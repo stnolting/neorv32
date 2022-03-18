@@ -422,8 +422,8 @@ interrupt) this register provides the address of the next not-yet-executed instr
 | 0x343 | **Machine bad address or instruction** | `mtval`
 3+| Reset value: _UNDEFINED_
 3+| The `mtval` CSR is compatible to the RISC-V specifications. When a trap is triggered, the CSR shows either
-the faulting address (for misaligned/faulting load/stores/fetch) or the faulting instruction itself (for illegal
-instructions). For interrupts the CSR is set to zero.
+the faulting address (for misaligned/faulting load/store/fetch) or the faulting instruction word itself (for illegal
+instructions). For all other exceptions (including interrupts) the CSR is set to zero.
 |=======================
 
 .Machine bad address or instruction register
@@ -432,13 +432,12 @@ instructions). For interrupts the CSR is set to zero.
 |=======================
 | Trap cause | `mtval` content
 | misaligned instruction fetch address or instruction fetch access fault | address of faulting instruction fetch
-| breakpoint | program counter (= address) of faulting instruction itself
-| misaligned load address, load access fault, misaligned store address or store access fault | program counter (= address) of faulting instruction itself
-| illegal instruction | actual instruction word of faulting instruction
+| misaligned load address, load access fault, misaligned store address or store access fault | program counter (= address) of faulting instruction
+| illegal instruction | actual instruction word of faulting instruction (decoded 32-bit instruction word if caused by a compressed instruction)
 | anything else including interrupts | _0x00000000_ (always zero)
 |=======================
 
-[IMPORTAN]
+[IMPORTANT]
 The NEORV32 `mtval` CSR is read-only. However, a write access will _NOT_ raise an illegal instruction exception.
 
 :sectnums!:
