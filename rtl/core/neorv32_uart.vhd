@@ -28,7 +28,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -592,57 +592,55 @@ begin
 
   -- SIMULATION Transmitter -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
--- pragma translate_off
--- synthesis translate_off
--- RTL_SYNTHESIS OFF
-  sim_output: process(clk_i) -- for SIMULATION ONLY!
-    file file_uart_text_out : text open write_mode is sim_uart_text_file_c;
-    file file_uart_data_out : text open write_mode is sim_uart_data_file_c;
-    variable char_v         : integer;
-    variable line_screen_v  : line; -- we need several line variables here since "writeline" seems to flush the source variable
-    variable line_text_v    : line;
-    variable line_data_v    : line;
-  begin
-    if rising_edge(clk_i) then
-      if (tx_engine.state = S_TX_SIM) then -- UART simulation mode
-        
-        -- print lowest byte as ASCII char --
-        char_v := to_integer(unsigned(tx_buffer.rdata(7 downto 0)));
-        if (char_v >= 128) then -- out of range?
-          char_v := 0;
-        end if;
-
-        if (char_v /= 10) and (char_v /= 13) then -- skip line breaks - they are issued via "writeline"
-          if (sim_screen_output_en_c = true) then
-            write(line_screen_v, character'val(char_v));
+  simulation_transmitter:
+  if (is_simulation_c = true) generate -- for SIMULATION ONLY!
+    sim_output: process(clk_i)
+      file file_uart_text_out : text open write_mode is sim_uart_text_file_c;
+      file file_uart_data_out : text open write_mode is sim_uart_data_file_c;
+      variable char_v         : integer;
+      variable line_screen_v  : line; -- we need several line variables here since "writeline" seems to flush the source variable
+      variable line_text_v    : line;
+      variable line_data_v    : line;
+    begin
+      if rising_edge(clk_i) then
+        if (tx_engine.state = S_TX_SIM) then -- UART simulation mode
+          
+          -- print lowest byte as ASCII char --
+          char_v := to_integer(unsigned(tx_buffer.rdata(7 downto 0)));
+          if (char_v >= 128) then -- out of range?
+            char_v := 0;
           end if;
-          if (sim_text_output_en_c = true) then
-            write(line_text_v, character'val(char_v));
-          end if;
-        end if;
 
-        if (char_v = 10) then -- line break: write to screen and text file
-          if (sim_screen_output_en_c = true) then
-            writeline(output, line_screen_v);
+          if (char_v /= 10) and (char_v /= 13) then -- skip line breaks - they are issued via "writeline"
+            if (sim_screen_output_en_c = true) then
+              write(line_screen_v, character'val(char_v));
+            end if;
+            if (sim_text_output_en_c = true) then
+              write(line_text_v, character'val(char_v));
+            end if;
           end if;
-          if (sim_text_output_en_c = true) then
-            writeline(file_uart_text_out, line_text_v);
+
+          if (char_v = 10) then -- line break: write to screen and text file
+            if (sim_screen_output_en_c = true) then
+              writeline(output, line_screen_v);
+            end if;
+            if (sim_text_output_en_c = true) then
+              writeline(file_uart_text_out, line_text_v);
+            end if;
           end if;
-        end if;
 
-        -- dump raw data as 8 hex chars to file --
-        if (sim_data_output_en_c = true) then
-          for x in 7 downto 0 loop
-            write(line_data_v, to_hexchar_f(tx_buffer.rdata(3+x*4 downto 0+x*4))); -- write in hex form
-          end loop; -- x
-          writeline(file_uart_data_out, line_data_v);
-        end if;
+          -- dump raw data as 8 hex chars to file --
+          if (sim_data_output_en_c = true) then
+            for x in 7 downto 0 loop
+              write(line_data_v, to_hexchar_f(tx_buffer.rdata(3+x*4 downto 0+x*4))); -- write in hex form
+            end loop; -- x
+            writeline(file_uart_data_out, line_data_v);
+          end if;
 
+        end if;
       end if;
-    end if;
-  end process sim_output;
--- RTL_SYNTHESIS ON
--- synthesis translate_on
--- pragma translate_on
+    end process sim_output;
+  end generate;
+
 
 end neorv32_uart_rtl;
