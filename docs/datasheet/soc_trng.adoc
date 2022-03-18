@@ -26,9 +26,15 @@ NEORV32 processor. The TRNG uses the default neoTRNG configuration, which showed
 `dieharder` battery of random number tests. More detailed information about the neoTRNG, it's architecture and a
 detailed evaluation of the random number quality can be found it it's repository: https://github.com/stnolting/neoTRNG
 
+.Platform Independent Architecture
 [NOTE]
 The TRNG features a platform independent architecture without FPGA-specific primitives, macros or
 attributes so it can be synthesized for _any_ FPGA.
+
+.Inferring Latches
+[NOTE]
+The synthesis tool might emit a warning like _"inferring latches for ... neorv32_trng ..."_. This is no problem
+as this is what we actually want (the TRNG is based on latches).
 
 
 **Using the TRNG**
@@ -39,6 +45,7 @@ sampled 8-bit random data byte can be obtained from the lowest 8 bits of the `CT
 (_TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_LSB_). These bits always keep the latest valid data obtained from the TRNG
 entropy source. The _TRNG_CTRL_VALID_ bit is automatically cleared when reading the control register.
 
+.TRNG Reset
 [NOTE]
 The TRNG core does not provide a dedicated reset. In order to ensure correct operations, the TRNG should be
 disabled (=reset) by clearing the _TRNG_CTRL_EN_ and waiting some milliseconds before re-enabling it.
