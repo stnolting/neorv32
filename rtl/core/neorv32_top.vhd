@@ -246,10 +246,10 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_slink_en_c : boolean := boolean(SLINK_NUM_RX > 0) or boolean(SLINK_NUM_TX > 0); -- implement slink at all?
 
   -- reset generator --
-  signal rstn_gen : std_ulogic_vector(7 downto 0) := (others => '0'); -- initialize (=reset) via bitstream (for FPGAs only)
-  signal ext_rstn : std_ulogic;
-  signal sys_rstn : std_ulogic;
-  signal wdt_rstn : std_ulogic;
+  signal ext_rstn_sync : std_ulogic_vector(3 downto 0) := (others => '0'); -- initialize (=reset) via bitstream (for FPGAs only)
+  signal ext_rstn      : std_ulogic;
+  signal sys_rstn      : std_ulogic;
+  signal wdt_rstn      : std_ulogic;
 
   -- clock generator --
   signal clk_div       : std_ulogic_vector(11 downto 0);
@@ -417,18 +417,18 @@ begin
   reset_generator: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      rstn_gen <= (others => '0');
-      sys_rstn <= '0';
+      ext_rstn_sync <= (others => '0');
+      ext_rstn      <= '0';
+      sys_rstn      <= '0';
     elsif rising_edge(clk_i) then
-      -- keep internal reset active for at least <rstn_gen'size> clock cycles --
-      rstn_gen <= rstn_gen(rstn_gen'left-1 downto 0) & '1';
+      -- keep internal reset active for at least <ext_rstn_sync'size> clock cycles --
+      ext_rstn_sync <= ext_rstn_sync(ext_rstn_sync'left-1 downto 0) & '1';
+      -- beautified external reset signal --
+      ext_rstn <= and_reduce_f(ext_rstn_sync);
       -- system reset: can also be triggered by watchdog and debug module --
       sys_rstn <= ext_rstn and wdt_rstn and dci_ndmrstn;
     end if;
   end process reset_generator;
-
-  -- beautified external reset signal --
-  ext_rstn <= rstn_gen(rstn_gen'left);
 
 
   -- Clock Generator ------------------------------------------------------------------------
