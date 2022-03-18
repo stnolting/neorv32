@@ -730,8 +730,11 @@ typedef struct __attribute__((packed,aligned(4))) {
 	uint32_t REG[32]; /**< offset 4*0..4*31: CFS register 0..31, user-defined */
 } neorv32_cfs_t;
 
+/** CFS base address */
+#define NEORV32_CFS_BASE (0xFFFFFE00UL)
+
 /** CFS module hardware access (#neorv32_cfs_t) */
-#define NEORV32_CFS (*((volatile neorv32_cfs_t*) (0xFFFFFE00UL)))
+#define NEORV32_CFS (*((volatile neorv32_cfs_t*) (NEORV32_CFS_BASE)))
 /**@}*/
 
 
