@@ -91,6 +91,7 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   signal rs2_is_signed : std_ulogic;
   signal div_res_corr  : std_ulogic;
   signal out_en        : std_ulogic;
+  signal rs2_zero      : std_ulogic;
 
   -- divider core --
   signal remainder        : std_ulogic_vector(data_width_c-1 downto 0);
@@ -152,7 +153,7 @@ begin
         when DIV_PREPROCESS =>
           -- check relevant input signs for result sign compensation --
           if (cp_op = cp_op_div_c) then -- signed div operation
-            div_res_corr <= (rs1_i(rs1_i'left) xor rs2_i(rs2_i'left)) and or_reduce_f(rs2_i); -- different signs AND rs2 not zero
+            div_res_corr <= (rs1_i(rs1_i'left) xor rs2_i(rs2_i'left)) and (not rs2_zero); -- different signs AND rs2 not zero
           elsif (cp_op = cp_op_rem_c) then -- signed rem operation
             div_res_corr <= rs1_i(rs1_i'left);
           else
@@ -182,6 +183,9 @@ begin
       end case;
     end if;
   end process coprocessor_ctrl;
+
+  -- rs2 zero? --
+  rs2_zero <= '1' when (or_reduce_f(rs2_i) = '0') else '0';
 
   -- co-processor command --
   cp_op <= ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c);
