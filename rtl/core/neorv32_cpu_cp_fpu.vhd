@@ -343,6 +343,7 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl_engine.state      <= S_IDLE;
+      ctrl_engine.valid      <= '0';
       ctrl_engine.start      <= '0';
       fpu_operands.frm       <= (others => def_rst_val_c);
       fpu_operands.rs1       <= (others => def_rst_val_c);
@@ -671,12 +672,7 @@ begin
     variable a_snan_v,     a_qnan_v,     b_snan_v,     b_qnan_v     : std_ulogic;
   begin
     if (rstn_i = '0') then
-      multiplier.res_class(fp_class_pos_norm_c) <= def_rst_val_c;
-      multiplier.res_class(fp_class_neg_norm_c) <= def_rst_val_c;
-      multiplier.res_class(fp_class_pos_inf_c)  <= def_rst_val_c;
-      multiplier.res_class(fp_class_neg_inf_c)  <= def_rst_val_c;
-      multiplier.res_class(fp_class_pos_zero_c) <= def_rst_val_c;
-      multiplier.res_class(fp_class_neg_zero_c) <= def_rst_val_c;
+      multiplier.res_class <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       -- minions --
       a_pos_norm_v := fpu_operands.rs1_class(fp_class_pos_norm_c);    b_pos_norm_v := fpu_operands.rs2_class(fp_class_pos_norm_c);
@@ -756,12 +752,12 @@ begin
         (a_qnan_v or b_qnan_v) or -- nay input is qNaN
         ((a_pos_inf_v  or a_neg_inf_v)  and (b_pos_zero_v or b_neg_zero_v)) or -- +/-inf * +/-zero
         ((a_pos_zero_v or a_neg_zero_v) and (b_pos_inf_v  or b_neg_inf_v));    -- +/-zero * +/-inf
+
+      -- subnormal result --
+      multiplier.res_class(fp_class_pos_denorm_c) <= '0'; -- is evaluated by the normalizer
+      multiplier.res_class(fp_class_neg_denorm_c) <= '0'; -- is evaluated by the normalizer
     end if;
   end process multiplier_class_core;
-
-  -- subnormal result --
-  multiplier.res_class(fp_class_pos_denorm_c) <= '0'; -- is evaluated by the normalizer
-  multiplier.res_class(fp_class_neg_denorm_c) <= '0'; -- is evaluated by the normalizer
 
   -- unused --
   fu_mul.result <= (others => '0');
@@ -910,11 +906,7 @@ begin
     variable a_snan_v,     a_qnan_v,     b_snan_v,     b_qnan_v     : std_ulogic;
   begin
     if (rstn_i = '0') then
-      addsub.res_class(fp_class_pos_inf_c)  <= def_rst_val_c;
-      addsub.res_class(fp_class_neg_inf_c)  <= def_rst_val_c;
-      addsub.res_class(fp_class_pos_zero_c) <= def_rst_val_c;
-      addsub.res_class(fp_class_neg_zero_c) <= def_rst_val_c;
-      addsub.res_class(fp_class_qnan_c)     <= def_rst_val_c;
+      addsub.res_class <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       -- minions --
       a_pos_norm_v := fpu_operands.rs1_class(fp_class_pos_norm_c);    b_pos_norm_v := fpu_operands.rs2_class(fp_class_pos_norm_c);
@@ -1039,12 +1031,12 @@ begin
 
       -- sNaN --
       addsub.res_class(fp_class_snan_c) <= (a_snan_v or b_snan_v); -- any input is sNaN
+
+      -- subnormal result --
+      addsub.res_class(fp_class_pos_denorm_c) <= '0'; -- is evaluated by the normalizer
+      addsub.res_class(fp_class_neg_denorm_c) <= '0'; -- is evaluated by the normalizer
     end if;
   end process adder_subtractor_class_core;
-
-  -- subnormal result --
-  addsub.res_class(fp_class_pos_denorm_c) <= '0'; -- is evaluated by the normalizer
-  addsub.res_class(fp_class_neg_denorm_c) <= '0'; -- is evaluated by the normalizer
 
   -- unused --
   fu_addsub.result <= (others => '0');
