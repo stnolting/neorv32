@@ -66,14 +66,20 @@ void neorv32_rte_setup(void) {
   // configure trap handler base address
   neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&__neorv32_rte_core));
 
+  // disable all IRQ channels
+  neorv32_cpu_csr_write(CSR_MIE, 0);
+
+  // clear all pending IRQs
+  neorv32_cpu_csr_write(CSR_MIP, 0);
+
+  // clear BUSKEEPER error flags
+  NEORV32_BUSKEEPER.CTRL = 0;
+
   // install debug handler for all sources
   uint8_t id;
   for (id = 0; id < (sizeof(__neorv32_rte_vector_lut)/sizeof(__neorv32_rte_vector_lut[0])); id++) {
     neorv32_rte_exception_uninstall(id); // this will configure the debug handler
   }
-
-  // clear BUSKEEPER error flags
-  NEORV32_BUSKEEPER.CTRL = 0;
 }
 
 
