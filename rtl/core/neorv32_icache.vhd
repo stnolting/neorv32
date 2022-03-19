@@ -545,7 +545,7 @@ begin
   end process comparator;
 
   -- global hit --
-  hit_o <= or_reduce_f(hit);
+  hit_o <= '1' when (or_reduce_f(hit) = '1') else '0';
 
 
 	-- Cache Data Memory ----------------------------------------------------------------------

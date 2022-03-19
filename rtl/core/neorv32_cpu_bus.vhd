@@ -486,9 +486,9 @@ begin
   end process pmp_check_permission;
 
   -- final PMP access fault signals --
-  if_pmp_fault <= or_reduce_f(pmp.if_fault) when (PMP_NUM_REGIONS > 0) else '0';
-  ld_pmp_fault <= or_reduce_f(pmp.ld_fault) when (PMP_NUM_REGIONS > 0) else '0';
-  st_pmp_fault <= or_reduce_f(pmp.st_fault) when (PMP_NUM_REGIONS > 0) else '0';
+  if_pmp_fault <= '1' when (or_reduce_f(pmp.if_fault) = '1') and (PMP_NUM_REGIONS > 0) else '0';
+  ld_pmp_fault <= '1' when (or_reduce_f(pmp.ld_fault) = '1') and (PMP_NUM_REGIONS > 0) else '0';
+  st_pmp_fault <= '1' when (or_reduce_f(pmp.st_fault) = '1') and (PMP_NUM_REGIONS > 0) else '0';
 
 
 end neorv32_cpu_bus_rtl;
