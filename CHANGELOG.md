@@ -33,6 +33,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 19.03.2022 | 1.6.9.3 | :bug: fixed minor bug in **FPU** - incorrect/missing reset (even if reset to `'-'`) of some registers |
 | 18.03.2022 | 1.6.9.2 | fixed minor bug in **TRNG** hand shake (that marked the same RND value as valid for several times); minor optimization of **processor's reset generator** |
 | 14.03.2022 | 1.6.9.1 | `mtval` CSR is set to zero for software breakpoints (`[c.]ebreak` instruction(s)) - this is permitted by the RISC-V machine ISA spec. v1.12; [PR #289](https://github.com/stnolting/neorv32/pull/289) |
 | 09.03.2022 | [**:rocket:1.6.9**](https://github.com/stnolting/neorv32/releases/tag/v1.6.9) | **New release** |
