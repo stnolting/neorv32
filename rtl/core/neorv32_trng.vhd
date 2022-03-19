@@ -327,7 +327,7 @@ begin
 
   -- enable chain --
   cell_array.en_in(0) <= ctrl.enable; -- start of chain
-  cell_array.en_in(NUM_CELLS-1 downto 1) <=cell_array.en_out(NUM_CELLS-2 downto 0); -- i+1 <= i
+  cell_array.en_in(NUM_CELLS-1 downto 1) <= cell_array.en_out(NUM_CELLS-2 downto 0); -- i+1 <= i
 
 
   -- XOR All Cell's Outputs -----------------------------------------------------------------
@@ -395,7 +395,6 @@ begin
       else
         valid_o <= '0';
       end if;
-
     end if;
   end process control_unit;
 
