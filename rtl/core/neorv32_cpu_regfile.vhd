@@ -116,7 +116,7 @@ begin
     end process rf_access;
 
     -- writing to x0? --
-    rd_is_x0 <= not or_reduce_f(ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c));
+    rd_is_x0 <= '1' when (ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) = "00000") else '0';
   end generate;
 
   reg_file_rv32e: -- embedded register file with 16 registers
@@ -133,7 +133,7 @@ begin
     end process rf_access;
 
     -- writing to x0? --
-    rd_is_x0 <= not or_reduce_f(ctrl_i(ctrl_rf_rd_adr3_c downto ctrl_rf_rd_adr0_c));
+    rd_is_x0 <= '1' when (ctrl_i(ctrl_rf_rd_adr3_c downto ctrl_rf_rd_adr0_c) = "0000") else '0';
   end generate;
 
   -- access addresses --

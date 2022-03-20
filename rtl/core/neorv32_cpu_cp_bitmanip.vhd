@@ -470,7 +470,7 @@ begin
   clmul.rs2 <= bit_rev_f(rs2_reg) when (cmd_buf(op_clmulr_c) = '1') else rs2_reg;
 
   -- multiplier busy? --
-  clmul.busy <= or_reduce_f(clmul.cnt);
+  clmul.busy <= '1' when (or_reduce_f(clmul.cnt) = '1') else '0';
 
 
   -- Operation Results ----------------------------------------------------------------------
@@ -522,7 +522,7 @@ begin
   -- single-bit instructions --
   res_int(op_bclr_c) <= rs1_reg and (not one_hot_core);
   res_int(op_bext_c)(data_width_c-1 downto 1) <= (others => '0');
-  res_int(op_bext_c)(0) <= or_reduce_f(rs1_reg and one_hot_core);
+  res_int(op_bext_c)(0) <= '1' when (or_reduce_f(rs1_reg and one_hot_core) = '1') else '0';
   res_int(op_binv_c) <= rs1_reg xor one_hot_core;
   res_int(op_bset_c) <= rs1_reg or one_hot_core;
 

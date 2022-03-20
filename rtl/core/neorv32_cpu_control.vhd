@@ -902,8 +902,16 @@ begin
     end if;
 
     -- register/uimm5 checks --
-    decode_aux.rs1_zero <= not or_reduce_f(execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c));
-    decode_aux.rd_zero  <= not or_reduce_f(execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c));
+    if (execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") then
+      decode_aux.rs1_zero <= '1';
+    else
+      decode_aux.rs1_zero <= '0';
+    end if;
+    if (execute_engine.i_reg(instr_rd_msb_c downto instr_rd_lsb_c) = "00000") then
+      decode_aux.rd_zero <= '1';
+    else
+      decode_aux.rd_zero <= '0';
+    end if;
   end process decode_helper;
 
 
@@ -1667,8 +1675,9 @@ begin
   end process trap_controller;
 
   -- any exception/interrupt? --
-  trap_ctrl.exc_fire <= or_reduce_f(trap_ctrl.exc_buf); -- sync. exceptions CANNOT be masked
-  trap_ctrl.irq_fire <= (or_reduce_f(trap_ctrl.irq_buf) and csr.mstatus_mie and trap_ctrl.db_irq_en) or trap_ctrl.db_irq_fire; -- interrupts CAN be masked (but not the DEBUG halt IRQ)
+  trap_ctrl.exc_fire <= '1' when (or_reduce_f(trap_ctrl.exc_buf) = '1') else '0'; -- sync. exceptions CANNOT be masked
+  trap_ctrl.irq_fire <= '1' when ((or_reduce_f(trap_ctrl.irq_buf) = '1') and (csr.mstatus_mie = '1') and (trap_ctrl.db_irq_en = '1')) or -- interrupts CAN be masked
+                                 (trap_ctrl.db_irq_fire = '1') else '0'; -- but not the DEBUG halt IRQ
 
   -- debug mode (entry) interrupts --
   trap_ctrl.db_irq_en   <= '0' when (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) else '1'; -- no interrupts when IN debug mode or IN single-step mode
@@ -2659,7 +2668,11 @@ begin
       if (HPM_NUM_CNTS /= 0) then
         for i in 0 to HPM_NUM_CNTS-1 loop
           -- do not increment if CPU is in debug mode --
-          hpmcnt_trigger(i) <= or_reduce_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0)) and (not debug_ctrl.running);
+          if (or_reduce_f(cnt_event and csr.mhpmevent(i)(cnt_event'left downto 0)) = '1') and (debug_ctrl.running = '0') then
+            hpmcnt_trigger(i) <= '1';
+          else
+            hpmcnt_trigger(i) <= '0';
+          end if;
         end loop; -- i
       end if;
     end if;

@@ -424,7 +424,11 @@ begin
       -- keep internal reset active for at least <ext_rstn_sync'size> clock cycles --
       ext_rstn_sync <= ext_rstn_sync(ext_rstn_sync'left-1 downto 0) & '1';
       -- beautified external reset signal --
-      ext_rstn <= and_reduce_f(ext_rstn_sync);
+      if (and_reduce_f(ext_rstn_sync) = '1') then
+        ext_rstn <= '1';
+      else
+        ext_rstn <= '0';
+      end if;
       -- system reset: can also be triggered by watchdog and debug module --
       sys_rstn <= ext_rstn and wdt_rstn and dci_ndmrstn;
     end if;
@@ -436,15 +440,19 @@ begin
   clock_generator: process(sys_rstn, clk_i)
   begin
     if (sys_rstn = '0') then
-      clk_gen_en_ff <= '-';
-      clk_div_ff    <= (others => '-');
+      clk_gen_en_ff <= '0'; -- reset required
       clk_div       <= (others => '0'); -- reset required
+      clk_div_ff    <= (others => '-');
     elsif rising_edge(clk_i) then
-      clk_gen_en_ff <= or_reduce_f(clk_gen_en);
-      clk_div_ff    <= clk_div;
-      if (clk_gen_en_ff = '1') then -- actual clock generator
+      if (or_reduce_f(clk_gen_en) = '0') then
+        clk_gen_en_ff <= '0';
+      else
+        clk_gen_en_ff <= '1';
+      end if;
+      if (clk_gen_en_ff = '1') then
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
       end if;
+      clk_div_ff <= clk_div;
     end if;
   end process clock_generator;
 
@@ -944,8 +952,8 @@ begin
   -- IO Access? -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   io_acc  <= '1' when (p_bus.addr(data_width_c-1 downto index_size_f(io_size_c)) = io_base_c(data_width_c-1 downto index_size_f(io_size_c))) else '0';
-  io_rden <= io_acc and p_bus.re;
-  io_wren <= io_acc and p_bus.we and and_reduce_f(p_bus.ben); -- only full-word write accesses are allowed (reduces HW complexity)
+  io_rden <= '1' when (io_acc = '1') and (p_bus.re = '1') else '0';
+  io_wren <= '1' when (io_acc = '1') and (p_bus.we = '1') and (p_bus.ben = "1111") else '0'; -- only full-word write accesses are allowed (reduces HW complexity)
 
 
   -- Custom Functions Subsystem (CFS) -------------------------------------------------------

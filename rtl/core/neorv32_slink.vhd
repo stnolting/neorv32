@@ -8,7 +8,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -208,7 +208,9 @@ begin
           end if;
           ack_write <= '1';
         else -- TX links
-          ack_write <= or_reduce_f(link_sel and tx_fifo_free);
+          if (or_reduce_f(link_sel and tx_fifo_free) = '1') then
+            ack_write <= '1';
+          end if;
         end if;
       end if;
 
@@ -243,8 +245,10 @@ begin
               data_o <= (others => '0');
           end case;
         else -- RX links
-          data_o   <= rx_fifo_rdata(to_integer(unsigned(addr(4 downto 2))));
-          ack_read <= or_reduce_f(link_sel and rx_fifo_avail);
+          data_o <= rx_fifo_rdata(to_integer(unsigned(addr(4 downto 2))));
+          if (or_reduce_f(link_sel and rx_fifo_avail) = '1') then
+            ack_read <= '1';
+          end if;
         end if;
       end if;
     end if;
@@ -328,8 +332,14 @@ begin
   irq_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      irq_rx_o <= or_reduce_f(rx_irq.set);
-      irq_tx_o <= or_reduce_f(tx_irq.set);
+      irq_rx_o <= '0';
+      irq_tx_o <= '0';
+      if (or_reduce_f(rx_irq.set) = '1') then
+        irq_rx_o <= '1';
+      end if;
+      if (or_reduce_f(tx_irq.set) = '1') then
+        irq_tx_o <= '1';
+      end if;
     end if;
   end process irq_generator;
 

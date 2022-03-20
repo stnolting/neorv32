@@ -119,7 +119,7 @@ begin
   -- shift control/output --
   serial_shifter_ctrl:
   if (FAST_SHIFT_EN = false) generate
-    shifter.done <= not or_reduce_f(shifter.cnt(shifter.cnt'left downto 1));
+    shifter.done <= '1' when (or_reduce_f(shifter.cnt(shifter.cnt'left downto 1)) = '0') else '0';
     valid_o      <= shifter.busy and shifter.done;
     res_o        <= shifter.sreg when (shifter.busy = '0') and (shifter.busy_ff = '1') else (others => '0');
   end generate;
