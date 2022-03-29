@@ -440,17 +440,15 @@ begin
   clock_generator: process(sys_rstn, clk_i)
   begin
     if (sys_rstn = '0') then
-      clk_gen_en_ff <= '0'; -- reset required
-      clk_div       <= (others => '0'); -- reset required
-      clk_div_ff    <= (others => '-');
+      clk_gen_en_ff <= '0';
+      clk_div       <= (others => '0');
+      clk_div_ff    <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (or_reduce_f(clk_gen_en) = '0') then
-        clk_gen_en_ff <= '0';
-      else
-        clk_gen_en_ff <= '1';
-      end if;
+      clk_gen_en_ff <= or_reduce_f(clk_gen_en);
       if (clk_gen_en_ff = '1') then
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
+      else
+        clk_div <= (others => '0');
       end if;
       clk_div_ff <= clk_div;
     end if;
