@@ -176,7 +176,7 @@ begin
 
           when others => -- undefined
           -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o <= (others => '-');
+            ci_instr32_o <= (others => '0');
             ci_illegal_o <= '1';
 
         end case;
@@ -346,7 +346,7 @@ begin
 
           when others => -- undefined
           -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o <= (others => '-');
+            ci_instr32_o <= (others => '0');
             ci_illegal_o <= '1';
 
         end case;
@@ -441,14 +441,14 @@ begin
 
           when others => -- undefined
           -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o <= (others => '-');
+            ci_instr32_o <= (others => '0');
             ci_illegal_o <= '1';
 
         end case;
 
       when others => -- not a compressed instruction
       -- ----------------------------------------------------------------------------------------------------------
-        ci_instr32_o <= (others => '-');
+        ci_instr32_o <= (others => '0');
         ci_illegal_o <= '0';
 
     end case;
