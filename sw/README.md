@@ -28,12 +28,6 @@ memory initialization files (for memory-persistent applications and for the boot
 This program is automatically compiled using the native GCC when invoking one of the application compilation makefiles.
 
 
-## [isa-test](isa-test)
-
-NEORV32 RISC-V Architecture Test Framework.
-See [sim/README](../sim/README.md).
-
-
 ## [lib](lib)
 
 Core libraries (sources and header files) and helper functions for using the processor peripherals and the CPU itself.
