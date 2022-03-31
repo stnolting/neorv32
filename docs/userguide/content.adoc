@@ -48,8 +48,6 @@ include::zephyr_support.adoc[]
 
 include::free_rtos_support.adoc[]
 
-include::riscv_architecture_tests.adoc[]
-
 include::debugging_with_ocd.adoc[]
 
 
