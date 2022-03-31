@@ -276,9 +276,8 @@ begin
   rdata_o <= exclusive_lock_status when (CPU_EXTENSION_RISCV_A = true) and (ctrl_i(ctrl_bus_ch_lock_c) = '1') else rdata_align;
 
 
-  -- Data Access Arbiter --------------------------------------------------------------------
+  -- Data Access Arbiter (controlled by pipeline BACK-end) ----------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- controlled by pipeline BACK-end --
   data_access_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -287,13 +286,12 @@ begin
       d_arbiter.err_align <= '0';
       d_arbiter.err_bus   <= '0';
     elsif rising_edge(clk_i) then
-      -- data access request --
       if (d_arbiter.wr_req = '0') and (d_arbiter.rd_req = '0') then -- idle
         d_arbiter.wr_req    <= ctrl_i(ctrl_bus_wr_c);
         d_arbiter.rd_req    <= ctrl_i(ctrl_bus_rd_c);
         d_arbiter.err_align <= '0';
         d_arbiter.err_bus   <= '0';
-      else -- in progress, accumulate error
+      else -- in progress, accumulate errors
         d_arbiter.err_align <= d_arbiter.err_align or d_misaligned;
         d_arbiter.err_bus   <= d_arbiter.err_bus or d_bus_err_i or (st_pmp_fault and d_arbiter.wr_req) or (ld_pmp_fault and d_arbiter.rd_req);
         if (d_bus_ack_i = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- wait for ACK or TRAP
@@ -368,7 +366,8 @@ begin
       exclusive_lock <= '0';
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_A = true) then
-        if (ctrl_i(ctrl_trap_c) = '1') or (ctrl_i(ctrl_bus_de_lock_c) = '1') then -- remove lock if entering a trap or executing a non-load-reservate memory access
+        -- remove lock if entering a trap or executing a non-load-reservate memory access --
+        if (ctrl_i(ctrl_trap_c) = '1') or (ctrl_i(ctrl_bus_de_lock_c) = '1') then
           exclusive_lock <= '0';
         elsif (ctrl_i(ctrl_bus_lock_c) = '1') then -- set new lock
           exclusive_lock <= '1';
@@ -391,9 +390,8 @@ begin
   d_bus_lock_o <= exclusive_lock;
 
 
-  -- Instruction Fetch Arbiter --------------------------------------------------------------
+  -- Instruction Fetch Arbiter (controlled by pipeline FRONT-end) ---------------------------
   -- -------------------------------------------------------------------------------------------
-  -- controlled by pipeline FRONT-end --
   ifetch_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -401,7 +399,6 @@ begin
       i_arbiter.err_align <= '0';
       i_arbiter.err_bus   <= '0';
     elsif rising_edge(clk_i) then
-      -- instruction fetch request --
       if (i_arbiter.rd_req = '0') then -- idle
         i_arbiter.rd_req    <= ctrl_i(ctrl_bus_if_c);
         i_arbiter.err_align <= '0';
@@ -452,7 +449,8 @@ begin
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- check access address region --
+
+  -- check address region --
   pmp_check_address: process(pmp_addr_i, fetch_pc_i, mar)
   begin
     for i in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
