@@ -1,4 +1,0 @@
-[submodule "riscv-arch-test/work/riscv-arch-test"]
-	path = sw/isa-test/riscv-arch-test
-	url = https://github.com/riscv-non-isa/riscv-arch-test.git
-	ignore = dirty
