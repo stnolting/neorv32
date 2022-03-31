@@ -12,14 +12,12 @@
 1. [Overview](#1-Overview)
    * [Key Features](#Project-Key-Features)
    * [Status](#status)
-2. [Processor/SoC Features](#2-NEORV32-Processor-Features)
-   * [FPGA Implementation Results](#FPGA-Implementation-Results---Processor)
-3. [CPU Features](#3-NEORV32-CPU-Features)
-   * [Available ISA Extensions](#Available-ISA-Extensions)
-   * [FPGA Implementation Results](#FPGA-Implementation-Results---CPU)
-   * [Performance](#Performance)
-4. [Software Framework & Tooling](#4-Software-Framework-and-Tooling)
-5. [**Getting Started**](#5-Getting-Started) :rocket:
+2. [Features](#2-Features)
+   * [FPGA Implementation Results - Processor/SoC](#FPGA-Implementation-Results---Processor)
+   * [FPGA Implementation Results - CPU](#FPGA-Implementation-Results---CPU)
+   * [Performance](#3-Performance)
+3. [Software Framework & Tooling](#3-Software-Framework-and-Tooling)
+4. [**Getting Started**](#4-Getting-Started) :rocket:
 
 
 
@@ -63,6 +61,7 @@ setting up your NEORV32 setup!
 
 - [x] all-in-one package: **CPU** plus **SoC** plus **Software Framework & Tooling**
 - [x] completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
+- [x] highly extensible hardware - on CPU, SoC and system level
 - [x] be as small as possible while being as RISC-V-compliant as possible
 - [x] from zero to `printf("hello world!");` - completely open source and documented
 - [x] easy to use even for FPGA/RISC-V starters – intended to work *out of the box*
@@ -77,102 +76,25 @@ setting up your NEORV32 setup!
 [![riscv-arch-test](https://img.shields.io/github/workflow/status/stnolting/neorv32/riscv-arch-test/main?longCache=true&style=flat-square&label=riscv-arch-test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3Ariscv-arch-test)
 [![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/main?longCache=true&style=flat-square&label=Processor&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor)
 
+The processor passes the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test) and can
+run any C programs (for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example)
+folder). The SoC can be synthesized for _any_ target technology - tested on Intel, Xilinx and Lattice FPGAs.
+
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
-## 2. NEORV32 Processor Features
+
+## 2. Features
 
 The NEORV32 Processor provides a full-featured microcontroller-like SoC build around the NEORV32 CPU. It is highly configurable
-via generics to allow a flexible customization according to your needs. Note that all modules listed below are _optional_.
+via generics to allow a flexible customization according to your needs. Note that all modules listed below are _optional_ (except
+for the CPU, obviously).
 
-**Memory**
+**CPU**
 
-* processor-internal data and instruction memories ([DMEM](https://stnolting.github.io/neorv32/#_data_memory_dmem) /
-[IMEM](https://stnolting.github.io/neorv32/#_instruction_memory_imem)) &
-cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruction_cache_icache))
-* pre-installed bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with serial user interface
-  * allows booting application code via UART or from external SPI flash
-
-**Timers**
-
-* machine system timer, 64-bit ([MTIME](https://stnolting.github.io/neorv32/#_machine_system_timer_mtime)), RISC-V spec. compatible
-* general purpose 32-bit timer ([GPTMR](https://stnolting.github.io/neorv32/#_general_purpose_timer_gptmr))
-* watchdog timer ([WDT](https://stnolting.github.io/neorv32/#_watchdog_timer_wdt))
-
-**Input/Output**
-
-* standard serial interfaces
-([UART](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0),
-[SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi),
-[TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi))
-* general purpose [GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio) and
-[PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
-* smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly control NeoPixel(TM) LEDs
-
-**SoC Connectivity**
-
-* 32-bit external bus interface, Wishbone b4 compatible
-([WISHBONE](https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite))
-  * [wrappers](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration) for AXI4-Lite and Avalon-MM host interfaces
-* 32-bit stream link interface with up to 8 independent RX and TX links
-([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink)) - AXI4-Stream compatible
-* external interrupt controller with up to 32 channels
-([XIRQ](https://stnolting.github.io/neorv32/#_external_interrupt_controller_xirq))
-
-**Advanced**
-
-* JTAG-accessible on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) - compliant to
-the "Minimal RISC-V Debug Specification Version 0.13.2" and compatible with **OpenOCD** + **gdb** and **Segger Embedded Studio**
-* _true random_ number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng))
-* execute in place module ([XIP](https://stnolting.github.io/neorv32/#_execute_in_place_module_xip)) to directly execute code from SPI flash
-* custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))
-for tightly-coupled custom accelerators and interfaces
-* custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu)) for up to 1024
-_custom RISC-V instructions_
-
-[[back to top](#The-NEORV32-RISC-V-Processor)]
-
-
-### FPGA Implementation Results - Processor
-
-The hardware resources used by a specific processor setup is defined by the implemented CPU extensions,
-the configuration of the peripheral modules and some "glue logic".
-Section [_FPGA Implementation Results - Processor Modules_](https://stnolting.github.io/neorv32/#_processor_modules)
-of the online datasheet shows the resource utilization of each optional processor module to allow an
-estimation of the actual setup's hardware requirements.
-
-:bulb: The [`neorv32-setups`](https://github.com/stnolting/neorv32-setups) repository provides exemplary FPGA
-setups targeting various FPGA boards and toolchains. The latest bitstreams and utilization reports for those setups
-can be found in the assets of the [Implementation Workflow](https://github.com/stnolting/neorv32-setups/actions/workflows/Implementation.yml).
-
-[[back to top](#The-NEORV32-RISC-V-Processor)]
-
-
-
-## 3. NEORV32 CPU Features
-
-The NEORV32 CPU implements the RISC-V 32-bit `rv32i` ISA with optional extensions (see below). It is compatible to subsets of the
-*Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-spec.pdf)
-and the *Privileged Architecture Specification* [(Version 1.12)](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf).
-Compatibility is checked by passing the [official RISC-V architecture tests](https://github.com/riscv/riscv-arch-test).
-
-The core is a little-endian Von-Neumann machine implemented as multi-cycle architecture.
-However, the CPU's_front end (instruction fetch) and back end (instruction execution) can work independently to increase performance.
-Currently, two privilege levels "machine-mode" and optional "user-mode" are supported. The CPU implements all three standard RISC-V machine
-interrupts (MTI, MEI, MSI) plus 16 _fast interrupt requests_ as custom extensions.
-It also supports **all** standard RISC-V exceptions (instruction/load/store misaligned address & bus access fault, illegal
-instruction, breakpoint, environment calls).
-
-:books: In-depth detailed information regarding the CPU can be found in the
-[_Data Sheet: NEORV32 Central Processing Unit_](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu).
-
-
-### Available ISA Extensions
-
-The following _optional_ RISC-V-compatible and NEORV32-specific ISA extensions are available (linked to the according
-documentation section):
-
-**RV32
+* 32-bit little-endian RISC-V single-core, pipelined/multi-cycle Von-Neumann architecture
+* configurable ISA extensions
+  * `RV32`
 [[`I`](https://stnolting.github.io/neorv32/#_i_base_integer_isa)/
 [`E`](https://stnolting.github.io/neorv32/#_e_embedded_cpu)]
 [[`A`](https://stnolting.github.io/neorv32/#_a_atomic_memory_access)]
@@ -189,11 +111,82 @@ documentation section):
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_integer_multiplication)]
 [[`Zxcfu`](https://stnolting.github.io/neorv32/#_zxcfu_custom_instructions_extension_cfu)]
 [[`PMP`](https://stnolting.github.io/neorv32/#_pmp_physical_memory_protection)]
-[[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]**
+[[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]
+* compatible to subsets of the
+*Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-spec.pdf)
+and the *Privileged Architecture Specification* [(Version 1.12)](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf).
+* `machine` and `user` modes
+* implements _all_ standard RISC-V exceptions/interrupts (including MTI, MEI & MSI)
+* 16-fast interrupt requests as NEORV32-specific extensions
 
-:warning: The `B`, `Zfinx` and `Zmmul` RISC-V are frozen and officially ratified but there is no
-upstream gcc support yet. To circumvent this, the NEORV32 software framework provides _intrinsic libraries_ for the
-`B` and `Zfinx` extensions.
+**Memory**
+
+* processor-internal data and instruction memories ([DMEM](https://stnolting.github.io/neorv32/#_data_memory_dmem) /
+[IMEM](https://stnolting.github.io/neorv32/#_instruction_memory_imem)) &
+cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruction_cache_icache))
+* pre-installed bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with serial user interface
+  * allows booting application code via UART or from external SPI flash
+
+**Timers**
+
+* machine system timer, 64-bit ([MTIME](https://stnolting.github.io/neorv32/#_machine_system_timer_mtime)), RISC-V spec. compatible
+* general purpose 32-bit timer ([GPTMR](https://stnolting.github.io/neorv32/#_general_purpose_timer_gptmr))
+* watchdog timer ([WDT](https://stnolting.github.io/neorv32/#_watchdog_timer_wdt))
+
+**Input / Output**
+
+* standard serial interfaces
+([UART](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0),
+[SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi),
+[TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi))
+* general purpose [GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio) and
+[PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
+* smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly control NeoPixel(TM) LEDs
+
+**SoC Connectivity**
+
+* 32-bit external bus interface, Wishbone b4 compatible
+([WISHBONE](https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite))
+  * [wrappers](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration) for AXI4-Lite and Avalon-MM host interfaces
+* 32-bit stream link interface with up to 8 independent RX and TX links
+([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink)) - AXI4-Stream compatible
+* external interrupts controller with up to 32 channels
+([XIRQ](https://stnolting.github.io/neorv32/#_external_interrupt_controller_xirq))
+
+**Advanced**
+
+* _true random_ number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng))
+* execute in place module ([XIP](https://stnolting.github.io/neorv32/#_execute_in_place_module_xip)) to directly execute code from SPI flash
+* custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))
+for tightly-coupled custom accelerators and interfaces
+* custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu)) for up to 1024
+_custom RISC-V instructions_
+
+**Debugging**
+
+* on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) accessible via standard JTAG interface
+* compliant to the "Minimal RISC-V Debug Specification Version 0.13.2"
+* compatible with **OpenOCD** + **gdb** and **Segger Embedded Studio**
+
+
+:warning: The `B`, `Zfinx` and `Zmmul` RISC-V ISA extensions are frozen and officially ratified but there is no
+upstream gcc support yet (will be available with GCC12). To circumvent this, the NEORV32 software framework provides
+_intrinsic libraries_ for the `B` and `Zfinx` extensions.
+
+[[back to top](#The-NEORV32-RISC-V-Processor)]
+
+
+### FPGA Implementation Results - Processor
+
+The hardware resources used by a specific processor setup is defined by the implemented CPU extensions,
+the configuration of the peripheral modules and some "glue logic".
+Section [_FPGA Implementation Results - Processor Modules_](https://stnolting.github.io/neorv32/#_processor_modules)
+of the online datasheet shows the resource utilization of each optional processor module to allow an
+estimation of the actual setup's hardware requirements.
+
+:bulb: The [`neorv32-setups`](https://github.com/stnolting/neorv32-setups) repository provides exemplary FPGA
+setups targeting various FPGA boards and toolchains. The latest bitstreams and utilization reports for those setups
+can be found in the assets of the [Implementation Workflow](https://github.com/stnolting/neorv32-setups/actions/workflows/Implementation.yml).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -238,7 +231,7 @@ The following table shows the performance results (scores and average CPI) for e
 
 
 
-## 4. Software Framework and Tooling
+## 3. Software Framework and Tooling
 
 * [core libraries](https://github.com/stnolting/neorv32/tree/main/sw/lib) for high-level usage of the provided functions and peripherals
 * application compilation based on GNU makefiles
@@ -262,7 +255,7 @@ developed and debugged with open source tooling
 
 
 
-## 5. Getting Started
+## 4. Getting Started
 
 This overview provides some *quick links* to the most important sections of the
 [online Data Sheet](https://stnolting.github.io/neorv32) and the
