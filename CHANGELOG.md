@@ -33,10 +33,10 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 29.03.2022 | 1.6.9.5 | minor clock generator edits: reset clock generator explicitly if not being used by _any_ peripheral/IO device |
+| 29.03.2022 | 1.6.9.5 | minor clock generator edits: reset **clock generator** explicitly if not being used by _any_ peripheral/IO device |
 | 19.03.2022 | 1.6.9.4 | :test_tube: change usage of VHDL `*_reduce_f` functions for signals that might effect gate-level simulations; [PR #290](https://github.com/stnolting/neorv32/pull/290) |
 | 19.03.2022 | 1.6.9.3 | :bug: fixed minor bug in **FPU** - incorrect/missing reset (even if reset to `'-'`) of some registers |
-| 18.03.2022 | 1.6.9.2 | fixed minor bug in **TRNG** hand shake (that marked the same RND value as valid for several times); minor optimization of **processor's reset generator** |
+| 18.03.2022 | 1.6.9.2 | fixed minor bug in **TRNG** interface hand shake (that marked the _same_ RND value as "valid" for several times); minor optimization of **processor's reset generator** |
 | 14.03.2022 | 1.6.9.1 | `mtval` CSR is set to zero for software breakpoints (`[c.]ebreak` instruction(s)) - this is permitted by the RISC-V machine ISA spec. v1.12; [PR #289](https://github.com/stnolting/neorv32/pull/289) |
 | 09.03.2022 | [**:rocket:1.6.9**](https://github.com/stnolting/neorv32/releases/tag/v1.6.9) | **New release** |
 | 09.03.2022 | 1.6.8.12 | CPU core: minor code clean-up |
