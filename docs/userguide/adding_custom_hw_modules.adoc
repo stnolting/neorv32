@@ -28,7 +28,7 @@ have a minimal  protocol overhead. Device-specific interrupt capabilities could 
 https://stnolting.github.io/neorv32/#_external_interrupt_controller_xirq[External Interrupt Controller (XIRQ)].
 
 Beyond simplicity, these interface only provide a very limited bandwidth and require more sophisticated
-software handling ("bit-banging" for the GPIO). Hence, i is not recommend to use them for _chip-internal_ communication.
+software handling ("bit-banging" for the GPIO). Hence, it is not recommend to use them for _chip-internal_ communication.
 
 
 === External Bus Interface
