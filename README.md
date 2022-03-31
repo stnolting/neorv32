@@ -1,4 +1,4 @@
-[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/main/docs/figures/neorv32_logo_dark.png)](https://github.com/stnolting/neorv32)
+[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/main/docs/figures/neorv32_logo_front.png)](https://github.com/stnolting/neorv32)
 
 # The NEORV32 RISC-V Processor
 
@@ -15,7 +15,7 @@
 2. [Features](#2-Features)
    * [FPGA Implementation Results - Processor/SoC](#FPGA-Implementation-Results---Processor)
    * [FPGA Implementation Results - CPU](#FPGA-Implementation-Results---CPU)
-   * [Performance](#3-Performance)
+   * [Performance](#Performance)
 3. [Software Framework & Tooling](#3-Software-Framework-and-Tooling)
 4. [**Getting Started**](#4-Getting-Started) :rocket:
 
