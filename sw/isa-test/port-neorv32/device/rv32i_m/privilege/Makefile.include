@@ -1,3 +1,0 @@
-NEORV32_CPU_EXTENSION_RISCV_C ?= true
-
-include $(NEORV32_ROOT)/sw/isa-test/common.mk

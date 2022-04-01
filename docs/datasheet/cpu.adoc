@@ -125,13 +125,10 @@ memory operations).
 :sectnums:
 === RISC-V Compatibility
 
-The NEORV32 CPU passes the rv32_m/I, rv32_m/M, rv32_m/C, rv32_m/privilege, and
-rv32_m/Zifencei tests of the official RISC-V Architecture Tests (GitHub). The port files for the
-NEORV32 processor are located in the repository's `sw/isa-test` folder.
-
-[NOTE]
-See section https://stnolting.github.io/neorv32/ug/#_risc_v_architecture_test_framework[User Guide: RISC-V Architecture Test Framework]
-for information how to run the tests on the NEORV32.
+The NEORV32 CPU passes the tests of the _RISC-V Architecture Test Framework_. This framework is used to check
+RISC-V implementations for compatibility with the official RISC-V ISA specifications. 
+The NEORV32 port of this test framework has been moved to a separate repository:
+https://github.com/stnolting/neorv32-verif
 
 .**RISC-V `rv32_m/C` Tests**
 ...................................

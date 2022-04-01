@@ -139,10 +139,7 @@ neorv32                - Project home folder
  ├lib                  - Processor core library
  │├include             - Header files (*.h)
  │└source              - Source files (*.c)
- ├image_gen            - Helper program to generate NEORV32 executables
- ├isa-test
- │├riscv-arch-test     - RISC-V spec. compatibility test framework (submodule)
- │└port-neorv32        - Port files for the official RISC-V architecture tests
+ ├image_gen            - Helper program to generate NEORV32 executables^
  ├ocd_firmware         - Source code for on-chip debugger's "park loop"
  ├openocd              - OpenOCD on-chip debugger configuration files
  └svd                  - Processor system view description file (CMSIS-SVD)

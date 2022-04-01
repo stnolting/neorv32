@@ -1,6 +1,0 @@
-NEORV32_MARCH ?= rv32im
-NEORV32_LINK ?= link.imem_ram.ld
-NEORV32_MEM_INT_IMEM_SIZE ?= '16384'
-NEORV32_CPU_EXTENSION_RISCV_ZIFENCEI ?= true
-
-include $(NEORV32_ROOT)/sw/isa-test/common.mk

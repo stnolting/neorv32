@@ -34,6 +34,4 @@ sw/image_gen/image_gen.exe
 *.cf
 *.o
 
-# riscv-arch-test
-
 /sim/work/
