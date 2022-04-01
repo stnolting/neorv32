@@ -33,6 +33,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 01.04.2022 | 1.6.9.6 | rework **CPU front-end**: instruction issue engine; much cleaner code, slightly less HW required; [PR #292](https://github.com/stnolting/neorv32/pull/292) |
 | 29.03.2022 | 1.6.9.5 | minor clock generator edits: reset **clock generator** explicitly if not being used by _any_ peripheral/IO device |
 | 19.03.2022 | 1.6.9.4 | :test_tube: change usage of VHDL `*_reduce_f` functions for signals that might effect gate-level simulations; [PR #290](https://github.com/stnolting/neorv32/pull/290) |
 | 19.03.2022 | 1.6.9.3 | :bug: fixed minor bug in **FPU** - incorrect/missing reset (even if reset to `'-'`) of some registers |
