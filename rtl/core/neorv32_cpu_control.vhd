@@ -703,7 +703,7 @@ begin
           elsif (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_DEBUG = true) then -- any other exception INSIDE debug mode
             execute_engine.next_pc <= std_ulogic_vector(unsigned(CPU_DEBUG_ADDR) + 4); -- start at "parking loop" <exception_entry>
           else -- normal trapping
-            execute_engine.next_pc <= csr.mtvec(data_width_c-1 downto 1) & '0'; -- trap enter
+            execute_engine.next_pc <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- trap enter
           end if;
         when TRAP_EXIT => -- LEAVING trap environment
           if (CPU_EXTENSION_RISCV_DEBUG = false) or (debug_ctrl.running = '0') then -- normal end of trap
@@ -1124,8 +1124,7 @@ begin
         -- mret / dret --
         if (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_mret_c) then
           execute_engine.state_nxt <= TRAP_EXIT; -- mret
-        elsif (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_dret_c) and
-              (CPU_EXTENSION_RISCV_DEBUG = true) then
+        elsif (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_dret_c) and (CPU_EXTENSION_RISCV_DEBUG = true) then
           debug_ctrl.dret          <= '1';
           execute_engine.state_nxt <= TRAP_EXIT; -- dret
         else
@@ -1834,7 +1833,7 @@ begin
       when funct3_csrrwi_c => csr.wdata <= csr_imm_v;
       when funct3_csrrsi_c => csr.wdata <= csr.rdata or csr_imm_v;
       when funct3_csrrci_c => csr.wdata <= csr.rdata and (not csr_imm_v);
-      when others          => csr.wdata <= (others => '-'); -- undefined
+      when others          => csr.wdata <= (others => '0'); -- undefined
     end case;
   end process csr_write_data;
 
@@ -1964,8 +1963,7 @@ begin
             end if;
             -- R/W: mcause - machine trap cause --
             if (csr.addr(3 downto 0) = csr_mcause_c(3 downto 0)) then
-              csr.mcause(csr.mcause'left) <= csr.wdata(31); -- 1: async/interrupt, 0: sync/exception
-              csr.mcause(4 downto 0)      <= csr.wdata(4 downto 0); -- identifier
+              csr.mcause <= csr.wdata(31) & csr.wdata(4 downto 0); -- type + identifier
             end if;
             -- R/W: mip - machine interrupt pending --
             if (csr.addr(3 downto 0) = csr_mip_c(3 downto 0)) then
@@ -1973,9 +1971,10 @@ begin
             end if;
           end if;
 
-          -- physical memory protection: R/W: pmpcfg* - PMP configuration registers --
+          -- physical memory protection --
           -- --------------------------------------------------------------------
           if (PMP_NUM_REGIONS > 0) then
+            -- R/W: pmpcfg* - PMP configuration registers --
             if (csr.addr(11 downto 2) = csr_class_pmpcfg_c) then -- pmp configuration CSR class
               for i in 0 to 3 loop -- 3 pmpcfg CSRs
                 if (csr.addr(1 downto 0) = std_ulogic_vector(to_unsigned(i, 2))) then
@@ -1994,11 +1993,7 @@ begin
                 end if;
               end loop; -- i (pmpcfg CSR)
             end if;
-          end if;
-
-          -- physical memory protection: R/W: pmpaddr* - PMP address registers --
-          -- --------------------------------------------------------------------
-          if (PMP_NUM_REGIONS > 0) then
+            -- R/W: pmpaddr* - PMP address registers --
             if (csr.addr(11 downto 4) = csr_class_pmpaddr_c) then 
               for i in 0 to PMP_NUM_REGIONS-1 loop
                 if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
@@ -2094,8 +2089,7 @@ begin
             if (CPU_EXTENSION_RISCV_DEBUG = false) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.running = '0')) then
 
               -- trap cause ID code --
-              csr.mcause(csr.mcause'left) <= trap_ctrl.cause(trap_ctrl.cause'left); -- 1: interrupt, 0: exception
-              csr.mcause(4 downto 0)      <= trap_ctrl.cause(4 downto 0); -- identifier
+              csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- type + identifier
 
               -- trap PC --
               if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS (async source)
@@ -2212,12 +2206,12 @@ begin
 
           -- machine trap setup --
           -- --------------------------------------------------------------------
-          when csr_mstatus_c => -- mstatus (r/w): machine status register
+          when csr_mstatus_c => -- mstatus (r/w): machine status register - low word
             csr.rdata(03) <= csr.mstatus_mie; -- MIE
             csr.rdata(07) <= csr.mstatus_mpie; -- MPIE
             csr.rdata(12 downto 11) <= (others => csr.mstatus_mpp); -- MPP: machine previous privilege mode
             csr.rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- TW
---        when csr_mstatush_c => -- mstatush (r/w): machine status register - high, implemented but always zero
+--        when csr_mstatush_c => -- mstatush (r/w): machine status register - high word, implemented but always zero
 --          csr.rdata <= (others => '0');
           when csr_misa_c => -- misa (r/-): ISA and extensions
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
@@ -2249,8 +2243,8 @@ begin
           when csr_mepc_c => -- mepc (r/w): machine exception program counter
             csr.rdata <= csr.mepc(data_width_c-1 downto 1) & '0';
           when csr_mcause_c => -- mcause (r/w): machine trap cause
-            csr.rdata(31) <= csr.mcause(csr.mcause'left);
-            csr.rdata(csr.mcause'left-1 downto 0) <= csr.mcause(csr.mcause'left-1 downto 0);
+            csr.rdata(31)         <= csr.mcause(5);
+            csr.rdata(4 downto 0) <= csr.mcause(4 downto 0);
           when csr_mtval_c => -- mtval (r/-): machine bad address or instruction
             csr.rdata <= csr.mtval;
           when csr_mip_c => -- mip (r/w): machine interrupt pending
@@ -2498,7 +2492,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   csr_counters: process(rstn_i, clk_i)
   begin
-    -- Counter CSRs (each counter is split into two 32-bit counters - coupled via an MSB overflow FF)
     if (rstn_i = '0') then
       csr.mcycle           <= (others => def_rst_val_c);
       csr.mcycle_ovfl      <= (others => def_rst_val_c);
@@ -2520,8 +2513,8 @@ begin
           csr.mcycle(cpu_cnt_lo_width_c-1 downto 0) <= csr.mcycle_nxt(cpu_cnt_lo_width_c-1 downto 0);
         end if;
       else
-        csr.mcycle_ovfl <= (others => '-');
-        csr.mcycle      <= (others => '-');
+        csr.mcycle_ovfl <= (others => '0');
+        csr.mcycle      <= (others => '0');
       end if;
 
       -- [m]cycleh --
@@ -2532,7 +2525,7 @@ begin
           csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.mcycleh(cpu_cnt_hi_width_c-1 downto 0)) + unsigned(csr.mcycle_ovfl));
         end if;
       else
-        csr.mcycleh <= (others => '-');
+        csr.mcycleh <= (others => '0');
       end if;
 
 
@@ -2545,8 +2538,8 @@ begin
           csr.minstret(cpu_cnt_lo_width_c-1 downto 0) <= csr.minstret_nxt(cpu_cnt_lo_width_c-1 downto 0);
         end if;
       else
-        csr.minstret_ovfl <= (others => '-');
-        csr.minstret      <= (others => '-');
+        csr.minstret_ovfl <= (others => '0');
+        csr.minstret      <= (others => '0');
       end if;
 
       -- [m]instreth --
@@ -2557,7 +2550,7 @@ begin
           csr.minstreth(cpu_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.minstreth(cpu_cnt_hi_width_c-1 downto 0)) + unsigned(csr.minstret_ovfl));
         end if;
       else
-        csr.minstreth <= (others => '-');
+        csr.minstreth <= (others => '0');
       end if;
 
 
@@ -2573,8 +2566,8 @@ begin
             csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0) <= csr.mhpmcounter_nxt(i)(hpm_cnt_lo_width_c-1 downto 0);
           end if;
         else
-          csr.mhpmcounter_ovfl(i) <= (others => '-');
-          csr.mhpmcounter(i)      <= (others => '-');
+          csr.mhpmcounter_ovfl(i) <= (others => '0');
+          csr.mhpmcounter(i)      <= (others => '0');
         end if;
 
         -- [m]hpmcounter*h --
@@ -2585,7 +2578,7 @@ begin
             csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0)) + unsigned(csr.mhpmcounter_ovfl(i)));
           end if;
         else
-          csr.mhpmcounterh(i) <= (others => '-');
+          csr.mhpmcounterh(i) <= (others => '0');
         end if;
 
       end loop; -- i
