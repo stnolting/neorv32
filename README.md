@@ -76,9 +76,10 @@ setting up your NEORV32 setup!
 [![riscv-arch-test](https://img.shields.io/github/workflow/status/stnolting/neorv32-verif/riscv-arch-test/main?longCache=true&style=flat-square&label=riscv-arch-test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verif/actions?query=workflow%3Ariscv-arch-test)
 [![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/main?longCache=true&style=flat-square&label=Processor&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor)
 
-The processor passes the [official RISC-V architecture tests](https://github.com/riscv-non-isa/riscv-arch-test) and can
-run any C programs (for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example)
-folder). The SoC can be synthesized for _any_ target technology - tested on Intel, Xilinx and Lattice FPGAs.
+The processor passes the official RISC-V architecture tests, which are check by the
+[neorv32-verif](https://github.com/stnolting/neorv32-verif) repository. It can successfully run _any_ C program
+(for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example)
+folder) and can be synthesized for _any_ target technology - tested on Intel, Xilinx and Lattice FPGAs.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -86,9 +87,10 @@ folder). The SoC can be synthesized for _any_ target technology - tested on Inte
 
 ## 2. Features
 
-The NEORV32 Processor provides a full-featured microcontroller-like SoC build around the NEORV32 CPU. It is highly configurable
-via generics to allow a flexible customization according to your needs. Note that all modules listed below are _optional_ (except
-for the CPU, obviously).
+The NEORV32 Processor provides a full-featured microcontroller-like SoC build around the NEORV32 CPU. 
+By using generics the design is highly configurable and allows a flexible customization to tailor the
+setup according to your needs. The following list shows all available SoC module. Note that all those
+modules are _optional_.
 
 **CPU**
 
