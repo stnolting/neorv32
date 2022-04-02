@@ -304,6 +304,7 @@ globally enabled via the `CSR_MSTATUS_MIE` flag of the `mstatus` CSR. The follow
 3+| The `mtvec` CSR is compatible to the RISC-V specifications. It stores the base address for ALL machine
 traps. Thus, it defines the main entry point for exception/interrupt handling regardless of the actual trap
 source. The lowest two bits of this register are always zero and cannot be modified (= address mode only).
+Hence, the trap handler's base address has to be aligned to a 4-byte boundary.
 |=======================
 
 .Machine trap-handler base address
