@@ -573,9 +573,9 @@ int main() {
 
   cnt_test++;
 
-  // illegal 32-bit instruction (malformed SRA)
+  // illegal 32-bit instruction (MRET with incorrect opcode)
   asm volatile (".align 4 \n"
-                ".word 0xC0000033");
+                ".word 0x3020007f");
 
   // make sure this has cause an illegal exception
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
