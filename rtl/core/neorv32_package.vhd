@@ -49,8 +49,8 @@ package neorv32_package is
   constant dedicated_reset_c : boolean := false;
 
   -- "critical" number of implemented PMP regions --
-  -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically inserted into the memory interfaces
-  -- increasing instruction fetch & data access latency by +1 cycle but also reducing critical path length
+  -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically inserted into
+  -- the memory interfaces increasing instruction fetch & data access latency by +1 cycle but also reducing critical path length
   constant pmp_num_regions_critical_c : natural := 8; -- default=8
 
   -- "response time window" for processor-internal modules --
@@ -65,7 +65,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060905"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060906"; -- no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
