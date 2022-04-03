@@ -573,24 +573,28 @@ int main() {
 
   cnt_test++;
 
+  // clear mstatus.mie and set mstatus.mpie
+  tmp_a = neorv32_cpu_csr_read(CSR_MSTATUS);
+  tmp_a &= ~(1 << CSR_MSTATUS_MIE);
+  tmp_a |=  (1 << CSR_MSTATUS_MPIE);
+  neorv32_cpu_csr_write(CSR_MSTATUS, tmp_a);
+
   // illegal 32-bit instruction (MRET with incorrect opcode)
   asm volatile (".align 4 \n"
                 ".word 0x3020007f");
 
   // make sure this has cause an illegal exception
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
-    // make sure this is really the instruction that caused the exception
-    // -> for illegal instructions MTVAL contains the faulting instruction word
-    if (neorv32_cpu_csr_read(CSR_MTVAL) == 0xC0000033) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) && // illegal instruction exception
+      (neorv32_cpu_csr_read(CSR_MTVAL) == 0x3020007f) && // correct instruction word
+      ((neorv32_cpu_csr_read(CSR_MSTATUS) & (1 << CSR_MSTATUS_MIE)) == 0)) { // MIE should still be cleared
+    test_ok();
   }
   else {
     test_fail();
   }
+
+  // clear mstatus.mie
+  neorv32_cpu_dint();
 
 
   // ----------------------------------------------------------
