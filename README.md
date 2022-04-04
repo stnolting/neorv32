@@ -78,8 +78,8 @@ setting up your NEORV32 setup!
 The NEORV32 is fully operational.
 The processor passes the official RISC-V architecture tests, which are checked by the
 [neorv32-verif](https://github.com/stnolting/neorv32-verif) repository. It can successfully run _any_ C program
-(for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example) including CoreMark
-folder) and can be synthesized for _any_ target technology - tested on Intel, Xilinx and Lattice FPGAs.
+(for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example) folder) including CoreMark
+and can be synthesized for _any_ target technology - tested on Intel, Xilinx and Lattice FPGAs.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
