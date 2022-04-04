@@ -13,11 +13,10 @@
    * [Key Features](#Project-Key-Features)
    * [Status](#status)
 2. [Features](#2-Features)
-   * [FPGA Implementation Results - Processor/SoC](#FPGA-Implementation-Results---Processor)
-   * [FPGA Implementation Results - CPU](#FPGA-Implementation-Results---CPU)
-   * [Performance](#Performance)
-3. [Software Framework & Tooling](#3-Software-Framework-and-Tooling)
-4. [**Getting Started**](#4-Getting-Started) :rocket:
+3. [FPGA Implementation Results](#3-FPGA-Implementation-Results)
+4. [Performance](#4-Performance)
+5. [Software Framework & Tooling](#5-Software-Framework-and-Tooling)
+6. [**Getting Started**](#6-Getting-Started) :rocket:
 
 
 
@@ -61,7 +60,7 @@ setting up your NEORV32 setup!
 
 - [x] all-in-one package: **CPU** plus **SoC** plus **Software Framework & Tooling**
 - [x] completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
-- [x] highly extensible hardware - on CPU, SoC and system level
+- [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules) - on CPU, SoC and system level
 - [x] be as small as possible while being as RISC-V-compliant as possible
 - [x] from zero to `printf("hello world!");` - completely open source and documented
 - [x] easy to use even for FPGA/RISC-V starters – intended to work *out of the box*
@@ -76,9 +75,10 @@ setting up your NEORV32 setup!
 [![riscv-arch-test](https://img.shields.io/github/workflow/status/stnolting/neorv32-verif/riscv-arch-test/main?longCache=true&style=flat-square&label=riscv-arch-test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verif/actions?query=workflow%3Ariscv-arch-test)
 [![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/main?longCache=true&style=flat-square&label=Processor&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor)
 
-The processor passes the official RISC-V architecture tests, which are check by the
+The NEORV32 is fully operational.
+The processor passes the official RISC-V architecture tests, which are checked by the
 [neorv32-verif](https://github.com/stnolting/neorv32-verif) repository. It can successfully run _any_ C program
-(for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example)
+(for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example) including CoreMark
 folder) and can be synthesized for _any_ target technology - tested on Intel, Xilinx and Lattice FPGAs.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
@@ -178,25 +178,10 @@ _intrinsic libraries_ for the `B` and `Zfinx` extensions.
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
-### FPGA Implementation Results - Processor
+## 3. FPGA Implementation Results
 
-The hardware resources used by a specific processor setup is defined by the implemented CPU extensions,
-the configuration of the peripheral modules and some "glue logic".
-Section [_FPGA Implementation Results - Processor Modules_](https://stnolting.github.io/neorv32/#_processor_modules)
-of the online datasheet shows the resource utilization of each optional processor module to allow an
-estimation of the actual setup's hardware requirements.
-
-:bulb: The [`neorv32-setups`](https://github.com/stnolting/neorv32-setups) repository provides exemplary FPGA
-setups targeting various FPGA boards and toolchains. The latest bitstreams and utilization reports for those setups
-can be found in the assets of the [Implementation Workflow](https://github.com/stnolting/neorv32-setups/actions/workflows/Implementation.yml).
-
-[[back to top](#The-NEORV32-RISC-V-Processor)]
-
-
-### FPGA Implementation Results - CPU
-
-Implementation results for _exemplary_ CPU configuration generated for an **Intel Cyclone IV E** `EP4CE22F17C6` FPGA
-using **Intel Quartus Prime Lite 21.1** (no timing constrains, _balanced optimization_, f_max from _Slow 1200mV 0C Model_).
+Implementation results for exemplary **CPU-only** configuration generated for an Intel Cyclone IV E `EP4CE22F17C6` FPGA
+using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimization_, f_max from _Slow 1200mV 0C Model_).
 
 | CPU Configuration (version [1.6.8.3](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
 |:------------------------|:----:|:----:|:----:|:-:|:-------:|
@@ -207,10 +192,24 @@ using **Intel Quartus Prime Lite 21.1** (no timing constrains, _balanced optimiz
 :bulb: An incremental list of the CPUs ISA extension's hardware utilization can found in the
 [_Data Sheet: FPGA Implementation Results - CPU_](https://stnolting.github.io/neorv32/#_cpu).
 
+The hardware resources used by a specific **full-processor** setup is defined by the implemented CPU extensions,
+the configuration of the peripheral modules and some "glue logic".
+Section [_FPGA Implementation Results - Processor Modules_](https://stnolting.github.io/neorv32/#_processor_modules)
+of the online datasheet shows the resource utilization of each optional processor module to allow an
+estimation of the actual setup's hardware requirements.
+
+:bulb: The [`neorv32-setups`](https://github.com/stnolting/neorv32-setups) repository provides exemplary FPGA
+setups targeting various FPGA boards and toolchains. The latest bitstreams and utilization reports for those setups
+can be found in the assets of the [Implementation Workflow](https://github.com/stnolting/neorv32-setups/actions/workflows/Implementation.yml).
+
+:bulb: The CPU & SoC provide further "tuning" options to optimize the design for maximum performance, maximum clock speed, minimal area
+or minimal power consumption:
+[UG: Application-Specific Processor Configuration](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration)
+
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
-### Performance
+## 4. Performance
 
 The NEORV32 CPU is based on a two-stages pipeline architecture (fetch and execute).
 The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on the
@@ -233,7 +232,7 @@ The following table shows the performance results (scores and average CPI) for e
 
 
 
-## 3. Software Framework and Tooling
+## 5. Software Framework and Tooling
 
 * [core libraries](https://github.com/stnolting/neorv32/tree/main/sw/lib) for high-level usage of the provided functions and peripherals
 * application compilation based on GNU makefiles
@@ -257,7 +256,7 @@ developed and debugged with open source tooling
 
 
 
-## 4. Getting Started
+## 6. Getting Started
 
 This overview provides some *quick links* to the most important sections of the
 [online Data Sheet](https://stnolting.github.io/neorv32) and the
