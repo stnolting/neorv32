@@ -234,6 +234,8 @@ int main() {
   // ----------------------------------------------------------
   asm volatile ("fence");
   asm volatile ("fence.i");
+  asm volatile ("fence");
+  asm volatile ("fence.i");
 
 
   // ----------------------------------------------------------
