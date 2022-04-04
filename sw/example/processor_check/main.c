@@ -217,9 +217,6 @@ int main() {
   // test intro
   PRINT_STANDARD("\nStarting tests.\n\n");
 
-  // sync (test)
-  asm volatile ("fence.i");
-
   // enable global interrupts
   neorv32_cpu_eint();
 
