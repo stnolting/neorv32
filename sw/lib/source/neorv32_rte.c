@@ -136,7 +136,7 @@ int neorv32_rte_exception_uninstall(uint8_t id) {
 static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32_rte_core(void) {
 
   register uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
-  neorv32_cpu_csr_write(CSR_MSCRATCH, rte_mepc); // store for later
+  neorv32_cpu_csr_write(CSR_MSCRATCH, rte_mepc); // backup for later
   register uint32_t rte_mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
 
   // compute return address
@@ -145,11 +145,11 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32
     // get low half word of faulting instruction
     register uint32_t rte_trap_inst = neorv32_cpu_load_unsigned_half(rte_mepc);
 
-    if ((rte_trap_inst & 3) == 3) { // faulting instruction is uncompressed instruction
-      rte_mepc += 4;
-    }
-    else { // faulting instruction is compressed instruction
-      rte_mepc += 2;
+    rte_mepc += 4; // default: faulting instruction is uncompressed
+    if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) { // C extension implemented?
+      if ((rte_trap_inst & 3) != 3) { // faulting instruction is compressed instruction
+        rte_mepc -= 2;
+      }
     }
 
     // store new return address
