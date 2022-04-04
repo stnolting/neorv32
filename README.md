@@ -60,7 +60,7 @@ setting up your NEORV32 setup!
 
 - [x] all-in-one package: **CPU** plus **SoC** plus **Software Framework & Tooling**
 - [x] completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
-- [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules) - on CPU, SoC and system level
+- [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, SoC and system level
 - [x] be as small as possible while being as RISC-V-compliant as possible
 - [x] from zero to `printf("hello world!");` - completely open source and documented
 - [x] easy to use even for FPGA/RISC-V starters – intended to work *out of the box*
