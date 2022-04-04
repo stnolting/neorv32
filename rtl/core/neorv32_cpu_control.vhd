@@ -202,7 +202,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
   type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE, ALU_WAIT,
-                                  BRANCH, BRANCHED, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, CSR_ACCESS);
+                                  BRANCH, BRANCHED, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
@@ -880,7 +880,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_comb: process(execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, issue_engine,
                                    csr, ctrl, alu_idone_i, bus_d_wait_i, excl_state_i)
-    variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     -- arbiter defaults --
     execute_engine.state_nxt    <= execute_engine.state;
@@ -970,7 +969,9 @@ begin
 
       when TRAP_EXIT => -- Return from trap environment - get xEPC
       -- ------------------------------------------------------------
-        trap_ctrl.env_end        <= '1';
+        if (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- end trap environment if THIS is not an illegal instruction
+          trap_ctrl.env_end <= '1';
+        end if;
         execute_engine.state_nxt <= TRAP_EXECUTE;
 
 
@@ -985,9 +986,7 @@ begin
 
       when EXECUTE => -- Decode and execute instruction (control has to be here for exactly 1 cycle in any case!)
       -- ------------------------------------------------------------
-        -- save some bits: opcode LSBs are always "11" for the (de-compressed) 32-bit rv32 instruction words here
-        opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
-        case opcode_v is
+        case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
           when opcode_alu_c | opcode_alui_c => -- (register/immediate) ALU operation
           -- ------------------------------------------------------------
@@ -1098,6 +1097,7 @@ begin
 
           when opcode_system_c => -- environment/csr access
           -- ------------------------------------------------------------
+            ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c; -- only relevant for CSR access
             if (CPU_EXTENSION_RISCV_Zicsr = true) then
               if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- environment
                 if (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_mret_c) then
@@ -1117,7 +1117,13 @@ begin
                   execute_engine.sleep_nxt <= '1'; -- wfi not executed (=NOP) when in debug-mode or during single-stepping
                 end if;
               else -- CSR access
-                execute_engine.state_nxt <= CSR_ACCESS;
+                if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
+                   (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
+                   (decode_aux.rs1_zero = '0') then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
+                  csr.we_nxt <= '1';
+                end if;
+                ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
+                execute_engine.state_nxt  <= DISPATCH;
               end if;
             else
               execute_engine.state_nxt <= DISPATCH;
@@ -1129,18 +1135,6 @@ begin
             execute_engine.state_nxt <= DISPATCH;
 
         end case; -- /EXECUTE
-
-
-      when CSR_ACCESS => -- read & write status and control register (CSR) - no read/write if illegal instruction
-      -- ------------------------------------------------------------
-        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
-           (decode_aux.rs1_zero = '0') then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
-          csr.we_nxt <= '1';
-        end if;
-        ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c;
-        ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-        execute_engine.state_nxt  <= DISPATCH;
 
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation (ALU co-processor) to finish
