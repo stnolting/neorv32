@@ -115,14 +115,13 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   constant pmp_cfg_x_c  : natural := 2; -- execute permit
   constant pmp_cfg_al_c : natural := 3; -- mode bit low
   constant pmp_cfg_ah_c : natural := 4; -- mode bit high
-  --
   constant pmp_cfg_l_c  : natural := 7; -- locked entry
 
   -- PMP minimal granularity --
   constant pmp_lsb_c : natural := index_size_f(PMP_MIN_GRANULARITY);
 
-  -- data interface registers --
-  signal mar, mdo, mdi : std_ulogic_vector(data_width_c-1 downto 0);
+  -- data memory address register --
+  signal mar : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- data access --
   signal d_bus_wdata : std_ulogic_vector(data_width_c-1 downto 0); -- write data
@@ -197,86 +196,84 @@ begin
   mem_do_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      mdo <= (others => def_rst_val_c);
+      d_bus_wdata <= (others => def_rst_val_c);
+      d_bus_ben   <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
-        mdo <= wdata_i; -- memory data output register (MDO)
+        -- byte enable and data alignment --
+        case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
+          when "00" => -- byte
+            d_bus_wdata(07 downto 00) <= wdata_i(7 downto 0);
+            d_bus_wdata(15 downto 08) <= wdata_i(7 downto 0);
+            d_bus_wdata(23 downto 16) <= wdata_i(7 downto 0);
+            d_bus_wdata(31 downto 24) <= wdata_i(7 downto 0);
+            case addr_i(1 downto 0) is
+              when "00"   => d_bus_ben <= "0001";
+              when "01"   => d_bus_ben <= "0010";
+              when "10"   => d_bus_ben <= "0100";
+              when others => d_bus_ben <= "1000";
+            end case;
+          when "01" => -- half-word
+            d_bus_wdata(31 downto 16) <= wdata_i(15 downto 0);
+            d_bus_wdata(15 downto 00) <= wdata_i(15 downto 0);
+            if (addr_i(1) = '0') then
+              d_bus_ben <= "0011"; -- low half-word
+            else
+              d_bus_ben <= "1100"; -- high half-word
+            end if;
+          when others => -- word
+            d_bus_wdata <= wdata_i;
+            d_bus_ben   <= "1111"; -- full word
+        end case;
       end if;
     end if;
   end process mem_do_reg;
 
-  -- byte enable and output data alignment --
-  write_align: process(mar, mdo, ctrl_i)
-  begin
-    case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
-      when "00" => -- byte
-        d_bus_wdata(07 downto 00) <= mdo(7 downto 0);
-        d_bus_wdata(15 downto 08) <= mdo(7 downto 0);
-        d_bus_wdata(23 downto 16) <= mdo(7 downto 0);
-        d_bus_wdata(31 downto 24) <= mdo(7 downto 0);
-        case mar(1 downto 0) is
-          when "00"   => d_bus_ben <= "0001";
-          when "01"   => d_bus_ben <= "0010";
-          when "10"   => d_bus_ben <= "0100";
-          when others => d_bus_ben <= "1000";
-        end case;
-      when "01" => -- half-word
-        d_bus_wdata(31 downto 16) <= mdo(15 downto 0);
-        d_bus_wdata(15 downto 00) <= mdo(15 downto 0);
-        if (mar(1) = '0') then
-          d_bus_ben <= "0011"; -- low half-word
-        else
-          d_bus_ben <= "1100"; -- high half-word
-        end if;
-      when others => -- word
-        d_bus_wdata <= mdo;
-        d_bus_ben   <= "1111"; -- full word
-    end case;
-  end process write_align;
-
 
   -- Data Interface: Read Data --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_di_reg: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      mdi <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
-      if (ctrl_i(ctrl_bus_mi_we_c) = '1') then
-        mdi <= d_bus_rdata; -- memory data input register (MDI)
-      end if;
-    end if;
-  end process mem_di_reg;
-
-  -- input data alignment and sign extension --
-  read_align: process(mdi, mar, ctrl_i)
+  read_align: process(rstn_i, clk_i)
     variable shifted_data_v : std_ulogic_vector(31 downto 0);
   begin
-    -- align input word --
-    case mar(1 downto 0) is
-      when "00"   => shifted_data_v :=             mdi(31 downto 00);
-      when "01"   => shifted_data_v := x"00" &     mdi(31 downto 08);
-      when "10"   => shifted_data_v := x"0000" &   mdi(31 downto 16);
-      when others => shifted_data_v := x"000000" & mdi(31 downto 24);
-    end case;
-    -- actual data size and sign-extension --
-    case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is
-      when "00" => -- byte
-        rdata_align(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and shifted_data_v(7))); -- sign extension
-        rdata_align(07 downto 00) <= shifted_data_v(07 downto 00);
-      when "01" => -- half-word
-        rdata_align(31 downto 16) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and shifted_data_v(15))); -- sign extension
-        rdata_align(15 downto 00) <= shifted_data_v(15 downto 00); -- high half-word
-      when others => -- word
-        rdata_align <= shifted_data_v; -- full word
-    end case;
+    if (rstn_i = '0') then
+      rdata_align <= (others => def_rst_val_c);
+    elsif rising_edge(clk_i) then
+      -- input data alignment and sign extension --
+      case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is
+        when "00" => -- byte
+          case mar(1 downto 0) is
+            when "00" => -- byte 0
+              rdata_align(07 downto 00) <= d_bus_rdata(07 downto 00);
+              rdata_align(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(07))); -- sign extension
+            when "01" => -- byte 1
+              rdata_align(07 downto 00) <= d_bus_rdata(15 downto 08);
+              rdata_align(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(15))); -- sign extension
+            when "10" => -- byte 2
+              rdata_align(07 downto 00) <= d_bus_rdata(23 downto 16);
+              rdata_align(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(23))); -- sign extension
+            when others => -- byte 3
+              rdata_align(07 downto 00) <= d_bus_rdata(31 downto 24);
+              rdata_align(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(31))); -- sign extension
+          end case;
+        when "01" => -- half-word
+          if (mar(1) = '0') then
+            rdata_align(15 downto 00) <= d_bus_rdata(15 downto 00); -- low half-word
+            rdata_align(31 downto 16) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(15))); -- sign extension
+          else
+            rdata_align(15 downto 00) <= d_bus_rdata(31 downto 16); -- high half-word
+            rdata_align(31 downto 16) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(31))); -- sign extension
+          end if;
+        when others => -- word
+          rdata_align <= d_bus_rdata; -- full word
+      end case;
+    end if;
   end process read_align;
 
   -- insert exclusive lock status for SC operations only --
   rdata_o <= exclusive_lock_status when (CPU_EXTENSION_RISCV_A = true) and (ctrl_i(ctrl_bus_ch_lock_c) = '1') else rdata_align;
 
 
-  -- Data Access Arbiter (controlled by pipeline BACK-end) ----------------------------------
+  -- Data Interface: Arbiter (controlled by pipeline back-end) ------------------------------
   -- -------------------------------------------------------------------------------------------
   data_access_arbiter: process(rstn_i, clk_i)
   begin
@@ -325,24 +322,19 @@ begin
   d_bus_rdata   <= d_bus_rdata_i;
 
   -- check data access address alignment --
-  misaligned_d_check: process(mar, ctrl_i)
+  misaligned_d_check: process(rstn_i, clk_i)
   begin
-    case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
-      when "00" => -- byte
-        d_misaligned <= '0';
-      when "01" => -- half-word
-        if (mar(0) /= '0') then
-          d_misaligned <= '1';
-        else
-          d_misaligned <= '0';
-        end if;
-      when others => -- word
-        if (mar(1 downto 0) /= "00") then
-          d_misaligned <= '1';
-        else
-          d_misaligned <= '0';
-        end if;
-    end case;
+    if (rstn_i = '0') then
+      d_misaligned <= def_rst_val_c;
+    elsif rising_edge(clk_i) then
+      if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
+        case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
+          when "00"   => d_misaligned <= '0'; -- byte
+          when "01"   => d_misaligned <= addr_i(0); -- half-word
+          when others => d_misaligned <= addr_i(1) or addr_i(0); -- word
+        end case;
+      end if;
+    end if;
   end process misaligned_d_check;
 
   -- additional register stage for control signals if using PMP_NUM_REGIONS > pmp_num_regions_critical_c --
@@ -390,7 +382,7 @@ begin
   d_bus_lock_o <= exclusive_lock;
 
 
-  -- Instruction Fetch Arbiter (controlled by pipeline FRONT-end) ---------------------------
+  -- Instruction Interface: Arbiter (controlled by pipeline front-end) ----------------------
   -- -------------------------------------------------------------------------------------------
   ifetch_arbiter: process(rstn_i, clk_i)
   begin

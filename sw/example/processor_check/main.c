@@ -217,9 +217,6 @@ int main() {
   // test intro
   PRINT_STANDARD("\nStarting tests.\n\n");
 
-  // sync (test)
-  asm volatile ("fence.i");
-
   // enable global interrupts
   neorv32_cpu_eint();
 
@@ -230,10 +227,24 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test fence instructions (just make sure CPU does not crash)
+  // Test fence instructions 
   // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  PRINT_STANDARD("[%i] FENCE(.I): ", cnt_test);
+
+  cnt_test++;
+
   asm volatile ("fence");
   asm volatile ("fence.i");
+  asm volatile ("fence");
+  asm volatile ("fence.i");
+
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
 
 
   // ----------------------------------------------------------
@@ -275,56 +286,56 @@ int main() {
   }
 
 
-//// ----------------------------------------------------------
-//// Test standard RISC-V performance counter [m]cycle[h]
-//// ----------------------------------------------------------
-//neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-//PRINT_STANDARD("[%i] cycle counter: ", cnt_test);
-//
-//cnt_test++;
-//
-//// make sure counter is enabled
-//asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_CY));
-//
-//// prepare overflow
-//neorv32_cpu_set_mcycle(0x00000000FFFFFFFFULL);
-//
-//// get current cycle counter HIGH
-//tmp_a = neorv32_cpu_csr_read(CSR_MCYCLEH);
-//
-//// make sure cycle counter high has incremented and there was no exception during access
-//if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
-//  test_ok();
-//}
-//else {
-//  test_fail();
-//}
+  // ----------------------------------------------------------
+  // Test standard RISC-V performance counter [m]cycle[h]
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  PRINT_STANDARD("[%i] cycle counter: ", cnt_test);
+
+  cnt_test++;
+
+  // make sure counter is enabled
+  asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_CY));
+
+  // prepare overflow
+  neorv32_cpu_set_mcycle(0x00000000FFFFFFFFULL);
+
+  // get current cycle counter HIGH
+  tmp_a = neorv32_cpu_csr_read(CSR_MCYCLEH);
+
+  // make sure cycle counter high has incremented and there was no exception during access
+  if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
 
 
-//// ----------------------------------------------------------
-//// Test standard RISC-V performance counter [m]instret[h]
-//// ----------------------------------------------------------
-//neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-//PRINT_STANDARD("[%i] instret counter: ", cnt_test);
-//
-//cnt_test++;
-//
-//// make sure counter is enabled
-//asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_IR));
-//
-//// prepare overflow
-//neorv32_cpu_set_minstret(0x00000000FFFFFFFFULL);
-//
-//// get instruction counter HIGH
-//tmp_a = neorv32_cpu_csr_read(CSR_INSTRETH);
-//
-//// make sure instruction counter high has incremented and there was no exception during access
-//if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
-//  test_ok();
-//}
-//else {
-//  test_fail();
-//}
+  // ----------------------------------------------------------
+  // Test standard RISC-V performance counter [m]instret[h]
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  PRINT_STANDARD("[%i] instret counter: ", cnt_test);
+
+  cnt_test++;
+
+  // make sure counter is enabled
+  asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_IR));
+
+  // prepare overflow
+  neorv32_cpu_set_minstret(0x00000000FFFFFFFFULL);
+
+  // get instruction counter HIGH
+  tmp_a = neorv32_cpu_csr_read(CSR_INSTRETH);
+
+  // make sure instruction counter high has incremented and there was no exception during access
+  if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
 
 
   // ----------------------------------------------------------
@@ -376,19 +387,21 @@ int main() {
   tmp_a &= ~(1<<CSR_MCOUNTEREN_CY); // clear access right
   neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
 
-  neorv32_cpu_csr_write(CSR_CYCLEH, 1); // make sure CSR is != 0 for this test
+  neorv32_cpu_csr_write(CSR_MCYCLE, 0);
+  neorv32_cpu_csr_write(CSR_MCYCLEH, 123); // make sure CSR is != 0 for this test
 
   // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
   goto_user_mode();
   {
     // access to cycle CSR is no longer allowed
-    asm volatile (" li       %[result], 0xcc11aa22  \n" // initialize
-                  " rdcycleh %[result]                " // read CSR_CYCLE, is not allowed and should not alter [result]
-                  : [result] "=r" (tmp_a) : );
+    asm volatile (" li    %[result], 0xcc11aa22       \n" // initialize
+                  " csrrw %[result], cycleh, %[input]   " // read and write CSR_CYCLE, not allowed and should not alter [result] nor CSR
+                  : [result] "=r" (tmp_a) : [input] "r" (tmp_a) );
   }
 
   // make sure there was an illegal instruction trap
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) &&
+      (neorv32_cpu_csr_read(CSR_CYCLEH) == 123) && // csr not altered
       (tmp_a == 0xcc11aa22)) { // destination register not altered
     test_ok();
   }
@@ -499,24 +512,24 @@ int main() {
   }
 
 
-//// ----------------------------------------------------------
-//// No "real" CSR write access (because rs1 = r0)
-//// ----------------------------------------------------------
-//neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-//PRINT_STANDARD("[%i] Read-only CSR 'no-write' (rs1=0) access: ", cnt_test);
-//
-//cnt_test++;
-//
-//// time CSR is read-only, but no actual write is performed because rs1=r0
-//// -> should cause no exception
-//asm volatile("csrrs zero, time, zero");
-//
-//if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
-//  test_ok();
-//}
-//else {
-//  test_fail();
-//}
+  // ----------------------------------------------------------
+  // No "real" CSR write access (because rs1 = r0)
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  PRINT_STANDARD("[%i] Read-only CSR 'no-write' (rs1=0) access: ", cnt_test);
+
+  cnt_test++;
+
+  // time CSR is read-only, but no actual write is performed because rs1=r0
+  // -> should cause no exception
+  asm volatile("csrrs zero, time, zero");
+
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
 
 
   // ----------------------------------------------------------
@@ -573,24 +586,28 @@ int main() {
 
   cnt_test++;
 
-  // illegal 32-bit instruction (malformed SRA)
+  // clear mstatus.mie and set mstatus.mpie
+  tmp_a = neorv32_cpu_csr_read(CSR_MSTATUS);
+  tmp_a &= ~(1 << CSR_MSTATUS_MIE);
+  tmp_a |=  (1 << CSR_MSTATUS_MPIE);
+  neorv32_cpu_csr_write(CSR_MSTATUS, tmp_a);
+
+  // illegal 32-bit instruction (MRET with incorrect opcode)
   asm volatile (".align 4 \n"
-                ".word 0xC0000033");
+                ".word 0x3020007f");
 
   // make sure this has cause an illegal exception
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
-    // make sure this is really the instruction that caused the exception
-    // -> for illegal instructions MTVAL contains the faulting instruction word
-    if (neorv32_cpu_csr_read(CSR_MTVAL) == 0xC0000033) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) && // illegal instruction exception
+      (neorv32_cpu_csr_read(CSR_MTVAL) == 0x3020007f) && // correct instruction word
+      ((neorv32_cpu_csr_read(CSR_MSTATUS) & (1 << CSR_MSTATUS_MIE)) == 0)) { // MIE should still be cleared
+    test_ok();
   }
   else {
     test_fail();
   }
+
+  // clear mstatus.mie
+  neorv32_cpu_dint();
 
 
   // ----------------------------------------------------------

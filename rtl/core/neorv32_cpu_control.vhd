@@ -164,7 +164,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- instruction prefetch buffer (FIFO) interface --
   type ipb_data_t is array (0 to 1) of std_ulogic_vector((2+16)-1 downto 0); -- status (bus_error, align_error) + 16-bit instruction
   type ipb_t is record
-    clear : std_ulogic; -- clear all entries
     wdata : ipb_data_t;
     we    : std_ulogic_vector(1 downto 0); -- trigger write
     free  : std_ulogic_vector(1 downto 0); -- free entry available?
@@ -203,7 +202,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
   type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE, ALU_WAIT,
-                                  BRANCH, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYS_ENV, CSR_ACCESS);
+                                  BRANCH, BRANCHED, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYSTEM);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
@@ -369,10 +368,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal hpmcnt_trigger : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0);
 
   -- illegal instruction check --
-  signal illegal_opcode_lsbs : std_ulogic; -- opcode != rv32
   signal illegal_instruction : std_ulogic;
   signal illegal_register    : std_ulogic; -- illegal register (>x15) - E-extension
-  signal illegal_compressed  : std_ulogic; -- illegal compressed instruction - C-extension
 
   -- access (privilege) check --
   signal csr_acc_valid : std_ulogic; -- valid CSR access (implemented and valid access rights)
@@ -435,7 +432,7 @@ begin
         fetch_engine.bus_if    <= '1'; -- instruction fetch request
         fetch_engine.state_nxt <= IFETCH_ISSUE;
       end if;
-      fetch_engine.restart_nxt <= '0';
+      fetch_engine.restart_nxt <= '0'; -- restart done
 
     else -- ISSUE: store instruction data to prefetch buffer
     -- ------------------------------------------------------------
@@ -451,9 +448,6 @@ begin
 
     end if;
   end process fetch_engine_fsm_comb;
-
-  -- clear instruction prefetch buffer while being reset --
-  ipb.clear <= fetch_engine.restart or fetch_engine.reset;
 
 
 -- ****************************************************************************************************************************
@@ -473,19 +467,19 @@ begin
     )
     port map (
       -- control --
-      clk_i   => clk_i,        -- clock, rising edge
-      rstn_i  => '1',          -- async reset, low-active
-      clear_i => ipb.clear,    -- sync reset, high-active
+      clk_i   => clk_i,                -- clock, rising edge
+      rstn_i  => '1',                  -- async reset, low-active
+      clear_i => fetch_engine.restart, -- sync reset, high-active
       level_o => open,
       half_o  => open,
       -- write port --
-      wdata_i => ipb.wdata(i), -- write data
-      we_i    => ipb.we(i),    -- write enable
-      free_o  => ipb.free(i),  -- at least one entry is free when set
+      wdata_i => ipb.wdata(i),         -- write data
+      we_i    => ipb.we(i),            -- write enable
+      free_o  => ipb.free(i),          -- at least one entry is free when set
       -- read port --
-      re_i    => ipb.re(i),    -- read enable
-      rdata_o => ipb.rdata(i), -- read data
-      avail_o => ipb.avail(i)  -- data available when set
+      re_i    => ipb.re(i),            -- read enable
+      rdata_o => ipb.rdata(i),         -- read data
+      avail_o => ipb.avail(i)          -- data available when set
     );
   end generate;
 
@@ -502,7 +496,7 @@ begin
       issue_engine.align <= '0'; -- always start aligned after reset
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_C = true) then
-        if (ipb.clear = '1') then
+        if (fetch_engine.restart = '1') then
           issue_engine.align <= execute_engine.pc(1); -- branch to unaligned address?
         elsif (execute_engine.state = DISPATCH) then
           issue_engine.align <= (issue_engine.align and (not issue_engine.align_clr)) or issue_engine.align_set;
@@ -655,7 +649,7 @@ begin
   begin
     if (rstn_i = '0') then
       -- no dedicated reset required --
-      execute_engine.state_prev <= DISPATCH; -- actual reset value is not relevant
+      execute_engine.state_prev <= BRANCHED; -- actual reset value is not relevant
       execute_engine.i_reg      <= (others => def_rst_val_c);
       execute_engine.is_ci      <= def_rst_val_c;
       execute_engine.is_ici     <= def_rst_val_c;
@@ -665,7 +659,7 @@ begin
       -- registers that DO require a specific RESET state --
       execute_engine.pc         <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned!
       execute_engine.pc_last    <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00";
-      execute_engine.state      <= DISPATCH;
+      execute_engine.state      <= BRANCHED;
       execute_engine.sleep      <= '0';
       execute_engine.branched   <= '1'; -- reset is a branch from "somewhere"
       ctrl(ctrl_bus_rd_c)       <= '0';
@@ -683,11 +677,17 @@ begin
       -- execute engine arbiter --
       execute_engine.state      <= execute_engine.state_nxt;
       execute_engine.state_prev <= execute_engine.state;
-      execute_engine.sleep      <= execute_engine.sleep_nxt;
       execute_engine.branched   <= execute_engine.branched_nxt;
       execute_engine.i_reg      <= execute_engine.i_reg_nxt;
       execute_engine.is_ci      <= execute_engine.is_ci_nxt;
       execute_engine.is_ici     <= execute_engine.is_ici_nxt;
+
+      -- sleep mode --
+      if (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then
+        execute_engine.sleep <= '0'; -- no sleep when in debug mode
+      else
+        execute_engine.sleep <= execute_engine.sleep_nxt;
+      end if;
 
       -- PC & IR of "last executed" instruction for trap handling --
       if (execute_engine.state = EXECUTE) then
@@ -886,7 +886,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_comb: process(execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, issue_engine,
                                    csr, ctrl, alu_idone_i, bus_d_wait_i, excl_state_i)
-    variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     -- arbiter defaults --
     execute_engine.state_nxt    <= execute_engine.state;
@@ -966,7 +965,7 @@ begin
         end if;
 
 
-      when TRAP_ENTER => -- Start trap environment - get trap vector (depc or epc), stay here for sleep mode
+      when TRAP_ENTER => -- Start trap environment - get trap vector, stay here for sleep mode
       -- ------------------------------------------------------------
         if (trap_ctrl.env_start = '1') then -- trap triggered?
           trap_ctrl.env_start_ack  <= '1';
@@ -980,19 +979,18 @@ begin
         execute_engine.state_nxt <= TRAP_EXECUTE;
 
 
-      when TRAP_EXECUTE => -- Process trap environment -> jump to xTVEC / return from trap environment -> jump to xEPC
+      when TRAP_EXECUTE => -- Process trap environment
       -- ------------------------------------------------------------
-        execute_engine.pc_mux_sel <= '0'; -- next_PC
+        execute_engine.pc_mux_sel <= '0'; -- next_PC (or xEPC / trap vector)
         fetch_engine.reset        <= '1';
         execute_engine.pc_we      <= '1';
         execute_engine.sleep_nxt  <= '0'; -- disable sleep mode
-        execute_engine.state_nxt  <= DISPATCH;
+        execute_engine.state_nxt  <= BRANCHED;
 
 
       when EXECUTE => -- Decode and execute instruction (control has to be here for exactly 1 cycle in any case!)
       -- ------------------------------------------------------------
-        opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11"; -- save some bits here, LSBs are always 11 for rv32
-        case opcode_v is
+        case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
           when opcode_alu_c | opcode_alui_c => -- (register/immediate) ALU operation
           -- ------------------------------------------------------------
@@ -1072,16 +1070,11 @@ begin
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
-            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then -- FENCE
-              ctrl_nxt(ctrl_bus_fence_c)  <= '1';
-              execute_engine.state_nxt    <= DISPATCH;
-            elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then -- FENCE.I
-              ctrl_nxt(ctrl_bus_fencei_c) <= '1';
-              execute_engine.branched_nxt <= '1'; -- this is an actual branch
-              execute_engine.state_nxt    <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC)
-            else -- illegal fence instruction
-              execute_engine.state_nxt    <= DISPATCH;
+            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c+1) = funct3_fence_c(2 downto 1)) then -- FENCE / FENCE.I
+              ctrl_nxt(ctrl_bus_fence_c)  <= not execute_engine.i_reg(instr_funct3_lsb_c); -- FENCE
+              ctrl_nxt(ctrl_bus_fencei_c) <= execute_engine.i_reg(instr_funct3_lsb_c) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- FENCE.I
             end if;
+            execute_engine.state_nxt <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC)
 
 
           when opcode_fop_c => -- floating-point operations
@@ -1104,59 +1097,42 @@ begin
             end if;
 
 
-          when others => -- system/csr access OR illegal opcode
+          when opcode_system_c => -- environment/csr access
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zicsr = true) then
-              if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system/environment
-                execute_engine.state_nxt <= SYS_ENV;
-              else -- CSR access
-                execute_engine.state_nxt <= CSR_ACCESS;
-              end if;
+              execute_engine.state_nxt <= SYSTEM;
             else
               execute_engine.state_nxt <= DISPATCH;
             end if;
 
-        end case;
+
+          when others => -- illegal opcode
+          -- ------------------------------------------------------------
+            execute_engine.state_nxt <= DISPATCH;
+
+        end case; -- /EXECUTE
 
 
-      when SYS_ENV => -- system environment operation
+      when SYSTEM => -- system environment operation
       -- ------------------------------------------------------------
-        -- mret / dret --
-        if (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_mret_c) then
-          execute_engine.state_nxt <= TRAP_EXIT; -- mret
-        elsif (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_dret_c) and (CPU_EXTENSION_RISCV_DEBUG = true) then
-          debug_ctrl.dret          <= '1';
-          execute_engine.state_nxt <= TRAP_EXIT; -- dret
-        else
-          execute_engine.state_nxt <= DISPATCH; -- default
-        end if;
-        -- ecall / ebreak --
-        if ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c+1) = funct12_ecall_c(11 downto 1))) then
-          if (execute_engine.i_reg(instr_funct12_lsb_c) = funct12_ecall_c(0)) then
-            trap_ctrl.env_call <= '1'; -- ecall
-          else
-            trap_ctrl.break_point <= '1'; -- ebreak
+        ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c; -- only relevant for CSR access
+        execute_engine.state_nxt <= DISPATCH; -- default or illegal instruction
+        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- environment
+          case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
+            when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ecall
+            when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- ebreak
+            when funct12_mret_c   => execute_engine.state_nxt <= TRAP_EXIT; -- mret
+            when funct12_dret_c   => execute_engine.state_nxt <= TRAP_EXIT; debug_ctrl.dret <= '1'; -- dret
+            when others           => execute_engine.sleep_nxt <= '1'; -- "funct12_wfi_c" - wfi/sleep
+          end case;
+        else -- CSR access - no state change if illegal instruction
+          if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
+             (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
+             (decode_aux.rs1_zero = '0') then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
+            csr.we_nxt <= '1';
           end if;
+          ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
         end if;
-        -- wfi --
-        if (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_wfi_c) and
-           ((CPU_EXTENSION_RISCV_DEBUG = false) or ((debug_ctrl.running = '0') and (csr.dcsr_step = '0'))) then
-          execute_engine.sleep_nxt <= '1'; -- not executed (NOP) when in debug-mode or during single-stepping
-        end if;
-
-
-      when CSR_ACCESS => -- read & write status and control register (CSR) - no read/write if illegal instruction
-      -- ------------------------------------------------------------
-        -- CSR write access (invalid CSR instructions are already checked by the illegal instruction logic) --
-        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRW(I); always write CSR
-           (decode_aux.rs1_zero = '0') then -- CSRRS(I) / CSRRC(I): write CSR if rs1/imm5 is NOT zero
-          csr.we_nxt <= '1';
-        end if;
-        -- register file write back --
-        ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c;
-        ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-        execute_engine.state_nxt  <= DISPATCH;
 
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation (ALU co-processor) to finish
@@ -1169,20 +1145,26 @@ begin
         end if;
 
 
-      when BRANCH => -- update PC for taken branches and jumps
+      when BRANCH => -- update PC on taken branches and jumps
       -- ------------------------------------------------------------
         -- get and store return address (only relevant for jump-and-link operations) --
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_npc_c; -- next PC
         ctrl_nxt(ctrl_rf_wb_en_c) <= execute_engine.i_reg(instr_opcode_lsb_c+2); -- valid RF write-back? (is jump-and-link?)
         -- destination address --
         execute_engine.pc_mux_sel <= '1'; -- PC <= alu.add = branch/jump destination
+        execute_engine.pc_we      <= '1'; -- update PC with destination; will be overridden again in DISPATCH if branch not taken
         if (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') or (execute_engine.branch_taken = '1') then -- JAL/JALR or taken branch
-          -- no need to check for illegal instructions here; the branch condition evaluation circuit will not set "branch_taken" if funct3 is invalid
-          execute_engine.pc_we        <= '1'; -- update PC
-          execute_engine.branched_nxt <= '1'; -- this is an actual branch
-          fetch_engine.reset          <= '1'; -- trigger new instruction fetch from modified PC
+          fetch_engine.reset       <= '1'; -- reset instruction fetch starting at modified PC
+          execute_engine.state_nxt <= BRANCHED;
+        else
+          execute_engine.state_nxt <= DISPATCH;
         end if;
-        execute_engine.state_nxt <= DISPATCH;
+
+
+      when BRANCHED => -- delay cycle to wait for reset of pipeline front-end
+      -- ------------------------------------------------------------
+        execute_engine.branched_nxt <= '1'; -- this is an actual branch
+        execute_engine.state_nxt    <= DISPATCH;
 
 
       when LOADSTORE_0 => -- trigger memory request
@@ -1342,29 +1324,13 @@ begin
   -- Illegal Instruction Check --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   illegal_instruction_check: process(execute_engine, decode_aux, csr, csr_acc_valid, debug_ctrl)
-    variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     -- defaults --
     illegal_instruction <= '0';
     illegal_register    <= '0';
 
-    -- check opcode for rv32 --
-    if (execute_engine.i_reg(instr_opcode_lsb_c+1 downto instr_opcode_lsb_c) = "11") then
-      illegal_opcode_lsbs <= '0';
-    else
-      illegal_opcode_lsbs <= '1';
-    end if;
-
-    -- check for illegal compressed instruction --
-    if (CPU_EXTENSION_RISCV_C = true) then
-      illegal_compressed <= execute_engine.is_ici;
-    else
-      illegal_compressed <= '0';
-    end if;
-
-    -- check instructions --
-    opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11"; -- save some bits here, LSBs are always 11 for rv32
-    case opcode_v is
+    -- check instruction --
+    case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
       when opcode_lui_c | opcode_auipc_c | opcode_jal_c => -- check sufficient LUI, UIPC, JAL (only check actual OPCODE)
       -- ------------------------------------------------------------
@@ -1496,7 +1462,7 @@ begin
         end if;
         -- NOTE: ignore all remaining bit fields here
 
-      when opcode_syscsr_c => -- check system instructions
+      when opcode_system_c => -- check system instructions
       -- ------------------------------------------------------------
         -- CSR access --
         if ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
@@ -1550,7 +1516,7 @@ begin
         -- illegal E-CPU register? --
         illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu) and (execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
 
-      when others => -- undefined instruction -> illegal!
+      when others => -- illegal opcode
       -- ------------------------------------------------------------
         illegal_instruction <= '1';
 
@@ -1561,11 +1527,10 @@ begin
   -- Illegal Operation Check ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- check in EXECUTE state: any illegal condition? --
-  trap_ctrl.instr_il <= (illegal_opcode_lsbs or -- illegal opcode LSB bits - not rv32
-                         illegal_instruction or -- illegal instruction
+  trap_ctrl.instr_il <= (illegal_instruction or -- illegal instruction
                          (bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and illegal_register) or -- illegal register access in E extension
-                         illegal_compressed) -- illegal compressed instruction
-                        when (execute_engine.state = EXECUTE) else '0';
+                         (bool_to_ulogic_f(CPU_EXTENSION_RISCV_C) and execute_engine.is_ici)) -- illegal compressed instruction
+                        when (execute_engine.state = EXECUTE) else '0'; -- evaluate in EXECUTE stage only
 
 
 -- ****************************************************************************************************************************
@@ -1891,7 +1856,7 @@ begin
 
     elsif rising_edge(clk_i) then
       -- write access? --
-      csr.we <= csr.we_nxt;
+      csr.we <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- write if not illegal instruction
 
       -- defaults --
       csr.mip_firq_nclr <= (others => '1'); -- active low
@@ -1900,7 +1865,7 @@ begin
         -- --------------------------------------------------------------------------------
         -- CSR access by application software
         -- --------------------------------------------------------------------------------
-        if (csr.we = '1') and (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- manual write access and not illegal instruction
+        if (csr.we = '1') then -- manual write access and not illegal instruction
 
           -- user floating-point CSRs --
           -- --------------------------------------------------------------------
@@ -2753,7 +2718,8 @@ begin
 
   -- trigger to enter debug-mode: instruction address match (fire AFTER execution) --
   hw_trigger_fire <= '1' when (CPU_EXTENSION_RISCV_DEBUG = true) and (csr.tdata1_exe = '1') and
-                              (csr.tdata2(data_width_c-1 downto 1) = execute_engine.pc(data_width_c-1 downto 1)) else '0';
+                              (csr.tdata2(data_width_c-1 downto 1) = execute_engine.pc(data_width_c-1 downto 1)) and
+                              (execute_engine.state = EXECUTE) else '0';
 
 
   -- Match Control CSR (mcontrol @ tdata1) - Read-Back --------------------------------------

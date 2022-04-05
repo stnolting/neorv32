@@ -65,7 +65,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060906"; -- no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060907"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -454,7 +454,7 @@ package neorv32_package is
   constant opcode_store_c  : std_ulogic_vector(6 downto 0) := "0100011"; -- store (data type via funct3)
   -- system/csr --
   constant opcode_fence_c  : std_ulogic_vector(6 downto 0) := "0001111"; -- fence / fence.i
-  constant opcode_syscsr_c : std_ulogic_vector(6 downto 0) := "1110011"; -- system/csr access (type via funct3)
+  constant opcode_system_c : std_ulogic_vector(6 downto 0) := "1110011"; -- system/csr access (type via funct3)
   -- atomic memory access (A) --
   constant opcode_atomic_c : std_ulogic_vector(6 downto 0) := "0101111"; -- atomic operations (A extension)
   -- floating point operations (Zfinx-only) (F/D/H/Q) --
@@ -507,8 +507,8 @@ package neorv32_package is
   -- system --
   constant funct12_ecall_c  : std_ulogic_vector(11 downto 0) := x"000"; -- ecall
   constant funct12_ebreak_c : std_ulogic_vector(11 downto 0) := x"001"; -- ebreak
-  constant funct12_mret_c   : std_ulogic_vector(11 downto 0) := x"302"; -- mret
   constant funct12_wfi_c    : std_ulogic_vector(11 downto 0) := x"105"; -- wfi
+  constant funct12_mret_c   : std_ulogic_vector(11 downto 0) := x"302"; -- mret
   constant funct12_dret_c   : std_ulogic_vector(11 downto 0) := x"7b2"; -- dret
 
   -- RISC-V Funct5 --------------------------------------------------------------------------
@@ -847,7 +847,7 @@ package neorv32_package is
 --constant trap_ipf_c   x  : std_ulogic_vector(6 downto 0) := "0" & "0" & "01100"; -- 0.12: instruction page fault
 --constant trap_lpf_c   x  : std_ulogic_vector(6 downto 0) := "0" & "0" & "01101"; -- 0.13: load page fault
 --constant trap_???_c   x  : std_ulogic_vector(6 downto 0) := "0" & "0" & "01110"; -- 0.14: reserved
---constant trap_lpf_c   x  : std_ulogic_vector(6 downto 0) := "0" & "0" & "01111"; -- 0.15: store page fault
+--constant trap_spf_c   x  : std_ulogic_vector(6 downto 0) := "0" & "0" & "01111"; -- 0.15: store page fault
   -- NEORV32-specific (custom) synchronous exceptions --
 -- none implemented yet
   -- RISC-V compliant asynchronous exceptions (interrupts) --

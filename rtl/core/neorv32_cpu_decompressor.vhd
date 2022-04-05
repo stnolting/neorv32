@@ -423,7 +423,7 @@ begin
             else -- C.EBREAK, C.JALR, C.ADD
               if (ci_instr16_i(6 downto 2) = "00000") then -- C.EBREAK, C.JALR
                 if (ci_instr16_i(11 downto 7) = "00000") then -- C.EBREAK
-                  ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c)   <= opcode_syscsr_c;
+                  ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c)   <= opcode_system_c;
                   ci_instr32_o(instr_funct12_msb_c downto instr_funct12_lsb_c) <= "000000000001";
                 else -- C.JALR
                   ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_jalr_c;
