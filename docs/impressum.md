@@ -1,12 +1,8 @@
 ## Impressum
 
-### Angaben gem. § 5 TMG
-
 Dipl.-Ing. Stephan Nolting
 
 Deutschland
-
-E-Mail: [stnolting@gmail.com](mailto:stnolting@gmail.com)
 
 ### Haftungsausschluss – Disclaimer
 
@@ -44,7 +40,8 @@ Informationen entstehen, haftet allein der Diensteanbieter der Seite, auf welche
 der über Links auf die jeweilige Veröffentlichung lediglich verweist.
 
 Werden uns Rechtsverletzungen bekannt, werden die externen Links durch uns unverzüglich entfernt.
-Kontaktieren Sie uns über [stnolting@gmail.com](mailto:stnolting@gmail.com).
+Kontaktieren Sie uns direkt über [https://github.com/issues](https://github.com/issues) oder über unseren
+[Gitter-Kanal](https://gitter.im/neorv32/community).
 
 #### Urheberrecht
 
