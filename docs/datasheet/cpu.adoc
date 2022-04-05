@@ -844,15 +844,15 @@ configurations are presented in <<_cpu_performance>>.
 | Memory access  | `I/E` | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw` | 5 + (ML-2)
 | Memory access  | `C`   | `c.lw` `c.sw` `c.lwsp` `c.swsp`           | 5 + (ML-2)
 | Memory access  | `A`   | `lr.w` `sc.w`                             | 5 + (ML-2)
-| Multiplication | `M`   | `mul` `mulh` `mulhsu` `mulhu` | 2+32+2; FAST_MULfootnote:[DSP-based multiplication; enabled via `FAST_MUL_EN`.]: 4
-| Division       | `M`   | `div` `divu` `rem` `remu`     | 2+32+2
-| CSR access     | `Zicsr`     | `csrrw` `csrrs` `csrrc` `csrrwi` `csrrsi` `csrrci` | 3
-| System         | `I/E`       | `fence` | 4 + ML
+| MulDiv         | `M`   | `mul` `mulh` `mulhsu` `mulhu` | 2+32+2; FAST_MULfootnote:[DSP-based multiplication; enabled via `FAST_MUL_EN`.]: 4
+| MulDiv         | `M`   | `div` `divu` `rem` `remu`     | 2+32+2
+| System         | `Zicsr`     | `csrrw` `csrrs` `csrrc` `csrrwi` `csrrsi` `csrrci` | 3
 | System         | `Zicsr`     | `ecall` `ebreak` | 3
-| System         | `Zicsr`+`C` | `c.break` | 3
-| System         | `Zicsr`     | `mret` | 4
-| System         | `Zicsr`     | `wfi` | 3
-| System         | `Zifencei`  | `fence.i` | 4 + ML
+| System         | `Zicsr`+`C` | `c.break`        | 3
+| System         | `Zicsr`     | `wfi`            | 3
+| System         | `Zicsr`     | `mret` `dret`    | 5
+| Fence          | `I/E`       | `fence`   | 4 + ML
+| Fence          | `Zifencei`  | `fence.i` | 4 + ML
 | Floating-point - artihmetic | `Zfinx` | `fadd.s` | 110
 | Floating-point - artihmetic | `Zfinx` | `fsub.s` | 112
 | Floating-point - artihmetic | `Zfinx` | `fmul.s` | 22
