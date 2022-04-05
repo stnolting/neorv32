@@ -1456,7 +1456,7 @@ int main() {
   // Test WFI ("sleep") instruction (executed in user mode), wakeup via MTIME
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] WFI (sleep instruction, wake-up via MTIME): ", cnt_test);
+  PRINT_STANDARD("[%i] WFI (wake-up via MTIME): ", cnt_test);
 
   cnt_test++;
 
@@ -1484,6 +1484,31 @@ int main() {
   }
   else {
     test_ok();
+  }
+
+
+  // ----------------------------------------------------------
+  // Test unallowed WFI ("sleep") instruction (executed in user mode)
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  PRINT_STANDARD("[%i] WFI (not allowed in u-mode): ", cnt_test);
+
+  cnt_test++;
+
+  // set mstatus.TW to disallow execution of WFI in user-mode
+  neorv32_cpu_csr_write(CSR_MSTATUS, neorv32_cpu_csr_read(CSR_MSTATUS) | (1<<CSR_MSTATUS_TW));
+
+  // put CPU into sleep mode (from user mode)
+  goto_user_mode();
+  {
+    asm volatile ("wfi"); // this has to fail
+  }
+
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+    test_ok();
+  }
+  else {
+    test_fail();
   }
 
 
