@@ -657,9 +657,9 @@ The "wait for interrupt instruction" `wfi` acts like a sleep command. When execu
 halted until a valid interrupt request occurs. To wake up again, at least one interrupt source has to
 be enabled via the <<_mie>> CSR and the global interrupt enable flag in <<_mstatus>> has to be set.
 
-If the <<_mstatus>> `TW` bis is cleared the `wfi` instruction is also allowed to execute when in user-mode.
-This is always the case if user-mode is not implemented. If the `TW` bit is set the execution of `wfi` in
-user-mode will raise an illegal instruction exception.
+[NOTE]
+Executing the `wfi` instruction is user-mode will raise an illegal instruction exception if
+<<_mstatus>>.`TW` is set.
 
 
 ==== **`Zicntr`** CPU Base Counters
