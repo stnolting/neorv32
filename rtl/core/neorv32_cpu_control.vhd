@@ -202,7 +202,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
   type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE, ALU_WAIT,
-                                  BRANCH, BRANCHED, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2);
+                                  BRANCH, BRANCHED, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2, SYSTEM);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
@@ -677,11 +677,17 @@ begin
       -- execute engine arbiter --
       execute_engine.state      <= execute_engine.state_nxt;
       execute_engine.state_prev <= execute_engine.state;
-      execute_engine.sleep      <= execute_engine.sleep_nxt;
       execute_engine.branched   <= execute_engine.branched_nxt;
       execute_engine.i_reg      <= execute_engine.i_reg_nxt;
       execute_engine.is_ci      <= execute_engine.is_ci_nxt;
       execute_engine.is_ici     <= execute_engine.is_ici_nxt;
+
+      -- sleep mode --
+      if (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then
+        execute_engine.sleep <= '0'; -- no sleep when in debug mode
+      else
+        execute_engine.sleep <= execute_engine.sleep_nxt;
+      end if;
 
       -- PC & IR of "last executed" instruction for trap handling --
       if (execute_engine.state = EXECUTE) then
@@ -959,7 +965,7 @@ begin
         end if;
 
 
-      when TRAP_ENTER => -- Start trap environment - get trap vector (depc or epc), stay here for sleep mode
+      when TRAP_ENTER => -- Start trap environment - get trap vector, stay here for sleep mode
       -- ------------------------------------------------------------
         if (trap_ctrl.env_start = '1') then -- trap triggered?
           trap_ctrl.env_start_ack  <= '1';
@@ -969,15 +975,13 @@ begin
 
       when TRAP_EXIT => -- Return from trap environment - get xEPC
       -- ------------------------------------------------------------
-        if (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- end trap environment if THIS is not an illegal instruction
-          trap_ctrl.env_end <= '1';
-        end if;
+        trap_ctrl.env_end        <= '1';
         execute_engine.state_nxt <= TRAP_EXECUTE;
 
 
       when TRAP_EXECUTE => -- Process trap environment
       -- ------------------------------------------------------------
-        execute_engine.pc_mux_sel <= '0'; -- next_PC
+        execute_engine.pc_mux_sel <= '0'; -- next_PC (or xEPC / trap vector)
         fetch_engine.reset        <= '1';
         execute_engine.pc_we      <= '1';
         execute_engine.sleep_nxt  <= '0'; -- disable sleep mode
@@ -1069,10 +1073,8 @@ begin
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c+1) = funct3_fence_c(2 downto 1)) then -- FENCE / FENCE.I
               ctrl_nxt(ctrl_bus_fence_c)  <= not execute_engine.i_reg(instr_funct3_lsb_c); -- FENCE
               ctrl_nxt(ctrl_bus_fencei_c) <= execute_engine.i_reg(instr_funct3_lsb_c) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- FENCE.I
-              execute_engine.state_nxt    <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC); actually, this not required for FENCE
-            else -- illegal fence instruction
-              execute_engine.state_nxt    <= DISPATCH;
             end if;
+            execute_engine.state_nxt <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC)
 
 
           when opcode_fop_c => -- floating-point operations
@@ -1097,34 +1099,8 @@ begin
 
           when opcode_system_c => -- environment/csr access
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c; -- only relevant for CSR access
             if (CPU_EXTENSION_RISCV_Zicsr = true) then
-              if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- environment
-                if (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_mret_c) then
-                  execute_engine.state_nxt <= TRAP_EXIT; -- mret
-                elsif (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_dret_c) and (CPU_EXTENSION_RISCV_DEBUG = true) then
-                  debug_ctrl.dret          <= '1';
-                  execute_engine.state_nxt <= TRAP_EXIT; -- dret
-                else
-                  execute_engine.state_nxt <= DISPATCH; -- default
-                end if;
-                if ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c+1) = funct12_ecall_c(11 downto 1))) then
-                  trap_ctrl.env_call    <= not execute_engine.i_reg(instr_funct12_lsb_c); -- ecall
-                  trap_ctrl.break_point <=     execute_engine.i_reg(instr_funct12_lsb_c); -- ebreak
-                end if;
-                if (execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_wfi_c) and
-                   ((CPU_EXTENSION_RISCV_DEBUG = false) or ((debug_ctrl.running = '0') and (csr.dcsr_step = '0'))) then
-                  execute_engine.sleep_nxt <= '1'; -- wfi not executed (=NOP) when in debug-mode or during single-stepping
-                end if;
-              else -- CSR access
-                if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
-                   (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
-                   (decode_aux.rs1_zero = '0') then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
-                  csr.we_nxt <= '1';
-                end if;
-                ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-                execute_engine.state_nxt  <= DISPATCH;
-              end if;
+              execute_engine.state_nxt <= SYSTEM;
             else
               execute_engine.state_nxt <= DISPATCH;
             end if;
@@ -1135,6 +1111,28 @@ begin
             execute_engine.state_nxt <= DISPATCH;
 
         end case; -- /EXECUTE
+
+
+      when SYSTEM => -- system environment operation
+      -- ------------------------------------------------------------
+        ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c; -- only relevant for CSR access
+        execute_engine.state_nxt <= DISPATCH; -- default or illegal instruction
+        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- environment
+          case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
+            when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ecall
+            when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- ebreak
+            when funct12_mret_c   => execute_engine.state_nxt <= TRAP_EXIT; -- mret
+            when funct12_dret_c   => execute_engine.state_nxt <= TRAP_EXIT; debug_ctrl.dret <= '1'; -- dret
+            when others           => execute_engine.sleep_nxt <= '1'; -- "funct12_wfi_c" - wfi/sleep
+          end case;
+        else -- CSR access - no state change if illegal instruction
+          if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
+             (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
+             (decode_aux.rs1_zero = '0') then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
+            csr.we_nxt <= '1';
+          end if;
+          ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
+        end if;
 
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation (ALU co-processor) to finish
@@ -1858,7 +1856,7 @@ begin
 
     elsif rising_edge(clk_i) then
       -- write access? --
-      csr.we <= csr.we_nxt;
+      csr.we <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- write if not illegal instruction
 
       -- defaults --
       csr.mip_firq_nclr <= (others => '1'); -- active low
@@ -1867,7 +1865,7 @@ begin
         -- --------------------------------------------------------------------------------
         -- CSR access by application software
         -- --------------------------------------------------------------------------------
-        if (csr.we = '1') and (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- manual write access and not illegal instruction
+        if (csr.we = '1') then -- manual write access and not illegal instruction
 
           -- user floating-point CSRs --
           -- --------------------------------------------------------------------
