@@ -86,7 +86,7 @@ typedef union
 // ################################################################################################
 
 /**********************************************************************//**
- * Flush to zero if denormal number.
+ * Flush to zero if de-normal number.
  *
  * @warning Subnormal numbers are not supported yet! Flush them to zero.
  *
@@ -97,6 +97,7 @@ float subnormal_flush(float tmp) {
 
   float res = tmp;
 
+  // flush to zero if subnormal
   if (fpclassify(tmp) == FP_SUBNORMAL) {
     if (signbit(tmp) != 0) {
       res = -0.0f;
@@ -581,6 +582,12 @@ float __attribute__ ((noinline)) riscv_emulate_fadds(float rs1, float rs2) {
   float opb = subnormal_flush(rs2);
 
   float res = opa + opb;
+
+  // make NAN canonical
+  if (fpclassify(res) == FP_NAN) {
+    res = NAN;
+  }
+
   return subnormal_flush(res);
 }
 
@@ -598,6 +605,12 @@ float __attribute__ ((noinline)) riscv_emulate_fsubs(float rs1, float rs2) {
   float opb = subnormal_flush(rs2);
 
   float res = opa - opb;
+
+  // make NAN canonical
+  if (fpclassify(res) == FP_NAN) {
+    res = NAN;
+  }
+
   return subnormal_flush(res);
 }
 
