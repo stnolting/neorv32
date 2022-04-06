@@ -33,6 +33,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 06.04.2022 | 1.6.9.8 | :bug: fixed instruction decoding collision in CPU `B` extension; :lock: closed further illegal instruction encoding holes; optimized illegal instruction detection logic; [PR #294](https://github.com/stnolting/neorv32/pull/294) |
 | 04.04.2022 | 1.6.9.7 | **major CPU logic optimization**: reduced area costs and shortened critical path (higher f_max!); :bug: fixed rare bug in RTE (if C-extension is not implemented); :lock: closed further illegal instruction encoding holes; [PR #293](https://github.com/stnolting/neorv32/pull/293) |
 | 01.04.2022 | 1.6.9.6 | rework **CPU front-end**: instruction issue engine; much cleaner code, slightly less HW required; [PR #292](https://github.com/stnolting/neorv32/pull/292) |
 | 29.03.2022 | 1.6.9.5 | minor clock generator edits: reset **clock generator** explicitly if not being used by _any_ peripheral/IO device |
