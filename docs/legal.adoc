@@ -34,7 +34,8 @@ ARISING IN ANY WAY OUT OF
 
 ==========================
 **The NEORV32 RISC-V Processor** +
-Copyright (c) 2022, by Dipl.-Ing. Stephan Nolting. All rights reserved. +
+By Dipl.-Ing. Stephan Nolting +
+Contact: stnolting@gmail.com +
 HQ: https://github.com/stnolting/neorv32
 ==========================
 
@@ -121,8 +122,3 @@ who helped improving this project! ❤️**
 https://riscv.org[RISC-V] - instruction sets want to be free!
 
 Continuous integration provided by https://github.com/features/actions[GitHub Actions] and powered by https://github.com/ghdl/ghdl[GHDL].
-
-
-=== Impressum (Imprint)
-
-See https://github.com/stnolting/neorv32/blob/main/docs/impressum.md[`docs/impressum.md`].
