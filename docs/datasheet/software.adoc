@@ -402,7 +402,7 @@ is used to implement all the standard input, output and error consoles (`STDIN`,
 .Newlib Test/Demo Program
 [TIP]
 A simple test and demo program, which uses some of newlib's core functions (like `malloc`/`free` and `read`/`write`)
-is available in `sw/example_newlib_demo`
+is available in `sw/example/demo_newlib`
 
 
 :sectnums:

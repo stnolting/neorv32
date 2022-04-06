@@ -34,7 +34,7 @@
 
 
 /**********************************************************************//**
- * @file newlib_demo/main.c
+ * @file demo_newlib/main.c
  * @author Stephan Nolting
  * @brief Demo/test program for NEORV32's newlib C standard library support.
  **************************************************************************/
