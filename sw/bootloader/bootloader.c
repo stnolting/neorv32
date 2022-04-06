@@ -565,7 +565,8 @@ void get_exe(int src) {
     PRINT_TEXT("Loading... ");
 
     // flash checks
-    if (spi_flash_read_1st_id() == 0x00) { // check if flash ready (or available at all)
+    if (((NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IO_SPI)) == 0x00) || // SPI module implemented?
+       (spi_flash_read_1st_id() == 0x00)) { // check if flash ready (or available at all)
       system_error(ERROR_FLASH);
     }
   }
