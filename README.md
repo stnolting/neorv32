@@ -183,11 +183,11 @@ _intrinsic libraries_ for the `B` and `Zfinx` extensions.
 Implementation results for exemplary **CPU-only** configuration generated for an Intel Cyclone IV E `EP4CE22F17C6` FPGA
 using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimization_, f_max from _Slow 1200mV 0C Model_).
 
-| CPU Configuration (version [1.6.8.3](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
+| CPU Configuration (version [1.6.9.8](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
 |:------------------------|:----:|:----:|:----:|:-:|:-------:|
-| `rv32i_Zicsr`           | 1425 |  673 | 1024 | 0 | 118 MHz |
-| `rv32i_Zicsr_Zicntr`    | 1778 |  803 | 1024 | 0 | 118 MHz |
-| `rv32imac_Zicsr_Zicntr` | 2453 |  994 | 1024 | 0 | 118 MHz |   
+| `rv32i_Zicsr`           | 1328 |  678 | 1024 | 0 | 128 MHz |
+| `rv32i_Zicsr_Zicntr`    | 1614 |  808 | 1024 | 0 | 128 MHz |
+| `rv32imac_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 128 MHz |   
 
 :bulb: An incremental list of the CPUs ISA extension's hardware utilization can found in the
 [_Data Sheet: FPGA Implementation Results - CPU_](https://stnolting.github.io/neorv32/#_cpu).

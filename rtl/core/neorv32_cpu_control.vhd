@@ -368,8 +368,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal hpmcnt_trigger : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0);
 
   -- illegal instruction check --
-  signal illegal_instruction : std_ulogic;
-  signal illegal_register    : std_ulogic; -- illegal register (>x15) - E-extension
+  signal illegal_cmd : std_ulogic;
+  signal illegal_reg : std_ulogic; -- illegal register (>x15) - E-extension
 
   -- access (privilege) check --
   signal csr_acc_valid : std_ulogic; -- valid CSR access (implemented and valid access rights)
@@ -1116,8 +1116,9 @@ begin
       when SYSTEM => -- system environment operation
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c; -- only relevant for CSR access
-        execute_engine.state_nxt <= DISPATCH; -- default or illegal instruction
-        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- environment
+        execute_engine.state_nxt <= DISPATCH; -- default
+        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and -- ENVIRONMENT
+           (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- and NOT already identified as illegal instruction
           case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
             when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ecall
             when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- ebreak
@@ -1125,7 +1126,7 @@ begin
             when funct12_dret_c   => execute_engine.state_nxt <= TRAP_EXIT; debug_ctrl.dret <= '1'; -- dret
             when others           => execute_engine.sleep_nxt <= '1'; -- "funct12_wfi_c" - wfi/sleep
           end case;
-        else -- CSR access - no state change if illegal instruction
+        else -- CSR ACCESS - there will be no state change if illegal instruction
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
              (decode_aux.rs1_zero = '0') then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
@@ -1169,28 +1170,24 @@ begin
 
       when LOADSTORE_0 => -- trigger memory request
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_lock_c) <= decode_aux.is_a_lr; -- atomic.LR: set lock
         if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_a_lr = '1') then -- normal load or atomic load-reservate
-          ctrl_nxt(ctrl_bus_rd_c) <= '1'; -- read request
-        else -- store
-          if (decode_aux.is_a_sc = '0') or (CPU_EXTENSION_RISCV_A = false) then -- (normal) write request
-            ctrl_nxt(ctrl_bus_wr_c) <= '1';
-          else -- evaluate lock state
-            ctrl_nxt(ctrl_bus_wr_c) <= excl_state_i; -- write request if lock is still ok
-          end if;
+          ctrl_nxt(ctrl_bus_rd_c) <= '1'; -- bus read request
+        elsif (decode_aux.is_a_sc = '0') or (excl_state_i = '1') then -- normal store request or atomic store-conditional with lock still OK
+          ctrl_nxt(ctrl_bus_wr_c) <= '1'; -- bus write request
         end if;
-        execute_engine.state_nxt <= LOADSTORE_1;
+        ctrl_nxt(ctrl_bus_lock_c) <= decode_aux.is_a_lr; -- atomic load-reservate: set lock
+        execute_engine.state_nxt  <= LOADSTORE_1;
 
 
       when LOADSTORE_1 => -- memory access latency
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- write input data to MDI (only relevant for LOADs)
+        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- write input data to MDI (only relevant for load and SC.W operations)
         execute_engine.state_nxt   <= LOADSTORE_2;
 
 
       when LOADSTORE_2 => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load (and SC.W) operations)
+        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load and SC.W operations)
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_mem_c; -- memory read data
         -- wait for memory response --
         if (trap_ctrl.env_start = '1') and (trap_ctrl.cause(6 downto 5) = "00") then -- abort if SYNC EXCEPTION (from bus or illegal cmd) / no IRQs and NOT DEBUG-MODE-related
@@ -1326,171 +1323,130 @@ begin
   illegal_instruction_check: process(execute_engine, decode_aux, csr, csr_acc_valid, debug_ctrl)
   begin
     -- defaults --
-    illegal_instruction <= '0';
-    illegal_register    <= '0';
+    illegal_cmd <= '0';
+    illegal_reg <= '0';
 
-    -- check instruction --
+    -- check instruction word encoding and side effects --
     case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
-      when opcode_lui_c | opcode_auipc_c | opcode_jal_c => -- check sufficient LUI, UIPC, JAL (only check actual OPCODE)
+      when opcode_lui_c | opcode_auipc_c | opcode_jal_c => -- LUI, UIPC, JAL (only check actual OPCODE)
       -- ------------------------------------------------------------
-        illegal_instruction <= '0';
-        -- illegal E-CPU register? --
-        illegal_register <= execute_engine.i_reg(instr_rd_msb_c);
-
-      when opcode_alu_c => -- check ALU.funct3 & ALU.funct7
-      -- ------------------------------------------------------------
-        if (((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c)) and
-            (execute_engine.i_reg(instr_funct7_msb_c-2 downto instr_funct7_lsb_c) = "00000") and (execute_engine.i_reg(instr_funct7_msb_c) = '0')) or
-           (((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or 
-             (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or 
-             (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sltu_c) or 
-             (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_xor_c) or 
-             (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_or_c) or 
-             (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_and_c)) and
-             (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000")) then -- valid base ALUI instruction?
-          illegal_instruction <= '0';
-        elsif ((CPU_EXTENSION_RISCV_M = true) or (CPU_EXTENSION_RISCV_Zmmul = false)) and (decode_aux.is_m_mul = '1') then -- valid MUL instruction?
-          illegal_instruction <= '0';
-        elsif (CPU_EXTENSION_RISCV_M = true) and (decode_aux.is_m_div = '1') then -- valid DIV instruction?
-          illegal_instruction <= '0';
-        elsif (CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_b_reg = '1') then -- valid BITMANIP instruction?
-          illegal_instruction <= '0';
-        else
-          illegal_instruction <= '1';
-        end if;
-        -- illegal E-CPU register? --
-        illegal_register <= execute_engine.i_reg(instr_rd_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rs2_msb_c);
-
-      when opcode_alui_c => -- check ALUI.funct7
-      -- ------------------------------------------------------------
-        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sltu_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_xor_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_or_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_and_c) or
-           ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and -- shift logical left
-            (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000")) or
-           ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) and -- shift right
-            ((execute_engine.i_reg(instr_funct7_msb_c-2 downto instr_funct7_lsb_c) = "00000") and (execute_engine.i_reg(instr_funct7_msb_c) = '0'))) then -- valid base ALUI instruction?
-          illegal_instruction <= '0';
-        elsif (CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_b_imm = '1') then -- valid BITMANIP immediate instruction?
-          illegal_instruction <= '0';
-        else
-          illegal_instruction <= '1';
-        end if;
-        -- illegal E-CPU register? --
-        illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
-
-      when opcode_load_c => -- check LOAD.funct3
-      -- ------------------------------------------------------------
-        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_lb_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_lh_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_lw_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_lbu_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_lhu_c) then
-          illegal_instruction <= '0';
-        else
-          illegal_instruction <= '1';
-        end if;
-        -- illegal E-CPU register? --
-        illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
-
-      when opcode_store_c => -- check STORE.funct3
-      -- ------------------------------------------------------------
-        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sb_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sh_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sw_c) then
-          illegal_instruction <= '0';
-        else
-          illegal_instruction <= '1';
-        end if;
-        -- illegal E-CPU register? --
-        illegal_register <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c);
-
-      when opcode_atomic_c => -- atomic instructions
-      -- ------------------------------------------------------------
-        if (CPU_EXTENSION_RISCV_A = true) then
-          if (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = "00010") then -- LR
-            illegal_instruction <= '0';
-            -- illegal E-CPU register? --
-            illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
-          elsif (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c) = "00011") then -- SC
-            illegal_instruction <= '0';
-            -- illegal E-CPU register? --
-            illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
-          else
-            illegal_instruction <= '1';
-          end if;
-        else
-          illegal_instruction <= '1';
-        end if;
-
-      when opcode_branch_c => -- check BRANCH.funct3
-      -- ------------------------------------------------------------
-        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_beq_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_bne_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_blt_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_bge_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_bltu_c) or
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_bgeu_c) then
-          illegal_instruction <= '0';
-        else
-          illegal_instruction <= '1';
-        end if;
-        -- illegal E-CPU register? --
-        illegal_register <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c);
+        illegal_cmd <= '0';
+        illegal_reg <= execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
       when opcode_jalr_c => -- check JALR.funct3
       -- ------------------------------------------------------------
-        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "000") then
-          illegal_instruction <= '0';
-        else
-          illegal_instruction <= '1';
-        end if;
-        -- illegal E-CPU register? --
-        illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
+        case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          when "000" => illegal_cmd <= '0';
+          when others => illegal_cmd <= '1';
+        end case;
+        illegal_reg <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
-      when opcode_fence_c => -- check FENCE.funct3
+      when opcode_branch_c => -- check BRANCH.funct3
       -- ------------------------------------------------------------
-        if ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true)) or -- FENCE.I
-           (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then -- FENCE
-          illegal_instruction <= '0';
+        case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          when funct3_beq_c | funct3_bne_c | funct3_blt_c | funct3_bge_c | funct3_bltu_c | funct3_bgeu_c => illegal_cmd <= '0';
+          when others => illegal_cmd <= '1';
+        end case;
+        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c); -- illegal 'E' register?
+
+      when opcode_load_c => -- check LOAD.funct3
+      -- ------------------------------------------------------------
+        case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          when funct3_lb_c | funct3_lh_c | funct3_lw_c | funct3_lbu_c | funct3_lhu_c => illegal_cmd <= '0';
+          when others => illegal_cmd <= '1';
+        end case;
+        illegal_reg <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
+
+      when opcode_store_c => -- check STORE.funct3
+      -- ------------------------------------------------------------
+        case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          when funct3_sb_c | funct3_sh_c | funct3_sw_c => illegal_cmd <= '0';
+          when others => illegal_cmd <= '1';
+        end case;
+        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c); -- illegal 'E' register?
+
+      when opcode_alu_c => -- check ALU.funct3 & ALU.funct7
+      -- ------------------------------------------------------------
+        if ((((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c)) and
+             (execute_engine.i_reg(instr_funct7_msb_c-2 downto instr_funct7_lsb_c) = "00000") and (execute_engine.i_reg(instr_funct7_msb_c) = '0')) or
+            (((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or 
+              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or 
+              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sltu_c) or 
+              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_xor_c) or 
+              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_or_c) or 
+              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_and_c)) and
+              (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000"))) or -- valid base ALU instruction?
+           (((CPU_EXTENSION_RISCV_M = true) or (CPU_EXTENSION_RISCV_Zmmul = true)) and (decode_aux.is_m_mul = '1')) or -- valid MUL instruction?
+           ((CPU_EXTENSION_RISCV_M = true) and (decode_aux.is_m_div = '1')) or -- valid DIV instruction?
+           ((CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_b_reg = '1')) then -- valid BITMANIP register instruction?
+          illegal_cmd <= '0';
         else
-          illegal_instruction <= '1';
+          illegal_cmd <= '1';
         end if;
-        -- NOTE: ignore all remaining bit fields here
+        illegal_reg <= execute_engine.i_reg(instr_rd_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rs2_msb_c); -- illegal 'E' register?
+
+      when opcode_alui_c => -- check ALU.funct3 & ALU.funct7
+      -- ------------------------------------------------------------
+        if ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or
+            (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or
+            (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sltu_c) or
+            (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_xor_c) or
+            (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_or_c) or
+            (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_and_c) or
+            ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and
+             (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000")) or
+            ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) and
+             ((execute_engine.i_reg(instr_funct7_msb_c-2 downto instr_funct7_lsb_c) = "00000") and (execute_engine.i_reg(instr_funct7_msb_c) = '0')))) or -- valid base ALUI instruction?
+           ((CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_b_imm = '1')) then -- valid BITMANIP immediate instruction?
+          illegal_cmd <= '0';
+        else
+          illegal_cmd <= '1';
+        end if;
+        illegal_reg <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
+
+      when opcode_fence_c => -- check FENCE.funct3, ignore all remaining bit-fields
+      -- ------------------------------------------------------------
+        case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          when funct3_fence_c  => illegal_cmd <= '0'; -- FENCE
+          when funct3_fencei_c => illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- FENCE.I
+          when others => illegal_cmd <= '1';
+        end case;
+
+      when opcode_atomic_c => -- check AMO.funct3 and AMO.funct5
+      -- ------------------------------------------------------------
+        if (CPU_EXTENSION_RISCV_A = true) and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and
+           (execute_engine.i_reg(instr_funct5_msb_c downto instr_funct5_lsb_c+1) = "0001") then -- LR/SC
+          illegal_cmd <= '0';
+        else
+          illegal_cmd <= '1';
+        end if;
+        illegal_reg <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
       when opcode_system_c => -- check system instructions
       -- ------------------------------------------------------------
-        -- CSR access --
-        if ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or
-            (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrs_c) or
-            (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrc_c) or
-            (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or
-            (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrsi_c) or
-            (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrci_c)) and
-           (csr_acc_valid = '1') then -- valid CSR access?
-          illegal_instruction <= '0';
-          -- illegal E-CPU register? --
-          if (execute_engine.i_reg(instr_funct3_msb_c) = '0') then -- reg-reg CSR
-            illegal_register <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c);
-          else -- reg-imm CSR
-            illegal_register <= execute_engine.i_reg(instr_rd_msb_c);
+        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system environment
+          if (decode_aux.rs1_zero = '1') and (decode_aux.rd_zero = '1') then
+            case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
+              when funct12_ecall_c | funct12_ebreak_c => illegal_cmd <= '0'; -- ECALL, EBREAK
+              when funct12_mret_c                     => illegal_cmd <= not csr.privilege; -- MRET (only allowed in ACTUAL M-mode)
+              when funct12_wfi_c                      => illegal_cmd <= (not csr.privilege) and csr.mstatus_tw; -- WFI (only allowed in ACTUAL M-mode or if mstatus.TW = 0)
+              when funct12_dret_c                     => illegal_cmd <= not debug_ctrl.running; -- DRET (only allowed in D-mode)
+              when others => illegal_cmd <= '1';
+            end case;
+          else
+            illegal_cmd <= '1';
           end if;
-        -- system: ecall, ebreak, mret, wfi, dret --
-        -- > WFI is always allowed to execute in M-mode; in U-mode it is allowed to execute if mstatus.TW = 0
-        elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "000") and
-              (decode_aux.rs1_zero = '1') and (decode_aux.rd_zero = '1') and
-              ((execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ecall_c)  or -- ECALL
-               (execute_engine.i_reg(instr_funct12_msb_c  downto instr_funct12_lsb_c) = funct12_ebreak_c) or -- EBREAK 
-               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_mret_c) and (csr.privilege = priv_mode_m_c)) or -- MRET (only allowed in ACTUAL M-mode)
-               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_dret_c) and (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1')) or -- DRET (only allowed in D-mode)
-               ((execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) = funct12_wfi_c) and ((csr.privilege = priv_mode_m_c) or (csr.mstatus_tw = '0')))) then -- WFI
-          illegal_instruction <= '0';
-        else
-          illegal_instruction <= '1';
+        else -- CSR access
+          if (csr_acc_valid = '0') then -- invalid CSR access?
+            illegal_cmd <= '1';
+          end if;
+        end if;
+        -- illegal E-CPU register? --
+        if (execute_engine.i_reg(instr_funct3_msb_c) = '0') then -- reg-reg CSR (or ENV where rd=rs1=zero)
+          illegal_reg <= execute_engine.i_reg(instr_rd_msb_c) or execute_engine.i_reg(instr_rs1_msb_c);
+        else -- reg-imm CSR
+          illegal_reg <= execute_engine.i_reg(instr_rd_msb_c);
         end if;
 
       when opcode_fop_c => -- floating point operations - single/dual operands
@@ -1498,27 +1454,20 @@ begin
         if (CPU_EXTENSION_RISCV_Zfinx = true) and -- F extension implemented
            (execute_engine.i_reg(instr_funct7_lsb_c+1 downto instr_funct7_lsb_c) = float_single_c) and -- single-precision operations only
            (decode_aux.is_f_op = '1') then -- is correct/supported floating-point instruction
-          illegal_instruction <= '0';
+          illegal_cmd <= '0';
         else
-          illegal_instruction <= '1';
+          illegal_cmd <= '1';
         end if;
-        -- illegal E-CPU register? --
-        -- FIXME: rs2 is not checked!
-        illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx) and (execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
+        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
       when opcode_cust0_c => -- CFU: custom instructions
       -- ------------------------------------------------------------
-        if (CPU_EXTENSION_RISCV_Zxcfu = true) then -- CFU extension implemented
-          illegal_instruction <= '0';
-        else
-          illegal_instruction <= '1';
-        end if;
-        -- illegal E-CPU register? --
-        illegal_register <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu) and (execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c));
+        illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- CFU extension not implemented
+        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
       when others => -- illegal opcode
       -- ------------------------------------------------------------
-        illegal_instruction <= '1';
+        illegal_cmd <= '1';
 
     end case;
   end process illegal_instruction_check;
@@ -1527,8 +1476,8 @@ begin
   -- Illegal Operation Check ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- check in EXECUTE state: any illegal condition? --
-  trap_ctrl.instr_il <= (illegal_instruction or -- illegal instruction
-                         (bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and illegal_register) or -- illegal register access in E extension
+  trap_ctrl.instr_il <= (illegal_cmd or -- illegal instruction
+                         (bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and illegal_reg) or -- illegal register access in E extension
                          (bool_to_ulogic_f(CPU_EXTENSION_RISCV_C) and execute_engine.is_ici)) -- illegal compressed instruction
                         when (execute_engine.state = EXECUTE) else '0'; -- evaluate in EXECUTE stage only
 
