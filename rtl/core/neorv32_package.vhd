@@ -65,7 +65,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060908"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01060909"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -367,7 +367,6 @@ package neorv32_package is
   constant ctrl_bus_de_lock_c   : natural := 40; -- remove atomic/exclusive access 
   constant ctrl_bus_ch_lock_c   : natural := 41; -- evaluate atomic/exclusive lock (SC operation)
   -- alu co-processors --
-  constant ctrl_cp_id_lsb_c     : natural := 42; -- cp select ID lsb [ALIAS]
   constant ctrl_cp_trig0_c      : natural := 42; -- trigger CP0
   constant ctrl_cp_trig1_c      : natural := 43; -- trigger CP1
   constant ctrl_cp_trig2_c      : natural := 44; -- trigger CP2
@@ -376,7 +375,6 @@ package neorv32_package is
   constant ctrl_cp_trig5_c      : natural := 47; -- trigger CP5
   constant ctrl_cp_trig6_c      : natural := 48; -- trigger CP6
   constant ctrl_cp_trig7_c      : natural := 49; -- trigger CP7
-  constant ctrl_cp_id_msb_c     : natural := 49; -- cp select ID msb [ALIAS]
   -- instruction word control blocks (used by cpu co-processors) --
   constant ctrl_ir_funct3_0_c   : natural := 50; -- funct3 bit 0
   constant ctrl_ir_funct3_1_c   : natural := 51; -- funct3 bit 1
@@ -554,6 +552,7 @@ package neorv32_package is
 
   -- RISC-V CSR Addresses -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  constant csr_zero_c           : std_ulogic_vector(11 downto 0) := x"000"; -- always returns zero, only relevant for hardware access
   -- <<< standard read/write CSRs >>> --
   -- user floating-point CSRs --
   constant csr_class_float_c    : std_ulogic_vector(09 downto 0) := x"00" & "00"; -- floating point

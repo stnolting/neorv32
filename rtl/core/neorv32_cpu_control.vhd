@@ -271,6 +271,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     addr              : std_ulogic_vector(11 downto 0); -- csr address
     we                : std_ulogic; -- csr write enable
     we_nxt            : std_ulogic;
+    re                : std_ulogic; -- csr read enable
+    re_nxt            : std_ulogic;
     wdata             : std_ulogic_vector(data_width_c-1 downto 0); -- csr write data
     rdata             : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
     --
@@ -916,6 +918,7 @@ begin
 
     -- CSR access --
     csr.we_nxt                  <= '0';
+    csr.re_nxt                  <= '0';
 
     -- CONTROL DEFAULTS --
     ctrl_nxt <= (others => '0'); -- default: all off
@@ -1017,18 +1020,18 @@ begin
             -- co-processor MULDIV operation (multi-cycle) --
             if ((CPU_EXTENSION_RISCV_M = true) and ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
                ((CPU_EXTENSION_RISCV_Zmmul = true) and (decode_aux.is_m_mul = '1')) then -- MUL
-              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_muldiv_c; -- trigger MULDIV CP
+              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_muldiv_c; -- trigger MULDIV CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- co-processor BIT-MANIPULATION operation (multi-cycle) --
             elsif (CPU_EXTENSION_RISCV_B = true) and
                   (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_b_reg = '1')) or -- register operation
                    ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
-              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_bitmanip_c; -- trigger BITMANIP CP
+              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_bitmanip_c; -- trigger BITMANIP CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- co-processor SHIFT operation (multi-cycle) --
             elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or
                   (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) then
-              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_shifter_c; -- trigger SHIFTER CP
+              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_shifter_c; -- trigger SHIFTER CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- ALU CORE operation (single-cycle) --
             else
@@ -1080,7 +1083,7 @@ begin
           when opcode_fop_c => -- floating-point operations
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zfinx = true) then
-              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_fpu_c; -- trigger FPU CP
+              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_fpu_c; -- trigger FPU CP
               execute_engine.state_nxt <= ALU_WAIT;
             else
               execute_engine.state_nxt <= DISPATCH;
@@ -1090,7 +1093,7 @@ begin
           when opcode_cust0_c => -- CFU: custom RISC-V instructions (CUSTOM0 OPCODE space)
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zxcfu = true) then
-              ctrl_nxt(ctrl_cp_id_msb_c downto ctrl_cp_id_lsb_c) <= cp_sel_cfu_c; -- trigger CFU CP
+              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_cfu_c; -- trigger CFU CP
               execute_engine.state_nxt <= ALU_WAIT;
             else
               execute_engine.state_nxt <= DISPATCH;
@@ -1099,6 +1102,7 @@ begin
 
           when opcode_system_c => -- environment/csr access
           -- ------------------------------------------------------------
+            csr.re_nxt <= '1'; -- always read CSR, only relevant for CSR access
             if (CPU_EXTENSION_RISCV_Zicsr = true) then
               execute_engine.state_nxt <= SYSTEM;
             else
@@ -1489,7 +1493,6 @@ begin
   -- Trap Controller ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   trap_controller: process(rstn_i, clk_i)
-    variable mode_m_v, mode_u_v : std_ulogic;
   begin
     if (rstn_i = '0') then
       trap_ctrl.exc_buf   <= (others => '0');
@@ -1759,6 +1762,7 @@ begin
   begin
     if (rstn_i = '0') then
       csr.we                <= '0';
+      csr.re                <= def_rst_val_c;
       --
       csr.mstatus_mie       <= '0';
       csr.mstatus_mpie      <= '0';
@@ -1806,6 +1810,7 @@ begin
     elsif rising_edge(clk_i) then
       -- write access? --
       csr.we <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- write if not illegal instruction
+      csr.re <= csr.re_nxt;
 
       -- defaults --
       csr.mip_firq_nclr <= (others => '1'); -- active low
@@ -2098,16 +2103,27 @@ begin
 
   -- Control and Status Registers - Read Access ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_read_access: process(rstn_i, clk_i)
+  csr_read_access: process(clk_i)
     variable csr_addr_v : std_ulogic_vector(11 downto 0);
   begin
     if rising_edge(clk_i) then
-      csr.rdata <= (others => '0'); -- default output, unimplemented CSRs are hardwired to zero
+      csr.rdata <= (others => '0'); -- default output, unimplemented CSRs read as zero
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
-        csr_addr_v(11 downto 10) := csr.addr(11 downto 10);
-        csr_addr_v(09 downto 08) := (others => csr.addr(8)); -- !!! WARNING: MACHINE (11) and USER (00) CSRs ONLY !!!
-        csr_addr_v(07 downto 00) := csr.addr(07 downto 00);
+
+        -- AND-gate CSR read address: csr.rdata is zero if csr.re is not set --
+        if (csr.re = '1') then
+          csr_addr_v(11 downto 10) := csr.addr(11 downto 10);
+          csr_addr_v(09 downto 08) := (others => csr.addr(8)); -- !!! WARNING: MACHINE (11) and USER (00) CSRS ONLY !!!
+          csr_addr_v(07 downto 00) := csr.addr(07 downto 00);
+        else -- reduce switching activity if not accessed
+          csr_addr_v := (others => '0'); -- = csr_zero_c
+        end if;
         case csr_addr_v is
+
+          -- hardware-only CSRs --
+          -- --------------------------------------------------------------------
+--        when csr_zero_c => -- zero (r/-): always returns zero, only relevant for hardware-access, not visible to ISA
+--          csr.rdata <= (others => '0');
 
           -- floating-point CSRs --
           -- --------------------------------------------------------------------
