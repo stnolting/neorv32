@@ -445,11 +445,12 @@ and placed right before the actual application code so it gets executed right af
 The `crt0.S` start-up performs the following operations:
 
 [start=1]
+. Disable interrupts globally by clearing <<_mstatus>>`.mie`.
 . Initialize all integer registers `x1 - x31` (or just `x1 - x15` when using the `E` CPU extension) to a defined value.
-. Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
 . Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ traps. This handler catches all traps
+** All interrupt sources are disabled and all pending interrupts are cleared.
+. Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
 during the early boot phase.
-. All interrupt sources are disabled and all pending interrupts are cleared.
 . Clear all counter CSRs and stop auto-increment.
 . Clear IO area: Write zero to all memory-mapped registers within the IO region (`iodev` section). If certain devices have not
 been implemented, a bus access fault exception will occur. This exception is captured by the dummy trap handler.
