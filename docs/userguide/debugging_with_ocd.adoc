@@ -175,6 +175,13 @@ After the upload, GDB will make the processor jump to the beginning of the uploa
 (by default, this is the beginning of the instruction memory at `0x00000000`) skipping the bootloader
 and halting the CPU right before executing the `blink_led` application.
 
+[IMPORTANT]
+After gdb has connected to the CPU, it is recommended to disable the CPU's global interrupt flag
+(`mstatus.mie`, = bit #3) to prevent unintended calls of potentially outdated trap handlers. The global
+interrupt flag can be cleared using the following gdb command:
+`set $mstatus = ($mstatus & ~(1<<3))`. Interrupts can be enabled globally again by the following command:
+`set $mstatus = ($mstatus | (1<<3))`.
+
 
 :sectnums:
 ==== Software Breakpoints
