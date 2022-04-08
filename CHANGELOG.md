@@ -33,7 +33,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 07.04.2022 | 1.6.9.10 | rework compressed instructions (`C`) decompressor: closed further illegal compressed instruction holes; code clean-ups; `mtval` CSR now shows the decompressed 32-bit instruction when executing an illegal compressed instruction; [PR #296](https://github.com/stnolting/neorv32/pull/296) |
+| 08.04.2022 | 1.6.9.10 | rework compressed instruction (`C` ISA extension) de-compressor: :lock: closed further illegal compressed instruction holes; code clean-ups; `mtval` CSR now shows the decompressed 32-bit instruction when executing an illegal compressed instruction; minor RTL code cleanups (removing legacy stuff); [PR #296](https://github.com/stnolting/neorv32/pull/296) |
 | 07.04.2022 | 1.6.9.9 | AND-gate CSR read address: reduces **CPU switching activity** (= dynamic power consumption) and even reduces area costs; [PR #295](https://github.com/stnolting/neorv32/pull/295) |
 | 06.04.2022 | 1.6.9.8 | :bug: fixed instruction decoding collision in CPU `B` extension; :lock: closed further illegal instruction encoding holes; optimized illegal instruction detection logic; [PR #294](https://github.com/stnolting/neorv32/pull/294) |
 | 04.04.2022 | 1.6.9.7 | **major CPU logic optimization**: reduced area costs and shortened critical path (higher f_max!); :bug: fixed rare bug in RTE core (if C-extension is not implemented); :lock: closed further illegal instruction encoding holes; [PR #293](https://github.com/stnolting/neorv32/pull/293) |
