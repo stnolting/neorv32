@@ -33,6 +33,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 08.04.2022 | [**:rocket:1.7.0**](https://github.com/stnolting/neorv32/releases/tag/v1.7.0) | **New release** |
 | 08.04.2022 | 1.6.9.11 | :bug: fixed bug in interrupt setup of **`crt0` start-up code** [#297](https://github.com/stnolting/neorv32/pull/297) |
 | 08.04.2022 | 1.6.9.10 | rework compressed instruction (`C` ISA extension) de-compressor: :lock: closed further illegal compressed instruction holes; code clean-ups; `mtval` CSR now shows the decompressed 32-bit instruction when executing an illegal compressed instruction; minor RTL code cleanups (removing legacy stuff); [PR #296](https://github.com/stnolting/neorv32/pull/296) |
 | 07.04.2022 | 1.6.9.9 | AND-gate CSR read address: reduces **CPU switching activity** (= dynamic power consumption) and even reduces area costs; [PR #295](https://github.com/stnolting/neorv32/pull/295) |
