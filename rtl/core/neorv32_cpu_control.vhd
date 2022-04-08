@@ -755,9 +755,6 @@ begin
     -- memory access size / sign --
     ctrl_o(ctrl_bus_unsigned_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
     ctrl_o(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size
-    -- alu.shifter --
-    ctrl_o(ctrl_alu_shift_dir_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- shift direction (left/right)
-    ctrl_o(ctrl_alu_shift_ar_c)  <= execute_engine.i_reg(30); -- is arithmetic shift
     -- instruction's function blocks (for co-processors) --
     ctrl_o(ctrl_ir_opcode7_6_c  downto ctrl_ir_opcode7_0_c) <= execute_engine.i_reg(instr_opcode_msb_c  downto instr_opcode_lsb_c);
     ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
@@ -881,7 +878,7 @@ begin
   end process decode_helper;
 
   -- CSR access address --
-  csr.addr <= execute_engine.i_reg(instr_csr_id_msb_c downto instr_csr_id_lsb_c);
+  csr.addr <= execute_engine.i_reg(instr_imm12_msb_c downto instr_imm12_lsb_c);
 
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
@@ -939,22 +936,19 @@ begin
 
       when DISPATCH => -- Get new command from instruction issue engine
       -- ------------------------------------------------------------
-        -- PC update --
+        -- PC & IR update --
         execute_engine.pc_mux_sel <= '0'; -- linear next PC
-        -- IR update --
-        execute_engine.is_ci_nxt <= issue_engine.data(32); -- flag to indicate a de-compressed instruction
-        execute_engine.i_reg_nxt <= issue_engine.data(31 downto 0);
+        execute_engine.i_reg_nxt  <= issue_engine.data(31 downto 0);
+        execute_engine.is_ci_nxt  <= issue_engine.data(32); -- this is a de-compressed instruction
+        execute_engine.is_ici_nxt <= issue_engine.data(35); -- illegal compressed instruction
         --
         if (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- instruction available?
           -- PC update --
           execute_engine.branched_nxt <= '0';
           execute_engine.pc_we        <= not execute_engine.branched; -- update PC with linear next_pc if there was no actual branch
           -- IR update - exceptions --
-          if (CPU_EXTENSION_RISCV_C = false) then
-            trap_ctrl.instr_ma <= issue_engine.data(33); -- misaligned instruction fetch address, if C disabled
-          end if;
-          trap_ctrl.instr_be        <= issue_engine.data(34); -- bus access fault during instruction fetch
-          execute_engine.is_ici_nxt <= issue_engine.data(35); -- invalid decompressed instruction
+          trap_ctrl.instr_ma <= issue_engine.data(33) and (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_C)); -- misaligned instruction fetch (if C disabled)
+          trap_ctrl.instr_be <= issue_engine.data(34); -- bus access fault during instruction fetch
           -- any reason to go to trap state? --
           if (execute_engine.sleep = '1') or -- enter sleep state
              (trap_ctrl.exc_fire = '1') or -- exception during LAST instruction (e.g. illegal instruction)

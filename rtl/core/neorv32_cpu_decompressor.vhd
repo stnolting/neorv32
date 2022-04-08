@@ -117,29 +117,6 @@ begin
       when "00" => -- C0: Register-Based Loads and Stores
         case ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) is
 
-          when "000" => -- Illegal_instruction, C.ADDI4SPN
-          -- ----------------------------------------------------------------------------------------------------------
-            -- C.ADDI4SPN
-            ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
-            ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
-            ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & ci_instr16_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);
-            ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_subadd_c;
-            ci_instr32_o(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= (others => '0'); -- zero extend
-            ci_instr32_o(instr_imm12_lsb_c + 0)                        <= '0';
-            ci_instr32_o(instr_imm12_lsb_c + 1)                        <= '0';
-            ci_instr32_o(instr_imm12_lsb_c + 2)                        <= ci_instr16_i(6);
-            ci_instr32_o(instr_imm12_lsb_c + 3)                        <= ci_instr16_i(5);
-            ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(11);
-            ci_instr32_o(instr_imm12_lsb_c + 5)                        <= ci_instr16_i(12);
-            ci_instr32_o(instr_imm12_lsb_c + 6)                        <= ci_instr16_i(7);
-            ci_instr32_o(instr_imm12_lsb_c + 7)                        <= ci_instr16_i(8);
-            ci_instr32_o(instr_imm12_lsb_c + 8)                        <= ci_instr16_i(9);
-            ci_instr32_o(instr_imm12_lsb_c + 9)                        <= ci_instr16_i(10);
-            --
-            if (ci_instr16_i(12 downto 2) = "00000000000") then -- 12:2 = "00000000000" is official illegal instruction
-              ci_illegal_o <= '1';
-            end if;
-
           when "010" | "011" => -- C.LW / C.FLW
           -- ----------------------------------------------------------------------------------------------------------
             ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_c;
@@ -174,49 +151,57 @@ begin
               ci_illegal_o <= '1';
             end if;
 
-          when others => -- undefined
+          when others => -- "000": Illegal_instruction, C.ADDI4SPN; others: illegal
           -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o <= (others => '0');
-            ci_illegal_o <= '1';
+            ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
+            ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
+            ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & ci_instr16_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);
+            ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_subadd_c;
+            ci_instr32_o(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= (others => '0'); -- zero extend
+            ci_instr32_o(instr_imm12_lsb_c + 0)                        <= '0';
+            ci_instr32_o(instr_imm12_lsb_c + 1)                        <= '0';
+            ci_instr32_o(instr_imm12_lsb_c + 2)                        <= ci_instr16_i(6);
+            ci_instr32_o(instr_imm12_lsb_c + 3)                        <= ci_instr16_i(5);
+            ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(11);
+            ci_instr32_o(instr_imm12_lsb_c + 5)                        <= ci_instr16_i(12);
+            ci_instr32_o(instr_imm12_lsb_c + 6)                        <= ci_instr16_i(7);
+            ci_instr32_o(instr_imm12_lsb_c + 7)                        <= ci_instr16_i(8);
+            ci_instr32_o(instr_imm12_lsb_c + 8)                        <= ci_instr16_i(9);
+            ci_instr32_o(instr_imm12_lsb_c + 9)                        <= ci_instr16_i(10);
+            --
+            if (ci_instr16_i(12 downto 5) = "00000000") or -- canonical illegal C instruction or C.ADDI4SPN with nzuimm = 0
+               (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "001") or -- C.FLS / C.LQ
+               (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "100") or -- reserved
+               (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "101") then -- C.C.FSD / C.SQ
+              ci_illegal_o <= '1';
+            end if;
 
         end case;
 
       when "01" => -- C1: Control Transfer Instructions, Integer Constant-Generation Instructions
 
         case ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) is
-          when "101" => -- C.J
+          when "101" | "001" => -- C.J, C.JAL
           -- ----------------------------------------------------------------------------------------------------------
+            if (ci_instr16_i(ci_funct3_msb_c) = '1') then -- C.J
+              ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c) <= "00000"; -- discard return address
+            else -- C.JAL
+              ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c) <= "00001"; -- save return address to link register
+            end if;
             ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_jal_c;
-            ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= "00000"; -- discard return address
             ci_instr32_o(19 downto 12)                                 <= imm20_v(19 downto 12);
             ci_instr32_o(20)                                           <= imm20_v(11);
             ci_instr32_o(30 downto 21)                                 <= imm20_v(10 downto 01);
             ci_instr32_o(31)                                           <= imm20_v(20);
 
-          when "001" => -- C.JAL
+          when "110" | "111" => -- C.BEQ, C.BNEZ
           -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_jal_c;
-            ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)         <= "00001"; -- save return address to link register
-            ci_instr32_o(19 downto 12)                                 <= imm20_v(19 downto 12);
-            ci_instr32_o(20)                                           <= imm20_v(11);
-            ci_instr32_o(30 downto 21)                                 <= imm20_v(10 downto 01);
-            ci_instr32_o(31)                                           <= imm20_v(20);
-
-          when "110" => -- C.BEQ
-          -- ----------------------------------------------------------------------------------------------------------
+            if (ci_instr16_i(ci_funct3_lsb_c) = '0') then -- C.BEQ
+              ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_beq_c;
+            else -- C.BNEZ
+              ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_bne_c;
+            end if;
             ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_branch_c;
-            ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_beq_c;
-            ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c);
-            ci_instr32_o(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= "00000"; -- x0
-            ci_instr32_o(07)                                           <= imm12_v(11);
-            ci_instr32_o(11 downto 08)                                 <= imm12_v(04 downto 01);
-            ci_instr32_o(30 downto 25)                                 <= imm12_v(10 downto 05);
-            ci_instr32_o(31)                                           <= imm12_v(12);
-
-          when "111" => -- C.BNEZ
-          -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_branch_c;
-            ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_bne_c;
             ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c);
             ci_instr32_o(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= "00000"; -- x0
             ci_instr32_o(07)                                           <= imm12_v(11);
@@ -268,7 +253,7 @@ begin
               ci_instr32_o(instr_imm20_lsb_c + 4)                        <= ci_instr16_i(6);
               ci_instr32_o(instr_imm20_lsb_c + 5)                        <= ci_instr16_i(12);
             end if;
-            if (ci_instr16_i(6 downto 2) = "00000") and (ci_instr16_i(12) = '0') then -- reserved
+            if (ci_instr16_i(6 downto 2) = "00000") and (ci_instr16_i(12) = '0') then -- reserved if nzimm = 0
               ci_illegal_o <= '1';
             end if;
 
@@ -286,34 +271,26 @@ begin
             ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(6);
             ci_instr32_o(instr_imm12_lsb_c + 5)                        <= ci_instr16_i(12);
 
-          when "100" => -- C.SRLI, C.SRAI, C.ANDI, C.SUB, C.XOR, C.OR, C.AND, reserved
+          when others => -- 100: C.SRLI, C.SRAI, C.ANDI, C.SUB, C.XOR, C.OR, C.AND, reserved
           -- ----------------------------------------------------------------------------------------------------------
             ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c)   <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c);
             ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c) <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c);
             ci_instr32_o(instr_rs2_msb_c downto instr_rs2_lsb_c) <= "01" & ci_instr16_i(ci_rs2_3_msb_c downto ci_rs2_3_lsb_c);
             case ci_instr16_i(11 downto 10) is
-              when "00" => -- C.SRLI
-                ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
-                ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sr_c;
-                ci_instr32_o(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000000";
-                ci_instr32_o(instr_imm12_lsb_c + 0)                        <= ci_instr16_i(2);
-                ci_instr32_o(instr_imm12_lsb_c + 1)                        <= ci_instr16_i(3);
-                ci_instr32_o(instr_imm12_lsb_c + 2)                        <= ci_instr16_i(4);
-                ci_instr32_o(instr_imm12_lsb_c + 3)                        <= ci_instr16_i(5);
-                ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(6);
-                if (ci_instr16_i(12) = '1') then
-                  ci_illegal_o <= '1';
+              when "00" | "01" => -- C.SRLI, C.SRAI
+                if (ci_instr16_i(10) = '0') then -- C.SRLI
+                  ci_instr32_o(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000000";
+                else -- C.SRAI
+                  ci_instr32_o(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0100000";
                 end if;
-              when "01" => -- C.SRAI
                 ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
                 ci_instr32_o(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sr_c;
-                ci_instr32_o(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0100000";
                 ci_instr32_o(instr_imm12_lsb_c + 0)                        <= ci_instr16_i(2);
                 ci_instr32_o(instr_imm12_lsb_c + 1)                        <= ci_instr16_i(3);
                 ci_instr32_o(instr_imm12_lsb_c + 2)                        <= ci_instr16_i(4);
                 ci_instr32_o(instr_imm12_lsb_c + 3)                        <= ci_instr16_i(5);
                 ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(6);
-                if (ci_instr16_i(12) = '1') then
+                if (ci_instr16_i(12) = '1') then -- nzuimm[5] = 1 -> RV32 custom
                   ci_illegal_o <= '1';
                 end if;
               when "10" => -- C.ANDI
@@ -344,14 +321,9 @@ begin
                 end case;
             end case;
 
-          when others => -- undefined
-          -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o <= (others => '0');
-            ci_illegal_o <= '1';
-
         end case;
 
-      when "10" => -- C2: Stack-Pointer-Based Loads and Stores, Control Transfer Instructions
+      when others => -- C2: Stack-Pointer-Based Loads and Stores, Control Transfer Instructions (or C3, which is not a RVC instruction)
         case ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) is
 
           when "000" => -- C.SLLI
@@ -366,8 +338,8 @@ begin
             ci_instr32_o(instr_imm12_lsb_c + 2)                        <= ci_instr16_i(4);
             ci_instr32_o(instr_imm12_lsb_c + 3)                        <= ci_instr16_i(5);
             ci_instr32_o(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(6);
-            if (ci_instr16_i(12) = '1') then
-              ci_illegal_o <= ci_instr16_i(12);
+            if (ci_instr16_i(12) = '1') then -- nzuimm[5] = 1 -> RV32 custom
+              ci_illegal_o <= '1';
             end if;
 
           when "010" | "011" => -- C.LWSP / C.FLWSP
@@ -406,7 +378,7 @@ begin
               ci_illegal_o <= '1';
             end if;
 
-          when "100" => -- C.JR, C.JALR, C.MV, C.EBREAK, C.ADD
+          when others => -- "100": C.JR, C.JALR, C.MV, C.EBREAK, C.ADD; others: undefined
           -- ----------------------------------------------------------------------------------------------------------
             if (ci_instr16_i(12) = '0') then -- C.JR, C.MV
               if (ci_instr16_i(6 downto 2) = "00000") then -- C.JR
@@ -424,7 +396,7 @@ begin
               if (ci_instr16_i(6 downto 2) = "00000") then -- C.EBREAK, C.JALR
                 if (ci_instr16_i(11 downto 7) = "00000") then -- C.EBREAK
                   ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c)   <= opcode_system_c;
-                  ci_instr32_o(instr_funct12_msb_c downto instr_funct12_lsb_c) <= "000000000001";
+                  ci_instr32_o(instr_funct12_msb_c downto instr_funct12_lsb_c) <= funct12_ebreak_c;
                 else -- C.JALR
                   ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_jalr_c;
                   ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= ci_instr16_i(ci_rs1_5_msb_c downto ci_rs1_5_lsb_c);
@@ -438,18 +410,13 @@ begin
                 ci_instr32_o(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= ci_instr16_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c);
               end if;
             end if;
-
-          when others => -- undefined
-          -- ----------------------------------------------------------------------------------------------------------
-            ci_instr32_o <= (others => '0');
-            ci_illegal_o <= '1';
+            --
+            if (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "001") or -- C.FLDSP / C.LQSP
+               (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "101") then -- C.FSDSP / C.SQSP
+              ci_illegal_o <= '1';
+            end if;
 
         end case;
-
-      when others => -- not a compressed instruction
-      -- ----------------------------------------------------------------------------------------------------------
-        ci_instr32_o <= (others => '0');
-        ci_illegal_o <= '0';
 
     end case;
   end process decompressor;

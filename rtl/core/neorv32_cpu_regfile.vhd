@@ -75,18 +75,20 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   type   reg_file_emb_t is array (15 downto 0) of std_ulogic_vector(data_width_c-1 downto 0);
   signal reg_file     : reg_file_t;
   signal reg_file_emb : reg_file_emb_t;
-  signal rf_wdata     : std_ulogic_vector(data_width_c-1 downto 0); -- actual write-back data
-  signal rd_is_x0     : std_ulogic; -- writing to x0?
-  signal opa_addr     : std_ulogic_vector(4 downto 0); -- rs1/dst address
-  signal opb_addr     : std_ulogic_vector(4 downto 0); -- rs2 address
+
+  -- access --
+  signal rf_wdata : std_ulogic_vector(data_width_c-1 downto 0); -- actual write-back data
+  signal rd_zero  : std_ulogic; -- writing to x0?
+  signal opa_addr : std_ulogic_vector(4 downto 0); -- rs1/dst address
+  signal opb_addr : std_ulogic_vector(4 downto 0); -- rs2 address
 
 begin
 
   -- Data Input Mux -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  input_mux: process(rd_is_x0, ctrl_i, alu_i, mem_i, csr_i, pc2_i)
+  input_mux: process(rd_zero, ctrl_i, alu_i, mem_i, csr_i, pc2_i)
   begin
-    if (rd_is_x0 = '1') then -- write zero if accessing x0 to "emulate" it is hardwired to zero
+    if (rd_zero = '1') then -- write zero if accessing x0 to "emulate" it is hardwired to zero
       rf_wdata <= (others => '0'); -- TODO: FIXME! but how???
     else
       case ctrl_i(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) is
@@ -98,6 +100,9 @@ begin
       end case;
     end if;
   end process input_mux;
+
+  -- writing to x0? --
+  rd_zero <= '1' when (ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) = "00000") else '0';
 
 
   -- Register File Access -------------------------------------------------------------------
@@ -114,9 +119,6 @@ begin
         rs2_o <= reg_file(to_integer(unsigned(opb_addr(4 downto 0))));
       end if;
     end process rf_access;
-
-    -- writing to x0? --
-    rd_is_x0 <= '1' when (ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) = "00000") else '0';
   end generate;
 
   reg_file_rv32e: -- embedded register file with 16 registers
@@ -131,9 +133,6 @@ begin
         rs2_o <= reg_file_emb(to_integer(unsigned(opb_addr(3 downto 0))));
       end if;
     end process rf_access;
-
-    -- writing to x0? --
-    rd_is_x0 <= '1' when (ctrl_i(ctrl_rf_rd_adr3_c downto ctrl_rf_rd_adr0_c) = "0000") else '0';
   end generate;
 
   -- access addresses --

@@ -106,10 +106,10 @@ begin
           shifter.cnt  <= shamt_i; -- shift amount
         elsif (or_reduce_f(shifter.cnt) = '1') then -- running shift (cnt != 0)
           shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 1);
-          if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- SLL: shift left logical
+          if (ctrl_i(ctrl_ir_funct3_2_c) = '0') then -- SLL: shift left logical
             shifter.sreg <= shifter.sreg(shifter.sreg'left-1 downto 0) & '0';
           else -- SRL: shift right logical / SRA: shift right arithmetical
-            shifter.sreg <= (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_alu_shift_ar_c)) & shifter.sreg(shifter.sreg'left downto 1);
+            shifter.sreg <= (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_ir_funct12_10_c)) & shifter.sreg(shifter.sreg'left downto 1);
           end if;
         end if;
       end if;
@@ -132,7 +132,7 @@ begin
     shifter_unit_async: process(rs1_i, shamt_i, ctrl_i, bs_level)
     begin
       -- input level: convert left shifts to right shifts --
-      if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then -- is left shift?
+      if (ctrl_i(ctrl_ir_funct3_2_c) = '0') then -- is left shift?
         bs_level(index_size_f(data_width_c)) <= bit_rev_f(rs1_i); -- reverse bit order of input operand
       else
         bs_level(index_size_f(data_width_c)) <= rs1_i;
@@ -141,7 +141,7 @@ begin
       -- shifter array --
       for i in index_size_f(data_width_c)-1 downto 0 loop
         if (shamt_i(i) = '1') then
-          bs_level(i)(data_width_c-1 downto data_width_c-(2**i)) <= (others => (bs_level(i+1)(data_width_c-1) and ctrl_i(ctrl_alu_shift_ar_c)));
+          bs_level(i)(data_width_c-1 downto data_width_c-(2**i)) <= (others => (bs_level(i+1)(data_width_c-1) and ctrl_i(ctrl_ir_funct12_10_c)));
           bs_level(i)((data_width_c-(2**i))-1 downto 0) <= bs_level(i+1)(data_width_c-1 downto 2**i);
         else
           bs_level(i) <= bs_level(i+1);
@@ -149,7 +149,7 @@ begin
       end loop;
 
       -- re-convert original left shifts --
-      if (ctrl_i(ctrl_alu_shift_dir_c) = '0') then
+      if (ctrl_i(ctrl_ir_funct3_2_c) = '0') then
         bs_result <= bit_rev_f(bs_level(0));
       else
         bs_result <= bs_level(0);
