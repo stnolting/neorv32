@@ -10,15 +10,14 @@ can be found [online at GitHub-pages](https://stnolting.github.io/neorv32).
 The _hardware version identifier_ uses an additional custom version element (i.e. `MAJOR.MINOR.PATCH.individual`) to track _individual_ changes.
 The identifier number is incremented with every core RTL modification and also by major framework modifications.
 
-:information_source: The processor can determine its version from the `mimpid` CSR.
+:information_source: The version number is globally defined by the `hw_version_c` constant in the main VHDL
+[package file](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
+The processor can determine its version by reading the `mimpid` CSR (at CSR address 0xf13).
 A 8x4-bit BCD representation is used. Leading zeros are optional. Example:
 
 ```
-mimpid (@0xf13) = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
+mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 ```
-
-The version number is globally defined by the `hw_version_c` constant in the main VHDL package file
-[`rtl/core/neorv32_package.vhd`](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
 
 
 ### Version History
@@ -33,6 +32,7 @@ The version number is globally defined by the `hw_version_c` constant in the mai
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 10.04.2022 | 1.7.0.1 | rework handling of `x0` register (`zero`): shortens critical path and reduces area costs;  [#298](https://github.com/stnolting/neorv32/pull/298) |
 | 08.04.2022 | [**:rocket:1.7.0**](https://github.com/stnolting/neorv32/releases/tag/v1.7.0) | **New release** |
 | 08.04.2022 | 1.6.9.11 | :bug: fixed bug in interrupt setup of **`crt0` start-up code** [#297](https://github.com/stnolting/neorv32/pull/297) |
 | 08.04.2022 | 1.6.9.10 | rework compressed instruction (`C` ISA extension) de-compressor: :lock: closed further illegal compressed instruction holes; code clean-ups; `mtval` CSR now shows the decompressed 32-bit instruction when executing an illegal compressed instruction; minor RTL code cleanups (removing legacy stuff); [PR #296](https://github.com/stnolting/neorv32/pull/296) |
