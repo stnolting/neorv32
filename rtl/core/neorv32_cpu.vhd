@@ -9,9 +9,10 @@
 -- #     * neorv32_cpu_cp_fpu.vhd        - Single-precision FPU co-processor                       #
 -- #     * neorv32_cpu_cp_muldiv.vhd     - Integer multiplier/divider co-processor                 #
 -- #     * neorv32_cpu_cp_shifter.vhd    - Base ISA shifter unit                                   #
--- #   * neorv32_cpu_bus.vhd             - Instruction and data bus interface unit                 #
+-- #   * neorv32_cpu_bus.vhd             - Load/store unit & physical memory protection            #
 -- #   * neorv32_cpu_control.vhd         - CPU control and CSR system                              #
 -- #     * neorv32_cpu_decompressor.vhd  - Compressed instructions decoder                         #
+-- #     * neorv32_fifo.vhd              - Instruction prefetch buffer                             #
 -- #   * neorv32_cpu_regfile.vhd         - Data register file                                      #
 -- # * neorv32_package.vhd               - Main CPU & Processor package file                       #
 -- #                                                                                               #
@@ -137,30 +138,27 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- local signals --
-  signal ctrl       : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
-  signal comparator : std_ulogic_vector(1 downto 0); -- comparator result
-  signal imm        : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-  signal instr      : std_ulogic_vector(data_width_c-1 downto 0); -- new instruction
-  signal rs1, rs2   : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
-  signal alu_res    : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
-  signal alu_add    : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
-  signal mem_rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
-  signal alu_idone  : std_ulogic; -- iterative alu operation done
-  signal bus_i_wait : std_ulogic; -- wait for current bus instruction fetch
-  signal bus_d_wait : std_ulogic; -- wait for current bus data access
-  signal csr_rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
-  signal mar        : std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
-  signal ma_instr   : std_ulogic; -- misaligned instruction address
-  signal ma_load    : std_ulogic; -- misaligned load data address
-  signal ma_store   : std_ulogic; -- misaligned store data address
-  signal excl_state : std_ulogic; -- atomic/exclusive access lock status
-  signal be_instr   : std_ulogic; -- bus error on instruction access
-  signal be_load    : std_ulogic; -- bus error on load data access
-  signal be_store   : std_ulogic; -- bus error on store data access
-  signal fetch_pc   : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
-  signal curr_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
-  signal next_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- next pc (for next executed instruction)
-  signal fpu_flags  : std_ulogic_vector(4 downto 0); -- FPU exception flags
+  signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+  signal comparator  : std_ulogic_vector(1 downto 0); -- comparator result
+  signal imm         : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
+  signal rs1, rs2    : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
+  signal alu_res     : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
+  signal alu_add     : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
+  signal mem_rdata   : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
+  signal alu_idone   : std_ulogic; -- iterative alu operation done
+  signal bus_d_wait  : std_ulogic; -- wait for current bus data access
+  signal csr_rdata   : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
+  signal mar         : std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
+  signal ma_load     : std_ulogic; -- misaligned load data address
+  signal ma_store    : std_ulogic; -- misaligned store data address
+  signal excl_state  : std_ulogic; -- atomic/exclusive access lock status
+  signal be_load     : std_ulogic; -- bus error on load data access
+  signal be_store    : std_ulogic; -- bus error on store data access
+  signal fetch_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
+  signal curr_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
+  signal next_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- next pc (for next executed instruction)
+  signal fpu_flags   : std_ulogic_vector(4 downto 0); -- FPU exception flags
+  signal i_pmp_fault : std_ulogic; -- instruction fetch PMP fault
 
   -- pmp interface --
   signal pmp_addr : pmp_addr_if_t;
@@ -278,48 +276,51 @@ begin
   )
   port map (
     -- global control --
-    clk_i         => clk_i,       -- global clock, rising edge
-    rstn_i        => rstn_i,      -- global reset, low-active, async
-    ctrl_o        => ctrl,        -- main control bus
+    clk_i         => clk_i,         -- global clock, rising edge
+    rstn_i        => rstn_i,        -- global reset, low-active, async
+    ctrl_o        => ctrl,          -- main control bus
+    -- instruction fetch interface --
+    i_bus_addr_o  => i_bus_addr_o,  -- bus access address
+    i_bus_rdata_i => i_bus_rdata_i, -- bus read data
+    i_bus_re_o    => i_bus_re_o,    -- read enable
+    i_bus_ack_i   => i_bus_ack_i,   -- bus transfer acknowledge
+    i_bus_err_i   => i_bus_err_i,   -- bus transfer error
+    i_pmp_fault_i => i_pmp_fault,   -- instruction fetch pmp fault
     -- status input --
-    alu_idone_i   => alu_idone,   -- ALU iterative operation done
-    bus_i_wait_i  => bus_i_wait,  -- wait for bus
-    bus_d_wait_i  => bus_d_wait,  -- wait for bus
-    excl_state_i  => excl_state,  -- atomic/exclusive access lock status
+    alu_idone_i   => alu_idone,     -- ALU iterative operation done
+    bus_d_wait_i  => bus_d_wait,    -- wait for bus
+    excl_state_i  => excl_state,    -- atomic/exclusive access lock status
     -- data input --
-    instr_i       => instr,       -- instruction
-    cmp_i         => comparator,  -- comparator status
-    alu_add_i     => alu_add,     -- ALU address result
-    rs1_i         => rs1,         -- rf source 1
+    cmp_i         => comparator,    -- comparator status
+    alu_add_i     => alu_add,       -- ALU address result
+    rs1_i         => rs1,           -- rf source 1
     -- data output --
-    imm_o         => imm,         -- immediate
-    fetch_pc_o    => fetch_pc,    -- PC for instruction fetch
-    curr_pc_o     => curr_pc,     -- current PC (corresponding to current instruction)
-    next_pc_o     => next_pc,     -- next PC (corresponding to next instruction)
-    csr_rdata_o   => csr_rdata,   -- CSR read data
+    imm_o         => imm,           -- immediate
+    fetch_pc_o    => fetch_pc,      -- PC for instruction fetch
+    curr_pc_o     => curr_pc,       -- current PC (corresponding to current instruction)
+    next_pc_o     => next_pc,       -- next PC (corresponding to next instruction)
+    csr_rdata_o   => csr_rdata,     -- CSR read data
     -- FPU interface --
-    fpu_flags_i   => fpu_flags,   -- exception flags
+    fpu_flags_i   => fpu_flags,     -- exception flags
     -- debug mode (halt) request --
     db_halt_req_i => db_halt_req_i,
     -- interrupts (risc-v compliant) --
-    msw_irq_i     => msw_irq_i,   -- machine software interrupt
-    mext_irq_i    => mext_irq_i,  -- machine external interrupt
-    mtime_irq_i   => mtime_irq_i, -- machine timer interrupt
+    msw_irq_i     => msw_irq_i,     -- machine software interrupt
+    mext_irq_i    => mext_irq_i,    -- machine external interrupt
+    mtime_irq_i   => mtime_irq_i,   -- machine timer interrupt
     -- fast interrupts (custom) --
-    firq_i        => firq_i,      -- fast interrupt trigger
+    firq_i        => firq_i,        -- fast interrupt trigger
     -- system time input from MTIME --
-    time_i        => time_i,      -- current system time
+    time_i        => time_i,        -- current system time
     -- physical memory protection --
-    pmp_addr_o    => pmp_addr,    -- addresses
-    pmp_ctrl_o    => pmp_ctrl,    -- configs
+    pmp_addr_o    => pmp_addr,      -- addresses
+    pmp_ctrl_o    => pmp_ctrl,      -- configs
     -- bus access exceptions --
-    mar_i         => mar,         -- memory address register
-    ma_instr_i    => ma_instr,    -- misaligned instruction address
-    ma_load_i     => ma_load,     -- misaligned load data address
-    ma_store_i    => ma_store,    -- misaligned store data address
-    be_instr_i    => be_instr,    -- bus error on instruction access
-    be_load_i     => be_load,     -- bus error on load data access
-    be_store_i    => be_store     -- bus error on store data access
+    mar_i         => mar,           -- memory address register
+    ma_load_i     => ma_load,       -- misaligned load data address
+    ma_store_i    => ma_store,      -- misaligned store data address
+    be_load_i     => be_load,       -- bus error on load data access
+    be_store_i    => be_store       -- bus error on store data access
   );
 
   -- CPU is sleeping? --
@@ -327,6 +328,13 @@ begin
 
   -- CPU is in debug mode? --
   debug_o <= ctrl(ctrl_debug_running_c);
+
+  -- instruction fetch interface defaults --
+  i_bus_wdata_o <= (others => '0'); -- read-only
+  i_bus_ben_o   <= (others => '0'); -- read-only
+  i_bus_we_o    <= '0'; -- read-only
+  i_bus_lock_o  <= '0'; -- cannot be locked
+  i_bus_fence_o <= ctrl(ctrl_bus_fencei_c);
 
 
   -- Register File --------------------------------------------------------------------------
@@ -389,8 +397,6 @@ begin
   neorv32_cpu_bus_inst: neorv32_cpu_bus
   generic map (
     CPU_EXTENSION_RISCV_A => CPU_EXTENSION_RISCV_A, -- implement atomic extension?
-    CPU_EXTENSION_RISCV_C => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
-    -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS       => PMP_NUM_REGIONS,       -- number of regions (0..16)
     PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY    -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   )
@@ -401,18 +407,13 @@ begin
     ctrl_i        => ctrl,          -- main control bus
     -- cpu instruction fetch interface --
     fetch_pc_i    => fetch_pc,      -- PC for instruction fetch
-    instr_o       => instr,         -- instruction
-    i_wait_o      => bus_i_wait,    -- wait for fetch to complete
-    --
-    ma_instr_o    => ma_instr,      -- misaligned instruction address
-    be_instr_o    => be_instr,      -- bus error on instruction access
+    i_pmp_fault_o => i_pmp_fault,   -- instruction fetch pmp fault
     -- cpu data access interface --
     addr_i        => alu_add,       -- ALU.add result -> access address
     wdata_i       => rs2,           -- write data
     rdata_o       => mem_rdata,     -- read data
     mar_o         => mar,           -- current memory address register
     d_wait_o      => bus_d_wait,    -- wait for access to complete
-    --
     excl_state_o  => excl_state,    -- atomic/exclusive access status
     ma_load_o     => ma_load,       -- misaligned load data address
     ma_store_o    => ma_store,      -- misaligned store data address
@@ -421,17 +422,6 @@ begin
     -- physical memory protection --
     pmp_addr_i    => pmp_addr,      -- addresses
     pmp_ctrl_i    => pmp_ctrl,      -- configurations
-    -- instruction bus --
-    i_bus_addr_o  => i_bus_addr_o,  -- bus access address
-    i_bus_rdata_i => i_bus_rdata_i, -- bus read data
-    i_bus_wdata_o => i_bus_wdata_o, -- bus write data
-    i_bus_ben_o   => i_bus_ben_o,   -- byte enable
-    i_bus_we_o    => i_bus_we_o,    -- write enable
-    i_bus_re_o    => i_bus_re_o,    -- read enable
-    i_bus_lock_o  => i_bus_lock_o,  -- exclusive access request
-    i_bus_ack_i   => i_bus_ack_i,   -- bus transfer acknowledge
-    i_bus_err_i   => i_bus_err_i,   -- bus transfer error
-    i_bus_fence_o => i_bus_fence_o, -- fence operation
     -- data bus --
     d_bus_addr_o  => d_bus_addr_o,  -- bus access address
     d_bus_rdata_i => d_bus_rdata_i, -- bus read data
