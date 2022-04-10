@@ -45,15 +45,12 @@ _start:
 
 
 // ************************************************************************************************
-// This is the very first instruction that is executed after hardware reset. It ensures that x0 is
-// written at least once - the CPU HW will ensure it is always set to zero on any write access.
-//
-// Furthermore, we have to disable ALL interrupts, which is required if this code is part of a
-// program uploaded by the on-chip debugger (potentionally taking control from the bootloader).
-// We setup a new stack pointer here and WE DO NOT WANT TO trap to an outdated trap handler with
-// a modified stack pointer.
+// We need to ensure interrupts are globally disabled at start. This is is required if this code
+// is part of a program uploaded by the on-chip debugger (potentionally taking control from the
+// bootloader). We setup a new stack pointer here and WE DO NOT WANT TO trap to an outdated trap
+// handler with a modified stack pointer.
 // ************************************************************************************************
-  csrrci zero, mstatus, (1<<3) // disable global interrupt flag and write "anything" to x0
+  csrrci zero, mstatus, (1<<3) // disable global interrupt flag
 
 
 // ************************************************************************************************

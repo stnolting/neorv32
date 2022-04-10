@@ -351,8 +351,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type debug_ctrl_t is record
     state        : debug_ctrl_state_t;
     -- decoded state --
-    running      : std_ulogic; -- debug mode active
-    pending      : std_ulogic; -- waiting to start debug mode
+    running      : std_ulogic; -- CPU is in debug mode
     -- entering triggers --
     trig_hw      : std_ulogic; -- hardware trigger
     trig_break   : std_ulogic; -- ebreak instruction
@@ -746,10 +745,9 @@ begin
     ctrl_o(ctrl_bus_wr_c)   <= ctrl(ctrl_bus_wr_c)   and (not trap_ctrl.exc_buf(exc_iillegal_c));
     -- current effective privilege level --
     ctrl_o(ctrl_priv_mode_c) <= csr.privilege_eff;
-    -- register addresses --
+    -- register sources --
     ctrl_o(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c);
     ctrl_o(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= execute_engine.i_reg(instr_rs2_msb_c downto instr_rs2_lsb_c);
-    ctrl_o(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c);
     -- instruction fetch request --
     ctrl_o(ctrl_bus_if_c) <= fetch_engine.bus_if;
     -- memory access size / sign --
@@ -919,8 +917,9 @@ begin
 
     -- CONTROL DEFAULTS --
     ctrl_nxt <= (others => '0'); -- default: all off
-    ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_add_c; -- default ALU operation: ADD
-    ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_alu_c; -- default RF input: ALU
+    ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c)       <= alu_op_add_c; -- default ALU operation: ADD
+    ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c)       <= rf_mux_alu_c; -- default RF input: ALU
+    ctrl_nxt(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) <= execute_engine.i_reg(instr_rd_msb_c downto instr_rd_lsb_c); -- rd
     -- ALU sign control --
     if (execute_engine.i_reg(instr_opcode_lsb_c+4) = '1') then -- ALU ops
       ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- unsigned ALU operation? (SLTIU, SLTU)
@@ -1164,6 +1163,12 @@ begin
       -- ------------------------------------------------------------
         execute_engine.branched_nxt <= '1'; -- this is an actual branch
         execute_engine.state_nxt    <= DISPATCH;
+        -- use this state also to clear register file's x0 register --
+        if (reset_x0_c = true) then -- if x0 is a "real" register that has to be initialized to zero
+          ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c)       <= rf_mux_csr_c; -- this will return 0 since csr.re_nxt is cleared
+          ctrl_nxt(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) <= (others => '0'); -- rd = x0 (zero)
+          ctrl_nxt(ctrl_rf_zero_we_c)                          <= '1'; -- allow write access to x0
+        end if;
 
 
       when LOADSTORE_0 => -- trigger memory request
@@ -2088,11 +2093,15 @@ begin
   csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') else csr.privilege;
 
   -- PMP output to bus unit --
-  pmp_output:
-  for i in 0 to PMP_NUM_REGIONS-1 generate
-    pmp_addr_o(i)(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i); -- physical address
-    pmp_ctrl_o(i) <= csr.pmpcfg(i);
-  end generate;
+  pmp_output: process(csr)
+  begin
+    pmp_addr_o <= (others => (others => '0'));
+    pmp_ctrl_o <= (others => (others => '0'));
+    for i in 0 to PMP_NUM_REGIONS-1 loop
+      pmp_addr_o(i)(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i); -- physical address
+      pmp_ctrl_o(i) <= csr.pmpcfg(i);
+    end loop;
+  end process pmp_output;
 
 
   -- Control and Status Registers - Read Access ---------------------------------------------
@@ -2639,8 +2648,7 @@ begin
     end process debug_control;
   end generate;
 
-  -- state decoding --
-  debug_ctrl.pending <= '1' when (debug_ctrl.state = DEBUG_PENDING) and (CPU_EXTENSION_RISCV_DEBUG = true) else '0';
+  -- CPU is *in* debug mode --
   debug_ctrl.running <= '1' when ((debug_ctrl.state = DEBUG_ONLINE) or (debug_ctrl.state = DEBUG_EXIT)) and (CPU_EXTENSION_RISCV_DEBUG = true) else '0';
 
   -- entry debug mode triggers --
