@@ -2093,11 +2093,15 @@ begin
   csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') else csr.privilege;
 
   -- PMP output to bus unit --
-  pmp_output:
-  for i in 0 to PMP_NUM_REGIONS-1 generate
-    pmp_addr_o(i)(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i); -- physical address
-    pmp_ctrl_o(i) <= csr.pmpcfg(i);
-  end generate;
+  pmp_output: process(csr)
+  begin
+    pmp_addr_o <= (others => (others => '0'));
+    pmp_ctrl_o <= (others => (others => '0'));
+    for i in 0 to PMP_NUM_REGIONS-1 loop
+      pmp_addr_o(i)(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i); -- physical address
+      pmp_ctrl_o(i) <= csr.pmpcfg(i);
+    end loop;
+  end process pmp_output;
 
 
   -- Control and Status Registers - Read Access ---------------------------------------------
