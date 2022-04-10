@@ -92,13 +92,18 @@ entity neorv32_cpu_control is
     clk_i         : in  std_ulogic; -- global clock, rising edge
     rstn_i        : in  std_ulogic; -- global reset, low-active, async
     ctrl_o        : out std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+    -- instruction fetch interface --
+    i_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    i_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    i_bus_re_o    : out std_ulogic; -- read enable
+    i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
+    i_bus_err_i   : in  std_ulogic; -- bus transfer error
+    i_pmp_fault_i : in  std_ulogic; -- instruction fetch pmp fault
     -- status input --
     alu_idone_i   : in  std_ulogic; -- ALU iterative operation done
-    bus_i_wait_i  : in  std_ulogic; -- wait for bus
     bus_d_wait_i  : in  std_ulogic; -- wait for bus
     excl_state_i  : in  std_ulogic; -- atomic/exclusive access lock status
     -- data input --
-    instr_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- instruction
     cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
     alu_add_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU address result
     rs1_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
@@ -125,10 +130,8 @@ entity neorv32_cpu_control is
     pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
     -- bus access exceptions --
     mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory address register
-    ma_instr_i    : in  std_ulogic; -- misaligned instruction address
     ma_load_i     : in  std_ulogic; -- misaligned load data address
     ma_store_i    : in  std_ulogic; -- misaligned store data address
-    be_instr_i    : in  std_ulogic; -- bus error on instruction access
     be_load_i     : in  std_ulogic; -- bus error on load data access
     be_store_i    : in  std_ulogic  -- bus error on store data access
   );
@@ -152,12 +155,12 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     state_prev  : fetch_engine_state_t;
     restart     : std_ulogic;
     restart_nxt : std_ulogic;
-    align       : std_ulogic;
-    align_nxt   : std_ulogic;
+    unalign     : std_ulogic;
+    unalign_nxt : std_ulogic;
     pc          : std_ulogic_vector(data_width_c-1 downto 0);
     pc_nxt      : std_ulogic_vector(data_width_c-1 downto 0);
     reset       : std_ulogic;
-    bus_if      : std_ulogic;
+    a_err       : std_ulogic; -- alignment error
   end record;
   signal fetch_engine : fetch_engine_t;
 
@@ -392,63 +395,65 @@ begin
       fetch_engine.state      <= IFETCH_REQUEST;
       fetch_engine.state_prev <= IFETCH_REQUEST;
       fetch_engine.restart    <= '1';
-      fetch_engine.align      <= '0'; -- always start at aligned address after reset
+      fetch_engine.unalign    <= '0'; -- always start at aligned address after reset
       fetch_engine.pc         <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       fetch_engine.state      <= fetch_engine.state_nxt;
       fetch_engine.state_prev <= fetch_engine.state;
       fetch_engine.restart    <= fetch_engine.restart_nxt or fetch_engine.reset;
-      fetch_engine.align      <= fetch_engine.align_nxt and bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);
+      fetch_engine.unalign    <= fetch_engine.unalign_nxt and bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);
       fetch_engine.pc         <= fetch_engine.pc_nxt;
     end if;
   end process fetch_engine_fsm_sync;
 
   -- PC output --
-  fetch_pc_o <= fetch_engine.pc(data_width_c-1 downto 1) & '0'; -- half-word aligned
+  fetch_pc_o   <= fetch_engine.pc(data_width_c-1 downto 1) & '0'; -- half-word aligned
+  i_bus_addr_o <= fetch_engine.pc(data_width_c-1 downto 2) & "00"; -- word aligned
 
 
   -- Fetch Engine FSM Comb ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fetch_engine_fsm_comb: process(fetch_engine, execute_engine, ipb, instr_i, bus_i_wait_i, be_instr_i, ma_instr_i)
+  fetch_engine_fsm_comb: process(fetch_engine, execute_engine, ipb, i_bus_ack_i, i_bus_err_i, i_pmp_fault_i)
   begin
-    -- arbiter defaults --
-    fetch_engine.bus_if      <= '0';
+    -- defaults --
+    i_bus_re_o               <= '0';
+    ipb.we                   <= "00";
     fetch_engine.state_nxt   <= fetch_engine.state;
     fetch_engine.pc_nxt      <= fetch_engine.pc;
     fetch_engine.restart_nxt <= fetch_engine.restart;
-    fetch_engine.align_nxt   <= fetch_engine.align;
-
-    -- instruction prefetch buffer defaults --
-    ipb.we       <= "00";
-    ipb.wdata(0) <= be_instr_i & ma_instr_i & instr_i(15 downto 00);
-    ipb.wdata(1) <= be_instr_i & ma_instr_i & instr_i(31 downto 16);
+    fetch_engine.unalign_nxt <= fetch_engine.unalign;
 
     -- state machine --
     if (fetch_engine.state = IFETCH_REQUEST) then -- REQUEST: request new 32-bit-aligned instruction word
     -- ------------------------------------------------------------
       if (fetch_engine.restart = '1') then -- reset request
-        fetch_engine.pc_nxt    <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
-        fetch_engine.align_nxt <= execute_engine.pc(1);
+        fetch_engine.pc_nxt      <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
+        fetch_engine.unalign_nxt <= execute_engine.pc(1);
       elsif (ipb.free = "11") then -- free entries in both buffers
-        fetch_engine.bus_if    <= '1'; -- instruction fetch request
+        i_bus_re_o             <= '1'; -- instruction fetch request
         fetch_engine.state_nxt <= IFETCH_ISSUE;
       end if;
       fetch_engine.restart_nxt <= '0'; -- restart done
 
-    else -- ISSUE: store instruction data to prefetch buffer
+    else -- ISSUE: write instruction data to prefetch buffer
     -- ------------------------------------------------------------
-      if (bus_i_wait_i = '0') or (be_instr_i = '1') or (ma_instr_i = '1') then -- wait for bus response
-        fetch_engine.pc_nxt    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
-        fetch_engine.align_nxt <= '0';
-        fetch_engine.state_nxt <= IFETCH_REQUEST;
-        if (fetch_engine.restart = '0') then -- write to IPB if not being reset
-          ipb.we(0) <= not fetch_engine.align; -- not start at unaligned address
-          ipb.we(1) <= '1';
-        end if;
+      if (i_bus_ack_i = '1') or (i_bus_err_i = '1') or (i_pmp_fault_i = '1') or (fetch_engine.a_err = '1') then -- wait for bus response
+        fetch_engine.pc_nxt      <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
+        fetch_engine.unalign_nxt <= '0';
+        fetch_engine.state_nxt   <= IFETCH_REQUEST;
+        ipb.we(0)                <= not fetch_engine.unalign; -- write if not start at unaligned address
+        ipb.we(1)                <= '1';
       end if;
 
     end if;
   end process fetch_engine_fsm_comb;
+
+  -- unaligned access error (no alignment exceptions possible when using C-extension) --
+  fetch_engine.a_err <= '0' when (fetch_engine.pc(1) = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
+
+  -- instruction data --
+  ipb.wdata(0) <= (i_bus_err_i or i_pmp_fault_i) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
+  ipb.wdata(1) <= (i_bus_err_i or i_pmp_fault_i) & fetch_engine.a_err & i_bus_rdata_i(31 downto 16);
 
 
 -- ****************************************************************************************************************************
@@ -748,8 +753,6 @@ begin
     -- register sources --
     ctrl_o(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c);
     ctrl_o(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= execute_engine.i_reg(instr_rs2_msb_c downto instr_rs2_lsb_c);
-    -- instruction fetch request --
-    ctrl_o(ctrl_bus_if_c) <= fetch_engine.bus_if;
     -- memory access size / sign --
     ctrl_o(ctrl_bus_unsigned_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
     ctrl_o(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size
