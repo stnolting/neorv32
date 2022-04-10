@@ -148,11 +148,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   constant hpm_cnt_hi_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0));
 
   -- instruction fetch engine --
-  type fetch_engine_state_t is (IFETCH_REQUEST, IFETCH_ISSUE);
   type fetch_engine_t is record
-    state       : fetch_engine_state_t;
-    state_nxt   : fetch_engine_state_t;
-    state_prev  : fetch_engine_state_t;
+    pending     : std_ulogic;
+    pending_nxt : std_ulogic;
+    pending_ff  : std_ulogic;
     restart     : std_ulogic;
     restart_nxt : std_ulogic;
     unalign     : std_ulogic;
@@ -392,23 +391,23 @@ begin
   fetch_engine_fsm_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      fetch_engine.state      <= IFETCH_REQUEST;
-      fetch_engine.state_prev <= IFETCH_REQUEST;
+      fetch_engine.pending    <= '0';
+      fetch_engine.pending_ff <= def_rst_val_c;
       fetch_engine.restart    <= '1';
       fetch_engine.unalign    <= '0'; -- always start at aligned address after reset
       fetch_engine.pc         <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
-      fetch_engine.state      <= fetch_engine.state_nxt;
-      fetch_engine.state_prev <= fetch_engine.state;
+      fetch_engine.pending    <= fetch_engine.pending_nxt;
+      fetch_engine.pending_ff <= fetch_engine.pending;
       fetch_engine.restart    <= fetch_engine.restart_nxt or fetch_engine.reset;
       fetch_engine.unalign    <= fetch_engine.unalign_nxt and bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);
       fetch_engine.pc         <= fetch_engine.pc_nxt;
     end if;
   end process fetch_engine_fsm_sync;
 
-  -- PC output --
-  fetch_pc_o   <= fetch_engine.pc(data_width_c-1 downto 1) & '0'; -- half-word aligned
-  i_bus_addr_o <= fetch_engine.pc(data_width_c-1 downto 2) & "00"; -- word aligned
+  -- PC output - 32-bit aligned --
+  fetch_pc_o   <= fetch_engine.pc(data_width_c-1 downto 2) & "00";
+  i_bus_addr_o <= fetch_engine.pc(data_width_c-1 downto 2) & "00";
 
 
   -- Fetch Engine FSM Comb ------------------------------------------------------------------
@@ -418,20 +417,20 @@ begin
     -- defaults --
     i_bus_re_o               <= '0';
     ipb.we                   <= "00";
-    fetch_engine.state_nxt   <= fetch_engine.state;
+    fetch_engine.pending_nxt <= fetch_engine.pending;
     fetch_engine.pc_nxt      <= fetch_engine.pc;
     fetch_engine.restart_nxt <= fetch_engine.restart;
     fetch_engine.unalign_nxt <= fetch_engine.unalign;
 
     -- state machine --
-    if (fetch_engine.state = IFETCH_REQUEST) then -- REQUEST: request new 32-bit-aligned instruction word
+    if (fetch_engine.pending = '0') then -- REQUEST: request new 32-bit-aligned instruction word
     -- ------------------------------------------------------------
       if (fetch_engine.restart = '1') then -- reset request
-        fetch_engine.pc_nxt      <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- initialize with "real" application PC
+        fetch_engine.pc_nxt      <= execute_engine.pc(data_width_c-1 downto 2) & "00"; -- initialize with "real" PC, 32-bit aligned
         fetch_engine.unalign_nxt <= execute_engine.pc(1);
       elsif (ipb.free = "11") then -- free entries in both buffers
-        i_bus_re_o             <= '1'; -- instruction fetch request
-        fetch_engine.state_nxt <= IFETCH_ISSUE;
+        i_bus_re_o               <= '1'; -- instruction fetch request
+        fetch_engine.pending_nxt <= '1';
       end if;
       fetch_engine.restart_nxt <= '0'; -- restart done
 
@@ -440,7 +439,7 @@ begin
       if (i_bus_ack_i = '1') or (i_bus_err_i = '1') or (i_pmp_fault_i = '1') or (fetch_engine.a_err = '1') then -- wait for bus response
         fetch_engine.pc_nxt      <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
         fetch_engine.unalign_nxt <= '0';
-        fetch_engine.state_nxt   <= IFETCH_REQUEST;
+        fetch_engine.pending_nxt <= '0';
         ipb.we(0)                <= not fetch_engine.unalign; -- write if not start at unaligned address
         ipb.we(1)                <= '1';
       end if;
@@ -2582,10 +2581,10 @@ begin
     cnt_event(hpmcnt_event_ir_c)      <= '1' when (execute_engine.state = EXECUTE) else '0'; -- (any) retired instruction
 
     -- counter event trigger - custom / NEORV32-specific --
-    cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)      and (execute_engine.is_ci = '1')             else '0'; -- retired compressed instruction
-    cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = IFETCH_ISSUE) and (fetch_engine.state_prev = IFETCH_ISSUE) else '0'; -- instruction fetch memory wait cycle
-    cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)     and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
-    cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                                  else '0'; -- multi-cycle alu-operation wait cycle
+    cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)  and (execute_engine.is_ci = '1')           else '0'; -- retired compressed instruction
+    cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.pending = '1')      and (fetch_engine.pending_ff = '1')        else '0'; -- instruction fetch memory wait cycle
+    cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH) and (execute_engine.state_prev = DISPATCH) else '0'; -- instruction issue wait cycle
+    cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                            else '0'; -- multi-cycle alu-operation wait cycle
 
     cnt_event(hpmcnt_event_load_c)    <= '1' when                                          (ctrl(ctrl_bus_rd_c) = '1')               else '0'; -- load operation
     cnt_event(hpmcnt_event_store_c)   <= '1' when                                          (ctrl(ctrl_bus_wr_c) = '1')               else '0'; -- store operation
