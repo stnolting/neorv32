@@ -1,7 +1,7 @@
 -- #################################################################################################
--- # << NEORV32 - Bus Interface Unit >>                                                            #
+-- # << NEORV32 - (Data) Bus Interface Unit >>                                                     #
 -- # ********************************************************************************************* #
--- # Data bus interfaces (load/store) and physical memory protection (PMP).                        #
+-- # Data bus interface (load/store unit) and physical memory protection (PMP).                    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
