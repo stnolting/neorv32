@@ -280,7 +280,7 @@ begin
     rstn_i        => rstn_i,        -- global reset, low-active, async
     ctrl_o        => ctrl,          -- main control bus
     -- instruction fetch interface --
-    i_bus_addr_o  => i_bus_addr_o,  -- bus access address
+    i_bus_addr_o  => fetch_pc,      -- bus access address
     i_bus_rdata_i => i_bus_rdata_i, -- bus read data
     i_bus_re_o    => i_bus_re_o,    -- read enable
     i_bus_ack_i   => i_bus_ack_i,   -- bus transfer acknowledge
@@ -296,7 +296,6 @@ begin
     rs1_i         => rs1,           -- rf source 1
     -- data output --
     imm_o         => imm,           -- immediate
-    fetch_pc_o    => fetch_pc,      -- PC for instruction fetch
     curr_pc_o     => curr_pc,       -- current PC (corresponding to current instruction)
     next_pc_o     => next_pc,       -- next PC (corresponding to next instruction)
     csr_rdata_o   => csr_rdata,     -- CSR read data
@@ -323,17 +322,16 @@ begin
     be_store_i    => be_store       -- bus error on store data access
   );
 
-  -- CPU is sleeping? --
+  -- CPU state --
   sleep_o <= ctrl(ctrl_sleep_c); -- set when CPU is sleeping (after WFI)
+  debug_o <= ctrl(ctrl_debug_running_c); -- set when CPU is in debug mode
 
-  -- CPU is in debug mode? --
-  debug_o <= ctrl(ctrl_debug_running_c);
-
-  -- instruction fetch interface defaults --
+  -- instruction fetch interface --
+  i_bus_addr_o  <= fetch_pc;
   i_bus_wdata_o <= (others => '0'); -- read-only
   i_bus_ben_o   <= (others => '0'); -- read-only
   i_bus_we_o    <= '0'; -- read-only
-  i_bus_lock_o  <= '0'; -- cannot be locked
+  i_bus_lock_o  <= '0'; -- instruction fetch cannot be locked
   i_bus_fence_o <= ctrl(ctrl_bus_fencei_c);
 
 

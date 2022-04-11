@@ -109,7 +109,6 @@ entity neorv32_cpu_control is
     rs1_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
     -- data output --
     imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-    fetch_pc_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
     curr_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- current PC (corresponding to current instruction)
     next_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- next PC (corresponding to next instruction)
     csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
@@ -405,9 +404,8 @@ begin
     end if;
   end process fetch_engine_fsm_sync;
 
-  -- PC output - 32-bit aligned --
-  fetch_pc_o   <= fetch_engine.pc(data_width_c-1 downto 2) & "00";
-  i_bus_addr_o <= fetch_engine.pc(data_width_c-1 downto 2) & "00";
+  -- PC output for instruction fetch --
+  i_bus_addr_o <= fetch_engine.pc(data_width_c-1 downto 2) & "00"; -- 32-bit aligned
 
 
   -- Fetch Engine FSM Comb ------------------------------------------------------------------
@@ -434,7 +432,7 @@ begin
       end if;
       fetch_engine.restart_nxt <= '0'; -- restart done
 
-    else -- ISSUE: write instruction data to prefetch buffer
+    else -- RECEIVE: write instruction data to prefetch buffer
     -- ------------------------------------------------------------
       if (i_bus_ack_i = '1') or (i_bus_err_i = '1') or (i_pmp_fault_i = '1') or (fetch_engine.a_err = '1') then -- wait for bus response
         fetch_engine.pc_nxt      <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);

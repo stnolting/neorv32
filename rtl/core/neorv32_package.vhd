@@ -1252,7 +1252,6 @@ package neorv32_package is
       rs1_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
       -- data output --
       imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-      fetch_pc_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
       curr_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- current PC (corresponding to current instruction)
       next_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- next PC (corresponding to next instruction)
       csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
