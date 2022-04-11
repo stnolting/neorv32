@@ -1,7 +1,7 @@
 -- #################################################################################################
--- # << NEORV32 - Bus Interface Unit >>                                                            #
+-- # << NEORV32 - (Data) Bus Interface Unit >>                                                     #
 -- # ********************************************************************************************* #
--- # Instruction and data bus interfaces and physical memory protection (PMP).                     #
+-- # Data bus interface (load/store unit) and physical memory protection (PMP).                    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -44,8 +44,6 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_bus is
   generic (
     CPU_EXTENSION_RISCV_A : boolean; -- implement atomic extension?
-    CPU_EXTENSION_RISCV_C : boolean; -- implement compressed extension?
-    -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS       : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY   : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   );
@@ -56,18 +54,13 @@ entity neorv32_cpu_bus is
     ctrl_i        : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     -- cpu instruction fetch interface --
     fetch_pc_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- PC for instruction fetch
-    instr_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- instruction
-    i_wait_o      : out std_ulogic; -- wait for fetch to complete
-    --
-    ma_instr_o    : out std_ulogic; -- misaligned instruction address
-    be_instr_o    : out std_ulogic; -- bus error on instruction access
+    i_pmp_fault_o : out std_ulogic; -- instruction fetch pmp fault
     -- cpu data access interface --
     addr_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result -> access address
     wdata_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- write data
     rdata_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- read data
     mar_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
     d_wait_o      : out std_ulogic; -- wait for access to complete
-    --
     excl_state_o  : out std_ulogic; -- atomic/exclusive access status
     ma_load_o     : out std_ulogic; -- misaligned load data address
     ma_store_o    : out std_ulogic; -- misaligned store data address
@@ -76,17 +69,6 @@ entity neorv32_cpu_bus is
     -- physical memory protection --
     pmp_addr_i    : in  pmp_addr_if_t; -- addresses
     pmp_ctrl_i    : in  pmp_ctrl_if_t; -- configs
-    -- instruction bus --
-    i_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    i_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    i_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    i_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-    i_bus_we_o    : out std_ulogic; -- write enable
-    i_bus_re_o    : out std_ulogic; -- read enable
-    i_bus_lock_o  : out std_ulogic; -- exclusive access request
-    i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-    i_bus_err_i   : in  std_ulogic; -- bus transfer error
-    i_bus_fence_o : out std_ulogic; -- fence operation
     -- data bus --
     d_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     d_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -130,7 +112,7 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   signal d_bus_ben   : std_ulogic_vector(3 downto 0); -- write data byte enable
 
   -- misaligned access? --
-  signal d_misaligned, i_misaligned : std_ulogic;
+  signal d_misaligned : std_ulogic;
 
   -- bus arbiter --
   type bus_arbiter_t is record
@@ -139,7 +121,7 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
     err_align : std_ulogic; -- alignment error
     err_bus   : std_ulogic; -- bus access error
   end record;
-  signal i_arbiter, d_arbiter : bus_arbiter_t;
+  signal d_arbiter : bus_arbiter_t;
 
   -- atomic/exclusive access - reservation controller --
   signal exclusive_lock        : std_ulogic;
@@ -158,9 +140,8 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   -- memory control signal buffer (when using PMP) --
   signal d_bus_we, d_bus_we_buf : std_ulogic;
   signal d_bus_re, d_bus_re_buf : std_ulogic;
-  signal i_bus_re, i_bus_re_buf : std_ulogic;
 
-  -- pmp faults anyone? --
+  -- pmp faults --
   signal if_pmp_fault : std_ulogic; -- pmp instruction access fault
   signal ld_pmp_fault : std_ulogic; -- pmp load access fault
   signal st_pmp_fault : std_ulogic; -- pmp store access fault
@@ -174,7 +155,7 @@ begin
   "). Inserting another register stage (that will increase memory latency by +1 cycle)." severity warning;
 
 
-  -- Data Interface: Access Address ---------------------------------------------------------
+  -- Access Address -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   mem_adr_reg: process(rstn_i, clk_i)
   begin
@@ -191,7 +172,7 @@ begin
   mar_o <= mar;
 
 
-  -- Data Interface: Write Data -------------------------------------------------------------
+  -- Write Data -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   mem_do_reg: process(rstn_i, clk_i)
   begin
@@ -230,7 +211,7 @@ begin
   end process mem_do_reg;
 
 
-  -- Data Interface: Read Data --------------------------------------------------------------
+  -- Read Data ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   read_align: process(rstn_i, clk_i)
     variable shifted_data_v : std_ulogic_vector(31 downto 0);
@@ -273,7 +254,7 @@ begin
   rdata_o <= exclusive_lock_status when (CPU_EXTENSION_RISCV_A = true) and (ctrl_i(ctrl_bus_ch_lock_c) = '1') else rdata_align;
 
 
-  -- Data Interface: Arbiter (controlled by pipeline back-end) ------------------------------
+  -- Access Arbiter -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   data_access_arbiter: process(rstn_i, clk_i)
   begin
@@ -378,65 +359,7 @@ begin
   excl_state_o <= exclusive_lock;
 
   -- output to memory system --
-  i_bus_lock_o <= '0'; -- instruction fetches cannot be locked
   d_bus_lock_o <= exclusive_lock;
-
-
-  -- Instruction Interface: Arbiter (controlled by pipeline front-end) ----------------------
-  -- -------------------------------------------------------------------------------------------
-  ifetch_arbiter: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      i_arbiter.rd_req    <= '0';
-      i_arbiter.err_align <= '0';
-      i_arbiter.err_bus   <= '0';
-    elsif rising_edge(clk_i) then
-      if (i_arbiter.rd_req = '0') then -- idle
-        i_arbiter.rd_req    <= ctrl_i(ctrl_bus_if_c);
-        i_arbiter.err_align <= '0';
-        i_arbiter.err_bus   <= '0';
-      else -- in progress, accumulate errors
-        i_arbiter.err_align <= i_arbiter.err_align or i_misaligned;
-        i_arbiter.err_bus   <= i_arbiter.err_bus or i_bus_err_i or if_pmp_fault;
-        if (i_bus_ack_i = '1') or (i_arbiter.err_align = '1') or (i_arbiter.err_bus = '1') then -- wait for ACK or ERROR
-          i_arbiter.rd_req <= '0';
-        end if;
-      end if;
-    end if;
-  end process ifetch_arbiter;
-
-  i_arbiter.wr_req <= '0'; -- instruction fetch is read-only
-
-  -- wait for bus transaction to finish --
-  i_wait_o <= i_arbiter.rd_req and (not i_bus_ack_i);
-
-  -- output instruction fetch error to controller --
-  ma_instr_o <= i_arbiter.err_align;
-  be_instr_o <= i_arbiter.err_bus;
-
-  -- instruction bus (read-only) --
-  i_bus_addr_o  <= fetch_pc_i(data_width_c-1 downto 2) & "00"; -- instruction access is always 4-byte aligned (even for compressed instructions)
-  i_bus_wdata_o <= (others => '0'); -- instruction fetch is read-only
-  i_bus_ben_o   <= (others => '0');
-  i_bus_we_o    <= '0';
-  i_bus_re      <= ctrl_i(ctrl_bus_if_c) and (not i_misaligned) and (not if_pmp_fault); -- no actual read when misaligned or PMP fault
-  i_bus_re_o    <= i_bus_re_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else i_bus_re;
-  i_bus_fence_o <= ctrl_i(ctrl_bus_fencei_c);
-  instr_o       <= i_bus_rdata_i;
-
-  -- check instruction access address alignment --
-  i_misaligned <= '0' when (CPU_EXTENSION_RISCV_C = true) else -- no alignment exceptions possible when using C-extension
-                  '1' when (fetch_pc_i(1) = '1') else '0'; -- 32-bit accesses only
-
-  -- additional register stage for control signals if using PMP_NUM_REGIONS > pmp_num_regions_critical_c --
-  pmp_ibus_buffer: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      i_bus_re_buf <= '0';
-    elsif rising_edge(clk_i) then
-      i_bus_re_buf <= i_bus_re;
-    end if;
-  end process pmp_ibus_buffer;
 
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------
@@ -479,6 +402,9 @@ begin
   if_pmp_fault <= '1' when (or_reduce_f(pmp.if_fault) = '1') and (PMP_NUM_REGIONS > 0) else '0';
   ld_pmp_fault <= '1' when (or_reduce_f(pmp.ld_fault) = '1') and (PMP_NUM_REGIONS > 0) else '0';
   st_pmp_fault <= '1' when (or_reduce_f(pmp.st_fault) = '1') and (PMP_NUM_REGIONS > 0) else '0';
+
+  -- instruction fetch PMP fault --
+  i_pmp_fault_o <= if_pmp_fault;
 
 
 end neorv32_cpu_bus_rtl;
