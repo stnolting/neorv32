@@ -255,7 +255,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     break_point   : std_ulogic; -- ebreak instruction
   end record;
   signal trap_ctrl : trap_ctrl_t;
-  
+
   -- CPU main control bus --
   signal ctrl_nxt, ctrl : std_ulogic_vector(ctrl_width_c-1 downto 0);
 
@@ -399,7 +399,7 @@ begin
       fetch_engine.pending    <= fetch_engine.pending_nxt;
       fetch_engine.pending_ff <= fetch_engine.pending;
       fetch_engine.restart    <= fetch_engine.restart_nxt or fetch_engine.reset;
-      fetch_engine.unalign    <= fetch_engine.unalign_nxt and bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);
+      fetch_engine.unalign    <= fetch_engine.unalign_nxt;
       fetch_engine.pc         <= fetch_engine.pc_nxt;
     end if;
   end process fetch_engine_fsm_sync;
@@ -438,7 +438,7 @@ begin
         fetch_engine.pc_nxt      <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
         fetch_engine.unalign_nxt <= '0';
         fetch_engine.pending_nxt <= '0';
-        ipb.we(0)                <= not fetch_engine.unalign; -- write if not start at unaligned address
+        ipb.we(0)                <= not (fetch_engine.unalign and bool_to_ulogic_f(CPU_EXTENSION_RISCV_C)); -- write if not start at unaligned address
         ipb.we(1)                <= '1';
       end if;
 
@@ -446,7 +446,7 @@ begin
   end process fetch_engine_fsm_comb;
 
   -- unaligned access error (no alignment exceptions possible when using C-extension) --
-  fetch_engine.a_err <= '0' when (fetch_engine.pc(1) = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
+  fetch_engine.a_err <= '1' when (fetch_engine.unalign = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
 
   -- instruction data --
   ipb.wdata(0) <= (i_bus_err_i or i_pmp_fault_i) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
