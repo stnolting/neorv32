@@ -68,7 +68,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070002"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070003"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -983,7 +983,7 @@ package neorv32_package is
       FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
       CPU_CNT_WIDTH                : natural := 64;     -- total width of CPU cycle and instret counters (0..64)
-      CPU_IPB_ENTRIES              : natural := 2;      -- entries is instruction prefetch buffer, has to be a power of 2
+      CPU_IPB_ENTRIES              : natural := 2;      -- entries is instruction prefetch buffer, has to be a power of 2, min 2
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..16)
       PMP_MIN_GRANULARITY          : natural := 4;      -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -1144,7 +1144,7 @@ package neorv32_package is
       FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
       CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
-      CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2
+      CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2, min 2
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
       PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -1222,7 +1222,7 @@ package neorv32_package is
       FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
       CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
-      CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2
+      CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2, min 2
       -- Physical memory protection (PMP) --
       PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
       PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
