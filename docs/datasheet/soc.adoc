@@ -471,7 +471,7 @@ Note: configurations with <<_cpu_cnt_width>> less than 64 bits do not comply to 
 |======
 | **CPU_IPB_ENTRIES** | _natural_ | 2
 3+| This generic configures the number of entries in the CPU's instruction prefetch buffer (a FIFO).
-The value has to be a power of two and has to be greater than zero.
+The value has to be a power of two and has to be greater than or equal to _two_ (>= 2).
 Long linear sequences of code can benefit from an increased IPB size.
 |======
 
