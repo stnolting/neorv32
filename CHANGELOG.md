@@ -32,7 +32,8 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
-| 10.04.2022 | 1.7.0.1 | rework handling of `x0` register (`zero`): shortens critical path and reduces area costs;  [#298](https://github.com/stnolting/neorv32/pull/298) |
+| 11.04.2022 | 1.7.0.2 | cleanup of CPU front-end (instruction fetch); cleaner code, less area costs; [#299](https://github.com/stnolting/neorv32/pull/299) |
+| 10.04.2022 | 1.7.0.1 | rework handling of `x0` register (`zero`): shortens critical path and reduces area costs; [#298](https://github.com/stnolting/neorv32/pull/298) |
 | 08.04.2022 | [**:rocket:1.7.0**](https://github.com/stnolting/neorv32/releases/tag/v1.7.0) | **New release** |
 | 08.04.2022 | 1.6.9.11 | :bug: fixed bug in interrupt setup of **`crt0` start-up code** [#297](https://github.com/stnolting/neorv32/pull/297) |
 | 08.04.2022 | 1.6.9.10 | rework compressed instruction (`C` ISA extension) de-compressor: :lock: closed further illegal compressed instruction holes; code clean-ups; `mtval` CSR now shows the decompressed 32-bit instruction when executing an illegal compressed instruction; minor RTL code cleanups (removing legacy stuff); [PR #296](https://github.com/stnolting/neorv32/pull/296) |
