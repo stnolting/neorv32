@@ -51,7 +51,7 @@ various FPGA boards and toolchains to get you started.
 not working as expected. Or have a chat on our [gitter channel](https://gitter.im/neorv32/community).
 See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
 
-:rocket: Check out the [quick links below](#5-Getting-Started) or directly jump to the
+:rocket: Check out the [quick links below](#6-Getting-Started) or directly jump to the
 [*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started
 setting up your NEORV32 setup!
 
