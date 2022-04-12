@@ -246,9 +246,10 @@ The following table shows the performance results (scores and average CPI) for e
 developed and debugged with open source tooling
 * [continuous integration](https://github.com/stnolting/neorv32/actions) is available for:
   * allowing users to see the expected execution/output of the tools
-  * ensuring specification compliance
+  * ensuring [specification compliance](https://github.com/stnolting/neorv32-verif)
   * catching regressions
-  * providing ready-to-use and up-to-date bitstreams and documentation
+  * providing ready-to-use and up-to-date [bitstreams](https://github.com/stnolting/neorv32-setups/actions/workflows/Implementation.yml)
+    and [documentation](https://stnolting.github.io/neorv32/)
 
 :books: Want to know more? Check out [_Data Sheet: Software Framework_](https://stnolting.github.io/neorv32/#_software_framework).
 
