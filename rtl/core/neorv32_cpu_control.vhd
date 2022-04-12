@@ -147,7 +147,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   constant hpm_cnt_hi_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0));
 
   -- instruction fetch engine --
-  type fetch_engine_state_t is (S_RESTART, S_REQUEST, S_PENDING, S_WAIT);
+  type fetch_engine_state_t is (S_RESTART, S_REQUEST, S_PENDING, S_WAIT); -- better use one-hot encoding
   type fetch_engine_t is record
     state     : fetch_engine_state_t;
     state_ff  : fetch_engine_state_t;
@@ -385,9 +385,9 @@ begin
 -- Instruction Fetch (always fetch 32-bit-aligned 32-bit chunks of data)
 -- ****************************************************************************************************************************
 
-  -- Fetch Engine FSM Sync ------------------------------------------------------------------
+  -- Fetch Engine FSM -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fetch_engine_fsm_sync: process(rstn_i, clk_i)
+  fetch_engine_fsm: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       fetch_engine.state     <= S_RESTART;
@@ -450,7 +450,7 @@ begin
 
       end case;
     end if;
-  end process fetch_engine_fsm_sync;
+  end process fetch_engine_fsm;
 
   -- PC output for instruction fetch --
   i_bus_addr_o <= fetch_engine.pc(data_width_c-1 downto 2) & "00"; -- 32-bit aligned
@@ -461,10 +461,10 @@ begin
   -- unaligned access error (no alignment exceptions possible when using C-extension) --
   fetch_engine.a_err <= '1' when (fetch_engine.unaligned = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
 
-  -- bus response --
+  -- instruction bus response --
   fetch_engine.resp <= '1' when (i_bus_ack_i = '1') or (i_bus_err_i = '1') or (fetch_engine.pmp_err = '1') or (fetch_engine.a_err = '1') else '0';
 
-  -- instruction data --
+  -- IPB instruction data and status --
   ipb.wdata(0) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
   ipb.wdata(1) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(31 downto 16);
 
