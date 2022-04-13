@@ -79,7 +79,7 @@ entity neorv32_cpu_control is
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
     CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
-    CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2
+    CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2, min 2
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -147,18 +147,17 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   constant hpm_cnt_hi_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0));
 
   -- instruction fetch engine --
+  type fetch_engine_state_t is (S_RESTART, S_REQUEST, S_PENDING, S_WAIT); -- better use one-hot encoding
   type fetch_engine_t is record
-    pending     : std_ulogic;
-    pending_nxt : std_ulogic;
-    pending_ff  : std_ulogic;
-    restart     : std_ulogic;
-    restart_nxt : std_ulogic;
-    unalign     : std_ulogic;
-    unalign_nxt : std_ulogic;
-    pc          : std_ulogic_vector(data_width_c-1 downto 0);
-    pc_nxt      : std_ulogic_vector(data_width_c-1 downto 0);
-    reset       : std_ulogic;
-    a_err       : std_ulogic; -- alignment error
+    state     : fetch_engine_state_t;
+    state_ff  : fetch_engine_state_t;
+    restart   : std_ulogic;
+    unaligned : std_ulogic;
+    pc        : std_ulogic_vector(data_width_c-1 downto 0);
+    reset     : std_ulogic;
+    resp      : std_ulogic; -- bus response
+    a_err     : std_ulogic; -- alignment error
+    pmp_err   : std_ulogic; -- PMP error
   end record;
   signal fetch_engine : fetch_engine_t;
 
@@ -168,6 +167,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     wdata : ipb_data_t;
     we    : std_ulogic_vector(1 downto 0); -- trigger write
     free  : std_ulogic_vector(1 downto 0); -- free entry available?
+    half  : std_ulogic_vector(1 downto 0); -- half full?
     rdata : ipb_data_t;
     re    : std_ulogic_vector(1 downto 0); -- read enable
     avail : std_ulogic_vector(1 downto 0); -- data available?
@@ -385,72 +385,93 @@ begin
 -- Instruction Fetch (always fetch 32-bit-aligned 32-bit chunks of data)
 -- ****************************************************************************************************************************
 
-  -- Fetch Engine FSM Sync ------------------------------------------------------------------
+  -- Fetch Engine FSM -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fetch_engine_fsm_sync: process(rstn_i, clk_i)
+  fetch_engine_fsm: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      fetch_engine.pending    <= '0';
-      fetch_engine.pending_ff <= def_rst_val_c;
-      fetch_engine.restart    <= '1';
-      fetch_engine.unalign    <= '0'; -- always start at aligned address after reset
-      fetch_engine.pc         <= (others => def_rst_val_c);
+      fetch_engine.state     <= S_RESTART;
+      fetch_engine.state_ff  <= S_RESTART;
+      fetch_engine.restart   <= '1'; -- set to reset IPB
+      fetch_engine.unaligned <= '0'; -- always start at aligned address after reset
+      fetch_engine.pc        <= (others => def_rst_val_c);
+      fetch_engine.pmp_err   <= '0';
     elsif rising_edge(clk_i) then
-      fetch_engine.pending    <= fetch_engine.pending_nxt;
-      fetch_engine.pending_ff <= fetch_engine.pending;
-      fetch_engine.restart    <= fetch_engine.restart_nxt or fetch_engine.reset;
-      fetch_engine.unalign    <= fetch_engine.unalign_nxt;
-      fetch_engine.pc         <= fetch_engine.pc_nxt;
+      -- previous state (for HPM) --
+      fetch_engine.state_ff <= fetch_engine.state;
+
+      -- restart request buffer --
+      if (fetch_engine.state = S_RESTART) then -- restart done
+        fetch_engine.restart <= '0';
+      else -- buffer request
+        fetch_engine.restart <= fetch_engine.restart or fetch_engine.reset;
+      end if;
+
+      -- fsm --
+      case fetch_engine.state is
+
+        when S_RESTART => -- set new fetch start address
+        -- ------------------------------------------------------------
+          fetch_engine.pc        <= execute_engine.pc(data_width_c-1 downto 2) & "00"; -- initialize with "real" PC, 32-bit aligned
+          fetch_engine.unaligned <= execute_engine.pc(1);
+          fetch_engine.state     <= S_REQUEST;
+
+        when S_REQUEST => -- request new 32-bit-aligned instruction word
+        -- ------------------------------------------------------------
+          fetch_engine.pmp_err <= i_pmp_fault_i;
+          fetch_engine.state   <= S_PENDING;
+
+        when S_PENDING => -- wait for bus response and write instruction data to prefetch buffer
+        -- ------------------------------------------------------------
+          if (fetch_engine.resp = '1') then -- wait for bus response
+            fetch_engine.pc        <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
+            fetch_engine.unaligned <= '0';
+            fetch_engine.pmp_err   <= '0';
+            if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request
+              fetch_engine.state <= S_RESTART;
+            elsif (ipb.half /= "00") or (CPU_IPB_ENTRIES < 2) then -- no "safe" space left if any IPB buffer is at least half full
+              fetch_engine.state <= S_WAIT;
+            else -- request next instruction word
+              fetch_engine.state <= S_REQUEST;
+            end if;
+          end if;
+
+        when S_WAIT => -- wait for free IPB space 
+        -- ------------------------------------------------------------
+          if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request
+            fetch_engine.state <= S_RESTART;
+          elsif (ipb.free = "11") then -- free entry in IPB (both buffers)
+            fetch_engine.state <= S_REQUEST; -- request next instruction word
+          end if;
+
+        when others => -- undefined
+        -- ------------------------------------------------------------
+          fetch_engine.state <= S_RESTART;
+
+      end case;
     end if;
-  end process fetch_engine_fsm_sync;
+  end process fetch_engine_fsm;
 
   -- PC output for instruction fetch --
   i_bus_addr_o <= fetch_engine.pc(data_width_c-1 downto 2) & "00"; -- 32-bit aligned
 
-
-  -- Fetch Engine FSM Comb ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  fetch_engine_fsm_comb: process(fetch_engine, execute_engine, ipb, i_bus_ack_i, i_bus_err_i, i_pmp_fault_i)
-  begin
-    -- defaults --
-    i_bus_re_o               <= '0';
-    ipb.we                   <= "00";
-    fetch_engine.pending_nxt <= fetch_engine.pending;
-    fetch_engine.pc_nxt      <= fetch_engine.pc;
-    fetch_engine.restart_nxt <= fetch_engine.restart;
-    fetch_engine.unalign_nxt <= fetch_engine.unalign;
-
-    -- state machine --
-    if (fetch_engine.pending = '0') then -- REQUEST: request new 32-bit-aligned instruction word
-    -- ------------------------------------------------------------
-      if (fetch_engine.restart = '1') then -- reset request
-        fetch_engine.pc_nxt      <= execute_engine.pc(data_width_c-1 downto 2) & "00"; -- initialize with "real" PC, 32-bit aligned
-        fetch_engine.unalign_nxt <= execute_engine.pc(1);
-      elsif (ipb.free = "11") then -- free entries in both buffers
-        i_bus_re_o               <= '1'; -- instruction fetch request
-        fetch_engine.pending_nxt <= '1';
-      end if;
-      fetch_engine.restart_nxt <= '0'; -- restart done
-
-    else -- RECEIVE: write instruction data to prefetch buffer
-    -- ------------------------------------------------------------
-      if (i_bus_ack_i = '1') or (i_bus_err_i = '1') or (i_pmp_fault_i = '1') or (fetch_engine.a_err = '1') then -- wait for bus response
-        fetch_engine.pc_nxt      <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
-        fetch_engine.unalign_nxt <= '0';
-        fetch_engine.pending_nxt <= '0';
-        ipb.we(0)                <= not (fetch_engine.unalign and bool_to_ulogic_f(CPU_EXTENSION_RISCV_C)); -- write if not start at unaligned address
-        ipb.we(1)                <= '1';
-      end if;
-
-    end if;
-  end process fetch_engine_fsm_comb;
+  -- instruction fetch (read) request --
+  i_bus_re_o <= '1' when (fetch_engine.state = S_REQUEST) else '0';
 
   -- unaligned access error (no alignment exceptions possible when using C-extension) --
-  fetch_engine.a_err <= '1' when (fetch_engine.unalign = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
+  fetch_engine.a_err <= '1' when (fetch_engine.unaligned = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
 
-  -- instruction data --
-  ipb.wdata(0) <= (i_bus_err_i or i_pmp_fault_i) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
-  ipb.wdata(1) <= (i_bus_err_i or i_pmp_fault_i) & fetch_engine.a_err & i_bus_rdata_i(31 downto 16);
+  -- instruction bus response --
+  fetch_engine.resp <= '1' when (i_bus_ack_i = '1') or (i_bus_err_i = '1') or (fetch_engine.pmp_err = '1') or (fetch_engine.a_err = '1') else '0';
+
+  -- IPB instruction data and status --
+  ipb.wdata(0) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
+  ipb.wdata(1) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(31 downto 16);
+
+  -- IPB write enable --
+  ipb.we(0) <= '1' when (fetch_engine.state = S_PENDING) and (fetch_engine.resp = '1') and
+                        ((fetch_engine.unaligned = '0') or (CPU_EXTENSION_RISCV_C = false)) else '0';
+  ipb.we(1) <= '1' when (fetch_engine.state = S_PENDING) and (fetch_engine.resp = '1') else '0';
 
 
 -- ****************************************************************************************************************************
@@ -474,7 +495,7 @@ begin
       rstn_i  => '1',                  -- async reset, low-active
       clear_i => fetch_engine.restart, -- sync reset, high-active
       level_o => open,
-      half_o  => open,
+      half_o  => ipb.half(i),          -- at least half full
       -- write port --
       wdata_i => ipb.wdata(i),         -- write data
       we_i    => ipb.we(i),            -- write enable
@@ -739,12 +760,12 @@ begin
   -- -------------------------------------------------------------------------------------------
   ctrl_output: process(ctrl, fetch_engine, trap_ctrl, execute_engine, csr, debug_ctrl)
   begin
-    -- signals from execute engine --
+    -- default --
     ctrl_o <= ctrl;
-    -- prevent commits if illegal instruction --
-    ctrl_o(ctrl_rf_wb_en_c) <= ctrl(ctrl_rf_wb_en_c) and (not trap_ctrl.exc_buf(exc_iillegal_c));
-    ctrl_o(ctrl_bus_rd_c)   <= ctrl(ctrl_bus_rd_c)   and (not trap_ctrl.exc_buf(exc_iillegal_c));
-    ctrl_o(ctrl_bus_wr_c)   <= ctrl(ctrl_bus_wr_c)   and (not trap_ctrl.exc_buf(exc_iillegal_c));
+    -- "commit" signals --
+    ctrl_o(ctrl_rf_wb_en_c) <= ctrl(ctrl_rf_wb_en_c) and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- prevent write if illegal instruction
+    ctrl_o(ctrl_bus_rd_c)   <= ctrl(ctrl_bus_rd_c); -- not set if illegal instruction (ensured by execute engine)
+    ctrl_o(ctrl_bus_wr_c)   <= ctrl(ctrl_bus_wr_c); -- not set if illegal instruction (ensured by execute engine)
     -- current effective privilege level --
     ctrl_o(ctrl_priv_mode_c) <= csr.privilege_eff;
     -- register sources --
@@ -1174,9 +1195,9 @@ begin
       when LOADSTORE_0 => -- trigger memory request
       -- ------------------------------------------------------------
         if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') or (decode_aux.is_a_lr = '1') then -- normal load or atomic load-reservate
-          ctrl_nxt(ctrl_bus_rd_c) <= '1'; -- bus read request
+          ctrl_nxt(ctrl_bus_rd_c) <= not trap_ctrl.exc_buf(exc_iillegal_c); -- bus read request (if not illegal instruction)
         elsif (decode_aux.is_a_sc = '0') or (excl_state_i = '1') then -- normal store request or atomic store-conditional with lock still OK
-          ctrl_nxt(ctrl_bus_wr_c) <= '1'; -- bus write request
+          ctrl_nxt(ctrl_bus_wr_c) <= not trap_ctrl.exc_buf(exc_iillegal_c); -- bus write request (if not illegal instruction)
         end if;
         ctrl_nxt(ctrl_bus_lock_c) <= decode_aux.is_a_lr; -- atomic load-reservate: set lock
         execute_engine.state_nxt  <= LOADSTORE_1;
@@ -2579,10 +2600,10 @@ begin
     cnt_event(hpmcnt_event_ir_c)      <= '1' when (execute_engine.state = EXECUTE) else '0'; -- (any) retired instruction
 
     -- counter event trigger - custom / NEORV32-specific --
-    cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)  and (execute_engine.is_ci = '1')           else '0'; -- retired compressed instruction
-    cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.pending = '1')      and (fetch_engine.pending_ff = '1')        else '0'; -- instruction fetch memory wait cycle
-    cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH) and (execute_engine.state_prev = DISPATCH) else '0'; -- instruction issue wait cycle
-    cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                            else '0'; -- multi-cycle alu-operation wait cycle
+    cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)   and (execute_engine.is_ci      = '1')       else '0'; -- retired compressed instruction
+    cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = S_PENDING) and (fetch_engine.state_ff     = S_PENDING) else '0'; -- instruction fetch memory wait cycle
+    cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)  and (execute_engine.state_prev = DISPATCH)  else '0'; -- instruction issue wait cycle
+    cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                              else '0'; -- multi-cycle alu-operation wait cycle
 
     cnt_event(hpmcnt_event_load_c)    <= '1' when                                          (ctrl(ctrl_bus_rd_c) = '1')               else '0'; -- load operation
     cnt_event(hpmcnt_event_store_c)   <= '1' when                                          (ctrl(ctrl_bus_wr_c) = '1')               else '0'; -- store operation
