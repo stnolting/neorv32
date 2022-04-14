@@ -41,7 +41,7 @@ The latest _pdf_ versions can be found [here](https://github.com/stnolting/neorv
 :label: The project's change log is available in [`CHANGELOG.md`](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
 To see the changes between _official releases_ visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
-:package: [**Exemplary setups**](https://github.com/stnolting/neorv32-setups) targeting
+:package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) targeting
 various FPGA boards and toolchains to get you started.
 
 :kite: Supported by upstream [Zephyr OS](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) and FreeRTOS.
@@ -119,7 +119,7 @@ modules are _optional_.
 and the *Privileged Architecture Specification* [(Version 1.12)](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf).
 * `machine` and `user` modes
 * implements _all_ standard RISC-V exceptions/interrupts (including MTI, MEI & MSI)
-* 16-fast interrupt requests as NEORV32-specific extensions
+* 16-fast interrupt requests as NEORV32-specific extension
 
 **Memory**
 
@@ -187,24 +187,13 @@ using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimizatio
 |:------------------------|:----:|:----:|:----:|:-:|:-------:|
 | `rv32i_Zicsr`           | 1328 |  678 | 1024 | 0 | 128 MHz |
 | `rv32i_Zicsr_Zicntr`    | 1614 |  808 | 1024 | 0 | 128 MHz |
-| `rv32imac_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 128 MHz |   
+| `rv32imac_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 128 MHz |
 
-:bulb: An incremental list of the CPUs ISA extension's hardware utilization can found in the
-[_Data Sheet: FPGA Implementation Results - CPU_](https://stnolting.github.io/neorv32/#_cpu).
-
-The hardware resources used by a specific **full-processor** setup is defined by the implemented CPU extensions,
-the configuration of the peripheral modules and some "glue logic".
-Section [_FPGA Implementation Results - Processor Modules_](https://stnolting.github.io/neorv32/#_processor_modules)
-of the online datasheet shows the resource utilization of each optional processor module to allow an
-estimation of the actual setup's hardware requirements.
+:bulb: An incremental list of the CPU extensions and the Processor modules found in the
+[_Data Sheet: FPGA Implementation Results_]https://stnolting.github.io/neorv32/#_fpga_implementation_results).
 
 :bulb: The [`neorv32-setups`](https://github.com/stnolting/neorv32-setups) repository provides exemplary FPGA
-setups targeting various FPGA boards and toolchains. The latest bitstreams and utilization reports for those setups
-can be found in the assets of the [Implementation Workflow](https://github.com/stnolting/neorv32-setups/actions/workflows/Implementation.yml).
-
-:bulb: The CPU & SoC provide further "tuning" options to optimize the design for maximum performance, maximum clock speed, minimal area
-or minimal power consumption:
-[UG: Application-Specific Processor Configuration](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration)
+setups targeting various FPGA boards and toolchains.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -227,6 +216,10 @@ The following table shows the performance results (scores and average CPI) for e
 
 :bulb: More information regarding the CPU performance can be found in the
 [_Data Sheet: CPU Performance_](https://stnolting.github.io/neorv32/#_cpu_performance).
+
+:bulb: The CPU & SoC provide further "tuning" options to optimize the design for maximum performance, maximum clock speed, minimal area
+or minimal power consumption:
+[_UG: Application-Specific Processor Configuration_](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration)
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
