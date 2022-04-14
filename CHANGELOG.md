@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 13.04.2022 | 1.7.0.4 | improve timing of CPU's barrel shifter (`FAST_SHIFT_EN` = true) by moving the register stage; [#301](https://github.com/stnolting/neorv32/pull/301) |
 | 12.04.2022 | 1.7.0.3 | CPU front-end is now controlled by a _synchronous_ state machine (all outgoing signals are driven by registers), reducing critical path of memory system & reducing area costs; :warning: `CPU_IPB_ENTRIES` now has to be >= 2; [#300](https://github.com/stnolting/neorv32/pull/300) |
 | 11.04.2022 | 1.7.0.2 | cleanup of CPU front-end (instruction fetch); cleaner code, less area costs; [#299](https://github.com/stnolting/neorv32/pull/299) |
 | 10.04.2022 | 1.7.0.1 | rework handling of `x0` register (`zero`): shortens critical path and reduces area costs; [#298](https://github.com/stnolting/neorv32/pull/298) |
