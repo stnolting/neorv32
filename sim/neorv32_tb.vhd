@@ -84,7 +84,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- simulated external Wishbone memory C (can be used to simulate external IO access) --
   constant ext_mem_c_base_addr_c   : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address (default begin of EXTERNAL IO area)
   constant ext_mem_c_size_c        : natural := 64; -- wishbone memory size in bytes
-  constant ext_mem_c_latency_c     : natural := 3; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
+  constant ext_mem_c_latency_c     : natural := 128; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulation interrupt trigger --
   constant irq_trigger_base_addr_c : std_ulogic_vector(31 downto 0) := x"FF000000";
   -- -------------------------------------------------------------------------------------------
@@ -146,7 +146,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   type ext_mem_t is record
     rdata  : ext_mem_read_latency_t;
     acc_en : std_ulogic;
-    ack    : std_ulogic_vector(ext_mem_a_latency_c-1 downto 0);
+    ack    : std_ulogic_vector(255 downto 0);
   end record;
   signal ext_mem_a, ext_mem_b, ext_mem_c : ext_mem_t;
 

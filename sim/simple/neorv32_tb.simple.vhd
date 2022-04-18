@@ -66,8 +66,8 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   -- User Configuration ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- general --
-  constant ext_dmem_c              : boolean := false;     -- false: use proc-internal DMEM, true: use external simulated DMEM (ext. mem B)
-  constant dmem_size_c             : natural := 8*1024;    -- size in bytes of processor-internal DMEM / external mem B
+  constant ext_dmem_c              : boolean := false; -- false: use proc-internal DMEM, true: use external simulated DMEM (ext. mem B)
+  constant dmem_size_c             : natural := 8*1024; -- size in bytes of processor-internal DMEM / external mem B
   constant f_clock_c               : natural := 100000000; -- main clock in Hz
   constant baud0_rate_c            : natural := 19200; -- simulation UART0 (primary UART) baud rate
   constant baud1_rate_c            : natural := 19200; -- simulation UART1 (secondary UART) baud rate
@@ -82,7 +82,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   -- simulated external Wishbone memory C (can be used to simulate external IO access) --
   constant ext_mem_c_base_addr_c   : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address (default begin of EXTERNAL IO area)
   constant ext_mem_c_size_c        : natural := 64; -- wishbone memory size in bytes
-  constant ext_mem_c_latency_c     : natural := 3;  -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
+  constant ext_mem_c_latency_c     : natural := 128; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulation interrupt trigger --
   constant irq_trigger_base_addr_c : std_ulogic_vector(31 downto 0) := x"FF000000";
   -- -------------------------------------------------------------------------------------------
@@ -147,7 +147,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   type ext_mem_t is record
     rdata  : ext_mem_read_latency_t;
     acc_en : std_ulogic;
-    ack    : std_ulogic_vector(ext_mem_a_latency_c-1 downto 0);
+    ack    : std_ulogic_vector(255 downto 0);
   end record;
   signal ext_mem_a, ext_mem_b, ext_mem_c : ext_mem_t;
 
@@ -235,7 +235,7 @@ begin
     IO_TWI_EN                    => true,          -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                => 30,            -- number of PWM channels to implement (0..60); 0 = disabled
     IO_WDT_EN                    => true,          -- implement watch dog timer (WDT)?
-    IO_TRNG_EN                   => false,         -- trng cannot be simulated
+    IO_TRNG_EN                   => true,          -- implement true random number generator (TRNG)?
     IO_CFS_EN                    => true,          -- implement custom functions subsystem (CFS)?
     IO_CFS_CONFIG                => (others => '0'), -- custom CFS configuration generic
     IO_CFS_IN_SIZE               => 32,            -- size of CFS input conduit in bits
