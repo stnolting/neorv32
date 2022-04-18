@@ -74,8 +74,8 @@ architecture neorv32_bus_keeper_rtl of neorv32_bus_keeper is
   constant lo_abb_c : natural := index_size_f(buskeeper_size_c); -- low address boundary bit
 
   -- Control register --
-  constant ctrl_err_type_c : natural :=  0; -- r/-: error type LSB: 0=device error, 1=access timeout
-  constant ctrl_err_flag_c : natural := 31; -- r/c: bus error encountered, sticky; cleared by writing zero
+  constant ctrl_err_type_c : natural :=  0; -- r/-: error type: 0=device error, 1=access timeout
+  constant ctrl_err_flag_c : natural := 31; -- r/c: bus error encountered, sticky
 
   -- error codes --
   constant err_device_c  : std_ulogic := '0'; -- device access error
@@ -171,7 +171,7 @@ begin
           control.err_type <= err_device_c; -- device error
           control.bus_err  <= '1';
           control.pending  <= '0';
-        elsif ((or_reduce_f(control.timeout) = '0') and (bus_ext_i = '0') and (bus_xip_i = '0')) or -- valid internal access timeout
+        elsif ((or_reduce_f(control.timeout) = '0') and (bus_ext_i = '0') and (bus_xip_i = '0')) or -- valid INTERNAL access timeout
               (bus_tmo_i = '1') then -- external access timeout
           control.err_type <= err_timeout_c; -- timeout error
           control.bus_err  <= '1';

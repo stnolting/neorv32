@@ -429,7 +429,7 @@ begin
             fetch_engine.pmp_err   <= '0';
             if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request
               fetch_engine.state <= S_RESTART;
-            elsif (ipb.half /= "00") or (CPU_IPB_ENTRIES < 2) then -- no "safe" space left if any IPB buffer is at least half full
+            elsif (ipb.half /= "00") or (CPU_IPB_ENTRIES < 2) then -- no "safe" space left if any IPB buffer (at least half full)
               fetch_engine.state <= S_WAIT;
             else -- request next instruction word
               fetch_engine.state <= S_REQUEST;
