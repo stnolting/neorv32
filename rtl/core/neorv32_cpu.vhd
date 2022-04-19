@@ -190,6 +190,10 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- simulation notifier --
+  assert not (is_simulation_c = true)  report "NEORV32 CPU INFO: Seems like this is a simulation." severity note;
+  assert not (is_simulation_c = false) report "NEORV32 CPU INFO: Seems like this is real hardware." severity note;
+
   -- hardware reset notifier --
   assert not (dedicated_reset_c = false) report "NEORV32 CPU CONFIG NOTE: Implementing NO dedicated hardware reset for uncritical registers (default)." severity note;
   assert not (dedicated_reset_c = true)  report "NEORV32 CPU CONFIG NOTE: Implementing defined hardware reset for uncritical registers (non-default, reset-to-zero, might increase area)." severity note;
