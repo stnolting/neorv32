@@ -215,7 +215,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // test intro
-  PRINT_STANDARD("\nStarting tests.\n\n");
+  PRINT_STANDARD("\nStarting tests...\n\n");
 
   // enable global interrupts
   neorv32_cpu_eint();
