@@ -5,7 +5,7 @@
 # ********************************************************************************************* #
 # BSD 3-Clause License                                                                          #
 #                                                                                               #
-# Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+# Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 #                                                                                               #
 # Redistribution and use in source and binary forms, with or without modification, are          #
 # permitted provided that the following conditions are met:                                     #
@@ -117,7 +117,7 @@ OBJCOPY = $(RISCV_PREFIX)objcopy
 SIZE    = $(RISCV_PREFIX)size
 
 # Host native compiler
-CC_X86 = g++ -Wall -O -g
+CC_X86 = gcc -Wall -O -g
 
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
