@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -117,22 +117,22 @@ int main(int argc, char *argv[]) {
   if (option == 1) {
 
     // reserve header space for signature
-    fputc(char(0), output);
-    fputc(char(0), output);
-    fputc(char(0), output);
-    fputc(char(0), output);
+    fputc(0, output);
+    fputc(0, output);
+    fputc(0, output);
+    fputc(0, output);
 
     // reserve header space for size
-    fputc(char(0), output);
-    fputc(char(0), output);
-    fputc(char(0), output);
-    fputc(char(0), output);
+    fputc(0, output);
+    fputc(0, output);
+    fputc(0, output);
+    fputc(0, output);
 
     // reserve header space for checksum
-    fputc(char(0), output);
-    fputc(char(0), output);
-    fputc(char(0), output);
-    fputc(char(0), output);
+    fputc(0, output);
+    fputc(0, output);
+    fputc(0, output);
+    fputc(0, output);
 
     buffer[0] = 0;
     buffer[1] = 0;
