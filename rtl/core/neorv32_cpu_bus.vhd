@@ -116,10 +116,9 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
 
   -- bus arbiter --
   type bus_arbiter_t is record
-    rd_req    : std_ulogic; -- read access in progress
-    wr_req    : std_ulogic; -- write access in progress
-    err_align : std_ulogic; -- alignment error
-    err_bus   : std_ulogic; -- bus access error
+    busy : std_ulogic; -- pending bus access
+    rw   : std_ulogic; -- read/write access
+    err  : std_ulogic; -- bus access error
   end record;
   signal d_arbiter : bus_arbiter_t;
 
@@ -214,7 +213,6 @@ begin
   -- Read Data ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   read_align: process(rstn_i, clk_i)
-    variable shifted_data_v : std_ulogic_vector(31 downto 0);
   begin
     if (rstn_i = '0') then
       rdata_align <= (others => def_rst_val_c);
@@ -250,7 +248,7 @@ begin
     end if;
   end process read_align;
 
-  -- insert exclusive lock status for SC operations only --
+  -- insert exclusive lock status for SC operations --
   rdata_o <= exclusive_lock_status when (CPU_EXTENSION_RISCV_A = true) and (ctrl_i(ctrl_bus_ch_lock_c) = '1') else rdata_align;
 
 
@@ -259,39 +257,40 @@ begin
   data_access_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      d_arbiter.wr_req    <= '0';
-      d_arbiter.rd_req    <= '0';
-      d_arbiter.err_align <= '0';
-      d_arbiter.err_bus   <= '0';
+      d_arbiter.busy <= '0';
+      d_arbiter.rw   <= def_rst_val_c;
+      d_arbiter.err  <= def_rst_val_c;
     elsif rising_edge(clk_i) then
-      if (d_arbiter.wr_req = '0') and (d_arbiter.rd_req = '0') then -- idle
-        d_arbiter.wr_req    <= ctrl_i(ctrl_bus_wr_c);
-        d_arbiter.rd_req    <= ctrl_i(ctrl_bus_rd_c);
-        d_arbiter.err_align <= '0';
-        d_arbiter.err_bus   <= '0';
-      else -- in progress, accumulate errors
-        d_arbiter.err_align <= d_arbiter.err_align or d_misaligned;
-        d_arbiter.err_bus   <= d_arbiter.err_bus or d_bus_err_i or (st_pmp_fault and d_arbiter.wr_req) or (ld_pmp_fault and d_arbiter.rd_req);
-        if (d_bus_ack_i = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- wait for ACK or TRAP
-          -- > do not abort directly when an error has been detected - wait until the trap environment
-          -- > has started (ctrl_i(ctrl_trap_c)) to make sure the error signals are evaluated BEFORE d_wait_o clears
-          d_arbiter.wr_req <= '0';
-          d_arbiter.rd_req <= '0';
+      if (d_arbiter.busy = '0') then -- idle
+        d_arbiter.busy <= ctrl_i(ctrl_bus_wr_c) or ctrl_i(ctrl_bus_rd_c); -- start bus access
+        d_arbiter.rw   <= ctrl_i(ctrl_bus_wr_c); -- set if write access
+        d_arbiter.err  <= '0';
+      else -- bus access in progress
+        -- accumulate bus errors --
+        if (d_bus_err_i = '1') or -- bus error
+           ((d_arbiter.rw = '1') and (st_pmp_fault = '1')) or -- PMP store fault
+           ((d_arbiter.rw = '0') and (ld_pmp_fault = '1')) then -- PMP load fault
+          d_arbiter.err <= '1';
+        end if;
+        -- do not abort directly when an error has been detected - wait until the trap environment
+        -- has started (ctrl_i(ctrl_trap_c)) to make sure the error signals are evaluated BEFORE d_wait_o clears
+        if (d_bus_ack_i = '1') or (ctrl_i(ctrl_trap_c) = '1') then
+          d_arbiter.busy <= '0';
         end if;
       end if;
     end if;
   end process data_access_arbiter;
 
   -- wait for bus transaction to finish --
-  d_wait_o <= (d_arbiter.wr_req or d_arbiter.rd_req) and (not d_bus_ack_i);
+  d_wait_o <= '1' when (d_arbiter.busy = '1') and (d_bus_ack_i = '0') else '0';
 
   -- output data access error to controller --
-  ma_load_o  <= d_arbiter.rd_req and d_arbiter.err_align;
-  be_load_o  <= d_arbiter.rd_req and d_arbiter.err_bus;
-  ma_store_o <= d_arbiter.wr_req and d_arbiter.err_align;
-  be_store_o <= d_arbiter.wr_req and d_arbiter.err_bus;
+  ma_load_o  <= '1' when (d_arbiter.busy = '1') and (d_arbiter.rw = '0') and (d_misaligned  = '1') else '0';
+  be_load_o  <= '1' when (d_arbiter.busy = '1') and (d_arbiter.rw = '0') and (d_arbiter.err = '1') else '0';
+  ma_store_o <= '1' when (d_arbiter.busy = '1') and (d_arbiter.rw = '1') and (d_misaligned  = '1') else '0';
+  be_store_o <= '1' when (d_arbiter.busy = '1') and (d_arbiter.rw = '1') and (d_arbiter.err = '1') else '0';
 
-  -- data bus (read/write)--
+  -- data bus interface (read/write)--
   d_bus_addr_o  <= mar;
   d_bus_wdata_o <= d_bus_wdata;
   d_bus_ben_o   <= d_bus_ben;
@@ -364,7 +363,6 @@ begin
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
   -- check address region --
   pmp_check_address: process(pmp_addr_i, fetch_pc_i, mar)
   begin
