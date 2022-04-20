@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - Arithmetical/Logical Unit >>                                                     #
 -- # ********************************************************************************************* #
--- # Main data/address ALU and ALU co-processor (= multi-cycle function units).                    #
+-- # Main data/address ALU and ALU co-processors (= multi-cycle function units).                   #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -83,15 +83,15 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   -- operands --
   signal opa, opb : std_ulogic_vector(data_width_c-1 downto 0);
 
-  -- results --
+  -- intermediate results --
   signal addsub_res : std_ulogic_vector(data_width_c downto 0);
   signal cp_res     : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- co-processor interface --
-  type cp_data_if_t  is array (0 to 7)  of std_ulogic_vector(data_width_c-1 downto 0);
+  type cp_data_if_t  is array (0 to 5) of std_ulogic_vector(data_width_c-1 downto 0);
   signal cp_result : cp_data_if_t; -- co-processor i result
-  signal cp_start  : std_ulogic_vector(7 downto 0); -- trigger co-processor i
-  signal cp_valid  : std_ulogic_vector(7 downto 0); -- co-processor i done
+  signal cp_start  : std_ulogic_vector(5 downto 0); -- trigger co-processor i
+  signal cp_valid  : std_ulogic_vector(5 downto 0); -- co-processor i done
 
 begin
 
@@ -162,15 +162,15 @@ begin
 
   -- co-processor select / start trigger --
   -- > "cp_start" is high for one cycle to trigger operation of the according co-processor
-  cp_start(7 downto 0) <= ctrl_i(ctrl_cp_trig7_c downto ctrl_cp_trig0_c);
+  cp_start(5 downto 0) <= ctrl_i(ctrl_cp_trig5_c downto ctrl_cp_trig0_c);
 
   -- co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before output data (cp_result) is valid
-  idone_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5) or cp_valid(6) or cp_valid(7);
+  idone_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5);
 
   -- co-processor result --
   -- > "cp_result" data has to be always zero unless co-processor was actually triggered
-  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5) or cp_result(6) or cp_result(7);
+  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5);
 
 
   -- Co-Processor 0: Shifter Unit (CPU Base ISA) --------------------------------------------
@@ -318,18 +318,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   cp_result(5) <= (others => '0');
   cp_valid(5)  <= '0';
-
-
-  -- Co-Processor 6: Reserved ---------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  cp_result(6) <= (others => '0');
-  cp_valid(6)  <= '0';
-
-
-  -- Co-Processor 7: Reserved ---------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  cp_result(7) <= (others => '0');
-  cp_valid(7)  <= '0';
 
 
 end neorv32_cpu_cpu_rtl;

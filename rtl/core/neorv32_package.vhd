@@ -361,47 +361,45 @@ package neorv32_package is
   constant ctrl_cp_trig3_c      : natural := 31; -- trigger CP3
   constant ctrl_cp_trig4_c      : natural := 32; -- trigger CP4
   constant ctrl_cp_trig5_c      : natural := 33; -- trigger CP5
-  constant ctrl_cp_trig6_c      : natural := 34; -- trigger CP6
-  constant ctrl_cp_trig7_c      : natural := 35; -- trigger CP7
   -- bus interface --
-  constant ctrl_bus_rd_c        : natural := 36; -- read data request
-  constant ctrl_bus_wr_c        : natural := 37; -- write data request
-  constant ctrl_bus_mo_we_c     : natural := 38; -- memory address and data output register write enable
-  constant ctrl_bus_fence_c     : natural := 39; -- executed fence operation
-  constant ctrl_bus_fencei_c    : natural := 40; -- executed fence.i operation
-  constant ctrl_bus_lock_c      : natural := 41; -- make atomic/exclusive access lock
-  constant ctrl_bus_de_lock_c   : natural := 42; -- remove atomic/exclusive access 
-  constant ctrl_bus_ch_lock_c   : natural := 43; -- evaluate atomic/exclusive lock (SC operation)
+  constant ctrl_bus_rd_c        : natural := 34; -- read data request
+  constant ctrl_bus_wr_c        : natural := 35; -- write data request
+  constant ctrl_bus_mo_we_c     : natural := 36; -- memory address and data output register write enable
+  constant ctrl_bus_fence_c     : natural := 37; -- executed fence operation
+  constant ctrl_bus_fencei_c    : natural := 38; -- executed fence.i operation
+  constant ctrl_bus_lock_c      : natural := 39; -- make atomic/exclusive access lock
+  constant ctrl_bus_de_lock_c   : natural := 40; -- remove atomic/exclusive access 
+  constant ctrl_bus_ch_lock_c   : natural := 41; -- evaluate atomic/exclusive lock (SC operation)
   -- instruction word control blocks --
-  constant ctrl_ir_funct3_0_c   : natural := 44; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 45; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 46; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 47; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 48; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 49; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 50; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 51; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 52; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 53; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 54; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 55; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 56; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 57; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 58; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 59; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 60; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 61; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 62; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 63; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 64; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 65; -- opcode7 bit 6
+  constant ctrl_ir_funct3_0_c   : natural := 42; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 43; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 44; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 45; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 46; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 47; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 48; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 49; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 50; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 51; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 52; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 53; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 54; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 55; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 56; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 57; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 58; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 59; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 60; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 61; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 62; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 63; -- opcode7 bit 6
   -- cpu status --
-  constant ctrl_priv_mode_c     : natural := 66; -- effective privilege mode
-  constant ctrl_sleep_c         : natural := 67; -- set when CPU is in sleep mode
-  constant ctrl_trap_c          : natural := 68; -- set when CPU is entering trap execution
-  constant ctrl_debug_running_c : natural := 69; -- set when CPU is in debug mode
+  constant ctrl_priv_mode_c     : natural := 64; -- effective privilege mode
+  constant ctrl_sleep_c         : natural := 65; -- set when CPU is in sleep mode
+  constant ctrl_trap_c          : natural := 66; -- set when CPU is entering trap execution
+  constant ctrl_debug_running_c : natural := 67; -- set when CPU is in debug mode
   -- control bus size --
-  constant ctrl_width_c         : natural := 70; -- control bus size
+  constant ctrl_width_c         : natural := 68; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -564,7 +562,7 @@ package neorv32_package is
   --
   constant csr_mstatush_c       : std_ulogic_vector(11 downto 0) := x"310";
   -- machine configuration --
-  constant csr_class_envcfg_c   : std_ulogic_vector(06 downto 0) := x"3" & "000"; -- configuration
+  constant csr_class_envcfg_c   : std_ulogic_vector(06 downto 0) := x"3" & "000"; -- environment configuration
   constant csr_menvcfg_c        : std_ulogic_vector(11 downto 0) := x"30a";
   constant csr_menvcfgh_c       : std_ulogic_vector(11 downto 0) := x"31a";
   -- machine counter setup --
@@ -794,14 +792,12 @@ package neorv32_package is
 
   -- CPU Co-Processor IDs (one-hot!) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant cp_sel_shifter_c  : std_ulogic_vector(7 downto 0) := "00000001"; -- CP0: shift operations (base ISA)
-  constant cp_sel_muldiv_c   : std_ulogic_vector(7 downto 0) := "00000010"; -- CP1: multiplication/division operations ('M' extensions)
-  constant cp_sel_bitmanip_c : std_ulogic_vector(7 downto 0) := "00000100"; -- CP2: bit manipulation ('B' extensions)
-  constant cp_sel_fpu_c      : std_ulogic_vector(7 downto 0) := "00001000"; -- CP3: floating-point unit ('Zfinx' extension)
-  constant cp_sel_cfu_c      : std_ulogic_vector(7 downto 0) := "00010000"; -- CP4: custom instructions CFU ('Zxcfu' extension)
---constant cp_sel_res5_c     : std_ulogic_vector(7 downto 0) := "00100000"; -- CP5: reserved
---constant cp_sel_res6_c     : std_ulogic_vector(7 downto 0) := "01000000"; -- CP6: reserved
---constant cp_sel_res7_c     : std_ulogic_vector(7 downto 0) := "10000000"; -- CP7: reserved
+  constant cp_sel_shifter_c  : std_ulogic_vector(5 downto 0) := "000001"; -- CP0: shift operations (base ISA)
+  constant cp_sel_muldiv_c   : std_ulogic_vector(5 downto 0) := "000010"; -- CP1: multiplication/division operations ('M' extensions)
+  constant cp_sel_bitmanip_c : std_ulogic_vector(5 downto 0) := "000100"; -- CP2: bit manipulation ('B' extensions)
+  constant cp_sel_fpu_c      : std_ulogic_vector(5 downto 0) := "001000"; -- CP3: floating-point unit ('Zfinx' extension)
+  constant cp_sel_cfu_c      : std_ulogic_vector(5 downto 0) := "010000"; -- CP4: custom instructions CFU ('Zxcfu' extension)
+--constant cp_sel_res5_c     : std_ulogic_vector(5 downto 0) := "100000"; -- CP5: reserved
 
   -- ALU Function Codes [DO NOT CHANGE ENCODING!] -------------------------------------------
   -- -------------------------------------------------------------------------------------------

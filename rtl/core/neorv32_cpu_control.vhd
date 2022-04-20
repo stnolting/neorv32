@@ -1006,13 +1006,16 @@ begin
       -- ------------------------------------------------------------
         case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
-          when opcode_alu_c | opcode_alui_c => -- (register/immediate) ALU operation
+          when opcode_alu_c | opcode_alui_c => -- register/immediate ALU operation
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opb_mux_c) <= not execute_engine.i_reg(instr_opcode_msb_c-1); -- use IMM as ALU.OPB for immediate operations
+            -- register-immediate ALU operation --
+            if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then 
+              ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
+            end if;
 
             -- ALU core operation --
             case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is -- actual ALU.logic operation (re-coding)
-              when funct3_subadd_c => -- ADD(I)/SUB
+              when funct3_subadd_c => -- ADD(I), SUB
                 if ((execute_engine.i_reg(instr_opcode_msb_c-1) = '1') and (execute_engine.i_reg(instr_funct7_msb_c-1) = '1')) then -- not an immediate op and funct7.6 set => SUB
                   ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_sub_c;
                 else
@@ -1024,25 +1027,25 @@ begin
                 ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_xor_c;
               when funct3_or_c => -- OR(I)
                 ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_or_c;
-              when others => -- AND(I), multi-cycle / co-processor operations
+              when others => -- AND(I) or multi-cycle / co-processor operation
                 ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_and_c;
             end case;
 
             -- co-processor MULDIV operation (multi-cycle) --
             if ((CPU_EXTENSION_RISCV_M = true) and ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
                ((CPU_EXTENSION_RISCV_Zmmul = true) and (decode_aux.is_m_mul = '1')) then -- MUL
-              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_muldiv_c; -- trigger MULDIV CP
+              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_muldiv_c; -- trigger MULDIV CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- co-processor BIT-MANIPULATION operation (multi-cycle) --
             elsif (CPU_EXTENSION_RISCV_B = true) and
                   (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_b_reg = '1')) or -- register operation
                    ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
-              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_bitmanip_c; -- trigger BITMANIP CP
+              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_bitmanip_c; -- trigger BITMANIP CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- co-processor SHIFT operation (multi-cycle) --
             elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or
                   (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) then
-              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_shifter_c; -- trigger SHIFTER CP
+              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_shifter_c; -- trigger SHIFTER CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- ALU CORE operation (single-cycle) --
             else
@@ -1094,7 +1097,7 @@ begin
           when opcode_fop_c => -- floating-point operations
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zfinx = true) then
-              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_fpu_c; -- trigger FPU CP
+              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_fpu_c; -- trigger FPU CP
               execute_engine.state_nxt <= ALU_WAIT;
             else
               execute_engine.state_nxt <= DISPATCH;
@@ -1104,7 +1107,7 @@ begin
           when opcode_cust0_c => -- CFU: custom RISC-V instructions (CUSTOM0 OPCODE space)
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zxcfu = true) then
-              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_cfu_c; -- trigger CFU CP
+              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_cfu_c; -- trigger CFU CP
               execute_engine.state_nxt <= ALU_WAIT;
             else
               execute_engine.state_nxt <= DISPATCH;
@@ -1208,7 +1211,7 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_mem_c; -- memory read data
         -- wait for memory response --
-        if (trap_ctrl.env_start = '1') and (trap_ctrl.cause(6 downto 5) = "00") then -- abort if SYNC EXCEPTION (from bus or illegal cmd) / no IRQs and NOT DEBUG-MODE-related
+        if (trap_ctrl.env_start = '1') and (trap_ctrl.cause(6 downto 5) = "00") then -- abort if SYNC non-debug EXCEPTION (e.g. bus or illegal)
           execute_engine.state_nxt <= DISPATCH;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           -- data write-back --
