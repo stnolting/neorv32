@@ -102,7 +102,8 @@ begin
 
   -- Register File Access -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  reg_file_rv32i: -- "normal" (RV32I) register file with 32 registers
+  -- "normal" (RV32I) register file with 32 registers --
+  reg_file_rv32i:
   if (CPU_EXTENSION_RISCV_E = false) generate
     rf_access: process(clk_i)
     begin
@@ -116,7 +117,8 @@ begin
     end process rf_access;
   end generate;
 
-  reg_file_rv32e: -- "embedded" (RV32E) register file with 16 registers
+  -- "embedded" (RV32E) register file with 16 registers --
+  reg_file_rv32e:
   if (CPU_EXTENSION_RISCV_E = true) generate
     rf_access: process(clk_i)
     begin
