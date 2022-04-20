@@ -768,13 +768,11 @@ begin
     ctrl_o(ctrl_bus_wr_c)   <= ctrl(ctrl_bus_wr_c); -- not set if illegal instruction (ensured by execute engine)
     -- current effective privilege level --
     ctrl_o(ctrl_priv_mode_c) <= csr.privilege_eff;
-    -- register sources --
+    -- register addresses --
     ctrl_o(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c);
     ctrl_o(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= execute_engine.i_reg(instr_rs2_msb_c downto instr_rs2_lsb_c);
-    -- memory access size / sign --
-    ctrl_o(ctrl_bus_unsigned_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
-    ctrl_o(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size
-    -- instruction's function blocks (for co-processors) --
+    ctrl_o(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c);
+    -- instruction's function blocks --
     ctrl_o(ctrl_ir_opcode7_6_c  downto ctrl_ir_opcode7_0_c) <= execute_engine.i_reg(instr_opcode_msb_c  downto instr_opcode_lsb_c);
     ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
     ctrl_o(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c)  <= execute_engine.i_reg(instr_funct3_msb_c  downto instr_funct3_lsb_c);
@@ -938,9 +936,8 @@ begin
 
     -- CONTROL DEFAULTS --
     ctrl_nxt <= (others => '0'); -- default: all off
-    ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c)       <= alu_op_add_c; -- default ALU operation: ADD
-    ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c)       <= rf_mux_alu_c; -- default RF input: ALU
-    ctrl_nxt(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) <= execute_engine.i_reg(instr_rd_msb_c downto instr_rd_lsb_c); -- rd
+    ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_add_c; -- default ALU operation: ADD
+    ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_alu_c; -- default RF input: ALU
     -- ALU sign control --
     if (execute_engine.i_reg(instr_opcode_lsb_c+4) = '1') then -- ALU ops
       ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- unsigned ALU operation? (SLTIU, SLTU)
@@ -1070,7 +1067,7 @@ begin
           when opcode_load_c | opcode_store_c | opcode_atomic_c => -- load/store / atomic memory access
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
-            ctrl_nxt(ctrl_bus_mo_we_c)   <= '1'; -- write to MAR and MDO (MDO only relevant for store)
+            ctrl_nxt(ctrl_bus_mo_we_c)   <= '1'; -- write memory output registers (data & address)
             execute_engine.state_nxt     <= LOADSTORE_0;
 
 
@@ -1184,11 +1181,10 @@ begin
       -- ------------------------------------------------------------
         execute_engine.branched_nxt <= '1'; -- this is an actual branch
         execute_engine.state_nxt    <= DISPATCH;
-        -- use this state also to clear register file's x0 register --
+        -- use this state also to (re-)initialize the register file's x0/zero register --
         if (reset_x0_c = true) then -- if x0 is a "real" register that has to be initialized to zero
-          ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c)       <= rf_mux_csr_c; -- this will return 0 since csr.re_nxt is cleared
-          ctrl_nxt(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) <= (others => '0'); -- rd = x0 (zero)
-          ctrl_nxt(ctrl_rf_zero_we_c)                          <= '1'; -- allow write access to x0
+          ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c; -- this will return 0 since csr.re_nxt has not been set
+          ctrl_nxt(ctrl_rf_zero_we_c)                    <= '1'; -- allow/force write access to x0
         end if;
 
 
@@ -1205,13 +1201,11 @@ begin
 
       when LOADSTORE_1 => -- memory access latency
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- write input data to MDI (only relevant for load and SC.W operations)
-        execute_engine.state_nxt   <= LOADSTORE_2;
+        execute_engine.state_nxt <= LOADSTORE_2;
 
 
       when LOADSTORE_2 => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load and SC.W operations)
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_mem_c; -- memory read data
         -- wait for memory response --
         if (trap_ctrl.env_start = '1') and (trap_ctrl.cause(6 downto 5) = "00") then -- abort if SYNC EXCEPTION (from bus or illegal cmd) / no IRQs and NOT DEBUG-MODE-related
@@ -2019,11 +2013,12 @@ begin
           end if;
 
           -- --------------------------------------------------------------------
-          -- TRAP ENTER: write machine trap cause, PC and trap value register
+          -- TRAP ENTER: write machine trap cause, PC and value register
           -- --------------------------------------------------------------------
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
 
-            -- normal trap entry: write mcause, mepc and mtval --
+            -- trap entry: write mcause, mepc and mtval --
+            -- > no update when in debug-mode!
             -- --------------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_DEBUG = false) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.running = '0')) then
 
@@ -2053,7 +2048,8 @@ begin
 
             end if;
 
-            -- DEBUG MODE (trap) enter: write dpc and dcsr --
+            -- DEBUG MODE entry: write dpc and dcsr --
+            -- > no update when already in debug-mode!
             -- --------------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then
 
@@ -2077,19 +2073,19 @@ begin
           -- --------------------------------------------------------------------
           -- mstatus: context switch
           -- --------------------------------------------------------------------
-          -- ENTER: trap handler starting
+          -- ENTER: trap handler starting --
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
             if (CPU_EXTENSION_RISCV_DEBUG = false) or -- normal trapping (debug mode NOT implemented)
                ((debug_ctrl.running = '0') and (trap_ctrl.cause(5) = '0')) then -- not IN debug mode and not ENTERING debug mode
               csr.mstatus_mie  <= '0'; -- disable interrupts
-              csr.mstatus_mpie <= csr.mstatus_mie; -- buffer previous mie state
+              csr.mstatus_mpie <= csr.mstatus_mie; -- backup previous mie state
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
                 csr.privilege   <= priv_mode_m_c; -- execute trap in machine mode
                 csr.mstatus_mpp <= csr.privilege; -- backup previous privilege mode
               end if;
             end if;
 
-          -- EXIT: return from trap
+          -- EXIT: return from trap --
           elsif (trap_ctrl.env_end = '1') then
             if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then -- return from debug mode
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
@@ -2099,7 +2095,7 @@ begin
               csr.mstatus_mie  <= csr.mstatus_mpie; -- restore global IRQ enable flag
               csr.mstatus_mpie <= '1';
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
-                csr.privilege   <= csr.mstatus_mpp; -- go back to previous privilege mode
+                csr.privilege   <= csr.mstatus_mpp; -- restore previous privilege mode
                 csr.mstatus_mpp <= '0'; -- MRET has to clear mstatus.MPP
               end if;
             end if;
@@ -2110,7 +2106,7 @@ begin
     end if;
   end process csr_write_access;
 
-  -- effective privilege mode is M when in debug mode --
+  -- effective privilege mode is MACHINE when in debug mode --
   csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') else csr.privilege;
 
   -- PMP output to bus unit --

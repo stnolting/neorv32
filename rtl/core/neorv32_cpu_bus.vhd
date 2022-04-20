@@ -102,17 +102,12 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   -- PMP minimal granularity --
   constant pmp_lsb_c : natural := index_size_f(PMP_MIN_GRANULARITY);
 
-  -- data memory address register --
-  signal mar : std_ulogic_vector(data_width_c-1 downto 0);
-
-  -- data access --
-  signal d_bus_wdata : std_ulogic_vector(data_width_c-1 downto 0); -- write data
-  signal d_bus_rdata : std_ulogic_vector(data_width_c-1 downto 0); -- read data
-  signal rdata_align : std_ulogic_vector(data_width_c-1 downto 0); -- read-data alignment
-  signal d_bus_ben   : std_ulogic_vector(3 downto 0); -- write data byte enable
-
-  -- misaligned access? --
-  signal d_misaligned : std_ulogic;
+  -- misc --
+  signal data_size  : std_ulogic_vector(1 downto 0); -- transfer size
+  signal data_sign  : std_ulogic; -- signed load
+  signal mar        : std_ulogic_vector(data_width_c-1 downto 0); -- data memory address register
+  signal rdata      : std_ulogic_vector(data_width_c-1 downto 0); -- aligned and sign-extended read-data
+  signal misaligned : std_ulogic; -- misaligned address
 
   -- bus arbiter --
   type bus_arbiter_t is record
@@ -120,7 +115,11 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
     rw   : std_ulogic; -- read/write access
     err  : std_ulogic; -- bus access error
   end record;
-  signal d_arbiter : bus_arbiter_t;
+  signal arbiter : bus_arbiter_t;
+
+  -- memory control signal buffer (when using PMP) --
+  signal d_bus_we, d_bus_we_buf : std_ulogic;
+  signal d_bus_re, d_bus_re_buf : std_ulogic;
 
   -- atomic/exclusive access - reservation controller --
   signal exclusive_lock        : std_ulogic;
@@ -136,10 +135,6 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   end record;
   signal pmp : pmp_t;
 
-  -- memory control signal buffer (when using PMP) --
-  signal d_bus_we, d_bus_we_buf : std_ulogic;
-  signal d_bus_re, d_bus_re_buf : std_ulogic;
-
   -- pmp faults --
   signal if_pmp_fault : std_ulogic; -- pmp instruction access fault
   signal ld_pmp_fault : std_ulogic; -- pmp load access fault
@@ -151,7 +146,13 @@ begin
   -- -------------------------------------------------------------------------------------------
   assert not (PMP_NUM_REGIONS > pmp_num_regions_critical_c) report "NEORV32 CPU CONFIG WARNING! Number of implemented PMP regions (PMP_NUM_REGIONS = " &
   integer'image(PMP_NUM_REGIONS) & ") beyond critical limit (pmp_num_regions_critical_c = " & integer'image(pmp_num_regions_critical_c) &
-  "). Inserting another register stage (that will increase memory latency by +1 cycle)." severity warning;
+  "). Inserting another register stage (increasing DATA memory access latency by +1 cycle)." severity warning;
+
+
+  -- Transfer Configuration -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  data_size <= ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c); -- transfer size
+  data_sign <= not ctrl_i(ctrl_ir_funct3_2_c); -- NOT unsigned LOAD (LBU, LHU)
 
 
   -- Access Address -------------------------------------------------------------------------
@@ -167,8 +168,25 @@ begin
     end if;
   end process mem_adr_reg;
 
-  -- address read-back for exception controller --
-  mar_o <= mar;
+  -- address output --
+  d_bus_addr_o <= mar;
+  mar_o        <= mar; -- for mtval csr (exceptions)
+
+  -- data access address alignment check --
+  misaligned_d_check: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      misaligned <= def_rst_val_c;
+    elsif rising_edge(clk_i) then
+      if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
+        case data_size is -- data size
+          when "00"   => misaligned <= '0'; -- byte
+          when "01"   => misaligned <= addr_i(0); -- half-word
+          when others => misaligned <= addr_i(1) or addr_i(0); -- word
+        end case;
+      end if;
+    end if;
+  end process misaligned_d_check;
 
 
   -- Write Data -----------------------------------------------------------------------------
@@ -176,34 +194,34 @@ begin
   mem_do_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      d_bus_wdata <= (others => def_rst_val_c);
-      d_bus_ben   <= (others => def_rst_val_c);
+      d_bus_wdata_o <= (others => def_rst_val_c);
+      d_bus_ben_o   <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
         -- byte enable and data alignment --
-        case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
+        case data_size is -- data size
           when "00" => -- byte
-            d_bus_wdata(07 downto 00) <= wdata_i(7 downto 0);
-            d_bus_wdata(15 downto 08) <= wdata_i(7 downto 0);
-            d_bus_wdata(23 downto 16) <= wdata_i(7 downto 0);
-            d_bus_wdata(31 downto 24) <= wdata_i(7 downto 0);
+            d_bus_wdata_o(07 downto 00) <= wdata_i(7 downto 0);
+            d_bus_wdata_o(15 downto 08) <= wdata_i(7 downto 0);
+            d_bus_wdata_o(23 downto 16) <= wdata_i(7 downto 0);
+            d_bus_wdata_o(31 downto 24) <= wdata_i(7 downto 0);
             case addr_i(1 downto 0) is
-              when "00"   => d_bus_ben <= "0001";
-              when "01"   => d_bus_ben <= "0010";
-              when "10"   => d_bus_ben <= "0100";
-              when others => d_bus_ben <= "1000";
+              when "00"   => d_bus_ben_o <= "0001";
+              when "01"   => d_bus_ben_o <= "0010";
+              when "10"   => d_bus_ben_o <= "0100";
+              when others => d_bus_ben_o <= "1000";
             end case;
           when "01" => -- half-word
-            d_bus_wdata(31 downto 16) <= wdata_i(15 downto 0);
-            d_bus_wdata(15 downto 00) <= wdata_i(15 downto 0);
+            d_bus_wdata_o(31 downto 16) <= wdata_i(15 downto 0);
+            d_bus_wdata_o(15 downto 00) <= wdata_i(15 downto 0);
             if (addr_i(1) = '0') then
-              d_bus_ben <= "0011"; -- low half-word
+              d_bus_ben_o <= "0011"; -- low half-word
             else
-              d_bus_ben <= "1100"; -- high half-word
+              d_bus_ben_o <= "1100"; -- high half-word
             end if;
           when others => -- word
-            d_bus_wdata <= wdata_i;
-            d_bus_ben   <= "1111"; -- full word
+            d_bus_wdata_o <= wdata_i;
+            d_bus_ben_o   <= "1111"; -- full word
         end case;
       end if;
     end if;
@@ -215,41 +233,41 @@ begin
   read_align: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      rdata_align <= (others => def_rst_val_c);
+      rdata <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       -- input data alignment and sign extension --
-      case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is
+      case data_size is
         when "00" => -- byte
           case mar(1 downto 0) is
             when "00" => -- byte 0
-              rdata_align(07 downto 00) <= d_bus_rdata(07 downto 00);
-              rdata_align(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(07))); -- sign extension
+              rdata(07 downto 00) <= d_bus_rdata_i(07 downto 00);
+              rdata(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(07))); -- sign extension
             when "01" => -- byte 1
-              rdata_align(07 downto 00) <= d_bus_rdata(15 downto 08);
-              rdata_align(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(15))); -- sign extension
+              rdata(07 downto 00) <= d_bus_rdata_i(15 downto 08);
+              rdata(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
             when "10" => -- byte 2
-              rdata_align(07 downto 00) <= d_bus_rdata(23 downto 16);
-              rdata_align(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(23))); -- sign extension
+              rdata(07 downto 00) <= d_bus_rdata_i(23 downto 16);
+              rdata(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(23))); -- sign extension
             when others => -- byte 3
-              rdata_align(07 downto 00) <= d_bus_rdata(31 downto 24);
-              rdata_align(31 downto 08) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(31))); -- sign extension
+              rdata(07 downto 00) <= d_bus_rdata_i(31 downto 24);
+              rdata(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
           end case;
         when "01" => -- half-word
           if (mar(1) = '0') then
-            rdata_align(15 downto 00) <= d_bus_rdata(15 downto 00); -- low half-word
-            rdata_align(31 downto 16) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(15))); -- sign extension
+            rdata(15 downto 00) <= d_bus_rdata_i(15 downto 00); -- low half-word
+            rdata(31 downto 16) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
           else
-            rdata_align(15 downto 00) <= d_bus_rdata(31 downto 16); -- high half-word
-            rdata_align(31 downto 16) <= (others => ((not ctrl_i(ctrl_bus_unsigned_c)) and d_bus_rdata(31))); -- sign extension
+            rdata(15 downto 00) <= d_bus_rdata_i(31 downto 16); -- high half-word
+            rdata(31 downto 16) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
           end if;
         when others => -- word
-          rdata_align <= d_bus_rdata; -- full word
+          rdata <= d_bus_rdata_i; -- full word
       end case;
     end if;
   end process read_align;
 
   -- insert exclusive lock status for SC operations --
-  rdata_o <= exclusive_lock_status when (CPU_EXTENSION_RISCV_A = true) and (ctrl_i(ctrl_bus_ch_lock_c) = '1') else rdata_align;
+  rdata_o <= exclusive_lock_status when (CPU_EXTENSION_RISCV_A = true) and (ctrl_i(ctrl_bus_ch_lock_c) = '1') else rdata;
 
 
   -- Access Arbiter -------------------------------------------------------------------------
@@ -257,67 +275,45 @@ begin
   data_access_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      d_arbiter.busy <= '0';
-      d_arbiter.rw   <= def_rst_val_c;
-      d_arbiter.err  <= def_rst_val_c;
+      arbiter.busy <= '0';
+      arbiter.rw   <= def_rst_val_c;
+      arbiter.err  <= def_rst_val_c;
     elsif rising_edge(clk_i) then
-      if (d_arbiter.busy = '0') then -- idle
-        d_arbiter.busy <= ctrl_i(ctrl_bus_wr_c) or ctrl_i(ctrl_bus_rd_c); -- start bus access
-        d_arbiter.rw   <= ctrl_i(ctrl_bus_wr_c); -- set if write access
-        d_arbiter.err  <= '0';
+      if (arbiter.busy = '0') then -- idle
+        arbiter.busy <= ctrl_i(ctrl_bus_wr_c) or ctrl_i(ctrl_bus_rd_c); -- start bus access
+        arbiter.rw   <= ctrl_i(ctrl_bus_wr_c); -- set if write access
+        arbiter.err  <= '0';
       else -- bus access in progress
         -- accumulate bus errors --
         if (d_bus_err_i = '1') or -- bus error
-           ((d_arbiter.rw = '1') and (st_pmp_fault = '1')) or -- PMP store fault
-           ((d_arbiter.rw = '0') and (ld_pmp_fault = '1')) then -- PMP load fault
-          d_arbiter.err <= '1';
+           ((arbiter.rw = '1') and (st_pmp_fault = '1')) or -- PMP store fault
+           ((arbiter.rw = '0') and (ld_pmp_fault = '1')) then -- PMP load fault
+          arbiter.err <= '1';
         end if;
         -- do not abort directly when an error has been detected - wait until the trap environment
         -- has started (ctrl_i(ctrl_trap_c)) to make sure the error signals are evaluated BEFORE d_wait_o clears
         if (d_bus_ack_i = '1') or (ctrl_i(ctrl_trap_c) = '1') then
-          d_arbiter.busy <= '0';
+          arbiter.busy <= '0';
         end if;
       end if;
     end if;
   end process data_access_arbiter;
 
   -- wait for bus transaction to finish --
-  d_wait_o <= '1' when (d_arbiter.busy = '1') and (d_bus_ack_i = '0') else '0';
+  d_wait_o <= '1' when (arbiter.busy = '1') and (d_bus_ack_i = '0') else '0';
 
   -- output data access error to controller --
-  ma_load_o  <= '1' when (d_arbiter.busy = '1') and (d_arbiter.rw = '0') and (d_misaligned  = '1') else '0';
-  be_load_o  <= '1' when (d_arbiter.busy = '1') and (d_arbiter.rw = '0') and (d_arbiter.err = '1') else '0';
-  ma_store_o <= '1' when (d_arbiter.busy = '1') and (d_arbiter.rw = '1') and (d_misaligned  = '1') else '0';
-  be_store_o <= '1' when (d_arbiter.busy = '1') and (d_arbiter.rw = '1') and (d_arbiter.err = '1') else '0';
+  ma_load_o  <= '1' when (arbiter.busy = '1') and (arbiter.rw = '0') and (misaligned  = '1') else '0';
+  be_load_o  <= '1' when (arbiter.busy = '1') and (arbiter.rw = '0') and (arbiter.err = '1') else '0';
+  ma_store_o <= '1' when (arbiter.busy = '1') and (arbiter.rw = '1') and (misaligned  = '1') else '0';
+  be_store_o <= '1' when (arbiter.busy = '1') and (arbiter.rw = '1') and (arbiter.err = '1') else '0';
 
   -- data bus interface (read/write)--
-  d_bus_addr_o  <= mar;
-  d_bus_wdata_o <= d_bus_wdata;
-  d_bus_ben_o   <= d_bus_ben;
-  d_bus_we      <= ctrl_i(ctrl_bus_wr_c) and (not d_misaligned) and (not st_pmp_fault); -- no actual write when misaligned or PMP fault
-  d_bus_re      <= ctrl_i(ctrl_bus_rd_c) and (not d_misaligned) and (not ld_pmp_fault); -- no actual read when misaligned or PMP fault
-  d_bus_we_o    <= d_bus_we_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_we;
-  d_bus_re_o    <= d_bus_re_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_re;
+  d_bus_we      <= ctrl_i(ctrl_bus_wr_c) and (not misaligned) and (not st_pmp_fault); -- no actual write when misaligned or PMP fault
+  d_bus_re      <= ctrl_i(ctrl_bus_rd_c) and (not misaligned) and (not ld_pmp_fault); -- no actual read when misaligned or PMP fault
   d_bus_fence_o <= ctrl_i(ctrl_bus_fence_c);
-  d_bus_rdata   <= d_bus_rdata_i;
 
-  -- check data access address alignment --
-  misaligned_d_check: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      d_misaligned <= def_rst_val_c;
-    elsif rising_edge(clk_i) then
-      if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
-        case ctrl_i(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) is -- data size
-          when "00"   => d_misaligned <= '0'; -- byte
-          when "01"   => d_misaligned <= addr_i(0); -- half-word
-          when others => d_misaligned <= addr_i(1) or addr_i(0); -- word
-        end case;
-      end if;
-    end if;
-  end process misaligned_d_check;
-
-  -- additional register stage for control signals if using PMP_NUM_REGIONS > pmp_num_regions_critical_c --
+  -- additional register stage for control signals if PMP_NUM_REGIONS > pmp_num_regions_critical_c --
   pmp_dbus_buffer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -329,8 +325,11 @@ begin
     end if;
   end process pmp_dbus_buffer;
 
+  d_bus_we_o <= d_bus_we_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_we;
+  d_bus_re_o <= d_bus_re_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_re;
 
-  -- Reservation Controller (LR/SC [A extension]) -------------------------------------------
+
+  -- Reservation Controller (A extension) ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   exclusive_access_controller: process(rstn_i, clk_i)
   begin
