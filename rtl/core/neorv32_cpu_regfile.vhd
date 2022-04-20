@@ -95,14 +95,14 @@ begin
       when rf_mux_mem_c => rf_wdata <= mem_i; -- memory read data
       when rf_mux_csr_c => rf_wdata <= csr_i; -- CSR read data
       when rf_mux_npc_c => rf_wdata <= pc2_i; -- next PC (branch return/link address)
-      when others       => rf_wdata <= alu_i;
+      when others       => rf_wdata <= alu_i; -- don't care
     end case;
   end process wb_select;
 
 
   -- Register File Access -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  reg_file_rv32i: -- normal (RV32I) register file with 32 registers
+  reg_file_rv32i: -- "normal" (RV32I) register file with 32 registers
   if (CPU_EXTENSION_RISCV_E = false) generate
     rf_access: process(clk_i)
     begin
@@ -135,7 +135,8 @@ begin
   rf_we   <= (ctrl_i(ctrl_rf_wb_en_c) and (not rd_zero)) or ctrl_i(ctrl_rf_zero_we_c); -- do not write to x0 unless explicitly forced
 
   -- access addresses --
-  opa_addr <= ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) when (ctrl_i(ctrl_rf_wb_en_c) = '1') or (ctrl_i(ctrl_rf_zero_we_c) = '1') else -- rd
+  opa_addr <= "00000" when (ctrl_i(ctrl_rf_zero_we_c) = '1') else -- force rd = zero
+              ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) when (ctrl_i(ctrl_rf_wb_en_c) = '1') else -- rd
               ctrl_i(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- rs1
   opb_addr <= ctrl_i(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c); -- rs2
 
