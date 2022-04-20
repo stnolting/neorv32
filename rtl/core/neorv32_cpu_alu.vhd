@@ -101,39 +101,38 @@ begin
   cmp_opy <= (rs2_i(rs2_i'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs2_i;
 
   cmp(cmp_equal_c) <= '1' when (rs1_i = rs2_i) else '0';
-  cmp(cmp_less_c)  <= '1' when (signed(cmp_opx) < signed(cmp_opy)) else '0';
+  cmp(cmp_less_c)  <= '1' when (signed(cmp_opx) < signed(cmp_opy)) else '0'; -- signed or unsigned comparison
   cmp_o            <= cmp;
 
 
-  -- ALU Input Operand Mux ------------------------------------------------------------------
+  -- ALU Input Operand Select ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  opa <= pc_i  when (ctrl_i(ctrl_alu_opa_mux_c) = '1') else rs1_i; -- operand a (first ALU input operand), only required for arithmetic ops
-  opb <= imm_i when (ctrl_i(ctrl_alu_opb_mux_c) = '1') else rs2_i; -- operand b (second ALU input operand)
+  opa <= pc_i  when (ctrl_i(ctrl_alu_opa_mux_c) = '1') else rs1_i;
+  opb <= imm_i when (ctrl_i(ctrl_alu_opb_mux_c) = '1') else rs2_i;
 
 
-  -- Binary Adder/Subtracter ----------------------------------------------------------------
+  -- Adder/Subtracter Core ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  binary_arithmetic_core: process(ctrl_i, opa, opb)
-    variable cin_v  : std_ulogic_vector(0 downto 0);
-    variable op_a_v : std_ulogic_vector(data_width_c downto 0);
-    variable op_b_v : std_ulogic_vector(data_width_c downto 0);
-    variable op_y_v : std_ulogic_vector(data_width_c downto 0);
-    variable res_v  : std_ulogic_vector(data_width_c downto 0);
+  arithmetic_core: process(ctrl_i, opa, opb)
+    variable cin_v : std_ulogic_vector(0 downto 0);
+    variable opa_v : std_ulogic_vector(data_width_c downto 0);
+    variable opb_v : std_ulogic_vector(data_width_c downto 0);
+    variable opy_v : std_ulogic_vector(data_width_c downto 0);
   begin
     -- operand sign-extension --
-    op_a_v := (opa(opa'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opa;
-    op_b_v := (opb(opb'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opb;
+    opa_v := (opa(opa'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opa;
+    opb_v := (opb(opb'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opb;
     -- add/sub(slt) select --
     if (ctrl_i(ctrl_alu_op0_c) = '1') then -- subtraction
-      op_y_v   := not op_b_v;
+      opy_v    := not opb_v;
       cin_v(0) := '1';
     else -- addition
-      op_y_v   := op_b_v;
+      opy_v    := opb_v;
       cin_v(0) := '0';
     end if;
     -- adder core --
-    addsub_res <= std_ulogic_vector(unsigned(op_a_v) + unsigned(op_y_v) + unsigned(cin_v(0 downto 0)));
-  end process binary_arithmetic_core;
+    addsub_res <= std_ulogic_vector(unsigned(opa_v) + unsigned(opy_v) + unsigned(cin_v(0 downto 0)));
+  end process arithmetic_core;
 
   -- direct output of adder result --
   add_o <= addsub_res(data_width_c-1 downto 0);
@@ -152,7 +151,7 @@ begin
       when alu_op_xor_c  => res_o <= rs1_i xor opb; -- only rs1 required for logic ops (opa would also contain pc)
       when alu_op_or_c   => res_o <= rs1_i or  opb;
       when alu_op_and_c  => res_o <= rs1_i and opb;
-      when others        => res_o <= addsub_res(data_width_c-1 downto 0);
+      when others        => res_o <= addsub_res(data_width_c-1 downto 0); -- don't care
     end case;
   end process alu_core;
 
@@ -167,13 +166,11 @@ begin
 
   -- co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before output data (cp_result) is valid
-  idone_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or
-             cp_valid(4) or cp_valid(5) or cp_valid(6) or cp_valid(7);
+  idone_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5) or cp_valid(6) or cp_valid(7);
 
   -- co-processor result --
   -- > "cp_result" data has to be always zero unless co-processor was actually triggered
-  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or
-            cp_result(4) or cp_result(5) or cp_result(6) or cp_result(7);
+  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5) or cp_result(6) or cp_result(7);
 
 
   -- Co-Processor 0: Shifter Unit (CPU Base ISA) --------------------------------------------

@@ -210,30 +210,35 @@ begin
 
   -- Peripheral Bus Switch ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  p_bus_addr_o   <= ca_bus_addr_i   when (arbiter.bus_sel = '0')    else cb_bus_addr_i;
-  p_bus_wdata_o  <= cb_bus_wdata_i  when (PORT_CA_READ_ONLY = true) else
-                    ca_bus_wdata_i  when (PORT_CB_READ_ONLY = true) else
-                    ca_bus_wdata_i  when (arbiter.bus_sel = '0')    else cb_bus_wdata_i;
-  p_bus_ben_o    <= cb_bus_ben_i    when (PORT_CA_READ_ONLY = true) else
-                    ca_bus_ben_i    when (PORT_CB_READ_ONLY = true) else
-                    ca_bus_ben_i    when (arbiter.bus_sel = '0')    else cb_bus_ben_i;
-  p_bus_we       <= ca_bus_we_i     when (arbiter.bus_sel = '0')    else cb_bus_we_i;
-  p_bus_re       <= ca_bus_re_i     when (arbiter.bus_sel = '0')    else cb_bus_re_i;
-  p_bus_we_o     <= (p_bus_we or arbiter.we_trig);
-  p_bus_re_o     <= (p_bus_re or arbiter.re_trig);
+  p_bus_addr_o   <= ca_bus_addr_i when (arbiter.bus_sel = '0') else cb_bus_addr_i;
+
+  p_bus_wdata_o  <= cb_bus_wdata_i when (PORT_CA_READ_ONLY = true) else
+                    ca_bus_wdata_i when (PORT_CB_READ_ONLY = true) else
+                    ca_bus_wdata_i when (arbiter.bus_sel = '0')    else cb_bus_wdata_i;
+
+  p_bus_ben_o    <= cb_bus_ben_i when (PORT_CA_READ_ONLY = true) else
+                    ca_bus_ben_i when (PORT_CB_READ_ONLY = true) else
+                    ca_bus_ben_i when (arbiter.bus_sel = '0')    else cb_bus_ben_i;
+
+  p_bus_we       <= ca_bus_we_i when (arbiter.bus_sel = '0') else cb_bus_we_i;
+  p_bus_re       <= ca_bus_re_i when (arbiter.bus_sel = '0') else cb_bus_re_i;
+  p_bus_we_o     <= p_bus_we or arbiter.we_trig;
+  p_bus_re_o     <= p_bus_re or arbiter.re_trig;
+
   p_bus_lock_o   <= ca_bus_lock_i or cb_bus_lock_i;
+
   p_bus_src_o    <= arbiter.bus_sel;
 
   ca_bus_rdata_o <= p_bus_rdata_i;
   cb_bus_rdata_o <= p_bus_rdata_i;
 
-  ca_bus_ack     <= p_bus_ack_i and (not arbiter.bus_sel);
-  cb_bus_ack     <= p_bus_ack_i and (    arbiter.bus_sel);
+  ca_bus_ack     <= p_bus_ack_i when (arbiter.bus_sel = '0') else '0';
+  cb_bus_ack     <= p_bus_ack_i when (arbiter.bus_sel = '1') else '0';
   ca_bus_ack_o   <= ca_bus_ack;
   cb_bus_ack_o   <= cb_bus_ack;
 
-  ca_bus_err     <= p_bus_err_i and (not arbiter.bus_sel);
-  cb_bus_err     <= p_bus_err_i and (    arbiter.bus_sel);
+  ca_bus_err     <= p_bus_err_i when (arbiter.bus_sel = '0') else '0';
+  cb_bus_err     <= p_bus_err_i when (arbiter.bus_sel = '1') else '0';
   ca_bus_err_o   <= ca_bus_err;
   cb_bus_err_o   <= cb_bus_err;
 
