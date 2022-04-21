@@ -293,10 +293,10 @@ void neorv32_rte_print_hw_config(void) {
   int i;
   char c;
 
-  neorv32_uart0_printf("\n\n<<< Processor Configuration Overview >>>\n");
+  neorv32_uart0_printf("\n\n<< Processor Configuration >>\n");
 
   // CPU configuration
-  neorv32_uart0_printf("\n=== << CPU >> ===\n");
+  neorv32_uart0_printf("\n---<< CPU >>---\n");
 
   // general
   neorv32_uart0_printf("Clock speed:       %u Hz\n", NEORV32_SYSINFO.CLK);
@@ -379,10 +379,20 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // check physical memory protection
-  neorv32_uart0_printf("\nPMP:               ");
+  neorv32_uart0_printf("\nPhys. Mem. Prot.:  ");
   uint32_t pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
   if (pmp_num_regions != 0)  {
-    neorv32_uart0_printf("%u regions, %u bytes minimal granularity, OFF/TOR modes only\n", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
+    neorv32_uart0_printf("%u region(s), %u bytes minimal granularity, OFF/TOR mode only", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
+  }
+  else {
+    neorv32_uart0_printf("not implemented");
+  }
+
+  // check hardware performance monitors
+  neorv32_uart0_printf("\nHW Perf. Monitors: ");
+  uint32_t hpm_num = neorv32_cpu_hpm_get_counters();
+  if (hpm_num != 0)  {
+    neorv32_uart0_printf("%u counter(s), %u bit\n", hpm_num, neorv32_cpu_hpm_get_size());
   }
   else {
     neorv32_uart0_printf("not implemented\n");
@@ -390,7 +400,7 @@ void neorv32_rte_print_hw_config(void) {
 
 
   // Memory configuration
-  neorv32_uart0_printf("\n=== << Memory System >> ===\n");
+  neorv32_uart0_printf("\n---<< Memory System >>---\n");
 
   neorv32_uart0_printf("Boot configuration:  Boot ");
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {
@@ -471,7 +481,7 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // peripherals
-  neorv32_uart0_printf("\n=== << Peripherals >> ===\n");
+  neorv32_uart0_printf("\n---<< Peripherals >>---\n");
 
   tmp = NEORV32_SYSINFO.SOC;
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_GPIO));   neorv32_uart0_printf(" GPIO\n");
@@ -592,7 +602,7 @@ void neorv32_rte_print_credits(void) {
   }
 
   neorv32_uart0_print("The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
-                      "(c) 2022 by Stephan Nolting, BSD 3-Clause License\n\n");
+                      "(c) 2022 by Dipl.-Ing. Stephan Nolting, BSD 3-Clause License\n\n");
 }
 
 
