@@ -37,4 +37,5 @@ else
   $runcmd
 fi
 
-cat neorv32.uart0.sim_mode.text.out | grep "CPU TEST COMPLETED SUCCESSFULLY!"
+# verify results of processor check: sw/example/processor_check
+cat neorv32.uart0.sim_mode.text.out | grep "PROCESSOR TEST COMPLETED SUCCESSFULLY!"
