@@ -391,16 +391,26 @@ void neorv32_rte_print_hw_config(void) {
   // check hardware performance monitors
   neorv32_uart0_printf("\nHW Perf. Monitors: ");
   uint32_t hpm_num = neorv32_cpu_hpm_get_counters();
-  if (hpm_num != 0)  {
-    neorv32_uart0_printf("%u counter(s), %u bit\n", hpm_num, neorv32_cpu_hpm_get_size());
+  if (hpm_num != 0) {
+    neorv32_uart0_printf("%u counter(s), %u bit", hpm_num, neorv32_cpu_hpm_get_size());
   }
   else {
-    neorv32_uart0_printf("not implemented\n");
+    neorv32_uart0_printf("not implemented");
+  }
+
+  // check RISC-V CPU counters
+  neorv32_uart0_printf("\nBase counters:     ");
+  uint32_t cnt_size = neorv32_cpu_cnt_get_size();
+  if (hpm_num != 0) {
+    neorv32_uart0_printf("%u bit", cnt_size);
+  }
+  else {
+    neorv32_uart0_printf("not implemented");
   }
 
 
   // Memory configuration
-  neorv32_uart0_printf("\n---<< Memory System >>---\n");
+  neorv32_uart0_printf("\n\n---<< Memory System >>---\n");
 
   neorv32_uart0_printf("Boot configuration:  Boot ");
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {
