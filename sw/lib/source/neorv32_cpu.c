@@ -629,3 +629,46 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
   return size;
 }
 
+
+/**********************************************************************//**
+ * CPU base counters (cycle, instret): Get total counter width
+ *
+ * @warning This function overrides mcycle[h] CSRs.
+ *
+ * @return Size of CPU counters (1-64, 0 if not implemented at all).
+ **************************************************************************/
+uint32_t neorv32_cpu_cnt_get_size(void) {
+
+  uint32_t tmp, size, i;
+
+  // counters implemented at all?
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZICNTR)) == 0) {
+    return 0;
+  }
+
+  // inhibit auto-update of HPM counter3
+  tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
+  tmp |= 1 << CSR_MCOUNTINHIBIT_CY;
+  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp);
+
+  neorv32_cpu_csr_write(CSR_MCYCLE,  0xffffffff);
+  neorv32_cpu_csr_write(CSR_MCYCLEH, 0xffffffff);
+
+  if (neorv32_cpu_csr_read(CSR_MCYCLE) == 0) {
+    size = 0;
+    tmp = neorv32_cpu_csr_read(CSR_MHPMCOUNTER3);
+  }
+  else {
+    size = 32;
+    tmp = neorv32_cpu_csr_read(CSR_MCYCLEH);
+  }
+
+  for (i=0; i<32; i++) {
+    if (tmp & (1<<i)) {
+      size++;
+    }
+  }
+
+  return size;
+}
+
