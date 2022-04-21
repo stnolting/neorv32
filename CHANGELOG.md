@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 21.04.2022 | 1.7.0.6 | further VHDL code clean-ups and minor optimizations; [#303](https://github.com/stnolting/neorv32/pull/303) |
 | 19.04.2022 | 1.7.0.5 | minor clean-up and optimization of CPU's bus unit |
 | 13.04.2022 | 1.7.0.4 | improve timing of CPU's barrel shifter (`FAST_SHIFT_EN` = true) by moving the register stage; [#301](https://github.com/stnolting/neorv32/pull/301) |
 | 12.04.2022 | 1.7.0.3 | CPU front-end is now controlled by a _synchronous_ state machine (all outgoing signals are driven by registers), reducing critical path of memory system & reducing area costs; :warning: `CPU_IPB_ENTRIES` now has to be >= 2; [#300](https://github.com/stnolting/neorv32/pull/300) |
