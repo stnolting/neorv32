@@ -149,15 +149,15 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- instruction fetch engine --
   type fetch_engine_state_t is (S_RESTART, S_REQUEST, S_PENDING, S_WAIT); -- better use one-hot encoding
   type fetch_engine_t is record
-    state     : fetch_engine_state_t;
-    state_ff  : fetch_engine_state_t;
-    restart   : std_ulogic;
-    unaligned : std_ulogic;
-    pc        : std_ulogic_vector(data_width_c-1 downto 0);
-    reset     : std_ulogic;
-    resp      : std_ulogic; -- bus response
-    a_err     : std_ulogic; -- alignment error
-    pmp_err   : std_ulogic; -- PMP error
+    state      : fetch_engine_state_t;
+    state_prev : fetch_engine_state_t;
+    restart    : std_ulogic;
+    unaligned  : std_ulogic;
+    pc         : std_ulogic_vector(data_width_c-1 downto 0);
+    reset      : std_ulogic;
+    resp       : std_ulogic; -- bus response
+    a_err      : std_ulogic; -- alignment error
+    pmp_err    : std_ulogic; -- PMP error
   end record;
   signal fetch_engine : fetch_engine_t;
 
@@ -390,15 +390,15 @@ begin
   fetch_engine_fsm: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      fetch_engine.state     <= S_RESTART;
-      fetch_engine.state_ff  <= S_RESTART;
-      fetch_engine.restart   <= '1'; -- set to reset IPB
-      fetch_engine.unaligned <= '0'; -- always start at aligned address after reset
-      fetch_engine.pc        <= (others => def_rst_val_c);
-      fetch_engine.pmp_err   <= '0';
+      fetch_engine.state      <= S_RESTART;
+      fetch_engine.state_prev <= S_RESTART;
+      fetch_engine.restart    <= '1'; -- set to reset IPB
+      fetch_engine.unaligned  <= '0'; -- always start at aligned address after reset
+      fetch_engine.pc         <= (others => def_rst_val_c);
+      fetch_engine.pmp_err    <= '0';
     elsif rising_edge(clk_i) then
       -- previous state (for HPM) --
-      fetch_engine.state_ff <= fetch_engine.state;
+      fetch_engine.state_prev <= fetch_engine.state;
 
       -- restart request buffer --
       if (fetch_engine.state = S_RESTART) then -- restart done
@@ -768,13 +768,11 @@ begin
     ctrl_o(ctrl_bus_wr_c)   <= ctrl(ctrl_bus_wr_c); -- not set if illegal instruction (ensured by execute engine)
     -- current effective privilege level --
     ctrl_o(ctrl_priv_mode_c) <= csr.privilege_eff;
-    -- register sources --
+    -- register addresses --
     ctrl_o(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c);
     ctrl_o(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= execute_engine.i_reg(instr_rs2_msb_c downto instr_rs2_lsb_c);
-    -- memory access size / sign --
-    ctrl_o(ctrl_bus_unsigned_c) <= execute_engine.i_reg(instr_funct3_msb_c); -- unsigned LOAD (LBU, LHU)
-    ctrl_o(ctrl_bus_size_msb_c downto ctrl_bus_size_lsb_c) <= execute_engine.i_reg(instr_funct3_lsb_c+1 downto instr_funct3_lsb_c); -- mem transfer size
-    -- instruction's function blocks (for co-processors) --
+    ctrl_o(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c);
+    -- instruction's function blocks --
     ctrl_o(ctrl_ir_opcode7_6_c  downto ctrl_ir_opcode7_0_c) <= execute_engine.i_reg(instr_opcode_msb_c  downto instr_opcode_lsb_c);
     ctrl_o(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_0_c) <= execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c);
     ctrl_o(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c)  <= execute_engine.i_reg(instr_funct3_msb_c  downto instr_funct3_lsb_c);
@@ -938,9 +936,8 @@ begin
 
     -- CONTROL DEFAULTS --
     ctrl_nxt <= (others => '0'); -- default: all off
-    ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c)       <= alu_op_add_c; -- default ALU operation: ADD
-    ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c)       <= rf_mux_alu_c; -- default RF input: ALU
-    ctrl_nxt(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) <= execute_engine.i_reg(instr_rd_msb_c downto instr_rd_lsb_c); -- rd
+    ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_add_c; -- default ALU operation: ADD
+    ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_alu_c; -- default RF input: ALU
     -- ALU sign control --
     if (execute_engine.i_reg(instr_opcode_lsb_c+4) = '1') then -- ALU ops
       ctrl_nxt(ctrl_alu_unsigned_c) <= execute_engine.i_reg(instr_funct3_lsb_c+0); -- unsigned ALU operation? (SLTIU, SLTU)
@@ -1009,13 +1006,16 @@ begin
       -- ------------------------------------------------------------
         case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
-          when opcode_alu_c | opcode_alui_c => -- (register/immediate) ALU operation
+          when opcode_alu_c | opcode_alui_c => -- register/immediate ALU operation
           -- ------------------------------------------------------------
-            ctrl_nxt(ctrl_alu_opb_mux_c) <= not execute_engine.i_reg(instr_opcode_msb_c-1); -- use IMM as ALU.OPB for immediate operations
+            -- register-immediate ALU operation --
+            if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then 
+              ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
+            end if;
 
             -- ALU core operation --
             case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is -- actual ALU.logic operation (re-coding)
-              when funct3_subadd_c => -- ADD(I)/SUB
+              when funct3_subadd_c => -- ADD(I), SUB
                 if ((execute_engine.i_reg(instr_opcode_msb_c-1) = '1') and (execute_engine.i_reg(instr_funct7_msb_c-1) = '1')) then -- not an immediate op and funct7.6 set => SUB
                   ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_sub_c;
                 else
@@ -1027,25 +1027,25 @@ begin
                 ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_xor_c;
               when funct3_or_c => -- OR(I)
                 ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_or_c;
-              when others => -- AND(I), multi-cycle / co-processor operations
+              when others => -- AND(I) or multi-cycle / co-processor operation
                 ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_and_c;
             end case;
 
             -- co-processor MULDIV operation (multi-cycle) --
             if ((CPU_EXTENSION_RISCV_M = true) and ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
                ((CPU_EXTENSION_RISCV_Zmmul = true) and (decode_aux.is_m_mul = '1')) then -- MUL
-              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_muldiv_c; -- trigger MULDIV CP
+              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_muldiv_c; -- trigger MULDIV CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- co-processor BIT-MANIPULATION operation (multi-cycle) --
             elsif (CPU_EXTENSION_RISCV_B = true) and
                   (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_b_reg = '1')) or -- register operation
                    ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
-              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_bitmanip_c; -- trigger BITMANIP CP
+              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_bitmanip_c; -- trigger BITMANIP CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- co-processor SHIFT operation (multi-cycle) --
             elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or
                   (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) then
-              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_shifter_c; -- trigger SHIFTER CP
+              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_shifter_c; -- trigger SHIFTER CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- ALU CORE operation (single-cycle) --
             else
@@ -1070,7 +1070,7 @@ begin
           when opcode_load_c | opcode_store_c | opcode_atomic_c => -- load/store / atomic memory access
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
-            ctrl_nxt(ctrl_bus_mo_we_c)   <= '1'; -- write to MAR and MDO (MDO only relevant for store)
+            ctrl_nxt(ctrl_bus_mo_we_c)   <= '1'; -- write memory output registers (data & address)
             execute_engine.state_nxt     <= LOADSTORE_0;
 
 
@@ -1097,7 +1097,7 @@ begin
           when opcode_fop_c => -- floating-point operations
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zfinx = true) then
-              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_fpu_c; -- trigger FPU CP
+              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_fpu_c; -- trigger FPU CP
               execute_engine.state_nxt <= ALU_WAIT;
             else
               execute_engine.state_nxt <= DISPATCH;
@@ -1107,7 +1107,7 @@ begin
           when opcode_cust0_c => -- CFU: custom RISC-V instructions (CUSTOM0 OPCODE space)
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zxcfu = true) then
-              ctrl_nxt(ctrl_cp_trig7_c downto ctrl_cp_trig0_c) <= cp_sel_cfu_c; -- trigger CFU CP
+              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_cfu_c; -- trigger CFU CP
               execute_engine.state_nxt <= ALU_WAIT;
             else
               execute_engine.state_nxt <= DISPATCH;
@@ -1184,11 +1184,10 @@ begin
       -- ------------------------------------------------------------
         execute_engine.branched_nxt <= '1'; -- this is an actual branch
         execute_engine.state_nxt    <= DISPATCH;
-        -- use this state also to clear register file's x0 register --
+        -- use this state also to (re-)initialize the register file's x0/zero register --
         if (reset_x0_c = true) then -- if x0 is a "real" register that has to be initialized to zero
-          ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c)       <= rf_mux_csr_c; -- this will return 0 since csr.re_nxt is cleared
-          ctrl_nxt(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) <= (others => '0'); -- rd = x0 (zero)
-          ctrl_nxt(ctrl_rf_zero_we_c)                          <= '1'; -- allow write access to x0
+          ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c; -- this will return 0 since csr.re_nxt has not been set
+          ctrl_nxt(ctrl_rf_zero_we_c)                    <= '1'; -- allow/force write access to x0
         end if;
 
 
@@ -1205,16 +1204,14 @@ begin
 
       when LOADSTORE_1 => -- memory access latency
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- write input data to MDI (only relevant for load and SC.W operations)
-        execute_engine.state_nxt   <= LOADSTORE_2;
+        execute_engine.state_nxt <= LOADSTORE_2;
 
 
       when LOADSTORE_2 => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_bus_mi_we_c) <= '1'; -- keep writing input data to MDI (only relevant for load and SC.W operations)
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_mem_c; -- memory read data
         -- wait for memory response --
-        if (trap_ctrl.env_start = '1') and (trap_ctrl.cause(6 downto 5) = "00") then -- abort if SYNC EXCEPTION (from bus or illegal cmd) / no IRQs and NOT DEBUG-MODE-related
+        if (trap_ctrl.env_start = '1') and (trap_ctrl.cause(6 downto 5) = "00") then -- abort if SYNC non-debug EXCEPTION (e.g. bus or illegal)
           execute_engine.state_nxt <= DISPATCH;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           -- data write-back --
@@ -2019,11 +2016,12 @@ begin
           end if;
 
           -- --------------------------------------------------------------------
-          -- TRAP ENTER: write machine trap cause, PC and trap value register
+          -- TRAP ENTER: write machine trap cause, PC and value register
           -- --------------------------------------------------------------------
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
 
-            -- normal trap entry: write mcause, mepc and mtval --
+            -- trap entry: write mcause, mepc and mtval --
+            -- > no update when in debug-mode!
             -- --------------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_DEBUG = false) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.running = '0')) then
 
@@ -2053,7 +2051,8 @@ begin
 
             end if;
 
-            -- DEBUG MODE (trap) enter: write dpc and dcsr --
+            -- DEBUG MODE entry: write dpc and dcsr --
+            -- > no update when already in debug-mode!
             -- --------------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then
 
@@ -2077,19 +2076,19 @@ begin
           -- --------------------------------------------------------------------
           -- mstatus: context switch
           -- --------------------------------------------------------------------
-          -- ENTER: trap handler starting
+          -- ENTER: trap handler starting --
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
             if (CPU_EXTENSION_RISCV_DEBUG = false) or -- normal trapping (debug mode NOT implemented)
                ((debug_ctrl.running = '0') and (trap_ctrl.cause(5) = '0')) then -- not IN debug mode and not ENTERING debug mode
               csr.mstatus_mie  <= '0'; -- disable interrupts
-              csr.mstatus_mpie <= csr.mstatus_mie; -- buffer previous mie state
+              csr.mstatus_mpie <= csr.mstatus_mie; -- backup previous mie state
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
                 csr.privilege   <= priv_mode_m_c; -- execute trap in machine mode
                 csr.mstatus_mpp <= csr.privilege; -- backup previous privilege mode
               end if;
             end if;
 
-          -- EXIT: return from trap
+          -- EXIT: return from trap --
           elsif (trap_ctrl.env_end = '1') then
             if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then -- return from debug mode
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
@@ -2099,7 +2098,7 @@ begin
               csr.mstatus_mie  <= csr.mstatus_mpie; -- restore global IRQ enable flag
               csr.mstatus_mpie <= '1';
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
-                csr.privilege   <= csr.mstatus_mpp; -- go back to previous privilege mode
+                csr.privilege   <= csr.mstatus_mpp; -- restore previous privilege mode
                 csr.mstatus_mpp <= '0'; -- MRET has to clear mstatus.MPP
               end if;
             end if;
@@ -2110,7 +2109,7 @@ begin
     end if;
   end process csr_write_access;
 
-  -- effective privilege mode is M when in debug mode --
+  -- effective privilege mode is MACHINE when in debug mode --
   csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') else csr.privilege;
 
   -- PMP output to bus unit --
@@ -2439,7 +2438,7 @@ begin
   
 
 -- ****************************************************************************************************************************
--- CPU Counters / HPMs (CSRs)
+-- CPU Counters / HPMs
 -- ****************************************************************************************************************************
 
   -- Control and Status Registers - Counters ------------------------------------------------
@@ -2595,27 +2594,27 @@ begin
   hpm_triggers:
   if (HPM_NUM_CNTS /= 0) generate
     -- counter event trigger - RISC-V-specific --
-    cnt_event(hpmcnt_event_cy_c)      <= not execute_engine.sleep; -- active cycle
-    cnt_event(hpmcnt_event_never_c)   <= '0'; -- "never"
+    cnt_event(hpmcnt_event_cy_c)      <= '1' when (execute_engine.sleep = '0') else '0'; -- active cycle
+    cnt_event(hpmcnt_event_never_c)   <= '0'; -- "never" (position would be TIME)
     cnt_event(hpmcnt_event_ir_c)      <= '1' when (execute_engine.state = EXECUTE) else '0'; -- (any) retired instruction
 
     -- counter event trigger - custom / NEORV32-specific --
     cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)   and (execute_engine.is_ci      = '1')       else '0'; -- retired compressed instruction
-    cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = S_PENDING) and (fetch_engine.state_ff     = S_PENDING) else '0'; -- instruction fetch memory wait cycle
+    cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = S_PENDING) and (fetch_engine.state_prev   = S_PENDING) else '0'; -- instruction fetch memory wait cycle
     cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)  and (execute_engine.state_prev = DISPATCH)  else '0'; -- instruction issue wait cycle
     cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                              else '0'; -- multi-cycle alu-operation wait cycle
 
-    cnt_event(hpmcnt_event_load_c)    <= '1' when                                          (ctrl(ctrl_bus_rd_c) = '1')               else '0'; -- load operation
-    cnt_event(hpmcnt_event_store_c)   <= '1' when                                          (ctrl(ctrl_bus_wr_c) = '1')               else '0'; -- store operation
+    cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl(ctrl_bus_rd_c) = '1') else '0'; -- load operation
+    cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl(ctrl_bus_wr_c) = '1') else '0'; -- store operation
     cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = LOADSTORE_2) and (execute_engine.state_prev = LOADSTORE_2) else '0'; -- load/store memory wait cycle
 
-    cnt_event(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
-    cnt_event(hpmcnt_event_branch_c)  <= '1' when (execute_engine.state = BRANCH) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') else '0'; -- branch (conditional, taken or not taken)
-    cnt_event(hpmcnt_event_tbranch_c) <= '1' when (execute_engine.state = BRANCH) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') and (execute_engine.branch_taken = '1') else '0'; -- taken branch (conditional)
+    cnt_event(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
+    cnt_event(hpmcnt_event_branch_c)  <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') else '0'; -- branch (conditional, taken or not taken)
+    cnt_event(hpmcnt_event_tbranch_c) <= '1' when (execute_engine.state = BRANCHED) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') else '0'; -- taken branch (conditional)
 
     cnt_event(hpmcnt_event_trap_c)    <= '1' when (trap_ctrl.env_start_ack = '1')                                    else '0'; -- entered trap
     cnt_event(hpmcnt_event_illegal_c) <= '1' when (trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause = trap_iil_c) else '0'; -- illegal operation
-  end generate;
+  end generate; --/hpm_triggers
 
 
 -- ****************************************************************************************************************************
@@ -2667,7 +2666,7 @@ begin
         end case;
       end if;
     end process debug_control;
-  end generate;
+  end generate; --/ocd_en
 
   -- CPU is *in* debug mode --
   debug_ctrl.running <= '1' when ((debug_ctrl.state = DEBUG_ONLINE) or (debug_ctrl.state = DEBUG_EXIT)) and (CPU_EXTENSION_RISCV_DEBUG = true) else '0';
