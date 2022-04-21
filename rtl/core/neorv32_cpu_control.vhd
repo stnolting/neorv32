@@ -149,15 +149,15 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- instruction fetch engine --
   type fetch_engine_state_t is (S_RESTART, S_REQUEST, S_PENDING, S_WAIT); -- better use one-hot encoding
   type fetch_engine_t is record
-    state     : fetch_engine_state_t;
-    state_ff  : fetch_engine_state_t;
-    restart   : std_ulogic;
-    unaligned : std_ulogic;
-    pc        : std_ulogic_vector(data_width_c-1 downto 0);
-    reset     : std_ulogic;
-    resp      : std_ulogic; -- bus response
-    a_err     : std_ulogic; -- alignment error
-    pmp_err   : std_ulogic; -- PMP error
+    state      : fetch_engine_state_t;
+    state_prev : fetch_engine_state_t;
+    restart    : std_ulogic;
+    unaligned  : std_ulogic;
+    pc         : std_ulogic_vector(data_width_c-1 downto 0);
+    reset      : std_ulogic;
+    resp       : std_ulogic; -- bus response
+    a_err      : std_ulogic; -- alignment error
+    pmp_err    : std_ulogic; -- PMP error
   end record;
   signal fetch_engine : fetch_engine_t;
 
@@ -390,15 +390,15 @@ begin
   fetch_engine_fsm: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      fetch_engine.state     <= S_RESTART;
-      fetch_engine.state_ff  <= S_RESTART;
-      fetch_engine.restart   <= '1'; -- set to reset IPB
-      fetch_engine.unaligned <= '0'; -- always start at aligned address after reset
-      fetch_engine.pc        <= (others => def_rst_val_c);
-      fetch_engine.pmp_err   <= '0';
+      fetch_engine.state      <= S_RESTART;
+      fetch_engine.state_prev <= S_RESTART;
+      fetch_engine.restart    <= '1'; -- set to reset IPB
+      fetch_engine.unaligned  <= '0'; -- always start at aligned address after reset
+      fetch_engine.pc         <= (others => def_rst_val_c);
+      fetch_engine.pmp_err    <= '0';
     elsif rising_edge(clk_i) then
       -- previous state (for HPM) --
-      fetch_engine.state_ff <= fetch_engine.state;
+      fetch_engine.state_prev <= fetch_engine.state;
 
       -- restart request buffer --
       if (fetch_engine.state = S_RESTART) then -- restart done
@@ -2438,7 +2438,7 @@ begin
   
 
 -- ****************************************************************************************************************************
--- CPU Counters / HPMs (CSRs)
+-- CPU Counters / HPMs
 -- ****************************************************************************************************************************
 
   -- Control and Status Registers - Counters ------------------------------------------------
@@ -2594,27 +2594,27 @@ begin
   hpm_triggers:
   if (HPM_NUM_CNTS /= 0) generate
     -- counter event trigger - RISC-V-specific --
-    cnt_event(hpmcnt_event_cy_c)      <= not execute_engine.sleep; -- active cycle
-    cnt_event(hpmcnt_event_never_c)   <= '0'; -- "never"
+    cnt_event(hpmcnt_event_cy_c)      <= '1' when (execute_engine.sleep = '0') else '0'; -- active cycle
+    cnt_event(hpmcnt_event_never_c)   <= '0'; -- "never" (position would be TIME)
     cnt_event(hpmcnt_event_ir_c)      <= '1' when (execute_engine.state = EXECUTE) else '0'; -- (any) retired instruction
 
     -- counter event trigger - custom / NEORV32-specific --
     cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)   and (execute_engine.is_ci      = '1')       else '0'; -- retired compressed instruction
-    cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = S_PENDING) and (fetch_engine.state_ff     = S_PENDING) else '0'; -- instruction fetch memory wait cycle
+    cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = S_PENDING) and (fetch_engine.state_prev   = S_PENDING) else '0'; -- instruction fetch memory wait cycle
     cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)  and (execute_engine.state_prev = DISPATCH)  else '0'; -- instruction issue wait cycle
-    cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                              else '0'; -- multi-cycle alu-operation wait cycle
+    cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)  and (execute_engine.state_prev = ALU_WAIT)  else '0'; -- multi-cycle alu-operation wait cycle
 
-    cnt_event(hpmcnt_event_load_c)    <= '1' when                                          (ctrl(ctrl_bus_rd_c) = '1')               else '0'; -- load operation
-    cnt_event(hpmcnt_event_store_c)   <= '1' when                                          (ctrl(ctrl_bus_wr_c) = '1')               else '0'; -- store operation
+    cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl(ctrl_bus_rd_c) = '1') else '0'; -- load operation
+    cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl(ctrl_bus_wr_c) = '1') else '0'; -- store operation
     cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = LOADSTORE_2) and (execute_engine.state_prev = LOADSTORE_2) else '0'; -- load/store memory wait cycle
 
-    cnt_event(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
-    cnt_event(hpmcnt_event_branch_c)  <= '1' when (execute_engine.state = BRANCH) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') else '0'; -- branch (conditional, taken or not taken)
-    cnt_event(hpmcnt_event_tbranch_c) <= '1' when (execute_engine.state = BRANCH) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') and (execute_engine.branch_taken = '1') else '0'; -- taken branch (conditional)
+    cnt_event(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
+    cnt_event(hpmcnt_event_branch_c)  <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') else '0'; -- branch (conditional, taken or not taken)
+    cnt_event(hpmcnt_event_tbranch_c) <= '1' when (execute_engine.state = BRANCHED) and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') else '0'; -- taken branch (conditional)
 
-    cnt_event(hpmcnt_event_trap_c)    <= '1' when (trap_ctrl.env_start_ack = '1')                                    else '0'; -- entered trap
-    cnt_event(hpmcnt_event_illegal_c) <= '1' when (trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause = trap_iil_c) else '0'; -- illegal operation
-  end generate;
+    cnt_event(hpmcnt_event_trap_c)    <= '1' when (execute_engine.state = TRAP_ENTER) else '0'; -- entered trap
+    cnt_event(hpmcnt_event_illegal_c) <= '1' when (execute_engine.state = TRAP_ENTER) and (trap_ctrl.cause = trap_iil_c) else '0'; -- illegal operation
+  end generate; --/hpm_triggers
 
 
 -- ****************************************************************************************************************************
@@ -2666,7 +2666,7 @@ begin
         end case;
       end if;
     end process debug_control;
-  end generate;
+  end generate; --/ocd_en
 
   -- CPU is *in* debug mode --
   debug_ctrl.running <= '1' when ((debug_ctrl.state = DEBUG_ONLINE) or (debug_ctrl.state = DEBUG_EXIT)) and (CPU_EXTENSION_RISCV_DEBUG = true) else '0';
