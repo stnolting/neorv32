@@ -8,10 +8,19 @@ root = true
 end_of_line = lf
 insert_final_newline = true
 
-[*.{vhd,vhdl}]
+# RTL files
+[*.{vhd,vhdl,v}]
 charset = utf-8
 indent_style = space
 indent_size = 2
 
+# C files
+[*.{c,h,cpp,hpp}]
+charset = utf-8
+indent_style = space
+indent_size = 2
+
+# Makefiles
 [Makefile]
+charset = utf-8
 indent_style = tab
