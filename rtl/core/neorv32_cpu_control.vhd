@@ -429,7 +429,12 @@ begin
             fetch_engine.pmp_err   <= '0';
             if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request
               fetch_engine.state <= S_RESTART;
-            elsif (ipb.half /= "00") or (CPU_IPB_ENTRIES < 2) then -- no "safe" space left if any IPB buffer (at least half full)
+            elsif (ipb.half /= "00") or (CPU_IPB_ENTRIES < 2) or -- no "safe" space left in IPB
+                  -- this is something like a simple "branch prediction" (predict: always taken)
+                  -- > do not trigger new instruction fetch when a branch instruction is executed
+                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_branch_c) or
+                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_jal_c) or
+                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_jalr_c) then 
               fetch_engine.state <= S_WAIT;
             else -- request next instruction word
               fetch_engine.state <= S_REQUEST;
