@@ -5,8 +5,9 @@ to [open a new issue](https://github.com/stnolting/neorv32/issues) or start a ne
 Also look out for issues and pull requests labeled with
 [![help-wanted](https://img.shields.io/badge/-help%20wanted-brightgreen)](https://github.com/stnolting/neorv32/labels/help%20wanted).
 
-:information_source: Please note we have a [Code of Conduct](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md),
-please follow it in all your interactions with the project.
+:information_source: Please note we have a [**Code of Conduct**](https://github.com/stnolting/neorv32/tree/master/CODE_OF_CONDUCT.md),
+please follow it in all your interactions with the project. Also checkout out our
+[**File Formatting Standards**](https://github.com/stnolting/neorv32/tree/master/.editroconfig).
 
 ## Contributing Process
 
