@@ -170,15 +170,15 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ││├neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
 ││├neorv32_cpu_cp_cfu.vhd        - Custom functions (instruction) co-processor (Zxcfu ext.)
 ││├neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
-││├neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M extension)
-││└neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor
-│├neorv32_cpu_bus.vhd            - Bus interface + physical memory protection
-│├neorv32_cpu_control.vhd        - CPU control, exception/IRQ system and CSRs
+││├neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M ext.)
+││└neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
+│├neorv32_cpu_bus.vhd            - Load/store unit + physical memory protection
+│├neorv32_cpu_control.vhd        - CPU control, exception system and CSRs
 ││└neorv32_cpu_decompressor.vhd  - Compressed instructions decoder
 │└neorv32_cpu_regfile.vhd        - Data register file
 │
 ├neorv32_boot_rom.vhd            - Bootloader ROM
-│└neorv32_bootloader_image.vhd   - Bootloader boot ROM memory image
+│└neorv32_bootloader_image.vhd   - Bootloader ROM memory image
 ├neorv32_busswitch.vhd           - Processor bus switch for CPU buses (I&D)
 ├neorv32_bus_keeper.vhd          - Processor-internal bus monitor
 ├neorv32_cfs.vhd                 - Custom functions subsystem

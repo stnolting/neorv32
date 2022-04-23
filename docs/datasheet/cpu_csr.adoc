@@ -8,20 +8,24 @@ understood by the assembler/compiler. The *[C]* names are defined by the NEORV32
 used as immediate in plain C code. The *R/W* column shows whether the CSR can be read and/or written.
 The NEORV32-specific CSRs are mapped to the official "custom CSRs" CSR address space.
 
+.Mandatory `Zicsr` Extension
 [IMPORTANT]
-The CSRs, the CSR-related instructions as well as the complete exception/interrupt processing
-system are only available when the `CPU_EXTENSION_RISCV_Zicsr` generic is _true_.
+The CSRs, the CSR-related instructions and the complete exception/interrupt processing
+system are only available when the <<_cpu_extension_riscv_zicsr>> generic is _true_.
 
+.CSR Access Exception
 [IMPORTANT]
 When trying to write to a read-only CSR (like the `time` CSR) or when trying to access a nonexistent
 CSR or when trying to access a machine-mode CSR from less-privileged user-mode an
 illegal instruction exception is raised.
 
-[NOTE]
-CSR reset value: Please note that most of the CSRs do *NOT* provide a dedicated reset. Hence,
-these CSRs are not initialized by a hardware reset and keep an *UNDEFINED* value until they are
-explicitly initialized by the software (normally, this is already done by the NEORV32-specific
+.CSR Reset Value
+[IMPORTANT]
+Please note that most of the CSRs do *NOT* provide a dedicated reset. Hence,
+these CSRs are not initialized by a hardware reset and provide an *UNDEFINED* value until they are
+explicitly initialized by the software (normally, this is done by the NEORV32-specific
 `crt0.S` start-up code). For more information see section <<_cpu_hardware_reset>>.
+
 
 **CSR Listing**
 
@@ -45,8 +49,8 @@ See the according CSR description for more information.
 
 .Debug Mode CSRs
 [IMPORTANT]
-The _debug mode_ CSRs are not listed here since they are only accessible in debug mode and not during normal CPU operation.
-See section <<_cpu_debug_mode_csrs>>.
+The _debug mode_ CSRs are not listed here since they are accessible only in debug mode and not during _normal_ CPU operation.
+See section <<_cpu_debug_mode_csrs>> for more information.
 
 
 <<<
@@ -55,7 +59,7 @@ See section <<_cpu_debug_mode_csrs>>.
 
 CSRs with the following notes ...
 
-* `X`: _custom_ - have or are a custom CPU-specific extension (that is allowed by the RISC-V specs)
+* `X`: _custom_ - have or are a custom CPU-specific extension (which is allowed by the RISC-V specs)
 * `R`: _read-only_ - are read-only (in contrast to the originally specified r/w capability)
 * `C`: _constrained_ - have a constrained compatibility, not all specified bits are implemented
 
@@ -77,11 +81,11 @@ CSRs with the following notes ...
 | 0x304   | <<_mie>>        | _CSR_MIE_        | r/w | Machine interrupt enable register | `X`
 | 0x305   | <<_mtvec>>      | _CSR_MTVEC_      | r/w | Machine trap-handler base address (for ALL traps) | 
 | 0x306   | <<_mcounteren>> | _CSR_MCOUNTEREN_ | r/w | Machine counter-enable register | `C`
-| 0x310   | <<_mstatush>>   | _CSR_MSTATUSH_   | r/- | Machine status register - high word | `C`
+| 0x310   | <<_mstatush>>   | _CSR_MSTATUSH_   | r/- | Machine status register - high word | `R`
 6+^| **<<_machine_trap_handling_csrs>>**
 | 0x340   | <<_mscratch>>   | _CSR_MSCRATCH_   | r/w | Machine scratch register | 
 | 0x341   | <<_mepc>>       | _CSR_MEPC_       | r/w | Machine exception program counter | 
-| 0x342   | <<_mcause>>     | _CSR_MCAUSE_     | r/w | Machine trap cause | `X`
+| 0x342   | <<_mcause>>     | _CSR_MCAUSE_     | r/w | Machine trap cause | `CX`
 | 0x343   | <<_mtval>>      | _CSR_MTVAL_      | r/- | Machine bad address or instruction | `R`
 | 0x344   | <<_mip>>        | _CSR_MIP_        | r/w | Machine interrupt pending register | `X`
 6+^| **<<_machine_physical_memory_protection_csrs>>**
@@ -111,7 +115,7 @@ CSRs with the following notes ...
 | 0xf14   | <<_mhartid>>    | _CSR_MHARTID_    | r/- | Machine thread ID |
 | 0xf15   | <<_mconfigptr>> | _CSR_MCONFIGPTR_ | r/- | Machine configuration pointer register |
 6+^| **<<_neorv32_specific_csrs>>**
-| 0xfc0   | <<_mxisa>>       | _CSR_MXISA_     | r/- | NEORV32-specific "extended" machine CPU ISA and extensions |
+| 0xfc0   | <<_mxisa>>       | _CSR_MXISA_     | r/- | NEORV32-specific "extended" machine CPU ISA and extensions | `X`
 |=======================
 
 
@@ -671,32 +675,30 @@ instructions counter. The `minstret[h]` CSR also be written when in machine mode
 The hardware performance monitor CSRs are implemented when the `Zihpm` ISA extension is enabled via the
 <<_cpu_extension_riscv_zihpm>> generic.
 
-The actually implemented hardware performance logic is configured via the <<_hpm_num_cnts>> top entity generic,
-which defines the number of implemented performance monitors. Note that always all 28 HPM counter and configuration registers
-(`mhpmcounter*[h]` and `mhpmevent*`) are implemented, but only the actually configured ones are real registers and
-not hardwired to zero.
+The actual number of implemented hardware performance monitors is configured via the <<_hpm_num_cnts>> top entity generic,
+Note that always all 28 HPM counter and configuration registers (`mhpmcounter*[h]` and `mhpmevent*`) are implemented, but
+only the actually configured ones are implemented as "real" physical registers - the remaining ones will be hardwired to zero.
 
-[TIP]
 If trying to access an HPM-related CSR beyond <<_hpm_num_cnts>> **no illegal instruction exception is
-triggered**. The according CSRs are read-only (writes are ignored) and always return zero.
+triggered**. These CSRs are read-only (writes are ignored) and always return zero.
 
+.Access Privilege
 [NOTE]
-The HPM system only allows machine-mode access. Hence, `hpmcounter*[h]` CSR are not implemented
-and any access (even) from machine mode will raise an exception. Furthermore, the according bits of <<_mcounteren>>
-used to configure user-mode access to `hpmcounter*[h]` are hard-wired to zero.
+The HPM system only allows machine-mode access. Hence, `hpmcounter*[h]` CSR are not implemented and any access (even
+from machine mode) will raise an illegal instruction exception. Furthermore, the according bits of <<_mcounteren>>
+used to configure user-mode access to `hpmcounter*[h]` are hardwired to zero.
 
 The total counter width of the HPMs can be configured before synthesis via the <<_hpm_cnt_width>> generic (0..64-bit).
+If <<_hpm_num_cnts>> is less than 64, all remaining MSB-aligned bits are hardwired to zero.
 
+.HPM Counter Overflow
 [NOTE]
-The total LSB-aligned HPM counter size (low word CSR + high word CSR) is defined via the
-<<_hpm_num_cnts>> generic (0..64-bit). If <<_hpm_num_cnts>> is less than 64, all unused MSB-aligned
-bits are hardwired to zero.
+HPM counters do not saturate and will overflow (restarting at zero).
 
-
-.Counter Increment During Debugging
+.Counter Increment
 [NOTE]
-All HPM counters do not increment when the CPU is in debug mode.
-See section <<_cpu_debug_mode>> for more information.
+All HPM counters do not increment when the CPU is either in debug-mode (see section <<_cpu_debug_mode>> for more
+information) or when the CPU is in sleep-mode.
 
 
 :sectnums!:
@@ -707,35 +709,42 @@ See section <<_cpu_debug_mode>> for more information.
 |=======================
 | 0x232 -0x33f | **Machine hardware performance monitor event selector** | `mhpmevent3` - `mhpmevent31`
 3+| Reset value: _UNDEFINED_
-3+| The `mhpmevent*` CSRs are compatible to the RISC-V specifications. The configuration of these CSR define
-the architectural events that cause the according `mhpmcounter*[h]` counters to increment. All available events are
-listed in the table below. If more than one event is selected, the according counter will increment if any of
+3+| The `mhpmevent*` CSRs are compatible to the RISC-V specifications. The value in these CSRs define
+the architectural events that cause an increment of the according `mhpmcounter*[h]` counter(s). All available events are
+listed in the table below. If more than one event is selected, the according counter will increment if _any_ of
 the enabled events is observed (logical OR). Note that the counter will only increment by 1 step per clock
-cycle even if more than one event is observed. If the CPU is in sleep or debug mode, no HPM counter will increment
-at all.
+cycle even if more than one trigger event is observed.
 |=======================
 
-.HPM event selector
+.HPM Event Select
 [cols="^1,<3,^1,<5"]
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C]               | R/W | Event
-| 0   | _HPMCNT_EVENT_CY_      | r/w | active clock cycle (not in sleep)
+| 0   | _HPMCNT_EVENT_CY_      | r/w | active clock cycle (CPU not in sleep mode)
 | 1   | -                      | r/- | _not implemented, always read as zero_
 | 2   | _HPMCNT_EVENT_IR_      | r/w | retired instruction (compressed or uncompressed)
 | 3   | _HPMCNT_EVENT_CIR_     | r/w | retired compressed instruction
-| 4   | _HPMCNT_EVENT_WAIT_IF_ | r/w | instruction fetch memory wait cycle (if more than 1 cycle memory latency)
-| 5   | _HPMCNT_EVENT_WAIT_II_ | r/w | instruction issue pipeline wait cycle (if more than 1 cycle latency), caused by pipelines flushes (like taken branches)
-| 6   | _HPMCNT_EVENT_WAIT_MC_ | r/w | multi-cycle ALU operation wait cycle
+| 4   | _HPMCNT_EVENT_WAIT_IF_ | r/w | instruction fetch memory wait cycle: if more than 1 cycle memory latency, cache miss or high bus traffic
+| 5   | _HPMCNT_EVENT_WAIT_II_ | r/w | instruction issue pipeline wait cycle: if more than 1 cycle latency, pipelines flush (like taken branches) / cache miss or high bus traffic
+| 6   | _HPMCNT_EVENT_WAIT_MC_ | r/w | multi-cycle ALU operation wait cycle (like iterative shift operation)
 | 7   | _HPMCNT_EVENT_LOAD_    | r/w | memory data load operation
 | 8   | _HPMCNT_EVENT_STORE_   | r/w | memory data store operation
-| 9   | _HPMCNT_EVENT_WAIT_LS_ | r/w | load/store memory wait cycle (if more than 1 cycle memory latency)
+| 9   | _HPMCNT_EVENT_WAIT_LS_ | r/w | load/store memory wait cycle: if more than 1 cycle memory latency or high bus traffic
 | 10  | _HPMCNT_EVENT_JUMP_    | r/w | unconditional jump
-| 11  | _HPMCNT_EVENT_BRANCH_  | r/w | conditional branch (taken or not taken)
-| 12  | _HPMCNT_EVENT_TBRANCH_ | r/w | taken conditional branch
+| 11  | _HPMCNT_EVENT_BRANCH_  | r/w | conditional branch (_taken_ or _not taken_)
+| 12  | _HPMCNT_EVENT_TBRANCH_ | r/w | _taken_ conditional branch
 | 13  | _HPMCNT_EVENT_TRAP_    | r/w | entered trap (synchronous exception or interrupt)
 | 14  | _HPMCNT_EVENT_ILLEGAL_ | r/w | illegal instruction exception
 |=======================
+
+.Cache Misses
+[NOTE]
+A _miss_ in the instruction cache will cause an automatic reload of the referenced memory block from main
+memory. Fetching this block takes several cycles - depending on the configured cache block size and the general
+memory system throughput. This will introduce instruction fetch wait cycles (_HPMCNT_EVENT_WAIT_IF_) since the CPU
+front end has to wait for the cache to finish loading. Furthermore, this will also introduce instruction issue
+wait cycles (_HPMCNT_EVENT_WAIT_II_) as the CPU execution core is waiting for new instructions from the font end.
 
 
 :sectnums!:
