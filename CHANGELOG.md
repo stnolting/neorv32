@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 23.04.2022 | 1.7.0.8 | :sparkles: add simple branch prediction (predict "always taken") to CPU front-end to reduce branch penalty (less wait cycles); [#306](https://github.com/stnolting/neorv32/pull/306) |
 | 22.04.2022 | 1.7.0.7 | reworked CPU's MUL/DIV unit (`M`-extension): less area and shorter critical path; [#305](https://github.com/stnolting/neorv32/pull/305) |
 | 21.04.2022 | 1.7.0.6 | further VHDL code clean-ups and minor optimizations; [#303](https://github.com/stnolting/neorv32/pull/303) |
 | 19.04.2022 | 1.7.0.5 | minor clean-up and optimization of CPU's bus unit |
