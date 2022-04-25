@@ -6,8 +6,8 @@ The latest release is [![release](https://img.shields.io/github/v/release/stnolt
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
 can be found [online at GitHub-pages](https://stnolting.github.io/neorv32).
 
-:information_source: Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org) for official releases.
-The _hardware version identifier_ uses an additional custom version element (i.e. `MAJOR.MINOR.PATCH.individual`) to track _individual_ changes.
+:information_source: Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org).
+The _hardware version identifier_ uses an additional custom element (`MAJOR.MINOR.PATCH.custom`) to track _individual_ changes.
 The identifier number is incremented with every core RTL modification and also by major framework modifications.
 
 :information_source: The version number is globally defined by the `hw_version_c` constant in the main VHDL
@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 25.04.2022 | [**:rocket:1.7.1**](https://github.com/stnolting/neorv32/releases/tag/v1.7.1) | **New release** |
 | 23.04.2022 | 1.7.0.9 | :bug: fixed minor bug in HPM event logic: imprecise "taken branch" (_HPMCNT_EVENT_TBRANCH_) event |
 | 23.04.2022 | 1.7.0.8 | :sparkles: add simple branch prediction (predict "always taken") to CPU front-end to reduce branch penalty (less wait cycles); [#306](https://github.com/stnolting/neorv32/pull/306) |
 | 22.04.2022 | 1.7.0.7 | reworked CPU's MUL/DIV unit (`M`-extension): less area and shorter critical path; [#305](https://github.com/stnolting/neorv32/pull/305) |
