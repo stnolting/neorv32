@@ -99,7 +99,6 @@ modules are _optional_.
   * `RV32`
 [[`I`](https://stnolting.github.io/neorv32/#_i_base_integer_isa)/
 [`E`](https://stnolting.github.io/neorv32/#_e_embedded_cpu)]
-[[`A`](https://stnolting.github.io/neorv32/#_a_atomic_memory_access)]
 [[`B`](https://stnolting.github.io/neorv32/#_b_bit_manipulation_operations)]
 [[`C`](https://stnolting.github.io/neorv32/#_c_compressed_instructions)]
 [[`M`](https://stnolting.github.io/neorv32/#_m_integer_multiplication_and_division)]
@@ -184,10 +183,10 @@ Implementation results for exemplary **CPU-only** configuration generated for an
 using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimization_, f_max from _Slow 1200mV 0C Model_).
 
 | CPU Configuration (version [1.6.9.8](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
-|:------------------------|:----:|:----:|:----:|:-:|:-------:|
-| `rv32i_Zicsr`           | 1328 |  678 | 1024 | 0 | 128 MHz |
-| `rv32i_Zicsr_Zicntr`    | 1614 |  808 | 1024 | 0 | 128 MHz |
-| `rv32imac_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 128 MHz |
+|:-----------------------|:----:|:----:|:----:|:-:|:-------:|
+| `rv32i_Zicsr`          | 1328 |  678 | 1024 | 0 | 128 MHz |
+| `rv32i_Zicsr_Zicntr`   | 1614 |  808 | 1024 | 0 | 128 MHz |
+| `rv32imc_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 128 MHz |
 
 :bulb: An incremental list of the CPU extensions and the Processor modules found in the
 [_Data Sheet: FPGA Implementation Results_]https://stnolting.github.io/neorv32/#_fpga_implementation_results).
