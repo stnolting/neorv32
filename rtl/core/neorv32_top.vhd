@@ -55,7 +55,6 @@ entity neorv32_top is
     ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
 
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
@@ -159,7 +158,6 @@ entity neorv32_top is
     wb_sel_o       : out std_ulogic_vector(03 downto 0); -- byte enable
     wb_stb_o       : out std_ulogic; -- strobe
     wb_cyc_o       : out std_ulogic; -- valid cycle
-    wb_lock_o      : out std_ulogic; -- exclusive access request
     wb_ack_i       : in  std_ulogic := 'L'; -- transfer acknowledge
     wb_err_i       : in  std_ulogic := 'L'; -- transfer error
 
@@ -280,9 +278,7 @@ architecture neorv32_top_rtl of neorv32_top is
     ack   : std_ulogic; -- bus transfer acknowledge
     err   : std_ulogic; -- bus transfer error
     fence : std_ulogic; -- fence(i) instruction executed
-    priv  : std_ulogic; -- current privilege level
     src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
-    lock  : std_ulogic; -- exclusive access request
   end record;
   signal cpu_i, i_cache, cpu_d, p_bus : bus_interface_t;
 
@@ -355,6 +351,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal xip_enable  : std_ulogic;
   signal xip_page    : std_ulogic_vector(3 downto 0);
   signal debug_mode  : std_ulogic;
+  signal priv_mode   : std_ulogic;
 
 begin
 
@@ -486,7 +483,6 @@ begin
     CPU_BOOT_ADDR                => cpu_boot_addr_c,              -- cpu boot address
     CPU_DEBUG_ADDR               => dm_base_c,                    -- cpu debug mode start address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
@@ -518,6 +514,7 @@ begin
     rstn_i        => sys_rstn,    -- global reset, low-active, async
     sleep_o       => open,        -- cpu is in sleep mode when set
     debug_o       => debug_mode,  -- cpu is in debug mode when set
+    priv_o        => priv_mode,   -- current effective privilege level
     -- instruction bus interface --
     i_bus_addr_o  => cpu_i.addr,  -- bus access address
     i_bus_rdata_i => cpu_i.rdata, -- bus read data
@@ -525,11 +522,9 @@ begin
     i_bus_ben_o   => cpu_i.ben,   -- byte enable
     i_bus_we_o    => cpu_i.we,    -- write enable
     i_bus_re_o    => cpu_i.re,    -- read enable
-    i_bus_lock_o  => cpu_i.lock,  -- exclusive access request
     i_bus_ack_i   => cpu_i.ack,   -- bus transfer acknowledge
     i_bus_err_i   => cpu_i.err,   -- bus transfer error
     i_bus_fence_o => cpu_i.fence, -- executed FENCEI operation
-    i_bus_priv_o  => cpu_i.priv,  -- privilege level
     -- data bus interface --
     d_bus_addr_o  => cpu_d.addr,  -- bus access address
     d_bus_rdata_i => cpu_d.rdata, -- bus read data
@@ -537,11 +532,9 @@ begin
     d_bus_ben_o   => cpu_d.ben,   -- byte enable
     d_bus_we_o    => cpu_d.we,    -- write enable
     d_bus_re_o    => cpu_d.re,    -- read enable
-    d_bus_lock_o  => cpu_d.lock,  -- exclusive access request
     d_bus_ack_i   => cpu_d.ack,   -- bus transfer acknowledge
     d_bus_err_i   => cpu_d.err,   -- bus transfer error
     d_bus_fence_o => cpu_d.fence, -- executed FENCE operation
-    d_bus_priv_o  => cpu_d.priv,  -- privilege level
     -- system time input from MTIME --
     time_i        => mtime_time,  -- current system time
     -- non-maskable interrupt --
@@ -619,9 +612,6 @@ begin
     );
   end generate;
 
-  -- TODO: do not use LOCKED instruction fetch --
-  i_cache.lock <= '0';
-
   neorv32_icache_inst_false:
   if (ICACHE_EN = false) generate
     i_cache.addr  <= cpu_i.addr;
@@ -653,7 +643,6 @@ begin
     ca_bus_ben_i   => cpu_d.ben,     -- byte enable
     ca_bus_we_i    => cpu_d.we,      -- write enable
     ca_bus_re_i    => cpu_d.re,      -- read enable
-    ca_bus_lock_i  => cpu_d.lock,    -- exclusive access request
     ca_bus_ack_o   => cpu_d.ack,     -- bus transfer acknowledge
     ca_bus_err_o   => cpu_d.err,     -- bus transfer error
     -- controller interface b --
@@ -663,7 +652,6 @@ begin
     cb_bus_ben_i   => i_cache.ben,   -- byte enable
     cb_bus_we_i    => i_cache.we,    -- write enable
     cb_bus_re_i    => i_cache.re,    -- read enable
-    cb_bus_lock_i  => i_cache.lock,  -- exclusive access request
     cb_bus_ack_o   => i_cache.ack,   -- bus transfer acknowledge
     cb_bus_err_o   => i_cache.err,   -- bus transfer error
     -- peripheral bus --
@@ -674,16 +662,12 @@ begin
     p_bus_ben_o    => p_bus.ben,     -- byte enable
     p_bus_we_o     => p_bus.we,      -- write enable
     p_bus_re_o     => p_bus.re,      -- read enable
-    p_bus_lock_o   => p_bus.lock,    -- exclusive access request
     p_bus_ack_i    => p_bus.ack,     -- bus transfer acknowledge
     p_bus_err_i    => bus_error      -- bus transfer error
   );
 
-  -- current CPU privilege level --
-  p_bus.priv <= cpu_i.priv; -- note: cpu_i.priv == cpu_d.priv
-
   -- fence operation (unused) --
-  p_bus.fence <= cpu_d.fence or cpu_i.fence;
+  p_bus.fence <= '0';
 
   -- bus response --
   bus_response: process(resp_bus)
@@ -848,11 +832,10 @@ begin
       ben_i      => p_bus.ben,                     -- byte write enable
       data_i     => p_bus.wdata,                   -- data in
       data_o     => resp_bus(RESP_WISHBONE).rdata, -- data out
-      lock_i     => p_bus.lock,                    -- exclusive access request
       ack_o      => resp_bus(RESP_WISHBONE).ack,   -- transfer acknowledge
       err_o      => resp_bus(RESP_WISHBONE).err,   -- transfer error
       tmo_o      => ext_timeout,                   -- transfer timeout
-      priv_i     => p_bus.priv,                    -- current CPU privilege level
+      priv_i     => priv_mode,                     -- current CPU privilege level
       ext_o      => ext_access,                    -- active external access
       -- xip configuration --
       xip_en_i   => xip_enable,                    -- XIP module enabled
@@ -866,7 +849,6 @@ begin
       wb_sel_o   => wb_sel_o,                      -- byte enable
       wb_stb_o   => wb_stb_o,                      -- strobe
       wb_cyc_o   => wb_cyc_o,                      -- valid cycle
-      wb_lock_o  => wb_lock_o,                     -- exclusive access request
       wb_ack_i   => wb_ack_i,                      -- transfer acknowledge
       wb_err_i   => wb_err_i                       -- transfer error
     );
@@ -878,14 +860,13 @@ begin
     ext_timeout <= '0';
     ext_access  <= '0';
     --
-    wb_adr_o  <= (others => '0');
-    wb_dat_o  <= (others => '0');
-    wb_we_o   <= '0';
-    wb_sel_o  <= (others => '0');
-    wb_stb_o  <= '0';
-    wb_cyc_o  <= '0';
-    wb_lock_o <= '0';
-    wb_tag_o  <= (others => '0');
+    wb_adr_o <= (others => '0');
+    wb_dat_o <= (others => '0');
+    wb_we_o  <= '0';
+    wb_sel_o <= (others => '0');
+    wb_stb_o <= '0';
+    wb_cyc_o <= '0';
+    wb_tag_o <= (others => '0');
   end generate;
 
 
