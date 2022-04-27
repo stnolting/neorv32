@@ -101,10 +101,7 @@ entity neorv32_cpu is
     -- instruction bus interface --
     i_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     i_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    i_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    i_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-    i_bus_we_o    : out std_ulogic; -- write enable
-    i_bus_re_o    : out std_ulogic; -- read enable
+    i_bus_re_o    : out std_ulogic; -- read request
     i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
     i_bus_err_i   : in  std_ulogic; -- bus transfer error
     i_bus_fence_o : out std_ulogic; -- executed FENCEI operation
@@ -113,8 +110,8 @@ entity neorv32_cpu is
     d_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
     d_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
     d_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-    d_bus_we_o    : out std_ulogic; -- write enable
-    d_bus_re_o    : out std_ulogic; -- read enable
+    d_bus_we_o    : out std_ulogic; -- write request
+    d_bus_re_o    : out std_ulogic; -- read request
     d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
     d_bus_err_i   : in  std_ulogic; -- bus transfer error
     d_bus_fence_o : out std_ulogic; -- executed FENCE operation
@@ -326,9 +323,6 @@ begin
 
   -- instruction fetch interface --
   i_bus_addr_o  <= fetch_pc;
-  i_bus_wdata_o <= (others => '0'); -- read-only
-  i_bus_ben_o   <= (others => '0'); -- read-only
-  i_bus_we_o    <= '0'; -- read-only
   i_bus_fence_o <= ctrl(ctrl_bus_fencei_c);
 
 

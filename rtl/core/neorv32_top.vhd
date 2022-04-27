@@ -267,20 +267,32 @@ architecture neorv32_top_rtl of neorv32_top is
   signal gptmr_cg_en  : std_ulogic;
   signal xip_cg_en    : std_ulogic;
 
-  -- bus interface --
-  type bus_interface_t is record
+  -- bus interface - instruction fetch --
+  type bus_i_interface_t is record
+    addr  : std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    rdata : std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    re    : std_ulogic; -- read request
+    ack   : std_ulogic; -- bus transfer acknowledge
+    err   : std_ulogic; -- bus transfer error
+    fence : std_ulogic; -- fence.i instruction executed
+    src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
+  end record;
+  signal cpu_i, i_cache : bus_i_interface_t;
+
+  -- bus interface - data access --
+  type bus_d_interface_t is record
     addr  : std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     rdata : std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
     wdata : std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
     ben   : std_ulogic_vector(03 downto 0); -- byte enable
-    we    : std_ulogic; -- write enable
-    re    : std_ulogic; -- read enable
+    we    : std_ulogic; -- write request
+    re    : std_ulogic; -- read request
     ack   : std_ulogic; -- bus transfer acknowledge
     err   : std_ulogic; -- bus transfer error
-    fence : std_ulogic; -- fence(i) instruction executed
+    fence : std_ulogic; -- fence instruction executed
     src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
   end record;
-  signal cpu_i, i_cache, cpu_d, p_bus : bus_interface_t;
+  signal cpu_d, p_bus : bus_d_interface_t;
 
   -- bus access error (from BUSKEEPER) --
   signal bus_error : std_ulogic;
@@ -518,10 +530,7 @@ begin
     -- instruction bus interface --
     i_bus_addr_o  => cpu_i.addr,  -- bus access address
     i_bus_rdata_i => cpu_i.rdata, -- bus read data
-    i_bus_wdata_o => cpu_i.wdata, -- bus write data
-    i_bus_ben_o   => cpu_i.ben,   -- byte enable
-    i_bus_we_o    => cpu_i.we,    -- write enable
-    i_bus_re_o    => cpu_i.re,    -- read enable
+    i_bus_re_o    => cpu_i.re,    -- read request
     i_bus_ack_i   => cpu_i.ack,   -- bus transfer acknowledge
     i_bus_err_i   => cpu_i.err,   -- bus transfer error
     i_bus_fence_o => cpu_i.fence, -- executed FENCEI operation
@@ -530,8 +539,8 @@ begin
     d_bus_rdata_i => cpu_d.rdata, -- bus read data
     d_bus_wdata_o => cpu_d.wdata, -- bus write data
     d_bus_ben_o   => cpu_d.ben,   -- byte enable
-    d_bus_we_o    => cpu_d.we,    -- write enable
-    d_bus_re_o    => cpu_d.re,    -- read enable
+    d_bus_we_o    => cpu_d.we,    -- write request
+    d_bus_re_o    => cpu_d.re,    -- read request
     d_bus_ack_i   => cpu_d.ack,   -- bus transfer acknowledge
     d_bus_err_i   => cpu_d.err,   -- bus transfer error
     d_bus_fence_o => cpu_d.fence, -- executed FENCE operation
@@ -594,18 +603,12 @@ begin
       -- host controller interface --
       host_addr_i  => cpu_i.addr,    -- bus access address
       host_rdata_o => cpu_i.rdata,   -- bus read data
-      host_wdata_i => cpu_i.wdata,   -- bus write data
-      host_ben_i   => cpu_i.ben,     -- byte enable
-      host_we_i    => cpu_i.we,      -- write enable
       host_re_i    => cpu_i.re,      -- read enable
       host_ack_o   => cpu_i.ack,     -- bus transfer acknowledge
       host_err_o   => cpu_i.err,     -- bus transfer error
       -- peripheral bus interface --
       bus_addr_o   => i_cache.addr,  -- bus access address
       bus_rdata_i  => i_cache.rdata, -- bus read data
-      bus_wdata_o  => i_cache.wdata, -- bus write data
-      bus_ben_o    => i_cache.ben,   -- byte enable
-      bus_we_o     => i_cache.we,    -- write enable
       bus_re_o     => i_cache.re,    -- read enable
       bus_ack_i    => i_cache.ack,   -- bus transfer acknowledge
       bus_err_i    => i_cache.err    -- bus transfer error
@@ -614,14 +617,11 @@ begin
 
   neorv32_icache_inst_false:
   if (ICACHE_EN = false) generate
-    i_cache.addr  <= cpu_i.addr;
-    cpu_i.rdata   <= i_cache.rdata;
-    i_cache.wdata <= cpu_i.wdata;
-    i_cache.ben   <= cpu_i.ben;
-    i_cache.we    <= cpu_i.we;
-    i_cache.re    <= cpu_i.re;
-    cpu_i.ack     <= i_cache.ack;
-    cpu_i.err     <= i_cache.err;
+    i_cache.addr <= cpu_i.addr;
+    cpu_i.rdata  <= i_cache.rdata;
+    i_cache.re   <= cpu_i.re;
+    cpu_i.ack    <= i_cache.ack;
+    cpu_i.err    <= i_cache.err;
   end generate;
 
 
@@ -648,9 +648,9 @@ begin
     -- controller interface b --
     cb_bus_addr_i  => i_cache.addr,  -- bus access address
     cb_bus_rdata_o => i_cache.rdata, -- bus read data
-    cb_bus_wdata_i => i_cache.wdata, -- bus write data
-    cb_bus_ben_i   => i_cache.ben,   -- byte enable
-    cb_bus_we_i    => i_cache.we,    -- write enable
+    cb_bus_wdata_i => (others => '0'),
+    cb_bus_ben_i   => (others => '0'),
+    cb_bus_we_i    => '0',
     cb_bus_re_i    => i_cache.re,    -- read enable
     cb_bus_ack_o   => i_cache.ack,   -- bus transfer acknowledge
     cb_bus_err_o   => i_cache.err,   -- bus transfer error

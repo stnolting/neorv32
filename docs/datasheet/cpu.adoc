@@ -301,10 +301,7 @@ direction seen from the CPU.
 4+^| **Instruction <<_bus_interface>>**
 | `i_bus_addr_o`   |    32 | out | access address
 | `i_bus_rdata_i`  |    32 | in  | read data
-| `i_bus_wdata_o`  |    32 | out | write data (always zero)
-| `i_bus_ben_o`    |     4 | out | byte enable (always zero)
-| `i_bus_we_o`     |     1 | out | write transaction (always zero)
-| `i_bus_re_o`     |     1 | out | read transaction
+| `i_bus_re_o`     |     1 | out | read request (one-shot)
 | `i_bus_ack_i`    |     1 | in  | bus transfer acknowledge from accessed peripheral
 | `i_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
 | `i_bus_fence_o`  |     1 | out | indicates an executed `fence.i` instruction
@@ -313,8 +310,8 @@ direction seen from the CPU.
 | `d_bus_rdata_i`  |    32 | in  | read data
 | `d_bus_wdata_o`  |    32 | out | write data
 | `d_bus_ben_o`    |     4 | out | byte enable
-| `d_bus_we_o`     |     1 | out | write transaction
-| `d_bus_re_o`     |     1 | out | read transaction
+| `d_bus_we_o`     |     1 | out | write request (one-shot)
+| `d_bus_re_o`     |     1 | out | read request (one-shot)
 | `d_bus_ack_i`    |     1 | in  | bus transfer acknowledge from accessed peripheral
 | `d_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
 | `d_bus_fence_o`  |     1 | out | indicates an executed `fence` instruction
@@ -329,6 +326,11 @@ direction seen from the CPU.
 4+^| **Enter Debug Mode Request (<<_on_chip_debugger_ocd>>)**
 | `db_halt_req_i`  |     1 | in  | request CPU to halt and enter debug mode
 |=======================
+
+.Protocol
+[TIP]
+See section <<_bus_interface>> for the instruction fetch and data access protocol.
+
 
 <<<
 // ####################################################################################################################
@@ -1000,7 +1002,7 @@ In both cases bit 0 of the program counter (and all related CSRs) is hardwired t
 ==== Bus Interface
 
 The NEORV32 CPU implements a 32-bit machine with separated instruction and data interfaces making the CPU a
-**Harvard Architecture**: the _instruction fetch interface_ (`i_bus_*`) is used for fetching instruction and the
+**Harvard Architecture**: the _instruction fetch interface_ (`i_bus_*`) is used for fetching instructions and the
 _data access interface_ (`d_bus_*`) is used to access data via load and store operations.
 Each of this interfaces can access an address space of up to 2^32^ bytes (4GB).
 The following table shows the signals of the data and instruction interfaces as seen from the CPU (`*_o` signals are driven
@@ -1013,10 +1015,10 @@ by the CPU / outputs, `*_i` signals are read by the CPU / inputs). Both interfac
 | Signal            | Width | Direction | Description
 | `i/d_bus_addr_o`  | 32    | out       | access address
 | `i/d_bus_rdata_i` | 32    | in        | data input for read operations
-| `i/d_bus_wdata_o` | 32    | out       | data output for write operations (always zero for instruction fetch)
-| `i/d_bus_ben_o`   | 4     | out       | byte enable signal for write operations (always zero for instruction fetch)
-| `i/d_bus_we_o`    | 1     | out       | bus write access (always zero for instruction fetch)
-| `i/d_bus_re_o`    | 1     | out       | bus read access
+| `d_bus_wdata_o`   | 32    | out       | data output for write operations
+| `d_bus_ben_o`     | 4     | out       | byte enable signal for write operations
+| `d_bus_we_o`    |   1     | out       | bus write access request (one-shot)
+| `i/d_bus_re_o`    | 1     | out       | bus read access request (one-shot)
 | `i/d_bus_ack_i`   | 1     | in        | accessed peripheral indicates a successful completion of the bus transaction
 | `i/d_bus_err_i`   | 1     | in        | accessed peripheral indicates an error during the bus transaction
 | `i/d_bus_fence_o` | 1     | out       | this signal is set for one cycle when the CPU executes an instruction/data fence operation
@@ -1091,7 +1093,7 @@ a| image::cpu_interface_write_long.png[write,300,150]
 **Write Access**
 
 For a write access, the access address (`bus_addr_o`), the data to be written (`bus_wdata_o`) and the byte
-enable signals (`bus_ben_o`) are set when bus_we_o goes high. These three signals are kept stable until the
+enable signals (`bus_ben_o`) are set when `bus_we_o` goes high. These three signals are kept stable until the
 transaction is completed. In the example the accessed peripheral cannot answer directly in the next
 cycle after issuing. Here, the transaction is successful and the peripheral sets the `bus_ack_i` signal several
 cycles after issuing.

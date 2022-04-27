@@ -57,18 +57,12 @@ entity neorv32_icache is
     -- host controller interface --
     host_addr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     host_rdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    host_wdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    host_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
-    host_we_i    : in  std_ulogic; -- write enable
     host_re_i    : in  std_ulogic; -- read enable
     host_ack_o   : out std_ulogic; -- bus transfer acknowledge
     host_err_o   : out std_ulogic; -- bus transfer error
     -- peripheral bus interface --
     bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-    bus_we_o     : out std_ulogic; -- write enable
     bus_re_o     : out std_ulogic; -- read enable
     bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
     bus_err_i    : in  std_ulogic  -- bus transfer error
@@ -200,9 +194,6 @@ begin
 
     -- peripheral bus interface defaults --
     bus_addr_o            <= ctrl.addr_reg;
-    bus_wdata_o           <= (others => '0'); -- cache is read-only
-    bus_ben_o             <= (others => '0'); -- cache is read-only
-    bus_we_o              <= '0'; -- cache is read-only
     bus_re_o              <= '0';
 
     -- fsm --
