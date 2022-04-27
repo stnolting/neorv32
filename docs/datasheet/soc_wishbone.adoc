@@ -15,7 +15,6 @@
 |                          | `wb_sel_o`  | byte enable (4-bit)
 |                          | `wb_stb_o`  | strobe (1-bit)
 |                          | `wb_cyc_o`  | valid cycle (1-bit)
-|                          | `wb_lock_o` | exclusive access request (1-bit)
 |                          | `wb_ack_i`  | acknowledge (1-bit)
 |                          | `wb_err_i`  | bus error (1-bit)
 |                          | `fence_o`   | an executed `fence` instruction
@@ -109,23 +108,6 @@ is compatible to the AXI4 _AxPROT_ signal.
 * `wb_tag_o(0)` 1: privileged access (CPU is in machine mode); 0: unprivileged access
 * `wb_tag_o(1)` always zero (indicating "secure access")
 * `wb_tag_o(2)` 1: instruction fetch access, 0: data access
-
-
-**Exclusive / Atomic Bus Access**
-
-If the atomic memory access CPU extension (via _CPU_EXTENSION_RISCV_A_) is enabled, the CPU can
-request an atomic/exclusive bus access via the external memory interface.
-
-The load-reservate instruction (`lr.w`) will set the `wb_lock_o` signal telling the bus interconnect to establish a
-reservation for the current accessed address (start of an exclusive access). This signal will stay asserted until
-another memory access instruction is executed (for example a `sc.w`).
-
-The memory system has to make sure that no other entity can access the reservated address until `wb_lock_o`
-is released again. If this attempt fails, the memory system has to assert `wb_err_i` in order to indicate that the
-reservation was broken.
-
-[TIP]
-See section <<_bus_interface>> for the CPU bus interface protocol.
 
 
 **Endianness**
