@@ -540,7 +540,7 @@ begin
 
   -- Wishbone transfer termination --
   wb_core.ack <= ack_read or ack_write;
-  wb_core.err <= (ack_read and err_read) or (ack_write and err_write) or wb_core.lock;
+  wb_core.err <= (ack_read and err_read) or (ack_write and err_write);
 
 
 end architecture;
