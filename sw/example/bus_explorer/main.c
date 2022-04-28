@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -58,7 +58,6 @@ char access_size;
 void read_memory(void);
 void setup_access(void);
 void write_memory(void);
-void atomic_cas(void);
 void dump_memory(void);
 uint32_t hexstr_to_uint(char *buffer, uint8_t length);
 void aux_print_hex_byte(uint8_t byte);
@@ -119,7 +118,6 @@ int main() {
                           " setup  - configure memory access width (byte,half,word)\n"
                           " read   - read from address (byte,half,word)\n"
                           " write  - write to address (byte,half,word)\n"
-                          " atomic - perform atomic LR/SC access (word-only)\n"
                           " dump   - dump several bytes/halfs/words from base address\n");
     }
 
@@ -129,10 +127,6 @@ int main() {
 
     else if (!strcmp(buffer, "read")) {
       read_memory();
-    }
-
-    else if (!strcmp(buffer, "atomic")) {
-      atomic_cas();
     }
 
     else if (!strcmp(buffer, "write")) {
@@ -286,45 +280,6 @@ void write_memory(void) {
   if (access_size == 'w') { neorv32_cpu_store_unsigned_word(mem_address, mem_data_w); }
 
   neorv32_uart0_printf("\n");
-}
-
-
-/**********************************************************************//**
- * Perform atomic compare-and-swap operation, always 32-bit
- **************************************************************************/
-void atomic_cas(void) {
-
-  char terminal_buffer[16];
-  uint32_t mem_address, rdata, wdata, status;
-
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A)) != 0) {
-
-    // enter memory address
-    neorv32_uart0_printf("Enter memory address (8 hex chars): 0x");
-    neorv32_uart0_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
-    mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
-
-    // enter desired value
-    neorv32_uart0_printf("\nEnter new value @0x%x (8 hex chars): 0x", mem_address);
-    neorv32_uart0_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
-    wdata = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
-
-    rdata = neorv32_cpu_load_reservate_word(mem_address); // make reservation
-    status = neorv32_cpu_store_conditional(mem_address, wdata);
-
-    // status
-    neorv32_uart0_printf("\nOld data: 0x%x\n", rdata);
-    if (status == 0) {
-      neorv32_uart0_printf("Atomic access successful!\n");
-      neorv32_uart0_printf("New data: 0x%x\n", neorv32_cpu_load_unsigned_word(mem_address));
-    }
-    else {
-      neorv32_uart0_printf("Atomic access failed!\n");
-    }
-  }
-  else {
-    neorv32_uart0_printf("Atomic operations not implemented/enabled!\n");
-  }
 }
 
 

@@ -58,7 +58,6 @@ entity neorv32_busswitch is
     ca_bus_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
     ca_bus_we_i    : in  std_ulogic; -- write enable
     ca_bus_re_i    : in  std_ulogic; -- read enable
-    ca_bus_lock_i  : in  std_ulogic; -- exclusive access request
     ca_bus_ack_o   : out std_ulogic; -- bus transfer acknowledge
     ca_bus_err_o   : out std_ulogic; -- bus transfer error
     -- controller interface b --
@@ -68,7 +67,6 @@ entity neorv32_busswitch is
     cb_bus_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
     cb_bus_we_i    : in  std_ulogic; -- write enable
     cb_bus_re_i    : in  std_ulogic; -- read enable
-    cb_bus_lock_i  : in  std_ulogic; -- exclusive access request
     cb_bus_ack_o   : out std_ulogic; -- bus transfer acknowledge
     cb_bus_err_o   : out std_ulogic; -- bus transfer error
     -- peripheral bus --
@@ -79,7 +77,6 @@ entity neorv32_busswitch is
     p_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
     p_bus_we_o     : out std_ulogic; -- write enable
     p_bus_re_o     : out std_ulogic; -- read enable
-    p_bus_lock_o   : out std_ulogic; -- exclusive access request
     p_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
     p_bus_err_i    : in  std_ulogic  -- bus transfer error
   );
@@ -224,8 +221,6 @@ begin
   p_bus_re       <= ca_bus_re_i when (arbiter.bus_sel = '0') else cb_bus_re_i;
   p_bus_we_o     <= p_bus_we or arbiter.we_trig;
   p_bus_re_o     <= p_bus_re or arbiter.re_trig;
-
-  p_bus_lock_o   <= ca_bus_lock_i or cb_bus_lock_i;
 
   p_bus_src_o    <= arbiter.bus_sel;
 

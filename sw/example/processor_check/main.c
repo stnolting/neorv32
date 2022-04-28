@@ -105,9 +105,6 @@ uint32_t xirq_trap_handler_ack = 0;
 /// Variable to test store accesses
 volatile uint32_t store_access_addr[2];
 
-/// Variable to test atomic accesses
-volatile uint32_t atomic_access_addr;
-
 /// Variable to test PMP
 volatile uint32_t pmp_access_addr;
 
@@ -1690,116 +1687,6 @@ int main() {
   else {
     PRINT_STANDARD("<skipped, n.a.>\n");
   }
-
-
-  // ----------------------------------------------------------
-  // Test atomic LR/SC operation - should succeed
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Atomic access (LR+SC succeeding access) ", cnt_test);
-
-#ifdef __riscv_atomic
-  // skip if A-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A)) != 0) {
-
-    cnt_test++;
-
-    neorv32_cpu_store_unsigned_word((uint32_t)&atomic_access_addr, 0x11223344);
-
-    tmp_a = neorv32_cpu_load_reservate_word((uint32_t)&atomic_access_addr); // make reservation
-    asm volatile ("nop");
-    tmp_b = neorv32_cpu_store_conditional((uint32_t)&atomic_access_addr, 0x22446688);
-
-    // atomic access
-    if ((tmp_b == 0) && // status: success
-        (tmp_a == 0x11223344) && // correct data read
-        (neorv32_cpu_load_unsigned_word((uint32_t)&atomic_access_addr) == 0x22446688) && // correct data write
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) { // no exception triggered
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("<skipped, n.a.>\n");
-  }
-#else
-  PRINT_STANDARD("<skipped, n.a.>\n");
-#endif
-
-
-  // ----------------------------------------------------------
-  // Test atomic LR/SC operation - should fail
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Atomic access (LR+SC failing access 1) ", cnt_test);
-
-#ifdef __riscv_atomic
-  // skip if A-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A)) != 0) {
-
-    cnt_test++;
-
-    neorv32_cpu_store_unsigned_word((uint32_t)&atomic_access_addr, 0xAABBCCDD);
-
-    // atomic access
-    tmp_a = neorv32_cpu_load_reservate_word((uint32_t)&atomic_access_addr); // make reservation
-    // neorv32_cpu_store_unsigned_word((uint32_t)&atomic_access_addr, 0xDEADDEAD); // destroy reservation
-    neorv32_cpu_load_unsigned_word((uint32_t)&atomic_access_addr); // destroy reservation
-    tmp_b = neorv32_cpu_store_conditional((uint32_t)&atomic_access_addr, 0x22446688);
-
-    if ((tmp_b != 0) && // status: fail
-        (tmp_a == 0xAABBCCDD) && // correct data read
-        (neorv32_cpu_load_unsigned_word((uint32_t)&atomic_access_addr) == 0xAABBCCDD)) { // correct data write
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("<skipped, n.a.>\n");
-  }
-#else
-  PRINT_STANDARD("<skipped, n.a.>\n");
-#endif
-
-
-  // ----------------------------------------------------------
-  // Test atomic LR/SC operation - should fail
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
-  PRINT_STANDARD("[%i] Atomic access (LR+SC failing access 2) ", cnt_test);
-
-#ifdef __riscv_atomic
-  // skip if A-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A)) != 0) {
-
-    cnt_test++;
-
-    neorv32_cpu_store_unsigned_word((uint32_t)&atomic_access_addr, 0x12341234);
-
-    // atomic access
-    tmp_a = neorv32_cpu_load_reservate_word((uint32_t)&atomic_access_addr); // make reservation
-    asm volatile ("ecall"); // destroy reservation via trap (simulate a context switch)
-    tmp_b = neorv32_cpu_store_conditional((uint32_t)&atomic_access_addr, 0xDEADBEEF);
-
-    if ((tmp_b != 0) && // status: fail
-        (tmp_a == 0x12341234) && // correct data read
-        (neorv32_cpu_load_unsigned_word((uint32_t)&atomic_access_addr) == 0x12341234)) { // correct data write
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("<skipped on real HW>\n");
-  }
-#else
-  PRINT_STANDARD("<skipped, n.a.>\n");
-#endif
 
 
   // ----------------------------------------------------------

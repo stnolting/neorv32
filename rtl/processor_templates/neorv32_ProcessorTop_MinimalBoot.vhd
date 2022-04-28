@@ -45,7 +45,6 @@ entity neorv32_ProcessorTop_MinimalBoot is
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
 
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        : boolean := true;   -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        : boolean := true;   -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean := true;   -- implement mul/div extension?
@@ -137,7 +136,6 @@ begin
     ON_CHIP_DEBUGGER_EN          => false,  -- implement on-chip debugger?
 
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,         -- implement atomic extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,         -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,         -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,         -- implement mul/div extension?
@@ -215,7 +213,6 @@ begin
     wb_sel_o    => open,                         -- byte enable
     wb_stb_o    => open,                         -- strobe
     wb_cyc_o    => open,                         -- valid cycle
-    wb_lock_o   => open,                         -- exclusive access request
     wb_ack_i    => '0',                          -- transfer acknowledge
     wb_err_i    => '0',                          -- transfer error
 

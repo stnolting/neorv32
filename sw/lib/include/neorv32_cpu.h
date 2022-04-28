@@ -67,31 +67,6 @@ extern void __attribute__ ((weak)) __neorv32_crt0_after_main(int32_t return_code
 
 
 /**********************************************************************//**
- * Store unsigned word to address space if atomic access reservation is still valid.
- *
- * @note An unaligned access address will raise an alignment exception.
- *
- * @param[in] addr Address (32-bit).
- * @param[in] wdata Data word (32-bit) to store.
- * @return Operation status (32-bit, zero if success).
- **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_store_conditional(uint32_t addr, uint32_t wdata) {
-
-#if defined __riscv_atomic || defined __riscv_a
-  register uint32_t reg_addr = addr;
-  register uint32_t reg_data = wdata;
-  register uint32_t reg_status;
-
-  asm volatile ("sc.w %[status], %[da], (%[ad])" : [status] "=r" (reg_status) : [da] "r" (reg_data), [ad] "r" (reg_addr));
-
-  return reg_status;
-#else
-  return 1; // always failing
-#endif
-}
-
-
-/**********************************************************************//**
  * Conditional store unsigned word to address space.
  *
  * @note An unaligned access address will raise an alignment exception.
@@ -137,29 +112,6 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_byte(uint
   register uint32_t reg_data = (uint32_t)wdata;
 
   asm volatile ("sb %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr));
-}
-
-
-/**********************************************************************//**
- * Load unsigned word from address space and make reservation for atomic access.
- *
- * @note An unaligned access address will raise an alignment exception.
- *
- * @param[in] addr Address (32-bit).
- * @return Read data word (32-bit).
- **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_reservate_word(uint32_t addr) {
-
-  register uint32_t reg_addr = addr;
-  register uint32_t reg_data;
-
-#if defined __riscv_atomic || defined __riscv_a
-  asm volatile ("lr.w %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
-#else
-  asm volatile ("lw %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
-#endif
-
-  return reg_data;
 }
 
 

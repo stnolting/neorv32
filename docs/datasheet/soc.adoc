@@ -249,18 +249,6 @@ can be determined via the NEORV32-specific <<_mxisa>> CSR.
 
 
 :sectnums!:
-===== _CPU_EXTENSION_RISCV_A_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_A** | _boolean_ | false
-3+| Implement atomic memory access operations when _true_.
-See section <<_a_atomic_memory_access>>.
-|======
-
-
-:sectnums!:
 ===== _CPU_EXTENSION_RISCV_B_
 
 [cols="4,4,2"]

@@ -18,7 +18,6 @@ image::neorv32_cpu_block.png[width=600,align=center]
 * 32-bit little-endian, multi-cycle, in-order `rv32` RISC-V CPU
 * Compatible to the RISC-V. **Privileged Architecture - Machine ISA Version 1.12** specifications
 * Available <<_instruction_sets_and_extensions>>:
-** `A` - atomic memory access operations
 ** `B` - bit-manipulation instructions
 ** `C` - 16-bit compressed instructions
 ** `I` - integer base ISA (always enabled)
@@ -272,11 +271,6 @@ The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only 
 the according PMP entry and not the entries below. All region rules are checked in parallel **without**
 prioritization so for identical memory regions the most restrictive PMP rule will be enforced.
 
-.Atomic Memory Operations
-[IMPORTANT]
-The `A` CPU extension only implements the `lr.w` and `sc.w` instructions yet.
-However, these instructions are sufficient to emulate all further atomic memory operations.
-
 .No HW-Support of Misaligned Memory Accesses
 [WARNING]
 The CPU does not support the resolution of unaligned memory access by the hardware. This is not a
@@ -303,30 +297,24 @@ direction seen from the CPU.
 | `rstn_i`         |     1 | in  | global reset, low-active
 | `sleep_o`        |     1 | out | CPU is in sleep mode when set
 | `debug_o`        |     1 | out | CPU is in debug mode when set
+| `priv_o`         |     1 | out | current _effective_ CPU privilege level (`0` = user, `1` = machine)
 4+^| **Instruction <<_bus_interface>>**
 | `i_bus_addr_o`   |    32 | out | access address
 | `i_bus_rdata_i`  |    32 | in  | read data
-| `i_bus_wdata_o`  |    32 | out | write data (always zero)
-| `i_bus_ben_o`    |     4 | out | byte enable
-| `i_bus_we_o`     |     1 | out | write transaction (always zero)
-| `i_bus_re_o`     |     1 | out | read transaction
-| `i_bus_lock_o`   |     1 | out | exclusive access request (always zero)
+| `i_bus_re_o`     |     1 | out | read request (one-shot)
 | `i_bus_ack_i`    |     1 | in  | bus transfer acknowledge from accessed peripheral
 | `i_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
 | `i_bus_fence_o`  |     1 | out | indicates an executed `fence.i` instruction
-| `i_bus_priv_o`   |     1 | out | current _effective_ CPU privilege level (`0` user, `1` machine or debug)
 4+^| **Data <<_bus_interface>>**
 | `d_bus_addr_o`   |    32 | out | access address
 | `d_bus_rdata_i`  |    32 | in  | read data
 | `d_bus_wdata_o`  |    32 | out | write data
 | `d_bus_ben_o`    |     4 | out | byte enable
-| `d_bus_we_o`     |     1 | out | write transaction
-| `d_bus_re_o`     |     1 | out | read transaction
-| `d_bus_lock_o`   |     1 | out | exclusive access request
+| `d_bus_we_o`     |     1 | out | write request (one-shot)
+| `d_bus_re_o`     |     1 | out | read request (one-shot)
 | `d_bus_ack_i`    |     1 | in  | bus transfer acknowledge from accessed peripheral
 | `d_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
 | `d_bus_fence_o`  |     1 | out | indicates an executed `fence` instruction
-| `d_bus_priv_o`   |     1 | out | current _effective_ CPU privilege level (`0` user, `1` machine or debug)
 4+^| **System Time (for <<_timeh>> CSR)**
 | `time_i`         |    64 | in  | system time input from <<_machine_system_timer_mtime>>
 4+^| **Interrupts, RISC-V-compatible (<<_traps_exceptions_and_interrupts>>)**
@@ -338,6 +326,11 @@ direction seen from the CPU.
 4+^| **Enter Debug Mode Request (<<_on_chip_debugger_ocd>>)**
 | `db_halt_req_i`  |     1 | in  | request CPU to halt and enter debug mode
 |=======================
+
+.Protocol
+[TIP]
+See section <<_bus_interface>> for the instruction fetch and data access protocol.
+
 
 <<<
 // ####################################################################################################################
@@ -392,37 +385,6 @@ or by executing an instruction and checking for an _illegal instruction exceptio
  +
 Executing an instruction from an extension that is not supported yet or that is currently not enabled
 (via the according top entity generic) will raise an illegal instruction exception.
-
-
-==== **`A`** - Atomic Memory Access
-
-Atomic memory access instructions allow more sophisticated memory operations like implementing semaphores and mutexes.
-The RICS-C specs. defines a specific _atomic_ extension that provides instructions for atomic memory accesses. The `A`
-ISA extension is enabled if the <<_cpu_extension_riscv_a>> configuration generic is _true_.
-In this case the following additional instructions are available:
-
-* `lr.w`: load-reservate
-* `sc.w`: store-conditional
-
-[NOTE]
-Even though only `lr.w` and `sc.w` instructions are implemented yet, all further atomic operations
-(load-modify-write instruction) can be emulated using these two instruction. Furthermore, the
-instruction's ordering flags (`aq` and `lr`) are ignored by the CPU hardware. Using any other (not yet
-implemented) AMO (atomic memory operation) will raise an illegal instruction exception.
-
-The *load-reservate* instruction behaves as a "normal" load-word instruction (`lw`) but will also set a CPU-internal
-_data memory access lock_. Executing a *store-conditional* behaves as "normal" store-word instruction (`sw`) that will
-only conduct an actual memory write operations if the lock is still intact. Additionally, the store-conditional instruction
-will also return the lock state (returns zero if the lock is still intact or non-zero if the lock has been broken).
-After the execution of the `sc` instruction, the lock is automatically removed.
-
-The lock is broken if at least one of the following conditions occur:
-. executing any data memory access instruction other than `lr.w`
-. raising _any_ t (for example an interrupt or a memory access exception)
-
-[NOTE]
-The atomic instructions have special requirements for memory system / bus interconnect. More
-information can be found in sections <<_bus_interface>> and <<_processor_external_memory_interface_wishbone_axi4_lite>>, respectively.
 
 
 ==== **`B`** - Bit-Manipulation Operations
@@ -1040,7 +1002,7 @@ In both cases bit 0 of the program counter (and all related CSRs) is hardwired t
 ==== Bus Interface
 
 The NEORV32 CPU implements a 32-bit machine with separated instruction and data interfaces making the CPU a
-**Harvard Architecture**: the _instruction fetch interface_ (`i_bus_*`) is used for fetching instruction and the
+**Harvard Architecture**: the _instruction fetch interface_ (`i_bus_*`) is used for fetching instructions and the
 _data access interface_ (`d_bus_*`) is used to access data via load and store operations.
 Each of this interfaces can access an address space of up to 2^32^ bytes (4GB).
 The following table shows the signals of the data and instruction interfaces as seen from the CPU (`*_o` signals are driven
@@ -1050,18 +1012,16 @@ by the CPU / outputs, `*_i` signals are read by the CPU / inputs). Both interfac
 [cols="<2,^1,^1,<6"]
 [options="header",grid="rows"]
 |=======================
-| Signal             | Width | Direction | Description
-| `i/d_bus_addr_o`   | 32    | out       | access address
-| `i/d_bus_rdata_i`  | 32    | in        | data input for read operations
-| `i/d_bus_wdata_o`  | 32    | out       | data output for write operations
-| `i/d_bus_ben_o`    | 4     | out       | byte enable signal for write operations
-| `i/d_bus_we_o`     | 1     | out       | bus write access (always zero for instruction fetches)
-| `i/d_bus_re_o`     | 1     | out       | bus read access
-| `i/d_bus_lock_o`   | 1     | out       | exclusive access request
-| `i/d_bus_ack_i`    | 1     | in        | accessed peripheral indicates a successful completion of the bus transaction
-| `i/d_bus_err_i`    | 1     | in        | accessed peripheral indicates an error during the bus transaction
-| `i/d_bus_fence_o`  | 1     | out       | this signal is set for one cycle when the CPU executes an instruction/data fence operation
-| `i/d_bus_priv_o`   | 2     | out       | current CPU privilege level
+| Signal            | Width | Direction | Description
+| `i/d_bus_addr_o`  | 32    | out       | access address
+| `i/d_bus_rdata_i` | 32    | in        | data input for read operations
+| `d_bus_wdata_o`   | 32    | out       | data output for write operations
+| `d_bus_ben_o`     | 4     | out       | byte enable signal for write operations
+| `d_bus_we_o`    |   1     | out       | bus write access request (one-shot)
+| `i/d_bus_re_o`    | 1     | out       | bus read access request (one-shot)
+| `i/d_bus_ack_i`   | 1     | in        | accessed peripheral indicates a successful completion of the bus transaction
+| `i/d_bus_err_i`   | 1     | in        | accessed peripheral indicates an error during the bus transaction
+| `i/d_bus_fence_o` | 1     | out       | this signal is set for one cycle when the CPU executes an instruction/data fence operation
 |=======================
 
 .Pipelined Transfers
@@ -1133,7 +1093,7 @@ a| image::cpu_interface_write_long.png[write,300,150]
 **Write Access**
 
 For a write access, the access address (`bus_addr_o`), the data to be written (`bus_wdata_o`) and the byte
-enable signals (`bus_ben_o`) are set when bus_we_o goes high. These three signals are kept stable until the
+enable signals (`bus_ben_o`) are set when `bus_we_o` goes high. These three signals are kept stable until the
 transaction is completed. In the example the accessed peripheral cannot answer directly in the next
 cycle after issuing. Here, the transaction is successful and the peripheral sets the `bus_ack_i` signal several
 cycles after issuing.
@@ -1153,32 +1113,6 @@ signal).
 The instruction interface will always access memory on word (= 32-bit) boundaries even if fetching
 compressed (16-bit) instructions. The data interface can access memory on byte (= 8-bit), half-word (= 16-
 bit) and word (= 32-bit) boundaries.
-
-
-**Exclusive (Atomic) Access**
-
-The CPU can access memory in an exclusive manner by generating a load-reservate and store-conditional
-combination. Normally, these combinations should target the same memory address.
-
-The CPU starts an exclusive access to memory via the _load-reservate instruction_ (`lr.w`). This instruction
-will set the CPU-internal _exclusive access lock_, which directly drives the `d_bus_lock_o`. It is the task of
-the memory system to manage this exclusive access reservation by storing the according access address and
-the source of the access itself (for example via the CPU ID in a multi-core system).
-
-When the CPU executes a _store-conditional instruction_ (`sc.w`) the _CPU-internal exclusive access lock_ is
-evaluated to check if the exclusive access was successful. If the lock is still OK, the instruction will write-back
-zero and will allow the according store operation to the memory system. If the lock is broken, the
-instruction will write-back non-zero and will not generate an actual memory store operation.
-
-The CPU-internal exclusive access lock is broken if at least one of the situations appear.
-
-* when executing any other memory-access operation than `lr.w`
-* when any trap (sync. or async.) is triggered (for example to force a context switch)
-* when the memory system signals a bus error (via the `bus_err_i` signal)
-
-[TIP]
-For more information regarding the SoC-level behavior and requirements of atomic operations see
-section <<_processor_external_memory_interface_wishbone_axi4_lite>>.
 
 
 **Memory Barriers**

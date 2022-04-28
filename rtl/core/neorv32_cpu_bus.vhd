@@ -43,9 +43,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_bus is
   generic (
-    CPU_EXTENSION_RISCV_A : boolean; -- implement atomic extension?
-    PMP_NUM_REGIONS       : natural; -- number of regions (0..16)
-    PMP_MIN_GRANULARITY   : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_NUM_REGIONS     : natural; -- number of regions (0..16)
+    PMP_MIN_GRANULARITY : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   );
   port (
     -- global control --
@@ -61,7 +60,6 @@ entity neorv32_cpu_bus is
     rdata_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- read data
     mar_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
     d_wait_o      : out std_ulogic; -- wait for access to complete
-    excl_state_o  : out std_ulogic; -- atomic/exclusive access status
     ma_load_o     : out std_ulogic; -- misaligned load data address
     ma_store_o    : out std_ulogic; -- misaligned store data address
     be_load_o     : out std_ulogic; -- bus error on load data access
@@ -76,7 +74,6 @@ entity neorv32_cpu_bus is
     d_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
     d_bus_we_o    : out std_ulogic; -- write enable
     d_bus_re_o    : out std_ulogic; -- read enable
-    d_bus_lock_o  : out std_ulogic; -- exclusive access request
     d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
     d_bus_err_i   : in  std_ulogic; -- bus transfer error
     d_bus_fence_o : out std_ulogic  -- fence operation
@@ -106,7 +103,6 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   signal data_size  : std_ulogic_vector(1 downto 0); -- transfer size
   signal data_sign  : std_ulogic; -- signed load
   signal mar        : std_ulogic_vector(data_width_c-1 downto 0); -- data memory address register
-  signal rdata      : std_ulogic_vector(data_width_c-1 downto 0); -- aligned and sign-extended read-data
   signal misaligned : std_ulogic; -- misaligned address
 
   -- bus arbiter --
@@ -120,10 +116,6 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   -- memory control signal buffer (when using PMP) --
   signal d_bus_we, d_bus_we_buf : std_ulogic;
   signal d_bus_re, d_bus_re_buf : std_ulogic;
-
-  -- atomic/exclusive access - reservation controller --
-  signal exclusive_lock        : std_ulogic;
-  signal exclusive_lock_status : std_ulogic_vector(data_width_c-1 downto 0); -- read data
 
   -- physical memory protection --
   type pmp_t is record
@@ -233,41 +225,38 @@ begin
   read_align: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      rdata <= (others => def_rst_val_c);
+      rdata_o <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       -- input data alignment and sign extension --
       case data_size is
         when "00" => -- byte
           case mar(1 downto 0) is
             when "00" => -- byte 0
-              rdata(07 downto 00) <= d_bus_rdata_i(07 downto 00);
-              rdata(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(07))); -- sign extension
+              rdata_o(07 downto 00) <= d_bus_rdata_i(07 downto 00);
+              rdata_o(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(07))); -- sign extension
             when "01" => -- byte 1
-              rdata(07 downto 00) <= d_bus_rdata_i(15 downto 08);
-              rdata(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
+              rdata_o(07 downto 00) <= d_bus_rdata_i(15 downto 08);
+              rdata_o(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
             when "10" => -- byte 2
-              rdata(07 downto 00) <= d_bus_rdata_i(23 downto 16);
-              rdata(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(23))); -- sign extension
+              rdata_o(07 downto 00) <= d_bus_rdata_i(23 downto 16);
+              rdata_o(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(23))); -- sign extension
             when others => -- byte 3
-              rdata(07 downto 00) <= d_bus_rdata_i(31 downto 24);
-              rdata(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
+              rdata_o(07 downto 00) <= d_bus_rdata_i(31 downto 24);
+              rdata_o(31 downto 08) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
           end case;
         when "01" => -- half-word
           if (mar(1) = '0') then
-            rdata(15 downto 00) <= d_bus_rdata_i(15 downto 00); -- low half-word
-            rdata(31 downto 16) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
+            rdata_o(15 downto 00) <= d_bus_rdata_i(15 downto 00); -- low half-word
+            rdata_o(31 downto 16) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
           else
-            rdata(15 downto 00) <= d_bus_rdata_i(31 downto 16); -- high half-word
-            rdata(31 downto 16) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
+            rdata_o(15 downto 00) <= d_bus_rdata_i(31 downto 16); -- high half-word
+            rdata_o(31 downto 16) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
           end if;
         when others => -- word
-          rdata <= d_bus_rdata_i; -- full word
+          rdata_o <= d_bus_rdata_i; -- full word
       end case;
     end if;
   end process read_align;
-
-  -- insert exclusive lock status for SC operations --
-  rdata_o <= exclusive_lock_status when (CPU_EXTENSION_RISCV_A = true) and (ctrl_i(ctrl_bus_ch_lock_c) = '1') else rdata;
 
 
   -- Access Arbiter -------------------------------------------------------------------------
@@ -327,37 +316,6 @@ begin
 
   d_bus_we_o <= d_bus_we_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_we;
   d_bus_re_o <= d_bus_re_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_re;
-
-
-  -- Reservation Controller (A extension) ---------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  exclusive_access_controller: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      exclusive_lock <= '0';
-    elsif rising_edge(clk_i) then
-      if (CPU_EXTENSION_RISCV_A = true) then
-        -- remove lock if entering a trap or executing a non-load-reservate memory access --
-        if (ctrl_i(ctrl_trap_c) = '1') or (ctrl_i(ctrl_bus_de_lock_c) = '1') then
-          exclusive_lock <= '0';
-        elsif (ctrl_i(ctrl_bus_lock_c) = '1') then -- set new lock
-          exclusive_lock <= '1';
-        end if;
-      else
-        exclusive_lock <= '0';
-      end if;
-    end if;
-  end process exclusive_access_controller;
-
-  -- lock status for SC operation --
-  exclusive_lock_status(data_width_c-1 downto 1) <= (others => '0');
-  exclusive_lock_status(0) <= not exclusive_lock;
-
-  -- output reservation status to control unit (to check if SC should write at all) --
-  excl_state_o <= exclusive_lock;
-
-  -- output to memory system --
-  d_bus_lock_o <= exclusive_lock;
 
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------

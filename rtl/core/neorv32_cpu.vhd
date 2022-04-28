@@ -66,11 +66,10 @@ entity neorv32_cpu is
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
     CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean; -- implement muld/div extension?
+    CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
@@ -84,7 +83,7 @@ entity neorv32_cpu is
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
     CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
-    CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2, min 2
+    CPU_IPB_ENTRIES              : natural; -- entries in instruction prefetch buffer, has to be a power of 2, min 2
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -98,30 +97,24 @@ entity neorv32_cpu is
     rstn_i        : in  std_ulogic; -- global reset, low-active, async
     sleep_o       : out std_ulogic; -- cpu is in sleep mode when set
     debug_o       : out std_ulogic; -- cpu is in debug mode when set
+    priv_o        : out std_ulogic; -- current effective privilege level
     -- instruction bus interface --
     i_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     i_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    i_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    i_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-    i_bus_we_o    : out std_ulogic; -- write enable
-    i_bus_re_o    : out std_ulogic; -- read enable
-    i_bus_lock_o  : out std_ulogic; -- exclusive access request
+    i_bus_re_o    : out std_ulogic; -- read request
     i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
     i_bus_err_i   : in  std_ulogic; -- bus transfer error
     i_bus_fence_o : out std_ulogic; -- executed FENCEI operation
-    i_bus_priv_o  : out std_ulogic; -- privilege level
     -- data bus interface --
     d_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     d_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
     d_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
     d_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-    d_bus_we_o    : out std_ulogic; -- write enable
-    d_bus_re_o    : out std_ulogic; -- read enable
-    d_bus_lock_o  : out std_ulogic; -- exclusive access request
+    d_bus_we_o    : out std_ulogic; -- write request
+    d_bus_re_o    : out std_ulogic; -- read request
     d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
     d_bus_err_i   : in  std_ulogic; -- bus transfer error
     d_bus_fence_o : out std_ulogic; -- executed FENCE operation
-    d_bus_priv_o  : out std_ulogic; -- privilege level
     -- system time input from MTIME --
     time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
     -- interrupts (risc-v compliant) --
@@ -151,7 +144,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal mar         : std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
   signal ma_load     : std_ulogic; -- misaligned load data address
   signal ma_store    : std_ulogic; -- misaligned store data address
-  signal excl_state  : std_ulogic; -- atomic/exclusive access lock status
   signal be_load     : std_ulogic; -- bus error on load data access
   signal be_store    : std_ulogic; -- bus error on store data access
   signal fetch_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
@@ -172,7 +164,6 @@ begin
   "NEORV32 CPU ISA Configuration (MARCH): " &
   cond_sel_string_f(CPU_EXTENSION_RISCV_E, "RV32E", "RV32I") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_M, "M", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_A, "A", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_C, "C", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_B, "B", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_U, "U", "") &
@@ -253,7 +244,6 @@ begin
     CPU_BOOT_ADDR                => CPU_BOOT_ADDR,                -- cpu boot address
     CPU_DEBUG_ADDR               => CPU_DEBUG_ADDR,               -- cpu debug mode start address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic extension?
     CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
@@ -294,7 +284,6 @@ begin
     -- status input --
     alu_idone_i   => alu_idone,     -- ALU iterative operation done
     bus_d_wait_i  => bus_d_wait,    -- wait for bus
-    excl_state_i  => excl_state,    -- atomic/exclusive access lock status
     -- data input --
     cmp_i         => comparator,    -- comparator status
     alu_add_i     => alu_add,       -- ALU address result
@@ -330,13 +319,10 @@ begin
   -- CPU state --
   sleep_o <= ctrl(ctrl_sleep_c); -- set when CPU is sleeping (after WFI)
   debug_o <= ctrl(ctrl_debug_running_c); -- set when CPU is in debug mode
+  priv_o  <= ctrl(ctrl_priv_mode_c); -- current effective privilege level
 
   -- instruction fetch interface --
   i_bus_addr_o  <= fetch_pc;
-  i_bus_wdata_o <= (others => '0'); -- read-only
-  i_bus_ben_o   <= (others => '0'); -- read-only
-  i_bus_we_o    <= '0'; -- read-only
-  i_bus_lock_o  <= '0'; -- instruction fetch cannot be locked
   i_bus_fence_o <= ctrl(ctrl_bus_fencei_c);
 
 
@@ -399,9 +385,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_bus_inst: neorv32_cpu_bus
   generic map (
-    CPU_EXTENSION_RISCV_A => CPU_EXTENSION_RISCV_A, -- implement atomic extension?
-    PMP_NUM_REGIONS       => PMP_NUM_REGIONS,       -- number of regions (0..16)
-    PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY    -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_NUM_REGIONS     => PMP_NUM_REGIONS,    -- number of regions (0..16)
+    PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   )
   port map (
     -- global control --
@@ -417,7 +402,6 @@ begin
     rdata_o       => mem_rdata,     -- read data
     mar_o         => mar,           -- current memory address register
     d_wait_o      => bus_d_wait,    -- wait for access to complete
-    excl_state_o  => excl_state,    -- atomic/exclusive access status
     ma_load_o     => ma_load,       -- misaligned load data address
     ma_store_o    => ma_store,      -- misaligned store data address
     be_load_o     => be_load,       -- bus error on load data access
@@ -432,15 +416,10 @@ begin
     d_bus_ben_o   => d_bus_ben_o,   -- byte enable
     d_bus_we_o    => d_bus_we_o,    -- write enable
     d_bus_re_o    => d_bus_re_o,    -- read enable
-    d_bus_lock_o  => d_bus_lock_o,  -- exclusive access request
     d_bus_ack_i   => d_bus_ack_i,   -- bus transfer acknowledge
     d_bus_err_i   => d_bus_err_i,   -- bus transfer error
     d_bus_fence_o => d_bus_fence_o  -- fence operation
   );
-
-  -- current privilege level --
-  i_bus_priv_o <= ctrl(ctrl_priv_mode_c);
-  d_bus_priv_o <= ctrl(ctrl_priv_mode_c);
 
 
 end neorv32_cpu_rtl;

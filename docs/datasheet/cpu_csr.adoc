@@ -263,7 +263,6 @@ CSR is simply ignored and will _NOT_ cause an illegal instruction exception.
 | 8     | _CSR_MISA_I_EXT_ | r/- | **I**: CPU base ISA, cleared when _CPU_EXTENSION_RISCV_E_ enabled
 | 4     | _CSR_MISA_E_EXT_ | r/- | **E**: CPU extension (embedded) available, set when _CPU_EXTENSION_RISCV_E_ enabled
 | 2     | _CSR_MISA_C_EXT_ | r/- | **C**: CPU extension (compressed instruction) available, set when _CPU_EXTENSION_RISCV_C_ enabled
-| 0     | _CSR_MISA_A_EXT_ | r/- | **A**: CPU extension (atomic memory access) available, set when _CPU_EXTENSION_RISCV_A_ enabled
 |=======================
 
 [TIP]
