@@ -666,8 +666,8 @@ begin
     p_bus_err_i    => bus_error      -- bus transfer error
   );
 
-  -- fence operation (unused) --
-  p_bus.fence <= '0';
+  -- any fence operation? --
+  p_bus.fence <= cpu_i.fence or cpu_d.fence;
 
   -- bus response --
   bus_response: process(resp_bus)
@@ -1082,7 +1082,7 @@ begin
   begin
     if rising_edge(clk_i) then
       -- buffer low word one clock cycle to compensate for MTIME's 1-cycle delay
-      -- when overflowing from low-word to high-word -> only relevant for processor-external devices
+      -- when overflowing from low-word to high-word -> only relevant for processor-external devices;
       -- processor-internal devices (= the CPU) do not care about this delay offset as 64-bit MTIME.TIME
       -- cannot be accessed within a single cycle
       if (IO_MTIME_EN = true) then
