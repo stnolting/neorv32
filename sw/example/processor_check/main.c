@@ -157,13 +157,6 @@ int main() {
   // intro
   PRINT_STANDARD("\n<< PROCESSOR CHECK >>\n");
   PRINT_STANDARD("build: "__DATE__" "__TIME__"\n");
-  PRINT_STANDARD("is simulation: ");
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IS_SIM)) {
-    PRINT_STANDARD("yes\n");
-  }
-  else {
-    PRINT_STANDARD("no\n");
-  }
 
 
   // reset (performance) counters
