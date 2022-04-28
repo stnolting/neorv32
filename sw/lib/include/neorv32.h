@@ -447,6 +447,10 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_ZIHPM     =  9, /**< CPU mxisa CSR  (9): hardware performance monitors (r/-)*/
   CSR_MXISA_DEBUGMODE = 10, /**< CPU mxisa CSR (10): RISC-V debug mode (r/-)*/
 
+  // Misc
+  CSR_MXISA_IS_SIM    = 20, /**< CPU mxisa CSR (20): this might be a simulation when set (r/-)*/
+  CSR_MXISA_HW_RESET  = 21, /**< CPU mxisa CSR (21): set if a dedicated hardware reset of all core registers is implemented (r/-)*/
+
   // Tuning options
   CSR_MXISA_FASTMUL   = 30, /**< CPU mxisa CSR (30): DSP-based multiplication (M extensions only) (r/-)*/ 
   CSR_MXISA_FASTSHIFT = 31  /**< CPU mxisa CSR (31): parallel logic for shifts (barrel shifters) (r/-)*/

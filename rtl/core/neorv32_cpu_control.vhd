@@ -2385,6 +2385,9 @@ begin
             csr.rdata(08) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP: physical memory protection (Zspmp)
             csr.rdata(09) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm);    -- Zihpm: hardware performance monitors
             csr.rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG);    -- RISC-V debug mode
+            -- misc --
+            csr.rdata(20) <= bool_to_ulogic_f(is_simulation_c);              -- is this a simulation?
+            csr.rdata(21) <= bool_to_ulogic_f(dedicated_reset_c);            -- dedicated hardware reset of all core registers?
             -- tuning options --
             csr.rdata(30) <= bool_to_ulogic_f(FAST_MUL_EN);                  -- DSP-based multiplication (M extensions only)
             csr.rdata(31) <= bool_to_ulogic_f(FAST_SHIFT_EN);                -- parallel logic for shifts (barrel shifters)
