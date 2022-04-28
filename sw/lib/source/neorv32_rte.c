@@ -299,10 +299,12 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\n---<< CPU >>---\n");
 
   // general
+  neorv32_uart0_printf("Is simulation:     "); __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM));
   neorv32_uart0_printf("Clock speed:       %u Hz\n", NEORV32_SYSINFO.CLK);
-  neorv32_uart0_printf("Full HW reset:     "); __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_HW_RESET));
+  neorv32_uart0_printf("Full HW reset:     "); __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_HW_RESET));
   neorv32_uart0_printf("On-chip debugger:  "); __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_OCD));
-  // ID
+
+  // IDs
   neorv32_uart0_printf("Hart ID:           0x%x\n"
                        "Vendor ID:         0x%x\n", neorv32_cpu_csr_read(CSR_MHARTID), neorv32_cpu_csr_read(CSR_MVENDORID));
 
@@ -313,7 +315,7 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // hardware version
-  neorv32_uart0_printf("\nImplementation ID: 0x%x (", neorv32_cpu_csr_read(CSR_MIMPID));
+  neorv32_uart0_printf("\nImplementation ID: 0x%x (v", neorv32_cpu_csr_read(CSR_MIMPID));
   neorv32_rte_print_hw_version();
   neorv32_uart0_putc(')');
 
@@ -621,39 +623,36 @@ void neorv32_rte_print_credits(void) {
  **************************************************************************/
 void neorv32_rte_print_logo(void) {
 
-  const uint32_t logo_data_c[11][4] =
-  {
-    {0b00000000000000000000000000000000,0b00000000000000000000000000000000,0b00000000000000000000000110000000,0b00000000000000000000000000000000},
-    {0b00000000000000000000000000000000,0b00000000000000000000000000000000,0b00000000000000000000000110000000,0b00110001100011000000000000000000},
-    {0b01100000110001111111110001111111,0b10000111111110001100000011000111,0b11111000011111111000000110000000,0b11111111111111110000000000000000},
-    {0b11110000110011000000000011000000,0b11001100000011001100000011001100,0b00001100110000001100000110000011,0b11000000000000111100000000000000},
-    {0b11011000110011000000000011000000,0b11001100000011001100000011000000,0b00001100000000011000000110000000,0b11000111111000110000000000000000},
-    {0b11001100110011111111100011000000,0b11001111111110001100000011000000,0b11111000000001100000000110000011,0b11000111111000111100000000000000},
-    {0b11000110110011000000000011000000,0b11001100001100000110000110000000,0b00001100000110000000000110000000,0b11000111111000110000000000000000},
-    {0b11000011110011000000000011000000,0b11001100000110000011001100001100,0b00001100011000000000000110000011,0b11000000000000111100000000000000},
-    {0b11000001100001111111110001111111,0b10001100000011000000110000000111,0b11111000111111111100000110000000,0b11111111111111110000000000000000},
-    {0b00000000000000000000000000000000,0b00000000000000000000000000000000,0b00000000000000000000000110000000,0b00110001100011000000000000000000},
-    {0b00000000000000000000000000000000,0b00000000000000000000000000000000,0b00000000000000000000000110000000,0b00000000000000000000000000000000}
+  const uint16_t logo_data_c[9][7] = {
+    {0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000001100000000,0b1100011000110000},
+    {0b0110000011000111,0b1111110001111111,0b1000011111111000,0b1100000011000111,0b1111100001111111,0b1000001100000011,0b1111111111111100},
+    {0b1111000011001100,0b0000000011000000,0b1100110000001100,0b1100000011001100,0b0000110011000000,0b1100001100001111,0b0000000000001111},
+    {0b1101100011001100,0b0000000011000000,0b1100110000001100,0b1100000011000000,0b0000110000000001,0b1000001100000011,0b0001111110001100},
+    {0b1100110011001111,0b1111100011000000,0b1100111111111000,0b1100000011000000,0b1111100000000110,0b0000001100001111,0b0001111110001111},
+    {0b1100011011001100,0b0000000011000000,0b1100110000110000,0b0110000110000000,0b0000110000011000,0b0000001100000011,0b0001111110001100},
+    {0b1100001111001100,0b0000000011000000,0b1100110000011000,0b0011001100001100,0b0000110001100000,0b0000001100001111,0b0000000000001111},
+    {0b1100000110000111,0b1111110001111111,0b1000110000001100,0b0000110000000111,0b1111100011111111,0b1100001100000011,0b1111111111111100},
+    {0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000001100000000,0b1100011000110000}
   };
 
   int u,v,w;
-  uint32_t tmp;
+  uint16_t tmp;
+  char c;
 
   if (neorv32_uart0_available() == 0) {
     return; // cannot output anything if UART0 is not implemented
   }
 
-  for (u=0; u<11; u++) {
+  for (u=0; u<9; u++) {
     neorv32_uart0_print("\n");
-    for (v=0; v<4; v++) {
+    for (v=0; v<7; v++) {
       tmp = logo_data_c[u][v];
-      for (w=0; w<32; w++){
-        if (((int32_t)tmp) < 0) { // check MSB
-          neorv32_uart0_putc('#');
+      for (w=0; w<16; w++){
+        c = ' ';
+        if (((int16_t)tmp) < 0) { // check MSB
+          c = '#';
         }
-        else {
-          neorv32_uart0_putc(' ');
-        }
+        neorv32_uart0_putc(c);
         tmp <<= 1;
       }
     }
@@ -672,36 +671,36 @@ void neorv32_rte_print_license(void) {
   }
 
   neorv32_uart0_print(
-  "\n"
-  "BSD 3-Clause License\n"
-  "\n"
-  "Copyright (c) 2022, Stephan Nolting. All rights reserved.\n"
-  "\n"
-  "Redistribution and use in source and binary forms, with or without modification, are\n"
-  "permitted provided that the following conditions are met:\n"
-  "\n"
-  "1. Redistributions of source code must retain the above copyright notice, this list of\n"
-  "   conditions and the following disclaimer.\n"
-  "\n"
-  "2. Redistributions in binary form must reproduce the above copyright notice, this list of\n"
-  "   conditions and the following disclaimer in the documentation and/or other materials\n"
-  "   provided with the distribution.\n"
-  "\n"
-  "3. Neither the name of the copyright holder nor the names of its contributors may be used to\n"
-  "   endorse or promote products derived from this software without specific prior written\n"
-  "   permission.\n"
-  "\n"
-  "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS\n"
-  "OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n"
-  "MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE\n"
-  "COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,\n"
-  "EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE\n"
-  "GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED\n"
-  "AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\n"
-  "NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED\n"
-  "OF THE POSSIBILITY OF SUCH DAMAGE.\n"
-  "\n"
-  "\n"
+    "\n"
+    "BSD 3-Clause License\n"
+    "\n"
+    "Copyright (c) 2022, Stephan Nolting. All rights reserved.\n"
+    "\n"
+    "Redistribution and use in source and binary forms, with or without modification, are\n"
+    "permitted provided that the following conditions are met:\n"
+    "\n"
+    "1. Redistributions of source code must retain the above copyright notice, this list of\n"
+    "   conditions and the following disclaimer.\n"
+    "\n"
+    "2. Redistributions in binary form must reproduce the above copyright notice, this list of\n"
+    "   conditions and the following disclaimer in the documentation and/or other materials\n"
+    "   provided with the distribution.\n"
+    "\n"
+    "3. Neither the name of the copyright holder nor the names of its contributors may be used to\n"
+    "   endorse or promote products derived from this software without specific prior written\n"
+    "   permission.\n"
+    "\n"
+    "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS\n"
+    "OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n"
+    "MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE\n"
+    "COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,\n"
+    "EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE\n"
+    "GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED\n"
+    "AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\n"
+    "NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED\n"
+    "OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+    "\n"
+    "\n"
   );
 }
 
