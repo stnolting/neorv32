@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 28.04.2022 | 1.7.1.2 | add flag to `mxisa`  CSR to check if _this_ is a simulation (bit 20: _CSR_MXISA_IS_SIM_); add flag to `mxisa`  CSR to check if all CPU core register have a dedicated reset (bit 21: _CSR_MXISA_HW_RESET_); [#309](https://github.com/stnolting/neorv32/pull/309) |
 | 27.04.2022 | 1.7.1.1 | :warning: **removed RISC-V `A` ISA extension** (atomic memory accesses); removed Wishbone "lock" signal; [#308](https://github.com/stnolting/neorv32/pull/308) |
 | 25.04.2022 | [**:rocket:1.7.1**](https://github.com/stnolting/neorv32/releases/tag/v1.7.1) | **New release** |
 | 23.04.2022 | 1.7.0.9 | :bug: fixed minor bug in HPM event logic: imprecise "taken branch" (_HPMCNT_EVENT_TBRANCH_) event |
