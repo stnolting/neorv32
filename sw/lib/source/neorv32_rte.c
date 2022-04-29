@@ -296,7 +296,7 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\n\n<< Processor Configuration >>\n");
 
   // CPU configuration
-  neorv32_uart0_printf("\n---<< CPU >>---\n");
+  neorv32_uart0_printf("\n---<< CPU Core >>---\n");
 
   // general
   neorv32_uart0_printf("Is simulation:     "); __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM));
@@ -371,8 +371,8 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("DebugMode ");
   }
 
-  // CPU extension options
-  neorv32_uart0_printf("\nExtension options: ");
+  // CPU tuning options
+  neorv32_uart0_printf("\nTuning options:    ");
   if (tmp & (1<<CSR_MXISA_FASTMUL)) {
     neorv32_uart0_printf("FAST_MUL ");
   }
