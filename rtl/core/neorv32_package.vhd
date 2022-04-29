@@ -53,7 +53,7 @@ package neorv32_package is
 
   -- "critical" number of implemented PMP regions --
   -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically inserted into
-  -- the memory interfaces increasing instruction fetch & data access latency by +1 cycle but also reducing critical path length
+  -- the memory interfaces increasing data access latency by +1 cycle but also reducing critical path length
   constant pmp_num_regions_critical_c : natural := 8; -- default=8
 
   -- "response time window" for processor-internal modules --

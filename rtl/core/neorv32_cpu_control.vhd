@@ -2377,7 +2377,7 @@ begin
             csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei: instruction stream sync.
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul: mul/div
             csr.rdata(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);    -- Zxcfu: custom RISC-V instructions
-            csr.rdata(04) <= '0'; -- reserved
+--          csr.rdata(04) <= '0'; -- reserved
             csr.rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx: FPU using x registers, "F-alternative"
             csr.rdata(06) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and
                              bool_to_ulogic_f(boolean(CPU_CNT_WIDTH /= 64)); -- Zxscnt: reduced-size CPU counters (from Zicntr)
