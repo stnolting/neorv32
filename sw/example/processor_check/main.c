@@ -198,22 +198,22 @@ int main() {
     return 1;
   }
 
+
+  // **********************************************************************************************
+  // Run CPU and SoC tests
+  // **********************************************************************************************
+
+  // tests intro
+  PRINT_STANDARD("\nStarting tests...\n\n");
+
   // clear testbench IRQ triggers
   sim_irq_trigger(0);
 
   // clear all interrupt enables, enable only where needed
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
-  // test intro
-  PRINT_STANDARD("\nStarting tests...\n\n");
-
   // enable global interrupts
   neorv32_cpu_eint();
-
-
-  // **********************************************************************************************
-  // Run CPU and SoC tests
-  // **********************************************************************************************
 
 
   // ----------------------------------------------------------
@@ -225,9 +225,14 @@ int main() {
   cnt_test++;
 
   asm volatile ("fence");
-  asm volatile ("fence.i");
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIFENCEI)) {
+    asm volatile ("fence.i");
+  }
   asm volatile ("fence");
-  asm volatile ("fence.i");
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIFENCEI)) {
+    asm volatile ("fence.i");
+  }
+  asm volatile ("fence");
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
     test_ok();
@@ -1723,19 +1728,17 @@ int main() {
 
 
 /**********************************************************************//**
- * Switch from privilege mode MACHINE to privilege mode USER.
+ * Switch from privilege mode MACHINE to privilege mode USER (function return with CPU in user mode).
  *
  * @warning This function requires the U extension to be implemented.
  **************************************************************************/
 void __attribute__((naked)) goto_user_mode(void) {
 
-  // make sure to use NO registers in here! -> naked
-
   asm volatile ("csrw mepc, ra           \n" // move return address to mepc so we can return using "mret". also, we can now use ra as temp register
-                "li ra, %[input_imm]     \n" // bit mask to clear the two MPP bits
+                "li ra, %[u_mask]        \n" // bit mask to clear the two MPP bits
                 "csrrc zero, mstatus, ra \n" // clear MPP bits -> MPP=u-mode
                 "mret                    \n" // return and switch to user mode
-                :  : [input_imm] "i" ((1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L)));
+                :  : [u_mask] "i" ((1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L)));
 }
 
 
