@@ -198,12 +198,13 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal decode_aux : decode_aux_t;
 
   -- instruction execution engine --
-  type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE, ALU_WAIT,
-                                  BRANCH, BRANCHED, SYSTEM, LOADSTORE_0, LOADSTORE_1, LOADSTORE_2);
+  type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, EXECUTE,
+                                  ALU_WAIT, BRANCH, BRANCHED, SYSTEM, MEM_REQ, MEM_WAIT);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
     state_prev   : execute_engine_state_t;
+    state_prev2  : execute_engine_state_t;
     --
     i_reg        : std_ulogic_vector(31 downto 0);
     i_reg_nxt    : std_ulogic_vector(31 downto 0);
@@ -666,21 +667,22 @@ begin
   begin
     if (rstn_i = '0') then
       -- no dedicated reset required --
-      execute_engine.state_prev <= BRANCHED; -- actual reset value is not relevant
-      execute_engine.i_reg      <= (others => def_rst_val_c);
-      execute_engine.is_ci      <= def_rst_val_c;
-      execute_engine.is_ici     <= def_rst_val_c;
-      execute_engine.i_reg_last <= (others => def_rst_val_c);
-      execute_engine.next_pc    <= (others => def_rst_val_c);
-      ctrl                      <= (others => def_rst_val_c);
+      execute_engine.i_reg       <= (others => def_rst_val_c);
+      execute_engine.is_ci       <= def_rst_val_c;
+      execute_engine.is_ici      <= def_rst_val_c;
+      execute_engine.i_reg_last  <= (others => def_rst_val_c);
+      execute_engine.next_pc     <= (others => def_rst_val_c);
+      ctrl                       <= (others => def_rst_val_c);
       -- registers that DO require a specific RESET state --
-      execute_engine.pc         <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned!
-      execute_engine.pc_last    <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00";
-      execute_engine.state      <= BRANCHED;
-      execute_engine.sleep      <= '0';
-      execute_engine.branched   <= '1'; -- reset is a branch from "somewhere"
-      ctrl(ctrl_bus_rd_c)       <= '0';
-      ctrl(ctrl_bus_wr_c)       <= '0';
+      execute_engine.pc          <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned!
+      execute_engine.pc_last     <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00";
+      execute_engine.state       <= BRANCHED;
+      execute_engine.state_prev  <= BRANCHED; -- actual reset value is not relevant
+      execute_engine.state_prev2 <= BRANCHED; -- actual reset value is not relevant
+      execute_engine.sleep       <= '0';
+      execute_engine.branched    <= '1'; -- reset is a branch from "somewhere"
+      ctrl(ctrl_bus_rd_c)        <= '0';
+      ctrl(ctrl_bus_wr_c)        <= '0';
     elsif rising_edge(clk_i) then
       -- PC update --
       if (execute_engine.pc_we = '1') then
@@ -692,12 +694,13 @@ begin
       end if;
 
       -- execute engine arbiter --
-      execute_engine.state      <= execute_engine.state_nxt;
-      execute_engine.state_prev <= execute_engine.state;
-      execute_engine.branched   <= execute_engine.branched_nxt;
-      execute_engine.i_reg      <= execute_engine.i_reg_nxt;
-      execute_engine.is_ci      <= execute_engine.is_ci_nxt;
-      execute_engine.is_ici     <= execute_engine.is_ici_nxt;
+      execute_engine.state       <= execute_engine.state_nxt;
+      execute_engine.state_prev  <= execute_engine.state; -- for HPMs only
+      execute_engine.state_prev2 <= execute_engine.state_prev; -- for HPMs only
+      execute_engine.branched    <= execute_engine.branched_nxt;
+      execute_engine.i_reg       <= execute_engine.i_reg_nxt;
+      execute_engine.is_ci       <= execute_engine.is_ci_nxt;
+      execute_engine.is_ici      <= execute_engine.is_ici_nxt;
 
       -- sleep mode --
       if (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then
@@ -792,9 +795,9 @@ begin
     decode_aux.rd_zero  <= '0';
 
     -- is BITMANIP instruction? --
-    -- pretty complex as we have to extract this from the ALU/ALUI instruction space --
+    -- pretty complex as we have to check the already-crowded ALU/ALUI instruction space --
     if (CPU_EXTENSION_RISCV_B = true) then -- BITMANIP implemented at all?
-      -- immediate operation --
+      -- register-immediate operation --
       if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001") and
            (
             (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00000") or -- CLZ
@@ -805,25 +808,20 @@ begin
            )
          ) or
          ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- RORI
-         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00111")) or -- ORCB
-         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- REV8
-         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BCLRI
-         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- BEXTI
-         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BINVI
+         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and
+                                                                                               (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00111")) or -- ORCB
+         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- BCLRI / BEXTI
+         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.i_reg(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- REV8 / BINVI
          ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) then -- BSETI
         decode_aux.is_b_imm <= '1';
       end if;
-      -- register operation --
+      -- register-register operation --
       if ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.i_reg(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- ROR / ROL
-         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.i_reg(instr_funct3_msb_c) = '1')) or -- MIN[U] / MAX[U]
+         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) /= "000")) or -- MIN[U] / MAX[U] / CMUL[H/R]
          ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")) or -- ZEXTH
-         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BCLR
-         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- BEXT
+         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.i_reg(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- BCLR / BEXT
          ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BINV
          ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BSET
-         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- CLMUL
-         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "011")) or -- CLMULH
-         ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010")) or -- CLMULR
          ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100000") and
           (
            (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = "111") or -- ANDN
@@ -852,7 +850,9 @@ begin
          ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "10100") and (execute_engine.i_reg(instr_funct3_msb_c) = '0')) or -- FEQ.S / FLT.S / FLE.S
          ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11010") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c+1) = "0000")) or -- FCVT.S.W*
          ((execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "11000") and (execute_engine.i_reg(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c+1) = "0000")) then -- FCVT.W*.S
-        decode_aux.is_f_op <= '1';
+        if (execute_engine.i_reg(instr_funct7_lsb_c+1 downto instr_funct7_lsb_c) = float_single_c) then -- single-precision operations only
+          decode_aux.is_f_op <= '1';
+        end if;
       end if;
     end if;
 
@@ -1054,7 +1054,7 @@ begin
           -- ------------------------------------------------------------
             ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB
             ctrl_nxt(ctrl_bus_mo_we_c)   <= '1'; -- write memory output registers (data & address)
-            execute_engine.state_nxt     <= LOADSTORE_0;
+            execute_engine.state_nxt     <= MEM_REQ;
 
 
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c => -- branch / jump and link (with register)
@@ -1174,7 +1174,7 @@ begin
         end if;
 
 
-      when LOADSTORE_0 => -- trigger memory request
+      when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
         if (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- not an illegal instruction
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- load
@@ -1183,19 +1183,14 @@ begin
             ctrl_nxt(ctrl_bus_wr_c) <= '1'; -- trigger write request
           end if;
         end if;
-        execute_engine.state_nxt <= LOADSTORE_1;
+        execute_engine.state_nxt <= MEM_WAIT;
 
 
-      when LOADSTORE_1 => -- access latency
-      -- ------------------------------------------------------------
-        execute_engine.state_nxt <= LOADSTORE_2;
-
-
-      when LOADSTORE_2 => -- wait for bus transaction to finish
+      when MEM_WAIT => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_mem_c; -- memory read data
         -- wait for memory response --
-        if (trap_ctrl.env_start = '1') and (trap_ctrl.cause(6 downto 5) = "00") then -- abort if SYNC non-debug EXCEPTION (e.g. bus or illegal)
+        if (trap_ctrl.env_start = '1') and (trap_ctrl.cause(6 downto 5) = "00") then -- abort if SYNC non-debug EXCEPTION (bus or illegal)
           execute_engine.state_nxt <= DISPATCH;
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- load
@@ -1439,9 +1434,7 @@ begin
 
       when opcode_fop_c => -- floating point operations - single/dual operands
       -- ------------------------------------------------------------
-        if (CPU_EXTENSION_RISCV_Zfinx = true) and -- F extension implemented
-           (execute_engine.i_reg(instr_funct7_lsb_c+1 downto instr_funct7_lsb_c) = float_single_c) and -- single-precision operations only
-           (decode_aux.is_f_op = '1') then -- is correct/supported floating-point instruction
+        if (CPU_EXTENSION_RISCV_Zfinx = true) and (decode_aux.is_f_op = '1') then -- is supported floating-point instruction
           illegal_cmd <= '0';
         else
           illegal_cmd <= '1';
@@ -2428,7 +2421,7 @@ begin
 
       -- [m]cycle --
       if (cpu_cnt_lo_width_c > 0) and (CPU_EXTENSION_RISCV_Zicntr = true) then
-        csr.mcycle_ovfl(0) <= csr.mcycle_nxt(csr.mcycle_nxt'left) and (not csr.mcountinhibit_cy);
+        csr.mcycle_ovfl(0) <= csr.mcycle_nxt(csr.mcycle_nxt'left) and (not csr.mcountinhibit_cy) and cnt_event(hpmcnt_event_cy_c) and (not debug_ctrl.running);
         if (csr.we = '1') and (csr.addr = csr_mcycle_c) then -- write access
           csr.mcycle(cpu_cnt_lo_width_c-1 downto 0) <= csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
         elsif (csr.mcountinhibit_cy = '0') and (cnt_event(hpmcnt_event_cy_c) = '1') and (debug_ctrl.running = '0') then -- non-inhibited automatic update and not in debug mode
@@ -2453,7 +2446,7 @@ begin
 
       -- [m]instret --
       if (cpu_cnt_lo_width_c > 0) and (CPU_EXTENSION_RISCV_Zicntr = true) then
-        csr.minstret_ovfl(0) <= csr.minstret_nxt(csr.minstret_nxt'left) and (not csr.mcountinhibit_ir);
+        csr.minstret_ovfl(0) <= csr.minstret_nxt(csr.minstret_nxt'left) and (not csr.mcountinhibit_ir) and cnt_event(hpmcnt_event_ir_c) and (not debug_ctrl.running);
         if (csr.we = '1') and (csr.addr = csr_minstret_c) then -- write access
           csr.minstret(cpu_cnt_lo_width_c-1 downto 0) <= csr.wdata(cpu_cnt_lo_width_c-1 downto 0);
         elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') and (debug_ctrl.running = '0') then -- non-inhibited automatic update and not in debug mode
@@ -2481,7 +2474,7 @@ begin
 
         -- [m]hpmcounter* --
         if (hpm_cnt_lo_width_c > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then
-          csr.mhpmcounter_ovfl(i)(0) <= csr.mhpmcounter_nxt(i)(csr.mhpmcounter_nxt(i)'left) and (not csr.mcountinhibit_hpm(i));
+          csr.mhpmcounter_ovfl(i)(0) <= csr.mhpmcounter_nxt(i)(csr.mhpmcounter_nxt(i)'left) and (not csr.mcountinhibit_hpm(i)) and hpmcnt_trigger(i);
           if (csr.we = '1') and (csr.addr = std_ulogic_vector(unsigned(csr_mhpmcounter3_c) + i)) then -- write access
             csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0) <= csr.wdata(hpm_cnt_lo_width_c-1 downto 0);
           elsif (csr.mcountinhibit_hpm(i) = '0') and (hpmcnt_trigger(i) = '1') then -- non-inhibited automatic update
@@ -2575,7 +2568,7 @@ begin
 
     cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl(ctrl_bus_rd_c) = '1') else '0'; -- load operation
     cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl(ctrl_bus_wr_c) = '1') else '0'; -- store operation
-    cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = LOADSTORE_2) and (execute_engine.state_prev = LOADSTORE_2) else '0'; -- load/store memory wait cycle
+    cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = MEM_WAIT) and (execute_engine.state_prev2 = MEM_WAIT) else '0'; -- load/store memory wait cycle
 
     cnt_event(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
     cnt_event(hpmcnt_event_branch_c)  <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') else '0'; -- branch (conditional, taken or not taken)

@@ -47,8 +47,8 @@ package neorv32_package is
   -- if register x0 is implemented as actual physical register is has to be set to zero by the CPU hardware --
   constant reset_x0_c : boolean := true; -- has to be 'true' for the default register file rtl description (BRAM-based)
 
-  -- use dedicated hardware reset value for UNCRITICAL CPU registers --
-  -- FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value
+  -- use dedicated hardware reset value for UNCRITICAL CPU registers (like pipeline buffers) --
+  -- FALSE = no hardware reset (might simplify HW), default; TRUE = reset to zero
   constant dedicated_reset_c : boolean := false;
 
   -- "critical" number of implemented PMP regions --
@@ -68,7 +68,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070102"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070103"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------

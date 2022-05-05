@@ -107,7 +107,7 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
 
   -- bus arbiter --
   type bus_arbiter_t is record
-    busy : std_ulogic; -- pending bus access
+    pend : std_ulogic; -- pending bus access
     rw   : std_ulogic; -- read/write access
     err  : std_ulogic; -- bus access error
   end record;
@@ -264,12 +264,12 @@ begin
   data_access_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      arbiter.busy <= '0';
+      arbiter.pend <= '0';
       arbiter.rw   <= def_rst_val_c;
       arbiter.err  <= def_rst_val_c;
     elsif rising_edge(clk_i) then
-      if (arbiter.busy = '0') then -- idle
-        arbiter.busy <= ctrl_i(ctrl_bus_wr_c) or ctrl_i(ctrl_bus_rd_c); -- start bus access
+      if (arbiter.pend = '0') then -- idle
+        arbiter.pend <= ctrl_i(ctrl_bus_wr_c) or ctrl_i(ctrl_bus_rd_c); -- start bus access
         arbiter.rw   <= ctrl_i(ctrl_bus_wr_c); -- set if write access
         arbiter.err  <= '0';
       else -- bus access in progress
@@ -279,27 +279,26 @@ begin
            ((arbiter.rw = '0') and (ld_pmp_fault = '1')) then -- PMP load fault
           arbiter.err <= '1';
         end if;
-        -- do not abort directly when an error has been detected - wait until the trap environment
-        -- has started (ctrl_i(ctrl_trap_c)) to make sure the error signals are evaluated BEFORE d_wait_o clears
+        -- wait for normal termination or start of trap handling --
         if (d_bus_ack_i = '1') or (ctrl_i(ctrl_trap_c) = '1') then
-          arbiter.busy <= '0';
+          arbiter.pend <= '0';
         end if;
       end if;
     end if;
   end process data_access_arbiter;
 
-  -- wait for bus transaction to finish --
-  d_wait_o <= '1' when (arbiter.busy = '1') and (d_bus_ack_i = '0') else '0';
+  -- wait for bus response --
+  d_wait_o <= not d_bus_ack_i;
 
   -- output data access error to controller --
-  ma_load_o  <= '1' when (arbiter.busy = '1') and (arbiter.rw = '0') and (misaligned  = '1') else '0';
-  be_load_o  <= '1' when (arbiter.busy = '1') and (arbiter.rw = '0') and (arbiter.err = '1') else '0';
-  ma_store_o <= '1' when (arbiter.busy = '1') and (arbiter.rw = '1') and (misaligned  = '1') else '0';
-  be_store_o <= '1' when (arbiter.busy = '1') and (arbiter.rw = '1') and (arbiter.err = '1') else '0';
+  ma_load_o  <= '1' when (arbiter.pend = '1') and (arbiter.rw = '0') and (misaligned  = '1') else '0';
+  be_load_o  <= '1' when (arbiter.pend = '1') and (arbiter.rw = '0') and (arbiter.err = '1') else '0';
+  ma_store_o <= '1' when (arbiter.pend = '1') and (arbiter.rw = '1') and (misaligned  = '1') else '0';
+  be_store_o <= '1' when (arbiter.pend = '1') and (arbiter.rw = '1') and (arbiter.err = '1') else '0';
 
   -- data bus interface (read/write)--
-  d_bus_we      <= ctrl_i(ctrl_bus_wr_c) and (not misaligned) and (not st_pmp_fault); -- no actual write when misaligned or PMP fault
-  d_bus_re      <= ctrl_i(ctrl_bus_rd_c) and (not misaligned) and (not ld_pmp_fault); -- no actual read when misaligned or PMP fault
+  d_bus_we      <= ctrl_i(ctrl_bus_wr_c) and (not misaligned) and (not st_pmp_fault); -- no write request when misaligned or PMP fault
+  d_bus_re      <= ctrl_i(ctrl_bus_rd_c) and (not misaligned) and (not ld_pmp_fault); -- no read request when misaligned or PMP fault
   d_bus_fence_o <= ctrl_i(ctrl_bus_fence_c);
 
   -- additional register stage for control signals if PMP_NUM_REGIONS > pmp_num_regions_critical_c --
