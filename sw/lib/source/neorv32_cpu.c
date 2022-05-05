@@ -405,7 +405,7 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
  * @param[in] index Region number (index, 0..PMP_NUM_REGIONS-1).
  * @param[in] base Region base address.
  * @param[in] config Region configuration byte (see #NEORV32_PMPCFG_ATTRIBUTES_enum).
- * @return Returns 0 on success, 1 on failure.
+ * @return Returns 0 on success, !=0 on failure.
  **************************************************************************/
 int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint8_t config) {
 
@@ -450,10 +450,14 @@ int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint8_t conf
   tmp = tmp | config_new;
   __neorv32_cpu_pmp_cfg_write(pmpcfg_index, tmp);
 
+  // flush instruction and data queues and caches
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIFENCEI)) {
+    asm volatile ("fence.i");
+  }
+  asm volatile ("fence");
 
   // check if update was successful
-  tmp = __neorv32_cpu_pmp_cfg_read(pmpcfg_index);
-  if ((tmp & config_mask) == config_new) {
+  if ((__neorv32_cpu_pmp_cfg_read(pmpcfg_index) & config_mask) == config_new) {
     return 0;
   } else {
     return 2;
