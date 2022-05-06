@@ -22,8 +22,12 @@ Note that this flag is not guaranteed to be set correctly (depending on the HDL 
 
 A plain-VHDL (no third-party libraries) testbench (`sim/simple/neorv32_tb.simple.vhd`) can be used for simulating and
 testing the processor.
-This testbench features a 100MHz clock and enables all optional peripheral and CPU extensions except for the `E`
-extension and the TRNG IO module (that CANNOT be simulated due to its combinatorial (looped) architecture).
+This testbench features a 100MHz clock and enables all optional peripheral and CPU extensions except for the `E`.
+
+.True Random Number Generator
+[NOTE]
+The NEORV32 TRNG will be set to "simulation mode" when enabled for simulation (replacing the ring-oscillators
+by pseudo-random LFSRs). See the neoTRNG documentation for more information.
 
 The simulation setup is configured via the "User Configuration" section located right at the beginning of
 the testbench's architecture. Each configuration constant provides comments to explain the functionality.

@@ -64,9 +64,13 @@ architecture neorv32_trng_rtl of neorv32_trng is
   constant num_inv_delay_c : natural := 2; -- additional inverters to form cell's long path, has to be even
   -- -----------------------------------------------------------------------------------------------------------------
 
+  -- use simulation mode (PRNG!!!) --
+  constant sim_mode_c : boolean := is_simulation_c;
+
   -- control register bits --
   constant ctrl_data_lsb_c : natural :=  0; -- r/-: Random data byte LSB
   constant ctrl_data_msb_c : natural :=  7; -- r/-: Random data byte MSB
+  constant ctrl_sim_mode_c : natural := 29; -- r/-: TRNG implemented in PRNG simulation mode
   constant ctrl_en_c       : natural := 30; -- r/w: TRNG enable
   constant ctrl_valid_c    : natural := 31; -- r/-: Output data valid
 
@@ -85,7 +89,9 @@ architecture neorv32_trng_rtl of neorv32_trng is
       NUM_CELLS     : natural; -- total number of ring-oscillator cells
       NUM_INV_START : natural; -- number of inverters in first cell (short path), has to be odd
       NUM_INV_INC   : natural; -- number of additional inverters in next cell (short path), has to be even
-      NUM_INV_DELAY : natural  -- additional inverters to form cell's long path, has to be even
+      NUM_INV_DELAY : natural; -- additional inverters to form cell's long path, has to be even
+      POST_PROC_EN  : boolean; -- implement post-processing for advanced whitening when true
+      IS_SIM        : boolean  -- for simulation only!
     );
     port (
       clk_i    : in  std_ulogic; -- global clock line
@@ -130,8 +136,9 @@ begin
       data_o <= (others => '0');
       if (rden = '1') then
         data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= rnd_reg;
-        data_o(ctrl_en_c)    <= enable;
-        data_o(ctrl_valid_c) <= valid;
+        data_o(ctrl_sim_mode_c) <= bool_to_ulogic_f(sim_mode_c);
+        data_o(ctrl_en_c)       <= enable;
+        data_o(ctrl_valid_c)    <= valid;
       end if;
 
       -- sample --
@@ -153,14 +160,16 @@ begin
   end process rw_access;
 
 
-  -- neoTRNG --------------------------------------------------------------------------------
+  -- neoTRNG True Random Number Generator ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neoTRNG_inst: neoTRNG
     generic map (
       NUM_CELLS     => num_cells_c,
       NUM_INV_START => num_inv_start_c,
       NUM_INV_INC   => num_inv_inc_c,
-      NUM_INV_DELAY => num_inv_delay_c
+      NUM_INV_DELAY => num_inv_delay_c,
+      POST_PROC_EN  => true, -- post-processing enabled
+      IS_SIM        => sim_mode_c
     )
     port map (
       clk_i    => clk_i,
@@ -178,17 +187,17 @@ end neorv32_trng_rtl;
 
 
 -- #################################################################################################
--- # << neoTRNG - A Tiny and Platform-Independent True Random Number Generator for any FPGA >>     #
+-- # << neoTRNG V2 - A Tiny and Platform-Independent True Random Number Generator for any FPGA >>  #
 -- # ********************************************************************************************* #
 -- # This generator is based on entropy cells, which implement simple ring-oscillators. Each ring- #
--- # oscillator features a short and a long delay path that is dynamically selected defining the   #
--- # primary oscillation frequency. The cells are cascaded so that the random data output of a     #
--- # cell controls the delay path of the next cell (which has the next-larger inverter chain).     #
+-- # oscillator features a short and a long delay path that is dynamically switched. The cells are #
+-- # cascaded so that the random data output of a cell controls the delay path of the next cell.   #
 -- #                                                                                               #
--- # The random data outputs of all cells are XOR-ed and de-biased using a von Neumann randomness  #
--- # extractor (converting edges into bits). The resulting bit is sampled in chunks of 8 bits to   #
--- # provide the final random data output. No further internal post-processing is applied. Hence,  #
--- # the TRNG produces simple de-biased *RAW* data.                                                #
+-- # The random data output of the very last cell in the chain is synchronized and de-biased using #
+-- # a simple 2-bit a von Neumann randomness extractor (converting edges into bits). Eight result  #
+-- # bits are samples to create one "raw" random data sample. If the post-processing module is     #
+-- # enabled (POST_PROC_EN), 8 byte samples will be combined into a single output byte to improve  #
+-- # whitening.                                                                                    #
 -- #                                                                                               #
 -- # The entropy cell architecture uses individually-controlled latches and inverters to create    #
 -- # the inverter chain in a platform-agnostic style that can be implemented for any FPGA without  #
@@ -236,7 +245,9 @@ entity neoTRNG is
     NUM_CELLS     : natural; -- total number of ring-oscillator cells
     NUM_INV_START : natural; -- number of inverters in first cell (short path), has to be odd
     NUM_INV_INC   : natural; -- number of additional inverters in next cell (short path), has to be even
-    NUM_INV_DELAY : natural  -- additional inverters to form cell's long path, has to be even
+    NUM_INV_DELAY : natural; -- additional inverters to form cell's long path, has to be even
+    POST_PROC_EN  : boolean; -- implement post-processing for advanced whitening when true
+    IS_SIM        : boolean  -- for simulation only!
   );
   port (
     clk_i    : in  std_ulogic; -- global clock line
@@ -252,14 +263,15 @@ architecture neoTRNG_rtl of neoTRNG is
   component neoTRNG_cell
     generic (
       NUM_INV_S : natural; -- number of inverters in short path
-      NUM_INV_L : natural  -- number of inverters in long path
+      NUM_INV_L : natural; -- number of inverters in long path
+      IS_SIM    : boolean  -- for simulation only!
     );
     port (
       clk_i    : in  std_ulogic; -- system clock
       select_i : in  std_ulogic; -- delay select
       enable_i : in  std_ulogic; -- enable chain input
       enable_o : out std_ulogic; -- enable chain output
-      data_o   : out std_ulogic  -- sync random bit
+      data_o   : out std_ulogic  -- random data
     );
   end component;
 
@@ -267,13 +279,13 @@ architecture neoTRNG_rtl of neoTRNG is
   type cell_array_t is record
     en_in  : std_ulogic_vector(NUM_CELLS-1 downto 0);
     en_out : std_ulogic_vector(NUM_CELLS-1 downto 0);
-    rnd    : std_ulogic_vector(NUM_CELLS-1 downto 0);
-    sel    : std_ulogic_vector(NUM_CELLS-1 downto 0);
+    output : std_ulogic_vector(NUM_CELLS-1 downto 0);
+    input  : std_ulogic_vector(NUM_CELLS-1 downto 0);
   end record;
   signal cell_array : cell_array_t;
 
-  -- global cell-XOR --
-  signal rnd_bit : std_ulogic;
+  -- raw synchronizer --
+  signal rnd_sync : std_ulogic_vector(1 downto 0);
 
   -- von-Neumann de-biasing --
   type debiasing_t is record
@@ -282,21 +294,33 @@ architecture neoTRNG_rtl of neoTRNG is
     valid : std_ulogic; -- de-biased data
     data  : std_ulogic; -- de-biased data valid
   end record;
-  signal deb : debiasing_t;
+  signal db : debiasing_t;
 
-  -- control unit --
-  type ctrl_t is record
+  -- sample unit --
+  type sample_t is record
     enable : std_ulogic;
     run    : std_ulogic;
-    cnt    : std_ulogic_vector(2 downto 0); -- bit counter
     sreg   : std_ulogic_vector(7 downto 0); -- data shift register
+    valid  : std_ulogic; -- valid data sample (one byte)
+    cnt    : std_ulogic_vector(2 downto 0); -- bit counter
   end record;
-  signal ctrl : ctrl_t;
+  signal sample : sample_t;
+
+  -- post processing --
+  type post_t is record
+    state : std_ulogic_vector(1 downto 0);
+    cnt   : std_ulogic_vector(3 downto 0); -- byte counter
+    buf   : std_ulogic_vector(7 downto 0); -- post processing buffer
+    valid : std_ulogic; -- valid data byte
+  end record;
+  signal post : post_t;
 
 begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  assert not (true) report "<< neoTRNG V2 - A Tiny and Platform-Independent True Random Number Generator for any FPGA >>" severity note;
+  assert not (POST_PROC_EN = true) report "neoTRNG note: Post-processing enabled." severity note;
   assert not (NUM_CELLS < 2) report "neoTRNG config ERROR: Total number of ring-oscillator cells <NUM_CELLS> has to be >= 2." severity error;
   assert not ((NUM_INV_START mod 2)  = 0) report "neoTRNG config ERROR: Number of inverters in first cell <NUM_INV_START> has to be odd." severity error;
   assert not ((NUM_INV_INC   mod 2) /= 0) report "neoTRNG config ERROR: Inverter increment for each next cell <NUM_INV_INC> has to be even." severity error;
@@ -310,96 +334,158 @@ begin
     neoTRNG_cell_inst_i: neoTRNG_cell
     generic map (
       NUM_INV_S => NUM_INV_START + (i*NUM_INV_INC), -- number of inverters in short chain
-      NUM_INV_L => NUM_INV_START + (i*NUM_INV_INC) + NUM_INV_DELAY -- number of inverters in long chain
+      NUM_INV_L => NUM_INV_START + (i*NUM_INV_INC) + NUM_INV_DELAY, -- number of inverters in long chain
+      IS_SIM    => IS_SIM -- for simulation only!
     )
     port map (
       clk_i    => clk_i,
-      select_i => cell_array.sel(i),
+      select_i => cell_array.input(i),
       enable_i => cell_array.en_in(i),
       enable_o => cell_array.en_out(i),
-      data_o   => cell_array.rnd(i) -- SYNC data output
+      data_o   => cell_array.output(i) -- SYNC data output
     );
   end generate;
 
-  -- path select chain --
-  cell_array.sel(0) <= cell_array.rnd(NUM_CELLS-1); -- use output of last cell to select path of first cell
-  cell_array.sel(NUM_CELLS-1 downto 1) <= cell_array.rnd(NUM_CELLS-2 downto 0); -- i+1 <= i
-
   -- enable chain --
-  cell_array.en_in(0) <= ctrl.enable; -- start of chain
+  cell_array.en_in(0) <= sample.enable; -- start of chain
   cell_array.en_in(NUM_CELLS-1 downto 1) <= cell_array.en_out(NUM_CELLS-2 downto 0); -- i+1 <= i
 
-
-  -- XOR All Cell's Outputs -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  cell_xor: process(cell_array.rnd)
-    variable tmp_v : std_ulogic;
+  -- feedback chain --
+  path_select: process(rnd_sync, cell_array.output)
   begin
-    tmp_v := '0';
-    for i in 0 to NUM_CELLS-1 loop
-      tmp_v := tmp_v xor cell_array.rnd(i);
-    end loop; -- i
-    rnd_bit <= tmp_v;
-  end process cell_xor;
+    if (rnd_sync(0) = '0') then -- forward
+      cell_array.input(0) <= cell_array.output(NUM_CELLS-1);
+      for i in 0 to NUM_CELLS-2 loop
+        cell_array.input(i+1) <= cell_array.output(i);
+      end loop;
+    else -- backward
+      cell_array.input(NUM_CELLS-1) <= cell_array.output(0);
+      for i in NUM_CELLS-1 downto 1 loop
+        cell_array.input(i-1) <= cell_array.output(i);
+      end loop;
+    end if;
+  end process path_select;
 
 
-  -- John von Neumann Randomness Extractor --------------------------------------------------
+  -- Synchronizer ---------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  synchronizer: process(clk_i)
+  begin
+    -- no more metastability beyond this point --
+    if rising_edge(clk_i) then
+      rnd_sync(1) <= rnd_sync(0);
+      rnd_sync(0) <= cell_array.output(NUM_CELLS-1);
+    end if;
+  end process synchronizer;
+
+
+  -- John von Neumann Randomness Extractor (De-Biasing) -------------------------------------
   -- -------------------------------------------------------------------------------------------
   debiasing_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      deb.sreg <= deb.sreg(0) & rnd_bit;
+      db.sreg <= db.sreg(0) & rnd_sync(rnd_sync'left);
       -- start operation when last cell is enabled and process in every second cycle --
-      deb.state <= (not deb.state) and cell_array.en_out(NUM_CELLS-1);
+      db.state <= (not db.state) and cell_array.en_out(NUM_CELLS-1);
     end if;
   end process debiasing_sync;
 
   -- edge detector --
-  debiasing_comb: process(deb)
+  debiasing_comb: process(db)
     variable tmp_v : std_ulogic_vector(2 downto 0);
   begin
-    tmp_v := deb.state & deb.sreg(1 downto 0); -- check groups of two non-overlapping bits from the input stream
+    tmp_v := db.state & db.sreg(1 downto 0); -- check groups of two non-overlapping bits from the input stream
     case tmp_v is
-      when "101"  => deb.valid <= '1'; deb.data <= '0'; -- rising edge = '0'
-      when "110"  => deb.valid <= '1'; deb.data <= '1'; -- falling edge = '1'
-      when others => deb.valid <= '0'; deb.data <= '-'; -- no valid data
+      when "101"  => db.valid <= '1'; -- rising edge
+      when "110"  => db.valid <= '1'; -- falling edge
+      when others => db.valid <= '0'; -- no valid data
     end case;
   end process debiasing_comb;
 
+  -- edge data --
+  db.data <= db.sreg(0);
 
-  -- Control Unit ---------------------------------------------------------------------------
+
+  -- Sample Unit ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  control_unit: process(clk_i)
+  sample_unit: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- make sure enable is sync --
-      ctrl.enable <= enable_i;
+      sample.enable <= enable_i;
 
       -- sample chunks of 8 bit --
-      if (ctrl.enable = '0') then
-        ctrl.cnt <= (others => '0');
-        ctrl.run <= '0';
-      elsif (deb.valid = '1') then -- valid random sample?
-        ctrl.cnt <= std_ulogic_vector(unsigned(ctrl.cnt) + 1);
-        ctrl.run <= '1';
+      if (sample.enable = '0') then
+        sample.cnt <= (others => '0');
+        sample.run <= '0';
+      elsif (db.valid = '1') then -- valid random sample?
+        sample.cnt <= std_ulogic_vector(unsigned(sample.cnt) + 1);
+        sample.run <= '1';
       end if;
 
       -- sample shift register --
-      if (deb.valid = '1') then
-        ctrl.sreg <= ctrl.sreg(ctrl.sreg'left-1 downto 0) & deb.data;
+      if (db.valid = '1') then
+        sample.sreg <= sample.sreg(sample.sreg'left-1 downto 0) & db.data;
       end if;
 
-      -- data valid? --
-      if (ctrl.cnt = "000") and (ctrl.run = '1') and (deb.valid = '1') then
-        valid_o <= '1';
+      -- sample valid? --
+      if (sample.cnt = "000") and (sample.run = '1') and (db.valid = '1') then
+        sample.valid <= '1';
       else
-        valid_o <= '0';
+        sample.valid <= '0';
       end if;
     end if;
-  end process control_unit;
+  end process sample_unit;
 
-  -- random byte output --
-  data_o <= ctrl.sreg;
+
+  -- Post Processing ------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  post_processing_enable:
+  if (POST_PROC_EN = true) generate
+
+    post_processing: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        -- defaults --
+        post.state(1) <= sample.run;
+        post.valid    <= '0';
+
+        -- fsm --
+        case post.state is
+
+          when "10" => -- start new post-processing
+            post.cnt      <= (others => '0');
+            post.buf      <= (others => '0');
+            post.state(0) <= '1';
+
+          when "11" => -- combine eight samples
+            if (sample.valid = '1') then
+              post.buf <= std_ulogic_vector(unsigned(post.buf(0) & post.buf(7 downto 1)) + unsigned(sample.sreg)); -- combine function
+              post.cnt <= std_ulogic_vector(unsigned(post.cnt) + 1);
+            end if;
+            if (post.cnt(3) = '1') then
+              post.valid    <= '1';
+              post.state(0) <= '0';
+            end if;
+
+          when others => -- reset/disabled
+            post.state(0) <= '0';
+
+        end case;
+      end if;
+    end process post_processing;
+
+    -- data output --
+    data_o  <= post.buf;
+    valid_o <= post.valid;
+
+  end generate; -- /post_processing_enable
+
+  post_processing_disable:
+  if (POST_PROC_EN = false) generate
+    -- data output --
+    data_o  <= sample.sreg;
+    valid_o <= sample.valid;
+  end generate;
 
 
 end neoTRNG_rtl;
@@ -410,14 +496,14 @@ end neoTRNG_rtl;
 
 
 -- #################################################################################################
--- # << neoTRNG - A Tiny and Platform-Independent True Random Number Generator for any FPGA >>     #
+-- # << neoTRNG V2 - A Tiny and Platform-Independent True Random Number Generator for any FPGA >>  #
 -- # ********************************************************************************************* #
 -- # neoTRNG Entropy Cell                                                                          #
 -- #                                                                                               #
 -- # The cell consists of two ring-oscillators build from inverter chains. The short chain uses    #
 -- # NUM_INV_S inverters and oscillates at a "high" frequency and the long chain uses NUM_INV_L    #
 -- # inverters and oscillates at a "low" frequency. The select_i input selects which chain is      #
--- # actually used.                                                                                #
+-- # used as data output (data_o).                                                                 #
 -- #                                                                                               #
 -- # Each inverter chain is constructed as an "asynchronous" shift register. The single inverters  #
 -- # are connected via latches that are used to enable/disable the TRNG. Also, these latches are   #
@@ -458,18 +544,20 @@ end neoTRNG_rtl;
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 entity neoTRNG_cell is
   generic (
     NUM_INV_S : natural; -- number of inverters in short path
-    NUM_INV_L : natural  -- number of inverters in long path
+    NUM_INV_L : natural; -- number of inverters in long path
+    IS_SIM    : boolean  -- for simulation only!
   );
   port (
     clk_i    : in  std_ulogic; -- system clock
     select_i : in  std_ulogic; -- delay select
     enable_i : in  std_ulogic; -- enable chain input
     enable_o : out std_ulogic; -- enable chain output
-    data_o   : out std_ulogic  -- sync random bit
+    data_o   : out std_ulogic  -- random data
   );
 end neoTRNG_cell;
 
@@ -480,51 +568,78 @@ architecture neoTRNG_cell_rtl of neoTRNG_cell is
   signal feedback      : std_ulogic; -- cell feedback/output
   signal enable_sreg_s : std_ulogic_vector(NUM_INV_S-1 downto 0); -- enable shift register for short chain
   signal enable_sreg_l : std_ulogic_vector(NUM_INV_L-1 downto 0); -- enable shift register for long chain
-  signal sync_ff       : std_ulogic_vector(1 downto 0); -- output signal synchronizer
+  signal lfsr          : std_ulogic_vector(15 downto 0); -- LFSR - for simulation only!!!
 
 begin
 
-  -- Ring Oscillators -----------------------------------------------------------------------
+  -- Ring Oscillator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- Each cell provides a short inverter chain (high frequency) and a long oscillator chain (low frequency).
-  -- The select_i signals defines which chain is enabled.
+  -- The select_i signals defines which chain is used as cell output.
   -- NOTE: All signals that control a inverter-latch element have to be registered to ensure a single element
   -- is mapped to a single LUT (or LUT + FF(latch-mode)).
 
-  -- short oscillator chain --
-  ring_osc_short: process(enable_i, enable_sreg_s, feedback, inv_chain_s)
-  begin
-    for i in 0 to NUM_INV_S-1 loop -- inverters in short chain
-      if (enable_i = '0') then -- start with a defined state (latch reset)
-        inv_chain_s(i) <= '0';
-      elsif (enable_sreg_s(i) = '1') then
-        if (i = NUM_INV_S-1) then -- left-most inverter?
-          inv_chain_s(i) <= not feedback;
+  real_hardware:
+  if (IS_SIM = false) generate
+
+    -- short oscillator chain --
+    ring_osc_short: process(enable_i, enable_sreg_s, feedback, inv_chain_s)
+    begin
+      for i in 0 to NUM_INV_S-1 loop -- inverters in short chain
+        if (enable_i = '0') then -- start with a defined state (latch reset)
+          inv_chain_s(i) <= '0';
+        elsif (enable_sreg_s(i) = '1') then
+          if (i = NUM_INV_S-1) then -- left-most inverter?
+            inv_chain_s(i) <= not feedback;
+          else
+            inv_chain_s(i) <= not inv_chain_s(i+1);
+          end if;
+        end if;
+      end loop; -- i
+    end process ring_osc_short;
+
+    -- long oscillator chain --
+    ring_osc_long: process(enable_i, enable_sreg_l, feedback, inv_chain_l)
+    begin
+      for i in 0 to NUM_INV_L-1 loop -- inverters in long chain
+        if (enable_i = '0') then -- start with a defined state (latch reset)
+          inv_chain_l(i) <= '0';
+        elsif (enable_sreg_l(i) = '1') then
+          if (i = NUM_INV_L-1) then -- left-most inverter?
+            inv_chain_l(i) <= not feedback;
+          else
+            inv_chain_l(i) <= not inv_chain_l(i+1);
+          end if;
+        end if;
+      end loop; -- i
+    end process ring_osc_long;
+
+    -- final ROSC output --
+    feedback <= inv_chain_l(0) when (select_i = '1') else inv_chain_s(0);
+    data_o   <= feedback;
+  end generate;
+
+
+  -- Fake(!) Pseudo-RNG ---------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- For simulation/debugging only! --
+  sim_rng:
+  if (IS_SIM = true) generate
+    assert false report "neoTRNG WARNING: Implementing simulation-only PRNG (LFSR)!" severity warning;
+    sim_lfsr: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        if (enable_sreg_l(enable_sreg_l'left) = '0') then
+          lfsr <= std_ulogic_vector(to_unsigned(NUM_INV_S, 16));
         else
-          inv_chain_s(i) <= not inv_chain_s(i+1);
+          lfsr <= lfsr(lfsr'left-1 downto 0) & (lfsr(15) xnor lfsr(14) xnor lfsr(13) xnor lfsr(2));
         end if;
       end if;
-    end loop; -- i
-  end process ring_osc_short;
+    end process sim_lfsr;
 
-  -- long oscillator chain --
-  ring_osc_long: process(enable_i, enable_sreg_l, feedback, inv_chain_l)
-  begin
-    for i in 0 to NUM_INV_L-1 loop -- inverters in long chain
-      if (enable_i = '0') then -- start with a defined state (latch reset)
-        inv_chain_l(i) <= '0';
-      elsif (enable_sreg_l(i) = '1') then
-        if (i = NUM_INV_L-1) then -- left-most inverter?
-          inv_chain_l(i) <= not feedback;
-        else
-          inv_chain_l(i) <= not inv_chain_l(i+1);
-        end if;
-      end if;
-    end loop; -- i
-  end process ring_osc_long;
-
-  -- length select --
-  feedback <= inv_chain_l(0) when (select_i = '0') else inv_chain_s(0);
+    feedback <= lfsr(lfsr'left);
+    data_o   <= feedback;
+  end generate;
 
 
   -- Control --------------------------------------------------------------------------------
@@ -535,19 +650,14 @@ begin
   ctrl_unit: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- enable sreg --
       enable_sreg_s <= enable_sreg_s(enable_sreg_s'left-1 downto 0) & enable_i;
       enable_sreg_l <= enable_sreg_l(enable_sreg_l'left-1 downto 0) & enable_sreg_s(enable_sreg_s'left);
-      -- data output sync - no metastability beyond this point --
-      sync_ff <= sync_ff(0) & feedback;
     end if;
   end process ctrl_unit;
 
   -- output for "enable chain" --
   enable_o <= enable_sreg_l(enable_sreg_l'left);
 
-  -- random data output --
-  data_o <= sync_ff(1);
-
 
 end neoTRNG_cell_rtl;
+

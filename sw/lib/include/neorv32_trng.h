@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -48,5 +48,6 @@ int  neorv32_trng_available(void);
 void neorv32_trng_enable(void);
 void neorv32_trng_disable(void);
 int  neorv32_trng_get(uint8_t *data);
+int  neorv32_trng_check_sim_mode(void);
 
 #endif // neorv32_trng_h
