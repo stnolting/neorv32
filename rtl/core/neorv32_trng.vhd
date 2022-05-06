@@ -64,9 +64,13 @@ architecture neorv32_trng_rtl of neorv32_trng is
   constant num_inv_delay_c : natural := 2; -- additional inverters to form cell's long path, has to be even
   -- -----------------------------------------------------------------------------------------------------------------
 
+  -- use simulation mode (PRNG!!!) --
+  constant sim_mode_c : boolean := is_simulation_c;
+
   -- control register bits --
   constant ctrl_data_lsb_c : natural :=  0; -- r/-: Random data byte LSB
   constant ctrl_data_msb_c : natural :=  7; -- r/-: Random data byte MSB
+  constant ctrl_sim_mode_c : natural := 29; -- r/-: TRNG implemented in PRNG simulation mode
   constant ctrl_en_c       : natural := 30; -- r/w: TRNG enable
   constant ctrl_valid_c    : natural := 31; -- r/-: Output data valid
 
@@ -132,8 +136,9 @@ begin
       data_o <= (others => '0');
       if (rden = '1') then
         data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= rnd_reg;
-        data_o(ctrl_en_c)    <= enable;
-        data_o(ctrl_valid_c) <= valid;
+        data_o(ctrl_sim_mode_c) <= bool_to_ulogic_f(sim_mode_c);
+        data_o(ctrl_en_c)       <= enable;
+        data_o(ctrl_valid_c)    <= valid;
       end if;
 
       -- sample --
@@ -164,7 +169,7 @@ begin
       NUM_INV_INC   => num_inv_inc_c,
       NUM_INV_DELAY => num_inv_delay_c,
       POST_PROC_EN  => true, -- post-processing enabled
-      IS_SIM        => is_simulation_c
+      IS_SIM        => sim_mode_c
     )
     port map (
       clk_i    => clk_i,
