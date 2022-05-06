@@ -1216,6 +1216,7 @@ enum NEORV32_TRNG_CTRL_enum {
   TRNG_CTRL_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data byte LSB */
   TRNG_CTRL_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data byte MSB */
 
+  TRNG_CTRL_SIM_MODE = 29, /**< TRNG data/control register(29) (r/-): PRNG mode (simulation mode) */
   TRNG_CTRL_EN       = 30, /**< TRNG data/control register(30) (r/w): TRNG enable */
   TRNG_CTRL_VALID    = 31  /**< TRNG data/control register(31) (r/-): Random data output valid */
 };

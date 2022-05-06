@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -86,8 +86,14 @@ int main(void) {
 
   // check if TRNG unit is implemented at all
   if (neorv32_trng_available() == 0) {
-    neorv32_uart0_printf("No TRNG implemented.");
+    neorv32_uart0_printf("No TRNG implemented.\n");
     return 1;
+  }
+
+  // check if TRNG is using simulation mode
+  if (neorv32_trng_check_sim_mode() != 0) {
+    neorv32_uart0_printf("WARNING! TRNG uses simulation-only mode implementing a pseudo-RNG (LFSR)\n");
+    neorv32_uart0_printf("         instead of the physical entropy sources!\n");
   }
 
   // enable TRNG

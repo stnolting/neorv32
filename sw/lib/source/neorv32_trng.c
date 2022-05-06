@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -108,5 +108,23 @@ int neorv32_trng_get(uint8_t *data) {
   }
   else {
     return -1;
+  }
+}
+
+
+/**********************************************************************//**
+ * Check if TRNG is implemented using SIMULATION mode.
+ *
+ * @warning In simulation mode the physical entropy source is replaced by a PRNG (LFSR) with very bad random quality.
+ *
+ * @return Simulation mode active when not zero.
+ **************************************************************************/
+int neorv32_trng_check_sim_mode(void) {
+
+  if (NEORV32_TRNG.CTRL & (1<<TRNG_CTRL_SIM_MODE)) {
+    return -1; // simulation mode (PRNG)
+  }
+  else {
+    return 0; // real TRUE random number generator mode
   }
 }
