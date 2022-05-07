@@ -7,6 +7,9 @@
 -- # - Zbs: Single-bit instructions                                                                #
 -- # - Zbc: Carry-less multiplication instructions                                                 #
 -- #                                                                                               #
+-- # Processor/CPU configuration generic FAST_MUL_EN can be used to enable implementation of fast  #
+-- # (full-parallel) logic for all shift-related instructions (ROL, ROR[I], CLZ, CTZ, CPOP).       #
+-- #                                                                                               #
 -- # NOTE: This is a first implementation of the bit-manipulation co-processor that supports all   #
 -- #       sub-sets of the B extension. Hence, it is not yet optimized for area, latency or speed. #
 -- # ********************************************************************************************* #
@@ -80,43 +83,43 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   -- --------------------------------------------------------
 
   -- Zbb - logic with negate --
-  constant op_andn_c    : natural := 0;
-  constant op_orn_c     : natural := 1;
-  constant op_xnor_c    : natural := 2;
+  constant op_andn_c   : natural := 0;
+  constant op_orn_c    : natural := 1;
+  constant op_xnor_c   : natural := 2;
   -- Zbb - count leading/trailing zero bits --
-  constant op_clz_c     : natural := 3;
-  constant op_ctz_c     : natural := 4;
+  constant op_clz_c    : natural := 3;
+  constant op_ctz_c    : natural := 4;
   -- Zbb - count population --
-  constant op_cpop_c    : natural := 5;
+  constant op_cpop_c   : natural := 5;
   -- Zbb - integer minimum/maximum --
-  constant op_max_c     : natural := 6; -- signed/unsigned
-  constant op_min_c     : natural := 7; -- signed/unsigned
+  constant op_max_c    : natural := 6; -- signed/unsigned
+  constant op_min_c    : natural := 7; -- signed/unsigned
   -- Zbb - sign- and zero-extension --
-  constant op_sextb_c   : natural := 8;
-  constant op_sexth_c   : natural := 9;
-  constant op_zexth_c   : natural := 10;
+  constant op_sextb_c  : natural := 8;
+  constant op_sexth_c  : natural := 9;
+  constant op_zexth_c  : natural := 10;
   -- Zbb - bitwise rotation --
-  constant op_rol_c     : natural := 11;
-  constant op_ror_c     : natural := 12; -- also rori
+  constant op_rol_c    : natural := 11;
+  constant op_ror_c    : natural := 12; -- also rori
   -- Zbb - or-combine --
-  constant op_orcb_c    : natural := 13;
+  constant op_orcb_c   : natural := 13;
   -- Zbb - byte-reverse --
-  constant op_rev8_c    : natural := 14;
+  constant op_rev8_c   : natural := 14;
   -- Zba - shifted-add --
-  constant op_sh1add_c  : natural := 15;
-  constant op_sh2add_c  : natural := 16;
-  constant op_sh3add_c  : natural := 17;
+  constant op_sh1add_c : natural := 15;
+  constant op_sh2add_c : natural := 16;
+  constant op_sh3add_c : natural := 17;
   -- Zbs - single-bit operations --
-  constant op_bclr_c    : natural := 18;
-  constant op_bext_c    : natural := 19;
-  constant op_binv_c    : natural := 20;
-  constant op_bset_c    : natural := 21;
+  constant op_bclr_c   : natural := 18;
+  constant op_bext_c   : natural := 19;
+  constant op_binv_c   : natural := 20;
+  constant op_bset_c   : natural := 21;
   -- Zbc - carry-less multiplication --
-  constant op_clmul_c   : natural := 22;
-  constant op_clmulh_c  : natural := 23;
-  constant op_clmulr_c  : natural := 24;
+  constant op_clmul_c  : natural := 22;
+  constant op_clmulh_c : natural := 23;
+  constant op_clmulr_c : natural := 24;
   --
-  constant op_width_c   : natural := 25;
+  constant op_width_c  : natural := 25;
 
   -- controller --
   type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT, S_START_CLMUL, S_BUSY_CLMUL);
@@ -125,10 +128,10 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   signal valid        : std_ulogic;
 
   -- operand buffers --
-  signal rs1_reg : std_ulogic_vector(data_width_c-1 downto 0);
-  signal rs2_reg : std_ulogic_vector(data_width_c-1 downto 0);
-  signal sha_reg : std_ulogic_vector(index_size_f(data_width_c)-1 downto 0);
-  signal less_ff : std_ulogic;
+  signal rs1_reg  : std_ulogic_vector(data_width_c-1 downto 0);
+  signal rs2_reg  : std_ulogic_vector(data_width_c-1 downto 0);
+  signal sha_reg  : std_ulogic_vector(index_size_f(data_width_c)-1 downto 0);
+  signal less_reg : std_ulogic;
 
   -- serial shifter --
   type shifter_t is record
@@ -152,7 +155,7 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   -- shifted-add unit --
   signal adder_core : std_ulogic_vector(data_width_c-1 downto 0);
 
-  -- one-hot shifter --
+  -- one-hot decoder --
   signal one_hot_core : std_ulogic_vector(data_width_c-1 downto 0);
 
   -- carry-less multiplier --
@@ -231,7 +234,7 @@ begin
       rs1_reg       <= (others => def_rst_val_c);
       rs2_reg       <= (others => def_rst_val_c);
       sha_reg       <= (others => def_rst_val_c);
-      less_ff       <= def_rst_val_c;
+      less_reg      <= def_rst_val_c;
       clmul.start   <= '0';
       shifter.start <= '0';
       valid         <= '0';
@@ -241,24 +244,24 @@ begin
       clmul.start   <= '0';
       valid         <= '0';
 
+      -- operand registers --
+      if (start_i = '1') then
+        less_reg <= cmp_i(cmp_less_c);
+        cmd_buf  <= cmd;
+        rs1_reg  <= rs1_i;
+        rs2_reg  <= rs2_i;
+        sha_reg  <= shamt_i;
+      end if;
+
       -- fsm --
       case ctrl_state is
 
         when S_IDLE => -- wait for operation trigger
         -- ------------------------------------------------------------
           if (start_i = '1') then
-            less_ff <= cmp_i(cmp_less_c);
-            cmd_buf <= cmd;
-            rs1_reg <= rs1_i;
-            rs2_reg <= rs2_i;
-            sha_reg <= shamt_i;
-            if ((cmd(op_clz_c) or cmd(op_ctz_c) or cmd(op_cpop_c) or cmd(op_ror_c) or cmd(op_rol_c)) = '1') then -- multi-cycle shift operation
-              if (FAST_SHIFT_EN = false) then -- default: iterative computation
-                shifter.start <= '1';
-                ctrl_state <= S_START_SHIFT;
-              else -- full-parallel computation
-                ctrl_state <= S_BUSY_SHIFT;
-              end if;
+            if (FAST_SHIFT_EN = false) and ((cmd(op_clz_c) or cmd(op_ctz_c) or cmd(op_cpop_c) or cmd(op_ror_c) or cmd(op_rol_c)) = '1') then -- multi-cycle shift operation
+              shifter.start <= '1';
+              ctrl_state <= S_START_SHIFT;
             elsif (zbc_en_c = true) and ((cmd(op_clmul_c) or cmd(op_clmulh_c) or cmd(op_clmulr_c)) = '1') then -- multi-cycle clmul operation
               clmul.start <= '1';
               ctrl_state  <= S_START_CLMUL;
@@ -303,6 +306,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   serial_shifter:
   if (FAST_SHIFT_EN = false) generate
+
     shifter_unit: process(rstn_i, clk_i)
       variable new_bit_v : std_ulogic;
     begin
@@ -315,7 +319,7 @@ begin
         if (shifter.start = '1') then -- trigger new shift
           shifter.cnt <= (others => '0');
           -- shift operand --
-          if (cmd_buf(op_clz_c) = '1') or (cmd_buf(op_rol_c) = '1') then -- count LEADING zeros / rotate LEFT
+          if (cmd_buf(op_clz_c) = '1') or (cmd_buf(op_rol_c) = '1') then -- clz, rol
             shifter.sreg <= bit_rev_f(rs1_reg); -- reverse - we can only do right shifts here
           else -- ctz, cpop, ror
             shifter.sreg <= rs1_reg;
@@ -338,14 +342,11 @@ begin
         end if;
       end if;
     end process shifter_unit;
-  end generate;
 
-  -- run control --
-  serial_shifter_ctrl:
-  if (FAST_SHIFT_EN = false) generate
+    -- run control --
     shifter_unit_ctrl: process(cmd_buf, shifter)
     begin
-      -- keep shifting until ... --
+      -- keep shifting until all bits are processed --
       if (cmd_buf(op_clz_c) = '1') or (cmd_buf(op_ctz_c) = '1') then -- count leading/trailing zeros
         shifter.run <= not shifter.sreg(0);
       else -- population count / rotate
@@ -356,40 +357,17 @@ begin
         end if;
       end if;
     end process shifter_unit_ctrl;
-  end generate;
+
+  end generate; -- /serial_shifter
 
 
   -- Shifter Function Core (parallel: fast but large) ---------------------------------------
   -- -------------------------------------------------------------------------------------------
-  barrel_shifter_async_sync:
+  parallel_shifter:
   if (FAST_SHIFT_EN = true) generate
-    shifter_unit_fast: process(rstn_i, clk_i)
-      variable new_bit_v : std_ulogic;
-    begin
-      if (rstn_i = '0') then
-        shifter.cnt     <= (others => def_rst_val_c);
-        shifter.sreg    <= (others => def_rst_val_c);
-        shifter.bcnt    <= (others => def_rst_val_c);
-      elsif rising_edge(clk_i) then
-        -- population count --
-        shifter.bcnt <= std_ulogic_vector(to_unsigned(popcount_f(rs1_reg), shifter.bcnt'length));
-        -- count leading/trailing zeros --
-        if cmd_buf(op_clz_c) = '1' then -- leading
-          shifter.cnt <= std_ulogic_vector(to_unsigned(leading_zeros_f(rs1_reg), shifter.cnt'length));
-        else -- trailing
-          shifter.cnt <= std_ulogic_vector(to_unsigned(leading_zeros_f(bit_rev_f(rs1_reg)), shifter.cnt'length));
-        end if;
-        -- barrel shifter --
-        shifter.sreg <= bs_level(0); -- rol/ror[i]
-      end if;
-    end process shifter_unit_fast;
-    shifter.run <= '0'; -- we are done already!
-  end generate;
 
-  -- barrel shifter array --
-  barrel_shifter_async:
-  if (FAST_SHIFT_EN = true) generate
-    shifter_unit_async: process(rs1_reg, sha_reg, cmd_buf, bs_level)
+    -- barrel shifter array --
+    barrel_shifter: process(cmd_buf, rs1_reg, sha_reg, bs_level)
     begin
       -- input level: convert left shifts to right shifts --
       if (cmd_buf(op_rol_c) = '1') then -- is left shift?
@@ -397,7 +375,6 @@ begin
       else
         bs_level(index_size_f(data_width_c)) <= rs1_reg;
       end if;
-
       -- shifter array --
       for i in index_size_f(data_width_c)-1 downto 0 loop
         if (sha_reg(i) = '1') then
@@ -407,8 +384,21 @@ begin
           bs_level(i) <= bs_level(i+1);
         end if;
       end loop;
-    end process shifter_unit_async;
-  end generate;
+    end process barrel_shifter;
+
+    -- shift result --
+    shifter.sreg <= bs_level(0); -- rol/ror[i]
+
+    -- population count --
+    shifter.bcnt <= std_ulogic_vector(to_unsigned(popcount_f(rs1_reg), shifter.bcnt'length)); -- CPOP
+
+    -- count leading/trailing zeros --
+    shifter.cnt <= std_ulogic_vector(to_unsigned(leading_zeros_f(rs1_reg), shifter.cnt'length)) when (cmd_buf(op_clz_c) = '1') else -- CLZ
+                   std_ulogic_vector(to_unsigned(leading_zeros_f(bit_rev_f(rs1_reg)), shifter.cnt'length)); -- CTZ
+
+    shifter.run <= '0'; -- we are done already!
+
+  end generate; -- /parallel_shifter
 
 
   -- Shifted-Add Core -----------------------------------------------------------------------
@@ -490,7 +480,7 @@ begin
   res_int(op_cpop_c)(shifter.bcnt'left downto 0) <= shifter.bcnt;
 
   -- min/max select --
-  res_int(op_min_c) <= rs1_reg when ((less_ff xor cmd_buf(op_max_c)) = '1') else rs2_reg;
+  res_int(op_min_c) <= rs1_reg when ((less_reg xor cmd_buf(op_max_c)) = '1') else rs2_reg;
   res_int(op_max_c) <= (others => '0'); -- unused/redundant
 
   -- sign-extension --
