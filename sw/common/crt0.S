@@ -158,6 +158,7 @@ __crt0_reset_io_loop:
 __crt0_copy_data:
   la   x11, __crt0_copy_data_src_begin        // start of data area (copy source)
   la   x12, __crt0_copy_data_dst_begin        // start of data area (copy destination)
+  beq  x11, x12, __crt0_copy_data_loop_end    // Nothing to do, if source and destination address are the same
   la   x13, __crt0_copy_data_dst_end          // last address of destination data area
 
 __crt0_copy_data_loop:
