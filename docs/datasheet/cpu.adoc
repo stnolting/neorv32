@@ -822,14 +822,13 @@ configurations are presented in <<_cpu_performance>>.
 | Floating-point - misc       | `Zfinx` | `fsgnj.s` `fsgnjn.s` `fsgnjx.s` `fclass.s` | 12
 | Floating-point - conversion | `Zfinx` | `fcvt.w.s` `fcvt.wu.s` | 47
 | Floating-point - conversion | `Zfinx` | `fcvt.s.w` `fcvt.s.wu` | 48
-| Bit-manipulation - arithmetic/logic    | `B(Zbb)` | `sext.b` `sext.h` `min` `minu` `max` `maxu` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 3
-| Bit-manipulation - arithmetic/logic    | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 3
-| Bit-manipulation - shifts              | `B(Zbb)` | `clz` `ctz` | 3 + 0..32
-| Bit-manipulation - shifts              | `B(Zbb)` | `cpop` | 3 + 32
-| Bit-manipulation - shifts              | `B(Zbb)` | `rol` `ror` `rori` | 3 + SA
-| Bit-manipulation - single-bit          | `B(Zbs)` | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 3
-| Bit-manipulation - shifted-add         | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 3
-| Bit-manipulation - carry-less multiply | `B(Zbc)` | `clmul` `clmulh` `clmulr` | 3 + 32
+| Bit-manipulation - arithmetic/logic    | `B(Zbb)` | `min[u]` `max[u]` `sext.b` `sext.h` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 4
+| Bit-manipulation - shifts              | `B(Zbb)` | `clz` `ctz` | 4 + 1..32; FAST_SHIFT: 4
+| Bit-manipulation - shifts              | `B(Zbb)` | `cpop` | 4 + 32; FAST_SHIFT: 4
+| Bit-manipulation - shifts              | `B(Zbb)` | `rol` `ror[i]` | 4 + SA; FAST_SHIFT: 4
+| Bit-manipulation - shifted-add         | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 4
+| Bit-manipulation - single-bit          | `B(Zbs)` | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 4
+| Bit-manipulation - carry-less multiply | `B(Zbc)` | `clmul` `clmulh` `clmulr` | 4 + 32
 | Custom instructions (CFU) | `Zxcfu` | - | min. 4
 | | | | 
 | _Illegal instructions_    | `Zicsr` | - | min. 2
