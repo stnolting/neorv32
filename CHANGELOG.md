@@ -6,11 +6,11 @@ The latest release is [![release](https://img.shields.io/github/v/release/stnolt
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
 can be found [online at GitHub-pages](https://stnolting.github.io/neorv32).
 
-:information_source: Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org).
+Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org).
 The _hardware version identifier_ uses an additional custom element (`MAJOR.MINOR.PATCH.custom`) to track _individual_ changes.
 The identifier number is incremented with every core RTL modification and also by major framework modifications.
 
-:information_source: The version number is globally defined by the `hw_version_c` constant in the main VHDL
+The version number is globally defined by the `hw_version_c` constant in the main VHDL
 [package file](https://github.com/stnolting/neorv32/blob/master/rtl/core/neorv32_package.vhd).
 The processor can determine its version by reading the `mimpid` CSR (at CSR address 0xf13).
 A 8x4-bit BCD representation is used. Leading zeros are optional. Example:
@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 10.05.2022 | 1.7.1.5 | code clean-up and minor optimization of `B` extension (bit-manipulation) CPU co-processor; [#312](https://github.com/stnolting/neorv32/pull/312) |
 | 06.05.2022 | 1.7.1.4 | :sparkles: upgrade TRNG module to new [neoTRNG v2](https://github.com/stnolting/neoTRNG); [#311](https://github.com/stnolting/neorv32/pull/311) |
 | 05.05.2022 | 1.7.1.3 | :bug: bug fix in CPU counter overflow logic (`cycle` and `instret` counters); minor optimization of CPU execution unit; [#310](https://github.com/stnolting/neorv32/pull/310) |
 | 28.04.2022 | 1.7.1.2 | add flag to `mxisa`  CSR to check if _this_ is a simulation (bit 20: _CSR_MXISA_IS_SIM_); add flag to `mxisa`  CSR to check if all CPU core register have a dedicated reset (bit 21: _CSR_MXISA_HW_RESET_); [#309](https://github.com/stnolting/neorv32/pull/309) |
