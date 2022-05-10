@@ -777,7 +777,11 @@ begin
     ctrl_o(ctrl_trap_c)          <= trap_ctrl.env_start_ack; -- cpu is starting a trap handler
     ctrl_o(ctrl_debug_running_c) <= debug_ctrl.running; -- cpu is currently in debug mode
     -- FPU rounding mode --
-    ctrl_o(ctrl_alu_frm2_c downto ctrl_alu_frm0_c) <= csr.frm;
+    if (CPU_EXTENSION_RISCV_Zfinx = true) then
+      ctrl_o(ctrl_alu_frm2_c downto ctrl_alu_frm0_c) <= csr.frm;
+    else
+      ctrl_o(ctrl_alu_frm2_c downto ctrl_alu_frm0_c) <= (others => '0');
+    end if;
   end process ctrl_output;
 
 
