@@ -23,3 +23,4 @@ Here is a simple guide line if you'd like to contribute code modifications to th
 6. Push to the branch: `git push origin awesome_new_feature_branch`
 7. Create a new [pull request](https://github.com/stnolting/neorv32/pulls)
 8. If you like, discuss on the project's [discussion board](https://github.com/stnolting/neorv32/discussions)
+or on our [gitter channel](https://gitter.im/neorv32/community).
