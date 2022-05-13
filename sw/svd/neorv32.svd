@@ -954,6 +954,12 @@
               <description>Random data</description>
             </field>
             <field>
+              <name>TRNG_CTRL_SIM_MODE</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>TRNG simulation mode (PRNG!) active</description>
+            </field>
+            <field>
               <name>TRNG_CTRL_EN</name>
               <bitRange>[30:30]</bitRange>
               <description>TRNG enable flag</description>
