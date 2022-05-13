@@ -59,10 +59,13 @@ include::rationale.adoc[]
 :sectnums:
 === Project Key Features
 
-* open-source and documented; including user guides to get started
+* from zero to _"hello world!"_ - completely open-source and documented; including user guides to get started
 * completely described in behavioral, platform-independent VHDL (yet platform-optimized modules are provided)
+* easy to use even for FPGA/RISC-V starters - intended to _work out of the box_
+* all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
+* highly extensible hardware - on CPU, SoC and system level
 * fully synchronous design, no latches, no gated clocks
-* small hardware footprint and high operating frequency for easy integration
+* aims to be as small as reasonable while being as RISC-V-compliant as possible
 * **NEORV32 CPU**: 32-bit `rv32i` RISC-V CPU
 ** RISC-V compatibility: passes the official architecture tests
 ** base architecture + privileged architecture (optional) + ISA extensions (optional)
