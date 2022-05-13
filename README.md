@@ -259,14 +259,14 @@ This overview provides some *quick links* to the most important sections of the
 
 * [Rationale](https://stnolting.github.io/neorv32/#_rationale) - NEORV32: why? how come? what for?
 
-* [NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - the SoC
+* **[NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - the SoC**
   * [Top Entity - Signals](https://stnolting.github.io/neorv32/#_processor_top_entity_signals) - how to connect to the processor
   * [Top Entity - Generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics) - configuration options
   * [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory layout and boot configuration
   * [SoC Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - available peripheral modules and memories
   * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - online & in-system debugging of the processor via JTAG
 
-* [NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the CPU
+* **[NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the CPU**
   * [RISC-V compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs. and what is not
   * [Full Virtualization](https://stnolting.github.io/neorv32/#_full_virtualization) - hardware execution safety
   * [ISA and Extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions) - available RISC-V ISA extensions
