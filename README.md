@@ -36,13 +36,15 @@ are executed. Whenever an unexpected situation occurs the application code is in
 :interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
 
 :books: For detailed information take a look at the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
-The latest _pdf_ versions can be found [here](https://github.com/stnolting/neorv32/releases/tag/nightly).
+The latest _PDF_ versions can be found [here](https://github.com/stnolting/neorv32/releases/tag/nightly).
 
 :label: The project's change log is available in [`CHANGELOG.md`](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
 To see the changes between _official releases_ visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
 :package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) targeting
 various FPGA boards and toolchains to get you started.
+
+:heavy_check_mark: Automatic check for RISC-V specification [compliance](https://github.com/stnolting/neorv32-verif).
 
 :kite: Supported by upstream [Zephyr OS](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) and FreeRTOS.
 
@@ -61,7 +63,7 @@ setting up your NEORV32 setup!
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
 - [x] completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
 - [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, SoC and system level
-- [x] aims to be as small as possible while being as RISC-V-compliant as possible
+- [x] aims to be as small as reasonable while being as RISC-V-compliant as possible
 - [x] from zero to _"hello world!"_ - completely open source and documented
 - [x] easy to use even for FPGA/RISC-V starters – intended to **work out of the box**
 
@@ -79,7 +81,7 @@ The NEORV32 is fully operational.
 The processor passes the official RISC-V architecture tests, which are checked by the
 [neorv32-verif](https://github.com/stnolting/neorv32-verif) repository. It can successfully run _any_ C program
 (for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example) folder) including CoreMark
-and can be synthesized for _any_ target technology - tested on Intel, Xilinx and Lattice FPGAs.
+and FreeRTOS and can be synthesized for _any_ target technology - tested on Intel, Xilinx and Lattice FPGAs.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -215,9 +217,8 @@ The following table shows the performance results (scores and average CPI) for e
 
 :bulb: More information regarding the CPU performance can be found in the
 [_Data Sheet: CPU Performance_](https://stnolting.github.io/neorv32/#_cpu_performance).
-
-:bulb: The CPU & SoC provide further "tuning" options to optimize the design for maximum performance, maximum clock speed, minimal area
-or minimal power consumption:
+The CPU & SoC provide further "tuning" options to optimize the design for maximum performance,
+maximum clock speed, minimal area or minimal power consumption:
 [_UG: Application-Specific Processor Configuration_](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration)
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
@@ -234,8 +235,8 @@ or minimal power consumption:
 * runtime environment for handling traps
 * several [example programs](https://github.com/stnolting/neorv32/tree/main/sw/example) to get started including CoreMark, FreeRTOS and Conway's Game of Life
 * doxygen-based documentation, available on [GitHub pages](https://stnolting.github.io/neorv32/sw/files.html)
-* supports implementation using open source tooling ([GHDL](https://github.com/ghdl/ghdl), Yosys, nextpnr, ...) - both, software and hardware can be
-developed and debugged with open source tooling
+* supports implementation using open source toolchains - both, software and hardware can be
+developed and debugged with open source tools ([GHDL](https://github.com/ghdl/ghdl), Yosys, nextpnr, openOCD, gtkwave, ...)
 * [continuous integration](https://github.com/stnolting/neorv32/actions) is available for:
   * allowing users to see the expected execution/output of the tools
   * ensuring [specification compliance](https://github.com/stnolting/neorv32-verif)
@@ -257,7 +258,7 @@ This overview provides some *quick links* to the most important sections of the
 
 ### :electric_plug: Hardware Overview
 
-* [Rationale](https://stnolting.github.io/neorv32/#_rationale) - NEORV32: why? how come? what for?
+* [:interrobang: Rationale](https://stnolting.github.io/neorv32/#_rationale) - NEORV32: why? how come? what for?
 
 * **[NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - the SoC**
   * [Top Entity - Signals](https://stnolting.github.io/neorv32/#_processor_top_entity_signals) - how to connect to the processor
