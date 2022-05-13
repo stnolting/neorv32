@@ -649,7 +649,8 @@ In additions to the base cycle, instructions-retired and time counters the NEORV
 up to 29 hardware performance monitors (HPM 3..31), which can be used to benchmark applications. Each HPM consists of an
 N-bit wide counter (split in a high-word 32-bit CSR and a low-word 32-bit CSR), where N is defined via the top's
 <<_hpm_cnt_width>> generic (0..64-bit) and a corresponding event configuration CSR. The event configuration
-CSR defines the architectural events that lead to an increment of the associated HPM counter.
+CSR defines the architectural events that lead to an increment of the associated HPM counter. See the
+<<_hpm_num_cnts>> documentation for a list of available trigger events.
 
 The HPM counters are available if the `Zihpm` ISA extensions is enabled via the <<_cpu_extension_riscv_zihpm>> generic.
 The actual number of implemented HPM counters is defined by the <<_hpm_num_cnts>> generic.
