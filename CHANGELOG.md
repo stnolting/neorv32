@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 13.05.2022 | 1.7.1.6 | :bug: fixed bug in **BUSKEEPER** timeout logic; [#315](https://github.com/stnolting/neorv32/pull/315) |
 | 10.05.2022 | 1.7.1.5 | code clean-up and minor optimization of `B` extension (bit-manipulation) CPU co-processor; [#312](https://github.com/stnolting/neorv32/pull/312) |
 | 06.05.2022 | 1.7.1.4 | :sparkles: upgrade TRNG module to new [neoTRNG v2](https://github.com/stnolting/neoTRNG); [#311](https://github.com/stnolting/neorv32/pull/311) |
 | 05.05.2022 | 1.7.1.3 | :bug: bug fix in CPU counter overflow logic (`cycle` and `instret` counters); minor optimization of CPU execution unit; [#310](https://github.com/stnolting/neorv32/pull/310) |
