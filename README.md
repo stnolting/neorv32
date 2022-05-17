@@ -122,7 +122,7 @@ modules are _optional_.
 and the *Privileged Architecture Specification* [(Version 1.12)](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf).
 * `machine` and `user` modes
 * implements _all_ standard RISC-V exceptions/interrupts (including MTI, MEI & MSI)
-* 16-fast interrupt requests as NEORV32-specific extension
+* 16 fast interrupt request channels as NEORV32-specific extension
 
 **Memory**
 
