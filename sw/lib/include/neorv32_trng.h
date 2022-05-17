@@ -47,6 +47,7 @@
 int  neorv32_trng_available(void);
 void neorv32_trng_enable(void);
 void neorv32_trng_disable(void);
+void neorv32_trng_fifo_clear(void);
 int  neorv32_trng_get(uint8_t *data);
 int  neorv32_trng_check_sim_mode(void);
 
