@@ -339,6 +339,7 @@ begin
     IO_PWM_NUM_CH                => 30,            -- number of PWM channels to implement (0..60); 0 = disabled
     IO_WDT_EN                    => true,          -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => true,          -- implement true random number generator (TRNG)?
+    IO_TRNG_FIFO                 => 4,             -- TRNG fifo depth, has to be a power of two, min 1
     IO_CFS_EN                    => true,          -- implement custom functions subsystem (CFS)?
     IO_CFS_CONFIG                => (others => '0'), -- custom CFS configuration generic
     IO_CFS_IN_SIZE               => 32,            -- size of CFS input conduit in bits
