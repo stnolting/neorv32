@@ -128,6 +128,7 @@ entity neorv32_top is
     IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..60); 0 = disabled
     IO_WDT_EN                    : boolean := false;  -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
+    IO_TRNG_FIFO                 : natural := 1;      -- TRNG fifo depth, has to be a power of two, min 1
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
     IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
     IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
@@ -1308,6 +1309,9 @@ begin
   neorv32_trng_inst_true:
   if (IO_TRNG_EN = true) generate
     neorv32_trng_inst: neorv32_trng
+    generic map (
+      IO_TRNG_FIFO => IO_TRNG_FIFO -- RND fifo depth, has to be a power of two, min 1
+    )
     port map (
       -- host access --
       clk_i  => clk_i,                     -- global clock line
