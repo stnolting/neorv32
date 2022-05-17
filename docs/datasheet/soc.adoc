@@ -969,6 +969,18 @@ information.
 
 
 :sectnums!:
+===== _IO_TRNG_FIFO_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **IO_TRNG_FIFO** | _natural_ | 1
+3+| Defines the depth of the TRNG data FIFO. Minimal value is 1;, has to be a power of two.
+See section <<_true_random_number_generator_trng>> for more information.
+|======
+
+
+:sectnums!:
 ===== _IO_CFS_EN_
 
 [cols="4,4,2"]
@@ -1082,9 +1094,9 @@ specifications. However, bare-metal system can also repurpose these interrupts. 
 [options="header",grid="rows"]
 |=======================
 | Top signal | Width | Description
-| `mtime_irq_i` | 1 | Machine timer interrupt from _processor-external_ MTIME unit. This IRQ is only available if the processor-internal MTIME unit is not used (<<_io_mtime_en>> = false).
-| `msw_irq_i`   | 1 | Machine software interrupt. This interrupt is used for inter-processor interrupts in multi-core systems. However, it can also be used for any custom purpose.
-| `mext_irq_i`  | 1 | Machine external interrupt. This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
+| `mtime_irq_i` | 1 | Machine timer interrupt from _processor-external_ MTIME unit (_MTI_). This IRQ is only available if the processor-internal MTIME unit is not used (<<_io_mtime_en>> = false).
+| `msw_irq_i`   | 1 | Machine software interrupt (_MSI_). This interrupt is used for inter-processor interrupts in multi-core systems. However, it can also be used for any custom purpose.
+| `mext_irq_i`  | 1 | Machine external interrupt (_MEI_). This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
 |=======================
 
 .Trigger type
