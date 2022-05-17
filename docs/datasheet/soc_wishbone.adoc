@@ -42,7 +42,7 @@ access is delegated to the external bus interface if...
 actually implemented or not.
 
 [NOTE]
-If the Execute In Place module (XIP) is implemented accesses map to this module are not forwarded to the
+If the Execute In Place module (XIP) is implemented accesses targeting the XIP module are not forwarded to the
 external memory interface. See section <<_execute_in_place_module_xip>> for more information.
 
 [TIP]
@@ -52,8 +52,7 @@ See section <<_address_space>> for more information.
 **Wishbone Bus Protocol**
 
 The external memory interface either uses the **standard** ("classic") Wishbone transaction protocol (default) or
-**pipelined** Wishbone transaction protocol. The transaction protocol is configured via the _MEM_EXT_PIPE_MODE_ generic:
-
+**pipelined** Wishbone transaction protocol. The transaction protocol is configured via the <<_mem_ext_pipe_mode>> generic:
 When _MEM_EXT_PIPE_MODE_ is _false_, all bus control signals including _STB_ are active and remain stable until the
 transfer is acknowledged/terminated. If _MEM_EXT_PIPE_MODE_ is _true_, all bus control except _STB_ are active
 and remain until the transfer is acknowledged/terminated. In this case, _STB_ is asserted only during the very
