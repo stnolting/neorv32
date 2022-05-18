@@ -78,6 +78,9 @@ void neorv32_trng_enable(void) {
   for (i=0; i<256; i++) {
     asm volatile ("nop");
   }
+
+  // clear random "pool"
+  neorv32_trng_fifo_clear();
 }
 
 
@@ -87,6 +90,15 @@ void neorv32_trng_enable(void) {
 void neorv32_trng_disable(void) {
 
   NEORV32_TRNG.CTRL = 0;
+}
+
+
+/**********************************************************************//**
+ * Clear TRNG random data "pool" (data FIFO).
+ **************************************************************************/
+void neorv32_trng_fifo_clear(void) {
+
+  NEORV32_TRNG.CTRL |= 1 << TRNG_CTRL_FIFO_CLR; // auto clears
 }
 
 

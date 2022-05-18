@@ -954,6 +954,11 @@
               <description>Random data</description>
             </field>
             <field>
+              <name>TRNG_CTRL_FIFO_CLR</name>
+              <bitRange>[28:28]</bitRange>
+              <description>Clear data FIFO when set (auto clears)</description>
+            </field>
+            <field>
               <name>TRNG_CTRL_SIM_MODE</name>
               <bitRange>[29:29]</bitRange>
               <access>read-only</access>

@@ -9,7 +9,8 @@
 | Software driver file(s): | neorv32_trng.c |
 |                          | neorv32_trng.h |
 | Top entity port:         | none | 
-| Configuration generics:  | _IO_TRNG_EN_ | implement TRNG when _true_
+| Configuration generics:  | _IO_TRNG_EN_   | implement TRNG when _true_
+|                          | _IO_TRNG_FIFO_ | data FIFO depth, min 1, has to be a power of two
 | CPU interrupts:          | none | 
 |=======================
 
@@ -31,7 +32,7 @@ detailed evaluation of the random number quality can be found it it's repository
 .Inferring Latches
 [NOTE]
 The synthesis tool might emit a warning like _"inferring latches for ... neorv32_trng ..."_. This is no problem
-as this is what we actually want (the TRNG is based on latches).
+as this is what we actually want: the TRNG is based on latches, which implement the inverters of the ring oscillators.
 
 .Simulation
 [IMPORTANT]
@@ -43,10 +44,17 @@ The _TRNG_CTRL_SIM_MODE_ flag of the control register is set if simulation mode 
 **Using the TRNG**
 
 The TRNG features a single register for status and data access. When the _TRNG_CTRL_EN_ control register (`CTRL`)
-bit is set, the TRNG is enabled and starts operation. As soon as the _TRNG_CTRL_VALID_ bit is set, the currently
-sampled 8-bit random data byte can be obtained from the lowest 8 bits of the `CTRL` register
-(_TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_LSB_). These bits always keep the latest valid data obtained from the TRNG
-entropy source. The _TRNG_CTRL_VALID_ bit is automatically cleared when reading the control register.
+bit is set, the TRNG is enabled and starts operation. As soon as the _TRNG_CTRL_VALID_ bit is set a random data byte
+is available and can be obtained from the lowest 8 bits of the `CTRL` register
+(_TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_LSB_).
+
+An optional random data FIFO can be configured using the <<_io_trng_fifo>> generic. This FIFO automatically samples
+new random data from the TRNG to provide some kind of _random data pool_ for applications, which require a large number
+of RND data in a short time. The minimal and default value for <<_io_trng_fifo>> is 1 (implementing a register rather
+than a real FIFO); the generic has to be a power of two.
+
+The random data FIFO can be cleared at any time either by disabling the TRNG via the _TRNG_CTRL_EN_ flag or by
+setting the _TRNG_CTRL_FIFO_CLR_ flag. Note that this falg is write-only and auto clears after being set.
 
 .TRNG Reset
 [NOTE]
@@ -59,7 +67,8 @@ disabled (=reset) by clearing the _TRNG_CTRL_EN_ and waiting some 1000s clock cy
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.4+<| `0xffffffb8` .4+<| `NEORV32_TRNG.CTRL` <|`7:0` _TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_MSB_ ^| r/- <| 8-bit random data
+.5+<| `0xffffffb8` .5+<| `NEORV32_TRNG.CTRL` <|`7:0` _TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_MSB_ ^| r/- <| 8-bit random data
+                                             <|`28` _TRNG_CTRL_FIFO_CLR_                         ^| -/w <| clear data FIFO when set (auto clears)
                                              <|`29` _TRNG_CTRL_SIM_MODE_                         ^| r/- <| simulation mode (PRNG!)
                                              <|`30` _TRNG_CTRL_EN_                               ^| r/w <| TRNG enable
                                              <|`31` _TRNG_CTRL_VALID_                            ^| r/- <| random data is valid when set
