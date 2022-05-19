@@ -270,7 +270,8 @@ begin
     variable tmp_v : std_ulogic_vector(31 downto 0);
   begin
     tmp_v(31 downto 28) := "0000";
-    tmp_v(27 downto 00) := arbiter.addr(27 downto 00);
+    tmp_v(27 downto 02) := arbiter.addr(27 downto 02);
+    tmp_v(01 downto 00) := "00"; -- always align to 32-bit boundary; sub-word read accesses are handled by the CPU logic
     case ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) is -- shift address bits to be MSB-aligned
       when "00"   => xip_addr <= tmp_v(07 downto 0) & x"000000"; -- 1 address byte
       when "01"   => xip_addr <= tmp_v(15 downto 0) & x"0000";   -- 2 address bytes
