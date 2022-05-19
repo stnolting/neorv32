@@ -146,10 +146,13 @@ __crt0_reset_io:
   la   x8,   __crt0_io_space_begin         // start of processor-internal IO region
   la   x9,   __crt0_io_space_end           // end of processor-internal IO region
 
+// Make this opt-out so that e.g. the XIP module can keep running
+#ifndef NO_IO_RESET
 __crt0_reset_io_loop:
   sw   zero, 0(x8)
   addi x8,   x8, 4
   bne  x8,   x9, __crt0_reset_io_loop
+#endif
 
 
 // ************************************************************************************************
