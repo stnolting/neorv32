@@ -86,7 +86,7 @@ infringement of the law becomes known to us, we will immediately remove the link
 
 [NOTE]
 This is an open-source project that is free of charge. Use this project in any way you like
-(as long as it complies to the permissive license). Please quote it appropriately. 👍
+(as long as it complies to the permissive license). Please cite it appropriately. 👍
 
 .Contributors ❤️
 [NOTE]
