@@ -160,7 +160,7 @@ entity neorv32_SystemTop_axi4lite is
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o     : out std_logic; -- chip-select, low-active
     xip_clk_o     : out std_logic; -- serial clock
-    xip_sdi_i     : in  std_logic := 'L'; -- device data input
+    xip_sdi_i     : in  std_logic := '0'; -- device data input
     xip_sdo_o     : out std_logic; -- controller data output
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o        : out std_logic_vector(63 downto 0); -- parallel output

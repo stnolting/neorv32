@@ -146,7 +146,7 @@ entity neorv32_ProcessorTop_stdlogic is
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o      : out std_logic; -- chip-select, low-active
     xip_clk_o      : out std_logic; -- serial clock
-    xip_sdi_i      : in  std_logic := 'L'; -- device data input
+    xip_sdi_i      : in  std_logic := '0'; -- device data input
     xip_sdo_o      : out std_logic; -- controller data output
     -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
     slink_tx_dat_o : out sdata_8x32r_t; -- output data
