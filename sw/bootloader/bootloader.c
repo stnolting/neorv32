@@ -153,10 +153,10 @@ enum ERROR_CODES {
  * Error messages
  **************************************************************************/
 const char error_message[4][24] = {
-  "exe signature fail",
+  "exe signature error",
   "exceeding IMEM capacity",
-  "checksum fail",
-  "SPI flash access failed"
+  "checksum error",
+  "SPI flash access error"
 };
 
 
