@@ -108,6 +108,11 @@
   #define SPI_FLASH_CS 0
 #endif
 
+/** SPI flash address width (in numbers of bytes; 2,3,4) */
+#ifndef SPI_FLASH_ADDR_BYTES
+  #define SPI_FLASH_ADDR_BYTES 3 // default = 3 address bytes = 24-bit
+#endif
+
 /** SPI flash sector size in bytes */
 #ifndef SPI_FLASH_SECTOR_SIZE
   #define SPI_FLASH_SECTOR_SIZE 65536 // default = 64kB
@@ -159,12 +164,21 @@ const char error_message[4][24] = {
  * SPI flash commands
  **************************************************************************/
 enum SPI_FLASH_CMD {
-  SPI_FLASH_CMD_PAGE_PROGRAM = 0x02, /**< Program page */
-  SPI_FLASH_CMD_READ         = 0x03, /**< Read data */
-  SPI_FLASH_CMD_READ_STATUS  = 0x05, /**< Get status register */
-  SPI_FLASH_CMD_WRITE_ENABLE = 0x06, /**< Allow write access */
-  SPI_FLASH_CMD_READ_ID      = 0x9E, /**< Read manufacturer ID */
-  SPI_FLASH_CMD_SECTOR_ERASE = 0xD8  /**< Erase complete sector */
+  SPI_FLASH_CMD_PAGE_PROGRAM  = 0x02, /**< Program page */
+  SPI_FLASH_CMD_READ          = 0x03, /**< Read data */
+  SPI_FLASH_CMD_WRITE_DISABLE = 0x04, /**< Disallow write access */
+  SPI_FLASH_CMD_READ_STATUS   = 0x05, /**< Get status register */
+  SPI_FLASH_CMD_WRITE_ENABLE  = 0x06, /**< Allow write access */
+  SPI_FLASH_CMD_SECTOR_ERASE  = 0xD8  /**< Erase complete sector */
+};
+
+
+/**********************************************************************//**
+ * SPI flash status register bits
+ **************************************************************************/
+enum SPI_FLASH_SREG {
+  FLASH_SREG_BUSY = 0, /**< Busy, write/erase in progress when set, read-only */
+  FLASH_SREG_WEL  = 1  /**< Write access enabled when set, read-only */
 };
 
 
@@ -232,13 +246,14 @@ void system_error(uint8_t err_code);
 void print_hex_word(uint32_t num);
 
 // SPI flash driver functions
+int spi_flash_check(void);
 uint8_t spi_flash_read_byte(uint32_t addr);
 void spi_flash_write_byte(uint32_t addr, uint8_t wdata);
 void spi_flash_write_word(uint32_t addr, uint32_t wdata);
 void spi_flash_erase_sector(uint32_t addr);
-uint8_t spi_flash_read_1st_id(void);
-void spi_flash_write_wait(void);
 void spi_flash_write_enable(void);
+void spi_flash_write_disable(void);
+uint32_t spi_flash_read_status(void);
 void spi_flash_write_addr(uint32_t addr);
 
 
@@ -566,7 +581,7 @@ void get_exe(int src) {
 
     // flash checks
     if (((NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IO_SPI)) == 0x00) || // SPI module implemented?
-       (spi_flash_read_1st_id() == 0x00)) { // check if flash ready (or available at all)
+       (spi_flash_check() != 0)) { // check if flash ready (or available at all)
       system_error(ERROR_FLASH);
     }
   }
@@ -637,7 +652,7 @@ void save_exe(void) {
   }
 
   // check if flash ready (or available at all)
-  if (spi_flash_read_1st_id() == 0x00) { // manufacturer ID
+  if (spi_flash_check() != 0) {
     system_error(ERROR_FLASH);
   }
 
@@ -760,6 +775,34 @@ void print_hex_word(uint32_t num) {
 // -------------------------------------------------------------------------------------
 
 /**********************************************************************//**
+ * Check if SPI and flash are available/working by making sure the WEL
+ * flag of the flash status register can be set and cleared again.
+ *
+ * @return 0 if success, -1 if error
+ **************************************************************************/
+int spi_flash_check(void) {
+
+#if (SPI_EN != 0)
+
+  // set WEL
+  spi_flash_write_enable();
+  if ((spi_flash_read_status() & (1 << FLASH_SREG_WEL)) == 0) { // fail if WEL is cleared
+    return -1;
+  }
+
+  // clear WEL
+  spi_flash_write_disable();
+  if ((spi_flash_read_status() & (1 << FLASH_SREG_WEL)) != 0) { // fail if WEL is set
+    return -1;
+  }
+
+  return 0;
+#else
+  return -1;
+#endif
+}
+
+/**********************************************************************//**
  * Read byte from SPI flash.
  *
  * @param[in] addr Flash read address.
@@ -802,7 +845,11 @@ void spi_flash_write_byte(uint32_t addr, uint8_t wdata) {
 
   neorv32_spi_cs_dis(SPI_FLASH_CS);
 
-  spi_flash_write_wait(); // wait for write operation to finish
+  while(1) {
+    if ((spi_flash_read_status() & (1 << FLASH_SREG_BUSY)) == 0) { // write in progress flag cleared?
+      break;
+    }
+  }
 #endif
 }
 
@@ -832,7 +879,7 @@ void spi_flash_write_word(uint32_t addr, uint32_t wdata) {
 
 
 /**********************************************************************//**
- * Erase sector (64kB) at base adress.
+ * Erase sector (64kB) at base address.
  *
  * @param[in] addr Base address of sector to erase.
  **************************************************************************/
@@ -848,51 +895,8 @@ void spi_flash_erase_sector(uint32_t addr) {
 
   neorv32_spi_cs_dis(SPI_FLASH_CS);
 
-  spi_flash_write_wait(); // wait for write operation to finish
-#endif
-}
-
-
-/**********************************************************************//**
- * Read first byte of ID (manufacturer ID), should be != 0x00.
- *
- * @note The first bit of the manufacturer ID is used to detect if a Flash is connected at all.
- *
- * @return First byte of ID.
- **************************************************************************/
-uint8_t spi_flash_read_1st_id(void) {
-
-#if (SPI_EN != 0)
-  neorv32_spi_cs_en(SPI_FLASH_CS);
-
-  neorv32_spi_trans(SPI_FLASH_CMD_READ_ID);
-  uint8_t id = (uint8_t)neorv32_spi_trans(0);
-
-  neorv32_spi_cs_dis(SPI_FLASH_CS);
-
-  return id;
-#else
-  return 0;
-#endif
-}
-
-
-/**********************************************************************//**
- * Wait for flash write operation to finish.
- **************************************************************************/
-void spi_flash_write_wait(void) {
-
-#if (SPI_EN != 0)
   while(1) {
-
-    neorv32_spi_cs_en(SPI_FLASH_CS);
-
-    neorv32_spi_trans(SPI_FLASH_CMD_READ_STATUS);
-    uint8_t status = (uint8_t)neorv32_spi_trans(0);
-
-    neorv32_spi_cs_dis(SPI_FLASH_CS);
-
-    if ((status & 0x01) == 0) { // write in progress flag cleared?
+    if ((spi_flash_read_status() & (1 << FLASH_SREG_BUSY)) == 0) { // write in progress flag cleared?
       break;
     }
   }
@@ -914,13 +918,51 @@ void spi_flash_write_enable(void) {
 
 
 /**********************************************************************//**
- * Send address word to flash.
+ * Disable flash write access.
+ **************************************************************************/
+void spi_flash_write_disable(void) {
+
+#if (SPI_EN != 0)
+  neorv32_spi_cs_en(SPI_FLASH_CS);
+  neorv32_spi_trans(SPI_FLASH_CMD_WRITE_DISABLE);
+  neorv32_spi_cs_dis(SPI_FLASH_CS);
+#endif
+}
+
+
+/**********************************************************************//**
+ * Read flash status register.
+ *
+ * @return SPI flash status register (32-bit zero-extended).
+ **************************************************************************/
+uint32_t spi_flash_read_status(void) {
+
+#if (SPI_EN != 0)
+  neorv32_spi_cs_en(SPI_FLASH_CS);
+
+  neorv32_spi_trans(SPI_FLASH_CMD_READ_STATUS);
+  uint32_t res = neorv32_spi_trans(0);
+
+  neorv32_spi_cs_dis(SPI_FLASH_CS);
+
+  return res;
+#else
+  return 0;
+#endif
+}
+
+
+/**********************************************************************//**
+ * Send address word to flash (16-bit, 24-bit or 32-bit address size).
  *
  * @param[in] addr Address word.
  **************************************************************************/
 void spi_flash_write_addr(uint32_t addr) {
 
-#if (SPI_EN != 0)
+#if (SPI_EN == 0)
+  return;
+#endif
+
   union {
     uint32_t uint32;
     uint8_t  uint8[sizeof(uint32_t)];
@@ -928,9 +970,19 @@ void spi_flash_write_addr(uint32_t addr) {
 
   address.uint32 = addr;
 
-  int i;
-  for (i=2; i>=0; i--) {
-    neorv32_spi_trans(address.uint8[i]);
-  }
+#if (SPI_FLASH_ADDR_BYTES == 2)
+  neorv32_spi_trans(address.uint8[1]);
+  neorv32_spi_trans(address.uint8[0]);
+#elif (SPI_FLASH_ADDR_BYTES == 3)
+  neorv32_spi_trans(address.uint8[2]);
+  neorv32_spi_trans(address.uint8[1]);
+  neorv32_spi_trans(address.uint8[0]);
+#elif (SPI_FLASH_ADDR_BYTES == 4)
+  neorv32_spi_trans(address.uint8[3]);
+  neorv32_spi_trans(address.uint8[2]);
+  neorv32_spi_trans(address.uint8[1]);
+  neorv32_spi_trans(address.uint8[0]);
+#else
+  #error "Unsupported SPI_FLASH_ADDR_BYTES configuration!"
 #endif
 }
