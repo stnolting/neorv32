@@ -141,12 +141,13 @@ __crt0_reg_file_clear:
 // Reset/deactivate IO/peripheral devices
 // Devices, that are not implemented, will cause a store bus access fault
 // that is catched (but not further processed) by the dummy trap handler.
+// This can be disabled by defining 'NO_IO_RESET' before re-compiling.
 // ************************************************************************************************
 __crt0_reset_io:
   la   x8,   __crt0_io_space_begin         // start of processor-internal IO region
   la   x9,   __crt0_io_space_end           // end of processor-internal IO region
 
-// Make this opt-out so that e.g. the XIP module can keep running
+// Make this opt-out so that certain modules (like the XIP module) can keep running after being configured by the bootloader
 #ifndef NO_IO_RESET
 __crt0_reset_io_loop:
   sw   zero, 0(x8)
