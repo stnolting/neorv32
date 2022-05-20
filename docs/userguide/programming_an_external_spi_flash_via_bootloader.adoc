@@ -14,23 +14,6 @@ See section <<_customizing_the_internal_bootloader>> on how to customize the boo
 
 
 :sectnums:
-=== SPI Flash
-
-The bootloader can access an SPI compatible flash via the processor top entity's SPI port. By default, the flash
-chip-select line is to `spi_csn_o(0)` and uses 1/8 of the processor's main clock as clock frequency.
-The SPI flash has to support single-byte read and write, 24-bit addresses and at least the following standard commands:
-
-* READ `0x03`
-* READ STATUS `0x05`
-* WRITE ENABLE `0x06`
-* PAGE PROGRAM `0x02`
-* SECTOR ERASE `0xD8`
-* READ ID `0x9E`
-
-Compatible (FGPA configuration) SPI flash memories are for example the "Winbond W25Q64FV2 or the "Micron N25Q032A".
-
-
-:sectnums:
 === Programming an Executable
 
 [start=1]
