@@ -5,7 +5,7 @@
 This section refers to the **default** bootloader from the repository. The bootloader can be customized
 to target application-specific scenarios using pre-defined options (see User Guide section
 https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader[Customizing the Internal Bootloader]
-) or it can be completely reqritten/replaced for custom purpose.
+) or it can be completely rewritten/replaced for custom purpose.
 
 The NEORV32 bootloader (source code `sw/bootloader/bootloader.c`) provides an optional build-in firmware that
 allows to upload new application executables at _any time_ without the need to re-synthesize the FPGA's bitstream.
@@ -49,6 +49,13 @@ The SPI flash has to support single-byte read and write operations, 24-bit addre
 * `0x02`: Page program
 * `0xD8`: Block erase (64kB)
 
+.Custom Configuration
+[TIP]
+Most properties (like chip select line, flash address width, SPI clock frequency, ...) of the default bootloader can be reconfigured
+without the need to change the source code. Custom configuration can be made using command line switches when recompiling the bootloader.
+See the User Guide https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader for more information.
+
+.Known-Good Chips
 [TIP]
 Compatible (FGPA configuration) SPI flash memories are for example the "Winbond W25Q64FV2 or the "Micron N25Q032A".
 
