@@ -36,7 +36,7 @@ ARISING IN ANY WAY OUT OF
 **The NEORV32 RISC-V Processor** +
 HQ: https://github.com/stnolting/neorv32 +
 By Dipl.-Ing. Stephan Nolting +
-Hanover, Germany +
+European Union, Germany +
 Contact: stnolting@gmail.com
 ==========================
 
