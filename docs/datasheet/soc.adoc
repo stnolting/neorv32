@@ -1383,7 +1383,8 @@ system implements an internal reset generator and a global clock generator/divid
 Most processor-internal modules - except for the CPU and the watchdog timer - do not have a dedicated
 reset signal. However, all devices can be reset by software by clearing the corresponding unit's control
 register. The automatically included application start-up code (`crt0.S`) will perform a software-reset of all
-modules to ensure a clean system reset state.
+modules to ensure a clean system reset state. This feature can be manually deactivated if required. See section
+<<_start_up_code_crt0>> for more information.
 
 The hardware reset signal of the processor can either be triggered via the external reset pin (`rstn_i`, low-active),
 by the internal watchdog timer (if implemented) or by the on-chip debugger. The external reset signal `rstn_i`
@@ -1438,11 +1439,12 @@ be written with a byte-wide granularity.
 When accessing an IO device that hast not been implemented (via the according generic), a
 load/store access fault exception is triggered.
 
-.Hardware Reset
+.Module Reset
 [NOTE]
-Most of the IO devices do not have a hardware reset. Instead, the devices are reset via software by
-writing zero to the unit's control register. A general software-based reset of all devices is done by the
-application start-up code `crt0.S`.
+Most of the IO devices do not have a dedicated hardware reset at all. Instead, the devices are reset via software by
+writing zero to the unit's control register. A general software-based reset of **all** IO/peripheral devices is done by the
+application start-up code `crt0.S`. This feature can be manually deactivated if required. See section
+<<_start_up_code_crt0>> for more information.
 
 [TIP]
 You should use the provided core software library to interact with the peripheral devices. This
