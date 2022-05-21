@@ -190,6 +190,21 @@ __crt0_clear_bss_loop:
 
 __crt0_clear_bss_loop_end:
 
+// ************************************************************************************************
+// Call constructors
+// ************************************************************************************************
+__crt0_call_constructors:
+  la   s3,  __init_array_start
+  la   s4,  __init_array_end
+
+__crt0_call_constructors_loop:
+  bge  s3,  s4, __crt0_call_constructors_loop_end
+  lw   t1, 0(s3)
+  jalr ra, 0(t1)
+  addi s3,  s3, 4
+  j    __crt0_call_constructors_loop
+
+__crt0_call_constructors_loop_end:
 
 // ************************************************************************************************
 // Setup arguments and call main function
@@ -207,6 +222,22 @@ __crt0_main_exit:                    // main's "return" and "exit" will arrive h
 // call "after main" handler (if there is any) if main really returns
 // ************************************************************************************************
 #ifndef make_bootloader              // after_main handler not supported for bootloader
+
+// ************************************************************************************************
+// Call destructors
+// ************************************************************************************************
+__crt0_call_destructors:
+  la   s3,  __fini_array_start
+  la   s4,  __fini_array_end
+
+__crt0_call_destructors_loop:
+  bge  s3,  s4, __crt0_call_destructors_loop_end
+  lw   t1, 0(s3)
+  jalr ra, 0(t1)
+  addi s3,  s3, 4
+  j    __crt0_call_destructors_loop
+
+__crt0_call_destructors_loop_end:
 
 __crt0_main_aftermath:
   .weak __neorv32_crt0_after_main
