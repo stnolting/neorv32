@@ -339,6 +339,12 @@ The `.text` and `.rodata` sections are mapped to processor's instruction memory 
 `.bss` and `heap` sections are mapped to the processor's data memory space. Finally, the `.text`, `.rodata` and `.data`
 sections are extracted and concatenated into a single file `main.bin`.
 
+.Section Alignment
+[NOTE]
+The default NEORV32 linker script aligns _all_ section so they start and end on a 32-bit (word) boundary. The default
+NEORV32 start-up code (crt0) makes use of this alignment by using word-level memory instruction to initialize the `.data`
+section and to clear the `.bss` section.
+
 
 :sectnums:
 ==== RAM Layout
