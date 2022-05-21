@@ -380,15 +380,8 @@ using dynamic memory allocation.
 :sectnums:
 ==== C Standard Library
 
-.Constructors and Deconstructors
-[IMPORTANT]
-The NEORV32 processor is an embedded system intended for running bare-metal or RTOS applications. To simplify this setup
-explicit constructors and deconstructors are not supported by default. However, a minimal "deconstructor-alike" support is
-provided by the <<_after_main_handler>>.
-
-The NEORV32 is a processor for _embedded_ applications. Hence, it is not capable of running desktop OSs like Linux
-(at least not without emulation). Hence, the software framework relies on a "bare-metal" setup that uses **newlib**
-as default C standard library.
+The NEORV32 is a processor for _embedded_ applications, which is not capable of running desktop OSs like Linux
+(at least not without emulation). Hence, the default software framework relies on **newlib** as default C standard library.
 
 .RTOS Support
 [NOTE]
@@ -409,6 +402,11 @@ is used to implement all the standard input, output and error consoles (`STDIN`,
 [TIP]
 A simple test and demo program, which uses some of newlib's core functions (like `malloc`/`free` and `read`/`write`)
 is available in `sw/example/demo_newlib`
+
+.Constructors and Destructors
+[NOTE]
+Constructors and destructors for plain C code or for C++ applications are supported by the software framework.
+See `sw/example/hellp_cpp` for a minimal example.
 
 
 :sectnums:
@@ -463,9 +461,11 @@ This step can be disabled by the user; see note below.
 If certain devices have not been implemented, a bus access fault exception will occur, which is captured by the dummy trap handler.
 . Clear the `.bss` section defined by the linker script.
 . Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
+. Call and execute all _constructors_ (if there are any)
 . Call the application's `main` function (with _no_ arguments: `argc` = `argv` = 0).
 . If the main function returns...
 ** the return value is copied to the <<_mscratch>> CSR to allow inspection by the on-chip debugger.
+** call and execute all _destructors_ (if there ary an)
 ** an optional <<_after_main_handler>> is called (if defined at all).
 ** the CPU enters sleep mode (using the `wfi` instruction) or halts in an endless loop (if `wfi` "returns").
 
@@ -476,6 +476,11 @@ which are booted by a (custom) bootloader and rely on certain IO initializations
 reset of all IO/peripheral modules the `NO_IO_RESET` symbol needs to be _defined_ before compilation using the makefile's `USER_FLAGS`
 variable. Furthermore, all object files need to be recompiled using the `clean_all` target.
 Example: `$ make USER_FLAGS+=-DNO_IO_RESET clean_all exe`
+
+.Bootloader Start-Up Code
+[NOTE]
+The bootloader uses the same start-up code as any "usual" application. However, certain parts are omitted when compiling
+`crt0` for the bootloader (like calling constructors and destructors). See the `crt0` source code for more information.
 
 
 :sectnums:
@@ -507,6 +512,9 @@ void __neorv32_crt0_after_main(int32_t return_code) {
 }
 ----
 <1> Use `<RTE>` here to make clear this is a message comes from the runtime environment.
+
+[NOTE]
+The after-main handler is executed _after_ executing all destructor functions (if there are any at all).
 
 
 <<<
