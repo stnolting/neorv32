@@ -2633,7 +2633,7 @@ begin
             end if;
 
           when DEBUG_PENDING => -- waiting to start debug mode
-            if (trap_ctrl.irq_start_ack = '1') and (trap_ctrl.cause(5) = '1') then -- processing trap entry into debug mode
+            if (trap_ctrl.irq_start_ack = '1' or trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause(5) = '1') then -- processing trap entry into debug mode
               debug_ctrl.state <= DEBUG_ONLINE;
             end if;
 
