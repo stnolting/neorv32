@@ -840,6 +840,7 @@ int main() {
 
   // disable interrupt
   neorv32_cpu_irq_disable(CSR_MIE_MSIE);
+  sim_irq_trigger(0);
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MSI) {
     test_ok();
@@ -869,6 +870,7 @@ int main() {
 
   // enable interrupt
   neorv32_cpu_irq_disable(CSR_MIE_MEIE);
+  sim_irq_trigger(0);
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MEI) {
     test_ok();
@@ -1743,15 +1745,13 @@ void __attribute__((naked)) goto_user_mode(void) {
 
 
 /**********************************************************************//**
- * Simulation-based function to trigger CPU interrupts (MSI, MEI).
+ * Simulation-based function to set/clear CPU interrupts (MSI, MEI).
  *
  * @param[in] sel IRQ select mask (bit positions according to #NEORV32_CSR_MIE_enum).
  **************************************************************************/
 void sim_irq_trigger(uint32_t sel) {
 
   *(IO_REG32 (0xFF000000)) = sel;
-  asm volatile("nop"); // interrupt should kick in here (latest)
-  *(IO_REG32 (0xFF000000)) = 0;
 }
 
 
