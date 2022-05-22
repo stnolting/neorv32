@@ -245,6 +245,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     env_start_ack : std_ulogic; -- start of trap handler acknowledged
     env_end       : std_ulogic; -- end trap handler env
     --
+    irq_start     : std_ulogic; -- start trap handler irq
+    irq_start_ack : std_ulogic; -- start of trap handler acknowledged
+    --
     instr_be      : std_ulogic; -- instruction fetch bus error
     instr_ma      : std_ulogic; -- instruction fetch misaligned address
     instr_il      : std_ulogic; -- illegal instruction
@@ -774,7 +777,7 @@ begin
     ctrl_o(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c)  <= execute_engine.i_reg(instr_funct3_msb_c  downto instr_funct3_lsb_c);
     -- cpu status --
     ctrl_o(ctrl_sleep_c)         <= execute_engine.sleep; -- cpu is in sleep mode
-    ctrl_o(ctrl_trap_c)          <= trap_ctrl.env_start_ack; -- cpu is starting a trap handler
+    ctrl_o(ctrl_trap_c)          <= trap_ctrl.env_start_ack or trap_ctrl.irq_start_ack; -- cpu is starting a trap handler
     ctrl_o(ctrl_debug_running_c) <= debug_ctrl.running; -- cpu is currently in debug mode
     -- FPU rounding mode --
     if (CPU_EXTENSION_RISCV_Zfinx = true) then
@@ -909,6 +912,7 @@ begin
     -- trap environment control --
     trap_ctrl.env_start_ack     <= '0';
     trap_ctrl.env_end           <= '0';
+    trap_ctrl.irq_start_ack     <= '0';
 
     -- leave debug mode --
     debug_ctrl.dret             <= '0';
@@ -956,7 +960,8 @@ begin
           -- any reason to go to trap state? --
           if (execute_engine.sleep = '1') or -- enter sleep state
              (trap_ctrl.exc_fire = '1') or -- exception during LAST instruction (e.g. illegal instruction)
-             (trap_ctrl.env_start = '1') or -- pending trap (IRQ or exception)
+             (trap_ctrl.env_start = '1') or -- pending trap (exception)
+             (trap_ctrl.irq_start = '1') or -- pending trap (IRQ)
              ((issue_engine.data(33) = '1') and (CPU_EXTENSION_RISCV_C = false)) or -- misaligned instruction fetch address (if C disabled)
              (issue_engine.data(34) = '1') then -- bus access fault during instruction fetch
             execute_engine.state_nxt <= TRAP_ENTER;
@@ -971,8 +976,10 @@ begin
         if (trap_ctrl.env_start = '1') then -- trap triggered?
           trap_ctrl.env_start_ack  <= '1';
           execute_engine.state_nxt <= TRAP_EXECUTE;
+        elsif (trap_ctrl.irq_start = '1') then -- trap triggered for IRQ?
+          trap_ctrl.irq_start_ack  <= '1';
+          execute_engine.state_nxt <= TRAP_EXECUTE;
         end if;
-
 
       when TRAP_EXIT => -- Return from trap environment - get xEPC
       -- ------------------------------------------------------------
@@ -1479,6 +1486,7 @@ begin
       trap_ctrl.exc_buf   <= (others => '0');
       trap_ctrl.irq_buf   <= (others => '0');
       trap_ctrl.env_start <= '0';
+      trap_ctrl.irq_start <= '0';
       trap_ctrl.cause     <= (others => '0');
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
@@ -1524,16 +1532,28 @@ begin
         -- interrupt *queue*: NEORV32-specific fast interrupts (FIRQ) - require manual ACK/clear --
         trap_ctrl.irq_buf(irq_firq_15_c downto irq_firq_0_c) <= (trap_ctrl.irq_buf(irq_firq_15_c downto irq_firq_0_c) or (csr.mie_firqe and firq_i)) and csr.mip_firq_nclr;
 
-        -- trap environment control --
-        if (trap_ctrl.env_start = '0') then -- no started trap handler
-          if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and -- exception triggered!
-             ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP_ENTER))) then -- fire IRQs in EXECUTE or TRAP state only to continue execution even on permanent IRQ
+        -- trap environment control for asynchronous exceptions --
+        if (trap_ctrl.irq_start = '0') then -- no started trap handler
+          if (trap_ctrl.irq_fire = '1') and -- exception triggered!
+             ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP_ENTER)) then -- fire IRQs in EXECUTE or TRAP state only to continue execution even on permanent IRQ
             trap_ctrl.cause     <= trap_ctrl.cause_nxt; -- capture trap ID for mcause csr
-            trap_ctrl.env_start <= '1';                 -- now execute engine can start trap handler
+            trap_ctrl.irq_start <= '1';  -- now execute engine can start trap handler, flag for interrupts
+          end if;
+        elsif (trap_ctrl.irq_start_ack = '1') then -- start of trap handler for irq acknowledged by execute engine 
+          trap_ctrl.irq_start <= '0';
+        end if;
+
+        -- trap environment control for synchronous exceptions -- (Higher priority, so any cause or start set above will be overridden)
+        if (trap_ctrl.env_start = '0') then -- no started trap handler
+          if (trap_ctrl.exc_fire = '1') then -- exception triggered!
+            trap_ctrl.cause     <= trap_ctrl.cause_nxt; -- capture trap ID for mcause csr
+            trap_ctrl.env_start <= '1'; -- now execute engine can start trap handler, flag for exceptions
           end if;
         elsif (trap_ctrl.env_start_ack = '1') then -- start of trap handler acknowledged by execute engine
           trap_ctrl.env_start <= '0';
+          trap_ctrl.irq_start <= '0'; -- because MIE will go to zero here, irq start is cleared to be handled some later time
         end if;
+
       end if;
     end if;
   end process trap_controller;
@@ -1982,7 +2002,7 @@ begin
           -- --------------------------------------------------------------------
           -- TRAP ENTER: write machine trap cause, PC and value register
           -- --------------------------------------------------------------------
-          if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
+          if (trap_ctrl.env_start_ack = '1') or (trap_ctrl.irq_start_ack = '1') then -- trap handler starting?
 
             -- trap entry: write mcause, mepc and mtval --
             -- > no update when in debug-mode!
@@ -2041,7 +2061,7 @@ begin
           -- mstatus: context switch
           -- --------------------------------------------------------------------
           -- ENTER: trap handler starting --
-          if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
+          if (trap_ctrl.env_start_ack = '1') or (trap_ctrl.irq_start_ack = '1') then -- trap handler starting?
             if (CPU_EXTENSION_RISCV_DEBUG = false) or -- normal trapping (debug mode NOT implemented)
                ((debug_ctrl.running = '0') and (trap_ctrl.cause(5) = '0')) then -- not IN debug mode and not ENTERING debug mode
               csr.mstatus_mie  <= '0'; -- disable interrupts
@@ -2579,7 +2599,7 @@ begin
     cnt_event(hpmcnt_event_tbranch_c) <= '1' when (execute_engine.state = BRANCHED) and (execute_engine.state_prev = BRANCH) and
                                                                                         (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') else '0'; -- taken branch (conditional)
 
-    cnt_event(hpmcnt_event_trap_c)    <= '1' when (trap_ctrl.env_start_ack = '1')                                    else '0'; -- entered trap
+    cnt_event(hpmcnt_event_trap_c)    <= '1' when (trap_ctrl.env_start_ack = '1') or (trap_ctrl.irq_start_ack = '1') else '0'; -- entered trap
     cnt_event(hpmcnt_event_illegal_c) <= '1' when (trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause = trap_iil_c) else '0'; -- illegal operation
   end generate; --/hpm_triggers
 
@@ -2613,7 +2633,7 @@ begin
             end if;
 
           when DEBUG_PENDING => -- waiting to start debug mode
-            if (trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause(5) = '1') then -- processing trap entry into debug mode
+            if (trap_ctrl.irq_start_ack = '1') and (trap_ctrl.cause(5) = '1') then -- processing trap entry into debug mode
               debug_ctrl.state <= DEBUG_ONLINE;
             end if;
 
