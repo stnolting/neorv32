@@ -192,6 +192,25 @@ __crt0_clear_bss_loop_end:
 
 
 // ************************************************************************************************
+// Call constructors
+// ************************************************************************************************
+#ifndef make_bootloader              // constructors are not supported for bootloader
+__crt0_call_constructors:
+  la   s3,  __init_array_start
+  la   s4,  __init_array_end
+
+__crt0_call_constructors_loop:
+  bge  s3,  s4, __crt0_call_constructors_loop_end
+  lw   t1, 0(s3)
+  jalr ra, 0(t1)
+  addi s3,  s3, 4
+  j    __crt0_call_constructors_loop
+
+__crt0_call_constructors_loop_end:
+#endif
+
+
+// ************************************************************************************************
 // Setup arguments and call main function
 // ************************************************************************************************
 __crt0_main_entry:
@@ -204,10 +223,28 @@ __crt0_main_exit:                    // main's "return" and "exit" will arrive h
 
 
 // ************************************************************************************************
+// Call destructors
+// ************************************************************************************************
+#ifndef make_bootloader              // destructors are not supported for bootloader
+__crt0_call_destructors:
+  la   s3,  __fini_array_start
+  la   s4,  __fini_array_end
+
+__crt0_call_destructors_loop:
+  bge  s3,  s4, __crt0_call_destructors_loop_end
+  lw   t1, 0(s3)
+  jalr ra, 0(t1)
+  addi s3,  s3, 4
+  j    __crt0_call_destructors_loop
+
+__crt0_call_destructors_loop_end:
+#endif
+
+
+// ************************************************************************************************
 // call "after main" handler (if there is any) if main really returns
 // ************************************************************************************************
 #ifndef make_bootloader              // after_main handler not supported for bootloader
-
 __crt0_main_aftermath:
   .weak __neorv32_crt0_after_main
   la   ra, __neorv32_crt0_after_main
@@ -215,7 +252,6 @@ __crt0_main_aftermath:
   jalr ra                            // execute handler with main's return code still in a0
 
 __crt0_main_aftermath_end:
-
 #endif
 
 

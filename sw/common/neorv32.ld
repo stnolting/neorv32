@@ -97,6 +97,13 @@ SECTIONS
     /* .gnu.warning sections are handled specially by elf.em.  */
     *(.gnu.warning)
 
+    KEEP (*(SORT_NONE(.init)))
+    KEEP (*(SORT_NONE(.fini)))
+    KEEP (*(SORT(.ctors.*)))
+    KEEP (*(.ctors))
+    KEEP (*(SORT(.dtors.*)))
+    KEEP (*(.dtors))
+
     /* finish section on WORD boundary */
     . = ALIGN(4);
     PROVIDE (__etext = .);
@@ -108,6 +115,25 @@ SECTIONS
   /* Second part of the actual executable: read-only data, placed right next to .text */
   .rodata : ALIGN(4)
   {
+    /* these are a list of 32-bit pointers that point to functions
+     * that are called before/after executing "main". */
+
+	/* The following defines an array with constructors, which are called
+	   from crt0.s before "main", but of course after data init / bss clear. */
+
+    PROVIDE_HIDDEN(__init_array_start = .);
+    KEEP (*(.preinit_array))
+    KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+    KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
+    PROVIDE_HIDDEN(__init_array_end = .);
+
+    /* main should never return, but if it does, the destructors are called. */
+
+    PROVIDE_HIDDEN(__fini_array_start = .);
+    KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
+    KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
+    PROVIDE_HIDDEN(__fini_array_end = .);
+
     /* constant data like strings */
     *(.rodata .rodata.* .gnu.linkonce.r.*)
     *(.rodata1)
