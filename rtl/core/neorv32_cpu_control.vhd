@@ -967,8 +967,10 @@ begin
         end if;
 
 
-      when TRAP_ENTER => -- begin trap environment; stay here for sleep mode
+      when TRAP_ENTER => -- Begin trap environment; stay here for sleep mode
       -- ------------------------------------------------------------
+        -- this also serves as additional "delay" cycle to wait for (other) potential sync. exceptions
+        -- to reach the trap controller logic (issue #325)
         if (trap_ctrl.env_start = '1') then -- trap triggered?
           execute_engine.state_nxt <= TRAP_START;
         end if;
@@ -1541,8 +1543,7 @@ begin
 
         -- trap environment control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler yet
-          if ((trap_ctrl.exc_fire = '1')) or
-             ((trap_ctrl.irq_fire = '1') and (trap_ctrl.irq_pend = '1')) then
+          if ((trap_ctrl.exc_fire = '1')) or ((trap_ctrl.irq_fire = '1') and (trap_ctrl.irq_pend = '1')) then
             trap_ctrl.env_start <= '1'; -- now execute engine can start trap handler
           end if;
         else -- trap environment ready to start
@@ -1620,8 +1621,8 @@ begin
 
     -- ----------------------------------------------------------------------------------------
     -- (re-)enter debug mode requests: basically, these are standard traps that have some
-    -- special handling - they have the highest INTERRUPT priority in order to go to debug when requested
-    -- even if other IRQs are pending right now
+    -- special handling - they have the highest INTERRUPT priority in order to go to debug
+    -- when requested even if other IRQs are pending right now
     -- ----------------------------------------------------------------------------------------
 
     -- evaluate ASYNC entry exceptions first!
