@@ -25,9 +25,9 @@
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/main/docs/figures/neorv32_processor.png)
 
 The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** that is based on the
-[RISC-V](https://riscv.org/) NEORV32 CPU.
-The project is intended as auxiliary processor in larger SoC designs or as *ready-to-go* stand-alone
-custom microcontroller that even fits into a Lattice iCE40 UltraPlus 5k low-power FPGA running at +24 MHz.
+[RISC-V](https://riscv.org/) NEORV32 CPU. The project is intended as auxiliary processor in larger SoC designs
+or as *ready-to-go* stand-alone custom microcontroller that even fits into a Lattice iCE40 UltraPlus 5k
+low-power and low-density FPGA running at +24 MHz.
 
 Special focus is paid on **execution safety** to provide defined and predictable behavior at any time.
 Therefore, the CPU ensures that all memory access are acknowledged and no invalid/malformed instructions
@@ -120,7 +120,7 @@ modules are _optional_.
 * compatible to subsets of the
 *Unprivileged ISA Specification* [(Version 2.2)](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-spec.pdf)
 and the *Privileged Architecture Specification* [(Version 1.12)](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf).
-* `machine` and `user` modes
+* `machine` and `user` privilege modes
 * implements _all_ standard RISC-V exceptions/interrupts (including MTI, MEI & MSI)
 * 16 fast interrupt request channels as NEORV32-specific extension
 
@@ -162,7 +162,7 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 
 * _true random_ number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng)) based
 on the [neoTRNG](https://github.com/stnolting/neoTRNG)
-* execute in place module ([XIP](https://stnolting.github.io/neorv32/#_execute_in_place_module_xip)) to directly execute code from SPI flash
+* execute-in-place module ([XIP](https://stnolting.github.io/neorv32/#_execute_in_place_module_xip)) to directly execute code from SPI flash
 * custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))
 for tightly-coupled custom accelerators and interfaces
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu)) for up to 1024
@@ -194,7 +194,7 @@ using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimizatio
 | `rv32imc_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 128 MHz |
 
 :bulb: An incremental list of the CPU extensions and the Processor modules found in the
-[_Data Sheet: FPGA Implementation Results_]https://stnolting.github.io/neorv32/#_fpga_implementation_results).
+[_Data Sheet: FPGA Implementation Results_](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
 
 :bulb: The [`neorv32-setups`](https://github.com/stnolting/neorv32-setups) repository provides exemplary FPGA
 setups targeting various FPGA boards and toolchains.
