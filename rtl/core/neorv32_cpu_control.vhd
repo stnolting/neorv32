@@ -1625,7 +1625,14 @@ begin
     -- when requested even if other IRQs are pending right now
     -- ----------------------------------------------------------------------------------------
 
-    -- evaluate ASYNC entry exceptions first!
+    -- hardware trigger (sync) --
+    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.exc_buf(exc_db_hw_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_db_hw_c;
+
+    -- break instruction (sync) --
+    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.exc_buf(exc_db_break_c) = '1') then
+      trap_ctrl.cause_nxt <= trap_db_break_c;
+
 
     -- external halt request (async) --
     elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.irq_buf(irq_db_halt_c) = '1') then
@@ -1634,15 +1641,6 @@ begin
     -- single stepping (async) --
     elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.irq_buf(irq_db_step_c) = '1') then
       trap_ctrl.cause_nxt <= trap_db_step_c;
-
-
-    -- hardware trigger (sync) --
-    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.exc_buf(exc_db_hw_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_db_hw_c;
-
-    -- break instruction (sync) --
-    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.exc_buf(exc_db_break_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_db_break_c;
 
     -- ----------------------------------------------------------------------------------------
     -- custom FAST interrupts (*asynchronous* exceptions)
