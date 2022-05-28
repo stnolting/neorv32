@@ -640,7 +640,7 @@ int main() {
   PRINT_STANDARD("[%i] BREAK EXC ", cnt_test);
 
   // skip on real hardware since ebreak will make problems when running this test program via gdb
-  if ((NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IS_SIM)) == 0) {
+  if (NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IS_SIM)) {
     cnt_test++;
 
     asm volatile("EBREAK");
