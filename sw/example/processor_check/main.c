@@ -638,15 +638,22 @@ int main() {
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   PRINT_STANDARD("[%i] BREAK EXC ", cnt_test);
-  cnt_test++;
 
-  asm volatile("EBREAK");
+  // skip on real hardware since ebreak will make problems when running this test program via gdb
+  if ((NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IS_SIM)) == 0) {
+    cnt_test++;
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_BREAKPOINT) {
-    test_ok();
+    asm volatile("EBREAK");
+
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_BREAKPOINT) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
   }
   else {
-    test_fail();
+    PRINT_STANDARD("<skipped>\n");
   }
 
 
