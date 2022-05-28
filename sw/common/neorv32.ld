@@ -300,6 +300,6 @@ SECTIONS
   PROVIDE(__crt0_copy_data_src_begin = LOADADDR(.data));
   PROVIDE(__crt0_copy_data_dst_begin = ADDR(.data));
   PROVIDE(__crt0_copy_data_dst_end   = ADDR(.data) + SIZEOF(.data));
-  PROVIDE(__ctr0_io_space_begin      = ORIGIN(iodev));
-  PROVIDE(__ctr0_io_space_end        = ORIGIN(iodev) + LENGTH(iodev));
+  PROVIDE(__crt0_io_space_begin      = ORIGIN(iodev));
+  PROVIDE(__crt0_io_space_end        = ORIGIN(iodev) + LENGTH(iodev));
 }
