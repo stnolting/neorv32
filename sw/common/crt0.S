@@ -45,7 +45,7 @@ _start:
 
 
 // ************************************************************************************************
-// We need to ensure interrupts are globally disabled at start. This is is required if this code
+// We need to ensure interrupts are globally disabled at start. This is required if this code
 // is part of a program uploaded by the on-chip debugger (potentionally taking control from the
 // bootloader). We setup a new stack pointer here and WE DO NOT WANT TO trap to an outdated trap
 // handler with a modified stack pointer.
@@ -76,7 +76,7 @@ __crt0_cpu_csr_init:
   csrw mtvec, x10
   csrw mepc,  x10                       // just to init mepc
 
-  csrw mstatus, zero                    // clear all control flags, also disable global IRQ
+  csrw mstatus, zero                    // clear all control flags, also disable IRQs globally
   csrw mie,     zero                    // absolutely no interrupt sources, thanks
   csrw mip,     zero                    // clear all pending interrupts
 
@@ -141,19 +141,23 @@ __crt0_reg_file_clear:
 // Reset/deactivate IO/peripheral devices
 // Devices, that are not implemented, will cause a store bus access fault
 // that is catched (but not further processed) by the dummy trap handler.
+// This can be disabled by defining 'NO_IO_RESET' before re-compiling.
 // ************************************************************************************************
 __crt0_reset_io:
   la   x8,   __crt0_io_space_begin         // start of processor-internal IO region
   la   x9,   __crt0_io_space_end           // end of processor-internal IO region
 
+// Make this opt-out so that certain modules (like the XIP module) can keep running after being configured by the bootloader
+#ifndef NO_IO_RESET
 __crt0_reset_io_loop:
   sw   zero, 0(x8)
   addi x8,   x8, 4
   bne  x8,   x9, __crt0_reset_io_loop
+#endif
 
 
 // ************************************************************************************************
-// Copy initialized .data section from ROM to RAM (byte-wise)
+// Copy initialized .data section from ROM to RAM (word-wise, section begins and ends on word boundary)
 // ************************************************************************************************
 __crt0_copy_data:
   la   x11, __crt0_copy_data_src_begin        // start of data area (copy source)
@@ -163,17 +167,17 @@ __crt0_copy_data:
 
 __crt0_copy_data_loop:
   bge  x12, x13,  __crt0_copy_data_loop_end
-  lb   x14, 0(x11)
-  sb   x14, 0(x12)
-  addi x11, x11, 1
-  addi x12, x12, 1
+  lw   x14, 0(x11)
+  sw   x14, 0(x12)
+  addi x11, x11, 4
+  addi x12, x12, 4
   j    __crt0_copy_data_loop
 
 __crt0_copy_data_loop_end:
 
 
 // ************************************************************************************************
-// Clear .bss section (byte-wise)
+// Clear .bss section (word-wise, section begins and ends on word boundary)
 // ************************************************************************************************
 __crt0_clear_bss:
   la   x14,  __crt0_bss_start
@@ -181,11 +185,30 @@ __crt0_clear_bss:
 
 __crt0_clear_bss_loop:
   bge  x14,  x15, __crt0_clear_bss_loop_end
-  sb   zero, 0(x14)
-  addi x14,  x14, 1
+  sw   zero, 0(x14)
+  addi x14,  x14, 4
   j    __crt0_clear_bss_loop
 
 __crt0_clear_bss_loop_end:
+
+
+// ************************************************************************************************
+// Call constructors
+// ************************************************************************************************
+#ifndef make_bootloader              // constructors are not supported for bootloader
+__crt0_call_constructors:
+  la   s3,  __init_array_start
+  la   s4,  __init_array_end
+
+__crt0_call_constructors_loop:
+  bge  s3,  s4, __crt0_call_constructors_loop_end
+  lw   t1, 0(s3)
+  jalr ra, 0(t1)
+  addi s3,  s3, 4
+  j    __crt0_call_constructors_loop
+
+__crt0_call_constructors_loop_end:
+#endif
 
 
 // ************************************************************************************************
@@ -201,10 +224,28 @@ __crt0_main_exit:                    // main's "return" and "exit" will arrive h
 
 
 // ************************************************************************************************
+// Call destructors
+// ************************************************************************************************
+#ifndef make_bootloader              // destructors are not supported for bootloader
+__crt0_call_destructors:
+  la   s3,  __fini_array_start
+  la   s4,  __fini_array_end
+
+__crt0_call_destructors_loop:
+  bge  s3,  s4, __crt0_call_destructors_loop_end
+  lw   t1, 0(s3)
+  jalr ra, 0(t1)
+  addi s3,  s3, 4
+  j    __crt0_call_destructors_loop
+
+__crt0_call_destructors_loop_end:
+#endif
+
+
+// ************************************************************************************************
 // call "after main" handler (if there is any) if main really returns
 // ************************************************************************************************
 #ifndef make_bootloader              // after_main handler not supported for bootloader
-
 __crt0_main_aftermath:
   .weak __neorv32_crt0_after_main
   la   ra, __neorv32_crt0_after_main
@@ -212,7 +253,6 @@ __crt0_main_aftermath:
   jalr ra                            // execute handler with main's return code still in a0
 
 __crt0_main_aftermath_end:
-
 #endif
 
 

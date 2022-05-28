@@ -105,6 +105,7 @@ entity neorv32_SystemTop_axi4lite is
     IO_PWM_NUM_CH                : natural := 4;      -- number of PWM channels to implement (0..60); 0 = disabled
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := true;   -- implement true random number generator (TRNG)?
+    IO_TRNG_FIFO                 : natural := 1;      -- TRNG fifo depth, has to be a power of two, min 1
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
     IO_CFS_CONFIG                : std_logic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
     IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
@@ -159,7 +160,7 @@ entity neorv32_SystemTop_axi4lite is
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o     : out std_logic; -- chip-select, low-active
     xip_clk_o     : out std_logic; -- serial clock
-    xip_sdi_i     : in  std_logic := 'L'; -- device data input
+    xip_sdi_i     : in  std_logic := '0'; -- device data input
     xip_sdo_o     : out std_logic; -- controller data output
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o        : out std_logic_vector(63 downto 0); -- parallel output
@@ -344,6 +345,7 @@ begin
     IO_PWM_NUM_CH                => IO_PWM_NUM_CH,      -- number of PWM channels to implement (0..60); 0 = disabled
     IO_WDT_EN                    => IO_WDT_EN,          -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => IO_TRNG_EN,         -- implement true random number generator (TRNG)?
+    IO_TRNG_FIFO                 => IO_TRNG_FIFO,       -- TRNG fifo depth, has to be a power of two, min 1
     IO_CFS_EN                    => IO_CFS_EN,          -- implement custom functions subsystem (CFS)?
     IO_CFS_CONFIG                => IO_CFS_CONFIG_INT,  -- custom CFS configuration generic
     IO_CFS_IN_SIZE               => IO_CFS_IN_SIZE,     -- size of CFS input conduit in bits

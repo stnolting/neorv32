@@ -90,12 +90,17 @@ architecture neorv32_bus_keeper_rtl of neorv32_bus_keeper is
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
+  -- timeout counter size --
+  constant cnt_width_c : natural := index_size_f(max_proc_int_response_time_c);
+
   -- controller --
   type control_t is record
     pending  : std_ulogic;
-    timeout  : std_ulogic_vector(index_size_f(max_proc_int_response_time_c) downto 0);
+    timeout  : std_ulogic_vector(cnt_width_c-1 downto 0);
     err_type : std_ulogic;
     bus_err  : std_ulogic;
+    ignore   : std_ulogic;
+    expired  : std_ulogic;
   end record;
   signal control : control_t;
 
@@ -154,25 +159,33 @@ begin
       control.bus_err  <= '0'; -- required
       control.err_type <= '-';
       control.timeout  <= (others => '-');
+      control.ignore   <= '-';
     elsif rising_edge(clk_i) then
       -- defaults --
       control.bus_err <= '0';
 
       -- access monitor: IDLE --
       if (control.pending = '0') then
-        control.timeout <= std_ulogic_vector(to_unsigned(max_proc_int_response_time_c, index_size_f(max_proc_int_response_time_c)+1));
+        control.timeout <= std_ulogic_vector(to_unsigned(max_proc_int_response_time_c-1, cnt_width_c));
+        control.ignore  <= '0';
         if (bus_rden_i = '1') or (bus_wren_i = '1') then
           control.pending <= '1';
         end if;
       -- access monitor: PENDING --
       else
-        control.timeout <= std_ulogic_vector(unsigned(control.timeout) - 1); -- countdown timer
+        -- countdown timer --
+        if (control.expired = '0') then
+          control.timeout <= std_ulogic_vector(unsigned(control.timeout) - 1);
+        end if;
+        -- bus keeper shall ignore internal timeout during this access (because it's "external") --
+        control.ignore <= control.ignore or (bus_ext_i or bus_xip_i);
+        -- response handling --
         if (bus_err_i = '1') then -- error termination by bus system
           control.err_type <= err_device_c; -- device error
           control.bus_err  <= '1';
           control.pending  <= '0';
-        elsif ((or_reduce_f(control.timeout) = '0') and (bus_ext_i = '0') and (bus_xip_i = '0')) or -- valid INTERNAL access timeout
-              (bus_tmo_i = '1') then -- external access timeout
+        elsif ((control.expired = '1') and (control.ignore = '0')) or -- valid INTERNAL access timeout
+              (bus_tmo_i = '1') then -- EXTERNAL access timeout
           control.err_type <= err_timeout_c; -- timeout error
           control.bus_err  <= '1';
           control.pending  <= '0';
@@ -184,6 +197,9 @@ begin
       end if;
     end if;
   end process keeper_control;
+
+  -- timeout counter expired? --
+  control.expired <= '1' when (or_reduce_f(control.timeout) = '0') else '0';
 
   -- signal bus error to CPU --
   err_o <= control.bus_err;

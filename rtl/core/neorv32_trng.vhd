@@ -1,7 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - True Random Number Generator (TRNG) >>                                           #
 -- # ********************************************************************************************* #
--- # This processor module instantiates the "neoTRNG" true random number generator.                #
+-- # This processor module instantiates the "neoTRNG" true random number generator. An optional    #
+-- # "random pool" FIFO can be configured using the TRNG_FIFO generic.                             #
 -- # See the neoTRNG's documentation for more information: https://github.com/stnolting/neoTRNG    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
@@ -43,6 +44,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_trng is
+  generic (
+    IO_TRNG_FIFO : natural := 1 -- RND fifo depth, has to be a power of two, min 1
+  );
   port (
     -- host access --
     clk_i  : in  std_ulogic; -- global clock line
@@ -70,6 +74,7 @@ architecture neorv32_trng_rtl of neorv32_trng is
   -- control register bits --
   constant ctrl_data_lsb_c : natural :=  0; -- r/-: Random data byte LSB
   constant ctrl_data_msb_c : natural :=  7; -- r/-: Random data byte MSB
+  constant ctrl_fifo_clr_c : natural := 28; -- -/w: Clear data FIFO (auto clears)
   constant ctrl_sim_mode_c : natural := 29; -- r/-: TRNG implemented in PRNG simulation mode
   constant ctrl_en_c       : natural := 30; -- r/w: TRNG enable
   constant ctrl_valid_c    : natural := 31; -- r/-: Output data valid
@@ -101,16 +106,29 @@ architecture neorv32_trng_rtl of neorv32_trng is
     );
   end component;
 
-  -- TRNG interface --
-  signal trng_data  : std_ulogic_vector(7 downto 0);
-  signal trng_valid : std_ulogic;
-
   -- arbiter --
-  signal enable  : std_ulogic;
-  signal valid   : std_ulogic;
-  signal rnd_reg : std_ulogic_vector(7 downto 0);
+  signal enable   : std_ulogic;
+  signal fifo_clr : std_ulogic;
+
+  -- data FIFO --
+  type fifo_t is record
+    we    : std_ulogic; -- write enable
+    re    : std_ulogic; -- read enable
+    clear : std_ulogic; -- sync reset, high-active
+    wdata : std_ulogic_vector(7 downto 0); -- write data
+    rdata : std_ulogic_vector(7 downto 0); -- read data
+    avail : std_ulogic; -- data available?
+  end record;
+  signal fifo : fifo_t;
 
 begin
+
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not (IO_TRNG_FIFO < 1) report "NEORV32 PROCESSOR CONFIG ERROR: TRNG FIFO size <IO_TRNG_FIFO> has to be >= 1." severity error;
+  assert not (is_power_of_two_f(IO_TRNG_FIFO) = false) report "NEORV32 PROCESSOR CONFIG ERROR: TRNG FIFO size <IO_TRNG_FIFO> has to be a power of two." severity error;
+  assert not (sim_mode_c = true) report "NEORV32 PROCESSOR CONFIG WARNING: TRNG uses SIMULATION mode!" severity warning;
+
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -127,34 +145,22 @@ begin
       -- host bus acknowledge --
       ack_o <= wren or rden;
 
+      -- defaults --
+      fifo_clr <= '0';
+
       -- write access --
       if (wren = '1') then
-        enable <= data_i(ctrl_en_c);
+        enable   <= data_i(ctrl_en_c);
+        fifo_clr <= data_i(ctrl_fifo_clr_c);
       end if;
 
       -- read access --
       data_o <= (others => '0');
       if (rden = '1') then
-        data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= rnd_reg;
+        data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
         data_o(ctrl_sim_mode_c) <= bool_to_ulogic_f(sim_mode_c);
         data_o(ctrl_en_c)       <= enable;
-        data_o(ctrl_valid_c)    <= valid;
-      end if;
-
-      -- sample --
-      if (trng_valid = '1') then
-        rnd_reg <= trng_data;
-      end if;
-
-      -- data valid? --
-      if (enable = '0') then -- disabled
-        valid <= '0';
-      else
-        if (trng_valid = '1') then
-          valid <= '1';
-        elsif (rden = '1') then
-          valid <= '0';
-        end if;
+        data_o(ctrl_valid_c)    <= fifo.avail;
       end if;
     end if;
   end process rw_access;
@@ -168,15 +174,48 @@ begin
       NUM_INV_START => num_inv_start_c,
       NUM_INV_INC   => num_inv_inc_c,
       NUM_INV_DELAY => num_inv_delay_c,
-      POST_PROC_EN  => true, -- post-processing enabled
+      POST_PROC_EN  => true, -- post-processing enabled!
       IS_SIM        => sim_mode_c
     )
     port map (
       clk_i    => clk_i,
       enable_i => enable,
-      data_o   => trng_data,
-      valid_o  => trng_valid
+      data_o   => fifo.wdata,
+      valid_o  => fifo.we
     );
+
+
+  -- Data FIFO ------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  rnd_pool_fifo_inst: neorv32_fifo
+  generic map (
+    FIFO_DEPTH => IO_TRNG_FIFO, -- number of fifo entries; has to be a power of two; min 1
+    FIFO_WIDTH => 8,            -- size of data elements in fifo
+    FIFO_RSYNC => false,        -- async read
+    FIFO_SAFE  => true          -- safe access
+  )
+  port map (
+    -- control --
+    clk_i   => clk_i,      -- clock, rising edge
+    rstn_i  => '1',        -- async reset, low-active
+    clear_i => fifo.clear, -- sync reset, high-active
+    level_o => open,
+    half_o  => open,
+    -- write port --
+    wdata_i => fifo.wdata, -- write data
+    we_i    => fifo.we,    -- write enable
+    free_o  => open,       -- at least one entry is free when set
+    -- read port --
+    re_i    => fifo.re,    -- read enable
+    rdata_o => fifo.rdata, -- read data
+    avail_o => fifo.avail  -- data available when set
+  );
+
+  -- fifo reset --
+  fifo.clear <= '1' when (enable = '0') or (fifo_clr = '1') else '0';
+
+  -- read access --
+  fifo.re <= '1' when (rden = '1') else '0';
 
 
 end neorv32_trng_rtl;

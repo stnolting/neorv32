@@ -59,10 +59,14 @@ include::rationale.adoc[]
 :sectnums:
 === Project Key Features
 
-* open-source and documented; including user guides to get started
-* completely described in behavioral, platform-independent VHDL (yet platform-optimized modules are provided)
-* fully synchronous design, no latches, no gated clocks
-* small hardware footprint and high operating frequency for easy integration
+* all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
+* completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
+* extensive configuration options for adapting the processor to the requirements of the application
+* highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, SoC and system level
+* aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-performance trade-off
+* optimized for high clock frequency to ease timing closure
+* from zero to _"hello world!"_ - completely open source and documented
+* easy to use even for FPGA/RISC-V starters – intended to _work out of the box_
 * **NEORV32 CPU**: 32-bit `rv32i` RISC-V CPU
 ** RISC-V compatibility: passes the official architecture tests
 ** base architecture + privileged architecture (optional) + ISA extensions (optional)

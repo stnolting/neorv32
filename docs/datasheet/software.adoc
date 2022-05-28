@@ -339,6 +339,12 @@ The `.text` and `.rodata` sections are mapped to processor's instruction memory 
 `.bss` and `heap` sections are mapped to the processor's data memory space. Finally, the `.text`, `.rodata` and `.data`
 sections are extracted and concatenated into a single file `main.bin`.
 
+.Section Alignment
+[NOTE]
+The default NEORV32 linker script aligns _all_ section so they start and end on a 32-bit (word) boundary. The default
+NEORV32 start-up code (crt0) makes use of this alignment by using word-level memory instruction to initialize the `.data`
+section and to clear the `.bss` section.
+
 
 :sectnums:
 ==== RAM Layout
@@ -374,15 +380,8 @@ using dynamic memory allocation.
 :sectnums:
 ==== C Standard Library
 
-.Constructors and Deconstructors
-[IMPORTANT]
-The NEORV32 processor is an embedded system intended for running bare-metal or RTOS applications. To simplify this setup
-explicit constructors and deconstructors are not supported by default. However, a minimal "deconstructor-alike" support is
-provided by the <<_after_main_handler>>.
-
-The NEORV32 is a processor for _embedded_ applications. Hence, it is not capable of running desktop OSs like Linux
-(at least not without emulation). Hence, the software framework relies on a "bare-metal" setup that uses **newlib**
-as default C standard library.
+The NEORV32 is a processor for _embedded_ applications, which is not capable of running desktop OSs like Linux
+(at least not without emulation). Hence, the default software framework relies on **newlib** as default C standard library.
 
 .RTOS Support
 [NOTE]
@@ -403,6 +402,11 @@ is used to implement all the standard input, output and error consoles (`STDIN`,
 [TIP]
 A simple test and demo program, which uses some of newlib's core functions (like `malloc`/`free` and `read`/`write`)
 is available in `sw/example/demo_newlib`
+
+.Constructors and Destructors
+[NOTE]
+Constructors and destructors for plain C code or for C++ applications are supported by the software framework.
+See `sw/example/hellp_cpp` for a minimal example.
 
 
 :sectnums:
@@ -447,20 +451,37 @@ The `crt0.S` start-up performs the following operations:
 [start=1]
 . Disable interrupts globally by clearing <<_mstatus>>`.mie`.
 . Initialize all integer registers `x1 - x31` (or just `x1 - x15` when using the `E` CPU extension) to a defined value.
-. Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ traps. This handler catches all traps
+. Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ exceptions.
 ** All interrupt sources are disabled and all pending interrupts are cleared.
 . Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
 during the early boot phase.
 . Clear all counter CSRs and stop auto-increment.
-. Clear IO area: Write zero to all memory-mapped registers within the IO region (`iodev` section). If certain devices have not
-been implemented, a bus access fault exception will occur. This exception is captured by the dummy trap handler.
+. **Clear IO area**: Write zero to all memory-mapped registers within the IO region (`iodev` section) resetting all IO/peripheral modules.
+This step can be disabled by the user; see note below.
+If certain devices have not been implemented, a bus access fault exception will occur, which is captured by the dummy trap handler.
 . Clear the `.bss` section defined by the linker script.
 . Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
+. Call and execute all _constructors_ (if there are any)
 . Call the application's `main` function (with _no_ arguments: `argc` = `argv` = 0).
 . If the main function returns...
 ** the return value is copied to the <<_mscratch>> CSR to allow inspection by the on-chip debugger.
+** call and execute all _destructors_ (if there are any)
 ** an optional <<_after_main_handler>> is called (if defined at all).
-** the last step the CPU does is entering endless sleep mode (using the `wfi` instruction).
+** the CPU enters sleep mode (using the `wfi` instruction) or halts in an endless loop (if `wfi` "returns").
+
+.Disabling automatic software reset of all IO/peripheral devices during executable boot
+[IMPORTANT]
+The automatic "software reset" performed by the crt0 start-up code can be manually disabled. This can be handy for certain executables,
+which are booted by a (custom) bootloader and rely on certain IO initializations performed by the bootloader. To disable the automatic
+reset of all IO/peripheral modules the `NO_IO_RESET` symbol needs to be _defined_ before compilation using the makefile's `USER_FLAGS`
+variable. Furthermore, all object files need to be recompiled using the `clean_all` target.
+Example: `$ make USER_FLAGS+=-DNO_IO_RESET clean_all exe`
+
+.Bootloader Start-Up Code
+[NOTE]
+The bootloader uses the same start-up code as any "usual" application. However, certain parts are omitted when compiling
+`crt0` for the bootloader (like calling constructors and destructors). See the `crt0` source code for more information.
+
 
 :sectnums:
 ===== After-Main Handler
@@ -491,6 +512,9 @@ void __neorv32_crt0_after_main(int32_t return_code) {
 }
 ----
 <1> Use `<RTE>` here to make clear this is a message comes from the runtime environment.
+
+[NOTE]
+The after-main handler is executed _after_ executing all destructor functions (if there are any at all).
 
 
 <<<

@@ -153,6 +153,10 @@ There is no _continuous read_ feature (i.e. a burst SPI transmission fetching se
 When using four SPI flash address bytes, the most significant 4 bits of the address are always hardwired
 to zero allowing a maximum **accessible** flash size of 256MB.
 
+[NOTE]
+The XIP module always fetches a full naturally aligned 32-bit word from the SPI flash. Any sub-word data masking
+or alignment will be performed by the CPU logic.
+
 After the SPI properties (including the amount of address bytes **and** the total amount of SPI transfer bytes)
 and XIP address mapping are configured, the actual XIP mode can be enabled by setting
 the control register's _XIP_CTRL_XIP_EN_ bit. This will enable the "transparent SPI access port" of the module and thus,

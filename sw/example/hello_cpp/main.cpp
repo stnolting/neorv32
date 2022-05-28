@@ -1,9 +1,9 @@
 // #################################################################################################
-// # << NEORV32: neorv32_trng.h - True Random Number Generator (TRNG) HW Driver >>                 #
+// # << NEORV32 - "Hello World" Demo Program >>                                                    #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -34,21 +34,74 @@
 
 
 /**********************************************************************//**
- * @file neorv32_trng.h
- * @brief True Random Number Generator (TRNG) HW driver header file.
- *
- * @note These functions should only be used if the TRNG unit was synthesized (IO_TRNG_EN = true).
+ * @file hello_cpp/main.cpp
+ * @author Gideon Zweijtzer
+ * @brief Simple 'hello world' type of demo with static C++ constructors
  **************************************************************************/
 
-#ifndef neorv32_trng_h
-#define neorv32_trng_h
+#include <neorv32.h>
 
-// prototypes
-int  neorv32_trng_available(void);
-void neorv32_trng_enable(void);
-void neorv32_trng_disable(void);
-void neorv32_trng_fifo_clear(void);
-int  neorv32_trng_get(uint8_t *data);
-int  neorv32_trng_check_sim_mode(void);
 
-#endif // neorv32_trng_h
+/**********************************************************************//**
+ * @name User configuration
+ **************************************************************************/
+/**@{*/
+/** UART BAUD rate */
+#define BAUD_RATE 19200
+/**@}*/
+
+/**********************************************************************//**
+ * DemoClass: Just a simple C++ class that holds one constant and can
+ *            be asked to print it.
+ *
+ * @note This class will only successfully reveal its ID if the
+ *       constructors are called prior to the main function.
+ **************************************************************************/
+class DemoClass
+{
+	const int identity;
+public:
+	DemoClass(int id) : identity(id) { }
+
+	void print_id(void)
+	{
+		// In order to demonstrate just how constructors are called pre-main,
+		// it is not necessary to use the C++ type streams to print something.
+		neorv32_uart0_printf("I am DemoClass with instance ID: %d\n", identity);
+	}
+};
+
+static DemoClass demo1(1);
+static DemoClass demo2(2);
+
+/**********************************************************************//**
+ * Main function; prints some fancy stuff via UART.
+ *
+ * @note This program requires the UART interface to be synthesized.
+ *
+ * @return 0 if execution was successful
+ **************************************************************************/
+int main() {
+
+  // capture all exceptions and give debug info via UART
+  // this is not required, but keeps us safe
+  neorv32_rte_setup();
+
+  // init UART at default baud rate, no parity bits, ho hw flow control
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+
+  // check available hardware extensions and compare with compiler flags
+  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
+
+  // print project logo via UART
+  neorv32_rte_print_logo();
+
+  // say hello
+  neorv32_uart0_print("Hello world! :)\n");
+
+  // print the IDs of the two statically declared instances of DemoClass
+  demo1.print_id();
+  demo2.print_id();
+
+  return 0;
+}
