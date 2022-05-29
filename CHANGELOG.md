@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 29.05.2022 | 1.7.1.9 | :bug: fixed bug in **CPU trap logic**: collision of synchronous and asynchronous exceptions; [#327](https://github.com/stnolting/neorv32/pull/327) |
 | 19.05.2022 | 1.7.1.8 | :bug: fixed bug in **XIP** address conversion logic: sub-word read accesses (half-word, byte) returned wrong data; [#320](https://github.com/stnolting/neorv32/pull/320) |
 | 17.05.2022 | 1.7.1.7 | :sparkles: add optional/configurable data FIFO to **TRNG**; new top generic `IO_TRNG_FIFO`; [#316](https://github.com/stnolting/neorv32/pull/316) |
 | 13.05.2022 | 1.7.1.6 | :bug: fixed bug in **BUSKEEPER** timeout logic; [#315](https://github.com/stnolting/neorv32/pull/315) |
