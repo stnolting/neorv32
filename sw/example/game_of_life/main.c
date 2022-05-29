@@ -143,9 +143,7 @@ int main(void) {
       for (y=0; y<NUM_CELLS_Y; y++) {
         if (trng_available) {
           while (1) {
-            int err = neorv32_trng_get(&trng_data);
-            if (err) {
-              neorv32_uart0_printf("TRNG error (%i)! Restarting TRNG...\n", err);
+            if (neorv32_trng_get(&trng_data)) {
               continue;
             }
             else {
