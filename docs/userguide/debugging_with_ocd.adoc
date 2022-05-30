@@ -249,11 +249,12 @@ Breakpoint 1, 0x00000690 in neorv32_cpu_delay_ms ()
 Continuing.
 --------------------------
 
-.BREAK instructions in your program code
+.Hardcoded EBREAK Instructions In The Program Code
 [TIP]
 If your original application code uses the BREAK instruction (for example for some OS calls/signaling) this
 instruction will cause an enter to debug mode when executed. These situation cannot be continued using gdb's
-`c` command and have to be "stepped-over" using the single-step command `s`.
+`c` nor can they be "stepped-over" using the single-step command `s`. You need to declare the `ebreak` instruction
+as breakpoint to be able to resume operation after executing it. See https://sourceware.org/pipermail/gdb/2021-January/049125.html
 
 
 :sectnums:

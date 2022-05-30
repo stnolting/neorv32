@@ -74,7 +74,7 @@ The NEORV32 project provides a set of C libraries that allows an easy usage of t
 
 [source,c]
 ----
-#include <neorv32.h> // add NEORV32 HAL and runtime libraries
+#include <neorv32.h> // add NEORV32 HAL, core and runtime libraries
 ----
 
 [cols="<3,<4,<8"]
@@ -104,10 +104,14 @@ footnote:[This driver file only represents a stub, since the real CFS drivers ar
 | `syscalls.c`        | -                      | newlib system calls
 |=======================
 
+.Core Library Documentation
+[TIP]
+The _doxygen_-based documentation of the software framework including all core libraries is available online at
+https://stnolting.github.io/neorv32/sw/files.html.
+
+.CMSIS System View Description File (SVD)
 [TIP]
 A CMSIS-SVD-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
-`sw/lib/include`. Currently, the following library files are available:
-
 
 
 <<<
@@ -398,15 +402,15 @@ C libraries like `stdio`. These stubs are available in `sw/source/syscalls.c` an
 <<_primary_universal_asynchronous_receiver_and_transmitter_uart0, UART0>>
 is used to implement all the standard input, output and error consoles (`STDIN`, `STDOUT` and `STDERR`).
 
-.Newlib Test/Demo Program
-[TIP]
-A simple test and demo program, which uses some of newlib's core functions (like `malloc`/`free` and `read`/`write`)
-is available in `sw/example/demo_newlib`
-
 .Constructors and Destructors
 [NOTE]
 Constructors and destructors for plain C code or for C++ applications are supported by the software framework.
 See `sw/example/hellp_cpp` for a minimal example.
+
+.Newlib Test/Demo Program
+[TIP]
+A simple test and demo program, which uses some of newlib's core functions (like `malloc`/`free` and `read`/`write`)
+is available in `sw/example/demo_newlib`
 
 
 :sectnums:
