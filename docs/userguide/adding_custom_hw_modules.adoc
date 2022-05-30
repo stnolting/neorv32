@@ -6,7 +6,6 @@ In resemblance to the RISC-V ISA, the NEORV32 processor was designed to ease cus
 The processor provides several predefined options to add application-specific custom hardware modules and accelerators.
 A <<_comparative_summary>> is given at the end of this section.
 
-
 .Debugging/Testing Custom Hardware Modules
 [TIP]
 Custom hardware IP modules connected via the external bus interface or integrated as CFU can be debugged "in-system" using the
@@ -102,15 +101,15 @@ chip-internal extension options:
 [cols="<1,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
-|                                 | Custom Functions Unit | Custom Functions Subsystem | Stream Link Interface  | External Bus Interface
-| **SoC location**                | CPU-internal          | processor-internal         | processor-external     | processor-external
-| **HW complexity/size**          | small                 | medium                     | unlimited              | unlimited
-| **CPU-independent operation**   | no                    | partly                     | partly                 | completely
-| **CPU interface**               | register-file access  | memory-mapped              | memory-mapped          | memory-mapped
-| **Low-level CPU access scheme** | custom instructions   | load/store                 | load/store             | load/store
-| **Random access**               | -                     | yes                        | no, only sequential    | yes
-| **Access latency**              | minimal               | low                        | low                    | medium to high
-| **External IO interfaces**      | no                    | yes, but limited           | yes                    | yes
-| **Interrupt-capable**           | no                    | yes                        | yes                    | user-defined
+|                                | Custom Functions Unit | Custom Functions Subsystem | Stream Link Interface  | External Bus Interface
+| **SoC location**               | CPU-internal          | processor-internal         | processor-external     | processor-external
+| **HW complexity/size**         | small                 | medium                     | large                  | large
+| **CPU-independent operation**  | no                    | yes                        | yes                    | yes
+| **CPU interface**              | register-file access  | memory-mapped              | memory-mapped          | memory-mapped
+| **Low-level access mechanism** | custom instructions   | load/store                 | load/store             | load/store
+| **Arbitrary accesses**         | yes                   | yes                        | no, only sequential    | yes
+| **Access latency**             | minimal               | low                        | low                    | medium to high
+| **External IO interfaces**     | no                    | yes, but limited           | yes                    | yes
+| **Interrupt-capable**          | no                    | yes                        | yes                    | user-defined
 |=======================
 
