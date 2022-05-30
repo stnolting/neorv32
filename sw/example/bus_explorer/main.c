@@ -384,6 +384,8 @@ void hexdump(void) {
   uint8_t line[16];
   uint32_t i;
 
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+
   neorv32_uart0_printf("\n");
   while(neorv32_uart0_char_received() == 0) {
 
@@ -392,10 +394,9 @@ void hexdump(void) {
     // get 16 bytes
     for (i=0; i<16; i++) {
       line[i] = neorv32_cpu_load_unsigned_byte(mem_address + i);
-    }
-
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
-      break;
+      if (neorv32_cpu_csr_read(CSR_MCAUSE) != 0) {
+        return;
+      }
     }
 
     // print 16 bytes as hexadecimal
