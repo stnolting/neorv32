@@ -59,6 +59,7 @@ void read_memory(void);
 void setup_access(void);
 void write_memory(void);
 void dump_memory(void);
+void hexdump(void);
 uint32_t hexstr_to_uint(char *buffer, uint8_t length);
 void aux_print_hex_byte(uint8_t byte);
 
@@ -114,11 +115,12 @@ int main() {
     // decode input and execute command
     if (!strcmp(buffer, "help")) {
       neorv32_uart0_printf("Available commands:\n"
-                          " help   - show this text\n"
-                          " setup  - configure memory access width (byte,half,word)\n"
-                          " read   - read from address (byte,half,word)\n"
-                          " write  - write to address (byte,half,word)\n"
-                          " dump   - dump several bytes/halfs/words from base address\n");
+                          " > help  - show this text\n"
+                          " > setup - configure memory access width (byte,half,word)\n"
+                          " > read  - read from address (byte,half,word)\n"
+                          " > write - write to address (byte,half,word)\n"
+                          " > dump  - dump several bytes/halfs/words from base address\n"
+                          " > hex   - hex dump (bytes + ASCII) from base address\n");
     }
 
     else if (!strcmp(buffer, "setup")) {
@@ -135,6 +137,10 @@ int main() {
 
     else if (!strcmp(buffer, "dump")) {
       dump_memory();
+    }
+
+    else if (!strcmp(buffer, "hex")) {
+      hexdump();
     }
 
     else {
@@ -349,6 +355,68 @@ void dump_memory(void) {
     else if (access_size == 'w') {
       mem_address += 4;
     }
+
+  }
+  neorv32_uart0_char_received_get(); // clear UART rx buffer
+  neorv32_uart0_printf("\n");
+}
+
+
+/**********************************************************************//**
+ * Make pretty hexadecimal + ASCII dump (byte-wise)
+ **************************************************************************/
+void hexdump(void) {
+
+  char terminal_buffer[16];
+
+  // enter base address
+  neorv32_uart0_printf("Enter base address (8 hex chars): 0x");
+  neorv32_uart0_scan(terminal_buffer, 8+1, 1); // 8 hex chars for address plus '\0'
+  uint32_t mem_address = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+
+  neorv32_uart0_printf("\nPress key to start dumping. Press any key to abort.\n");
+  neorv32_uart0_getc(); // wait for key
+
+  // start at 16-byte boundary
+  mem_address &= 0xfffffff0UL;
+
+  uint8_t tmp;
+  uint8_t line[16];
+  uint32_t i;
+
+  neorv32_uart0_printf("\n");
+  while(neorv32_uart0_char_received() == 0) {
+
+    neorv32_uart0_printf("0x%x |", mem_address);
+
+    // get 16 bytes
+    for (i=0; i<16; i++) {
+      line[i] = neorv32_cpu_load_unsigned_byte(mem_address + i);
+    }
+
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+      break;
+    }
+
+    // print 16 bytes as hexadecimal
+    for (i=0; i<16; i++) {
+      neorv32_uart0_putc(' ');
+      aux_print_hex_byte(line[i]);
+    }
+
+    neorv32_uart0_printf(" | ");
+
+    // print 16 bytes as ASCII
+    for (i=0; i<16; i++) {
+      tmp = line[i];
+      if ((tmp < 32) || (tmp > 126)) { // printable?
+        tmp = '.';
+      }
+      neorv32_uart0_putc((char)tmp);
+    }
+
+    neorv32_uart0_printf("\n");
+    mem_address += 16;
 
   }
   neorv32_uart0_char_received_get(); // clear UART rx buffer
