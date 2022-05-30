@@ -293,10 +293,10 @@ void neorv32_rte_print_hw_config(void) {
   int i;
   char c;
 
-  neorv32_uart0_printf("\n\n<< Processor Configuration >>\n");
+  neorv32_uart0_printf("\n\n<< NEORV32 Processor Configuration >>\n");
 
   // CPU configuration
-  neorv32_uart0_printf("\n---<< CPU Core >>---\n");
+  neorv32_uart0_printf("\n====== CPU Core ======\n");
 
   // general
   neorv32_uart0_printf("Is simulation:     "); __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM));
@@ -412,7 +412,7 @@ void neorv32_rte_print_hw_config(void) {
 
 
   // Memory configuration
-  neorv32_uart0_printf("\n\n---<< Memory System >>---\n");
+  neorv32_uart0_printf("\n\n====== Memory System ======\n");
 
   neorv32_uart0_printf("Boot configuration:  Boot ");
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {
@@ -493,7 +493,7 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // peripherals
-  neorv32_uart0_printf("\n---<< Peripherals >>---\n");
+  neorv32_uart0_printf("\n====== Peripherals ======\n");
 
   tmp = NEORV32_SYSINFO.SOC;
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_GPIO));   neorv32_uart0_printf(" GPIO\n");
