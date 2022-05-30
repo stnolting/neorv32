@@ -95,17 +95,32 @@ int main() {
                        "      and a minimal granularity of 4 bytes (PMP_MIN_GRANULARITY = 4).\n\n");
 
   neorv32_uart0_printf("NOTE: A 4-word array 'protected_var[4]' is created, which will be probed from\n"
-                       "      **machine-mode**. It provides the following access rights:\n"
-                       "      - NO_EXECUTE\n"
-                       "      - NO_WRITE\n"
-                       "      - READ\n"
-                       "      - LOCKED - also enforce access rights for machine-mode software\n\n");
+                       "      machine-mode. It provides the following access rights:\n"
+                       "      > NO_EXECUTE - no execute permission\n"
+                       "      > NO_WRITE   - no write permission\n"
+                       "      > READ       - program is allowed to read\n"
+                       "      > LOCKED     - also enforce access rights for machine-mode software\n\n");
 
 
   // show PMP configuration
   neorv32_uart0_printf("PMP hardware configuration:\n");
   neorv32_uart0_printf("> Number of regions: %u\n", neorv32_cpu_pmp_get_num_regions());
   neorv32_uart0_printf("> Min. granularity:  %u bytes (minimal region size)\n\n", neorv32_cpu_pmp_get_granularity());
+
+
+  // PMP hardware configuration sufficient?
+  uint32_t tmp;
+
+  tmp = neorv32_cpu_pmp_get_num_regions();
+  if (tmp < 2) {
+    neorv32_uart0_printf("ERROR! Insufficient PMP region! Regions required = 2; region available = %u\n", tmp);
+    return 1;
+  }
+  tmp = neorv32_cpu_pmp_get_granularity();
+  if (tmp > 4) {
+    neorv32_uart0_printf("ERROR! Insufficient PMP granularity! Granularity required = 4 bytes; granularity available = %u bytes\n", tmp);
+    return 1;
+  }
 
 
   // The "protected_var" variable will be protected: No execute and no write access, just allow read access
@@ -117,7 +132,7 @@ int main() {
 
   // any access in "region_begin <= address < region_end" will match the PMP rule
   uint32_t region_begin = (uint32_t)(&protected_var[0]);
-  uint32_t region_end   = (uint32_t)(&protected_var[4]) + 4;
+  uint32_t region_end   = (uint32_t)(&protected_var[3]) + 4;
   neorv32_uart0_printf("REGION_BEGIN = 0x%x\n", region_begin);
   neorv32_uart0_printf("REGION_END   = 0x%x\n", region_end);
 
@@ -151,24 +166,24 @@ int main() {
   neorv32_uart0_printf("\nTesting access to 'protected_var' - invalid accesses will raise an exception, which will be\n"
                        "captured by the NEORV32 runtime environment's dummy/debug handlers ('<RTE> ... </RTE>').\n\n");
 
-  neorv32_uart0_printf("Reading protected_var[0] = 0x%x\n", protected_var[0]);
-  neorv32_uart0_printf("Reading protected_var[1] = 0x%x\n", protected_var[1]);
-  neorv32_uart0_printf("Reading protected_var[2] = 0x%x\n", protected_var[2]);
-  neorv32_uart0_printf("Reading protected_var[3] = 0x%x\n\n", protected_var[3]);
+  neorv32_uart0_printf("Reading protected_var[0] @ 0x%x = 0x%x\n", (uint32_t)(&protected_var[0]), protected_var[0]);
+  neorv32_uart0_printf("Reading protected_var[1] @ 0x%x = 0x%x\n", (uint32_t)(&protected_var[1]), protected_var[1]);
+  neorv32_uart0_printf("Reading protected_var[2] @ 0x%x = 0x%x\n", (uint32_t)(&protected_var[2]), protected_var[2]);
+  neorv32_uart0_printf("Reading protected_var[3] @ 0x%x = 0x%x\n\n", (uint32_t)(&protected_var[3]), protected_var[3]);
 
-  neorv32_uart0_printf("Trying to write protected_var[0]... ");
+  neorv32_uart0_printf("Trying to write protected_var[0] @ 0x%x... \n", (uint32_t)(&protected_var[0]));
   protected_var[0] = 0; // should fail!
-  neorv32_uart0_printf("Trying to write protected_var[1]... ");
+  neorv32_uart0_printf("Trying to write protected_var[1] @ 0x%x... \n", (uint32_t)(&protected_var[1]));
   protected_var[1] = 0; // should fail!
-  neorv32_uart0_printf("Trying to write protected_var[2]... ");
+  neorv32_uart0_printf("Trying to write protected_var[2] @ 0x%x... \n", (uint32_t)(&protected_var[2]));
   protected_var[2] = 0; // should fail!
-  neorv32_uart0_printf("Trying to write protected_var[3]... ");
+  neorv32_uart0_printf("Trying to write protected_var[3] @ 0x%x... \n", (uint32_t)(&protected_var[3]));
   protected_var[3] = 0; // should fail!
 
-  neorv32_uart0_printf("\nReading again protected_var[0] = 0x%x\n", protected_var[0]);
-  neorv32_uart0_printf("Reading again protected_var[1] = 0x%x\n", protected_var[1]);
-  neorv32_uart0_printf("Reading again protected_var[2] = 0x%x\n", protected_var[2]);
-  neorv32_uart0_printf("Reading again protected_var[3] = 0x%x\n\n", protected_var[3]);
+  neorv32_uart0_printf("\nReading again protected_var[0] @ 0x%x = 0x%x\n", (uint32_t)(&protected_var[0]), protected_var[0]);
+  neorv32_uart0_printf("Reading again protected_var[1] @ 0x%x = 0x%x\n", (uint32_t)(&protected_var[1]), protected_var[1]);
+  neorv32_uart0_printf("Reading again protected_var[2] @ 0x%x = 0x%x\n", (uint32_t)(&protected_var[2]), protected_var[2]);
+  neorv32_uart0_printf("Reading again protected_var[3] @ 0x%x = 0x%x\n\n", (uint32_t)(&protected_var[3]), protected_var[3]);
 
 
   neorv32_uart0_printf("\nPMP demo program completed.\n");
