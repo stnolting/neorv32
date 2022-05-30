@@ -1535,7 +1535,7 @@ begin
         -- trap environment control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler yet
           if ((trap_ctrl.exc_fire = '1')) or -- sync. exception firing
-             -- sample IRQs in EXECUTE or TRAP_ENTER (e.g. during sleep) state only to continue execution even on permanent IRQ
+             -- trigger IRQs in EXECUTE or TRAP_ENTER (e.g. during sleep) state only to continue execution even on permanent IRQ
              ((trap_ctrl.irq_fire = '1') and ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP_ENTER))) then -- async. exception (IRQ) firing
             trap_ctrl.env_start <= '1'; -- now execute engine can start trap handler
           end if;
