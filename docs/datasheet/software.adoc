@@ -468,8 +468,9 @@ If certain devices have not been implemented, a bus access fault exception will 
 . Call and execute all _constructors_ (if there are any)
 . Call the application's `main` function (with _no_ arguments: `argc` = `argv` = 0).
 . If the main function returns...
+** interrupt are globally disabled by clearing <<_mstatus>>`.mie`.
 ** the return value is copied to the <<_mscratch>> CSR to allow inspection by the on-chip debugger.
-** call and execute all _destructors_ (if there are any)
+** call and execute all _destructors_ (if there are any).
 ** an optional <<_after_main_handler>> is called (if defined at all).
 ** the CPU enters sleep mode (using the `wfi` instruction) or halts in an endless loop (if `wfi` "returns").
 
