@@ -1,5 +1,5 @@
 /* ################################################################################################# */
-/* # << NEORV32 - crt0.S - Start-Up Code >>                                                        # */
+/* # << NEORV32 - crt0.S Start-Up Code >>                                                          # */
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
@@ -50,7 +50,7 @@ _start:
 // bootloader). We setup a new stack pointer here and WE DO NOT WANT TO trap to an outdated trap
 // handler with a modified stack pointer.
 // ************************************************************************************************
-  csrrci zero, mstatus, (1<<3) // disable global interrupt flag
+  csrrwi zero, mstatus, 0 // clear mstatus; disable global interrupt flag
 
 
 // ************************************************************************************************
@@ -72,20 +72,22 @@ __crt0_pointer_init:
 // ************************************************************************************************
 __crt0_cpu_csr_init:
 
-  la   x10,   __crt0_dummy_trap_handler // configure early-boot trap handler
+  la   x10,   __crt0_trap_handler // configure early-boot trap handler
   csrw mtvec, x10
-  csrw mepc,  x10                       // just to init mepc
+  csrw mepc,  x10                 // just to init mepc
 
-  csrw mstatus, zero                    // clear all control flags, also disable IRQs globally
-  csrw mie,     zero                    // absolutely no interrupt sources, thanks
-  csrw mip,     zero                    // clear all pending interrupts
+  li   x7, (3 << 11)              // set mpp=11 => machine-mode, clear all remaining bits,
+  csrw mstatus, x7                // also disable IRQs globally
 
-  csrw 0x320,      zero                 // stop all counters; use "mcountinhibit" literal address for lagacy toolchain compatibility
-  csrw mcounteren, zero                 // no access from less-privileged modes to counter CSRs
+  csrw mie, zero                  // disable all interrupt lines
+  csrw mip, zero                  // clear all pending interrupts
 
-  csrw mcycle,    zero                  // reset cycle counter
+  csrw 0x320,      zero           // stop all counters; use "mcountinhibit" literal address for lagacy toolchain compatibility
+  csrw mcounteren, zero           // no access from less-privileged modes to counter CSRs
+
+  csrw mcycle,    zero            // reset cycle counter
   csrw mcycleh,   zero
-  csrw minstret,  zero                  // reset instructions-retired counter
+  csrw minstret,  zero            // reset instructions-retired counter
   csrw minstreth, zero
 
 
@@ -100,7 +102,7 @@ __crt0_reg_file_clear:
   addi  x4, x0, 0
   addi  x5, x0, 0
   addi  x6, x0, 0
-  addi  x7, x0, 0
+//addi  x7, x0, 0 // implicitly initialized within crt0
 //addi  x8, x0, 0 // implicitly initialized within crt0
 //addi  x9, x0, 0 // implicitly initialized within crt0
 //addi x10, x0, 0 // implicitly initialized within crt0
@@ -140,12 +142,12 @@ __crt0_reg_file_clear:
 // ************************************************************************************************
 // Reset/deactivate IO/peripheral devices
 // Devices, that are not implemented, will cause a store bus access fault
-// that is catched (but not further processed) by the dummy trap handler.
+// that is catched (but not further processed) by the crt0 dummy trap handler.
 // This can be disabled by defining 'NO_IO_RESET' before re-compiling.
 // ************************************************************************************************
 __crt0_reset_io:
-  la   x8,   __crt0_io_space_begin         // start of processor-internal IO region
-  la   x9,   __crt0_io_space_end           // end of processor-internal IO region
+  la   x8,   __crt0_io_space_begin // start of processor-internal IO region
+  la   x9,   __crt0_io_space_end   // end of processor-internal IO region
 
 // Make this opt-out so that certain modules (like the XIP module) can keep running after being configured by the bootloader
 #ifndef NO_IO_RESET
@@ -160,10 +162,10 @@ __crt0_reset_io_loop:
 // Copy initialized .data section from ROM to RAM (word-wise, section begins and ends on word boundary)
 // ************************************************************************************************
 __crt0_copy_data:
-  la   x11, __crt0_copy_data_src_begin        // start of data area (copy source)
-  la   x12, __crt0_copy_data_dst_begin        // start of data area (copy destination)
-  beq  x11, x12, __crt0_copy_data_loop_end    // Nothing to do, if source and destination address are the same
-  la   x13, __crt0_copy_data_dst_end          // last address of destination data area
+  la   x11, __crt0_copy_data_src_begin     // start of data area (copy source)
+  la   x12, __crt0_copy_data_dst_begin     // start of data area (copy destination)
+  la   x13, __crt0_copy_data_dst_end       // last address of destination data area
+  beq  x11, x12, __crt0_copy_data_loop_end // Nothing to do, if source and destination address are the same
 
 __crt0_copy_data_loop:
   bge  x12, x13,  __crt0_copy_data_loop_end
@@ -195,7 +197,7 @@ __crt0_clear_bss_loop_end:
 // ************************************************************************************************
 // Call constructors
 // ************************************************************************************************
-#ifndef make_bootloader              // constructors are not supported for bootloader
+#ifndef make_bootloader // constructors are not supported for bootloader
 __crt0_call_constructors:
   la   s3,  __init_array_start
   la   s4,  __init_array_end
@@ -215,18 +217,19 @@ __crt0_call_constructors_loop_end:
 // Setup arguments and call main function
 // ************************************************************************************************
 __crt0_main_entry:
-  addi a0,  zero, 0                  // a0 = argc = 0
-  addi a1,  zero, 0                  // a1 = argv = 0
-  jal  ra,  main                     // call actual app's main function, this "should" not return
+  addi a0,  zero, 0       // a0 = argc = 0
+  addi a1,  zero, 0       // a1 = argv = 0
+  jal  ra,  main          // call actual app's main function
 
-__crt0_main_exit:                    // main's "return" and "exit" will arrive here
-  csrw mscratch, a0                  // backup main's return code to mscratch (for debugger)
+__crt0_main_exit:         // main's "return" and "exit" will arrive here
+  csrci mstatus, (1 << 3) // disable global IRQs (clear mstatus.mie)
+  csrw mscratch, a0       // backup main's return code to mscratch (for debugger)
 
 
 // ************************************************************************************************
 // Call destructors
 // ************************************************************************************************
-#ifndef make_bootloader              // destructors are not supported for bootloader
+#ifndef make_bootloader // destructors are not supported for bootloader
 __crt0_call_destructors:
   la   s3,  __fini_array_start
   la   s4,  __fini_array_end
@@ -243,11 +246,11 @@ __crt0_call_destructors_loop_end:
 
 
 // ************************************************************************************************
-// call "after main" handler (if there is any) if main really returns
+// Call "after main" handler (if there is any) if main really returns
 // ************************************************************************************************
 #ifndef make_bootloader              // after_main handler not supported for bootloader
 __crt0_main_aftermath:
-  .weak __neorv32_crt0_after_main
+  .weak    __neorv32_crt0_after_main
   la   ra, __neorv32_crt0_after_main
   beqz ra, __crt0_main_aftermath_end // check if an aftermath handler has been specified
   jalr ra                            // execute handler with main's return code still in a0
@@ -257,46 +260,44 @@ __crt0_main_aftermath_end:
 
 
 // ************************************************************************************************
-// go to endless sleep mode
+// Go to endless sleep mode
 // ************************************************************************************************
 __crt0_shutdown:
-  csrci mstatus, 8                   // disable global IRQs (clear mstatus.mie)
-  wfi                                // go to sleep mode
-  j .                                // endless loop
+  wfi // go to sleep mode
+  j . // endless loop
 
 
 // ************************************************************************************************
-// dummy trap handler (for exceptions & IRQs during very early boot stage)
-// does nothing but trying to move on to the next instruction
+// Dummy trap handler (for all traps during very early boot stage)
+// - does nothing but trying to move on to the next instruction
 // ************************************************************************************************
-.balign 4
-__crt0_dummy_trap_handler:
+.balign 4                                   // the trap handler has to be 32-bit aligned
+__crt0_trap_handler:
 
   addi  sp,   sp, -8
   sw    x8,   0(sp)
   sw    x9,   4(sp)
 
   csrr  x8,   mcause
-  blt   x8,   zero, __crt0_dummy_trap_handler_irq  // skip mepc modification if interrupt
+  blt   x8,   zero, __crt0_trap_handler_end // skip mepc modification if interrupt
 
   csrr  x8,   mepc
 
-__crt0_dummy_trap_handler_exc_c_check:             // is compressed instruction?
-  lh    x9,   0(x8)                                // get compressed instruction or lower 16 bits of uncompressed instruction that caused exception
-  andi  x9,   x9, 3                                // mask: isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
+__crt0_trap_handler_exc_mepc_update:
+  lh    x9,   0(x8)                         // get compressed instruction or lower 16 bits of uncompressed instruction that caused exception
+  andi  x9,   x9, 3                         // mask: isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
 
-  addi  x8,   x8, +2                               // only this for compressed instructions
-  csrw  mepc, x8                                   // set return address when compressed instruction
+  addi  x8,   x8, +2                        // mepc +2 only for compressed instructions
+  csrw  mepc, x8                            // set new return address
 
   addi  x8,   zero, 3
-  bne   x8,   x9, __crt0_dummy_trap_handler_irq    // jump if compressed instruction
+  bne   x8,   x9, __crt0_trap_handler_end   // done if compressed instruction
 
-__crt0_dummy_trap_handler_exc_uncrompressed:       // is uncompressed instruction!
   csrr  x8,   mepc
-  addi  x8,   x8, +2                               // add another 2 (making +4) for uncompressed instructions
+  addi  x8,   x8, +2                        // add another +2 to mepc (making +4) for uncompressed instructions
   csrw  mepc, x8
 
-__crt0_dummy_trap_handler_irq:
+__crt0_trap_handler_end:
   lw    x8,   0(sp)
   lw    x9,   4(sp)
   addi  sp,   sp, +8
