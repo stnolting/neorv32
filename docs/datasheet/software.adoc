@@ -33,10 +33,8 @@ files and folders is shown below:
 .Software Documentation
 [TIP]
 All core libraries and example programs are highly documented using **Doxygen**.
-See section <<Building the Software Framework Documentation>>.
 The documentation is automatically built and deployed to GitHub pages and is available online
-at https://stnolting.github.io/neorv32/sw/files.html .
-
+at https://stnolting.github.io/neorv32/sw/files.html.
 
 
 // ####################################################################################################################
@@ -49,8 +47,8 @@ build instructions on the official RISC-V GNU toolchain GitHub page: https://git
 The NEORV32 implements a 32-bit RISC-V architecture and uses a 32-bit integer and soft-float ABI by default.
 Make sure the toolchain / toolchain build is configured accordingly.
 
-* MARCH = `rv32i`
-* MABI = `ilp32`
+* `MARCH=rv32i`
+* `MABI=ilp32`
 
 Alternatively, you can download my prebuilt `rv32i/e` toolchains for 64-bit x86 Linux from: https://github.com/stnolting/riscv-gcc-prebuilt
 
@@ -60,7 +58,6 @@ using makefile flags at any time.
 [TIP]
 More information regarding the toolchain (building from scratch or downloading the prebuilt ones)
 can be found in the user guides' section https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup[Software Toolchain Setup].
-
 
 
 <<<
@@ -256,7 +253,6 @@ The following default compiler flags are used for compiling an application. Thes
 | `-falign-loops=4`
 | `-falign-jumps=4`
 |=======================
-
 
 
 <<<
@@ -468,7 +464,7 @@ If certain devices have not been implemented, a bus access fault exception will 
 . Call and execute all _constructors_ (if there are any)
 . Call the application's `main` function (with _no_ arguments: `argc` = `argv` = 0).
 . If the main function returns...
-** interrupt are globally disabled by clearing <<_mstatus>>`.mie`.
+** interrupts are globally disabled by clearing <<_mstatus>>`.mie`.
 ** the return value is copied to the <<_mscratch>> CSR to allow inspection by the on-chip debugger.
 ** call and execute all _destructors_ (if there are any).
 ** an optional <<_after_main_handler>> is called (if defined at all).
@@ -526,7 +522,6 @@ The after-main handler is executed _after_ executing all destructor functions (i
 // ####################################################################################################################
 
 include::software_bootloader.adoc[]
-
 
 
 <<<
