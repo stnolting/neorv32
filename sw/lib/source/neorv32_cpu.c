@@ -676,3 +676,19 @@ uint32_t neorv32_cpu_cnt_get_size(void) {
   return size;
 }
 
+
+/**********************************************************************//**
+ * Switch from privilege mode MACHINE to privilege mode USER.
+ *
+ * @warning This function requires the U ISA extension to be implemented.
+ **************************************************************************/
+void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
+
+  // make sure to use NO registers in here! -> naked
+
+  asm volatile ("csrw  mepc, ra          \n" // move return address to mepc so we can return using "mret". also, we can now use ra as temp register
+                "li    ra, %[input_imm]  \n" // bit mask to clear the two MPP bits
+                "csrrc zero, mstatus, ra \n" // clear MPP bits -> MPP=u-mode
+                "mret                    \n" // return and switch to user mode
+                :  : [input_imm] "i" ((1 << CSR_MSTATUS_MPP_H) | (1 << CSR_MSTATUS_MPP_L)));
+}
