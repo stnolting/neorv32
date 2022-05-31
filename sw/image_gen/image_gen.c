@@ -100,6 +100,19 @@ int main(int argc, char *argv[]) {
 
 
 // ------------------------------------------------------------
+// Try to find out targeted CPU configuration
+// via MARCH environment variable
+// ------------------------------------------------------------
+  char string_march[64] = "default";
+  char *envvar_march = "MARCH";
+  if (getenv(envvar_march)) {
+    if (snprintf(string_march, 64, "%s", getenv(envvar_march)) >= 64){
+      strcpy(string_march, "default");
+    }
+  }
+
+
+// ------------------------------------------------------------
 // Get size of application (in bytes)
 // ------------------------------------------------------------
   fseek(input, 0L, SEEK_END);
@@ -112,7 +125,7 @@ int main(int argc, char *argv[]) {
 
 
 // ------------------------------------------------------------
-// Generate BINARY executable (with header!!!) for bootloader upload
+// Generate BINARY executable (with header!) for bootloader upload
 // ------------------------------------------------------------
   if (option == 1) {
 
@@ -176,14 +189,15 @@ int main(int argc, char *argv[]) {
 
 
 // ------------------------------------------------------------
-// Generate APPLICATION's executable memory init file (no header!!!)
+// Generate APPLICATION's executable memory init file (no header!)
 // ------------------------------------------------------------
   if (option == 2) {
 
-	// header
+	  // header
     sprintf(tmp_string, "-- The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
 	 					            "-- Auto-generated memory init file (for APPLICATION) from source file <%s/%s>\n"
 	 					            "-- Size: %lu bytes\n"
+	 					            "-- MARCH: %s\n"
 						            "\n"
 						            "library ieee;\n"
 						            "use ieee.std_logic_1164.all;\n"
@@ -193,10 +207,10 @@ int main(int argc, char *argv[]) {
 						            "\n"
 						            "package neorv32_application_image is\n"
 						            "\n"
-						            "  constant application_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size);
+						            "  constant application_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, string_march);
     fputs(tmp_string, output);
 
-	// data
+	  // data
     buffer[0] = 0;
     buffer[1] = 0;
     buffer[2] = 0;
@@ -240,7 +254,7 @@ int main(int argc, char *argv[]) {
       printf("Unexpected input file end!\n");
     }
 
-	// end
+	  // end
     sprintf(tmp_string, "  );\n"
 						            "\n"
 						            "end neorv32_application_image;\n");
@@ -249,14 +263,15 @@ int main(int argc, char *argv[]) {
 
 
 // ------------------------------------------------------------
-// Generate BOOTLOADER's executable memory init file (no header!!!)
+// Generate BOOTLOADER's executable memory init file (no header!)
 // ------------------------------------------------------------
   if (option == 3) {
 
-	// header
+	  // header
     sprintf(tmp_string, "-- The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
 	 					            "-- Auto-generated memory init file (for BOOTLOADER) from source file <%s/%s>\n"
 	 					            "-- Size: %lu bytes\n"
+	 					            "-- MARCH: %s\n"
 						            "\n"
 						            "library ieee;\n"
 						            "use ieee.std_logic_1164.all;\n"
@@ -266,7 +281,7 @@ int main(int argc, char *argv[]) {
 						            "\n"
 						            "package neorv32_bootloader_image is\n"
 						            "\n"
-						            "  constant bootloader_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size);
+						            "  constant bootloader_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, string_march);
     fputs(tmp_string, output);
 
     // data
@@ -313,7 +328,7 @@ int main(int argc, char *argv[]) {
       printf("Unexpected input file end!\n");
     }
 
-	// end
+	  // end
     sprintf(tmp_string, "  );\n"
 						            "\n"
 						            "end neorv32_bootloader_image;\n");
@@ -342,7 +357,6 @@ int main(int argc, char *argv[]) {
       fputs(tmp_string, output);
     }
   }
-
 
   fclose(input);
   fclose(output);
