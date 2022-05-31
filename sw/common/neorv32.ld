@@ -297,9 +297,9 @@ SECTIONS
   PROVIDE(__crt0_stack_begin         = (ORIGIN(ram) + LENGTH(ram)) - 4);
   PROVIDE(__crt0_bss_start           = __BSS_START__);
   PROVIDE(__crt0_bss_end             = __BSS_END__);
-  PROVIDE(__crt0_copy_data_src_begin = __etext + SIZEOF(.rodata));
-  PROVIDE(__crt0_copy_data_dst_begin = __DATA_BEGIN__);
-  PROVIDE(__crt0_copy_data_dst_end   = __DATA_BEGIN__ + SIZEOF(.data));
+  PROVIDE(__crt0_copy_data_src_begin = LOADADDR(.data));
+  PROVIDE(__crt0_copy_data_dst_begin = ADDR(.data));
+  PROVIDE(__crt0_copy_data_dst_end   = ADDR(.data) + SIZEOF(.data));
   PROVIDE(__crt0_io_space_begin      = ORIGIN(iodev));
   PROVIDE(__crt0_io_space_end        = ORIGIN(iodev) + LENGTH(iodev));
 }
