@@ -279,7 +279,7 @@ This overview provides some *quick links* to the most important sections of the
 
 ### :floppy_disk: Software Overview
 
-* [Example Programs](https://github.com/stnolting/neorv32/tree/main/sw/example) - test program execution on your setup
+* [Example Programs](https://github.com/stnolting/neorv32/tree/main/sw/example) - examples how to use each of the processor modules
 * [Core Libraries](https://stnolting.github.io/neorv32/#_core_libraries) - high-level functions for accessing the processor's peripherals
   * [Software Framework Documentation](https://stnolting.github.io/neorv32/sw/files.html) - _doxygen_-based documentation
 * [Application Makefiles](https://stnolting.github.io/neorv32/#_application_makefile) - turning _your_ application into an executable
