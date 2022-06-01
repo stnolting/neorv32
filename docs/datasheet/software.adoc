@@ -36,6 +36,11 @@ All core libraries and example programs are highly documented using **Doxygen**.
 The documentation is automatically built and deployed to GitHub pages and is available online
 at https://stnolting.github.io/neorv32/sw/files.html.
 
+.Example Programs
+[TIP]
+A collection of annotated example programs, which show how to use certain CPU functions
+and peripheral/IO modules, can be found in `sw/example`.
+
 
 // ####################################################################################################################
 :sectnums:
