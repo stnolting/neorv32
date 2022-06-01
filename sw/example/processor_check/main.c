@@ -247,7 +247,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   PRINT_STANDARD("[%i] Setup HPM events ", cnt_test);
 
-  num_hpm_cnts_global = neorv32_cpu_hpm_get_counters();
+  num_hpm_cnts_global = neorv32_cpu_hpm_get_num_counters();
 
   if (num_hpm_cnts_global != 0) {
     cnt_test++;

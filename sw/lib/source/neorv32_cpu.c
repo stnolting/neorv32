@@ -515,7 +515,7 @@ static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data) {
  *
  * @return Returns number of available HPM counters (0..29).
  **************************************************************************/
-uint32_t neorv32_cpu_hpm_get_counters(void) {
+uint32_t neorv32_cpu_hpm_get_num_counters(void) {
 
   // HPMs implemented at all?
   if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIHPM)) == 0) {

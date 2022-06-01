@@ -392,7 +392,7 @@ void neorv32_rte_print_hw_config(void) {
 
   // check hardware performance monitors
   neorv32_uart0_printf("\nHW Perf. Monitors: ");
-  uint32_t hpm_num = neorv32_cpu_hpm_get_counters();
+  uint32_t hpm_num = neorv32_cpu_hpm_get_num_counters();
   if (hpm_num != 0) {
     neorv32_uart0_printf("%u counter(s), %u bit", hpm_num, neorv32_cpu_hpm_get_size());
   }

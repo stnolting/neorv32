@@ -167,7 +167,7 @@ portable_init(core_portable *p, int *argc, char *argv[])
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
-  num_hpm_cnts_global = neorv32_cpu_hpm_get_counters();
+  num_hpm_cnts_global = neorv32_cpu_hpm_get_num_counters();
 
   // try to setup as many HPMs as possible
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_CIR);

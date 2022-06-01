@@ -77,7 +77,7 @@ int main() {
   }
 
   // check if at least one HPM counter is implemented
-  if (neorv32_cpu_hpm_get_counters() == 0) {
+  if (neorv32_cpu_hpm_get_num_counters() == 0) {
     neorv32_uart0_printf("ERROR! No HPM counters implemented!\n");
     return 1;
   }
@@ -89,7 +89,7 @@ int main() {
 
 
   // show HPM hardware configuration
-  uint32_t hpm_num = neorv32_cpu_hpm_get_counters();
+  uint32_t hpm_num = neorv32_cpu_hpm_get_num_counters();
   uint32_t hpm_width = neorv32_cpu_hpm_get_size();
   neorv32_uart0_printf("Check: %u HPM counters detected, each %u bits wide\n", hpm_num, hpm_width);
 
@@ -152,7 +152,7 @@ int main() {
     neorv32_uart0_printf(" > An exception (environment call) handled by the RTE: ");
     asm volatile ("ecall"); // environment call
     neorv32_uart0_printf(" > An invalid instruction handled by the RTE: ");
-    asm volatile ("csrwi marchid, 1"); // illegal instruction (writing to read-only CSR
+    asm volatile ("csrwi marchid, 1"); // illegal instruction (writing to read-only CSR)
   }
 
 
