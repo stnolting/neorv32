@@ -203,9 +203,17 @@ begin
   -- supported (and acknowledged) by this example. Sub-word write access will not alter any CFS register state and will cause
   -- a "bus store access" exception (with a "Device Timeout" qualifier as not ACK is generated in that case).
 
-  host_access: process(clk_i)
+  host_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then -- synchronous interface for read and write accesses
+    if (rstn_i = '0') then
+      cfs_reg_wr(0) <= (others => '0');
+      cfs_reg_wr(1) <= (others => '0');
+      cfs_reg_wr(2) <= (others => '0');
+      cfs_reg_wr(3) <= (others => '0');
+      --
+      ack_o  <= '-'; -- no actual reset required
+      data_o <= (others => '-'); -- no actual reset required
+    elsif rising_edge(clk_i) then -- synchronous interface for read and write accesses
       -- transfer/access acknowledge --
       -- default: required for the CPU to check the CFS is answering a bus read OR write request;
       -- all read and write accesses (to any cfs_reg, even if there is no according physical register implemented) will succeed.
