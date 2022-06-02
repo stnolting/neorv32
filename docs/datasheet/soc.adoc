@@ -1362,8 +1362,8 @@ in this scenario. It is pre-initialized (by the bitstream) with the actual appli
 
 In contrast, boot scenario **2b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_). In this scenario the
 system designer is responsible for providing an initialized external memory that contains the actual application to be executed.
-If the external is not already initialized after reset, a simple ROM containing a "polling loop" can be implemented that is
-exited as soon as the application logic has finished initializing the memory with the acutal application code.
+If the external memory is not already initialized after reset, a simple ROM containing a "polling loop" can be implemented that is
+exited as soon as the application logic has finished initializing the memory with the actual application code.
 
 
 
@@ -1372,23 +1372,17 @@ exited as soon as the application logic has finished initializing the memory wit
 :sectnums:
 === Processor-Internal Modules
 
-Basically, the processor is a SoC consisting of the NEORV32 CPU, peripheral/IO devices, embedded
+Basically, the NEORV32 processor is a SoC consisting of the NEORV32 CPU, peripheral/IO devices, embedded
 memories, an external memory interface and a bus infrastructure to interconnect all units. Additionally, the
 system implements an internal reset generator and a global clock generator/divider.
 
 
 **Internal Reset Generator**
 
-[IMPORTANT]
-Most processor-internal modules - except for the CPU and the watchdog timer - do not have a dedicated
-reset signal. However, all devices can be reset by software by clearing the corresponding unit's control
-register. The automatically included application start-up code (`crt0.S`) will perform a software-reset of all
-modules to ensure a clean system reset state. This feature can be manually deactivated if required. See section
-<<_start_up_code_crt0>> for more information.
-
-The hardware reset signal of the processor can either be triggered via the external reset pin (`rstn_i`, low-active),
-by the internal watchdog timer (if implemented) or by the on-chip debugger. The external reset signal `rstn_i`
-is extended to be active for at least 4 cycles when triggered.
+The internal reset generator is responsible for converting controlling the processor-global system reset.
+This system reset is either triggered via the external reset pin (`rstn_i`, low-active), by the internal
+watchdog timer (if implemented) or by the on-chip debugger. If any of those sources issues an active reset
+the system reset is activated for at least 4 cycles.
 
 
 **Internal Clock Divider**
@@ -1436,21 +1430,23 @@ be written with a byte-wide granularity.
 
 .Unimplemented Modules
 [NOTE]
-When accessing an IO device that hast not been implemented (via the according generic), a
-load/store access fault exception is triggered.
+When accessing an IO device that hast not been implemented (disabled via the according generic), a
+load or store access fault exception is triggered.
 
 .Module Reset
 [NOTE]
-Most of the IO devices do not have a dedicated hardware reset at all. Instead, the devices are reset via software by
-writing zero to the unit's control register. A general software-based reset of **all** IO/peripheral devices is done by the
-application start-up code `crt0.S`. This feature can be manually deactivated if required. See section
-<<_start_up_code_crt0>> for more information.
+All processor-internal modules provide a dedicated hardware reset, which can be triggered by the external reset
+signal, the watchdog timer or the on-chip debugger. When active, the system-wide reset will ensure that all
+module interface register (like the control register) are reset to all-zero. Software can trigger a module reset
+by clearing the enable bit of the module's control register.
 
+.Software Access
 [TIP]
-You should use the provided core software library to interact with the peripheral devices. This
+Use the provided <<_core_libraries>> to interact with the peripheral devices. This
 prevents incompatibilities with future versions, since the hardware driver functions handle all the
 register and register bit accesses.
 
+.CMSIS System Description View (SV)
 [TIP]
 A CMSIS-SVD-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
 
