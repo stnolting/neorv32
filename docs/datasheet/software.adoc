@@ -454,10 +454,11 @@ and placed right before the actual application code so it gets executed right af
 The `crt0.S` start-up performs the following operations:
 
 [start=1]
-. Disable interrupts globally by clearing <<_mstatus>>`.mie`.
-. Initialize all integer registers `x1 - x31` (or just `x1 - x15` when using the `E` CPU extension) to a defined value.
+. Disable interrupts globally by clearing <<_mstatus>> (including `mie`).
+. Initialize all integer registers `x1 - x31` (or just `x1 - x15` when using the `E` CPU extension is enabled) to a defined value.
 . Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ exceptions. This is used for the very early boot
 phase where the application might not provide a trap handling yet.
+** Set <<_mstatus>>`.mpp` to `11`; previous mode is machine mode.
 ** All interrupt sources are disabled and all pending interrupts are cleared.
 . Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
 during the early boot phase.
