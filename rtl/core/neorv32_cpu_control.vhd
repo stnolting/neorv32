@@ -2594,6 +2594,11 @@ begin
     cnt_event(hpmcnt_event_illegal_c) <= '1' when (trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause = trap_iil_c) else '0'; -- illegal operation
   end generate; --/hpm_triggers
 
+  hpm_triggers_none:
+  if (HPM_NUM_CNTS = 0) generate
+    cnt_event <= (others => '0');
+  end generate; --/hpm_triggers_none
+
 
 -- ****************************************************************************************************************************
 -- CPU Debug Mode (Part of the On-Chip Debugger)
