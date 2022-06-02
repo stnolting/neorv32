@@ -1265,7 +1265,8 @@ enum NEORV32_WDT_CTRL_enum {
   WDT_CTRL_FORCE    =  7, /**< WDT control register(7) (-/w): Force WDT action, auto-clears */
   WDT_CTRL_LOCK     =  8, /**< WDT control register(8) (r/w): Lock write access to control register, clears on reset (HW or WDT) only */
   WDT_CTRL_DBEN     =  9, /**< WDT control register(9) (r/w): Allow WDT to continue operation even when in debug mode */
-  WDT_CTRL_HALF     = 10  /**< WDT control register(10) (r/-): Set if at least half of the max. timeout counter value has been reached */
+  WDT_CTRL_HALF     = 10, /**< WDT control register(10) (r/-): Set if at least half of the max. timeout counter value has been reached */
+  WDT_CTRL_PAUSE    = 11  /**< WDT control register(11) (r/w): Pause WDT when CPU is in sleep mode */
 };
 /**@}*/
 
