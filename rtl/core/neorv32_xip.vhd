@@ -183,15 +183,13 @@ begin
   ctrl_rw_access : process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl                    <= (others => '-');
-      ctrl(ctrl_enable_c)     <= '0'; -- required
-      ctrl(ctrl_xip_enable_c) <= '0'; -- required
-      spi_data_lo             <= (others => '-');
-      spi_data_hi             <= (others => '-');
-      spi_trigger             <= '-';
+      ctrl        <= (others => '0');
+      spi_data_lo <= (others => '-');
+      spi_data_hi <= (others => '-');
+      spi_trigger <= '-';
       --
-      ct_data_o               <= (others => '-');
-      ct_ack_o                <= '-';
+      ct_data_o   <= (others => '-');
+      ct_ack_o    <= '-';
     elsif rising_edge(clk_i) then
       -- access acknowledge --
       ct_ack_o <= ct_wren or ct_rden;
