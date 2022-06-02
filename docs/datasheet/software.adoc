@@ -456,32 +456,22 @@ The `crt0.S` start-up performs the following operations:
 [start=1]
 . Disable interrupts globally by clearing <<_mstatus>>`.mie`.
 . Initialize all integer registers `x1 - x31` (or just `x1 - x15` when using the `E` CPU extension) to a defined value.
-. Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ exceptions.
+. Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ exceptions. This is used for the very early boot
+phase where the application might not provide a trap handling yet.
 ** All interrupt sources are disabled and all pending interrupts are cleared.
 . Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
 during the early boot phase.
 . Clear all counter CSRs and stop auto-increment.
-. **Clear IO area**: Write zero to all memory-mapped registers within the IO region (`iodev` section) resetting all IO/peripheral modules.
-This step can be disabled by the user; see note below.
-If certain devices have not been implemented, a bus access fault exception will occur, which is captured by the dummy trap handler.
 . Clear the `.bss` section defined by the linker script.
 . Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
 . Call and execute all _constructors_ (if there are any)
-. Call the application's `main` function (with _no_ arguments: `argc` = `argv` = 0).
-. If the main function returns...
+. Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
+. If `main` returns:
 ** interrupts are globally disabled by clearing <<_mstatus>>`.mie`.
 ** the return value is copied to the <<_mscratch>> CSR to allow inspection by the on-chip debugger.
 ** call and execute all _destructors_ (if there are any).
 ** an optional <<_after_main_handler>> is called (if defined at all).
-** the CPU enters sleep mode (using the `wfi` instruction) or halts in an endless loop (if `wfi` "returns").
-
-.Disabling automatic software reset of all IO/peripheral devices during executable boot
-[IMPORTANT]
-The automatic "software reset" performed by the crt0 start-up code can be manually disabled. This can be handy for certain executables,
-which are booted by a (custom) bootloader and rely on certain IO initializations performed by the bootloader. To disable the automatic
-reset of all IO/peripheral modules the `NO_IO_RESET` symbol needs to be _defined_ before compilation using the makefile's `USER_FLAGS`
-variable. Furthermore, all object files need to be recompiled using the `clean_all` target.
-Example: `$ make USER_FLAGS+=-DNO_IO_RESET clean_all exe`
+** the CPU enters sleep mode (using the `wfi` instruction) or remains in an endless loop (if `wfi` "returns").
 
 .Bootloader Start-Up Code
 [NOTE]
