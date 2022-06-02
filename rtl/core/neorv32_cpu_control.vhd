@@ -236,7 +236,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     exc_fire      : std_ulogic; -- set if there is a valid source in the exception buffer
     irq_buf       : std_ulogic_vector(irq_width_c-1 downto 0);
     irq_fire      : std_ulogic; -- set if there is a valid source in the interrupt buffer
-    irq_pend      : std_ulogic; -- pending IRQ trigger
     cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR
     cause_nxt     : std_ulogic_vector(6 downto 0);
     db_irq_fire   : std_ulogic; -- set if there is a valid IRQ source in the "enter debug mode" trap buffer
@@ -1487,7 +1486,6 @@ begin
     if (rstn_i = '0') then
       trap_ctrl.exc_buf   <= (others => '0');
       trap_ctrl.irq_buf   <= (others => '0');
-      trap_ctrl.irq_pend  <= '0';
       trap_ctrl.env_start <= '0';
       trap_ctrl.cause     <= (others => '0');
     elsif rising_edge(clk_i) then
@@ -1534,17 +1532,11 @@ begin
 
         -- ----------------------------------------------------------
 
-        -- buffer IRQs until we have evaluated any potential sync. exceptions (issue #325) --
-        if (trap_ctrl.env_start_ack = '1') then -- trap handling started - no pending IRQs anymore (at least not NOW)
-          trap_ctrl.irq_pend <= '0';
-        elsif (execute_engine.state = EXECUTE) or (execute_engine.state = TRAP_ENTER) then
-          -- sample IRQs in EXECUTE or TRAP_ENTER (e.g. during sleep) state only to continue execution even on permanent IRQ
-          trap_ctrl.irq_pend <= trap_ctrl.irq_fire;
-        end if;
-
         -- trap environment control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler yet
-          if ((trap_ctrl.exc_fire = '1')) or ((trap_ctrl.irq_fire = '1') and (trap_ctrl.irq_pend = '1')) then
+          if ((trap_ctrl.exc_fire = '1')) or -- sync. exception firing
+             -- trigger IRQs in EXECUTE or TRAP_ENTER (e.g. during sleep) state only to continue execution even on permanent IRQ
+             ((trap_ctrl.irq_fire = '1') and ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP_ENTER))) then -- async. exception (IRQ) firing
             trap_ctrl.env_start <= '1'; -- now execute engine can start trap handler
           end if;
         else -- trap environment ready to start
