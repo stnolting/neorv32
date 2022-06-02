@@ -48,7 +48,7 @@
 static uint32_t __neorv32_xirq_vector_lut[32] __attribute__((unused)); // trap handler vector table
 
 // private functions
-static void __attribute__((aligned(16))) __neorv32_xirq_core(void);
+static void __neorv32_xirq_core(void);
 static void __neorv32_xirq_dummy_handler(void);
 
 
@@ -79,6 +79,7 @@ int neorv32_xirq_setup(void) {
 
   NEORV32_XIRQ.IER = 0; // disable all input channels
   NEORV32_XIRQ.IPR = 0; // clear all pending IRQs
+  NEORV32_XIRQ.SCR = 0; // acknowledge (clear) XIRQ interrupt
 
   int i;
   for (i=0; i<32; i++) {
@@ -230,7 +231,7 @@ int neorv32_xirq_uninstall(uint8_t ch) {
  * This is the actual second-level (F)IRQ handler for the XIRQ. It will
  * call the previously installed handler if an XIRQ fires.
  **************************************************************************/
-static void __attribute__((aligned(16))) __neorv32_xirq_core(void) {
+static void __neorv32_xirq_core(void) {
 
   register uint32_t src = NEORV32_XIRQ.SCR; // get IRQ source (with highest priority)
 

@@ -93,7 +93,7 @@ int neorv32_xip_init(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) {
   
   NEORV32_XIP.CTRL = ctrl;
 
-  // send 64 dummy clocks
+  // send 64 SPI dummy clocks
   NEORV32_XIP.DATA_LO = 0;
   NEORV32_XIP.DATA_HI = 0; // trigger SPI transfer
 
@@ -125,7 +125,6 @@ int neorv32_xip_start(uint8_t abytes, uint32_t page_base) {
     return 1;
   }
   page_base >>= 28;
-
 
   uint32_t ctrl = NEORV32_XIP.CTRL;
 
@@ -204,7 +203,7 @@ int neorv32_xip_spi_trans(uint8_t nbytes, uint64_t *rtx_data) {
   NEORV32_XIP.DATA_HI = data.uint32[1]; // trigger SPI transfer
 
   // wait for transfer to complete
-  while(NEORV32_XIP.CTRL & (1 << XIP_CTRL_PHY_BUSY));
+  while (NEORV32_XIP.CTRL & (1 << XIP_CTRL_PHY_BUSY));
 
   data.uint32[0] = NEORV32_XIP.DATA_LO;
   data.uint32[1] = 0; // RX data is always 32-bit
