@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -47,6 +47,7 @@ entity neorv32_twi is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
+    rstn_i      : in  std_ulogic; -- global reset line, low-active
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
@@ -123,9 +124,13 @@ begin
 
   -- Read/Write Access ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(clk_i)
+  rw_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      ctrl   <= (others => '0');
+      ack_o  <= '-';
+      data_o <= (others => '-');
+    elsif rising_edge(clk_i) then
       ack_o <= rden or wren;
       -- write access --
       if (wren = '1') then
@@ -261,6 +266,7 @@ begin
           end if;
 
         when others => -- "0--" OFFLINE: TWI deactivated
+          rtx_sreg    <= (others => '0');
           twi_sda_out <= '1';
           twi_scl_out <= '1';
           arbiter(1 downto 0) <= "00"; -- stay here, go to idle when activated
