@@ -153,7 +153,7 @@ begin
   ctrl_engine_fsm_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl.state     <= S_CACHE_CLEAR;
+      ctrl.state     <= S_CACHE_CLEAR; -- to reset cache information memory, which does not have an explicit reset
       ctrl.re_buf    <= '0';
       ctrl.clear_buf <= '0';
       ctrl.addr_reg  <= (others => '-');
