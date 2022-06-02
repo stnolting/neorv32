@@ -68,7 +68,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070200"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070201"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1660,9 +1660,6 @@ package neorv32_package is
   -- Component: Watchdog Timer (WDT) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_wdt
-    generic (
-      DEBUG_EN : boolean -- CPU debug mode implemented?
-    );
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
@@ -1673,8 +1670,9 @@ package neorv32_package is
       data_i      : in  std_ulogic_vector(31 downto 0); -- data in
       data_o      : out std_ulogic_vector(31 downto 0); -- data out
       ack_o       : out std_ulogic; -- transfer acknowledge
-      -- CPU in debug mode? --
-      cpu_debug_i : in  std_ulogic;
+      -- CPU status --
+      cpu_debug_i : in  std_ulogic; -- CPU is in debug mode
+      cpu_sleep_i : in  std_ulogic; -- CPU is in sleep mode
       -- clock generator --
       clkgen_en_o : out std_ulogic; -- enable clock generator
       clkgen_i    : in  std_ulogic_vector(07 downto 0);

@@ -268,6 +268,14 @@ architecture neorv32_top_rtl of neorv32_top is
   signal gptmr_cg_en  : std_ulogic;
   signal xip_cg_en    : std_ulogic;
 
+  -- CPU status --
+  type cpu_status_t is record
+    debug : std_ulogic; -- set when in debug mode
+    priv  : std_ulogic; -- set when in privileged machine mode
+    sleep : std_ulogic; -- set when in sleep mode
+  end record;
+  signal cpu_s : cpu_status_t;
+
   -- bus interface - instruction fetch --
   type bus_i_interface_t is record
     addr  : std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
@@ -363,8 +371,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal xip_access  : std_ulogic;
   signal xip_enable  : std_ulogic;
   signal xip_page    : std_ulogic_vector(3 downto 0);
-  signal debug_mode  : std_ulogic;
-  signal priv_mode   : std_ulogic;
 
 begin
 
@@ -420,6 +426,11 @@ begin
 
   -- on-chip debugger --
   assert not (ON_CHIP_DEBUGGER_EN = true) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD)." severity note;
+
+
+-- ****************************************************************************************************************************
+-- Clock/Reset System
+-- ****************************************************************************************************************************
 
 
   -- Reset Generator ------------------------------------------------------------------------
@@ -487,6 +498,11 @@ begin
   clk_gen_en(9) <= xip_cg_en;
 
 
+-- ****************************************************************************************************************************
+-- CPU Core Complex
+-- ****************************************************************************************************************************
+
+
   -- CPU Core -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_inst: neorv32_cpu
@@ -525,9 +541,9 @@ begin
     -- global control --
     clk_i         => clk_i,       -- global clock, rising edge
     rstn_i        => sys_rstn,    -- global reset, low-active, async
-    sleep_o       => open,        -- cpu is in sleep mode when set
-    debug_o       => debug_mode,  -- cpu is in debug mode when set
-    priv_o        => priv_mode,   -- current effective privilege level
+    sleep_o       => cpu_s.sleep, -- cpu is in sleep mode when set
+    debug_o       => cpu_s.debug, -- cpu is in debug mode when set
+    priv_o        => cpu_s.priv,  -- current effective privilege level
     -- instruction bus interface --
     i_bus_addr_o  => cpu_i.addr,  -- bus access address
     i_bus_rdata_i => cpu_i.rdata, -- bus read data
@@ -721,6 +737,11 @@ begin
   resp_bus(RESP_BUSKEEPER).err <= '0';
 
 
+-- ****************************************************************************************************************************
+-- Memory System
+-- ****************************************************************************************************************************
+
+
   -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_int_imem_inst_true:
@@ -836,7 +857,7 @@ begin
       ack_o      => resp_bus(RESP_WISHBONE).ack,   -- transfer acknowledge
       err_o      => resp_bus(RESP_WISHBONE).err,   -- transfer error
       tmo_o      => ext_timeout,                   -- transfer timeout
-      priv_i     => priv_mode,                     -- current CPU privilege level
+      priv_i     => cpu_s.priv,                    -- current CPU privilege level
       ext_o      => ext_access,                    -- active external access
       -- xip configuration --
       xip_en_i   => xip_enable,                    -- XIP module enabled
@@ -1012,9 +1033,6 @@ begin
   neorv32_wdt_inst_true:
   if (IO_WDT_EN = true) generate
     neorv32_wdt_inst: neorv32_wdt
-    generic map(
-      DEBUG_EN => ON_CHIP_DEBUGGER_EN -- CPU debug mode implemented?
-    )
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line
@@ -1025,8 +1043,9 @@ begin
       data_i      => p_bus.wdata,              -- data in
       data_o      => resp_bus(RESP_WDT).rdata, -- data out
       ack_o       => resp_bus(RESP_WDT).ack,   -- transfer acknowledge
-      -- CPU in debug mode? --
-      cpu_debug_i => debug_mode,
+      -- CPU status --
+      cpu_debug_i => cpu_s.debug,              -- CPU is in debug mode
+      cpu_sleep_i => cpu_s.sleep,              -- CPU is in sleep mode
       -- clock generator --
       clkgen_en_o => wdt_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
@@ -1537,9 +1556,9 @@ begin
   );
 
 
-  -- **************************************************************************************************************************
-  -- On-Chip Debugger Complex
-  -- **************************************************************************************************************************
+-- **************************************************************************************************************************
+-- On-Chip Debugger Complex
+-- **************************************************************************************************************************
 
 
   -- On-Chip Debugger - Debug Module (DM) ---------------------------------------------------
@@ -1563,7 +1582,7 @@ begin
       dmi_resp_data_o  => dmi.resp_data,
       dmi_resp_err_o   => dmi.resp_err,             -- 0=ok, 1=error
       -- CPU bus access --
-      cpu_debug_i      => debug_mode,               -- CPU is in debug mode
+      cpu_debug_i      => cpu_s.debug,              -- CPU is in debug mode
       cpu_addr_i       => p_bus.addr,               -- address
       cpu_rden_i       => p_bus.re,                 -- read enable
       cpu_wren_i       => p_bus.we,                 -- write enable
