@@ -46,6 +46,7 @@ entity neorv32_mtime is
   port (
     -- host access --
     clk_i  : in  std_ulogic; -- global clock line
+    rstn_i : in  std_ulogic; -- global reset line, low-active
     addr_i : in  std_ulogic_vector(31 downto 0); -- address
     rden_i : in  std_ulogic; -- read enable
     wren_i : in  std_ulogic; -- write enable
@@ -101,9 +102,18 @@ begin
 
   -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  wr_access: process(clk_i)
+  wr_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      ack_o         <= '-';
+      mtimecmp_lo   <= (others => '0');
+      mtimecmp_hi   <= (others => '0');
+      mtime_lo_we   <= '0';
+      mtime_hi_we   <= '0';
+      mtime_lo      <= (others => '0');
+      mtime_lo_ovfl <= (others => '0');
+      mtime_hi      <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- bus handshake --
       ack_o <= rden or wren;
 
