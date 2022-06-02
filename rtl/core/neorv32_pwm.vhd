@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -49,6 +49,7 @@ entity neorv32_pwm is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
+    rstn_i      : in  std_ulogic; -- global reset line, low-active
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
@@ -113,9 +114,15 @@ begin
 
   -- Write access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  wr_access: process(clk_i)
+  wr_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      enable <= '0';
+      prsc   <= (others => '0');
+      pwm_ch <= (others => (others => '0'));
+      ack_o  <= '-';
+      data_o <= (others => '-');
+    elsif rising_edge(clk_i) then
       ack_o <= rden or wren;
 
       -- write access --
