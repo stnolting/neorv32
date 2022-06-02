@@ -48,9 +48,6 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_wdt is
-  generic (
-    DEBUG_EN : boolean -- CPU debug mode implemented?
-  );
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
@@ -61,8 +58,9 @@ entity neorv32_wdt is
     data_i      : in  std_ulogic_vector(31 downto 0); -- data in
     data_o      : out std_ulogic_vector(31 downto 0); -- data out
     ack_o       : out std_ulogic; -- transfer acknowledge
-    -- CPU in debug mode? --
-    cpu_debug_i : in  std_ulogic;
+    -- CPU status --
+    cpu_debug_i : in  std_ulogic; -- CPU is in debug mode
+    cpu_sleep_i : in  std_ulogic; -- CPU is in sleep mode
     -- clock generator --
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(07 downto 0);
@@ -88,8 +86,9 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   constant ctrl_reset_c   : natural :=  6; -- -/w: reset WDT if set
   constant ctrl_force_c   : natural :=  7; -- -/w: force WDT action
   constant ctrl_lock_c    : natural :=  8; -- r/w: lock access to control register when set
-  constant ctrl_dben_c    : natural :=  9; -- r/w: allow WDT to continue operation even when in debug mode
+  constant ctrl_dben_c    : natural :=  9; -- r/w: allow WDT to continue operation even when CPU is in debug mode
   constant ctrl_half_c    : natural := 10; -- r/-: set if at least half of the max. timeout counter value has been reached
+  constant ctrl_pause_c   : natural := 11; -- r/w: pause WDT when CPU is in sleep mode
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -105,7 +104,8 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
     reset   : std_ulogic; -- reset WDT
     enforce : std_ulogic; -- force action
     lock    : std_ulogic; -- lock control register
-    dben    : std_ulogic; -- allow operation also in debug mode
+    dben    : std_ulogic; -- allow operation also if CPU is in  debug mode
+    pause   : std_ulogic; -- allow operation even if CPU is in sleep mode
   end record;
   signal ctrl : ctrl_t;
 
@@ -113,10 +113,11 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   signal prsc_tick : std_ulogic;
 
   -- WDT core --
-  signal wdt_cnt : std_ulogic_vector(20 downto 0);
-  signal hw_rst  : std_ulogic;
-  signal rst_gen : std_ulogic_vector(03 downto 0);
-  signal cnt_en  : std_ulogic;
+  signal wdt_cnt   : std_ulogic_vector(20 downto 0);
+  signal hw_rst    : std_ulogic;
+  signal rst_gen   : std_ulogic_vector(03 downto 0);
+  signal cnt_en    : std_ulogic;
+  signal cnt_en_ff : std_ulogic;
 
   -- internal reset (sync, low-active) --
   signal rstn_sync : std_ulogic;
@@ -142,6 +143,7 @@ begin
       ctrl.clk_sel <= (others => '0');
       ctrl.lock    <= '0';
       ctrl.dben    <= '0';
+      ctrl.pause   <= '0';
     elsif rising_edge(clk_i) then
       if (rstn_sync = '0') then -- internal reset
         ctrl.reset   <= '1'; -- reset counter on start-up
@@ -151,6 +153,7 @@ begin
         ctrl.clk_sel <= (others => '0');
         ctrl.lock    <= '0';
         ctrl.dben    <= '0';
+        ctrl.pause   <= '0';
       else
         -- auto-clear WDT reset and WDT force flags --
         ctrl.reset   <= '0';
@@ -164,7 +167,8 @@ begin
             ctrl.mode    <= data_i(ctrl_mode_c);
             ctrl.clk_sel <= data_i(ctrl_clksel2_c downto ctrl_clksel0_c);
             ctrl.lock    <= data_i(ctrl_lock_c);
-            ctrl.dben    <= data_i(ctrl_dben_c) and bool_to_ulogic_f(DEBUG_EN);
+            ctrl.dben    <= data_i(ctrl_dben_c);
+            ctrl.pause   <= data_i(ctrl_pause_c);
           end if;
         end if;
       end if;
@@ -181,16 +185,20 @@ begin
   wdt_counter: process(clk_i)
   begin
     if rising_edge(clk_i) then
+      cnt_en_ff <= cnt_en;
       if (ctrl.reset = '1') then -- watchdog reset
         wdt_cnt <= (others => '0');
-      elsif (cnt_en = '1') then
+      elsif (cnt_en_ff = '1') then
         wdt_cnt <= std_ulogic_vector(unsigned('0' & wdt_cnt(wdt_cnt'left-1 downto 0)) + 1);
       end if;
     end if;
   end process wdt_counter;
 
-  -- WDT counter enable --
-  cnt_en <= ctrl.enable and prsc_tick and ((not cpu_debug_i) or ctrl.dben);
+  -- WDT counter allowed to run? --
+  cnt_en <= ctrl.enable and -- watchdog enabled
+            prsc_tick and -- counter increment tick
+            ((not cpu_debug_i) or ctrl.dben) and -- CPU not in debug mode or allowed to also run when in debug mode
+            ((not cpu_sleep_i) or (not ctrl.pause)); -- pause watchdog when CPU is in sleep mode
 
   -- action trigger --
   irq_o  <= ctrl.enable and (wdt_cnt(wdt_cnt'left) or ctrl.enforce) and (not ctrl.mode); -- mode 0: IRQ
@@ -225,7 +233,8 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o <= rden or wren;
+      ack_o  <= rden or wren;
+      data_o <= (others => '0');
       if (rden = '1') then
         data_o(ctrl_enable_c) <= ctrl.enable;
         data_o(ctrl_mode_c)   <= ctrl.mode;
@@ -234,8 +243,7 @@ begin
         data_o(ctrl_lock_c)   <= ctrl.lock;
         data_o(ctrl_dben_c)   <= ctrl.dben;
         data_o(ctrl_half_c)   <= wdt_cnt(wdt_cnt'left-1);
-      else
-        data_o <= (others => '0');
+        data_o(ctrl_pause_c)  <= ctrl.pause;
       end if;
     end if;
   end process read_access;
