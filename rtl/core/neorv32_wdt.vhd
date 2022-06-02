@@ -115,7 +115,7 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   -- WDT core --
   signal wdt_cnt   : std_ulogic_vector(20 downto 0);
   signal hw_rst    : std_ulogic;
-  signal rst_gen   : std_ulogic_vector(03 downto 0);
+  signal rstn_gen  : std_ulogic_vector(03 downto 0);
   signal cnt_en    : std_ulogic;
   signal cnt_en_ff : std_ulogic;
 
@@ -211,21 +211,21 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl.rcause <= '0';
-      rst_gen     <= (others => '1'); -- do NOT fire on reset!
+      rstn_gen    <= (others => '1'); -- do NOT fire on reset!
       rstn_sync   <= '1';
     elsif rising_edge(clk_i) then
       ctrl.rcause <= ctrl.rcause or hw_rst; -- sticky-set on WDT timeout/force
       if (hw_rst = '1') then
-        rst_gen <= (others => '0');
+        rstn_gen <= (others => '0');
       else
-        rst_gen <= rst_gen(rst_gen'left-1 downto 0) & '1';
+        rstn_gen <= rstn_gen(rstn_gen'left-1 downto 0) & '1';
       end if;
-      rstn_sync <= rst_gen(rst_gen'left);
+      rstn_sync <= rstn_gen(rstn_gen'left);
     end if;
   end process reset_generator;
 
   -- system reset --
-  rstn_o <= rst_gen(rst_gen'left);
+  rstn_o <= rstn_gen(rstn_gen'left);
 
 
   -- Read Access ----------------------------------------------------------------------------
