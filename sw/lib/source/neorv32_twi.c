@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -107,7 +107,7 @@ void neorv32_twi_mack_enable(void) {
 
 
 /**********************************************************************//**
- * Deacivate sending ACKs by controller (MACK).
+ * Deactivate sending ACKs by controller (MACK).
  **************************************************************************/
 void neorv32_twi_mack_disable(void) {
 
@@ -117,8 +117,6 @@ void neorv32_twi_mack_disable(void) {
 
 /**********************************************************************//**
  * Check if TWI is busy.
- *
- * @note This function is blocking.
  *
  * @return 0 if idle, 1 if busy
  **************************************************************************/
@@ -143,14 +141,7 @@ int neorv32_twi_start_trans(uint8_t a) {
 
   neorv32_twi_generate_start(); // generate START condition
 
-  NEORV32_TWI.DATA = (uint32_t)a; // send address
-  while(NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
-
-  // check for ACK/NACK
-  if (NEORV32_TWI.CTRL & (1 << TWI_CTRL_ACK))
-    return 0; // ACK received
-  else
-    return 1; // NACK received
+  return neorv32_twi_trans(a); // transfer address
 }
 
 
@@ -165,13 +156,15 @@ int neorv32_twi_start_trans(uint8_t a) {
 int neorv32_twi_trans(uint8_t d) {
 
   NEORV32_TWI.DATA = (uint32_t)d; // send data
-  while(NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
+  while (NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
 
   // check for ACK/NACK
-  if (NEORV32_TWI.CTRL & (1 << TWI_CTRL_ACK))
+  if (NEORV32_TWI.CTRL & (1 << TWI_CTRL_ACK)) {
     return 0; // ACK received
-  else
+  }
+  else {
     return 1; // NACK received
+  }
 }
 
 
@@ -194,17 +187,17 @@ uint8_t neorv32_twi_get_data(void) {
 void neorv32_twi_generate_stop(void) {
 
   NEORV32_TWI.CTRL |= (uint32_t)(1 << TWI_CTRL_STOP); // generate STOP condition
-  while(NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
+  while (NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
 }
 
 
  /**********************************************************************//**
- * Generate START condition.
+ * Generate START (or REPEATED-START) condition.
  *
  * @note Blocking function.
  **************************************************************************/
 void neorv32_twi_generate_start(void) {
 
   NEORV32_TWI.CTRL |= (1 << TWI_CTRL_START); // generate START condition
-  while(NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
+  while (NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
 }
