@@ -48,6 +48,7 @@ entity neorv32_gptmr is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
+    rstn_i      : in  std_ulogic; -- global reset line, low-active
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
@@ -110,9 +111,15 @@ begin
 
   -- Read/Write Access ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(clk_i)
+  rw_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      timer.cnt_we <= '0';
+      ctrl         <= (others => '0');
+      timer.thres  <= (others => '0');
+      ack_o        <= '-';
+      data_o       <= (others => '-');
+    elsif rising_edge(clk_i) then
       -- bus access acknowledge --
       ack_o <= rden or wren;
 
@@ -162,11 +169,13 @@ begin
 
   -- Timer Core -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  timer_core: process(clk_i)
+  timer_core: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      timer.count <= (others => '0');
+    elsif rising_edge(clk_i) then
       if (timer.cnt_we = '1') then -- write access
-        timer.count <= data_i;
+        timer.count <= data_i; -- data_i will stay unchanged for min. 1 cycle after WREN has returned to low again
       elsif (ctrl(ctrl_en_c) = '1') and (gptmr_clk_en = '1') then -- enabled and clock tick
         if (timer.match = '1') then
           if (ctrl(ctrl_mode_c) = '1') then -- reset counter if continuous mode
