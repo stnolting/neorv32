@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 02.06.2022 | [**:rocket:1.7.2**](https://github.com/stnolting/neorv32/releases/tag/v1.7.2) | **New release** |
 | 01.06.2022 | 1.7.1.11 | :bug: fixed bug in **debugger's** single-stepping mode (bug introduced with version 1.7.1.9); [#329](https://github.com/stnolting/neorv32/pull/329) |
 | 29.05.2022 | 1.7.1.10 | rework **bootloader's** "SPI flash presence detection"; added new option (`SPI_FLASH_ADDR_BYTES`) to customize the bootloader SPI flash address width (16-, 24- or 32-bit); [#321](https://github.com/stnolting/neorv32/pull/321) |
 | 29.05.2022 | 1.7.1.9 | :bug: fixed bug in **CPU trap logic**: collision of synchronous and asynchronous exceptions; [#327](https://github.com/stnolting/neorv32/pull/327) |
