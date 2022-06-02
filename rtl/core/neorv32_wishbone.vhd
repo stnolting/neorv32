@@ -174,17 +174,17 @@ begin
     if (rstn_i = '0') then
       ctrl.state    <= IDLE;
       ctrl.state_ff <= IDLE;
-      ctrl.we       <= def_rst_val_c;
-      ctrl.adr      <= (others => def_rst_val_c);
-      ctrl.wdat     <= (others => def_rst_val_c);
-      ctrl.rdat     <= (others => def_rst_val_c);
-      ctrl.sel      <= (others => def_rst_val_c);
-      ctrl.timeout  <= (others => def_rst_val_c);
-      ctrl.ack      <= def_rst_val_c;
-      ctrl.err      <= def_rst_val_c;
-      ctrl.tmo      <= def_rst_val_c;
-      ctrl.src      <= def_rst_val_c;
-      ctrl.priv     <= def_rst_val_c;
+      ctrl.we       <= '0';
+      ctrl.adr      <= (others => '0');
+      ctrl.wdat     <= (others => '0');
+      ctrl.rdat     <= (others => '0');
+      ctrl.sel      <= (others => '0');
+      ctrl.timeout  <= (others => '0');
+      ctrl.ack      <= '0';
+      ctrl.err      <= '0';
+      ctrl.tmo      <= '0';
+      ctrl.src      <= '0';
+      ctrl.priv     <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
       ctrl.state_ff <= ctrl.state;
