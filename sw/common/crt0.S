@@ -92,9 +92,9 @@ __crt0_cpu_csr_init:
 
 
 // ************************************************************************************************
-// Initialize integer register file (lower half)
+// Initialize integer register file
 // ************************************************************************************************
-__crt0_reg_file_clear:
+__crt0_reg_file_init:
 //addi  x0, x0, 0 // hardwired to zero
   addi  x1, x0, 0
 //addi  x2, x0, 0 // stack pointer sp
@@ -112,13 +112,7 @@ __crt0_reg_file_clear:
 //addi x14, x0, 0 // implicitly initialized within crt0
 //addi x15, x0, 0 // implicitly initialized within crt0
 
-
-// ************************************************************************************************
-// Initialize integer register file (upper half, if no E extension)
-// ************************************************************************************************
-#ifndef __riscv_32e
-// do not do this if compiling bootloader (to save some program space)
-#ifndef make_bootloader
+#ifndef __riscv_32e // initialize upper half (if E extension is not implemented)
   addi x16, x0, 0
   addi x17, x0, 0
   addi x18, x0, 0
@@ -136,7 +130,6 @@ __crt0_reg_file_clear:
   addi x30, x0, 0
   addi x31, x0, 0
 #endif
-#endif
 
 
 // ************************************************************************************************
@@ -146,7 +139,7 @@ __crt0_copy_data:
   la   x11, __crt0_copy_data_src_begin     // start of data area (copy source)
   la   x12, __crt0_copy_data_dst_begin     // start of data area (copy destination)
   la   x13, __crt0_copy_data_dst_end       // last address of destination data area
-  beq  x11, x12, __crt0_copy_data_loop_end // Nothing to do, if source and destination address are the same
+  beq  x11, x12, __crt0_copy_data_loop_end // nothing to do if source and destination address are the same
 
 __crt0_copy_data_loop:
   bge  x12, x13,  __crt0_copy_data_loop_end
