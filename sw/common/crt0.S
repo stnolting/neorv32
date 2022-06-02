@@ -140,25 +140,6 @@ __crt0_reg_file_clear:
 
 
 // ************************************************************************************************
-// Reset/deactivate IO/peripheral devices
-// Devices, that are not implemented, will cause a store bus access fault
-// that is catched (but not further processed) by the crt0 dummy trap handler.
-// This can be disabled by defining 'NO_IO_RESET' before re-compiling.
-// ************************************************************************************************
-__crt0_reset_io:
-  la   x8,   __crt0_io_space_begin // start of processor-internal IO region
-  la   x9,   __crt0_io_space_end   // end of processor-internal IO region
-
-// Make this opt-out so that certain modules (like the XIP module) can keep running after being configured by the bootloader
-#ifndef NO_IO_RESET
-__crt0_reset_io_loop:
-  sw   zero, 0(x8)
-  addi x8,   x8, 4
-  bne  x8,   x9, __crt0_reset_io_loop
-#endif
-
-
-// ************************************************************************************************
 // Copy initialized .data section from ROM to RAM (word-wise, section begins and ends on word boundary)
 // ************************************************************************************************
 __crt0_copy_data:
@@ -199,14 +180,14 @@ __crt0_clear_bss_loop_end:
 // ************************************************************************************************
 #ifndef make_bootloader // constructors are not supported for bootloader
 __crt0_call_constructors:
-  la   s3,  __init_array_start
-  la   s4,  __init_array_end
+  la   x8,  __init_array_start
+  la   x9,  __init_array_end
 
 __crt0_call_constructors_loop:
-  bge  s3,  s4, __crt0_call_constructors_loop_end
-  lw   t1, 0(s3)
-  jalr ra, 0(t1)
-  addi s3,  s3, 4
+  bge  x8, x9, __crt0_call_constructors_loop_end
+  lw   ra, 0(s3)
+  jalr ra, 0(ra)
+  addi x8, x8, 4
   j    __crt0_call_constructors_loop
 
 __crt0_call_constructors_loop_end:
@@ -217,9 +198,9 @@ __crt0_call_constructors_loop_end:
 // Setup arguments and call main function
 // ************************************************************************************************
 __crt0_main_entry:
-  addi a0,  zero, 0       // a0 = argc = 0
-  addi a1,  zero, 0       // a1 = argv = 0
-  jal  ra,  main          // call actual app's main function
+  addi a0, zero, 0        // a0 = argc = 0
+  addi a1, zero, 0        // a1 = argv = 0
+  jal  ra, main           // call actual app's main function
 
 __crt0_main_exit:         // main's "return" and "exit" will arrive here
   csrci mstatus, (1 << 3) // disable global IRQs (clear mstatus.mie)
@@ -231,14 +212,14 @@ __crt0_main_exit:         // main's "return" and "exit" will arrive here
 // ************************************************************************************************
 #ifndef make_bootloader // destructors are not supported for bootloader
 __crt0_call_destructors:
-  la   s3,  __fini_array_start
-  la   s4,  __fini_array_end
+  la   s3, __fini_array_start
+  la   s4, __fini_array_end
 
 __crt0_call_destructors_loop:
-  bge  s3,  s4, __crt0_call_destructors_loop_end
+  bge  s3, s4, __crt0_call_destructors_loop_end
   lw   t1, 0(s3)
   jalr ra, 0(t1)
-  addi s3,  s3, 4
+  addi s3, s3, 4
   j    __crt0_call_destructors_loop
 
 __crt0_call_destructors_loop_end:
