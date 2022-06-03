@@ -339,9 +339,10 @@ architecture neorv32_top_rtl of neorv32_top is
   constant resp_bus_entry_terminate_c : resp_bus_entry_t := (rdata => (others => '0'), ack => '0', err => '0');
 
   -- module response bus - device ID --
-  type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO, RESP_MTIME,
-                         RESP_UART0, RESP_UART1, RESP_SPI, RESP_TWI, RESP_PWM, RESP_WDT, RESP_TRNG, RESP_CFS,
-                         RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK, RESP_XIRQ, RESP_GPTMR, RESP_XIP_CT, RESP_XIP_IF);
+  type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO,
+                         RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI, RESP_TWI, RESP_PWM, RESP_WDT,
+                         RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK, RESP_XIRQ,
+                         RESP_GPTMR, RESP_XIP_CT, RESP_XIP_ACC);
 
   -- module response bus --
   type resp_bus_t is array (resp_bus_id_t) of resp_bus_entry_t;
@@ -899,41 +900,41 @@ begin
     neorv32_xip_inst: neorv32_xip
     port map (
       -- global control --
-      clk_i       => clk_i,                       -- global clock line
-      rstn_i      => sys_rstn,                    -- global reset line, low-active
+      clk_i       => clk_i,                        -- global clock line
+      rstn_i      => sys_rstn,                     -- global reset line, low-active
       -- host access: control register access port --
-      ct_addr_i   => p_bus.addr,                  -- address
-      ct_rden_i   => io_rden,                     -- read enable
-      ct_wren_i   => io_wren,                     -- write enable
-      ct_data_i   => p_bus.wdata,                 -- data in
-      ct_data_o   => resp_bus(RESP_XIP_CT).rdata, -- data out
-      ct_ack_o    => resp_bus(RESP_XIP_CT).ack,   -- transfer acknowledge
+      ct_addr_i   => p_bus.addr,                   -- address
+      ct_rden_i   => io_rden,                      -- read enable
+      ct_wren_i   => io_wren,                      -- write enable
+      ct_data_i   => p_bus.wdata,                  -- data in
+      ct_data_o   => resp_bus(RESP_XIP_CT).rdata,  -- data out
+      ct_ack_o    => resp_bus(RESP_XIP_CT).ack,    -- transfer acknowledge
       -- host access: transparent SPI access port (read-only) --
-      acc_addr_i  => p_bus.addr,                  -- address
-      acc_rden_i  => p_bus.re,                    -- read enable
-      acc_data_o  => resp_bus(RESP_XIP_IF).rdata, -- data out
-      acc_ack_o   => resp_bus(RESP_XIP_IF).ack,   -- transfer acknowledge
+      acc_addr_i  => p_bus.addr,                   -- address
+      acc_rden_i  => p_bus.re,                     -- read enable
+      acc_data_o  => resp_bus(RESP_XIP_ACC).rdata, -- data out
+      acc_ack_o   => resp_bus(RESP_XIP_ACC).ack,   -- transfer acknowledge
       -- status --
-      xip_en_o    => xip_enable,                  -- XIP enable
-      xip_acc_o   => xip_access,                  -- pending XIP access
-      xip_page_o  => xip_page,                    -- XIP page
+      xip_en_o    => xip_enable,                   -- XIP enable
+      xip_acc_o   => xip_access,                   -- pending XIP access
+      xip_page_o  => xip_page,                     -- XIP page
       -- clock generator --
-      clkgen_en_o => xip_cg_en,                   -- enable clock generator
+      clkgen_en_o => xip_cg_en,                    -- enable clock generator
       clkgen_i    => clk_gen,
       -- SPI device interface --
-      spi_csn_o   => xip_csn_o,                   -- chip-select, low-active
-      spi_clk_o   => xip_clk_o,                   -- serial clock
-      spi_data_i  => xip_sdi_i,                   -- device data output
-      spi_data_o  => xip_sdo_o                    -- controller data output
+      spi_csn_o   => xip_csn_o,                    -- chip-select, low-active
+      spi_clk_o   => xip_clk_o,                    -- serial clock
+      spi_data_i  => xip_sdi_i,                    -- device data output
+      spi_data_o  => xip_sdo_o                     -- controller data output
     );
-    resp_bus(RESP_XIP_CT).err <= '0'; -- no access error possible
-    resp_bus(RESP_XIP_IF).err <= '0'; -- no access error possible
+    resp_bus(RESP_XIP_CT).err  <= '0'; -- no access error possible
+    resp_bus(RESP_XIP_ACC).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_xip_inst_false:
   if (IO_XIP_EN = false) generate
-    resp_bus(RESP_XIP_CT) <= resp_bus_entry_terminate_c;
-    resp_bus(RESP_XIP_IF) <= resp_bus_entry_terminate_c;
+    resp_bus(RESP_XIP_CT)  <= resp_bus_entry_terminate_c;
+    resp_bus(RESP_XIP_ACC) <= resp_bus_entry_terminate_c;
     --
     xip_enable <= '0';
     xip_access <= '0';
