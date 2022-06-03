@@ -2009,11 +2009,11 @@ package neorv32_package is
       ct_data_i   : in  std_ulogic_vector(31 downto 0); -- data in
       ct_data_o   : out std_ulogic_vector(31 downto 0); -- data out
       ct_ack_o    : out std_ulogic; -- transfer acknowledge
-      -- host access: instruction fetch access port (read-only) --
-      if_addr_i   : in  std_ulogic_vector(31 downto 0); -- address
-      if_rden_i   : in  std_ulogic; -- read enable
-      if_data_o   : out std_ulogic_vector(31 downto 0); -- data out
-      if_ack_o    : out std_ulogic; -- transfer acknowledge
+      -- host access: transparent SPI access port (read-only) --
+      acc_addr_i  : in  std_ulogic_vector(31 downto 0); -- address
+      acc_rden_i  : in  std_ulogic; -- read enable
+      acc_data_o  : out std_ulogic_vector(31 downto 0); -- data out
+      acc_ack_o   : out std_ulogic; -- transfer acknowledge
       -- status --
       xip_en_o    : out std_ulogic; -- XIP enable
       xip_acc_o   : out std_ulogic; -- pending XIP access

@@ -908,11 +908,11 @@ begin
       ct_data_i   => p_bus.wdata,                 -- data in
       ct_data_o   => resp_bus(RESP_XIP_CT).rdata, -- data out
       ct_ack_o    => resp_bus(RESP_XIP_CT).ack,   -- transfer acknowledge
-      -- host access: instruction fetch access port (read-only) --
-      if_addr_i   => p_bus.addr,                  -- address
-      if_rden_i   => p_bus.re,                    -- read enable
-      if_data_o   => resp_bus(RESP_XIP_IF).rdata, -- data out
-      if_ack_o    => resp_bus(RESP_XIP_IF).ack,   -- transfer acknowledge
+      -- host access: transparent SPI access port (read-only) --
+      acc_addr_i  => p_bus.addr,                  -- address
+      acc_rden_i  => p_bus.re,                    -- read enable
+      acc_data_o  => resp_bus(RESP_XIP_IF).rdata, -- data out
+      acc_ack_o   => resp_bus(RESP_XIP_IF).ack,   -- transfer acknowledge
       -- status --
       xip_en_o    => xip_enable,                  -- XIP enable
       xip_acc_o   => xip_access,                  -- pending XIP access
