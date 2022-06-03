@@ -488,15 +488,14 @@ begin
         ctrl.di_sync <= '-';
       else
         -- defaults --
-        spi_clk_o    <= cf_cpol_i;
-        spi_csn_o    <= '1'; -- de-selected by default
-        ctrl.di_sync <= spi_data_i;
+        spi_csn_o <= '1'; -- de-selected by default
 
         -- fsm --
         case ctrl.state is
 
           when S_IDLE => -- wait for new transmission trigger
           -- ------------------------------------------------------------
+            spi_clk_o   <= cf_cpol_i;
             ctrl.bitcnt <= op_nbytes_i & "000"; -- number of bytes
             ctrl.csen   <= op_csen_i;
             if (op_start_i = '1') then
@@ -508,27 +507,32 @@ begin
           -- ------------------------------------------------------------
             spi_csn_o <= not ctrl.csen;
             if (spi_clk_en_i = '1') then
+              if (cf_cpha_i = '1') then -- clock phase shift
+                spi_clk_o <= not cf_cpol_i;
+              end if;
               ctrl.state <= S_RTX_A;
             end if;
 
           when S_RTX_A => -- first half of bit transmission
           -- ------------------------------------------------------------
             spi_csn_o <= not ctrl.csen;
-            spi_clk_o <= cf_cpha_i xor cf_cpol_i;
             if (spi_clk_en_i = '1') then
-              ctrl.bitcnt <= std_ulogic_vector(unsigned(ctrl.bitcnt) - 1);
-              ctrl.state  <= S_RTX_B;
+              spi_clk_o    <= not (cf_cpha_i xor cf_cpol_i);
+              ctrl.di_sync <= spi_data_i;
+              ctrl.bitcnt  <= std_ulogic_vector(unsigned(ctrl.bitcnt) - 1);
+              ctrl.state   <= S_RTX_B;
             end if;
 
           when S_RTX_B => -- second half of bit transmission
           -- ------------------------------------------------------------
             spi_csn_o <= not ctrl.csen;
-            spi_clk_o <= not (cf_cpha_i xor cf_cpol_i);
             if (spi_clk_en_i = '1') then
               ctrl.sreg <= ctrl.sreg(ctrl.sreg'left-1 downto 0) & ctrl.di_sync;
               if (or_reduce_f(ctrl.bitcnt) = '0') then -- all bits transferred?
+                spi_clk_o  <= cf_cpol_i;
                 ctrl.state <= S_DONE; -- transmission done
               else
+                spi_clk_o  <= cf_cpha_i xor cf_cpol_i;
                 ctrl.state <= S_RTX_A; -- next bit
               end if;
             end if;
