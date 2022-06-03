@@ -57,11 +57,11 @@ entity neorv32_xip is
     ct_data_i   : in  std_ulogic_vector(31 downto 0); -- data in
     ct_data_o   : out std_ulogic_vector(31 downto 0); -- data out
     ct_ack_o    : out std_ulogic; -- transfer acknowledge
-    -- host access: instruction fetch access port (read-only) --
-    if_addr_i   : in  std_ulogic_vector(31 downto 0); -- address
-    if_rden_i   : in  std_ulogic; -- read enable
-    if_data_o   : out std_ulogic_vector(31 downto 0); -- data out
-    if_ack_o    : out std_ulogic; -- transfer acknowledge
+    -- host access: transparent SPI access port (read-only) --
+    acc_addr_i  : in  std_ulogic_vector(31 downto 0); -- address
+    acc_rden_i  : in  std_ulogic; -- read enable
+    acc_data_o  : out std_ulogic_vector(31 downto 0); -- data out
+    acc_ack_o   : out std_ulogic; -- transfer acknowledge
     -- status --
     xip_en_o    : out std_ulogic; -- XIP enable
     xip_acc_o   : out std_ulogic; -- pending XIP access
@@ -183,15 +183,13 @@ begin
   ctrl_rw_access : process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl                    <= (others => '-');
-      ctrl(ctrl_enable_c)     <= '0'; -- required
-      ctrl(ctrl_xip_enable_c) <= '0'; -- required
-      spi_data_lo             <= (others => '-');
-      spi_data_hi             <= (others => '-');
-      spi_trigger             <= '-';
+      ctrl        <= (others => '0');
+      spi_data_lo <= (others => '-');
+      spi_data_hi <= (others => '-');
+      spi_trigger <= '-';
       --
-      ct_data_o               <= (others => '-');
-      ct_ack_o                <= '-';
+      ct_data_o   <= (others => '-');
+      ct_ack_o    <= '-';
     elsif rising_edge(clk_i) then
       -- access acknowledge --
       ct_ack_o <= ct_wren or ct_rden;
@@ -291,20 +289,20 @@ begin
       else
         arbiter.state <= arbiter.state_nxt;
       end if;
-      arbiter.addr <= if_addr_i; -- buffer address (reducing fan-out on CPU's address net)
+      arbiter.addr <= acc_addr_i; -- buffer address (reducing fan-out on CPU's address net)
     end if;
   end process arbiter_sync;
 
 
   -- FSM - combinatorial part --
-  arbiter_comb: process(arbiter, ctrl, xip_addr, phy_if, if_rden_i, if_addr_i, spi_data_hi, spi_data_lo, spi_trigger)
+  arbiter_comb: process(arbiter, ctrl, xip_addr, phy_if, acc_rden_i, acc_addr_i, spi_data_hi, spi_data_lo, spi_trigger)
   begin
     -- arbiter defaults --
     arbiter.state_nxt <= arbiter.state;
 
     -- bus interface defaults --
-    if_data_o <= (others => '0');
-    if_ack_o  <= '0';
+    acc_data_o <= (others => '0');
+    acc_ack_o  <= '0';
 
     -- SPI PHY interface defaults --
     phy_if.start <= '0';
@@ -321,7 +319,7 @@ begin
 
       when S_IDLE => -- XIP: wait for new bus request
       -- ------------------------------------------------------------
-        if (if_rden_i = '1') and (if_addr_i(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
+        if (acc_rden_i = '1') and (acc_addr_i(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
           arbiter.state_nxt <= S_TRIG;
         end if;
 
@@ -333,8 +331,8 @@ begin
       when S_BUSY => -- XIP: wait for PHY to complete operation
       -- ------------------------------------------------------------
         if (phy_if.busy = '0') then
-          if_data_o         <= phy_if.rdata;
-          if_ack_o          <= '1';
+          acc_data_o        <= phy_if.rdata;
+          acc_ack_o         <= '1';
           arbiter.state_nxt <= S_IDLE;
         end if;
 

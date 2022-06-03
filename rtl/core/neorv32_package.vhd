@@ -68,7 +68,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070201"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070202"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1625,6 +1625,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i  : in  std_ulogic; -- global clock line
+      rstn_i : in  std_ulogic; -- global reset line, low-active
       addr_i : in  std_ulogic_vector(31 downto 0); -- address
       rden_i : in  std_ulogic; -- read enable
       wren_i : in  std_ulogic; -- write enable
@@ -1644,6 +1645,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i  : in  std_ulogic; -- global clock line
+      rstn_i : in  std_ulogic; -- global reset line, low-active
       addr_i : in  std_ulogic_vector(31 downto 0); -- address
       rden_i : in  std_ulogic; -- read enable
       wren_i : in  std_ulogic; -- write enable
@@ -1693,6 +1695,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
@@ -1720,6 +1723,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
@@ -1745,6 +1749,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
@@ -1771,6 +1776,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
@@ -1794,6 +1800,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i  : in  std_ulogic; -- global clock line
+      rstn_i : in  std_ulogic; -- global reset line, low-active
       addr_i : in  std_ulogic_vector(31 downto 0); -- address
       rden_i : in  std_ulogic; -- read enable
       wren_i : in  std_ulogic; -- write enable
@@ -1892,6 +1899,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
@@ -1920,6 +1928,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i          : in  std_ulogic; -- global clock line
+      rstn_i         : in  std_ulogic; -- global reset line, low-active
       addr_i         : in  std_ulogic_vector(31 downto 0); -- address
       rden_i         : in  std_ulogic; -- read enable
       wren_i         : in  std_ulogic; -- write enable
@@ -1951,6 +1960,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i     : in  std_ulogic; -- global clock line
+      rstn_i    : in  std_ulogic; -- global reset line, low-active
       addr_i    : in  std_ulogic_vector(31 downto 0); -- address
       rden_i    : in  std_ulogic; -- read enable
       wren_i    : in  std_ulogic; -- write enable
@@ -1970,6 +1980,7 @@ package neorv32_package is
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
@@ -1998,11 +2009,11 @@ package neorv32_package is
       ct_data_i   : in  std_ulogic_vector(31 downto 0); -- data in
       ct_data_o   : out std_ulogic_vector(31 downto 0); -- data out
       ct_ack_o    : out std_ulogic; -- transfer acknowledge
-      -- host access: instruction fetch access port (read-only) --
-      if_addr_i   : in  std_ulogic_vector(31 downto 0); -- address
-      if_rden_i   : in  std_ulogic; -- read enable
-      if_data_o   : out std_ulogic_vector(31 downto 0); -- data out
-      if_ack_o    : out std_ulogic; -- transfer acknowledge
+      -- host access: transparent SPI access port (read-only) --
+      acc_addr_i  : in  std_ulogic_vector(31 downto 0); -- address
+      acc_rden_i  : in  std_ulogic; -- read enable
+      acc_data_o  : out std_ulogic_vector(31 downto 0); -- data out
+      acc_ack_o   : out std_ulogic; -- transfer acknowledge
       -- status --
       xip_en_o    : out std_ulogic; -- XIP enable
       xip_acc_o   : out std_ulogic; -- pending XIP access

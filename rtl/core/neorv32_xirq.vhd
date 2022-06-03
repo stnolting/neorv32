@@ -55,6 +55,7 @@ entity neorv32_xirq is
   port (
     -- host access --
     clk_i     : in  std_ulogic; -- global clock line
+    rstn_i    : in  std_ulogic; -- global reset line, low-active
     addr_i    : in  std_ulogic_vector(31 downto 0); -- address
     rden_i    : in  std_ulogic; -- read enable
     wren_i    : in  std_ulogic; -- write enable
@@ -117,9 +118,14 @@ begin
 
   -- Read/Write Access ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(clk_i)
+  rw_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      clr_pending <= (others => '0'); -- clear all pending interrupts
+      irq_enable  <= (others => '0');
+      ack_o       <= '-';
+      data_o      <= (others => '-');
+    elsif rising_edge(clk_i) then
       -- bus handshake --
       ack_o <= rden or wren;
 
@@ -207,18 +213,22 @@ begin
 
   -- IRQ Arbiter --------------------------------------------------------------
   -- -----------------------------------------------------------------------------
-  irq_arbiter: process(clk_i)
+  irq_arbiter: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      cpu_irq_o <= '0';
+      irq_run   <= '0';
+      irq_src   <= (others => '-');
+    elsif rising_edge(clk_i) then
       cpu_irq_o <= '0';
       if (irq_run = '0') then -- no active IRQ
         if (irq_fire = '1') then
           cpu_irq_o <= '1';
           irq_run   <= '1';
-          irq_src   <= irq_src_nxt;
+          irq_src   <= irq_src_nxt; -- get IRQ source that has highest priority
         end if;
       else -- active IRQ, wait for CPU to acknowledge
-        if (wren = '1') and (addr = xirq_source_addr_c) then -- write _any_ value to acknowledge
+        if (wren = '1') and (addr = xirq_source_addr_c) then -- write *any* value to acknowledge
           irq_run <= '0';
         end if;
       end if;

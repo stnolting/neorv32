@@ -54,6 +54,7 @@ entity neorv32_slink is
   port (
     -- host access --
     clk_i          : in  std_ulogic; -- global clock line
+    rstn_i         : in  std_ulogic; -- global reset line, low-active
     addr_i         : in  std_ulogic_vector(31 downto 0); -- address
     rden_i         : in  std_ulogic; -- read enable
     wren_i         : in  std_ulogic; -- write enable
@@ -186,9 +187,18 @@ begin
 
   -- Read/Write Access ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(clk_i)
+  rw_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      enable      <= '0';
+      irq_rx_en   <= (others => '0');
+      irq_rx_mode <= (others => '0');
+      irq_tx_en   <= (others => '0');
+      irq_tx_mode <= (others => '0');
+      ack_write   <= '-';
+      ack_read    <= '-';
+      data_o      <= (others => '-');
+    elsif rising_edge(clk_i) then
       -- write access --
       ack_write <= '0';
       if (wren = '1') then

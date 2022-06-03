@@ -46,6 +46,7 @@ entity neorv32_gpio is
   port (
     -- host access --
     clk_i  : in  std_ulogic; -- global clock line
+    rstn_i : in  std_ulogic; -- global reset line, low-active
     addr_i : in  std_ulogic_vector(31 downto 0); -- address
     rden_i : in  std_ulogic; -- read enable
     wren_i : in  std_ulogic; -- write enable
@@ -87,9 +88,17 @@ begin
 
   -- Read/Write Access ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(clk_i)
+  rw_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      ack_o   <= '-';
+      err_o   <= '-';
+      dout_lo <= (others => '0');
+      dout_hi <= (others => '0');
+      din_lo  <= (others => '-');
+      din_hi  <= (others => '-');
+      data_o  <= (others => '-');
+    elsif rising_edge(clk_i) then
       -- bus handshake --
       ack_o <= (wren and addr(3)) or rden;
       err_o <= wren and (not addr(3)); -- INPUT registers are read only!
