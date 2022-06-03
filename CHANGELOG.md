@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 03.06.2022 | 1.7.2.2 | :sparkles: (finally) added a **dedicated hardware reset** to all IO/peripheral devices; [#334](https://github.com/stnolting/neorv32/pull/334) |
 | 02.06.2022 | 1.7.2.1 | :sparkles: add **watchdog** pause flag to stop watchdog timeout counter when CPU is in sleep mode; [#331](https://github.com/stnolting/neorv32/pull/331) |
 | 02.06.2022 | [**:rocket:1.7.2**](https://github.com/stnolting/neorv32/releases/tag/v1.7.2) | **New release** |
 | 01.06.2022 | 1.7.1.11 | :bug: fixed bug in **debugger's** single-stepping mode (bug introduced with version 1.7.1.9); [#329](https://github.com/stnolting/neorv32/pull/329) |
