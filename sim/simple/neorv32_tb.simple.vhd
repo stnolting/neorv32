@@ -238,7 +238,8 @@ begin
     IO_NEOLED_EN                 => true,          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            => 8,             -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  => true,          -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN                    => true           -- implement execute in place module (XIP)?
+    IO_XIP_EN                    => true,          -- implement execute in place module (XIP)?
+    IO_QDEC_NUM_CH               => 6              -- number of quadrature decoder (QDEC) channels to implement (0..6); 0 = disabled
   )
   port map (
     -- Global control --
@@ -300,6 +301,9 @@ begin
     twi_scl_io     => twi_scl,         -- twi serial clock line
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          => open,            -- pwm channels
+    -- QDEC (available if IO_QDEC_NUM_CH > 0) --
+    qdec_a_i       => gpio(05 downto 0), -- rotary encoder phase A
+    qdec_b_i       => gpio(11 downto 6), -- rotary encoder phase B
     -- Custom Functions Subsystem IO --
     cfs_in_i       => (others => '0'), -- custom CFS inputs
     cfs_out_o      => open,            -- custom CFS outputs
