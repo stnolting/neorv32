@@ -147,6 +147,7 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 * general purpose [GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio) and
 [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
 * smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly control NeoPixel(TM) LEDs
+* quadrature decoder to connect up to 6 rotary encoders ([QDEC](https://stnolting.github.io/neorv32/#_quadrature_decoder_qdec))
 
 **SoC Connectivity**
 
