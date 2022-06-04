@@ -661,6 +661,13 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define GPTMR_RTE_ID           RTE_TRAP_FIRQ_12  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
 #define GPTMR_TRAP_CODE        TRAP_CODE_FIRQ_12 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
+/** @name Quadrature Decoder (QDEC) */
+/**@{*/
+#define QDEC_FIRQ_ENABLE       CSR_MIE_FIRQ13E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
+#define QDEC_FIRQ_PENDING      CSR_MIP_FIRQ13P   /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
+#define QDEC_RTE_ID            RTE_TRAP_FIRQ_13  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
+#define QDEC_TRAP_CODE         TRAP_CODE_FIRQ_13 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+/**@}*/
 /**@}*/
 
 
@@ -943,6 +950,53 @@ enum NEORV32_XIP_CTRL_enum {
 
   XIP_CTRL_PHY_BUSY       = 30, /**< XIP control register(20) (r/-): SPI PHY is busy */
   XIP_CTRL_XIP_BUSY       = 31  /**< XIP control register(31) (r/-): XIP access in progress */
+};
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: Quadrature Decoder (QDEC)
+ **************************************************************************/
+/**@{*/
+/** QDEC module prototype */
+typedef struct __attribute__((packed,aligned(4))) {
+	uint32_t CTRL;       /**< offset  0: control register (#NEORV32_QDEC_CTRL_enum) */
+	const uint32_t CNT0; /**< offset  4: counter register 0, channels 0,1 */
+	const uint32_t CNT1; /**< offset  8: counter register 1, channels 2,3 */
+	const uint32_t CNT2; /**< offset 12: counter register 2, channels 4,5 */
+} neorv32_qdec_t;
+
+/** QDEC module base address */
+#define NEORV32_QDEC_BASE (0xFFFFFF50UL)
+
+/** QDEC module hardware access (#neorv32_qdec_t) */
+#define NEORV32_QDEC (*((volatile neorv32_qdec_t*) (NEORV32_QDEC_BASE)))
+
+/** QDEC control register bits */
+enum NEORV32_QDEC_CTRL_enum {
+  QDEC_CTRL_EN       =  0, /**< QDEC control register(0) (r/w): Module enable */
+  QDEC_CTRL_PRSC0    =  1, /**< QDEC control register(1) (r/w): Clock prescaler select bit 0 */
+  QDEC_CTRL_PRSC1    =  2, /**< QDEC control register(2) (r/w): Clock prescaler select bit 1 */
+  QDEC_CTRL_PRSC2    =  3, /**< QDEC control register(3) (r/w): Clock prescaler select bit 2 */
+  QDEC_CTRL_CIRQ0_EN =  4, /**< QDEC control register(4) (r/w): State change interrupt enable channel 0 */
+  QDEC_CTRL_CIRQ1_EN =  5, /**< QDEC control register(5) (r/w): State change interrupt enable channel 1 */
+  QDEC_CTRL_CIRQ2_EN =  6, /**< QDEC control register(6) (r/w): State change interrupt enable channel 2 */
+  QDEC_CTRL_CIRQ3_EN =  7, /**< QDEC control register(7) (r/w): State change interrupt enable channel 3 */
+  QDEC_CTRL_CIRQ4_EN =  8, /**< QDEC control register(8) (r/w): State change interrupt enable channel 4 */
+  QDEC_CTRL_CIRQ5_EN =  9, /**< QDEC control register(9) (r/w): State change interrupt enable channel 5 */
+  QDEC_CTRL_EIRQ0_EN = 10, /**< QDEC control register(10) (r/w): Decoder error interrupt enable channel 0 */
+  QDEC_CTRL_EIRQ1_EN = 11, /**< QDEC control register(11) (r/w): Decoder error interrupt enable channel 1 */
+  QDEC_CTRL_EIRQ2_EN = 12, /**< QDEC control register(12) (r/w): Decoder error interrupt enable channel 2 */
+  QDEC_CTRL_EIRQ3_EN = 13, /**< QDEC control register(13) (r/w): Decoder error interrupt enable channel 3 */
+  QDEC_CTRL_EIRQ4_EN = 14, /**< QDEC control register(14) (r/w): Decoder error interrupt enable channel 4 */
+  QDEC_CTRL_EIRQ5_EN = 15, /**< QDEC control register(15) (r/w): Decoder error interrupt enable channel 5 */
+
+  QDEC_CTRL_ERR0     = 26, /**< QDEC control register(26) (r/c): Error in decoder channel 0, sticky bits, has to be cleared by writing zero */
+  QDEC_CTRL_ERR1     = 27, /**< QDEC control register(27) (r/c): Error in decoder channel 1, sticky bits, has to be cleared by writing zero */
+  QDEC_CTRL_ERR2     = 28, /**< QDEC control register(28) (r/c): Error in decoder channel 2, sticky bits, has to be cleared by writing zero */
+  QDEC_CTRL_ERR3     = 29, /**< QDEC control register(29) (r/c): Error in decoder channel 3, sticky bits, has to be cleared by writing zero */
+  QDEC_CTRL_ERR4     = 30, /**< QDEC control register(30) (r/c): Error in decoder channel 4, sticky bits, has to be cleared by writing zero */
+  QDEC_CTRL_ERR5     = 31  /**< QDEC control register(31) (r/c): Error in decoder channel 5, sticky bits, has to be cleared by writing zero */
 };
 /**@}*/
 
@@ -1397,7 +1451,8 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_NEOLED      = 27, /**< SYSINFO_FEATURES (27) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
   SYSINFO_SOC_IO_XIRQ        = 28, /**< SYSINFO_FEATURES (28) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
   SYSINFO_SOC_IO_GPTMR       = 29, /**< SYSINFO_FEATURES (29) (r/-): General purpose timer implemented when 1 (via IO_GPTMR_EN generic) */
-  SYSINFO_SOC_IO_XIP         = 30  /**< SYSINFO_FEATURES (30) (r/-): Execute in place module implemented when 1 (via IO_XIP_EN generic) */
+  SYSINFO_SOC_IO_XIP         = 30, /**< SYSINFO_FEATURES (30) (r/-): Execute in place module implemented when 1 (via IO_XIP_EN generic) */
+  SYSINFO_SOC_IO_QDEC        = 31  /**< SYSINFO_FEATURES (31) (r/-): Quadrature decder module implemented when 1 (via IO_QDEC_EN generic) */
 };
 
 /** NEORV32_SYSINFO.CACHE (r/-): Cache configuration */
@@ -1445,6 +1500,7 @@ enum NEORV32_SYSINFO_SOC_enum {
 #include "neorv32_mtime.h"
 #include "neorv32_neoled.h"
 #include "neorv32_pwm.h"
+#include "neorv32_qdec.h"
 #include "neorv32_slink.h"
 #include "neorv32_spi.h"
 #include "neorv32_trng.h"
