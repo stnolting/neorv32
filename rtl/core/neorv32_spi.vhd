@@ -223,12 +223,8 @@ begin
   spi_rtx_unit: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- input (sdi) synchronizer --
-      rtx_engine.sdi_sync <= spi_sdi_i;
-
       -- defaults --
-      spi_sck_o <= ctrl(ctrl_cpol_c);
-      irq_o     <= '0';
+      irq_o <= '0';
 
       -- serial engine --
       rtx_engine.state(2) <= ctrl(ctrl_en_c);
@@ -236,6 +232,7 @@ begin
 
         when "100" => -- enabled but idle, waiting for new transmission trigger
         -- ------------------------------------------------------------
+          spi_sck_o <= ctrl(ctrl_cpol_c);
           rtx_engine.bitcnt <= (others => '0');
           if (rtx_engine.start = '1') then -- trigger new transmission
             rtx_engine.sreg <= data_i;
@@ -245,32 +242,38 @@ begin
         when "101" => -- start with next new clock pulse
         -- ------------------------------------------------------------
           if (spi_clk_en = '1') then
+            if (ctrl(ctrl_cpha_c) = '1') then -- clock phase shift
+              spi_sck_o <= not ctrl(ctrl_cpol_c);
+            end if;
             rtx_engine.state(1 downto 0) <= "10";
           end if;
 
         when "110" => -- first half of bit transmission
         -- ------------------------------------------------------------
-          spi_sck_o <= ctrl(ctrl_cpha_c) xor ctrl(ctrl_cpol_c);
           if (spi_clk_en = '1') then
+            spi_sck_o <= not (ctrl(ctrl_cpha_c) xor ctrl(ctrl_cpol_c));
+            rtx_engine.sdi_sync <= spi_sdi_i; -- sample data input
             rtx_engine.bitcnt <= std_ulogic_vector(unsigned(rtx_engine.bitcnt) + 1);
             rtx_engine.state(1 downto 0) <= "11";
           end if;
 
         when "111" => -- second half of bit transmission
         -- ------------------------------------------------------------
-          spi_sck_o <= ctrl(ctrl_cpha_c) xnor ctrl(ctrl_cpol_c);
           if (spi_clk_en = '1') then
-            rtx_engine.sreg <= rtx_engine.sreg(30 downto 0) & rtx_engine.sdi_sync;
+            rtx_engine.sreg <= rtx_engine.sreg(30 downto 0) & rtx_engine.sdi_sync; -- shift and set output
             if (rtx_engine.bitcnt(5 downto 3) = rtx_engine.bytecnt) then -- all bits transferred?
+              spi_sck_o <= ctrl(ctrl_cpol_c);
               irq_o <= '1'; -- interrupt!
               rtx_engine.state(1 downto 0) <= "00"; -- transmission done
             else
+              spi_sck_o <= ctrl(ctrl_cpha_c) xor ctrl(ctrl_cpol_c);
               rtx_engine.state(1 downto 0) <= "10";
             end if;
           end if;
 
         when others => -- "0--": SPI deactivated
         -- ------------------------------------------------------------
+          spi_sck_o <= ctrl(ctrl_cpol_c);
           rtx_engine.sreg <= (others => '0');
           rtx_engine.state(1 downto 0) <= "00";
 
