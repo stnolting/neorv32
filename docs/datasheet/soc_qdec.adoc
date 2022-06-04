@@ -1,0 +1,138 @@
+<<<
+:sectnums:
+==== Quadrature Decoder (QDEC)
+
+[cols="<3,<3,<4"]
+[frame="topbot",grid="none"]
+|=======================
+| Hardware source file(s): | neorv32_qdec.vhd | 
+| Software driver file(s): | neorv32_qdec.c |
+|                          | neorv32_qdec.h |
+| Top entity port:         | `qdec_a_i` | rotary encoder phase A input for channels 0..5
+|                          | `qdec_b_i` | rotary encoder phase B input for channels 0..5
+| Configuration generics:  | _IO_QDEC_NUM_CH_ | number of channels to implement (0..6)
+| CPU interrupts:          | fast IRQ channel 13 | state-change/error interrupt (see <<_processor_interrupts>>)
+|=======================
+
+
+**Overview**
+
+The quadrature decoder (QDEC) hardware module allows to track the movement of up to independent 6 Gray-coded
+incremental / rotary encoders with zero software overhead. The encoders can be manually operated (e.g. for a user
+interface) or automatically operated (e.g. to track the movement of an axis).
+
+The QDEC module samples the state of the encoders _phase signals_ (A and B)
+and increments or decrements an internal 16-bit counter according to which signal provides a leading edge.
+The listing below shows the logic level of the A and B signals for 6 exemplary turns.
+
+.Exemplary AB Signal Levels for 6 Turns to the Left/Right (Gray code)
+[source]
+--------------------------
+       AB   AB   AB   AB   AB   AB
+Right: 00 - 01 - 11 - 10 - 00 - 01
+Left:  00 - 10 - 11 - 01 - 00 - 10
+--------------------------
+
+.Gray Code
+[NOTE]
+The QDEC was designed to handle **Gray-coded** (only one bit changes at a time) encoders only.
+
+The number of implemented channels is defined by the _IO_QDEC_NUM_CH_ generic (0..6). Configuring 0 channels will
+exclude the module from synthesis. Each encoder is connected to one bit of the `qdec_a_i` signal and one bit of the
+`qdec_b_i` signal. For example encoder channel 0 uses `qdec_a_i(0)` for its A signal line and `qdec_b_i(0)` for its B
+signal line.
+
+.Defined Signal Levels
+[IMPORTANT]
+Make sure to use pull-down / pull-up resistors for the A and B lines of each encoder.
+
+.Center Button
+[TIP]
+An optional center button can be sampled via polling by connecting it to the GPIO input port of the
+<<_general_purpose_input_and_output_port_gpio>>. Alternatively, it can be sampled using interrupts by connecting it to
+the <<_external_interrupt_controller_xirq>>.
+
+
+**Theory of Operation**
+
+The QDEC module is enabled by setting the _QDEC_CTRL_EN_ bit in the `CTRL` control register. Clearing this
+bit will disable the module and will also reset all internal states.
+
+Each channel provides a 16-bit unsigned counter that keeps track of the position. Turning the encoder in one direction
+will increment the counter while turning the encoder in the opposite direction will decrement the register. The register
+will wrap-around when reaching the minimum/maximum value. The counters are available via the `CNTx` register where
+each register provides the position counters for two consecutive channels (e.g. `CNT0` for channels 0 and 1).
+The position counters are read-only and are reset by disabling (and re-enabling) the QDEC module via the control register's
+enable bit.
+
+
+**Encoder Sample Rate**
+
+The rotary encoders are sampled at a fraction of the processor's main clock (_f~main~_) to blank out signal bouncing.
+The specific sample rate is programmable as it's requirements are defined by the actual application: a manually operated
+encoder requires a lower sample rate than an automatically operated encoder. The actual sample rate is defined
+by a 3-bit clock prescaler select in the module's control register.
+
+.QDEC prescaler configuration
+[cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
+[options="header",grid="rows"]
+|=======================
+| **`QDEC_CTRL_PRSCx`**       | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
+| Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
+|=======================
+
+Based on the selected prescaler and the processor main clock (_f~main~_) the resulting sampling frequency
+evaluates to:
+
+_**f~sample~**_ = _f~main~_ / (64 * `clock_prescaler`)
+
+Example: A system running at 100MHz and using `0b111` as clock prescaler select will sample the encoders at
+_f~sample~_ = 100MHz / (64 * 4096) = 381.5Hz.
+
+
+**Decoder Error**
+
+The QDEC module checks each encoder fo invalid state transitions. An invalid transition means that both signal
+lines A and B change level _at the same time_ (for example: `AB=00 -> AB=11`). In this case the channel's position
+counter is _not_ altered and a sticky error flag is. These error flags are available per-channel via the _QDEC_CTRL_ERRx_
+control register bits. Once set, the error flags have to be cleared by explicitly writing zero (sticky) or by disabling
+(an re-enabling) the QDEC module.
+
+
+**Quadrature Decoder Interrupt**
+
+The QDEC features a single interrupt request signal that is connected to the CPU's fast interrupt channel 13
+(see <<_processor_interrupts>>). Once triggered, the interrupt remains pending until explicitly cleared by
+writing zero to the according <<_mip>> CSR bit.
+
+The interrupt can be triggered by two conditions (logical ORed):
+
+* A _change of state_, i.e. an encoder has changed its position.
+* A _decoder error_, i.e. an invalid state transition has been detected.
+
+These interrupt conditions can be configured per-channel. The control register _QDEC_CTRL_CIRQx_EN_ bit
+enables the state change interrupt for channel `x` when set. The control register _QDEC_CTRL_EIRQx_EN_ bit
+enables the decoder error interrupt for channel `x` when set.
+
+
+
+**Register Map**
+
+.QDEC register map (`struct NEORV32_QDEC`)
+[cols="<2,<2,<4,^1,<7"]
+[options="header",grid="all"]
+|=======================
+| Address | Name [C] | Bit(s), Name [C] | R/W | Function
+.6+<| `0xffffff50` .6+<| `NEORV32_QDEC.CTRL` <|`0`     _QDEC_CTRL_EN_       ^| r/w <| QDED module enable
+                                             <|`3:1`   _QDEC_CTRL_PRSCx_    ^| r/w <| 3-bit sample clock prescaler select
+                                             <|`9:4`   _QDEC_CTRL_CIRQx_EN_ ^| r/w <| State-change interrupt enable for channel `x`
+                                             <|`15:10` _QDEC_CTRL_EIRQx_EN_ ^| r/w <| Decoder error interrupt enable for channel `x`
+                                             <|`25:16`                      ^| r/- <| _reserved_, read as zero
+                                             <|`31:26` _QDEC_CTRL_ERRx_     ^| r/c <| Decoder error in channel `x`, cleared by writing zero
+.2+<| `0xffffff54` .2+<| `NEORV32_QDEC.CNT0` <|`15:0`  ^| r/- <| Channel 0 position counter
+                                             <|`31:16` ^| r/- <| Channel 1 position counter
+.2+<| `0xffffff58` .2+<| `NEORV32_QDEC.CNT1` <|`15:0`  ^| r/- <| Channel 2 position counter
+                                             <|`31:16` ^| r/- <| Channel 3 position counter
+.2+<| `0xffffff5C` .2+<| `NEORV32_QDEC.CNT2` <|`15:0`  ^| r/- <| Channel 4 position counter
+                                             <|`31:16` ^| r/- <| Channel 5 position counter
+|=======================
