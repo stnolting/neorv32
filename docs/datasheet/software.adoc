@@ -94,6 +94,7 @@ footnote:[This driver file only represents a stub, since the real CFS drivers ar
 | `neorv32_mtime.c`   | `neorv32_mtime.h`      | HW driver functions for the **MTIME**
 | `neorv32_neoled.c`  | `neorv32_neoled.h`     | HW driver functions for the **NEOLED**
 | `neorv32_pwm.c`     | `neorv32_pwm.h`        | HW driver functions for the **PWM**
+| `neorv32_qdec.c`    | `neorv32_qdec.h`       | HW driver functions for the **QDEC**
 | `neorv32_rte.c`     | `neorv32_rte.h`        | NEORV32 **runtime environment** and helper functions
 | `neorv32_slink.c`   | `neorv32_slink.h`      | HW driver functions for the **SLINK**
 | `neorv32_spi.c`     | `neorv32_spi.h`        | HW driver functions for the **SPI**
