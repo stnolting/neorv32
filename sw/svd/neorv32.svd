@@ -445,6 +445,183 @@
       </registers>
     </peripheral>
 
+    <!-- QDEC -->
+    <peripheral>
+      <name>QDEC</name>
+      <description>Quadrature decoder</description>
+      <groupName>QDEC</groupName>
+      <baseAddress>0xFFFFFF50</baseAddress>
+
+      <interrupt><name>QDEC_FIRQ</name><value>13</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>QDEC_CTRL_EN</name>
+              <bitRange>[0:0]</bitRange>
+              <description>Quadrature decoder enable flag</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_PRSC</name>
+              <bitRange>[3:1]</bitRange>
+              <description>Sample clock prescaler select</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_CIRQ0_EN</name>
+              <bitRange>[4:4]</bitRange>
+              <description>State change interrupt enable channel 0</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_CIRQ1_EN</name>
+              <bitRange>[5:5]</bitRange>
+              <description>State change interrupt enable channel 1</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_CIRQ2_EN</name>
+              <bitRange>[6:6]</bitRange>
+              <description>State change interrupt enable channel 2</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_CIRQ3_EN</name>
+              <bitRange>[7:7]</bitRange>
+              <description>State change interrupt enable channel 3</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_CIRQ4_EN</name>
+              <bitRange>[8:8]</bitRange>
+              <description>State change interrupt enable channel 4</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_CIRQ5_EN</name>
+              <bitRange>[9:9]</bitRange>
+              <description>State change interrupt enable channel 5</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_EIRQ0_EN</name>
+              <bitRange>[9:9]</bitRange>
+              <description>Decoder error interrupt enable channel 0</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_EIRQ1_EN</name>
+              <bitRange>[10:10]</bitRange>
+              <description>Decoder error interrupt enable channel 1</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_EIRQ2_EN</name>
+              <bitRange>[11:11]</bitRange>
+              <description>Decoder error interrupt enable channel 2</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_EIRQ3_EN</name>
+              <bitRange>[12:12]</bitRange>
+              <description>Decoder error interrupt enable channel 3</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_EIRQ4_EN</name>
+              <bitRange>[13:13]</bitRange>
+              <description>Decoder error interrupt enable channel 4</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_EIRQ5_EN</name>
+              <bitRange>[14:14]</bitRange>
+              <description>Decoder error interrupt enable channel 5</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_ERR0</name>
+              <bitRange>[26:26]</bitRange>
+              <description>Decoder channel 0 error flag (sticky)</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_ERR1</name>
+              <bitRange>[27:27]</bitRange>
+              <description>Decoder channel 1 error flag (sticky)</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_ERR2</name>
+              <bitRange>[28:28]</bitRange>
+              <description>Decoder channel 2 error flag (sticky)</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_ERR3</name>
+              <bitRange>[29:29]</bitRange>
+              <description>Decoder channel 3 error flag (sticky)</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_ERR4</name>
+              <bitRange>[30:30]</bitRange>
+              <description>Decoder channel 4 error flag (sticky)</description>
+            </field>
+            <field>
+              <name>QDEC_CTRL_ERR5</name>
+              <bitRange>[31:31]</bitRange>
+              <description>Decoder channel 5 error flag (sticky)</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CNT0</name>
+          <description>Position counter register 0</description>
+          <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>QDEC_CNT0_CH0</name>
+              <bitRange>[15:0]</bitRange>
+              <description>Channel 0 position counter</description>
+            </field>
+            <field>
+              <name>QDEC_CNT0_CH1</name>
+              <bitRange>[31:16]</bitRange>
+              <description>Channel 1 position counter</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CNT1</name>
+          <description>Position counter register 1</description>
+          <addressOffset>0x08</addressOffset>
+          <fields>
+            <field>
+              <name>QDEC_CNT1_CH2</name>
+              <bitRange>[15:0]</bitRange>
+              <description>Channel 2 position counter</description>
+            </field>
+            <field>
+              <name>QDEC_CNT1_CH3</name>
+              <bitRange>[31:16]</bitRange>
+              <description>Channel 3 position counter</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CNT2</name>
+          <description>Position counter register 2</description>
+          <addressOffset>0x0C</addressOffset>
+          <fields>
+            <field>
+              <name>QDEC_CNT2_CH4</name>
+              <bitRange>[15:0]</bitRange>
+              <description>Channel 4 position counter</description>
+            </field>
+            <field>
+              <name>QDEC_CNT2_CH5</name>
+              <bitRange>[31:16]</bitRange>
+              <description>Channel 5 position counter</description>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
     <!-- GPTMR -->
     <peripheral>
       <name>GPTMR</name>
