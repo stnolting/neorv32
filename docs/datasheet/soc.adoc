@@ -27,6 +27,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ external interrupt controller with up to 32 channels (<<_external_interrupt_controller_xirq,**XIRQ**>>)
 * _optional_ general purpose 32-bit timer (<<_general_purpose_timer_gptmr,**GPTMR**>>)
 * _optional_ execute in place module (<<_execute_in_place_module_xip,**XIP**>>)
+* _optional_ quadrature decoder for rotary encoder with up to 6 channel (<<_quadrature_decoder_qdec,**QDEC**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
 * bus keeper to monitor processor-internal bus transactions (<<_internal_bus_monitor_buskeeper,**BUSKEEPER**>>)
 * system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
@@ -118,6 +119,9 @@ bits/channels are hardwired to zero.
 | `twi_scl_io` | 1 | inout | TWI serial clock line
 4+^| **Pulse-Width Modulation Channels (<<_pulse_width_modulation_controller_pwm,PWM>>)**
 | `pwm_o` | 60 | out | pulse-width modulated channels
+4+^| **Quadrature Decoder (<<_quadrature_decoder_qdec,QDEC>>)**
+| `qdec_a_i` | 6 | in | rotary encoder phase A for channel 0..5
+| `qdec_b_i` | 6 | in | rotary encoder phase B for channel 0..5
 4+^| **Custom Functions Subsystem (<<_custom_functions_subsystem_cfs,CFS>>)**
 | `cfs_in_i`  | 32 | in | custom CFS input signal conduit
 | `cfs_out_o` | 32 | out | custom CFS output signal conduit
@@ -1073,6 +1077,18 @@ See section <<_execute_in_place_module_xip>> for more information.
 |======
 
 
+:sectnums!:
+===== _IO_QDEC_NUM_CH_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **IO_QDEC_NUM_CH** | _natural_ | 0
+3+| Number of rotary encoder input channels (0..6) to implement. The QDEC module is _not_ implemented if zero.
+See section <<_quadrature_decoder_qdec>> for more information.
+|======
+
+
 
 <<<
 // ####################################################################################################################
@@ -1155,7 +1171,8 @@ the according FIRQ priority; 0 = highest, 15 = lowest):
 | 10      | <<_stream_link_interface_slink,SLINK>> | RX data buffer interrupt
 | 11      | <<_stream_link_interface_slink,SLINK>> | TX data buffer interrupt
 | 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
-| 13:15   | - | _reserved_, will never fire
+| 13      | <<_quadrature_decoder_qdec,QDEC>> | Quadrature decoder interrupt
+| 14:15   | - | _reserved_, will never fire
 |=======================
 
 .Trigger type
@@ -1532,5 +1549,7 @@ include::soc_xirq.adoc[]
 include::soc_gptmr.adoc[]
 
 include::soc_xip.adoc[]
+
+include::soc_qdec.adoc[]
 
 include::soc_sysinfo.adoc[]
