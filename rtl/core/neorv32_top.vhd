@@ -136,7 +136,8 @@ entity neorv32_top is
     IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
+    IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
+    IO_QDEC_NUM_CH               : natural := 0       -- number of quadrature decoder (QDEC) channels to implement (0..6); 0 = disabled
   );
   port (
     -- Global control --
@@ -211,6 +212,10 @@ entity neorv32_top is
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          : out std_ulogic_vector(59 downto 0); -- pwm channels
 
+    -- QDEC (available if IO_QDEC_NUM_CH > 0) --
+    qdec_a_i       : in  std_ulogic_vector(5 downto 0) := (others => 'U'); -- rotary encoder phase A
+    qdec_b_i       : in  std_ulogic_vector(5 downto 0) := (others => 'U'); -- rotary encoder phase B
+
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0) := (others => 'U'); -- custom CFS inputs conduit
     cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
@@ -254,7 +259,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clk_div       : std_ulogic_vector(11 downto 0);
   signal clk_div_ff    : std_ulogic_vector(11 downto 0);
   signal clk_gen       : std_ulogic_vector(07 downto 0);
-  signal clk_gen_en    : std_ulogic_vector(09 downto 0);
+  signal clk_gen_en    : std_ulogic_vector(10 downto 0);
   signal clk_gen_en_ff : std_ulogic;
   --
   signal wdt_cg_en    : std_ulogic;
@@ -267,6 +272,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal neoled_cg_en : std_ulogic;
   signal gptmr_cg_en  : std_ulogic;
   signal xip_cg_en    : std_ulogic;
+  signal qdec_cg_en   : std_ulogic;
 
   -- CPU status --
   type cpu_status_t is record
@@ -342,7 +348,7 @@ architecture neorv32_top_rtl of neorv32_top is
   type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO,
                          RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI, RESP_TWI, RESP_PWM, RESP_WDT,
                          RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK, RESP_XIRQ,
-                         RESP_GPTMR, RESP_XIP_CT, RESP_XIP_ACC);
+                         RESP_GPTMR, RESP_XIP_CT, RESP_XIP_ACC, RESP_QDEC);
 
   -- module response bus --
   type resp_bus_t is array (resp_bus_id_t) of resp_bus_entry_t;
@@ -364,6 +370,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal slink_rx_irq  : std_ulogic;
   signal xirq_irq      : std_ulogic;
   signal gptmr_irq     : std_ulogic;
+  signal qdec_irq      : std_ulogic;
 
   -- misc --
   signal mtime_time  : std_ulogic_vector(63 downto 0); -- current system time from MTIME
@@ -394,6 +401,7 @@ begin
   cond_sel_string_f(boolean(XIRQ_NUM_CH > 0), "XIRQ ", "") &
   cond_sel_string_f(IO_GPTMR_EN, "GPTMR ", "") &
   cond_sel_string_f(IO_XIP_EN, "XIP ", "") &
+  cond_sel_string_f(boolean(IO_QDEC_NUM_CH > 0), "QDEC ", "") &
   "" 
   severity note;
 
@@ -487,16 +495,17 @@ begin
   clk_gen(clk_div4096_c) <= clk_div(11) and (not clk_div_ff(11)); -- CLK/4096
 
   -- fresh clocks anyone? --
-  clk_gen_en(0) <= wdt_cg_en;
-  clk_gen_en(1) <= uart0_cg_en;
-  clk_gen_en(2) <= uart1_cg_en;
-  clk_gen_en(3) <= spi_cg_en;
-  clk_gen_en(4) <= twi_cg_en;
-  clk_gen_en(5) <= pwm_cg_en;
-  clk_gen_en(6) <= cfs_cg_en;
-  clk_gen_en(7) <= neoled_cg_en;
-  clk_gen_en(8) <= gptmr_cg_en;
-  clk_gen_en(9) <= xip_cg_en;
+  clk_gen_en(0)  <= wdt_cg_en;
+  clk_gen_en(1)  <= uart0_cg_en;
+  clk_gen_en(2)  <= uart1_cg_en;
+  clk_gen_en(3)  <= spi_cg_en;
+  clk_gen_en(4)  <= twi_cg_en;
+  clk_gen_en(5)  <= pwm_cg_en;
+  clk_gen_en(6)  <= cfs_cg_en;
+  clk_gen_en(7)  <= neoled_cg_en;
+  clk_gen_en(8)  <= gptmr_cg_en;
+  clk_gen_en(9)  <= xip_cg_en;
+  clk_gen_en(10) <= qdec_cg_en;
 
 
 -- ****************************************************************************************************************************
@@ -596,8 +605,8 @@ begin
   fast_irq(10) <= slink_rx_irq;  -- SLINK RX
   fast_irq(11) <= slink_tx_irq;  -- SLINK TX
   fast_irq(12) <= gptmr_irq;     -- general purpose timer
+  fast_irq(13) <= qdec_irq;      -- QDEC state-change/error
   --
-  fast_irq(13) <= '0';           -- reserved
   fast_irq(14) <= '0';           -- reserved
   fast_irq(15) <= '0';           -- LOWEST PRIORITY - reserved
 
@@ -1515,6 +1524,45 @@ begin
   end generate;
 
 
+  -- Quadrature Decoder (QDEC) --------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_qdec_inst_true:
+  if (IO_QDEC_NUM_CH > 0) generate
+    neorv32_qdec_inst: neorv32_qdec
+    generic map (
+      QDEC_NUM_CH => IO_QDEC_NUM_CH -- number of channels (0..6)
+    )
+    port map (
+      -- host access --
+      clk_i       => clk_i,                     -- global clock line
+      rstn_i      => sys_rstn,                  -- global reset line, low-active
+      addr_i      => p_bus.addr,                -- address
+      rden_i      => io_rden,                   -- read enable
+      wren_i      => io_wren,                   -- write enable
+      data_i      => p_bus.wdata,               -- data in
+      data_o      => resp_bus(RESP_QDEC).rdata, -- data out
+      ack_o       => resp_bus(RESP_QDEC).ack,   -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o => qdec_cg_en,                -- enable clock generator
+      clkgen_i    => clk_gen,
+      -- quadrature encoder input --
+      enc_a_i     => qdec_a_i,                  -- rotary encoder phase A
+      enc_b_i     => qdec_b_i,                  -- rotary encoder phase B
+      -- state change interrupt --
+      irq_o       => qdec_irq
+    );
+    resp_bus(RESP_QDEC).err <= '0'; -- no access error possible
+  end generate;
+
+  neorv32_qdec_inst_false:
+  if (IO_QDEC_NUM_CH = 0) generate
+    resp_bus(RESP_QDEC) <= resp_bus_entry_terminate_c;
+    --
+    qdec_cg_en          <= '0';
+    qdec_irq            <= '0';
+  end generate;
+
+
   -- System Configuration Information Memory (SYSINFO) --------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_sysinfo_inst: neorv32_sysinfo
@@ -1555,7 +1603,8 @@ begin
     IO_NEOLED_EN         => IO_NEOLED_EN,         -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_XIRQ_NUM_CH       => XIRQ_NUM_CH,          -- number of external interrupt (XIRQ) channels to implement
     IO_GPTMR_EN          => IO_GPTMR_EN,          -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN            => IO_XIP_EN             -- implement execute in place module (XIP)?
+    IO_XIP_EN            => IO_XIP_EN,            -- implement execute in place module (XIP)?
+    IO_QDEC_NUM_CH       => IO_QDEC_NUM_CH        -- umber of quadrature decoder (QDEC) channels to implement (0..6); 0 = disabled
   )
   port map (
     -- host access --

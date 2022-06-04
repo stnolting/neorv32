@@ -68,7 +68,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070203"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070204"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -230,9 +230,13 @@ package neorv32_package is
   constant xip_data_lo_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff48";
   constant xip_data_hi_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff4C";
 
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff50"; -- base address
---constant reserved_size_c      : natural := 4*4; -- module's address space size in bytes
+  -- Quadrature Decoder (QDEC) --
+  constant qdec_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff50"; -- base address
+  constant qdec_size_c         : natural := 4*4; -- module's address space size in bytes
+  constant qdec_ctrl_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff50";
+  constant qdec_cnt0_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff54";
+  constant qdec_cnt1_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff58";
+  constant qdec_cnt2_addr_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff5C";
 
   -- General Purpose Timer (GPTMR) --
   constant gptmr_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff60"; -- base address
@@ -1018,7 +1022,8 @@ package neorv32_package is
       IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
       IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
       IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
-      IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
+      IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
+      IO_QDEC_NUM_CH               : natural := 0       -- number of quadrature decoder (QDEC) channels to implement (0..6); 0 = disabled
     );
     port (
       -- Global control --
@@ -1080,6 +1085,9 @@ package neorv32_package is
       twi_scl_io     : inout std_logic; -- twi serial clock line
       -- PWM (available if IO_PWM_NUM_CH > 0) --
       pwm_o          : out std_ulogic_vector(59 downto 0); -- pwm channels
+      -- QDEC (available if IO_QDEC_NUM_CH > 0) --
+      qdec_a_i       : in  std_ulogic_vector(5 downto 0) := (others => 'U'); -- rotary encoder phase A
+      qdec_b_i       : in  std_ulogic_vector(5 downto 0) := (others => 'U'); -- rotary encoder phase B
       -- Custom Functions Subsystem IO --
       cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0) := (others => 'U'); -- custom CFS inputs conduit
       cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
@@ -2029,6 +2037,33 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: Quadrature Decoder (QDEC) ---------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_qdec
+    generic (
+      QDEC_NUM_CH : natural -- number of channels (0..6)
+    );
+    port (
+      -- host access --
+      clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active
+      addr_i      : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i      : in  std_ulogic; -- read enable
+      wren_i      : in  std_ulogic; -- write enable
+      data_i      : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o      : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o       : out std_ulogic; -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o : out std_ulogic; -- enable clock generator
+      clkgen_i    : in  std_ulogic_vector(07 downto 0);
+      -- quadrature encoder input --
+      enc_a_i     : in  std_ulogic_vector(5 downto 0); -- rotary encoder phase A
+      enc_b_i     : in  std_ulogic_vector(5 downto 0); -- rotary encoder phase B
+      -- state change interrupt --
+      irq_o       : out std_ulogic
+    );
+  end component;
+
   -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
@@ -2069,7 +2104,8 @@ package neorv32_package is
       IO_NEOLED_EN         : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
       IO_XIRQ_NUM_CH       : natural; -- number of external interrupt (XIRQ) channels to implement
       IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?
-      IO_XIP_EN            : boolean  -- implement execute in place module (XIP)?
+      IO_XIP_EN            : boolean; -- implement execute in place module (XIP)?
+      IO_QDEC_NUM_CH       : natural  -- number of quadrature decoder (QDEC) channels to implement (0..6); 0 = disabled
     );
     port (
       -- host access --

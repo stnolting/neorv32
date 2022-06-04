@@ -80,7 +80,8 @@ entity neorv32_sysinfo is
     IO_NEOLED_EN         : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_XIRQ_NUM_CH       : natural; -- number of external interrupt (XIRQ) channels to implement
     IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN            : boolean  -- implement execute in place module (XIP)?
+    IO_XIP_EN            : boolean; -- implement execute in place module (XIP)?
+    IO_QDEC_NUM_CH       : natural  -- number of quadrature decoder (QDEC) channels to implement (0..6); 0 = disabled
   );
   port (
     -- host access --
@@ -158,8 +159,7 @@ begin
   sysinfo_mem(2)(28) <= bool_to_ulogic_f(boolean(IO_XIRQ_NUM_CH > 0)); -- external interrupt controller (XIRQ) implemented?
   sysinfo_mem(2)(29) <= bool_to_ulogic_f(IO_GPTMR_EN);  -- general purpose timer (GPTMR) implemented?
   sysinfo_mem(2)(30) <= bool_to_ulogic_f(IO_XIP_EN);    -- execute in place module (XIP) implemented?
-  --
-  sysinfo_mem(2)(31) <= '0'; -- reserved
+  sysinfo_mem(2)(31) <= bool_to_ulogic_f(boolean(IO_QDEC_NUM_CH > 0)); -- quadrature decoder (QDEC) implemented?
 
   -- SYSINFO(3): Cache configuration --
   sysinfo_mem(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE),    4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(block_size_in_bytes)
