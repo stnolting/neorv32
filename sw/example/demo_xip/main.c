@@ -121,7 +121,7 @@ int main() {
   // * clock mode 0 (cpol = 0, cpha = 0)
   // * flash read command = 0x03
   // -> this function will also send 64 dummy clock cycles via the XIP's SPI port (with CS disabled)
-  if (neorv32_xip_init(CLK_PRSC_64, 0, 0, 0x03)) {
+  if (neorv32_xip_setup(CLK_PRSC_64, 0, 0, 0x03)) {
     neorv32_uart0_printf("Error! XIP module setup error!\n");
     return 1;
   }
