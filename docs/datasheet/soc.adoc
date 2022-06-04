@@ -144,9 +144,7 @@ bits/channels are hardwired to zero.
 :sectnums:
 === Processor Top Entity - Generics
 
-This is a list of all configuration generics of the NEORV32 processor top entity rtl/neorv32_top.vhd.
-The generic name is shown in orange, followed by the type in printed in black and concluded by the default
-value printed in light gray.
+This is a list of all configuration generics of the NEORV32 processor top entity (`rtl/neorv32_top.vhd`).
 
 [TIP]
 The NEORV32 generics allow to configure the system according to your needs. The generics are
@@ -175,14 +173,13 @@ during synthesis/simulation if an invalid combination has been detected.
 
 **Generic Description**
 
-The description of each generic provides the following summary:
+The description of each generic uses the following scheme:
 
-.Generic description
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
 | _Generic name_ | _type_ | _default value_
-3+| _Description_
+3+| Short description and link(s) for further information.
 |======
 
 <<<
