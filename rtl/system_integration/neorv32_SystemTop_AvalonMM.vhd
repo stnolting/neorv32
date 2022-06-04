@@ -127,7 +127,8 @@ entity neorv32_top_avalonmm is
     IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
+    IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
+    IO_QDEC_NUM_CH               : natural := 0       -- number of quadrature decoder (QDEC) channels to implement (0..6); 0 = disabled
   );
   port (
     -- Global control --
@@ -198,6 +199,10 @@ entity neorv32_top_avalonmm is
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          : out std_ulogic_vector(59 downto 0); -- pwm channels
+
+    -- QDEC (available if IO_QDEC_NUM_CH > 0) --
+    qdec_a_i       : in  std_ulogic_vector(5 downto 0) := (others => 'U'); -- rotary encoder phase A
+    qdec_b_i       : in  std_ulogic_vector(5 downto 0) := (others => 'U'); -- rotary encoder phase B
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0) := (others => 'U'); -- custom CFS inputs conduit
@@ -328,7 +333,8 @@ begin
     IO_NEOLED_EN => IO_NEOLED_EN,
     IO_NEOLED_TX_FIFO => IO_NEOLED_TX_FIFO,
     IO_GPTMR_EN => IO_GPTMR_EN,
-    IO_XIP_EN => IO_XIP_EN
+    IO_XIP_EN => IO_XIP_EN,
+    IO_QDEC_NUM_CH => IO_QDEC_NUM_CH
     )
   port map (
     -- Global control --
@@ -402,6 +408,10 @@ begin
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o => pwm_o,
+
+    -- QDEC (available if IO_QDEC_NUM_CH > 0) --
+    qdec_a_i => qdec_a_i,
+    qdec_b_i => qdec_b_i,
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i => cfs_in_i,
