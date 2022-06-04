@@ -70,13 +70,13 @@ int neorv32_xip_available(void) {
  * @param[in] cpol SPI clock polarity (0/1).
  * @param[in] cpha SPI clock phase(0/1).
  * @param[in] rd_cmd SPI flash read command.
- * @return 0 if configuration is OK, 1 if configuration error.
+ * @return 0 if configuration is OK, -1 if configuration error.
  **************************************************************************/
-int neorv32_xip_init(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) {
+int neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) {
 
   // configuration check
   if ((prsc > 7) || (cpol > 1) || (cpha > 1)) {
-    return 1;
+    return -1;
   }
 
   // reset module
@@ -98,7 +98,7 @@ int neorv32_xip_init(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) {
   NEORV32_XIP.DATA_HI = 0; // trigger SPI transfer
 
   // wait for transfer to complete
-  while(NEORV32_XIP.CTRL & (1 << XIP_CTRL_PHY_BUSY));
+  while (NEORV32_XIP.CTRL & (1 << XIP_CTRL_PHY_BUSY));
 
   NEORV32_XIP.CTRL |= 1 << XIP_CTRL_SPI_CSEN; // finally enable SPI chip-select
 
@@ -107,22 +107,20 @@ int neorv32_xip_init(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) {
 
 
 /**********************************************************************//**
- * Enable XIP mode (to allow CPU to _transparently_ fetch instructions).
- *
- * @warning This function is blocking until the XIP mode is ready.
+ * Enable XIP mode (to allow CPU to _transparently_ fetch data & instructions).
  *
  * @param[in] abytes Number of address bytes used to access the SPI flash (1,2,3,4).
  * @param[in] page_base XIP memory page base address (top 4 address bits, 0..15).
- * @return 0 if XIP configuration is OK, 1 if configuration error.
+ * @return 0 if XIP configuration is OK, -1 if configuration error.
  **************************************************************************/
 int neorv32_xip_start(uint8_t abytes, uint32_t page_base) {
 
   if ((abytes < 1) || (abytes > 4)) {
-    return 1;
+    return -1;
   }
 
   if (page_base & 0x0FFFFFFF) {
-    return 1;
+    return -1;
   }
   page_base >>= 28;
 
