@@ -73,6 +73,7 @@ will signal a "DEVICE ERROR" in this case.
 | `28` | _SYSINFO_SOC_IO_XIRQ_          | set if the XIRQ is implemented (via top's <<_xirq_num_ch>> generic)
 | `29` | _SYSINFO_SOC_IO_GPTMR_         | set if the GPTMR is implemented (via top's <<_io_gptmr_en>> generic)
 | `30` | _SYSINFO_SOC_IO_XIP_           | set if the XIP module is implemented (via top's <<_io_xip_en>> generic)
+| `31` | _SYSINFO_SOC_IO_QDEC_          | set if the QDEC module is implemented (via top's <<_io_qdec_num_ch>> generic)
 |=======================
 
 
