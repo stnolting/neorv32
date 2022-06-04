@@ -1001,7 +1001,7 @@ int main() {
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] FIRQ1 (CFS) ", cnt_test);
-  PRINT_STANDARD("<skipped>\n");
+  PRINT_STANDARD("<skipped, n.a.>\n");
 
 
   // ----------------------------------------------------------
@@ -1416,7 +1416,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 12 (GPTMR)
   // ----------------------------------------------------------
-  if (neorv32_slink_available()) {
+  if (neorv32_gptmr_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
     PRINT_STANDARD("[%i] FIRQ12 (GPTMR) ", cnt_test);
 
@@ -1435,7 +1435,7 @@ int main() {
     // disable GPTMR interrupt
     neorv32_cpu_irq_disable(CSR_MIE_FIRQ12E);
 
-    // check if RX FIFO fires IRQ
+    // check if IRQ
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_12) {
       test_ok();
     }
@@ -1448,11 +1448,58 @@ int main() {
   }
 
 
-//// ----------------------------------------------------------
-//// Fast interrupt channel 13..15 (reserved)
-//// ----------------------------------------------------------
-//PRINT_STANDARD("[%i] FIRQ13..15 ", cnt_test);
-//PRINT_STANDARD("<skipped, n.a.>\n");
+  // ----------------------------------------------------------
+  // Fast interrupt channel 13 (QDEC)
+  // ----------------------------------------------------------
+  if (neorv32_qdec_available()) {
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    PRINT_STANDARD("[%i] FIRQ13 (QDEC) ", cnt_test);
+
+    cnt_test++;
+
+    // enable QDEC FIRQ
+    neorv32_cpu_irq_enable(QDEC_FIRQ_ENABLE);
+
+    // set encoder input A[5:0] = GPIO.out[5:0]; B[5:0] = GPIO.out[11:6]
+    neorv32_gpio_port_set(0);
+
+    // configure decoder: highest sample rate, enable state-change for channel 0
+    neorv32_qdec_setup(CLK_PRSC_2, 0b000001, 0b000000);
+
+    // simulate one encoder increment
+    // wait some time to make sure the initial state has been sampled
+    for(tmp_a=0; tmp_a < 64; tmp_a++) {
+      asm volatile ("nop");
+    }
+    // set next encoder step
+    neorv32_gpio_port_set((0 << 6) | (1 << 0));
+    // wait some time to make sure the "movement" has been sampled
+    for(tmp_a=0; tmp_a < 32; tmp_a++) {
+      asm volatile ("nop");
+    }
+
+    // disable QDEC interrupt
+    neorv32_cpu_irq_disable(QDEC_FIRQ_ENABLE);
+
+    // check if IRQ and position increment at channel 0
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == QDEC_TRAP_CODE) &&
+        (neorv32_qdec_get_count(0) == 1)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    // disable QDEC
+    neorv32_qdec_disable();
+  }
+
+
+  // ----------------------------------------------------------
+  // Fast interrupt channel 14..15 (reserved)
+  // ----------------------------------------------------------
+  PRINT_STANDARD("[%i] FIRQ14..15 ", cnt_test);
+  PRINT_STANDARD("<skipped, n.a.>\n");
 
 
   // ----------------------------------------------------------
