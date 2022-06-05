@@ -15,7 +15,6 @@ __pycache__
 
 # keep default VHDL memory images
 !rtl/core/*_image.vhd
-!rtl/core/*_image_mem.vhd
 
 # host executables
 sw/image_gen/image_gen
