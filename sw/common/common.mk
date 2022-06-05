@@ -92,7 +92,7 @@ LD_SCRIPT = $(NEORV32_COM_PATH)/neorv32.ld
 APP_EXE  = neorv32_exe.bin
 APP_HEX  = neorv32_exe.hex
 APP_ASM  = main.asm
-APP_IMG  = neorv32_application_image_mem.vhd
+APP_IMG  = neorv32_application_image.vhd
 BOOT_IMG = neorv32_bootloader_image.vhd
 
 
