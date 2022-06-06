@@ -289,8 +289,13 @@ int main(int argc, char *argv[]) {
                         "-- MARCH: %s\n"
                         "-- Built: %s\n"
                         "\n"
-                        "-- prototype defined in 'neorv32_boot_rom.vhd'\n"
-                        "package body neorv32_bootloader_image is\n"
+                        "library ieee;\n"
+                        "use ieee.std_logic_1164.all;\n"
+                        "\n"
+                        "library neorv32;\n"
+                        "use neorv32.neorv32_package.all;\n"
+                        "\n"
+                        "package neorv32_bootloader_image is\n"
                         "\n"
                         "  constant bootloader_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, string_march, compile_time);
     fputs(tmp_string, output);
