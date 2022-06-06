@@ -4,7 +4,7 @@
 -- MARCH: default
 -- Built: 03.06.2022 06:03:44
 
--- prototype defined in 'neorv32_imem.entity.vhd'
+-- prototype defined in 'neorv32_package.vhd'
 package body neorv32_application_image is
 
   constant application_init_image : mem32_t := (

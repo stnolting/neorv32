@@ -4,13 +4,8 @@
 -- MARCH: default
 -- Built: 03.06.2022 06:02:56
 
-library ieee;
-use ieee.std_logic_1164.all;
-
-library neorv32;
-use neorv32.neorv32_package.all;
-
-package neorv32_bootloader_image is
+-- prototype defined in 'neorv32_package.vhd'
+package body neorv32_bootloader_image is
 
   constant bootloader_init_image : mem32_t := (
     00000000 => x"30005073",
