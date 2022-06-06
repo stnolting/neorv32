@@ -1,9 +1,10 @@
 -- #################################################################################################
 -- # << NEORV32 - Quadrature Decoder (QDEC) >>                                                     #
 -- # ********************************************************************************************* #
--- # Quadrature decoder to sample rotary encoders without any software overhead. The decoder       #
--- # supports up to 6 independent channels. Each channel provides it's own 16-bit position counter #
--- # that is increment/decremented according to which input edge is leading (A or B).              #
+-- # Quadrature decoder to sample Gray-coded incremental encoders without any software overhead.   #
+-- # The decoder supports up to 6 independent encoder channels. Each channel provides it's own     #
+-- # 16-bit (unsigned) position counter that is increment/decremented according to which encoder's #
+-- # input edge is leading (A or B).                                                               #
 -- #                                                                                               #
 -- # The decoder's sample rate is programmable to adjust to manually operated (slow) or            #
 -- # automatically operated (fast) rotary encoders.                                                #
@@ -11,7 +12,8 @@
 -- # Each channel provides an optional state-change interrupt that is triggered if there is any    #
 -- # valid movement detected. Furthermore, each channel provides an optional decoder error         #
 -- # interrupt that is triggered if an illegal state transition (i.e. both phase signals change at #
--- # the same time) is detected.                                                                   #
+-- # the same time) is detected. If any enabled interrupt source becomes valid the (single) QDEC   #
+-- # interrupt will be triggered.                                                                  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -132,9 +134,9 @@ architecture neorv32_qdec_rtl of neorv32_qdec is
   signal sample_cnt_msb : std_ulogic;
   signal sample_tick    : std_ulogic; -- final sample clock enable
 
-  -- movement detector --
+  -- decoder core --
   type sync_t is array (0 to QDEC_NUM_CH-1) of std_ulogic_vector(1 downto 0);
-  type move_t is record
+  type decoder_t is record
     sync_a    : sync_t;
     sync_b    : sync_t;
     sample_a  : sync_t;
@@ -143,7 +145,7 @@ architecture neorv32_qdec_rtl of neorv32_qdec is
     direction : std_ulogic_vector(QDEC_NUM_CH-1 downto 0);
     error     : std_ulogic_vector(QDEC_NUM_CH-1 downto 0);
   end record;
-  signal move : move_t;
+  signal decoder : decoder_t;
 
   -- position counters --
   type cnt_t is array (0 to QDEC_NUM_CH-1) of std_ulogic_vector(15 downto 0);
@@ -256,63 +258,63 @@ begin
 
   -- Movement Detector ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  move_detect_sync: process(clk_i)
+  decoder_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
       for i in 0 to QDEC_NUM_CH-1 loop
         -- input synchronizer to prevent metastability --
-        move.sync_a(i) <= move.sync_a(i)(0) & enc_a_i(i);
-        move.sync_b(i) <= move.sync_b(i)(0) & enc_b_i(i);
-        -- sampling --
-        move.sample_a(i)(1) <= move.sample_a(i)(0);
-        move.sample_b(i)(1) <= move.sample_b(i)(0);
+        decoder.sync_a(i) <= decoder.sync_a(i)(0) & enc_a_i(i);
+        decoder.sync_b(i) <= decoder.sync_b(i)(0) & enc_b_i(i);
+        -- sample buffers --
+        decoder.sample_a(i)(1) <= decoder.sample_a(i)(0);
+        decoder.sample_b(i)(1) <= decoder.sample_b(i)(0);
         if (enable = '0') then
-          move.sample_a(i)(0) <= '0';
-          move.sample_a(i)(0) <= '0';
+          decoder.sample_a(i)(0) <= '0';
+          decoder.sample_a(i)(0) <= '0';
         elsif (sample_tick = '1') then
-          move.sample_a(i)(0) <= move.sync_a(i)(1);
-          move.sample_b(i)(0) <= move.sync_b(i)(1);
+          decoder.sample_a(i)(0) <= decoder.sync_a(i)(1);
+          decoder.sample_b(i)(0) <= decoder.sync_b(i)(1);
         end if;
       end loop; -- i
     end if;
-  end process move_detect_sync;
+  end process decoder_sync;
 
   -- state decoding --
-  move_detect_comb: process(move)
+  decoder_comb: process(decoder)
     variable tmp_v : std_ulogic_vector(3 downto 0);
   begin
     for i in 0 to QDEC_NUM_CH-1 loop
-      tmp_v := move.sample_a(i)(0) & move.sample_b(i)(0) & move.sample_a(i)(1) & move.sample_b(i)(1);
-      case tmp_v is -- AB_current | AB_previous - gray encoding!
-        when "0000" => move.direction(i) <= '0'; move.valid(i) <= '0'; move.error(i) <= '0';
-        when "0001" => move.direction(i) <= '1'; move.valid(i) <= '1'; move.error(i) <= '0';
-        when "0010" => move.direction(i) <= '0'; move.valid(i) <= '1'; move.error(i) <= '0';
-        when "0011" => move.direction(i) <= '0'; move.valid(i) <= '0'; move.error(i) <= '1';
-        when "0100" => move.direction(i) <= '0'; move.valid(i) <= '1'; move.error(i) <= '0';
-        when "0101" => move.direction(i) <= '0'; move.valid(i) <= '0'; move.error(i) <= '0';
-        when "0110" => move.direction(i) <= '0'; move.valid(i) <= '0'; move.error(i) <= '1';
-        when "0111" => move.direction(i) <= '1'; move.valid(i) <= '1'; move.error(i) <= '0';
-        when "1000" => move.direction(i) <= '1'; move.valid(i) <= '1'; move.error(i) <= '0';
-        when "1001" => move.direction(i) <= '0'; move.valid(i) <= '0'; move.error(i) <= '1';
-        when "1010" => move.direction(i) <= '0'; move.valid(i) <= '0'; move.error(i) <= '0';
-        when "1011" => move.direction(i) <= '0'; move.valid(i) <= '1'; move.error(i) <= '0';
-        when "1100" => move.direction(i) <= '0'; move.valid(i) <= '0'; move.error(i) <= '1';
-        when "1101" => move.direction(i) <= '0'; move.valid(i) <= '1'; move.error(i) <= '0';
-        when "1110" => move.direction(i) <= '1'; move.valid(i) <= '1'; move.error(i) <= '0';
-        when "1111" => move.direction(i) <= '0'; move.valid(i) <= '0'; move.error(i) <= '0';
-        when others => move.direction(i) <= '0'; move.valid(i) <= '0'; move.error(i) <= '0';
+      tmp_v := decoder.sample_a(i)(0) & decoder.sample_b(i)(0) & decoder.sample_a(i)(1) & decoder.sample_b(i)(1);
+      case tmp_v is -- AB_current | AB_previous - Gray encoding!
+        when "0000" => decoder.direction(i) <= '0'; decoder.valid(i) <= '0'; decoder.error(i) <= '0';
+        when "0001" => decoder.direction(i) <= '1'; decoder.valid(i) <= '1'; decoder.error(i) <= '0';
+        when "0010" => decoder.direction(i) <= '0'; decoder.valid(i) <= '1'; decoder.error(i) <= '0';
+        when "0011" => decoder.direction(i) <= '0'; decoder.valid(i) <= '0'; decoder.error(i) <= '1';
+        when "0100" => decoder.direction(i) <= '0'; decoder.valid(i) <= '1'; decoder.error(i) <= '0';
+        when "0101" => decoder.direction(i) <= '0'; decoder.valid(i) <= '0'; decoder.error(i) <= '0';
+        when "0110" => decoder.direction(i) <= '0'; decoder.valid(i) <= '0'; decoder.error(i) <= '1';
+        when "0111" => decoder.direction(i) <= '1'; decoder.valid(i) <= '1'; decoder.error(i) <= '0';
+        when "1000" => decoder.direction(i) <= '1'; decoder.valid(i) <= '1'; decoder.error(i) <= '0';
+        when "1001" => decoder.direction(i) <= '0'; decoder.valid(i) <= '0'; decoder.error(i) <= '1';
+        when "1010" => decoder.direction(i) <= '0'; decoder.valid(i) <= '0'; decoder.error(i) <= '0';
+        when "1011" => decoder.direction(i) <= '0'; decoder.valid(i) <= '1'; decoder.error(i) <= '0';
+        when "1100" => decoder.direction(i) <= '0'; decoder.valid(i) <= '0'; decoder.error(i) <= '1';
+        when "1101" => decoder.direction(i) <= '0'; decoder.valid(i) <= '1'; decoder.error(i) <= '0';
+        when "1110" => decoder.direction(i) <= '1'; decoder.valid(i) <= '1'; decoder.error(i) <= '0';
+        when "1111" => decoder.direction(i) <= '0'; decoder.valid(i) <= '0'; decoder.error(i) <= '0';
+        when others => decoder.direction(i) <= '0'; decoder.valid(i) <= '0'; decoder.error(i) <= '0';
       end case;
     end loop; -- i
-  end process move_detect_comb;
+  end process decoder_comb;
 
 
-  -- Start-Up -------------------------------------------------------------------------------
+  -- Start-Up Delay -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   start_up: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- wait for two sample ticks before we start "real" operation
-      -- this will prevent false interrupts, positions changes and errors
+      -- wait for two sample clock ticks before we start "real" operation
+      -- this will prevent false interrupts, false positions changes and false transition errors
       if (enable = '0') then
         ready_sreg <= "00";
       elsif (sample_tick = '1') then
@@ -321,13 +323,13 @@ begin
     end if;
   end process start_up;
 
-  -- system ready? --
+  -- start-up done? --
   ready <= '1' when (ready_sreg = "11") else '0';
 
 
-  -- Position Update ------------------------------------------------------------------------
+  -- Position Counters ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  position_update: process(clk_i)
+  position_counter: process(clk_i)
   begin
     if rising_edge(clk_i) then
       for i in 0 to QDEC_NUM_CH-1 loop
@@ -336,19 +338,19 @@ begin
           err(i) <= '0';
         else
           -- channel position counter --
-          if (move.valid(i) = '1') then
-            if (move.direction(i) = '1') then -- increment
+          if (decoder.valid(i) = '1') then
+            if (decoder.direction(i) = '1') then -- increment
               cnt(i) <= std_ulogic_vector(unsigned(cnt(i)) + 1);
             else -- decrement
               cnt(i) <= std_ulogic_vector(unsigned(cnt(i)) - 1);
             end if;
           end if;
           -- channel decoder error flag (sticky) --
-          err(i) <= (err(i) or move.error(i)) and err_nclr(i);
+          err(i) <= (err(i) or decoder.error(i)) and err_nclr(i);
         end if;
       end loop; -- i
     end if;
-  end process position_update;
+  end process position_counter;
 
 
   -- Interrupt Generator --------------------------------------------------------------------
@@ -360,14 +362,14 @@ begin
         irq_gen <= "00";
       else
         irq_gen(1) <= irq_gen(0);
-        irq_gen(0) <= or_reduce_f(cirq_en and move.valid) or -- state-change interrupt
-                      or_reduce_f(eirq_en and move.error); -- decoder error interrupt
+        irq_gen(0) <= or_reduce_f(cirq_en and decoder.valid) or -- state-change interrupt
+                      or_reduce_f(eirq_en and decoder.error); -- decoder error interrupt
       end if;
     end if;
   end process irq_generator;
 
   -- CPU interrupt request --
-  irq_o <= '1' when (irq_gen = "01") else '0';
+  irq_o <= '1' when (irq_gen = "01") else '0'; -- edge detect
 
 
 end neorv32_qdec_rtl;
