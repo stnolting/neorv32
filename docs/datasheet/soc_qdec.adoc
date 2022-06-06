@@ -21,11 +21,15 @@ The quadrature decoder (QDEC) hardware module allows to track the movement of up
 incremental / rotary encoders with zero software overhead. The encoders can be manually operated (e.g. for a user
 interface) or automatically operated (e.g. to track the movement of an axis).
 
+[TIP]
+Wikipedia features an excellent article regarding incremental encoders and their interface:
+https://en.wikipedia.org/wiki/Incremental_encoder
+
 The QDEC module samples the state of the encoders _phase signals_ (A and B)
 and increments or decrements an internal 16-bit counter according to which signal provides a leading edge.
 The listing below shows the logic level of the A and B signals for 6 exemplary turns.
 
-.Exemplary AB Signal Levels for 6 Turns to the Left/Right (Gray code)
+.Exemplary AB Signal Levels for 6 Turns to the Left/Right (Gray code: only one bit changes at a time)
 [source]
 --------------------------
        AB   AB   AB   AB   AB   AB
@@ -33,23 +37,19 @@ Right: 00 - 01 - 11 - 10 - 00 - 01
 Left:  00 - 10 - 11 - 01 - 00 - 10
 --------------------------
 
-.Gray Code
-[NOTE]
-The QDEC was designed to handle **Gray-coded** (only one bit changes at a time) encoders only.
-
 The number of implemented channels is defined by the _IO_QDEC_NUM_CH_ generic (0..6). Configuring 0 channels will
-exclude the module from synthesis. Each encoder is connected to one bit of the `qdec_a_i` signal and one bit of the
-`qdec_b_i` signal. For example encoder channel 0 uses `qdec_a_i(0)` for its A signal line and `qdec_b_i(0)` for its B
+exclude the module from synthesis. Each encoder has to be connected to one bit of the `qdec_a_i` signal and one bit of the
+`qdec_b_i` signal. For example encoder channel 0 uses `qdec_a_i(0)` for the A signal line and `qdec_b_i(0)` for the B
 signal line.
 
 .Defined Signal Levels
 [IMPORTANT]
-Make sure to use pull-down / pull-up resistors for the A and B lines of each encoder.
+Make sure to use pull-down / pull-up resistors for the A and B signals of each encoder.
 
 .Center Button
 [TIP]
-An optional center button can be sampled via polling by connecting it to the GPIO input port of the
-<<_general_purpose_input_and_output_port_gpio>>. Alternatively, it can be sampled using interrupts by connecting it to
+If the encoder features a center push button can be optionally sampled via polling by connecting it to the GPIO input port of the
+<<_general_purpose_input_and_output_port_gpio>>. Alternatively, it can be sampled using interrupts (recommended) by connecting it to
 the <<_external_interrupt_controller_xirq>>.
 
 
