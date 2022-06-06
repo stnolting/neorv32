@@ -1463,7 +1463,7 @@ int main() {
     // set encoder input A[5:0] = GPIO.out[5:0]; B[5:0] = GPIO.out[11:6]
     neorv32_gpio_port_set(0);
 
-    // configure decoder: highest sample rate, enable state-change for channel 0
+    // configure decoder: highest sample rate, enable state-change IRQ for channel 0
     neorv32_qdec_setup(CLK_PRSC_2, 0b000001, 0b000000);
 
     // simulate one encoder increment
