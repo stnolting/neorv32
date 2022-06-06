@@ -123,7 +123,7 @@ enables the decoder error interrupt for channel `x` when set.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.6+<| `0xffffff50` .6+<| `NEORV32_QDEC.CTRL` <|`0`     _QDEC_CTRL_EN_       ^| r/w <| QDED module enable
+.6+<| `0xffffff50` .6+<| `NEORV32_QDEC.CTRL` <|`0`     _QDEC_CTRL_EN_       ^| r/w <| QDEC module enable
                                              <|`3:1`   _QDEC_CTRL_PRSCx_    ^| r/w <| 3-bit sample clock prescaler select
                                              <|`9:4`   _QDEC_CTRL_CIRQx_EN_ ^| r/w <| State-change interrupt enable for channel `x`
                                              <|`15:10` _QDEC_CTRL_EIRQx_EN_ ^| r/w <| Decoder error interrupt enable for channel `x`

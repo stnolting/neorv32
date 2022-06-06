@@ -605,7 +605,7 @@ begin
   fast_irq(10) <= slink_rx_irq;  -- SLINK RX
   fast_irq(11) <= slink_tx_irq;  -- SLINK TX
   fast_irq(12) <= gptmr_irq;     -- general purpose timer
-  fast_irq(13) <= qdec_irq;      -- QDEC state-change/error
+  fast_irq(13) <= qdec_irq;      -- quadrature decoder state-change/error
   --
   fast_irq(14) <= '0';           -- reserved
   fast_irq(15) <= '0';           -- LOWEST PRIORITY - reserved
