@@ -49,9 +49,9 @@ int main(int argc, char *argv[]) {
            "Three arguments are required.\n"
            "1st: Option\n"
            " -app_bin : Generate application executable binary (binary file, little-endian, with header) \n"
-           " -app_hex : Generate application raw executable (hex file, no header)\n"
-           " -app_img : Generate application raw executable memory image (vhdl file, no header)\n"
-           " -bld_img : Generate bootloader raw executable memory image (vdhl file, no header)\n"
+           " -app_hex : Generate application raw executable (ASCII hex file, no header)\n"
+           " -app_img : Generate application raw executable memory image (vhdl package body file, no header)\n"
+           " -bld_img : Generate bootloader raw executable memory image (vhdl package body file, no header)\n"
            "2nd: Input file (raw binary image)\n"
            "3rd: Output file\n"
            "4th: Project folder (optional)\n");
@@ -208,13 +208,14 @@ int main(int argc, char *argv[]) {
 
 
 // ------------------------------------------------------------
-// Generate APPLICATION's executable memory init file (no header!)
+// Generate APPLICATION's executable memory initialization file (no header!)
+// => VHDL package body
 // ------------------------------------------------------------
   if (option == 2) {
 
     // header
     sprintf(tmp_string, "-- The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
-                        "-- Auto-generated memory init file (for APPLICATION) from source file <%s/%s>\n"
+                        "-- Auto-generated memory initialization file (for APPLICATION) from source file <%s/%s>\n"
                         "-- Size: %lu bytes\n"
                         "-- MARCH: %s\n"
                         "-- Built: %s\n"
@@ -278,13 +279,14 @@ int main(int argc, char *argv[]) {
 
 
 // ------------------------------------------------------------
-// Generate BOOTLOADER's executable memory init file (no header!)
+// Generate BOOTLOADER's executable memory initialization file (no header!)
+// => VHDL package body
 // ------------------------------------------------------------
   if (option == 3) {
 
     // header
     sprintf(tmp_string, "-- The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
-                        "-- Auto-generated memory init file (for BOOTLOADER) from source file <%s/%s>\n"
+                        "-- Auto-generated memory initialization file (for BOOTLOADER) from source file <%s/%s>\n"
                         "-- Size: %lu bytes\n"
                         "-- MARCH: %s\n"
                         "-- Built: %s\n"
@@ -348,7 +350,7 @@ int main(int argc, char *argv[]) {
 
 
 // ------------------------------------------------------------
-// Generate APPLICATION's executable hex file (no header!!!)
+// Generate APPLICATION's executable ASCII hex file (no header!!!)
 // ------------------------------------------------------------
   if (option == 4) {
 
