@@ -1001,7 +1001,7 @@ int main() {
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] FIRQ1 (CFS) ", cnt_test);
-  PRINT_STANDARD("<skipped>\n");
+  PRINT_STANDARD("<skipped, n.a.>\n");
 
 
   // ----------------------------------------------------------
@@ -1416,7 +1416,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 12 (GPTMR)
   // ----------------------------------------------------------
-  if (neorv32_slink_available()) {
+  if (neorv32_gptmr_available()) {
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
     PRINT_STANDARD("[%i] FIRQ12 (GPTMR) ", cnt_test);
 
@@ -1435,7 +1435,7 @@ int main() {
     // disable GPTMR interrupt
     neorv32_cpu_irq_disable(CSR_MIE_FIRQ12E);
 
-    // check if RX FIFO fires IRQ
+    // check if IRQ
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_FIRQ_12) {
       test_ok();
     }
@@ -1448,11 +1448,11 @@ int main() {
   }
 
 
-//// ----------------------------------------------------------
-//// Fast interrupt channel 13..15 (reserved)
-//// ----------------------------------------------------------
-//PRINT_STANDARD("[%i] FIRQ13..15 ", cnt_test);
-//PRINT_STANDARD("<skipped, n.a.>\n");
+  // ----------------------------------------------------------
+  // Fast interrupt channel 13..15 (reserved)
+  // ----------------------------------------------------------
+  PRINT_STANDARD("[%i] FIRQ13..15 ", cnt_test);
+  PRINT_STANDARD("<skipped, n.a.>\n");
 
 
   // ----------------------------------------------------------
