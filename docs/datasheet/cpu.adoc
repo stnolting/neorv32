@@ -145,135 +145,11 @@ memory operations).
 :sectnums:
 === RISC-V Compatibility
 
-The NEORV32 CPU passes the tests of the _RISC-V Architecture Test Framework_. This framework is used to check
-RISC-V implementations for compatibility with the official RISC-V ISA specifications. 
-The NEORV32 port of this test framework has been moved to a separate repository:
-https://github.com/stnolting/neorv32-verif
-
-.**RISC-V `rv32_m/C` Tests**
-...................................
-Check cadd-01           ... OK
-Check caddi-01          ... OK
-Check caddi16sp-01      ... OK
-Check caddi4spn-01      ... OK
-Check cand-01           ... OK
-Check candi-01          ... OK
-Check cbeqz-01          ... OK
-Check cbnez-01          ... OK
-Check cebreak-01        ... OK
-Check cj-01             ... OK
-Check cjal-01           ... OK
-Check cjalr-01          ... OK
-Check cjr-01            ... OK
-Check cli-01            ... OK
-Check clui-01           ... OK
-Check clw-01            ... OK
-Check clwsp-01          ... OK
-Check cmv-01            ... OK
-Check cnop-01           ... OK
-Check cor-01            ... OK
-Check cslli-01          ... OK
-Check csrai-01          ... OK
-Check csrli-01          ... OK
-Check csub-01           ... OK
-Check csw-01            ... OK
-Check cswsp-01          ... OK
-Check cxor-01           ... OK
---------------------------------
-OK: 27/27 RISCV_TARGET=neorv32 RISCV_DEVICE=C XLEN=32
-...................................
-
-.**RISC-V `rv32_m/I` Tests**
-...................................
-Check add-01            ... OK
-Check addi-01           ... OK
-Check and-01            ... OK
-Check andi-01           ... OK
-Check auipc-01          ... OK
-Check beq-01            ... OK
-Check bge-01            ... OK
-Check bgeu-01           ... OK
-Check blt-01            ... OK
-Check bltu-01           ... OK
-Check bne-01            ... OK
-Check fence-01          ... OK
-Check jal-01            ... IGNORED <1>
-Check jalr-01           ... OK
-Check lb-align-01       ... OK
-Check lbu-align-01      ... OK
-Check lh-align-01       ... OK
-Check lhu-align-01      ... OK
-Check lui-01            ... OK
-Check lw-align-01       ... OK
-Check or-01             ... OK
-Check ori-01            ... OK
-Check sb-align-01       ... OK
-Check sh-align-01       ... OK
-Check sll-01            ... OK
-Check slli-01           ... OK
-Check slt-01            ... OK
-Check slti-01           ... OK
-Check sltiu-01          ... OK
-Check sltu-01           ... OK
-Check sra-01            ... OK
-Check srai-01           ... OK
-Check srl-01            ... OK
-Check srli-01           ... OK
-Check sub-01            ... OK
-Check sw-align-01       ... OK
-Check xor-01            ... OK
-Check xori-01           ... OK
-Check fence-01          ... OK
---------------------------------
-OK: 39/39 RISCV_TARGET=neorv32 RISCV_DEVICE=I XLEN=32
-...................................
-<1> Test is skipped due to a GHDL simulation issue.
-
-.**RISC-V `rv32_m/M` Tests**
-...................................
-Check div-01            ... OK
-Check divu-01           ... OK
-Check mul-01            ... OK
-Check mulh-01           ... OK
-Check mulhsu-01         ... OK
-Check mulhu-01          ... OK
-Check rem-01            ... OK
-Check remu-01           ... OK
---------------------------------
-OK: 8/8 RISCV_TARGET=neorv32 RISCV_DEVICE=M XLEN=32
-...................................
-
-.**RISC-V `rv32_m/privilege` Tests**
-...................................
-Check ebreak            ... OK
-Check ecall             ... OK
-Check misalign-beq-01   ... OK
-Check misalign-bge-01   ... OK
-Check misalign-bgeu-01  ... OK
-Check misalign-blt-01   ... OK
-Check misalign-bltu-01  ... OK
-Check misalign-bne-01   ... OK
-Check misalign-jal-01   ... OK
-Check misalign-lh-01    ... OK
-Check misalign-lhu-01   ... OK
-Check misalign-lw-01    ... OK
-Check misalign-sh-01    ... OK
-Check misalign-sw-01    ... OK
-Check misalign1-jalr-01 ... OK
-Check misalign2-jalr-01 ... OK
---------------------------------
-OK: 16/16 RISCV_TARGET=neorv32 RISCV_DEVICE=privilege XLEN=32
-...................................
-
-.**RISC-V `rv32_m/Zifencei` Tests**
-...................................
-Check Fencei            ... OK
---------------------------------
-OK: 1/1 RISCV_TARGET=neorv32 RISCV_DEVICE=Zifencei XLEN=32
-...................................
+The NEORV32 CPU passes the tests of the _official RISC-V Architecture Test Framework (v2.x)_. This framework is used to check
+RISC-V implementations for compatibility with the official RISC-V ISA specifications. The NEORV32 port of this test framework
+has been moved to a separate repository: https://github.com/stnolting/neorv32-verif
 
 
-<<<
 :sectnums:
 ==== RISC-V Incompatibility Issues and Limitations
 
@@ -284,8 +160,8 @@ handling unaligned memory accesses).
 
 .Read-Only "Read-Write" CSRs
 [IMPORTANT]
-The NEORV32 <<_misa>> and <<_mtval>> CSRs in the NEORV32 are _read-only_ (the RISC-V specs. declare
-these registers as _read/write_). Any machine-mode write access to them is ignored and will _not_
+The NEORV32 <<_misa>> and <<_mtval>> CSRs are _read-only_ - the RISC-V specs. declare
+these registers as _read/write_. Any machine-mode write access to them is ignored and will _not_
 cause any exceptions or side-effects to maintain RISC-V compatibility.
 
 .Physical Memory Protection
@@ -295,11 +171,11 @@ The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only 
 the according PMP entry and not the entries below. All region rules are checked in parallel **without**
 prioritization so for identical memory regions the most restrictive PMP rule will be enforced.
 
-.No HW-Support of Misaligned Memory Accesses
+.No Hardware Support of Misaligned Memory Accesses
 [WARNING]
 The CPU does not support the resolution of unaligned memory access by the hardware. This is not a
 RISC-V-compatibility issue but an important thing to know. Any kind of unaligned memory access
-will raise an exception to allow a software-based emulation.
+will raise an exception to allow a software-based emulation provided by the application.
 
 
 <<<
