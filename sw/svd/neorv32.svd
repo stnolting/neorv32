@@ -900,6 +900,12 @@
               <description>Generate ACK by controller for each transmission</description>
             </field>
             <field>
+              <name>TWI_CTRL_CLAIMED</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>Set if the TWI bus is currently claimed by any controller</description>
+            </field>
+            <field>
               <name>TWI_CTRL_ACK</name>
               <bitRange>[30:30]</bitRange>
               <access>read-only</access>
