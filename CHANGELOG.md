@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 09.06.2022 | 1.7.2.5 | reworked **TWI** module fixing several interface issues; :warning: removed "START condition done interrupt" and "STOP condition done interrupt"; [#340](https://github.com/stnolting/neorv32/pull/340) |
 | 06.06.2022 | 1.7.2.4 | split executable images into package and body; [#338](https://github.com/stnolting/neorv32/pull/338) |
 | 04.06.2022 | 1.7.2.3 | :bug: fixed bug in **SPI** and **XIP** modules: phase offset between SPI clock and SPI data; [#336](https://github.com/stnolting/neorv32/pull/336) |
 | 03.06.2022 | 1.7.2.2 | :sparkles: (finally) added a **dedicated hardware reset** to all IO/peripheral devices; [#334](https://github.com/stnolting/neorv32/pull/334) |
