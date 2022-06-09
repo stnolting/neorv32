@@ -125,7 +125,9 @@ int neorv32_twi_busy(void) {
   if (NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)) {
     return 1;
   }
-  return 0;
+  else {
+    return 0;
+  }
 }
 
 
