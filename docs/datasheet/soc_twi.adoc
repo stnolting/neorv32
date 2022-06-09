@@ -70,6 +70,13 @@ Set the control register's _TWI_CTRL_MACK_ bit to activate this feature. If this
 the peripheral is sampled in this time slot instead (normal mode).
 
 
+**TWI Bus Status**
+
+The TWI controller can check if the TWI bus is currently claimed (SCL and SDA both low). The bus can be claimed by the
+NEORV32 TWI itself or by any other controller. Bit _TWI_CTRL_CLAIMED_ of the control register will be set if the bus
+is currently claimed.
+
+
 **Summary**
 
 In summary, the following _independent_ TWI operations can be triggered by the application program to conduct
@@ -107,14 +114,15 @@ explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.9+<| `0xffffffb0` .9+<| `NEORV32_TWI.CTRL` <|`0` _TWI_CTRL_EN_     ^| r/w <| TWI enable
-                                            <|`1` _TWI_CTRL_START_  ^| -/w <| generate START condition, auto-clears
-                                            <|`2` _TWI_CTRL_STOP_   ^| -/w <| generate STOP condition, auto-clears
-                                            <|`3` _TWI_CTRL_PRSC0_  ^| r/w .3+<| 3-bit clock prescaler select
-                                            <|`4` _TWI_CTRL_PRSC1_  ^| r/w
-                                            <|`5` _TWI_CTRL_PRSC2_  ^| r/w
-                                            <|`6` _TWI_CTRL_MACK_   ^| r/w <| generate controller-ACK for each transmission ("MACK")
-                                            <|`30` _TWI_CTRL_ACK_   ^| r/- <| ACK received when set, NACK received when cleared
-                                            <|`31` _TWI_CTRL_BUSY_  ^| r/- <| transfer/START/STOP in progress when set
+.10+<| `0xffffffb0` .10+<| `NEORV32_TWI.CTRL` <|`0` _TWI_CTRL_EN_       ^| r/w <| TWI enable
+                                              <|`1` _TWI_CTRL_START_    ^| -/w <| generate START condition, auto-clears
+                                              <|`2` _TWI_CTRL_STOP_     ^| -/w <| generate STOP condition, auto-clears
+                                              <|`3` _TWI_CTRL_PRSC0_    ^| r/w .3+<| 3-bit clock prescaler select
+                                              <|`4` _TWI_CTRL_PRSC1_    ^| r/w
+                                              <|`5` _TWI_CTRL_PRSC2_    ^| r/w
+                                              <|`6` _TWI_CTRL_MACK_     ^| r/w <| generate controller-ACK for each transmission ("MACK")
+                                              <|`29` _TWI_CTRL_CLAIMED_ ^| r/- <| Set if the TWI bus is claimed by any controller
+                                              <|`30` _TWI_CTRL_ACK_     ^| r/- <| ACK received when set, NACK received when cleared
+                                              <|`31` _TWI_CTRL_BUSY_    ^| r/- <| transfer/START/STOP in progress when set
 | `0xffffffb4` | `NEORV32_TWI.DATA` |`7:0` _TWI_DATA_MSB_ : TWI_DATA_LSB_ | r/w | receive/transmit data
 |=======================
