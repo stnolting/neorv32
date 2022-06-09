@@ -56,5 +56,6 @@ int     neorv32_twi_trans(uint8_t d);
 uint8_t neorv32_twi_get_data(void);
 void    neorv32_twi_generate_stop(void);
 void    neorv32_twi_generate_start(void);
+int     neorv32_twi_bus_claimed(void);
 
 #endif // neorv32_twi_h

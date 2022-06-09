@@ -203,3 +203,19 @@ void neorv32_twi_generate_start(void) {
   NEORV32_TWI.CTRL |= (1 << TWI_CTRL_START); // generate START condition
   while (NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
 }
+
+
+ /**********************************************************************//**
+ * Check if the TWI bus is currently claimed by any controller.
+ *
+ * @return 0: 0 if bus is not claimed, 1 if bus is claimed.
+ **************************************************************************/
+int neorv32_twi_bus_claimed(void) {
+
+  if (NEORV32_TWI.CTRL & (1 << TWI_CTRL_CLAIMED)) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
