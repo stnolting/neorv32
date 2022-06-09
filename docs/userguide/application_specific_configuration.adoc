@@ -59,7 +59,7 @@ by setting `CPU_CNT_WIDTH => 0` if they are not used at all (note, this is not R
 using LUTs to implement the multiplier (`FAST_MUL_EN => true`).
 * If there is no need to execute division in hardware, use the `Zmmul` extension instead of the full-scale
 `M` extension.
-* Disable CPU extension that are not explicitly used (`A`, `U`, `Zfinx`).
+* Disable CPU extension that are not explicitly used.
 * _To be continued..._
 
 === Optimize for Clock Speed
