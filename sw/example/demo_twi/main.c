@@ -56,9 +56,13 @@
 void scan_twi(void);
 void set_speed(void);
 void send_twi(void);
+void check_claimed(void);
 void toggle_mack(void);
 uint32_t hexstr_to_uint(char *buffer, uint8_t length);
 void print_hex_byte(uint8_t data);
+
+// Global variables
+int bus_claimed;
 
 
 /**********************************************************************//**
@@ -72,7 +76,7 @@ int main() {
 
   char buffer[8];
   int length = 0;
-  int bus_claimed = 0;
+  bus_claimed = 0;
 
   // check if UART unit is implemented at all
   if (neorv32_uart0_available() == 0) {
@@ -130,6 +134,7 @@ int main() {
                           " stop  - generate STOP condition\n"
                           " send  - write & read single byte to/from bus\n"
                           " speed - select bus clock\n"
+                          " stat  - check if the TWI bus is currently claimed by any controller\n"
                           " mack  - enable/disable MASTER-ACK (ACK send by controller)\n\n"
                           "Start a new transmission by generating a START condition. Next, transfer the 7-bit device address\n"
                           "and the R/W flag. After that, transfer your data to be written or send a 0xFF if you want to read\n"
@@ -161,6 +166,9 @@ int main() {
       else {
         send_twi();
       }
+    }
+    else if (!strcmp(buffer, "stat")) {
+      check_claimed();
     }
     else if (!strcmp(buffer, "mack")) {
       toggle_mack();
@@ -234,6 +242,25 @@ void scan_twi(void) {
 
   if (!num_devices) {
     neorv32_uart0_printf("No devices found.\n");
+  }
+}
+
+
+/**********************************************************************//**
+ * Check if the TWI is currently claimed.
+ **************************************************************************/
+void check_claimed(void) {
+
+  if (NEORV32_TWI.CTRL & (1 << TWI_CTRL_CLAIMED)) {
+    if (bus_claimed == 0) {
+      neorv32_uart0_printf("Bus claimed by another controller.\n");
+    }
+    else {
+      neorv32_uart0_printf("Bus claimed by NEORV32 TWI.\n");
+    }
+  }
+  else {
+    neorv32_uart0_printf("Bus is idle.\n");
   }
 }
 
