@@ -72,16 +72,17 @@ architecture neorv32_twi_rtl of neorv32_twi is
   constant lo_abb_c : natural := index_size_f(twi_size_c); -- low address boundary bit
 
   -- control register --
-  constant ctrl_en_c    : natural := 0; -- r/w: TWI enable
-  constant ctrl_start_c : natural := 1; -- -/w: Generate START condition
-  constant ctrl_stop_c  : natural := 2; -- -/w: Generate STOP condition
-  constant ctrl_prsc0_c : natural := 3; -- r/w: CLK prsc bit 0
-  constant ctrl_prsc1_c : natural := 4; -- r/w: CLK prsc bit 1
-  constant ctrl_prsc2_c : natural := 5; -- r/w: CLK prsc bit 2
-  constant ctrl_mack_c  : natural := 6; -- r/w: generate ACK by controller for transmission
+  constant ctrl_en_c      : natural := 0; -- r/w: TWI enable
+  constant ctrl_start_c   : natural := 1; -- -/w: Generate START condition
+  constant ctrl_stop_c    : natural := 2; -- -/w: Generate STOP condition
+  constant ctrl_prsc0_c   : natural := 3; -- r/w: CLK prsc bit 0
+  constant ctrl_prsc1_c   : natural := 4; -- r/w: CLK prsc bit 1
+  constant ctrl_prsc2_c   : natural := 5; -- r/w: CLK prsc bit 2
+  constant ctrl_mack_c    : natural := 6; -- r/w: generate ACK by controller for transmission
   --
-  constant ctrl_ack_c   : natural := 30; -- r/-: Set if ACK received
-  constant ctrl_busy_c  : natural := 31; -- r/-: Set if TWI unit is busy
+  constant ctrl_claimed_c : natural := 29; -- r/-: Set if bus is still claimed
+  constant ctrl_ack_c     : natural := 30; -- r/-: Set if ACK received
+  constant ctrl_busy_c    : natural := 31; -- r/-: Set if TWI unit is busy
   --
   signal ctrl : std_ulogic_vector(6 downto 0); -- unit's control register
 
@@ -109,6 +110,7 @@ architecture neorv32_twi_rtl of neorv32_twi is
     bitcnt    : std_ulogic_vector(3 downto 0);
     rtx_sreg  : std_ulogic_vector(8 downto 0); -- main rx/tx shift reg
     busy      : std_ulogic;
+    claimed   : std_ulogic;
   end record;
   signal arbiter : arbiter_t;
 
@@ -153,14 +155,15 @@ begin
       data_o <= (others => '0');
       if (rden = '1') then
         if (addr = twi_ctrl_addr_c) then
-          data_o(ctrl_en_c)    <= ctrl(ctrl_en_c);
-          data_o(ctrl_prsc0_c) <= ctrl(ctrl_prsc0_c);
-          data_o(ctrl_prsc1_c) <= ctrl(ctrl_prsc1_c);
-          data_o(ctrl_prsc2_c) <= ctrl(ctrl_prsc2_c);
-          data_o(ctrl_mack_c)  <= ctrl(ctrl_mack_c);
+          data_o(ctrl_en_c)      <= ctrl(ctrl_en_c);
+          data_o(ctrl_prsc0_c)   <= ctrl(ctrl_prsc0_c);
+          data_o(ctrl_prsc1_c)   <= ctrl(ctrl_prsc1_c);
+          data_o(ctrl_prsc2_c)   <= ctrl(ctrl_prsc2_c);
+          data_o(ctrl_mack_c)    <= ctrl(ctrl_mack_c);
           --
-          data_o(ctrl_ack_c)   <= not arbiter.rtx_sreg(0);
-          data_o(ctrl_busy_c)  <= arbiter.busy;
+          data_o(ctrl_claimed_c) <= arbiter.claimed;
+          data_o(ctrl_ack_c)     <= not arbiter.rtx_sreg(0);
+          data_o(ctrl_busy_c)    <= arbiter.busy;
         else -- twi_rtx_addr_c =>
           data_o(7 downto 0)   <= arbiter.rtx_sreg(8 downto 1);
         end if;
@@ -283,6 +286,8 @@ begin
           -- data output update --
           if (clk_gen.phase(0) = '1') then
             io_con.sda_out <= arbiter.rtx_sreg(8); -- MSB first
+          elsif (arbiter.bitcnt = "1001") then
+            io_con.sda_out <= '0'; -- set SDA to low to keep bus claimed after transmission
           end if;
           -- input sample --
           if (clk_gen.phase(2) = '1') then
@@ -313,6 +318,9 @@ begin
   arbiter.busy <= arbiter.state(1) or arbiter.state(0) or -- operation in progress
                   arbiter.state_nxt(1) or arbiter.state_nxt(0); -- operation pending
 
+  -- check if the TWI bus is currently claimed (by this module or any other controller) --
+  arbiter.claimed <= '1' when (arbiter.busy = '1') or ((io_con.sda_in_ff(1) = '0') and (io_con.scl_in_ff(1) = '0')) else '0';
+
 
   -- Tri-State Driver -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -323,5 +331,6 @@ begin
   -- read-back - 'to_bit' to avoid hardware-vs-simulation mismatch --
   io_con.sda_in <= to_stdulogic(to_bit(twi_sda_io));
   io_con.scl_in <= to_stdulogic(to_bit(twi_scl_io));
+
 
 end neorv32_twi_rtl;
