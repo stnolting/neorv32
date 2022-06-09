@@ -202,7 +202,7 @@ begin
 
   -- Clock Stretching Detector --
   -- controller wants to pull SCL high, but SCL is pulled low by peripheral --
-  clk_gen.halt <= '1' when (io_con.scl_out = '1') and (to_bit(io_con.scl_in_ff(1)) = '0') else '0'; -- 'to_bit' to avoid simulation mismatch
+  clk_gen.halt <= '1' when (io_con.scl_out = '1') and (io_con.scl_in_ff(1) = '0') else '0';
 
 
   -- TWI Transceiver ------------------------------------------------------------------------
@@ -320,9 +320,8 @@ begin
   twi_sda_io <= '0' when (io_con.sda_out = '0') else 'Z';
   twi_scl_io <= '0' when (io_con.scl_out = '0') else 'Z';
 
-  -- read-back --
-  io_con.sda_in <= std_ulogic(twi_sda_io);
-  io_con.scl_in <= std_ulogic(twi_scl_io);
-
+  -- read-back - 'to_bit' to avoid hardware-vs-simulation mismatch --
+  io_con.sda_in <= to_stdulogic(to_bit(twi_sda_io));
+  io_con.scl_in <= to_stdulogic(to_bit(twi_scl_io));
 
 end neorv32_twi_rtl;
