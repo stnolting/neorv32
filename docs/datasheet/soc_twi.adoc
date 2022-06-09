@@ -26,6 +26,10 @@ The NEORV32 TWI implements a **TWI controller**. It supports "clock so a slow pe
 the transmission by pulling the SCL line low. Currently, **no multi-controller
 support** is available. Also, the NEORV32 TWI unit cannot operate in peripheral mode.
 
+[IMPORTANT]
+The serial clock (SCL) and the serial data (SDA) lines can only be actively driven low by the
+controller. Hence, external pull-up resistors are required for these lines.
+
 
 **TWI Clock Speed**
 
@@ -92,11 +96,11 @@ send/receive an arbitrary number of bytes
 
 [TIP]
 A transmission can be terminated at any time by disabling the TWI module
-by clearing the _TWI_CTRL_EN_ control register bit.
+by clearing the _TWI_CTRL_EN_ control register bit. This will also reset the whole module.
 
-[IMPORTANT]
-The serial clock (SCL) and the serial data (SDA) lines can only be actively driven low by the
-controller. Hence, external pull-up resistors are required for these lines.
+[NOTE]
+When reading data from a device, all-one (`0xFF`) has to be written to TWI data register `NEORV32_TWI.DATA`
+so the accessed device can actively pull-down SDA when required.
 
 
 **TWI Interrupt**
@@ -114,14 +118,14 @@ explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xffffffb0` .10+<| `NEORV32_TWI.CTRL` <|`0` _TWI_CTRL_EN_       ^| r/w <| TWI enable
+.10+<| `0xffffffb0` .10+<| `NEORV32_TWI.CTRL` <|`0` _TWI_CTRL_EN_       ^| r/w <| TWI enable, reset if cleared
                                               <|`1` _TWI_CTRL_START_    ^| -/w <| generate START condition, auto-clears
                                               <|`2` _TWI_CTRL_STOP_     ^| -/w <| generate STOP condition, auto-clears
                                               <|`3` _TWI_CTRL_PRSC0_    ^| r/w .3+<| 3-bit clock prescaler select
                                               <|`4` _TWI_CTRL_PRSC1_    ^| r/w
                                               <|`5` _TWI_CTRL_PRSC2_    ^| r/w
                                               <|`6` _TWI_CTRL_MACK_     ^| r/w <| generate controller-ACK for each transmission ("MACK")
-                                              <|`29` _TWI_CTRL_CLAIMED_ ^| r/- <| Set if the TWI bus is claimed by any controller
+                                              <|`29` _TWI_CTRL_CLAIMED_ ^| r/- <| set if the TWI bus is claimed by any controller
                                               <|`30` _TWI_CTRL_ACK_     ^| r/- <| ACK received when set, NACK received when cleared
                                               <|`31` _TWI_CTRL_BUSY_    ^| r/- <| transfer/START/STOP in progress when set
 | `0xffffffb4` | `NEORV32_TWI.DATA` |`7:0` _TWI_DATA_MSB_ : TWI_DATA_LSB_ | r/w | receive/transmit data
