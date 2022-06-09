@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # Supports START and STOP conditions, 8 bit data + ACK/NACK transfers and clock stretching.     #
 -- # Supports ACKs by the controller. No multi-controller support and no peripheral mode support   #
--- # yet. Interrupt: "operation done"                                                              #
+-- # yet. Interrupt: "transmission done"                                                           #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -91,26 +91,37 @@ architecture neorv32_twi_rtl of neorv32_twi is
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
-  -- twi clocking --
-  signal twi_clk       : std_ulogic;
-  signal twi_phase_gen : std_ulogic_vector(3 downto 0);
-  signal twi_clk_phase : std_ulogic_vector(3 downto 0);
+  -- clock generator --
+  type clk_gen_t is record
+    clk_tick     : std_ulogic;
+    clk_tick_ff  : std_ulogic;
+    phase_gen    : std_ulogic_vector(3 downto 0);
+    phase_gen_ff : std_ulogic_vector(3 downto 0);
+    phase        : std_ulogic_vector(3 downto 0);
+    halt         : std_ulogic;
+  end record;
+  signal clk_gen : clk_gen_t;
 
-  -- twi clock stretching --
-  signal twi_clk_halt : std_ulogic;
+  -- arbiter --
+  type arbiter_t is record
+    state     : std_ulogic_vector(2 downto 0);
+    state_nxt : std_ulogic_vector(1 downto 0);
+    bitcnt    : std_ulogic_vector(3 downto 0);
+    rtx_sreg  : std_ulogic_vector(8 downto 0); -- main rx/tx shift reg
+    busy      : std_ulogic;
+  end record;
+  signal arbiter : arbiter_t;
 
-  -- twi transceiver core --
-  signal arbiter  : std_ulogic_vector(2 downto 0);
-  signal bitcnt   : std_ulogic_vector(3 downto 0);
-  signal rtx_sreg : std_ulogic_vector(8 downto 0); -- main rx/tx shift reg
-
-  -- tri-state I/O --
-  signal twi_sda_in_ff : std_ulogic_vector(1 downto 0); -- SDA input sync
-  signal twi_scl_in_ff : std_ulogic_vector(1 downto 0); -- SCL input sync
-  signal twi_sda_in    : std_ulogic;
-  signal twi_scl_in    : std_ulogic;
-  signal twi_sda_out   : std_ulogic;
-  signal twi_scl_out   : std_ulogic;
+  -- tri-state I/O control --
+  type io_con_t is record
+    sda_in_ff : std_ulogic_vector(1 downto 0); -- SDA input sync
+    scl_in_ff : std_ulogic_vector(1 downto 0); -- SCL input sync
+    sda_in    : std_ulogic;
+    scl_in    : std_ulogic;
+    sda_out   : std_ulogic;
+    scl_out   : std_ulogic;
+  end record;
+  signal io_con : io_con_t;
 
 begin
 
@@ -148,10 +159,10 @@ begin
           data_o(ctrl_prsc2_c) <= ctrl(ctrl_prsc2_c);
           data_o(ctrl_mack_c)  <= ctrl(ctrl_mack_c);
           --
-          data_o(ctrl_ack_c)   <= not rtx_sreg(0);
-          data_o(ctrl_busy_c)  <= arbiter(1) or arbiter(0);
+          data_o(ctrl_ack_c)   <= not arbiter.rtx_sreg(0);
+          data_o(ctrl_busy_c)  <= arbiter.busy;
         else -- twi_rtx_addr_c =>
-          data_o(7 downto 0)   <= rtx_sreg(8 downto 1);
+          data_o(7 downto 0)   <= arbiter.rtx_sreg(8 downto 1);
         end if;
       end if;
     end if;
@@ -164,25 +175,34 @@ begin
   clkgen_en_o <= ctrl(ctrl_en_c);
 
   -- twi clock select --
-  twi_clk <= clkgen_i(to_integer(unsigned(ctrl(ctrl_prsc2_c downto ctrl_prsc0_c))));
+  clk_gen.clk_tick <= clkgen_i(to_integer(unsigned(ctrl(ctrl_prsc2_c downto ctrl_prsc0_c))));
 
-  -- generate four non-overlapping clock ticks at twi_clk/4 --
+  -- generate four non-overlapping clock ticks --
   clock_phase_gen: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (arbiter(2) = '0') or (arbiter(1 downto 0) = "00") then -- offline or idle
-        twi_phase_gen <= "0001"; -- make sure to start with a new phase, bit 0,1,2,3 stepping
-      elsif (twi_clk = '1') and (twi_clk_halt = '0') then -- enabled and no clock stretching detected
-        twi_phase_gen <= twi_phase_gen(2 downto 0) & twi_phase_gen(3); -- rotate left
+      clk_gen.clk_tick_ff <= clk_gen.clk_tick;
+      if (arbiter.state(2) = '0') or (arbiter.state(1 downto 0) = "00") then -- offline or idle
+        clk_gen.phase_gen_ff <= "0001";
+        clk_gen.phase_gen    <= "0001"; -- make sure to start with a new phase, bit stepping: 0-1-2-3
+      else
+        clk_gen.phase_gen_ff <= clk_gen.phase_gen;
+        if (clk_gen.clk_tick_ff = '1') and (clk_gen.halt = '0') then -- clock tick and no clock stretching detected
+          clk_gen.phase_gen <= clk_gen.phase_gen(2 downto 0) & clk_gen.phase_gen(3); -- rotate left
+        end if;
       end if;
     end if;
   end process clock_phase_gen;
 
   -- TWI bus signals are set/sampled using 4 clock phases --
-  twi_clk_phase(0) <= twi_phase_gen(0) and twi_clk; -- first step
-  twi_clk_phase(1) <= twi_phase_gen(1) and twi_clk;
-  twi_clk_phase(2) <= twi_phase_gen(2) and twi_clk;
-  twi_clk_phase(3) <= twi_phase_gen(3) and twi_clk; -- last step
+  clk_gen.phase(0) <= clk_gen.phase_gen_ff(0) and (not clk_gen.phase_gen(0)); -- first step
+  clk_gen.phase(1) <= clk_gen.phase_gen_ff(1) and (not clk_gen.phase_gen(1));
+  clk_gen.phase(2) <= clk_gen.phase_gen_ff(2) and (not clk_gen.phase_gen(2));
+  clk_gen.phase(3) <= clk_gen.phase_gen_ff(3) and (not clk_gen.phase_gen(3)); -- last step
+
+  -- Clock Stretching Detector --
+  -- controller wants to pull SCL high, but SCL is pulled low by peripheral --
+  clk_gen.halt <= '1' when (io_con.scl_out = '1') and (to_bit(io_con.scl_in_ff(1)) = '0') else '0'; -- 'to_bit' to avoid simulation mismatch
 
 
   -- TWI Transceiver ------------------------------------------------------------------------
@@ -190,107 +210,119 @@ begin
   twi_rtx_unit: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- input synchronizer & sampler --
-      twi_sda_in_ff <= twi_sda_in_ff(0) & twi_sda_in;
-      twi_scl_in_ff <= twi_scl_in_ff(0) & twi_scl_in;
+      -- input synchronizer --
+      io_con.sda_in_ff <= io_con.sda_in_ff(0) & io_con.sda_in;
+      io_con.scl_in_ff <= io_con.scl_in_ff(0) & io_con.scl_in;
 
       -- defaults --
       irq_o <= '0';
 
       -- serial engine --
-      arbiter(2) <= ctrl(ctrl_en_c); -- still activated?
-      case arbiter is
+      arbiter.state(2) <= ctrl(ctrl_en_c); -- module enabled?
+      case arbiter.state is
 
         when "100" => -- IDLE: waiting for requests, bus might be still claimed by this controller if no STOP condition was generated
-          bitcnt <= (others => '0');
+          arbiter.bitcnt <= (others => '0');
           if (wren = '1') then
             if (addr = twi_ctrl_addr_c) then
               if (data_i(ctrl_start_c) = '1') then -- issue START condition
-                arbiter(1 downto 0) <= "01";
+                arbiter.state_nxt <= "01";
               elsif (data_i(ctrl_stop_c) = '1') then  -- issue STOP condition
-                arbiter(1 downto 0) <= "10";
+                arbiter.state_nxt <= "10";
               end if;
             elsif (addr = twi_rtx_addr_c) then -- start a data transmission
-              -- one bit extra for ack, issued by controller if ctrl_mack_c is set,
+              -- one bit extra for ACK: issued by controller if ctrl_mack_c is set,
               -- sampled from peripheral if ctrl_mack_c is cleared
-              rtx_sreg <= data_i(7 downto 0) & (not ctrl(ctrl_mack_c));
-              arbiter(1 downto 0) <= "11";
+              arbiter.rtx_sreg  <= data_i(7 downto 0) & (not ctrl(ctrl_mack_c));
+              arbiter.state_nxt <= "11";
             end if;
           end if;
+          -- start operation on next TWI clock pulse --
+          if (arbiter.state_nxt /= "00") and (clk_gen.clk_tick_ff = '1') then
+            arbiter.state(1 downto 0) <= arbiter.state_nxt;
+          end if;
 
-        when "101" => -- START: generate START condition
-          if (twi_clk_phase(0) = '1') then
-            twi_sda_out <= '1';
-          elsif (twi_clk_phase(1) = '1') then
-            twi_sda_out <= '0';
+        when "101" => -- START: generate (repeated) START condition
+          arbiter.state_nxt <= "00";
+          if (clk_gen.phase(0) = '1') then
+            io_con.sda_out <= '1';
+          elsif (clk_gen.phase(1) = '1') then
+            io_con.sda_out <= '0';
           end if;
           --
-          if (twi_clk_phase(0) = '1') then
-            twi_scl_out <= '1';
-          elsif (twi_clk_phase(3) = '1') then
-            twi_scl_out <= '0';
-            irq_o       <= '1'; -- Interrupt!
-            arbiter(1 downto 0) <= "00"; -- go back to IDLE
+          if (clk_gen.phase(0) = '1') then
+            io_con.scl_out <= '1';
+          elsif (clk_gen.phase(3) = '1') then
+            io_con.scl_out <= '0';
+            arbiter.state(1 downto 0) <= "00"; -- go back to IDLE
           end if;
 
         when "110" => -- STOP: generate STOP condition
-          if (twi_clk_phase(0) = '1') then
-            twi_sda_out <= '0';
-          elsif (twi_clk_phase(3) = '1') then
-            twi_sda_out <= '1';
-            irq_o       <= '1'; -- Interrupt!
-            arbiter(1 downto 0) <= "00"; -- go back to IDLE
+          arbiter.state_nxt <= "00";
+          if (clk_gen.phase(0) = '1') then
+            io_con.sda_out <= '0';
+          elsif (clk_gen.phase(3) = '1') then
+            io_con.sda_out <= '1';
+            arbiter.state(1 downto 0) <= "00"; -- go back to IDLE
           end if;
           --
-          if (twi_clk_phase(0) = '1') then
-            twi_scl_out <= '0';
-          elsif (twi_clk_phase(1) = '1') then
-            twi_scl_out <= '1';
+          if (clk_gen.phase(0) = '1') then
+            io_con.scl_out <= '0';
+          elsif (clk_gen.phase(1) = '1') then
+            io_con.scl_out <= '1';
           end if;
 
-        when "111" => -- TRANSMISSION: transmission in progress
-          if (twi_clk_phase(0) = '1') then
-            bitcnt    <= std_ulogic_vector(unsigned(bitcnt) + 1);
-            twi_scl_out <= '0';
-            twi_sda_out <= rtx_sreg(8); -- MSB first
-          elsif (twi_clk_phase(1) = '1') then -- first half + second half of valid data strobe
-            twi_scl_out <= '1';
-          elsif (twi_clk_phase(3) = '1') then
-            rtx_sreg  <= rtx_sreg(7 downto 0) & twi_sda_in_ff(twi_sda_in_ff'left); -- sample and shift left
-            twi_scl_out <= '0';
+        when "111" => -- TRANSMISSION: send/receive byte + ACK/NACK/MACK
+          arbiter.state_nxt <= "00";
+          -- clock --
+          if (clk_gen.phase(0) = '1') or (clk_gen.phase(3) = '1') then
+            io_con.scl_out <= '0';
+          elsif (clk_gen.phase(1) = '1') then -- first half + second half of valid data strobe
+            io_con.scl_out <= '1';
+          end if;
+          -- data output update --
+          if (clk_gen.phase(0) = '1') then
+            io_con.sda_out <= arbiter.rtx_sreg(8); -- MSB first
+          end if;
+          -- input sample --
+          if (clk_gen.phase(2) = '1') then
+            arbiter.rtx_sreg <= arbiter.rtx_sreg(7 downto 0) & io_con.sda_in_ff(1); -- sample and shift left
+          end if;
+          -- bit done --
+          if (clk_gen.phase(3) = '1') then
+            arbiter.bitcnt <= std_ulogic_vector(unsigned(arbiter.bitcnt) + 1);
           end if;
           --
-          if (bitcnt = "1010") then -- 8 data bits + 1 bit for ACK + 1 tick delay
-            irq_o <= '1'; -- Interrupt!
-            arbiter(1 downto 0) <= "00"; -- go back to IDLE
+          if (arbiter.bitcnt = "1001") then -- 8 data bits + 1 ACK bit
+            irq_o <= '1'; -- transmission done interrupt
+            arbiter.state(1 downto 0) <= "00"; -- go back to IDLE
           end if;
 
         when others => -- "0--" OFFLINE: TWI deactivated
-          rtx_sreg    <= (others => '0');
-          twi_sda_out <= '1';
-          twi_scl_out <= '1';
-          arbiter(1 downto 0) <= "00"; -- stay here, go to idle when activated
+          io_con.sda_out            <= '1';
+          io_con.scl_out            <= '1';
+          arbiter.rtx_sreg          <= (others => '0');
+          arbiter.state_nxt         <= (others => '0');
+          arbiter.state(1 downto 0) <= (others => '0'); -- stay here, go to idle when activated
 
       end case;
     end if;
   end process twi_rtx_unit;
 
-
-  -- Clock Stretching Detector --------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- controller wants to pull SCL high, but SCL is pulled low by peripheral --
-  twi_clk_halt <= '1' when (twi_scl_out = '1') and (twi_scl_in_ff(twi_scl_in_ff'left) = '0') else '0';
+  -- arbiter busy flag --
+  arbiter.busy <= arbiter.state(1) or arbiter.state(0) or -- operation in progress
+                  arbiter.state_nxt(1) or arbiter.state_nxt(0); -- operation pending
 
 
   -- Tri-State Driver -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- SDA and SCL need to be of type std_logic to be correctly resolved in simulation
-  twi_sda_io <= '0' when (twi_sda_out = '0') else 'Z';
-  twi_scl_io <= '0' when (twi_scl_out = '0') else 'Z';
+  twi_sda_io <= '0' when (io_con.sda_out = '0') else 'Z';
+  twi_scl_io <= '0' when (io_con.scl_out = '0') else 'Z';
 
   -- read-back --
-  twi_sda_in <= std_ulogic(twi_sda_io);
-  twi_scl_in <= std_ulogic(twi_scl_io);
+  io_con.sda_in <= std_ulogic(twi_sda_io);
+  io_con.scl_in <= std_ulogic(twi_scl_io);
 
 
 end neorv32_twi_rtl;
