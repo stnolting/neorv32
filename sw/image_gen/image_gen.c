@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
   FILE *input, *output;
   unsigned char buffer[4];
-  char tmp_string[2048];
+  char tmp_string[1024];
   uint32_t tmp = 0, size = 0, checksum = 0;
   unsigned int i = 0;
   int option = 0;
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
   if (option == 2) {
 
     // header
-    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
+    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor: https://github.com/stnolting/neorv32\n"
                         "-- Auto-generated memory initialization file (for APPLICATION) from source file <%s/%s>\n"
                         "-- Size: %lu bytes\n"
                         "-- MARCH: %s\n"
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
                         "-- prototype defined in 'neorv32_package.vhd'\n"
                         "package body neorv32_application_image is\n"
                         "\n"
-                        "  constant application_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, string_march, compile_time);
+                        "constant application_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, string_march, compile_time);
     fputs(tmp_string, output);
 
     // data
@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
         tmp |= (uint32_t)(buffer[1] << 8);
         tmp |= (uint32_t)(buffer[2] << 16);
         tmp |= (uint32_t)(buffer[3] << 24);
-        sprintf(tmp_string, "    %08d => x\"%08x\",\n", i, (unsigned int)tmp);
+        sprintf(tmp_string, "x\"%08x\",\n", (unsigned int)tmp);
         fputs(tmp_string, output);
         buffer[0] = 0;
         buffer[1] = 0;
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[1] << 8);
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
-      sprintf(tmp_string, "    %08d => x\"%08x\"\n", i, (unsigned int)tmp);
+      sprintf(tmp_string, "x\"%08x\"\n", (unsigned int)tmp);
       fputs(tmp_string, output);
       buffer[0] = 0;
       buffer[1] = 0;
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
     }
 
     // end
-    sprintf(tmp_string, "  );\n"
+    sprintf(tmp_string, ");\n"
                         "\n"
                         "end neorv32_application_image;\n");
     fputs(tmp_string, output);
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
   if (option == 3) {
 
     // header
-    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32\n"
+    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor: https://github.com/stnolting/neorv32\n"
                         "-- Auto-generated memory initialization file (for BOOTLOADER) from source file <%s/%s>\n"
                         "-- Size: %lu bytes\n"
                         "-- MARCH: %s\n"
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
                         "-- prototype defined in 'neorv32_package.vhd'\n"
                         "package body neorv32_bootloader_image is\n"
                         "\n"
-                        "  constant bootloader_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, string_march, compile_time);
+                        "constant bootloader_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, string_march, compile_time);
     fputs(tmp_string, output);
 
     // data
@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
         tmp |= (uint32_t)(buffer[1] << 8);
         tmp |= (uint32_t)(buffer[2] << 16);
         tmp |= (uint32_t)(buffer[3] << 24);
-        sprintf(tmp_string, "    %08d => x\"%08x\",\n", i, (unsigned int)tmp);
+        sprintf(tmp_string, "x\"%08x\",\n", (unsigned int)tmp);
         fputs(tmp_string, output);
         buffer[0] = 0;
         buffer[1] = 0;
@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[1] << 8);
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
-      sprintf(tmp_string, "    %08d => x\"%08x\"\n", i, (unsigned int)tmp);
+      sprintf(tmp_string, "x\"%08x\"\n", (unsigned int)tmp);
       fputs(tmp_string, output);
       buffer[0] = 0;
       buffer[1] = 0;
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
     }
 
     // end
-    sprintf(tmp_string, "  );\n"
+    sprintf(tmp_string, ");\n"
                         "\n"
                         "end neorv32_bootloader_image;\n");
     fputs(tmp_string, output);
