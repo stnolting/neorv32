@@ -95,7 +95,7 @@ The NEORV32 Processor provides a full-featured microcontroller-like SoC build ar
 By using generics the design is highly configurable and allows a flexible customization to tailor the
 setup according to your needs. Note that all of the following SoC modules are entirely _optional_.
 
-**CPU**
+**CPU Core**
 
 * 32-bit little-endian RISC-V single-core, pipelined/multi-cycle modified Harvard architecture
 * configurable ISA extensions:
@@ -184,8 +184,8 @@ _intrinsic libraries_ for the `B` and `Zfinx` extensions.
 
 ## 3. FPGA Implementation Results
 
-Implementation results for exemplary **CPU-only** configuration generated for an Intel Cyclone IV E `EP4CE22F17C6` FPGA
-using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimization_, f_max from _Slow 1200mV 0C Model_).
+Implementation results for exemplary configuration generated for an Intel Cyclone IV E `EP4CE22F17C6` FPGA
+using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimization_, f_max from the _Slow 1200mV 0C Model_).
 
 | CPU Configuration (version [1.6.9.8](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
 |:-----------------------|:----:|:----:|:----:|:-:|:-------:|
@@ -259,9 +259,11 @@ This overview provides some *quick links* to the most important sections of the
 [online Data Sheet](https://stnolting.github.io/neorv32) and the
 [online User Guide](https://stnolting.github.io/neorv32/ug).
 
-### :electric_plug: Hardware Overview
+### :interrobang: Rationale
 
-* [:interrobang: Rationale](https://stnolting.github.io/neorv32/#_rationale) - NEORV32: Why? How come? What for?
+* [Rationale](https://stnolting.github.io/neorv32/#_rationale) - NEORV32: Why? How come? What for?
+
+### :electric_plug: Hardware Overview
 
 * **[NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - the SoC**
   * [Top Entity - Signals](https://stnolting.github.io/neorv32/#_processor_top_entity_signals) - how to connect to the processor
@@ -296,7 +298,6 @@ This overview provides some *quick links* to the most important sections of the
 * [Adding Custom Hardware Modules](https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules) - add _your_ custom hardware
 * [Debugging via the On-Chip Debugger](https://stnolting.github.io/neorv32/ug/#_debugging_using_the_on_chip_debugger) - step through code *online* and *in-system*
 * [Simulation](https://stnolting.github.io/neorv32/ug/#_simulating_the_processor) - simulate the whole SoC
-  * [Hello World!](https://stnolting.github.io/neorv32/ug/index.html#_hello_world) - run a quick _"hello world"_ simulation
 
 ### :copyright: Legal
 
