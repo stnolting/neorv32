@@ -109,6 +109,7 @@ architecture neorv32_twi_rtl of neorv32_twi is
     state_nxt : std_ulogic_vector(1 downto 0);
     bitcnt    : std_ulogic_vector(3 downto 0);
     rtx_sreg  : std_ulogic_vector(8 downto 0); -- main rx/tx shift reg
+    rtx_done  : std_ulogic;
     busy      : std_ulogic;
     claimed   : std_ulogic;
   end record;
@@ -181,7 +182,7 @@ begin
   clk_gen.clk_tick <= clkgen_i(to_integer(unsigned(ctrl(ctrl_prsc2_c downto ctrl_prsc0_c))));
 
   -- generate four non-overlapping clock ticks --
-  clock_phase_gen: process(clk_i)
+  clock_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
       clk_gen.clk_tick_ff <= clk_gen.clk_tick;
@@ -195,7 +196,7 @@ begin
         end if;
       end if;
     end if;
-  end process clock_phase_gen;
+  end process clock_generator;
 
   -- TWI bus signals are set/sampled using 4 clock phases --
   clk_gen.phase(0) <= clk_gen.phase_gen_ff(0) and (not clk_gen.phase_gen(0)); -- first step
@@ -210,21 +211,26 @@ begin
 
   -- TWI Transceiver ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  twi_rtx_unit: process(clk_i)
+  twi_engine: process(clk_i)
   begin
     if rising_edge(clk_i) then
       -- input synchronizer --
       io_con.sda_in_ff <= io_con.sda_in_ff(0) & io_con.sda_in;
       io_con.scl_in_ff <= io_con.scl_in_ff(0) & io_con.scl_in;
 
-      -- defaults --
-      irq_o <= '0';
+      -- interrupt --
+      if (arbiter.state = "111") and (arbiter.rtx_done = '1') then -- transmission done
+        irq_o <= '1';
+      else
+        irq_o <= '0';
+      end if;
 
       -- serial engine --
       arbiter.state(2) <= ctrl(ctrl_en_c); -- module enabled?
       case arbiter.state is
 
-        when "100" => -- IDLE: waiting for requests, bus might be still claimed by this controller if no STOP condition was generated
+        when "100" => -- IDLE: waiting for operation requests
+        -- ------------------------------------------------------------
           arbiter.bitcnt <= (others => '0');
           if (wren = '1') then
             if (addr = twi_ctrl_addr_c) then
@@ -246,7 +252,8 @@ begin
           end if;
 
         when "101" => -- START: generate (repeated) START condition
-          arbiter.state_nxt <= "00";
+        -- ------------------------------------------------------------
+          arbiter.state_nxt <= "00"; -- no operation pending anymore
           if (clk_gen.phase(0) = '1') then
             io_con.sda_out <= '1';
           elsif (clk_gen.phase(1) = '1') then
@@ -261,7 +268,8 @@ begin
           end if;
 
         when "110" => -- STOP: generate STOP condition
-          arbiter.state_nxt <= "00";
+        -- ------------------------------------------------------------
+          arbiter.state_nxt <= "00"; -- no operation pending anymore
           if (clk_gen.phase(0) = '1') then
             io_con.sda_out <= '0';
           elsif (clk_gen.phase(3) = '1') then
@@ -276,47 +284,51 @@ begin
           end if;
 
         when "111" => -- TRANSMISSION: send/receive byte + ACK/NACK/MACK
-          arbiter.state_nxt <= "00";
-          -- clock --
+        -- ------------------------------------------------------------
+          arbiter.state_nxt <= "00"; -- no operation pending anymore
+          -- SCL clocking --
           if (clk_gen.phase(0) = '1') or (clk_gen.phase(3) = '1') then
-            io_con.scl_out <= '0';
+            io_con.scl_out <= '0'; -- set SCL low after after transmission to keep bus claimed
           elsif (clk_gen.phase(1) = '1') then -- first half + second half of valid data strobe
             io_con.scl_out <= '1';
           end if;
-          -- data output update --
-          if (clk_gen.phase(0) = '1') then
+          -- SDA output --
+          if (arbiter.rtx_done = '1') then
+            io_con.sda_out <= '0'; -- also set SDA low after after transmission to keep bus claimed
+          elsif (clk_gen.phase(0) = '1') then
             io_con.sda_out <= arbiter.rtx_sreg(8); -- MSB first
-          elsif (arbiter.bitcnt = "1001") then
-            io_con.sda_out <= '0'; -- set SDA to low to keep bus claimed after transmission
           end if;
-          -- input sample --
+          -- SDA input --
           if (clk_gen.phase(2) = '1') then
-            arbiter.rtx_sreg <= arbiter.rtx_sreg(7 downto 0) & io_con.sda_in_ff(1); -- sample and shift left
+            arbiter.rtx_sreg <= arbiter.rtx_sreg(7 downto 0) & io_con.sda_in_ff(1); -- sample SDA input and shift left
           end if;
-          -- bit done --
+          -- bit counter --
           if (clk_gen.phase(3) = '1') then
             arbiter.bitcnt <= std_ulogic_vector(unsigned(arbiter.bitcnt) + 1);
           end if;
-          --
-          if (arbiter.bitcnt = "1001") then -- 8 data bits + 1 ACK bit
-            irq_o <= '1'; -- transmission done interrupt
+          -- transmission done --
+          if (arbiter.rtx_done = '1') then
             arbiter.state(1 downto 0) <= "00"; -- go back to IDLE
           end if;
 
-        when others => -- "0--" OFFLINE: TWI deactivated
-          io_con.sda_out            <= '1';
-          io_con.scl_out            <= '1';
-          arbiter.rtx_sreg          <= (others => '0');
-          arbiter.state_nxt         <= (others => '0');
-          arbiter.state(1 downto 0) <= (others => '0'); -- stay here, go to idle when activated
+        when others => -- "0--" OFFLINE: TWI deactivated, bus unclaimed
+        -- ------------------------------------------------------------
+          io_con.scl_out            <= '1'; -- SCL driven by pull-up resistor
+          io_con.sda_out            <= '1'; -- SDA driven by pull-up resistor
+          arbiter.rtx_sreg          <= (others => '0'); -- make DATA and ACK _defined_ after reset
+          arbiter.state_nxt         <= "00"; -- no operation pending anymore
+          arbiter.state(1 downto 0) <= "00"; -- stay here, go to IDLE when activated
 
       end case;
     end if;
-  end process twi_rtx_unit;
+  end process twi_engine;
 
-  -- arbiter busy flag --
+  -- transmit 8 data bits + 1 ACK bit and wait for another clock phase --
+  arbiter.rtx_done <= '1' when (arbiter.bitcnt = "1001") and (clk_gen.phase(0) = '1') else '0';
+
+  -- arbiter busy? --
   arbiter.busy <= arbiter.state(1) or arbiter.state(0) or -- operation in progress
-                  arbiter.state_nxt(1) or arbiter.state_nxt(0); -- operation pending
+                  arbiter.state_nxt(1) or arbiter.state_nxt(0); -- pending operation
 
   -- check if the TWI bus is currently claimed (by this module or any other controller) --
   arbiter.claimed <= '1' when (arbiter.busy = '1') or ((io_con.sda_in_ff(1) = '0') and (io_con.scl_in_ff(1) = '0')) else '0';
@@ -328,7 +340,7 @@ begin
   twi_sda_io <= '0' when (io_con.sda_out = '0') else 'Z';
   twi_scl_io <= '0' when (io_con.scl_out = '0') else 'Z';
 
-  -- read-back - 'to_bit' to avoid hardware-vs-simulation mismatch --
+  -- read-back - "to_bit" to avoid hardware-vs-simulation mismatch --
   io_con.sda_in <= to_stdulogic(to_bit(twi_sda_io));
   io_con.scl_in <= to_stdulogic(to_bit(twi_scl_io));
 
