@@ -83,14 +83,20 @@ architecture neorv32_twi_rtl of neorv32_twi is
   constant ctrl_claimed_c : natural := 29; -- r/-: Set if bus is still claimed
   constant ctrl_ack_c     : natural := 30; -- r/-: Set if ACK received
   constant ctrl_busy_c    : natural := 31; -- r/-: Set if TWI unit is busy
-  --
-  signal ctrl : std_ulogic_vector(6 downto 0); -- unit's control register
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
   signal addr   : std_ulogic_vector(31 downto 0); -- access address
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
+
+  -- control register --
+  type ctrl_t is record
+    enable : std_ulogic;
+    prsc   : std_ulogic_vector(2 downto 0);
+    mack   : std_ulogic;
+  end record;
+  signal ctrl : ctrl_t;
 
   -- clock generator --
   type clk_gen_t is record
@@ -141,26 +147,28 @@ begin
   rw_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl   <= (others => '0');
-      ack_o  <= '-';
-      data_o <= (others => '-');
+      ctrl.enable <= '0';
+      ctrl.prsc   <= (others => '0');
+      ctrl.mack   <= '0';
+      ack_o       <= '-';
+      data_o      <= (others => '-');
     elsif rising_edge(clk_i) then
       ack_o <= rden or wren;
       -- write access --
       if (wren = '1') then
         if (addr = twi_ctrl_addr_c) then
-          ctrl <= data_i(ctrl'left downto 0);
+          ctrl.enable <= data_i(ctrl_en_c);
+          ctrl.prsc   <= data_i(ctrl_prsc2_c downto ctrl_prsc0_c);
+          ctrl.mack   <= data_i(ctrl_mack_c);
         end if;
       end if;
       -- read access --
       data_o <= (others => '0');
       if (rden = '1') then
         if (addr = twi_ctrl_addr_c) then
-          data_o(ctrl_en_c)      <= ctrl(ctrl_en_c);
-          data_o(ctrl_prsc0_c)   <= ctrl(ctrl_prsc0_c);
-          data_o(ctrl_prsc1_c)   <= ctrl(ctrl_prsc1_c);
-          data_o(ctrl_prsc2_c)   <= ctrl(ctrl_prsc2_c);
-          data_o(ctrl_mack_c)    <= ctrl(ctrl_mack_c);
+          data_o(ctrl_en_c)                        <= ctrl.enable;
+          data_o(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
+          data_o(ctrl_mack_c)                      <= ctrl.mack;
           --
           data_o(ctrl_claimed_c) <= arbiter.claimed;
           data_o(ctrl_ack_c)     <= not arbiter.rtx_sreg(0);
@@ -176,10 +184,10 @@ begin
   -- Clock Generation -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- clock generator enable --
-  clkgen_en_o <= ctrl(ctrl_en_c);
+  clkgen_en_o <= ctrl.enable;
 
   -- twi clock select --
-  clk_gen.clk_tick <= clkgen_i(to_integer(unsigned(ctrl(ctrl_prsc2_c downto ctrl_prsc0_c))));
+  clk_gen.clk_tick <= clkgen_i(to_integer(unsigned(ctrl.prsc)));
 
   -- generate four non-overlapping clock ticks --
   clock_generator: process(clk_i)
@@ -226,7 +234,7 @@ begin
       end if;
 
       -- serial engine --
-      arbiter.state(2) <= ctrl(ctrl_en_c); -- module enabled?
+      arbiter.state(2) <= ctrl.enable; -- module enabled?
       case arbiter.state is
 
         when "100" => -- IDLE: waiting for operation requests
@@ -242,7 +250,7 @@ begin
             elsif (addr = twi_rtx_addr_c) then -- start a data transmission
               -- one bit extra for ACK: issued by controller if ctrl_mack_c is set,
               -- sampled from peripheral if ctrl_mack_c is cleared
-              arbiter.rtx_sreg  <= data_i(7 downto 0) & (not ctrl(ctrl_mack_c));
+              arbiter.rtx_sreg  <= data_i(7 downto 0) & (not ctrl.mack);
               arbiter.state_nxt <= "11";
             end if;
           end if;
