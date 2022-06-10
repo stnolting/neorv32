@@ -296,13 +296,13 @@ begin
           arbiter.state_nxt <= "00"; -- no operation pending anymore
           -- SCL clocking --
           if (clk_gen.phase(0) = '1') or (clk_gen.phase(3) = '1') then
-            io_con.scl_out <= '0'; -- set SCL low after after transmission to keep bus claimed
+            io_con.scl_out <= '0'; -- set SCL low after transmission to keep bus claimed
           elsif (clk_gen.phase(1) = '1') then -- first half + second half of valid data strobe
             io_con.scl_out <= '1';
           end if;
           -- SDA output --
           if (arbiter.rtx_done = '1') then
-            io_con.sda_out <= '0'; -- also set SDA low after after transmission to keep bus claimed
+            io_con.sda_out <= '0'; -- set SDA low after transmission to keep bus claimed
           elsif (clk_gen.phase(0) = '1') then
             io_con.sda_out <= arbiter.rtx_sreg(8); -- MSB first
           end if;
