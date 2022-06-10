@@ -93,8 +93,7 @@ and FreeRTOS and can be synthesized for _any_ target technology - tested on Inte
 
 The NEORV32 Processor provides a full-featured microcontroller-like SoC build around the NEORV32 CPU. 
 By using generics the design is highly configurable and allows a flexible customization to tailor the
-setup according to your needs. The following list shows all available SoC module. Note that all those
-modules are _optional_.
+setup according to your needs. Note that all of the following SoC modules are entirely _optional_.
 
 **CPU**
 
@@ -266,13 +265,13 @@ This overview provides some *quick links* to the most important sections of the
 
 * **[NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - the SoC**
   * [Top Entity - Signals](https://stnolting.github.io/neorv32/#_processor_top_entity_signals) - how to connect to the processor
-  * [Top Entity - Generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics) - configuration options
+  * [Top Entity - Generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics) - processor/CPU configuration options
   * [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory layout and boot configurations
-  * [SoC Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - peripheral modules and memories
+  * [SoC Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - IO/peripheral modules and memories
   * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - online & in-system debugging of the processor via JTAG
 
 * **[NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the CPU**
-  * [RISC-V compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs. and what is not
+  * [RISC-V compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs and what is not
   * [Full Virtualization](https://stnolting.github.io/neorv32/#_full_virtualization) - hardware execution safety
   * [ISA and Extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions) - available (RISC-V) ISA extensions
   * [CSRs](https://stnolting.github.io/neorv32/#_control_and_status_registers_csrs) - control and status registers
@@ -280,7 +279,7 @@ This overview provides some *quick links* to the most important sections of the
 
 ### :floppy_disk: Software Overview
 
-* [Example Programs](https://github.com/stnolting/neorv32/tree/main/sw/example) - examples how to use each of the processor modules
+* [Example Programs](https://github.com/stnolting/neorv32/tree/main/sw/example) - examples how to use the processor's IO/peripheral modules
 * [Core Libraries](https://stnolting.github.io/neorv32/#_core_libraries) - high-level functions for accessing the processor's peripherals
   * [Software Framework Documentation](https://stnolting.github.io/neorv32/sw/files.html) - _doxygen_-based documentation
 * [Application Makefiles](https://stnolting.github.io/neorv32/#_application_makefile) - turning _your_ application into an executable
@@ -289,9 +288,9 @@ This overview provides some *quick links* to the most important sections of the
 ### :rocket: User Guide
 
 * [Toolchain Setup](https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup) - install and setup the RISC-V GCC toolchain
-* [General Hardware Setup](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) - setup a new NEORV32 EDA project
+* [General Hardware Setup](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) - setup a new NEORV32 FPGA project
 * [General Software Setup](https://stnolting.github.io/neorv32/ug/#_general_software_framework_setup) - configure the software framework
-* [Application Compilation](https://stnolting.github.io/neorv32/ug/#_application_program_compilation) - compile an application using _make_
+* [Application Compilation](https://stnolting.github.io/neorv32/ug/#_application_program_compilation) - compile an application using `make`
 * [Upload via Bootloader](https://stnolting.github.io/neorv32/ug/#_uploading_and_starting_of_a_binary_executable_image_via_uart) - upload and execute executables
 * [Application-Specific Processor Configuration](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration) - tailor the processor to your needs
 * [Adding Custom Hardware Modules](https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules) - add _your_ custom hardware
@@ -304,7 +303,7 @@ This overview provides some *quick links* to the most important sections of the
 [![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat)](https://github.com/stnolting/neorv32/blob/main/LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg)](https://doi.org/10.5281/zenodo.5018888)
 
-* [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, limitation of liability for external links, proprietary notice, ...
+* [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, limitation of liability for external links, proprietary notice, etc.
 * [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information
 
 This is an open-source project that is free of charge. Use this project in any way you like
