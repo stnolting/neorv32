@@ -32,6 +32,8 @@ and the `MTI` machine timer CPU interrupt (`MTI`) is directly connected to the t
 is hardwired to zero in this case.
 
 
+**Register Map**
+
 .MTIME register map (`struct NEORV32_MTIME`)
 [cols="<3,<3,^1,^1,<6"]
 [options="header",grid="all"]

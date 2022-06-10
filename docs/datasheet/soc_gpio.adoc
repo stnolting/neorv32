@@ -31,6 +31,8 @@ Write accesses to the `NEORV32_GPIO.INPUT_LO` and `NEORV32_GPIO.INPUT_HI` regist
 error exception. The BUSKEEPER will indicate a "DEVICE_ERR" in this case.
 
 
+**Register Map**
+
 .GPIO unit register map (`struct NEORV32_GPIO`)
 [cols="<2,<2,^1,^1,<6"]
 [options="header",grid="rows"]

@@ -26,6 +26,7 @@ that defines the actual duty cycle. The controller can be used to drive fancy RG
 bit true color, to dim LCD back-lights or even for "analog" control. An external integrator (RC low-pass filter)
 can be used to smooth the generated "analog" signals.
 
+
 **Theory of Operation**
 
 The PWM controller is activated by setting the _PWM_CTRL_EN_ bit in the module's control register `CTRL`. When this
@@ -61,7 +62,9 @@ The resulting PWM base frequency is defined by:
 
 _**f~PWM~**_ = _f~main~[Hz]_ / (2^8^ * `clock_prescaler`)
 
-<<<
+
+**Register Map**
+
 .PWM register map (`struct neorv32_pwm_t`)
 [cols="<4,<4,<6,^2,<8"]
 [options="header",grid="all"]

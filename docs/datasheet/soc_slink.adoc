@@ -156,6 +156,8 @@ If _SLINK_RX_FIFO_ is 1 all _SLINK_IRQ_RX_MODE_ bits are hardwired to one.
 If _SLINK_TX_FIFO_ is 1 all _SLINK_IRQ_TX_MODE_ bits are hardwired to one.
 
 
+**Register Map**
+
 .SLINK register map (`struct NEORV32_SLINK`)
 [cols="^4,<5,^2,^2,<14"]
 [options="header",grid="all"]

@@ -176,6 +176,8 @@ It is highly recommended to enable the <<_processor_internal_instruction_cache_i
 of the SPI access latency.
 
 
+**Register Map**
+
 .XIP register map (`struct NEORV32_XIP`)
 [cols="<2,<2,<4,^1,<7"]
 [options="header",grid="all"]

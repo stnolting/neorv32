@@ -14,6 +14,7 @@
 | CPU interrupts:          | fast IRQ channel 9 | NEOLED interrupt (see <<_processor_interrupts>>)
 |=======================
 
+
 **Theory of Operation**
 
 The NEOLED module provides a dedicated interface for "smart RGB LEDs" like the WS2812 or WS2811.
@@ -29,6 +30,7 @@ WS2812 (or older WS2811) smart LEDs (see link:https://learn.adafruit.com/adafrui
 The interface provides a single 1-bit output `neoled_o` to drive an arbitrary number of cascaded LEDs. Since the
 NEOLED module provides 24-bit and 32-bit operating modes, a mixed setup with RGB LEDs (24-bit color)
 and RGBW LEDs (32-bit color including a dedicated white LED chip) is possible.
+
 
 **Theory of Operation - NEOLED Module**
 
@@ -55,7 +57,7 @@ The mode bit can be configured before writing each new data word in order to sup
 an arbitrary setup of RGB and RGBW LEDs.
 
 
-**Theory of Operation - Protocol**
+**Protocol**
 
 The interface of the WS2812 LEDs uses an 800kHz carrier signal. Data is transmitted in a serial manner
 starting with LSB-first. The intensity for each R, G & B (& W) LED chip (= color code) is defined via an 8-bit
@@ -148,7 +150,7 @@ _NEOLED_CTRL_T_ONE_H_x_ and _NEOLED_CTRL_T_ZERO_H_x_) are **NOT** stored to the 
 these value while the buffer is not empty or the TX engine is still busy will cause data corruption.
 
 
-** Strobe Command ("RESET") **
+**Strobe Command ("RESET")**
 
 According to the WS2812 specs the data written to the LED's shift registers is strobed to the actual PWM driver
 registers when the data line is low for 50μs ("RESET" command, see table above). This can be implemented
@@ -181,6 +183,8 @@ The _NEOLED_CTRL_IRQ_CONF_ is hardwired to one if _IO_NEOLED_TX_FIFO_ = 1 (-> IR
 If the FIFO is configured to contain only a single entry (_IO_NEOLED_TX_FIFO_ = 1) the interrupt
 will become pending if the FIFO (which is just a single register providing simple _double-buffering_) is empty.
 
+
+**Register Map**
 
 <<<
 .NEOLED register map (`struct NEORV32_NEOLED`)

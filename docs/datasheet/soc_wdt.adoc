@@ -72,6 +72,8 @@ By default the watchdog keeps operating when the CPU enters sleep mode. However,
 the CPU is sleeping by setting the _WDT_CTRL_PAUSE_ control register bit.
 
 
+**Register Map**
+
 .WDT register map (`struct NEORV32_WDT`)
 [cols="<2,<2,<4,^1,^1,^2,<4"]
 [options="header",grid="all"]

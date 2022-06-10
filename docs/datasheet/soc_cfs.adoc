@@ -89,6 +89,8 @@ _IO_CFS_OUT_SIZE_ configuration generic (default = 32-bit). If the custom functi
 (_IO_CFS_EN_ = false) the `cfs_out_o` signal is tied to all-zero.
 
 
+**Register Map**
+
 .CFS register map (`struct NEORV32_CFS`)
 [cols="^4,<5,^2,^3,<14"]
 [options="header",grid="all"]

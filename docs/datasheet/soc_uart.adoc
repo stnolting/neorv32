@@ -156,6 +156,8 @@ More information regarding the simulation-mode of the UART0 can be found in the 
 section https://stnolting.github.io/neorv32/ug/#_simulating_the_processor[Simulating the Processor].
 
 
+**Register Map**
+
 .UART0 register map (`struct NEORV32_UART0`)
 [cols="<6,<7,<10,^2,<18"]
 [options="header",grid="all"]
@@ -230,6 +232,8 @@ output data is written to UART1-specific files: `neorv32.uart1.sim_mode.text.out
 plain ASCII text and `neorv32.uart1.sim_mode.data.out` is used to store full 32-bit hexadecimal
 data words.
 
+
+**Register Map**
 
 .UART1 register map (`struct NEORV32_UART1`)
 [cols="<6,<7,<10,^2,<18"]

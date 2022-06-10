@@ -118,6 +118,8 @@ module completes the current transfer operation, the interrupt is triggered and 
 by writing zero to the according <<_mip>> CSR bit.
 
 
+**Register Map**
+
 .SPI register map (`struct NEORV32_SPI`)
 [cols="<2,<2,<4,^1,<7"]
 [options="header",grid="all"]

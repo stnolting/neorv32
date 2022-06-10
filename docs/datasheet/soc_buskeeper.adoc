@@ -46,6 +46,8 @@ the _BUSKEEPER_ERR_FLAG_ bit remains zero (since the error signal is not trigger
 the CPU's PMP logic).
 
 
+**Register Map**
+
 .BUSKEEPER register map (`struct NEORV32_BUSKEEPER`)
 [cols="<2,<2,<4,^1,<4"]
 [options="header",grid="all"]

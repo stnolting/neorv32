@@ -19,6 +19,7 @@ The eXternal interrupt controller provides a simple mechanism to implement up to
 request signals. The external IRQ requests are prioritized, queued and signaled to the CPU via a
 single _CPU fast interrupt request_.
 
+
 **Theory of Operation**
 
 The XIRQ provides up to 32 interrupt _channels_ (configured via the _XIRQ_NUM_CH_ generic). Each bit in the `xirq_i`
@@ -51,6 +52,7 @@ value to the interrupt source register `SRC`.
 An interrupt handler should clear the interrupt pending bit that caused the interrupt first before
 acknowledging the interrupt by writing the `SCR` register.
 
+
 **IRQ Trigger Configuration**
 
 The controller does not provide a configuration option to define the IRQ triggers _during runtime_. Instead, two
@@ -68,6 +70,9 @@ low-level or falling-edge and a `1` defines high-level or rising-edge.
 XIRQ_TRIGGER_TYPE     => x"00000001";  
 XIRQ_TRIGGER_POLARITY => x"ffffffff";  
 ----
+
+
+**Register Map**
 
 .XIRQ register map (`struct NEORV32_XIRQ`)
 [cols="^4,<5,^2,^2,<14"]

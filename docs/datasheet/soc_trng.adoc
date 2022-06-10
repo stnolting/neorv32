@@ -62,6 +62,8 @@ The TRNG core does not provide a dedicated reset. In order to ensure correct ope
 disabled (=reset) by clearing the _TRNG_CTRL_EN_ and waiting some 1000s clock cycles before re-enabling it.
 
 
+**Register Map**
+
 .TRNG register map (`struct NEORV32_TRNG`)
 [cols="<2,<2,<4,^1,<7"]
 [options="header",grid="all"]
