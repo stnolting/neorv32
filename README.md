@@ -184,8 +184,8 @@ _intrinsic libraries_ for the `B` and `Zfinx` extensions.
 
 ## 3. FPGA Implementation Results
 
-Implementation results for exemplary configuration generated for an Intel Cyclone IV E `EP4CE22F17C6` FPGA
-using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimization_, f_max from the _Slow 1200mV 0C Model_).
+Implementation results for exemplary CPU configurations generated for an Intel Cyclone IV `EP4CE22F17C6` FPGA
+using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimization_, f_max from _Slow 1200mV 0C Model_).
 
 | CPU Configuration (version [1.6.9.8](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
 |:-----------------------|:----:|:----:|:----:|:-:|:-------:|
@@ -273,8 +273,8 @@ This overview provides some *quick links* to the most important sections of the
   * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - online & in-system debugging of the processor via JTAG
 
 * **[NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the CPU**
-  * [RISC-V compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs and what is not
-  * [Full Virtualization](https://stnolting.github.io/neorv32/#_full_virtualization) - hardware execution safety
+  * [RISC-V Compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs and what is not
+  * [Full Virtualization](https://stnolting.github.io/neorv32/#_full_virtualization) - execution safety
   * [ISA and Extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions) - available (RISC-V) ISA extensions
   * [CSRs](https://stnolting.github.io/neorv32/#_control_and_status_registers_csrs) - control and status registers
   * [Traps](https://stnolting.github.io/neorv32/#_traps_exceptions_and_interrupts) - interrupts and exceptions
@@ -283,8 +283,8 @@ This overview provides some *quick links* to the most important sections of the
 
 * [Example Programs](https://github.com/stnolting/neorv32/tree/main/sw/example) - examples how to use the processor's IO/peripheral modules
 * [Core Libraries](https://stnolting.github.io/neorv32/#_core_libraries) - high-level functions for accessing the processor's peripherals
-  * [Software Framework Documentation](https://stnolting.github.io/neorv32/sw/files.html) - _doxygen_-based documentation
-* [Application Makefiles](https://stnolting.github.io/neorv32/#_application_makefile) - turning _your_ application into an executable
+* [Software Framework Documentation](https://stnolting.github.io/neorv32/sw/files.html) - _doxygen_-based
+* [Application Makefile](https://stnolting.github.io/neorv32/#_application_makefile) - turning _your_ application into an executable
 * [Bootloader](https://stnolting.github.io/neorv32/#_bootloader) - the build-in NEORV32 bootloader
 
 ### :rocket: User Guide
