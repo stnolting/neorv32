@@ -2,12 +2,17 @@
 -- # << NEORV32 - External Bus Interface (WISHBONE) >>                                             #
 -- # ********************************************************************************************* #
 -- # All bus accesses from the CPU, which do not target the internal IO region / the internal      #
--- # bootloader / the internal instruction or data memories (if implemented), are delegated via    #
--- # this Wishbone gateway to the external bus interface. Accessed peripherals can have a response #
--- # latency of up to BUS_TIMEOUT - 1 cycles.                                                      #
+-- # bootloader / the OCD system / the internal instruction or data memories (if implemented), are #
+-- # delegated via this Wishbone gateway to the external bus interface. Wishbone accesses can have #
+-- # a response latency of up to BUS_TIMEOUT - 1 cycles or an infinity response time if            #
+-- # BUS_TIMEOUT = 0 (not recommended!)                                                            #
+-- #                                                                                               #
+-- # The Wishbone gateway registers all outgoing signals. These signals will remain stable (gated) #
+-- # if there is no active Wishbone access. By default, also the incoming signals are registered,  #
+-- # too. this can be disabled by setting ASYNC_RX = false.                                        # 
 -- #                                                                                               #
 -- # Even when all processor-internal memories and IO devices are disabled, the EXTERNAL address   #
--- # space ENDS at address 0xffff0000 (begin of internal BOOTROM address space).                   #
+-- # space ENDS at address 0xffff0000 (begin of internal BOOTROM/OCD/IO address space).            #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -177,11 +182,11 @@ begin
       ctrl.we       <= '0';
       ctrl.adr      <= (others => '0');
       ctrl.wdat     <= (others => '0');
-      ctrl.rdat     <= (others => '0');
+      ctrl.rdat     <= (others => '-');
       ctrl.sel      <= (others => '0');
-      ctrl.timeout  <= (others => '0');
-      ctrl.ack      <= '0';
-      ctrl.err      <= '0';
+      ctrl.timeout  <= (others => '-');
+      ctrl.ack      <= '-';
+      ctrl.err      <= '-';
       ctrl.tmo      <= '0';
       ctrl.src      <= '0';
       ctrl.priv     <= '0';
@@ -199,20 +204,19 @@ begin
 
         when IDLE => -- waiting for host request
         -- ------------------------------------------------------------
-          -- buffer all outgoing signals --
-          ctrl.we  <= wren_i;
-          ctrl.adr <= addr_i;
-          if (BIG_ENDIAN = true) then -- big-endian
-            ctrl.wdat <= bswap32_f(data_i);
-            ctrl.sel  <= bit_rev_f(ben_i);
-          else -- little-endian
-            ctrl.wdat <= data_i;
-            ctrl.sel  <= ben_i;
-          end if;
-          ctrl.src  <= src_i;
-          ctrl.priv <= priv_i;
-          -- valid new or buffered read/write request --
-          if ((xbus_access and (wren_i or rden_i)) = '1') then
+          if (xbus_access = '1') and ((wren_i or rden_i) = '1') then -- valid external request
+            -- buffer (and gate) all outgoing signals --
+            ctrl.we   <= wren_i;
+            ctrl.adr  <= addr_i;
+            ctrl.src  <= src_i;
+            ctrl.priv <= priv_i;
+            if (BIG_ENDIAN = true) then -- big-endian
+              ctrl.wdat <= bswap32_f(data_i);
+              ctrl.sel  <= bit_rev_f(ben_i);
+            else -- little-endian
+              ctrl.wdat <= data_i;
+              ctrl.sel  <= ben_i;
+            end if;
             ctrl.state <= BUSY;
           end if;
 
@@ -243,7 +247,7 @@ begin
   end process bus_arbiter;
 
   -- host access --
-  ack_gated   <= wb_ack_i when (ctrl.state = BUSY) else '0'; -- CPU ack gate for "async" RX
+  ack_gated   <= wb_ack_i when (ctrl.state = BUSY) else '0'; -- CPU ACK gate for "async" RX
   rdata_gated <= wb_dat_i when (ctrl.state = BUSY) else (others => '0'); -- CPU read data gate for "async" RX
   rdata       <= ctrl.rdat when (ASYNC_RX = false) else rdata_gated;
 
@@ -259,15 +263,15 @@ begin
   wb_tag_o(1) <= '0'; -- 0 = secure, 1 = non-secure
   wb_tag_o(2) <= ctrl.src; -- 0 = data access, 1 = instruction access
 
+  stb_int <= '1' when (ctrl.state = BUSY) and (ctrl.state_ff /= BUSY) else '0';
+  cyc_int <= '1' when (ctrl.state = BUSY) else '0';
+
   wb_adr_o <= ctrl.adr;
   wb_dat_o <= ctrl.wdat;
   wb_we_o  <= ctrl.we;
   wb_sel_o <= ctrl.sel;
   wb_stb_o <= stb_int when (PIPE_MODE = true) else cyc_int;
   wb_cyc_o <= cyc_int;
-
-  stb_int <= '1' when (ctrl.state = BUSY) and (ctrl.state_ff /= BUSY) else '0';
-  cyc_int <= '1' when (ctrl.state = BUSY) else '0';
 
 
 end neorv32_wishbone_rtl;
