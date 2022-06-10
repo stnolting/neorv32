@@ -1225,7 +1225,7 @@ int main() {
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ7E);
 
     // trigger TWI IRQ
-    neorv32_twi_generate_start();
+    neorv32_twi_start_trans(0xA5);
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
