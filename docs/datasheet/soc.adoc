@@ -1377,25 +1377,27 @@ system implements an internal reset generator and a global clock generator/divid
 
 **Internal Reset Generator**
 
-The internal reset generator is responsible for converting controlling the processor-global system reset.
+The internal reset generator is responsible for controlling the processor-global system reset.
 This system reset is either triggered via the external reset pin (`rstn_i`, low-active), by the internal
-watchdog timer (if implemented) or by the on-chip debugger. If any of those sources issues an active reset
-the system reset is activated for at least 4 cycles.
+watchdog timer (if implemented) or by the on-chip debugger (if implemented). If any of those sources issues
+an active reset the system reset is activated for at least 4 cycles.
 
 
 **Internal Clock Divider**
 
 An internal clock divider generates 8 clock signals derived from the processor's main clock input `clk_i`.
 These derived clock signals are not actual _clock signals_. Instead, they are derived from a simple counter and
-are used as "clock enable" signal by the different processor modules. Thus, the whole design operates using
+can be used as "clock enable" signal by the different processor modules. Thus, the whole processor operates using
 only the main clock signal (single clock domain). Some of the processor peripherals like the Watchdog or the
-UARTs can select one of the derived clock enabled signals for their internal operation. If none of the
-connected modules require a clock signal from the divider, it is automatically deactivated to reduce dynamic
-power.
+UARTs can select one of the derived clock enabled signals for their internal operations.
 
-The peripheral devices, which feature a time-based configuration, provide a three-bit prescaler select in their
-according control register to select one out of the eight available clocks. The mapping of the prescaler select
-bits to the actually obtained clock are shown in the table below. Here, f represents the processor main clock
+[TIP]
+If none of the peripheral modules require a clock signal from the internal divider, it is automatically deactivated
+to reduce dynamic power consumption.
+
+Peripheral devices, which feature a time-based configuration, provide a three-bit prescaler select in their
+according control register to select one of the eight available clocks. The mapping of the prescaler select
+bits to the according clock source is shown in the table below. Here, _f_ represents the processor main clock
 from the top entity's `clk_i` signal.
 
 [cols="<3,^1,^1,^1,^1,^1,^1,^1,^1"]
@@ -1435,7 +1437,9 @@ load or store access fault exception is triggered.
 [NOTE]
 All processor-internal modules provide a dedicated hardware reset, which can be triggered by the external reset
 signal, the watchdog timer or the on-chip debugger. When active, the system-wide reset will ensure that all
-module interface register (like the control register) are reset to all-zero. Software can trigger a module reset
+**module interface register** (like the control register) are reset to all-zero. Note that this hardware reset
+does not _directly_ reset the remaining module's logic - the internal logic is reset _synchronously_ when the
+enable bit in the according unit's control register is cleared. Software can trigger a module reset
 by clearing the enable bit of the module's control register.
 
 .Software Access
@@ -1444,7 +1448,7 @@ Use the provided <<_core_libraries>> to interact with the peripheral devices. Th
 prevents incompatibilities with future versions, since the hardware driver functions handle all the
 register and register bit accesses.
 
-.CMSIS System Description View (SV)
+.CMSIS System Description View (SVD)
 [TIP]
 A CMSIS-SVD-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
 
