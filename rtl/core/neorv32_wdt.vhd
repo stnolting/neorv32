@@ -1,13 +1,16 @@
 -- #################################################################################################
 -- # << NEORV32 - Watch Dog Timer (WDT) >>                                                         #
 -- # ********************************************************************************************* #
--- # Watchdog counter to trigger an action if the CPU gets stuck.                                  #
--- # The internal counter is 20-bit wide. If this counter overflows one of two possible actions is #
--- # triggered: Generate an IRQ or force a hardware reset of the system.                           #
--- # A WDT action can also be triggered manually at any time by setting the FORCE bit.             #
+-- # Watchdog counter to trigger an action if the CPU gets stuck. The internal timeout counter is  #
+-- # 20-bit wide. If this counter overflows one of two possible actions is triggered: generate an  #
+-- # IRQ or force a hardware reset of the system. A WDT action can also be triggered manually at   #
+-- # any time by setting the FORCE bit.                                                            #
+-- #                                                                                               #
+-- # When writing to the control register the 16 MSB-aligned bits have to contain the "watchdog    #
+-- # access password". Otherwise all write accesses are ignored.                                   #
 -- #                                                                                               #
 -- # Access to the control register can be permanently locked by setting the lock bit. This bit    #
--- # can only be cleared by a hardware reset (external or caused by the watchdog itself).          #
+-- # can only be cleared by a system reset.                                                        #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -51,7 +54,8 @@ entity neorv32_wdt is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
+    rstn_ext_i  : in  std_ulogic; -- external reset line, low-active, async
+    rstn_int_i  : in  std_ulogic; -- internal reset line, low-active, async
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
@@ -66,7 +70,7 @@ entity neorv32_wdt is
     clkgen_i    : in  std_ulogic_vector(07 downto 0);
     -- timeout event --
     irq_o       : out std_ulogic; -- timeout IRQ
-    rstn_o      : out std_ulogic  -- timeout reset, low_active
+    rstn_o      : out std_ulogic  -- timeout reset, low_active, sync
   );
 end neorv32_wdt;
 
@@ -89,6 +93,12 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   constant ctrl_dben_c    : natural :=  9; -- r/w: allow WDT to continue operation even when CPU is in debug mode
   constant ctrl_half_c    : natural := 10; -- r/-: set if at least half of the max. timeout counter value has been reached
   constant ctrl_pause_c   : natural := 11; -- r/w: pause WDT when CPU is in sleep mode
+  --
+  constant ctrl_pwd_lsb_c : natural := 16; -- -/w: access password LSB
+  constant ctrl_pwd_msb_c : natural := 31; -- -/w: access password MSB
+
+  -- access password --
+  constant pwd_c : std_ulogic_vector(15 downto 0) := x"CA36";
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -112,10 +122,12 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   -- prescaler clock generator --
   signal prsc_tick : std_ulogic;
 
+  -- password check --
+  signal pwd_ok : std_ulogic;
+
   -- WDT core --
   signal wdt_cnt   : std_ulogic_vector(20 downto 0);
   signal hw_rst    : std_ulogic;
-  signal rstn_gen  : std_ulogic_vector(03 downto 0);
   signal cnt_en    : std_ulogic;
   signal cnt_en_ff : std_ulogic;
 
@@ -130,9 +142,9 @@ begin
 
   -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  write_access: process(rstn_i, clk_i)
+  write_access: process(rstn_int_i, clk_i)
   begin
-    if (rstn_i = '0') then
+    if (rstn_int_i = '0') then
       ctrl.reset   <= '1'; -- reset counter on start-up
       ctrl.enforce <= '0';
       ctrl.enable  <= '0'; -- disable WDT
@@ -145,8 +157,8 @@ begin
       -- auto-clear reset and force flags --
       ctrl.reset   <= '0';
       ctrl.enforce <= '0';
-      -- actual write access --
-      if (wren = '1') then
+      -- write access - only if password is OK --
+      if (wren = '1') and (pwd_ok = '1') then
         ctrl.reset   <= data_i(ctrl_reset_c);
         ctrl.enforce <= data_i(ctrl_force_c);
         if (ctrl.lock = '0') then -- update configuration only if not locked
@@ -161,22 +173,30 @@ begin
     end if;
   end process write_access;
 
+  -- password check --
+  pwd_ok <= '1' when (data_i(ctrl_pwd_msb_c downto ctrl_pwd_lsb_c) = pwd_c) else '0';
+
   -- clock generator --
   clkgen_en_o <= ctrl.enable; -- enable clock generator
   prsc_tick   <= clkgen_i(to_integer(unsigned(ctrl.clk_sel))); -- clock enable tick
 
 
-  -- Watchdog Counter -----------------------------------------------------------------------
+  -- Watchdog Timeout -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  wdt_counter: process(clk_i)
+  wdt_counter: process(rstn_int_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_int_i = '0') then
+      cnt_en_ff <= '0';
+      wdt_cnt   <= (others => '0');
+      rstn_o    <= '1'; -- do NOT fire on reset!
+    elsif rising_edge(clk_i) then
       cnt_en_ff <= cnt_en;
       if (ctrl.reset = '1') then -- watchdog reset
         wdt_cnt <= (others => '0');
       elsif (cnt_en_ff = '1') then
         wdt_cnt <= std_ulogic_vector(unsigned('0' & wdt_cnt(wdt_cnt'left-1 downto 0)) + 1);
       end if;
+      rstn_o <= not hw_rst;
     end if;
   end process wdt_counter;
 
@@ -191,25 +211,16 @@ begin
   hw_rst <= ctrl.enable and (wdt_cnt(wdt_cnt'left) or ctrl.enforce) and (    ctrl.mode); -- mode 1: RESET
 
 
-  -- Reset Generator & Action Cause Indicator -----------------------------------------------
+  -- Reset Cause Indicator ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  reset_generator: process(rstn_i, clk_i)
+  reset_generator: process(rstn_ext_i, clk_i)
   begin
-    if (rstn_i = '0') then
+    if (rstn_ext_i = '0') then
       ctrl.rcause <= '0';
-      rstn_gen    <= (others => '1'); -- do NOT fire on reset!
     elsif rising_edge(clk_i) then
       ctrl.rcause <= ctrl.rcause or hw_rst; -- sticky-set on WDT timeout/force
-      if (hw_rst = '1') then
-        rstn_gen <= (others => '0');
-      else
-        rstn_gen <= rstn_gen(rstn_gen'left-1 downto 0) & '1';
-      end if;
     end if;
   end process reset_generator;
-
-  -- system reset --
-  rstn_o <= rstn_gen(rstn_gen'left);
 
 
   -- Read Access ----------------------------------------------------------------------------
