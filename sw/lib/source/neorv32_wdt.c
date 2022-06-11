@@ -71,7 +71,7 @@ int neorv32_wdt_available(void) {
  **************************************************************************/
 void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock) {
 
-  NEORV32_WDT.CTRL = (1 << WDT_CTRL_RESET); // reset WDT counter
+  NEORV32_WDT.CTRL = (NEORV32_WDT_PWD << WDT_CTRL_PWD_LSB) | (1 << WDT_CTRL_RESET); // reset
 
   uint32_t prsc_int = (uint32_t)(prsc & 0x07);
   prsc_int = prsc_int << WDT_CTRL_CLK_SEL0;
@@ -85,7 +85,7 @@ void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock) {
   const uint32_t enable = (uint32_t)(1 << WDT_CTRL_EN);
 
   // update WDT control register
-  NEORV32_WDT.CTRL = enable | mode_int | prsc_int | lock_int;
+  NEORV32_WDT.CTRL = (NEORV32_WDT_PWD << WDT_CTRL_PWD_LSB) | enable | mode_int | prsc_int | lock_int;
 }
 
 
@@ -96,11 +96,11 @@ void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock) {
  **************************************************************************/
 int neorv32_wdt_disable(void) {
   
-  NEORV32_WDT.CTRL = 0;
+  NEORV32_WDT.CTRL = NEORV32_WDT_PWD << WDT_CTRL_PWD_LSB;
 
-  // check if wdt is really off
+  // check if WDT is really off
   if (NEORV32_WDT.CTRL & (1 << WDT_CTRL_EN)) {
-    return -1; // WDT still active
+    return -1; // still active
   }
   else {
     return 0;
@@ -113,7 +113,7 @@ int neorv32_wdt_disable(void) {
  **************************************************************************/
 void neorv32_wdt_reset(void) {
 
-  NEORV32_WDT.CTRL = NEORV32_WDT.CTRL | (1 << WDT_CTRL_RESET);
+  NEORV32_WDT.CTRL |= (NEORV32_WDT_PWD << WDT_CTRL_PWD_LSB) | (1 << WDT_CTRL_RESET);
 }
 
 
@@ -138,5 +138,5 @@ int neorv32_wdt_get_cause(void) {
  **************************************************************************/
 void neorv32_wdt_force(void) {
 
-  NEORV32_WDT.CTRL = NEORV32_WDT.CTRL | (1 << WDT_CTRL_FORCE);
+  NEORV32_WDT.CTRL |= (NEORV32_WDT_PWD << WDT_CTRL_PWD_LSB) | (1 << WDT_CTRL_FORCE);
 }
