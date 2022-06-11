@@ -228,7 +228,7 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= rden or wren;
+      ack_o  <= rden or (wren and pwd_ok); -- bus access (timeout) exception if write access with incorrect password
       data_o <= (others => '0');
       if (rden = '1') then
         data_o(ctrl_enable_c) <= ctrl.enable;

@@ -25,7 +25,8 @@ a system reset or an interrupt is generated depending on the configured operatio
 
 Whenever the watchdog control register `NEORV32_WDT.CTRL` shall be written the upper-most (MSB-aligned) 16 bit of the
 write data have to contain the "watchdog access password". If the password is incorrect the write access is entirely ignored
-and will not cause any side effects.
+and the watchdog hardware module will **not acknowledge** the bus write access leading to a **store access fault exception**.
+Read accesses are not affected by the access password at all.
 
 * Watchdog access password (`write_data[31:16]`) = **`0xCA36`**
 
@@ -115,5 +116,5 @@ or the watchdog itself (if _WDT_CTRL_MODE_ is set).
                                               <|`10` _WDT_CTRL_HALF_    ^| r/- ^| `0` ^| -   <| set if at least half of the max. timeout counter value has been reached
                                               <|`11` _WDT_CTRL_PAUSE_   ^| r/w ^| `0` ^| no  <| pause WDT when CPU is in sleep mode
                                               <|`15:12` -               ^| r/- ^| -   ^| -   <| _reserved_, reads as zero
-                                              <|`31:16` _WDT_CTRL_PWD_  ^| -/w ^| -   ^| -   <| watchdog password, has to be `0xCA36` - otherwise any write access is ignored, reads as zero
+                                              <|`31:16` _WDT_CTRL_PWD_  ^| -/w ^| -   ^| -   <| watchdog write access password, has to be `0xCA36`, reads as zero
 |=======================
