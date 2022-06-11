@@ -1041,7 +1041,8 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line
-      rstn_i      => rstn_ext,                 -- global reset line, low-active, async
+      rstn_ext_i  => rstn_ext,                 -- external reset line, low-active, async
+      rstn_int_i  => rstn_int,                 -- internal reset line, low-active, async
       rden_i      => io_rden,                  -- read enable
       wren_i      => io_wren,                  -- write enable
       addr_i      => p_bus.addr,               -- address
@@ -1056,7 +1057,7 @@ begin
       clkgen_i    => clk_gen,
       -- timeout event --
       irq_o       => wdt_irq,                  -- timeout IRQ
-      rstn_o      => rstn_wdt                  -- timeout reset, low_active
+      rstn_o      => rstn_wdt                  -- timeout reset, low_active, sync
     );
     resp_bus(RESP_WDT).err <= '0'; -- no access error possible
   end generate;

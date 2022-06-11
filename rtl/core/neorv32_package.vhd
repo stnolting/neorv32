@@ -1665,7 +1665,8 @@ package neorv32_package is
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active, async
+      rstn_ext_i  : in  std_ulogic; -- external reset line, low-active, async
+      rstn_int_i  : in  std_ulogic; -- internal reset line, low-active, async
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
@@ -1680,7 +1681,7 @@ package neorv32_package is
       clkgen_i    : in  std_ulogic_vector(07 downto 0);
       -- timeout event --
       irq_o       : out std_ulogic; -- timeout IRQ
-      rstn_o      : out std_ulogic  -- timeout reset, low_active
+      rstn_o      : out std_ulogic  -- timeout reset, low_active, sync
     );
   end component;
 
