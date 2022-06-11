@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -62,6 +62,8 @@ int neorv32_wdt_available(void) {
 
 /**********************************************************************//**
  * Configure and enable watchdog timer. The WDT control register bits are listed in #NEORV32_WDT_CTRL_enum.
+ *
+ * @warning Once set the watchdog lock can only be removed by an external hardware reset!
  *
  * @param[in] prsc Clock prescaler to select timeout interval. See #NEORV32_CLOCK_PRSC_enum.
  * @param[in] mode Trigger system reset on timeout when 1, trigger interrupt on timeout when 0.
