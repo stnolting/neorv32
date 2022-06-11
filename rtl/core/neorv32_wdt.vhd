@@ -51,7 +51,7 @@ entity neorv32_wdt is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
@@ -66,7 +66,7 @@ entity neorv32_wdt is
     clkgen_i    : in  std_ulogic_vector(07 downto 0);
     -- timeout event --
     irq_o       : out std_ulogic; -- timeout IRQ
-    rstn_o      : out std_ulogic  -- timeout reset, low_active, use as async
+    rstn_o      : out std_ulogic  -- timeout reset, low_active
   );
 end neorv32_wdt;
 
@@ -119,9 +119,6 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   signal cnt_en    : std_ulogic;
   signal cnt_en_ff : std_ulogic;
 
-  -- internal reset (sync, low-active) --
-  signal rstn_sync : std_ulogic;
-
 begin
 
   -- Access Control -------------------------------------------------------------------------
@@ -145,31 +142,20 @@ begin
       ctrl.dben    <= '0';
       ctrl.pause   <= '0';
     elsif rising_edge(clk_i) then
-      if (rstn_sync = '0') then -- internal reset
-        ctrl.reset   <= '1'; -- reset counter on start-up
-        ctrl.enforce <= '0';
-        ctrl.enable  <= '0'; -- disable WDT
-        ctrl.mode    <= '0';
-        ctrl.clk_sel <= (others => '0');
-        ctrl.lock    <= '0';
-        ctrl.dben    <= '0';
-        ctrl.pause   <= '0';
-      else
-        -- auto-clear WDT reset and WDT force flags --
-        ctrl.reset   <= '0';
-        ctrl.enforce <= '0';
-        -- actual write access --
-        if (wren = '1') then
-          ctrl.reset   <= data_i(ctrl_reset_c);
-          ctrl.enforce <= data_i(ctrl_force_c);
-          if (ctrl.lock = '0') then -- update configuration only if not locked
-            ctrl.enable  <= data_i(ctrl_enable_c);
-            ctrl.mode    <= data_i(ctrl_mode_c);
-            ctrl.clk_sel <= data_i(ctrl_clksel2_c downto ctrl_clksel0_c);
-            ctrl.lock    <= data_i(ctrl_lock_c);
-            ctrl.dben    <= data_i(ctrl_dben_c);
-            ctrl.pause   <= data_i(ctrl_pause_c);
-          end if;
+      -- auto-clear reset and force flags --
+      ctrl.reset   <= '0';
+      ctrl.enforce <= '0';
+      -- actual write access --
+      if (wren = '1') then
+        ctrl.reset   <= data_i(ctrl_reset_c);
+        ctrl.enforce <= data_i(ctrl_force_c);
+        if (ctrl.lock = '0') then -- update configuration only if not locked
+          ctrl.enable  <= data_i(ctrl_enable_c);
+          ctrl.mode    <= data_i(ctrl_mode_c);
+          ctrl.clk_sel <= data_i(ctrl_clksel2_c downto ctrl_clksel0_c);
+          ctrl.lock    <= data_i(ctrl_lock_c);
+          ctrl.dben    <= data_i(ctrl_dben_c);
+          ctrl.pause   <= data_i(ctrl_pause_c);
         end if;
       end if;
     end if;
@@ -212,7 +198,6 @@ begin
     if (rstn_i = '0') then
       ctrl.rcause <= '0';
       rstn_gen    <= (others => '1'); -- do NOT fire on reset!
-      rstn_sync   <= '1';
     elsif rising_edge(clk_i) then
       ctrl.rcause <= ctrl.rcause or hw_rst; -- sticky-set on WDT timeout/force
       if (hw_rst = '1') then
@@ -220,7 +205,6 @@ begin
       else
         rstn_gen <= rstn_gen(rstn_gen'left-1 downto 0) & '1';
       end if;
-      rstn_sync <= rstn_gen(rstn_gen'left);
     end if;
   end process reset_generator;
 
