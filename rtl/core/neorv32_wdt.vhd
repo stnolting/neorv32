@@ -145,7 +145,7 @@ begin
   write_access: process(rstn_int_i, clk_i)
   begin
     if (rstn_int_i = '0') then
-      ctrl.reset   <= '1'; -- reset counter on start-up
+      ctrl.reset   <= '0';
       ctrl.enforce <= '0';
       ctrl.enable  <= '0'; -- disable WDT
       ctrl.mode    <= '0';
@@ -206,7 +206,7 @@ begin
             ((not cpu_debug_i) or ctrl.dben) and -- CPU not in debug mode or allowed to also run when in debug mode
             ((not cpu_sleep_i) or (not ctrl.pause)); -- pause watchdog when CPU is in sleep mode
 
-  -- action trigger --
+  -- action triggers --
   irq_o  <= ctrl.enable and (wdt_cnt(wdt_cnt'left) or ctrl.enforce) and (not ctrl.mode); -- mode 0: IRQ
   hw_rst <= ctrl.enable and (wdt_cnt(wdt_cnt'left) or ctrl.enforce) and (    ctrl.mode); -- mode 1: RESET
 
