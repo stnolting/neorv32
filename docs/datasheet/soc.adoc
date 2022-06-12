@@ -59,7 +59,7 @@ bits/channels are hardwired to zero.
 [options="header",grid="rows"]
 |=======================
 | Signal | Width | Dir. | Function
-4+^| **Global Control**
+4+^| **Global Control (<<_processor_clocking>> and <<_processor_reset>>)**
 | `clk_i` | 1 | in | global clock line, all registers triggering on rising edge
 | `rstn_i` | 1 | in | global reset, asynchronous, **low-active**
 4+^| **JTAG Access Port for <<_on_chip_debugger_ocd>>**
@@ -1075,6 +1075,94 @@ See section <<_execute_in_place_module_xip>> for more information.
 <<<
 // ####################################################################################################################
 :sectnums:
+=== Processor Clocking
+
+The processor is implemented as fully-synchronous logic design using a _single clock domain_ that is driven by the top's
+`clk_i` signal. This clock signal is used by all internal registers and memories, which trigger on the rising edge of
+this clock signal. External "clocks" like the OCD's JTAG clock or the TWI's serial clock are synchronized into the
+processor's clock domain before being further processed.
+
+[NOTE]
+The registers of the <<_processor_reset>> system trigger on a falling clock edge.
+
+Many processor modules like the UARTs or the timers require a programmable time base for operations. In order to simplify
+the hardware, the processor implements a global "clock generator" that provides _clock enables_ for certain frequencies.
+These clock enable signals are synchronous to the system's main clock and will be high for only a single cycle of this main
+clock. Hence, processor modules can use these signals for sub-main-clock operations while still having a single clock domain
+only. 
+
+In total, 8 sub-main-clock signals are available. All processor modules, which feature a time-based configuration, provide a
+programmable three-bit prescaler select in their according control register to select one of the 8 available clocks. The
+mapping of the prescaler select bits to the according clock source is shown in the table below. Here, _f_ represents the
+processor main clock from the top entity's `clk_i` signal.
+
+[cols="<3,^1,^1,^1,^1,^1,^1,^1,^1"]
+[grid="rows"]
+|=======================
+| Prescaler bits:  | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
+| Resulting clock: | _f/2_   | _f/4_   | _f/8_   | _f/64_  | _f/128_ | _f/1024_| _f/2048_| _f/4096_
+|=======================
+
+The software framework provides pre-defined aliases for the prescaler select bits:
+
+.Prescaler Aliases from `neorv32.h`
+[source]
+--------------------------
+enum NEORV32_CLOCK_PRSC_enum {
+  CLK_PRSC_2    = 0, /**< CPU_CLK (from clk_i top signal) / 2 */
+  CLK_PRSC_4    = 1, /**< CPU_CLK (from clk_i top signal) / 4 */
+  CLK_PRSC_8    = 2, /**< CPU_CLK (from clk_i top signal) / 8 */
+  CLK_PRSC_64   = 3, /**< CPU_CLK (from clk_i top signal) / 64 */
+  CLK_PRSC_128  = 4, /**< CPU_CLK (from clk_i top signal) / 128 */
+  CLK_PRSC_1024 = 5, /**< CPU_CLK (from clk_i top signal) / 1024 */
+  CLK_PRSC_2048 = 6, /**< CPU_CLK (from clk_i top signal) / 2048 */
+  CLK_PRSC_4096 = 7  /**< CPU_CLK (from clk_i top signal) / 4096 */
+};
+--------------------------
+
+[TIP]
+If no peripheral modules requires a clock signal from the internal generator (all available modules disabled by clearing the
+_enable_ bit in the according module's control register), it is automatically deactivated to reduce dynamic power consumption.
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Processor Reset
+
+The processor provides two reset systems: an _external_ one and an _internal_ one. The external reset is triggered by
+the asynchronous, low-active `rstn_i` top entity signal. The internal reset is a synchronous, low-active reset that
+can be triggered by the external reset, the <<_on_chip_debugger_ocd>> and the <<_watchdog_timer_wdt>>.
+
+If the external hardware reset (`rstn_i`) is active it will be _asynchronously_ applied to all processor modules. An
+internal shift register ensures that the system wide reset will be active for at least 4 clock cycles. After that,
+the system wide reset is de-asserted _synchronously_ at a _falling_ edge of the main clock to ensure there are no
+meta-stable situation (like de-asserting reset at a rising edge).
+
+If one of the internal reset sources trigger a reset, this will be applied _synchronously_ to all processor modules
+at a rising edge. This signal is also extended to be active for at least 4 clock cycles. After that, the system wide
+reset is also de-asserted _synchronously_ at a _falling_ edge.
+
+[TIP]
+The EE Times provided a nice article about FPGA resets. The reset system of the NEORV32 is loosely based on this
+article: https://www.eetimes.com/how-do-i-reset-my-fpga/
+
+The system-wide reset will reset the CPU, the <<_processor_clocking>> system and the IO/peripheral devices.
+
+[NOTE]
+Note that the system reset will **NOT** reset _all_ PCU register by default. See section <<_cpu_hardware_reset>>
+for more information.
+
+[NOTE]
+The system reset will only reset the control registers of each implemented IO/peripheral module. This will also
+reset the according "module enable flag" to zero, which - in turn - will cause a _synchronous_ and
+module-internal reset of the remaining logic.
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
 === Processor Interrupts
 
 The NEORV32 Processor provides several interrupt request signals (IRQs) for custom platform use.
@@ -1372,40 +1460,7 @@ exited as soon as the application logic has finished initializing the memory wit
 
 Basically, the NEORV32 processor is a SoC consisting of the NEORV32 CPU, peripheral/IO devices, embedded
 memories, an external memory interface and a bus infrastructure to interconnect all units. Additionally, the
-system implements an internal reset generator and a global clock generator/divider.
-
-
-**Internal Reset Generator**
-
-The internal reset generator is responsible for controlling the processor-global system reset.
-This system reset is either triggered via the external reset pin (`rstn_i`, low-active), by the internal
-watchdog timer (if implemented) or by the on-chip debugger (if implemented). If any of those sources issues
-an active reset the system reset is activated for at least 4 cycles.
-
-
-**Internal Clock Divider**
-
-An internal clock divider generates 8 clock signals derived from the processor's main clock input `clk_i`.
-These derived clock signals are not actual _clock signals_. Instead, they are derived from a simple counter and
-can be used as "clock enable" signal by the different processor modules. Thus, the whole processor operates using
-only the main clock signal (single clock domain). Some of the processor peripherals like the Watchdog or the
-UARTs can select one of the derived clock enabled signals for their internal operations.
-
-[TIP]
-If none of the peripheral modules require a clock signal from the internal divider, it is automatically deactivated
-to reduce dynamic power consumption.
-
-Peripheral devices, which feature a time-based configuration, provide a three-bit prescaler select in their
-according control register to select one of the eight available clocks. The mapping of the prescaler select
-bits to the according clock source is shown in the table below. Here, _f_ represents the processor main clock
-from the top entity's `clk_i` signal.
-
-[cols="<3,^1,^1,^1,^1,^1,^1,^1,^1"]
-[grid="rows"]
-|=======================
-| Prescaler bits:  | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
-| Resulting clock: | _f/2_   | _f/4_   | _f/8_   | _f/64_  | _f/128_ | _f/1024_| _f/2048_| _f/4096_
-|=======================
+system implements an internal reset generator (-> <<_processor_reset>>) and a global clock system (-> <<_processor_clocking>>).
 
 
 **Peripheral / IO Devices**
@@ -1415,7 +1470,7 @@ address _0xFFFFFE00_. A region of 512 bytes is reserved for this devices. Hence,
 accessed using a memory-mapped scheme. A special linker script as well as the NEORV32 core software
 library abstract the specific memory layout for the user.
 
-.Address Space Mapping
+.Module Address Space Mapping
 [IMPORTANT]
 The base address of each component/module has to be aligned to the
 total size of the module's occupied address space! The occupied address space
@@ -1428,19 +1483,18 @@ All peripheral/IO devices can only be written in full-word mode (i.e. 32-bit). B
 Processor-internal memories as well as modules connected to the external memory interface can still
 be written with a byte-wide granularity.
 
-.Unimplemented Modules
+.Unimplemented Modules / "Address Holes"
 [NOTE]
-When accessing an IO device that hast not been implemented (disabled via the according generic), a
-load or store access fault exception is triggered.
+When accessing an IO device that hast not been implemented (disabled via the according generic)
+or when accessing an address that is _unused_, a load or store access fault exception is raise.
 
 .Module Reset
 [NOTE]
-All processor-internal modules provide a dedicated hardware reset, which can be triggered by the external reset
-signal, the watchdog timer or the on-chip debugger. When active, the system-wide reset will ensure that all
-**module interface register** (like the control register) are reset to all-zero. Note that this hardware reset
-does not _directly_ reset the remaining module's logic - the internal logic is reset _synchronously_ when the
+All processor-internal modules provide a dedicated hardware reset, which is triggered by the <<_processor_reset>>
+system. When active, the system-wide reset will reset all module's _control registers_ to all-zero. Note that this
+hardware reset does not _directly_ reset the remaining module's logic - the internal logic is reset _synchronously_ when the
 enable bit in the according unit's control register is cleared. Software can trigger a module reset
-by clearing the enable bit of the module's control register.
+by clearing the enable bit of the module's control register. See section <<_processor_reset>> for more information.
 
 .Software Access
 [TIP]
@@ -1458,9 +1512,10 @@ A CMSIS-SVD-compatible **System View Description (SVD)** file including all peri
 Most peripheral/IO devices provide some kind of interrupt (for example to signal available incoming data). These
 interrupts are entirely mapped to the CPU's <<_custom_fast_interrupt_request_lines>>. Note that all these
 interrupt lines are high-active and are permanently triggered until the IRQ-causing condition is resolved.
+See section <<_processor_interrupts>> for more information.
 
 
-**Nomenclature for the Peripheral / IO Devices Listing**
+**Nomenclature for Peripheral / IO Devices Listing**
 
 Each peripheral device chapter features a register map showing accessible control and data registers of the
 according device including the implemented control and status bits. C-language code can directly interact with these
