@@ -245,10 +245,11 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_slink_en_c : boolean := boolean(SLINK_NUM_RX > 0) or boolean(SLINK_NUM_TX > 0); -- implement slink at all?
 
   -- reset generator --
-  signal ext_rstn_sync : std_ulogic_vector(3 downto 0) := (others => '0'); -- initialize (=reset) via bitstream (for FPGAs only)
-  signal ext_rstn      : std_ulogic;
-  signal sys_rstn      : std_ulogic;
-  signal wdt_rstn      : std_ulogic;
+  signal rstn_ext_sreg : std_ulogic_vector(3 downto 0) := (others => '0'); -- initialize (reset) via bitstream
+  signal rstn_int_sreg : std_ulogic_vector(3 downto 0) := (others => '0'); -- initialize (reset) via bitstream
+  signal rstn_ext      : std_ulogic;
+  signal rstn_int      : std_ulogic;
+  signal rstn_wdt      : std_ulogic;
 
   -- clock generator --
   signal clk_div       : std_ulogic_vector(11 downto 0);
@@ -430,7 +431,7 @@ begin
 
 
 -- ****************************************************************************************************************************
--- Clock/Reset System
+-- Clock and Reset System
 -- ****************************************************************************************************************************
 
 
@@ -439,29 +440,31 @@ begin
   reset_generator: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ext_rstn_sync <= (others => '0');
-      ext_rstn      <= '0';
-      sys_rstn      <= '0';
-    elsif rising_edge(clk_i) then
-      -- keep internal reset active for at least <ext_rstn_sync'size> clock cycles --
-      ext_rstn_sync <= ext_rstn_sync(ext_rstn_sync'left-1 downto 0) & '1';
-      -- beautified external reset signal --
-      if (and_reduce_f(ext_rstn_sync) = '1') then
-        ext_rstn <= '1';
+      rstn_ext_sreg <= (others => '0');
+      rstn_int_sreg <= (others => '0');
+      rstn_ext      <= '0';
+      rstn_int      <= '0';
+    elsif falling_edge(clk_i) then -- inverted clock to release reset _before_ all FFs trigger (rising edge)
+      -- external reset --
+      rstn_ext_sreg <= rstn_ext_sreg(rstn_ext_sreg'left-1 downto 0) & '1'; -- active for at least <rstn_ext_sreg'size> clock cycles
+      -- internal reset --
+      if (rstn_wdt = '0') or (dci_ndmrstn = '0') then -- sync reset sources
+        rstn_int_sreg <= (others => '0');
       else
-        ext_rstn <= '0';
+        rstn_int_sreg <= rstn_int_sreg(rstn_int_sreg'left-1 downto 0) & '1'; -- active for at least <rstn_int_sreg'size> clock cycles
       end if;
-      -- system reset: can also be triggered by watchdog and debug module --
-      sys_rstn <= ext_rstn and wdt_rstn and dci_ndmrstn;
+      -- reset nets --
+      rstn_ext <= and_reduce_f(rstn_ext_sreg); -- external reset (via reset pin)
+      rstn_int <= and_reduce_f(rstn_int_sreg); -- internal reset (via reset pin, WDT or OCD)
     end if;
   end process reset_generator;
 
 
   -- Clock Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  clock_generator: process(sys_rstn, clk_i)
+  clock_generator: process(rstn_int, clk_i)
   begin
-    if (sys_rstn = '0') then
+    if (rstn_int = '0') then
       clk_gen_en_ff <= '0';
       clk_div       <= (others => '0');
       clk_div_ff    <= (others => '0');
@@ -469,7 +472,7 @@ begin
       clk_gen_en_ff <= or_reduce_f(clk_gen_en);
       if (clk_gen_en_ff = '1') then
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
-      else
+      else -- reset if disabled
         clk_div <= (others => '0');
       end if;
       clk_div_ff <= clk_div;
@@ -541,7 +544,7 @@ begin
   port map (
     -- global control --
     clk_i         => clk_i,       -- global clock, rising edge
-    rstn_i        => sys_rstn,    -- global reset, low-active, async
+    rstn_i        => rstn_int,    -- global reset, low-active, async
     sleep_o       => cpu_s.sleep, -- cpu is in sleep mode when set
     debug_o       => cpu_s.debug, -- cpu is in debug mode when set
     priv_o        => cpu_s.priv,  -- current effective privilege level
@@ -615,7 +618,7 @@ begin
     port map (
       -- global control --
       clk_i        => clk_i,         -- global clock, rising edge
-      rstn_i       => sys_rstn,      -- global reset, low-active, async
+      rstn_i       => rstn_int,      -- global reset, low-active, async
       clear_i      => cpu_i.fence,   -- cache clear
       miss_o       => open,          -- cache miss
       -- host controller interface --
@@ -653,7 +656,7 @@ begin
   port map (
     -- global control --
     clk_i          => clk_i,         -- global clock, rising edge
-    rstn_i         => sys_rstn,      -- global reset, low-active, async
+    rstn_i         => rstn_int,      -- global reset, low-active, async
     -- controller interface a --
     ca_bus_addr_i  => cpu_d.addr,    -- bus access address
     ca_bus_rdata_o => cpu_d.rdata,   -- bus read data
@@ -715,7 +718,7 @@ begin
   port map (
     -- host access --
     clk_i      => clk_i,                          -- global clock line
-    rstn_i     => sys_rstn,                       -- global reset line, low-active, use as async
+    rstn_i     => rstn_int,                       -- global reset line, low-active, use as async
     addr_i     => p_bus.addr,                     -- address
     rden_i     => io_rden,                        -- read enable
     wren_i     => io_wren,                        -- byte write enable
@@ -846,7 +849,7 @@ begin
     port map (
       -- global control --
       clk_i      => clk_i,                         -- global clock line
-      rstn_i     => sys_rstn,                      -- global reset line, low-active
+      rstn_i     => rstn_int,                      -- global reset line, low-active
       -- host access --
       src_i      => p_bus.src,                     -- access type (0: data, 1:instruction)
       addr_i     => p_bus.addr,                    -- address
@@ -901,7 +904,7 @@ begin
     port map (
       -- global control --
       clk_i       => clk_i,                        -- global clock line
-      rstn_i      => sys_rstn,                     -- global reset line, low-active
+      rstn_i      => rstn_int,                     -- global reset line, low-active
       -- host access: control register access port --
       ct_addr_i   => p_bus.addr,                   -- address
       ct_rden_i   => io_rden,                      -- read enable
@@ -971,7 +974,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line
-      rstn_i      => sys_rstn,                 -- global reset line, low-active, use as async
+      rstn_i      => rstn_int,                 -- global reset line, low-active, use as async
       addr_i      => p_bus.addr,               -- address
       rden_i      => io_rden,                  -- read enable
       wren_i      => io_wren,                  -- word write enable
@@ -1008,7 +1011,7 @@ begin
     port map (
       -- host access --
       clk_i  => clk_i,                     -- global clock line
-      rstn_i => sys_rstn,                  -- global reset line, low-active
+      rstn_i => rstn_int,                  -- global reset line, low-active
       addr_i => p_bus.addr,                -- address
       rden_i => io_rden,                   -- read enable
       wren_i => io_wren,                   -- write enable
@@ -1038,7 +1041,8 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line
-      rstn_i      => ext_rstn,                 -- global reset line, low-active
+      rstn_ext_i  => rstn_ext,                 -- external reset line, low-active, async
+      rstn_int_i  => rstn_int,                 -- internal reset line, low-active, async
       rden_i      => io_rden,                  -- read enable
       wren_i      => io_wren,                  -- write enable
       addr_i      => p_bus.addr,               -- address
@@ -1053,7 +1057,7 @@ begin
       clkgen_i    => clk_gen,
       -- timeout event --
       irq_o       => wdt_irq,                  -- timeout IRQ
-      rstn_o      => wdt_rstn                  -- timeout reset, low_active, use it as async!
+      rstn_o      => rstn_wdt                  -- timeout reset, low_active, sync
     );
     resp_bus(RESP_WDT).err <= '0'; -- no access error possible
   end generate;
@@ -1063,7 +1067,7 @@ begin
     resp_bus(RESP_WDT) <= resp_bus_entry_terminate_c;
     --
     wdt_irq   <= '0';
-    wdt_rstn  <= '1';
+    rstn_wdt  <= '1';
     wdt_cg_en <= '0';
   end generate;
 
@@ -1076,7 +1080,7 @@ begin
     port map (
       -- host access --
       clk_i  => clk_i,                      -- global clock line
-      rstn_i => sys_rstn,                   -- global reset line, low-active
+      rstn_i => rstn_int,                   -- global reset line, low-active
       addr_i => p_bus.addr,                 -- address
       rden_i => io_rden,                    -- read enable
       wren_i => io_wren,                    -- write enable
@@ -1133,7 +1137,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                      -- global clock line
-      rstn_i      => sys_rstn,                   -- global reset line, low-active
+      rstn_i      => rstn_int,                   -- global reset line, low-active
       addr_i      => p_bus.addr,                 -- address
       rden_i      => io_rden,                    -- read enable
       wren_i      => io_wren,                    -- write enable
@@ -1181,7 +1185,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                      -- global clock line
-      rstn_i      => sys_rstn,                   -- global reset line, low-active
+      rstn_i      => rstn_int,                   -- global reset line, low-active
       addr_i      => p_bus.addr,                 -- address
       rden_i      => io_rden,                    -- read enable
       wren_i      => io_wren,                    -- write enable
@@ -1224,7 +1228,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line
-      rstn_i      => sys_rstn,                 -- global reset line, low-active
+      rstn_i      => rstn_int,                 -- global reset line, low-active
       addr_i      => p_bus.addr,               -- address
       rden_i      => io_rden,                  -- read enable
       wren_i      => io_wren,                  -- write enable
@@ -1265,7 +1269,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line
-      rstn_i      => sys_rstn,                 -- global reset line, low-active
+      rstn_i      => rstn_int,                 -- global reset line, low-active
       addr_i      => p_bus.addr,               -- address
       rden_i      => io_rden,                  -- read enable
       wren_i      => io_wren,                  -- write enable
@@ -1306,7 +1310,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line
-      rstn_i      => sys_rstn,                 -- global reset line, low-active
+      rstn_i      => rstn_int,                 -- global reset line, low-active
       addr_i      => p_bus.addr,               -- address
       rden_i      => io_rden,                  -- read enable
       wren_i      => io_wren,                  -- write enable
@@ -1342,7 +1346,7 @@ begin
     port map (
       -- host access --
       clk_i  => clk_i,                     -- global clock line
-      rstn_i => sys_rstn,                  -- global reset line, low-active
+      rstn_i => rstn_int,                  -- global reset line, low-active
       addr_i => p_bus.addr,                -- address
       rden_i => io_rden,                   -- read enable
       wren_i => io_wren,                   -- write enable
@@ -1370,7 +1374,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                       -- global clock line
-      rstn_i      => sys_rstn,                    -- global reset line, low-active
+      rstn_i      => rstn_int,                    -- global reset line, low-active
       addr_i      => p_bus.addr,                  -- address
       rden_i      => io_rden,                     -- read enable
       wren_i      => io_wren,                     -- write enable
@@ -1412,7 +1416,7 @@ begin
     port map (
       -- host access --
       clk_i          => clk_i,                      -- global clock line
-      rstn_i         => sys_rstn,                   -- global reset line, low-active
+      rstn_i         => rstn_int,                   -- global reset line, low-active
       addr_i         => p_bus.addr,                 -- address
       rden_i         => io_rden,                    -- read enable
       wren_i         => io_wren,                    -- write enable
@@ -1459,7 +1463,7 @@ begin
     port map (
       -- host access --
       clk_i     => clk_i,                     -- global clock line
-      rstn_i    => sys_rstn,                  -- global reset line, low-active
+      rstn_i    => rstn_int,                  -- global reset line, low-active
       addr_i    => p_bus.addr,                -- address
       rden_i    => io_rden,                   -- read enable
       wren_i    => io_wren,                   -- write enable
@@ -1490,7 +1494,7 @@ begin
     port map (
       -- host access --
       clk_i     => clk_i,                      -- global clock line
-      rstn_i    => sys_rstn,                   -- global reset line, low-active
+      rstn_i    => rstn_int,                   -- global reset line, low-active
       addr_i    => p_bus.addr,                 -- address
       rden_i    => io_rden,                    -- read enable
       wren_i    => io_wren,                    -- write enable
@@ -1582,7 +1586,7 @@ begin
     port map (
       -- global control --
       clk_i            => clk_i,                    -- global clock line
-      rstn_i           => ext_rstn,                 -- external reset, low-active
+      rstn_i           => rstn_ext,                 -- external reset, low-active
       -- debug module interface (DMI) --
       dmi_rstn_i       => dmi.rstn,
       dmi_req_valid_i  => dmi.req_valid,
@@ -1636,7 +1640,7 @@ begin
     port map (
       -- global control --
       clk_i            => clk_i,          -- global clock line
-      rstn_i           => ext_rstn,       -- external reset, low-active
+      rstn_i           => rstn_ext,       -- external reset, low-active
       -- jtag connection --
       jtag_trst_i      => jtag_trst_i,
       jtag_tck_i       => jtag_tck_i,

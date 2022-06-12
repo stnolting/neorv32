@@ -68,7 +68,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070206"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070207"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1665,7 +1665,8 @@ package neorv32_package is
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active
+      rstn_ext_i  : in  std_ulogic; -- external reset line, low-active, async
+      rstn_int_i  : in  std_ulogic; -- internal reset line, low-active, async
       rden_i      : in  std_ulogic; -- read enable
       wren_i      : in  std_ulogic; -- write enable
       addr_i      : in  std_ulogic_vector(31 downto 0); -- address
@@ -1680,7 +1681,7 @@ package neorv32_package is
       clkgen_i    : in  std_ulogic_vector(07 downto 0);
       -- timeout event --
       irq_o       : out std_ulogic; -- timeout IRQ
-      rstn_o      : out std_ulogic  -- timeout reset, low_active, use it as async!
+      rstn_o      : out std_ulogic  -- timeout reset, low_active, sync
     );
   end component;
 

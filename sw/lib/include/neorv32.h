@@ -1254,7 +1254,10 @@ typedef struct __attribute__((packed,aligned(4))) {
 /** WDT module hardware access (#neorv32_wdt_t) */
 #define NEORV32_WDT (*((volatile neorv32_wdt_t*) (NEORV32_WDT_BASE)))
 
-/** WTD control register bits */
+/** WDT access password */
+#define NEORV32_WDT_PWD (0xCA36)
+
+/** WDT control register bits */
 enum NEORV32_WDT_CTRL_enum {
   WDT_CTRL_EN       =  0, /**< WDT control register(0) (r/w): Watchdog enable */
   WDT_CTRL_CLK_SEL0 =  1, /**< WDT control register(1) (r/w): Clock prescaler select bit 0 */
@@ -1267,7 +1270,10 @@ enum NEORV32_WDT_CTRL_enum {
   WDT_CTRL_LOCK     =  8, /**< WDT control register(8) (r/w): Lock write access to control register, clears on reset (HW or WDT) only */
   WDT_CTRL_DBEN     =  9, /**< WDT control register(9) (r/w): Allow WDT to continue operation even when in debug mode */
   WDT_CTRL_HALF     = 10, /**< WDT control register(10) (r/-): Set if at least half of the max. timeout counter value has been reached */
-  WDT_CTRL_PAUSE    = 11  /**< WDT control register(11) (r/w): Pause WDT when CPU is in sleep mode */
+  WDT_CTRL_PAUSE    = 11, /**< WDT control register(11) (r/w): Pause WDT when CPU is in sleep mode */
+
+  WDT_CTRL_PWD_LSB  = 16, /**< WDT control register(16) (-/w): Watchdog access password, LSB ("NEORV32_WDT_PWD") */
+  WDT_CTRL_PWD_MSB  = 31  /**< WDT control register(31) (-/w): Watchdog access password, MSB ("NEORV32_WDT_PWD") */
 };
 /**@}*/
 

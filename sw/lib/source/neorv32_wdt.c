@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -63,13 +63,15 @@ int neorv32_wdt_available(void) {
 /**********************************************************************//**
  * Configure and enable watchdog timer. The WDT control register bits are listed in #NEORV32_WDT_CTRL_enum.
  *
+ * @warning Once set the watchdog lock can only be removed by an external hardware reset!
+ *
  * @param[in] prsc Clock prescaler to select timeout interval. See #NEORV32_CLOCK_PRSC_enum.
  * @param[in] mode Trigger system reset on timeout when 1, trigger interrupt on timeout when 0.
  * @param[in] lock Control register will be locked when 1 (until next reset).
  **************************************************************************/
 void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock) {
 
-  NEORV32_WDT.CTRL = (1 << WDT_CTRL_RESET); // reset WDT counter
+  NEORV32_WDT.CTRL = (NEORV32_WDT_PWD << WDT_CTRL_PWD_LSB) | (1 << WDT_CTRL_RESET); // reset and disable
 
   uint32_t prsc_int = (uint32_t)(prsc & 0x07);
   prsc_int = prsc_int << WDT_CTRL_CLK_SEL0;
@@ -83,7 +85,7 @@ void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock) {
   const uint32_t enable = (uint32_t)(1 << WDT_CTRL_EN);
 
   // update WDT control register
-  NEORV32_WDT.CTRL = enable | mode_int | prsc_int | lock_int;
+  NEORV32_WDT.CTRL = (NEORV32_WDT_PWD << WDT_CTRL_PWD_LSB) | enable | mode_int | prsc_int | lock_int;
 }
 
 
@@ -93,12 +95,12 @@ void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock) {
  * @return Returns 0 if WDT is really deactivated, -1 otherwise.
  **************************************************************************/
 int neorv32_wdt_disable(void) {
-  
-  NEORV32_WDT.CTRL = 0;
 
-  // check if wdt is really off
+  NEORV32_WDT.CTRL = (NEORV32_WDT_PWD << WDT_CTRL_PWD_LSB) | (1 << WDT_CTRL_RESET); // reset and disable
+
+  // check if WDT is really off
   if (NEORV32_WDT.CTRL & (1 << WDT_CTRL_EN)) {
-    return -1; // WDT still active
+    return -1; // still active
   }
   else {
     return 0;
@@ -107,25 +109,25 @@ int neorv32_wdt_disable(void) {
 
 
 /**********************************************************************//**
- * Reset (running) watchdog.
+ * Feed watchdog (reset timeout counter).
  **************************************************************************/
 void neorv32_wdt_reset(void) {
 
-  NEORV32_WDT.CTRL = NEORV32_WDT.CTRL | (1 << WDT_CTRL_RESET);
+  NEORV32_WDT.CTRL |= (NEORV32_WDT_PWD << WDT_CTRL_PWD_LSB) | (1 << WDT_CTRL_RESET);
 }
 
 
 /**********************************************************************//**
  * Get cause of last system reset.
  *
- * @return Cause of last reset/IRQ (0: external reset, 1: watchdog timeout).
+ * @return Cause of last reset (0: system reset - OCD or external, 1: watchdog timeout).
  **************************************************************************/
 int neorv32_wdt_get_cause(void) {
 
   if (NEORV32_WDT.CTRL & (1 << WDT_CTRL_RCAUSE)) { // reset caused by watchdog
     return 1;
   }
-  else { // external reset
+  else { // reset caused by system (external or OCD)
     return 0;
   }
 }
@@ -136,5 +138,5 @@ int neorv32_wdt_get_cause(void) {
  **************************************************************************/
 void neorv32_wdt_force(void) {
 
-  NEORV32_WDT.CTRL = NEORV32_WDT.CTRL | (1 << WDT_CTRL_FORCE);
+  NEORV32_WDT.CTRL |= (NEORV32_WDT_PWD << WDT_CTRL_PWD_LSB) | (1 << WDT_CTRL_FORCE);
 }

@@ -1059,6 +1059,11 @@
               <bitRange>[11:11]</bitRange>
               <description>Pause WDT when CPU is in sleep mode</description>
             </field>
+            <field>
+              <name>WDT_CTRL_PWD</name>
+              <bitRange>[31:16]</bitRange>
+              <description>Watchdog password, has to be `0xCA36` - otherwise any write access is ignored, reads as zero</description>
+            </field>
           </fields>
         </register>
       </registers>

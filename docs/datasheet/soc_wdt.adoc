@@ -16,9 +16,22 @@
 
 **Theory of Operation**
 
-The watchdog (WDT) provides a last resort for safety-critical applications. The WDT has an internal 20-bit
+The watchdog (WDT) provides a last resort for safety-critical applications. The WDT provides an internal 20-bit
 wide counter that needs to be reset every now and then by the user program. If the counter overflows, either
 a system reset or an interrupt is generated depending on the configured operation mode.
+
+
+**Access Password**
+
+Whenever the watchdog control register `NEORV32_WDT.CTRL` shall be written the upper-most (MSB-aligned) 16 bit of the
+write data have to contain the "watchdog access password". If the password is incorrect the write access is entirely ignored
+and the watchdog hardware module will **not acknowledge** the bus write access leading to a **store access fault exception**.
+Read accesses are not affected by the access password at all.
+
+* Watchdog access password (`write_data[31:16]`) = **`0xCA36`**
+
+
+**Timeout Configuration**
 
 The watchdog is enabled by setting the control register's `WDT_CTRL_EN_ bit. The clock used to increment the
 internal counter is selected via the 3-bit _WDT_CTRL_CLK_SELx_ prescaler:
@@ -38,26 +51,26 @@ internal counter is selected via the 3-bit _WDT_CTRL_CLK_SELx_ prescaler:
 |=======================
 
 The _WDT_CTRL_HALF_ flag of the control register `CTRL` indicates that at least half of the maximum timeout
-value has already been reached. The watchdog is reset by setting the _WDT_CTRL_RESET_ bit.
+value has already been reached. The watchdog is "fed" by setting the _WDT_CTRL_RESET_ control register bit, which
+will reset the timeout counter.
+
+
+**Watchdog Action**
 
 Whenever the internal counter overflows the watchdog executes one of two possible actions: either a hard
 processor reset is triggered or an interrupt is requested via the CPU's fast interrupt channel #0. The
-_WDT_CTRL_MODE_ bit defines the action to be taken on an overflow: when cleared, the Watchdog will assert an
+_WDT_CTRL_MODE_ bit defines the action to be taken on an overflow: when cleared, the watchdog will assert an
 IRQ, when set the WDT will cause a system wide reset. The configured action can also be triggered manually at
 any time by setting the _WDT_CTRL_FORCE_ bit.
 
+The cause of the last system reset can be determined via the _WDT_CTRL_RCAUSE_ flag. If this flag is
+zero, the processor has been reset via the external reset signal (or the on-chip debugger). If this flag is set
+the last system reset was caused by the watchdog itself.
+
+.Watchdog Interrupt
 [NOTE]
 A watchdog interrupt can only occur if the watchdog is enabled and interrupt mode is enabled.
 A triggered interrupt has to be cleared again by writing zero to the according <<_mip>> CSR bit.
-
-The cause of the last system reset can be determined via the _WDT_CTRL_RCAUSE_ flag. If this flag is
-zero, the processor has been reset via the external reset signal. If this flag is set the last system reset was
-initiated by the watchdog.
-
-The Watchdog control register can be locked in order to protect the current configuration. The lock is
-activated by setting the _WDT_CTRL_LOCK_ bit. In the locked state any write access to the configuration flags is
-ignored (see table below, "writable if locked"). Read accesses to the control register are not effected. The
-lock can only be removed by a system reset (via external reset signal or via a watchdog reset action).
 
 .Watchdog Operation during Debugging
 [IMPORTANT]
@@ -72,6 +85,17 @@ By default the watchdog keeps operating when the CPU enters sleep mode. However,
 the CPU is sleeping by setting the _WDT_CTRL_PAUSE_ control register bit.
 
 
+**Configuration Lock**
+
+The watchdog control register can be locked to protect the current configuration from being modified. The lock is activated by
+setting the _WDT_CTRL_LOCK_ bit. In the locked state any write access to the control register's configuration flags is
+ignored (see table below, "writable if locked"). Read accesses to the control register as well as watchdog resets (_WDT_CTRL_RESET_)
+and forced watchdog actions (_WDT_CTRL_FORCE_) are not affected.
+
+The lock is removed by a system reset, which can be triggered via the external hardware reset signal, the on-chip debugger
+or the watchdog itself (if _WDT_CTRL_MODE_ is set).
+
+
 **Register Map**
 
 .WDT register map (`struct NEORV32_WDT`)
@@ -79,7 +103,7 @@ the CPU is sleeping by setting the _WDT_CTRL_PAUSE_ control register bit.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Reset value | Writable if locked | Function
-.12+<| `0xffffffbc` .12+<| `NEORV32_WDT.CTRL` <|`0` _WDT_CTRL_EN_       ^| r/w ^| `0` ^| no  <| watchdog enable
+.14+<| `0xffffffbc` .14+<| `NEORV32_WDT.CTRL` <|`0` _WDT_CTRL_EN_       ^| r/w ^| `0` ^| no  <| watchdog enable
                                               <|`1` _WDT_CTRL_CLK_SEL0_ ^| r/w ^| `0` ^| no  .3+<| 3-bit clock prescaler select
                                               <|`2` _WDT_CTRL_CLK_SEL1_ ^| r/w ^| `0` ^| no 
                                               <|`3` _WDT_CTRL_CLK_SEL2_ ^| r/w ^| `0` ^| no 
@@ -91,4 +115,6 @@ the CPU is sleeping by setting the _WDT_CTRL_PAUSE_ control register bit.
                                               <|`9` _WDT_CTRL_DBEN_     ^| r/w ^| `0` ^| no  <| allow WDT to continue operation even when CPU is in debug mode
                                               <|`10` _WDT_CTRL_HALF_    ^| r/- ^| `0` ^| -   <| set if at least half of the max. timeout counter value has been reached
                                               <|`11` _WDT_CTRL_PAUSE_   ^| r/w ^| `0` ^| no  <| pause WDT when CPU is in sleep mode
+                                              <|`15:12` -               ^| r/- ^| -   ^| -   <| _reserved_, reads as zero
+                                              <|`31:16` _WDT_CTRL_PWD_  ^| -/w ^| -   ^| -   <| watchdog write access password, has to be `0xCA36`, reads as zero
 |=======================
