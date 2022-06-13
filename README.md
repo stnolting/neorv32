@@ -64,7 +64,7 @@ setting up your NEORV32 setup!
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
 - [x] completely described in behavioral, platform-independent VHDL - **no** platform-specific primitives, macros, attributes, etc.
 - [x] extensive configuration options for adapting the processor to the requirements of the application
-- [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, SoC and system level
+- [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, processor and system level
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
 - [x] optimized for high clock frequencies to ease timing closure
 - [x] from zero to _"hello world!"_ - completely open source and documented
@@ -87,7 +87,7 @@ The processor passes the official RISC-V architecture tests, which is checked by
 (for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example) folder) including CoreMark
 and FreeRTOS and can be synthesized for _any_ target technology - tested on Intel, Xilinx and Lattice FPGAs.
 
-**[[back to top](#The-NEORV32-RISC-V-Processor)]**
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 
@@ -181,7 +181,7 @@ _custom RISC-V instructions_
 upstream gcc support yet (will be available with GCC12). To circumvent this, the NEORV32 software framework provides
 _intrinsic libraries_ for the `B` and `Zfinx` extensions.
 
-**[[back to top](#The-NEORV32-RISC-V-Processor)]**
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 ## 3. FPGA Implementation Results
@@ -201,7 +201,7 @@ using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimizatio
 :bulb: The [`neorv32-setups`](https://github.com/stnolting/neorv32-setups) repository provides exemplary FPGA
 setups targeting various FPGA boards and toolchains.
 
-**[[back to top](#The-NEORV32-RISC-V-Processor)]**
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 ## 4. Performance
@@ -226,7 +226,7 @@ The CPU & SoC provide further "tuning" options to optimize the design for maximu
 maximum clock speed, minimal area or minimal power consumption:
 [_UG: Application-Specific Processor Configuration_](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration)
 
-**[[back to top](#The-NEORV32-RISC-V-Processor)]**
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 
@@ -251,7 +251,7 @@ developed and debugged with open source tools ([GHDL](https://github.com/ghdl/gh
 
 :books: Want to know more? Check out [_Data Sheet: Software Framework_](https://stnolting.github.io/neorv32/#_software_framework).
 
-**[[back to top](#The-NEORV32-RISC-V-Processor)]**
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 
@@ -313,7 +313,7 @@ This is an open-source project that is free of charge. Use this project in any w
 (as long as it complies to the permissive [license](https://github.com/stnolting/neorv32/blob/main/LICENSE)).
 Please cite it appropriately. :+1:
 
-**[[back to top](#The-NEORV32-RISC-V-Processor)]**
+[[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
 ---------------------------------------
