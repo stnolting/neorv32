@@ -16,6 +16,9 @@ The on-chip debugger is only implemented if the _ON_CHIP_DEBUGGER_EN_ generic is
 the `Zicsr` and `Zifencei` CPU extension to be implemented (top generics _CPU_EXTENSION_RISCV_Zicsr_ = _true_
 and _CPU_EXTENSION_RISCV_Zifencei_ = _true_).
 
+[TIP]
+<<_segger_embedded_studio>> can also be used to develop and debug applications for the NEORV32 using the on-chip debugger.
+
 
 :sectnums:
 === Hardware Requirements
@@ -277,3 +280,14 @@ Breakpoint 1 at 0x690
 [NOTE]
 The CPU's trigger module only provides a single _instruction address match_ type trigger. Hence, only
 a single `hb` hardware-assisted breakpoint can be used.
+
+
+:sectnums:
+=== Segger Embedded Studio
+
+Software for the NEORV32 processor can also be developed and debugged _in-system_ using Segger Embedded Studio
+and a Segger J-Link probe. The following links provide further information as well as an excellent tutorial.
+
+* Segger Embedded Studio: https://www.segger.com/products/development-tools/embedded-studio
+* Segger notes regarding NEORV32: https://wiki.segger.com/J-Link_NEORV32
+* Excellent tutorial: https://www.emb4fun.com/riscv/ses4rv/index.html

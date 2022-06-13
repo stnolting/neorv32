@@ -57,6 +57,7 @@ Contact: stnolting@gmail.com
 * Images/figures made with _Microsoft Power Point_.
 * Timing diagrams made with _WaveDrom Editor_.
 * Documentation proudly made with `asciidoctor`.
+* "Segger Embedded Studio" and "J-Link" are trademarks of Segger Microcontroller Systems GmbH.
 * All further/unreferenced products belong to their according copyright holders.
 
 PDF icons from https://www.flaticon.com and made by
