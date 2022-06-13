@@ -62,7 +62,7 @@ include::rationale.adoc[]
 * all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
 * completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
 * extensive configuration options for adapting the processor to the requirements of the application
-* highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, SoC and system level
+* highly (https://stnolting.github.io/neorv32/ug/#_comparative_summary)[extensible hardware] - on CPU, SoC and system level
 * aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-performance trade-off
 * optimized for high clock frequency to ease timing closure
 * from zero to _"hello world!"_ - completely open source and documented

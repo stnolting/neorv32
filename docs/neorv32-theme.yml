@@ -18,12 +18,12 @@ header:
   border-width: 1
   recto:
     left:
-      content: '*The NEORV32 RISC-V Processor*'
+      content: '*The https://github.com/stnolting/neorv32[NEORV32] RISC-V Processor*'
     right:
       content: '*Visit on https://github.com/stnolting/neorv32[GitHub]*'
   verso:
     left:
-      content: '*The NEORV32 Processor*'
+      content: '*The https://github.com/stnolting/neorv32[NEORV32] RISC-V Processor*'
     right:
       content: '*Visit on https://github.com/stnolting/neorv32[GitHub]*'
 footer:
@@ -36,13 +36,13 @@ footer:
     left:
       content: '{page-number} / {page-count}'
     center:
-      content: 'Copyright (c) 2021, Stephan Nolting. All rights reserved.'
+      content: 'Copyright by Stephan Nolting. All rights reserved.'
     right:
       content: '{docdate}'
   verso:
     left:
       content: '{page-number} / {page-count}'
     center:
-      content: 'NEORV32 Version: {revnumber}'
+      content: 'Version {revnumber}'
     right:
       content: '{docdate}'
