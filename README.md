@@ -46,7 +46,8 @@ various FPGA boards and toolchains to get you started.
 
 :heavy_check_mark: Automatic check for RISC-V specification [compliance](https://github.com/stnolting/neorv32-verif).
 
-:kite: Supported by upstream [Zephyr OS](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) and FreeRTOS.
+:kite: Supported by [Zephyr OS](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) and
+[FreeRTOS](https://github.com/stnolting/neorv32/tree/main/sw/example/demo_freeRTOS).
 
 :bulb: Feel free to open a [new issue](https://github.com/stnolting/neorv32/issues) or start a
 [new discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or if something is
@@ -78,6 +79,7 @@ setting up your NEORV32 setup!
 [![Documentation](https://img.shields.io/github/workflow/status/stnolting/neorv32/Documentation/main?longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation)
 [![riscv-arch-test](https://img.shields.io/github/workflow/status/stnolting/neorv32-verif/riscv-arch-test/main?longCache=true&style=flat-square&label=riscv-arch-test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verif/actions?query=workflow%3Ariscv-arch-test)
 [![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/main?longCache=true&style=flat-square&label=Processor&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor)
+[![Implementation](https://img.shields.io/github/workflow/status/stnolting/neorv32-setups/Implementation/main?longCache=true&style=flat-square&label=Implementation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-setups/actions?query=workflow%3AImplementation)
 
 The NEORV32 is fully operational.
 The processor passes the official RISC-V architecture tests, which is checked by the
