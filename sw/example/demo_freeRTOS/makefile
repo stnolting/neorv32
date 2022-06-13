@@ -5,7 +5,7 @@
 # ********************************************************************************************* #
 # BSD 3-Clause License                                                                          #
 #                                                                                               #
-# Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+# Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 #                                                                                               #
 # Redistribution and use in source and binary forms, with or without modification, are          #
 # permitted provided that the following conditions are met:                                     #
@@ -58,9 +58,6 @@ MABI  ?= ilp32
 
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
-
-# Relative or absolute path to the NEORV32 home folder
-NEORV32_HOME ?= ../../..
 # *****************************************************************************
 
 
@@ -70,7 +67,7 @@ NEORV32_HOME ?= ../../..
 # -----------------------------------------------------------------------------
 ifneq (,$(findstring RUN_FREERTOS_DEMO,$(USER_FLAGS)))
 # FreeRTOS home folder (adapt this!)
-FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOSv10.4.1
+FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOS
 
 # FreeRTOS RISC-V specific
 APP_SRC += $(wildcard $(FREERTOS_HOME)/FreeRTOS/Source/portable/GCC/RISC-V/*.c)
@@ -135,7 +132,6 @@ APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/FreeRTOS_UDP_
 APP_INC += -I $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/include
 APP_INC += -I $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/portable/Compiler/GCC
 endif
-
 
 
 # Modify this variable to fit your NEORV32 setup (neorv32 home folder)
