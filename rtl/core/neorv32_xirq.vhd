@@ -218,7 +218,7 @@ begin
     if (rstn_i = '0') then
       cpu_irq_o <= '0';
       irq_run   <= '0';
-      irq_src   <= (others => '-');
+      irq_src   <= (others => '0');
     elsif rising_edge(clk_i) then
       cpu_irq_o <= '0';
       if (irq_run = '0') then -- no active IRQ
