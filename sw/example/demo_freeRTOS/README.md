@@ -10,11 +10,19 @@ but is placed in this source directory for simplicity.
 **:information_source: Tested with FreeRTOS version V10.4.4+**
 
 
-## Hardware Requirements
+## Requirements
 
-* DMEM/IMEM requriements depend on the actual application (for example: 16kB DMEM and 16kB IMEM for *blinky_demo*)
-* MTIME (machine timer) + UART0 + GPIO
-* `Zicsr` CPU extension
+* Hardware
+  * DMEM/IMEM requirements depend on the actual application (for example: 16kB DMEM and 16kB IMEM for "blinky_demo")
+  * peripherals: MTIME (machine timer), UART0, GPIO
+  * CPU ISA extensions: `Zicsr`
+
+* Software
+  * NEORV32 software framework
+  * RISC-V gcc
+  * FreeRTOS
+  * application-specific configuration of `FreeRTOSConfig.h` (especially `configCPU_CLOCK_HZ`)
+  * application-specific configuration of the NEORV32 linker script when using non-default IMEM or DMEM configurations (size!) 
 
 
 ## Instructions

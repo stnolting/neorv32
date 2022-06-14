@@ -151,14 +151,20 @@ static void prvSetupHardware( void )
   // init UART at default baud rate, no parity bits, ho hw flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
+  // check clock tick configuration
+  if (NEORV32_SYSINFO.CLK != (uint32_t)configCPU_CLOCK_HZ) {
+    neorv32_uart0_printf("Warning! Incorrect 'configCPU_CLOCK_HZ' configuration!\n"
+                         "Is %u Hz but should be %u Hz.\n\n", (uint32_t)configCPU_CLOCK_HZ, NEORV32_SYSINFO.CLK);
+  }
+
+  // check available hardware ISA extensions and compare with compiler flags
+  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
+
   // enable and configure further NEORV32-specific modules if required
   // ...
 
   // enable NEORV32-specific interrupts if required
   // ...
-
-  // check available hardware extensions and compare with compiler flags
-  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 }
 
 /*-----------------------------------------------------------*/

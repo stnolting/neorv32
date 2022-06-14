@@ -86,6 +86,11 @@
  *----------------------------------------------------------*/
 
 /* See https://www.freertos.org/Using-FreeRTOS-on-RISC-V.html */
+
+
+/******************************************************************************
+ * Modified for the NEORV32 processor by Stephan Nolting.
+ ******************************************************************************/
 #define configMTIME_BASE_ADDRESS 	( 0xFFFFFF90UL  )
 #define configMTIMECMP_BASE_ADDRESS ( 0xFFFFFF98UL  )
 
