@@ -233,20 +233,19 @@ int neorv32_xirq_uninstall(uint8_t ch) {
  **************************************************************************/
 static void __neorv32_xirq_core(void) {
 
-  register uint32_t src = NEORV32_XIRQ.SCR; // get IRQ source (with highest priority)
-
-  uint32_t mask = 1 << src;
-  NEORV32_XIRQ.IPR = ~mask; // clear current pending interrupt
-
   neorv32_cpu_csr_write(CSR_MIP, ~(1 << XIRQ_FIRQ_PENDING)); // acknowledge XIRQ FIRQ
 
-  NEORV32_XIRQ.SCR = 0; // acknowledge current XIRQ interrupt source
+  register uint32_t src = NEORV32_XIRQ.SCR; // get IRQ source (with highest priority)
 
   // execute handler
   register uint32_t xirq_handler = __neorv32_xirq_vector_lut[src];
   void (*handler_pnt)(void);
   handler_pnt = (void*)xirq_handler;
   (*handler_pnt)();
+
+  uint32_t mask = 1 << src;
+  NEORV32_XIRQ.IPR = ~mask; // clear current pending interrupt
+  NEORV32_XIRQ.SCR = 0; // acknowledge current XIRQ interrupt
 }
 
 
