@@ -190,6 +190,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant sreg_exception_ack_c : natural := 5; -- -/w: CPU has detected an exception
 
   -- code ROM containing "park loop" --
+  -- copied manually from 'sw/ocd-firmware/neorv32_debug_mem_code.vhd' --
   type code_rom_file_t is array (0 to 31) of std_ulogic_vector(31 downto 0);
   constant code_rom_file : code_rom_file_t := (
     00000000 => x"0180006f",
