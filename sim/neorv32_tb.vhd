@@ -150,6 +150,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal slink_dat : sdata_8x32_t;
   signal slink_val : std_ulogic_vector(7 downto 0);
   signal slink_rdy : std_ulogic_vector(7 downto 0);
+  signal slink_lst : std_ulogic_vector(7 downto 0);
 
   signal slink_transmitter_dat, slink_receiver_dat : sdata_8x32_t;
   signal slink_transmitter_val, slink_receiver_val : std_ulogic_vector(7 downto 0);
@@ -382,10 +383,12 @@ begin
     slink_tx_dat_o => slink_dat,       -- output data
     slink_tx_val_o => slink_val,       -- valid output
     slink_tx_rdy_i => slink_rdy,       -- ready to send
+    slink_tx_lst_o => slink_lst,       -- last data of package
     -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
     slink_rx_dat_i => slink_dat,       -- input data
     slink_rx_val_i => slink_val,       -- valid input
     slink_rx_rdy_o => slink_rdy,       -- ready to receive
+    slink_rx_lst_i => slink_lst,       -- last data of package
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o         => gpio,            -- parallel output
     gpio_i         => gpio,            -- parallel input
