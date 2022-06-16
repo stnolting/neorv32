@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -70,7 +70,7 @@ int main() {
   // this will take care of handling all CPU traps (interrupts and exceptions)
   neorv32_rte_setup();
 
-  // setup UART0 at default baud rate, no parity bits, ho hw flow control
+  // setup UART0 at default baud rate, no parity bits, no hw flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // check if XIRQ unit is implemented at all
@@ -113,10 +113,8 @@ int main() {
     return 1;
   }
 
-
   // allow XIRQ to trigger CPU interrupt
   neorv32_xirq_global_enable();
-
 
   // enable global interrupts
   neorv32_cpu_eint();
