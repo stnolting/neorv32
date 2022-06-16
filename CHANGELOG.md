@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 16.06.2022 | 1.7.2.8 | :warning: rework **SLINK** module, add support for T_LAST signals; [#349](https://github.com/stnolting/neorv32/pull/349) |
 | 11.06.2022 | 1.7.2.7 | reworked processor **reset system**; :warning: changed behavior of **watchdog's** "lock" bit; add watchdog "access password"; [#345](https://github.com/stnolting/neorv32/pull/345) |
 | 10.06.2022 | 1.7.2.6 | **Wishbone** interface now _gates_ all outgoing signals (= signals remain stable if there is no active Wishbone access); [#344](https://github.com/stnolting/neorv32/pull/344) |
 | 09.06.2022 | 1.7.2.5 | reworked **TWI** module fixing several interface timing issues; :warning: removed "START condition done interrupt" and "STOP condition done interrupt"; [#340](https://github.com/stnolting/neorv32/pull/340) |
