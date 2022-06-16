@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -43,226 +43,17 @@
 
 // prototypes
 int  neorv32_slink_available(void);
+void neorv32_slink_setup(uint32_t rx_irq_en, uint32_t tx_irq_en);
 void neorv32_slink_enable(void);
 void neorv32_slink_disable(void);
-void neorv32_slink_rx_irq_config(int link_id, int irq_en, int irq_type);
-void neorv32_slink_tx_irq_config(int link_id, int irq_en, int irq_type);
+
 int  neorv32_slink_get_rx_num(void);
 int  neorv32_slink_get_tx_num(void);
 int  neorv32_slink_get_rx_depth(void);
 int  neorv32_slink_get_tx_depth(void);
-int  neorv32_slink_check_rx_half_full(int link_id);
-int  neorv32_slink_check_tx_half_full(int link_id);
-// non-blocking transmit
-int  neorv32_slink_tx0_nonblocking(uint32_t tx_data);
-int  neorv32_slink_tx1_nonblocking(uint32_t tx_data);
-int  neorv32_slink_tx2_nonblocking(uint32_t tx_data);
-int  neorv32_slink_tx3_nonblocking(uint32_t tx_data);
-int  neorv32_slink_tx4_nonblocking(uint32_t tx_data);
-int  neorv32_slink_tx5_nonblocking(uint32_t tx_data);
-int  neorv32_slink_tx6_nonblocking(uint32_t tx_data);
-int  neorv32_slink_tx7_nonblocking(uint32_t tx_data);
-// non-blocking receive
-int  neorv32_slink_rx0_nonblocking(uint32_t *rx_data);
-int  neorv32_slink_rx1_nonblocking(uint32_t *rx_data);
-int  neorv32_slink_rx2_nonblocking(uint32_t *rx_data);
-int  neorv32_slink_rx3_nonblocking(uint32_t *rx_data);
-int  neorv32_slink_rx4_nonblocking(uint32_t *rx_data);
-int  neorv32_slink_rx5_nonblocking(uint32_t *rx_data);
-int  neorv32_slink_rx6_nonblocking(uint32_t *rx_data);
-int  neorv32_slink_rx7_nonblocking(uint32_t *rx_data);
 
-
-/**********************************************************************//**
- * Write data to TX stream link 0 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in] tx_data Data to send to link.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_tx0_blocking(uint32_t tx_data) {  
-  NEORV32_SLINK.DATA[0] = tx_data;
-}
-
-
-/**********************************************************************//**
- * Write data to TX stream link 1 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in] tx_data Data to send to link.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_tx1_blocking(uint32_t tx_data) { 
-  NEORV32_SLINK.DATA[1] = tx_data;
-}
-
-
-/**********************************************************************//**
- * Write data to TX stream link 2 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in] tx_data Data to send to link.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_tx2_blocking(uint32_t tx_data) { 
-  NEORV32_SLINK.DATA[2] = tx_data;
-}
-
-
-/**********************************************************************//**
- * Write data to TX stream link 3 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in] tx_data Data to send to link.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_tx3_blocking(uint32_t tx_data) { 
-  NEORV32_SLINK.DATA[3] = tx_data;
-}
-
-
-/**********************************************************************//**
- * Write data to TX stream link 4 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in] tx_data Data to send to link.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_tx4_blocking(uint32_t tx_data) { 
-  NEORV32_SLINK.DATA[4] = tx_data;
-}
-
-
-/**********************************************************************//**
- * Write data to TX stream link 5 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in] tx_data Data to send to link.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_tx5_blocking(uint32_t tx_data) { 
-  NEORV32_SLINK.DATA[5] = tx_data;
-}
-
-
-/**********************************************************************//**
- * Write data to TX stream link 6 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in] tx_data Data to send to link.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_tx6_blocking(uint32_t tx_data) { 
-  NEORV32_SLINK.DATA[6] = tx_data;
-}
-
-
-/**********************************************************************//**
- * Write data to TX stream link 7 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in] tx_data Data to send to link.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_tx7_blocking(uint32_t tx_data) { 
-  NEORV32_SLINK.DATA[7] = tx_data;
-}
-
-
-/**********************************************************************//**
- * Read data from RX stream link 0 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in,out] rx_data Pointer to return read data.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_rx0_blocking(uint32_t *rx_data) { 
-  *rx_data = NEORV32_SLINK.DATA[0];
-}
-
-
-/**********************************************************************//**
- * Read data from RX stream link 1 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in,out] rx_data Pointer to return read data.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_rx1_blocking(uint32_t *rx_data) { 
-  *rx_data = NEORV32_SLINK.DATA[1];
-}
-
-
-/**********************************************************************//**
- * Read data from RX stream link 2 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in,out] rx_data Pointer to return read data.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_rx2_blocking(uint32_t *rx_data) { 
-  *rx_data = NEORV32_SLINK.DATA[2];
-}
-
-
-/**********************************************************************//**
- * Read data from RX stream link 3 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in,out] rx_data Pointer to return read data.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_rx3_blocking(uint32_t *rx_data) { 
-  *rx_data = NEORV32_SLINK.DATA[3];
-}
-
-
-/**********************************************************************//**
- * Read data from RX stream link 4 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in,out] rx_data Pointer to return read data.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_rx4_blocking(uint32_t *rx_data) { 
-  *rx_data = NEORV32_SLINK.DATA[4];
-}
-
-
-/**********************************************************************//**
- * Read data from RX stream link 5 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in,out] rx_data Pointer to return read data.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_rx5_blocking(uint32_t *rx_data) { 
-  *rx_data = NEORV32_SLINK.DATA[5];
-}
-
-
-/**********************************************************************//**
- * Read data from RX stream link 6 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in,out] rx_data Pointer to return read data.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_rx6_blocking(uint32_t *rx_data) { 
-  *rx_data = NEORV32_SLINK.DATA[6];
-}
-
-
-/**********************************************************************//**
- * Read data from RX stream link 7 (blocking!)
- *
- * @warning This function will raise an exception when the bus access times out!
- *
- * @param[in,out] rx_data Pointer to return read data.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_slink_rx7_blocking(uint32_t *rx_data) { 
-  *rx_data = NEORV32_SLINK.DATA[7];
-}
+int  neorv32_slink_tx(int link_id, uint32_t tx_data, int last);
+int  neorv32_slink_rx(int link_id, uint32_t *rx_data);
 
 
 #endif // neorv32_slink_h
