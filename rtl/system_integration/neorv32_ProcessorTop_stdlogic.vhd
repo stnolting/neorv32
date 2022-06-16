@@ -152,10 +152,12 @@ entity neorv32_ProcessorTop_stdlogic is
     slink_tx_dat_o : out sdata_8x32r_t; -- output data
     slink_tx_val_o : out std_logic_vector(7 downto 0); -- valid output
     slink_tx_rdy_i : in  std_logic_vector(7 downto 0) := (others => '0'); -- ready to send
+    slink_tx_lst_o : out std_logic_vector(7 downto 0); -- last data of package
     -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
     slink_rx_dat_i : in  sdata_8x32r_t := (others => (others => '0')); -- input data
     slink_rx_val_i : in  std_logic_vector(7 downto 0) := (others => '0'); -- valid input
     slink_rx_rdy_o : out std_logic_vector(7 downto 0); -- ready to receive
+    slink_rx_lst_i : in  std_logic_vector(7 downto 0) := (others => '0'); -- last data of package
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o         : out std_logic_vector(63 downto 0); -- parallel output
     gpio_i         : in  std_logic_vector(63 downto 0) := (others => '0'); -- parallel input
@@ -234,9 +236,11 @@ architecture neorv32_ProcessorTop_stdlogic_rtl of neorv32_ProcessorTop_stdlogic 
   signal slink_tx_dat_o_int : sdata_8x32_t;
   signal slink_tx_val_o_int : std_logic_vector(7 downto 0);
   signal slink_tx_rdy_i_int : std_logic_vector(7 downto 0);
+  signal slink_tx_lst_o_int : std_logic_vector(7 downto 0);
   signal slink_rx_dat_i_int : sdata_8x32_t;
   signal slink_rx_val_i_int : std_logic_vector(7 downto 0);
   signal slink_rx_rdy_o_int : std_logic_vector(7 downto 0);
+  signal slink_rx_lst_i_int : std_logic_vector(7 downto 0);
   --
   signal gpio_o_int      : std_ulogic_vector(63 downto 0);
   signal gpio_i_int      : std_ulogic_vector(63 downto 0);
@@ -389,10 +393,12 @@ begin
     slink_tx_dat_o => slink_tx_dat_o_int, -- output data
     slink_tx_val_o => slink_tx_val_o_int, -- valid output
     slink_tx_rdy_i => slink_tx_rdy_i_int, -- ready to send
+    slink_tx_lst_o => slink_tx_lst_o_int, -- last data of package
     -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
     slink_rx_dat_i => slink_rx_dat_i_int, -- input data
     slink_rx_val_i => slink_rx_val_i_int, -- valid input
     slink_rx_rdy_o => slink_rx_rdy_o_int, -- ready to receive
+    slink_rx_lst_i => slink_rx_lst_i_int, -- last data of package
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o         => gpio_o_int,      -- parallel output
     gpio_i         => gpio_i_int,      -- parallel input
@@ -463,8 +469,10 @@ begin
 
   slink_tx_val_o     <= std_logic_vector(slink_tx_val_o_int);
   slink_tx_rdy_i_int <= std_ulogic_vector(slink_tx_rdy_i);
+  slink_rx_lst_i_int <= std_ulogic_vector(slink_rx_lst_i);
   slink_rx_val_i_int <= std_ulogic_vector(slink_rx_val_i);
   slink_rx_rdy_o     <= std_logic_vector(slink_rx_rdy_o_int);
+  slink_tx_lst_o     <= std_logic_vector(slink_tx_lst_o_int);
 
   slink_conv:
   for i in 0 to 7 generate
