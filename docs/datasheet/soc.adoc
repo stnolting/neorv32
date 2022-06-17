@@ -89,12 +89,14 @@ bits/channels are hardwired to zero.
 | `xip_sdi_i` | 1 | in  | serial data input
 | `xip_sdo_o` | 1 | out | serial data output
 4+^| **Stream Link Interface (<<_stream_link_interface_slink,SLINK>>)**
-| `slink_tx_dat_o` | 8x32 | out | TX link _n_ data
-| `slink_tx_val_o` |    8 | out | TX link _n_ data valid
-| `slink_tx_rdy_i` |    8 | in  | TX link _n_ allowed to send
-| `slink_rx_dat_i` | 8x32 | in  | RX link _n_ data
-| `slink_rx_val_i` |    8 | in  | RX link _n_ data valid
-| `slink_rx_rdy_o` |    8 | out | RX link _n_ ready to receive
+| `slink_tx_dat_o` | 8x32 | out | TX link _i_ data
+| `slink_tx_val_o` |    8 | out | TX link _i_ data valid
+| `slink_tx_rdy_i` |    8 | in  | TX link _i_ allowed to send
+| `slink_tx_lst_o` |    8 | in  | TX link _i_ end of packet
+| `slink_rx_dat_i` | 8x32 | in  | RX link _i_ data
+| `slink_rx_val_i` |    8 | in  | RX link _i_ data valid
+| `slink_rx_rdy_o` |    8 | out | RX link _i_ ready to receive
+| `slink_rx_lst_i` |    8 | out | RX link _i_ end of packet
 4+^| **General Purpose Inputs & Outputs (<<_general_purpose_input_and_output_port_gpio,GPIO>>)**
 | `gpio_o` | 64 | out | general purpose parallel output
 | `gpio_i` | 64 | in | general purpose parallel input

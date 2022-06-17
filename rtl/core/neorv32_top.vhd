@@ -176,11 +176,13 @@ entity neorv32_top is
     slink_tx_dat_o : out sdata_8x32_t; -- output data
     slink_tx_val_o : out std_ulogic_vector(7 downto 0); -- valid output
     slink_tx_rdy_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- ready to send
+    slink_tx_lst_o : out std_ulogic_vector(7 downto 0); -- last data of packet
 
     -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
     slink_rx_dat_i : in  sdata_8x32_t := (others => (others => 'U')); -- input data
     slink_rx_val_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- valid input
     slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
+    slink_rx_lst_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- last data of packet
 
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
@@ -1424,16 +1426,18 @@ begin
       data_o         => resp_bus(RESP_SLINK).rdata, -- data out
       ack_o          => resp_bus(RESP_SLINK).ack,   -- transfer acknowledge
       -- interrupt --
-      irq_tx_o       => slink_tx_irq,               -- transmission done
-      irq_rx_o       => slink_rx_irq,               -- data received
+      irq_tx_o       => slink_tx_irq,
+      irq_rx_o       => slink_rx_irq,
       -- TX stream interfaces --
       slink_tx_dat_o => slink_tx_dat_o,             -- output data
       slink_tx_val_o => slink_tx_val_o,             -- valid output
       slink_tx_rdy_i => slink_tx_rdy_i,             -- ready to send
+      slink_tx_lst_o => slink_tx_lst_o,             -- last data of packet
       -- RX stream interfaces --
       slink_rx_dat_i => slink_rx_dat_i,             -- input data
       slink_rx_val_i => slink_rx_val_i,             -- valid input
-      slink_rx_rdy_o => slink_rx_rdy_o              -- ready to receive
+      slink_rx_rdy_o => slink_rx_rdy_o,             -- ready to receive
+      slink_rx_lst_i => slink_rx_lst_i              -- last data of packet
     );
     resp_bus(RESP_SLINK).err <= '0'; -- no access error possible
   end generate;
@@ -1446,6 +1450,7 @@ begin
     slink_rx_irq   <= '0';
     slink_tx_dat_o <= (others => (others => '0'));
     slink_tx_val_o <= (others => '0');
+    slink_tx_lst_o <= (others => '0');
     slink_rx_rdy_o <= (others => '0');
   end generate;
 

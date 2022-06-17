@@ -748,7 +748,7 @@ enum NEORV32_OCD_DM_SREG_enum {
 /**@{*/
 /** CFS module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t REG[32]; /**< offset 4*0..4*31: CFS register 0..31, user-defined */
+  uint32_t REG[32]; /**< offset 4*0..4*31: CFS register 0..31, user-defined */
 } neorv32_cfs_t;
 
 /** CFS base address */
@@ -765,8 +765,8 @@ typedef struct __attribute__((packed,aligned(4))) {
 /**@{*/
 /** PWM module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL;     /**< offset 0: control register (#NEORV32_PWM_CTRL_enum) */
-	uint32_t DUTY[15]; /**< offset 4..60: duty cycle register 0..14 */
+  uint32_t CTRL;     /**< offset 0: control register (#NEORV32_PWM_CTRL_enum) */
+  uint32_t DUTY[15]; /**< offset 4..60: duty cycle register 0..14 */
 } neorv32_pwm_t;
 
 /** PWM module base address */
@@ -791,13 +791,11 @@ enum NEORV32_PWM_CTRL_enum {
 /**@{*/
 /** SLINK module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t       CTRL;         /**< offset 0: control register (#NEORV32_SLINK_CTRL_enum) */
-  const uint32_t reserved0;    /**< offset 4: reserved */
-  uint32_t       IRQ;          /**< offset 8: interrupt configuration register (#NEORV32_SLINK_IRQ_enum) */
-  const uint32_t reserved1;    /**< offset 12: reserved */
-	const uint32_t STATUS;       /**< offset 16: status register (#NEORV32_SLINK_STATUS_enum) */
-  const uint32_t reserved2[3]; /**< offset 20..28: reserved */
-  uint32_t       DATA[8];      /**< offset 32..60: stream link data channel 0..7 */
+  uint32_t       CTRL;          /**< offset 0: control register (#NEORV32_SLINK_CTRL_enum) */
+  const uint32_t reserved0[3];  /**< offset 4..12: reserved */
+  uint32_t       STATUS;        /**< offset 16: status register (#NEORV32_SLINK_STATUS_enum) */
+  const uint32_t reserved1[3];  /**< offset 20..28: reserved */
+  uint32_t       DATA[8];       /**< offset 32..60: stream link RX/TX data channels 0..7 */
 } neorv32_slink_t;
 
 /** SLINK module base address */
@@ -808,97 +806,38 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** SLINK control register bits */
 enum NEORV32_SLINK_CTRL_enum {
-  SLINK_CTRL_RX_NUM0    =  0, /**< SLINK control register(0) (r/-): number of implemented RX links bit 0 */
-  SLINK_CTRL_RX_NUM1    =  1, /**< SLINK control register(1) (r/-): number of implemented RX links bit 1 */
-  SLINK_CTRL_RX_NUM2    =  2, /**< SLINK control register(2) (r/-): number of implemented RX links bit 2 */
-  SLINK_CTRL_RX_NUM3    =  3, /**< SLINK control register(3) (r/-): number of implemented RX links bit 3 */
+  SLINK_CTRL_EN            =  0, /**< SLINK control register(0) (r/w): SLINK controller enable */
 
-  SLINK_CTRL_TX_NUM0    =  4, /**< SLINK control register(4) (r/-): number of implemented TX links bit 0 */
-  SLINK_CTRL_TX_NUM1    =  5, /**< SLINK control register(5) (r/-): number of implemented TX links bit 1 */
-  SLINK_CTRL_TX_NUM2    =  6, /**< SLINK control register(6) (r/-): number of implemented TX links bit 2 */
-  SLINK_CTRL_TX_NUM3    =  7, /**< SLINK control register(7) (r/-): number of implemented TX links bit 3 */
+  SLINK_CTRL_RX_FIFO_S0    =  8, /**< SLINK control register( 8) (r/-): log2(RX FIFO size) bit 0 */
+  SLINK_CTRL_RX_FIFO_S1    =  9, /**< SLINK control register( 9) (r/-): log2(RX FIFO size) bit 1 */
+  SLINK_CTRL_RX_FIFO_S2    = 10, /**< SLINK control register(10) (r/-): log2(RX FIFO size) bit 2 */
+  SLINK_CTRL_RX_FIFO_S3    = 11, /**< SLINK control register(11) (r/-): log2(RX FIFO size) bit 3 */
 
-  SLINK_CTRL_RX_FIFO_S0 =  8, /**< SLINK control register( 8) (r/-): log2(RX FIFO size) bit 0 */
-  SLINK_CTRL_RX_FIFO_S1 =  9, /**< SLINK control register( 9) (r/-): log2(RX FIFO size) bit 1 */
-  SLINK_CTRL_RX_FIFO_S2 = 10, /**< SLINK control register(10) (r/-): log2(RX FIFO size) bit 2 */
-  SLINK_CTRL_RX_FIFO_S3 = 11, /**< SLINK control register(11) (r/-): log2(RX FIFO size) bit 3 */
+  SLINK_CTRL_TX_FIFO_S0    = 12, /**< SLINK control register(12) (r/-): log2(TX FIFO size) bit 0 */
+  SLINK_CTRL_TX_FIFO_S1    = 13, /**< SLINK control register(13) (r/-): log2(TX FIFO size) bit 1 */
+  SLINK_CTRL_TX_FIFO_S2    = 14, /**< SLINK control register(14) (r/-): log2(TX FIFO size) bit 2 */
+  SLINK_CTRL_TX_FIFO_S3    = 15, /**< SLINK control register(15) (r/-): log2(TX FIFO size) bit 3 */
 
-  SLINK_CTRL_TX_FIFO_S0 = 12, /**< SLINK control register(12) (r/-): log2(TX FIFO size) bit 0 */
-  SLINK_CTRL_TX_FIFO_S1 = 13, /**< SLINK control register(13) (r/-): log2(TX FIFO size) bit 1 */
-  SLINK_CTRL_TX_FIFO_S2 = 14, /**< SLINK control register(14) (r/-): log2(TX FIFO size) bit 2 */
-  SLINK_CTRL_TX_FIFO_S3 = 15, /**< SLINK control register(15) (r/-): log2(TX FIFO size) bit 3 */
+  SLINK_CTRL_RX_IRQ_EN_LSB = 16, /**< SLINK control register(23:16) (r/w): Enable interrupt for RX link i, LSB */
+  SLINK_CTRL_RX_IRQ_EN_MSB = 23, /**< SLINK control register(23:16) (r/w): Enable interrupt for RX link i, MSB */
 
-  SLINK_CTRL_EN         = 31  /**< SLINK control register(0) (r/w): SLINK controller enable */
-};
-
-/** SLINK interrupt control register bits */
-enum NEORV32_SLINK_IRQ_enum {
-  SLINK_IRQ_RX_EN_LSB   =  0, /**< SLINK IRQ configuration register( 0) (r/w): RX IRQ enable LSB (link 0) (#NEORV32_SLINK_IRQ_EN_enum) */
-  SLINK_IRQ_RX_EN_MSB   =  7, /**< SLINK IRQ configuration register( 7) (r/w): RX IRQ enable MSB (link 7) (#NEORV32_SLINK_IRQ_EN_enum) */
-  SLINK_IRQ_RX_MODE_LSB =  8, /**< SLINK IRQ configuration register( 8) (r/w): RX IRQ mode LSB (link 0) (#NEORV32_SLINK_IRQ_RX_TYPE_enum) */
-  SLINK_IRQ_RX_MODE_MSB = 15, /**< SLINK IRQ configuration register(15) (r/w): RX IRQ mode MSB (link 7) (#NEORV32_SLINK_IRQ_RX_TYPE_enum) */
-
-  SLINK_IRQ_TX_EN_LSB   = 16, /**< SLINK IRQ configuration register(16) (r/w): TX IRQ enable LSB (link 0) (#NEORV32_SLINK_IRQ_EN_enum) */
-  SLINK_IRQ_TX_EN_MSB   = 23, /**< SLINK IRQ configuration register(23) (r/w): TX IRQ enable MSB (link 7) (#NEORV32_SLINK_IRQ_EN_enum) */
-  SLINK_IRQ_TX_MODE_LSB = 24, /**< SLINK IRQ configuration register(24) (r/w): TX IRQ mode LSB (link 0) (#NEORV32_SLINK_IRQ_TX_TYPE_enum) */
-  SLINK_IRQ_TX_MODE_MSB = 31  /**< SLINK IRQ configuration register(31) (r/w): TX IRQ mode MSB (link 7) (#NEORV32_SLINK_IRQ_TX_TYPE_enum) */
-};
-
-/** SLINK interrupt configuration enable (per link) */
-enum NEORV32_SLINK_IRQ_EN_enum {
-  SLINK_IRQ_DISABLE = 0, /**< '1': IRQ disabled */
-  SLINK_IRQ_ENABLE  = 1  /**< '0': IRQ enabled */
-};
-
-/** SLINK RX interrupt configuration type (per link) */
-enum NEORV32_SLINK_IRQ_RX_TYPE_enum {
-  SLINK_IRQ_RX_NOT_EMPTY = 0, /**< '1': RX FIFO is not empty */
-  SLINK_IRQ_RX_FIFO_HALF = 1  /**< '0': RX FIFO fill-level rises above half-full */
-};
-
-/** SLINK TX interrupt configuration type (per link) */
-enum NEORV32_SLINK_IRQ_TX_TYPE_enum {
-  SLINK_IRQ_TX_NOT_FULL  = 0, /**< '1': TX FIFO is not FULL */
-  SLINK_IRQ_TX_FIFO_HALF = 1  /**< '0': TX FIFO fill-level falls below half-full */
+  SLINK_CTRL_TX_IRQ_EN_LSB = 24, /**< SLINK control register(31:24) (r/w): Enable interrupt for TX link i, LSB */
+  SLINK_CTRL_TX_IRQ_EN_MSB = 31  /**< SLINK control register(31:24) (r/w): Enable interrupt for TX link i, MSB */
 };
 
 /** SLINK status register bits */
 enum NEORV32_SLINK_STATUS_enum {
-  SLINK_STATUS_RX0_AVAIL =  0, /**< SLINK status register(0) (r/-): RX link 0 FIFO is NOT empty (data available) */
-  SLINK_STATUS_RX1_AVAIL =  1, /**< SLINK status register(1) (r/-): RX link 1 FIFO is NOT empty (data available) */
-  SLINK_STATUS_RX2_AVAIL =  2, /**< SLINK status register(2) (r/-): RX link 2 FIFO is NOT empty (data available) */
-  SLINK_STATUS_RX3_AVAIL =  3, /**< SLINK status register(3) (r/-): RX link 3 FIFO is NOT empty (data available) */
-  SLINK_STATUS_RX4_AVAIL =  4, /**< SLINK status register(4) (r/-): RX link 4 FIFO is NOT empty (data available) */
-  SLINK_STATUS_RX5_AVAIL =  5, /**< SLINK status register(5) (r/-): RX link 5 FIFO is NOT empty (data available) */
-  SLINK_STATUS_RX6_AVAIL =  6, /**< SLINK status register(6) (r/-): RX link 6 FIFO is NOT empty (data available) */
-  SLINK_STATUS_RX7_AVAIL =  7, /**< SLINK status register(7) (r/-): RX link 7 FIFO is NOT empty (data available) */
+  SLINK_STATUS_RX_AVAIL_LSB =  0, /**< SLINK status register(7:0) (r/-): RX link i FIFO is NOT empty (data available), LSB */
+  SLINK_STATUS_RX_AVAIL_MSB =  7, /**< SLINK status register(7:0) (r/-): RX link i FIFO is NOT empty (data available), MSB */
 
-  SLINK_STATUS_TX0_FREE  =  8, /**< SLINK status register(8)  (r/-): TX link 0 FIFO is NOT full (ready to send) */
-  SLINK_STATUS_TX1_FREE  =  9, /**< SLINK status register(9)  (r/-): TX link 1 FIFO is NOT full (ready to send) */
-  SLINK_STATUS_TX2_FREE  = 10, /**< SLINK status register(10) (r/-): TX link 2 FIFO is NOT full (ready to send) */
-  SLINK_STATUS_TX3_FREE  = 11, /**< SLINK status register(11) (r/-): TX link 3 FIFO is NOT full (ready to send) */
-  SLINK_STATUS_TX4_FREE  = 12, /**< SLINK status register(12) (r/-): TX link 4 FIFO is NOT full (ready to send) */
-  SLINK_STATUS_TX5_FREE  = 13, /**< SLINK status register(13) (r/-): TX link 5 FIFO is NOT full (ready to send) */
-  SLINK_STATUS_TX6_FREE  = 14, /**< SLINK status register(14) (r/-): TX link 6 FIFO is NOT full (ready to send) */
-  SLINK_STATUS_TX7_FREE  = 15, /**< SLINK status register(15) (r/-): TX link 7 FIFO is NOT full (ready to send) */
+  SLINK_STATUS_TX_FREE_LSB  =  8, /**< SLINK status register(15:8) (r/-): TX link i FIFO is NOT full (ready to send), LSB */
+  SLINK_STATUS_TX_FREE_MSB  = 15, /**< SLINK status register(15:8) (r/-): TX link i FIFO is NOT full (ready to send), MSB */
 
-  SLINK_STATUS_RX0_HALF  = 16, /**< SLINK status register(16) (r/-): RX link 0 FIFO fill level is >= half-full */
-  SLINK_STATUS_RX1_HALF  = 17, /**< SLINK status register(17) (r/-): RX link 1 FIFO fill level is >= half-full */
-  SLINK_STATUS_RX2_HALF  = 18, /**< SLINK status register(18) (r/-): RX link 2 FIFO fill level is >= half-full */
-  SLINK_STATUS_RX3_HALF  = 19, /**< SLINK status register(19) (r/-): RX link 3 FIFO fill level is >= half-full */
-  SLINK_STATUS_RX4_HALF  = 20, /**< SLINK status register(20) (r/-): RX link 4 FIFO fill level is >= half-full */
-  SLINK_STATUS_RX5_HALF  = 21, /**< SLINK status register(21) (r/-): RX link 5 FIFO fill level is >= half-full */
-  SLINK_STATUS_RX6_HALF  = 22, /**< SLINK status register(22) (r/-): RX link 6 FIFO fill level is >= half-full */
-  SLINK_STATUS_RX7_HALF  = 23, /**< SLINK status register(23) (r/-): RX link 7 FIFO fill level is >= half-full */
+  SLINK_STATUS_RX_LAST_LSB  = 16, /**< SLINK status register(23:16) (r/-): Indicates end of packet for RX link i, LSB */
+  SLINK_STATUS_RX_LAST_MSB  = 23, /**< SLINK status register(23:16) (r/-): Indicates end of packet for RX link i, MSB */
 
-  SLINK_STATUS_TX0_HALF  = 24, /**< SLINK status register(24) (r/-): TX link 0 FIFO fill level is > half-full */
-  SLINK_STATUS_TX1_HALF  = 25, /**< SLINK status register(25) (r/-): TX link 1 FIFO fill level is > half-full */
-  SLINK_STATUS_TX2_HALF  = 26, /**< SLINK status register(26) (r/-): TX link 2 FIFO fill level is > half-full */
-  SLINK_STATUS_TX3_HALF  = 27, /**< SLINK status register(27) (r/-): TX link 3 FIFO fill level is > half-full */
-  SLINK_STATUS_TX4_HALF  = 28, /**< SLINK status register(28) (r/-): TX link 4 FIFO fill level is > half-full */
-  SLINK_STATUS_TX5_HALF  = 29, /**< SLINK status register(29) (r/-): TX link 5 FIFO fill level is > half-full */
-  SLINK_STATUS_TX6_HALF  = 30, /**< SLINK status register(30) (r/-): TX link 6 FIFO fill level is > half-full */
-  SLINK_STATUS_TX7_HALF  = 31  /**< SLINK status register(31) (r/-): TX link 7 FIFO fill level is > half-full */
+  SLINK_STATUS_TX_LAST_LSB  = 24, /**< SLINK status register(31:24) (r/w): Set to indicate end of packet for TX link i, LSB */
+  SLINK_STATUS_TX_LAST_MSB  = 31, /**< SLINK status register(31:24) (r/w): Set to indicate end of packet for TX link i, MSB */
 };
 /**@}*/
 
@@ -909,10 +848,10 @@ enum NEORV32_SLINK_STATUS_enum {
 /**@{*/
 /** XIP module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL;           /**< offset  0: control register (#NEORV32_XIP_CTRL_enum) */
-	const uint32_t reserved; /**< offset  4: reserved */
-	uint32_t DATA_LO;        /**< offset  8: SPI data register low */
-	uint32_t DATA_HI;        /**< offset 12: SPI data register high */
+  uint32_t CTRL;           /**< offset  0: control register (#NEORV32_XIP_CTRL_enum) */
+  const uint32_t reserved; /**< offset  4: reserved */
+  uint32_t DATA_LO;        /**< offset  8: SPI data register low */
+  uint32_t DATA_HI;        /**< offset 12: SPI data register high */
 } neorv32_xip_t;
 
 /** XIP module base address */
@@ -953,9 +892,9 @@ enum NEORV32_XIP_CTRL_enum {
 /**@{*/
 /** GPTMR module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL;           /**< offset  0: control register (#NEORV32_GPTMR_CTRL_enum) */
-	uint32_t THRES;          /**< offset  4: threshold register */
-	uint32_t COUNT;          /**< offset  8: counter register */
+  uint32_t CTRL;           /**< offset  0: control register (#NEORV32_GPTMR_CTRL_enum) */
+  uint32_t THRES;          /**< offset  4: threshold register */
+  uint32_t COUNT;          /**< offset  8: counter register */
   const uint32_t reserved; /**< offset 12: reserved */
 } neorv32_gptmr_t;
 
@@ -982,7 +921,7 @@ enum NEORV32_GPTMR_CTRL_enum {
 /**@{*/
 /** BUSKEEPER module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL; /**< offset 0: control register (#NEORV32_BUSKEEPER_CTRL_enum) */
+  uint32_t CTRL; /**< offset 0: control register (#NEORV32_BUSKEEPER_CTRL_enum) */
 } neorv32_buskeeper_t;
 
 /** BUSKEEPER module base address */
@@ -1005,10 +944,10 @@ enum NEORV32_BUSKEEPER_CTRL_enum {
 /**@{*/
 /** XIRQ module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t       IER;      /**< offset 0:  IRQ input enable register */
-	uint32_t       IPR;      /**< offset 4:  pending IRQ register /ack/clear */
-	uint32_t       SCR;      /**< offset 8:  interrupt source register */
-	const uint32_t reserved; /**< offset 12: reserved */
+  uint32_t       IER;      /**< offset 0:  IRQ input enable register */
+  uint32_t       IPR;      /**< offset 4:  pending IRQ register /ack/clear */
+  uint32_t       SCR;      /**< offset 8:  interrupt source register */
+  const uint32_t reserved; /**< offset 12: reserved */
 } neorv32_xirq_t;
 
 /** XIRQ module base address */
@@ -1025,10 +964,10 @@ typedef struct __attribute__((packed,aligned(4))) {
 /**@{*/
 /** MTIME module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t TIME_LO;    /**< offset 0:  time register low word */
-	uint32_t TIME_HI;    /**< offset 4:  time register high word */
-	uint32_t TIMECMP_LO; /**< offset 8:  compare register low word */
-	uint32_t TIMECMP_HI; /**< offset 12: compare register high word */
+  uint32_t TIME_LO;    /**< offset 0:  time register low word */
+  uint32_t TIME_HI;    /**< offset 4:  time register high word */
+  uint32_t TIMECMP_LO; /**< offset 8:  compare register low word */
+  uint32_t TIMECMP_HI; /**< offset 12: compare register high word */
 } neorv32_mtime_t;
 
 /** MTIME module base address */
@@ -1045,8 +984,8 @@ typedef struct __attribute__((packed,aligned(4))) {
 /**@{*/
 /** UART0 module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL;  /**< offset 0: control register (#NEORV32_UART_CTRL_enum) */
-	uint32_t DATA;  /**< offset 4: data register (#NEORV32_UART_DATA_enum) */
+  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_UART_CTRL_enum) */
+  uint32_t DATA;  /**< offset 4: data register (#NEORV32_UART_DATA_enum) */
 } neorv32_uart0_t;
 
 /** UART0 module base address */
@@ -1057,8 +996,8 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** UART1 module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL;  /**< offset 0: control register (#NEORV32_UART_CTRL_enum) */
-	uint32_t DATA;  /**< offset 4: data register (#NEORV32_UART_DATA_enum) */
+  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_UART_CTRL_enum) */
+  uint32_t DATA;  /**< offset 4: data register (#NEORV32_UART_DATA_enum) */
 } neorv32_uart1_t;
 
 /** UART1 module base address */
@@ -1137,8 +1076,8 @@ enum NEORV32_UART_DATA_enum {
 /**@{*/
 /** SPI module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL;  /**< offset 0: control register (#NEORV32_SPI_CTRL_enum) */
-	uint32_t DATA;  /**< offset 4: data register */
+  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_SPI_CTRL_enum) */
+  uint32_t DATA;  /**< offset 4: data register */
 } neorv32_spi_t;
 
 /** SPI module base address */
@@ -1178,8 +1117,8 @@ enum NEORV32_SPI_CTRL_enum {
 /**@{*/
 /** TWI module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL;  /**< offset 0: control register (#NEORV32_TWI_CTRL_enum) */
-	uint32_t DATA;  /**< offset 4: data register (#NEORV32_TWI_DATA_enum) */
+  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_TWI_CTRL_enum) */
+  uint32_t DATA;  /**< offset 4: data register (#NEORV32_TWI_DATA_enum) */
 } neorv32_twi_t;
 
 /** TWI module base address */
@@ -1217,7 +1156,7 @@ enum NEORV32_TWI_DATA_enum {
 /**@{*/
 /** TRNG module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL;  /**< offset 0: control register (#NEORV32_TRNG_CTRL_enum) */
+  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_TRNG_CTRL_enum) */
 } neorv32_trng_t;
 
 /** TRNG module base address */
@@ -1245,7 +1184,7 @@ enum NEORV32_TRNG_CTRL_enum {
 /**@{*/
 /** WDT module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL;  /**< offset 0: control register (#NEORV32_WDT_CTRL_enum) */
+  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_WDT_CTRL_enum) */
 } neorv32_wdt_t;
 
 /** WDT module base address */
@@ -1284,10 +1223,10 @@ enum NEORV32_WDT_CTRL_enum {
 /**@{*/
 /** GPIO module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	const uint32_t INPUT_LO;  /**< offset 0:  parallel input port lower 32-bit, read-only */
-	const uint32_t INPUT_HI;  /**< offset 4:  parallel input port upper 32-bit, read-only */
-	uint32_t       OUTPUT_LO; /**< offset 8:  parallel output port lower 32-bit */
-	uint32_t       OUTPUT_HI; /**< offset 12: parallel output port upper 32-bit */
+  const uint32_t INPUT_LO;  /**< offset 0:  parallel input port lower 32-bit, read-only */
+  const uint32_t INPUT_HI;  /**< offset 4:  parallel input port upper 32-bit, read-only */
+  uint32_t       OUTPUT_LO; /**< offset 8:  parallel output port lower 32-bit */
+  uint32_t       OUTPUT_HI; /**< offset 12: parallel output port upper 32-bit */
 } neorv32_gpio_t;
 
 /** GPIO module base address */
@@ -1304,8 +1243,8 @@ typedef struct __attribute__((packed,aligned(4))) {
 /**@{*/
 /** NEOLED module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-	uint32_t CTRL; /**< offset 0: control register */
-	uint32_t DATA; /**< offset 4: data register (#NEORV32_NEOLED_CTRL_enum) */
+  uint32_t CTRL; /**< offset 0: control register */
+  uint32_t DATA; /**< offset 4: data register (#NEORV32_NEOLED_CTRL_enum) */
 } neorv32_neoled_t;
 
 /** NEOLED module base address */
@@ -1361,14 +1300,14 @@ enum NEORV32_NEOLED_CTRL_enum {
 /**@{*/
 /** SYSINFO module prototype - whole module is read-only */
 typedef struct __attribute__((packed,aligned(4))) {
-	const uint32_t CLK;         /**< offset 0:  clock speed in Hz */
-	const uint32_t reserved;    /**< offset 4:  reserved */
-	const uint32_t SOC;         /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
-	const uint32_t CACHE;       /**< offset 12: cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
-	const uint32_t ISPACE_BASE; /**< offset 16: instruction memory address space base */
-	const uint32_t DSPACE_BASE; /**< offset 20: data memory address space base */
-	const uint32_t IMEM_SIZE;   /**< offset 24: internal instruction memory (IMEM) size in bytes */
-	const uint32_t DMEM_SIZE;   /**< offset 28: internal data memory (DMEM) size in bytes */
+  const uint32_t CLK;         /**< offset 0:  clock speed in Hz */
+  const uint32_t reserved;    /**< offset 4:  reserved */
+  const uint32_t SOC;         /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
+  const uint32_t CACHE;       /**< offset 12: cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
+  const uint32_t ISPACE_BASE; /**< offset 16: instruction memory address space base */
+  const uint32_t DSPACE_BASE; /**< offset 20: data memory address space base */
+  const uint32_t IMEM_SIZE;   /**< offset 24: internal instruction memory (IMEM) size in bytes */
+  const uint32_t DMEM_SIZE;   /**< offset 28: internal data memory (DMEM) size in bytes */
 } neorv32_sysinfo_t;
 
 /** SYSINFO module base address */
