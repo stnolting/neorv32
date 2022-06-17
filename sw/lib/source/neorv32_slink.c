@@ -68,11 +68,11 @@ void neorv32_slink_setup(uint32_t rx_irq_en, uint32_t tx_irq_en) {
   NEORV32_SLINK.CTRL = 0; // reset and disable
   NEORV32_SLINK.STATUS = 0;
 
-  uint32_t rxirq = rx_irq_en & 0xff;
+  uint32_t rxirq = (rx_irq_en & 0xff) << SLINK_CTRL_RX_IRQ_EN_LSB;
 
-  uint32_t txirq = tx_irq_en & 0xff;
+  uint32_t txirq = (tx_irq_en & 0xff) << SLINK_CTRL_TX_IRQ_EN_LSB;
 
-  NEORV32_SLINK.CTRL = (1 << SLINK_CTRL_EN) | (rxirq << SLINK_CTRL_RX_IRQ_EN_LSB) | (txirq << SLINK_CTRL_TX_IRQ_EN_LSB);
+  NEORV32_SLINK.CTRL = rxirq | txirq | (1 << SLINK_CTRL_EN);
 }
 
 
@@ -97,91 +97,59 @@ void neorv32_slink_disable(void) {
 
 
 /**********************************************************************//**
- * Get number of implemented RX links
+ * Get number of implemented RX/TX links
  *
  * @warning This function overrides NEORV32_SLINK.CTRL!
  *
- * @return Number of implemented RX link (0..8).
+ * @param[in] sel 0 = RX, =!0 TX
+ * @return Number of implemented RX/TX links (0..8).
  **************************************************************************/
-int neorv32_slink_get_rx_num(void) {
+int neorv32_slink_get_link_num(int sel) {
 
   if (neorv32_slink_available() == 0) {
     return 0;
   }
 
-  NEORV32_SLINK.CTRL = 0xff << SLINK_CTRL_RX_IRQ_EN_LSB; // try to set all RX IRQ enable bits
-
-  // count actually set bits
-  uint32_t tmp = NEORV32_SLINK.CTRL >> SLINK_CTRL_RX_IRQ_EN_LSB;
-  int cnt = 0;
-  int i = 0;
-  for (i=0; i<8; i++) {
-    if (tmp & 1) {
-      cnt++;
-    }
-    tmp >>= 1;
-  }
-
-  return cnt;
-}
-
-
-/**********************************************************************//**
- * Get number of implemented TX links
- *
- * @warning This function overrides NEORV32_SLINK.CTRL!
- *
- * @return Number of implemented TX link (0..8).
- **************************************************************************/
-int neorv32_slink_get_tx_num(void) {
-
-  if (neorv32_slink_available() == 0) {
-    return 0;
-  }
-
-  NEORV32_SLINK.CTRL = 0xff << SLINK_CTRL_TX_IRQ_EN_LSB; // try to set all TX IRQ enable bits
-
-  // count actually set bits
-  uint32_t tmp = NEORV32_SLINK.CTRL >> SLINK_CTRL_TX_IRQ_EN_LSB;
-  int cnt = 0;
-  int i = 0;
-  for (i=0; i<8; i++) {
-    if (tmp & 1) {
-      cnt++;
-    }
-    tmp >>= 1;
-  }
-
-  return cnt;
-}
-
-
-/**********************************************************************//**
- * Get FIFO depth of RX links
- *
- * @return FIFO depth of RX links (1..32768); 0 if no RX links implemented.
- **************************************************************************/
-int neorv32_slink_get_rx_depth(void) {
-
-  if (neorv32_slink_available()) {
-    uint32_t tmp = (NEORV32_SLINK.CTRL >> SLINK_CTRL_RX_FIFO_S0) & 0x0f;
-    return (int)(1 << tmp);
+  uint32_t tmp;
+  if (sel) {
+    NEORV32_SLINK.CTRL = 0xff << SLINK_CTRL_TX_IRQ_EN_LSB; // try to set all TX IRQ enable bits
+    tmp = NEORV32_SLINK.CTRL >> SLINK_CTRL_TX_IRQ_EN_LSB;
   }
   else {
-    return 0;
+    NEORV32_SLINK.CTRL = 0xff << SLINK_CTRL_RX_IRQ_EN_LSB; // try to set all TX IRQ enable bits
+    tmp = NEORV32_SLINK.CTRL >> SLINK_CTRL_RX_IRQ_EN_LSB;
   }
+
+  // count actually set bits
+  int cnt = 0;
+  int i = 0;
+  for (i=0; i<8; i++) {
+    if (tmp & 1) {
+      cnt++;
+    }
+    tmp >>= 1;
+  }
+
+  return cnt;
 }
 
 
 /**********************************************************************//**
- * Get FIFO depth of TX links
+ * Get FIFO depth of RX/TX links
  *
- * @return FIFO depth of TX links (1..32768); 0 if no TX links implemented.
+ * @param[in] sel 0 = RX, =!0 TX
+ * @return FIFO depth of RX/TX links (1..32768); 0 if no RX/TX links implemented.
  **************************************************************************/
-int neorv32_slink_get_tx_depth(void) {
+int neorv32_slink_get_fifo_depth(int sel) {
 
   if (neorv32_slink_available()) {
-    uint32_t tmp = (NEORV32_SLINK.CTRL >> SLINK_CTRL_TX_FIFO_S0) & 0x0f;
+    uint32_t tmp;
+    if (sel) {
+      tmp = (NEORV32_SLINK.CTRL >> SLINK_CTRL_TX_FIFO_S0) & 0x0f;
+    }
+    else {
+      tmp = (NEORV32_SLINK.CTRL >> SLINK_CTRL_RX_FIFO_S0) & 0x0f;
+    }
     return (int)(1 << tmp);
   }
   else {
@@ -196,16 +164,15 @@ int neorv32_slink_get_tx_depth(void) {
  * @param[in] link_id Link ID (0..7).
  * @param[in] tx_data Data to send to link.
  * @param[in] last Set to 1 to indicate this is the "end of packet".
- * @return 0 if data was send, -1 if link is still busy.
+ * @return 0 if data was send, -1 if link is still busy (FIFO full)
  **************************************************************************/
 int neorv32_slink_tx(int link_id, uint32_t tx_data, int last) {
 
-  uint32_t link = link_id & 7;
+  uint32_t link_sel = link_id & 7;
 
-  if (NEORV32_SLINK.STATUS & (1 << (SLINK_STATUS_TX_FREE_LSB + link))) {
-    NEORV32_SLINK.STATUS = (last & 1) << SLINK_STATUS_TX_LAST_LSB;
-    NEORV32_SLINK.DATA[link] = tx_data;
-    NEORV32_SLINK.STATUS = 0; // clear LAST flag
+  if (NEORV32_SLINK.STATUS & (1 << (SLINK_STATUS_TX_FREE_LSB + link_sel))) {
+    NEORV32_SLINK.STATUS = last << SLINK_STATUS_TX_LAST_LSB; // set if LAST, clear otherwise
+    NEORV32_SLINK.DATA[link_sel] = tx_data;
     return 0;
   }
   else {
@@ -224,11 +191,11 @@ int neorv32_slink_tx(int link_id, uint32_t tx_data, int last) {
  **************************************************************************/
 int neorv32_slink_rx(int link_id, uint32_t *rx_data) {
 
-  uint32_t link = link_id & 7;
+  uint32_t link_sel = link_id & 7;
 
-  if (NEORV32_SLINK.STATUS & (1 << (SLINK_STATUS_RX_AVAIL_LSB + link))) {
-    uint32_t tmp = NEORV32_SLINK.STATUS; // read LAST flag before doing a SLINK read data access
-    *rx_data = NEORV32_SLINK.DATA[link];
+  if (NEORV32_SLINK.STATUS & (1 << (SLINK_STATUS_RX_AVAIL_LSB + link_sel))) {
+    uint32_t tmp = NEORV32_SLINK.STATUS; // read LAST flag before doing a RX data access
+    *rx_data = NEORV32_SLINK.DATA[link_sel];
     if (tmp & (1 << SLINK_STATUS_RX_LAST_LSB)) {
       return +1;
     }

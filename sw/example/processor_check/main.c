@@ -1377,7 +1377,7 @@ int main() {
     neorv32_slink_setup(0b00000000, 0b00000001);
     neorv32_cpu_irq_enable(SLINK_TX_FIRQ_ENABLE);
 
-    tmp_b = neorv32_slink_get_rx_depth() + neorv32_slink_get_tx_depth();
+    tmp_b = neorv32_slink_get_fifo_depth(0) + neorv32_slink_get_fifo_depth(1);
 
     tmp_a = 0; // error counter
 

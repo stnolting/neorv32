@@ -93,10 +93,10 @@ int main() {
 
 
   // show SLINK hardware configuration
-  neorv32_uart0_printf("Number of SLINK RX channels: %u\n", neorv32_slink_get_rx_num());
-  neorv32_uart0_printf("Number of SLINK TX channels: %u\n", neorv32_slink_get_tx_num());
-  neorv32_uart0_printf("SLINK RX FIFO depth: %u entries\n", neorv32_slink_get_rx_depth());
-  neorv32_uart0_printf("SLINK TX FIFO depth: %u entries\n", neorv32_slink_get_tx_depth());
+  neorv32_uart0_printf("Number of SLINK RX channels: %u\n", neorv32_slink_get_link_num(0));
+  neorv32_uart0_printf("Number of SLINK TX channels: %u\n", neorv32_slink_get_link_num(1));
+  neorv32_uart0_printf("SLINK RX FIFO depth: %u entries\n", neorv32_slink_get_fifo_depth(0));
+  neorv32_uart0_printf("SLINK TX FIFO depth: %u entries\n", neorv32_slink_get_fifo_depth(1));
 
   neorv32_uart0_printf("\nNOTE: This demo program uses SLINK RX/TX channels 0 and assumes\n"
                          "      SLINK.TX(0) is coupled directly to SLINK.RX(0).\n\n");

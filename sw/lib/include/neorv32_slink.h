@@ -47,10 +47,8 @@ void neorv32_slink_setup(uint32_t rx_irq_en, uint32_t tx_irq_en);
 void neorv32_slink_enable(void);
 void neorv32_slink_disable(void);
 
-int  neorv32_slink_get_rx_num(void);
-int  neorv32_slink_get_tx_num(void);
-int  neorv32_slink_get_rx_depth(void);
-int  neorv32_slink_get_tx_depth(void);
+int  neorv32_slink_get_link_num(int sel);
+int  neorv32_slink_get_fifo_depth(int sel);
 
 int  neorv32_slink_tx(int link_id, uint32_t tx_data, int last);
 int  neorv32_slink_rx(int link_id, uint32_t *rx_data);
