@@ -81,7 +81,7 @@ image::SPI_timing_diagram2.wikimedia.png[]
 [cols="<2,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
-|                 | Mode 0 | Mode 1 | Mode 2 | Mode 4
+|                 | Mode 0 | Mode 1 | Mode 2 | Mode 3
 | _SPI_CTRL_CPOL_ |    `0` |    `0` |    `1` |    `1` 
 | _SPI_CTRL_CPHA_ |    `0` |    `1` |    `0` |    `1` 
 |=======================
