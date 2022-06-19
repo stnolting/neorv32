@@ -17,7 +17,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -261,16 +261,6 @@ begin
 
   -- IRQ Generator --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_select: process(ctrl, tx_buffer, serial.done)
-  begin
-    if (FIFO_DEPTH = 1) or (ctrl.irq_conf = '1') then
-      irq.set <= tx_buffer.free and serial.done; -- fire IRQ if FIFO is empty
-    else
-      irq.set <= not tx_buffer.half; -- fire IRQ if FIFO is less than half-full
-    end if;
-  end process irq_select;
-
-  -- Interrupt Edge Detector --
   irq_detect: process(clk_i)
   begin
     if rising_edge(clk_i) then
@@ -281,6 +271,10 @@ begin
       end if;
     end if;
   end process irq_detect;
+
+  -- trigger select --
+  irq.set <= (tx_buffer.free and serial.done) when (FIFO_DEPTH = 1) or (ctrl.irq_conf = '1') else -- fire IRQ if FIFO is empty
+             (not tx_buffer.half); -- fire IRQ if FIFO is less than half-full
 
   -- IRQ request to CPU --
   irq_o <= '1' when (irq.buf = "01") else '0';
@@ -329,7 +323,8 @@ begin
 
       -- FSM --
       if (ctrl.enable = '0') then -- disabled
-        serial.state <= S_IDLE;
+        serial.tx_out <= '0';
+        serial.state  <= S_IDLE;
       else
         case serial.state is
 
@@ -344,14 +339,15 @@ begin
 
           when S_INIT => -- initialize TX shift engine
           -- ------------------------------------------------------------
+            if (tx_buffer.rdata(32) = '0') then -- mode = "RGB" 
+              serial.mode    <= '0';
+              serial.bit_cnt <= "011000"; -- total number of bits to send: 3x8=24
+            else -- mode = "RGBW"
+              serial.mode    <= '1';
+              serial.bit_cnt <= "100000"; -- total number of bits to send: 4x8=32
+            end if;
+            --
             if (tx_buffer.rdata(33) = '0') then -- send data
-              if (tx_buffer.rdata(32) = '0') then -- mode = "RGB" 
-                serial.mode    <= '0';
-                serial.bit_cnt <= "011000"; -- total number of bits to send: 3x8=24
-              else -- mode = "RGBW"
-                serial.mode    <= '1';
-                serial.bit_cnt <= "100000"; -- total number of bits to send: 4x8=32
-              end if;
               serial.sreg  <= tx_buffer.rdata(31 downto 00);
               serial.state <= S_GETBIT;
             else -- send RESET command

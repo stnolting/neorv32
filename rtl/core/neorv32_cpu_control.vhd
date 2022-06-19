@@ -257,7 +257,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ctrl_nxt, ctrl : std_ulogic_vector(ctrl_width_c-1 downto 0);
 
   -- RISC-V control and status registers (CSRs) --
-  type pmpcfg_t       is array (0 to 15) of std_ulogic_vector(7 downto 0);
+  type pmpcfg_t       is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
+  type pmpcfg_rd_t    is array (0 to 3) of std_ulogic_vector(31 downto 0);
   type pmpaddr_t      is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
   type mhpmevent_t    is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type mhpmevent_rd_t is array (0 to 28) of std_ulogic_vector(data_width_c-1 downto 0);
@@ -324,6 +325,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mhpmcounterh_rd   : mhpmcnt_rd_t; -- mhpmcounter*h (R/W): actual read data
     --
     pmpcfg            : pmpcfg_t; -- physical memory protection - configuration registers
+    pmpcfg_rd         : pmpcfg_rd_t; -- physical memory protection - configuration read-back
     pmpaddr           : pmpaddr_t; -- physical memory protection - address registers (bits 33:2 of PHYSICAL address)
     --
     frm               : std_ulogic_vector(02 downto 0); -- frm (R/W): FPU rounding mode
@@ -1884,34 +1886,30 @@ begin
 
           -- physical memory protection --
           -- --------------------------------------------------------------------
-          if (PMP_NUM_REGIONS > 0) then
-            -- R/W: pmpcfg* - PMP configuration registers --
-            if (csr.addr(11 downto 2) = csr_class_pmpcfg_c) then -- pmp configuration CSR class
-              for i in 0 to 3 loop -- 3 pmpcfg CSRs
-                if (csr.addr(1 downto 0) = std_ulogic_vector(to_unsigned(i, 2))) then
-                  for j in 0 to 3 loop -- 4 entries per CSR
-                    if (csr.pmpcfg(i*4+j)(7) = '0') then -- unlocked pmpcfg entry
-                      csr.pmpcfg(i*4+j)(0) <= csr.wdata(j*8+0); -- R - read
-                      csr.pmpcfg(i*4+j)(1) <= csr.wdata(j*8+1); -- W - write
-                      csr.pmpcfg(i*4+j)(2) <= csr.wdata(j*8+2); -- X - execute
-                      csr.pmpcfg(i*4+j)(3) <= csr.wdata(j*8+3); -- A_L - mode low [TOR-mode only!]
-                      csr.pmpcfg(i*4+j)(4) <= '0'; -- A_H - mode high [TOR-mode only!]
-                      csr.pmpcfg(i*4+j)(5) <= '0'; -- reserved
-                      csr.pmpcfg(i*4+j)(6) <= '0'; -- reserved
-                      csr.pmpcfg(i*4+j)(7) <= csr.wdata(j*8+7); -- L (locked / also enforce in machine-mode)
-                    end if;
-                  end loop; -- j (entry)
+          -- R/W: pmpcfg* - PMP configuration registers --
+          if (csr.addr(11 downto 2) = csr_class_pmpcfg_c) then -- pmp configuration CSR class
+            for i in 0 to PMP_NUM_REGIONS-1 loop
+              if (csr.addr(1 downto 0) = std_ulogic_vector(to_unsigned(i/4, 2))) then
+                if (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpcfg entry
+                  csr.pmpcfg(i)(0) <= csr.wdata((i mod 4)*8+0); -- R - read
+                  csr.pmpcfg(i)(1) <= csr.wdata((i mod 4)*8+1); -- W - write
+                  csr.pmpcfg(i)(2) <= csr.wdata((i mod 4)*8+2); -- X - execute
+                  csr.pmpcfg(i)(3) <= csr.wdata((i mod 4)*8+3); -- A_L - mode low [TOR-mode only!]
+                  csr.pmpcfg(i)(4) <= '0'; -- A_H - mode high [TOR-mode only!]
+                  csr.pmpcfg(i)(5) <= '0'; -- reserved
+                  csr.pmpcfg(i)(6) <= '0'; -- reserved
+                  csr.pmpcfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked / also enforce in machine-mode)
                 end if;
-              end loop; -- i (pmpcfg CSR)
-            end if;
-            -- R/W: pmpaddr* - PMP address registers --
-            if (csr.addr(11 downto 4) = csr_class_pmpaddr_c) then 
-              for i in 0 to PMP_NUM_REGIONS-1 loop
-                if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
-                  csr.pmpaddr(i) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
-                end if;
-              end loop; -- i (PMP regions)
-            end if;
+              end if;
+            end loop; -- i (pmpcfg entry)
+          end if;
+          -- R/W: pmpaddr* - PMP address registers --
+          if (csr.addr(11 downto 4) = csr_class_pmpaddr_c) then 
+            for i in 0 to PMP_NUM_REGIONS-1 loop
+              if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
+                csr.pmpaddr(i) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+              end if;
+            end loop; -- i (PMP regions)
           end if;
 
           -- machine counter setup --
@@ -2087,16 +2085,18 @@ begin
   -- effective privilege mode is MACHINE when in debug mode --
   csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') else csr.privilege;
 
-  -- PMP output to bus unit --
-  pmp_output: process(csr)
+  -- PMP output to bus unit and configuration read-back --
+  pmp_connect: process(csr)
   begin
-    pmp_addr_o <= (others => (others => '0'));
-    pmp_ctrl_o <= (others => (others => '0'));
+    pmp_addr_o    <= (others => (others => '0'));
+    pmp_ctrl_o    <= (others => (others => '0'));
+    csr.pmpcfg_rd <= (others => (others => '0'));
     for i in 0 to PMP_NUM_REGIONS-1 loop
       pmp_addr_o(i)(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i); -- physical address
       pmp_ctrl_o(i) <= csr.pmpcfg(i);
+      csr.pmpcfg_rd(i/4)(8*(i mod 4)+7 downto 8*(i mod 4)+0) <= csr.pmpcfg(i);
     end loop;
-  end process pmp_output;
+  end process pmp_connect;
 
 
   -- Control and Status Registers - Read Access ---------------------------------------------
@@ -2182,34 +2182,10 @@ begin
 
           -- physical memory protection - configuration (r/w) --
           -- --------------------------------------------------------------------
-          when csr_pmpcfg0_c =>
-            if (PMP_NUM_REGIONS > 0) then
-              if (PMP_NUM_REGIONS > 00) then csr.rdata(07 downto 00) <= csr.pmpcfg(00); end if;
-              if (PMP_NUM_REGIONS > 01) then csr.rdata(15 downto 08) <= csr.pmpcfg(01); end if;
-              if (PMP_NUM_REGIONS > 02) then csr.rdata(23 downto 16) <= csr.pmpcfg(02); end if;
-              if (PMP_NUM_REGIONS > 03) then csr.rdata(31 downto 24) <= csr.pmpcfg(03); end if;
-            else NULL; end if;
-          when csr_pmpcfg1_c =>
-            if (PMP_NUM_REGIONS > 4) then
-              if (PMP_NUM_REGIONS > 04) then csr.rdata(07 downto 00) <= csr.pmpcfg(04); end if;
-              if (PMP_NUM_REGIONS > 05) then csr.rdata(15 downto 08) <= csr.pmpcfg(05); end if;
-              if (PMP_NUM_REGIONS > 06) then csr.rdata(23 downto 16) <= csr.pmpcfg(06); end if;
-              if (PMP_NUM_REGIONS > 07) then csr.rdata(31 downto 24) <= csr.pmpcfg(07); end if;
-            else NULL; end if;
-          when csr_pmpcfg2_c =>
-            if (PMP_NUM_REGIONS > 8) then
-              if (PMP_NUM_REGIONS > 08) then csr.rdata(07 downto 00) <= csr.pmpcfg(08); end if;
-              if (PMP_NUM_REGIONS > 09) then csr.rdata(15 downto 08) <= csr.pmpcfg(09); end if;
-              if (PMP_NUM_REGIONS > 10) then csr.rdata(23 downto 16) <= csr.pmpcfg(10); end if;
-              if (PMP_NUM_REGIONS > 11) then csr.rdata(31 downto 24) <= csr.pmpcfg(11); end if;
-            else NULL; end if;
-          when csr_pmpcfg3_c =>
-            if (PMP_NUM_REGIONS > 12) then
-              if (PMP_NUM_REGIONS > 12) then csr.rdata(07 downto 00) <= csr.pmpcfg(12); end if;
-              if (PMP_NUM_REGIONS > 13) then csr.rdata(15 downto 08) <= csr.pmpcfg(13); end if;
-              if (PMP_NUM_REGIONS > 14) then csr.rdata(23 downto 16) <= csr.pmpcfg(14); end if;
-              if (PMP_NUM_REGIONS > 15) then csr.rdata(31 downto 24) <= csr.pmpcfg(15); end if;
-            else NULL; end if;
+          when csr_pmpcfg0_c => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpcfg_rd(0); else NULL; end if;
+          when csr_pmpcfg1_c => if (PMP_NUM_REGIONS > 04) then csr.rdata <= csr.pmpcfg_rd(1); else NULL; end if;
+          when csr_pmpcfg2_c => if (PMP_NUM_REGIONS > 08) then csr.rdata <= csr.pmpcfg_rd(2); else NULL; end if;
+          when csr_pmpcfg3_c => if (PMP_NUM_REGIONS > 12) then csr.rdata <= csr.pmpcfg_rd(3); else NULL; end if;
 
           -- physical memory protection - addresses (r/w) --
           -- --------------------------------------------------------------------
@@ -2528,7 +2504,7 @@ begin
 
 
   -- hpm counter read --
-  hpm_rd_dummy: process(csr)
+  hpm_connect: process(csr)
   begin
     csr.mhpmevent_rd    <= (others => (others => '0'));
     csr.mhpmcounter_rd  <= (others => (others => '0'));
@@ -2544,7 +2520,7 @@ begin
         end if;
       end loop; -- i
     end if;
-  end process hpm_rd_dummy;
+  end process hpm_connect;
 
 
   -- Hardware Performance Monitor - Counter Event Control (Triggers) ------------------------
