@@ -296,6 +296,7 @@ begin
     MEM_EXT_PIPE_MODE => false,
     MEM_EXT_BIG_ENDIAN => false,
     MEM_EXT_ASYNC_RX => false,
+    MEM_EXT_ASYNC_TX => false,
 
     -- Stream link interface (SLINK) --
     SLINK_NUM_TX => SLINK_NUM_TX,
