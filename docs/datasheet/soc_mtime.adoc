@@ -26,6 +26,12 @@ registers - is used to configure the CPU's MTI (machine timer interrupt). The in
 whenever `TIME` (high & low part) is greater than or equal to `TIMECMP` (high & low part).
 The interrupt remain active (=pending) until `TIME` becomes less `TIMECMP` again (either by modifying `TIME` or `TIMECMP`).
 
+.Reset
+[NOTE]
+After a hardware reset the `TIME` register is reset to all-zero and the `TIMECMP` register is reset to all-one to prevent
+accidental interrupt requests during early boot phase.
+
+.External TIME Input
 [NOTE]
 If the processor-internal **MTIME module is NOT implemented**, the top's `mtime_i` input signal is used to update the `time[h]` CSRs
 and the `MTI` machine timer CPU interrupt (`MTI`) is directly connected to the top's `mtime_irq_i` input. The `mtime_o` signal

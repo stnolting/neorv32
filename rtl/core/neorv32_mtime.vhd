@@ -106,8 +106,8 @@ begin
   begin
     if (rstn_i = '0') then
       ack_o         <= '-';
-      mtimecmp_lo   <= (others => '0');
-      mtimecmp_hi   <= (others => '0');
+      mtimecmp_lo   <= (others => '1'); -- all-one to prevent accidental interrupt after reset
+      mtimecmp_hi   <= (others => '1');
       mtime_lo_we   <= '0';
       mtime_hi_we   <= '0';
       mtime_lo      <= (others => '0');
@@ -169,17 +169,17 @@ begin
       data_o <= (others => '0'); -- default
       if (rden = '1') then
         case addr(3 downto 2) is
-          when "00"   => data_o <= mtime_lo; -- mtime low
-          when "01"   => data_o <= mtime_hi; -- mtime high
-          when "10"   => data_o <= mtimecmp_lo; -- mtimecmp low
-          when others => data_o <= mtimecmp_hi; -- mtimecmp high
+          when "00"   => data_o <= mtime_lo;
+          when "01"   => data_o <= mtime_hi;
+          when "10"   => data_o <= mtimecmp_lo;
+          when others => data_o <= mtimecmp_hi;
         end case;
       end if;
     end if;
   end process rd_access;
 
   -- system time output for cpu --
-  time_o <= mtime_hi & mtime_lo; -- NOTE: low and high words are not synchronized here!
+  time_o <= mtime_hi & mtime_lo; -- NOTE: low and high words are not in-sync here!
 
 
   -- Comparator -----------------------------------------------------------------------------
