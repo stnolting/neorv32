@@ -707,6 +707,20 @@ implemented reducing access latency by one cycle but eventually increasing the c
 |======
 
 
+:sectnums!:
+===== _MEM_EXT_ASYNC_TX_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **MEM_EXT_ASYNC_TX** | _boolen_ | false
+3+| By default, _MEM_EXT_ASYNC_TX_ = _false_ implements register for all outgoing (TX) signals
+in order to shorten the critical path. By setting _MEM_EXT_ASYNC_TX_ = _true_ an _asynchronous_ ("direct") path is
+implemented reducing access latency by one cycle but eventually increasing the critical path.
+|======
+
+
+
 // ####################################################################################################################
 :sectnums:
 ==== Stream Link Interface
