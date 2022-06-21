@@ -102,6 +102,7 @@ entity neorv32_top is
     MEM_EXT_PIPE_MODE            : boolean := false;  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
     MEM_EXT_BIG_ENDIAN           : boolean := false;  -- byte order: true=big-endian, false=little-endian
     MEM_EXT_ASYNC_RX             : boolean := false;  -- use register buffer for RX data when false
+    MEM_EXT_ASYNC_TX             : boolean := false;  -- use register buffer for TX data when false
 
     -- Stream link interface (SLINK) --
     SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
@@ -846,7 +847,8 @@ begin
       BUS_TIMEOUT       => MEM_EXT_TIMEOUT,    -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
       PIPE_MODE         => MEM_EXT_PIPE_MODE,  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
       BIG_ENDIAN        => MEM_EXT_BIG_ENDIAN, -- byte order: true=big-endian, false=little-endian
-      ASYNC_RX          => MEM_EXT_ASYNC_RX    -- use register buffer for RX data when false
+      ASYNC_RX          => MEM_EXT_ASYNC_RX,   -- use register buffer for RX data when false
+      ASYNC_TX          => MEM_EXT_ASYNC_TX    -- use register buffer for TX data when false
     )
     port map (
       -- global control --
