@@ -120,8 +120,8 @@ setup according to your needs. Note that all of the following SoC modules are en
 [[`PMP`](https://stnolting.github.io/neorv32/#_pmp_physical_memory_protection)]
 [[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]
 * compatible to subsets of the RISC-V
-*Unprivileged ISA Specification* ([v2.2](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-spec.pdf))
-and *Privileged Architecture Specification* ([v1.12](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf)).
+*Unprivileged ISA Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-spec.pdf))
+and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf)).
 * `machine` and `user` privilege modes
 * implements **all** standard RISC-V exceptions and interrupts (including MTI, MEI & MSI)
 * 16 fast interrupt request channels as NEORV32-specific extension

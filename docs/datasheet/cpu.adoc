@@ -16,7 +16,7 @@ image::neorv32_cpu_block.png[width=600,align=center]
 **Key Features**
 
 * 32-bit little-endian, multi-cycle, in-order `rv32` RISC-V CPU
-* Compatible to the RISC-V. **Privileged Architecture - Machine ISA Version 1.12** specifications
+* Compatible to the RISC-V. **Privileged Architecture - Machine ISA Version 1.13** specifications
 * Available <<_instruction_sets_and_extensions>>:
 ** `B` - bit-manipulation instructions
 ** `C` - 16-bit compressed instructions
@@ -51,6 +51,43 @@ can start building your own SoC. Of course you can also use the CPU in it's true
 
 [NOTE]
 This documentation assumes the reader is familiar with the official RISC-V "User" and "Privileged Architecture" specifications.
+
+
+// ####################################################################################################################
+:sectnums:
+=== RISC-V Compatibility
+
+The NEORV32 CPU passes the tests of the _official RISC-V Architecture Test Framework (v2.x)_. This framework is used to check
+RISC-V implementations for compatibility with the official RISC-V ISA specifications. The NEORV32 port of this test framework
+has been moved to a separate repository: https://github.com/stnolting/neorv32-verif
+
+:sectnums:
+==== RISC-V Incompatibility Issues and Limitations
+
+This list shows the currently identified issues regarding full RISC-V-compatibility. Note that most
+of the cases listed below are "special cases" that should not occur in "normal" programs. However,
+some of these incompatibilities can be circumvented using software emulation (for example for
+handling unaligned memory accesses).
+
+.Read-Only "Read-Write" CSRs
+[IMPORTANT]
+The NEORV32 <<_misa>> and <<_mtval>> CSRs are _read-only_ - the RISC-V specs. declare
+these registers as _read/write_. Any machine-mode write access to them is ignored and will _not_
+cause any exceptions or side-effects to maintain RISC-V compatibility.
+
+.Physical Memory Protection
+[IMPORTANT]
+The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only implements the **TOR**
+(top of region) mode and only up to 16 PMP regions. Furthermore, the <<_pmpcfg>>'s _lock bits_ only lock
+the according PMP entry and not the entries below. All region rules are checked in parallel **without**
+prioritization so for identical memory regions the most restrictive PMP rule will be enforced.
+
+.No Hardware Support of Misaligned Memory Accesses
+[WARNING]
+The CPU does not support the resolution of unaligned memory access by the hardware. This is not a
+RISC-V-compatibility issue but an important thing to know. Any kind of unaligned memory access
+will raise an exception to allow a software-based emulation provided by the application.
+
 
 <<<
 // ####################################################################################################################
@@ -139,43 +176,6 @@ execution safety feature the NEORV32 CPU ensures that _all_ unimplemented/malfor
 illegal instruction exceptions and do not commit any state-changing operation (like writing registers or triggering
 memory operations).
 * To be continued...
-
-
-// ####################################################################################################################
-:sectnums:
-=== RISC-V Compatibility
-
-The NEORV32 CPU passes the tests of the _official RISC-V Architecture Test Framework (v2.x)_. This framework is used to check
-RISC-V implementations for compatibility with the official RISC-V ISA specifications. The NEORV32 port of this test framework
-has been moved to a separate repository: https://github.com/stnolting/neorv32-verif
-
-
-:sectnums:
-==== RISC-V Incompatibility Issues and Limitations
-
-This list shows the currently identified issues regarding full RISC-V-compatibility. Note that most
-of the cases listed below are "special cases" that should not occur in "normal" programs. However,
-some of these incompatibilities can be circumvented using software emulation (for example for
-handling unaligned memory accesses).
-
-.Read-Only "Read-Write" CSRs
-[IMPORTANT]
-The NEORV32 <<_misa>> and <<_mtval>> CSRs are _read-only_ - the RISC-V specs. declare
-these registers as _read/write_. Any machine-mode write access to them is ignored and will _not_
-cause any exceptions or side-effects to maintain RISC-V compatibility.
-
-.Physical Memory Protection
-[IMPORTANT]
-The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only implements the **TOR**
-(top of region) mode and only up to 16 PMP regions. Furthermore, the <<_pmpcfg>>'s _lock bits_ only lock
-the according PMP entry and not the entries below. All region rules are checked in parallel **without**
-prioritization so for identical memory regions the most restrictive PMP rule will be enforced.
-
-.No Hardware Support of Misaligned Memory Accesses
-[WARNING]
-The CPU does not support the resolution of unaligned memory access by the hardware. This is not a
-RISC-V-compatibility issue but an important thing to know. Any kind of unaligned memory access
-will raise an exception to allow a software-based emulation provided by the application.
 
 
 <<<
