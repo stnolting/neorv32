@@ -24,6 +24,7 @@
 |                          | _MEM_EXT_PIPE_MODE_  | when _false_ (default): classic/standard Wishbone protocol; when _true_: pipelined Wishbone protocol
 |                          | _MEM_EXT_BIG_ENDIAN_ | byte-order (Endianness) of external memory interface; true=BIG, false=little (default)
 |                          | _MEM_EXT_ASYNC_RX_   | use registered RX path when _false_ (default); use async/direct RX path when _true_
+|                          | _MEM_EXT_ASYNC_TX_   | use registered TX path when _false_ (default); use async/direct TX path when _true_
 | CPU interrupts:          | none |
 |=======================
 
@@ -124,19 +125,23 @@ Application software can check the Endianness configuration of the external bus 
 SYSINFO module (see section <<_system_configuration_information_memory_sysinfo>> for more information).
 
 
-**Latency and Gating**
+**Access Latency**
 
 By default, the Wishbone gateway introduces two additional latency cycles: processor-outgoing (`*_o`) and
 processor-incoming (`*_i`) signals are fully registered. Thus, any access from the CPU to a processor-external devices
-via Wishbone requires 2 additional clock cycles (at least; depending on device's latency).
+via Wishbone requires 2 additional clock cycles. This can ease timing closure when using large (combinatorial) Wishbone
+interconnection networks.
 
-If the attached Wishbone network / peripheral already provides output registers or if the Wishbone network is not relevant
-for timing closure, the default buffering of incoming signals can be disabled by implementing an
-"asynchronous" RX path. The configuration is done via the _MEM_EXT_ASYNC_RX_ generic.
+Optionally, the latency of the Wishbone gateway can be reduced by removing the input and output register stages.
+Enabling the _MEM_EXT_ASYNC_RX_ option will remove the input register stage; enabling _MEM_EXT_ASYNC_TX_ option will
+remove the output register stages. Each enabled option reduces access latency by 1 cycle.
 
-All outgoing signals use a "gating mechanism" so they only change if there is a actual Wishbone transaction being in
+.Output Gating
+[NOTE]
+All outgoing Wishbone signals use a "gating mechanism" so they only change if there is a actual Wishbone transaction being in
 progress. This can reduce dynamic switching activity in the external bus system and also simplifies simulation-based
-inspection of the Wishbone transactions.
+inspection of the Wishbone transactions. Note that this output gating is only available if the output register buffer is not
+disabled (_MEM_EXT_ASYNC_TX_ = _false_).
 
 
 **AXI4-Lite Connectivity**
@@ -153,5 +158,5 @@ image::neorv32_axi_soc.png[]
 
 [WARNING]
 Using the auto-termination timeout feature (_MEM_EXT_TIMEOUT_ greater than zero) is **not AXI4 compliant** as
-the AXI protocol does not support canceling of bus transactions. Therefore, the NEORV32 top wrapper with AXI4-Lite interface
+the AXI protocol does not support "aborting" bus transactions. Therefore, the NEORV32 top wrapper with AXI4-Lite interface
 (`rtl/system_integration/neorv32_SystemTop_axi4lite`) configures _MEM_EXT_TIMEOUT_ = 0 by default.

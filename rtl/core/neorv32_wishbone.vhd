@@ -64,7 +64,8 @@ entity neorv32_wishbone is
     BUS_TIMEOUT       : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     PIPE_MODE         : boolean; -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
     BIG_ENDIAN        : boolean; -- byte order: true=big-endian, false=little-endian
-    ASYNC_RX          : boolean  -- use register buffer for RX data when false
+    ASYNC_RX          : boolean; -- use register buffer for RX data when false
+    ASYNC_TX          : boolean  -- use register buffer for TX data when false
   );
   port (
     -- global control --
@@ -113,10 +114,9 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
   signal xbus_access  : std_ulogic;
 
   -- bus arbiter
-  type ctrl_state_t is (IDLE, BUSY);
   type ctrl_t is record
-    state    : ctrl_state_t;
-    state_ff : ctrl_state_t;
+    state    : std_ulogic;
+    state_ff : std_ulogic;
     we       : std_ulogic;
     adr      : std_ulogic_vector(31 downto 0);
     wdat     : std_ulogic_vector(31 downto 0);
@@ -134,7 +134,11 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
   signal cyc_int : std_ulogic;
   signal rdata   : std_ulogic_vector(31 downto 0);
 
-  -- async RX mode --
+  -- endianness conversion --
+  signal end_wdata  : std_ulogic_vector(31 downto 0);
+  signal end_byteen : std_ulogic_vector(03 downto 0);
+
+  -- async RX gating --
   signal ack_gated   : std_ulogic;
   signal rdata_gated : std_ulogic_vector(31 downto 0);
 
@@ -143,20 +147,20 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- protocol --
-  assert not (PIPE_MODE = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing STANDARD Wishbone protocol." severity note;
-  assert not (PIPE_MODE = true) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing PIEPLINED Wishbone protocol." severity note;
+  assert not (PIPE_MODE = false) report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - STANDARD Wishbone protocol." severity note;
+  assert not (PIPE_MODE = true) report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - PIPELINED Wishbone protocol." severity note;
 
   -- bus timeout --
-  assert not (BUS_TIMEOUT /= 0) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing auto-timeout (" & integer'image(BUS_TIMEOUT) & " cycles)." severity note;
-  assert not (BUS_TIMEOUT  = 0) report "NEORV32 PROCESSOR CONFIG WARNING: External Bus Interface - Implementing NO auto-timeout (can cause permanent CPU stall!)." severity warning;
+  assert not (BUS_TIMEOUT /= 0) report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - auto-timeout (" & integer'image(BUS_TIMEOUT) & " cycles)." severity note;
+  assert not (BUS_TIMEOUT  = 0) report "NEORV32 PROCESSOR CONFIG WARNING: Ext. Bus Interface - NO auto-timeout (can cause permanent CPU stall!)." severity warning;
 
   -- endianness --
-  assert not (BIG_ENDIAN = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing LITTLE-endian byte order." severity note;
-  assert not (BIG_ENDIAN = true)  report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing BIG-endian byte." severity note;
+  assert not (BIG_ENDIAN = false) report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - LITTLE-endian byte order." severity note;
+  assert not (BIG_ENDIAN = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - BIG-endian byte." severity note;
 
-  -- async RX --
-  assert not (ASYNC_RX = false) report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing registered RX path." severity note;
-  assert not (ASYNC_RX = true)  report "NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing ASYNC RX path." severity note;
+  -- "async" (combinatorial) RX/TX --
+  assert not (ASYNC_RX = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - ASYNC RX path." severity note;
+  assert not (ASYNC_TX = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - ASYNC TX path." severity note;
 
 
   -- Access Control -------------------------------------------------------------------------
@@ -177,8 +181,8 @@ begin
   bus_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl.state    <= IDLE;
-      ctrl.state_ff <= IDLE;
+      ctrl.state    <= '0';
+      ctrl.state_ff <= '0';
       ctrl.we       <= '0';
       ctrl.adr      <= (others => '0');
       ctrl.wdat     <= (others => '0');
@@ -200,76 +204,71 @@ begin
       ctrl.timeout  <= std_ulogic_vector(to_unsigned(BUS_TIMEOUT, index_size_f(BUS_TIMEOUT)+1));
 
       -- state machine --
-      case ctrl.state is
-
-        when IDLE => -- waiting for host request
+      if (ctrl.state = '0') then -- IDLE, waiting for host request
         -- ------------------------------------------------------------
-          if (xbus_access = '1') and ((wren_i or rden_i) = '1') then -- valid external request
-            -- buffer (and gate) all outgoing signals --
-            ctrl.we   <= wren_i;
-            ctrl.adr  <= addr_i;
-            ctrl.src  <= src_i;
-            ctrl.priv <= priv_i;
-            if (BIG_ENDIAN = true) then -- big-endian
-              ctrl.wdat <= bswap32_f(data_i);
-              ctrl.sel  <= bit_rev_f(ben_i);
-            else -- little-endian
-              ctrl.wdat <= data_i;
-              ctrl.sel  <= ben_i;
-            end if;
-            ctrl.state <= BUSY;
-          end if;
+        if (xbus_access = '1') and ((wren_i or rden_i) = '1') then -- valid external request
+          -- buffer (and gate) all outgoing signals --
+          ctrl.we    <= wren_i;
+          ctrl.adr   <= addr_i;
+          ctrl.src   <= src_i;
+          ctrl.priv  <= priv_i;
+          ctrl.wdat  <= end_wdata;
+          ctrl.sel   <= end_byteen;
+          ctrl.state <= '1';
+        end if;
 
-        when BUSY => -- transfer in progress
+      else -- BUSY, transfer in progress
         -- ------------------------------------------------------------
-          ctrl.rdat <= wb_dat_i;
-          if (wb_err_i = '1') then -- abnormal bus termination
-            ctrl.err   <= '1';
-            ctrl.state <= IDLE;
-          elsif (timeout_en_c = true) and (or_reduce_f(ctrl.timeout) = '0') then -- enabled timeout
-            ctrl.tmo   <= '1';
-            ctrl.state <= IDLE;
-          elsif (wb_ack_i = '1') then -- normal bus termination
-            ctrl.ack   <= '1';
-            ctrl.state <= IDLE;
-          end if;
-          -- timeout counter --
-          if (timeout_en_c = true) then
-            ctrl.timeout <= std_ulogic_vector(unsigned(ctrl.timeout) - 1); -- timeout counter
-          end if;
-
-        when others => -- undefined
-        -- ------------------------------------------------------------
-          ctrl.state <= IDLE;
-
-      end case;
+        ctrl.rdat <= wb_dat_i;
+        if (wb_err_i = '1') then -- abnormal bus termination
+          ctrl.err   <= '1';
+          ctrl.state <= '0';
+        elsif (timeout_en_c = true) and (or_reduce_f(ctrl.timeout) = '0') then -- enabled timeout
+          ctrl.tmo   <= '1';
+          ctrl.state <= '0';
+        elsif (wb_ack_i = '1') then -- normal bus termination
+          ctrl.ack   <= '1';
+          ctrl.state <= '0';
+        end if;
+        -- timeout counter --
+        if (timeout_en_c = true) then
+          ctrl.timeout <= std_ulogic_vector(unsigned(ctrl.timeout) - 1); -- timeout counter
+        end if;
+      end if;
     end if;
   end process bus_arbiter;
 
-  -- host access --
-  ack_gated   <= wb_ack_i when (ctrl.state = BUSY) else '0'; -- CPU ACK gate for "async" RX
-  rdata_gated <= wb_dat_i when (ctrl.state = BUSY) else (others => '0'); -- CPU read data gate for "async" RX
-  rdata       <= ctrl.rdat when (ASYNC_RX = false) else rdata_gated;
+  -- active external access --
+  ext_o <= ctrl.state;
 
-  ext_o  <= '1' when (ctrl.state = BUSY) else '0'; -- active external access
+  -- endianness conversion --
+  end_wdata  <= bswap32_f(data_i) when (BIG_ENDIAN = true) else data_i;
+  end_byteen <= bit_rev_f(ben_i)  when (BIG_ENDIAN = true) else ben_i;
+
+
+  -- host access --
+  ack_gated   <= wb_ack_i when (ctrl.state = '1') else '0'; -- CPU ACK gate for "async" RX
+  rdata_gated <= wb_dat_i when (ctrl.state = '1') else (others => '0'); -- CPU read data gate for "async" RX
+  rdata       <= ctrl.rdat when (ASYNC_RX = false) else rdata_gated;
 
   data_o <= rdata when (BIG_ENDIAN = false) else bswap32_f(rdata); -- endianness conversion
   ack_o  <= ctrl.ack when (ASYNC_RX = false) else ack_gated;
   err_o  <= ctrl.err;
   tmo_o  <= ctrl.tmo;
 
+
   -- wishbone interface --
-  wb_tag_o(0) <= '0' when (ctrl.priv = priv_mode_u_c) else '1'; -- unprivileged access when in user mode
+  wb_tag_o(0) <= priv_i when (ASYNC_TX = true) else ctrl.priv; -- 0 = unprivileged (U-mode), 1 = privileged (M-mode)
   wb_tag_o(1) <= '0'; -- 0 = secure, 1 = non-secure
-  wb_tag_o(2) <= ctrl.src; -- 0 = data access, 1 = instruction access
+  wb_tag_o(2) <= src_i when (ASYNC_TX = true) else ctrl.src; -- 0 = data access, 1 = instruction access
 
-  stb_int <= '1' when (ctrl.state = BUSY) and (ctrl.state_ff /= BUSY) else '0';
-  cyc_int <= '1' when (ctrl.state = BUSY) else '0';
+  stb_int <=  (xbus_access and (wren_i or rden_i))                when (ASYNC_TX = true) else (ctrl.state and (not ctrl.state_ff));
+  cyc_int <= ((xbus_access and (wren_i or rden_i)) or ctrl.state) when (ASYNC_TX = true) else  ctrl.state;
 
-  wb_adr_o <= ctrl.adr;
-  wb_dat_o <= ctrl.wdat;
-  wb_we_o  <= ctrl.we;
-  wb_sel_o <= ctrl.sel;
+  wb_adr_o <= addr_i when (ASYNC_TX = true) else ctrl.adr;
+  wb_dat_o <= data_i when (ASYNC_TX = true) else ctrl.wdat;
+  wb_we_o  <= (wren_i or ctrl.we)  when (ASYNC_TX = true) else ctrl.we;
+  wb_sel_o <= end_byteen when (ASYNC_TX = true) else ctrl.sel;
   wb_stb_o <= stb_int when (PIPE_MODE = true) else cyc_int;
   wb_cyc_o <= cyc_int;
 

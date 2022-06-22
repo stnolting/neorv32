@@ -327,6 +327,7 @@ begin
     MEM_EXT_PIPE_MODE            => false,              -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
     MEM_EXT_BIG_ENDIAN           => false,              -- byte order: true=big-endian, false=little-endian
     MEM_EXT_ASYNC_RX             => false,              -- use register buffer for RX data when false
+    MEM_EXT_ASYNC_TX             => false,              -- use register buffer for TX data when false
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  => XIRQ_NUM_CH, -- number of external IRQ channels (0..32)
     XIRQ_TRIGGER_TYPE            => XIRQ_TRIGGER_TYPE_INT, -- trigger type: 0=level, 1=edge

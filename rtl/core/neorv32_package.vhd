@@ -68,7 +68,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070209"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070210"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -987,6 +987,7 @@ package neorv32_package is
       MEM_EXT_PIPE_MODE            : boolean := false;  -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
       MEM_EXT_BIG_ENDIAN           : boolean := false;  -- byte order: true=big-endian, false=little-endian
       MEM_EXT_ASYNC_RX             : boolean := false;  -- use register buffer for RX data when false
+      MEM_EXT_ASYNC_TX             : boolean := false;  -- use register buffer for TX data when false
       -- Stream link interface (SLINK) --
       SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
       SLINK_NUM_RX                 : natural := 0;      -- number of TX links (0..8)
@@ -1827,7 +1828,8 @@ package neorv32_package is
       BUS_TIMEOUT       : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
       PIPE_MODE         : boolean; -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
       BIG_ENDIAN        : boolean; -- byte order: true=big-endian, false=little-endian
-      ASYNC_RX          : boolean  -- use register buffer for RX data when false
+      ASYNC_RX          : boolean; -- use register buffer for RX data when false
+      ASYNC_TX          : boolean  -- use register buffer for TX data when false
     );
     port (
       -- global control --
