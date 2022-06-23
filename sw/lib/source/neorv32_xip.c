@@ -100,7 +100,7 @@ int neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) 
   // wait for transfer to complete
   while (NEORV32_XIP.CTRL & (1 << XIP_CTRL_PHY_BUSY));
 
-  NEORV32_XIP.CTRL |= 1 << XIP_CTRL_SPI_CSEN; // finally enable SPI chip-select
+  NEORV32_XIP.CTRL |= 1 << XIP_CTRL_SPI_CSEN; // finally enable automatic SPI chip-select
 
   return 0;
 }
@@ -160,8 +160,6 @@ void neorv32_xip_highspeed_enable(void) {
 
 /**********************************************************************//**
  * Disable high-speed SPI mode.
- *
- * @note High-speed SPI mode ignores the programmed clock prescaler configuration.
  **************************************************************************/
 void neorv32_xip_highspeed_disable(void) {
 
