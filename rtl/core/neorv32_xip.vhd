@@ -480,10 +480,10 @@ begin
       if (cf_enable_i = '0') then
         spi_clk_o    <= '0';
         spi_csn_o    <= '1';
-        --
         ctrl.state   <= S_IDLE;
         ctrl.csen    <= '-';
         ctrl.sreg    <= (others => '-');
+        ctrl.sreg(ctrl.sreg'left) <= '0'; -- this drives SDO
         ctrl.bitcnt  <= (others => '-');
         ctrl.di_sync <= '-';
       else
