@@ -890,6 +890,16 @@ is raised if bit 1 of the fetch address is set (i.e. not on a 32-bit boundary). 
 there will never be a misaligned instruction exception _at all_.
 In both cases bit 0 of the program counter (and all related CSRs) is hardwired to zero.
 
+.Trigger Type
+[IMPORTANT]
+The RISC-V standard interrupts (MEI, MSI and MTI) are **level-triggered and high-active**. Once set the signal has to stay high until
+the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register). The RISC-V standard interrupts
+can **NOT** be acknowledged by writing zero to the according <<_mip>> CSR bit. +
++
+In contrast, the NEORV32 fast interrupt request channels become pending after being triggering by **a rising edge**. A pending FIRQ has to
+be explicitly cleared by writing zero to the according <<_mip>> CSR bit.
+
+
 
 <<<
 // ####################################################################################################################
