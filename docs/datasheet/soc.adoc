@@ -8,14 +8,6 @@ interfaces and embedded memories it provides a RISC-V-based full-scale microcont
 
 image::neorv32_processor.png[align=center]
 
-**Section Structure**
-
-* <<_processor_top_entity_signals>> and <<_processor_top_entity_generics>>
-* <<_processor_clocking>> and <<_processor_reset>>
-* <<_processor_interrupts>>
-* <<_address_space>> and <<_boot_configuration>>
-* <<_processor_internal_modules>>
-
 **Key Features**
 
 * _optional_ processor-internal data and instruction memories (<<_data_memory_dmem,**DMEM**>>/<<_instruction_memory_imem,**IMEM**>>) + cache (<<_processor_internal_instruction_cache_icache,**iCACHE**>>)
