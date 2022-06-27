@@ -1201,45 +1201,25 @@ specifications. However, bare-metal system can also repurpose these interrupts. 
 | `mext_irq_i`  | 1 | Machine external interrupt (_MEI_). This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
 |=======================
 
-.Trigger type
+.Trigger Type
 [IMPORTANT]
-The fast interrupt request channels become pending after being triggering by **a rising edge**. A pending FIRQ has to
-be explicitly cleared by writing zero to the according <<_mip>> CSR bit.
-
-
-:sectnums:
-==== Platform External Interrupts
-
-[cols="<3,^2,<11"]
-[options="header",grid="rows"]
-|=======================
-| Top signal | Width | Description
-| `xirq_i` | up to 32 | External platform interrupts (user-defined).
-|=======================
-
-The processor provides an optional interrupt controller for up to 32 user-defined external interrupts
-(see section <<_external_interrupt_controller_xirq>>). These external IRQs are mapped to a _single_ CPU
-fast interrupt request so a software handler is required to differentiate / prioritize these interrupts.
-
-.Trigger type
-[IMPORTANT]
-The trigger for these interrupt can be defined via generics. See section
-<<_external_interrupt_controller_xirq>> for more information. Depending on the trigger type, users can
-implement custom acknowledge mechanisms. All _external interrupts_ are mapped to a single processor-internal
-_fast interrupt request_ (see below).
+The RISC-V standard interrupts are **level-triggered and high-active**. Once set the signal has to stay high until
+the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register). The RISC-V standard interrupts
+can **NOT** be acknowledged by writing zero to the according <<_mip>> CSR bit.
 
 
 :sectnums:
 ==== NEORV32-Specific Fast Interrupt Requests
 
-As part of the custom/NEORV32-specific CPU extensions, the CPU features 16 fast interrupt request signals
-(`FIRQ0` - `FIRQ15`). These are reserved for _processor-internal_ modules only (for example for the communication
+As part of the NEORV32-specific CPU extensions, the CPU core features 16 fast interrupt request signals
+(`FIRQ0` - `FIRQ15`) with dedicated bits in the <<_mip>> and <<_mie>> CSRs and custom <<_mcause>> trap codes.
+The FIRQ signals are reserved for _processor-internal_ modules only (for example for the communication
 interfaces to signal "available incoming data" or "ready to send new data").
 
-The mapping of the 16 FIRQ channels is shown in the following table (the channel number also corresponds to
-the according FIRQ priority; 0 = highest, 15 = lowest):
+The mapping of the 16 FIRQ channels and the according processor-internal modules is shown in the following
+table (the channel number also corresponds to the according FIRQ priority: 0 = highest, 15 = lowest):
 
-.NEORV32 fast interrupt channel mapping
+.NEORV32 Fast Interrupt Request (FIRQ) Mapping
 [cols="^1,<2,<7"]
 [options="header",grid="rows"]
 |=======================
@@ -1260,10 +1240,32 @@ the according FIRQ priority; 0 = highest, 15 = lowest):
 | 13:15   | - | _reserved_, will never fire
 |=======================
 
-.Trigger type
+.Trigger Type
 [IMPORTANT]
 The fast interrupt request channels become pending after being triggering by **a rising edge**. A pending FIRQ has to
 be explicitly cleared by writing zero to the according <<_mip>> CSR bit.
+
+
+:sectnums:
+==== Platform External Interrupts
+
+The processor provides an optional interrupt controller for up to 32 user-defined external interrupts
+(see section <<_external_interrupt_controller_xirq>>). These external IRQs are mapped to a _single_ CPU
+fast interrupt request so a software handler is required to differentiate / prioritize these interrupts.
+
+[cols="<3,^2,<11"]
+[options="header",grid="rows"]
+|=======================
+| Top signal | Width | Description
+| `xirq_i` | up to 32 | External platform interrupts (user-defined).
+|=======================
+
+.Trigger Type
+[IMPORTANT]
+The trigger for these interrupt can be defined via generics. See section
+<<_external_interrupt_controller_xirq>> for more information. Depending on the trigger type, users can
+implement custom acknowledge mechanisms. All _external interrupts_ are mapped to a single processor-internal
+_fast interrupt request_ (see below).
 
 
 
