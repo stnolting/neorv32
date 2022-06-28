@@ -9,20 +9,23 @@
 -- #                                                                                               #
 -- # Unless otherwise noted, LiteX is copyright (C) 2012-2022 Enjoy-Digital. All rights reserved.  #
 -- # LiteX HQ: https://github.com/enjoy-digital/litex                                              #
+-- #                                                                                               #
 -- # ********************************************************************************************* #
 -- # NEORV32 Core Complex wrapper for the LiteX SoC builder framework.                             #
 -- # https://github.com/enjoy-digital/litex/tree/master/litex/soc/cores/cpu/neorv32                #
 -- #                                                                                               #
 -- # This wrapper provides four pre-configured core complex configurations: "minimal", "lite",     #
 -- # "standard" and "full". See the 'configs_c' table for more details which RISC-V ISA extensions #
--- # and module parameters are used by each of the different configurations.                       #
+-- # and module parameters are used by each of the these configurations. All configurations can be #
+-- # used with the RISC-V-compatible on-chip debugger.                                             #
 -- #                                                                                               #
--- # This wrappers uses the "pipelined" Wishbone b4 protocol. See the "global configuration"       #
--- # constants for further bus configuration parameters (endianness, timeout, etc.).               #
+-- # This wrappers uses the "pipelined" Wishbone b4 protocol for the bus interface. See the        #
+-- # "global configuration" constants for further bus configuration parameters (endianness,        #
+-- # timeout, etc.).                                                                               #
 -- #                                                                                               #
 -- # The external interrupt signal is delegated to the CPU as RISC-V "machine external interrupt   #
 -- # (MTI)". Note that this IRQ signal is high-active - once set the signal has to stay high until #
--- # the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register).  #
+-- # the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register)!  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
