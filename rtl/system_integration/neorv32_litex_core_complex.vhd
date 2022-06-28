@@ -80,7 +80,6 @@ entity neorv32_litex_core_complex is
     jtag_tms_i  : in  std_ulogic; -- mode select
 
     -- Wishbone bus interface --
-    wb_tag_o    : out std_ulogic_vector(02 downto 0); -- request tag
     wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
     wb_dat_i    : in  std_ulogic_vector(31 downto 0); -- read data
     wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
@@ -197,7 +196,7 @@ begin
     jtag_tdo_o  => jtag_tdo_o,  -- serial data output
     jtag_tms_i  => jtag_tms_i,  -- mode select
     -- Wishbone bus interface --
-    wb_tag_o    => wb_tag_o,    -- request tag
+    wb_tag_o    => open,        -- request tag
     wb_adr_o    => wb_adr_o,    -- address
     wb_dat_i    => wb_dat_i,    -- read data
     wb_dat_o    => wb_dat_o,    -- write data
