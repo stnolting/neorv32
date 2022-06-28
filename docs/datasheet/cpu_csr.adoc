@@ -469,11 +469,18 @@ writing zero to the according `mip` bits (in the interrupt handler routine) to c
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 31:16 | _CSR_MIP_FIRQ15P_ : _CSR_MIP_FIRQ0P_ | r/c | **FIRQxP**: Fast interrupt channel 15..0 pending; cleared request by writing 1
-| 11    | _CSR_MIP_MEIP_                       | r/- | **MEIP**: Machine _external_ interrupt pending; _cleared by user-defined mechanism_
-| 7     | _CSR_MIP_MTIP_                       | r/- | **MTIP**: Machine _timer_ interrupt pending; cleared by incrementing MTIME's time compare register
-| 3     | _CSR_MIP_MSIP_                       | r/- | **MSIP**: Machine _software_ interrupt pending; _cleared by user-defined mechanism_
+| 31:16 | _CSR_MIP_FIRQ15P_ : _CSR_MIP_FIRQ0P_ | r/c | **FIRQxP**: Fast interrupt channel 15..0 pending; cleared request by writing zero
+| 11    | _CSR_MIP_MEIP_                       | r/- | **MEIP**: Machine _external_ interrupt pending; _cleared by platform-defined mechanism_
+| 7     | _CSR_MIP_MTIP_                       | r/- | **MTIP**: Machine _timer_ interrupt pending; _cleared by platform-defined mechanism_
+| 3     | _CSR_MIP_MSIP_                       | r/- | **MSIP**: Machine _software_ interrupt pending; _cleared by platform-defined mechanism_
 |=======================
+
+.RISC-V Standard Interrupts
+[IMPORTANT]
+Pending RISC-V standard machine interrupts (MEI, MTI, MSI) **cannot** be acknowledged/cleared by clearing the according
+`mip` bit. The interrupt source has to keep the interrupt request signal high until explicitly acknowledged (e.g. by writing
+to a specific memory-mapped register). However, the RISC-V standard interrupts can be cleared at any time by clearing the
+according <<_mip>> bit(s).
 
 .FIRQ Channel Mapping
 [TIP]
