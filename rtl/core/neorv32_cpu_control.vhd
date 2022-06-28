@@ -1204,7 +1204,8 @@ begin
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_mem_c; -- memory read data
         -- wait for memory response --
         if (trap_ctrl.exc_buf(exc_laccess_c) = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- bus error exception
-           (trap_ctrl.exc_buf(exc_lalign_c) = '1') or (trap_ctrl.exc_buf(exc_salign_c) = '1') then -- alignment error exception
+           (trap_ctrl.exc_buf(exc_lalign_c) = '1') or (trap_ctrl.exc_buf(exc_salign_c) = '1') or -- alignment error exception
+           (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then -- illegal instruction
           execute_engine.state_nxt <= DISPATCH; -- abort!
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- load
