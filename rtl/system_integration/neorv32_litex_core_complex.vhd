@@ -91,12 +91,8 @@ entity neorv32_litex_core_complex is
     wb_ack_i    : in  std_ulogic; -- transfer acknowledge
     wb_err_i    : in  std_ulogic; -- transfer error
 
-    -- Advanced memory control signals --
-    fence_o     : out std_ulogic; -- indicates an executed FENCE operation
-    fencei_o    : out std_ulogic; -- indicates an executed FENCE.I operation
-
     -- CPU interrupt --
-    mext_irq_i  : in  std_ulogic  -- machine external interrupt
+    mext_irq_i  : in  std_ulogic  -- RISC-V machine external interrupt (MEI)
   );
 end neorv32_litex_core_complex;
 
@@ -211,9 +207,6 @@ begin
     wb_cyc_o    => wb_cyc_o,    -- valid cycle
     wb_ack_i    => wb_ack_i,    -- transfer acknowledge
     wb_err_i    => wb_err_i,    -- transfer error
-    -- Advanced memory control signals --
-    fence_o     => fence_o,     -- indicates an executed FENCE operation
-    fencei_o    => fencei_o,    -- indicates an executed FENCEI operation
     -- CPU Interrupts --
     mext_irq_i  => mext_irq_i   -- machine external interrupt
   );
