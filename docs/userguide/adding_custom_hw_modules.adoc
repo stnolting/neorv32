@@ -92,10 +92,10 @@ with minimal data latency.
 The following table gives a comparative summary of the most important factors when choosing one of the
 chip-internal extension options:
 
-* https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu[Custom Functions Unit] for CPU-internal custom RISC-V instructions
-* https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs[Custom Functions Subsystem] for tightly-coupled processor-internal co-processors
-* https://stnolting.github.io/neorv32/#_stream_link_interface_slink[Stream Link Interface] for processor-external streaming modules
-* https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite[External Bus Interface] for processor-external memory-mapped modules
+* https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu[Custom Functions Unit (CFU)] for CPU-internal custom RISC-V instructions
+* https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs[Custom Functions Subsystem (CFS)] for tightly-coupled processor-internal co-processors
+* https://stnolting.github.io/neorv32/#_stream_link_interface_slink[Stream Link Interface (SLIN)] for processor-external streaming modules
+* https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite[External Bus Interface (WISHBONE)] for processor-external memory-mapped modules
 
 .Comparison of On-Chip Extension Options
 [cols="<1,^1,^1,^1,^1"]
