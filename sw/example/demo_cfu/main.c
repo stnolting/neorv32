@@ -53,9 +53,20 @@
 
 
 /**********************************************************************//**
- * @name Prototypes
+ * Pseudo-random number generator (to generate deterministic test data).
+ *
+ * @return Random data (32-bit).
  **************************************************************************/
-uint32_t xorshift32(void);
+uint32_t xorshift32(void) {
+
+  static uint32_t x32 = 314159265;
+
+  x32 ^= x32 << 13;
+  x32 ^= x32 >> 17;
+  x32 ^= x32 << 5;
+
+  return x32;
+}
 
 
 /**********************************************************************//**
@@ -97,61 +108,60 @@ int main() {
                        "      in the CFU hardware module (-> rtl/core/neorv32_cpu_cp_cfu.vhd).\n\n");
 
 
-  // custom instructions usage examples
+  // The CFU custom instruction can be used as plain C functions with the help of the NEORV32 CFU intrinsics.
+  //
+  // There are 8 "prototypes" for the CFU instructions:
+  // > neorv32_cfu_cmd0(funct7, rs1, rs2) - sets the instruction's "funct3" bit field to 000
+  // > neorv32_cfu_cmd1(funct7, rs1, rs2) - sets the instruction's "funct3" bit field to 001
+  // > ...
+  // > neorv32_cfu_cmd7(funct7, rs1, rs2) - sets the instruction's "funct3" bit field to 111
+  //
+  // Every "call" of these functions is turned into a single 32-bit R2-type RISC-V instruction (= "intrinsics").
+  // - No overhead at all! Maximum throughput!
+  //
+  // Each neorv32_cfu_cmd* function requires three arguments:
+  // > funct7: a compile-time static 7-bit immediate (for the instruction's "funct7" bit field)
+  // > rs1:    a 32-bit operand A (this is the first register file source rs1)
+  // > rs2:    a 32-bit operand B (this is the second register file source rs2)
+  //
+  // The rs* operands can be literals, variables, function return values, ... you name it.
+  // The 7-bit immediate ("funct7") can be used to pass _compile-time static_ literals to the CFU
+  // or to do a more fine-grained function selection - it all depends on your hardware implementation.
+  //
+  // Each neorv32_cfu_cmd* function returns a 32-bit uint32_t data word, which represents
+  // the result of the according instruction.
+
   uint32_t i, opa, opb;
 
-  neorv32_uart0_printf("\n--- CFU 'binary to gray' instruction (funct3 = 000) ---\n");
+  neorv32_uart0_printf("\n--- CFU \"binary to gray\" instruction (funct3 = 000) ---\n");
   for (i=0; i<TESTCASES; i++) {
     opa = xorshift32(); // get random test data
     opb = 0;
+    // passing of two variables (opa and opb):
     neorv32_uart0_printf("%u: neorv32_cfu_cmd0 - OPA = 0x%x, OPB = 0x%x, ", i, opa, opb);
-
-    // The CFU custom instruction can be used as plain C functions!
-    //
-    // There are 8 "prototypes" for the CFU instructions:
-    // - neorv32_cfu_cmd0(funct7, rs1, rs2) - sets the instruction's "funct3" bit field to 000
-    // - neorv32_cfu_cmd1(funct7, rs1, rs2) - sets the instruction's "funct3" bit field to 001
-    // - ...
-    // - neorv32_cfu_cmd7(funct7, rs1, rs2) - sets the instruction's "funct3" bit field to 111
-    //
-    // These functions are turned into 32-bit instruction words resembling a R2-type RISC-V instruction
-    // (=> "intrinsics").
-    //
-    // Each neorv32_cfu_cmd* function requires three arguments:
-    // - funct7: a compile-time static 7-bit immediate (put in the instruction's "funct7" bit field)
-    // - rs1:    a 32-bit operand A (this is the first register file source rs1)
-    // - rs2:    a 32-bit operand B (this is the first register second source rs2)
-    //
-    // The operands can be literals, variables, function return values, ... you name it.
-    //
-    // Each neorv32_cfu_cmd* function returns a 32-bit uint32_t data word, which represents
-    // the result of the according instruction.
-    //
-    // The 7-bit immediate ("funct7") can be used to pass small _static_ literals to the CFU
-    // or to do a more fine-grained function selection - it all depends on your hardware implementation! ;)
     neorv32_uart0_printf("Result = 0x%x\n", neorv32_cfu_cmd0(0b0000000, opa, opb));
   }
 
-  neorv32_uart0_printf("\n--- CFU 'gray to binary' instruction (funct3 = 001) ---\n");
+  neorv32_uart0_printf("\n--- CFU \"gray to binary\" instruction (funct3 = 001) ---\n");
   for (i=0; i<TESTCASES; i++) {
     opa = xorshift32();
     neorv32_uart0_printf("%u: neorv32_cfu_cmd1 - OPA = 0x%x, OPB = 0x%x, ", i, opa, 0);
-    // you can also pass literals instead of variables to the intrinsics (0 instead of opb):
+    // you can also pass literals instead of variables (0 instead of opb):
     neorv32_uart0_printf("Result = 0x%x\n", neorv32_cfu_cmd1(0b0000000, opa, 0));
   }
 
-  neorv32_uart0_printf("\n--- CFU 'bit reversal' instruction (funct3 = 010) ---\n");
+  neorv32_uart0_printf("\n--- CFU \"bit reversal\" instruction (funct3 = 010) ---\n");
   for (i=0; i<TESTCASES; i++) {
     opa = xorshift32();
     neorv32_uart0_printf("%u: neorv32_cfu_cmd2 - OPA = 0x%x, OPB = 0x%x, ", i, opa, 0);
     // here we are setting the funct7 bit-field to all-one; however, this is not
     // used at all by the default CFU hardware module
     // note that all funct3/funct7 combinations are treated as "valid" by the CPU
-    // - so there is no chance of causing an illegal instruction exception by using the CFU intrinsics
+    // - so there is no chance of causing an illegal instruction exception when using the CFU intrinsics
     neorv32_uart0_printf("Result = 0x%x\n", neorv32_cfu_cmd2(0b1111111, opa, 0));
   }
 
-  neorv32_uart0_printf("\n--- CFU 'XNOR' instruction (funct3 = 011) ---\n");
+  neorv32_uart0_printf("\n--- CFU \"logical XNOR\" instruction (funct3 = 011) ---\n");
   for (i=0; i<TESTCASES; i++) {
     opa = xorshift32();
     opb = xorshift32();
@@ -163,21 +173,4 @@ int main() {
   neorv32_uart0_printf("\nCFU demo program completed.\n");
 
   return 0;
-}
-
-
-/**********************************************************************//**
- * Pseudo-random number generator (to generate deterministic test data).
- *
- * @return Random data (32-bit).
- **************************************************************************/
-uint32_t xorshift32(void) {
-
-  static uint32_t x32 = 314159265;
-
-  x32 ^= x32 << 13;
-  x32 ^= x32 >> 17;
-  x32 ^= x32 << 5;
-
-  return x32;
 }

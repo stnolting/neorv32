@@ -5,9 +5,6 @@
 -- # documentation for more information.                                                           #
 -- #                                                                                               #
 -- # NOTE: Take a look at the "software-counterpart" of this CFU example in 'sw/example/demo_cfu'. #
--- #                                                                                               #
--- # TODO: Maybe turn this into a wrapper for CFU-playground templates.                            #
--- #       -> https://github.com/google/CFU-Playground                                             #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -89,14 +86,14 @@ begin
       res_o <= (others => '0');
       control.busy <= '0';
     elsif rising_edge(clk_i) then
-      res_o <= (others => '0'); -- default
+      res_o <= (others => '0'); -- default; all CPU co-processor outputs are logically OR-ed
       if (control.busy = '0') then -- idle
         if (start_i = '1') then
           control.busy <= '1';
         end if;
       else -- busy
-        if (control.done = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- processing done? abort if trap
-          res_o <= control.result; -- actual output for only one cycle
+        if (control.done = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- processing done? abort if trap (exception)
+          res_o <= control.result; -- output result for just one cycle, CFU output has to be all-zero otherwise
           control.busy <= '0';
         end if;
       end if;
@@ -112,7 +109,7 @@ begin
 
 
 -- ****************************************************************************************************************************
--- Actual CFU user logic - ADD YOUR CUSTOM LOGIC BELOW
+-- Actual CFU user logic - Add your custom logic below
 -- ****************************************************************************************************************************
 
   -- ----------------------------------------------------------------------------------------
@@ -120,24 +117,24 @@ begin
   -- ----------------------------------------------------------------------------------------
   -- The CFU only supports the R2-type RISC-V instruction format. This format consists of two source registers (rs1 and rs2),
   -- a destination register (rd) and two "immediate" bit-fields (funct7 and funct3). It is up to the user to decide which
-  -- of these fields are actually used by the CFU logic.
+  -- of these instruction bit fields are actually used by the CFU logic.
 
 
   -- ----------------------------------------------------------------------------------------
   -- Input Operands
   -- ----------------------------------------------------------------------------------------
-  -- > rs1_i          (input, 32-bit): source register 1
-  -- > rs2_i          (input, 32-bit): source register 2
-  -- > control.funct3 (input,  3-bit): 3-bit function select / immediate, driven by instruction word's funct3 bit field
-  -- > control.funct7 (input,  7-bit): 7-bit function select / immediate, driven by instruction word's funct7 bit field
+  -- > rs1_i          (input, 32-bit): source register 1 ("data")
+  -- > rs2_i          (input, 32-bit): source register 2 ("data")
+  -- > control.funct3 (input,  3-bit): 3-bit function select / immediate, driven by instruction word's funct3 bit field ("data" / "control")
+  -- > control.funct7 (input,  7-bit): 7-bit function select / immediate, driven by instruction word's funct7 bit field ("data" / "control")
   --
   -- The two signal rs1_i and rs2_i provide the data read from the CPU's register file, which is adressed by the
   -- instruction word's rs1 and rs2 bit-fields.
   --
   -- The actual CFU operation can be defined by using the funct3 and funct7 signals. Both signals are directly driven by
   -- the according bit-fields of the custom instruction. Note that these signals represent "immediates" that have to be
-  -- static already at compile time. These immediates can be used to select the actual function to be executed or they
-  -- can be used as immediates for certain operations (like shift amounts, addresses or offsets).
+  -- static already at compile time. These immediates can be used to select the actual function to be executed or as small
+  -- literals for certain operations (like shift amounts, addresses offsets, multiplication factors, ...).
   --
   -- [NOTE] rs1_i and rs2_i are directly driven by the register file (block RAM). For complex CFU designs it is recommended
   --        to buffer these signals using CFU-internal registers before using them for computations as the rs1 and rs2 nets
@@ -151,11 +148,12 @@ begin
   -- ----------------------------------------------------------------------------------------
   -- Result Output
   -- ----------------------------------------------------------------------------------------
-  -- > control.result (output, 32-bit): processing result
+  -- > control.result (output, 32-bit): processing result ("data")
   --
-  -- When the CFU has finished computation, the data in the control.result signal will be written to the CPU's register
-  -- file. The destination register is addressed by the rd bit-field in the instruction. The CFU result output is
-  -- registered in the CFU controller (see above) so do not worry too much about increasing the CPU's critical path. ;)
+  -- When the CFU has completed computations, the data in the control.result signal will be written to the CPU's register
+  -- file. The destination register is addressed by the rd bit-field in the instruction. The CFU result output is registered
+  -- in the CFU controller (see above) - so do not worry too much about increasing the CPU's critical path with your custom
+  -- logic.
 
 
   -- ----------------------------------------------------------------------------------------
@@ -166,13 +164,22 @@ begin
   -- > start_i      (input,  1-bit): operation trigger (start processing, high for one cycle)
   -- > control.done (output, 1-bit): set high when processing is done
   --
-  -- For pure-combinatorial instructions (without internal state) a subset of those signals is sufficient; see the minimal
+  -- For pure-combinatorial instructions (without internal states) a subset of these signals is sufficient; see the minimal
   -- example below. If the CFU shall also include states (like memories, registers or "buffers") the start_i signal can be
-  -- used to trigger a new CFU operation. As soon as all internal computations have completed, the control.done signal has
-  -- to be set to indicate completion. This will finish CFU operation and will write the processing result (control.result)
-  -- to the CPU register file.
+  -- used to trigger a new iterative CFU operation. As soon as all internal computations have completed, the control.done
+  -- signal has to be set to indicate completion. This will finish CFU instruction operation and will write the processing
+  -- result (control.result) back to the CPU register file.
   --
   -- [NOTE] The control.done **has to be set at some time**, otherwise the CPU will get stalled forever.
+
+
+  -- ----------------------------------------------------------------------------------------
+  -- Final Notes
+  -- ----------------------------------------------------------------------------------------
+  -- The "cfu_control" instance provides something like a "keeper" that ensures correct functionality (we do not want to
+  -- stall the CPU forever) and also a simple-to-use interface hardware designers can start with. Obviously, the control
+  -- instance add one additional cycle of latency. Advanced users can remove this default control instance to obtain
+  -- maximum throughput.
 
 
   -- User Logic Example ---------------------------------------------------------------------
