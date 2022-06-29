@@ -19,13 +19,21 @@
 -- # and module parameters are used by each of the these configurations. All configurations can be #
 -- # used with the RISC-V-compatible on-chip debugger.                                             #
 -- #                                                                                               #
+-- # === Bus Interface ===                                                                         #
 -- # This wrappers uses the "pipelined" Wishbone b4 protocol for the bus interface. See the        #
 -- # "global configuration" constants for further bus configuration parameters (endianness,        #
 -- # timeout, etc.).                                                                               #
 -- #                                                                                               #
+-- # === Interrupt ====                                                                            #
 -- # The external interrupt signal is delegated to the CPU as RISC-V "machine external interrupt   #
 -- # (MTI)". Note that this IRQ signal is high-active - once set the signal has to stay high until #
 -- # the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register)!  #
+-- #                                                                                               #
+-- # === Core Complex Address Space ===                                                            #
+-- # Note that the NEORV32 core complex occupies a small fraction of the total 32-bit address      #
+-- # space for internal components (machine timer, on-chip-debugger, ...). This address space      #
+-- # starts at address 0xffff0000 and ends at 0xffffffff. Any CPU access to this address space     #
+-- # will NOT be delegated to bus interface of the core complex!                                   #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
