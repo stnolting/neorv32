@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 29.06.2022 | 1.7.3.2 | :test_tube: add experimental core complex wrapper for integration into the [**LiteX**](https://github.com/enjoy-digital/litex) SoC builder framework; [#353](https://github.com/stnolting/neorv32/pull/353) |
 | 28.06.2022 | 1.7.3.1 | :bug: fix bug that caused permanent CPU stall if illegal load/store instruction; [#356](https://github.com/stnolting/neorv32/pull/356) |
 | 23.06.2022 | [**:rocket:1.7.3**](https://github.com/stnolting/neorv32/releases/tag/v1.7.3) | **New release** _two years NEORV32!_ :tada: |
 | 21.06.2022 | 1.7.2.10 | :sparkles: add option to implement an asynchronous **Wishbone** TX path; add new top generic `MEM_EXT_ASYNC_TX`; [#352](https://github.com/stnolting/neorv32/pull/352) |
