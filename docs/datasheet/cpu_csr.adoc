@@ -277,7 +277,7 @@ Machine-mode software can discover available `Z*` _sub-extensions_ (like `Zicsr`
 [frame="topbot",grid="none"]
 |=======================
 | 0x304 | **Machine interrupt-enable register** | `mie`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: _0x00000000_
 3+| The `mie` CSR is compatible to the RISC-V specifications and features custom extensions for the fast
 interrupt channels. It is used to enabled specific interrupts sources. Please note that interrupts also have to be
 globally enabled via the `CSR_MSTATUS_MIE` flag of the `mstatus` CSR. The following bits are implemented

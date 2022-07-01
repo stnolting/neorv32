@@ -1764,16 +1764,16 @@ begin
       csr.mstatus_mpp       <= '0';
       csr.mstatus_tw        <= '0';
       csr.privilege         <= priv_mode_m_c; -- start in MACHINE mode
-      csr.mie_msie          <= def_rst_val_c;
-      csr.mie_meie          <= def_rst_val_c;
-      csr.mie_mtie          <= def_rst_val_c;
-      csr.mie_firqe         <= (others => def_rst_val_c);
+      csr.mie_msie          <= '0';
+      csr.mie_meie          <= '0';
+      csr.mie_mtie          <= '0';
+      csr.mie_firqe         <= (others => '0');
       csr.mtvec             <= (others => def_rst_val_c);
       csr.mscratch          <= x"19880704";
       csr.mepc              <= (others => def_rst_val_c);
       csr.mcause            <= (others => def_rst_val_c);
       csr.mtval             <= (others => def_rst_val_c);
-      csr.mip_firq_nclr     <= (others => def_rst_val_c);
+      csr.mip_firq_nclr     <= (others => '-');
       --
       csr.pmpcfg            <= (others => (others => '0'));
       csr.pmpaddr           <= (others => (others => def_rst_val_c));
