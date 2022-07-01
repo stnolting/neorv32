@@ -1757,7 +1757,6 @@ begin
   begin
     if (rstn_i = '0') then
       csr.we                <= '0';
-      csr.re                <= def_rst_val_c;
       --
       csr.mstatus_mie       <= '0';
       csr.mstatus_mpie      <= '0';
@@ -1805,7 +1804,6 @@ begin
     elsif rising_edge(clk_i) then
       -- write access? --
       csr.we <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- write if not illegal instruction
-      csr.re <= csr.re_nxt;
 
       -- defaults --
       csr.mip_firq_nclr <= (others => '1'); -- active low
@@ -2106,6 +2104,7 @@ begin
     variable csr_addr_v : std_ulogic_vector(11 downto 0);
   begin
     if rising_edge(clk_i) then
+      csr.re    <= csr.re_nxt; -- read access?
       csr.rdata <= (others => '0'); -- default output, unimplemented CSRs read as zero
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
 
@@ -2117,6 +2116,7 @@ begin
         else -- reduce switching activity if not accessed
           csr_addr_v := (others => '0'); -- = csr_zero_c
         end if;
+
         case csr_addr_v is
 
           -- hardware-only CSRs --
