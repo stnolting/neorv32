@@ -144,23 +144,19 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
+  -- Configuration Info ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- protocol --
-  assert not (PIPE_MODE = false) report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - STANDARD Wishbone protocol." severity note;
-  assert not (PIPE_MODE = true) report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - PIPELINED Wishbone protocol." severity note;
+  assert false report
+  "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - " &
+  cond_sel_string_f(PIPE_MODE, "PIPELINED", "CASSIC/STANDARD") & "Wishbone protocol, " &
+  cond_sel_string_f(boolean(BUS_TIMEOUT /= 0), "auto-timeout (" & integer'image(BUS_TIMEOUT) & " cycles), ", "NO auto-timeout, ") &
+  cond_sel_string_f(BIG_ENDIAN, "BIG", "LITTLE") & "-endian byte order, " &
+  cond_sel_string_f(ASYNC_RX, "ASYNC ", "buffered ") & "RX path, " &
+  cond_sel_string_f(ASYNC_TX, "ASYNC ", "buffered ") & "TX path"
+  severity note;
 
-  -- bus timeout --
-  assert not (BUS_TIMEOUT /= 0) report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - auto-timeout (" & integer'image(BUS_TIMEOUT) & " cycles)." severity note;
-  assert not (BUS_TIMEOUT  = 0) report "NEORV32 PROCESSOR CONFIG WARNING: Ext. Bus Interface - NO auto-timeout (can cause permanent CPU stall!)." severity warning;
-
-  -- endianness --
-  assert not (BIG_ENDIAN = false) report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - LITTLE-endian byte order." severity note;
-  assert not (BIG_ENDIAN = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - BIG-endian byte." severity note;
-
-  -- "async" (combinatorial) RX/TX --
-  assert not (ASYNC_RX = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - ASYNC RX path." severity note;
-  assert not (ASYNC_TX = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - ASYNC TX path." severity note;
+  -- no timeout warning --
+  assert not (BUS_TIMEOUT  = 0) report "NEORV32 PROCESSOR CONFIG WARNING! Ext. Bus Interface - NO auto-timeout (can cause permanent CPU stall!)." severity warning;
 
 
   -- Access Control -------------------------------------------------------------------------

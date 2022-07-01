@@ -161,7 +161,7 @@ begin
   -- CPU ISA Configuration ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-  "NEORV32 CPU ISA Configuration (MARCH): " &
+  "NEORV32 CPU CONFIG NOTE: ISA (MARCH) = " &
   cond_sel_string_f(CPU_EXTENSION_RISCV_E, "RV32E", "RV32I") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_M, "M", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_C, "C", "") &
@@ -181,6 +181,9 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- say hello --
+  assert false report "The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32" severity note;
+
   -- simulation notifier --
   assert not (is_simulation_c = true)  report "NEORV32 CPU WARNING! Assuming this is a simulation." severity warning;
   assert not (is_simulation_c = false) report "NEORV32 CPU NOTE: Assuming this is real hardware." severity note;
@@ -192,6 +195,7 @@ begin
 
   -- CPU boot address --
   assert not (CPU_BOOT_ADDR(1 downto 0) /= "00") report "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
+  assert false report "NEORV32 CPU CONFIG NOTE: Boot from address 0x" & to_hstring32_f(CPU_BOOT_ADDR) & "." severity note;
 
   -- CSR system --
   assert not (CPU_EXTENSION_RISCV_Zicsr = false) report "NEORV32 CPU CONFIG WARNING! No exception/interrupt/trap/privileged features available when <CPU_EXTENSION_RISCV_Zicsr> = false." severity warning;
@@ -208,14 +212,14 @@ begin
   assert not (CPU_IPB_ENTRIES < 2) report "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <CPU_IPB_ENTRIES> has to be >= 2." severity error;
 
   -- PMP --
-  assert not (PMP_NUM_REGIONS > 0) report "NEORV32 CPU NOTE: Implementing " & positive'image(PMP_NUM_REGIONS) & " PMP regions." severity note;
+  assert not (PMP_NUM_REGIONS > 0) report "NEORV32 CPU CONFIG NOTE: Implementing " & positive'image(PMP_NUM_REGIONS) & " PMP regions." severity note;
   assert not (PMP_NUM_REGIONS > 16) report "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out of valid range (0..16)." severity error;
   assert not ((is_power_of_two_f(PMP_MIN_GRANULARITY) = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be a power of two." severity error;
   assert not (PMP_MIN_GRANULARITY < 4) report "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be >= 4 bytes." severity error;
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_NUM_REGIONS > 0)) report "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
   -- HPM counters --
-  assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 0)) report "NEORV32 CPU NOTE: Implementing " & positive'image(HPM_NUM_CNTS) & " HPM counters." severity note;
+  assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 0)) report "NEORV32 CPU CONFIG NOTE: Implementing " & positive'image(HPM_NUM_CNTS) & " HPM counters." severity note;
   assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 29)) report "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..29)." severity error;
   assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and ((HPM_CNT_WIDTH < 0) or (HPM_CNT_WIDTH > 64))) report "NEORV32 CPU CONFIG ERROR! HPM counter width <HPM_CNT_WIDTH> has to be 0..64 bit." severity error; 
   assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_Zihpm = true)) report "NEORV32 CPU CONFIG ERROR! Hardware performance monitors extension <CPU_EXTENSION_RISCV_Zihpm> requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
@@ -228,7 +232,7 @@ begin
   assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zifencei> extension to be enabled." severity error;
 
   -- fast multiplication option --
-  assert not (FAST_MUL_EN = true) report "NEORV32 CPU CONFIG NOTE: <FAST_MUL_EN> enabled. Trying to use DSP blocks for base ISA multiplications." severity note;
+  assert not (FAST_MUL_EN = true) report "NEORV32 CPU CONFIG NOTE: <FAST_MUL_EN> enabled. Inferring DSP blocks for multiplications." severity note;
 
   -- fast shift option --
   assert not (FAST_SHIFT_EN = true) report "NEORV32 CPU CONFIG NOTE: <FAST_SHIFT_EN> enabled. Implementing full-parallel logic / barrel shifters." severity note;

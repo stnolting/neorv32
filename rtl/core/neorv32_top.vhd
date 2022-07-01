@@ -382,7 +382,7 @@ begin
   -- Processor IO/Peripherals Configuration -------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-  "NEORV32 PROCESSOR IO Configuration: " &
+  "NEORV32 PROCESSOR CONFIG NOTE: Peripherals = " &
   cond_sel_string_f(IO_GPIO_EN, "GPIO ", "") &
   cond_sel_string_f(IO_MTIME_EN, "MTIME ", "") &
   cond_sel_string_f(IO_UART0_EN, "UART0 ", "") &
@@ -406,8 +406,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- boot configuration --
   assert not (INT_BOOTLOADER_EN = true) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Indirect boot via bootloader (processor-internal BOOTROM)." severity note;
-  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-internal IMEM)." severity note;
-  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-external (I)MEM)." severity note;
+  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-internal IMEM)." severity note;
+  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-external (I)MEM)." severity note;
   --
   assert not ((MEM_EXT_EN = false) and (MEM_INT_DMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal IMEM." severity error;
   assert not ((MEM_EXT_EN = false) and (MEM_INT_IMEM_EN = false) and (INT_BOOTLOADER_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal IMEM and bootloader." severity error;

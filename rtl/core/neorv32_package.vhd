@@ -68,8 +68,8 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070302"; -- NEORV32 version - no touchy!
-  constant archid_c     : natural := 19; -- official NEORV32 architecture ID - hands off!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070303"; -- NEORV32 version - no touchy!
+  constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -116,6 +116,7 @@ package neorv32_package is
   function xor_reduce_f(a : std_ulogic_vector) return std_ulogic;
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
   function hexchar_to_stdulogicvector_f(input : character) return std_ulogic_vector;
+  function to_hstring32_f(input : std_ulogic_vector(31 downto 0)) return string;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
   function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector;
@@ -2376,6 +2377,21 @@ package body neorv32_package is
     end case;
     return hex_value_v;
   end function hexchar_to_stdulogicvector_f;
+
+  -- Function: Convert 32-bit std_ulogic_vector to hex string -------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function to_hstring32_f(input : std_ulogic_vector(31 downto 0)) return string is
+    variable res_v : string(1 to 8);
+    variable tmp_v : std_ulogic_vector(31 downto 0);
+    variable hex_v : std_ulogic_vector(3 downto 0);
+  begin
+    tmp_v := bit_rev_f(input);
+    for i in 0 to 7 loop
+      hex_v := tmp_v(i*4+3 downto i*4+0);
+      res_v(i+1) := to_hexchar_f(bit_rev_f(hex_v));
+    end loop; -- i
+    return res_v;
+  end function to_hstring32_f;
 
   -- Function: Bit reversal -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
