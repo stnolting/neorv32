@@ -146,8 +146,8 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     pmp_nr       => ( 0,       0,       0,       8     ), -- number of PMP regions (0..16)
     hpm_nr       => ( 0,       0,       0,       8     ), -- number of HPM counters (0..29)
     icache_en    => ( false,   false,   true,    true  ), -- instruction cache enabled
-    icache_nb    => ( 0,       0,       4,       8     ), -- number of cache blocks (lines), power of two
-    icache_bs    => ( 0,       0,       128,     256   ), -- size of cache clock (lines) in bytes, power of two
+    icache_nb    => ( 0,       0,       8,       8     ), -- number of cache blocks (lines), power of two
+    icache_bs    => ( 0,       0,       64,      256   ), -- size of cache clock (lines) in bytes, power of two
     icache_as    => ( 1,       1,       1,       2     ), -- associativity (1 or 2)
     mtime        => ( false,   true,    true,    true  )  -- RISC-V machine system timers
   );
