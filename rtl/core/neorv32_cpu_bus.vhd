@@ -168,7 +168,7 @@ begin
   misaligned_d_check: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      misaligned <= def_rst_val_c;
+      misaligned <= '0';
     elsif rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
         case data_size is -- data size
@@ -265,8 +265,8 @@ begin
   begin
     if (rstn_i = '0') then
       arbiter.pend <= '0';
-      arbiter.rw   <= def_rst_val_c;
-      arbiter.err  <= def_rst_val_c;
+      arbiter.rw   <= '0';
+      arbiter.err  <= '0';
     elsif rising_edge(clk_i) then
       if (arbiter.pend = '0') then -- idle
         arbiter.pend <= ctrl_i(ctrl_bus_wr_c) or ctrl_i(ctrl_bus_rd_c); -- start bus access

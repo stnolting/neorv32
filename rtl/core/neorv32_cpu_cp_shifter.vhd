@@ -91,7 +91,7 @@ begin
     serial_shifter_core: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        shifter.busy_ff <= def_rst_val_c;
+        shifter.busy_ff <= '-';
         shifter.busy    <= '0';
         shifter.cnt     <= (others => def_rst_val_c);
         shifter.sreg    <= (others => def_rst_val_c);
