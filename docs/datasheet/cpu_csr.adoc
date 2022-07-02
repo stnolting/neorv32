@@ -136,7 +136,7 @@ Otherwise any access to the floating-point CSRs will raise an illegal instructio
 [frame="topbot",grid="none"]
 |=======================
 | 0x001 | **Floating-point accrued exceptions** | `fflags`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: _0x00000000_
 3+| The `fflags` CSR is compatible to the RISC-V specifications. It shows the accrued ("accumulated")
 exception flags in the lowest 5 bits. This CSR is only available if a floating-point CPU extension is enabled.
 See the RISC-V ISA spec for more information.
@@ -150,7 +150,7 @@ See the RISC-V ISA spec for more information.
 [frame="topbot",grid="none"]
 |=======================
 | 0x002 | **Floating-point dynamic rounding mode** | `frm`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: _0x00000000_
 3+| The `frm` CSR is compatible to the RISC-V specifications and is used to configure the rounding modes using
 the lowest 3 bits. This CSR is only available if a floating-point CPU extension is enabled. See the RISC-V
 ISA spec for more information.
@@ -164,7 +164,7 @@ ISA spec for more information.
 [frame="topbot",grid="none"]
 |=======================
 | 0x003 | **Floating-point control and status register** | `fcsr`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: _0x00000000_
 3+| The `fcsr` CSR is compatible to the RISC-V specifications. It provides combined read/write access to the
 `fflags` and `frm` CSRs. This CSR is only available if a floating-point CPU extension is enabled. See the
 RISC-V ISA spec for more information.
@@ -327,7 +327,7 @@ Hence, the trap handler's base address has to be aligned to a 4-byte boundary.
 [frame="topbot",grid="none"]
 |=======================
 | 0x306 | **Machine counter enable** | `mcounteren`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: _0x00000000_
 3+| The `mcounteren` CSR is compatible to the RISC-V specifications. The bits of this CSR define which
 counter/timer CSR can be accessed (read) from code running in a less-privileged modes. For example,
 if user-level code tries to read from a counter/timer CSR without enabled access, an illegal instruction
@@ -714,7 +714,7 @@ information) or when the CPU is in sleep-mode.
 [frame="topbot",grid="none"]
 |=======================
 | 0x232 -0x33f | **Machine hardware performance monitor event selector** | `mhpmevent3` - `mhpmevent31`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: _0x00000000_
 3+| The `mhpmevent*` CSRs are compatible to the RISC-V specifications. The value in these CSRs define
 the architectural events that cause an increment of the according `mhpmcounter*[h]` counter(s). All available events are
 listed in the table below. If more than one event is selected, the according counter will increment if _any_ of
@@ -780,7 +780,7 @@ bit of arbitrary event counters. The event(s) that trigger an increment of these
 [frame="topbot",grid="none"]
 |=======================
 | 0x320 | **Machine counter-inhibit register** | `mcountinhibit`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: _0x00000000_
 3+| The `mcountinhibit` CSR is compatible to the RISC-V specifications. The bits in this register define which
 counter/timer CSR are allowed to perform an automatic increment. Automatic update is enabled if the
 according bit in `mcountinhibit` is cleared. The following bits are implemented (all remaining bits are

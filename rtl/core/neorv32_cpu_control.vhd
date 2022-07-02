@@ -1777,18 +1777,18 @@ begin
       csr.pmpcfg            <= (others => (others => '0'));
       csr.pmpaddr           <= (others => (others => def_rst_val_c));
       --
-      csr.mhpmevent         <= (others => (others => def_rst_val_c));
+      csr.mhpmevent         <= (others => (others => '0'));
       --
-      csr.mcounteren_cy     <= def_rst_val_c;
-      csr.mcounteren_tm     <= def_rst_val_c;
-      csr.mcounteren_ir     <= def_rst_val_c;
+      csr.mcounteren_cy     <= '0';
+      csr.mcounteren_tm     <= '0';
+      csr.mcounteren_ir     <= '0';
       --
-      csr.mcountinhibit_cy  <= def_rst_val_c;
-      csr.mcountinhibit_ir  <= def_rst_val_c;
-      csr.mcountinhibit_hpm <= (others => def_rst_val_c);
+      csr.mcountinhibit_cy  <= '0';
+      csr.mcountinhibit_ir  <= '0';
+      csr.mcountinhibit_hpm <= (others => '0');
       --
-      csr.fflags            <= (others => def_rst_val_c);
-      csr.frm               <= (others => def_rst_val_c);
+      csr.fflags            <= (others => '0');
+      csr.frm               <= (others => '0');
       --
       csr.dcsr_ebreakm      <= '0';
       csr.dcsr_ebreaku      <= '0';
