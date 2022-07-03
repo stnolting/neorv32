@@ -779,11 +779,7 @@ begin
     ctrl_o(ctrl_trap_c)          <= trap_ctrl.env_start_ack; -- cpu is starting a trap handler
     ctrl_o(ctrl_debug_running_c) <= debug_ctrl.running; -- cpu is currently in debug mode
     -- FPU rounding mode --
-    if (CPU_EXTENSION_RISCV_Zfinx = true) then
-      ctrl_o(ctrl_alu_frm2_c downto ctrl_alu_frm0_c) <= csr.frm;
-    else
-      ctrl_o(ctrl_alu_frm2_c downto ctrl_alu_frm0_c) <= (others => '0');
-    end if;
+    ctrl_o(ctrl_alu_frm2_c downto ctrl_alu_frm0_c) <= csr.frm;
   end process ctrl_output;
 
 
@@ -875,13 +871,9 @@ begin
     -- register/uimm5 checks --
     if (execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") then
       decode_aux.rs1_zero <= '1';
-    else
-      decode_aux.rs1_zero <= '0';
     end if;
     if (execute_engine.i_reg(instr_rd_msb_c downto instr_rd_lsb_c) = "00000") then
       decode_aux.rd_zero <= '1';
-    else
-      decode_aux.rd_zero <= '0';
     end if;
   end process decode_helper;
 
@@ -991,7 +983,7 @@ begin
 
       when TRAP_EXECUTE => -- Process trap environment
       -- ------------------------------------------------------------
-        execute_engine.pc_mux_sel <= '0'; -- next_PC (or xEPC / trap vector)
+        execute_engine.pc_mux_sel <= '0'; -- next_PC (xEPC or trap vector)
         fetch_engine.reset        <= '1';
         execute_engine.pc_we      <= '1';
         execute_engine.sleep_nxt  <= '0'; -- disable sleep mode
@@ -1110,7 +1102,7 @@ begin
             end if;
 
 
-          when opcode_system_c => -- environment/csr access
+          when others => -- opcode_system_c - environment operation / csr access / ILLEGAL OPCODE (will cause NO state change)
           -- ------------------------------------------------------------
             csr.re_nxt <= '1'; -- always read CSR, only relevant for CSR access
             if (CPU_EXTENSION_RISCV_Zicsr = true) then
@@ -1118,11 +1110,6 @@ begin
             else
               execute_engine.state_nxt <= DISPATCH;
             end if;
-
-
-          when others => -- illegal opcode
-          -- ------------------------------------------------------------
-            execute_engine.state_nxt <= DISPATCH;
 
         end case; -- /EXECUTE
 
@@ -1345,7 +1332,7 @@ begin
       when opcode_jalr_c => -- check JALR.funct3
       -- ------------------------------------------------------------
         case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when "000" => illegal_cmd <= '0';
+          when "000"  => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
         illegal_reg <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
@@ -1418,7 +1405,7 @@ begin
         case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           when funct3_fence_c  => illegal_cmd <= '0'; -- FENCE
           when funct3_fencei_c => illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- FENCE.I
-          when others => illegal_cmd <= '1';
+          when others          => illegal_cmd <= '1';
         end case;
 
       when opcode_system_c => -- check system instructions
