@@ -678,7 +678,7 @@ begin
       -- registers that DO require a specific RESET state --
       execute_engine.pc          <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned!
       execute_engine.pc_last     <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00";
-      execute_engine.state       <= BRANCHED;
+      execute_engine.state       <= BRANCHED; -- reset is a branch from "somewhere"
       execute_engine.state_prev  <= BRANCHED; -- actual reset value is not relevant
       execute_engine.state_prev2 <= BRANCHED; -- actual reset value is not relevant
       execute_engine.sleep       <= '0';
@@ -724,15 +724,20 @@ begin
             execute_engine.next_pc <= CPU_DEBUG_ADDR; -- debug mode enter; start at "parking loop" <normal_entry>
           elsif (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_DEBUG = true) then -- any other exception INSIDE debug mode
             execute_engine.next_pc <= std_ulogic_vector(unsigned(CPU_DEBUG_ADDR) + 4); -- start at "parking loop" <exception_entry>
-          else -- normal trapping
+          else -- normal start of trap
             execute_engine.next_pc <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- trap enter
           end if;
         when TRAP_EXIT => -- LEAVING trap environment
-          if (CPU_EXTENSION_RISCV_DEBUG = false) or (debug_ctrl.running = '0') then -- normal end of trap
-            execute_engine.next_pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap exit
-          else -- DEBUG MODE exiting
+          if (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_DEBUG = true) then -- debug mode exit
             execute_engine.next_pc <= csr.dpc(data_width_c-1 downto 1) & '0'; -- debug mode exit
+          else -- normal end of trap
+            execute_engine.next_pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap exit
           end if;
+          --if (CPU_EXTENSION_RISCV_DEBUG = false) or (debug_ctrl.running = '0') then -- normal end of trap
+          --  execute_engine.next_pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap exit
+          --else -- DEBUG MODE exiting
+          --  execute_engine.next_pc <= csr.dpc(data_width_c-1 downto 1) & '0'; -- debug mode exit
+          --end if;
         when EXECUTE => -- NORMAL pc increment
           execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc)); -- next linear PC
         when others =>
@@ -935,7 +940,7 @@ begin
       when DISPATCH => -- Get new command from instruction issue engine
       -- ------------------------------------------------------------
         -- PC & IR update --
-        execute_engine.pc_mux_sel <= '0'; -- linear next PC
+        execute_engine.pc_mux_sel <= '0'; -- next PC
         execute_engine.i_reg_nxt  <= issue_engine.data(31 downto 0);
         execute_engine.is_ci_nxt  <= issue_engine.data(32); -- this is a de-compressed instruction
         execute_engine.is_ici_nxt <= issue_engine.data(35); -- illegal compressed instruction
@@ -943,7 +948,7 @@ begin
         if (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- instruction available?
           -- PC update --
           execute_engine.branched_nxt <= '0';
-          execute_engine.pc_we        <= not execute_engine.branched; -- update PC with linear next_pc if there was no actual branch
+          execute_engine.pc_we        <= not execute_engine.branched; -- update PC with next_pc if there was no actual branch
           -- IR update - exceptions --
           trap_ctrl.instr_ma <= issue_engine.data(33) and (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_C)); -- misaligned instruction fetch (if C disabled)
           trap_ctrl.instr_be <= issue_engine.data(34); -- bus access fault during instruction fetch
@@ -2078,7 +2083,7 @@ begin
     pmp_ctrl_o    <= (others => (others => '0'));
     csr.pmpcfg_rd <= (others => (others => '0'));
     for i in 0 to PMP_NUM_REGIONS-1 loop
-      pmp_addr_o(i)(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i); -- physical address
+      pmp_addr_o(i)(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i);
       pmp_ctrl_o(i) <= csr.pmpcfg(i);
       csr.pmpcfg_rd(i/4)(8*(i mod 4)+7 downto 8*(i mod 4)+0) <= csr.pmpcfg(i);
     end loop;
@@ -2092,7 +2097,7 @@ begin
   begin
     if rising_edge(clk_i) then
       csr.re    <= csr.re_nxt; -- read access?
-      csr.rdata <= (others => '0'); -- default output, unimplemented CSRs read as zero
+      csr.rdata <= (others => '0'); -- default output, unimplemented CSRs/CSR bits read as zero
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
 
         -- AND-gate CSR read address: csr.rdata is zero if csr.re is not set --
