@@ -556,12 +556,10 @@ begin
 
   -- Output Gate ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  output_gate: process(rstn_i, clk_i)
+  output_gate: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      res_o <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
-      res_o <= (others => '0');
+    if rising_edge(clk_i) then
+      res_o <= (others => '0'); -- default
       if (valid = '1') then
         res_o <= res_out(op_andn_c)   or res_out(op_orn_c)    or res_out(op_xnor_c)  or
                  res_out(op_clz_c)    or res_out(op_cpop_c)   or -- res_out(op_ctz_c) is unused here

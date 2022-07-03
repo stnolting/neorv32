@@ -126,7 +126,7 @@ begin
       ctrl.cnt      <= (others => def_rst_val_c);
       ctrl.cp_op_ff <= (others => def_rst_val_c);
       ctrl.out_en   <= '0';
-      div.sign_mod <= def_rst_val_c;
+      div.sign_mod  <= def_rst_val_c;
     elsif rising_edge(clk_i) then
       -- defaults --
       ctrl.out_en <= '0';

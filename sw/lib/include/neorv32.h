@@ -669,9 +669,9 @@ enum NEORV32_CLOCK_PRSC_enum {
  **************************************************************************/
 /**@{*/
 /** instruction memory base address (r/w/x) */
-// -> configured via ispace_base_c constant in neorv32_package.vhd and available to SW via SYSCONFIG entry
+// -> configured via 'ispace_base_c' constant in neorv32_package.vhd and available to software via SYSINFO entry
 /** data memory base address (r/w/x) */
-// -> configured via dspace_base_c constant in neorv32_package.vhd and available to SW via SYSCONFIG entry
+// -> configured via 'dspace_base_c' constant in neorv32_package.vhd and available to software via SYSINFO entry
 /** bootloader memory base address (r/-/x) */
 #define BOOTLOADER_BASE_ADDRESS (0xFFFF0000UL)
 /** on-chip debugger complex base address (r/w/x) */
