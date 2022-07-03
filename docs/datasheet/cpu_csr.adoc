@@ -118,6 +118,10 @@ CSRs with the following notes ...
 | 0xfc0   | <<_mxisa>>       | _CSR_MXISA_     | r/- | NEORV32-specific "extended" machine CPU ISA and extensions | `X`
 |=======================
 
+.Debug-Mode CSRs
+[NOTE]
+The CSRs related to the CPU's debug mode (used by the on-chip debugger) are not listed here as they are not accessible by
+normal software. See sections <<_cpu_debug_mode_csrs>> and <<_trigger_module_csrs>> for more information about those CSRs.
 
 
 <<<
