@@ -61,6 +61,7 @@ entity neorv32_icache is
     host_ack_o   : out std_ulogic; -- bus transfer acknowledge
     host_err_o   : out std_ulogic; -- bus transfer error
     -- peripheral bus interface --
+    bus_cached_o : out std_ulogic; -- set if cached (!) access in progress
     bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
     bus_re_o     : out std_ulogic; -- read enable
@@ -279,6 +280,9 @@ begin
 
   -- signal cache miss to CPU --
   miss_o <= '1' when (ctrl.state = S_CACHE_MISS) else '0';
+
+  -- cache access in progress --
+  bus_cached_o <= '1' when (ctrl.state = S_BUS_DOWNLOAD_REQ) or (ctrl.state = S_BUS_DOWNLOAD_GET) else '0';
 
 
 	-- Cache Memory ---------------------------------------------------------------------------
