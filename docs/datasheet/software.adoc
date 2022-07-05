@@ -161,8 +161,8 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
  sim          - in-console simulation using default/simple testbench and GHDL
  all          - exe + hex + install
  elf_info     - show ELF layout info
- clean        - clean up project
- clean_all    - clean up project, core libraries and image generator
+ clean        - clean up project home folder
+ clean_all    - clean up whole project, core libraries and image generator
  bl_image     - compile and generate VHDL BOOTROM boot image (for bootloader only!) in local folder
  bootloader   - compile, generate and install VHDL BOOTROM boot image (for bootloader only!)
 
