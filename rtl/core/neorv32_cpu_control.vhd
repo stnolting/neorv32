@@ -733,11 +733,6 @@ begin
           else -- normal end of trap
             execute_engine.next_pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap exit
           end if;
-          --if (CPU_EXTENSION_RISCV_DEBUG = false) or (debug_ctrl.running = '0') then -- normal end of trap
-          --  execute_engine.next_pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap exit
-          --else -- DEBUG MODE exiting
-          --  execute_engine.next_pc <= csr.dpc(data_width_c-1 downto 1) & '0'; -- debug mode exit
-          --end if;
         when EXECUTE => -- NORMAL pc increment
           execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc)); -- next linear PC
         when others =>
