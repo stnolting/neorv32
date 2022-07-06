@@ -48,13 +48,16 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
+/** Flash base address */
+#define FLASH_BASE 0x00000000
 /**@}*/
 
 
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
-int program_xip_flash(void);
+int program_xip_flash(uint32_t base_addr);
+void dump_xip_flash(uint32_t base_addr, uint32_t num);
 
 
 /**********************************************************************//**
@@ -126,13 +129,19 @@ int main() {
     return 1;
   }
 
+
   // use a helper function to store a small example program to the XIP flash
   // NOTE: this (direct SPI access via the XIP module) has to be done before the actual XIP mode is enabled!
   neorv32_uart0_printf("Programming XIP flash...\n");
-  if (program_xip_flash()) {
+  if (program_xip_flash(FLASH_BASE)) {
     neorv32_uart0_printf("Error! XIP flash programming error!\n");
     return 1;
   }
+
+
+  // dump the content we have just programmed to the XIP flash
+  neorv32_uart0_printf("Read-back XIP flash...\n");
+  dump_xip_flash(FLASH_BASE, sizeof(xip_program)/4);
 
   // configure and enable the actual XIP mode
   // * configure 2 address bytes send to the SPI flash for addressing
@@ -142,11 +151,15 @@ int main() {
     return 1;
   }
 
+
   // finally, jump to the XIP flash's base address we have configured to start execution **from there**
   neorv32_uart0_printf("Starting Execute-In-Place program...\n");
-  asm volatile ("call %[dest]" : : [dest] "i" (0x20000000));
+  asm volatile ("call %[dest]" : : [dest] "i" (0x20000000 + FLASH_BASE));
 
-  return 0;
+
+  // this should never be reached
+  neorv32_uart0_printf("Error! Starting XIP program failed!\n");
+  return 1;
 }
 
 
@@ -156,14 +169,15 @@ int main() {
  * @warning This function can only be used BEFORE the XIP-mode is activated!
  * @note This function is blocking.
  *
+ * @param[in] base_addr Image base address (in flash).
  * @return Returns 0 if write was successful.
  **************************************************************************/
-int program_xip_flash(void) {
+int program_xip_flash(uint32_t base_addr) {
 
   int error = 0;
   uint32_t data_byte = 0;
   uint32_t cnt = 0;
-  uint32_t flash_addr = 0;
+  uint32_t flash_addr = base_addr;
   uint32_t tmp = 0;
 
   union {
@@ -216,4 +230,39 @@ int program_xip_flash(void) {
   }
 
   return error;
+}
+
+
+/**********************************************************************//**
+ * Helper function to dump 4-byte words from the XIP flash
+ *
+ * @param[in] base_addr Image base address (in flash).
+ * @param[in] num Number of 4-byte words to dump.
+ * @return Returns 0 if write was successful.
+ **************************************************************************/
+void dump_xip_flash(uint32_t base_addr, uint32_t num) {
+
+  uint32_t cnt = 0;
+  uint32_t flash_addr = base_addr;
+  uint32_t tmp = 0;
+
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
+  } data;
+
+  while (cnt < num) {
+
+    // read word
+    // 1 byte command, 2 bytes address, 4 bytes data
+    tmp = 0x03 << 24; // command: byte read
+    tmp |= (flash_addr & 0x0000FFFF) << 8; // address, 1st data dummy byte
+    data.uint32[0] = 0; // 3 data dummy bytes
+    data.uint32[1] = tmp;
+    neorv32_xip_spi_trans(7, &data.uint64);
+
+    neorv32_uart0_printf("[0x%x] 0x%x\n", flash_addr, data.uint32[0]);
+    flash_addr += 4;
+    cnt++;
+  }
 }
