@@ -49,36 +49,39 @@ entity neorv32_busswitch is
   );
   port (
     -- global control --
-    clk_i          : in  std_ulogic; -- global clock, rising edge
-    rstn_i         : in  std_ulogic; -- global reset, low-active, async
+    clk_i           : in  std_ulogic; -- global clock, rising edge
+    rstn_i          : in  std_ulogic; -- global reset, low-active, async
     -- controller interface a --
-    ca_bus_addr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    ca_bus_rdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    ca_bus_wdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    ca_bus_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
-    ca_bus_we_i    : in  std_ulogic; -- write enable
-    ca_bus_re_i    : in  std_ulogic; -- read enable
-    ca_bus_ack_o   : out std_ulogic; -- bus transfer acknowledge
-    ca_bus_err_o   : out std_ulogic; -- bus transfer error
+    ca_bus_cached_i : in  std_ulogic; -- set if cached transfer
+    ca_bus_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    ca_bus_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    ca_bus_wdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    ca_bus_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
+    ca_bus_we_i     : in  std_ulogic; -- write enable
+    ca_bus_re_i     : in  std_ulogic; -- read enable
+    ca_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
+    ca_bus_err_o    : out std_ulogic; -- bus transfer error
     -- controller interface b --
-    cb_bus_addr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    cb_bus_rdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    cb_bus_wdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    cb_bus_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
-    cb_bus_we_i    : in  std_ulogic; -- write enable
-    cb_bus_re_i    : in  std_ulogic; -- read enable
-    cb_bus_ack_o   : out std_ulogic; -- bus transfer acknowledge
-    cb_bus_err_o   : out std_ulogic; -- bus transfer error
+    cb_bus_cached_i : in  std_ulogic; -- set if cached transfer
+    cb_bus_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    cb_bus_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    cb_bus_wdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    cb_bus_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
+    cb_bus_we_i     : in  std_ulogic; -- write enable
+    cb_bus_re_i     : in  std_ulogic; -- read enable
+    cb_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
+    cb_bus_err_o    : out std_ulogic; -- bus transfer error
     -- peripheral bus --
-    p_bus_src_o    : out std_ulogic; -- access source: 0 = A, 1 = B
-    p_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    p_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    p_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    p_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-    p_bus_we_o     : out std_ulogic; -- write enable
-    p_bus_re_o     : out std_ulogic; -- read enable
-    p_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-    p_bus_err_i    : in  std_ulogic  -- bus transfer error
+    p_bus_cached_o  : out std_ulogic; -- set if cached transfer
+    p_bus_src_o     : out std_ulogic; -- access source: 0 = A, 1 = B
+    p_bus_addr_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    p_bus_rdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    p_bus_wdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    p_bus_ben_o     : out std_ulogic_vector(03 downto 0); -- byte enable
+    p_bus_we_o      : out std_ulogic; -- write enable
+    p_bus_re_o      : out std_ulogic; -- read enable
+    p_bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
+    p_bus_err_i     : in  std_ulogic  -- bus transfer error
   );
 end neorv32_busswitch;
 
@@ -216,6 +219,8 @@ begin
   p_bus_ben_o    <= cb_bus_ben_i when (PORT_CA_READ_ONLY = true) else
                     ca_bus_ben_i when (PORT_CB_READ_ONLY = true) else
                     ca_bus_ben_i when (arbiter.bus_sel = '0')    else cb_bus_ben_i;
+
+  p_bus_cached_o <= ca_bus_cached_i when (arbiter.bus_sel = '0') else cb_bus_cached_i;
 
   p_bus_we       <= ca_bus_we_i when (arbiter.bus_sel = '0') else cb_bus_we_i;
   p_bus_re       <= ca_bus_re_i when (arbiter.bus_sel = '0') else cb_bus_re_i;

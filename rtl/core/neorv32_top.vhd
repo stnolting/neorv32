@@ -282,28 +282,30 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- bus interface - instruction fetch --
   type bus_i_interface_t is record
-    addr  : std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    rdata : std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    re    : std_ulogic; -- read request
-    ack   : std_ulogic; -- bus transfer acknowledge
-    err   : std_ulogic; -- bus transfer error
-    fence : std_ulogic; -- fence.i instruction executed
-    src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
+    addr   : std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    re     : std_ulogic; -- read request
+    ack    : std_ulogic; -- bus transfer acknowledge
+    err    : std_ulogic; -- bus transfer error
+    fence  : std_ulogic; -- fence.i instruction executed
+    src    : std_ulogic; -- access source (1=instruction fetch, 0=data access)
+    cached : std_ulogic; -- cached transfer
   end record;
   signal cpu_i, i_cache : bus_i_interface_t;
 
   -- bus interface - data access --
   type bus_d_interface_t is record
-    addr  : std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    rdata : std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    wdata : std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    ben   : std_ulogic_vector(03 downto 0); -- byte enable
-    we    : std_ulogic; -- write request
-    re    : std_ulogic; -- read request
-    ack   : std_ulogic; -- bus transfer acknowledge
-    err   : std_ulogic; -- bus transfer error
-    fence : std_ulogic; -- fence instruction executed
-    src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
+    addr   : std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+    rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    wdata  : std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    ben    : std_ulogic_vector(03 downto 0); -- byte enable
+    we     : std_ulogic; -- write request
+    re     : std_ulogic; -- read request
+    ack    : std_ulogic; -- bus transfer acknowledge
+    err    : std_ulogic; -- bus transfer error
+    fence  : std_ulogic; -- fence instruction executed
+    src    : std_ulogic; -- access source (1=instruction fetch, 0=data access)
+    cached : std_ulogic; -- cached transfer
   end record;
   signal cpu_d, p_bus : bus_d_interface_t;
 
@@ -581,8 +583,10 @@ begin
   );
 
   -- misc --
-  cpu_i.src <= '1'; -- initialized but unused
-  cpu_d.src <= '0'; -- initialized but unused
+  cpu_i.src    <= '1'; -- initialized but unused
+  cpu_d.src    <= '0'; -- initialized but unused
+  cpu_i.cached <= '0'; -- initialized but unused
+  cpu_d.cached <= '0'; -- no data cache available yet
 
   -- advanced memory control --
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
@@ -620,32 +624,34 @@ begin
     )
     port map (
       -- global control --
-      clk_i        => clk_i,         -- global clock, rising edge
-      rstn_i       => rstn_int,      -- global reset, low-active, async
-      clear_i      => cpu_i.fence,   -- cache clear
-      miss_o       => open,          -- cache miss
+      clk_i        => clk_i,          -- global clock, rising edge
+      rstn_i       => rstn_int,       -- global reset, low-active, async
+      clear_i      => cpu_i.fence,    -- cache clear
+      miss_o       => open,           -- cache miss
       -- host controller interface --
-      host_addr_i  => cpu_i.addr,    -- bus access address
-      host_rdata_o => cpu_i.rdata,   -- bus read data
-      host_re_i    => cpu_i.re,      -- read enable
-      host_ack_o   => cpu_i.ack,     -- bus transfer acknowledge
-      host_err_o   => cpu_i.err,     -- bus transfer error
+      host_addr_i  => cpu_i.addr,     -- bus access address
+      host_rdata_o => cpu_i.rdata,    -- bus read data
+      host_re_i    => cpu_i.re,       -- read enable
+      host_ack_o   => cpu_i.ack,      -- bus transfer acknowledge
+      host_err_o   => cpu_i.err,      -- bus transfer error
       -- peripheral bus interface --
-      bus_addr_o   => i_cache.addr,  -- bus access address
-      bus_rdata_i  => i_cache.rdata, -- bus read data
-      bus_re_o     => i_cache.re,    -- read enable
-      bus_ack_i    => i_cache.ack,   -- bus transfer acknowledge
-      bus_err_i    => i_cache.err    -- bus transfer error
+      bus_cached_o => i_cache.cached, -- set if cached (!) access in progress
+      bus_addr_o   => i_cache.addr,   -- bus access address
+      bus_rdata_i  => i_cache.rdata,  -- bus read data
+      bus_re_o     => i_cache.re,     -- read enable
+      bus_ack_i    => i_cache.ack,    -- bus transfer acknowledge
+      bus_err_i    => i_cache.err     -- bus transfer error
     );
   end generate;
 
   neorv32_icache_inst_false:
   if (ICACHE_EN = false) generate
-    i_cache.addr <= cpu_i.addr;
-    cpu_i.rdata  <= i_cache.rdata;
-    i_cache.re   <= cpu_i.re;
-    cpu_i.ack    <= i_cache.ack;
-    cpu_i.err    <= i_cache.err;
+    i_cache.addr   <= cpu_i.addr;
+    cpu_i.rdata    <= i_cache.rdata;
+    i_cache.re     <= cpu_i.re;
+    cpu_i.ack      <= i_cache.ack;
+    cpu_i.err      <= i_cache.err;
+    i_cache.cached <= '0'; -- single transfer (uncached)
   end generate;
 
 
@@ -658,36 +664,39 @@ begin
   )
   port map (
     -- global control --
-    clk_i          => clk_i,         -- global clock, rising edge
-    rstn_i         => rstn_int,      -- global reset, low-active, async
+    clk_i           => clk_i,          -- global clock, rising edge
+    rstn_i          => rstn_int,       -- global reset, low-active, async
     -- controller interface a --
-    ca_bus_addr_i  => cpu_d.addr,    -- bus access address
-    ca_bus_rdata_o => cpu_d.rdata,   -- bus read data
-    ca_bus_wdata_i => cpu_d.wdata,   -- bus write data
-    ca_bus_ben_i   => cpu_d.ben,     -- byte enable
-    ca_bus_we_i    => cpu_d.we,      -- write enable
-    ca_bus_re_i    => cpu_d.re,      -- read enable
-    ca_bus_ack_o   => cpu_d.ack,     -- bus transfer acknowledge
-    ca_bus_err_o   => cpu_d.err,     -- bus transfer error
+    ca_bus_cached_i => cpu_d.cached,   -- set if cached transfer
+    ca_bus_addr_i   => cpu_d.addr,     -- bus access address
+    ca_bus_rdata_o  => cpu_d.rdata,    -- bus read data
+    ca_bus_wdata_i  => cpu_d.wdata,    -- bus write data
+    ca_bus_ben_i    => cpu_d.ben,      -- byte enable
+    ca_bus_we_i     => cpu_d.we,       -- write enable
+    ca_bus_re_i     => cpu_d.re,       -- read enable
+    ca_bus_ack_o    => cpu_d.ack,      -- bus transfer acknowledge
+    ca_bus_err_o    => cpu_d.err,      -- bus transfer error
     -- controller interface b --
-    cb_bus_addr_i  => i_cache.addr,  -- bus access address
-    cb_bus_rdata_o => i_cache.rdata, -- bus read data
-    cb_bus_wdata_i => (others => '0'),
-    cb_bus_ben_i   => (others => '0'),
-    cb_bus_we_i    => '0',
-    cb_bus_re_i    => i_cache.re,    -- read enable
-    cb_bus_ack_o   => i_cache.ack,   -- bus transfer acknowledge
-    cb_bus_err_o   => i_cache.err,   -- bus transfer error
+    cb_bus_cached_i => i_cache.cached, -- set if cached transfer
+    cb_bus_addr_i   => i_cache.addr,   -- bus access address
+    cb_bus_rdata_o  => i_cache.rdata,  -- bus read data
+    cb_bus_wdata_i  => (others => '0'),
+    cb_bus_ben_i    => (others => '0'),
+    cb_bus_we_i     => '0',
+    cb_bus_re_i     => i_cache.re,     -- read enable
+    cb_bus_ack_o    => i_cache.ack,    -- bus transfer acknowledge
+    cb_bus_err_o    => i_cache.err,    -- bus transfer error
     -- peripheral bus --
-    p_bus_src_o    => p_bus.src,     -- access source: 0 = A (data), 1 = B (instructions)
-    p_bus_addr_o   => p_bus.addr,    -- bus access address
-    p_bus_rdata_i  => p_bus.rdata,   -- bus read data
-    p_bus_wdata_o  => p_bus.wdata,   -- bus write data
-    p_bus_ben_o    => p_bus.ben,     -- byte enable
-    p_bus_we_o     => p_bus.we,      -- write enable
-    p_bus_re_o     => p_bus.re,      -- read enable
-    p_bus_ack_i    => p_bus.ack,     -- bus transfer acknowledge
-    p_bus_err_i    => bus_error      -- bus transfer error
+    p_bus_cached_o  => p_bus.cached,   -- set if cached transfer
+    p_bus_src_o     => p_bus.src,      -- access source: 0 = A (data), 1 = B (instructions)
+    p_bus_addr_o    => p_bus.addr,     -- bus access address
+    p_bus_rdata_i   => p_bus.rdata,    -- bus read data
+    p_bus_wdata_o   => p_bus.wdata,    -- bus write data
+    p_bus_ben_o     => p_bus.ben,      -- byte enable
+    p_bus_we_o      => p_bus.we,       -- write enable
+    p_bus_re_o      => p_bus.re,       -- read enable
+    p_bus_ack_i     => p_bus.ack,      -- bus transfer acknowledge
+    p_bus_err_i     => bus_error       -- bus transfer error
   );
 
   -- any fence operation? --

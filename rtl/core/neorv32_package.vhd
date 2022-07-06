@@ -68,7 +68,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070303"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070304"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1501,6 +1501,7 @@ package neorv32_package is
       host_ack_o   : out std_ulogic; -- bus transfer acknowledge
       host_err_o   : out std_ulogic; -- bus transfer error
       -- peripheral bus interface --
+      bus_cached_o : out std_ulogic; -- set if cached (!) access in progress
       bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
       bus_re_o     : out std_ulogic; -- read enable
@@ -1518,36 +1519,39 @@ package neorv32_package is
     );
     port (
       -- global control --
-      clk_i         : in  std_ulogic; -- global clock, rising edge
-      rstn_i        : in  std_ulogic; -- global reset, low-active, async
+      clk_i           : in  std_ulogic; -- global clock, rising edge
+      rstn_i          : in  std_ulogic; -- global reset, low-active, async
       -- controller interface a --
-      ca_bus_addr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-      ca_bus_rdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-      ca_bus_wdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-      ca_bus_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
-      ca_bus_we_i    : in  std_ulogic; -- write enable
-      ca_bus_re_i    : in  std_ulogic; -- read enable
-      ca_bus_ack_o   : out std_ulogic; -- bus transfer acknowledge
-      ca_bus_err_o   : out std_ulogic; -- bus transfer error
+      ca_bus_cached_i : in  std_ulogic; -- set if cached transfer
+      ca_bus_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+      ca_bus_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      ca_bus_wdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+      ca_bus_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
+      ca_bus_we_i     : in  std_ulogic; -- write enable
+      ca_bus_re_i     : in  std_ulogic; -- read enable
+      ca_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
+      ca_bus_err_o    : out std_ulogic; -- bus transfer error
       -- controller interface b --
-      cb_bus_addr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-      cb_bus_rdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-      cb_bus_wdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-      cb_bus_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
-      cb_bus_we_i    : in  std_ulogic; -- write enable
-      cb_bus_re_i    : in  std_ulogic; -- read enable
-      cb_bus_ack_o   : out std_ulogic; -- bus transfer acknowledge
-      cb_bus_err_o   : out std_ulogic; -- bus transfer error
+      cb_bus_cached_i : in  std_ulogic; -- set if cached transfer
+      cb_bus_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+      cb_bus_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      cb_bus_wdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+      cb_bus_ben_i    : in  std_ulogic_vector(03 downto 0); -- byte enable
+      cb_bus_we_i     : in  std_ulogic; -- write enable
+      cb_bus_re_i     : in  std_ulogic; -- read enable
+      cb_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
+      cb_bus_err_o    : out std_ulogic; -- bus transfer error
       -- peripheral bus --
-      p_bus_src_o    : out std_ulogic; -- access source: 0 = A, 1 = B
-      p_bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-      p_bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-      p_bus_wdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-      p_bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
-      p_bus_we_o     : out std_ulogic; -- write enable
-      p_bus_re_o     : out std_ulogic; -- read enable
-      p_bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
-      p_bus_err_i    : in  std_ulogic  -- bus transfer error
+      p_bus_cached_o  : out std_ulogic; -- set if cached transfer
+      p_bus_src_o     : out std_ulogic; -- access source: 0 = A, 1 = B
+      p_bus_addr_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
+      p_bus_rdata_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+      p_bus_wdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+      p_bus_ben_o     : out std_ulogic_vector(03 downto 0); -- byte enable
+      p_bus_we_o      : out std_ulogic; -- write enable
+      p_bus_re_o      : out std_ulogic; -- read enable
+      p_bus_ack_i     : in  std_ulogic; -- bus transfer acknowledge
+      p_bus_err_i     : in  std_ulogic  -- bus transfer error
     );
   end component;
 
@@ -2008,32 +2012,32 @@ package neorv32_package is
   component neorv32_xip
     port (
       -- globals --
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active
+      clk_i        : in  std_ulogic; -- global clock line
+      rstn_i       : in  std_ulogic; -- global reset line, low-active
       -- host access: control register access port --
-      ct_addr_i   : in  std_ulogic_vector(31 downto 0); -- address
-      ct_rden_i   : in  std_ulogic; -- read enable
-      ct_wren_i   : in  std_ulogic; -- write enable
-      ct_data_i   : in  std_ulogic_vector(31 downto 0); -- data in
-      ct_data_o   : out std_ulogic_vector(31 downto 0); -- data out
-      ct_ack_o    : out std_ulogic; -- transfer acknowledge
+      ct_addr_i    : in  std_ulogic_vector(31 downto 0); -- address
+      ct_rden_i    : in  std_ulogic; -- read enable
+      ct_wren_i    : in  std_ulogic; -- write enable
+      ct_data_i    : in  std_ulogic_vector(31 downto 0); -- data in
+      ct_data_o    : out std_ulogic_vector(31 downto 0); -- data out
+      ct_ack_o     : out std_ulogic; -- transfer acknowledge
       -- host access: transparent SPI access port (read-only) --
-      acc_addr_i  : in  std_ulogic_vector(31 downto 0); -- address
-      acc_rden_i  : in  std_ulogic; -- read enable
-      acc_data_o  : out std_ulogic_vector(31 downto 0); -- data out
-      acc_ack_o   : out std_ulogic; -- transfer acknowledge
+      acc_addr_i   : in  std_ulogic_vector(31 downto 0); -- address
+      acc_rden_i   : in  std_ulogic; -- read enable
+      acc_data_o   : out std_ulogic_vector(31 downto 0); -- data out
+      acc_ack_o    : out std_ulogic; -- transfer acknowledge
       -- status --
-      xip_en_o    : out std_ulogic; -- XIP enable
-      xip_acc_o   : out std_ulogic; -- pending XIP access
-      xip_page_o  : out std_ulogic_vector(03 downto 0); -- XIP page
+      xip_en_o     : out std_ulogic; -- XIP enable
+      xip_acc_o    : out std_ulogic; -- pending XIP access
+      xip_page_o   : out std_ulogic_vector(03 downto 0); -- XIP page
       -- clock generator --
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(07 downto 0);
+      clkgen_en_o  : out std_ulogic; -- enable clock generator
+      clkgen_i     : in  std_ulogic_vector(07 downto 0);
       -- SPI device interface --
-      spi_csn_o   : out std_ulogic; -- chip-select, low-active
-      spi_clk_o   : out std_ulogic; -- serial clock
-      spi_data_i  : in  std_ulogic; -- device data output
-      spi_data_o  : out std_ulogic  -- controller data output
+      spi_csn_o    : out std_ulogic; -- chip-select, low-active
+      spi_clk_o    : out std_ulogic; -- serial clock
+      spi_data_i   : in  std_ulogic; -- device data output
+      spi_data_o   : out std_ulogic  -- controller data output
     );
   end component;
 
