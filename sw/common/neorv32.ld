@@ -75,9 +75,9 @@ MEMORY
 SECTIONS
 {
 
-  /* default heap size: we can use up to 1/4 of available data memory (RAM) by default
+  /* set heap size (for dynamic memory allocation) only if explicitly defined
    * WARNING! the heap will collide with the stack if allocating too much memory! */
-  __heap_size = DEFINED(__heap_size) ? __heap_size : LENGTH(ram) / 4;
+  __heap_size = DEFINED(__heap_size) ? __heap_size : 0;
 
 
   /* First part of the actual executable file: actual instructions */
@@ -292,6 +292,7 @@ SECTIONS
 
 
   /* Export symbols for neorv32 crt0 start-up code */
+  PROVIDE(__crt0_max_heap            = __heap_size);
   PROVIDE(__crt0_imem_begin          = ORIGIN(rom));
   PROVIDE(__crt0_dmem_begin          = ORIGIN(ram));
   PROVIDE(__crt0_stack_begin         = (ORIGIN(ram) + LENGTH(ram)) - 4);

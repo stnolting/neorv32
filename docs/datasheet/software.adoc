@@ -372,8 +372,10 @@ grows upwards. This section is not initialized at all.
 There is _no explicit limit_ for the maximum stack size as this is hard to check. However, a physical memory protection rule could
 be used to configure a maximum size by adding a "protection area" between stack and heap (a PMP region without any access rights).
 
-The maximum size of the heap is defined by the linker script's `__heap_size` symbol. This symbol can be overridden at any time.
-By default, the maximum heap size is 1/4 of the total RAM size.
+.Heap Size
+[IMPORTANT]
+The maximum size of the heap is defined by the linker script's `__heap_size` symbol. This symbol has to be **explicitly defined** in order
+to define a heap size (and to use dynamic memory allocation at all). By default, the heap size is set to zero.
 
 .Heap-Stack Collisions
 [WARNING]
