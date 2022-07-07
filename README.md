@@ -66,7 +66,7 @@ setting up your NEORV32 setup!
 - [x] extensive configuration options for adapting the processor to the requirements of the application
 - [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, processor and system level
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
-- [x] optimized for high clock frequencies to ease timing closure
+- [x] optimized for high clock frequencies to ease integration and timing closure
 - [x] from zero to _"hello world!"_ - completely open source and documented
 - [x] easy to use even for FPGA / RISC-V starters – intended to **work out of the box**
 
