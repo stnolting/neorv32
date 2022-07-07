@@ -391,9 +391,9 @@ hart's GPRs (abstract command register index `0x1000` - `0x101f`).
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [RISC-V]        | R/W | Description
-| 17    | `autoexecprogbuf[1]` | r/w | when set reading/writing from/to `progbuf1` will execute `command again`
-| 16    | `autoexecprogbuf[0]` | r/w | when set reading/writing from/to `progbuf0` will execute `command again`
-|  0    | `autoexecdata[0]`    | r/w | when set reading/writing from/to `data0` will execute `command again`
+| 17    | `autoexecprogbuf[1]` | r/w | when set reading/writing from/to `progbuf1` will execute `command` again
+| 16    | `autoexecprogbuf[0]` | r/w | when set reading/writing from/to `progbuf0` will execute `command` again
+|  0    | `autoexecdata[0]`    | r/w | when set reading/writing from/to `data0` will execute `command` again
 |=======================
 
 
