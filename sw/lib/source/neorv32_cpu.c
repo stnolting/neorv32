@@ -312,6 +312,37 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
 
 
 /**********************************************************************//**
+ * Get actual clocking frequency from prescaler select #NEORV32_CLOCK_PRSC_enum
+ *
+ * @param[in] prsc Prescaler select #NEORV32_CLOCK_PRSC_enum.
+ * return Actual _raw_ clock frequency in Hz.
+ **************************************************************************/
+uint32_t neorv32_cpu_get_clk_from_prsc(int prsc) {
+
+  if ((prsc < CLK_PRSC_2) || (prsc > CLK_PRSC_4096)) { // out of range?
+    return 0;
+  }
+
+  uint32_t res = 0;
+  uint32_t clock = NEORV32_SYSINFO.CLK; // SoC main clock in Hz
+
+  switch(prsc & 7) {
+    case CLK_PRSC_2    : res = clock/2    ; break;
+    case CLK_PRSC_4    : res = clock/4    ; break;
+    case CLK_PRSC_8    : res = clock/8    ; break;
+    case CLK_PRSC_64   : res = clock/64   ; break;
+    case CLK_PRSC_128  : res = clock/128  ; break;
+    case CLK_PRSC_1024 : res = clock/1024 ; break;
+    case CLK_PRSC_2048 : res = clock/2048 ; break;
+    case CLK_PRSC_4096 : res = clock/4096 ; break;
+    default: break;
+  }
+  
+  return res;
+}
+
+
+/**********************************************************************//**
  * Physical memory protection (PMP): Get number of available regions.
  *
  * @warning This function overrides all available PMPCFG* CSRs!
