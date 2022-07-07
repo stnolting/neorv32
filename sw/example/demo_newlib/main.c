@@ -53,6 +53,12 @@
 
 
 /**********************************************************************//**
+ * @name Max heap size (from linker script)
+ **************************************************************************/
+extern const unsigned __crt0_max_heap;
+
+
+/**********************************************************************//**
  * Main function: Check some of newlib's core functions.
  *
  * @note This program requires UART0.
@@ -78,6 +84,15 @@ int main() {
   // say hello
   neorv32_uart0_printf("<<< Newlib demo/test program >>>\n\n");
 
+  // heap size definition
+  volatile uint32_t max_heap = (uint32_t)&__crt0_max_heap;
+  if (max_heap > 0){
+    neorv32_uart0_printf("MAX heap size: %u bytes\n", max_heap);
+  }
+  else {
+    neorv32_uart0_printf("ERROR! No heap size defined (linker script -> '__heap_size')!\n");
+    return -1;
+  }
 
   // check if newlib is really available
 #ifndef __NEWLIB__
@@ -90,14 +105,12 @@ int main() {
   neorv32_uart0_printf("<rand> test... ");
   srand(neorv32_cpu_csr_read(CSR_CYCLE)); // set random seed
   neorv32_uart0_printf("%i, %i, %i, %i ", rand() % 100, rand() % 100, rand() % 100, rand() % 100);
-  neorv32_uart0_printf("ok\n");
 
 
   char *char_buffer; // pointer for dynamic memory allocation
 
-  neorv32_uart0_printf("<malloc> test... ");
+  neorv32_uart0_printf("<malloc> test...\n");
   char_buffer = (char *) malloc(4 * sizeof(char)); // 4 bytes
-  neorv32_uart0_printf("ok\n");
 
   // do not test read & write in simulation as there would be no UART RX input
   if (NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IS_SIM)) {
@@ -117,9 +130,8 @@ int main() {
     neorv32_uart0_printf("\nok\n");
   }
 
-  neorv32_uart0_printf("<free> test... ");
+  neorv32_uart0_printf("<free> test...\n");
   free(char_buffer);
-  neorv32_uart0_printf("ok\n");
 
 
   // NOTE: exit is highly oversized as it also includes clean-up functions (destructors), which
