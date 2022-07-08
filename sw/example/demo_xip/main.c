@@ -75,6 +75,7 @@ enum SPI_FLASH_CMD {
 int erase_sector_xip_flash(uint32_t base_addr);
 int program_xip_flash(uint32_t *src, uint32_t base_addr, uint32_t size);
 void dump_xip_flash(uint32_t base_addr, uint32_t num);
+uint32_t byte_swap32(uint32_t data);
 
 
 /**********************************************************************//**
@@ -387,7 +388,7 @@ int main() {
 
   // warning if i-cache is not implemented
   if ((NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_ICACHE)) == 0) {
-    neorv32_uart0_printf("WARNING! No instruction cache implemented. The XIP program will run awfully slow...\n");
+    neorv32_uart0_printf("WARNING! No instruction cache implemented! The XIP program might run very slow...\n");
   }
 
 
@@ -413,8 +414,6 @@ int main() {
     return 1;
   }
 
-  neorv32_cpu_delay_ms(1000);
-
   neorv32_uart0_printf("Programming XIP flash (%u bytes)...\n", (uint32_t)sizeof(xip_program));
   if (program_xip_flash((uint32_t*)&xip_program, FLASH_BASE, (uint32_t)sizeof(xip_program))) {
     neorv32_uart0_printf("Error! XIP flash programming error!\n");
@@ -427,9 +426,15 @@ int main() {
   dump_xip_flash(FLASH_BASE, sizeof(xip_program)/4);
 
 
+  // Most SPI flash memories support "incremental read" operations - the read command and the start address
+  // is only transferred once and after that consecutive data is sampled with each new transferred byte.
+  // This can be sued by the XIP burst mode, which accelerates data fetch by up to 50%.
+  neorv32_xip_burst_mode_enable(); // this has to be called right before starting the XIP mode by neorv32_xip_start()
+
+
   // configure and enable the actual XIP mode
   // * configure FLASH_ABYTES address bytes send to the SPI flash for addressing
-  // * map the XIP flash to the address space starting at 0x20000000
+  // * map the XIP flash to the address space starting at 0x20000000 - only the 4 MSBs are relevant here
   if (neorv32_xip_start(FLASH_ABYTES, 0x20000000)) {
     neorv32_uart0_printf("Error! XIP mode configuration error!\n");
     return 1;
@@ -497,7 +502,7 @@ int erase_sector_xip_flash(uint32_t base_addr) {
  * Helper function to program the XIP flash via the direct SPI feature of the XIP module.
  *
  * @warning This function can only be used BEFORE the XIP-mode is activated!
- * @note This function is blocking and performs individual writes for each byte.
+ * @note This function is blocking and performs individual writes for each byte (little-endian byte order!).
  *
  * @param[in] src Pointer to data that will be copied to flash (32-bit).
  * @param[in] base_addr Image base address (in flash).
@@ -521,7 +526,7 @@ int program_xip_flash(uint32_t *src, uint32_t base_addr, uint32_t size) {
 
     // get data byte
     data_byte = src[cnt/4];
-    data_byte >>= (3-(cnt & 3)) * 8;
+    data_byte >>= (cnt & 3) * 8; // little-endian byte order!
     data_byte &= 0x000000FF;
 
     // set write-enable latch
@@ -594,11 +599,39 @@ void dump_xip_flash(uint32_t base_addr, uint32_t num) {
     if (FLASH_ABYTES == 2) { tmp |= (flash_addr & 0x0000FFFF) <<  8; } // address
     if (FLASH_ABYTES == 3) { tmp |= (flash_addr & 0x00FFFFFF) <<  0; } // address
     data.uint32[1] = tmp;
-    data.uint32[0] = 0; // data dummy bytes
+    data.uint32[0] = 0; // data dummy bytes, read data is always LSB-aligned
     neorv32_xip_spi_trans(5 + FLASH_ABYTES, &data.uint64);
+
+    // the direct SPI mode returns data in incrementing byte order so we need to convert endianness here
+    // to show the "correct" instruction layout as in 'xip_program'
+    data.uint32[0] = byte_swap32(data.uint32[0]); // convert byte order
 
     neorv32_uart0_printf("[0x%x] 0x%x\n", flash_addr, data.uint32[0]);
     flash_addr += 4;
     cnt++;
   }
+}
+
+
+/**********************************************************************//**
+ * Byte swap for endianness conversion.
+ *
+ * @param[in] data 32-bit input byte.
+ * @return 32-bit output data with swapped bytes.
+ **************************************************************************/
+uint32_t byte_swap32(uint32_t data) {
+
+  union {
+    uint32_t uint32;
+    uint8_t  uint8[sizeof(uint32_t)];
+  } tmp, res;
+
+  tmp.uint32 = data;
+
+  res.uint8[0] = tmp.uint8[3];
+  res.uint8[1] = tmp.uint8[2];
+  res.uint8[2] = tmp.uint8[1];
+  res.uint8[3] = tmp.uint8[0];
+
+  return res.uint32;
 }
