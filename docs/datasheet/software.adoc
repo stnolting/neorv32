@@ -154,17 +154,18 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
  help         - show this text
  check        - check toolchain
  info         - show makefile/toolchain configuration
- exe          - compile and generate <neorv32_exe.bin> executable for upload via bootloader
- hex          - compile and generate <neorv32_exe.hex> executable raw file
- image        - compile and generate VHDL IMEM boot image (for application) in local folder
- install      - compile, generate and install VHDL IMEM boot image (for application)
+ exe          - compile and generate <neorv32_exe.bin> executable for upload via default bootloader (binary file, with header)
+ bin          - compile and generate <neorv32_raw_exe.bin> RAW executable file (hex char file, no header)
+ hex          - compile and generate <neorv32_raw_exe.hex> RAW executable file (binary file, no header)
+ image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder
+ install      - compile, generate and install VHDL IMEM boot image (for application, no header)
  sim          - in-console simulation using default/simple testbench and GHDL
- all          - exe + hex + install
+ all          - exe + install + hex + bin
  elf_info     - show ELF layout info
  clean        - clean up project home folder
  clean_all    - clean up whole project, core libraries and image generator
- bl_image     - compile and generate VHDL BOOTROM boot image (for bootloader only!) in local folder
- bootloader   - compile, generate and install VHDL BOOTROM boot image (for bootloader only!)
+ bl_image     - compile and generate VHDL BOOTROM boot image (for bootloader only, no header) in local folder
+ bootloader   - compile, generate and install VHDL BOOTROM boot image (for bootloader only, no header)
 
 == Variables ==
  USER_FLAGS   - Custom toolchain flags [append only], default ""
@@ -420,29 +421,33 @@ is available in `sw/example/demo_newlib`
 ==== Executable Image Generator
 
 The `main.bin` file is packed by the NEORV32 image generator (`sw/image_gen`) to generate the final executable file.
-
-[NOTE]
-The sources of the image generator are automatically compiled when invoking the makefile.
-
-The image generator can generate three types of executables, selected by a flag when calling the generator:
+The image generator can generate several types of executables selected by a flag when calling the generator:
 
 [cols="<1,<9"]
 [grid="none"]
 |=======================
-| `-app_bin` | Generates an executable binary file `neorv32_exe.bin` (for UART uploading via the bootloader).
-| `-app_hex` | Generates a plain ASCII hex-char file `neorv32_exe.hex` that can be used to initialize custom (instruction-) memories (in synthesis/simulation).
-| `-app_img` | Generates an executable VHDL memory initialization image for the processor-internal IMEM. This option generates the `rtl/core/neorv32_application_image.vhd` file.
-| `-bld_img` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM. This option generates the `rtl/core/neorv32_bootloader_image.vhd` file.
+| `-app_bin` | Generates an executable binary file `neorv32_exe.bin` (including header) for UART uploading via the bootloader.
+| `-app_img` | Generates an executable VHDL memory initialization image (no header) for the processor-internal IMEM. This option generates the `rtl/core/neorv32_application_image.vhd` file.
+| `-raw_hex` | Generates a plain ASCII hex-char file `neorv32_raw_exe.hex` (no header) for custom purpose.
+| `-raw_bin` | Generates a plain binary file `neorv32_raw_exe.bin` (no header) for custom purpose.
+| `-bld_img` | Generates an executable VHDL memory initialization image (no header) for the processor-internal BOOT ROM. This option generates the `rtl/core/neorv32_bootloader_image.vhd` file.
 |=======================
 
-All these options are managed by the makefile. The _normal application_ compilation flow will generate the `neorv32_exe.bin`
-executable to be upload via UART to the NEORV32 bootloader.
+All these options are managed by the makefile. The "normal application2 compilation flow will generate the `neorv32_exe.bin`
+executable for uploading via UART to the default NEORV32 bootloader.
 
+.Image Generator Compilation
+[NOTE]
+The sources of the image generator are automatically compiled when invoking the makefile (requiring a native GCC installation).
+
+.Executable Header
+[NOTE]
 The image generator add a small header to the `neorv32_exe.bin` executable, which consists of three 32-bit words located right at the
 beginning of the file. The first word of the executable is the signature word and is always `0x4788cafe`. Based on this word the bootloader
 can identify a valid image file. The next word represents the size in bytes of the actual program
 image in bytes. A simple "complement" checksum of the actual program image is given by the third word. This
-provides a simple protection against data transmission or storage errors.
+provides a simple protection against data transmission or storage errors. **Note that this executable format cannot be used for _direct_
+execution (e.g. via XIP or direct memory access).**
 
 
 :sectnums:
