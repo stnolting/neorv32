@@ -46,18 +46,11 @@
  *
  * @note This program requires the GPIO controller to be synthesized.
  *
- * @return -1 if error.
+ * @return Will never return.
  **************************************************************************/
 int main() {
 
-  // capture all exceptions and give debug info via UART0 (if available)
-  // this is not required, but keeps us safe
-  neorv32_rte_setup();
-
-  // check if GPIO unit is implemented at all
-  if (neorv32_gpio_available() == 0) {
-    return 1; // abort, no GPIO unit synthesized
-  }
+  // This is a *minimal* example program.
 
   // clear GPIO output (set all bits to 0)
   neorv32_gpio_port_set(0);
@@ -66,7 +59,9 @@ int main() {
 
   while (1) {
     neorv32_gpio_port_set(cnt++ & 0xFF); // increment counter and mask for lowest 8 bit
-    neorv32_cpu_delay_ms(200); // wait 200ms using busy wait
+    neorv32_cpu_delay_ms(256); // wait 256ms using busy wait
   }
+
+  // this should never be reached
   return 0;
 }
