@@ -49,8 +49,9 @@ int main(int argc, char *argv[]) {
            "Three arguments are required.\n"
            "1st: Option\n"
            " -app_bin : Generate application executable binary (binary file, little-endian, with header) \n"
-           " -app_hex : Generate application raw executable (ASCII hex file, no header)\n"
            " -app_img : Generate application raw executable memory image (vhdl package body file, no header)\n"
+           " -raw_hex : Generate application raw executable (ASCII hex file, no header)\n"
+           " -raw_bin : Generate application raw executable (binary file, no header)\n"
            " -bld_img : Generate bootloader raw executable memory image (vhdl package body file, no header)\n"
            "2nd: Input file (raw binary image)\n"
            "3rd: Output file\n"
@@ -72,8 +73,10 @@ int main(int argc, char *argv[]) {
     option = 2;
   else if (strcmp(argv[1], "-bld_img") == 0)
     option = 3;
-  else if (strcmp(argv[1], "-app_hex") == 0)
+  else if (strcmp(argv[1], "-raw_hex") == 0)
     option = 4;
+  else if (strcmp(argv[1], "-raw_bin") == 0)
+    option = 5;
   else {
     printf("Invalid option!");
     return 1;
@@ -350,7 +353,7 @@ int main(int argc, char *argv[]) {
 
 
 // ------------------------------------------------------------
-// Generate APPLICATION's executable ASCII hex file (no header!!!)
+// Generate raw APPLICATION's executable ASCII hex file (no header!!!)
 // ------------------------------------------------------------
   if (option == 4) {
 
@@ -359,7 +362,6 @@ int main(int argc, char *argv[]) {
     buffer[1] = 0;
     buffer[2] = 0;
     buffer[3] = 0;
-    i = 0;
 
     while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
       tmp  = (uint32_t)(buffer[0] << 0);
@@ -370,6 +372,35 @@ int main(int argc, char *argv[]) {
       fputs(tmp_string, output);
     }
   }
+
+
+// ------------------------------------------------------------
+// Generate raw APPLICATION's executable binary file (no header!!!)
+// ------------------------------------------------------------
+  if (option == 5) {
+
+    // data
+    buffer[0] = 0;
+    buffer[1] = 0;
+    buffer[2] = 0;
+    buffer[3] = 0;
+
+    while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
+      tmp  = (uint32_t)(buffer[0] << 0);
+      tmp |= (uint32_t)(buffer[1] << 8);
+      tmp |= (uint32_t)(buffer[2] << 16);
+      tmp |= (uint32_t)(buffer[3] << 24);
+      fputc(buffer[0], output);
+      fputc(buffer[1], output);
+      fputc(buffer[2], output);
+      fputc(buffer[3], output);
+    }
+  }
+
+
+// ------------------------------------------------------------
+// Done, clean up
+// ------------------------------------------------------------
 
   fclose(input);
   fclose(output);
