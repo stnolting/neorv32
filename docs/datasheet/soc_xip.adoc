@@ -34,11 +34,18 @@ Note that this interface is read-only. Any write access will raise a bus error e
 The second interface is mapped to the processor's IO space and allows data accesses to the XIP module's
 configuration registers.
 
+.Example Program
 [TIP]
 An example program for the XIP module is available in `sw/example/demo_xip`.
 
+.Compiling a Program for XIP Execution
 [NOTE]
-Quad-SPI (QSPI) support, which is about 4x times faster, is planned for the future. 😉
+If you want to compile a program that shall be executed using the XIP module, the default NEORV32 linker script
+(`sw/common/neorv32.ld`) has to be modified: the `ORIGIN` attribute of the `rom` section needs to be adapted to
+the XIP page base address and the flash base address. For example if the XIP page is set to `0x20000000` and the
+executable is placed in the flash as offset `0x00400000` the `ORIGIN` attribute has to be set to the sum of both
+address offsets (`0x20000000 + 0x00400000 = 0x20400000` -> `rom  (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x20400000`).
+See sections <<_linker_script>>, <<_application_makefile>> and <<_executable_image_generator>> for more information.
 
 
 **SPI Protocol**
