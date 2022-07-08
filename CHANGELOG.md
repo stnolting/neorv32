@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:----------:|:-------:|:--------|
+| 08.07.2022 | 1.7.3.5 | Update "raw" executable generation options of makefile and image generator; [#360](https://github.com/stnolting/neorv32/pull/360) |
 | 05.07.2022 | 1.7.3.4 | add "infrastructure" for cached (burst) bus accesses; [#359](https://github.com/stnolting/neorv32/pull/359) |
 | 01.07.2022 | 1.7.3.3 | minor rtl cleanups; [#357](https://github.com/stnolting/neorv32/pull/357) |
 | 29.06.2022 | 1.7.3.2 | :test_tube: add experimental core complex wrapper for integration into the [**LiteX**](https://github.com/enjoy-digital/litex) SoC builder framework; [#353](https://github.com/stnolting/neorv32/pull/353) |
