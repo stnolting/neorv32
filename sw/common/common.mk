@@ -90,7 +90,8 @@ LD_SCRIPT = $(NEORV32_COM_PATH)/neorv32.ld
 
 # Main output files
 APP_EXE  = neorv32_exe.bin
-APP_HEX  = neorv32_exe.hex
+APP_HEX  = neorv32_raw_exe.hex
+APP_BIN  = neorv32_raw_exe.bin
 APP_ASM  = main.asm
 APP_IMG  = neorv32_application_image.vhd
 BOOT_IMG = neorv32_bootloader_image.vhd
@@ -139,10 +140,11 @@ CC_OPTS += $(USER_FLAGS)
 # 'compile' is still here for compatibility
 exe:     $(APP_ASM) $(APP_EXE)
 hex:     $(APP_ASM) $(APP_HEX)
+bin:     $(APP_ASM) $(APP_BIN)
 compile: $(APP_ASM) $(APP_EXE)
 image:   $(APP_ASM) $(APP_IMG)
 install: image install-$(APP_IMG)
-all:     $(APP_ASM) $(APP_EXE) $(APP_IMG) $(APP_HEX) install
+all:     $(APP_ASM) $(APP_EXE) $(APP_IMG) install
 
 # Check if making bootloader
 # Use different base address and length for instruction memory/"rom" (BOOTROM instead of IMEM)
@@ -199,7 +201,7 @@ main.bin: main.elf $(APP_ASM)
 
 
 # -----------------------------------------------------------------------------
-# Application targets: Generate binary executable, install (as VHDL file)
+# Application targets: Generate executable formats
 # -----------------------------------------------------------------------------
 # Generate NEORV32 executable image for upload via bootloader
 $(APP_EXE): main.bin $(IMAGE_GEN)
@@ -213,15 +215,21 @@ $(APP_IMG): main.bin $(IMAGE_GEN)
 	@set -e
 	@$(IMAGE_GEN) -app_img $< $@ $(shell basename $(CURDIR))
 
+# Install VHDL memory initialization file
 install-$(APP_IMG): $(APP_IMG)	
 	@set -e
 	@echo "Installing application image to $(NEORV32_RTL_PATH)/$(APP_IMG)"
 	@cp $(APP_IMG) $(NEORV32_RTL_PATH)/.
 
-# Generate NEORV32 executable image in plain hex format
+# Generate NEORV32 RAW executable image in plain hex format
 $(APP_HEX): main.bin $(IMAGE_GEN)
 	@set -e
-	@$(IMAGE_GEN) -app_hex $< $@ $(shell basename $(CURDIR))
+	@$(IMAGE_GEN) -raw_hex $< $@ $(shell basename $(CURDIR))
+
+# Generate NEORV32 RAW executable image in binary format
+$(APP_BIN): main.bin $(IMAGE_GEN)
+	@set -e
+	@$(IMAGE_GEN) -raw_bin $< $@ $(shell basename $(CURDIR))
 
 
 # -----------------------------------------------------------------------------
@@ -337,17 +345,18 @@ help:
 	@echo " help         - show this text"
 	@echo " check        - check toolchain"
 	@echo " info         - show makefile/toolchain configuration"
-	@echo " exe          - compile and generate <neorv32_exe.bin> executable for upload via bootloader"
-	@echo " hex          - compile and generate <neorv32_exe.hex> executable raw file"
-	@echo " image        - compile and generate VHDL IMEM boot image (for application) in local folder"
-	@echo " install      - compile, generate and install VHDL IMEM boot image (for application)"
+	@echo " exe          - compile and generate <neorv32_exe.bin> executable for upload via default bootloader (binary file, with header)"
+	@echo " bin          - compile and generate <neorv32_raw_exe.bin> RAW executable file (hex char file, no header)"
+	@echo " hex          - compile and generate <neorv32_raw_exe.hex> RAW executable file (binary file, no header)"
+	@echo " image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder"
+	@echo " install      - compile, generate and install VHDL IMEM boot image (for application, no header)"
 	@echo " sim          - in-console simulation using default/simple testbench and GHDL"
-	@echo " all          - exe + hex + install"
+	@echo " all          - exe + install"
 	@echo " elf_info     - show ELF layout info"
 	@echo " clean        - clean up project home folder"
 	@echo " clean_all    - clean up whole project, core libraries and image generator"
-	@echo " bl_image     - compile and generate VHDL BOOTROM boot image (for bootloader only!) in local folder"
-	@echo " bootloader   - compile, generate and install VHDL BOOTROM boot image (for bootloader only!)"
+	@echo " bl_image     - compile and generate VHDL BOOTROM boot image (for bootloader only, no header) in local folder"
+	@echo " bootloader   - compile, generate and install VHDL BOOTROM boot image (for bootloader only, no header)"
 	@echo ""
 	@echo "== Variables =="
 	@echo " USER_FLAGS   - Custom toolchain flags [append only], default \"$(USER_FLAGS)\""
