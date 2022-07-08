@@ -362,7 +362,7 @@ begin
       when S_BUSY => -- wait for PHY to complete operation
       -- ------------------------------------------------------------
         if (phy_if.busy = '0') then
-          acc_data_o        <= phy_if.rdata;
+          acc_data_o        <= bswap32_f(phy_if.rdata); -- convert to little-endian
           acc_ack_o         <= '1';
           arbiter.state_nxt <= S_IDLE;
         end if;
