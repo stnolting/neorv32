@@ -160,7 +160,7 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
  image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder
  install      - compile, generate and install VHDL IMEM boot image (for application, no header)
  sim          - in-console simulation using default/simple testbench and GHDL
- all          - exe + install
+ all          - exe + install + hex + bin
  elf_info     - show ELF layout info
  clean        - clean up project home folder
  clean_all    - clean up whole project, core libraries and image generator

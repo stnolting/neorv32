@@ -144,7 +144,7 @@ bin:     $(APP_ASM) $(APP_BIN)
 compile: $(APP_ASM) $(APP_EXE)
 image:   $(APP_ASM) $(APP_IMG)
 install: image install-$(APP_IMG)
-all:     $(APP_ASM) $(APP_EXE) $(APP_IMG) install
+all:     $(APP_ASM) $(APP_EXE) $(APP_IMG) install hex bin
 
 # Check if making bootloader
 # Use different base address and length for instruction memory/"rom" (BOOTROM instead of IMEM)
@@ -351,7 +351,7 @@ help:
 	@echo " image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder"
 	@echo " install      - compile, generate and install VHDL IMEM boot image (for application, no header)"
 	@echo " sim          - in-console simulation using default/simple testbench and GHDL"
-	@echo " all          - exe + install"
+	@echo " all          - exe + install + hex + bin"
 	@echo " elf_info     - show ELF layout info"
 	@echo " clean        - clean up project home folder"
 	@echo " clean_all    - clean up whole project, core libraries and image generator"
