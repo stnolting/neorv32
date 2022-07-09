@@ -80,7 +80,7 @@ uint32_t byte_swap32(uint32_t data);
 
 /**********************************************************************//**
  * @name Simple demo program to be stored to the XIP flash.
- * @note This is a the "raw HEX version" from the rv32i-only "sw/example/blink_led" demo program.
+ * @note This is a the "raw HEX version" from the rv32i-only "sw/example/blink_led" demo program (using "make clean_all hex").
  * This program has been compiled using a modified linker script:
  * rom ORIGIN = XIP base page + flash base address (= 0x20000000 + FLASH_BASE)
  **************************************************************************/
