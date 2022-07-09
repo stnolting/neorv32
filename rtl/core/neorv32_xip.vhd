@@ -130,7 +130,7 @@ architecture neorv32_xip_rtl of neorv32_xip is
     addr           : std_ulogic_vector(31 downto 0);
     addr_lookahead : std_ulogic_vector(31 downto 0);
     busy           : std_ulogic;
-    tmo_cnt        : std_ulogic_vector(04 downto 0);
+    tmo_cnt        : std_ulogic_vector(04 downto 0); -- timeout counter for auto CS de-assert (burst mode only)
   end record;
   signal arbiter : arbiter_t;
 
@@ -163,7 +163,7 @@ architecture neorv32_xip_rtl of neorv32_xip is
   );
   end component;
 
-  -- PHY interface --
+  -- SPI PHY interface --
   type phy_if_t is record
     start : std_ulogic; -- trigger new transmission
     final : std_ulogic; -- stop current transmission
@@ -345,7 +345,7 @@ begin
 
       when S_CHECK => -- check if we can resume flash access
       -- ------------------------------------------------------------
-        if (arbiter.addr(27 downto 2) = arbiter.addr_lookahead(27 downto 2)) and (ctrl(ctrl_burst_en_c) = '1') and -- access to _next_ address
+        if (arbiter.addr(27 downto 2) = arbiter.addr_lookahead(27 downto 2)) and (ctrl(ctrl_burst_en_c) = '1') and -- access to *next linear* address
            (arbiter.tmo_cnt(arbiter.tmo_cnt'left) = '0') then -- no "pending access" timeout yet
           phy_if.start      <= '1'; -- resume flash access
           arbiter.state_nxt <= S_BUSY;
@@ -361,8 +361,8 @@ begin
 
       when S_BUSY => -- wait for PHY to complete operation
       -- ------------------------------------------------------------
+        acc_data_o <= bswap32_f(phy_if.rdata); -- convert incrementing byte-read to little-endian
         if (phy_if.busy = '0') then
-          acc_data_o        <= bswap32_f(phy_if.rdata); -- convert to little-endian
           acc_ack_o         <= '1';
           arbiter.state_nxt <= S_IDLE;
         end if;
@@ -510,15 +510,14 @@ begin
   serial_engine: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (cf_enable_i = '0') then
+      if (cf_enable_i = '0') then -- sync reset
         spi_clk_o    <= '0';
         spi_csn_o    <= '1';
         ctrl.state   <= S_IDLE;
-        ctrl.csen    <= '-';
-        ctrl.sreg    <= (others => '-');
-        ctrl.sreg(ctrl.sreg'left) <= '0'; -- this drives SDO
-        ctrl.bitcnt  <= (others => '-');
-        ctrl.di_sync <= '-';
+        ctrl.csen    <= '0';
+        ctrl.sreg    <= (others => '0');
+        ctrl.bitcnt  <= (others => '0');
+        ctrl.di_sync <= '0';
       else -- fsm
         case ctrl.state is
 
@@ -532,9 +531,8 @@ begin
               ctrl.state <= S_START;
             end if;
 
-          when S_START => -- start of transmission
+          when S_START => -- start of transmission (keep current spi_csn_o state!)
           -- ------------------------------------------------------------
-            -- keep current spi_csn_o state
             ctrl.sreg <= op_wdata_i;
             if (spi_clk_en_i = '1') then
               ctrl.state <= S_SYNC;
@@ -543,8 +541,8 @@ begin
           when S_WAIT => -- wait for resume transmission trigger
           -- ------------------------------------------------------------
             spi_csn_o   <= not ctrl.csen; -- keep CS active
-            ctrl.bitcnt <= "0100" & "000"; -- 4 bytes: 32-bit read data only
---          ctrl.sreg   <= (others => '0');
+            ctrl.bitcnt <= "0100000"; -- 4 bytes = 32-bit read data
+ --         ctrl.sreg   <= (others => '0'); -- do we need this???
             if (op_final_i = '1') then -- terminate pending flash access
               ctrl.state  <= S_IDLE;
             elsif (op_start_i = '1') then -- resume flash access
