@@ -419,6 +419,11 @@
               <description>SPI high-speed mode enable (ignoring XIP_CTRL_PRSC)</description>
             </field>
             <field>
+              <name>XIP_CTRL_BURST_EN</name>
+              <bitRange>[27:27]</bitRange>
+              <description>Enable burst mode (for XIP accesses)</description>
+            </field>
+            <field>
               <name>XIP_CTRL_PHY_BUSY</name>
               <bitRange>[30:30]</bitRange>
               <access>read-only</access>

@@ -154,15 +154,15 @@ control register bits. Note that the 72-bit transmission size is only available 
 size of the direct SPI accesses is limited to 64-bit.
 
 [NOTE]
-There is no _continuous read_ feature (i.e. a burst SPI transmission fetching several data words at once) implemented yet.
-
-[NOTE]
 When using four SPI flash address bytes, the most significant 4 bits of the address are always hardwired
 to zero allowing a maximum **accessible** flash size of 256MB.
 
 [NOTE]
 The XIP module always fetches a full naturally aligned 32-bit word from the SPI flash. Any sub-word data masking
-or alignment will be performed by the CPU logic.
+or alignment will be performed by the CPU core logic.
+
+[IMPORTANT]
+The XIP mode requires the 4-byte data words in the flash to be ordered in **little-endian** byte order.
 
 After the SPI properties (including the amount of address bytes **and** the total amount of SPI transfer bytes)
 and XIP address mapping are configured, the actual XIP mode can be enabled by setting
@@ -183,14 +183,26 @@ It is highly recommended to enable the <<_processor_internal_instruction_cache_i
 of the SPI access latency.
 
 
+**XIP Burst Mode**
+
+By default, every XIP access to the flash transmits the read command and the word-aligned address before reading four consecutive
+data bytes. Obviously, this introduces a certain transmission overhead. To reduces this overhead, the XIP mode allows to utilize
+the flash's _incrmental read_ function, which will return consecutive bytes when continuing to send clock cycles after a read command.
+Hence, the XIP module provides an optional "burst mode" to accelerate consecutive read accesses.
+
+The XIP burst mode is enabled by setting the _XIP_CTRL_BURST_EN_ bit in the module's control register. The burst mode only affects
+the actual XIP mode and _not_ the direct SPI mode. Hence, it should be enabled right before enabling XIP mode only.
+By using the XIP burst mode flash read accesses can be accelerated by up to 50%.
+
+
 **Register Map**
 
-.XIP register map (`struct NEORV32_XIP`)
+.XIP Register Map (`struct NEORV32_XIP`)
 [cols="<2,<2,<4,^1,<7"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.16+<| `0xffffff40` .16+<| `NEORV32_XIP.CTRL` <|`0`  _XIP_CTRL_EN_    ^| r/w <| XIP module enable
+.17+<| `0xffffff40` .17+<| `NEORV32_XIP.CTRL` <|`0`  _XIP_CTRL_EN_    ^| r/w <| XIP module enable
                                               <|`1`  _XIP_CTRL_PRSC0_ ^| r/w .3+| 3-bit SPI clock prescaler select
                                               <|`2`  _XIP_CTRL_PRSC1_ ^| r/w
                                               <|`3`  _XIP_CTRL_PRSC2_ ^| r/w
@@ -203,7 +215,8 @@ of the SPI access latency.
                                               <|`24:21` _XIP_CTRL_XIP_PAGE_MSB_ : _XIP_CTRL_XIP_PAGE_LSB_ ^| r/w <| XIP memory page
                                               <|`25` _XIP_CTRL_SPI_CSEN_  ^| r/w <| Allow SPI chip-select to be actually asserted when set
                                               <|`26` _XIP_CTRL_HIGHSPEED_ ^| r/w <| enable SPI high-speed mode (ignoring _XIP_CTRL_PRSC_)
-                                              <|`29:27`                   ^| r/- <| _reserved_, read as zero
+                                              <|`27` _XIP_CTRL_BURST_EN_  ^| r/w <| Enable XIP burst mode
+                                              <|`29:28`                   ^| r/- <| _reserved_, read as zero
                                               <|`30` _XIP_CTRL_PHY_BUSY_  ^| r/- <| SPI PHY busy when set
                                               <|`31` _XIP_CTRL_XIP_BUSY_  ^| r/- <| XIP access in progress when set
 | `0xffffff44` | _reserved_            |`31:0` | r/- | _reserved_, read as zero

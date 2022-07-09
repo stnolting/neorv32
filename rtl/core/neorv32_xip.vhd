@@ -107,11 +107,12 @@ architecture neorv32_xip_rtl of neorv32_xip is
   constant ctrl_page3_c       : natural := 24; -- r/w: XIP memory page - bit 3
   constant ctrl_spi_csen_c    : natural := 25; -- r/w: SPI chip-select enabled
   constant ctrl_highspeed_c   : natural := 26; -- r/w: SPI high-speed mode enable (ignoring ctrl_spi_prsc)
+  constant ctrl_burst_en_c    : natural := 27; -- r/w: XIP burst mode enable
   --
   constant ctrl_phy_busy_c    : natural := 30; -- r/-: SPI PHY is busy when set
   constant ctrl_xip_busy_c    : natural := 31; -- r/-: XIP access in progress
   --
-  signal ctrl : std_ulogic_vector(26 downto 0);
+  signal ctrl : std_ulogic_vector(27 downto 0);
 
   -- Direct SPI access registers --
   signal spi_data_lo : std_ulogic_vector(31 downto 0);
@@ -122,12 +123,14 @@ architecture neorv32_xip_rtl of neorv32_xip is
   signal xip_addr : std_ulogic_vector(31 downto 0);
 
   -- SPI access fetch arbiter --
-  type arbiter_state_t is (S_DIRECT, S_IDLE, S_TRIG, S_BUSY);
+  type arbiter_state_t is (S_DIRECT, S_IDLE, S_CHECK, S_TRIG, S_BUSY);
   type arbiter_t is record
-    state     : arbiter_state_t;
-    state_nxt : arbiter_state_t;
-    addr      : std_ulogic_vector(31 downto 0);
-    busy      : std_ulogic;
+    state          : arbiter_state_t;
+    state_nxt      : arbiter_state_t;
+    addr           : std_ulogic_vector(31 downto 0);
+    addr_lookahead : std_ulogic_vector(31 downto 0);
+    busy           : std_ulogic;
+    tmo_cnt        : std_ulogic_vector(04 downto 0); -- timeout counter for auto CS de-assert (burst mode only)
   end record;
   signal arbiter : arbiter_t;
 
@@ -146,6 +149,7 @@ architecture neorv32_xip_rtl of neorv32_xip is
     cf_cpol_i    : in  std_ulogic; -- clock idle polarity
     -- operation control --
     op_start_i   : in  std_ulogic; -- trigger new transmission
+    op_final_i   : in  std_ulogic; -- end current transmission
     op_csen_i    : in  std_ulogic; -- actually enabled device for transmission
     op_busy_o    : out std_ulogic; -- transmission in progress when set
     op_nbytes_i  : in  std_ulogic_vector(03 downto 0); -- actual number of bytes to transmit (1..9)
@@ -159,9 +163,10 @@ architecture neorv32_xip_rtl of neorv32_xip is
   );
   end component;
 
-  -- PHY interface --
+  -- SPI PHY interface --
   type phy_if_t is record
     start : std_ulogic; -- trigger new transmission
+    final : std_ulogic; -- stop current transmission
     busy  : std_ulogic; -- transmission in progress when set
     wdata : std_ulogic_vector(71 downto 0); -- write data
     rdata : std_ulogic_vector(31 downto 0); -- read data
@@ -213,6 +218,7 @@ begin
           ctrl(ctrl_page3_c downto ctrl_page0_c)             <= ct_data_i(ctrl_page3_c downto ctrl_page0_c);
           ctrl(ctrl_spi_csen_c)                              <= ct_data_i(ctrl_spi_csen_c);
           ctrl(ctrl_highspeed_c)                             <= ct_data_i(ctrl_highspeed_c);
+          ctrl(ctrl_burst_en_c)                              <= ct_data_i(ctrl_burst_en_c);
         end if;
 
         -- SPI direct data access register lo --
@@ -243,6 +249,7 @@ begin
             ct_data_o(ctrl_page3_c downto ctrl_page0_c)             <= ctrl(ctrl_page3_c downto ctrl_page0_c);
             ct_data_o(ctrl_spi_csen_c)                              <= ctrl(ctrl_spi_csen_c);
             ct_data_o(ctrl_highspeed_c)                             <= ctrl(ctrl_highspeed_c);
+            ct_data_o(ctrl_burst_en_c)                              <= ctrl(ctrl_burst_en_c);
             --
             ct_data_o(ctrl_phy_busy_c) <= phy_if.busy;
             ct_data_o(ctrl_xip_busy_c) <= arbiter.busy;
@@ -284,12 +291,23 @@ begin
   arbiter_sync: process(clk_i)
   begin
     if rising_edge(clk_i) then
+      -- state control --
       if (ctrl(ctrl_enable_c) = '0') or (ctrl(ctrl_xip_enable_c) = '0') then -- sync reset
         arbiter.state <= S_DIRECT;
       else
         arbiter.state <= arbiter.state_nxt;
       end if;
-      arbiter.addr <= acc_addr_i; -- buffer address (reducing fan-out on CPU's address net)
+      -- address look-ahead --
+      if (acc_rden_i = '1') and (acc_addr_i(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
+        arbiter.addr <= acc_addr_i; -- buffer address (reducing fan-out on CPU's address net)
+      end if;
+      arbiter.addr_lookahead <= std_ulogic_vector(unsigned(arbiter.addr) + 4); -- prefetch address of *next* linear access
+      -- pending flash access timeout --
+      if (ctrl(ctrl_enable_c) = '0') or (ctrl(ctrl_xip_enable_c) = '0') or (arbiter.state = S_BUSY) then -- sync reset
+        arbiter.tmo_cnt <= (others => '0');
+      elsif (arbiter.tmo_cnt(arbiter.tmo_cnt'left) = '0') then -- stop if maximum reached
+        arbiter.tmo_cnt <= std_ulogic_vector(unsigned(arbiter.tmo_cnt) + 1);
+      end if;
     end if;
   end process arbiter_sync;
 
@@ -306,32 +324,45 @@ begin
 
     -- SPI PHY interface defaults --
     phy_if.start <= '0';
+    phy_if.final <= arbiter.tmo_cnt(arbiter.tmo_cnt'left) or (not ctrl(ctrl_burst_en_c)); -- terminate if timeout or if burst mode not enabled
     phy_if.wdata <= ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c) & xip_addr & x"00000000"; -- MSB-aligned: CMD + address + 32-bit zero data
 
     -- fsm --
     case arbiter.state is
 
-      when S_DIRECT => -- XIP access disabled: allow direct SPI access
+      when S_DIRECT => -- XIP access disabled; direct SPI access
       -- ------------------------------------------------------------
         phy_if.wdata      <= spi_data_hi & spi_data_lo & x"00"; -- MSB-aligned data
         phy_if.start      <= spi_trigger;
+        phy_if.final      <= '1'; -- do not keep CS active after transmission is done
         arbiter.state_nxt <= S_IDLE;
 
-      when S_IDLE => -- XIP: wait for new bus request
+      when S_IDLE => -- wait for new bus request
       -- ------------------------------------------------------------
         if (acc_rden_i = '1') and (acc_addr_i(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
+          arbiter.state_nxt <= S_CHECK;
+        end if;
+
+      when S_CHECK => -- check if we can resume flash access
+      -- ------------------------------------------------------------
+        if (arbiter.addr(27 downto 2) = arbiter.addr_lookahead(27 downto 2)) and (ctrl(ctrl_burst_en_c) = '1') and -- access to *next linear* address
+           (arbiter.tmo_cnt(arbiter.tmo_cnt'left) = '0') then -- no "pending access" timeout yet
+          phy_if.start      <= '1'; -- resume flash access
+          arbiter.state_nxt <= S_BUSY;
+        else
+          phy_if.final      <= '1'; -- reset flash access
           arbiter.state_nxt <= S_TRIG;
         end if;
 
-      when S_TRIG => -- XIP: trigger flash read
+      when S_TRIG => -- trigger NEW flash read
       -- ------------------------------------------------------------
         phy_if.start      <= '1';
         arbiter.state_nxt <= S_BUSY;
 
-      when S_BUSY => -- XIP: wait for PHY to complete operation
+      when S_BUSY => -- wait for PHY to complete operation
       -- ------------------------------------------------------------
+        acc_data_o <= bswap32_f(phy_if.rdata); -- convert incrementing byte-read to little-endian
         if (phy_if.busy = '0') then
-          acc_data_o        <= phy_if.rdata;
           acc_ack_o         <= '1';
           arbiter.state_nxt <= S_IDLE;
         end if;
@@ -372,6 +403,7 @@ begin
     cf_cpol_i    => ctrl(ctrl_spi_cpol_c), -- clock idle polarity
     -- operation control --
     op_start_i   => phy_if.start,          -- trigger new transmission
+    op_final_i   => phy_if.final,          -- end current transmission
     op_csen_i    => ctrl(ctrl_spi_csen_c), -- actually enabled device for transmission
     op_busy_o    => phy_if.busy,           -- transmission in progress when set
     op_nbytes_i  => ctrl(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c), -- actual number of bytes to transmit
@@ -444,6 +476,7 @@ entity neorv32_xip_phy is
     cf_cpol_i    : in  std_ulogic; -- clock idle polarity
     -- operation control --
     op_start_i   : in  std_ulogic; -- trigger new transmission
+    op_final_i   : in  std_ulogic; -- end current transmission
     op_csen_i    : in  std_ulogic; -- actually enabled device for transmission
     op_busy_o    : out std_ulogic; -- transmission in progress when set
     op_nbytes_i  : in  std_ulogic_vector(03 downto 0); -- actual number of bytes to transmit (1..9)
@@ -459,8 +492,8 @@ end neorv32_xip_phy;
 
 architecture neorv32_xip_phy_rtl of neorv32_xip_phy is
 
-  -- controller --
-  type ctrl_state_t is (S_IDLE, S_START, S_RTX_A, S_RTX_B, S_DONE);
+  -- serial engine --
+  type ctrl_state_t is (S_IDLE, S_WAIT, S_START, S_SYNC, S_RTX_A, S_RTX_B, S_DONE);
   type ctrl_t is record
     state   : ctrl_state_t;
     sreg    : std_ulogic_vector(71 downto 0); -- only the lowest 32-bit are used as RX data
@@ -472,40 +505,53 @@ architecture neorv32_xip_phy_rtl of neorv32_xip_phy is
 
 begin
 
-  -- Serial Interface Control Unit ----------------------------------------------------------
+  -- Serial Interface Engine ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  control_unit: process(clk_i)
+  serial_engine: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (cf_enable_i = '0') then
+      if (cf_enable_i = '0') then -- sync reset
         spi_clk_o    <= '0';
         spi_csn_o    <= '1';
         ctrl.state   <= S_IDLE;
-        ctrl.csen    <= '-';
-        ctrl.sreg    <= (others => '-');
-        ctrl.sreg(ctrl.sreg'left) <= '0'; -- this drives SDO
-        ctrl.bitcnt  <= (others => '-');
-        ctrl.di_sync <= '-';
-      else
-        -- defaults --
-        spi_csn_o <= '1'; -- de-selected by default
-
-        -- fsm --
+        ctrl.csen    <= '0';
+        ctrl.sreg    <= (others => '0');
+        ctrl.bitcnt  <= (others => '0');
+        ctrl.di_sync <= '0';
+      else -- fsm
         case ctrl.state is
 
           when S_IDLE => -- wait for new transmission trigger
           -- ------------------------------------------------------------
+            spi_csn_o   <= '1'; -- flash disabled
             spi_clk_o   <= cf_cpol_i;
             ctrl.bitcnt <= op_nbytes_i & "000"; -- number of bytes
             ctrl.csen   <= op_csen_i;
             if (op_start_i = '1') then
-              ctrl.sreg  <= op_wdata_i;
               ctrl.state <= S_START;
             end if;
 
-          when S_START => -- sync start of transmission
+          when S_START => -- start of transmission (keep current spi_csn_o state!)
           -- ------------------------------------------------------------
-            spi_csn_o <= not ctrl.csen;
+            ctrl.sreg <= op_wdata_i;
+            if (spi_clk_en_i = '1') then
+              ctrl.state <= S_SYNC;
+            end if;
+
+          when S_WAIT => -- wait for resume transmission trigger
+          -- ------------------------------------------------------------
+            spi_csn_o   <= not ctrl.csen; -- keep CS active
+            ctrl.bitcnt <= "0100000"; -- 4 bytes = 32-bit read data
+ --         ctrl.sreg   <= (others => '0'); -- do we need this???
+            if (op_final_i = '1') then -- terminate pending flash access
+              ctrl.state  <= S_IDLE;
+            elsif (op_start_i = '1') then -- resume flash access
+              ctrl.state  <= S_SYNC;
+            end if;
+
+          when S_SYNC => -- synchronize SPI clock
+          -- ------------------------------------------------------------
+            spi_csn_o <= not ctrl.csen; -- enable flash
             if (spi_clk_en_i = '1') then
               if (cf_cpha_i = '1') then -- clock phase shift
                 spi_clk_o <= not cf_cpol_i;
@@ -515,7 +561,6 @@ begin
 
           when S_RTX_A => -- first half of bit transmission
           -- ------------------------------------------------------------
-            spi_csn_o <= not ctrl.csen;
             if (spi_clk_en_i = '1') then
               spi_clk_o    <= not (cf_cpha_i xor cf_cpol_i);
               ctrl.di_sync <= spi_data_i;
@@ -525,7 +570,6 @@ begin
 
           when S_RTX_B => -- second half of bit transmission
           -- ------------------------------------------------------------
-            spi_csn_o <= not ctrl.csen;
             if (spi_clk_en_i = '1') then
               ctrl.sreg <= ctrl.sreg(ctrl.sreg'left-1 downto 0) & ctrl.di_sync;
               if (or_reduce_f(ctrl.bitcnt) = '0') then -- all bits transferred?
@@ -539,9 +583,8 @@ begin
 
           when S_DONE => -- transmission done
           -- ------------------------------------------------------------
-            spi_csn_o <= not ctrl.csen;
             if (spi_clk_en_i = '1') then
-              ctrl.state <= S_IDLE;
+              ctrl.state <= S_WAIT;
             end if;
 
           when others => -- undefined
@@ -551,10 +594,10 @@ begin
         end case;
       end if;
     end if;
-  end process control_unit;
+  end process serial_engine;
 
   -- serial unit busy --
-  op_busy_o <= '0' when (ctrl.state = S_IDLE) else '1';
+  op_busy_o <= '0' when (ctrl.state = S_IDLE) or (ctrl.state = S_WAIT) else '1';
 
   -- serial data output --
   spi_data_o <= ctrl.sreg(ctrl.sreg'left);

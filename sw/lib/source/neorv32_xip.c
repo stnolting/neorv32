@@ -82,8 +82,11 @@ int neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) 
   // reset module
   NEORV32_XIP.CTRL = 0;
 
-  uint32_t ctrl = 0;
+  // clear data registers
+  NEORV32_XIP.DATA_LO = 0;
+  NEORV32_XIP.DATA_HI = 0; // will not trigger SPI transfer as module is disabled
 
+  uint32_t ctrl = 0;
   ctrl |= ((uint32_t)(1            )) << XIP_CTRL_EN; // enable module
   ctrl |= ((uint32_t)(prsc   & 0x07)) << XIP_CTRL_PRSC0;
   ctrl |= ((uint32_t)(cpol   & 0x01)) << XIP_CTRL_CPOL;
@@ -164,6 +167,26 @@ void neorv32_xip_highspeed_enable(void) {
 void neorv32_xip_highspeed_disable(void) {
 
   NEORV32_XIP.CTRL &= ~(1 << XIP_CTRL_HIGHSPEED);
+}
+
+
+/**********************************************************************//**
+ * Enable XIP burst mode (incremental reads).
+ *
+ * @note Make sure your flash supports this feature (most flash chips do so).
+ **************************************************************************/
+void neorv32_xip_burst_mode_enable(void) {
+
+  NEORV32_XIP.CTRL |= 1 << XIP_CTRL_BURST_EN;
+}
+
+
+/**********************************************************************//**
+ * Disable XIP burst mode.
+ **************************************************************************/
+void neorv32_xip_burst_mode_disable(void) {
+
+  NEORV32_XIP.CTRL &= ~(1 << XIP_CTRL_BURST_EN);
 }
 
 
