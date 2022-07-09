@@ -7,10 +7,11 @@ This guide shows how to write an executable to the SPI flash via the bootloader 
 fetched and executed after processor reset. For example, you can use a section of the FPGA bitstream configuration
 memory to store an application executable.
 
+.Customization
 [NOTE]
 This section assumes the _default_ configuration of the NEORV32 bootloader.
 See section <<_customizing_the_internal_bootloader>> on how to customize the bootloader and its setting
-(for example the SPI chip-select port, the SPI clock speed or the flash base address for storing the executable).
+(for example the SPI chip-select port, the SPI clock speed or the **flash base address** for storing the executable).
 
 
 :sectnums:
@@ -37,7 +38,7 @@ command as this might corrupt the image):
 CMD:> u
 Awaiting neorv32_exe.bin... OK
 CMD:> p
-Write 0x000013FC bytes to SPI flash @ 0x00800000? (y/n)
+Write 0x000013FC bytes to SPI flash @ 0x02000000? (y/n)
 ----
 
 [start=5]
@@ -54,7 +55,7 @@ to specify the base address of the executable inside the SPI flash.
 CMD:> u
 Awaiting neorv32_exe.bin... OK
 CMD:> p
-Write 0x000013FC bytes to SPI flash @ 0x08000000? (y/n) y
+Write 0x000013FC bytes to SPI flash @ 0x02000000? (y/n) y
 Flashing... OK
 CMD:>
 ----
