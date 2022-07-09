@@ -115,13 +115,10 @@ package neorv32_package is
   function and_reduce_f(a : std_ulogic_vector) return std_ulogic;
   function xor_reduce_f(a : std_ulogic_vector) return std_ulogic;
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
-  function hexchar_to_stdulogicvector_f(input : character) return std_ulogic_vector;
   function to_hstring32_f(input : std_ulogic_vector(31 downto 0)) return string;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
   function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector;
-  function char_to_lower_f(ch : character) return character;
-  function str_equal_f(str0 : string; str1 : string) return boolean;
   function popcount_f(input : std_ulogic_vector) return natural;
   function leading_zeros_f(input : std_ulogic_vector) return natural;
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
@@ -2331,56 +2328,29 @@ package body neorv32_package is
   -- Function: Convert std_ulogic_vector to hex char ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character is
-    variable output_v : character;
+    variable res_v : character;
   begin
     case input is
-      when x"0"   => output_v := '0';
-      when x"1"   => output_v := '1';
-      when x"2"   => output_v := '2';
-      when x"3"   => output_v := '3';
-      when x"4"   => output_v := '4';
-      when x"5"   => output_v := '5';
-      when x"6"   => output_v := '6';
-      when x"7"   => output_v := '7';
-      when x"8"   => output_v := '8';
-      when x"9"   => output_v := '9';
-      when x"a"   => output_v := 'a';
-      when x"b"   => output_v := 'b';
-      when x"c"   => output_v := 'c';
-      when x"d"   => output_v := 'd';
-      when x"e"   => output_v := 'e';
-      when x"f"   => output_v := 'f';
-      when others => output_v := '?';
+      when x"0"   => res_v := '0';
+      when x"1"   => res_v := '1';
+      when x"2"   => res_v := '2';
+      when x"3"   => res_v := '3';
+      when x"4"   => res_v := '4';
+      when x"5"   => res_v := '5';
+      when x"6"   => res_v := '6';
+      when x"7"   => res_v := '7';
+      when x"8"   => res_v := '8';
+      when x"9"   => res_v := '9';
+      when x"a"   => res_v := 'a';
+      when x"b"   => res_v := 'b';
+      when x"c"   => res_v := 'c';
+      when x"d"   => res_v := 'd';
+      when x"e"   => res_v := 'e';
+      when x"f"   => res_v := 'f';
+      when others => res_v := '?';
     end case;
-    return output_v;
+    return res_v;
   end function to_hexchar_f;
-
-  -- Function: Convert hex char to std_ulogic_vector ----------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function hexchar_to_stdulogicvector_f(input : character) return std_ulogic_vector is
-    variable hex_value_v : std_ulogic_vector(3 downto 0);
-  begin
-    case input is
-      when '0'       => hex_value_v := x"0";
-      when '1'       => hex_value_v := x"1";
-      when '2'       => hex_value_v := x"2";
-      when '3'       => hex_value_v := x"3"; 
-      when '4'       => hex_value_v := x"4";
-      when '5'       => hex_value_v := x"5";
-      when '6'       => hex_value_v := x"6";
-      when '7'       => hex_value_v := x"7";
-      when '8'       => hex_value_v := x"8";
-      when '9'       => hex_value_v := x"9";
-      when 'a' | 'A' => hex_value_v := x"a";
-      when 'b' | 'B' => hex_value_v := x"b";
-      when 'c' | 'C' => hex_value_v := x"c";
-      when 'd' | 'D' => hex_value_v := x"d";
-      when 'e' | 'E' => hex_value_v := x"e";
-      when 'f' | 'F' => hex_value_v := x"f";
-      when others    => hex_value_v := (others => 'X');
-    end case;
-    return hex_value_v;
-  end function hexchar_to_stdulogicvector_f;
 
   -- Function: Convert 32-bit std_ulogic_vector to hex string -------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -2433,68 +2403,6 @@ package body neorv32_package is
     return output_v;
   end function bswap32_f;
 
-  -- Function: Convert char to lowercase ----------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function char_to_lower_f(ch : character) return character is
-    variable res: character;
-   begin
-     case ch is
-       when 'A'    => res := 'a';
-       when 'B'    => res := 'b';
-       when 'C'    => res := 'c';
-       when 'D'    => res := 'd';
-       when 'E'    => res := 'e';
-       when 'F'    => res := 'f';
-       when 'G'    => res := 'g';
-       when 'H'    => res := 'h';
-       when 'I'    => res := 'i';
-       when 'J'    => res := 'j';
-       when 'K'    => res := 'k';
-       when 'L'    => res := 'l';
-       when 'M'    => res := 'm';
-       when 'N'    => res := 'n';
-       when 'O'    => res := 'o';
-       when 'P'    => res := 'p';
-       when 'Q'    => res := 'q';
-       when 'R'    => res := 'r';
-       when 'S'    => res := 's';
-       when 'T'    => res := 't';
-       when 'U'    => res := 'u';
-       when 'V'    => res := 'v';
-       when 'W'    => res := 'w';
-       when 'X'    => res := 'x';
-       when 'Y'    => res := 'y';
-       when 'Z'    => res := 'z';
-       when others => res := ch;
-      end case;
-    return res;
-  end function char_to_lower_f;
-
-  -- Function: Compare strings (convert to lower case, check lengths) -----------------------
-  -- -------------------------------------------------------------------------------------------
-  function str_equal_f(str0 : string; str1 : string) return boolean is
-    variable tmp0_v : string(str0'range);
-    variable tmp1_v : string(str1'range);
-  begin
-    if (str0'length /= str1'length) then -- equal length?
-      return false;
-    else
-      -- convert to lower case --
-      for i in str0'range loop
-        tmp0_v(i) := char_to_lower_f(str0(i));
-      end loop;
-      for i in str1'range loop
-        tmp1_v(i) := char_to_lower_f(str1(i));
-      end loop;
-      -- compare lowercase strings --
-      if (tmp0_v = tmp1_v) then
-        return true;
-      else
-        return false;
-      end if;
-    end if;
-  end function str_equal_f;
-
   -- Function: Population count (number of set bits) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   function popcount_f(input : std_ulogic_vector) return natural is
@@ -2542,7 +2450,7 @@ package body neorv32_package is
   end function mem32_init_f;
 
 
-  -- Finally set deferred constant, see IEEE 1076-2008 14.4.2.1 (NEORV32 Issue #242) --------
+  -- Finally set deferred constants, see IEEE 1076-2008 14.4.2.1 (NEORV32 Issue #242) -------
   -- -------------------------------------------------------------------------------------------
   constant def_rst_val_c : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
 
@@ -2554,7 +2462,8 @@ end neorv32_package;
   -- -------------------------------------------------------------------------------------------
   -- > memory content in 'neorv32_bootloader_image.vhd', auto-generated by 'image_gen'
   -- > used by 'neorv32_boot_rom.vhd'
-  -- > enables body-only recompile in case of firmware change
+  -- > enables body-only recompile in case of firmware change (NEORV32 PR #338)
+
 library ieee;
 use ieee.std_logic_1164.all;
 
@@ -2570,7 +2479,8 @@ end neorv32_bootloader_image;
   -- -------------------------------------------------------------------------------------------
   -- > memory content in 'neorv32_application_image.vhd', auto-generated by 'image_gen'
   -- > used by 'mem/neorv32_imem.*.vhd'
-  -- > enables body-only recompile in case of firmware change
+  -- > enables body-only recompile in case of firmware change (NEORV32 PR #338)
+
 library ieee;
 use ieee.std_logic_1164.all;
 
