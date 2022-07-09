@@ -35,7 +35,7 @@ base ISA `rv32i` only to ensure it can work independently of the actual CPU conf
 | `SPI_FLASH_ADDR_BYTES`  | `3` | `2`, `3`, `4` | SPI flash address size in number of bytes (2=16-bit, 3=24-bit, 4=32-bit)
 | `SPI_FLASH_SECTOR_SIZE` | `65536` | _any_     | SPI flash sector size in bytes
 | `SPI_FLASH_CLK_PRSC`    | `CLK_PRSC_8`        | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock pre-scaler (dividing main processor clock)
-| `SPI_BOOT_BASE_ADDR`    | `0x08000000`        | _any_ 32-bit value | Defines the _base_ address of the executable in external flash
+| `SPI_BOOT_BASE_ADDR`    | `0x02000000`        | _any_ 32-bit value | Defines the _base_ address of the executable in external flash
 |=======================
 
 Each configuration parameter is implemented as C-language `define` that can be manually overridden (_redefined_) when
