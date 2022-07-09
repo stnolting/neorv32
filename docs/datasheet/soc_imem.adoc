@@ -31,6 +31,7 @@ with the actual application program image. The compiler toolchain will generate 
 file `rtl/core/neorv32_application_image.vhd`, which is automatically inserted into the IMEM. If
 the IMEM is implemented as RAM (default), the memory will **not be initialized at all**.
 
+.VHDL Source File
 [NOTE]
 The actual IMEM is split into two design files: a plain entity definition (`neorv32_imem.entity.vhd`) and the actual
 architecture definition (`mem/neorv32_imem.default.vhd`). This **default architecture** provides a _generic_ and
@@ -38,5 +39,6 @@ _platform independent_ memory design that (should) infers embedded memory block.
 source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
 and/or timing.
 
+.Read-Only Access
 [NOTE]
 If the IMEM is implemented as true ROM any write attempt to it will raise a _store access fault_ exception.

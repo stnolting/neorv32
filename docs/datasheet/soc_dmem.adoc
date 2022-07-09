@@ -19,9 +19,14 @@ generic. The size in bytes is defined via the _MEM_INT_DMEM_SIZE_ generic. If th
 the memory is mapped into the data memory space and located right at the beginning of the data memory
 space (default `dspace_base_c` = 0x80000000). The DMEM is always implemented as true RAM.
 
+.VHDL Source File
 [NOTE]
 The actual DMEM is split into two design files: a plain entity definition (`neorv32_dmem.entity.vhd`) and the actual
 architecture definition (`mem/neorv32_dmem.default.vhd`). This **default architecture** provides a _generic_ and
 _platform independent_ memory design that (should) infers embedded memory block. You can replace/modify the architecture
 source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
 and/or timing.
+
+.Execute from RAM
+[TIP]
+The CPU is capable of executing code also from DMEM.
