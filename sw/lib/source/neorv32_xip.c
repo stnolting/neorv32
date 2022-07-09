@@ -61,7 +61,7 @@ int neorv32_xip_available(void) {
 
 
 /**********************************************************************//**
- * Configure XIP module: configure SPI properties.
+ * Configure XIP module: configure SPI/flash properties.
  *
  * @warning This will reset the XIP module overriding the CTRL register.
  * @note This function will also send 64 dummy clocks via the SPI port (with chip-select disabled).
@@ -69,7 +69,7 @@ int neorv32_xip_available(void) {
  * @param[in] prsc SPI clock prescaler select (0..7).
  * @param[in] cpol SPI clock polarity (0/1).
  * @param[in] cpha SPI clock phase(0/1).
- * @param[in] rd_cmd SPI flash read command.
+ * @param[in] rd_cmd SPI flash read byte command.
  * @return 0 if configuration is OK, -1 if configuration error.
  **************************************************************************/
 int neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) {
@@ -79,12 +79,12 @@ int neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) 
     return -1;
   }
 
-  // reset module
+  // reset and disable module
   NEORV32_XIP.CTRL = 0;
 
   // clear data registers
   NEORV32_XIP.DATA_LO = 0;
-  NEORV32_XIP.DATA_HI = 0; // will not trigger SPI transfer as module is disabled
+  NEORV32_XIP.DATA_HI = 0; // will not trigger SPI transfer since module is disabled
 
   uint32_t ctrl = 0;
   ctrl |= ((uint32_t)(1            )) << XIP_CTRL_EN; // enable module
@@ -96,12 +96,12 @@ int neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) 
   
   NEORV32_XIP.CTRL = ctrl;
 
-  // send 64 SPI dummy clocks
+  // send 64 SPI dummy clocks but without an active CS
   NEORV32_XIP.DATA_LO = 0;
   NEORV32_XIP.DATA_HI = 0; // trigger SPI transfer
 
   // wait for transfer to complete
-  while (NEORV32_XIP.CTRL & (1 << XIP_CTRL_PHY_BUSY));
+  while (NEORV32_XIP.CTRL & (1 << XIP_CTRL_PHY_BUSY)); // direct SPI mode -> check PHY status
 
   NEORV32_XIP.CTRL |= 1 << XIP_CTRL_SPI_CSEN; // finally enable automatic SPI chip-select
 
@@ -222,12 +222,11 @@ int neorv32_xip_spi_trans(uint8_t nbytes, uint64_t *rtx_data) {
   NEORV32_XIP.DATA_HI = data.uint32[1]; // trigger SPI transfer
 
   // wait for transfer to complete
-  while (NEORV32_XIP.CTRL & (1 << XIP_CTRL_PHY_BUSY));
+  while (NEORV32_XIP.CTRL & (1 << XIP_CTRL_PHY_BUSY)); // direct SPI mode -> check PHY status
 
-  data.uint32[0] = NEORV32_XIP.DATA_LO;
-  data.uint32[1] = 0; // RX data is always 32-bit
+  data.uint32[0] = NEORV32_XIP.DATA_LO; // RX data is always 32-bit and LSB-aligned
+  data.uint32[1] = 0;
   *rtx_data = data.uint64;
 
   return 0;
 }
-
