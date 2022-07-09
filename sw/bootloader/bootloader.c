@@ -125,7 +125,7 @@
 
 /** SPI flash boot base address */
 #ifndef SPI_BOOT_BASE_ADDR
-  #define SPI_BOOT_BASE_ADDR 0x08000000
+  #define SPI_BOOT_BASE_ADDR 0x02000000
 #endif
 /**@}*/
 
@@ -152,11 +152,11 @@ enum ERROR_CODES {
 /**********************************************************************//**
  * Error messages
  **************************************************************************/
-const char error_message[4][24] = {
-  "exe signature error",
-  "exceeding IMEM capacity",
+const char error_message[4][16] = {
+  "signature error",
+  "exceeding IMEM",
   "checksum error",
-  "SPI flash access error"
+  "SPI flash error"
 };
 
 
@@ -280,7 +280,7 @@ int main(void) {
   while(1) {
     asm volatile ("nop");
   }
-  return 0; // should never be reached
+  return 0; // bootloader should never return
 #endif
 
 
@@ -358,8 +358,8 @@ int main(void) {
 
   // Configure machine system timer interrupt
   if (neorv32_mtime_available()) {
-    neorv32_mtime_set_timecmp(0 + (NEORV32_SYSINFO.CLK/4));
-    // active timer IRQ
+    NEORV32_MTIME.TIMECMP_LO = NEORV32_SYSINFO.CLK/4;
+    NEORV32_MTIME.TIMECMP_HI = 0;
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate MTIME IRQ source only!
     neorv32_cpu_eint(); // enable global interrupts
   }
@@ -463,14 +463,14 @@ int main(void) {
       }
     }
     else if (c == '?') {
-      PRINT_TEXT("(c) by Stephan Nolting\nhttps://github.com/stnolting/neorv32");
+      PRINT_TEXT("(c) by Stephan Nolting\ngithub.com/stnolting/neorv32");
     }
     else { // unknown command
       PRINT_TEXT("Invalid CMD");
     }
   }
 
-  return 1; // bootloader should never return
+  return 0; // bootloader should never return
 }
 
 
@@ -506,7 +506,7 @@ void start_app(void) {
 
   // start app at instruction space base address
   register uint32_t app_base = NEORV32_SYSINFO.ISPACE_BASE;
-  asm volatile ("jalr zero, %0" : : "r" (app_base));
+  asm volatile ("jalr ra, %0" : : "r" (app_base));
   while (1);
 }
 
@@ -520,10 +520,10 @@ void start_app(void) {
  **************************************************************************/
 void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
 
-  register uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
+  register uint32_t mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
 
   // Machine timer interrupt
-  if (cause == TRAP_CODE_MTI) { // raw exception code for MTI
+  if (mcause == TRAP_CODE_MTI) { // raw exception code for MTI
 #if (STATUS_LED_EN != 0)
     if (neorv32_gpio_available()) {
       neorv32_gpio_pin_toggle(STATUS_LED_PIN); // toggle status LED
@@ -536,25 +536,25 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
   }
 
   // Bus store access error during get_exe
-  else if ((cause == TRAP_CODE_S_ACCESS) && (getting_exe)) {
+  else if ((mcause == TRAP_CODE_S_ACCESS) && (getting_exe)) {
     system_error(ERROR_SIZE); // -> seems like executable is too large
   }
 
   // Anything else (that was not expected); output exception notifier and try to resume
   else {
-    register uint32_t epc = neorv32_cpu_csr_read(CSR_MEPC);
+    register uint32_t mepc = neorv32_cpu_csr_read(CSR_MEPC);
 #if (UART_EN != 0)
     if (neorv32_uart0_available()) {
       PRINT_TEXT("\n[ERROR - Unexpected exception! mcause=");
-      PRINT_XNUM(cause); // MCAUSE
+      PRINT_XNUM(mcause);
       PRINT_TEXT(" mepc=");
-      PRINT_XNUM(epc); // MEPC
+      PRINT_XNUM(mepc);
       PRINT_TEXT(" mtval=");
-      PRINT_XNUM(neorv32_cpu_csr_read(CSR_MTVAL)); // MTVAL
-      PRINT_TEXT("] trying to resume...\n");
+      PRINT_XNUM(neorv32_cpu_csr_read(CSR_MTVAL));
+      PRINT_TEXT("]\n");
     }
 #endif
-    neorv32_cpu_csr_write(CSR_MEPC, epc + 4); // advance to next instruction
+    neorv32_cpu_csr_write(CSR_MEPC, mepc + 4); // advance to next instruction
   }
 }
 
@@ -577,10 +577,12 @@ void get_exe(int src) {
   }
 #if (SPI_EN != 0)
   else {
-    PRINT_TEXT("Loading... ");
+    PRINT_TEXT("Loading (@");
+    PRINT_XNUM(addr);
+    PRINT_TEXT(")...\n");
 
     // flash checks
-    if (((NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IO_SPI)) == 0x00) || // SPI module implemented?
+    if (((NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IO_SPI)) == 0) || // SPI module not implemented?
        (spi_flash_check() != 0)) { // check if flash ready (or available at all)
       system_error(ERROR_FLASH);
     }
@@ -641,7 +643,7 @@ void save_exe(void) {
   // info and prompt
   PRINT_TEXT("Write ");
   PRINT_XNUM(size);
-  PRINT_TEXT(" bytes to SPI flash @0x");
+  PRINT_TEXT(" bytes to SPI flash @ ");
   PRINT_XNUM(addr);
   PRINT_TEXT("? (y/n) ");
 
@@ -715,7 +717,7 @@ uint32_t get_exe_word(int src, uint32_t addr) {
     }
 #if (SPI_EN != 0)
     else {
-      data.uint8[i] = spi_flash_read_byte(addr + (3-i));
+      data.uint8[i] = spi_flash_read_byte(addr + i); // little-endian byte order
     }
 #endif
   }
@@ -758,7 +760,8 @@ void print_hex_word(uint32_t num) {
 #if (UART_EN != 0)
   static const char hex_symbols[16] = "0123456789abcdef";
 
-  PRINT_TEXT("0x");
+  PRINT_PUTC('0');
+  PRINT_PUTC('x');
 
   int i;
   for (i=0; i<8; i++) {
@@ -870,9 +873,10 @@ void spi_flash_write_word(uint32_t addr, uint32_t wdata) {
 
   data.uint32 = wdata;
 
+  // little-endian byte order
   int i;
   for (i=0; i<4; i++) {
-    spi_flash_write_byte(addr + (3-i), data.uint8[i]);
+    spi_flash_write_byte(addr + i, data.uint8[i]);
   }
 #endif
 }
@@ -953,7 +957,7 @@ uint32_t spi_flash_read_status(void) {
 
 
 /**********************************************************************//**
- * Send address word to flash (16-bit, 24-bit or 32-bit address size).
+ * Send address word to flash (MSB-first, 16-bit, 24-bit or 32-bit address size).
  *
  * @param[in] addr Address word.
  **************************************************************************/
