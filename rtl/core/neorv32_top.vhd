@@ -711,8 +711,8 @@ begin
     rdata_v := (others => '0');
     ack_v   := '0';
     err_v   := '0';
-    -- OR all module's response signals: only the module that is actually
-    -- been accessed is allowed to set it's bus output signals
+    -- OR all response signals: only the module that has actually
+    -- been accessed is allowed to *set* it's bus output signals
     for i in resp_bus'range loop
       rdata_v := rdata_v or resp_bus(i).rdata; -- read data
       ack_v   := ack_v   or resp_bus(i).ack;   -- acknowledge
@@ -1115,7 +1115,6 @@ begin
     mtime_time <= mtime_i; -- use external machine timer time signal
     mtime_irq  <= mtime_irq_i; -- use external machine timer interrupt
   end generate;
-
 
   -- system time output LO --
   mtime_sync: process(clk_i)
@@ -1631,7 +1630,6 @@ begin
 
   neorv32_debug_dm_false:
   if (ON_CHIP_DEBUGGER_EN = false) generate
-    --
     dmi.req_ready  <= '0';
     dmi.resp_valid <= '0';
     dmi.resp_data  <= (others => '0');
