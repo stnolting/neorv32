@@ -539,7 +539,8 @@ as the MSB is hardwired to zero
 |=======================
 
 [WARNING]
-Setting the lock bit `L` **only locks the according PMP entry** and not the PMP entries below!
+Setting the lock bit `L` and setting TOR mode in `pmpcfg(i)` will also lock write access to `pmpaddr(i-1)`.
+See the RISC-V specs. for more information.
 
 
 :sectnums!:
