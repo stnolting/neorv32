@@ -7,7 +7,7 @@
 [![userguide (pdf)](https://img.shields.io/badge/user%20guide-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor)](https://github.com/stnolting/neorv32/releases/tag/nightly)
 [![userguide (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat-square)](https://stnolting.github.io/neorv32/ug)
 [![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen)](https://stnolting.github.io/neorv32/sw/files.html)
-[![Gitter](https://img.shields.io/badge/Chat-on%20gitter-4db797.svg?longCache=true&style=flat-square&logo=gitter&logoColor=e8ecef)](https://gitter.im/neorv32/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Gitter](https://img.shields.io/badge/Chat-on%20gitter-4db797.svg?longCache=true&style=flat-square&logo=gitter&logoColor=e8ecef)](https://gitter.im/neorv32/community)
 
 1. [Overview](#1-Overview)
    * [Key Features](#Key-Features)
@@ -42,7 +42,8 @@ The latest _PDF_ versions can be found [here](https://github.com/stnolting/neorv
 To see the changes between _official releases_ visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
 :package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) targeting
-various FPGA boards and toolchains to get you started.
+various FPGA boards and toolchains to get you started. Also check out the list of
+[community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#community-projects) there.
 
 :heavy_check_mark: Automatic check for RISC-V specification [compliance](https://github.com/stnolting/neorv32-verif).
 
