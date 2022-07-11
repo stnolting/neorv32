@@ -181,8 +181,8 @@ is no valid boot image found, and error code will be shown.
 :sectnums:
 ==== Bootloader Error Codes
 
-If something goes wrong during bootloader operation, an error code and a short message is shown. In this case the processor
-stalls,, the bootloader status LED is permanently activated and the processor must be reset manually.
+If something goes wrong during bootloader operation an error code and a short message is shown. In this case the processor
+is halted, the bootloader status LED is permanently activated and the processor has to be reset manually.
 
 [TIP]
 In many cases the error source is just _temporary_ (like some HF spike during an UART upload). Just try again.
@@ -196,3 +196,7 @@ In many cases the error source is just _temporary_ (like some HF spike during an
 | **`ERROR_3`** | This error occurs if the attached SPI flash cannot be accessed. Make sure you have the right type of flash and that it is properly connected to the NEORV32 SPI port using chip select #0.
 | **`ERROR - Unexpected exception!`** | The bootloader encountered an exception during operation. This might be caused when it tries to access peripherals that were not implemented during synthesis. Example: executing commands `l` or `s` (SPI flash operations) without the SPI module being implemented.
 |=======================
+
+[TIP]
+If an unexpected exception has been raised the bootloader prints some hexadecimal debug information showing
+the <<_mcause>>, <<_mepc>> and <<_mtval>> CSR values.
