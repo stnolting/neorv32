@@ -1872,30 +1872,37 @@ begin
 
           -- physical memory protection --
           -- --------------------------------------------------------------------
-          -- R/W: pmpcfg* - PMP configuration registers --
-          if (csr.addr(11 downto 2) = csr_class_pmpcfg_c) then -- pmp configuration CSR class
-            for i in 0 to PMP_NUM_REGIONS-1 loop
-              if (csr.addr(1 downto 0) = std_ulogic_vector(to_unsigned(i/4, 2))) then
-                if (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpcfg entry
-                  csr.pmpcfg(i)(0) <= csr.wdata((i mod 4)*8+0); -- R - read
-                  csr.pmpcfg(i)(1) <= csr.wdata((i mod 4)*8+1); -- W - write
-                  csr.pmpcfg(i)(2) <= csr.wdata((i mod 4)*8+2); -- X - execute
-                  csr.pmpcfg(i)(3) <= csr.wdata((i mod 4)*8+3); -- A_L - mode low [TOR-mode only!]
-                  csr.pmpcfg(i)(4) <= '0'; -- A_H - mode high [TOR-mode only!]
-                  csr.pmpcfg(i)(5) <= '0'; -- reserved
-                  csr.pmpcfg(i)(6) <= '0'; -- reserved
-                  csr.pmpcfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked / also enforce in machine-mode)
+          if (PMP_NUM_REGIONS > 0) then
+            -- R/W: pmpcfg* - PMP configuration registers --
+            if (csr.addr(11 downto 2) = csr_class_pmpcfg_c) then -- pmp configuration CSR class
+              for i in 0 to PMP_NUM_REGIONS-1 loop
+                if (csr.addr(1 downto 0) = std_ulogic_vector(to_unsigned(i/4, 2))) then
+                  if (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpcfg entry
+                    csr.pmpcfg(i)(0) <= csr.wdata((i mod 4)*8+0); -- R - read
+                    csr.pmpcfg(i)(1) <= csr.wdata((i mod 4)*8+1); -- W - write
+                    csr.pmpcfg(i)(2) <= csr.wdata((i mod 4)*8+2); -- X - execute
+                    csr.pmpcfg(i)(3) <= csr.wdata((i mod 4)*8+3); -- A_L - mode low [TOR-mode only!]
+                    csr.pmpcfg(i)(4) <= '0'; -- A_H - mode high [TOR-mode only!]
+                    csr.pmpcfg(i)(5) <= '0'; -- reserved
+                    csr.pmpcfg(i)(6) <= '0'; -- reserved
+                    csr.pmpcfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked / also enforce in machine-mode)
+                  end if;
                 end if;
+              end loop; -- i (pmpcfg entry)
+            end if;
+            -- R/W: pmpaddr* - PMP address registers --
+            if (csr.addr(11 downto 4) = csr_class_pmpaddr_c) then
+              for i in 0 to PMP_NUM_REGIONS-2 loop
+                if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') and -- unlocked access
+                  ((csr.pmpcfg(i+1)(7) = '0') or (csr.pmpcfg(i+1)(3) = '0')) then -- pmpcfg(i+1) not "LOCKED TOR" [TOR-mode only!]
+                  csr.pmpaddr(i) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+                end if;
+              end loop; -- i (PMP regions)
+              -- very last entry --
+              if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(PMP_NUM_REGIONS-1, 4))) and (csr.pmpcfg(PMP_NUM_REGIONS-1)(7) = '0') then -- unlocked access
+                csr.pmpaddr(PMP_NUM_REGIONS-1) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
               end if;
-            end loop; -- i (pmpcfg entry)
-          end if;
-          -- R/W: pmpaddr* - PMP address registers --
-          if (csr.addr(11 downto 4) = csr_class_pmpaddr_c) then 
-            for i in 0 to PMP_NUM_REGIONS-1 loop
-              if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked pmpaddr access
-                csr.pmpaddr(i) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
-              end if;
-            end loop; -- i (PMP regions)
+            end if;
           end if;
 
           -- machine counter setup --
