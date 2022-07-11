@@ -48,6 +48,8 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
+/** XIP page base address (32-bit) */
+#define XIP_PAGE_BASE_ADDR 0x40000000
 /** Flash base address (32-bit) */
 #define FLASH_BASE 0x00400000
 /** Flash address bytes */
@@ -74,21 +76,19 @@ enum SPI_FLASH_CMD {
  **************************************************************************/
 int erase_sector_xip_flash(uint32_t base_addr);
 int program_xip_flash(uint32_t *src, uint32_t base_addr, uint32_t size);
-void dump_xip_flash(uint32_t base_addr, uint32_t num);
-uint32_t byte_swap32(uint32_t data);
 
 
 /**********************************************************************//**
  * @name Simple demo program to be stored to the XIP flash.
  * @note This is a the "raw HEX version" from the rv32i-only "sw/example/blink_led" demo program (using "make clean_all hex").
  * This program has been compiled using a modified linker script:
- * rom ORIGIN = XIP base page + flash base address (= 0x20000000 + FLASH_BASE)
+ * rom ORIGIN = XIP base page + flash base address (= XIP_PAGE_BASE_ADDR + FLASH_BASE)
  **************************************************************************/
 const uint32_t xip_program[] = {
   0x30005073,
-  0x5fc02117,
+  0x3fc02117,
   0xff810113,
-  0x5fc00197,
+  0x3fc00197,
   0x7f418193,
   0x00000517,
   0x15050513,
@@ -127,9 +127,9 @@ const uint32_t xip_program[] = {
   0x00000f93,
   0x00000597,
   0x37c58593,
-  0x5fc00617,
+  0x3fc00617,
   0xf5860613,
-  0x5fc00697,
+  0x3fc00697,
   0xf5068693,
   0x00c58e63,
   0x00d65c63,
@@ -138,9 +138,9 @@ const uint32_t xip_program[] = {
   0x00458593,
   0x00460613,
   0xfedff06f,
-  0x5fc00717,
+  0x3fc00717,
   0xf2c70713,
-  0x5fc00797,
+  0x3fc00797,
   0xf2478793,
   0x00f75863,
   0x00072023,
@@ -198,24 +198,20 @@ const uint32_t xip_program[] = {
   0x00000593,
   0x00112623,
   0x00812423,
-  0x03c000ef,
+  0x0e0000ef,
   0x00000513,
   0x00150413,
   0x00000593,
   0x0ff57513,
-  0x028000ef,
+  0x0cc000ef,
   0x10000513,
-  0x030000ef,
+  0x020000ef,
   0x00040513,
   0xfe5ff06f,
   0xf9402583,
   0xf9002503,
   0xf9402783,
   0xfef59ae3,
-  0x00008067,
-  0xfc000793,
-  0x00a7a423,
-  0x00b7a623,
   0x00008067,
   0xfe010113,
   0x00a12623,
@@ -224,23 +220,23 @@ const uint32_t xip_program[] = {
   0x00112e23,
   0x00812c23,
   0x00912a23,
-  0x144000ef,
+  0x154000ef,
   0x00c12603,
   0x00000693,
   0x00000593,
-  0x09c000ef,
+  0x0ac000ef,
   0xfe802783,
   0x00020737,
   0x00050413,
   0x00e7f7b3,
   0x00058493,
   0x02078e63,
-  0xf95ff0ef,
+  0xfa5ff0ef,
   0x00850433,
   0x00a43533,
   0x009584b3,
   0x009504b3,
-  0xf81ff0ef,
+  0xf91ff0ef,
   0xfe95eee3,
   0x00b49463,
   0xfe856ae3,
@@ -258,6 +254,10 @@ const uint32_t xip_program[] = {
   0x00000013,
   0xff1ff06f,
   0xfcdff06f,
+  0xfc000793,
+  0x00a7a423,
+  0x00b7a623,
+  0x00008067,
   0x00050613,
   0x00000513,
   0x0015f693,
@@ -381,7 +381,8 @@ int main() {
 
   // configuration note
   neorv32_uart0_printf("Flash base address:  0x%x\n"
-                       "Flash address bytes: %u\n", (uint32_t)FLASH_BASE, (uint32_t)FLASH_ABYTES);
+                       "XIP base address:    0x%x\n"
+                       "Flash address bytes: %u\n", (uint32_t)FLASH_BASE, (uint32_t)XIP_PAGE_BASE_ADDR, (uint32_t)FLASH_ABYTES);
 
   neorv32_uart0_printf("XIP SPI clock speed: %u Hz\n\n", neorv32_cpu_get_clk_from_prsc(XIP_CLK_PRSC)/2);
 
@@ -421,29 +422,37 @@ int main() {
   }
 
 
-  // dump the content we have just programmed to the XIP flash
-  neorv32_uart0_printf("\nRead-back XIP flash...\n");
-  dump_xip_flash(FLASH_BASE, sizeof(xip_program)/4);
-
-
   // Most SPI flash memories support "incremental read" operations - the read command and the start address
   // is only transferred once and after that consecutive data is sampled with each new transferred byte.
   // This can be sued by the XIP burst mode, which accelerates data fetch by up to 50%.
+  neorv32_uart0_printf("Enabling XIP burst mode...\n");
   neorv32_xip_burst_mode_enable(); // this has to be called right before starting the XIP mode by neorv32_xip_start()
 
 
   // configure and enable the actual XIP mode
   // * configure FLASH_ABYTES address bytes send to the SPI flash for addressing
-  // * map the XIP flash to the address space starting at 0x20000000 - only the 4 MSBs are relevant here
-  if (neorv32_xip_start(FLASH_ABYTES, 0x20000000)) {
+  // * map the XIP flash to the address space starting at XIP_PAGE_BASE_ADDR - only the 4 MSBs are relevant here
+  // after calling this function the SPI flash is mapped to the processor's address space and is accessible as "normal"
+  // memory-mapped read-only memory
+  if (neorv32_xip_start(FLASH_ABYTES, XIP_PAGE_BASE_ADDR)) {
     neorv32_uart0_printf("Error! XIP mode configuration error!\n");
     return 1;
   }
 
 
+  // since the flash is now mapped to the processor's address space we can dump its content by using normal memory accesses
+  neorv32_uart0_printf("\nRead-back XIP flash content (via memory-mapped access)...\n");
+  uint32_t flash_base_addr = XIP_PAGE_BASE_ADDR + FLASH_BASE;
+  uint32_t *pnt = (uint32_t*)flash_base_addr;
+  uint32_t i;
+  for (i=0; i<(sizeof(xip_program)/4); i++) {
+    neorv32_uart0_printf("[0x%x] 0x%x\n", flash_base_addr + 4*i, pnt[i]);
+  }
+
+
   // finally, jump to the XIP flash's base address we have configured to start execution **from there**
-  neorv32_uart0_printf("\nStarting Execute-In-Place program...\n");
-  asm volatile ("call %[dest]" : : [dest] "i" (0x20000000 + FLASH_BASE));
+  neorv32_uart0_printf("\nStarting Execute-In-Place program (@ 0x%x)...\n", (uint32_t)(XIP_PAGE_BASE_ADDR + FLASH_BASE));
+  asm volatile ("call %[dest]" : : [dest] "i" (XIP_PAGE_BASE_ADDR + FLASH_BASE));
 
 
   // this should never be reached
@@ -569,69 +578,4 @@ int program_xip_flash(uint32_t *src, uint32_t base_addr, uint32_t size) {
   }
 
   return error;
-}
-
-
-/**********************************************************************//**
- * Helper function to dump 4-byte words from the XIP flash
- *
- * @param[in] base_addr Image base address (in flash).
- * @param[in] num Number of 4-byte words to dump.
- * @return Returns 0 if write was successful.
- **************************************************************************/
-void dump_xip_flash(uint32_t base_addr, uint32_t num) {
-
-  uint32_t cnt = 0;
-  uint32_t flash_addr = base_addr;
-  uint32_t tmp = 0;
-
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } data;
-
-  while (cnt < num) {
-
-    // read word
-    // 1 byte command, FLASH_ABYTES bytes address, 4 bytes data
-    tmp = SPI_FLASH_CMD_READ << 24; // command: byte read
-    if (FLASH_ABYTES == 1) { tmp |= (flash_addr & 0x000000FF) << 16; } // address
-    if (FLASH_ABYTES == 2) { tmp |= (flash_addr & 0x0000FFFF) <<  8; } // address
-    if (FLASH_ABYTES == 3) { tmp |= (flash_addr & 0x00FFFFFF) <<  0; } // address
-    data.uint32[1] = tmp;
-    data.uint32[0] = 0; // data dummy bytes, read data is always LSB-aligned
-    neorv32_xip_spi_trans(5 + FLASH_ABYTES, &data.uint64);
-
-    // the direct SPI mode returns data in incrementing byte order so we need to convert endianness here
-    // to show the "correct" instruction layout as in 'xip_program'
-    data.uint32[0] = byte_swap32(data.uint32[0]); // convert byte order
-
-    neorv32_uart0_printf("[0x%x] 0x%x\n", flash_addr, data.uint32[0]);
-    flash_addr += 4;
-    cnt++;
-  }
-}
-
-
-/**********************************************************************//**
- * Byte swap for endianness conversion.
- *
- * @param[in] data 32-bit input byte.
- * @return 32-bit output data with swapped bytes.
- **************************************************************************/
-uint32_t byte_swap32(uint32_t data) {
-
-  union {
-    uint32_t uint32;
-    uint8_t  uint8[sizeof(uint32_t)];
-  } tmp, res;
-
-  tmp.uint32 = data;
-
-  res.uint8[0] = tmp.uint8[3];
-  res.uint8[1] = tmp.uint8[2];
-  res.uint8[2] = tmp.uint8[1];
-  res.uint8[3] = tmp.uint8[0];
-
-  return res.uint32;
 }
