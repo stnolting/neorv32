@@ -31,7 +31,8 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
-|:----------:|:-------:|:--------|
+|:-------------------:|:-------:|:--------|
+| 11.07.2022 | 1.7.3.8 | **physical memory protection(PMP)**: locking entry `i` in TOR mode will now also prevent write access to `pmpaddr(i-1)` (RISC-V compatibility); [#363](https://github.com/stnolting/neorv32/pull/363) |
 | 09.07.2022 | 1.7.3.7 | :bug: fixed **bootloader's** byte order when using the flash for application storage: :warning: was BIG-endian, is now also LITTLE-endian; [#362](https://github.com/stnolting/neorv32/pull/362) |
 | 08.07.2022 | 1.7.3.6 | :test_tube: added burst mode option to **XIP module** to accelerate consecutive flash read accesses; :warning: fixed XIP endianness: was BIG-endian and is now LITTLE-endian; [#361](https://github.com/stnolting/neorv32/pull/361) |
 | 08.07.2022 | 1.7.3.5 | Update "raw" executable generation options of makefile and image generator; [#360](https://github.com/stnolting/neorv32/pull/360) |
