@@ -158,6 +158,11 @@ executed via the `e` command. To store the recently uploaded executable to an at
 directly load an executable from the SPI flash press `l`. The bootloader and the auto-boot sequence can be
 manually restarted via the `r` command.
 
+.Booting via XIP
+[NOTE]
+The bootloader allows to execute an application right from flash using the <<_execute_in_place_module_xip>> module.
+This requires a pre-programmed flash. The bootloader's "store" option can **not** be used to program an XIP image.
+
 .Default Configuration
 [TIP]
 More information regarding the default SPI, GPIO, XIP, etc. configuration can be found in the User Guide
