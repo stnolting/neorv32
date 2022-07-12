@@ -25,30 +25,34 @@ base ISA `rv32i` only to ensure it can work independently of the actual CPU conf
 4+^| Status LED
 | `STATUS_LED_EN`  | `1` | `0`, `1`     | Enable bootloader status led ("heart beat") at `GPIO` output port pin #`STATUS_LED_PIN` when `1`
 | `STATUS_LED_PIN` | `0` | `0` ... `31` | `GPIO` output pin used for the high-active status LED
-4+^| Boot configuration
-| `AUTO_BOOT_SPI_EN`  | `0` | `0`, `1` | Set `1` to enable immediate boot from external SPI flash
-| `AUTO_BOOT_OCD_EN`  | `0` | `0`, `1` | Set `1` to enable boot via on-chip debugger (OCD)
-| `AUTO_BOOT_TIMEOUT` | `8` | _any_    | Time in seconds after the auto-boot sequence starts (if there is no UART input by user); set to 0 to disabled auto-boot sequence
+4+^| Auto-boot configuration
+| `AUTO_BOOT_TIMEOUT` | `8` | _any_    | Time in seconds after the auto-boot sequence starts (if there is no UART input by the user); set to 0 to disabled auto-boot sequence
 4+^| SPI configuration
 | `SPI_EN`                | `1` | `0`, `1`      | Set `1` to enable the usage of the SPI module (including load/store executables from/to SPI flash options)
 | `SPI_FLASH_CS`          | `0` | `0` ... `7`   | SPI chip select output (`spi_csn_o`) for selecting flash
 | `SPI_FLASH_ADDR_BYTES`  | `3` | `2`, `3`, `4` | SPI flash address size in number of bytes (2=16-bit, 3=24-bit, 4=32-bit)
 | `SPI_FLASH_SECTOR_SIZE` | `65536` | _any_     | SPI flash sector size in bytes
 | `SPI_FLASH_CLK_PRSC`    | `CLK_PRSC_8`        | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock pre-scaler (dividing main processor clock)
-| `SPI_BOOT_BASE_ADDR`    | `0x02000000`        | _any_ 32-bit value | Defines the _base_ address of the executable in external flash
+| `SPI_BOOT_BASE_ADDR`    | `0x00400000`        | _any_ 32-bit value | Defines the _base_ address of the executable in external flash
+4+^| XIP configuration
+| `XIP_EN`                | `0` | `0`, `1`      | Set `1` to enable the XIP options
+| `XIP_PAGE_BASE_ADDR`    | `0x40000000`        | _any_ 32-bit value | Defines the page _base_ address where the XP flash will be mapped to
 |=======================
+
+[NOTE]
+The XIP options re-use the "SPI configuration" options for configuring the XIP's SPI connection.
 
 Each configuration parameter is implemented as C-language `define` that can be manually overridden (_redefined_) when
 invoking the bootloader's makefile. The according parameter and its new value has to be _appended_
 (using `+=`) to the makefile `USER_FLAGS` variable. Make sure to use the `-D` prefix here.
 
-For example, to configure a UART Baud rate of 57600 and redirecting the status LED to output pin 20
-use the following command (_in_ the bootloader's source folder `sw/bootloader`):
+For example, to configure a UART Baud rate of 57600 and redirecting the status LED to GPIO output pin 20
+use the following command:
 
 .Example: customizing, re-compiling and re-installing the bootloader
 [source,console]
 ----
-$ make USER_FLAGS+=-DUART_BAUD=57600 USER_FLAGS+=-DSTATUS_LED_PIN=20 clean_all bootloader
+sw/bootloader$ make USER_FLAGS+=-DUART_BAUD=57600 USER_FLAGS+=-DSTATUS_LED_PIN=20 clean_all bootloader
 ----
 
 [NOTE]
@@ -56,46 +60,14 @@ The `clean_all` target ensure that all libraries are re-compiled. The `bootloade
 compile and install the bootloader to the HDL boot ROM (updating `rtl/core/neorv32_bootloader_image.vhd`).
 
 :sectnums:
-=== Bootloader Boot Configuration
+=== Auto-Boot Configuration
 
-The bootloader provides several _boot configurations_ that define where the actual application's executable
-shall be fetched from. Note that the non-default boot configurations provide a smaller memory footprint
-reducing boot ROM implementation costs.
-
-:sectnums!:
-==== Default Boot Configuration
-
-The _default_ bootloader configuration provides a UART-based user interface that allows to upload new executables
+The default bootloader provides a UART-based user interface that allows to upload new executables
 at any time. Optionally, the executable can also be programmed to an external SPI flash by the bootloader (see
 section <<_programming_an_external_spi_flash_via_the_bootloader>>).
 
-This configuration also provides an _automatic boot sequence_ (auto-boot) which will start fetching an executable
-from external SPI flash using the default SPI configuration. By this, the default bootloader configuration
-provides a "non volatile program storage" mechanism that automatically boot from external SPI flash
-(after `AUTO_BOOT_TIMEOUT`) while still providing the option to re-program SPI flash at any time
-via the UART interface.
-
-:sectnums!:
-==== `AUTO_BOOT_SPI_EN`
-
-The automatic boot from SPI flash (enabled when `AUTO_BOOT_SPI_EN` is `1`) will fetch an executable from an external
-SPI flash (using the according _SPI configuration_) right after reset. The bootloader will start fetching
-the image at SPI flash base address `SPI_BOOT_BASE_ADDR`.
-
-Note that there is _no_ UART console to interact with the bootloader. However, this boot configuration will
-output minimal status messages via UART (if `UART_EN` is `1`).
-
-:sectnums!:
-==== `AUTO_BOOT_OCD_EN`
-
-If `AUTO_BOOT_OCD_EN` is `1` the bootloader is implemented as minimal "halt loop" to be used with the on-chip debugger.
-After initializing the hardware, the CPU waits in this endless loop until the on-chip debugger takes control over
-the core (to upload and run the actual executable). See section <<_debugging_using_the_on_chip_debugger>>
-for more information on how to use the on-chip debugger to upload and run executables.
-
-[NOTE]
-All bootloader boot configuration support uploading new executables via the on-chip debugger.
-
-[WARNING]
-Note that this boot configuration does not load any executable at all! Hence,
-this boot configuration is intended to be used with the on-chip debugger only.
+The bootloader also provides an _automatic boot sequence_ (auto-boot) which will start copying an executable
+from external SPI flash to IMEM using the default SPI configuration. By this, the default bootloader
+provides a "non-volatile program storage" mechanism that automatically boots from external SPI flash
+(after `AUTO_BOOT_TIMEOUT`) while still providing the option to re-program the SPI flash at any time
+via the UART console.

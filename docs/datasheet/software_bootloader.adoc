@@ -19,7 +19,7 @@ via UART. This allows to build processor setups with _non-volatile application s
 :sectnums:
 ==== Bootloader SoC/CPU Requirements
 
-The bootloader relies on certain CPU and SoC extensions and modules to be enabled to allo full functionality.
+The bootloader relies on certain CPU and SoC extensions and modules to be enabled to allow full functionality.
 
 [cols="<3,<12"]
 [grid="none"]
@@ -32,6 +32,7 @@ Without UART0 the auto-boot via SPI is still supported but the bootloader should
 | _RECOMMENDED_ | The default bootloader uses bit 0 of the <<_general_purpose_input_and_output_port_gpio>> output port to drive a high-active "heart beat" status LED.
 | _RECOMMENDED_ | The <<_machine_system_timer_mtime>> is used to control blinking of the status LED and also to automatically trigger the auto-boot sequence.
 | OPTIONAL      | The SPI controller (<<_serial_peripheral_interface_controller_spi>>) is needed to store/load executable from external flash (for the auto boot feature).
+| OPTIONAL      | The XIP controller (<<_execute_in_place_module_xip>>) is needed to execute code directly from a pre-programmed SPI flash.
 |=======================
 
 
@@ -42,11 +43,11 @@ The bootloader can access an SPI-compatible flash via the processor's top entity
 chip-select line is driven by `spi_csn_o(0)` and the SPI clock uses 1/8 of the processor's main clock as clock frequency.
 The SPI flash has to support single-byte read and write operations, 24-bit addresses and at least the following standard commands:
 
-* `0x03`: Read data
+* `0x02`: Program page (write byte)
+* `0x03`: Read data (byte)
 * `0x04`: Write disable (for volatile status register)
 * `0x05`: Read (first) status register
 * `0x06`: Write enable (for volatile status register)
-* `0x02`: Page program
 * `0xD8`: Block erase (64kB)
 
 .Custom Configuration
@@ -54,10 +55,6 @@ The SPI flash has to support single-byte read and write operations, 24-bit addre
 Most properties (like chip select line, flash address width, SPI clock frequency, ...) of the default bootloader can be reconfigured
 without the need to change the source code. Custom configuration can be made using command line switches when recompiling the bootloader.
 See the User Guide https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader for more information.
-
-.Known-Good Chips
-[TIP]
-Compatible (FGPA configuration) SPI flash memories are for example the "Winbond W25Q64FV2 or the "Micron N25Q032A".
 
 
 :sectnums:
@@ -83,21 +80,21 @@ can transfer data in _raw_ byte mode without any protocol overhead (e.g. XMODEM)
 transmitting files larger than 4kB (see https://github.com/stnolting/neorv32/pull/215). Try a different terminal program
 if uploading of a binary does not work.
 
-The bootloader uses the LSB of the top entity's `gpio_o` output port as high-active status LED. Aall other
-output pin are set to low level and won't be altered. After reset, this LED will start blinking at ~2Hz and the
-following intro screen should show up in the terminal:
+The bootloader uses the LSB of the top entity's `gpio_o` output port as high-active status LED. All other
+output pins are set to low level and won't be altered. After reset, the status LED will start blinking at 2Hz and the
+following intro screen shows up:
 
 [source]
 ----
 << NEORV32 Bootloader >>
 
-BLDV: Feb 16 2022
-HWV:  0x01060709
+BLDV: Jul 11 2022
+HWV:  0x01070307
 CLK:  0x05f5e100
-ISA:  0x40901107 + 0xc000068b
-SOC:  0x7b7f402f
-IMEM: 0x00008000 bytes @0x00000000
-DMEM: 0x00004000 bytes @0x80000000
+ISA:  0x40901104 + 0xc0000783
+SOC:  0x7c5f400f
+IMEM: 0x00004000 bytes @0x00000000
+DMEM: 0x00002000 bytes @0x80000000
 
 Autoboot in 8s. Press any key to abort.
 ----
@@ -123,13 +120,13 @@ you press any key within the 8 seconds, the actual bootloader user console start
 ----
 << NEORV32 Bootloader >>
 
-BLDV: Feb 16 2022
-HWV:  0x01060709
+BLDV: Jul 11 2022
+HWV:  0x01070307
 CLK:  0x05f5e100
-ISA:  0x40901107 + 0xc000068b
-SOC:  0x7b7f402f
-IMEM: 0x00008000 bytes @0x00000000
-DMEM: 0x00004000 bytes @0x80000000
+ISA:  0x40901104 + 0xc0000783
+SOC:  0x7c5f400f
+IMEM: 0x00004000 bytes @0x00000000
+DMEM: 0x00002000 bytes @0x80000000
 
 Autoboot in 8s. Press any key to abort.
 Aborted. <1>
@@ -140,6 +137,7 @@ Available commands:
  u: Upload
  s: Store to flash
  l: Load from flash
+ x: Boot from flash (XIP)
  e: Execute
 CMD:>
 ----
@@ -152,6 +150,7 @@ The auto boot countdown is stopped and the bootloader's user console is ready to
 * `u`: Upload new program executable (`neorv32_exe.bin`) via UART into the instruction memory
 * `s`: Store executable to SPI flash at `spi_csn_o(0)` (little-endian byte order)
 * `l`: Load executable from SPI flash at `spi_csn_o(0)` (little-endian byte order)
+* `x`: Boot program directly from flash via XIP (requires a pre-programmed image)
 * `e`: Start the application, which is currently stored in the instruction memory (IMEM)
 
 A new executable can be uploaded via UART by executing the `u` command. After that, the executable can be directly
@@ -159,10 +158,17 @@ executed via the `e` command. To store the recently uploaded executable to an at
 directly load an executable from the SPI flash press `l`. The bootloader and the auto-boot sequence can be
 manually restarted via the `r` command.
 
-[TIP]
-The CPU is in machine level privilege mode after reset. When the bootloader boots an application,
-this application is also started in machine level privilege mode.
+.Booting via XIP
+[NOTE]
+The bootloader allows to execute an application right from flash using the <<_execute_in_place_module_xip>> module.
+This requires a pre-programmed flash. The bootloader's "store" option can **not** be used to program an XIP image.
 
+.Default Configuration
+[TIP]
+More information regarding the default SPI, GPIO, XIP, etc. configuration can be found in the User Guide
+section https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader.
+
+.SPI Flash Programming
 [TIP]
 For detailed information on using an SPI flash for application storage see User Guide section
 https://stnolting.github.io/neorv32/ug/#_programming_an_external_spi_flash_via_the_bootloader[Programming an External SPI Flash via the Bootloader].
@@ -190,13 +196,13 @@ In many cases the error source is just _temporary_ (like some HF spike during an
 [cols="<2,<8"]
 [grid="rows"]
 |=======================
-| **`ERROR_0`** | If you try to transfer an invalid executable (via UART or from the external SPI flash), this error message shows up. There might be a transfer protocol configuration error in the terminal program. Also, if no SPI flash was found during an auto-boot attempt, this message will be displayed.
-| **`ERROR_1`** | Your program is way too big for the internal processor’s instructions memory. Increase the memory size or reduce your application code.
-| **`ERROR_2`** | This indicates a checksum error. Something went wrong during the transfer of the program image (upload via UART or loading from the external SPI flash). If the error was caused by a UART upload, just try it again. When the error was generated during a flash access, the stored image might be corrupted.
-| **`ERROR_3`** | This error occurs if the attached SPI flash cannot be accessed. Make sure you have the right type of flash and that it is properly connected to the NEORV32 SPI port using chip select #0.
-| **`ERROR - Unexpected exception!`** | The bootloader encountered an exception during operation. This might be caused when it tries to access peripherals that were not implemented during synthesis. Example: executing commands `l` or `s` (SPI flash operations) without the SPI module being implemented.
+| **`ERR_EXE`**  | If you try to transfer an invalid executable (via UART or from the external SPI flash), this error message shows up. There might be a transfer protocol configuration error in the terminal program or maybe just the wrong file was selected. Also, if no SPI flash was found during an auto-boot attempt, this message will be displayed.
+| **`ERR_SIZE`** | Your program is way too big for the internal processor’s instructions memory. Increase the memory size or reduce your application code.
+| **`ERR_CHKS`** | This indicates a checksum error. Something went wrong during the transfer of the program image (upload via UART or loading from the external SPI flash). If the error was caused by a UART upload, just try it again. When the error was generated during a flash access, the stored image might be corrupted.
+| **`ERR_FLSH`** | This error occurs if the attached SPI flash cannot be accessed. Make sure you have the right type of flash and that it is properly connected to the NEORV32 SPI port using chip select #0.
+| **`ERR_EXC`**  | The bootloader encountered an unexpected exception during operation. This might be caused when it tries to access peripherals that were not implemented during synthesis. Example: executing commands `l` or `s` (SPI flash operations) without the SPI module being implemented.
 |=======================
 
 [TIP]
-If an unexpected exception has been raised the bootloader prints some hexadecimal debug information showing
+If an unexpected exception has been raised the bootloader prints hexadecimal debug information showing
 the <<_mcause>>, <<_mepc>> and <<_mtval>> CSR values.
