@@ -1047,8 +1047,8 @@ int main() {
 
     // make sure UART is enabled
     NEORV32_UART0.CTRL |= (1 << UART_CTRL_EN);
-    // make sure sim mode is disabled; set baud rate to MAX (for faster simulation)
-    NEORV32_UART0.CTRL &= ~((1 << UART_CTRL_SIM_MODE) | (0xfff << UART_CTRL_BAUD00) | (7 << UART_CTRL_PRSC0));
+    // make sure sim mode is disabled
+    NEORV32_UART0.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
     // enable fast interrupt
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ2E);
@@ -1093,8 +1093,6 @@ int main() {
     NEORV32_UART0.CTRL |= (1 << UART_CTRL_EN);
     // make sure sim mode is disabled
     NEORV32_UART0.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
-    // make sure sim mode is disabled; set baud rate to MAX (for faster simulation)
-    NEORV32_UART0.CTRL &= ~((1 << UART_CTRL_SIM_MODE) | (0xfff << UART_CTRL_BAUD00) | (7 << UART_CTRL_PRSC0));
 
     // UART0 TX interrupt enable
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ3E);
@@ -1134,8 +1132,8 @@ int main() {
 
     // make sure UART is enabled
     NEORV32_UART1.CTRL |= (1 << UART_CTRL_EN);
-    // make sure sim mode is disabled; set baud rate to MAX (for faster simulation)
-    NEORV32_UART1.CTRL &= ~((1 << UART_CTRL_SIM_MODE) | (0xfff << UART_CTRL_BAUD00) | (7 << UART_CTRL_PRSC0));
+    // make sure sim mode is disabled
+    NEORV32_UART1.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
     // UART1 RX interrupt enable
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ4E);
@@ -1175,8 +1173,8 @@ int main() {
 
     // make sure UART is enabled
     NEORV32_UART1.CTRL |= (1 << UART_CTRL_EN);
-    // make sure sim mode is disabled; set baud rate to MAX (for faster simulation)
-    NEORV32_UART1.CTRL &= ~((1 << UART_CTRL_SIM_MODE) | (0xfff << UART_CTRL_BAUD00) | (7 << UART_CTRL_PRSC0));
+    // make sure sim mode is disabled
+    NEORV32_UART1.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
     // UART1 RX interrupt enable
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ5E);
