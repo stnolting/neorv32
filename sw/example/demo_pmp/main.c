@@ -92,14 +92,7 @@ int main() {
   neorv32_uart0_printf("\n<<< NEORV32 Physical Memory Protection (PMP) Example Program >>>\n\n");
 
   neorv32_uart0_printf("NOTE: This program requires at least 2 PMP regions (PMP_NUM_REGIONS >= 2)\n"
-                       "      and a minimal granularity of 4 bytes (PMP_MIN_GRANULARITY = 4).\n\n");
-
-  neorv32_uart0_printf("NOTE: A 4-word array 'protected_var[4]' is created, which will be probed from\n"
-                       "      machine-mode. It provides the following access rights:\n"
-                       "      > NO_EXECUTE - no execute permission\n"
-                       "      > NO_WRITE   - no write permission\n"
-                       "      > READ       - program is allowed to read\n"
-                       "      > LOCKED     - also enforce access rights for machine-mode software\n\n");
+                       "and a minimal granularity of 4 bytes (PMP_MIN_GRANULARITY = 4).\n\n");
 
 
   // show PMP configuration
@@ -123,6 +116,14 @@ int main() {
   }
 
 
+  neorv32_uart0_printf("NOTE: A 4-word array 'protected_var[4]' is created, which will be probed from\n"
+                       "machine-mode. The region provides the following access permissions:\n"
+                       "> !X - no execute permission\n"
+                       "> !W - no write permission\n"
+                       ">  R - read permission\n"
+                       ">  L - enforce access rights for machine-mode software\n\n");
+
+
   // The "protected_var" variable will be protected: No execute and no write access, just allow read access
 
   // create protected region
@@ -136,9 +137,10 @@ int main() {
   neorv32_uart0_printf("REGION_BEGIN = 0x%x\n", region_begin);
   neorv32_uart0_printf("REGION_END   = 0x%x\n", region_end);
 
+
   // base (region begin)
   permissions = PMP_OFF << PMPCFG_A_LSB; // mode = OFF
-  neorv32_uart0_printf("> Region begin (PMP entry 0): Base = 0x%x, Mode = OFF (base of region) ", region_begin);
+  neorv32_uart0_printf("> Region begin (PMP entry 0): Base = 0x%x, Mode = OFF (base of region)  ", region_begin);
   pmp_status = neorv32_cpu_pmp_configure_region(0, region_begin, permissions);
   if (pmp_status) {
     neorv32_uart0_printf("[FAILED]\n");
@@ -152,8 +154,8 @@ int main() {
                 (0 << PMPCFG_X) | // no "execute" permission
                 (0 << PMPCFG_W) | // no "write" permission
                 (1 << PMPCFG_R) | // set "read" permission
-                (1 << PMPCFG_L);  // locked: also enforce PMP rule for machine-mode software
-  neorv32_uart0_printf("> Region end   (PMP entry 1): Base = 0x%x, Mode = TOR (top of region)  ", region_end);
+                (1 << PMPCFG_L);  // locked: enforce PMP rule for machine-mode software
+  neorv32_uart0_printf("> Region end   (PMP entry 1): Base = 0x%x, Mode = TOR (bound of region) ", region_end);
   pmp_status = neorv32_cpu_pmp_configure_region(1, region_end, permissions);
   if (pmp_status) {
     neorv32_uart0_printf("[FAILED]\n");
@@ -162,8 +164,9 @@ int main() {
     neorv32_uart0_printf("[ok]\n");
   }
 
+
   // test access
-  neorv32_uart0_printf("\nTesting access to 'protected_var' - invalid accesses will raise an exception, which will be\n"
+  neorv32_uart0_printf("\n\nTesting access to 'protected_var' - invalid accesses will raise an exception, which will be\n"
                        "captured by the NEORV32 runtime environment's dummy/debug handlers ('<RTE> ... </RTE>').\n\n");
 
   neorv32_uart0_printf("Reading protected_var[0] @ 0x%x = 0x%x\n", (uint32_t)(&protected_var[0]), protected_var[0]);
