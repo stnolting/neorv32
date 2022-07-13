@@ -376,22 +376,11 @@ begin
     pmp.ld_fault <= tmp_ld_v(0);
     pmp.st_fault <= tmp_st_v(0);
 
-    -- > this is the behavioral version of the code above
---  -- instruction fetch access --
+    -- > this is the behavioral version of the code above (instruction fetch access)
 --  pmp.if_fault <= bool_to_ulogic_f(ctrl_i(ctrl_priv_mode_c) /= priv_mode_m_c); -- default: fault if U mode
 --  for r in 0 to PMP_NUM_REGIONS-1 loop
 --    if (pmp.i_match(r) = '1') then
 --      pmp.if_fault <= not pmp.perm_ex(r); -- fault if no execute permission
---      exit;
---    end if;
---  end loop; -- r
---  -- data load/store access --
---  pmp.ld_fault <= bool_to_ulogic_f(ctrl_i(ctrl_bus_priv_c) /= priv_mode_m_c); -- default: fault if U mode
---  pmp.st_fault <= bool_to_ulogic_f(ctrl_i(ctrl_bus_priv_c) /= priv_mode_m_c); -- default: fault if U mode
---  for r in 0 to PMP_NUM_REGIONS-1 loop
---    if (pmp.d_match(r) = '1') then
---      pmp.ld_fault <= not pmp.perm_rd(r); -- fault if no read permission
---      pmp.st_fault <= not pmp.perm_wr(r); -- fault if no write permission
 --      exit;
 --    end if;
 --  end loop; -- r
