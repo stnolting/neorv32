@@ -520,35 +520,35 @@ enum NEORV32_PMP_MODES_enum {
  * Trap codes from mcause CSR.
  **************************************************************************/
 enum NEORV32_EXCEPTION_CODES_enum {
-  TRAP_CODE_I_MISALIGNED = 0x00000000UL, /**< 0.0:  Instruction address misaligned */
-  TRAP_CODE_I_ACCESS     = 0x00000001UL, /**< 0.1:  Instruction (bus) access fault */
-  TRAP_CODE_I_ILLEGAL    = 0x00000002UL, /**< 0.2:  Illegal instruction */
-  TRAP_CODE_BREAKPOINT   = 0x00000003UL, /**< 0.3:  Breakpoint (EBREAK instruction) */
-  TRAP_CODE_L_MISALIGNED = 0x00000004UL, /**< 0.4:  Load address misaligned */
-  TRAP_CODE_L_ACCESS     = 0x00000005UL, /**< 0.5:  Load (bus) access fault */
-  TRAP_CODE_S_MISALIGNED = 0x00000006UL, /**< 0.6:  Store address misaligned */
-  TRAP_CODE_S_ACCESS     = 0x00000007UL, /**< 0.7:  Store (bus) access fault */
-  TRAP_CODE_UENV_CALL    = 0x00000008UL, /**< 0.8:  Environment call from user mode (ECALL instruction) */
-  TRAP_CODE_MENV_CALL    = 0x0000000bUL, /**< 0.11: Environment call from machine mode (ECALL instruction) */
-  TRAP_CODE_MSI          = 0x80000003UL, /**< 1.3:  Machine software interrupt */
-  TRAP_CODE_MTI          = 0x80000007UL, /**< 1.7:  Machine timer interrupt */
-  TRAP_CODE_MEI          = 0x8000000bUL, /**< 1.11: Machine external interrupt */
-  TRAP_CODE_FIRQ_0       = 0x80000010UL, /**< 1.16: Fast interrupt channel 0 */
-  TRAP_CODE_FIRQ_1       = 0x80000011UL, /**< 1.17: Fast interrupt channel 1 */
-  TRAP_CODE_FIRQ_2       = 0x80000012UL, /**< 1.18: Fast interrupt channel 2 */
-  TRAP_CODE_FIRQ_3       = 0x80000013UL, /**< 1.19: Fast interrupt channel 3 */
-  TRAP_CODE_FIRQ_4       = 0x80000014UL, /**< 1.20: Fast interrupt channel 4 */
-  TRAP_CODE_FIRQ_5       = 0x80000015UL, /**< 1.21: Fast interrupt channel 5 */
-  TRAP_CODE_FIRQ_6       = 0x80000016UL, /**< 1.22: Fast interrupt channel 6 */
-  TRAP_CODE_FIRQ_7       = 0x80000017UL, /**< 1.23: Fast interrupt channel 7 */
-  TRAP_CODE_FIRQ_8       = 0x80000018UL, /**< 1.24: Fast interrupt channel 8 */
-  TRAP_CODE_FIRQ_9       = 0x80000019UL, /**< 1.25: Fast interrupt channel 9 */
-  TRAP_CODE_FIRQ_10      = 0x8000001aUL, /**< 1.26: Fast interrupt channel 10 */
-  TRAP_CODE_FIRQ_11      = 0x8000001bUL, /**< 1.27: Fast interrupt channel 11 */
-  TRAP_CODE_FIRQ_12      = 0x8000001cUL, /**< 1.28: Fast interrupt channel 12 */
-  TRAP_CODE_FIRQ_13      = 0x8000001dUL, /**< 1.29: Fast interrupt channel 13 */
-  TRAP_CODE_FIRQ_14      = 0x8000001eUL, /**< 1.30: Fast interrupt channel 14 */
-  TRAP_CODE_FIRQ_15      = 0x8000001fUL  /**< 1.31: Fast interrupt channel 15 */
+  TRAP_CODE_I_MISALIGNED = 0x00000000U, /**< 0.0:  Instruction address misaligned */
+  TRAP_CODE_I_ACCESS     = 0x00000001U, /**< 0.1:  Instruction (bus) access fault */
+  TRAP_CODE_I_ILLEGAL    = 0x00000002U, /**< 0.2:  Illegal instruction */
+  TRAP_CODE_BREAKPOINT   = 0x00000003U, /**< 0.3:  Breakpoint (EBREAK instruction) */
+  TRAP_CODE_L_MISALIGNED = 0x00000004U, /**< 0.4:  Load address misaligned */
+  TRAP_CODE_L_ACCESS     = 0x00000005U, /**< 0.5:  Load (bus) access fault */
+  TRAP_CODE_S_MISALIGNED = 0x00000006U, /**< 0.6:  Store address misaligned */
+  TRAP_CODE_S_ACCESS     = 0x00000007U, /**< 0.7:  Store (bus) access fault */
+  TRAP_CODE_UENV_CALL    = 0x00000008U, /**< 0.8:  Environment call from user mode (ECALL instruction) */
+  TRAP_CODE_MENV_CALL    = 0x0000000bU, /**< 0.11: Environment call from machine mode (ECALL instruction) */
+  TRAP_CODE_MSI          = 0x80000003U, /**< 1.3:  Machine software interrupt */
+  TRAP_CODE_MTI          = 0x80000007U, /**< 1.7:  Machine timer interrupt */
+  TRAP_CODE_MEI          = 0x8000000bU, /**< 1.11: Machine external interrupt */
+  TRAP_CODE_FIRQ_0       = 0x80000010U, /**< 1.16: Fast interrupt channel 0 */
+  TRAP_CODE_FIRQ_1       = 0x80000011U, /**< 1.17: Fast interrupt channel 1 */
+  TRAP_CODE_FIRQ_2       = 0x80000012U, /**< 1.18: Fast interrupt channel 2 */
+  TRAP_CODE_FIRQ_3       = 0x80000013U, /**< 1.19: Fast interrupt channel 3 */
+  TRAP_CODE_FIRQ_4       = 0x80000014U, /**< 1.20: Fast interrupt channel 4 */
+  TRAP_CODE_FIRQ_5       = 0x80000015U, /**< 1.21: Fast interrupt channel 5 */
+  TRAP_CODE_FIRQ_6       = 0x80000016U, /**< 1.22: Fast interrupt channel 6 */
+  TRAP_CODE_FIRQ_7       = 0x80000017U, /**< 1.23: Fast interrupt channel 7 */
+  TRAP_CODE_FIRQ_8       = 0x80000018U, /**< 1.24: Fast interrupt channel 8 */
+  TRAP_CODE_FIRQ_9       = 0x80000019U, /**< 1.25: Fast interrupt channel 9 */
+  TRAP_CODE_FIRQ_10      = 0x8000001aU, /**< 1.26: Fast interrupt channel 10 */
+  TRAP_CODE_FIRQ_11      = 0x8000001bU, /**< 1.27: Fast interrupt channel 11 */
+  TRAP_CODE_FIRQ_12      = 0x8000001cU, /**< 1.28: Fast interrupt channel 12 */
+  TRAP_CODE_FIRQ_13      = 0x8000001dU, /**< 1.29: Fast interrupt channel 13 */
+  TRAP_CODE_FIRQ_14      = 0x8000001eU, /**< 1.30: Fast interrupt channel 14 */
+  TRAP_CODE_FIRQ_15      = 0x8000001fU  /**< 1.31: Fast interrupt channel 15 */
 };
 
 
@@ -673,11 +673,11 @@ enum NEORV32_CLOCK_PRSC_enum {
 /** data memory base address (r/w/x) */
 // -> configured via 'dspace_base_c' constant in neorv32_package.vhd and available to software via SYSINFO entry
 /** bootloader memory base address (r/-/x) */
-#define BOOTLOADER_BASE_ADDRESS (0xFFFF0000UL)
+#define BOOTLOADER_BASE_ADDRESS (0xFFFF0000U)
 /** on-chip debugger complex base address (r/w/x) */
-#define OCD_BASE_ADDRESS        (0XFFFFF800UL)
+#define OCD_BASE_ADDRESS        (0XFFFFF800U)
 /** peripheral/IO devices memory base address (r/w/-) */
-#define IO_BASE_ADDRESS         (0xFFFFFE00UL)
+#define IO_BASE_ADDRESS         (0xFFFFFE00U)
 /**@}*/
 
 
@@ -697,7 +697,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_dm_t;
 
 /** on-chip debugger debug module base address */
-#define NEORV32_DM_BASE (0XFFFFF800UL)
+#define NEORV32_DM_BASE (0XFFFFF800U)
 
 /** on-chip debugger debug module hardware access (#neorv32_dm_t) */
 #define NEORV32_DM (*((volatile neorv32_dm_t*) (NEORV32_DM_BASE)))
@@ -752,7 +752,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_cfs_t;
 
 /** CFS base address */
-#define NEORV32_CFS_BASE (0xFFFFFE00UL)
+#define NEORV32_CFS_BASE (0xFFFFFE00U)
 
 /** CFS module hardware access (#neorv32_cfs_t) */
 #define NEORV32_CFS (*((volatile neorv32_cfs_t*) (NEORV32_CFS_BASE)))
@@ -770,7 +770,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_pwm_t;
 
 /** PWM module base address */
-#define NEORV32_PWM_BASE (0xFFFFFE80UL)
+#define NEORV32_PWM_BASE (0xFFFFFE80U)
 
 /** PWM module hardware access (#neorv32_pwm_t) */
 #define NEORV32_PWM (*((volatile neorv32_pwm_t*) (NEORV32_PWM_BASE)))
@@ -799,7 +799,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_slink_t;
 
 /** SLINK module base address */
-#define NEORV32_SLINK_BASE (0xFFFFFEC0UL)
+#define NEORV32_SLINK_BASE (0xFFFFFEC0U)
 
 /** SLINK module hardware access (#neorv32_slink_t) */
 #define NEORV32_SLINK (*((volatile neorv32_slink_t*) (NEORV32_SLINK_BASE)))
@@ -855,7 +855,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_xip_t;
 
 /** XIP module base address */
-#define NEORV32_XIP_BASE (0xFFFFFF40UL)
+#define NEORV32_XIP_BASE (0xFFFFFF40U)
 
 /** XIP module hardware access (#neorv32_xip_t) */
 #define NEORV32_XIP (*((volatile neorv32_xip_t*) (NEORV32_XIP_BASE)))
@@ -900,7 +900,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_gptmr_t;
 
 /** GPTMR module base address */
-#define NEORV32_GPTMR_BASE (0xFFFFFF60UL)
+#define NEORV32_GPTMR_BASE (0xFFFFFF60U)
 
 /** GPTMR module hardware access (#neorv32_gptmr_t) */
 #define NEORV32_GPTMR (*((volatile neorv32_gptmr_t*) (NEORV32_GPTMR_BASE)))
@@ -926,7 +926,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_buskeeper_t;
 
 /** BUSKEEPER module base address */
-#define NEORV32_BUSKEEPER_BASE (0xFFFFFF7CUL)
+#define NEORV32_BUSKEEPER_BASE (0xFFFFFF7CU)
 
 /** BUSKEEPER module hardware access (#neorv32_buskeeper_t) */
 #define NEORV32_BUSKEEPER (*((volatile neorv32_buskeeper_t*) (NEORV32_BUSKEEPER_BASE)))
@@ -952,7 +952,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_xirq_t;
 
 /** XIRQ module base address */
-#define NEORV32_XIRQ_BASE (0xFFFFFF80UL)
+#define NEORV32_XIRQ_BASE (0xFFFFFF80U)
 
 /** XIRQ module hardware access (#neorv32_xirq_t) */
 #define NEORV32_XIRQ (*((volatile neorv32_xirq_t*) (NEORV32_XIRQ_BASE)))
@@ -972,7 +972,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_mtime_t;
 
 /** MTIME module base address */
-#define NEORV32_MTIME_BASE (0xFFFFFF90UL)
+#define NEORV32_MTIME_BASE (0xFFFFFF90U)
 
 /** MTIME module hardware access (#neorv32_mtime_t) */
 #define NEORV32_MTIME (*((volatile neorv32_mtime_t*) (NEORV32_MTIME_BASE)))
@@ -990,7 +990,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_uart0_t;
 
 /** UART0 module base address */
-#define NEORV32_UART0_BASE (0xFFFFFFA0UL)
+#define NEORV32_UART0_BASE (0xFFFFFFA0U)
 
 /** UART0 module hardware access (#neorv32_uart0_t) */
 #define NEORV32_UART0 (*((volatile neorv32_uart0_t*) (NEORV32_UART0_BASE)))
@@ -1002,7 +1002,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_uart1_t;
 
 /** UART1 module base address */
-#define NEORV32_UART1_BASE (0xFFFFFFD0UL)
+#define NEORV32_UART1_BASE (0xFFFFFFD0U)
 
 /** UART1 module hardware access (#neorv32_uart1_t) */
 #define NEORV32_UART1 (*((volatile neorv32_uart1_t*) (NEORV32_UART1_BASE)))
@@ -1082,7 +1082,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_spi_t;
 
 /** SPI module base address */
-#define NEORV32_SPI_BASE (0xFFFFFFA8UL)
+#define NEORV32_SPI_BASE (0xFFFFFFA8U)
 
 /** SPI module hardware access (#neorv32_spi_t) */
 #define NEORV32_SPI (*((volatile neorv32_spi_t*) (NEORV32_SPI_BASE)))
@@ -1123,7 +1123,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_twi_t;
 
 /** TWI module base address */
-#define NEORV32_TWI_BASE (0xFFFFFFB0UL)
+#define NEORV32_TWI_BASE (0xFFFFFFB0U)
 
 /** TWI module hardware access (#neorv32_twi_t) */
 #define NEORV32_TWI (*((volatile neorv32_twi_t*) (NEORV32_TWI_BASE)))
@@ -1161,7 +1161,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_trng_t;
 
 /** TRNG module base address */
-#define NEORV32_TRNG_BASE (0xFFFFFFB8UL)
+#define NEORV32_TRNG_BASE (0xFFFFFFB8U)
 
 /** TRNG module hardware access (#neorv32_trng_t) */
 #define NEORV32_TRNG (*((volatile neorv32_trng_t*) (NEORV32_TRNG_BASE)))
@@ -1189,7 +1189,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_wdt_t;
 
 /** WDT module base address */
-#define NEORV32_WDT_BASE (0xFFFFFFBCUL)
+#define NEORV32_WDT_BASE (0xFFFFFFBCU)
 
 /** WDT module hardware access (#neorv32_wdt_t) */
 #define NEORV32_WDT (*((volatile neorv32_wdt_t*) (NEORV32_WDT_BASE)))
@@ -1231,7 +1231,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_gpio_t;
 
 /** GPIO module base address */
-#define NEORV32_GPIO_BASE (0xFFFFFFC0UL)
+#define NEORV32_GPIO_BASE (0xFFFFFFC0U)
 
 /** GPIO module hardware access (#neorv32_gpio_t) */
 #define NEORV32_GPIO (*((volatile neorv32_gpio_t*) (NEORV32_GPIO_BASE)))
@@ -1249,7 +1249,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_neoled_t;
 
 /** NEOLED module base address */
-#define NEORV32_NEOLED_BASE (0xFFFFFFD8UL)
+#define NEORV32_NEOLED_BASE (0xFFFFFFD8U)
 
 /** NEOLED module hardware access (#neorv32_neoled_t) */
 #define NEORV32_NEOLED (*((volatile neorv32_neoled_t*) (NEORV32_NEOLED_BASE)))
@@ -1312,7 +1312,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 } neorv32_sysinfo_t;
 
 /** SYSINFO module base address */
-#define NEORV32_SYSINFO_BASE (0xFFFFFFE0UL)
+#define NEORV32_SYSINFO_BASE (0xFFFFFFE0U)
 
 /** SYSINFO module hardware access (#neorv32_sysinfo_t) */
 #define NEORV32_SYSINFO (*((volatile neorv32_sysinfo_t*) (NEORV32_SYSINFO_BASE)))
