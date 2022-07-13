@@ -187,7 +187,7 @@ begin
     FAST_MUL_EN                  => true,          -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => true,          -- use barrel shifter for shift operations
     CPU_CNT_WIDTH                => 64,            -- total width of CPU cycle and instret counters (0..64)
-    CPU_IPB_ENTRIES              => 4,             -- entries is instruction prefetch buffer, has to be a power of 2, min 2
+    CPU_IPB_ENTRIES              => 2,             -- entries is instruction prefetch buffer, has to be a power of 2, min 2
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              => 5,             -- number of regions (0..16)
     PMP_MIN_GRANULARITY          => 4,             -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -201,7 +201,7 @@ begin
     MEM_INT_DMEM_EN              => int_dmem_c,    -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => dmem_size_c,   -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_EN                    => false,          -- implement instruction cache
+    ICACHE_EN                    => true,          -- implement instruction cache
     ICACHE_NUM_BLOCKS            => 8,             -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE            => 64,            -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         => 2,             -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
