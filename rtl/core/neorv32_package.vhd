@@ -51,11 +51,6 @@ package neorv32_package is
   -- FALSE = no hardware reset (might simplify HW), default; TRUE = reset to zero
   constant dedicated_reset_c : boolean := false;
 
-  -- "critical" number of implemented PMP regions --
-  -- if more PMP regions (> pmp_num_regions_critical_c) are defined, another register stage is automatically inserted into
-  -- the memory interfaces increasing data access latency by +1 cycle but also reducing critical path length
-  constant pmp_num_regions_critical_c : natural := 8; -- default=8
-
   -- "response time window" for processor-internal modules --
   -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception (min 2)
   constant max_proc_int_response_time_c : natural := 15;
@@ -68,7 +63,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070309"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070310"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -93,7 +88,7 @@ package neorv32_package is
   -- Internal Interface Types ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   type pmp_ctrl_if_t is array (0 to 15) of std_ulogic_vector(07 downto 0);
-  type pmp_addr_if_t is array (0 to 15) of std_ulogic_vector(33 downto 2); -- bits 33:2 of phys. address
+  type pmp_addr_if_t is array (0 to 15) of std_ulogic_vector(33 downto 0);
 
   -- Internal Memory Types Configuration Types ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -365,36 +360,37 @@ package neorv32_package is
   constant ctrl_bus_mo_we_c     : natural := 36; -- memory address and data output register write enable
   constant ctrl_bus_fence_c     : natural := 37; -- executed fence operation
   constant ctrl_bus_fencei_c    : natural := 38; -- executed fence.i operation
+  constant ctrl_bus_priv_c      : natural := 39; -- effective privilege level for load/stores
   -- instruction word control blocks --
-  constant ctrl_ir_funct3_0_c   : natural := 39; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 40; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 41; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 42; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 43; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 44; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 45; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 46; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 47; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 48; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 49; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 50; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 51; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 52; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 53; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 54; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 55; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 56; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 57; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 58; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 59; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 60; -- opcode7 bit 6
+  constant ctrl_ir_funct3_0_c   : natural := 40; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 41; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 42; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 43; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 44; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 45; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 46; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 47; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 48; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 49; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 50; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 51; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 52; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 53; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 54; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 55; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 56; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 57; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 58; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 59; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 60; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 61; -- opcode7 bit 6
   -- cpu status --
-  constant ctrl_priv_mode_c     : natural := 61; -- effective privilege mode
-  constant ctrl_sleep_c         : natural := 62; -- set when CPU is in sleep mode
-  constant ctrl_trap_c          : natural := 63; -- set when CPU is entering trap execution
-  constant ctrl_debug_running_c : natural := 64; -- set when CPU is in debug mode
+  constant ctrl_priv_mode_c     : natural := 62; -- effective privilege mode
+  constant ctrl_sleep_c         : natural := 63; -- set when CPU is in sleep mode
+  constant ctrl_trap_c          : natural := 64; -- set when CPU is entering trap execution
+  constant ctrl_debug_running_c : natural := 65; -- set when CPU is in debug mode
   -- control bus size --
-  constant ctrl_width_c         : natural := 65; -- control bus size
+  constant ctrl_width_c         : natural := 66; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -902,6 +898,13 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   constant priv_mode_m_c : std_ulogic := '1'; -- machine mode
   constant priv_mode_u_c : std_ulogic := '0'; -- user mode
+
+  -- PMP Modes ------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant pmp_mode_off_c   : std_ulogic_vector(1 downto 0) := "00"; -- null region (disabled)
+  constant pmp_mode_tor_c   : std_ulogic_vector(1 downto 0) := "01"; -- top of range
+  constant pmp_mode_na4_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
+  constant pmp_mode_napot_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
 
   -- HPM Event System -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
