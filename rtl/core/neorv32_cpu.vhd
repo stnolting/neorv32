@@ -132,11 +132,11 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- local signals --
   signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
-  signal comparator  : std_ulogic_vector(1 downto 0); -- comparator result
   signal imm         : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
   signal rs1, rs2    : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
   signal alu_res     : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
   signal alu_add     : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
+  signal alu_cmp     : std_ulogic_vector(1 downto 0); -- comparator result
   signal mem_rdata   : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
   signal alu_idone   : std_ulogic; -- iterative alu operation done
   signal bus_d_wait  : std_ulogic; -- wait for current bus data access
@@ -288,7 +288,7 @@ begin
     alu_idone_i   => alu_idone,     -- ALU iterative operation done
     bus_d_wait_i  => bus_d_wait,    -- wait for bus
     -- data input --
-    cmp_i         => comparator,    -- comparator status
+    cmp_i         => alu_cmp,       -- comparator status
     alu_add_i     => alu_add,       -- ALU address result
     rs1_i         => rs1,           -- rf source 1
     -- data output --
@@ -366,21 +366,21 @@ begin
   )
   port map (
     -- global control --
-    clk_i       => clk_i,      -- global clock, rising edge
-    rstn_i      => rstn_i,     -- global reset, low-active, async
-    ctrl_i      => ctrl,       -- main control bus
+    clk_i       => clk_i,     -- global clock, rising edge
+    rstn_i      => rstn_i,    -- global reset, low-active, async
+    ctrl_i      => ctrl,      -- main control bus
     -- data input --
-    rs1_i       => rs1,        -- rf source 1
-    rs2_i       => rs2,        -- rf source 2
-    pc_i        => curr_pc,    -- current PC
-    imm_i       => imm,        -- immediate
+    rs1_i       => rs1,       -- rf source 1
+    rs2_i       => rs2,       -- rf source 2
+    pc_i        => curr_pc,   -- current PC
+    imm_i       => imm,       -- immediate
     -- data output --
-    cmp_o       => comparator, -- comparator status
-    res_o       => alu_res,    -- ALU result
-    add_o       => alu_add,    -- address computation result
-    fpu_flags_o => fpu_flags,  -- FPU exception flags
+    cmp_o       => alu_cmp,   -- comparator status
+    res_o       => alu_res,   -- ALU result
+    add_o       => alu_add,   -- address computation result
+    fpu_flags_o => fpu_flags, -- FPU exception flags
     -- status --
-    idone_o     => alu_idone   -- iterative processing units done?
+    idone_o     => alu_idone  -- iterative processing units done?
   );
 
 
