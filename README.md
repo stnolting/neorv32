@@ -43,7 +43,7 @@ To see the changes between _official releases_ visit the project's [release page
 
 :package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) targeting
 various FPGA boards and toolchains to get you started. Also check out the list of
-[community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#community-projects) there.
+[community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects) there.
 
 :heavy_check_mark: Automatic check for RISC-V specification [compliance](https://github.com/stnolting/neorv32-verif).
 
