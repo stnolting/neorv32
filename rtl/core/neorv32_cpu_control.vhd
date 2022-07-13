@@ -198,8 +198,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal decode_aux : decode_aux_t;
 
   -- instruction execution engine --
-  type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_START, TRAP_EXIT, TRAP_EXECUTE, EXECUTE,
-                                  ALU_WAIT, BRANCH, BRANCHED, SYSTEM, MEM_REQ, MEM_WAIT);
+  type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_START, TRAP_EXIT, TRAP_EXECUTE,
+                                  EXECUTE, ALU_WAIT, BRANCH, BRANCHED, SYSTEM, MEM_REQ, MEM_WAIT);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
@@ -430,11 +430,11 @@ begin
             if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request
               fetch_engine.state <= S_RESTART;
             elsif (ipb.half /= "00") or (CPU_IPB_ENTRIES < 2) or -- no "safe" space left in IPB
-                  -- this is something like a simple "branch prediction" (predict: always taken)
+                  -- > this is something like a simple branch prediction (predict "always taken"):
                   -- > do not trigger new instruction fetch when a branch instruction is executed
-                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_branch_c) or
-                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_jal_c) or
-                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_jalr_c) then 
+                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_branch_c) or -- might be taken
+                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_jal_c) or    -- will be taken
+                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_jalr_c) then -- will be taken
               fetch_engine.state <= S_WAIT;
             else -- request next instruction word
               fetch_engine.state <= S_REQUEST;
@@ -2556,10 +2556,10 @@ begin
     -- counter event trigger - RISC-V-specific --
     cnt_event(hpmcnt_event_cy_c)      <= '1' when (execute_engine.sleep = '0') else '0'; -- active cycle
     cnt_event(hpmcnt_event_never_c)   <= '0'; -- "never" (position would be TIME)
-    cnt_event(hpmcnt_event_ir_c)      <= '1' when (execute_engine.state = EXECUTE) else '0'; -- (any) retired instruction
+    cnt_event(hpmcnt_event_ir_c)      <= '1' when (execute_engine.state = EXECUTE) else '0'; -- any executed instruction
 
     -- counter event trigger - custom / NEORV32-specific --
-    cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)   and (execute_engine.is_ci      = '1')       else '0'; -- retired compressed instruction
+    cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)   and (execute_engine.is_ci      = '1')       else '0'; -- executed compressed instruction
     cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = S_PENDING) and (fetch_engine.state_prev   = S_PENDING) else '0'; -- instruction fetch memory wait cycle
     cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)  and (execute_engine.state_prev = DISPATCH)  else '0'; -- instruction issue wait cycle
     cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                              else '0'; -- multi-cycle alu-operation wait cycle
