@@ -38,7 +38,7 @@ image::neorv32_cpu_block.png[width=600,align=center]
 * Supports _all_ of the machine-level <<_traps_exceptions_and_interrupts>> from the RISC-V specifications (including bus access exceptions and all unimplemented/illegal/malformed instructions)
 ** This is a special aspect on _execution safety_ by <<_full_virtualization>>
 ** Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 custom _fast_ interrupts
-* Optional physical memory configuration (PMP), compatible to the RISC-V specifications
+* Optional physical memory configuration (PMP)
 * Optional hardware performance monitors (HPM) for application benchmarking
 * Separated <<_bus_interface>>s for instruction fetch and data access
 
@@ -599,17 +599,20 @@ the CPU take a look at the memory-mapped <<_custom_functions_subsystem_cfs>>.
 ==== **`PMP`** Physical Memory Protection
 
 The NEORV32 physical memory protection (PMP) provides an elementary memory protection mechanism that can be used
-to constrain read, write and execute rights of arbitrary memory regions. The PMP is compatible
-to the _RISC-V Privileged Architecture Specifications_. For detailed information see the according spec.'s sections.
+to constrain read, write and execute rights of arbitrary memory regions. The NEORV32 PMP is partly compatible
+to the RISC-V Privileged Architecture Specifications.
+
+In general, the PMP can **grant permissions to U mode**, which by default have none, and
+can **revoke permissions from M-mode**, which by default has full permissions.
 
 [IMPORTANT]
 The NEORV32 PMP only supports **TOR** (top of region) mode, which basically is a "base-and-bound" concept, and only
 up to 16 PMP regions.
 
 The physical memory protection logic is implemented if the <<_pmp_num_regions>> configuration generic is greater
-than zero. This generic also defines the total number of available configurable protection
-regions. The minimal granularity of a protected region is defined by the <<_pmp_min_granularity>> generic. Larger
-granularity will reduce hardware complexity but will also decrease granularity as the minimal region sizes increases.
+than zero. This generic also defines the total number of implemented configurable region registers.
+The minimal granularity of a protected region is defined by the <<_pmp_min_granularity>> generic. Larger
+granularity will reduce hardware complexity but will also decrease the resolution.
 The default value is 4 bytes, which allows a minimal region size of 4 bytes.
 
 If implemented the PMP provides the following additional CSRs:
@@ -617,50 +620,14 @@ If implemented the PMP provides the following additional CSRs:
 * <<_pmpcfg>> 0..3 (depending on configuration) - PMP configuration registers, 4 entries per CSR
 * <<_pmpaddr>> 0..15 (depending on configuration) - PMP address registers
 
-
-**Operation Summary**
-
-Any CPU access address (from the instruction fetch or data access interface) is tested if it matches _any_
-of the specified PMP regions. If there is a match, the configured access rights are enforced:
-
-* a write access (store) will fail if no **write** attribute is set
-* a read access (load) will fail if no **read** attribute is set
-* an instruction fetch access will fail if no **execute** attribute is set
-
-If an access to a protected region does not have the according access rights it will raise the according
-instruction/load/store _bus access fault_ exception.
-
-By default, all PMP checks are enforced for user-mode only. However, PMP rules can also be enforced for
-machine-mode when the according PMP region has the "LOCK" bit set. This will also prevent any write access
-to according region's PMP CSRs until the CPU is reset.
-
-.Rule Prioritization
-[IMPORTANT]
-All rules are checked in parallel **without** prioritization so for identical memory regions the most restrictive
-PMP rule will be enforced.
-
 .PMP Example Program
 [TIP]
 A simple PMP example program can be found in `sw/example/demo_pmp`.
 
-
-**Impact on Critical Path**
-
-When implementing more PMP regions that a "_certain critical limit_" an **additional register stage** is automatically
-inserted into the CPU's memory interfaces to keep impact on the critical path as short as minimal as possible.
-Unfortunately, this will also increase the latency of instruction fetches and data access by one cycle.
-The _critical limit_ can be modified by a constant from the main VHDL package file
-(`rtl/core/neorv32_package.vhd`, default value = 8):
-
-[source,vhdl]
-----
--- "critical" number of PMP regions --
-constant pmp_num_regions_critical_c : natural := 8;
-----
-
+.Hardware Optimization
 [TIP]
-Reducing the minimal PMP region size / granularity via the <<_pmp_min_granularity>> to entity generic
-will also reduce hardware utilization and impact on critical path.
+Reducing the minimal PMP region size / granularity via the <<_pmp_min_granularity>> top entity generic
+will reduce hardware utilization and also reduces impact on critical path.
 
 
 <<<
