@@ -278,6 +278,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mstatus_mie       : std_ulogic; -- mstatus.MIE: global IRQ enable (R/W)
     mstatus_mpie      : std_ulogic; -- mstatus.MPIE: previous global IRQ enable (R/W)
     mstatus_mpp       : std_ulogic; -- mstatus.MPP: machine previous privilege mode
+    mstatus_mprv      : std_ulogic; -- mstatus.MPRV: effective privilege level for machine-mode load/stores
     mstatus_tw        : std_ulogic; -- mstatus.TW: do not allow user mode to execute WFI instruction when set
     --
     mie_msie          : std_ulogic; -- mie.MSIE: machine software interrupt enable (R/W)
@@ -766,6 +767,11 @@ begin
     ctrl_o(ctrl_bus_wr_c)   <= ctrl(ctrl_bus_wr_c); -- not set if illegal instruction (ensured by execute engine)
     -- current effective privilege level --
     ctrl_o(ctrl_priv_mode_c) <= csr.privilege_eff;
+    if (csr.mstatus_mprv = '1') then -- effective privilege level for load/stores in M-mode
+      ctrl_o(ctrl_bus_priv_c) <= csr.mstatus_mpp;
+    else
+      ctrl_o(ctrl_bus_priv_c) <= csr.privilege_eff;
+    end if;
     -- register addresses --
     ctrl_o(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c);
     ctrl_o(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= execute_engine.i_reg(instr_rs2_msb_c downto instr_rs2_lsb_c);
@@ -1064,13 +1070,13 @@ begin
 
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c => -- branch / jump and link (with register)
           -- ------------------------------------------------------------
+            ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB (branch target address offset)
             if (execute_engine.i_reg(instr_opcode_lsb_c+3 downto instr_opcode_lsb_c+2) = opcode_jalr_c(3 downto 2)) then -- JALR
               ctrl_nxt(ctrl_alu_opa_mux_c) <= '0'; -- use RS1 as ALU.OPA (branch target address base)
             else -- JAL
               ctrl_nxt(ctrl_alu_opa_mux_c) <= '1'; -- use PC as ALU.OPA (branch target address base)
             end if;
-            ctrl_nxt(ctrl_alu_opb_mux_c) <= '1'; -- use IMM as ALU.OPB (branch target address offset)
-            execute_engine.state_nxt     <= BRANCH;
+            execute_engine.state_nxt <= BRANCH;
 
 
           when opcode_fence_c => -- fence operations
@@ -1748,6 +1754,7 @@ begin
       csr.mstatus_mie       <= '0';
       csr.mstatus_mpie      <= '0';
       csr.mstatus_mpp       <= '0';
+      csr.mstatus_mprv      <= '0';
       csr.mstatus_tw        <= '0';
       csr.privilege         <= priv_mode_m_c; -- start in MACHINE mode
       csr.mie_msie          <= '0';
@@ -1824,8 +1831,9 @@ begin
               csr.mstatus_mie  <= csr.wdata(03);
               csr.mstatus_mpie <= csr.wdata(07);
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
-                csr.mstatus_mpp <= csr.wdata(11) or csr.wdata(12); -- everything /= U will fall back to M
-                csr.mstatus_tw  <= csr.wdata(21);
+                csr.mstatus_mpp  <= csr.wdata(11) or csr.wdata(12); -- everything /= U will fall back to M
+                csr.mstatus_mprv <= csr.wdata(17);
+                csr.mstatus_tw   <= csr.wdata(21);
               end if;
             end if;
             -- R/W: mie - machine interrupt enable register --
@@ -2066,6 +2074,9 @@ begin
               if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
                 csr.privilege   <= csr.mstatus_mpp; -- restore previous privilege mode
                 csr.mstatus_mpp <= '0'; -- MRET has to clear mstatus.MPP
+                if (csr.mstatus_mpp /= priv_mode_m_c) then
+                  csr.mstatus_mprv <= '0'; -- clear if return priv. mode is less than M
+                end if;
               end if;
             end if;
           end if;
@@ -2133,6 +2144,7 @@ begin
             csr.rdata(03) <= csr.mstatus_mie; -- MIE
             csr.rdata(07) <= csr.mstatus_mpie; -- MPIE
             csr.rdata(12 downto 11) <= (others => csr.mstatus_mpp); -- MPP: machine previous privilege mode
+            csr.rdata(17) <= csr.mstatus_mprv;
             csr.rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- TW
 --        when csr_mstatush_c => -- mstatush (r/w): machine status register - high word, implemented but always zero
 --          csr.rdata <= (others => '0');
