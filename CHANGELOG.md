@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 14.07.2022 | [**:rocket:1.7.4**](https://github.com/stnolting/neorv32/releases/tag/v1.7.4) | **New release** |
 | 14.07.2022 | 1.7.3.11 | reset all "core" CSRs to all-zero; [#366](https://github.com/stnolting/neorv32/pull/366) |
 | 13.07.2022 | 1.7.3.10 | :bug: reworked/fixed **physical memory protection**; :sparkles: added `mstatus.MPRV` flag; [#365](https://github.com/stnolting/neorv32/pull/365) |
 | 12.07.2022 | 1.7.3.9 | clean-up and rework **bootloader**; :sparkles: add "boot via XIP" option; [#364](https://github.com/stnolting/neorv32/pull/364) |
