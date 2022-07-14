@@ -67,20 +67,15 @@ __crt0_pointer_init:
 
 
 // ************************************************************************************************
-// Setup CPU core CSRs (some of them DO NOT have a dedicated
-// reset and need to be explicitly initialized)
+// Setup CPU core CSRs (some of them DO NOT have a dedicated reset and need to be explicitly initialized)
 // ************************************************************************************************
 __crt0_cpu_csr_init:
-
   la   x10,   __crt0_trap_handler // configure early-boot trap handler
   csrw mtvec, x10
-  csrw mepc,  x10                 // just to init mepc
 
-  li   x7, (3 << 11)              // set mpp=11 => machine-mode, clear all remaining bits,
-  csrw mstatus, x7                // also disable IRQs globally
-
-  csrw mie, zero                  // disable all interrupt lines
-  csrw mip, zero                  // clear all pending interrupts
+  csrw mstatus, zero              // also disables IRQs globally
+  csrw mie,     zero              // disable all interrupt sources
+  csrw mip,     zero              // clear all pending interrupts
 
   csrw 0x320,      zero           // stop all counters; use "mcountinhibit" literal address for lagacy toolchain compatibility
   csrw mcounteren, zero           // no access from less-privileged modes to counter CSRs
@@ -96,13 +91,13 @@ __crt0_cpu_csr_init:
 // ************************************************************************************************
 __crt0_reg_file_init:
 //addi  x0, x0, 0 // hardwired to zero
-  addi  x1, x0, 0
+//addi  x1, x0, 0 // return address; implicitly initialized within crt0
 //addi  x2, x0, 0 // stack pointer sp
 //addi  x3, x0, 0 // global pointer gp
   addi  x4, x0, 0
   addi  x5, x0, 0
   addi  x6, x0, 0
-//addi  x7, x0, 0 // implicitly initialized within crt0
+  addi  x7, x0, 0
 //addi  x8, x0, 0 // implicitly initialized within crt0
 //addi  x9, x0, 0 // implicitly initialized within crt0
 //addi x10, x0, 0 // implicitly initialized within crt0
@@ -178,8 +173,8 @@ __crt0_call_constructors:
 
 __crt0_call_constructors_loop:
   bge  x8, x9, __crt0_call_constructors_loop_end
-  lw   ra, 0(s3)
-  jalr ra, 0(ra)
+  lw   x1, 0(s3)
+  jalr x1, 0(x1)
   addi x8, x8, 4
   j    __crt0_call_constructors_loop
 
@@ -191,9 +186,9 @@ __crt0_call_constructors_loop_end:
 // Setup arguments and call main function
 // ************************************************************************************************
 __crt0_main_entry:
-  addi a0, zero, 0        // a0 = argc = 0
-  addi a1, zero, 0        // a1 = argv = 0
-  jal  ra, main           // call actual app's main function
+  addi x10, zero, 0       // x10 = a0 = argc = 0
+  addi x11, zero, 0       // x11 = a1 = argv = 0
+  jal  x1,  main          // call actual app's main function
 
 __crt0_main_exit:         // main's "return" and "exit" will arrive here
   csrci mstatus, (1 << 3) // disable global IRQs (clear mstatus.mie)
@@ -205,14 +200,14 @@ __crt0_main_exit:         // main's "return" and "exit" will arrive here
 // ************************************************************************************************
 #ifndef make_bootloader // destructors are not supported for bootloader
 __crt0_call_destructors:
-  la   s3, __fini_array_start
-  la   s4, __fini_array_end
+  la   x8, __fini_array_start
+  la   x9, __fini_array_end
 
 __crt0_call_destructors_loop:
-  bge  s3, s4, __crt0_call_destructors_loop_end
-  lw   t1, 0(s3)
-  jalr ra, 0(t1)
-  addi s3, s3, 4
+  bge  x8, x9, __crt0_call_destructors_loop_end
+  lw   x1, 0(x8)
+  jalr x1, 0(x1)
+  addi x8, x8, 4
   j    __crt0_call_destructors_loop
 
 __crt0_call_destructors_loop_end:
@@ -255,9 +250,8 @@ __crt0_trap_handler:
   csrr  x8,   mcause
   blt   x8,   zero, __crt0_trap_handler_end // skip mepc modification if interrupt
 
+// update mepc
   csrr  x8,   mepc
-
-__crt0_trap_handler_exc_mepc_update:
   lh    x9,   0(x8)                         // get compressed instruction or lower 16 bits of uncompressed instruction that caused exception
   andi  x9,   x9, 3                         // mask: isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
 
