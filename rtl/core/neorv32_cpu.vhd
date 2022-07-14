@@ -97,7 +97,6 @@ entity neorv32_cpu is
     rstn_i        : in  std_ulogic; -- global reset, low-active, async
     sleep_o       : out std_ulogic; -- cpu is in sleep mode when set
     debug_o       : out std_ulogic; -- cpu is in debug mode when set
-    priv_o        : out std_ulogic; -- current effective privilege level
     -- instruction bus interface --
     i_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     i_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -105,6 +104,7 @@ entity neorv32_cpu is
     i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
     i_bus_err_i   : in  std_ulogic; -- bus transfer error
     i_bus_fence_o : out std_ulogic; -- executed FENCEI operation
+    i_bus_priv_o  : out std_ulogic; -- current effective privilege level
     -- data bus interface --
     d_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     d_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -115,6 +115,7 @@ entity neorv32_cpu is
     d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
     d_bus_err_i   : in  std_ulogic; -- bus transfer error
     d_bus_fence_o : out std_ulogic; -- executed FENCE operation
+    d_bus_priv_o  : out std_ulogic; -- current effective privilege level
     -- system time input from MTIME --
     time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
     -- interrupts (risc-v compliant) --
@@ -322,11 +323,11 @@ begin
   -- CPU state --
   sleep_o <= ctrl(ctrl_sleep_c); -- set when CPU is sleeping (after WFI)
   debug_o <= ctrl(ctrl_debug_running_c); -- set when CPU is in debug mode
-  priv_o  <= ctrl(ctrl_priv_mode_c); -- current effective privilege level
 
   -- instruction fetch interface --
   i_bus_addr_o  <= fetch_pc;
   i_bus_fence_o <= ctrl(ctrl_bus_fencei_c);
+  i_bus_priv_o  <= ctrl(ctrl_priv_mode_c);
 
 
   -- Register File --------------------------------------------------------------------------
@@ -421,7 +422,8 @@ begin
     d_bus_re_o    => d_bus_re_o,    -- read enable
     d_bus_ack_i   => d_bus_ack_i,   -- bus transfer acknowledge
     d_bus_err_i   => d_bus_err_i,   -- bus transfer error
-    d_bus_fence_o => d_bus_fence_o  -- fence operation
+    d_bus_fence_o => d_bus_fence_o, -- fence operation
+    d_bus_priv_o  => d_bus_priv_o   -- current effective privilege level
   );
 
 

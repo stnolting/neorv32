@@ -1141,7 +1141,6 @@ package neorv32_package is
       rstn_i        : in  std_ulogic; -- global reset, low-active, async
       sleep_o       : out std_ulogic; -- cpu is in sleep mode when set
       debug_o       : out std_ulogic; -- cpu is in debug mode when set
-      priv_o        : out std_ulogic; -- current effective privilege level
       -- instruction bus interface --
       i_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       i_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -1149,6 +1148,7 @@ package neorv32_package is
       i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
       i_bus_err_i   : in  std_ulogic; -- bus transfer error
       i_bus_fence_o : out std_ulogic; -- executed FENCEI operation
+      i_bus_priv_o  : out std_ulogic; -- current effective privilege level
       -- data bus interface --
       d_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       d_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -1159,6 +1159,7 @@ package neorv32_package is
       d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
       d_bus_err_i   : in  std_ulogic; -- bus transfer error
       d_bus_fence_o : out std_ulogic; -- executed FENCE operation
+      d_bus_priv_o  : out std_ulogic; -- current effective privilege level
       -- system time input from MTIME --
       time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
       -- interrupts (risc-v compliant) --
@@ -1450,7 +1451,8 @@ package neorv32_package is
       d_bus_re_o    : out std_ulogic; -- read enable
       d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
       d_bus_err_i   : in  std_ulogic; -- bus transfer error
-      d_bus_fence_o : out std_ulogic  -- fence operation
+      d_bus_fence_o : out std_ulogic; -- fence operation
+      d_bus_priv_o  : out std_ulogic  -- current effective privilege level
     );
   end component;
 
@@ -1522,6 +1524,7 @@ package neorv32_package is
       clk_i           : in  std_ulogic; -- global clock, rising edge
       rstn_i          : in  std_ulogic; -- global reset, low-active, async
       -- controller interface a --
+      ca_bus_priv_i   : in  std_ulogic; -- current privilege level
       ca_bus_cached_i : in  std_ulogic; -- set if cached transfer
       ca_bus_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       ca_bus_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -1532,6 +1535,7 @@ package neorv32_package is
       ca_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
       ca_bus_err_o    : out std_ulogic; -- bus transfer error
       -- controller interface b --
+      cb_bus_priv_i   : in  std_ulogic; -- current privilege level
       cb_bus_cached_i : in  std_ulogic; -- set if cached transfer
       cb_bus_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
       cb_bus_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -1542,6 +1546,7 @@ package neorv32_package is
       cb_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
       cb_bus_err_o    : out std_ulogic; -- bus transfer error
       -- peripheral bus --
+      p_bus_priv_o    : out std_ulogic; -- current privilege level
       p_bus_cached_o  : out std_ulogic; -- set if cached transfer
       p_bus_src_o     : out std_ulogic; -- access source: 0 = A, 1 = B
       p_bus_addr_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
