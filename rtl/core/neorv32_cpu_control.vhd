@@ -10,11 +10,6 @@
 -- #  + CSR module:     Read/write access to control and status registers                          #
 -- #  + Debug module:   CPU debug mode handling (on-chip debugger)                                 #
 -- #  + Trigger module: Hardware-assisted breakpoints (on-chip debugger)                           #
--- #                                                                                               #
--- # NOTE: If <dedicated_reset_c> = true then <def_rst_val_c> evaluates to '-'. Registers that     #
--- #       reset to <def_rst_val_c> do NOT actually have a real reset by default and have to be    #
--- #       explicitly initialized by software! This is only used for "uncritical" registers. Many  #
--- #       of them will be initialized by the default crt0 start-up code.                          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -394,7 +389,7 @@ begin
       fetch_engine.state_prev <= S_RESTART;
       fetch_engine.restart    <= '1'; -- set to reset IPB
       fetch_engine.unaligned  <= '0'; -- always start at aligned address after reset
-      fetch_engine.pc         <= (others => def_rst_val_c);
+      fetch_engine.pc         <= (others => '0');
       fetch_engine.pmp_err    <= '0';
     elsif rising_edge(clk_i) then
       -- previous state (for HPM) --
@@ -675,8 +670,8 @@ begin
       execute_engine.is_ici      <= def_rst_val_c;
       execute_engine.i_reg_last  <= (others => def_rst_val_c);
       execute_engine.next_pc     <= (others => def_rst_val_c);
-      ctrl                       <= (others => def_rst_val_c);
       -- registers that DO require a specific RESET state --
+      ctrl                       <= (others => '0');
       execute_engine.pc          <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned!
       execute_engine.pc_last     <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00";
       execute_engine.state       <= BRANCHED; -- reset is a branch from "somewhere"
@@ -684,8 +679,6 @@ begin
       execute_engine.state_prev2 <= BRANCHED; -- actual reset value is not relevant
       execute_engine.sleep       <= '0';
       execute_engine.branched    <= '1'; -- reset is a branch from "somewhere"
-      ctrl(ctrl_bus_rd_c)        <= '0';
-      ctrl(ctrl_bus_wr_c)        <= '0';
     elsif rising_edge(clk_i) then
       -- PC update --
       if (execute_engine.pc_we = '1') then
@@ -1761,11 +1754,11 @@ begin
       csr.mie_meie          <= '0';
       csr.mie_mtie          <= '0';
       csr.mie_firqe         <= (others => '0');
-      csr.mtvec             <= (others => def_rst_val_c);
+      csr.mtvec             <= (others => '0');
       csr.mscratch          <= x"19880704";
-      csr.mepc              <= (others => def_rst_val_c);
-      csr.mcause            <= (others => def_rst_val_c);
-      csr.mtval             <= (others => def_rst_val_c);
+      csr.mepc              <= (others => '0');
+      csr.mcause            <= (others => '0');
+      csr.mtval             <= (others => '0');
       csr.mip_firq_nclr     <= (others => '-');
       --
       csr.pmpcfg            <= (others => (others => '0'));
@@ -1788,12 +1781,12 @@ begin
       csr.dcsr_ebreaku      <= '0';
       csr.dcsr_step         <= '0';
       csr.dcsr_prv          <= priv_mode_m_c;
-      csr.dcsr_cause        <= (others => def_rst_val_c);
-      csr.dpc               <= (others => def_rst_val_c);
-      csr.dscratch0         <= (others => def_rst_val_c);
+      csr.dcsr_cause        <= (others => '0');
+      csr.dpc               <= (others => '0');
+      csr.dscratch0         <= (others => '0');
       --
       csr.tdata1_exe        <= '0';
-      csr.tdata2            <= (others => def_rst_val_c);
+      csr.tdata2            <= (others => '0');
 
     elsif rising_edge(clk_i) then
       -- write access? --
