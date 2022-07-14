@@ -228,14 +228,12 @@ The following bits are implemented (all remaining bits are always zero and are r
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 21    | _CSR_MSTATUS_TW_   | r/w | **TW**: Disallows execution of `wfi` instruction in user mode when set; hardwired to zero if user-mode not implemented
+| 21    | _CSR_MSTATUS_TW_   | r/w | **TW**: Trap on execution of `wfi` instruction in user mode when set; hardwired to zero if user-mode not implemented
+| 17    | _CSR_MSTATUS_MPRV_ | r/w | **MPRV**: Effective privilege level for load/stores in machine mode; use `MPP`'s as effective privilege level when set; hardwired to zero if user-mode not implemented
 | 12:11 | _CSR_MSTATUS_MPP_H_ : _CSR_MSTATUS_MPP_L_ | r/w | **MPP*: Previous machine privilege level, 11 = machine (M) level, 00 = user (U) level
 | 7     | _CSR_MSTATUS_MPIE_ | r/w | **MPIE**: Previous machine global interrupt enable flag state
 | 3     | _CSR_MSTATUS_MIE_  | r/w | **MIE**: Machine global interrupt enable flag
 |=======================
-
-When entering an exception/interrupt, the `MIE` flag is copied to `MPIE` and cleared afterwards. When leaving
-the exception/interrupt (via the `mret` instruction), `MPIE` is copied back to `MIE`.
 
 
 :sectnums!:
@@ -555,20 +553,9 @@ See the RISC-V specs. for more information.
 physical memory address. The actual number of available `pmpaddr` CSRs is defined by the <<_pmp_num_regions>> generic.
 |=======================
 
-.Physical memory protection address register layout
-[cols="^6,^3,<7"]
-[options="header",grid="rows"]
-|=======================
-| Bit                                | R/W | Function
-| 31:30                              | r/- | Hardwired to zero
-| 29 : _log2(PMP_MIN_GRANULARITY)-2_ | r/w | Bits 31 downto _log2(PMP_MIN_GRANULARITY)_ of the region's address
-| _log2(PMP_MIN_GRANULARITY)-2_ : 0  | r/- | Hardwired to zero
-|=======================
-
+.Physical Address Size
 [NOTE]
-When configuring the PMP make sure to set `pmpaddr*` before activating the according region via
-`pmpcfg*`. When changing the PMP configuration, deactivate the according region via `pmpcfg*`
-before modifying `pmpaddr*`.
+The two MSBs of each `pmpaddr` are hardwired to zero (= bits 33:32 of the physical address).
 
 
 <<<

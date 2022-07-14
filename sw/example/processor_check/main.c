@@ -107,6 +107,9 @@ volatile uint32_t store_access_addr[2];
 /// Variable to test PMP
 volatile uint32_t pmp_access_addr;
 
+/// Number of implemented PMP regions
+uint32_t pmp_num_regions;
+
 
 /**********************************************************************//**
  * High-level CPU/processor test program.
@@ -158,22 +161,21 @@ int main() {
   PRINT_STANDARD("build: "__DATE__" "__TIME__"\n");
 
 
-  // reset (performance) counters
-  // neorv32_cpu_csr_write(CSR_MCYCLEH, 0);   -> done in crt0.S
-  // neorv32_cpu_csr_write(CSR_MCYCLE, 0);    -> done in crt0.S
-  // neorv32_cpu_csr_write(CSR_MINSTRETH, 0); -> done in crt0.S
-  // neorv32_cpu_csr_write(CSR_MINSTRET, 0);  -> done in crt0.S
-  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable performance counter auto increment (ALL counters)
+  // prepare (performance) counters
+  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable counter auto increment (ALL counters)
   neorv32_cpu_csr_write(CSR_MCOUNTEREN, 7); // allow access from user-mode code to standard counters only
 
   // set CMP of machine system timer MTIME to max to prevent an IRQ
   neorv32_mtime_set_timecmp(-1);
   neorv32_mtime_set_time(0);
 
+  // get number of implemented PMP regions
+  pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
+
 
   // fancy intro
   // -----------------------------------------------
-  // show ASCII logo
+  // show NEORV32 ASCII logo
   neorv32_rte_print_logo();
 
   // show project credits
@@ -197,7 +199,6 @@ int main() {
     return 1;
   }
 
-
   // **********************************************************************************************
   // Run CPU and SoC tests
   // **********************************************************************************************
@@ -213,6 +214,31 @@ int main() {
 
   // enable global interrupts
   neorv32_cpu_eint();
+
+
+  // ----------------------------------------------------------
+  // Setup PMP for tests
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  PRINT_STANDARD("[%i] Initial PMP setup ", cnt_test);
+
+  if (pmp_num_regions >= 4) {
+    cnt_test++;
+
+    // full access for M & U mode
+    // use entries 2 & 3 so we can use entries 0 & 1 later on for higher-prioritized configurations
+    tmp_a  = neorv32_cpu_pmp_configure_region(0, 0x00000000, (PMP_OFF << PMPCFG_A_LSB));
+    tmp_a  = neorv32_cpu_pmp_configure_region(1, 0x00000000, (PMP_OFF << PMPCFG_A_LSB));
+    tmp_a  = neorv32_cpu_pmp_configure_region(2, 0x00000000, (PMP_OFF << PMPCFG_A_LSB));
+    tmp_a += neorv32_cpu_pmp_configure_region(3, 0xFFFFFFFF, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_L)  | (1 << PMPCFG_R) | (1 << PMPCFG_W) | (1 << PMPCFG_X));
+
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == 0) && (tmp_a == 0)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
 
 
   // ----------------------------------------------------------
@@ -1567,25 +1593,29 @@ int main() {
   // ----------------------------------------------------------
   // Test physical memory protection
   // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   PRINT_STANDARD("[%i] PMP:\n", cnt_test);
 
-  // check if PMP is implemented (two regions are required for these tests)
-  if (neorv32_cpu_pmp_get_num_regions() > 1)  {
+  // check if PMP is implemented
+  if (pmp_num_regions >= 4)  {
 
     // Create PMP protected region
     // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
     cnt_test++;
 
+    pmp_access_addr = 0xcafe1234; // initialize
     tmp_a = (uint32_t)(&pmp_access_addr); // base address of protected region
-    tmp_b = PMP_TOR << PMPCFG_A_LSB; // enable region, but absolutely no access rights
 
-    // configure
+    // configure new region (with highest priority)
     int pmp_res = 0;
-    PRINT_STANDARD(" Setup region 0 OFF [ -, -, -] @ 0x%x\n", tmp_a);
+    // base
+    PRINT_STANDARD(" Setup PMP(0) OFF [-,-,-,-] @ 0x%x\n", tmp_a);
     pmp_res += neorv32_cpu_pmp_configure_region(0, tmp_a, 0);
-    PRINT_STANDARD(" Setup region 1 TOR [!X,!W,!R] @ 0x%x ", tmp_a+4);
-    pmp_res += neorv32_cpu_pmp_configure_region(1, tmp_a+4, tmp_b);
+    // bound
+    PRINT_STANDARD(" Setup PMP(1) TOR [!L,!X,!W,R] @ 0x%x ", tmp_a+4);
+    pmp_res += neorv32_cpu_pmp_configure_region(1, tmp_a+4, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_R)); // read-only
+
     if ((pmp_res == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
       test_ok();
     }
@@ -1594,99 +1624,89 @@ int main() {
     }
 
 
-    // ------ EXECUTE: should fail ------
-    PRINT_STANDARD("[%i] PMP: U-mode execute ", cnt_test);
-    cnt_test++;
+    // ------ LOAD from U-mode: should succeed ------
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    PRINT_STANDARD("[%i] PMP: U-mode read (SUCCEED) ", cnt_test);
+    cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a)); // call address to execute -> should fail
+      tmp_b = 0;
+      tmp_b = neorv32_cpu_load_unsigned_word((uint32_t)(&pmp_access_addr));
     }
 
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ACCESS) {
-      asm volatile ("ecall"); // switch back to machine mode (if not already)
+    asm volatile ("ecall"); // switch back to machine mode
+    if (tmp_b == 0xcafe1234) {
       test_ok();
     }
     else {
-      asm volatile ("ecall"); // switch back to machine mode (if not already)
       test_fail();
     }
 
 
-    // ------ LOAD: should fail ------
-    PRINT_STANDARD("[%i] PMP: U-mode read ", cnt_test);
-    cnt_test++;
+    // ------ STORE from U-mode: should fail ------
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    PRINT_STANDARD("[%i] PMP: U-mode write (FAIL) ", cnt_test);
+    cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      asm volatile ("li %[da], 0xcafe0000 \n" // initialize destination register with known value
-                    "lw %[da], 0(%[ad])     " // must not update destination register to to exception
-                    : [da] "=r" (tmp_b) : [ad] "r" (tmp_a));
+      neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access_addr), 0); // store access -> should fail
     }
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) &&
-        (tmp_b == 0xcafe0000)) { // destination register not altered
-      // switch back to machine mode (if not already)
-      asm volatile ("ecall");
-
+    asm volatile ("ecall"); // switch back to machine mode
+    if (pmp_access_addr == 0xcafe1234) {
       test_ok();
     }
     else {
-      // switch back to machine mode (if not already)
-      asm volatile ("ecall");
-
       test_fail();
     }
 
 
-    // ------ STORE: should fail ------
-    PRINT_STANDARD("[%i] PMP: U-mode write ", cnt_test);
-    cnt_test++;
+    // ------ STORE from M mode using U mode permissions: should fail ------
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    PRINT_STANDARD("[%i] PMP: M-mode (using U-mode permissions) write (FAIL) ", cnt_test);
+    cnt_test++;
 
-    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
-    {
-      neorv32_cpu_store_unsigned_word(tmp_a, 0); // store access -> should fail
-    }
+    // make M-mode load/store accesses use U-mode rights
+    tmp_b = neorv32_cpu_csr_read(CSR_MSTATUS);
+    tmp_b |= 1 << CSR_MSTATUS_MPRV; // set MPRV: M uses U permissions for load/stores
+    tmp_b &= ~(3 << CSR_MSTATUS_MPP_L); // clear MPP: use U as effective privilege mode
+    neorv32_cpu_csr_write(CSR_MSTATUS, tmp_b);
 
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) {
-      // switch back to machine mode (if not already)
-      asm volatile ("ecall");
+    neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access_addr), 0); // store access -> should fail
 
+    tmp_b = neorv32_cpu_csr_read(CSR_MSTATUS);
+    tmp_b &= ~(1 << CSR_MSTATUS_MPRV);
+    neorv32_cpu_csr_write(CSR_MSTATUS, tmp_b);
+
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && (pmp_access_addr == 0xcafe1234)) {
       test_ok();
     }
     else {
-      // switch back to machine mode (if not already)
-      asm volatile ("ecall");
-
       test_fail();
     }
 
 
-    // ------ Lock test - pmpcfg0.0 / pmpaddr0 ------
-    PRINT_STANDARD("[%i] PMP: Entry [mode=off] lock ", cnt_test);
-    cnt_test++;
+    // ------ STORE from M mode with LOCKED: should fail ------
     neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    PRINT_STANDARD("[%i] PMP: M-mode (LOCKED) write (FAIL) ", cnt_test);
+    cnt_test++;
 
-    neorv32_cpu_csr_write(CSR_PMPCFG0, 0b10000001); // locked, but entry is deactivated (mode = off)
-
-    // make sure a locked cfg cannot be written
+    // set lock bit
     tmp_a = neorv32_cpu_csr_read(CSR_PMPCFG0);
-    neorv32_cpu_csr_write(CSR_PMPCFG0, 0b00011001); // try to re-write CFG content
+    tmp_a |= (1 << PMPCFG_L) << 8; // set lock bit in entry 1
+    neorv32_cpu_csr_write(CSR_PMPCFG0, tmp_a);
 
-    tmp_b = neorv32_cpu_csr_read(CSR_PMPADDR0);
-    neorv32_cpu_csr_write(CSR_PMPADDR0, 0xABABCDCD); // try to re-write ADDR content
+    neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access_addr), 0); // store access -> should fail
 
-    if ((tmp_a != neorv32_cpu_csr_read(CSR_PMPCFG0)) || (tmp_b != neorv32_cpu_csr_read(CSR_PMPADDR0)) || (neorv32_cpu_csr_read(CSR_MCAUSE) != 0)) {
-      test_fail();
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && (pmp_access_addr == 0xcafe1234)) {
+      test_ok();
     }
     else {
-      test_ok();
+      test_fail();
     }
 
   }

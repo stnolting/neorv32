@@ -38,7 +38,8 @@ the cache size/layout to maximize and optimize resource utilization.
 
 .Caching Internal Memories
 [NOTE]
-The instruction cache is intended to accelerate instruction fetches from _processor-external_ memories.
+The instruction cache is intended to accelerate instruction fetches from _processor-external_ memories
+(via the external bus interface or via the XIP module).
 Since all processor-internal memories provide an access latency of one cycle (by default), caching
 internal memories does not bring a relevant performance gain. However, it will slightly reduce traffic on the
 processor-internal bus.
@@ -46,11 +47,11 @@ processor-internal bus.
 .Manual Cache Clear/Reload
 [NOTE]
 By executing the `ifence.i` instruction (`Zifencei` CPU extension) the cache is cleared and a reload from
-main memory is triggered. Among other things this allows to implement self-modifying code.
+main memory is triggered. This also allows to implement self-modifying code.
 
 .Retrieve Cache Configuration from Software
 [TIP]
-Software can retrieve the cache configuration from the <<_sysinfo_cache_configuration>> register.
+Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_configuration>> register.
 
 
 **Bus Access Fault Handling**

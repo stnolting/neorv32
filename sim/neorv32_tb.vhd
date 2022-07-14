@@ -216,7 +216,7 @@ begin
     if ci_mode then
       -- No need to send the full expectation in one big chunk
       check_uart(net, uart1_rx_handle, nul & nul);
-      check_uart(net, uart1_rx_handle, "0/47" & cr & lf);
+      check_uart(net, uart1_rx_handle, "0/48" & cr & lf);
     end if;
 
     -- Apply some random data on each SLINK inputs and expect it to

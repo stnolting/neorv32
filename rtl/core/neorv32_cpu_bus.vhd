@@ -76,17 +76,12 @@ entity neorv32_cpu_bus is
     d_bus_re_o    : out std_ulogic; -- read enable
     d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
     d_bus_err_i   : in  std_ulogic; -- bus transfer error
-    d_bus_fence_o : out std_ulogic  -- fence operation
+    d_bus_fence_o : out std_ulogic; -- fence operation
+    d_bus_priv_o  : out std_ulogic  -- current effective privilege level
   );
 end neorv32_cpu_bus;
 
 architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
-
-  -- PMP modes --
-  constant pmp_off_mode_c   : std_ulogic_vector(1 downto 0) := "00"; -- null region (disabled)
-  constant pmp_tor_mode_c   : std_ulogic_vector(1 downto 0) := "01"; -- top of range
---constant pmp_na4_mode_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
---constant pmp_napot_mode_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
 
   -- PMP configuration register bits --
   constant pmp_cfg_r_c  : natural := 0; -- read permit
@@ -97,33 +92,37 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   constant pmp_cfg_l_c  : natural := 7; -- locked entry
 
   -- PMP minimal granularity --
-  constant pmp_lsb_c : natural := index_size_f(PMP_MIN_GRANULARITY);
+  constant pmp_lsb_c : natural := index_size_f(PMP_MIN_GRANULARITY); -- min = 2
 
   -- misc --
-  signal data_size  : std_ulogic_vector(1 downto 0); -- transfer size
   signal data_sign  : std_ulogic; -- signed load
   signal mar        : std_ulogic_vector(data_width_c-1 downto 0); -- data memory address register
   signal misaligned : std_ulogic; -- misaligned address
 
   -- bus arbiter --
   type bus_arbiter_t is record
-    pend : std_ulogic; -- pending bus access
-    rw   : std_ulogic; -- read/write access
-    err  : std_ulogic; -- bus access error
+    pend      : std_ulogic; -- pending bus access
+    rw        : std_ulogic; -- read/write access
+    err       : std_ulogic; -- bus access error
+    pmp_r_err : std_ulogic; -- pmp load fault
+    pmp_w_err : std_ulogic; -- pmp store fault
   end record;
   signal arbiter : bus_arbiter_t;
 
-  -- memory control signal buffer (when using PMP) --
-  signal d_bus_we, d_bus_we_buf : std_ulogic;
-  signal d_bus_re, d_bus_re_buf : std_ulogic;
-
   -- physical memory protection --
   type pmp_t is record
-    i_match  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for instruction interface
-    d_match  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region match for data interface
-    if_fault : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for fetch operation
-    ld_fault : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for load operation
-    st_fault : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0); -- region access fault for store operation
+    i_cmp_ge : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
+    i_cmp_lt : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
+    d_cmp_ge : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
+    d_cmp_lt : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
+    i_match  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
+    d_match  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
+    perm_ex  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
+    perm_rd  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
+    perm_wr  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
+    if_fault : std_ulogic;
+    ld_fault : std_ulogic;
+    st_fault : std_ulogic;
   end record;
   signal pmp : pmp_t;
 
@@ -134,51 +133,28 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not (PMP_NUM_REGIONS > pmp_num_regions_critical_c) report "NEORV32 CPU CONFIG WARNING! Number of implemented PMP regions (PMP_NUM_REGIONS = " &
-  integer'image(PMP_NUM_REGIONS) & ") beyond critical limit (pmp_num_regions_critical_c = " & integer'image(pmp_num_regions_critical_c) &
-  "). Inserting another register stage (increasing DATA memory access latency by +1 cycle)." severity warning;
-
-
-  -- Transfer Configuration -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  data_size <= ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c); -- transfer size
-  data_sign <= not ctrl_i(ctrl_ir_funct3_2_c); -- NOT unsigned LOAD (LBU, LHU)
-
-
   -- Access Address -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   mem_adr_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      mar <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
-      if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
-        mar <= addr_i;
-      end if;
-    end if;
-  end process mem_adr_reg;
-
-  -- address output --
-  d_bus_addr_o <= mar;
-  mar_o        <= mar; -- for mtval csr (exceptions)
-
-  -- data access address alignment check --
-  misaligned_d_check: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
+      mar        <= (others => def_rst_val_c);
       misaligned <= '0';
     elsif rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
-        case data_size is -- data size
+        mar <= addr_i; -- memory address register
+        case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is -- alignment check
           when "00"   => misaligned <= '0'; -- byte
           when "01"   => misaligned <= addr_i(0); -- half-word
           when others => misaligned <= addr_i(1) or addr_i(0); -- word
         end case;
       end if;
     end if;
-  end process misaligned_d_check;
+  end process mem_adr_reg;
+
+  -- address output --
+  d_bus_addr_o <= mar;
+  mar_o        <= mar; -- for MTVAL CSR
 
 
   -- Write Data -----------------------------------------------------------------------------
@@ -191,7 +167,7 @@ begin
     elsif rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
         -- byte enable and data alignment --
-        case data_size is -- data size
+        case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is -- data size
           when "00" => -- byte
             d_bus_wdata_o(07 downto 00) <= wdata_i(7 downto 0);
             d_bus_wdata_o(15 downto 08) <= wdata_i(7 downto 0);
@@ -228,7 +204,7 @@ begin
       rdata_o <= (others => def_rst_val_c);
     elsif rising_edge(clk_i) then
       -- input data alignment and sign extension --
-      case data_size is
+      case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is
         when "00" => -- byte
           case mar(1 downto 0) is
             when "00" => -- byte 0
@@ -258,16 +234,23 @@ begin
     end if;
   end process read_align;
 
+  -- sign extension --
+  data_sign <= not ctrl_i(ctrl_ir_funct3_2_c); -- NOT unsigned LOAD (LBU, LHU)
+
 
   -- Access Arbiter -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   data_access_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      arbiter.pend <= '0';
-      arbiter.rw   <= '0';
-      arbiter.err  <= '0';
+      arbiter.pend      <= '0';
+      arbiter.rw        <= '0';
+      arbiter.err       <= '0';
+      arbiter.pmp_r_err <= '0';
+      arbiter.pmp_w_err <= '0';
     elsif rising_edge(clk_i) then
+      arbiter.pmp_r_err <= ld_pmp_fault;
+      arbiter.pmp_w_err <= st_pmp_fault;
       if (arbiter.pend = '0') then -- idle
         arbiter.pend <= ctrl_i(ctrl_bus_wr_c) or ctrl_i(ctrl_bus_rd_c); -- start bus access
         arbiter.rw   <= ctrl_i(ctrl_bus_wr_c); -- set if write access
@@ -275,8 +258,8 @@ begin
       else -- bus access in progress
         -- accumulate bus errors --
         if (d_bus_err_i = '1') or -- bus error
-           ((arbiter.rw = '1') and (st_pmp_fault = '1')) or -- PMP store fault
-           ((arbiter.rw = '0') and (ld_pmp_fault = '1')) then -- PMP load fault
+           ((arbiter.rw = '1') and (arbiter.pmp_w_err = '1')) or -- PMP store fault
+           ((arbiter.rw = '0') and (arbiter.pmp_r_err = '1')) then -- PMP load fault
           arbiter.err <= '1';
         end if;
         -- wait for normal termination or start of trap handling --
@@ -296,66 +279,119 @@ begin
   ma_store_o <= '1' when (arbiter.pend = '1') and (arbiter.rw = '1') and (misaligned  = '1') else '0';
   be_store_o <= '1' when (arbiter.pend = '1') and (arbiter.rw = '1') and (arbiter.err = '1') else '0';
 
-  -- data bus interface (read/write)--
-  d_bus_we      <= ctrl_i(ctrl_bus_wr_c) and (not misaligned) and (not st_pmp_fault); -- no write request when misaligned or PMP fault
-  d_bus_re      <= ctrl_i(ctrl_bus_rd_c) and (not misaligned) and (not ld_pmp_fault); -- no read request when misaligned or PMP fault
+  -- data bus control interface (all source signals are driven by registers) --
+  d_bus_we_o    <= ctrl_i(ctrl_bus_wr_c) and (not misaligned) and (not arbiter.pmp_w_err);
+  d_bus_re_o    <= ctrl_i(ctrl_bus_rd_c) and (not misaligned) and (not arbiter.pmp_r_err);
   d_bus_fence_o <= ctrl_i(ctrl_bus_fence_c);
-
-  -- additional register stage for control signals if PMP_NUM_REGIONS > pmp_num_regions_critical_c --
-  pmp_dbus_buffer: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      d_bus_we_buf <= '0';
-      d_bus_re_buf <= '0';
-    elsif rising_edge(clk_i) then
-      d_bus_we_buf <= d_bus_we;
-      d_bus_re_buf <= d_bus_re;
-    end if;
-  end process pmp_dbus_buffer;
-
-  d_bus_we_o <= d_bus_we_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_we;
-  d_bus_re_o <= d_bus_re_buf when (PMP_NUM_REGIONS > pmp_num_regions_critical_c) else d_bus_re;
+  d_bus_priv_o  <= ctrl_i(ctrl_bus_priv_c);
 
 
-  -- Physical Memory Protection (PMP) -------------------------------------------------------
+  -- RISC-V Physical Memory Protection (PMP) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- check address region --
-  pmp_check_address: process(pmp_addr_i, fetch_pc_i, mar)
+
+  -- check address --
+  pmp_check_address: process(fetch_pc_i, addr_i, pmp_addr_i)
   begin
-    for i in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-      if (i = 0) then -- use ZERO as bottom boundary and current entry as top boundary for first entry
-        pmp.i_match(i) <= bool_to_ulogic_f(unsigned(fetch_pc_i(data_width_c-1 downto pmp_lsb_c)) < unsigned(pmp_addr_i(0)(data_width_c-1 downto pmp_lsb_c)));
-        pmp.d_match(i) <= bool_to_ulogic_f(unsigned(mar(data_width_c-1 downto pmp_lsb_c))        < unsigned(pmp_addr_i(0)(data_width_c-1 downto pmp_lsb_c)));
-      else -- use previous entry as bottom boundary and current entry as top boundary
-        pmp.i_match(i) <= bool_to_ulogic_f((unsigned(pmp_addr_i(i-1)(data_width_c-1 downto pmp_lsb_c)) <= unsigned(fetch_pc_i(data_width_c-1 downto pmp_lsb_c))) and
-                                           (unsigned(fetch_pc_i(data_width_c-1 downto pmp_lsb_c))      <  unsigned(pmp_addr_i(i)(data_width_c-1 downto pmp_lsb_c))));
-        pmp.d_match(i) <= bool_to_ulogic_f((unsigned(pmp_addr_i(i-1)(data_width_c-1 downto pmp_lsb_c)) <= unsigned(mar(data_width_c-1 downto pmp_lsb_c))) and
-                                           (unsigned(mar(data_width_c-1 downto pmp_lsb_c))             <  unsigned(pmp_addr_i(i)(data_width_c-1 downto pmp_lsb_c))));
+    for r in 0 to PMP_NUM_REGIONS-1 loop
+      if (r = 0) then -- first entry: use ZERO as base and current entry as bound
+        pmp.i_cmp_ge(r) <= '1'; -- address is always greater than or equal to zero
+        pmp.i_cmp_lt(r) <= '0'; -- unused
+        pmp.d_cmp_ge(r) <= '1'; -- address is always greater than or equal to zero
+        pmp.d_cmp_lt(r) <= '0'; -- unused
+      else -- use previous entry as base and current entry as bound
+        pmp.i_cmp_ge(r) <= bool_to_ulogic_f(unsigned(fetch_pc_i(data_width_c-1 downto pmp_lsb_c)) >= unsigned(pmp_addr_i(r-1)(data_width_c-1 downto pmp_lsb_c)));
+        pmp.i_cmp_lt(r) <= bool_to_ulogic_f(unsigned(fetch_pc_i(data_width_c-1 downto pmp_lsb_c)) <  unsigned(pmp_addr_i(r-0)(data_width_c-1 downto pmp_lsb_c)));
+        pmp.d_cmp_ge(r) <= bool_to_ulogic_f(unsigned(    addr_i(data_width_c-1 downto pmp_lsb_c)) >= unsigned(pmp_addr_i(r-1)(data_width_c-1 downto pmp_lsb_c)));
+        pmp.d_cmp_lt(r) <= bool_to_ulogic_f(unsigned(    addr_i(data_width_c-1 downto pmp_lsb_c)) <  unsigned(pmp_addr_i(r-0)(data_width_c-1 downto pmp_lsb_c)));
       end if;
-    end loop; -- i
+    end loop; -- r
   end process pmp_check_address;
 
-  -- check access type and permissions --
-  pmp_check_permission: process(pmp, pmp_ctrl_i, ctrl_i)
+  -- check mode --
+  pmp_check_mode: process(pmp_ctrl_i, pmp)
   begin
-    pmp.if_fault <= (others => '0');
-    pmp.ld_fault <= (others => '0');
-    pmp.st_fault <= (others => '0');
-    for i in 0 to PMP_NUM_REGIONS-1 loop -- iterate over all regions
-      if ((ctrl_i(ctrl_priv_mode_c) = priv_mode_u_c) or (pmp_ctrl_i(i)(pmp_cfg_l_c) = '1')) and -- enforce if USER-mode or LOCKED
-         (pmp_ctrl_i(i)(pmp_cfg_ah_c downto pmp_cfg_al_c) = pmp_tor_mode_c) and -- active entry
-         (ctrl_i(ctrl_debug_running_c) = '0') then -- disable PMP checks when in debug mode
-        pmp.if_fault(i) <= pmp.i_match(i) and (not pmp_ctrl_i(i)(pmp_cfg_x_c)); -- fetch access match no execute permission
-        pmp.ld_fault(i) <= pmp.d_match(i) and (not pmp_ctrl_i(i)(pmp_cfg_r_c)); -- load access match no read permission
-        pmp.st_fault(i) <= pmp.d_match(i) and (not pmp_ctrl_i(i)(pmp_cfg_w_c)); -- store access match no write permission
+    for r in 0 to PMP_NUM_REGIONS-1 loop
+      if (pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) = pmp_mode_tor_c) then -- TOR mode
+        if (r < (PMP_NUM_REGIONS-1)) then
+          -- this saves a LOT of comparators --
+          pmp.i_match(r) <= pmp.i_cmp_ge(r) and (not pmp.i_cmp_ge(r+1));
+          pmp.d_match(r) <= pmp.d_cmp_ge(r) and (not pmp.d_cmp_ge(r+1));
+        else -- very last entry
+          pmp.i_match(PMP_NUM_REGIONS-1) <= pmp.i_cmp_ge(PMP_NUM_REGIONS-1) and pmp.i_cmp_lt(PMP_NUM_REGIONS-1);
+          pmp.d_match(PMP_NUM_REGIONS-1) <= pmp.d_cmp_ge(PMP_NUM_REGIONS-1) and pmp.d_cmp_lt(PMP_NUM_REGIONS-1);
+        end if;
+      else -- entry disabled
+        pmp.i_match(r) <= '0';
+        pmp.d_match(r) <= '0';
       end if;
-    end loop; -- i
+    end loop; -- r
+  end process pmp_check_mode;
+
+  -- check permission --
+  pmp_check_permission: process(ctrl_i, pmp_ctrl_i)
+  begin
+    for r in 0 to PMP_NUM_REGIONS-1 loop
+      -- instruction fetch access --
+      if (ctrl_i(ctrl_priv_mode_c) = priv_mode_m_c) then -- M mode: always allow if lock bit not set, otherwise check permission
+        pmp.perm_ex(r) <= (not pmp_ctrl_i(r)(pmp_cfg_l_c)) or pmp_ctrl_i(r)(pmp_cfg_x_c);
+      else -- U mode: always check permission
+        pmp.perm_ex(r) <= pmp_ctrl_i(r)(pmp_cfg_x_c);
+      end if;
+      -- load/store accesses from M mode can also use U mode's permissions if MSTATUS.MPRV is set
+      if (ctrl_i(ctrl_bus_priv_c) = priv_mode_m_c) then -- M mode: always allow if lock bit not set, otherwise check permission
+        pmp.perm_rd(r) <= (not pmp_ctrl_i(r)(pmp_cfg_l_c)) or pmp_ctrl_i(r)(pmp_cfg_r_c);
+        pmp.perm_wr(r) <= (not pmp_ctrl_i(r)(pmp_cfg_l_c)) or pmp_ctrl_i(r)(pmp_cfg_w_c);
+      else -- U mode: always check permission
+        pmp.perm_rd(r) <= pmp_ctrl_i(r)(pmp_cfg_r_c);
+        pmp.perm_wr(r) <= pmp_ctrl_i(r)(pmp_cfg_w_c);
+      end if;
+    end loop; -- r
   end process pmp_check_permission;
 
-  -- final PMP access fault signals --
-  if_pmp_fault <= '1' when (or_reduce_f(pmp.if_fault) = '1') and (PMP_NUM_REGIONS > 0) else '0';
-  ld_pmp_fault <= '1' when (or_reduce_f(pmp.ld_fault) = '1') and (PMP_NUM_REGIONS > 0) else '0';
-  st_pmp_fault <= '1' when (or_reduce_f(pmp.st_fault) = '1') and (PMP_NUM_REGIONS > 0) else '0';
+  -- check for access fault (using static prioritization) --
+  pmp_check_fault: process(ctrl_i, pmp)
+    variable tmp_if_v, tmp_ld_v, tmp_st_v : std_ulogic_vector(PMP_NUM_REGIONS downto 0);
+  begin
+    -- > This is a *structural* description of a prioritization logic (a multiplexer chain).
+    -- > I prefer this style as I do not like using a loop with 'exit' - and I also think this style might be smaller
+    -- > and faster (could use the carry chain?!) as the synthesizer has less freedom doing what *I* want. ;)
+    tmp_if_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_priv_mode_c) /= priv_mode_m_c); -- default: fault if U mode
+    tmp_ld_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_bus_priv_c)  /= priv_mode_m_c); -- default: fault if U mode
+    tmp_st_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_bus_priv_c)  /= priv_mode_m_c); -- default: fault if U mode
+    for r in PMP_NUM_REGIONS-1 downto 0 loop -- start with lowest priority
+      -- instruction fetch access --
+      if (pmp.i_match(r) = '1') then -- address matches region r
+        tmp_if_v(r) := not pmp.perm_ex(r); -- fault if no execute permission
+      else
+        tmp_if_v(r) := tmp_if_v(r+1);
+      end if;
+      -- data load/store access --
+      if (pmp.d_match(r) = '1') then -- address matches region r
+        tmp_ld_v(r) := not pmp.perm_rd(r); -- fault if no read permission
+        tmp_st_v(r) := not pmp.perm_wr(r); -- fault if no write permission
+      else
+        tmp_ld_v(r) := tmp_ld_v(r+1);
+        tmp_st_v(r) := tmp_st_v(r+1);
+      end if;
+    end loop; -- r
+    pmp.if_fault <= tmp_if_v(0);
+    pmp.ld_fault <= tmp_ld_v(0);
+    pmp.st_fault <= tmp_st_v(0);
+
+    -- > this is the behavioral version of the code above (instruction fetch access)
+--  pmp.if_fault <= bool_to_ulogic_f(ctrl_i(ctrl_priv_mode_c) /= priv_mode_m_c); -- default: fault if U mode
+--  for r in 0 to PMP_NUM_REGIONS-1 loop
+--    if (pmp.i_match(r) = '1') then
+--      pmp.if_fault <= not pmp.perm_ex(r); -- fault if no execute permission
+--      exit;
+--    end if;
+--  end loop; -- r
+  end process pmp_check_fault;
+
+  -- final PMP access fault signals (ignored when in debug mode) --
+  if_pmp_fault <= '1' when (pmp.if_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i(ctrl_debug_running_c) = '0') else '0';
+  ld_pmp_fault <= '1' when (pmp.ld_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i(ctrl_debug_running_c) = '0') else '0';
+  st_pmp_fault <= '1' when (pmp.st_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i(ctrl_debug_running_c) = '0') else '0';
 
   -- instruction fetch PMP fault --
   i_pmp_fault_o <= if_pmp_fault;

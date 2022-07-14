@@ -52,6 +52,7 @@ entity neorv32_busswitch is
     clk_i           : in  std_ulogic; -- global clock, rising edge
     rstn_i          : in  std_ulogic; -- global reset, low-active, async
     -- controller interface a --
+    ca_bus_priv_i   : in  std_ulogic; -- current privilege level
     ca_bus_cached_i : in  std_ulogic; -- set if cached transfer
     ca_bus_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     ca_bus_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -62,6 +63,7 @@ entity neorv32_busswitch is
     ca_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
     ca_bus_err_o    : out std_ulogic; -- bus transfer error
     -- controller interface b --
+    cb_bus_priv_i   : in  std_ulogic; -- current privilege level
     cb_bus_cached_i : in  std_ulogic; -- set if cached transfer
     cb_bus_addr_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
     cb_bus_rdata_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
@@ -72,6 +74,7 @@ entity neorv32_busswitch is
     cb_bus_ack_o    : out std_ulogic; -- bus transfer acknowledge
     cb_bus_err_o    : out std_ulogic; -- bus transfer error
     -- peripheral bus --
+    p_bus_priv_o    : out std_ulogic; -- current privilege level
     p_bus_cached_o  : out std_ulogic; -- set if cached transfer
     p_bus_src_o     : out std_ulogic; -- access source: 0 = A, 1 = B
     p_bus_addr_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
@@ -221,6 +224,7 @@ begin
                     ca_bus_ben_i when (arbiter.bus_sel = '0')    else cb_bus_ben_i;
 
   p_bus_cached_o <= ca_bus_cached_i when (arbiter.bus_sel = '0') else cb_bus_cached_i;
+  p_bus_priv_o   <= ca_bus_priv_i   when (arbiter.bus_sel = '0') else cb_bus_priv_i;
 
   p_bus_we       <= ca_bus_we_i when (arbiter.bus_sel = '0') else cb_bus_we_i;
   p_bus_re       <= ca_bus_re_i when (arbiter.bus_sel = '0') else cb_bus_re_i;
