@@ -192,7 +192,6 @@ direction seen from the CPU.
 | `rstn_i`         |     1 | in  | global reset, low-active
 | `sleep_o`        |     1 | out | CPU is in sleep mode when set
 | `debug_o`        |     1 | out | CPU is in debug mode when set
-| `priv_o`         |     1 | out | current _effective_ CPU privilege level (`0` = user, `1` = machine)
 4+^| **Instruction <<_bus_interface>>**
 | `i_bus_addr_o`   |    32 | out | access address
 | `i_bus_rdata_i`  |    32 | in  | read data
@@ -200,6 +199,7 @@ direction seen from the CPU.
 | `i_bus_ack_i`    |     1 | in  | bus transfer acknowledge from accessed peripheral
 | `i_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
 | `i_bus_fence_o`  |     1 | out | indicates an executed `fence.i` instruction
+| `i_bus_priv_o`   |     1 | out | current _effective_ CPU privilege level (`0` = user, `1` = machine)
 4+^| **Data <<_bus_interface>>**
 | `d_bus_addr_o`   |    32 | out | access address
 | `d_bus_rdata_i`  |    32 | in  | read data
@@ -210,6 +210,7 @@ direction seen from the CPU.
 | `d_bus_ack_i`    |     1 | in  | bus transfer acknowledge from accessed peripheral
 | `d_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
 | `d_bus_fence_o`  |     1 | out | indicates an executed `fence` instruction
+| `d_bus_priv_o`   |     1 | out | current _effective_ CPU privilege level (`0` = user, `1` = machine)
 4+^| **System Time (for <<_timeh>> CSR)**
 | `time_i`         |    64 | in  | system time input from <<_machine_system_timer_mtime>>
 4+^| **Interrupts, RISC-V-compatible (<<_traps_exceptions_and_interrupts>>)**
