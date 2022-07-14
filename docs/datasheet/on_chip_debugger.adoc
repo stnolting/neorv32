@@ -214,7 +214,7 @@ their functionality.
 [frame="topbot",grid="none"]
 |======
 | 0x04 | **Abstract data 0** | `data0`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: `UNDEFINED`
 3+| Basic read/write registers to be used with abstract command (for example to read/write data from/to CPU GPRs).
 |======
 
@@ -226,7 +226,7 @@ their functionality.
 [frame="topbot",grid="none"]
 |======
 | 0x10 | **Debug module control register** | `dmcontrol`
-3+| Reset value: 0x00000000
+3+| Reset value: `0x00000000`
 3+| Control of the overall debug module and the hart. The following table shows all implemented bits. All remaining bits/bit-fields are configures as "zero" and are
 read-only. Writing '1' to these bits/fields will be ignored.
 |======
@@ -251,7 +251,7 @@ read-only. Writing '1' to these bits/fields will be ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x11 | **Debug module status register** | `dmstatus`
-3+| Reset value: 0x00000000
+3+| Reset value: `0x00400082`
 3+| Current status of the overall debug module and the hart. The entire register is read-only.
 |======
 
@@ -290,7 +290,7 @@ read-only. Writing '1' to these bits/fields will be ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x12 | **Hart information** | `hartinfo`
-3+| Reset value: see below
+3+| Reset value: _see below_
 3+| This register gives information about the hart. The entire register is read-only.
 |======
 
@@ -315,7 +315,7 @@ read-only. Writing '1' to these bits/fields will be ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x16 | **Abstract control and status** | `abstracts`
-3+| Reset value: see below
+3+| Reset value: _see below_
 3+| Command execution info and status.
 |======
 
@@ -350,7 +350,7 @@ Error codes in `cmderr` (highest priority first):
 [frame="topbot",grid="none"]
 |======
 | 0x17 | **Abstract command** | `command`
-3+| Reset value: 0x00000000
+3+| Reset value: `0x00000000`
 3+| Writing this register will trigger the execution of an abstract command. New command can only be executed if
 `cmderr` is zero. The entire register in write-only (reads will return zero).
 |======
@@ -382,7 +382,7 @@ hart's GPRs (abstract command register index `0x1000` - `0x101f`).
 [frame="topbot",grid="none"]
 |======
 | 0x18 | **Abstract command auto-execution** | `abstractauto`
-3+| Reset value: 0x00000000s
+3+| Reset value: `0x00000000`
 3+| Register to configure when a read/write access to a DM repeats execution of the last abstract command.
 |======
 
@@ -417,7 +417,7 @@ hart's GPRs (abstract command register index `0x1000` - `0x101f`).
 [frame="topbot",grid="none"]
 |======
 | 0x40 | **Halt summary 0** | `haltsum0`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: `UNDEFINED`
 3+| Bit 0 of this register is set if the hart is halted (all remaining bits are always zero). The entire register is read-only.
 |======
 
@@ -578,7 +578,7 @@ is raised.
 [frame="topbot",grid="none"]
 |======
 | 0x7b0 | **Debug control and status register** | `dcsr`
-3+| Reset value: 0x40000000
+3+| Reset value: `0x40000403`
 3+| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to configure debug mode and provides additional status information.
 The following bits are implemented. The reaming bits are read-only and always read as zero.
 |======
@@ -620,7 +620,7 @@ Cause codes in `dcsr.cause` (highest priority first):
 [frame="topbot",grid="none"]
 |======
 | 0x7b1 | **Debug program counter** | `dpc`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: `0x00000000`
 3+| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to store the current program counter when
 debug mode is entered. The `dret` instruction will return to `dpc` by moving `dpc` to `pc`.
 |======
@@ -633,7 +633,7 @@ debug mode is entered. The `dret` instruction will return to `dpc` by moving `dp
 [frame="topbot",grid="none"]
 |======
 | 0x7b2 | **Debug scratch register 0** | `dscratch0`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: `0x00000000`
 3+| The `dscratch0` CSR is compatible to the RISC-V debug spec. It provides a general purpose debug mode-only scratch register.
 |======
 
@@ -674,7 +674,7 @@ Hence, the CSRs of this module are only relevant for the debugger.
 [frame="topbot",grid="none"]
 |======
 | 0x7a0 | **Trigger select register** | `tselect`
-3+| Reset value: 0x00000000
+3+| Reset value: `0x00000000`
 3+| This CSR is hardwired to zero indicating there is only one trigger available. Any write access is ignored.
 |======
 
@@ -686,7 +686,7 @@ Hence, the CSRs of this module are only relevant for the debugger.
 [frame="topbot",grid="none"]
 |======
 | 0x7a1 | **Trigger data register 1 / match control register** | `tdata1` / `mcontrol`
-3+| Reset value: 0x28041048
+3+| Reset value: `0x28041048`
 3+| This CSR is used to configure the address match trigger. Only one bit is writable, the remaining bits are hardwired (see table below).
 Write attempts to the hardwired bits are ignored.
 |======
@@ -723,7 +723,7 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7a2 | **Trigger data register 2** | `tdata2`
-3+| Reset value: _UNDEFINED_
+3+| Reset value: `0x00000000`
 3+| Since only the "address match trigger" type is supported, this r/w CSR is used to store the address of the triggering instruction.
 |======
 
@@ -735,7 +735,7 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7a3 | **Trigger data register 3** | `tdata3`
-3+| Reset value: 0x00000000
+3+| Reset value: `0x00000000`
 3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
 |======
 
@@ -747,7 +747,7 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7a4 | **Trigger information register** | `tinfo`
-3+| Reset value: 0x00000004
+3+| Reset value: `0x00000004`
 3+| This CSR is hardwired to "4" indicating there is only an "address match trigger" available. Any write access is ignored.
 |======
 
@@ -759,7 +759,7 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7a5 | **Trigger control register** | `tcontrol`
-3+| Reset value: 0x00000000
+3+| Reset value: `0x00000000`
 3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
 |======
 
@@ -771,7 +771,7 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7a8 | **Machine context register** | `mcontext`
-3+| Reset value: 0x00000000
+3+| Reset value: `0x00000000`
 3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
 |======
 
@@ -783,7 +783,7 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7aa | **Supervisor context register** | `scontext`
-3+| Reset value: 0x00000000
+3+| Reset value: `0x00000000`
 3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
 |======
 

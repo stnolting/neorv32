@@ -999,7 +999,7 @@ memory system to perform the necessary operations (for example a cache flush and
 In order to reduce routing constraints (and by this the actual hardware requirements), most uncritical
 registers of the NEORV32 CPU as well as most register of the whole NEORV32 Processor do not use **a
 dedicated hardware reset**. "Uncritical registers" in this context means that the initial value of these registers
-after power-up is not relevant for a defined CPU boot process.
+after power-up/reset is not relevant for a defined CPU boot process.
 
 
 **Rationale**
@@ -1016,26 +1016,19 @@ this example "uncritical registers".
 
 **NEORV32 CPU Reset**
 
-In terms of the NEORV32 CPU, there are several pipeline registers, state machine registers and even status
+In terms of the NEORV32 CPU, there are several pipeline registers, state machine registers and even some status
 and control registers (CSRs) that do not require a defined initial state to ensure a correct boot process. The
 pipeline register will get initialized by the CPU's internal state machines, which are initialized from the main
-control engine that actually features a defined reset. The initialization of most of the CPU's core CSRs (like
-interrupt control) is done by the software (to be more specific, this is done by the `crt0.S` start-up code).
-
-During the very early boot process (where `crt0.S` is running) there is no chance for undefined behavior due to
-the lack of dedicated hardware resets of certain CSRs. For example the machine interrupt-enable CSR <<_mie>>
-does not provide a dedicated reset. The value after reset of this register is uncritical as interrupts cannot fire
-because the global interrupt enabled flag in the status register (`mstatsus(mie)`) _do_ provide a dedicated
-hardware reset setting this bit to low (globally disabling interrupts).
+control engine that actually features a defined reset.
 
 
 **Reset Configuration**
 
 Most CPU-internal register do provide an asynchronous reset in the VHDL code, but the "don't care" value
-(VHDL `'-'`) is used for initialization of all uncritical registers, effectively generating a flip-flop without a
+(VHDL `'-'`) is used for initialization of all uncritical registers - effectively generating a flip-flop without a
 reset. However, certain applications or situations (like advanced gate-level / timing simulations) might
-require a more deterministic reset state. For this case, a defined reset level (reset-to-low) of all CPU registers can
-be enabled by enabling a constant in the main VHDL package file (`rtl/core/neorv32_package.vhd`):
+require a more deterministic reset state. For this case, a defined reset level (reset-to-low) of most CPU registers can
+be configured by enabling a constant in the main VHDL package file (`rtl/core/neorv32_package.vhd`):
 
 [source,vhdl]
 ----
