@@ -17,6 +17,7 @@
 | CPU interrupts:          | fast IRQ channel 1 | CFS interrupt (see <<_processor_interrupts>>)
 |=======================
 
+
 **Theory of Operation**
 
 The custom functions subsystem is meant for implementing custom and application-specific logic.
@@ -42,6 +43,9 @@ see the <<_zxcfu_custom_instructions_extension_cfu>> and the according <<_custom
 [TIP]
 Take a look at the template CFS VHDL source file (`rtl/core/neorv32_cfs.vhd`). The file is highly
 commented to illustrate all aspects that are relevant for implementing custom CFS-based co-processor designs.
+
+[TIP]
+The memory-mapped CFS registers can also be used to provide instructions for the CPU to be executed.
 
 
 **CFS Software Access**
