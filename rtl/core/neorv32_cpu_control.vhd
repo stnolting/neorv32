@@ -1893,16 +1893,18 @@ begin
             end if;
             -- R/W: pmpaddr* - PMP address registers --
             if (csr.addr(11 downto 4) = csr_class_pmpaddr_c) then
-              for i in 0 to PMP_NUM_REGIONS-2 loop
-                if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') and -- unlocked access
-                  ((csr.pmpcfg(i+1)(7) = '0') or (csr.pmpcfg(i+1)(3) = '0')) then -- pmpcfg(i+1) not "LOCKED TOR" [TOR-mode only!]
-                  csr.pmpaddr(i) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+              for i in 0 to PMP_NUM_REGIONS-1 loop
+                if (i < PMP_NUM_REGIONS-1) then
+                  if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') and -- unlocked access
+                    ((csr.pmpcfg(i+1)(7) = '0') or (csr.pmpcfg(i+1)(3) = '0')) then -- pmpcfg(i+1) not "LOCKED TOR" [TOR-mode only!]
+                    csr.pmpaddr(i) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+                  end if;
+                else -- very last entry
+                  if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked access
+                    csr.pmpaddr(i) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+                  end if;
                 end if;
               end loop; -- i (PMP regions)
-              -- very last entry --
-              if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(PMP_NUM_REGIONS-1, 4))) and (csr.pmpcfg(PMP_NUM_REGIONS-1)(7) = '0') then -- unlocked access
-                csr.pmpaddr(PMP_NUM_REGIONS-1) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
-              end if;
             end if;
           end if;
 
