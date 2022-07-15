@@ -263,7 +263,7 @@ begin
 
   wb_adr_o <= addr_i when (ASYNC_TX = true) else ctrl.adr;
   wb_dat_o <= data_i when (ASYNC_TX = true) else ctrl.wdat;
-  wb_we_o  <= (wren_i or ctrl.we)  when (ASYNC_TX = true) else ctrl.we;
+  wb_we_o  <= (wren_i or (ctrl.we and ctrl.state)) when (ASYNC_TX = true) else ctrl.we;
   wb_sel_o <= end_byteen when (ASYNC_TX = true) else ctrl.sel;
   wb_stb_o <= stb_int when (PIPE_MODE = true) else cyc_int;
   wb_cyc_o <= cyc_int;
