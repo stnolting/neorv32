@@ -75,7 +75,7 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
     r_pnt : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- read pointer
     level : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- fill count
     data  : fifo_data_t; -- fifo memory
-    datas : std_ulogic_vector(FIFO_WIDTH-1 downto 0);
+    buf   : std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- if single-entry FIFO
     match : std_ulogic;
     empty : std_ulogic;
     full  : std_ulogic;
@@ -150,23 +150,23 @@ begin
 
   -- FIFO Memory ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fifo_memory_write: process(clk_i)
+  fifo_write: process(clk_i)
   begin
     if rising_edge(clk_i) then
       if (fifo.we = '1') then
         if (FIFO_DEPTH = 1) then
-          fifo.datas <= wdata_i;
+          fifo.buf <= wdata_i;
         else
           fifo.data(to_integer(unsigned(fifo.w_pnt(fifo.w_pnt'left-1 downto 0)))) <= wdata_i;
         end if;
       end if;
     end if;
-  end process fifo_memory_write;
+  end process fifo_write;
 
   -- "asynchronous" read --
   fifo_read_async:
   if (FIFO_RSYNC = false) generate
-    rdata_o <= fifo.datas when (FIFO_DEPTH = 1) else fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
+    rdata_o <= fifo.buf when (FIFO_DEPTH = 1) else fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
   end generate;
 
   -- synchronous read --
@@ -176,7 +176,7 @@ begin
     begin
       if rising_edge(clk_i) then
         if (FIFO_DEPTH = 1) then
-          rdata_o <= fifo.datas;
+          rdata_o <= fifo.buf;
         else
           rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
         end if;
