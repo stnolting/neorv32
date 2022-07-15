@@ -317,8 +317,8 @@ begin
           pmp.i_match(r) <= pmp.i_cmp_ge(r) and (not pmp.i_cmp_ge(r+1));
           pmp.d_match(r) <= pmp.d_cmp_ge(r) and (not pmp.d_cmp_ge(r+1));
         else -- very last entry
-          pmp.i_match(PMP_NUM_REGIONS-1) <= pmp.i_cmp_ge(PMP_NUM_REGIONS-1) and pmp.i_cmp_lt(PMP_NUM_REGIONS-1);
-          pmp.d_match(PMP_NUM_REGIONS-1) <= pmp.d_cmp_ge(PMP_NUM_REGIONS-1) and pmp.d_cmp_lt(PMP_NUM_REGIONS-1);
+          pmp.i_match(r) <= pmp.i_cmp_ge(r) and pmp.i_cmp_lt(r);
+          pmp.d_match(r) <= pmp.d_cmp_ge(r) and pmp.d_cmp_lt(r);
         end if;
       else -- entry disabled
         pmp.i_match(r) <= '0';
