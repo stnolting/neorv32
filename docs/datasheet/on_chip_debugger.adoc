@@ -578,7 +578,7 @@ is raised.
 [frame="topbot",grid="none"]
 |======
 | 0x7b0 | **Debug control and status register** | `dcsr`
-3+| Reset value: `0x40000403`
+3+| Reset value: `0x40000413`
 3+| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to configure debug mode and provides additional status information.
 The following bits are implemented. The reaming bits are read-only and always read as zero.
 |======
@@ -599,7 +599,7 @@ The following bits are implemented. The reaming bits are read-only and always re
 | 9     | `stoptime`    | r/- | `0` - timers increment as usual
 | 8:6   | `cause`       | r/- | cause identifier - why debug mode was entered (see below)
 | 5     | -             | r/- | `0` - _reserved_
-| 4     | `mprven`      | r/- | `0` - `mstatus.mprv` is ignored when in debug mode
+| 4     | `mprven`      | r/- | `1` - <<_mstatus>>`.mprv` is also evaluated when in debug mode
 | 3     | `nmip`        | r/- | `0` - non-maskable interrupt is pending
 | 2     | `step`        | r/w | enable single-stepping when set
 | 1:0   | `prv`         | r/w | CPU privilege level before/after debug mode
@@ -608,7 +608,7 @@ The following bits are implemented. The reaming bits are read-only and always re
 Cause codes in `dcsr.cause` (highest priority first):
 
 * `010` - trigger by hardware <<_trigger_module>>
-* `001` - executed EBREAK instruction
+* `001` - executed `EBREAK` instruction
 * `011` - external halt request (from DM)
 * `100` - return from single-stepping
 

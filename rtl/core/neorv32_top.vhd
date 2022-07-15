@@ -995,6 +995,7 @@ begin
       -- host access --
       clk_i       => clk_i,                    -- global clock line
       rstn_i      => rstn_int,                 -- global reset line, low-active, use as async
+      priv_i      => p_bus.priv,               -- current CPU privilege mode
       addr_i      => p_bus.addr,               -- address
       rden_i      => io_rden,                  -- read enable
       wren_i      => io_wren,                  -- word write enable

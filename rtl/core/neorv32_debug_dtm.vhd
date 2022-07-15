@@ -251,9 +251,9 @@ begin
       dmi_ctrl.dmihardreset <= '1';
       dmi_ctrl.dmireset     <= '1';
       dmi_ctrl.err          <= '0';
-      dmi_ctrl.rdata        <= (others => '-');
-      dmi_ctrl.wdata        <= (others => '-');
-      dmi_ctrl.addr         <= (others => '-');
+      dmi_ctrl.rdata        <= (others => '0');
+      dmi_ctrl.wdata        <= (others => '0');
+      dmi_ctrl.addr         <= (others => '0');
     elsif rising_edge(clk_i) then
 
       -- DMI status and control --

@@ -56,6 +56,7 @@ entity neorv32_cfs is
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
     rstn_i      : in  std_ulogic; -- global reset line, low-active, use as async
+    priv_i      : in  std_ulogic; -- current CPU privilege mode
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- word write enable
@@ -187,12 +188,14 @@ begin
   --
   -- Following the interface protocol, each read or write access has to be acknowledged in the following cycle using the ack_o
   -- signal (or even later if the module needs additional time). If no ACK is generated at all, the bus access will time out
-  -- and cause a bus access fault exception.
+  -- and cause a bus access fault exception. The current CPU privilege level is available via the 'priv_i' signal (0 = user mode,
+  -- 1 = machine mode), which can be used to constrain access to certain registers or features to privileged software only.
   --
   -- This module also provides an optional ERROR signal to indicate a faulty access operation (for example when accessing an
   -- unused, read-only or "locked" CFS register address). This signal may only be set when the module is actually accessed
   -- and is set INSTEAD of the ACK signal. Setting the ERR signal will raise a bus access exception with a "Device Error" qualifier
-  -- that can be handled by the application software.
+  -- that can be handled by the application software. Note that the current privilege level should not be exposed to software to
+  -- maintain full virtualization. Hence, CFS-based "privilege escalation" should trigger a bus access exception (e.g. by setting 'err_o').
 
   err_o <= '0'; -- Tie to zero if not explicitly used.
 
