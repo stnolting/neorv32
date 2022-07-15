@@ -559,7 +559,7 @@ begin
 
         -- bus output register --
         wb_mem_a.err <= '0';
-        if (ext_mem_a.ack(ext_mem_a_latency_c-1) = '1') and (wb_mem_a.cyc = '1') and (wb_mem_a.ack = '0') then
+        if (ext_mem_a.ack(ext_mem_a_latency_c-1) = '1') and (wb_mem_a.cyc = '1') then
           wb_mem_a.rdata <= ext_mem_a.rdata(ext_mem_a_latency_c-1);
           wb_mem_a.ack   <= '1';
         else
@@ -608,7 +608,7 @@ begin
 
       -- bus output register --
       wb_mem_b.err <= '0';
-      if (ext_mem_b.ack(ext_mem_b_latency_c-1) = '1') and (wb_mem_b.cyc = '1') and (wb_mem_b.ack = '0') then
+      if (ext_mem_b.ack(ext_mem_b_latency_c-1) = '1') and (wb_mem_b.cyc = '1') then
         wb_mem_b.rdata <= ext_mem_b.rdata(ext_mem_b_latency_c-1);
         wb_mem_b.ack   <= '1';
       else
@@ -647,7 +647,7 @@ begin
       end if;
 
       -- bus output register --
-      if (ext_mem_c.ack(ext_mem_c_latency_c-1) = '1') and (wb_mem_c.cyc = '1') and (wb_mem_c.ack = '0') then
+      if (ext_mem_c.ack(ext_mem_c_latency_c-1) = '1') and (wb_mem_c.cyc = '1') then
         wb_mem_c.rdata <= ext_mem_c.rdata(ext_mem_c_latency_c-1);
         wb_mem_c.ack   <= '1';
         wb_mem_c.err   <= '0';
