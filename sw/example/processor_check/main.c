@@ -268,7 +268,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test performance counter: setup as many events and counter as feasible
+  // Test performance counter: setup as many events and counters as possible
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
   PRINT_STANDARD("[%i] Setup HPM events ", cnt_test);
@@ -320,6 +320,8 @@ int main() {
   // prepare overflow
   neorv32_cpu_set_mcycle(0x00000000FFFFFFFFULL);
 
+  asm volatile ("nop"); // counter LOW should overflow here
+
   // get current cycle counter HIGH
   tmp_a = neorv32_cpu_csr_read(CSR_MCYCLEH);
 
@@ -345,6 +347,8 @@ int main() {
 
   // prepare overflow
   neorv32_cpu_set_minstret(0x00000000FFFFFFFFULL);
+
+  asm volatile ("nop"); // counter LOW should overflow here
 
   // get instruction counter HIGH
   tmp_a = neorv32_cpu_csr_read(CSR_INSTRETH);
