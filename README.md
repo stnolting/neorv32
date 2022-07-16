@@ -47,8 +47,8 @@ various FPGA boards and toolchains to get you started. Also check out the list o
 
 :heavy_check_mark: Automatic check for RISC-V specification [compliance](https://github.com/stnolting/neorv32-verif).
 
-:kite: Supported by [Zephyr OS](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) and
-[FreeRTOS](https://github.com/stnolting/neorv32/tree/main/sw/example/demo_freeRTOS).
+:kite: Support for [Zephyr](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) &
+[FreeRTOS](https://github.com/stnolting/neorv32/tree/main/sw/example/demo_freeRTOS) operating systems.
 
 :bulb: Feel free to open a [new issue](https://github.com/stnolting/neorv32/issues) or start a
 [new discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or if something is
@@ -250,7 +250,7 @@ developed and debugged with open source tools ([GHDL](https://github.com/ghdl/gh
   * providing ready-to-use and up-to-date [bitstreams](https://github.com/stnolting/neorv32-setups/actions/workflows/Implementation.yml)
     and [documentation](https://stnolting.github.io/neorv32/)
 
-:books: Want to know more? Check out [_Data Sheet: Software Framework_](https://stnolting.github.io/neorv32/#_software_framework).
+:bulb: Want to know more? Check out [_Data Sheet: Software Framework_](https://stnolting.github.io/neorv32/#_software_framework).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
