@@ -157,8 +157,8 @@ RISC-V ISA spec for more information.
 |=======================
 | 0x30a | **Machine environment configuration register** | `menvcfg`
 3+| Reset value: `0x00000000`
-3+| The features of this CSR are not implemented yet. The register is read-only. NOTE: This register
-only exists if the `U` ISA extensions is enabled.
+3+| The features of this CSR are not implemented yet. The register is read-only. This register
+only exists if the `U` ISA extension is enabled.
 |=======================
 
 
@@ -170,8 +170,8 @@ only exists if the `U` ISA extensions is enabled.
 |=======================
 | 0x31a | **Machine environment configuration register - high word** | `menvcfgh`
 3+| Reset value: `0x00000000`
-3+| The features of this CSR are not implemented yet. The register is read-only. NOTE: This register
-only exists if the `U` ISA extensions is enabled.
+3+| The features of this CSR are not implemented yet. The register is read-only. This register
+only exists if the `U` ISA extension is enabled.
 |=======================
 
 
@@ -287,7 +287,7 @@ Hence, the trap handler's base address has to be aligned to a 4-byte boundary.
 |=======================
 | Bit  | R/W | Function
 | 31:2 | r/w | **BASE**: 4-byte aligned base address of trap base handler
-| 1:0  | r/- | **MODE**: Always zero; BASE defined entry for _all_ traps
+| 1:0  | r/- | **MODE**: always zero; BASE defines entry for _all_ traps
 |=======================
 
 

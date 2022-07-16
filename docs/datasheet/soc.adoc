@@ -204,7 +204,8 @@ See section <<_system_configuration_information_memory_sysinfo>> for more inform
 |======
 | **CLOCK_FREQUENCY** | _natural_ | _none_
 3+| The clock frequency of the processor's `clk_i` input port in Hertz (Hz). This value can be retrieved by software
-from the <<_system_configuration_information_memory_sysinfo, SYSINFO>> module.
+from the <<_system_configuration_information_memory_sysinfo>> module to make clock-specific configurations (like timer values,
+interface timing).
 |======
 
 
