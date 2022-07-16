@@ -935,8 +935,10 @@ begin
       -- host access: transparent SPI access port (read-only) --
       acc_addr_i  => p_bus.addr,                   -- address
       acc_rden_i  => p_bus.re,                     -- read enable
+      acc_wren_i  => p_bus.we,                     -- write enable
       acc_data_o  => resp_bus(RESP_XIP_ACC).rdata, -- data out
       acc_ack_o   => resp_bus(RESP_XIP_ACC).ack,   -- transfer acknowledge
+      acc_err_o   => resp_bus(RESP_XIP_ACC).err,   -- transfer error
       -- status --
       xip_en_o    => xip_enable,                   -- XIP enable
       xip_acc_o   => xip_access,                   -- pending XIP access
@@ -950,8 +952,7 @@ begin
       spi_data_i  => xip_sdi_i,                    -- device data output
       spi_data_o  => xip_sdo_o                     -- controller data output
     );
-    resp_bus(RESP_XIP_CT).err  <= '0'; -- no access error possible
-    resp_bus(RESP_XIP_ACC).err <= '0'; -- no access error possible
+    resp_bus(RESP_XIP_CT).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_xip_inst_false:
