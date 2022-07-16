@@ -680,15 +680,6 @@ begin
       execute_engine.state_prev2 <= BRANCHED; -- actual reset value is not relevant
       execute_engine.sleep       <= '0';
     elsif rising_edge(clk_i) then
-      -- PC update --
-      if (execute_engine.pc_we = '1') then
-        if (execute_engine.pc_mux_sel = '0') then
-          execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment OR trap enter/exit
-        else
-          execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
-        end if;
-      end if;
-
       -- execute engine arbiter --
       execute_engine.state       <= execute_engine.state_nxt;
       execute_engine.state_prev  <= execute_engine.state; -- for HPMs only
@@ -697,6 +688,9 @@ begin
       execute_engine.i_reg       <= execute_engine.i_reg_nxt;
       execute_engine.is_ci       <= execute_engine.is_ci_nxt;
       execute_engine.is_ici      <= execute_engine.is_ici_nxt;
+
+      -- main control bus buffer --
+      ctrl <= ctrl_nxt;
 
       -- sleep mode --
       if (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then
@@ -709,6 +703,15 @@ begin
       if (execute_engine.state = EXECUTE) then
         execute_engine.pc_last    <= execute_engine.pc;
         execute_engine.i_reg_last <= execute_engine.i_reg;
+      end if;
+
+      -- PC update --
+      if (execute_engine.pc_we = '1') then
+        if (execute_engine.pc_mux_sel = '0') then
+          execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment OR trap enter/exit
+        else
+          execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
+        end if;
       end if;
 
       -- next PC logic --
@@ -732,9 +735,6 @@ begin
         when others =>
           NULL;
       end case;
-
-      -- main control bus buffer --
-      ctrl <= ctrl_nxt;
     end if;
   end process execute_engine_fsm_sync;
 
