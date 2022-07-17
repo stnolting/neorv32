@@ -102,7 +102,6 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   -- bus arbiter --
   type bus_arbiter_t is record
     pend      : std_ulogic; -- pending bus access
-    rw        : std_ulogic; -- read/write access
     err       : std_ulogic; -- bus access error
     pmp_r_err : std_ulogic; -- pmp load fault
     pmp_w_err : std_ulogic; -- pmp store fault
@@ -244,22 +243,22 @@ begin
   begin
     if (rstn_i = '0') then
       arbiter.pend      <= '0';
-      arbiter.rw        <= '0';
       arbiter.err       <= '0';
-      arbiter.pmp_r_err <= '0';
-      arbiter.pmp_w_err <= '0';
+      arbiter.pmp_r_err <= '-';
+      arbiter.pmp_w_err <= '-';
     elsif rising_edge(clk_i) then
       arbiter.pmp_r_err <= ld_pmp_fault;
       arbiter.pmp_w_err <= st_pmp_fault;
       if (arbiter.pend = '0') then -- idle
-        arbiter.pend <= ctrl_i(ctrl_bus_wr_c) or ctrl_i(ctrl_bus_rd_c); -- start bus access
-        arbiter.rw   <= ctrl_i(ctrl_bus_wr_c); -- set if write access
-        arbiter.err  <= '0';
+        if (ctrl_i(ctrl_bus_wr_c) = '1') or (ctrl_i(ctrl_bus_rd_c) = '1') then -- start bus access
+          arbiter.pend <= '1';
+        end if;
+        arbiter.err <= '0';
       else -- bus access in progress
         -- accumulate bus errors --
         if (d_bus_err_i = '1') or -- bus error
-           ((arbiter.rw = '1') and (arbiter.pmp_w_err = '1')) or -- PMP store fault
-           ((arbiter.rw = '0') and (arbiter.pmp_r_err = '1')) then -- PMP load fault
+           ((ctrl_i(ctrl_ir_opcode7_5_c) = '1') and (arbiter.pmp_w_err = '1')) or -- PMP store fault
+           ((ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (arbiter.pmp_r_err = '1')) then -- PMP load fault
           arbiter.err <= '1';
         end if;
         -- wait for normal termination or start of trap handling --
@@ -274,10 +273,10 @@ begin
   d_wait_o <= not d_bus_ack_i;
 
   -- output data access error to controller --
-  ma_load_o  <= '1' when (arbiter.pend = '1') and (arbiter.rw = '0') and (misaligned  = '1') else '0';
-  be_load_o  <= '1' when (arbiter.pend = '1') and (arbiter.rw = '0') and (arbiter.err = '1') else '0';
-  ma_store_o <= '1' when (arbiter.pend = '1') and (arbiter.rw = '1') and (misaligned  = '1') else '0';
-  be_store_o <= '1' when (arbiter.pend = '1') and (arbiter.rw = '1') and (arbiter.err = '1') else '0';
+  ma_load_o  <= '1' when (arbiter.pend = '1') and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (misaligned  = '1') else '0';
+  be_load_o  <= '1' when (arbiter.pend = '1') and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (arbiter.err = '1') else '0';
+  ma_store_o <= '1' when (arbiter.pend = '1') and (ctrl_i(ctrl_ir_opcode7_5_c) = '1') and (misaligned  = '1') else '0';
+  be_store_o <= '1' when (arbiter.pend = '1') and (ctrl_i(ctrl_ir_opcode7_5_c) = '1') and (arbiter.err = '1') else '0';
 
   -- data bus control interface (all source signals are driven by registers) --
   d_bus_we_o    <= ctrl_i(ctrl_bus_wr_c) and (not misaligned) and (not arbiter.pmp_w_err);
