@@ -422,7 +422,7 @@ begin
             fetch_engine.pc        <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
             fetch_engine.unaligned <= '0';
             fetch_engine.pmp_err   <= '0';
-            if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request
+            if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
               fetch_engine.state <= S_RESTART;
             elsif (ipb.half /= "00") or (CPU_IPB_ENTRIES < 2) or -- no "safe" space left in IPB
                   -- > this is something like a simple branch prediction (predict "always taken"):
@@ -438,7 +438,7 @@ begin
 
         when S_WAIT => -- wait for free IPB space 
         -- ------------------------------------------------------------
-          if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request
+          if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
             fetch_engine.state <= S_RESTART;
           elsif (ipb.free = "11") then -- free entry in IPB (both buffers)
             fetch_engine.state <= S_REQUEST; -- request next instruction word
@@ -680,15 +680,6 @@ begin
       execute_engine.state_prev2 <= BRANCHED; -- actual reset value is not relevant
       execute_engine.sleep       <= '0';
     elsif rising_edge(clk_i) then
-      -- PC update --
-      if (execute_engine.pc_we = '1') then
-        if (execute_engine.pc_mux_sel = '0') then
-          execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment OR trap enter/exit
-        else
-          execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
-        end if;
-      end if;
-
       -- execute engine arbiter --
       execute_engine.state       <= execute_engine.state_nxt;
       execute_engine.state_prev  <= execute_engine.state; -- for HPMs only
@@ -697,6 +688,9 @@ begin
       execute_engine.i_reg       <= execute_engine.i_reg_nxt;
       execute_engine.is_ci       <= execute_engine.is_ci_nxt;
       execute_engine.is_ici      <= execute_engine.is_ici_nxt;
+
+      -- main control bus buffer --
+      ctrl <= ctrl_nxt;
 
       -- sleep mode --
       if (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then
@@ -709,6 +703,15 @@ begin
       if (execute_engine.state = EXECUTE) then
         execute_engine.pc_last    <= execute_engine.pc;
         execute_engine.i_reg_last <= execute_engine.i_reg;
+      end if;
+
+      -- PC update --
+      if (execute_engine.pc_we = '1') then
+        if (execute_engine.pc_mux_sel = '0') then
+          execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment OR trap enter/exit
+        else
+          execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
+        end if;
       end if;
 
       -- next PC logic --
@@ -732,9 +735,6 @@ begin
         when others =>
           NULL;
       end case;
-
-      -- main control bus buffer --
-      ctrl <= ctrl_nxt;
     end if;
   end process execute_engine_fsm_sync;
 
@@ -990,6 +990,7 @@ begin
 
 
       when EXECUTE => -- Decode and execute instruction (control has to be here for exactly 1 cycle in any case!)
+      -- NOTE: register file is read this stage; due to the sync read data will be available in the _next_ state
       -- ------------------------------------------------------------
         case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 

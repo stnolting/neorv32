@@ -60,8 +60,10 @@ entity neorv32_xip is
     -- host access: transparent SPI access port (read-only) --
     acc_addr_i  : in  std_ulogic_vector(31 downto 0); -- address
     acc_rden_i  : in  std_ulogic; -- read enable
+    acc_wren_i  : in  std_ulogic; -- write enable
     acc_data_o  : out std_ulogic_vector(31 downto 0); -- data out
     acc_ack_o   : out std_ulogic; -- transfer acknowledge
+    acc_err_o   : out std_ulogic; -- transfer error
     -- status --
     xip_en_o    : out std_ulogic; -- XIP enable
     xip_acc_o   : out std_ulogic; -- pending XIP access
@@ -123,7 +125,7 @@ architecture neorv32_xip_rtl of neorv32_xip is
   signal xip_addr : std_ulogic_vector(31 downto 0);
 
   -- SPI access fetch arbiter --
-  type arbiter_state_t is (S_DIRECT, S_IDLE, S_CHECK, S_TRIG, S_BUSY);
+  type arbiter_state_t is (S_DIRECT, S_IDLE, S_CHECK, S_TRIG, S_BUSY, S_ERROR);
   type arbiter_t is record
     state          : arbiter_state_t;
     state_nxt      : arbiter_state_t;
@@ -321,6 +323,7 @@ begin
     -- bus interface defaults --
     acc_data_o <= (others => '0');
     acc_ack_o  <= '0';
+    acc_err_o  <= '0';
 
     -- SPI PHY interface defaults --
     phy_if.start <= '0';
@@ -339,8 +342,12 @@ begin
 
       when S_IDLE => -- wait for new bus request
       -- ------------------------------------------------------------
-        if (acc_rden_i = '1') and (acc_addr_i(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
-          arbiter.state_nxt <= S_CHECK;
+        if (acc_addr_i(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
+          if (acc_rden_i = '1') then
+            arbiter.state_nxt <= S_CHECK;
+          elsif (acc_wren_i = '1') then
+            arbiter.state_nxt <= S_ERROR;
+          end if;
         end if;
 
       when S_CHECK => -- check if we can resume flash access
@@ -350,7 +357,7 @@ begin
           phy_if.start      <= '1'; -- resume flash access
           arbiter.state_nxt <= S_BUSY;
         else
-          phy_if.final      <= '1'; -- reset flash access
+          phy_if.final      <= '1'; -- restart flash access
           arbiter.state_nxt <= S_TRIG;
         end if;
 
@@ -366,6 +373,11 @@ begin
           acc_ack_o         <= '1';
           arbiter.state_nxt <= S_IDLE;
         end if;
+
+      when S_ERROR => -- access error
+      -- ------------------------------------------------------------
+        acc_err_o         <= '1';
+        arbiter.state_nxt <= S_IDLE;
 
       when others => -- undefined
       -- ------------------------------------------------------------

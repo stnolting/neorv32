@@ -63,7 +63,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070402"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070403"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -814,13 +814,13 @@ package neorv32_package is
   constant trap_sma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00110"; -- 0.6:  store address misaligned
   constant trap_sbe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00111"; -- 0.7:  store access fault
   constant trap_uenv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01000"; -- 0.8:  environment call from u-mode
---constant trap_senv_c  x  : std_ulogic_vector(6 downto 0) := "0" & "0" & "01001"; -- 0.9:  environment call from s-mode
---constant trap_henv_c  x  : std_ulogic_vector(6 downto 0) := "0" & "0" & "01010"; -- 0.10: environment call from h-mode
+--constant trap_senv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01001"; -- 0.9:  environment call from s-mode
+--constant trap_henv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01010"; -- 0.10: environment call from h-mode
   constant trap_menv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01011"; -- 0.11: environment call from m-mode
---constant trap_ipf_c   x  : std_ulogic_vector(6 downto 0) := "0" & "0" & "01100"; -- 0.12: instruction page fault
---constant trap_lpf_c   x  : std_ulogic_vector(6 downto 0) := "0" & "0" & "01101"; -- 0.13: load page fault
---constant trap_???_c   x  : std_ulogic_vector(6 downto 0) := "0" & "0" & "01110"; -- 0.14: reserved
---constant trap_spf_c   x  : std_ulogic_vector(6 downto 0) := "0" & "0" & "01111"; -- 0.15: store page fault
+--constant trap_ipf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01100"; -- 0.12: instruction page fault
+--constant trap_lpf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01101"; -- 0.13: load page fault
+--constant trap_???_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01110"; -- 0.14: reserved
+--constant trap_spf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01111"; -- 0.15: store page fault
   -- NEORV32-specific (custom) synchronous exceptions --
 -- none implemented yet
   -- RISC-V compliant asynchronous exceptions (interrupts) --
@@ -2018,32 +2018,34 @@ package neorv32_package is
   component neorv32_xip
     port (
       -- globals --
-      clk_i        : in  std_ulogic; -- global clock line
-      rstn_i       : in  std_ulogic; -- global reset line, low-active
+      clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active
       -- host access: control register access port --
-      ct_addr_i    : in  std_ulogic_vector(31 downto 0); -- address
-      ct_rden_i    : in  std_ulogic; -- read enable
-      ct_wren_i    : in  std_ulogic; -- write enable
-      ct_data_i    : in  std_ulogic_vector(31 downto 0); -- data in
-      ct_data_o    : out std_ulogic_vector(31 downto 0); -- data out
-      ct_ack_o     : out std_ulogic; -- transfer acknowledge
+      ct_addr_i   : in  std_ulogic_vector(31 downto 0); -- address
+      ct_rden_i   : in  std_ulogic; -- read enable
+      ct_wren_i   : in  std_ulogic; -- write enable
+      ct_data_i   : in  std_ulogic_vector(31 downto 0); -- data in
+      ct_data_o   : out std_ulogic_vector(31 downto 0); -- data out
+      ct_ack_o    : out std_ulogic; -- transfer acknowledge
       -- host access: transparent SPI access port (read-only) --
-      acc_addr_i   : in  std_ulogic_vector(31 downto 0); -- address
-      acc_rden_i   : in  std_ulogic; -- read enable
-      acc_data_o   : out std_ulogic_vector(31 downto 0); -- data out
-      acc_ack_o    : out std_ulogic; -- transfer acknowledge
+      acc_addr_i  : in  std_ulogic_vector(31 downto 0); -- address
+      acc_rden_i  : in  std_ulogic; -- read enable
+      acc_wren_i  : in  std_ulogic; -- write enable
+      acc_data_o  : out std_ulogic_vector(31 downto 0); -- data out
+      acc_ack_o   : out std_ulogic; -- transfer acknowledge
+      acc_err_o   : out std_ulogic; -- transfer error
       -- status --
-      xip_en_o     : out std_ulogic; -- XIP enable
-      xip_acc_o    : out std_ulogic; -- pending XIP access
-      xip_page_o   : out std_ulogic_vector(03 downto 0); -- XIP page
+      xip_en_o    : out std_ulogic; -- XIP enable
+      xip_acc_o   : out std_ulogic; -- pending XIP access
+      xip_page_o  : out std_ulogic_vector(03 downto 0); -- XIP page
       -- clock generator --
-      clkgen_en_o  : out std_ulogic; -- enable clock generator
-      clkgen_i     : in  std_ulogic_vector(07 downto 0);
+      clkgen_en_o : out std_ulogic; -- enable clock generator
+      clkgen_i    : in  std_ulogic_vector(07 downto 0);
       -- SPI device interface --
-      spi_csn_o    : out std_ulogic; -- chip-select, low-active
-      spi_clk_o    : out std_ulogic; -- serial clock
-      spi_data_i   : in  std_ulogic; -- device data output
-      spi_data_o   : out std_ulogic  -- controller data output
+      spi_csn_o   : out std_ulogic; -- chip-select, low-active
+      spi_clk_o   : out std_ulogic; -- serial clock
+      spi_data_i  : in  std_ulogic; -- device data output
+      spi_data_o  : out std_ulogic  -- controller data output
     );
   end component;
 

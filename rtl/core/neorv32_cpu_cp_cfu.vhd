@@ -83,7 +83,7 @@ begin
   cfu_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      res_o <= (others => '0');
+      res_o <= (others => '-'); -- no actual reset required
       control.busy <= '0';
     elsif rising_edge(clk_i) then
       res_o <= (others => '0'); -- default; all CPU co-processor outputs are logically OR-ed

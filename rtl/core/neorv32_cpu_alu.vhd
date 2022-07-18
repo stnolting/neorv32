@@ -114,24 +114,17 @@ begin
   -- Adder/Subtracter Core ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   arithmetic_core: process(ctrl_i, opa, opb)
-    variable cin_v : std_ulogic_vector(0 downto 0);
-    variable opa_v : std_ulogic_vector(data_width_c downto 0);
-    variable opb_v : std_ulogic_vector(data_width_c downto 0);
-    variable opy_v : std_ulogic_vector(data_width_c downto 0);
+    variable opa_v, opb_v : std_ulogic_vector(data_width_c downto 0);
   begin
     -- operand sign-extension --
     opa_v := (opa(opa'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opa;
     opb_v := (opb(opb'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opb;
     -- add/sub(slt) select --
-    if (ctrl_i(ctrl_alu_op0_c) = '1') then -- subtraction
-      opy_v    := not opb_v;
-      cin_v(0) := '1';
-    else -- addition
-      opy_v    := opb_v;
-      cin_v(0) := '0';
+    if (ctrl_i(ctrl_alu_op0_c) = '1') then
+      addsub_res <= std_ulogic_vector(unsigned(opa_v) - unsigned(opb_v));
+    else
+      addsub_res <= std_ulogic_vector(unsigned(opa_v) + unsigned(opb_v));
     end if;
-    -- adder core --
-    addsub_res <= std_ulogic_vector(unsigned(opa_v) + unsigned(opy_v) + unsigned(cin_v(0 downto 0)));
   end process arithmetic_core;
 
   -- direct output of adder result --

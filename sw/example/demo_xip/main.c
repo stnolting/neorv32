@@ -441,13 +441,19 @@ int main() {
 
 
   // since the flash is now mapped to the processor's address space we can dump its content by using normal memory accesses
-  neorv32_uart0_printf("\nRead-back XIP flash content (via memory-mapped access)...\n");
+  neorv32_uart0_printf("\nRead-back XIP flash content (first 10 words) via memory-mapped access...\n");
   uint32_t flash_base_addr = XIP_PAGE_BASE_ADDR + FLASH_BASE;
-  uint32_t *pnt = (uint32_t*)flash_base_addr;
+  uint32_t *xip_mem = (uint32_t*)flash_base_addr;
   uint32_t i;
-  for (i=0; i<(sizeof(xip_program)/4); i++) {
-    neorv32_uart0_printf("[0x%x] 0x%x\n", flash_base_addr + 4*i, pnt[i]);
+  for (i=0; i<10; i++) {
+    neorv32_uart0_printf("[0x%x] 0x%x\n", flash_base_addr + 4*i, xip_mem[i]);
   }
+
+
+  // the flash is READ-ONLY in XIP mode - any write access to the XIP-mapped memory page will raise
+  // a store bus exception / device error (captured by the NEORV32 runtime environment)
+  neorv32_uart0_printf("\nTest write access to XIP memory (will raise an exception)...\n");
+  *xip_mem = 0; // try to write to the flash using XIP
 
 
   // finally, jump to the XIP flash's base address we have configured to start execution **from there**
