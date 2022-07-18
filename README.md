@@ -261,8 +261,7 @@ developed and debugged with open source tools ([GHDL](https://github.com/ghdl/gh
 ## 6. Getting Started
 
 This overview provides some *quick links* to the most important sections of the
-[online Data Sheet](https://stnolting.github.io/neorv32) and the
-[online User Guide](https://stnolting.github.io/neorv32/ug).
+[online Data Sheet](https://stnolting.github.io/neorv32) and the [online User Guide](https://stnolting.github.io/neorv32/ug).
 
 ### :interrobang: Rationale
 
@@ -275,10 +274,11 @@ This overview provides some *quick links* to the most important sections of the
   * [Top Entity - Generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics) - processor/CPU configuration options
   * [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory layout and boot configurations
   * [SoC Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - IO/peripheral modules and memories
-  * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - online & in-system debugging of the processor via JTAG
+  * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - in-system debugging of the processor via JTAG
 
 * **[NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the CPU**
   * [RISC-V Compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs and what is not
+  * [Architecture](https://stnolting.github.io/neorv32/#_architecture) - a look under the hood
   * [Full Virtualization](https://stnolting.github.io/neorv32/#_full_virtualization) - execution safety
   * [ISA and Extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions) - available (RISC-V) ISA extensions
   * [CSRs](https://stnolting.github.io/neorv32/#_control_and_status_registers_csrs) - control and status registers
