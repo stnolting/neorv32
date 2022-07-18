@@ -422,7 +422,7 @@ begin
             fetch_engine.pc        <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
             fetch_engine.unaligned <= '0';
             fetch_engine.pmp_err   <= '0';
-            if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request
+            if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
               fetch_engine.state <= S_RESTART;
             elsif (ipb.half /= "00") or (CPU_IPB_ENTRIES < 2) or -- no "safe" space left in IPB
                   -- > this is something like a simple branch prediction (predict "always taken"):
@@ -438,7 +438,7 @@ begin
 
         when S_WAIT => -- wait for free IPB space 
         -- ------------------------------------------------------------
-          if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request
+          if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
             fetch_engine.state <= S_RESTART;
           elsif (ipb.free = "11") then -- free entry in IPB (both buffers)
             fetch_engine.state <= S_REQUEST; -- request next instruction word
@@ -990,6 +990,7 @@ begin
 
 
       when EXECUTE => -- Decode and execute instruction (control has to be here for exactly 1 cycle in any case!)
+      -- NOTE: register file is read this stage; due to the sync read data will be available in the _next_ state
       -- ------------------------------------------------------------
         case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
