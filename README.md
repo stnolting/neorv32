@@ -48,7 +48,8 @@ various FPGA boards and toolchains to get you started. Also check out the list o
 :heavy_check_mark: Automatic check for RISC-V specification [compliance](https://github.com/stnolting/neorv32-verif).
 
 :kite: Support for [Zephyr](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) &
-[FreeRTOS](https://github.com/stnolting/neorv32/tree/main/sw/example/demo_freeRTOS) operating systems.
+[FreeRTOS](https://github.com/stnolting/neorv32/tree/main/sw/example/demo_freeRTOS) operating systems and
+[LiteX](https://github.com/enjoy-digital/litex/tree/master/litex/soc/cores/cpu/neorv32) SoC Builder Framework.
 
 :bulb: Feel free to open a [new issue](https://github.com/stnolting/neorv32/issues) or start a
 [new discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or if something is
