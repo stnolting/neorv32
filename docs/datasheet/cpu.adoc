@@ -89,28 +89,15 @@ will raise an exception to allow a software-based emulation provided by the appl
 :sectnums:
 === Architecture
 
-The NEORV32 CPU was designed from scratch based only on the official ISA / privileged architecture
-specifications. The following figure shows the simplified architecture of the CPU.
+The NEORV32 CPU was designed from scratch based only on the official base and privileged ISA
+specifications. The following figure shows the simplified data path of the CPU.
 
 image::neorv32_cpu.png[align=center]
 
-The CPU implements a _multi-cycle_ architecture. Hence, each instruction is executed as a series of consecutive
-micro-operations. In order to increase performance, the CPU's **front-end** (instruction fetch) and **back-end**
-(instruction execution) are de-couples via a FIFO (the "instruction prefetch buffer"). Therefore, the
-front-end can already fetch new instructions while the back-end is still processing previously-fetched instructions.
-
-The front-end is responsible for fetching 32-bit chunks of instruction words (one aligned 32-bit instruction,
-two 16-bit instructions or a mixture if 32-bit instructions are not aligned to 32-bit boundaries). The instruction
-data is stored to a FIFO queue - the instruction prefetch buffer.
-
-The back-end is responsible for the actual execution of the instruction. It includes an "issue engine",
-which takes data from the instruction prefetch buffer and assembles 32-bit instruction words (plain 32-bit
-instruction or decompressed 16-bit instructions) for execution.
-
-Front-end and back-end operate in parallel and with overlapping operations. Hence, the optimal CPI
-(cycles per instructions) is 2, but it can be significantly higher: for instance when executing loads/stores
-(accessing memory-mapped devices with high latency), executing multi-cycle ALU operations (like divisions) or
-when the CPU front-end has to reload the prefetch buffer due to a taken branch.
+The CPU implements a pipelined _multi-cycle_ architecture: each instruction is executed as a series of consecutive
+micro-operations. In order to increase performance, the CPU's front-end (instruction fetch) and back-end
+(instruction execution) are de-couples via a FIFO. Therefore, the front-end can already fetch new instructions while
+the back-end is still processing the previously-fetched instruction.
 
 Basically, the NEORV32 CPU is somewhere between a classical pipelined architecture, where each stage
 requires exactly one processing cycle (if not stalled) and a classical multi-cycle architecture, which executes
@@ -119,10 +106,103 @@ these two classical design paradigms allows an increased instruction execution i
 approach (due to overlapping operation of fetch and execute) at a reduced hardware footprint (due to the
 multi-cycle concept).
 
-As a Von-Neumann machine, the CPU provides independent interfaces for instruction fetch and data access.
-These two bus interfaces are merged into a single processor-internal bus via a prioritizing bus switch (data accesses
-have higher priority). Hence, ALL memory locations including peripheral devices are mapped to a single unified 32-bit
+As a Von-Neumann machine, the CPU provides independent interfaces for instruction fetch and data access. However,
+these two bus interfaces are merged into a single processor-internal bus via a prioritizing bus switch (data accesses
+have higher priority). Hence, _all_ memory addresses including peripheral devices are mapped to a single unified 32-bit
 address space.
+
+
+:sectnums:
+==== CPU Register File
+
+The data register file contains the general purpose "`x`" architecture registers. For `rv32i` ISA there are 32 32-bit registers
+(= 1024 bit total capacity) and for the `rv32e` ISA there are 16 32-bit registers (= 512 bit total capacity). Register zero (`x0`/`zero`)
+always read as zero and any write access to it is discarded. 
+
+The register file is implemented as synchronous memory with synchronous read and write accesses. Register `zero` is also mapped to
+a _physical memory_ in the register file. By this, there is no need to add a further multiplexer to "insert" zero if reading from
+`zero` reducing logic requirements and shortening the critical path. Furthermore, the whole register file can be mapped to FPGA
+block RAM(s).
+
+The memory of the register file uses two access ports: a read-only port for reading register `rs2` (second source operand) and a
+read/write port reading registers `rs1` (first source operand) or for writing processing results to register `rd` (destination register).
+Hence, a _simple_ dual-port RAM can be used to implement the register file. From a functional point of view, read and write accesses to
+the register file do never occur in the same clock cycle, so no bypass logic is required at all.
+
+
+:sectnums:
+==== CPU Arithmetic Logic Unit
+
+The arithmetic/logic unit (ALU) is used for processing data from the register file and also for memory and branch address computations.
+All simple <<_i_base_integer_isa> data processing operations (`add`, `and`, ...) are implemented as combinatorial logic requiring only a single cycle to
+complete. More sophisticated instructions (shift operations from the base ISA and all further ISA extensions) are processed by so-called
+"ALU co-processors".
+
+The co-processors are implemented as iterative units that require several cycles to complete processing. Besides the base ISA's shift instructions,
+the co-processors are used to implement all further processing-based ISA extensions (e.g. <<_m_integer_multiplication_and_division>> and
+<<_b_bit_manipulation_operations>>). Custom RISC-V instructions (<<_custom_functions_unit_cfu>>) are also implemented as ALU co-processor.
+
+
+:sectnums:
+==== CPU Bus Unit
+
+The bus unit takes care of handling data memory accesses via the load and store instructions. It handles data adjustment when accessing
+sub-word (16-bit or 8-bit) and performs sign-extension for singed load operations. The bus unit also includes the optional includes
+<<_pmp_physical_memory_protection>> that performs permission checks for any data and instruction (!) access.
+
+A list of the bus interface signals and a detailed description of the protocol can be found in section <<_bus_interface>>.
+All bus interface signals are driven/buffered by registers; so even a complex SoC interconnection bus network will not
+effect maximal operation frequency.
+
+.Unaligned Accesses
+[WARNING]
+The CPU does not support a hardware-based handling of unaligned memory accesses! Any unaligned access will raise a bus load/store unaligned
+address exception. The exception handler can be used to _emulate_ unaligned memory accesses in software.
+
+
+:sectnums:
+==== CPU Control Unit
+
+The CPU control unit is the actual brain of the processor core as it generated all the control signals for the different CPU modules.
+The control unit is based on several modules (also called "engines").
+
+
+**Front-End**
+
+The front-end is responsible for fetching instruction data in chunks of 32-bits. This can be one aligned 32-bit instruction,
+two aligned 16-bit instructions or a mixture if 32-bit instructions are not aligned to 32-bit boundaries. The instruction
+data including control and exception information is stored to a FIFO queue - the instruction prefetch buffer (IPB). The depth
+of this FIFO can be configured by the <<_cpu_ipb_entries>> top generic.
+
+The FIFO allows the front-end to do "speculative" instruction fetches, as it keeps fetching the next consecutive instruction
+all the time. This also allows to decouple front-end (instruction fetch) and back-end (instruction execution) so both modules
+can operate in parallel to increase performance.
+
+.Branch Prediction
+[NOTE]
+The front-end implements a very simple branch prediction (predict = always taken) that stops fetching further instruction while
+a branch/jump/call operation is in progress.
+
+
+**Back-End**
+
+Instruction data from the instruction prefetch buffer is decompressed (if the `C` ISA extension is enabled) and sent to the
+CPU back-end for actual execution. Execution is conducted by a state-machine that controls all of the CPU modules. The execution
+time of a instruction depends on the complexity of required operations. The minimal time for executing is 2 cycles (simple ALU
+operations) but can be significantly higher. The table in section <<_instruction_timing>> list the required execution times for
+all instructions and extensions.
+
+
+**Trap Controller**
+
+The trap controller handles all synchronous exceptions (caused by an instruction; e.g. an illegal instruction word) and asynchronous
+exceptions (= interrupts). A full list of all supported exceptions can be found in section <<_neorv32_trap_listing>>.
+
+
+**CSR System**
+
+The CSR system implements all the _control and status registers_ and also all hardware counters. See section
+<<_control_and_status_registers_csrs>> for a full overview of all available CSRs.
 
 
 // ####################################################################################################################
@@ -137,7 +217,7 @@ Note that this does _not affect_ the operation of any peripheral/IO modules like
 the CPU will continue to buffer/enqueue all incoming interrupt requests.
 
 The CPU will leave sleep mode as soon as any interrupt source becomes _pending_. This requires that interrupts are globally
-enabled by setting <<_mstauts>>`.mie` and that at least one interrupt source is enabled in <<_mie>>.
+enabled by setting `<<_mstatus>>.mie` and that at least one interrupt source is enabled in <<_mie>>.
 
 [IMPORTANT]
 If sleep mode is entered without at least one enabled interrupt source the CPU will be _permanently_ halted.
@@ -876,7 +956,7 @@ Each of this interfaces can access an address space of up to 2^32^ bytes (4GB).
 The following table shows the signals of the data and instruction interfaces as seen from the CPU (`*_o` signals are driven
 by the CPU / outputs, `*_i` signals are read by the CPU / inputs). Both interfaces use the same protocol.
 
-.CPU bus interfaces ()
+.CPU Bus Interface Signals
 [cols="<2,^1,^1,<6"]
 [options="header",grid="rows"]
 |=======================
@@ -885,11 +965,12 @@ by the CPU / outputs, `*_i` signals are read by the CPU / inputs). Both interfac
 | `i/d_bus_rdata_i` | 32    | in        | data input for read operations
 | `d_bus_wdata_o`   | 32    | out       | data output for write operations
 | `d_bus_ben_o`     | 4     | out       | byte enable signal for write operations
-| `d_bus_we_o`    |   1     | out       | bus write access request (one-shot)
+| `d_bus_we_o`      | 1     | out       | bus write access request (one-shot)
 | `i/d_bus_re_o`    | 1     | out       | bus read access request (one-shot)
 | `i/d_bus_ack_i`   | 1     | in        | accessed peripheral indicates a successful completion of the bus transaction
 | `i/d_bus_err_i`   | 1     | in        | accessed peripheral indicates an error during the bus transaction
 | `i/d_bus_fence_o` | 1     | out       | this signal is set for one cycle when the CPU executes an instruction/data fence operation
+| `i/d_bus_priv_o`  | 1     | out       | shows the effective privilege level of the bus access
 |=======================
 
 .Pipelined Transfers
