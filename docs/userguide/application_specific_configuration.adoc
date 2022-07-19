@@ -23,7 +23,9 @@ multiplications, `FAST_SHIFT_EN => true` use a fast barrel shifter for shift ope
 * Implement the instruction cache: `ICACHE_EN => true`
 * Use as many _internal_ memory as possible to reduce memory access latency: `MEM_INT_IMEM_EN => true` and
 `MEM_INT_DMEM_EN => true`, maximize `MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE`
-* Increase the CPU's instruction prefetch buffer size: `CPU_IPB_ENTRIES` (recommended value is >= 4)
+* Increase the CPU's instruction prefetch buffer size: if **no** instruction cache is implemented `CPU_IPB_ENTRIES` should be
+quite large (recommended value is >= 8); if the instruction cache is implemented `CPU_IPB_ENTRIES` values above 4 are
+rather inefficient
 * _To be continued..._
 
 
