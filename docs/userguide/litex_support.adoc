@@ -1,0 +1,163 @@
+<<<
+:sectnums:
+== LiteX SoC Builder Support
+
+https://github.com/enjoy-digital/litex[LiteX] is a SoC builder framework by https://github.com/enjoy-digital[Enjoy-Digital]
+that allows easy creation of complete system-on-chip designs - including sophisticated interfaces like Ethernet, serial ATA
+and DDR memory controller. The NEORV32 has been ported to the LiteX framework to be used as central processing unit.
+
+The default microcontroller-like NEORV32 processor is not directly supported as all the peripherals would provide some _redundancy_.
+Instead, the LiteX port uses a _core complex wrapper_ that only includes the actual NEORV32 CPU, the instruction cache (optional),
+the RISC-V machine system timer (optional), the on-chip debugger (optional) and the internal bus infrastructure.
+The specific implementation of optional modules as well as RISC-V ISA configuration and performance optimization options are
+controlled by a single _CONFIGURATION_ option wrapped in the LiteX build flow. The Wishbone interface is used to with the
+other LiteX SoC parts.
+
+.Core Complex Wrapper
+[TIP]
+The NEORV32 core complex wrapper used by LiteX for integration can be found in
+`rtl/system_integration/neorv32_litex_core_complex.vhd`.
+
+.LiteX NEORV32 Documentation
+[TIP]
+More information can be found in the "NEORV32" section of the LiteX project wiki: https://github.com/enjoy-digital/litex/wiki/CPUs
+
+.Work-In-Progress 🚧
+[NOTE]
+UG: synthesis - how to create a whole NEORV32 + LiteX SoC for a FPGA +
+LiteX: debugger - the NEORV32 on-chip-debugger is not supported by the LiteX port yet +
+LiteX: external interrupt - the "RISC-V machine external interrupt" is not supported by the LiteX port yet
+
+
+=== LiteX Setup
+
+[start=1]
+. Install LiteX and the RISC-V compiler following the excellent quick start guide: https://github.com/enjoy-digital/litex/wiki#quick-start-guide
+. The NEORV32 port for LiteX uses GHDL and yosys for converting the VHDL files via the https://github.com/ghdl/ghdl-yosys-plugin[GHDL-yosys-plugin].
+You can download prebuilt packages for example from https://github.com/YosysHQ/fpga-toolchain (_no longer maintained, but still works fine_).
+
+.GHDL-yosys Plugin
+[WARNING]
+If you would like to use the experimental GHDL Yosys plugin for VHDL on Linux or MacOS, you will need to set
+the `GHDL_PREFIX` environment variable. e.g. `export GHDL_PREFIX=<install_dir>/fpga-toolchain/lib/ghdl`.
+On Windows this is not necessary. +
+ +
+If you are using an existing Makefile set up for ghdl-yosys-plugin and see ERROR: This version of yosys
+is built without plugin support you probably need to remove `-m ghdl` from your yosys parameters. This is
+because the plugin is typically loaded from a separate file but it is provided built into yosys in this
+package. +
+- from https://github.com/YosysHQ/fpga-toolchain +
+ +
+**This means you might have to edit the call to yosys in `litex/soc/cores/cpu/neorv32/core.py`.**
+
+[start=3]
+. Add the `bin` folder of the ghdl-yosys-plugin to your `PATH` environment variable. You can test your yosys installation
+and check for the GHDL plugin:
+
+[source, bash]
+----
+$ yosys -H
+
+ /----------------------------------------------------------------------------\
+ |                                                                            |
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |                                                                            |
+ |  Copyright (C) 2012 - 2020  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |                                                                            |
+ |  Permission to use, copy, modify, and/or distribute this software for any  |
+ |  purpose with or without fee is hereby granted, provided that the above    |
+ |  copyright notice and this permission notice appear in all copies.         |
+ |                                                                            |
+ |  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  |
+ |  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF          |
+ |  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR   |
+ |  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES    |
+ |  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN     |
+ |  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF   |
+ |  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.            |
+ |                                                                            |
+ \----------------------------------------------------------------------------/
+
+ Yosys 0.10+12 (open-tool-forge build) (git sha1 356ec7bb, gcc 9.3.0-17ubuntu1~20.04 -Os)
+
+
+-- Running command `help' --
+
+    ... <1>
+    ghdl                 load VHDL designs using GHDL <2>
+    ...
+----
+<1> A long list of plugins...
+<2> This is the plugin we need.
+
+
+=== LiteX Simulation
+
+Start a simulation right in your console using the NEORV32 as target CPU:
+
+[source, bash]
+----
+$ litex_sim --cpu-type=neorv32
+----
+
+LiteX will start running its BIOS:
+
+[source]
+----
+        __   _ __      _  __
+       / /  (_) /____ | |/_/
+      / /__/ / __/ -_)>  <
+     /____/_/\__/\__/_/|_|
+   Build your hardware, easily!
+
+ (c) Copyright 2012-2022 Enjoy-Digital
+ (c) Copyright 2007-2015 M-Labs
+
+ BIOS built on Jul 19 2022 12:21:36
+ BIOS CRC passed (6f76f1e8)
+
+ LiteX git sha1: 0654279a
+
+--=============== SoC ==================--
+CPU:            NEORV32-standard @ 1MHz
+BUS:            WISHBONE 32-bit @ 4GiB
+CSR:            32-bit data
+ROM:            128KiB
+SRAM:           8KiB
+
+
+--============== Boot ==================--
+Booting from serial...
+Press Q or ESC to abort boot completely.
+sL5DdSMmkekro
+Timeout
+No boot medium found
+
+--============= Console ================--
+
+litex> help
+
+LiteX BIOS, available commands:
+
+flush_cpu_dcache         - Flush CPU data cache
+crc                      - Compute CRC32 of a part of the address space
+ident                    - Identifier of the system
+help                     - Print this help
+
+serialboot               - Boot from Serial (SFL)
+reboot                   - Reboot
+boot                     - Boot from Memory
+
+mem_cmp                  - Compare memory content
+mem_speed                - Test memory speed
+mem_test                 - Test memory access
+mem_copy                 - Copy address space
+mem_write                - Write address space
+mem_read                 - Read address space
+mem_list                 - List available memory regions
+
+
+litex> 
+----
+
+You can use the provided console to execute LiteX commands.
