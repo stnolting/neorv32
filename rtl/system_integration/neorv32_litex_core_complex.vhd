@@ -143,7 +143,7 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     riscv_zicntr => ( false,   false,   true,    true  ), -- RISC-V standard CPU counters 'Zicntr'
     riscv_zihpm  => ( false,   false,   false,   true  ), -- RISC-V hardware performance monitors 'Zihpm'
     fast_ops     => ( false,   false,   true,    true  ), -- use DSPs and barrel-shifters
-    ipb          => ( 2,       2,       4,       8     ), -- instruction prefetch buffer depth, power of two, min 2
+    ipb          => ( 2,       2,       4,       4     ), -- instruction prefetch buffer depth, power of two, min 2
     pmp_nr       => ( 0,       0,       0,       8     ), -- number of PMP regions (0..16)
     hpm_nr       => ( 0,       0,       0,       8     ), -- number of HPM counters (0..29)
     icache_en    => ( false,   false,   true,    true  ), -- instruction cache enabled
