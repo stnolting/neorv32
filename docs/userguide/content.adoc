@@ -48,6 +48,8 @@ include::zephyr_support.adoc[]
 
 include::free_rtos_support.adoc[]
 
+include::litex_support.adoc[]
+
 include::debugging_with_ocd.adoc[]
 
 
