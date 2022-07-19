@@ -1,6 +1,6 @@
 <<<
 :sectnums:
-== Zephyr RTOS Support 🪁
+== Zephyr RTOS Support
 
 The NEORV32 processor is supported by upstream Zephyr RTOS: https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html
 
