@@ -214,3 +214,120 @@ int neorv32_spi_busy(void) {
     return 0;
   }
 }
+
+
+/**********************************************************************//**
+ * SPI interrupt service routine. The data structure elements are listed in #t_neorv32_spi.
+ *
+ * @param[in,out] *this SPI driver common data handle. See #t_neorv32_spi.
+ **************************************************************************/
+void neorv32_spi_isr(t_neorv32_spi *this) {
+  
+  uint32_t  uint32Buf;  // help variable
+  
+  neorv32_cpu_csr_write(CSR_MIP, ~(1<<SPI_FIRQ_PENDING)); // ack/clear FIRQ
+  
+  if ( this->uint32CurrentElem == this->uint32TotalElem ) { // leave if accicently called ISR
+    return;
+  }
+  
+  uint32Buf = 0;  // data type conversion
+  switch (this->uint8SzElem) {
+    case 1:   // uint8_t
+      ((uint8_t *) this->ptrSpiBuf)[this->uint32CurrentElem] = (uint8_t) (NEORV32_SPI.DATA & 0xff); // capture from last transfer
+      if ( this->uint32CurrentElem == this->uint32TotalElem-1 ) { // transfer done, no new data
+        neorv32_spi_cs_dis(this->uint8Csn); // deselect slave
+        break;  // +1, signals complete
+      }
+      uint32Buf |= ((uint8_t *) this->ptrSpiBuf)[this->uint32CurrentElem+1];
+      NEORV32_SPI.DATA = uint32Buf; // next transfer
+      break;
+    case 2:   // uint16_t
+      ((uint16_t *) this->ptrSpiBuf)[this->uint32CurrentElem] = (uint16_t) (NEORV32_SPI.DATA & 0xffff); // capture from last transfer
+      if ( this->uint32CurrentElem == this->uint32TotalElem-1 ) { // transfer done, no new data
+        neorv32_spi_cs_dis(this->uint8Csn); // deselect slave
+        break;  // +1, signals complete
+      }
+      uint32Buf |= ((uint16_t *) this->ptrSpiBuf)[this->uint32CurrentElem+1];
+      NEORV32_SPI.DATA = uint32Buf; // next transfer
+      break;
+    case 4:   // uint32_t
+      ((uint32_t *) this->ptrSpiBuf)[this->uint32CurrentElem] = NEORV32_SPI.DATA; // capture from last transfer
+      if ( this->uint32CurrentElem == this->uint32TotalElem-1 ) { // transfer done, no new data
+        neorv32_spi_cs_dis(this->uint8Csn); // deselect slave
+        break;  // +1, signals complete
+      }
+      uint32Buf = ((uint32_t *) this->ptrSpiBuf)[this->uint32CurrentElem+1];  // next transfer
+      NEORV32_SPI.DATA = uint32Buf; // next transfer
+      break;
+    default:  // unknown
+      return;
+  }
+  (this->uint32CurrentElem)++;  // next element
+}
+
+
+/**********************************************************************//**
+ * Starts ISR driven read/write SPI transfer.
+ *
+ * @param[in,out] *this SPI driver common data handle. See #t_neorv32_spi.
+ * @param[in,out] *spi write/read data buffer for SPI. Before transmission contents the write data and after the read data.
+ * @param[in] csn Used chip select index for transfer.
+ * @param[in] num_elem Number of elements to transfer.
+ * @param[in] data_byte Number of data bytes per element in *spi.
+ * @return int status of function.
+ * @retval 0 new transfer started.
+ * @retval 1 transfer active, refused request.
+ * @retval 2 unsupported data size, only 1/2/4 allowed.
+ **************************************************************************/
+int neorv32_spi_rw(t_neorv32_spi *this, void *spi, uint8_t csn, uint32_t num_elem, uint8_t data_byte) {
+
+  uint32_t  uint32Buf;  // help variable
+
+  if ( (this->uint32CurrentElem != this->uint32TotalElem) || (0 != neorv32_spi_busy()) ) {
+    return 1; // transfer active, no new request
+  }
+  
+  this->uint32CurrentElem = 0;
+  this->uint32TotalElem = num_elem;
+  this->ptrSpiBuf = spi;
+  this->uint8SzElem = data_byte;
+  this->uint8Csn = csn;
+  
+  uint32Buf = 0;
+  switch (this->uint8SzElem) {  // start first transfer, rest is handled by ISR
+    case 1:   // uint8_t
+      uint32Buf |= ((uint8_t *) this->ptrSpiBuf)[0];
+      break;
+    case 2:   // uint16_t
+      uint32Buf |= ((uint16_t *) this->ptrSpiBuf)[0];
+      break;
+    case 4:   // uint32_t
+      uint32Buf = ((uint32_t *) this->ptrSpiBuf)[0];
+      break;
+    default:
+      return 2; // unsupported byte size
+  }
+  
+  neorv32_spi_cs_en(this->uint8Csn);  // select SPI channel
+  NEORV32_SPI.DATA = uint32Buf;   // next transfer
+  
+  return 0; // successful end
+}
+
+
+/**********************************************************************//**
+ * Check if transfer is active. see #neorv32_spi_rw
+ *
+ * @param[in,out] *this SPI driver common data handle. See #t_neorv32_spi.
+ * @return int satus of function.
+ * @retval 0 idle.
+ * @retval 1 busy.
+ **************************************************************************/
+int neorv32_spi_rw_busy(t_neorv32_spi *this) {
+  
+  if ( this->uint32TotalElem != this->uint32CurrentElem ) {
+    return 1;
+  }
+  return 0;
+}

@@ -43,6 +43,24 @@
 #ifndef neorv32_spi_h
 #define neorv32_spi_h
 
+/**
+ *  @typedef t_neorv32_spi
+ *
+ *  @brief  handle
+ *
+ *  spi driver handle
+ *
+ */
+typedef struct t_neorv32_spi
+{
+    void*     ptrSpiBuf;          /**< SPI buffer data pointer */
+    uint8_t   uint8SzElem;        /**< Element Size in byte */
+    uint8_t   uint8Csn;           /**< SPI chip select channel */
+    uint32_t  uint32TotalElem;    /**< Number of elements in buffer */
+    uint32_t  uint32CurrentElem;  /**< Number of elements in buffer */
+} t_neorv32_spi;
+
+
 // prototypes
 int      neorv32_spi_available(void);
 void     neorv32_spi_setup(uint8_t prsc, uint8_t clk_phase, uint8_t clk_polarity, uint8_t data_size);
@@ -56,5 +74,8 @@ uint32_t neorv32_spi_trans(uint32_t tx_data);
 void     neorv32_spi_put_nonblocking(uint32_t tx_data);
 uint32_t neorv32_spi_get_nonblocking(void);
 int      neorv32_spi_busy(void);
+void     neorv32_spi_isr(t_neorv32_spi *this)
+int      neorv32_spi_rw(t_neorv32_spi *this, void *spi, uint8_t csn, uint32_t num_elem, uint8_t data_byte);
+int      neorv32_spi_rw_busy(t_neorv32_spi *this);
 
 #endif // neorv32_spi_h
