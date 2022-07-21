@@ -1313,8 +1313,8 @@ illustrated in section <<_ram_layout>>.
 ==== Physical Memory Attributes (PMAs)
 
 Each default region of the NEORV32 address space provides specific physical memory attributes that define the allowed access types
-to each of these regions. These "access permission" are enforced by the hardware and cannot be changed. However, the access permissions
-can be further constrained using the CPU's <<_pmp_physical_memory_protection>>.
+to each of these regions. These "access permission" are enforced by the hardware and cannot be changed. If an access violates the
+PMA's permissions an exception is raised. The access permissions can be further constrained using the CPU's <<_pmp_physical_memory_protection>>.
 
 The following access types are checked by the hardware (if an access type is present in a region's PMA the access is permitted):
 
