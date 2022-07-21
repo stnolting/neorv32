@@ -108,7 +108,8 @@ begin
 
   -- Sanity Check --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (max_proc_int_response_time_c < 2) report "NEORV32 PROCESSOR CONFIG ERROR! Processor-internal bus timeout <max_proc_int_response_time_c> has to >= 2." severity error;
+  assert not (max_proc_int_response_time_c < 2) report "NEORV32 PROCESSOR CONFIG ERROR! " &
+  "Processor-internal bus timeout <max_proc_int_response_time_c> has to >= 2." severity error;
 
 
   -- Access Control -------------------------------------------------------------------------

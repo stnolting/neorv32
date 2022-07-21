@@ -303,7 +303,7 @@ begin
                 dm_ctrl.ldsw_progbuf(31 downto 25) <= dataaddr_c(11 downto 05); -- destination address
                 dm_ctrl.ldsw_progbuf(24 downto 20) <= dm_reg.command(4 downto 0); -- "regno" = source register
                 dm_ctrl.ldsw_progbuf(11 downto 07) <= dataaddr_c(04 downto 00); -- destination address
-              else -- "write" = 0 -> write to GPR
+              else -- "write" = 1 -> write to GPR
                 dm_ctrl.ldsw_progbuf <= instr_lw_c;
                 dm_ctrl.ldsw_progbuf(31 downto 20) <= dataaddr_c; -- source address
                 dm_ctrl.ldsw_progbuf(11 downto 07) <= dm_reg.command(4 downto 0); -- "regno" = destination register

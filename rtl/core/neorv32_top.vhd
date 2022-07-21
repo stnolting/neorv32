@@ -410,27 +410,23 @@ begin
   -- boot configuration --
   assert not (INT_BOOTLOADER_EN = true) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Indirect boot via bootloader (processor-internal BOOTROM)." severity note;
   assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-internal IMEM)." severity note;
-  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-external (I)MEM)." severity note;
+  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-external memory)." severity note;
   --
   assert not ((MEM_EXT_EN = false) and (MEM_INT_DMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal IMEM." severity error;
   assert not ((MEM_EXT_EN = false) and (MEM_INT_IMEM_EN = false) and (INT_BOOTLOADER_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal IMEM and bootloader." severity error;
 
-  -- memory system - size --
+  -- memory size --
   assert not ((MEM_INT_DMEM_EN = true) and (is_power_of_two_f(MEM_INT_IMEM_SIZE) = false)) report "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_IMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
   assert not ((MEM_INT_IMEM_EN = true) and (is_power_of_two_f(MEM_INT_DMEM_SIZE) = false)) report "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_DMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
 
-  -- memory system - alignment --
-  assert not (ispace_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 4-byte-aligned." severity error;
-  assert not (dspace_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 4-byte-aligned." severity error;
+  -- memory layout --
+  assert not (ispace_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 32-bit-aligned." severity error;
+  assert not (dspace_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 32-bit-aligned." severity error;
   assert not ((ispace_base_c(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) /= imem_align_check_c) and (MEM_INT_IMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address has to be aligned to IMEM size." severity error;
   assert not ((dspace_base_c(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) /= dmem_align_check_c) and (MEM_INT_DMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address has to be aligned to DMEM size." severity error;
-
-  -- memory system - layout warning --
-  assert not (ispace_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for instruction address space. Make sure this is sync with the software framework." severity warning;
-  assert not (dspace_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for data address space. Make sure this is sync with the software framework." severity warning;
-
-  -- memory system - the i-cache is intended to accelerate instruction fetch via the external memory interface only --
-  assert not ((ICACHE_EN = true) and (MEM_EXT_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE. Implementing i-cache without having the external memory interface implemented. The i-cache is intended to accelerate instruction fetch via the external memory interface." severity note;
+  --
+  assert not (ispace_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for INSTRUCTION ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
+  assert not (dspace_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for DATA ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
 
   -- on-chip debugger --
   assert not (ON_CHIP_DEBUGGER_EN = true) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD)." severity note;
@@ -719,7 +715,7 @@ begin
     ack_v   := '0';
     err_v   := '0';
     -- OR all response signals: only the module that has actually
-    -- been accessed is allowed to *set* it's bus output signals
+    -- been accessed is allowed to *set* its bus output signals
     for i in resp_bus'range loop
       rdata_v := rdata_v or resp_bus(i).rdata; -- read data
       ack_v   := ack_v   or resp_bus(i).ack;   -- acknowledge
@@ -756,7 +752,7 @@ begin
     bus_xip_i  => xip_access                      -- pending XIP access
   );
 
-  -- unused, BUSKEEPER **directly** issues error to the CPU --
+  -- unused, BUSKEEPER issues error to **directly** the CPU --
   resp_bus(RESP_BUSKEEPER).err <= '0';
 
 
@@ -1276,7 +1272,7 @@ begin
     --
     spi_sck_o <= '0';
     spi_sdo_o <= '0';
-    spi_csn_o <= (others => '1'); -- CSn lines are low-active
+    spi_csn_o <= (others => '1'); -- CS lines are low-active
     spi_cg_en <= '0';
     spi_irq   <= '0';
   end generate;
@@ -1538,8 +1534,8 @@ begin
   if (IO_GPTMR_EN = false) generate
     resp_bus(RESP_GPTMR) <= resp_bus_entry_terminate_c;
     --
-    gptmr_cg_en          <= '0';
-    gptmr_irq            <= '0';
+    gptmr_cg_en <= '0';
+    gptmr_irq   <= '0';
   end generate;
 
 
