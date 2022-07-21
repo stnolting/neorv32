@@ -44,9 +44,6 @@ see the <<_zxcfu_custom_instructions_extension_cfu>> and the according <<_custom
 Take a look at the template CFS VHDL source file (`rtl/core/neorv32_cfs.vhd`). The file is highly
 commented to illustrate all aspects that are relevant for implementing custom CFS-based co-processor designs.
 
-[TIP]
-The memory-mapped CFS registers can also be used to provide instructions for the CPU to be executed.
-
 
 **CFS Software Access**
 
