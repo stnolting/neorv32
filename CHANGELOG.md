@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 21.07.2022 | 1.7.4.4 | :lock: specify **physical memory attributes (PMA)** ;[#372](https://github.com/stnolting/neorv32/pull/372) |
 | 18.07.2022 | 1.7.4.3 | minor rtl edits and updates; [#369](https://github.com/stnolting/neorv32/pull/369) |
 | 15.07.2022 | 1.7.4.2 | :bug: fixed PMP configuration error when `PMP_NUM_REGIONS` = 0; [#368](https://github.com/stnolting/neorv32/pull/368) |
 | 15.07.2022 | 1.7.4.1 | :bug: fix permanent stall of `[m]cycle[h]` and `[m]instret[h]` counter if _HPM_NUM_CNTS_ = 0; :bug: fixed bug in Wishbone `we` signal when _ASYNC_TX_ mode enabled; hardwire `dcsr.mprven` to 1; [#367](https://github.com/stnolting/neorv32/pull/367) |
