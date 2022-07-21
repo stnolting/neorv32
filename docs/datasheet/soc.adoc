@@ -1283,17 +1283,17 @@ _fast interrupt request_ (see below).
 :sectnums:
 === Address Space
 
-The NEORV32 Processor provides a 32-bit / 4GB (physical) address space
-By default, this address space is divided into five main regions:
+As a 32-bit architecture the NEORV32 provides a 4GB physical address space. By default, this address space is
+divided into five main regions with each region having a specific function:
 
-1. **Instruction address space** - memory address space for instructions (=code) and constants.
-A configurable section of this address space is used by the internal/external _instruction memory_ (<<_mem_int_imem_size>> for the internal IMEM).
-2. **Data address space** - memory address space for application runtime data (heap, stack, etc.).
-A configurable section of this address space is used by the internal/external _data memory_ (<<_mem_int_dmem_size>> for the internal DMEM).
-3. **Bootloader address space**. A _fixed_ section of this address space is used by the
+1. **Instruction address space**: memory address space for instructions (=code) and constants.
+A configurable section of this address space can used by the _instruction memory_ (<<_instruction_memory_imem>>).
+2. **Data address space**: memory address space for application runtime data (heap, stack, etc.).
+A configurable section of this address space can be used by the _data memory_ (<<_data_memory_dmem>>).
+3. **Bootloader address space**: a _fixed_ section of this address space is used by the
 internal _bootloader memory_ (BOOTLDROM).
-4. **On-Chip Debugger address space**. This _fixed_ section is entirely used by the processor's <<_on_chip_debugger_ocd>>.
-5. **IO/peripheral address space**. Also a _fixed_ section used for the processor-internal memory-mapped IO/peripheral devices (e.g., UART).
+4. **On-Chip Debugger address space**: this _fixed_ section is entirely used by the processor's <<_on_chip_debugger_ocd>>.
+5. **IO/peripheral address space**: also a _fixed_ section used for the processor-internal memory-mapped IO/peripheral devices (e.g., UART).
 
 .NEORV32 processor - address space (default configuration)
 image::address_space.png[900]
@@ -1310,14 +1310,39 @@ illustrated in section <<_ram_layout>>.
 
 
 :sectnums:
+==== Physical Memory Attributes (PMAs)
+
+Each default region of the NEORV32 address space provides specific physical memory attributes that define the allowed access types
+to each of these regions. These "access permission" are enforced by the hardware and cannot be changed. However, the access permissions
+can be further constrained using the CPU's <<_pmp_physical_memory_protection>>.
+
+The following access types are checked by the hardware (if an access type is present in a region's PMA the access is permitted):
+
+* `r` - data read access
+* `w` - data write access
+* `x` - instruction fetch access ("execute")
+
+[cols="<1,^4,^2,<7"]
+[options="header",grid="rows"]
+|=======================
+| # | Region Description | PMAs | Note
+| 1 | Instruction address space      | `r(w)x` | Write accesses to the the internal <<_instruction_memory_imem>> can be disabled.
+| 2 | Data address space             | `rwx`   | Code can also be executed from data memory.
+| 3 | Bootloader address space       | `r-x`   | Read-only memory.
+| 4 | On-Chip Debugger address space | `---`   | Not accessible at all by "normal" software - accessible only when the CPU is in <<_cpu_debug_mode>>.
+| 5 | IO/peripheral address space    | `rw-`   | Read/write accesses only.
+|=======================
+
+
+:sectnums:
 ==== CPU Data and Instruction Access
 
-The CPU can access all of the 4GB address space from the instruction fetch interface (**I**) and also from the
+The CPU can access all of the 32-bit address space from the instruction fetch interface (**I**) and also from the
 data access interface (**D**). These two CPU interfaces are multiplexed by a simple bus switch
 (`rtl/core/neorv32_busswitch.vhd`) into a _single_ processor-internal bus. All processor-internal
 memories, peripherals and also the external memory interface are connected to this bus. Hence, both CPU
-interfaces (instruction fetch & data access) have access to the same (**identical**) address space making the
-setup a modified von-Neumann architecture.
+interfaces (instruction fetch & data access) have access to the same (_identical!_) address space making the
+setup a **modified von-Neumann architecture**.
 
 .Processor-internal bus architecture
 image::neorv32_bus.png[1300]
@@ -1329,12 +1354,8 @@ the CPU is equipped with a prefetch buffer. Instruction fetches can be further b
 Furthermore, data accesses (loads and stores) have higher priority than instruction fetch
 accesses.
 
-[IMPORTANT]
-Please note that all processor-internal components including the peripheral/IO devices can also be
-accessed from programs running in less-privileged user mode. For example, if the system relies on
-a periodic interrupt from the _MTIME_ timer unit, user-level programs could alter the _MTIME_
-configuration corrupting this interrupt. This kind of security issues can be compensated using the
-PMP system (see <<_machine_physical_memory_protection_csrs>>).
+[TIP]
+See sections <<_architecture>> and <<_bus_interface>> for more information regarding the CPU bus accesses.
 
 
 :sectnums:
@@ -1387,9 +1408,6 @@ If the processor-internal IMEM is implemented, it is located right at the base a
 address space (default `ispace_base_c` = _0x00000000_). Vice versa, the processor-internal data memory is
 located right at the beginning of the data address space (default `dspace_base_c` = _0x80000000_) when
 implemented.
-
-[TIP]
-The default processor setup uses only _internal_ memories.
 
 [NOTE]
 If the IMEM (internal or external) is less than the (default) maximum size (2GB), there is
