@@ -60,9 +60,6 @@ package neorv32_package is
   constant jtag_tap_idcode_partid_c  : std_ulogic_vector(15 downto 0) := x"cafe"; -- part number
   constant jtag_tap_idcode_manid_c   : std_ulogic_vector(10 downto 0) := "00000000000"; -- manufacturer id
 
-  -- chip vendor identifier --
-  constant vendor_id_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- no vendor defined
-
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!

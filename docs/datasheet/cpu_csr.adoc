@@ -775,8 +775,7 @@ All machine information registers can only be accessed in machine mode and are r
 |=======================
 | 0xf11 | **Machine vendor ID** | `mvendorid`
 3+| Reset value: `0x00000000`
-3+| The `mvendorid` CSR is compatible to the RISC-V specifications. It is read-only and always reads zero by default. A vendor ID can
-be configured via the VHDL package `vendor_id_c` constant.
+3+| The `mvendorid` CSR is compatible to the RISC-V specifications. It is read-only and always reads zero.
 |=======================
 
 
