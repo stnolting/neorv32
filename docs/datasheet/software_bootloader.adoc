@@ -90,6 +90,7 @@ following intro screen shows up:
 
 BLDV: Jul 11 2022
 HWV:  0x01070307
+CID:  0x00000000
 CLK:  0x05f5e100
 ISA:  0x40901104 + 0xc0000783
 SOC:  0x7c5f400f
@@ -106,6 +107,7 @@ The start-up screen gives some brief information about the bootloader and severa
 |=======================
 | `BLDV` | Bootloader version (built date).
 | `HWV`  | Processor hardware version (the <<_mimpid>> CSR); in BCD format; example: `0x01040606` = v1.4.6.6).
+| `CID`  | Custom user-defined ID (via the `CUSTOM_ID` register from <<_system_configuration_information_memory_sysinfo>>; defined by the <<_custom_id>> generic).
 | `CLK`  | Processor clock speed in Hz (via the `CLK` register from <<_system_configuration_information_memory_sysinfo>>; defined by the <<_clock_frequency>> generic).
 | `ISA`  | CPU extensions (<<_misa>> CSR + <<_mxisa>> CSR).
 | `SOC`  | Processor configuration (via the `SOC` register from the <<_system_configuration_information_memory_sysinfo>>; mainly defined by the `IO_*` and `MEM_*` configuration generics).
