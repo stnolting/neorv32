@@ -219,52 +219,51 @@ int neorv32_spi_busy(void) {
 /**********************************************************************//**
  * SPI interrupt service routine. The data structure elements are listed in #t_neorv32_spi.
  *
- * @param[in,out] *this SPI driver common data handle. See #t_neorv32_spi.
+ * @param[in,out] *self SPI driver common data handle. See #t_neorv32_spi.
  **************************************************************************/
-void neorv32_spi_isr(void *self) {
-
-  t_neorv32_spi*  th = self;  // cast to #t_neorv32_spi
-  uint32_t        uint32Buf;  // help variable
-
+void neorv32_spi_isr(t_neorv32_spi *self) {
+  
+  uint32_t  uint32Buf;  // help variable
+  
   neorv32_cpu_csr_write(CSR_MIP, ~(1<<SPI_FIRQ_PENDING)); // ack/clear FIRQ
-
-  if ( th->uint32CurrentElem == th->uint32TotalElem ) { // leave if accicently called ISR
+  
+  if ( self->uint32CurrentElem == self->uint32TotalElem ) { // leave if accicently called ISR
     return;
   }
-
+  
   uint32Buf = 0;  // data type conversion
-  switch (th->uint8SzElem) {
+  switch (self->uint8SzElem) {
     case 1:   // uint8_t
-      ((uint8_t *) th->ptrSpiBuf)[th->uint32CurrentElem] = (uint8_t) (NEORV32_SPI.DATA & 0xff); // capture from last transfer
-      if ( th->uint32CurrentElem == th->uint32TotalElem-1 ) { // transfer done, no new data
-        neorv32_spi_cs_dis(th->uint8Csn); // deselect slave
+      ((uint8_t *) self->ptrSpiBuf)[self->uint32CurrentElem] = (uint8_t) (NEORV32_SPI.DATA & 0xff); // capture from last transfer
+      if ( self->uint32CurrentElem == self->uint32TotalElem-1 ) { // transfer done, no new data
+        neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
         break;  // +1, signals complete
       }
-      uint32Buf |= ((uint8_t *) th->ptrSpiBuf)[th->uint32CurrentElem+1];
+      uint32Buf |= ((uint8_t *) self->ptrSpiBuf)[self->uint32CurrentElem+1];
       NEORV32_SPI.DATA = uint32Buf; // next transfer
       break;
     case 2:   // uint16_t
-      ((uint16_t *) th->ptrSpiBuf)[th->uint32CurrentElem] = (uint16_t) (NEORV32_SPI.DATA & 0xffff); // capture from last transfer
-      if ( th->uint32CurrentElem == th->uint32TotalElem-1 ) { // transfer done, no new data
-        neorv32_spi_cs_dis(th->uint8Csn); // deselect slave
+      ((uint16_t *) self->ptrSpiBuf)[self->uint32CurrentElem] = (uint16_t) (NEORV32_SPI.DATA & 0xffff); // capture from last transfer
+      if ( self->uint32CurrentElem == self->uint32TotalElem-1 ) { // transfer done, no new data
+        neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
         break;  // +1, signals complete
       }
-      uint32Buf |= ((uint16_t *) th->ptrSpiBuf)[th->uint32CurrentElem+1];
+      uint32Buf |= ((uint16_t *) self->ptrSpiBuf)[self->uint32CurrentElem+1];
       NEORV32_SPI.DATA = uint32Buf; // next transfer
       break;
     case 4:   // uint32_t
-      ((uint32_t *) th->ptrSpiBuf)[th->uint32CurrentElem] = NEORV32_SPI.DATA; // capture from last transfer
-      if ( th->uint32CurrentElem == th->uint32TotalElem-1 ) { // transfer done, no new data
-        neorv32_spi_cs_dis(th->uint8Csn); //  deselect slave
+      ((uint32_t *) self->ptrSpiBuf)[self->uint32CurrentElem] = NEORV32_SPI.DATA; // capture from last transfer
+      if ( self->uint32CurrentElem == self->uint32TotalElem-1 ) { // transfer done, no new data
+        neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
         break;  // +1, signals complete
       }
-      uint32Buf = ((uint32_t *) th->ptrSpiBuf)[th->uint32CurrentElem+1];  // next transfer
+      uint32Buf = ((uint32_t *) self->ptrSpiBuf)[self->uint32CurrentElem+1];  // next transfer
       NEORV32_SPI.DATA = uint32Buf; // next transfer
       break;
     default:  // unknown
       return;
   }
-  (th->uint32CurrentElem)++;  // next element
+  (self->uint32CurrentElem)++;  // next element
 }
 
 
@@ -281,39 +280,38 @@ void neorv32_spi_isr(void *self) {
  * @retval 1 transfer active, refused request.
  * @retval 2 unsupported data size, only 1/2/4 allowed.
  **************************************************************************/
-int neorv32_spi_rw(void *self, void *spi, uint8_t csn, uint32_t num_elem, uint8_t data_byte) {
+int neorv32_spi_rw(t_neorv32_spi *self, void *spi, uint8_t csn, uint32_t num_elem, uint8_t data_byte) {
 
-  t_neorv32_spi*  th = self;  // cast to #t_neorv32_spi
-  uint32_t        uint32Buf;  // help variable
+  uint32_t  uint32Buf;  // help variable
 
-  if ( (th->uint32CurrentElem != th->uint32TotalElem) || (0 != neorv32_spi_busy()) ) {
+  if ( (self->uint32CurrentElem != self->uint32TotalElem) || (0 != neorv32_spi_busy()) ) {
     return 1; // transfer active, no new request
   }
-
-  th->uint32CurrentElem = 0;
-  th->uint32TotalElem = num_elem;
-  th->ptrSpiBuf = spi;
-  th->uint8SzElem = data_byte;
-  th->uint8Csn = csn;
-
+  
+  self->uint32CurrentElem = 0;
+  self->uint32TotalElem = num_elem;
+  self->ptrSpiBuf = spi;
+  self->uint8SzElem = data_byte;
+  self->uint8Csn = csn;
+  
   uint32Buf = 0;
-  switch (th->uint8SzElem) {  // start first transfer, rest is handled by ISR
+  switch (self->uint8SzElem) {  // start first transfer, rest is handled by ISR
     case 1:   // uint8_t
-      uint32Buf |= ((uint8_t *) th->ptrSpiBuf)[0];
+      uint32Buf |= ((uint8_t *) self->ptrSpiBuf)[0];
       break;
     case 2:   // uint16_t
-      uint32Buf |= ((uint16_t *) th->ptrSpiBuf)[0];
+      uint32Buf |= ((uint16_t *) self->ptrSpiBuf)[0];
       break;
     case 4:   // uint32_t
-      uint32Buf = ((uint32_t *) th->ptrSpiBuf)[0];
+      uint32Buf = ((uint32_t *) self->ptrSpiBuf)[0];
       break;
     default:
       return 2; // unsupported byte size
   }
-
-  neorv32_spi_cs_en(th->uint8Csn);  // select SPI channel
+  
+  neorv32_spi_cs_en(self->uint8Csn);  // select SPI channel
   NEORV32_SPI.DATA = uint32Buf;   // next transfer
-
+  
   return 0; // successful end
 }
 
@@ -326,11 +324,9 @@ int neorv32_spi_rw(void *self, void *spi, uint8_t csn, uint32_t num_elem, uint8_
  * @retval 0 idle.
  * @retval 1 busy.
  **************************************************************************/
-int neorv32_spi_rw_busy(void *self) {
-
-  t_neorv32_spi*  th = self;  // cast to #t_neorv32_spi
-
-  if ( th->uint32TotalElem != th->uint32CurrentElem ) {
+int neorv32_spi_rw_busy(t_neorv32_spi *self) {
+  
+  if ( self->uint32TotalElem != self->uint32CurrentElem ) {
     return 1;
   }
   return 0;

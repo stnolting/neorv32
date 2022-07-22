@@ -74,8 +74,8 @@ uint32_t neorv32_spi_trans(uint32_t tx_data);
 void     neorv32_spi_put_nonblocking(uint32_t tx_data);
 uint32_t neorv32_spi_get_nonblocking(void);
 int      neorv32_spi_busy(void);
-void     neorv32_spi_isr(void *self);
-int      neorv32_spi_rw(void *self, void *spi, uint8_t csn, uint32_t num_elem, uint8_t data_byte);
-int      neorv32_spi_rw_busy(void *self);
+void     neorv32_spi_isr(t_neorv32_spi *self);
+int      neorv32_spi_rw(t_neorv32_spi *self, void *spi, uint8_t csn, uint32_t num_elem, uint8_t data_byte);
+int      neorv32_spi_rw_busy(t_neorv32_spi *self);
 
 #endif // neorv32_spi_h
