@@ -53,11 +53,11 @@
  */
 typedef struct t_neorv32_spi
 {
-    void*     ptrSpiBuf;          /**< SPI buffer data pointer */
-    uint8_t   uint8SzElem;        /**< Element Size in byte */
-    uint8_t   uint8Csn;           /**< SPI chip select channel */
-    uint32_t  uint32TotalElem;    /**< Number of elements in buffer */
-    uint32_t  uint32CurrentElem;  /**< Number of elements in buffer */
+  void*     ptrSpiBuf;          /**< SPI buffer data pointer */
+  uint8_t   uint8SzElem;        /**< Element Size in byte */
+  uint8_t   uint8Csn;           /**< SPI chip select channel */
+  uint32_t  uint32TotalElem;    /**< Number of elements in buffer */
+  uint32_t  uint32CurrentElem;  /**< Number of elements in buffer */
 } t_neorv32_spi;
 
 
