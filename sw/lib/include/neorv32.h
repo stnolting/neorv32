@@ -1303,7 +1303,7 @@ enum NEORV32_NEOLED_CTRL_enum {
 /** SYSINFO module prototype - whole module is read-only */
 typedef struct __attribute__((packed,aligned(4))) {
   const uint32_t CLK;         /**< offset 0:  clock speed in Hz */
-  const uint32_t reserved;    /**< offset 4:  reserved */
+  const uint32_t CUSTOM_ID;   /**< offset 4:  custom user-defined ID (via top generic) */
   const uint32_t SOC;         /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
   const uint32_t CACHE;       /**< offset 12: cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
   const uint32_t ISPACE_BASE; /**< offset 16: instruction memory address space base */

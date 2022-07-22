@@ -1235,6 +1235,12 @@
           <access>read-only</access>
         </register>
         <register>
+          <name>CUSTOM_ID</name>
+          <description>Custom user-defined ID</description>
+          <addressOffset>0x04</addressOffset>
+          <access>read-only</access>
+        </register>
+        <register>
           <name>SOC</name>
           <description>SoC features</description>
           <addressOffset>0x08</addressOffset>
