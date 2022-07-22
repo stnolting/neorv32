@@ -326,9 +326,9 @@ int neorv32_spi_rw(void *this, void *spi, uint8_t csn, uint32_t num_elem, uint8_
  * @retval 0 idle.
  * @retval 1 busy.
  **************************************************************************/
-int neorv32_spi_rw_busy(void *this) {
+int neorv32_spi_rw_busy(void *self) {
 
-  t_neorv32_spi*  th = this;  // cast to #t_neorv32_spi
+  t_neorv32_spi*  th = self;  // cast to #t_neorv32_spi
 
   if ( th->uint32TotalElem != th->uint32CurrentElem ) {
     return 1;
