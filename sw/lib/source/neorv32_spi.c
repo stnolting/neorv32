@@ -221,9 +221,9 @@ int neorv32_spi_busy(void) {
  *
  * @param[in,out] *this SPI driver common data handle. See #t_neorv32_spi.
  **************************************************************************/
-void neorv32_spi_isr(void *this) {
+void neorv32_spi_isr(void *self) {
 
-  t_neorv32_spi*  th = this;  // cast to #t_neorv32_spi
+  t_neorv32_spi*  th = self;  // cast to #t_neorv32_spi
   uint32_t        uint32Buf;  // help variable
 
   neorv32_cpu_csr_write(CSR_MIP, ~(1<<SPI_FIRQ_PENDING)); // ack/clear FIRQ
@@ -271,7 +271,7 @@ void neorv32_spi_isr(void *this) {
 /**********************************************************************//**
  * Starts ISR driven read/write SPI transfer.
  *
- * @param[in,out] *this SPI driver common data handle. See #t_neorv32_spi.
+ * @param[in,out] *self SPI driver common data handle. See #t_neorv32_spi.
  * @param[in,out] *spi write/read data buffer for SPI. Before transmission contents the write data and after the read data.
  * @param[in] csn Used chip select index for transfer.
  * @param[in] num_elem Number of elements to transfer.
@@ -281,9 +281,9 @@ void neorv32_spi_isr(void *this) {
  * @retval 1 transfer active, refused request.
  * @retval 2 unsupported data size, only 1/2/4 allowed.
  **************************************************************************/
-int neorv32_spi_rw(void *this, void *spi, uint8_t csn, uint32_t num_elem, uint8_t data_byte) {
+int neorv32_spi_rw(void *self, void *spi, uint8_t csn, uint32_t num_elem, uint8_t data_byte) {
 
-  t_neorv32_spi*  th = this;  // cast to #t_neorv32_spi
+  t_neorv32_spi*  th = self;  // cast to #t_neorv32_spi
   uint32_t        uint32Buf;  // help variable
 
   if ( (th->uint32CurrentElem != th->uint32TotalElem) || (0 != neorv32_spi_busy()) ) {
@@ -321,7 +321,7 @@ int neorv32_spi_rw(void *this, void *spi, uint8_t csn, uint32_t num_elem, uint8_
 /**********************************************************************//**
  * Check if transfer is active. see #neorv32_spi_rw
  *
- * @param[in,out] *this SPI driver common data handle. See #t_neorv32_spi.
+ * @param[in,out] *self SPI driver common data handle. See #t_neorv32_spi.
  * @return int satus of function.
  * @retval 0 idle.
  * @retval 1 busy.
