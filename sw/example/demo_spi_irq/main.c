@@ -119,7 +119,7 @@ int main()
   uint8MemBuf[1] = 0x0;
   uint8MemBuf[2] = 0x0;
   uint8MemBuf[3] = 0x0;
-  neorv32_spi_rw(&g_neorv32_spi, uint8MemBuf, 0, sizeof(uint8MemBuf)/sizeof(uint8MemBuf[0]), sizeof(uint8MemBuf[0]));	// send/recieve data
+  neorv32_spi_rw(&g_neorv32_spi, uint8MemBuf, 0, sizeof(uint8MemBuf)/sizeof(uint8MemBuf[0]), sizeof(uint8MemBuf[0]));	// send/receive data
 
 	// Wait for complete, free for other jobs
 	while ( neorv32_spi_rw_busy(&g_neorv32_spi) ) {
