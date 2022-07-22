@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32 - SPI Bus Explorer Demo Program >>                                                 #
+// # << NEORV32 - IRQ driven SPI transfer application example >>                                                 #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -80,7 +80,7 @@ void spi_irq_handler(void)
 int main()
 {
   // SPI Transceiver buffer
-	uint8_t	uint8MemBuf[10];
+  uint8_t uint8MemBuf[10];
 
   // capture all exceptions and give debug info via UART
   // this is not required, but keeps us safe
@@ -102,31 +102,31 @@ int main()
     neorv32_uart0_printf("ERROR! No SPI unit implemented.");
     return 1;
   }
-		
-	// enable IRQ system
+
+  // enable IRQ system
   neorv32_rte_exception_install(SPI_RTE_ID, spi_irq_handler); // SPI to RTE
   neorv32_cpu_irq_enable(SPI_FIRQ_ENABLE);    // FIRQ6: SPI Interrupt
   neorv32_cpu_eint();                         // enable global interrupts
 
-	// configure SPI
+  // configure SPI
   neorv32_spi_disable();
   neorv32_spi_setup(0, 0, 0, 0);  // spi mode 0, 8bit
   neorv32_spi_enable();
 
   // IRQ based data transfer
-  memset(uint8MemBuf, 0, sizeof(uint8MemBuf)/sizeof(uint8MemBuf[0]));	// fill with 0's
+  memset(uint8MemBuf, 0, sizeof(uint8MemBuf)/sizeof(uint8MemBuf[0])); // fill with 0's
   uint8MemBuf[0] = 0x3;
   uint8MemBuf[1] = 0x0;
   uint8MemBuf[2] = 0x0;
   uint8MemBuf[3] = 0x0;
-  neorv32_spi_rw(&g_neorv32_spi, uint8MemBuf, 0, sizeof(uint8MemBuf)/sizeof(uint8MemBuf[0]), sizeof(uint8MemBuf[0]));	// send/receive data
+  neorv32_spi_rw(&g_neorv32_spi, uint8MemBuf, 0, sizeof(uint8MemBuf)/sizeof(uint8MemBuf[0]), sizeof(uint8MemBuf[0])); // send/receive data
 
-	// Wait for complete, free for other jobs
-	while ( neorv32_spi_rw_busy(&g_neorv32_spi) ) {
-		__asm("nop");
-	}
+  // Wait for complete, free for other jobs
+  while ( neorv32_spi_rw_busy(&g_neorv32_spi) ) {
+    __asm("nop");
+  }
 
-	// stop program counter
+  // stop program counter
   while ( 1 ) { }
   return 0;
 }
