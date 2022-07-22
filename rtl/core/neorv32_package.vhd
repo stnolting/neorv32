@@ -61,7 +61,7 @@ package neorv32_package is
   constant jtag_tap_idcode_manid_c   : std_ulogic_vector(10 downto 0) := "00000000000"; -- manufacturer id
 
   -- chip vendor identifier --
-  constant vendor_id_c  : std_ulogic_vector(31 downto 0) := x"00000000"; -- no official vendor
+  constant vendor_id_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- no vendor defined
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -827,7 +827,6 @@ package neorv32_package is
   -- NEORV32-specific (RISC-V custom) synchronous exceptions --
 -- none implemented yet
   -- RISC-V compliant asynchronous exceptions (interrupts) --
---constant trap_und_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00000"; -- 1.0:  undefined source
   constant trap_msi_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00011"; -- 1.3:  machine software interrupt
   constant trap_mti_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00111"; -- 1.7:  machine timer interrupt
   constant trap_mei_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "01011"; -- 1.11: machine external interrupt
