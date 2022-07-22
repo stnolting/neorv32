@@ -385,7 +385,7 @@ interrupt) this register provides the address of the next not-yet-executed instr
 | Bit  | R/W | Function
 | 31   | r/w | **Interrupt**: `1` if the trap is caused by an interrupt (`0` if the trap is caused by an exception)
 | 30:5 | r/- | _Reserved_, read as zero
-| 4:0  | r/w | **Trap ID**: see <<_neorv32_trap_listing>>
+| 4:0  | r/w | **Exception code**: see <<_neorv32_trap_listing>>
 |=======================
 
 :sectnums!:
@@ -775,7 +775,8 @@ All machine information registers can only be accessed in machine mode and are r
 |=======================
 | 0xf11 | **Machine vendor ID** | `mvendorid`
 3+| Reset value: `0x00000000`
-3+| The `mvendorid` CSR is compatible to the RISC-V specifications. It is read-only and always reads zero.
+3+| The `mvendorid` CSR is compatible to the RISC-V specifications. It is read-only and always reads zero by default. A vendor ID can
+be configured via the VHDL package `vendor_id_c` constant.
 |=======================
 
 

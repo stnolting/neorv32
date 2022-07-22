@@ -1745,12 +1745,12 @@ begin
     if (rstn_i = '0') then
       csr.we                <= '0';
       --
+      csr.privilege         <= priv_mode_m_c; -- start in MACHINE mode
       csr.mstatus_mie       <= '0';
       csr.mstatus_mpie      <= '0';
       csr.mstatus_mpp       <= '0';
       csr.mstatus_mprv      <= '0';
       csr.mstatus_tw        <= '0';
-      csr.privilege         <= priv_mode_m_c; -- start in MACHINE mode
       csr.mie_msie          <= '0';
       csr.mie_meie          <= '0';
       csr.mie_mtie          <= '0';
@@ -2332,7 +2332,7 @@ begin
 
           -- machine information registers --
           -- --------------------------------------------------------------------
---        when csr_mvendorid_c  => csr.rdata <= (others => '0'); -- mvendorid (r/-): vendor ID, implemented but always zero
+          when csr_mvendorid_c  => csr.rdata <= vendor_id_c; -- mvendorid (r/-): vendor ID
           when csr_marchid_c    => csr.rdata(4 downto 0) <= "10011"; -- marchid (r/-): arch ID - official RISC-V open-source arch ID
           when csr_mimpid_c     => csr.rdata <= hw_version_c; -- mimpid (r/-): implementation ID -- NEORV32 hardware version
           when csr_mhartid_c    => csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32)); -- mhartid (r/-): hardware thread ID
