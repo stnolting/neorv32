@@ -235,6 +235,18 @@ Note that hart IDs must be unique within a system.
 
 
 :sectnums!:
+===== _CUSTOM_ID_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CUSTOM_ID** | _std_ulogic_vector(31 downto 0)_ | 0x00000000
+3+| User-defined identifier (to identify a certain setup or to pass user-defined flags).
+Software can retrieve this value from the <<_system_configuration_information_memory_sysinfo>> `CUSTOM_ID` register.
+|======
+
+
+:sectnums!:
 ===== _ON_CHIP_DEBUGGER_EN_
 
 [cols="4,4,2"]
