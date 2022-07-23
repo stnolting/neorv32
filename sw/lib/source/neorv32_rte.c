@@ -296,7 +296,7 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\n\n<< NEORV32 Processor Configuration >>\n");
 
   // CPU configuration
-  neorv32_uart0_printf("\n====== CPU Core ======\n");
+  neorv32_uart0_printf("\n====== Core ======\n");
 
   // general
   neorv32_uart0_printf("Is simulation:     "); __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM));
@@ -305,22 +305,23 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("On-chip debugger:  "); __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_OCD));
 
   // IDs
-  neorv32_uart0_printf("Hart ID:           0x%x\n"
-                       "Vendor ID:         0x%x\n", neorv32_cpu_csr_read(CSR_MHARTID), neorv32_cpu_csr_read(CSR_MVENDORID));
+  neorv32_uart0_printf("Custom ID:         0x%x\n"
+                       "Hart ID:           0x%x\n"
+                       "Vendor ID:         0x%x\n"
+                       "Architecture ID:   0x%x\n"
+                       "Implementation ID: 0x%x",
+                       NEORV32_SYSINFO.CUSTOM_ID,
+                       neorv32_cpu_csr_read(CSR_MHARTID),
+                       neorv32_cpu_csr_read(CSR_MVENDORID),
+                       neorv32_cpu_csr_read(CSR_MARCHID),
+                       neorv32_cpu_csr_read(CSR_MIMPID));
 
-  tmp = neorv32_cpu_csr_read(CSR_MARCHID);
-  neorv32_uart0_printf("Architecture ID:   0x%x", tmp);
-  if (tmp == NEORV32_ARCHID) {
-    neorv32_uart0_printf(" (NEORV32)");
-  }
-
-  // hardware version
-  neorv32_uart0_printf("\nImplementation ID: 0x%x (v", neorv32_cpu_csr_read(CSR_MIMPID));
+  neorv32_uart0_printf(" (v");
   neorv32_rte_print_hw_version();
-  neorv32_uart0_putc(')');
+  neorv32_uart0_printf(")\n");
 
   // CPU architecture and endianness
-  neorv32_uart0_printf("\nArchitecture:      ");
+  neorv32_uart0_printf("Architecture:      ");
   tmp = neorv32_cpu_csr_read(CSR_MISA);
   tmp = (tmp >> 30) & 0x03;
   if (tmp == 1) {
@@ -412,7 +413,7 @@ void neorv32_rte_print_hw_config(void) {
 
 
   // Memory configuration
-  neorv32_uart0_printf("\n\n====== Memory System ======\n");
+  neorv32_uart0_printf("\n\n====== Memory ======\n");
 
   neorv32_uart0_printf("Boot configuration:  Boot ");
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {

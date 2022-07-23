@@ -49,6 +49,7 @@ entity neorv32_top is
     -- General --
     CLOCK_FREQUENCY              : natural;           -- clock frequency of clk_i in Hz
     HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
+    CUSTOM_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user-defined ID
     INT_BOOTLOADER_EN            : boolean := false;  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
     -- On-Chip Debugger (OCD) --
@@ -1545,6 +1546,7 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY      => CLOCK_FREQUENCY,      -- clock frequency of clk_i in Hz
+    CUSTOM_ID            => CUSTOM_ID,            -- custom user-defined ID
     INT_BOOTLOADER_EN    => INT_BOOTLOADER_EN,    -- implement processor-internal bootloader?
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS      => PMP_NUM_REGIONS,      -- number of regions (0..16)

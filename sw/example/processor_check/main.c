@@ -89,6 +89,9 @@ void xirq_trap_handler1(void);
 void test_ok(void);
 void test_fail(void);
 
+// MCAUSE value that will be NEVER set by the hardware
+const uint32_t mcause_never_c = 0x80000000U; // = reserved
+
 // Global variables (also test initialization of global vars here)
 /// Global counter for failing tests
 int cnt_fail = 0;
@@ -219,7 +222,7 @@ int main() {
   // ----------------------------------------------------------
   // Setup PMP for tests
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Initial PMP setup ", cnt_test);
 
   if (pmp_num_regions >= 4) {
@@ -232,7 +235,7 @@ int main() {
     tmp_a  = neorv32_cpu_pmp_configure_region(2, 0x00000000, (PMP_OFF << PMPCFG_A_LSB));
     tmp_a += neorv32_cpu_pmp_configure_region(3, 0xFFFFFFFF, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_L)  | (1 << PMPCFG_R) | (1 << PMPCFG_W) | (1 << PMPCFG_X));
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == 0) && (tmp_a == 0)) {
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) && (tmp_a == 0)) {
       test_ok();
     }
     else {
@@ -244,7 +247,7 @@ int main() {
   // ----------------------------------------------------------
   // Test fence instructions 
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] FENCE(.I) ", cnt_test);
 
   cnt_test++;
@@ -259,7 +262,7 @@ int main() {
   }
   asm volatile ("fence");
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
     test_ok();
   }
   else {
@@ -270,7 +273,7 @@ int main() {
   // ----------------------------------------------------------
   // Test performance counter: setup as many events and counters as possible
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Setup HPM events ", cnt_test);
 
   num_hpm_cnts_global = neorv32_cpu_hpm_get_num_counters();
@@ -294,7 +297,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable all counters
 
     // make sure there was no exception
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
       test_ok();
     }
     else {
@@ -309,7 +312,7 @@ int main() {
   // ----------------------------------------------------------
   // Test standard RISC-V performance counter [m]cycle[h]
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] cycle counter ", cnt_test);
 
   cnt_test++;
@@ -326,7 +329,7 @@ int main() {
   tmp_a = neorv32_cpu_csr_read(CSR_MCYCLEH);
 
   // make sure cycle counter high has incremented and there was no exception during access
-  if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+  if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) {
     test_ok();
   }
   else {
@@ -337,7 +340,7 @@ int main() {
   // ----------------------------------------------------------
   // Test standard RISC-V performance counter [m]instret[h]
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] instret counter ", cnt_test);
 
   cnt_test++;
@@ -354,7 +357,7 @@ int main() {
   tmp_a = neorv32_cpu_csr_read(CSR_INSTRETH);
 
   // make sure instruction counter high has incremented and there was no exception during access
-  if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+  if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) {
     test_ok();
   }
   else {
@@ -365,7 +368,7 @@ int main() {
   // ----------------------------------------------------------
   // Test mcountinhibt: inhibit auto-inc of [m]cycle
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] mcountinhibt.cy CSR ", cnt_test);
 
   cnt_test++;
@@ -385,7 +388,7 @@ int main() {
   tmp_b = neorv32_cpu_csr_read(CSR_CYCLE);
 
   // make sure instruction counter has NOT incremented and there was no exception during access
-  if ((tmp_a == tmp_b) && (tmp_a != 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+  if ((tmp_a == tmp_b) && (tmp_a != 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) {
     test_ok();
   }
   else {
@@ -401,7 +404,7 @@ int main() {
   // ----------------------------------------------------------
   // Test mcounteren: do not allow cycle[h] access from user-mode
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] mcounteren.cy CSR ", cnt_test);
 
   cnt_test++;
@@ -442,7 +445,7 @@ int main() {
   // ----------------------------------------------------------
   // Execute MRET in U-mode (has to trap!)
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] MRET in U-mode ", cnt_test);
 
   cnt_test++;
@@ -464,7 +467,7 @@ int main() {
   // ----------------------------------------------------------
   // External memory interface test
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Ext. memory access (@0x%x) ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT)) {
@@ -486,7 +489,7 @@ int main() {
       tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
       asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
     
-      if ((neorv32_cpu_csr_read(CSR_MCAUSE) == 0) && // make sure there was no exception
+      if ((neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) && // make sure there was no exception
           (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15)) { // make sure the program was executed in the right way
         test_ok();
       }
@@ -503,7 +506,7 @@ int main() {
   // ----------------------------------------------------------
   // Illegal CSR access (CSR not implemented)
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Non-existent CSR ", cnt_test);
 
   cnt_test++;
@@ -521,7 +524,7 @@ int main() {
   // ----------------------------------------------------------
   // Write-access to read-only CSR
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Read-only CSR write ", cnt_test);
 
   cnt_test++;
@@ -539,7 +542,7 @@ int main() {
   // ----------------------------------------------------------
   // No "real" CSR write access (because rs1 = r0)
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Read-only CSR 'no-write' (rs1=x0) access ", cnt_test);
 
   cnt_test++;
@@ -548,7 +551,7 @@ int main() {
   // -> should cause no exception
   asm volatile("csrrs zero, time, zero");
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == 0) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
     test_ok();
   }
   else {
@@ -559,7 +562,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned instruction address
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] I_ALIGN (instr. align) EXC ", cnt_test);
 
   // skip if C-mode is implemented
@@ -587,7 +590,7 @@ int main() {
   // ----------------------------------------------------------
   // Instruction access fault
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] I_ACC (instr. bus access) EXC ", cnt_test);
   cnt_test++;
 
@@ -605,7 +608,7 @@ int main() {
   // ----------------------------------------------------------
   // Illegal instruction
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] I_ILLEG (illegal instr.) EXC ", cnt_test);
 
   cnt_test++;
@@ -637,7 +640,7 @@ int main() {
   // ----------------------------------------------------------
   // Illegal compressed instruction
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] CI_ILLEG (illegal compr. instr.) EXC ", cnt_test);
 
   // skip if C-mode is not implemented
@@ -665,7 +668,7 @@ int main() {
   // ----------------------------------------------------------
   // Breakpoint instruction
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] BREAK EXC ", cnt_test);
 
   // skip on real hardware since ebreak will make problems when running this test program via gdb
@@ -689,7 +692,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned load address
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] L_ALIGN (load align) EXC ", cnt_test);
   cnt_test++;
 
@@ -711,7 +714,7 @@ int main() {
   // ----------------------------------------------------------
   // Load access fault
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] L_ACC (load access) EXC ", cnt_test);
   cnt_test++;
 
@@ -736,7 +739,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned store address
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] S_ALIGN (store align) EXC ", cnt_test);
   cnt_test++;
 
@@ -763,7 +766,7 @@ int main() {
   // ----------------------------------------------------------
   // Store access fault
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] S_ACC (store access) EXC ", cnt_test);
   cnt_test++;
 
@@ -785,7 +788,7 @@ int main() {
   // ----------------------------------------------------------
   // Environment call from M-mode
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] ENVCALL M-mode EXC ", cnt_test);
   cnt_test++;
 
@@ -802,7 +805,7 @@ int main() {
   // ----------------------------------------------------------
   // Environment call from U-mode
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] ENVCALL U-mode EXC ", cnt_test);
 
   cnt_test++;
@@ -824,7 +827,7 @@ int main() {
   // ----------------------------------------------------------
   // Machine timer interrupt (MTIME)
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] MTI (MTIME) IRQ ", cnt_test);
 
   cnt_test++;
@@ -859,7 +862,7 @@ int main() {
   // ----------------------------------------------------------
   // Machine software interrupt (MSI) via testbench
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] MSI (testbench) IRQ ", cnt_test);
 
   cnt_test++;
@@ -889,7 +892,7 @@ int main() {
   // ----------------------------------------------------------
   // Machine external interrupt (MEI) via testbench
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] MEI (testbench) IRQ ", cnt_test);
 
   cnt_test++;
@@ -919,7 +922,7 @@ int main() {
   // ----------------------------------------------------------
   // Permanent IRQ (make sure interrupted program advances)
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Permanent IRQ (MTIME) ", cnt_test);
 
   cnt_test++;
@@ -949,7 +952,7 @@ int main() {
   // ----------------------------------------------------------
   // Test pending interrupt
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Pending IRQ (MTIME) ", cnt_test);
 
   cnt_test++;
@@ -998,7 +1001,7 @@ int main() {
   // Fast interrupt channel 0 (WDT)
   // ----------------------------------------------------------
   if (neorv32_wdt_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] FIRQ0 (WDT) ", cnt_test);
 
     cnt_test++;
@@ -1038,7 +1041,7 @@ int main() {
   // Fast interrupt channel 2 (UART0.RX)
   // ----------------------------------------------------------
   if (neorv32_uart1_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] FIRQ2 (UART0.RX) ", cnt_test);
 
     cnt_test++;
@@ -1082,7 +1085,7 @@ int main() {
   // Fast interrupt channel 3 (UART0.TX)
   // ----------------------------------------------------------
   if (neorv32_uart0_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] FIRQ3 (UART0.TX) ", cnt_test);
 
     cnt_test++;
@@ -1126,7 +1129,7 @@ int main() {
   // Fast interrupt channel 4 (UART1.RX)
   // ----------------------------------------------------------
   if (neorv32_uart1_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] FIRQ4 (UART1.RX) ", cnt_test);
 
     cnt_test++;
@@ -1167,7 +1170,7 @@ int main() {
   // Fast interrupt channel 5 (UART1.TX)
   // ----------------------------------------------------------
   if (neorv32_uart1_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] FIRQ5 (UART1.TX) ", cnt_test);
 
     cnt_test++;
@@ -1208,7 +1211,7 @@ int main() {
   // Fast interrupt channel 6 (SPI)
   // ----------------------------------------------------------
   if (neorv32_spi_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] FIRQ6 (SPI) ", cnt_test);
 
     cnt_test++;
@@ -1243,7 +1246,7 @@ int main() {
   // Fast interrupt channel 7 (TWI)
   // ----------------------------------------------------------
   if (neorv32_twi_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] FIRQ7 (TWI) ", cnt_test);
 
     cnt_test++;
@@ -1276,7 +1279,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 8 (XIRQ)
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] FIRQ8 (XIRQ) ", cnt_test);
   if (neorv32_xirq_available()) {
 
@@ -1318,7 +1321,7 @@ int main() {
   // Fast interrupt channel 9 (NEOLED)
   // ----------------------------------------------------------
   if (neorv32_neoled_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] FIRQ9 (NEOLED) ", cnt_test);
 
     cnt_test++;
@@ -1352,7 +1355,7 @@ int main() {
   // Fast interrupt channel 10 (SLINK RX)
   // ----------------------------------------------------------
   if (neorv32_slink_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] FIRQ10 (SLINK RX) ", cnt_test);
 
     cnt_test++;
@@ -1398,7 +1401,7 @@ int main() {
   // Fast interrupt channel 11 (SLINK TX)
   // ----------------------------------------------------------
   if (neorv32_slink_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] FIRQ11 (SLINK TX) ", cnt_test);
 
     cnt_test++;
@@ -1447,7 +1450,7 @@ int main() {
   // Fast interrupt channel 12 (GPTMR)
   // ----------------------------------------------------------
   if (neorv32_gptmr_available()) {
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] FIRQ12 (GPTMR) ", cnt_test);
 
     cnt_test++;
@@ -1488,7 +1491,7 @@ int main() {
   // ----------------------------------------------------------
   // Test WFI ("sleep") instruction (executed in user mode), wakeup via MTIME
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] WFI (wake-up via MTIME) ", cnt_test);
 
   cnt_test++;
@@ -1523,7 +1526,7 @@ int main() {
   // ----------------------------------------------------------
   // Test unallowed WFI ("sleep") instruction (executed in user mode)
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] WFI (not allowed in u-mode) ", cnt_test);
 
   cnt_test++;
@@ -1548,7 +1551,7 @@ int main() {
   // ----------------------------------------------------------
   // Test invalid CSR access in user mode
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Invalid CSR access (mstatus) from U-mode ", cnt_test);
 
   cnt_test++;
@@ -1571,7 +1574,7 @@ int main() {
   // ----------------------------------------------------------
   // Test RTE debug trap handler
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] RTE debug trap handler ", cnt_test);
 
   cnt_test++;
@@ -1583,7 +1586,7 @@ int main() {
   neorv32_cpu_csr_read(0xfff); // CSR not available
 
   PRINT_STANDARD(" ");
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) != 0) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) != mcause_never_c) {
     test_ok();
   }
   else {
@@ -1597,7 +1600,7 @@ int main() {
   // ----------------------------------------------------------
   // Test physical memory protection
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] PMP:\n", cnt_test);
 
   // check if PMP is implemented
@@ -1605,7 +1608,7 @@ int main() {
 
     // Create PMP protected region
     // ---------------------------------------------
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     cnt_test++;
 
     pmp_access_addr = 0xcafe1234; // initialize
@@ -1620,7 +1623,7 @@ int main() {
     PRINT_STANDARD(" Setup PMP(1) TOR [!L,!X,!W,R] @ 0x%x ", tmp_a+4);
     pmp_res += neorv32_cpu_pmp_configure_region(1, tmp_a+4, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_R)); // read-only
 
-    if ((pmp_res == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == 0)) {
+    if ((pmp_res == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) {
       test_ok();
     }
     else {
@@ -1629,7 +1632,7 @@ int main() {
 
 
     // ------ LOAD from U-mode: should succeed ------
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] PMP: U-mode read (SUCCEED) ", cnt_test);
     cnt_test++;
 
@@ -1650,7 +1653,7 @@ int main() {
 
 
     // ------ STORE from U-mode: should fail ------
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] PMP: U-mode write (FAIL) ", cnt_test);
     cnt_test++;
 
@@ -1670,7 +1673,7 @@ int main() {
 
 
     // ------ STORE from M mode using U mode permissions: should fail ------
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] PMP: M-mode (using U-mode permissions) write (FAIL) ", cnt_test);
     cnt_test++;
 
@@ -1695,7 +1698,7 @@ int main() {
 
 
     // ------ STORE from M mode with LOCKED: should fail ------
-    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
     PRINT_STANDARD("[%i] PMP: M-mode (LOCKED) write (FAIL) ", cnt_test);
     cnt_test++;
 

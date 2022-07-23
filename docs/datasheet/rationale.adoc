@@ -62,7 +62,7 @@ https://github.com/olofk/serv[SERV] in terms of size. It was build having a diff
 
 The project aims to provide _another option_ in the RISC-V / soft-core design space with a different performance
 vs. size trade-off and a different focus: _embrace_ concepts like documentation, platform-independence / portability,
-RISC-V compatibility, _ extensibility & customization_ and _ease of use_ (see the <<_project_key_features>> below).
+RISC-V compatibility, _extensibility & customization_ and _ease of use_ (see the <<_project_key_features>> below).
 
 Furthermore, the NEORV32 pays special focus on _execution safety_ using <<_full_virtualization>>. The CPU aims to
 provide fall-backs for _everything that could go wrong_. This includes malformed instruction words, privilege escalations

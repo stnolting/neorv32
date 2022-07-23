@@ -46,6 +46,7 @@ entity neorv32_sysinfo is
   generic (
     -- General --
     CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
+    CUSTOM_ID            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user-defined ID
     INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS      : natural; -- number of regions (0..64)
@@ -125,8 +126,8 @@ begin
   -- SYSINFO(0): Processor (primary) clock frequency --
   sysinfo_mem(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
 
-  -- SYSINFO(1): reserved --
-  sysinfo_mem(1) <= (others => '0'); -- reserved
+  -- SYSINFO(1): Custom user-defined ID --
+  sysinfo_mem(1) <= CUSTOM_ID;
 
   -- SYSINFO(2): Implemented processor devices/features --
   -- Memory --

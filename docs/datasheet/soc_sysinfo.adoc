@@ -34,7 +34,7 @@ will signal a "DEVICE ERROR" in this case.
 |=======================
 | Address | Name [C] | Function
 | `0xffffffe0` | `NEORV32_SYSINFO.CLK`         | clock speed in Hz (via top's <<_clock_frequency>> generic)
-| `0xffffffe4` | -                             | _reserved_, read as zero
+| `0xffffffe4` | `NEORV32_SYSINFO.CUSTOM_ID    | custom user-defined ID (via top's <<_custom_id>> generic)
 | `0xffffffe8` | `NEORV32_SYSINFO.SOC`         | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
 | `0xffffffec` | `NEORV32_SYSINFO.CACHE`       | cache configuration information (see <<_sysinfo_cache_configuration>>)
 | `0xfffffff0` | `NEORV32_SYSINFO.ISPACE_BASE` | instruction address space base (via package's `ispace_base_c` constant)

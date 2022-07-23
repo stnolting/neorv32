@@ -1745,12 +1745,12 @@ begin
     if (rstn_i = '0') then
       csr.we                <= '0';
       --
+      csr.privilege         <= priv_mode_m_c; -- start in MACHINE mode
       csr.mstatus_mie       <= '0';
       csr.mstatus_mpie      <= '0';
       csr.mstatus_mpp       <= '0';
       csr.mstatus_mprv      <= '0';
       csr.mstatus_tw        <= '0';
-      csr.privilege         <= priv_mode_m_c; -- start in MACHINE mode
       csr.mie_msie          <= '0';
       csr.mie_meie          <= '0';
       csr.mie_mtie          <= '0';
