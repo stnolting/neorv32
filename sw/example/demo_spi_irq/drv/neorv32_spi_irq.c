@@ -35,6 +35,7 @@
 
 /**********************************************************************//**
  * @file neorv32_spi_irq.c
+ * @author Andreas Kaeberlein
  * @brief Addition to neorv32_spi.c, which provides an IRQ driven data flow.
  *
  * @note These functions should only be used if the SPI unit was synthesized (IO_SPI_EN = true).
@@ -148,7 +149,7 @@ int neorv32_spi_rw(t_neorv32_spi *self, void *spi, uint8_t csn, uint32_t num_ele
  * Check if transfer is active. see #neorv32_spi_rw
  *
  * @param[in,out] *self SPI driver common data handle. See #t_neorv32_spi.
- * @return int satus of function.
+ * @return int status of function.
  * @retval 0 idle.
  * @retval 1 busy.
  **************************************************************************/

@@ -35,6 +35,7 @@
 
 /**********************************************************************//**
  * @file neorv32_spi_irq.h
+ * @author Andreas Kaeberlein
  * @brief Addition to neorv32_spi.h, which provides an IRQ driven data flow.
  *
  * @note These functions should only be used if the SPI unit was synthesized (IO_SPI_EN = true).
