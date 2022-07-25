@@ -148,13 +148,8 @@ disabled (_MEM_EXT_ASYNC_TX_ = _false_).
 
 The AXI4-Lite wrapper (`rtl/system_integration/neorv32_SystemTop_axi4lite.vhd`) provides a Wishbone-to-
 AXI4-Lite bridge, compatible with Xilinx Vivado (IP packager and block design editor). All entity signals of
-this wrapper are of type _std_logic_ or _std_logic_vector_, respectively.
-
-The AXI Interface has been verified using Xilinx Vivado IP Packager and Block Designer. The AXI
-interface port signals are automatically detected when packaging the core.
-
-.Example AXI SoC using Xilinx Vivado
-image::neorv32_axi_soc.png[]
+this wrapper are of type _std_logic_ or _std_logic_vector_, respectively. See The USer Guide for more
+information: https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_ip_block_for_xilinx_vivado_block_designer
 
 [WARNING]
 Using the auto-termination timeout feature (_MEM_EXT_TIMEOUT_ greater than zero) is **not AXI4 compliant** as

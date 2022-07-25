@@ -19,6 +19,9 @@ according to your needs).
 . Save everything, let VIVADO create a HDL-Wrapper for the block-design and choose this as your _Top Level Design_.
 . Define your constraints and generate your bitstream.
 
+.Example AXI SoC using Xilinx Vivado
+image::neorv32_axi_soc.png[]
+
 .True Random Number Generator
 [IMPORTANT]
 The NEORV32 TRNG peripheral is enabled by default in the `neorv32_top_axi4lite` AXI wrapper. Otherwise, Vivado
