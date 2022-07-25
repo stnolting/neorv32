@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 25.07.2022 | 1.7.4.6 | :warning: simplify memory configuration of **linker script**; :sparkles: add in-console configuration option; [#]375(https://github.com/stnolting/neorv32/pull/375) |
 | 22.07.2022 | 1.7.4.5 | add `CUSTOM_ID` generic; update bootloader; [#374](https://github.com/stnolting/neorv32/pull/374) |
 | 21.07.2022 | 1.7.4.4 | :lock: specify **physical memory attributes (PMA)** ;[#372](https://github.com/stnolting/neorv32/pull/372) |
 | 18.07.2022 | 1.7.4.3 | minor rtl edits and updates; [#369](https://github.com/stnolting/neorv32/pull/369) |
