@@ -32,53 +32,58 @@
 /* # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting # */
 /* ################################################################################################# */
 
-/* Default linker script, for normal executables */
-/* Copyright (C) 2014-2020 Free Software Foundation, Inc.
-   Copying and distribution of this script, with or without modification,
-   are permitted in any medium without royalty provided the copyright
-   notice and this notice are preserved. */
-
-/* modified for the NEORV32 processor by Stephan Nolting */
+/* Default linker script, for normal executables .
+ * Copyright (C) 2014-2020 Free Software Foundation, Inc.
+ * Copying and distribution of this script, with or without modification,
+ * are permitted in any medium without royalty provided the copyright
+ * notice and this notice are preserved.
+ * Modified for the NEORV32 processor by Stephan Nolting. */
 
 
 OUTPUT_FORMAT("elf32-littleriscv", "elf32-littleriscv", "elf32-littleriscv")
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
-SEARCH_DIR("/opt/riscv/riscv32-unknown-elf/lib"); SEARCH_DIR("=/opt/riscv/riscv64-unknown-linux-gnu/lib"); SEARCH_DIR("=/usr/local/lib"); SEARCH_DIR("=/lib"); SEARCH_DIR("=/usr/lib");
+SEARCH_DIR("/opt/riscv/riscv32-unknown-elf/lib")
+SEARCH_DIR("=/opt/riscv/riscv64-unknown-linux-gnu/lib")
+SEARCH_DIR("=/usr/local/lib")
+SEARCH_DIR("=/lib")
+SEARCH_DIR("=/usr/lib")
 
-/* ********************************************************************************************
- * NEORV32 memory section configuration.                                     
- * ********************************************************************************************
- * "ram"   : data memory (int/ext DMEM) - make sure this is sync with the HW!
- * "rom"   : instruction memory (int/ext IMEM or bootloader ROM)             
- * "iodev" : peripheral/IO devices               
- * NOTE: All sections defined in this script start and end on a 32-bit (word) aligned boundary. 
- * ******************************************************************************************** */
+
+/* ************************************************************************************************* */
+/* +++ NEORV32 memory configuration +++                                                              */
+/* If the symbols are not explicitly defined the default configurations are used. If required, only  */
+/* the edit the very last entry in each row.                                                         */
+/* NOTE: section sizes have to be a multiple of 4 bytes; base addresses have to be 32-bit-aligned.   */
+/* ************************************************************************************************* */
+
+/* Default rom/ram (IMEM/DMEM) sizes */
+__neorv32_rom_size = DEFINED(__neorv32_rom_size) ? __neorv32_rom_size : 2048M;
+__neorv32_ram_size = DEFINED(__neorv32_ram_size) ? __neorv32_ram_size : 8K;
+
+/* Default HEAP size (= 0; no heap at all) */
+__neorv32_heap_size = DEFINED(__neorv32_heap_size) ? __neorv32_heap_size : 0;
+
+/* Default section base addresses - do not change this unless the hardware-defined address space layout is changed! */
+__neorv32_rom_base = DEFINED(__neorv32_rom_base) ? __neorv32_rom_base : 0x00000000; /* = VHDL package's "ispace_base_c" */
+__neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x80000000; /* = VHDL package's "dspace_base_c" */
+
+
+/* ************************************************************************************************* */
+/* If compiling the bootloader, the rom section is automatically re-mapped to the processor-internal */
+/* bootloader ROM address space.                                                                     */
+/* ************************************************************************************************* */
 MEMORY
 {
-
-  /* section base addresses and sizes have to be a multiple of 4 bytes
-   * ram section: first value of LENGTH => data memory used by bootloader (fixed!); second value of LENGTH => *physical* size of data memory
-   * adapt the right-most value to match the *total physical data memory size* of your setup */
-
-  ram  (rwx) : ORIGIN = 0x80000000, LENGTH = DEFINED(make_bootloader) ? 512 : 8*1024
-
-  /* rom and iodev sections should NOT be modified by the user at all! 
-   * rom section: first value of ORIGIN/LENGTH => bootloader ROM; second value of ORIGIN/LENGTH => maximum *logical* size of instruction memory */
-
-  rom   (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 32K : 2048M
-  iodev (rw) : ORIGIN = 0xFFFFFE00, LENGTH = 512 /* this is hardware-defined and must not be altered! */
-
+  rom   (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : __neorv32_rom_base, LENGTH = DEFINED(make_bootloader) ? 32K : __neorv32_rom_size
+  ram  (rwx) : ORIGIN = __neorv32_ram_base, LENGTH = DEFINED(make_bootloader) ? 512 : __neorv32_ram_size
+  iodev (rw) : ORIGIN = 0xFFFFFE00, LENGTH = 512 /* this is hardware-defined and should not be modified! */
 }
-/* ************************************************************************* */
 
+
+/* ************************************************************************************************* */
 SECTIONS
 {
-
-  /* set heap size (for dynamic memory allocation) only if explicitly defined
-   * WARNING! the heap will collide with the stack if allocating too much memory! */
-  __heap_size = DEFINED(__heap_size) ? __heap_size : 0;
-
 
   /* First part of the actual executable file: actual instructions */
   .text : ALIGN(4)
@@ -211,7 +216,7 @@ SECTIONS
   .heap : ALIGN(4)
   {
     PROVIDE(__heap_start = .);
-    . = __heap_size;
+    . = __neorv32_heap_size;
     /* finish section on WORD boundary */
     . = ALIGN(4);
     PROVIDE(__heap_end = .);
@@ -292,7 +297,7 @@ SECTIONS
 
 
   /* Export symbols for neorv32 crt0 start-up code */
-  PROVIDE(__crt0_max_heap            = __heap_size);
+  PROVIDE(__crt0_max_heap            = __neorv32_heap_size);
   PROVIDE(__crt0_imem_begin          = ORIGIN(rom));
   PROVIDE(__crt0_dmem_begin          = ORIGIN(ram));
   PROVIDE(__crt0_stack_begin         = (ORIGIN(ram) + LENGTH(ram)) - 4);
