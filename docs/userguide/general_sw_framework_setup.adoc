@@ -51,7 +51,7 @@ __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x800000
 <2> Default size of the data memory address space (right-most value) (internal/external DMEM): 8kB
 <3> Default size of the HEAP (right-most value): 0kB
 <4> Default base address of the instruction memory address space (right-most value): `0x00000000`
-<4> Default base address of the data memory address space (right-most value): `0x80000000`
+<5> Default base address of the data memory address space (right-most value): `0x80000000`
 
 [start=2]
 . Only the the `neorv32_ram_size` variable needs to modified! If you have changed the default DMEM (_MEM_INT_DMEM_SIZE_ generic)
