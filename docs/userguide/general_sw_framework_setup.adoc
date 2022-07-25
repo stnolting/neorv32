@@ -3,39 +3,91 @@
 == General Software Framework Setup
 
 To allow executables to be _actually executed_ on the NEORV32 Processor the configuration of the software framework
-has to be aware to the hardware configuration. This guide focuses on the memory configuration. To enabled
+has to be aware to the hardware configuration. This guide focuses on the **memory configuration**. To enable
 certain CPU ISA features refer to the <<_enabling_risc_v_cpu_extensions>> section.
+
+This guide shows how to configure the linker script for a given hardware memory configuration. More information regarding the
+linker script itself can be found in the according section of the data sheet: https://stnolting.github.io/neorv32/#_linker_script
 
 [TIP]
 If you have **not** changed the _default_ memory configuration in section <<_general_hardware_setup>>
-you are already done and you can skip the rest of this guide.
+you are already done and you can skip the rest of this section.
+
+[NOTE]
+Always keep the processor's https://stnolting.github.io/neorv32/#_address_space[Address Space] layout in mind
+when modifying the linker script
+
+There are two options to modify the default memory configuration of the linker script:
+
+[start=1]
+. <<_modifying_the_linker_script>>
+. <<_overriding_the_default_configuration>> (recommended!)
+
+
+:sectnums:
+=== Modifying the Linker Script
+
+This will modify the linker script _itself_.
 
 [start=1]
 . Open the NEORV32 linker script `sw/common/neorv32.ld` with a text editor. Right at the
-beginning of this script you will find the `MEMORY` configuration listing the different memory section:
+beginning of this script you will find the `+++ NEORV32 memory configuration +++` configuration section:
 
-.Cut-out of the linker script `neorv32.ld`: `ram` memory section configuration
-[source,c]
+.Cut-out of the linker script `neorv32.ld`
+[source]
 ----
-MEMORY
-{
-  ram  (rwx) : ORIGIN = 0x80000000, LENGTH = DEFINED(make_bootloader) ? 512 : 8*1024 <1>
-...
+/* Default rom/ram (IMEM/DMEM) sizes */
+__neorv32_rom_size = DEFINED(__neorv32_rom_size) ? __neorv32_rom_size : 2048M; <1>
+__neorv32_ram_size = DEFINED(__neorv32_ram_size) ? __neorv32_ram_size : 8K; <2>
+
+/* Default HEAP size (= 0; no heap at all) */
+__neorv32_heap_size = DEFINED(__neorv32_heap_size) ? __neorv32_heap_size : 0; <3>
+
+/* Default section base addresses - do not change this unless the hardware-defined address space layout is changed! */
+__neorv32_rom_base = DEFINED(__neorv32_rom_base) ? __neorv32_rom_base : 0x00000000; /* = VHDL package's "ispace_base_c" */ <4>
+__neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x80000000; /* = VHDL package's "dspace_base_c" */ <5>
 ----
-<1> Size of the data memory address space (right-most value) (internal/external DMEM); here 8kB
+<1> Default (max) size of the instruction memory address space (right-most value) (internal/external IMEM): 2048MB
+<2> Default size of the data memory address space (right-most value) (internal/external DMEM): 8kB
+<3> Default size of the HEAP (right-most value): 0kB
+<4> Default base address of the instruction memory address space (right-most value): `0x00000000`
+<4> Default base address of the data memory address space (right-most value): `0x80000000`
 
 [start=2]
-. We only need to change the `ram` section, which presents the available data address space.
-If you have changed the DMEM (_MEM_INT_DMEM_SIZE_ generic) size adapt the `LENGTH` parameter of the `ram`
-section (here: `8*1024`) so it is equal to your DMEM hardware configuration.
-
-[IMPORTANT]
-Make sure you only modify the _right-most_ value (here: 8*1024)! +
-The "`512`" are not relevant for the application.
+. Only the the `neorv32_ram_size` variable needs to modified! If you have changed the default DMEM (_MEM_INT_DMEM_SIZE_ generic)
+size then change the right-most parameter (here: `8kB`) so it is equal to your DMEM hardware configuration. The `neorv32_rom_size`
+does not need to be modified even if you have changed the default IMEM size.
+For more information see https://stnolting.github.io/neorv32/#_linker_script
 
 [start=3]
 . Done! Save your changes and close the linker script.
 
-.Advanced: Section base address and size
-[IMPORTANT]
-More information can be found in the datasheet section https://stnolting.github.io/neorv32/#_address_space[Address Space].
+
+:sectnums:
+=== Overriding the Default Configuration
+
+This will not change the default linker script at all. Hence, this approach is recommended as it allows to make
+per-project memory configuration without changing the code base.
+
+The RAM and ROM sizes from <<_modifying_the_linker_script>> (as well as the base addresses) can also be modified
+by overriding the default values when invoking `make`. Therefore, the command needs to pass the according
+values to the linker using the makefile's `USER_FLAGS` variable.
+
+[TIP]
+See section "Application Makefile" of the data sheet for more information regarding the default makefile variables:
+https://stnolting.github.io/neorv32/#_application_makefile
+
+.Example: override default RAM size while invoking make
+[source, bash]
+----
+$ make USER_FLAGS+="-Wl,--defsym,__neorv32_rom_size=16k" clean_all exe
+----
+
+The `-Wl` will pass the following commands/flags to the linker. `--defsym` will **define** a symbol for the linker.
+`neorv32_rom_size` is the variable that will be defined and `16k` is the value assigned to it (= 16*1024kB). As a result, this
+command will set the RAM region to a size of 16kB.
+
+[NOTE]
+When using this approach the customized attributes have to be specified every time the makefile is invoked!
+You can put the RAM/ROM override commands into the project's local makefile or define a simple shell script that defines
+all the setup-related parameters (memory sizes, RISC-V ISA extensions, optimization goal, further tuning flags).
