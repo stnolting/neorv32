@@ -32,7 +32,7 @@ files and folders is shown below:
 
 .Software Documentation
 [TIP]
-All core libraries and example programs are highly documented using **Doxygen**.
+All core libraries and example programs are documented "in-code" using **Doxygen**.
 The documentation is automatically built and deployed to GitHub pages and is available online
 at https://stnolting.github.io/neorv32/sw/files.html.
 
@@ -54,11 +54,9 @@ Make sure the toolchain / toolchain build is configured accordingly.
 
 * `MARCH=rv32i`
 * `MABI=ilp32`
+* `RISCV_PREFIX=riscv32-unknown-elf-`
 
-Alternatively, you can download my prebuilt `rv32i/e` toolchains for 64-bit x86 Linux from: https://github.com/stnolting/riscv-gcc-prebuilt
-
-The default toolchain prefix used by the project's makefiles is **`riscv32-unknown-elf`**, which can be changes
-using makefile flags at any time.
+These default configurations can be override at any times using <<_application_makefile>> variables.
 
 [TIP]
 More information regarding the toolchain (building from scratch or downloading the prebuilt ones)
@@ -70,13 +68,13 @@ can be found in the user guides' section https://stnolting.github.io/neorv32/ug/
 :sectnums:
 === Core Libraries
 
-The NEORV32 project provides a set of C libraries that allows an easy usage of the processor/CPU features
+The NEORV32 project provides a set of pre-defined C libraries that allow an easy integration of the processor/CPU features
 (also called "HAL" - hardware abstraction layer). All driver and runtime-related files are located in
-`sw/lib`. These are automatically included and linked by adding the following _include statement_:
+`sw/lib`. These are automatically included and linked by adding the following include statement:
 
 [source,c]
 ----
-#include <neorv32.h> // add NEORV32 HAL, core and runtime libraries
+#include <neorv32.h> // NEORV32 HAL, core and runtime libraries
 ----
 
 [cols="<3,<4,<8"]
@@ -90,7 +88,7 @@ footnote:[This driver file only represents a stub, since the real CFS drivers ar
 | `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | HW driver functions for the NEORV32 **CFU** (custom instructions)
 | `neorv32_gpio.c`    | `neorv32_gpio.h`       | HW driver functions for the **GPIO**
 | `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | HW driver functions for the **GPTRM**
-| -                   | `neorv32_intrinsics.h` | macros for custom intrinsics & instructions
+| -                   | `neorv32_intrinsics.h` | macros for intrinsics & custom instructions
 | `neorv32_mtime.c`   | `neorv32_mtime.h`      | HW driver functions for the **MTIME**
 | `neorv32_neoled.c`  | `neorv32_neoled.h`     | HW driver functions for the **NEOLED**
 | `neorv32_pwm.c`     | `neorv32_pwm.h`        | HW driver functions for the **PWM**
@@ -103,7 +101,7 @@ footnote:[This driver file only represents a stub, since the real CFS drivers ar
 | `neorv32_wdt.c`     | `neorv32_wdt.h`        | HW driver functions for the **WDT**
 | `neorv32_xip.c`     | `neorv32_xip.h`        | HW driver functions for the **XIP**
 | `neorv32_xirq.c`    | `neorv32_xirq.h`       | HW driver functions for the **XIRQ**
-| `syscalls.c`        | -                      | newlib system calls
+| `syscalls.c`        | -                      | newlib "system calls"
 |=======================
 
 .Core Library Documentation
@@ -121,15 +119,17 @@ A CMSIS-SVD-compatible **System View Description (SVD)** file including all peri
 :sectnums:
 === Application Makefile
 
-Application compilation is based on a single, centralized **GNU makefiles** `sw/common/common.mk`. Each project in the
-`sw/example` folder features a makefile that just includes this central makefile. When creating a new project copy an
-existing project folder or at least the makefile to the new project folder. It is suggested to create new projects also
-in `sw/example` to keep the file dependencies. However, these dependencies can be manually configured via makefiles
-variables when the new project is located somewhere else.
+Application compilation is based on a single, centralized **GNU makefile** (`sw/common/common.mk`). Each project in the
+`sw/example` folder provides a makefile that just includes this central makefile.
+
+[TIP]
+When creating a new project, copy an existing project folder or at least the makefile to the new project folder.
+It is recommended to create new projects also in `sw/example` to keep the file dependencies. However, these
+dependencies can be manually configured via makefile variables if the new project is located somewhere else.
 
 [NOTE]
-Before the makefile can be used to compile applications, the RISC-V GCC toolchain needs to be installed. Furthermore,
-the `bin` folder of the compiler needs to be added to the system's `PATH` variable. More information can be found in
+Before the makefile can be used to compile applications, the RISC-V GCC toolchain needs to be installed and
+the compiler's `bin` folder has to be added to the system's `PATH` variable. More information can be found in
 https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup[User Guide: Software Toolchain Setup].
 
 The makefile is invoked by simply executing `make` in the console. For example:
@@ -241,7 +241,7 @@ default `sw/example` folder
 ==== Default Compiler Flags
 
 The following default compiler flags are used for compiling an application. These flags are defined via the
-`CC_OPTS` variable. Custom flags can be _appended_ to it using the `USER_FLAGS` variable.
+`CC_OPTS` variable.
 
 [cols="<3,<9"]
 [grid="none"]
@@ -260,76 +260,95 @@ The following default compiler flags are used for compiling an application. Thes
 | `-falign-jumps=4`
 |=======================
 
+:sectnums:
+==== Custom (Compiler) Flags
+
+Custom flags can be _appended_ to the `USER_FLAGS` variable. This allows to customize the entire software framework while
+calling `make` without the need to change the makefile(s) or the linker script.
+
+The following example will add debug symbols to the executable (`-g`) and will also define the linker script's
+`__neorv32_heap_size` setting the maximal heap size to 4096 bytes:
+
+.Example: using the `USER_FLAGS` variable for customization
+[source,bash]
+----
+$ make USER_FLAGS+="-g -Wl,--__neorv32_heap_size,__heap_size=4096" clean_all exe
+----
+
 
 <<<
 // ####################################################################################################################
 :sectnums:
 === Executable Image Format
 
-In order to generate a file, which can be executed by the processor, all source files have to be compiler, linked
-and packed into a final _executable_.
+In order to generate an executable for th processors all source files have to be compiled, linked
+and packed into a _final executable_.
 
 :sectnums:
 ==== Linker Script
 
-When all the application sources have been compiled, they need to be _linked_ in order to generate a unified
-program file. For this purpose the makefile uses the NEORV32-specific linker script `sw/common/neorv32.ld` for
-linking all object files that were generated during compilation.
+After all the application sources have been compiled, they need to be _linked_.
+For this purpose the makefile uses the NEORV32-specific linker script `sw/common/neorv32.ld` for
+linking all object files that were generated during compilation. In general, the linker script defines
+three memory sections: `rom`, `ram` and `iodev`.
 
-The linker script defines three memory _sections_: `rom`, `ram` and `iodev`. Each section provides specific
-access _attributes_: read access (`r`), write access (`w`) and executable (`x`).
-
-.Linker memory sections - general
-[cols="<2,^1,<7"]
+.Linker script - memory sections
+[cols="<2,<8"]
 [options="header",grid="rows"]
 |=======================
-| Memory section  | Attributes | Description
-| `ram`           | `rwx`      | Data memory address space (processor-internal/external DMEM)
-| `rom`           | `rx`       | Instruction memory address space (processor-internal/external IMEM) _or_ internal bootloader ROM
-| `iodev`         | `rw`       | Processor-internal memory-mapped IO/peripheral devices address space
+| Memory section  | Description
+| `ram`           | Data memory address space (processor-internal/external DMEM)
+| `rom`           | Instruction memory address space (processor-internal/external IMEM) _or_ internal bootloader ROM
+| `iodev`         | Processor-internal memory-mapped IO/peripheral devices address space
 |=======================
 
-These sections are defined right at the beginning of the linker script:
+[NOTE]
+The `iodev` section is entirely defined by the processor hardware layout and should not be modified at all.
 
-.Linker memory sections - cut-out from linker script `neorv32.ld`
-[source,c]
+[NOTE]
+The `rom` section is automatically re-mapped to the processor-internal <<_bootloader_rom_bootrom>> when (re-)compiling the
+bootloader
+
+Each section has two main attributes: `ORIGIN` and `LENGTH`. `ORIGIN` defines the base address of the according section
+while `LENGTH` defines its size in bytes. The attributes are configured indirectly via variables that provide default values.
+
+.Linker script - section configuration
+[source]
 ----
-MEMORY
-{
-  ram  (rwx) : ORIGIN = 0x80000000, LENGTH = DEFINED(make_bootloader) ? 512 : 8*1024
-  rom   (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 32K : 2048M
-  iodev (rw) : ORIGIN = 0xFFFFFE00, LENGTH = 512
-}
+/* Default rom/ram (IMEM/DMEM) sizes */
+__neorv32_rom_size = DEFINED(__neorv32_rom_size) ? __neorv32_rom_size : 2048M;
+__neorv32_ram_size = DEFINED(__neorv32_ram_size) ? __neorv32_ram_size : 8K;
+
+/* Default section base addresses - do not change this unless the hardware-defined address space layout is changed! */
+__neorv32_rom_base = DEFINED(__neorv32_rom_base) ? __neorv32_rom_base : 0x00000000; /* = VHDL package's "ispace_base_c" */
+__neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x80000000; /* = VHDL package's "dspace_base_c" */
 ----
 
-Each memory section provides a _base address_ `ORIGIN` and a _size_ `LENGTH`. The base address and size of the `iodev` section is
-fixed and should not be altered. The base addresses and sizes of the `ram` and `rom` regions correspond to the total available instruction
-and data memory address space (see section <<_address_space_layout>>) as defined in `rtl/core/neorv32_package.vhd`.
+Only the region **sizes** should be modified by the user. The base addresses are defined by the processor's hardware (see section
+<<_address_space>>) and should not be altered at all. The size (and base) configuration can be edited by the user - either by explicitly
+changing the default values in the linker script or by overriding them when invoking `make`:
+ 
+.Overriding default rom size configuration (setting 4096 bytes)
+[source, bash]
+----
+$ make USER_FLAGS+="-Wl,--defsym,__neorv32_rom_size=4096" clean_all exe
+----
 
 [IMPORTANT]
-`ORIGIN` of the `ram` section has to be always identical to the processor's `dspace_base_c` hardware configuration. +
- +
-`ORIGIN` of the `rom` section has to be always identical to the processor's `ispace_base_c` hardware configuration.
+`neorv32_rom_base` (= `ORIGIN` of the `ram` section) has to be always identical to the processor's `dspace_base_c` hardware configuration.
+Also, `neorv32_ram_base` (= `ORIGIN` of the `rom` section) has to be always identical to the processor's `ispace_base_c` hardware configuration.
 
-The sizes of `rom` section is a little bit more complicated. The default linker script configuration assumes a _maximum_ of 2GB _logical_
-memory space, which is also the default configuration of the processor's hardware instruction memory address space. This size does not have
+[NOTE]
+The default configuration for the `rom` section assumes a maximum of 2GB _logical_ memory address space. This size does not have
 to reflect the _actual_ physical size of the instruction memory (internal IMEM and/or processor-external memory). It just provides a maximum
-limit. When uploading new executable via the bootloader, the bootloader itself checks if sufficient _physical_ instruction memory is available.
+limit. When uploading a new executable via the bootloader, the bootloader itself checks if sufficient _physical_ instruction memory is available.
 If a new executable is embedded right into the internal-IMEM the synthesis tool will check, if the configured instruction memory size
 is sufficient (e.g., via the <<_mem_int_imem_size>> generic).
-
-[IMPORTANT]
-The `rom` region uses a conditional assignment (via the `make_bootloader` symbol) for `ORIGIN` and `LENGTH` that is used to place
-"normal executable" (i.e. for the IMEM) or "the bootloader image" to their according memories. +
- +
-The `ram` region also uses a conditional assignment (via the `make_bootloader` symbol) for `LENGTH`. When compiling the bootloader
-(`make_bootloader` symbol is set) the generated bootloader will only use the _first_ 512 bytes of the data address space. This is
-a fall-back to ensure the bootloader can operate independently of the actual _physical_ data memory size.
 
 The linker maps all the regions from the compiled object files into five final sections: `.text`, `.rodata`, `.data`, `.bss` and `.heap`.
 These regions contain everything required for the application to run:
 
-.Linker memory regions
+.Linker script - memory regions
 [cols="<1,<9"]
 [options="header",grid="rows"]
 |=======================
@@ -347,9 +366,9 @@ sections are extracted and concatenated into a single file `main.bin`.
 
 .Section Alignment
 [NOTE]
-The default NEORV32 linker script aligns _all_ section so they start and end on a 32-bit (word) boundary. The default
-NEORV32 start-up code (crt0) makes use of this alignment by using word-level memory instruction to initialize the `.data`
-section and to clear the `.bss` section.
+The default NEORV32 linker script aligns _all_ regions so they start and end on a 32-bit (word) boundary. The default
+NEORV32 start-up code (crt0) makes use of this alignment by using word-level memory instructions to initialize the `.data`
+section and to clear the `.bss` section (faster!).
 
 
 :sectnums:
@@ -375,8 +394,10 @@ be used to configure a maximum size by adding a "protection area" between stack 
 
 .Heap Size
 [IMPORTANT]
-The maximum size of the heap is defined by the linker script's `__heap_size` symbol. This symbol has to be **explicitly defined** in order
-to define a heap size (and to use dynamic memory allocation at all). By default, the heap size is set to zero.
+The maximum size of the heap is defined by the linker script's `__neorv32_heap_size` variable. This variable has to be
+**explicitly defined** in order to define a heap size (and to use dynamic memory allocation at all) other than zero. The user
+can define the heap size while invoking the application makefile: `$ USER_FLAGS+="-Wl,--defsym,__neorv32_heap_size=4k" make clean_all exe`
+(defines a heap size of 4*1024 bytes).
 
 .Heap-Stack Collisions
 [WARNING]

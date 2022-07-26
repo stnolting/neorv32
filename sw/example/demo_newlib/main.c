@@ -53,7 +53,7 @@
 
 
 /**********************************************************************//**
- * @name Max heap size (from linker script)
+ * @name Max heap size (from linker script's "__neorv32_heap_size")
  **************************************************************************/
 extern const unsigned __crt0_max_heap;
 
@@ -90,7 +90,7 @@ int main() {
     neorv32_uart0_printf("MAX heap size: %u bytes\n", max_heap);
   }
   else {
-    neorv32_uart0_printf("ERROR! No heap size defined (linker script -> '__heap_size')!\n");
+    neorv32_uart0_printf("ERROR! No heap size defined (linker script -> '__neorv32_heap_size')!\n");
     return -1;
   }
 
@@ -104,7 +104,7 @@ int main() {
 
   neorv32_uart0_printf("<rand> test... ");
   srand(neorv32_cpu_csr_read(CSR_CYCLE)); // set random seed
-  neorv32_uart0_printf("%i, %i, %i, %i ", rand() % 100, rand() % 100, rand() % 100, rand() % 100);
+  neorv32_uart0_printf("%i, %i, %i, %i\n", rand() % 100, rand() % 100, rand() % 100, rand() % 100);
 
 
   char *char_buffer; // pointer for dynamic memory allocation
@@ -134,9 +134,9 @@ int main() {
   free(char_buffer);
 
 
-  // NOTE: exit is highly oversized as it also includes clean-up functions (destructors), which
-  // is not required for bare-metal or RTOS applications... better use the simple 'return' or even better
-  // make sure main never returns. however, let's test that 'exit' works.
+  // NOTE: exit is highly over-sized as it also includes clean-up functions (destructors), which
+  // are not required for bare-metal or RTOS applications... better use the simple 'return' or even better
+  // make sure main never returns. Anyway, let's check if 'exit' works.
   neorv32_uart0_printf("<exit> test...");
   exit(0);
 
