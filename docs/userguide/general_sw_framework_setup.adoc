@@ -66,7 +66,7 @@ For more information see https://stnolting.github.io/neorv32/#_linker_script
 :sectnums:
 === Overriding the Default Configuration
 
-This will not change the default linker script at all. Hence, this approach is recommended as it allows to make
+This will not change the default linker script at all. Hence, **this approach is recommended** as it allows to make
 per-project memory configuration without changing the code base.
 
 The RAM and ROM sizes from <<_modifying_the_linker_script>> (as well as the base addresses) can also be modified
@@ -83,11 +83,11 @@ https://stnolting.github.io/neorv32/#_application_makefile
 $ make USER_FLAGS+="-Wl,--defsym,__neorv32_rom_size=16k" clean_all exe
 ----
 
-The `-Wl` will pass the following commands/flags to the linker. `--defsym` will **define** a symbol for the linker.
-`neorv32_rom_size` is the variable that will be defined and `16k` is the value assigned to it (= 16*1024kB). As a result, this
+The `-Wl` will pass the following commands/flags to the linker. `--defsym` will define a symbol for the linker.
+`neorv32_rom_size` is the variable that will be defined and `16k` is the value assigned to it (= 16*1024 bytes). As a result, this
 command will set the RAM region to a size of 16kB.
 
 [NOTE]
 When using this approach the customized attributes have to be specified every time the makefile is invoked!
 You can put the RAM/ROM override commands into the project's local makefile or define a simple shell script that defines
-all the setup-related parameters (memory sizes, RISC-V ISA extensions, optimization goal, further tuning flags).
+all the setup-related parameters (memory sizes, RISC-V ISA extensions, optimization goal, further tuning flags, etc.).
