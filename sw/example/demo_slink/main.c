@@ -69,7 +69,6 @@ int main() {
   uint32_t slink_data;
   int slink_status;
 
-
   // capture all exceptions and give debug info via UART0
   neorv32_rte_setup();
 
@@ -88,23 +87,25 @@ int main() {
   // check if SLINK is implemented at all
   if (neorv32_slink_available() == 0) {
     neorv32_uart0_printf("ERROR! SLINK module not implemented.");
-    return -1; // abort if not implemented
+    return -1;
   }
 
 
   // show SLINK hardware configuration
-  neorv32_uart0_printf("Number of SLINK RX channels: %u\n", neorv32_slink_get_link_num(0));
-  neorv32_uart0_printf("Number of SLINK TX channels: %u\n", neorv32_slink_get_link_num(1));
-  neorv32_uart0_printf("SLINK RX FIFO depth: %u entries\n", neorv32_slink_get_fifo_depth(0));
-  neorv32_uart0_printf("SLINK TX FIFO depth: %u entries\n", neorv32_slink_get_fifo_depth(1));
+  neorv32_uart0_printf("# SLINK RX channels: %u (%u FIFO entries each)\n"
+                       "# SLINK TX channels: %u (%u FIFO entries each)\n",
+                       neorv32_slink_get_link_num(0),
+                       neorv32_slink_get_fifo_depth(0),
+                       neorv32_slink_get_link_num(1),
+                       neorv32_slink_get_fifo_depth(1));
 
-  neorv32_uart0_printf("\nNOTE: This demo program uses SLINK RX/TX channels 0 and assumes\n"
-                         "      SLINK.TX(0) is coupled directly to SLINK.RX(0).\n\n");
+  neorv32_uart0_printf("\nNOTE: This demo program uses SLINK RX/TX channels 0 only.\n\n");
 
 
-  // configure (and enable) SLINK module
-  neorv32_slink_setup(0b00000001,  // enable RX interrupt for link 0
-                      0b00000001); // enable RX interrupt for link 0
+  // reset and enable SLINK module
+  neorv32_slink_setup((0b10 << (SLINK_IRQ_RX_LSB + 2*0)) | // RX link 0: IRQ if FIFO becomes not empty
+                      (0b11 << (SLINK_IRQ_TX_LSB + 2*0))); // TX link 0: IRQ if FIFO becomes less than half full
+
 
   // NEORV32 runtime environment: install SLINK FIRQ handlers
   neorv32_rte_exception_install(SLINK_RX_RTE_ID, slink_rx_firq_handler);
@@ -117,12 +118,12 @@ int main() {
   // do some demo transmissions
   neorv32_uart0_printf("-------- TX Demo --------\n");
 
-  for (i=0; i<6; i++) { // send 6 data words
+  for (i=0; i<6; i++) { // try to send 6 data words
     slink_data = xorshift32();
     neorv32_uart0_printf("%i: SLINK TX 0x%x via link 0... ", i, slink_data);
 
     if (i == 3) {
-      neorv32_uart0_printf("SET END-OF-PACKET ");
+      neorv32_uart0_printf("[set END-OF-PACKET] ");
       slink_status = neorv32_slink_tx(0, slink_data, 1); // do a "end of packet" transmission (set LST high)
     }
     else {
@@ -136,7 +137,7 @@ int main() {
       neorv32_uart0_printf("fail; FIFO full\n");
     }
   }
-  
+
 
   // check the RX link
   neorv32_uart0_printf("\n-------- RX Demo --------\n");
@@ -150,7 +151,7 @@ int main() {
       neorv32_uart0_printf("received 0x%x\n", slink_data);
     }
     else if (slink_status == 1) {
-      neorv32_uart0_printf("received 0x%x (END OF PACKET)\n", slink_data);
+      neorv32_uart0_printf("received 0x%x [END-OF-PACKET]\n", slink_data);
     }
     else { // == -1
       neorv32_uart0_printf("no data available\n");
@@ -180,7 +181,7 @@ void slink_tx_firq_handler(void) {
 
   neorv32_cpu_csr_write(CSR_MIP, ~(1 << SLINK_TX_FIRQ_PENDING)); // ack FIRQ
 
-  neorv32_uart0_printf(" << SLINK TX IRQ! >> ");
+  neorv32_uart0_printf(" <<SLINK TX IRQ!>> ");
 }
 
 
