@@ -214,92 +214,21 @@
           <name>CTRL</name>
           <description>Control register</description>
           <addressOffset>0x00</addressOffset>
-          <fields>
-            <field>
-              <name>SLINK_CTRL_RX_NUMx</name>
-              <access>read-only</access>
-              <bitRange>[3:0]</bitRange>
-              <description>Number of implemented RX links</description>
-            </field>
-            <field>
-              <name>SLINK_CTRL_TX_NUMx</name>
-              <access>read-only</access>
-              <bitRange>[7:4]</bitRange>
-              <description>Number of implemented TX links</description>
-            </field>
-            <field>
-              <name>SLINK_CTRL_RX_FIFO_Sx</name>
-              <access>read-only</access>
-              <bitRange>[11:8]</bitRange>
-              <description>log2(RX FIFO size)</description>
-            </field>
-            <field>
-              <name>SLINK_CTRL_TX_FIFO_Sx</name>
-              <access>read-only</access>
-              <bitRange>[15:12]</bitRange>
-              <description>log2(TX FIFO size)</description>
-            </field>
-            <field>
-              <name>SLINK_CTRL_EN</name>
-              <access>read-write</access>
-              <bitRange>[31:31]</bitRange>
-              <description>SLINK enable flag</description>
-            </field>
-          </fields>
         </register>
         <register>
           <name>IRQ</name>
           <description>Link interrupt configuration register</description>
-          <addressOffset>0x08</addressOffset>
-          <fields>
-            <field>
-              <name>SLINK_IRQ_RX_EN</name>
-              <bitRange>[7:0]</bitRange>
-              <description>RX link interrupt enable</description>
-            </field>
-            <field>
-              <name>SLINK_IRQ_RX_MODE</name>
-              <bitRange>[15:8]</bitRange>
-              <description>RX link interrupt mode</description>
-            </field>
-            <field>
-              <name>SLINK_IRQ_TX_EN</name>
-              <bitRange>[23:16]</bitRange>
-              <description>TX link interrupt enable</description>
-            </field>
-            <field>
-              <name>SLINK_IRQ_TX_MODE</name>
-              <bitRange>[31:24]</bitRange>
-              <description>TX link interrupt mode</description>
-            </field>
-          </fields>
+          <addressOffset>0x04</addressOffset>
         </register>
         <register>
-          <name>STATUS</name>
-          <description>Link status register</description>
-          <addressOffset>0x10</addressOffset>
-          <fields>
-            <field>
-              <name>SLINK_STATUS_RX_AVAIL</name>
-              <bitRange>[7:0]</bitRange>
-              <description>RX link n FIFO is NOT empty (data available)</description>
-            </field>
-            <field>
-              <name>SLINK_STATUS_TX_FREE</name>
-              <bitRange>[15:8]</bitRange>
-              <description>TX link n FIFO is NOT full (ready to send)</description>
-            </field>
-            <field>
-              <name>SLINK_STATUS_RX_HALF</name>
-              <bitRange>[23:16]</bitRange>
-              <description>RX link n FIFO fill level is >= half-full</description>
-            </field>
-            <field>
-              <name>SLINK_STATUS_TX_HALF</name>
-              <bitRange>[31:24]</bitRange>
-              <description>TX link 0 FIFO fill level is > half-full</description>
-            </field>
-          </fields>
+          <name>RX_STATUS</name>
+          <description>Status of RX link FIFOs</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>TX_STATUS</name>
+          <description>Status of TX link FIFOs</description>
+          <addressOffset>0x0C</addressOffset>
         </register>
         <register>
           <name>DATA0</name>
