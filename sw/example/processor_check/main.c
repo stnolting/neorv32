@@ -1361,13 +1361,18 @@ int main() {
     cnt_test++;
 
     // enable SLINK RX link 0 interrupt
-    neorv32_slink_setup(0b00000001, 0b00000000);
+    neorv32_slink_setup(0b11 << (SLINK_IRQ_RX_LSB + 2*0)); // RX link 0: IRQ if FIFO becomes at least half full
     neorv32_cpu_irq_enable(SLINK_RX_FIRQ_ENABLE);
 
+    tmp_b = neorv32_slink_get_fifo_depth(0) + neorv32_slink_get_fifo_depth(1);
+  
     tmp_a = 0; // error counter
 
-    // send single data word via link 0
-    tmp_a += neorv32_slink_tx(0, 0xA1B2C3D4, 1);
+    // send data words via link 0 to fill TX and RX FIFOs
+    while (tmp_b) {
+      tmp_a += neorv32_slink_tx(0, 0xA1B2C3D4, 1);
+      tmp_b--;
+    }
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
@@ -1407,22 +1412,13 @@ int main() {
     cnt_test++;
 
     // enable SLINK TX link 0 interrupt
-    neorv32_slink_setup(0b00000000, 0b00000001);
+    neorv32_slink_setup(0b10 << (SLINK_IRQ_TX_LSB + 2*0)); // TX link 0: IRQ if FIFO becomes empty
     neorv32_cpu_irq_enable(SLINK_TX_FIRQ_ENABLE);
-
-    tmp_b = neorv32_slink_get_fifo_depth(0) + neorv32_slink_get_fifo_depth(1);
 
     tmp_a = 0; // error counter
 
-    // send data words via link 0 to fill TX and RX FIFOs
-    while (tmp_b) {
-      tmp_a += neorv32_slink_tx(0, 0xA1B2C3D4, 0);
-      tmp_b--;
-    }
-
-    // read single data word
-    uint32_t slink_rx_data2 = 0;
-    neorv32_slink_rx(0, &slink_rx_data2);
+    // send single data word
+    tmp_a += neorv32_slink_tx(0, 0xACCABDDB, 0);
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
@@ -1434,7 +1430,11 @@ int main() {
     }
     neorv32_cpu_irq_disable(SLINK_TX_FIRQ_ENABLE);
 
-    if (tmp_a == 0) { // local error counter = 0
+    // read single data word
+    uint32_t slink_rx_data;
+    tmp_a += neorv32_slink_rx(0, &slink_rx_data);
+
+    if ((tmp_a == 0) && (slink_rx_data == 0xACCABDDB)) {
       test_ok();
     }
     else {

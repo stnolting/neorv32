@@ -63,7 +63,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070406"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070407"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -210,6 +210,22 @@ package neorv32_package is
   -- Stream Link Interface (SLINK) --
   constant slink_base_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffec0"; -- base address
   constant slink_size_c         : natural := 16*4; -- module's address space size in bytes
+  constant slink_ctrl_c         : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffec0";
+  constant slink_irq_c          : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffec4";
+  constant slink_rx_status_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffec8";
+  constant slink_tx_status_c    : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffecc";
+--constant slink_reserved_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffed0";
+--constant slink_reserved_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffed4";
+--constant slink_reserved_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffed8";
+--constant slink_reserved_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffedc";
+  constant slink_link0_c        : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffee0";
+  constant slink_link1_c        : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffee4";
+  constant slink_link2_c        : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffee8";
+  constant slink_link3_c        : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffeec";
+  constant slink_link4_c        : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffef0";
+  constant slink_link5_c        : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffef4";
+  constant slink_link6_c        : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffef7";
+  constant slink_link7_c        : std_ulogic_vector(data_width_c-1 downto 0) := x"fffffefc";
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff00"; -- base address

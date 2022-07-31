@@ -792,11 +792,12 @@ enum NEORV32_PWM_CTRL_enum {
 /**@{*/
 /** SLINK module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-  uint32_t       CTRL;          /**< offset 0: control register (#NEORV32_SLINK_CTRL_enum) */
-  const uint32_t reserved0[3];  /**< offset 4..12: reserved */
-  uint32_t       STATUS;        /**< offset 16: status register (#NEORV32_SLINK_STATUS_enum) */
-  const uint32_t reserved1[3];  /**< offset 20..28: reserved */
-  uint32_t       DATA[8];       /**< offset 32..60: stream link RX/TX data channels 0..7 */
+  uint32_t       CTRL;        /**< offset 0: control register (#NEORV32_SLINK_CTRL_enum) */
+  uint32_t       IRQ;         /**< offset 4: interrupt configuration register (#NEORV32_SLINK_IRQ_enum) */
+  const uint32_t RX_STATUS;   /**< offset 8: RX links status (#NEORV32_SLINK_RX_STATUS_enum) */
+  uint32_t       TX_STATUS;   /**< offset 12: interrupt configuration register (#NEORV32_SLINK_TX_STATUS_enum) */
+  const uint32_t reserved[4]; /**< offset 16..28: reserved */
+  uint32_t       DATA[8];     /**< offset 32..60: stream link RX/TX data channels 0..7 */
 } neorv32_slink_t;
 
 /** SLINK module base address */
@@ -807,38 +808,49 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** SLINK control register bits */
 enum NEORV32_SLINK_CTRL_enum {
-  SLINK_CTRL_EN            =  0, /**< SLINK control register(0) (r/w): SLINK controller enable */
+  SLINK_CTRL_EN          =  0, /**< SLINK control register(0) (r/w): SLINK controller enable */
 
-  SLINK_CTRL_RX_FIFO_S0    =  8, /**< SLINK control register( 8) (r/-): log2(RX FIFO size) bit 0 */
-  SLINK_CTRL_RX_FIFO_S1    =  9, /**< SLINK control register( 9) (r/-): log2(RX FIFO size) bit 1 */
-  SLINK_CTRL_RX_FIFO_S2    = 10, /**< SLINK control register(10) (r/-): log2(RX FIFO size) bit 2 */
-  SLINK_CTRL_RX_FIFO_S3    = 11, /**< SLINK control register(11) (r/-): log2(RX FIFO size) bit 3 */
+  SLINK_CTRL_RX_NUM_LSB  = 16, /**< SLINK control register(16) (r/-): number of available RX links bit 0 */
+  SLINK_CTRL_RX_NUM_MSB  = 19, /**< SLINK control register(19) (r/-): number of available RX links bit 3 */
+  SLINK_CTRL_TX_NUM_LSB  = 20, /**< SLINK control register(20) (r/-): number of available TX links bit 0 */
+  SLINK_CTRL_TX_NUM_MSB  = 23, /**< SLINK control register(23) (r/-): number of available TX links bit 3 */
 
-  SLINK_CTRL_TX_FIFO_S0    = 12, /**< SLINK control register(12) (r/-): log2(TX FIFO size) bit 0 */
-  SLINK_CTRL_TX_FIFO_S1    = 13, /**< SLINK control register(13) (r/-): log2(TX FIFO size) bit 1 */
-  SLINK_CTRL_TX_FIFO_S2    = 14, /**< SLINK control register(14) (r/-): log2(TX FIFO size) bit 2 */
-  SLINK_CTRL_TX_FIFO_S3    = 15, /**< SLINK control register(15) (r/-): log2(TX FIFO size) bit 3 */
-
-  SLINK_CTRL_RX_IRQ_EN_LSB = 16, /**< SLINK control register(23:16) (r/w): Enable interrupt for RX link i, LSB */
-  SLINK_CTRL_RX_IRQ_EN_MSB = 23, /**< SLINK control register(23:16) (r/w): Enable interrupt for RX link i, MSB */
-
-  SLINK_CTRL_TX_IRQ_EN_LSB = 24, /**< SLINK control register(31:24) (r/w): Enable interrupt for TX link i, LSB */
-  SLINK_CTRL_TX_IRQ_EN_MSB = 31  /**< SLINK control register(31:24) (r/w): Enable interrupt for TX link i, MSB */
+  SLINK_CTRL_RX_FIFO_LSB = 24, /**< SLINK control register(24) (r/-): log2(RX FIFO size) bit 0 */
+  SLINK_CTRL_RX_FIFO_MSB = 27, /**< SLINK control register(27) (r/-): log2(RX FIFO size) bit 3 */
+  SLINK_CTRL_TX_FIFO_LSB = 28, /**< SLINK control register(28) (r/-): log2(TX FIFO size) bit 0 */
+  SLINK_CTRL_TX_FIFO_MSB = 31  /**< SLINK control register(31) (r/-): log2(TX FIFO size) bit 3 */
 };
 
-/** SLINK status register bits */
-enum NEORV32_SLINK_STATUS_enum {
-  SLINK_STATUS_RX_AVAIL_LSB =  0, /**< SLINK status register(7:0) (r/-): RX link i FIFO is NOT empty (data available), LSB */
-  SLINK_STATUS_RX_AVAIL_MSB =  7, /**< SLINK status register(7:0) (r/-): RX link i FIFO is NOT empty (data available), MSB */
+/** SLINK interrupt configuration register bits */
+enum NEORV32_SLINK_IRQ_enum {
+  SLINK_IRQ_RX_LSB =  0, /**< SLINK IRQ configuration register(15:00) (r/w): RX link IRQ configuration, LSB */
+  SLINK_IRQ_RX_MSB = 15, /**< SLINK IRQ configuration register(15:00) (r/w): RX link IRQ configuration, MSB */
+  SLINK_IRQ_TX_LSB = 16, /**< SLINK IRQ configuration register(31:16) (r/w): TX link IRQ configuration, LSB */
+  SLINK_IRQ_TX_MSB = 31  /**< SLINK IRQ configuration register(31:16) (r/w): TX link IRQ configuration, MSB */
+};
 
-  SLINK_STATUS_TX_FREE_LSB  =  8, /**< SLINK status register(15:8) (r/-): TX link i FIFO is NOT full (ready to send), LSB */
-  SLINK_STATUS_TX_FREE_MSB  = 15, /**< SLINK status register(15:8) (r/-): TX link i FIFO is NOT full (ready to send), MSB */
+/** SLINK RX status register bits */
+enum NEORV32_SLINK_RX_STATUS_enum {
+  SLINK_RX_STATUS_EMPTY_LSB =  0, /**< SLINK RX status register(07:00) (r/-): RX link i FIFO empty, LSB */
+  SLINK_RX_STATUS_EMPTY_MSB =  7, /**< SLINK RX status register(07:00) (r/-): RX link i FIFO empty, MSB */
+  SLINK_RX_STATUS_HALF_LSB  =  8, /**< SLINK RX status register(15:08) (r/-): RX link i FIFO at least half full, LSB */
+  SLINK_RX_STATUS_HALF_MSB  = 15, /**< SLINK RX status register(15:08) (r/-): RX link i FIFO at least half full, MSB */
+  SLINK_RX_STATUS_FULL_LSB  = 16, /**< SLINK RX status register(23:16) (r/-): RX link i FIFO full, LSB */
+  SLINK_RX_STATUS_FULL_MSB  = 23, /**< SLINK RX status register(23:16) (r/-): RX link i FIFO full, MSB */
+  SLINK_RX_STATUS_LAST_LSB  = 24, /**< SLINK RX status register(31:24) (r/-): Set to indicate end of packet for RX link i, LSB */
+  SLINK_RX_STATUS_LAST_MSB  = 31  /**< SLINK RX status register(31:24) (r/-): Set to indicate end of packet for RX link i, MSB */
+};
 
-  SLINK_STATUS_RX_LAST_LSB  = 16, /**< SLINK status register(23:16) (r/-): Indicates end of packet for RX link i, LSB */
-  SLINK_STATUS_RX_LAST_MSB  = 23, /**< SLINK status register(23:16) (r/-): Indicates end of packet for RX link i, MSB */
-
-  SLINK_STATUS_TX_LAST_LSB  = 24, /**< SLINK status register(31:24) (r/w): Set to indicate end of packet for TX link i, LSB */
-  SLINK_STATUS_TX_LAST_MSB  = 31, /**< SLINK status register(31:24) (r/w): Set to indicate end of packet for TX link i, MSB */
+/** SLINK TX status register bits */
+enum NEORV32_SLINK_TX_STATUS_enum {
+  SLINK_TX_STATUS_EMPTY_LSB =  0, /**< SLINK TX status register(07:00) (r/-): TX link i FIFO empty, LSB */
+  SLINK_TX_STATUS_EMPTY_MSB =  7, /**< SLINK TX status register(07:00) (r/-): TX link i FIFO empty, MSB */
+  SLINK_TX_STATUS_HALF_LSB  =  8, /**< SLINK TX status register(15:08) (r/-): TX link i FIFO at least half full, LSB */
+  SLINK_TX_STATUS_HALF_MSB  = 15, /**< SLINK TX status register(15:08) (r/-): TX link i FIFO at least half full, MSB */
+  SLINK_TX_STATUS_FULL_LSB  = 16, /**< SLINK TX status register(23:16) (r/-): TX link i FIFO full, LSB */
+  SLINK_TX_STATUS_FULL_MSB  = 23, /**< SLINK TX status register(23:16) (r/-): TX link i FIFO full, MSB */
+  SLINK_TX_STATUS_LAST_LSB  = 24, /**< SLINK TX status register(31:24) (r/w): Set to mark end of packet for TX link i, LSB */
+  SLINK_TX_STATUS_LAST_MSB  = 31  /**< SLINK TX status register(31:24) (r/w): Set to mark end of packet for TX link i, MSB */
 };
 /**@}*/
 

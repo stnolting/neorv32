@@ -43,7 +43,7 @@
 
 // prototypes
 int  neorv32_slink_available(void);
-void neorv32_slink_setup(uint32_t rx_irq_en, uint32_t tx_irq_en);
+void neorv32_slink_setup(uint32_t irq_config);
 void neorv32_slink_enable(void);
 void neorv32_slink_disable(void);
 
