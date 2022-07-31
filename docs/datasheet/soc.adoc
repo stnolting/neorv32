@@ -909,6 +909,18 @@ implemented reducing access latency by one cycle but eventually increasing the c
 
 
 :sectnums!:
+===== _IO_SPI_FIFO_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **IO_SPI_FIFO** | _natural_ | 0
+3+| Depth of the <<_serial_peripheral_interface_controller_spi>> FIFO. Has to be zero or a power of two.
+Maximum value is 32*1024.
+|======
+
+
+:sectnums!:
 ===== _IO_TWI_EN_
 
 [cols="4,4,2"]
