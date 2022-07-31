@@ -110,7 +110,7 @@ int main()
 
   // configure SPI
   neorv32_spi_disable();
-  neorv32_spi_setup(0, 0, 0, 0);  // spi mode 0, 8bit
+  neorv32_spi_setup(0, 0, 0, 0, 0);  // spi mode 0, 8bit, IRQ when current PHY operation is done
   neorv32_spi_enable();
 
   // IRQ based data transfer

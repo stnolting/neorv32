@@ -1217,7 +1217,7 @@ int main() {
     cnt_test++;
 
     // configure SPI
-    neorv32_spi_setup(CLK_PRSC_2, 0, 0, 0);
+    neorv32_spi_setup(CLK_PRSC_2, 0, 0, 0, 0); // IRQ when SPI PHY becomes idle
 
     // enable fast interrupt
     neorv32_cpu_irq_enable(CSR_MIE_FIRQ6E);
