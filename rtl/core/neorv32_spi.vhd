@@ -44,6 +44,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_spi is
+  generic (
+    IO_SPI_FIFO : natural -- SPI RTX fifo depth, has to be zero or a power of two
+  );
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
@@ -74,27 +77,40 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant lo_abb_c : natural := index_size_f(spi_size_c); -- low address boundary bit
 
   -- control register --
-  constant ctrl_cs0_c       : natural :=  0; -- r/w: spi CS 0
-  constant ctrl_cs1_c       : natural :=  1; -- r/w: spi CS 1
-  constant ctrl_cs2_c       : natural :=  2; -- r/w: spi CS 2
-  constant ctrl_cs3_c       : natural :=  3; -- r/w: spi CS 3
-  constant ctrl_cs4_c       : natural :=  4; -- r/w: spi CS 4
-  constant ctrl_cs5_c       : natural :=  5; -- r/w: spi CS 5
-  constant ctrl_cs6_c       : natural :=  6; -- r/w: spi CS 6
-  constant ctrl_cs7_c       : natural :=  7; -- r/w: spi CS 7
-  constant ctrl_en_c        : natural :=  8; -- r/w: spi enable
-  constant ctrl_cpha_c      : natural :=  9; -- r/w: spi clock phase
-  constant ctrl_prsc0_c     : natural := 10; -- r/w: spi prescaler select bit 0
-  constant ctrl_prsc1_c     : natural := 11; -- r/w: spi prescaler select bit 1
-  constant ctrl_prsc2_c     : natural := 12; -- r/w: spi prescaler select bit 2
-  constant ctrl_size0_c     : natural := 13; -- r/w: data size lsb (00:  8-bit, 01: 16-bit)
-  constant ctrl_size1_c     : natural := 14; -- r/w: data size msb (10: 24-bit, 11: 32-bit)
-  constant ctrl_cpol_c      : natural := 15; -- r/w: spi clock polarity
-  constant ctrl_highspeed_c : natural := 16; -- r/w: spi high-speed mode enable (ignoring ctrl_prsc)
+  constant ctrl_cs0_c        : natural :=  0; -- r/w: spi CS 0
+  constant ctrl_cs1_c        : natural :=  1; -- r/w: spi CS 1
+  constant ctrl_cs2_c        : natural :=  2; -- r/w: spi CS 2
+  constant ctrl_cs3_c        : natural :=  3; -- r/w: spi CS 3
+  constant ctrl_cs4_c        : natural :=  4; -- r/w: spi CS 4
+  constant ctrl_cs5_c        : natural :=  5; -- r/w: spi CS 5
+  constant ctrl_cs6_c        : natural :=  6; -- r/w: spi CS 6
+  constant ctrl_cs7_c        : natural :=  7; -- r/w: spi CS 7
+  constant ctrl_en_c         : natural :=  8; -- r/w: spi enable
+  constant ctrl_cpha_c       : natural :=  9; -- r/w: spi clock phase
+  constant ctrl_prsc0_c      : natural := 10; -- r/w: spi prescaler select bit 0
+  constant ctrl_prsc1_c      : natural := 11; -- r/w: spi prescaler select bit 1
+  constant ctrl_prsc2_c      : natural := 12; -- r/w: spi prescaler select bit 2
+  constant ctrl_size0_c      : natural := 13; -- r/w: data size lsb (00:  8-bit, 01: 16-bit)
+  constant ctrl_size1_c      : natural := 14; -- r/w: data size msb (10: 24-bit, 11: 32-bit)
+  constant ctrl_cpol_c       : natural := 15; -- r/w: spi clock polarity
+  constant ctrl_highspeed_c  : natural := 16; -- r/w: spi high-speed mode enable (ignoring ctrl_prsc)
+  constant ctrl_irq0_c       : natural := 17; -- r/w: interrupt mode lsb (0-: PHY going idle)
+  constant ctrl_irq1_c       : natural := 18; -- r/w: interrupt mode msb (10: TX fifo less than half full, 11: TX fifo empty)
   --
-  constant ctrl_busy_c      : natural := 31; -- r/-: spi transceiver is busy
+  constant ctrl_fifo_size0_c : natural := 19; -- r/-: log2(FIFO size), bit 0
+  constant ctrl_fifo_size1_c : natural := 20; -- r/-: log2(FIFO size), bit 1
+  constant ctrl_fifo_size2_c : natural := 21; -- r/-: log2(FIFO size), bit 2
+  constant ctrl_fifo_size3_c : natural := 22; -- r/-: log2(FIFO size), bit 3
   --
-  signal ctrl : std_ulogic_vector(16 downto 0);
+  constant ctrl_tx_empty_c   : natural := 25; -- r/-: TX FIFO empty
+  constant ctrl_tx_half_c    : natural := 26; -- r/-: TX FIFO at least half full
+  constant ctrl_tx_full_c    : natural := 27; -- r/-: TX FIFO full
+  constant ctrl_rx_empty_c   : natural := 28; -- r/-: RX FIFO empty
+  constant ctrl_rx_half_c    : natural := 29; -- r/-: RX FIFO at least half full
+  constant ctrl_rx_full_c    : natural := 30; -- r/-: RX FIFO full
+  constant ctrl_busy_c       : natural := 31; -- r/-: spi PHY busy or TX FIFO not empty yet
+  --
+  signal ctrl : std_ulogic_vector(18 downto 0);
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -105,6 +121,9 @@ architecture neorv32_spi_rtl of neorv32_spi is
   -- clock generator --
   signal spi_clk_en : std_ulogic;
 
+  -- interrupt generator --
+  signal irq_gen : std_ulogic_vector(1 downto 0);
+
   -- spi transceiver --
   type rtx_engine_t is record
     state    : std_ulogic_vector(02 downto 0);
@@ -114,10 +133,30 @@ architecture neorv32_spi_rtl of neorv32_spi is
     bitcnt   : std_ulogic_vector(05 downto 0);
     bytecnt  : std_ulogic_vector(02 downto 0);
     sdi_sync : std_ulogic;
+    done     : std_ulogic;
   end record;
   signal rtx_engine : rtx_engine_t;
 
+  -- RX/TX FIFO interface --
+  type fifo_t is record
+    we    : std_ulogic; -- write enable
+    re    : std_ulogic; -- read enable
+    clear : std_ulogic; -- sync reset, high-active
+    wdata : std_ulogic_vector(31 downto 0); -- write data
+    rdata : std_ulogic_vector(31 downto 0); -- read data
+    avail : std_ulogic; -- data available?
+    free  : std_ulogic; -- free entry available?
+    half  : std_ulogic; -- half full
+  end record;
+  signal tx_fifo, rx_fifo : fifo_t;
+
 begin
+
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not (is_power_of_two_f(IO_SPI_FIFO) = false)  report "NEORV32 PROCESSOR CONFIG ERROR: SPI <IO_SPI_FIFO> has to be a power of two." severity error;
+  assert not (IO_SPI_FIFO > 2**15) report "NEORV32 PROCESSOR CONFIG ERROR: SPI <IO_SPI_FIFO> has to be 1..32768." severity error;
+
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -142,23 +181,14 @@ begin
       -- write access --
       if (wren = '1') then
         if (addr = spi_ctrl_addr_c) then -- control register
-          ctrl(ctrl_cs0_c)       <= data_i(ctrl_cs0_c);
-          ctrl(ctrl_cs1_c)       <= data_i(ctrl_cs1_c);
-          ctrl(ctrl_cs2_c)       <= data_i(ctrl_cs2_c);
-          ctrl(ctrl_cs3_c)       <= data_i(ctrl_cs3_c);
-          ctrl(ctrl_cs4_c)       <= data_i(ctrl_cs4_c);
-          ctrl(ctrl_cs5_c)       <= data_i(ctrl_cs5_c);
-          ctrl(ctrl_cs6_c)       <= data_i(ctrl_cs6_c);
-          ctrl(ctrl_cs7_c)       <= data_i(ctrl_cs7_c);
-          ctrl(ctrl_en_c)        <= data_i(ctrl_en_c);
-          ctrl(ctrl_cpha_c)      <= data_i(ctrl_cpha_c);
-          ctrl(ctrl_prsc0_c)     <= data_i(ctrl_prsc0_c);
-          ctrl(ctrl_prsc1_c)     <= data_i(ctrl_prsc1_c);
-          ctrl(ctrl_prsc2_c)     <= data_i(ctrl_prsc2_c);
-          ctrl(ctrl_size0_c)     <= data_i(ctrl_size0_c);
-          ctrl(ctrl_size1_c)     <= data_i(ctrl_size1_c);
-          ctrl(ctrl_cpol_c)      <= data_i(ctrl_cpol_c);
-          ctrl(ctrl_highspeed_c) <= data_i(ctrl_highspeed_c);
+          ctrl(ctrl_cs7_c downto ctrl_cs0_c)     <= data_i(ctrl_cs7_c downto ctrl_cs0_c);
+          ctrl(ctrl_en_c)                        <= data_i(ctrl_en_c);
+          ctrl(ctrl_cpha_c)                      <= data_i(ctrl_cpha_c);
+          ctrl(ctrl_prsc2_c downto ctrl_prsc0_c) <= data_i(ctrl_prsc2_c downto ctrl_prsc0_c);
+          ctrl(ctrl_size1_c downto ctrl_size0_c) <= data_i(ctrl_size1_c downto ctrl_size0_c);
+          ctrl(ctrl_cpol_c)                      <= data_i(ctrl_cpol_c);
+          ctrl(ctrl_highspeed_c)                 <= data_i(ctrl_highspeed_c);
+          ctrl(ctrl_irq1_c downto ctrl_irq0_c)   <= data_i(ctrl_irq1_c downto ctrl_irq0_c);
         end if;
       end if;
 
@@ -166,37 +196,32 @@ begin
       data_o <= (others => '0');
       if (rden = '1') then
         if (addr = spi_ctrl_addr_c) then -- control register
-          data_o(ctrl_cs0_c)       <= ctrl(ctrl_cs0_c);
-          data_o(ctrl_cs1_c)       <= ctrl(ctrl_cs1_c);
-          data_o(ctrl_cs2_c)       <= ctrl(ctrl_cs2_c);
-          data_o(ctrl_cs3_c)       <= ctrl(ctrl_cs3_c);
-          data_o(ctrl_cs4_c)       <= ctrl(ctrl_cs4_c);
-          data_o(ctrl_cs5_c)       <= ctrl(ctrl_cs5_c);
-          data_o(ctrl_cs6_c)       <= ctrl(ctrl_cs6_c);
-          data_o(ctrl_cs7_c)       <= ctrl(ctrl_cs7_c);
-          data_o(ctrl_en_c)        <= ctrl(ctrl_en_c);
-          data_o(ctrl_cpha_c)      <= ctrl(ctrl_cpha_c);
-          data_o(ctrl_prsc0_c)     <= ctrl(ctrl_prsc0_c);
-          data_o(ctrl_prsc1_c)     <= ctrl(ctrl_prsc1_c);
-          data_o(ctrl_prsc2_c)     <= ctrl(ctrl_prsc2_c);
-          data_o(ctrl_size0_c)     <= ctrl(ctrl_size0_c);
-          data_o(ctrl_size1_c)     <= ctrl(ctrl_size1_c);
-          data_o(ctrl_cpol_c)      <= ctrl(ctrl_cpol_c);
-          data_o(ctrl_highspeed_c) <= ctrl(ctrl_highspeed_c);
+          data_o(ctrl_cs7_c downto ctrl_cs0_c)               <= ctrl(ctrl_cs7_c downto ctrl_cs0_c);
+          data_o(ctrl_en_c)                                  <= ctrl(ctrl_en_c);
+          data_o(ctrl_cpha_c)                                <= ctrl(ctrl_cpha_c);
+          data_o(ctrl_prsc2_c downto ctrl_prsc0_c)           <= ctrl(ctrl_prsc2_c downto ctrl_prsc0_c);
+          data_o(ctrl_size1_c downto ctrl_size0_c)           <= ctrl(ctrl_size1_c downto ctrl_size0_c);
+          data_o(ctrl_cpol_c)                                <= ctrl(ctrl_cpol_c);
+          data_o(ctrl_highspeed_c)                           <= ctrl(ctrl_highspeed_c);
+          data_o(ctrl_irq1_c downto ctrl_irq0_c)             <= ctrl(ctrl_irq1_c downto ctrl_irq0_c);
+          data_o(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_SPI_FIFO), 4));
           --
-          data_o(ctrl_busy_c)      <= rtx_engine.busy;
+          data_o(ctrl_tx_empty_c) <= not tx_fifo.avail;
+          data_o(ctrl_tx_half_c)  <= tx_fifo.half;
+          data_o(ctrl_tx_full_c)  <= not tx_fifo.free;
+          data_o(ctrl_rx_empty_c) <= not rx_fifo.avail;
+          data_o(ctrl_rx_half_c)  <= rx_fifo.half;
+          data_o(ctrl_rx_full_c)  <= not rx_fifo.free;
+          data_o(ctrl_busy_c)     <= rtx_engine.busy or tx_fifo.avail; -- PHY busy or TX FIFO not empty yet
         else -- data register (spi_rtx_addr_c)
-          data_o <= rtx_engine.sreg;
+          data_o <= rx_fifo.rdata;
         end if;
       end if;
     end if;
   end process rw_access;
 
-  -- direct chip-select (CS), output is low-active --  
+  -- direct chip-select; low-active --  
   spi_csn_o(7 downto 0) <= not ctrl(ctrl_cs7_c downto ctrl_cs0_c);
-
-  -- trigger new SPI transmission --
-  rtx_engine.start <= '1' when (wren = '1') and (addr = spi_rtx_addr_c) else '0';
 
 
   -- Clock Selection ------------------------------------------------------------------------
@@ -218,13 +243,119 @@ begin
   end process data_size;
 
 
+  -- RXT FIFO -------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  rxt_fifo_gen:
+  if (IO_SPI_FIFO > 0) generate
+
+    -- TX FIFO ------------------------------------------------
+    tx_fifo_inst: neorv32_fifo
+    generic map (
+      FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
+      FIFO_WIDTH => 32,          -- size of data elements in fifo (32-bit only for simulation)
+      FIFO_RSYNC => false,       -- async read
+      FIFO_SAFE  => true         -- safe access
+    )
+    port map (
+      -- control --
+      clk_i   => clk_i,         -- clock, rising edge
+      rstn_i  => '1',           -- async reset, low-active
+      clear_i => tx_fifo.clear, -- sync reset, high-active
+      level_o => open,
+      half_o  => tx_fifo.half,  -- FIFO at least half-full
+      -- write port --
+      wdata_i => tx_fifo.wdata, -- write data
+      we_i    => tx_fifo.we,    -- write enable
+      free_o  => tx_fifo.free,  -- at least one entry is free when set
+      -- read port --
+      re_i    => tx_fifo.re,    -- read enable
+      rdata_o => tx_fifo.rdata, -- read data
+      avail_o => tx_fifo.avail  -- data available when set
+    );
+
+    -- reset --
+    tx_fifo.clear <= not ctrl(ctrl_en_c);
+
+    -- write access --
+    tx_fifo.we    <= '1' when (wren = '1') and (addr = spi_rtx_addr_c) else '0';
+    tx_fifo.wdata <= data_i;
+
+    -- read access --
+    tx_fifo.re       <= '1' when (rtx_engine.state = "100") and (tx_fifo.avail = '1') else '0';
+    rtx_engine.start <= tx_fifo.re;
+
+
+    -- RX FIFO ------------------------------------------------
+    rx_fifo_inst: neorv32_fifo
+    generic map (
+      FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
+      FIFO_WIDTH => 32,          -- size of data elements in fifo (32-bit only for simulation)
+      FIFO_RSYNC => false,       -- async read
+      FIFO_SAFE  => true         -- safe access
+    )
+    port map (
+      -- control --
+      clk_i   => clk_i,         -- clock, rising edge
+      rstn_i  => '1',           -- async reset, low-active
+      clear_i => rx_fifo.clear, -- sync reset, high-active
+      level_o => open,
+      half_o  => rx_fifo.half,  -- FIFO at least half-full
+      -- write port --
+      wdata_i => rx_fifo.wdata, -- write data
+      we_i    => rx_fifo.we,    -- write enable
+      free_o  => rx_fifo.free,  -- at least one entry is free when set
+      -- read port --
+      re_i    => rx_fifo.re,    -- read enable
+      rdata_o => rx_fifo.rdata, -- read data
+      avail_o => rx_fifo.avail  -- data available when set
+    );
+
+    -- reset --
+    rx_fifo.clear <= not ctrl(ctrl_en_c);
+
+    -- write access --
+    rx_fifo.wdata <= rtx_engine.sreg;
+    rx_fifo.we    <= rtx_engine.done;
+
+    -- read access --
+    rx_fifo.re <= '1' when (rden = '1') and (addr = spi_rtx_addr_c) else '0';
+
+  end generate;
+
+
+  -- no FIFO at all -----------------------------------------
+  rtx_fifo_terminate:
+  if (IO_SPI_FIFO = 0) generate
+    -- TX --
+    tx_fifo.clear <= '0';
+    tx_fifo.half  <= '0';
+    tx_fifo.wdata <= (others => '0');
+    tx_fifo.we    <= '0';
+    tx_fifo.free  <= '0';
+    tx_fifo.re    <= '0';
+    tx_fifo.rdata <= data_i;
+    tx_fifo.avail <= '0';
+    -- RX --
+    rx_fifo.clear <= '0';
+    rx_fifo.half  <= '0';
+    rx_fifo.wdata <= (others => '0');
+    rx_fifo.we    <= '0';
+    rx_fifo.free  <= '0';
+    rx_fifo.re    <= '0';
+    rx_fifo.rdata <= rtx_engine.sreg;
+    rx_fifo.avail <= '0';
+    -- SPI PHY trigger --
+    rtx_engine.start <= '1' when (wren = '1') and (addr = spi_rtx_addr_c) else '0'; -- trigger new SPI transmission
+  end generate;
+
+
   -- SPI Transceiver ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   spi_rtx_unit: process(clk_i)
   begin
     if rising_edge(clk_i) then
       -- defaults --
-      irq_o <= '0';
+      rtx_engine.done <= '0';
 
       -- serial engine --
       rtx_engine.state(2) <= ctrl(ctrl_en_c);
@@ -235,7 +366,7 @@ begin
           spi_sck_o <= ctrl(ctrl_cpol_c);
           rtx_engine.bitcnt <= (others => '0');
           if (rtx_engine.start = '1') then -- trigger new transmission
-            rtx_engine.sreg <= data_i;
+            rtx_engine.sreg <= tx_fifo.rdata;
             rtx_engine.state(1 downto 0) <= "01";
           end if;
 
@@ -263,7 +394,7 @@ begin
             rtx_engine.sreg <= rtx_engine.sreg(30 downto 0) & rtx_engine.sdi_sync; -- shift and set output
             if (rtx_engine.bitcnt(5 downto 3) = rtx_engine.bytecnt) then -- all bits transferred?
               spi_sck_o <= ctrl(ctrl_cpol_c);
-              irq_o <= '1'; -- interrupt!
+              rtx_engine.done              <= '1'; -- done!
               rtx_engine.state(1 downto 0) <= "00"; -- transmission done
             else
               spi_sck_o <= ctrl(ctrl_cpha_c) xor ctrl(ctrl_cpol_c);
@@ -294,6 +425,23 @@ begin
       when others => spi_sdo_o <= rtx_engine.sreg(31); -- 32-bit mode
     end case;
   end process spi_output;
+
+
+  -- Interrupt Generator --------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  irq_generator: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      case ctrl(ctrl_irq1_c downto ctrl_irq0_c) is
+        when "10"   => irq_gen <= irq_gen(0) & (not tx_fifo.half);  -- TX FIFO _becomes_ less than half full
+        when "11"   => irq_gen <= irq_gen(0) & (not tx_fifo.avail); -- TX FIFO _becomes_ empty
+        when others => irq_gen <= irq_gen(0) & rtx_engine.done;     -- current SPI transmission done (default)
+      end case;
+    end if;
+  end process irq_generator;
+
+  -- CPU interrupt --
+  irq_o <= '1' when (ctrl(ctrl_en_c) = '1') and (irq_gen = "01") else '0';
 
 
 end neorv32_spi_rtl;
