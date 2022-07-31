@@ -1245,7 +1245,7 @@ begin
   if (IO_SPI_EN = true) generate
     neorv32_spi_inst: neorv32_spi
     generic map (
-      IO_SPI_FIFO => 4 -- SPI RTX fifo depth, has to be zero or a power of two
+      IO_SPI_FIFO => IO_SPI_FIFO -- SPI RTX fifo depth, has to be zero or a power of two
     )
     port map (
       -- host access --
