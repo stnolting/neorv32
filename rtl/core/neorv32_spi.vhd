@@ -3,7 +3,6 @@
 -- # ********************************************************************************************* #
 -- # Frame format: 8/16/24/32-bit receive/transmit data, always MSB first, 2 clock modes,          #
 -- # 8 pre-scaled clocks (derived from system clock), 8 dedicated chip-select lines (low-active).  #
--- # Interrupt: "transfer done"                                                                    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -154,8 +153,10 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (is_power_of_two_f(IO_SPI_FIFO) = false)  report "NEORV32 PROCESSOR CONFIG ERROR: SPI <IO_SPI_FIFO> has to be a power of two." severity error;
-  assert not (IO_SPI_FIFO > 2**15) report "NEORV32 PROCESSOR CONFIG ERROR: SPI <IO_SPI_FIFO> has to be 1..32768." severity error;
+  assert not ((is_power_of_two_f(IO_SPI_FIFO) = false) and (IO_SPI_FIFO /= 0))
+  report "NEORV32 PROCESSOR CONFIG ERROR: SPI <IO_SPI_FIFO> has to be a power of two." severity error;
+  assert not (IO_SPI_FIFO > 2**15)
+  report "NEORV32 PROCESSOR CONFIG ERROR: SPI <IO_SPI_FIFO> has to be 1..32768." severity error;
 
 
   -- Access Control -------------------------------------------------------------------------
@@ -441,7 +442,7 @@ begin
   end process irq_generator;
 
   -- CPU interrupt --
-  irq_o <= '1' when (ctrl(ctrl_en_c) = '1') and (irq_gen = "01") else '0';
+  irq_o <= '1' when (ctrl(ctrl_en_c) = '1') and (irq_gen = "01") else '0'; -- rising edge detector
 
 
 end neorv32_spi_rtl;
