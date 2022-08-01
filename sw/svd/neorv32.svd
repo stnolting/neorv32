@@ -789,34 +789,22 @@
               <description>TX FIFO is empty</description>
             </field>
             <field>
+              <name>SPI_CTRL_RX_AVAIL</name>
+              <bitRange>[28:28]</bitRange>
+              <access>read-only</access>
+              <description>RX FIFO data available (RX FIFO not empty)</description>
+            </field>
+            <field>
               <name>SPI_CTRL_TX_HALF</name>
-              <bitRange>[26:26]</bitRange>
+              <bitRange>[29:29]</bitRange>
               <access>read-only</access>
               <description>TX FIFO is at least half full</description>
             </field>
             <field>
               <name>SPI_CTRL_TX_FULL</name>
-              <bitRange>[27:27]</bitRange>
-              <access>read-only</access>
-              <description>TX FIFO is full</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_RX_EMPTY</name>
-              <bitRange>[28:28]</bitRange>
-              <access>read-only</access>
-              <description>RX FIFO is empty</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_RX_HALF</name>
-              <bitRange>[29:29]</bitRange>
-              <access>read-only</access>
-              <description>RX FIFO is at least half full</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_RX_FULL</name>
               <bitRange>[30:30]</bitRange>
               <access>read-only</access>
-              <description>RX FIFO is full</description>
+              <description>TX FIFO is full</description>
             </field>
             <field>
               <name>SPI_CTRL_BUSY</name>

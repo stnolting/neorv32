@@ -1124,12 +1124,10 @@ enum NEORV32_SPI_CTRL_enum {
   SPI_CTRL_FIFO_LSB  = 19, /**< SPI control register(19) (r/-): log2(FIFO size), lsb */
   SPI_CTRL_FIFO_MSB  = 22, /**< SPI control register(22) (r/-): log2(FIFO size), msb */
 
-  SPI_CTRL_TX_EMPTY  = 25, /**< SPI control register(25) (r/-): TX FIFO empty */
-  SPI_CTRL_TX_HALF   = 26, /**< SPI control register(26) (r/-): TX FIFO at least half full */
-  SPI_CTRL_TX_FULL   = 27, /**< SPI control register(27) (r/-): TX FIFO full */
-  SPI_CTRL_RX_EMPTY  = 28, /**< SPI control register(28) (r/-): RX FIFO empty */
-  SPI_CTRL_RX_HALF   = 29, /**< SPI control register(29) (r/-): RX FIFO at least half full */
-  SPI_CTRL_RX_FULL   = 30, /**< SPI control register(30) (r/-): RX FIFO full */
+  SPI_CTRL_RX_AVAIL  = 27, /**< SPI control register(27) (r/-): RX FIFO data available (RX FIFO not empty) */
+  SPI_CTRL_TX_EMPTY  = 28, /**< SPI control register(28) (r/-): TX FIFO empty */
+  SPI_CTRL_TX_HALF   = 29, /**< SPI control register(29) (r/-): TX FIFO at least half full */
+  SPI_CTRL_TX_FULL   = 30, /**< SPI control register(30) (r/-): TX FIFO full */
   SPI_CTRL_BUSY      = 31  /**< SPI control register(31) (r/-): SPI busy flag */
 };
 /**@}*/
