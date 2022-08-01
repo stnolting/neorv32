@@ -187,7 +187,11 @@ begin
           ctrl(ctrl_size1_c downto ctrl_size0_c) <= data_i(ctrl_size1_c downto ctrl_size0_c);
           ctrl(ctrl_cpol_c)                      <= data_i(ctrl_cpol_c);
           ctrl(ctrl_highspeed_c)                 <= data_i(ctrl_highspeed_c);
-          ctrl(ctrl_irq1_c downto ctrl_irq0_c)   <= data_i(ctrl_irq1_c downto ctrl_irq0_c);
+          if (IO_SPI_FIFO > 0) then -- FIFO implemented: all IRQ options available
+            ctrl(ctrl_irq1_c downto ctrl_irq0_c) <= data_i(ctrl_irq1_c downto ctrl_irq0_c);
+          else -- fall back: only the busy state of the SPI PHY can be used as IRQ source if no FIFO is implemented
+            ctrl(ctrl_irq1_c downto ctrl_irq0_c) <= "00";
+          end if;
         end if;
       end if;
 
@@ -195,14 +199,14 @@ begin
       data_o <= (others => '0');
       if (rden = '1') then
         if (addr = spi_ctrl_addr_c) then -- control register
-          data_o(ctrl_cs7_c downto ctrl_cs0_c)               <= ctrl(ctrl_cs7_c downto ctrl_cs0_c);
-          data_o(ctrl_en_c)                                  <= ctrl(ctrl_en_c);
-          data_o(ctrl_cpha_c)                                <= ctrl(ctrl_cpha_c);
-          data_o(ctrl_prsc2_c downto ctrl_prsc0_c)           <= ctrl(ctrl_prsc2_c downto ctrl_prsc0_c);
-          data_o(ctrl_size1_c downto ctrl_size0_c)           <= ctrl(ctrl_size1_c downto ctrl_size0_c);
-          data_o(ctrl_cpol_c)                                <= ctrl(ctrl_cpol_c);
-          data_o(ctrl_highspeed_c)                           <= ctrl(ctrl_highspeed_c);
-          data_o(ctrl_irq1_c downto ctrl_irq0_c)             <= ctrl(ctrl_irq1_c downto ctrl_irq0_c);
+          data_o(ctrl_cs7_c downto ctrl_cs0_c)     <= ctrl(ctrl_cs7_c downto ctrl_cs0_c);
+          data_o(ctrl_en_c)                        <= ctrl(ctrl_en_c);
+          data_o(ctrl_cpha_c)                      <= ctrl(ctrl_cpha_c);
+          data_o(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl(ctrl_prsc2_c downto ctrl_prsc0_c);
+          data_o(ctrl_size1_c downto ctrl_size0_c) <= ctrl(ctrl_size1_c downto ctrl_size0_c);
+          data_o(ctrl_cpol_c)                      <= ctrl(ctrl_cpol_c);
+          data_o(ctrl_highspeed_c)                 <= ctrl(ctrl_highspeed_c);
+          data_o(ctrl_irq1_c downto ctrl_irq0_c)   <= ctrl(ctrl_irq1_c downto ctrl_irq0_c);
           --
           data_o(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_SPI_FIFO), 4));
           --
@@ -226,30 +230,8 @@ begin
     end if;
   end process rw_access;
 
-  -- direct chip-select; low-active --  
-  spi_csn_o(7 downto 0) <= not ctrl(ctrl_cs7_c downto ctrl_cs0_c);
 
-
-  -- Clock Selection ------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  clkgen_en_o <= ctrl(ctrl_en_c); -- clock generator enable
-  spi_clk_en  <= clkgen_i(to_integer(unsigned(ctrl(ctrl_prsc2_c downto ctrl_prsc0_c)))) or ctrl(ctrl_highspeed_c); -- clock select
-
-
-  -- Transmission Data Size -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  data_size: process(ctrl)
-  begin
-    case ctrl(ctrl_size1_c downto ctrl_size0_c) is
-      when "00"   => rtx_engine.bytecnt <= "001"; -- 1-byte mode
-      when "01"   => rtx_engine.bytecnt <= "010"; -- 2-byte mode
-      when "10"   => rtx_engine.bytecnt <= "011"; -- 3-byte mode
-      when others => rtx_engine.bytecnt <= "100"; -- 4-byte mode
-    end case;
-  end process data_size;
-
-
-  -- RXT FIFO -------------------------------------------------------------------------------
+  -- RTX FIFO ("Ring Buffer") ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   rxt_fifo_gen:
   if (IO_SPI_FIFO > 0) generate
@@ -418,19 +400,26 @@ begin
     end if;
   end process spi_rtx_unit;
 
-  -- busy flag --
+  -- clock generator --
+  clkgen_en_o <= ctrl(ctrl_en_c); -- clock generator enable
+  spi_clk_en  <= clkgen_i(to_integer(unsigned(ctrl(ctrl_prsc2_c downto ctrl_prsc0_c)))) or ctrl(ctrl_highspeed_c); -- clock select
+
+  -- PHY busy flag --
   rtx_engine.busy <= '0' when (rtx_engine.state(1 downto 0) = "00") else '1';
 
-  -- output bit select --
-  spi_output: process(ctrl, rtx_engine)
+  -- transmission size --
+  data_size: process(ctrl, rtx_engine)
   begin
     case ctrl(ctrl_size1_c downto ctrl_size0_c) is
-      when "00"   => spi_sdo_o <= rtx_engine.sreg(07); -- 8-bit mode
-      when "01"   => spi_sdo_o <= rtx_engine.sreg(15); -- 16-bit mode
-      when "10"   => spi_sdo_o <= rtx_engine.sreg(23); -- 24-bit mode
-      when others => spi_sdo_o <= rtx_engine.sreg(31); -- 32-bit mode
+      when "00"   => rtx_engine.bytecnt <= "001"; spi_sdo_o <= rtx_engine.sreg(07); -- 8-bit mode
+      when "01"   => rtx_engine.bytecnt <= "010"; spi_sdo_o <= rtx_engine.sreg(15); -- 16-bit mode
+      when "10"   => rtx_engine.bytecnt <= "011"; spi_sdo_o <= rtx_engine.sreg(23); -- 24-bit mode
+      when others => rtx_engine.bytecnt <= "100"; spi_sdo_o <= rtx_engine.sreg(31); -- 32-bit mode
     end case;
-  end process spi_output;
+  end process data_size;
+
+  -- direct chip-select; low-active --  
+  spi_csn_o(7 downto 0) <= not ctrl(ctrl_cs7_c downto ctrl_cs0_c);
 
 
   -- Interrupt Generator --------------------------------------------------------------------
