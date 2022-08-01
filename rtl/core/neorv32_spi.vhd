@@ -96,17 +96,15 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant ctrl_irq0_c       : natural := 17; -- r/w: interrupt mode lsb (0-: PHY going idle)
   constant ctrl_irq1_c       : natural := 18; -- r/w: interrupt mode msb (10: TX fifo less than half full, 11: TX fifo empty)
   --
-  constant ctrl_fifo_size0_c : natural := 19; -- r/-: log2(FIFO size), bit 0
+  constant ctrl_fifo_size0_c : natural := 19; -- r/-: log2(FIFO size), bit 0 (lsb)
   constant ctrl_fifo_size1_c : natural := 20; -- r/-: log2(FIFO size), bit 1
   constant ctrl_fifo_size2_c : natural := 21; -- r/-: log2(FIFO size), bit 2
-  constant ctrl_fifo_size3_c : natural := 22; -- r/-: log2(FIFO size), bit 3
+  constant ctrl_fifo_size3_c : natural := 22; -- r/-: log2(FIFO size), bit 3 (msb)
   --
-  constant ctrl_tx_empty_c   : natural := 25; -- r/-: TX FIFO empty
-  constant ctrl_tx_half_c    : natural := 26; -- r/-: TX FIFO at least half full
-  constant ctrl_tx_full_c    : natural := 27; -- r/-: TX FIFO full
-  constant ctrl_rx_empty_c   : natural := 28; -- r/-: RX FIFO empty
-  constant ctrl_rx_half_c    : natural := 29; -- r/-: RX FIFO at least half full
-  constant ctrl_rx_full_c    : natural := 30; -- r/-: RX FIFO full
+  constant ctrl_rx_avail_c   : natural := 27; -- r/-: RX FIFO data available (RX FIFO not empty)
+  constant ctrl_tx_empty_c   : natural := 28; -- r/-: TX FIFO empty
+  constant ctrl_tx_half_c    : natural := 29; -- r/-: TX FIFO at least half full
+  constant ctrl_tx_full_c    : natural := 30; -- r/-: TX FIFO full
   constant ctrl_busy_c       : natural := 31; -- r/-: spi PHY busy or TX FIFO not empty yet
   --
   signal ctrl : std_ulogic_vector(18 downto 0);
@@ -205,15 +203,22 @@ begin
           data_o(ctrl_cpol_c)                                <= ctrl(ctrl_cpol_c);
           data_o(ctrl_highspeed_c)                           <= ctrl(ctrl_highspeed_c);
           data_o(ctrl_irq1_c downto ctrl_irq0_c)             <= ctrl(ctrl_irq1_c downto ctrl_irq0_c);
+          --
           data_o(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_SPI_FIFO), 4));
           --
-          data_o(ctrl_tx_empty_c) <= not tx_fifo.avail;
-          data_o(ctrl_tx_half_c)  <= tx_fifo.half;
-          data_o(ctrl_tx_full_c)  <= not tx_fifo.free;
-          data_o(ctrl_rx_empty_c) <= not rx_fifo.avail;
-          data_o(ctrl_rx_half_c)  <= rx_fifo.half;
-          data_o(ctrl_rx_full_c)  <= not rx_fifo.free;
-          data_o(ctrl_busy_c)     <= rtx_engine.busy or tx_fifo.avail; -- PHY busy or TX FIFO not empty yet
+          if (IO_SPI_FIFO > 0) then
+            data_o(ctrl_rx_avail_c) <= rx_fifo.avail;
+            data_o(ctrl_tx_empty_c) <= not tx_fifo.avail;
+            data_o(ctrl_tx_half_c)  <= tx_fifo.half;
+            data_o(ctrl_tx_full_c)  <= not tx_fifo.free;
+            data_o(ctrl_busy_c)     <= rtx_engine.busy or tx_fifo.avail; -- PHY busy or TX FIFO not empty yet
+          else
+            data_o(ctrl_rx_avail_c) <= '0';
+            data_o(ctrl_tx_empty_c) <= '0';
+            data_o(ctrl_tx_half_c)  <= '0';
+            data_o(ctrl_tx_full_c)  <= '0';
+            data_o(ctrl_busy_c)     <= rtx_engine.busy;
+          end if;
         else -- data register (spi_rtx_addr_c)
           data_o <= rx_fifo.rdata;
         end if;
