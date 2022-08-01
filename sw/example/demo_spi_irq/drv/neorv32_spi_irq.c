@@ -160,7 +160,7 @@ int neorv32_spi_rw(t_neorv32_spi *self, void *spi, uint8_t csn, uint32_t num_ele
 
   uint32_t  uint32Buf;  // help variable
 
-v  if ( 0 != self->uint8IsBusy ) {
+  if ( 0 != self->uint8IsBusy ) {
     return 1; // transfer active, no new request
   }
 
