@@ -46,6 +46,22 @@
 
 
 /**********************************************************************//**
+ * Initializes SPI flow control handle. The data structure elements are listed in #t_neorv32_spi.
+ *
+ * @param[in,out] *self SPI driver common data handle. See #t_neorv32_spi.
+ **************************************************************************/
+void neorv32_spi_init(t_neorv32_spi *self) {
+
+  self->uint8IsBusy = 0;
+  self->uint32Fifo = (uint32_t) neorv32_spi_get_fifo_depth(); // acquire FIFO depth in elements
+  self->uint32Total = 0;
+  self->uint32Write = 0;  // write element count
+  self->uint32Read = 0; // read element count
+  return;
+}
+
+
+/**********************************************************************//**
  * SPI interrupt service routine. The data structure elements are listed in #t_neorv32_spi.
  *
  * @param[in,out] *self SPI driver common data handle. See #t_neorv32_spi.
@@ -53,46 +69,77 @@
 void neorv32_spi_isr(t_neorv32_spi *self) {
 
   uint32_t  uint32Buf;  // help variable
+  uint32_t  uint32Lim;  // loop limit
+
 
   neorv32_cpu_csr_write(CSR_MIP, ~(1<<SPI_FIRQ_PENDING)); // ack/clear FIRQ
 
-  if ( self->uint32CurrentElem == self->uint32TotalElem ) { // leave if accicently called ISR
+  if ( 0 == self->uint32Total ) { // leave if accidentally called ISR
     return;
   }
 
-  uint32Buf = 0;  // data type conversion
   switch (self->uint8SzElem) {
     case 1:   // uint8_t
-      ((uint8_t *) self->ptrSpiBuf)[self->uint32CurrentElem] = (uint8_t) (NEORV32_SPI.DATA & 0xff); // capture from last transfer
-      if ( self->uint32CurrentElem == self->uint32TotalElem-1 ) { // transfer done, no new data
-        neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
-        break;  // +1, signals complete
-      }
-      uint32Buf |= ((uint8_t *) self->ptrSpiBuf)[self->uint32CurrentElem+1];
-      NEORV32_SPI.DATA = uint32Buf; // next transfer
+    // read data from SPI from last transfer
+    for ( ; self->uint32Read<self->uint32Write; (self->uint32Read)++ ) {
+      ((uint8_t *) self->ptrSpiBuf)[self->uint32Read] = (uint8_t) (NEORV32_SPI.DATA & 0xff);  // capture from last transfer
+    }
+    if ( self->uint32Read == self->uint32Total ) {  // transfer done, no new data
+      neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
+      self->uint32Total = 0;
+      self->uint8IsBusy = 0;
       break;
+    }
+    // write next packet
+    uint32Lim = min(self->uint32Write+self->uint32Fifo, self->uint32Total);
+    for ( ; self->uint32Write<uint32Lim; (self->uint32Write)++ ) {
+      uint32Buf = 0;
+      uint32Buf |= ((uint8_t *) self->ptrSpiBuf)[self->uint32Write];
+      NEORV32_SPI.DATA = uint32Buf; // next transfer
+    }
+    break;
     case 2:   // uint16_t
-      ((uint16_t *) self->ptrSpiBuf)[self->uint32CurrentElem] = (uint16_t) (NEORV32_SPI.DATA & 0xffff); // capture from last transfer
-      if ( self->uint32CurrentElem == self->uint32TotalElem-1 ) { // transfer done, no new data
-        neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
-        break;  // +1, signals complete
-      }
-      uint32Buf |= ((uint16_t *) self->ptrSpiBuf)[self->uint32CurrentElem+1];
-      NEORV32_SPI.DATA = uint32Buf; // next transfer
+    // read data from SPI from last transfer
+    for ( ; self->uint32Read<self->uint32Write; (self->uint32Read)++ ) {
+      ((uint16_t *) self->ptrSpiBuf)[self->uint32Read] = (uint16_t) (NEORV32_SPI.DATA & 0xffff);  // capture from last transfer
+    }
+    if ( self->uint32Read == self->uint32Total ) {  // transfer done, no new data
+      neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
+      self->uint32Total = 0;
+      self->uint8IsBusy = 0;
       break;
+    }
+    // write next packet
+    uint32Lim = min(self->uint32Write+self->uint32Fifo, self->uint32Total);
+    for ( ; self->uint32Write<uint32Lim; (self->uint32Write)++ ) {
+      uint32Buf = 0;
+      uint32Buf |= ((uint16_t *) self->ptrSpiBuf)[self->uint32Write];
+      NEORV32_SPI.DATA = uint32Buf; // next transfer
+    }
+    break;
     case 4:   // uint32_t
-      ((uint32_t *) self->ptrSpiBuf)[self->uint32CurrentElem] = NEORV32_SPI.DATA; // capture from last transfer
-      if ( self->uint32CurrentElem == self->uint32TotalElem-1 ) { // transfer done, no new data
-        neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
-        break;  // +1, signals complete
-      }
-      uint32Buf = ((uint32_t *) self->ptrSpiBuf)[self->uint32CurrentElem+1];  // next transfer
-      NEORV32_SPI.DATA = uint32Buf; // next transfer
+    // read data from SPI from last transfer
+    for ( ; self->uint32Read<self->uint32Write; (self->uint32Read)++ ) {
+      ((uint32_t *) self->ptrSpiBuf)[self->uint32Read] = NEORV32_SPI.DATA;  // capture from last transfer
+    }
+    if ( self->uint32Read == self->uint32Total ) {  // transfer done, no new data
+      neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
+      self->uint32Total = 0;
+      self->uint8IsBusy = 0;
       break;
+    }
+    // write next packet
+    uint32Lim = min(self->uint32Write+self->uint32Fifo, self->uint32Total);
+    for ( ; self->uint32Write<uint32Lim; (self->uint32Write)++ ) {
+      uint32Buf = 0;
+      uint32Buf |= ((uint32_t *) self->ptrSpiBuf)[self->uint32Write];
+      NEORV32_SPI.DATA = uint32Buf; // next transfer
+    }
+    break;
     default:  // unknown
       return;
   }
-  (self->uint32CurrentElem)++;  // next element
+  return;
 }
 
 
@@ -113,33 +160,37 @@ int neorv32_spi_rw(t_neorv32_spi *self, void *spi, uint8_t csn, uint32_t num_ele
 
   uint32_t  uint32Buf;  // help variable
 
-  if ( (self->uint32CurrentElem != self->uint32TotalElem) || (0 != neorv32_spi_busy()) ) {
+v  if ( 0 != self->uint8IsBusy ) {
     return 1; // transfer active, no new request
   }
 
-  self->uint32CurrentElem = 0;
-  self->uint32TotalElem = num_elem;
+  self->uint32Total = num_elem;
+  self->uint32Write = 0;  // write element count
+  self->uint32Read = 0;   // read element count
   self->ptrSpiBuf = spi;
   self->uint8SzElem = data_byte;
   self->uint8Csn = csn;
+  self->uint8IsBusy = 1;  // mark as busy
 
-  uint32Buf = 0;
-  switch (self->uint8SzElem) {  // start first transfer, rest is handled by ISR
+  neorv32_spi_cs_en(self->uint8Csn);  // select SPI channel
+
+  for ( ; self->uint32Write<min(self->uint32Fifo, self->uint32Total); (self->uint32Write)++ ) { // Write in multiples of FIFO size
+    uint32Buf = 0;
+    switch (self->uint8SzElem) {  // start first transfer, rest is handled by ISR
     case 1:   // uint8_t
-      uint32Buf |= ((uint8_t *) self->ptrSpiBuf)[0];
+      uint32Buf |= ((uint8_t *) self->ptrSpiBuf)[self->uint32Write];
       break;
     case 2:   // uint16_t
-      uint32Buf |= ((uint16_t *) self->ptrSpiBuf)[0];
+      uint32Buf |= ((uint16_t *) self->ptrSpiBuf)[self->uint32Write];
       break;
     case 4:   // uint32_t
-      uint32Buf = ((uint32_t *) self->ptrSpiBuf)[0];
+      uint32Buf = ((uint32_t *) self->ptrSpiBuf)[self->uint32Write];
       break;
     default:
       return 2; // unsupported byte size
+    }
+    NEORV32_SPI.DATA = uint32Buf; // next transfer
   }
-
-  neorv32_spi_cs_en(self->uint8Csn);  // select SPI channel
-  NEORV32_SPI.DATA = uint32Buf;   // next transfer
 
   return 0; // successful end
 }
@@ -155,7 +206,7 @@ int neorv32_spi_rw(t_neorv32_spi *self, void *spi, uint8_t csn, uint32_t num_ele
  **************************************************************************/
 int neorv32_spi_rw_busy(t_neorv32_spi *self) {
 
-  if ( self->uint32TotalElem != self->uint32CurrentElem ) {
+  if ( 0 != self->uint8IsBusy ) {
     return 1;
   }
   return 0;
