@@ -315,7 +315,7 @@ void spi_setup(void) {
   }
   neorv32_uart0_printf("\n+ New SPI data size = %u byte(s)\n\n", tmp);
 
-  neorv32_spi_setup(spi_prsc, clk_phase, clk_pol, data_size);
+  neorv32_spi_setup(spi_prsc, clk_phase, clk_pol, data_size, 0);
   spi_configured = 1; // SPI is configured now
   spi_size = tmp;
 }

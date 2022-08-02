@@ -67,27 +67,21 @@ int neorv32_spi_available(void) {
  * @param[in] clk_phase Clock phase (0=sample on rising edge, 1=sample on falling edge).
  * @param[in] clk_polarity Clock polarity (when idle).
  * @param[in] data_size Data transfer size (0: 8-bit, 1: 16-bit, 2: 24-bit, 3: 32-bit).
+ * @param[in] irq_config Interrupt configuration (0,1: PHY transfer done, 2: TX FIFO becomes less than half full, 3: TX FIFO becomes empty).
  **************************************************************************/
-void neorv32_spi_setup(uint8_t prsc, uint8_t clk_phase, uint8_t clk_polarity, uint8_t data_size) {
+void neorv32_spi_setup(int prsc, int clk_phase, int clk_polarity, int data_size, int irq_config) {
 
   NEORV32_SPI.CTRL = 0; // reset
 
-  uint32_t ct_enable = 1;
-  ct_enable = ct_enable << SPI_CTRL_EN;
+  uint32_t tmp = 0;
+  tmp =  1                               << SPI_CTRL_EN;
+  tmp |= (uint32_t)(prsc         & 0x07) << SPI_CTRL_PRSC0;
+  tmp |= (uint32_t)(clk_phase    & 0x01) << SPI_CTRL_CPHA;
+  tmp |= (uint32_t)(clk_polarity & 0x01) << SPI_CTRL_CPOL;
+  tmp |= (uint32_t)(data_size    & 0x03) << SPI_CTRL_SIZE0;
+  tmp |= (uint32_t)(irq_config   & 0x03) << SPI_CTRL_IRQ0;
 
-  uint32_t ct_prsc = (uint32_t)(prsc & 0x07);
-  ct_prsc = ct_prsc << SPI_CTRL_PRSC0;
-
-  uint32_t ct_phase = (uint32_t)(clk_phase & 0x01);
-  ct_phase = ct_phase << SPI_CTRL_CPHA;
-
-  uint32_t ct_polarity = (uint32_t)(clk_polarity & 0x01);
-  ct_polarity = ct_polarity << SPI_CTRL_CPOL;
-
-  uint32_t ct_size = (uint32_t)(data_size & 0x03);
-  ct_size = ct_size << SPI_CTRL_SIZE0;
-
-  NEORV32_SPI.CTRL = ct_enable | ct_prsc | ct_phase | ct_polarity | ct_size;
+  NEORV32_SPI.CTRL = tmp;
 }
 
 
@@ -106,6 +100,18 @@ void neorv32_spi_disable(void) {
 void neorv32_spi_enable(void) {
 
   NEORV32_SPI.CTRL |= ((uint32_t)(1 << SPI_CTRL_EN));
+}
+
+
+/**********************************************************************//**
+ * Get SPI FIFO depth.
+ *
+ * @return FIFO depth (number of entries), zero if no FIFO implemented
+ **************************************************************************/
+int neorv32_spi_get_fifo_depth(void) {
+
+  uint32_t tmp = (NEORV32_SPI.CTRL >> SPI_CTRL_FIFO_LSB) & 0x0f;
+  return (int)(1 << tmp);
 }
 
 
@@ -138,7 +144,7 @@ void neorv32_spi_highspeed_disable(void) {
  *
  * @param cs Chip select line to activate (0..7).
  **************************************************************************/
-void neorv32_spi_cs_en(uint8_t cs) {
+void neorv32_spi_cs_en(int cs) {
 
   uint32_t cs_mask = (uint32_t)(1 << (cs & 0x07));
   cs_mask = cs_mask << SPI_CTRL_CS0;
@@ -153,7 +159,7 @@ void neorv32_spi_cs_en(uint8_t cs) {
  *
  * @param cs Chip select line to deactivate (0..7).
  **************************************************************************/
-void neorv32_spi_cs_dis(uint8_t cs) {
+void neorv32_spi_cs_dis(int cs) {
 
   uint32_t cs_mask = (uint32_t)(1 << (cs & 0x07));
   cs_mask = cs_mask << SPI_CTRL_CS0;

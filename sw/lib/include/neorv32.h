@@ -1119,7 +1119,15 @@ enum NEORV32_SPI_CTRL_enum {
   SPI_CTRL_SIZE1     = 14, /**< SPI control register(14) (r/w): Transfer data size msb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
   SPI_CTRL_CPOL      = 15, /**< SPI control register(15) (r/w): Clock polarity */
   SPI_CTRL_HIGHSPEED = 16, /**< SPI control register(16) (r/w): SPI high-speed mode enable (ignoring SPI_CTRL_PRSC) */
+  SPI_CTRL_IRQ0      = 17, /**< SPI control register(17) (r/w): Interrupt configuration lsb (0-: PHY going idle) */
+  SPI_CTRL_IRQ1      = 18, /**< SPI control register(18) (r/w): Interrupt configuration lsb (10: TX fifo less than half full, 11: TX fifo empty) */
+  SPI_CTRL_FIFO_LSB  = 19, /**< SPI control register(19) (r/-): log2(FIFO size), lsb */
+  SPI_CTRL_FIFO_MSB  = 22, /**< SPI control register(22) (r/-): log2(FIFO size), msb */
 
+  SPI_CTRL_RX_AVAIL  = 27, /**< SPI control register(27) (r/-): RX FIFO data available (RX FIFO not empty) */
+  SPI_CTRL_TX_EMPTY  = 28, /**< SPI control register(28) (r/-): TX FIFO empty */
+  SPI_CTRL_TX_HALF   = 29, /**< SPI control register(29) (r/-): TX FIFO at least half full */
+  SPI_CTRL_TX_FULL   = 30, /**< SPI control register(30) (r/-): TX FIFO full */
   SPI_CTRL_BUSY      = 31  /**< SPI control register(31) (r/-): SPI busy flag */
 };
 /**@}*/

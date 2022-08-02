@@ -772,6 +772,41 @@
               <description>SPI high-speed mode enable (ignoring SPI_CTRL_PRSC)</description>
             </field>
             <field>
+              <name>SPI_CTRL_IRQ</name>
+              <bitRange>[18:17]</bitRange>
+              <description>Interrupt configuration</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_FIFO</name>
+              <bitRange>[22:19]</bitRange>
+              <access>read-only</access>
+              <description>log2(FIFO size)</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_TX_EMPTY</name>
+              <bitRange>[25:25]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO is empty</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_RX_AVAIL</name>
+              <bitRange>[28:28]</bitRange>
+              <access>read-only</access>
+              <description>RX FIFO data available (RX FIFO not empty)</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_TX_HALF</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO is at least half full</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_TX_FULL</name>
+              <bitRange>[30:30]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO is full</description>
+            </field>
+            <field>
               <name>SPI_CTRL_BUSY</name>
               <bitRange>[31:31]</bitRange>
               <access>read-only</access>

@@ -278,7 +278,7 @@ int main(void) {
 #if (SPI_EN != 0)
   // setup SPI for 8-bit, clock-mode 0
   if (neorv32_spi_available()) {
-    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0);
+    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0, 0);
   }
 #endif
 
