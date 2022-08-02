@@ -174,23 +174,22 @@ int neorv32_spi_rw(t_neorv32_spi *self, void *spi, uint8_t csn, uint32_t num_ele
 
   neorv32_spi_cs_en(self->uint8Csn);  // select SPI channel
 
-  for ( ; self->uint32Write<min(self->uint32Fifo, self->uint32Total); (self->uint32Write)++ ) { // Write in multiples of FIFO size
-    uint32Buf = 0;
-    switch (self->uint8SzElem) {  // start first transfer, rest is handled by ISR
+  uint32Buf = 0;
+  switch (self->uint8SzElem) {  // start first transfer, rest is handled by ISR; can only sent one element, otherwise clash with ISR
     case 1:   // uint8_t
-      uint32Buf |= ((uint8_t *) self->ptrSpiBuf)[self->uint32Write];
+      uint32Buf |= ((uint8_t *) self->ptrSpiBuf)[0];
       break;
     case 2:   // uint16_t
-      uint32Buf |= ((uint16_t *) self->ptrSpiBuf)[self->uint32Write];
+      uint32Buf |= ((uint16_t *) self->ptrSpiBuf)[0];
       break;
     case 4:   // uint32_t
-      uint32Buf = ((uint32_t *) self->ptrSpiBuf)[self->uint32Write];
+      uint32Buf = ((uint32_t *) self->ptrSpiBuf)[0];
       break;
     default:
       return 2; // unsupported byte size
     }
+    (self->uint32Write)++;
     NEORV32_SPI.DATA = uint32Buf; // next transfer
-  }
 
   return 0; // successful end
 }
