@@ -60,35 +60,35 @@ include::rationale.adoc[]
 === Project Key Features
 
 * all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
-* completely described in behavioral, platform-independent VHDL - no primitives, macros, etc.
+* completely described in behavioral, platform-independent VHDL - no vendor- or technology-specific primitives, attributed, macros, libraries, etc. are used at all
 * extensive configuration options for adapting the processor to the requirements of the application
 * highly (https://stnolting.github.io/neorv32/ug/#_comparative_summary)[extensible hardware] - on CPU, SoC and system level
 * aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-performance trade-off
 * FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the register file)
-* optimized for high clock frequency to ease timing closure
+* optimized for high clock frequencies to ease timing closure and integration
 * from zero to _"hello world!"_ - completely open source and documented
 * easy to use even for FPGA/RISC-V starters – intended to _work out of the box_
 * **NEORV32 CPU**: 32-bit `rv32i` RISC-V CPU
-** RISC-V compatibility: passes the official architecture tests
-** base architecture + privileged architecture (optional) + ISA extensions (optional)
-** option to add custom RISC-V instructions (as custom ISA extension)
+** fully RISC-V compatible: passes the https://github.com/stnolting/neorv32-verif[official architecture tests]
+** base ISA + privileged ISA (optional) + several ISA extensions (optional)
+** option to add custom RISC-V instructions as custom ISA extension
 ** rich set of customization options (ISA extensions, design goal: performance / area (/ energy), ...)
-** aims to support <<_full_virtualization>> capabilities (CPU _and_ SoC) to increase execution safety
+** aims to support <<_full_virtualization>> capabilities to increase execution safety
 ** official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]
 * **NEORV32 Processor (SoC)**: highly-configurable full-scale microcontroller-like processor system
 ** based on the NEORV32 CPU
 ** optional serial interfaces (UARTs, TWI, SPI)
-** optional timers and counters (WDT, MTIME)
-** optional general purpose IO and PWM and native NeoPixel (c) compatible smart LED interface
+** optional timers and counters (watchdog, system timer)
+** optional general purpose IO and PWM; a native NeoPixel(c)-compatible smart LED interface
 ** optional embedded memories / caches for data, instructions and bootloader
 ** optional external memory interface (Wishbone / AXI4-Lite) and stream link interface (AXI4-Stream) for custom connectivity
-** optional execute in place (XIP) module
+** optional execute_in_place (XIP) module to execute code _directly_ form external SPI flash
 ** on-chip debugger compatible with OpenOCD and gdb including hardware trigger module
 * **Software framework**
-** GCC-based toolchain - prebuilt toolchains available; application compilation based on GNU makefiles
-** internal bootloader with serial user interface
-** core libraries for high-level usage of the provided functions and peripherals
-** runtime environment and several example programs
+** GCC-based toolchain - https://github.com/stnolting/riscv-gcc-prebuilt[prebuilt toolchains available]; application compilation based on GNU makefiles
+** internal bootloader with serial user interface (via UART)
+** core libraries and HAL for high-level usage of the provided functions and peripherals
+** processor-specific runtime environment and several example programs
 ** doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
 ** FreeRTOS port + demos available
 
