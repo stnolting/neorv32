@@ -246,18 +246,14 @@ The following default compiler flags are used for compiling an application. Thes
 [cols="<3,<9"]
 [grid="none"]
 |=======================
-| `-Wall`                  | Enable all compiler warnings.
-| `-ffunction-sections`    | Put functions and data segment in independent sections. This allows a code optimization as dead code and unused data can be easily removed.
-| `-nostartfiles`          | Do not use the default start code. Instead, use the NEORV32-specific start-up code (`sw/common/crt0.S`).
-| `-Wl,--gc-sections`      | Make the linker perform dead code elimination.
-| `-lm`                    | Include/link with `math.h`.
-| `-lc`                    | Search for the standard C library when linking.
-| `-lgcc`                  | Make sure we have no unresolved references to internal GCC library subroutines.
-| `-mno-fdiv`              | Use built-in software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
-| `-falign-functions=4` .4+| Force a 32-bit alignment of functions and labels (branch/jump/call targets). This increases performance as it simplifies instruction fetch when using the C extension. As a drawback this will also slightly increase the program code.
-| `-falign-labels=4`
-| `-falign-loops=4`
-| `-falign-jumps=4`
+| `-Wall`               | Enable all compiler warnings.
+| `-ffunction-sections` | Put functions and data segment in independent sections. This allows a code optimization as dead code and unused data can be easily removed.
+| `-nostartfiles`       | Do not use the default start code. Instead, the NEORV32-specific start-up code (`sw/common/crt0.S`) is used (pulled-in by the linker script).
+| `-Wl,--gc-sections`   | Make the linker perform dead code elimination.
+| `-lm`                 | Include/link with `math.h`.
+| `-lc`                 | Search for the standard C library when linking.
+| `-lgcc`               | Make sure we have no unresolved references to internal GCC library subroutines.
+| `-mno-fdiv`           | Use built-in software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
 |=======================
 
 :sectnums:
