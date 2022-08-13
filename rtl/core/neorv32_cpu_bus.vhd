@@ -250,7 +250,7 @@ begin
       arbiter.pmp_r_err <= ld_pmp_fault;
       arbiter.pmp_w_err <= st_pmp_fault;
       if (arbiter.pend = '0') then -- idle
-        if (ctrl_i(ctrl_bus_wr_c) = '1') or (ctrl_i(ctrl_bus_rd_c) = '1') then -- start bus access
+        if (ctrl_i(ctrl_bus_req_c) = '1') then -- start bus access
           arbiter.pend <= '1';
         end if;
         arbiter.err <= '0';
@@ -279,8 +279,8 @@ begin
   be_store_o <= '1' when (arbiter.pend = '1') and (ctrl_i(ctrl_ir_opcode7_5_c) = '1') and (arbiter.err = '1') else '0';
 
   -- data bus control interface (all source signals are driven by registers) --
-  d_bus_we_o    <= ctrl_i(ctrl_bus_wr_c) and (not misaligned) and (not arbiter.pmp_w_err);
-  d_bus_re_o    <= ctrl_i(ctrl_bus_rd_c) and (not misaligned) and (not arbiter.pmp_r_err);
+  d_bus_we_o    <= ctrl_i(ctrl_bus_req_c) and (    ctrl_i(ctrl_ir_opcode7_5_c)) and (not misaligned) and (not arbiter.pmp_w_err);
+  d_bus_re_o    <= ctrl_i(ctrl_bus_req_c) and (not ctrl_i(ctrl_ir_opcode7_5_c)) and (not misaligned) and (not arbiter.pmp_r_err);
   d_bus_fence_o <= ctrl_i(ctrl_bus_fence_c);
   d_bus_priv_o  <= ctrl_i(ctrl_bus_priv_c);
 
