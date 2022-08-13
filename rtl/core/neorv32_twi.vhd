@@ -174,7 +174,7 @@ begin
           data_o(ctrl_ack_c)     <= not arbiter.rtx_sreg(0);
           data_o(ctrl_busy_c)    <= arbiter.busy;
         else -- twi_rtx_addr_c =>
-          data_o(7 downto 0)   <= arbiter.rtx_sreg(8 downto 1);
+          data_o(7 downto 0) <= arbiter.rtx_sreg(8 downto 1);
         end if;
       end if;
     end if;
@@ -193,12 +193,11 @@ begin
   clock_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      clk_gen.clk_tick_ff <= clk_gen.clk_tick;
+      clk_gen.clk_tick_ff  <= clk_gen.clk_tick;
+      clk_gen.phase_gen_ff <= clk_gen.phase_gen;
       if (arbiter.state(2) = '0') or (arbiter.state(1 downto 0) = "00") then -- offline or idle
-        clk_gen.phase_gen_ff <= "0001";
-        clk_gen.phase_gen    <= "0001"; -- make sure to start with a new phase, bit stepping: 0-1-2-3
+        clk_gen.phase_gen <= "0001"; -- make sure to start with a new phase, bit stepping: 0-1-2-3
       else
-        clk_gen.phase_gen_ff <= clk_gen.phase_gen;
         if (clk_gen.clk_tick_ff = '1') and (clk_gen.halt = '0') then -- clock tick and no clock stretching detected
           clk_gen.phase_gen <= clk_gen.phase_gen(2 downto 0) & clk_gen.phase_gen(3); -- rotate left
         end if;
