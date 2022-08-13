@@ -63,7 +63,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070408"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070409"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -371,42 +371,41 @@ package neorv32_package is
   constant ctrl_cp_trig4_c      : natural := 32; -- trigger CP4
   constant ctrl_cp_trig5_c      : natural := 33; -- trigger CP5
   -- bus interface --
-  constant ctrl_bus_rd_c        : natural := 34; -- read data request
-  constant ctrl_bus_wr_c        : natural := 35; -- write data request
-  constant ctrl_bus_mo_we_c     : natural := 36; -- memory address and data output register write enable
-  constant ctrl_bus_fence_c     : natural := 37; -- executed fence operation
-  constant ctrl_bus_fencei_c    : natural := 38; -- executed fence.i operation
-  constant ctrl_bus_priv_c      : natural := 39; -- effective privilege level for load/stores
+  constant ctrl_bus_req_c       : natural := 34; -- trigger memory request
+  constant ctrl_bus_mo_we_c     : natural := 35; -- memory address and data output register write enable
+  constant ctrl_bus_fence_c     : natural := 36; -- fence operation
+  constant ctrl_bus_fencei_c    : natural := 37; -- fence.i operation
+  constant ctrl_bus_priv_c      : natural := 38; -- effective privilege level for load/store
   -- instruction word control blocks --
-  constant ctrl_ir_funct3_0_c   : natural := 40; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 41; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 42; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 43; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 44; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 45; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 46; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 47; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 48; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 49; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 50; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 51; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 52; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 53; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 54; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 55; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 56; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 57; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 58; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 59; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 60; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 61; -- opcode7 bit 6
+  constant ctrl_ir_funct3_0_c   : natural := 39; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 40; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 41; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 42; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 43; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 44; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 45; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 46; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 47; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 48; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 49; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 50; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 51; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 52; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 53; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 54; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 55; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 56; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 57; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 58; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 59; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 60; -- opcode7 bit 6
   -- cpu status --
-  constant ctrl_priv_mode_c     : natural := 62; -- effective privilege mode
-  constant ctrl_sleep_c         : natural := 63; -- set when CPU is in sleep mode
-  constant ctrl_trap_c          : natural := 64; -- set when CPU is entering trap execution
-  constant ctrl_debug_running_c : natural := 65; -- set when CPU is in debug mode
+  constant ctrl_priv_mode_c     : natural := 61; -- effective privilege mode
+  constant ctrl_sleep_c         : natural := 62; -- set when CPU is in sleep mode
+  constant ctrl_trap_c          : natural := 63; -- set when CPU is entering trap execution
+  constant ctrl_debug_running_c : natural := 64; -- set when CPU is in debug mode
   -- control bus size --
-  constant ctrl_width_c         : natural := 66; -- control bus size
+  constant ctrl_width_c         : natural := 65; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -789,14 +788,14 @@ package neorv32_package is
   -- machine extended ISA extensions information --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
 
-  -- CPU Co-Processor IDs (one-hot!) --------------------------------------------------------
+  -- CPU Co-Processor IDs -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant cp_sel_shifter_c  : std_ulogic_vector(5 downto 0) := "000001"; -- CP0: shift operations (base ISA)
-  constant cp_sel_muldiv_c   : std_ulogic_vector(5 downto 0) := "000010"; -- CP1: multiplication/division operations ('M' extensions)
-  constant cp_sel_bitmanip_c : std_ulogic_vector(5 downto 0) := "000100"; -- CP2: bit manipulation ('B' extensions)
-  constant cp_sel_fpu_c      : std_ulogic_vector(5 downto 0) := "001000"; -- CP3: floating-point unit ('Zfinx' extension)
-  constant cp_sel_cfu_c      : std_ulogic_vector(5 downto 0) := "010000"; -- CP4: custom instructions CFU ('Zxcfu' extension)
---constant cp_sel_res5_c     : std_ulogic_vector(5 downto 0) := "100000"; -- CP5: reserved
+  constant cp_sel_shifter_c  : natural := 0; -- CP0: shift operations (base ISA)
+  constant cp_sel_muldiv_c   : natural := 1; -- CP1: multiplication/division operations ('M' extensions)
+  constant cp_sel_bitmanip_c : natural := 2; -- CP2: bit manipulation ('B' extensions)
+  constant cp_sel_fpu_c      : natural := 3; -- CP3: floating-point unit ('Zfinx' extension)
+  constant cp_sel_cfu_c      : natural := 4; -- CP4: custom instructions CFU ('Zxcfu' extension)
+--constant cp_sel_res5_c     : natural := 5; -- CP5: reserved
 
   -- ALU Function Codes [DO NOT CHANGE ENCODING!] -------------------------------------------
   -- -------------------------------------------------------------------------------------------

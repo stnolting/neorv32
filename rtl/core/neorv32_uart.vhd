@@ -616,6 +616,7 @@ begin
             char_v := 0;
           end if;
 
+          -- ASCII output --
           if (char_v /= 10) and (char_v /= 13) then -- skip line breaks - they are issued via "writeline"
             if (sim_screen_output_en_c = true) then
               write(line_screen_v, character'val(char_v));
@@ -623,9 +624,7 @@ begin
             if (sim_text_output_en_c = true) then
               write(line_text_v, character'val(char_v));
             end if;
-          end if;
-
-          if (char_v = 10) then -- line break: write to screen and text file
+          elsif (char_v = 10) then -- line break: write to screen and text file
             if (sim_screen_output_en_c = true) then
               writeline(output, line_screen_v);
             end if;

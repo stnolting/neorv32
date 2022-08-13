@@ -140,7 +140,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   constant hpm_cnt_hi_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0));
 
   -- instruction fetch engine --
-  type fetch_engine_state_t is (S_RESTART, S_REQUEST, S_PENDING, S_WAIT); -- better use one-hot encoding
+  type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING, IF_WAIT); -- better use one-hot encoding
   type fetch_engine_t is record
     state      : fetch_engine_state_t;
     state_prev : fetch_engine_state_t;
@@ -385,8 +385,8 @@ begin
   fetch_engine_fsm: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      fetch_engine.state      <= S_RESTART;
-      fetch_engine.state_prev <= S_RESTART;
+      fetch_engine.state      <= IF_RESTART;
+      fetch_engine.state_prev <= IF_RESTART;
       fetch_engine.restart    <= '1'; -- set to reset IPB
       fetch_engine.unaligned  <= '0'; -- always start at aligned address after reset
       fetch_engine.pc         <= (others => '0');
@@ -396,7 +396,7 @@ begin
       fetch_engine.state_prev <= fetch_engine.state;
 
       -- restart request buffer --
-      if (fetch_engine.state = S_RESTART) then -- restart done
+      if (fetch_engine.state = IF_RESTART) then -- restart done
         fetch_engine.restart <= '0';
       else -- buffer request
         fetch_engine.restart <= fetch_engine.restart or fetch_engine.reset;
@@ -405,48 +405,48 @@ begin
       -- fsm --
       case fetch_engine.state is
 
-        when S_RESTART => -- set new fetch start address
+        when IF_RESTART => -- set new fetch start address
         -- ------------------------------------------------------------
           fetch_engine.pc        <= execute_engine.pc(data_width_c-1 downto 2) & "00"; -- initialize with "real" PC, 32-bit aligned
           fetch_engine.unaligned <= execute_engine.pc(1);
-          fetch_engine.state     <= S_REQUEST;
+          fetch_engine.state     <= IF_REQUEST;
 
-        when S_REQUEST => -- request new 32-bit-aligned instruction word
+        when IF_REQUEST => -- request new 32-bit-aligned instruction word
         -- ------------------------------------------------------------
           fetch_engine.pmp_err <= i_pmp_fault_i;
-          fetch_engine.state   <= S_PENDING;
+          fetch_engine.state   <= IF_PENDING;
 
-        when S_PENDING => -- wait for bus response and write instruction data to prefetch buffer
+        when IF_PENDING => -- wait for bus response and write instruction data to prefetch buffer
         -- ------------------------------------------------------------
           if (fetch_engine.resp = '1') then -- wait for bus response
             fetch_engine.pc        <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
             fetch_engine.unaligned <= '0';
             fetch_engine.pmp_err   <= '0';
             if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
-              fetch_engine.state <= S_RESTART;
+              fetch_engine.state <= IF_RESTART;
             elsif (ipb.half /= "00") or (CPU_IPB_ENTRIES < 2) or -- no "safe" space left in IPB
                   -- > this is something like a simple branch prediction (predict "always taken"):
                   -- > do not trigger new instruction fetch when a branch instruction is executed
                   (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_branch_c) or -- might be taken
                   (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_jal_c) or    -- will be taken
                   (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_jalr_c) then -- will be taken
-              fetch_engine.state <= S_WAIT;
+              fetch_engine.state <= IF_WAIT;
             else -- request next instruction word
-              fetch_engine.state <= S_REQUEST;
+              fetch_engine.state <= IF_REQUEST;
             end if;
           end if;
 
-        when S_WAIT => -- wait for free IPB space 
+        when IF_WAIT => -- wait for free IPB space 
         -- ------------------------------------------------------------
           if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
-            fetch_engine.state <= S_RESTART;
+            fetch_engine.state <= IF_RESTART;
           elsif (ipb.free = "11") then -- free entry in IPB (both buffers)
-            fetch_engine.state <= S_REQUEST; -- request next instruction word
+            fetch_engine.state <= IF_REQUEST; -- request next instruction word
           end if;
 
         when others => -- undefined
         -- ------------------------------------------------------------
-          fetch_engine.state <= S_RESTART;
+          fetch_engine.state <= IF_RESTART;
 
       end case;
     end if;
@@ -456,7 +456,7 @@ begin
   i_bus_addr_o <= fetch_engine.pc(data_width_c-1 downto 2) & "00"; -- 32-bit aligned
 
   -- instruction fetch (read) request --
-  i_bus_re_o <= '1' when (fetch_engine.state = S_REQUEST) else '0';
+  i_bus_re_o <= '1' when (fetch_engine.state = IF_REQUEST) else '0';
 
   -- unaligned access error (no alignment exceptions possible when using C-extension) --
   fetch_engine.a_err <= '1' when (fetch_engine.unaligned = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
@@ -469,9 +469,9 @@ begin
   ipb.wdata(1) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(31 downto 16);
 
   -- IPB write enable --
-  ipb.we(0) <= '1' when (fetch_engine.state = S_PENDING) and (fetch_engine.resp = '1') and
+  ipb.we(0) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') and
                         ((fetch_engine.unaligned = '0') or (CPU_EXTENSION_RISCV_C = false)) else '0';
-  ipb.we(1) <= '1' when (fetch_engine.state = S_PENDING) and (fetch_engine.resp = '1') else '0';
+  ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
 
 
 -- ****************************************************************************************************************************
@@ -756,8 +756,6 @@ begin
     ctrl_o <= ctrl;
     -- "commit" signals --
     ctrl_o(ctrl_rf_wb_en_c) <= ctrl(ctrl_rf_wb_en_c) and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- prevent write if illegal instruction
-    ctrl_o(ctrl_bus_rd_c)   <= ctrl(ctrl_bus_rd_c); -- not set if illegal instruction (ensured by execute engine)
-    ctrl_o(ctrl_bus_wr_c)   <= ctrl(ctrl_bus_wr_c); -- not set if illegal instruction (ensured by execute engine)
     -- current effective privilege level --
     ctrl_o(ctrl_priv_mode_c) <= csr.privilege_eff;
     if (csr.mstatus_mprv = '1') then -- effective privilege level for load/stores in M-mode
@@ -1022,18 +1020,18 @@ begin
             -- co-processor MULDIV operation (multi-cycle) --
             if ((CPU_EXTENSION_RISCV_M = true) and ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
                ((CPU_EXTENSION_RISCV_Zmmul = true) and (decode_aux.is_m_mul = '1')) then -- MUL
-              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_muldiv_c; -- trigger MULDIV CP
+              ctrl_nxt(ctrl_cp_trig0_c + cp_sel_muldiv_c) <= '1'; -- trigger MULDIV CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- co-processor BIT-MANIPULATION operation (multi-cycle) --
             elsif (CPU_EXTENSION_RISCV_B = true) and
                   (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_b_reg = '1')) or -- register operation
                    ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
-              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_bitmanip_c; -- trigger BITMANIP CP
+              ctrl_nxt(ctrl_cp_trig0_c + cp_sel_bitmanip_c) <= '1'; -- trigger BITMANIP CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- co-processor SHIFT operation (multi-cycle) --
             elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or
                   (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) then
-              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_shifter_c; -- trigger SHIFTER CP
+              ctrl_nxt(ctrl_cp_trig0_c + cp_sel_shifter_c) <= '1'; -- trigger SHIFTER CP
               execute_engine.state_nxt <= ALU_WAIT;
             -- ALU CORE operation (single-cycle) --
             else
@@ -1085,7 +1083,7 @@ begin
           when opcode_fop_c => -- floating-point operations
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zfinx = true) then
-              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_fpu_c; -- trigger FPU CP
+              ctrl_nxt(ctrl_cp_trig0_c + cp_sel_fpu_c) <= '1'; -- trigger FPU CP
               execute_engine.state_nxt <= ALU_WAIT;
             else
               execute_engine.state_nxt <= DISPATCH;
@@ -1095,7 +1093,7 @@ begin
           when opcode_cust0_c => -- CFU: custom RISC-V instructions (CUSTOM0 OPCODE space)
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zxcfu = true) then
-              ctrl_nxt(ctrl_cp_trig5_c downto ctrl_cp_trig0_c) <= cp_sel_cfu_c; -- trigger CFU CP
+              ctrl_nxt(ctrl_cp_trig0_c + cp_sel_cfu_c) <= '1'; -- trigger CFU CP
               execute_engine.state_nxt <= ALU_WAIT;
             else
               execute_engine.state_nxt <= DISPATCH;
@@ -1163,7 +1161,7 @@ begin
         end if;
 
 
-      when BRANCHED => -- delay cycle to wait for reset of pipeline front-end
+      when BRANCHED => -- delay cycle to wait for reset of pipeline front-end (instruction fetch)
       -- ------------------------------------------------------------
         execute_engine.branched_nxt <= '1'; -- this is an actual branch
         execute_engine.state_nxt    <= DISPATCH;
@@ -1177,11 +1175,7 @@ begin
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
         if (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- not an illegal instruction
-          if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- load
-            ctrl_nxt(ctrl_bus_rd_c) <= '1'; -- trigger read request
-          else -- store
-            ctrl_nxt(ctrl_bus_wr_c) <= '1'; -- trigger write request
-          end if;
+          ctrl_nxt(ctrl_bus_req_c) <= '1'; -- trigger read request
         end if;
         execute_engine.state_nxt <= MEM_WAIT;
 
@@ -1190,9 +1184,9 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_mem_c; -- memory read data
         -- wait for memory response --
-        if (trap_ctrl.exc_buf(exc_laccess_c) = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- bus error exception
-           (trap_ctrl.exc_buf(exc_lalign_c) = '1') or (trap_ctrl.exc_buf(exc_salign_c) = '1') or -- alignment error exception
-           (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then -- illegal instruction
+        if ((trap_ctrl.exc_buf(exc_laccess_c) or trap_ctrl.exc_buf(exc_saccess_c) or -- bus error exception
+             trap_ctrl.exc_buf(exc_lalign_c) or trap_ctrl.exc_buf(exc_salign_c) or -- alignment error exception
+             trap_ctrl.exc_buf(exc_iillegal_c)) = '1') then -- illegal instruction
           execute_engine.state_nxt <= DISPATCH; -- abort!
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           if (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') then -- load
@@ -1720,19 +1714,20 @@ begin
   -- Control and Status Registers - Write Data ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_write_data: process(execute_engine.i_reg, csr.rdata, rs1_i)
-    variable csr_imm_v : std_ulogic_vector(data_width_c-1 downto 0);
+    variable tmp_v : std_ulogic_vector(data_width_c-1 downto 0);
   begin
+    -- immediate/register operand --
+    if (execute_engine.i_reg(instr_funct3_msb_c) = '1') then
+      tmp_v := (others => '0');
+      tmp_v(4 downto 0) := execute_engine.i_reg(19 downto 15); -- uimm5
+    else
+      tmp_v := rs1_i;
+    end if;
     -- tiny ALU to compute CSR write data --
-    csr_imm_v := (others => '0');
-    csr_imm_v(4 downto 0) := execute_engine.i_reg(19 downto 15); -- uimm5
-    case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-      when funct3_csrrw_c  => csr.wdata <= rs1_i;
-      when funct3_csrrs_c  => csr.wdata <= csr.rdata or rs1_i;
-      when funct3_csrrc_c  => csr.wdata <= csr.rdata and (not rs1_i);
-      when funct3_csrrwi_c => csr.wdata <= csr_imm_v;
-      when funct3_csrrsi_c => csr.wdata <= csr.rdata or csr_imm_v;
-      when funct3_csrrci_c => csr.wdata <= csr.rdata and (not csr_imm_v);
-      when others          => csr.wdata <= (others => '0'); -- undefined
+    case execute_engine.i_reg(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) is
+      when "10"   => csr.wdata <= csr.rdata or tmp_v; -- set
+      when "11"   => csr.wdata <= csr.rdata and (not tmp_v); -- clear
+      when others => csr.wdata <= tmp_v; -- write
     end case;
   end process csr_write_data;
 
@@ -2546,20 +2541,20 @@ begin
     end if;
   end process hpmcnt_ctrl;
 
-  -- STD counters event trigger (RISC-V-specific) --
+  -- RISC-V-specific counter event triggers --
   cnt_event(hpmcnt_event_cy_c)      <= '1' when (execute_engine.sleep = '0') else '0'; -- active cycle
   cnt_event(hpmcnt_event_never_c)   <= '0'; -- "never" (position would be TIME)
   cnt_event(hpmcnt_event_ir_c)      <= '1' when (execute_engine.state = EXECUTE) else '0'; -- any executed instruction
 
-  -- HPM counters event trigger (NEORV32-specific) --
-  cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)   and (execute_engine.is_ci      = '1')       else '0'; -- executed compressed instruction
-  cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = S_PENDING) and (fetch_engine.state_prev   = S_PENDING) else '0'; -- instruction fetch memory wait cycle
-  cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)  and (execute_engine.state_prev = DISPATCH)  else '0'; -- instruction issue wait cycle
-  cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                              else '0'; -- multi-cycle alu-operation wait cycle
+  -- NEORV32-specific counter event triggers --
+  cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)    and (execute_engine.is_ci      = '1')        else '0'; -- executed compressed instruction
+  cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = IF_PENDING) and (fetch_engine.state_prev   = IF_PENDING) else '0'; -- instruction fetch memory wait cycle
+  cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)   and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
+  cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                                else '0'; -- multi-cycle alu-operation wait cycle
 
-  cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl(ctrl_bus_rd_c) = '1') else '0'; -- load operation
-  cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl(ctrl_bus_wr_c) = '1') else '0'; -- store operation
-  cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = MEM_WAIT) and (execute_engine.state_prev2 = MEM_WAIT) else '0'; -- load/store memory wait cycle
+  cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl(ctrl_bus_req_c) = '1')      and (execute_engine.i_reg(instr_opcode_msb_c-1) = '0') else '0'; -- load operation
+  cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl(ctrl_bus_req_c) = '1')      and (execute_engine.i_reg(instr_opcode_msb_c-1) = '1') else '0'; -- store operation
+  cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = MEM_WAIT) and (execute_engine.state_prev2 = MEM_WAIT)            else '0'; -- load/store memory wait cycle
 
   cnt_event(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
   cnt_event(hpmcnt_event_branch_c)  <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.i_reg(instr_opcode_lsb_c+2) = '0') else '0'; -- branch (conditional, taken or not taken)
