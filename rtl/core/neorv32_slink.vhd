@@ -290,7 +290,6 @@ begin
       clk_i                => clk_i,            -- clock, rising edge
       rstn_i               => '1',              -- async reset, low-active
       clear_i              => tx_fifo.clr(i),   -- sync reset, high-active
-      level_o              => open,             -- fill level
       half_o               => tx_fifo.half(i),  -- FIFO is at least half full
       wdata_i(31 downto 0) => tx_fifo.wdata(i), -- write data
       wdata_i(32)          => tx_fifo.wlast(i), -- end of packet
@@ -341,7 +340,6 @@ begin
       clk_i                => clk_i,            -- clock, rising edge
       rstn_i               => '1',              -- async reset, low-active
       clear_i              => rx_fifo.clr(i),   -- sync reset, high-active
-      level_o              => open,             -- fill level
       half_o               => rx_fifo.half(i),  -- FIFO is at least half full
       wdata_i(31 downto 0) => rx_fifo.wdata(i), -- write data
       wdata_i(32)          => rx_fifo.wlast(i), -- end of packet

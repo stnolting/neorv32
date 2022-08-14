@@ -205,7 +205,6 @@ begin
     clk_i   => clk_i,      -- clock, rising edge
     rstn_i  => '1',        -- async reset, low-active
     clear_i => fifo.clear, -- sync reset, high-active
-    level_o => open,
     half_o  => open,
     -- write port --
     wdata_i => fifo.wdata, -- write data

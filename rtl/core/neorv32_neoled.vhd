@@ -294,7 +294,6 @@ begin
     clk_i   => clk_i,           -- clock, rising edge
     rstn_i  => '1',             -- async reset, low-active
     clear_i => tx_buffer.clear, -- sync reset, high-active
-    level_o => open,            -- fill level
     half_o  => tx_buffer.half,  -- FIFO is at least half full
     -- write port --
     wdata_i => tx_buffer.wdata, -- write data
