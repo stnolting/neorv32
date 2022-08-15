@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 15.08.2022 | 1.7.5.1 | change base address of **BUSKEEPER**; [#]() |
 | 15.08.2022 | [**:rocket:1.7.5**](https://github.com/stnolting/neorv32/releases/tag/v1.7.5) | **New release** |
 | 14.08.2022 | 1.7.4.10 | cleanup of FIFO rtl component [#384](https://github.com/stnolting/neorv32/pull/384) |
 | 13.08.2022 | 1.7.4.9 | minor rtl cleanups and optimizations [#383](https://github.com/stnolting/neorv32/pull/383) |
