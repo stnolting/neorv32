@@ -494,7 +494,6 @@ begin
       clk_i   => clk_i,                -- clock, rising edge
       rstn_i  => '1',                  -- async reset, low-active
       clear_i => fetch_engine.restart, -- sync reset, high-active
-      level_o => open,
       half_o  => ipb.half(i),          -- at least half full
       -- write port --
       wdata_i => ipb.wdata(i),         -- write data
@@ -738,7 +737,6 @@ begin
     end if;
   end process execute_engine_fsm_sync;
 
-
   -- PC increment for next linear instruction (+2 for compressed instr., +4 otherwise) --
   execute_engine.next_pc_inc(data_width_c-1 downto 4) <= (others => '0');
   execute_engine.next_pc_inc(3 downto 0) <= x"4" when ((execute_engine.is_ci = '0') or (CPU_EXTENSION_RISCV_C = false)) else x"2";
@@ -933,14 +931,14 @@ begin
       -- ------------------------------------------------------------
         -- PC & IR update --
         execute_engine.pc_mux_sel <= '0'; -- next PC
+        execute_engine.pc_we      <= not execute_engine.branched; -- update PC with next_pc if there was no actual branch
         execute_engine.i_reg_nxt  <= issue_engine.data(31 downto 0);
         execute_engine.is_ci_nxt  <= issue_engine.data(32); -- this is a de-compressed instruction
         execute_engine.is_ici_nxt <= issue_engine.data(35); -- illegal compressed instruction
         --
         if (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- instruction available?
-          -- PC update --
+          -- clear branch flipflop --
           execute_engine.branched_nxt <= '0';
-          execute_engine.pc_we        <= not execute_engine.branched; -- update PC with next_pc if there was no actual branch
           -- IR update - exceptions --
           trap_ctrl.instr_ma <= issue_engine.data(33) and (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_C)); -- misaligned instruction fetch (if C disabled)
           trap_ctrl.instr_be <= issue_engine.data(34); -- bus access fault during instruction fetch

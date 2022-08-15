@@ -344,7 +344,6 @@ begin
     clk_i   => clk_i,           -- clock, rising edge
     rstn_i  => '1',             -- async reset, low-active
     clear_i => tx_buffer.clear, -- sync reset, high-active
-    level_o => open,
     half_o  => tx_buffer.half,  -- FIFO at least half-full
     -- write port --
     wdata_i => tx_buffer.wdata, -- write data
@@ -520,7 +519,6 @@ begin
     clk_i   => clk_i,           -- clock, rising edge
     rstn_i  => '1',             -- async reset, low-active
     clear_i => rx_buffer.clear, -- sync reset, high-active
-    level_o => open,
     half_o  => rx_buffer.half,  -- FIFO at least half-full
     -- write port --
     wdata_i => rx_buffer.wdata, -- write data

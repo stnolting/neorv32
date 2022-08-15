@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - General Purpose FIFO Component >>                                                #
+-- # << NEORV32 - Generic Single-Clock FIFO >>                                                     #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -51,7 +51,6 @@ entity neorv32_fifo is
     clk_i   : in  std_ulogic; -- clock, rising edge
     rstn_i  : in  std_ulogic; -- async reset, low-active
     clear_i : in  std_ulogic; -- sync reset, high-active
-    level_o : out std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- fill level
     half_o  : out std_ulogic; -- FIFO is at least half full
     -- write port --
     wdata_i : in  std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- write data
@@ -73,7 +72,6 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
     re    : std_ulogic; -- read enable
     w_pnt : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- write pointer
     r_pnt : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- read pointer
-    level : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- fill count
     data  : fifo_data_t; -- fifo memory
     buf   : std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- if single-entry FIFO
     match : std_ulogic;
@@ -100,9 +98,9 @@ begin
   fifo.we <= we_i when (FIFO_SAFE = false) else (we_i and fifo.free); -- SAFE = write only if space left
 
 
-  -- FIFO Control ---------------------------------------------------------------------------
+  -- FIFO Pointers --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fifo_control: process(rstn_i, clk_i)
+  fifo_pointers: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       fifo.w_pnt <= (others => '0');
@@ -121,19 +119,18 @@ begin
         fifo.r_pnt <= std_ulogic_vector(unsigned(fifo.r_pnt) + 1);
       end if;
     end if;
-  end process fifo_control;
+  end process fifo_pointers;
 
-  -- status --
+
+  -- FIFO Status ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   fifo.match <= '1' when (fifo.r_pnt(fifo.r_pnt'left-1 downto 0) = fifo.w_pnt(fifo.w_pnt'left-1 downto 0)) or (FIFO_DEPTH = 1) else '0';
   fifo.full  <= '1' when (fifo.r_pnt(fifo.r_pnt'left) /= fifo.w_pnt(fifo.w_pnt'left)) and (fifo.match = '1') else '0';
   fifo.empty <= '1' when (fifo.r_pnt(fifo.r_pnt'left)  = fifo.w_pnt(fifo.w_pnt'left)) and (fifo.match = '1') else '0';
   fifo.free  <= not fifo.full;
   fifo.avail <= not fifo.empty;
   level_diff <= std_ulogic_vector(unsigned(fifo.w_pnt) - unsigned(fifo.r_pnt));
-  fifo.level <= std_ulogic_vector(to_unsigned(FIFO_DEPTH, fifo.level'length)) when (fifo.full = '1') else level_diff;
 
-  -- status output --
-  level_o <= fifo.level;
   free_o  <= fifo.free;
   avail_o <= fifo.avail;
 
@@ -172,7 +169,7 @@ begin
   -- synchronous read --
   fifo_read_sync:
   if (FIFO_RSYNC = true) generate
-    fifo_memory_read: process(clk_i)
+    fifo_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
         if (FIFO_DEPTH = 1) then
@@ -181,7 +178,7 @@ begin
           rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
         end if;
       end if;
-    end process fifo_memory_read;
+    end process fifo_read;
   end generate;
 
 
