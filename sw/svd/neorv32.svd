@@ -435,7 +435,7 @@
       <name>BUSKEEPER</name>
       <description>Bus keeper</description>
       <groupName>BUSKEEPER</groupName>
-      <baseAddress>0xFFFFFF7C</baseAddress>
+      <baseAddress>0xFFFFFF78</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
