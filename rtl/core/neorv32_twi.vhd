@@ -57,9 +57,11 @@ entity neorv32_twi is
     -- clock generator --
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(07 downto 0);
-    -- com lines --
-    twi_sda_io  : inout std_logic; -- serial data line
-    twi_scl_io  : inout std_logic; -- serial clock line
+    -- com lines (require external tri-state drivers) --
+    twi_sda_i   : in  std_ulogic; -- serial data line input
+    twi_sda_o   : out std_ulogic; -- serial data line output
+    twi_scl_i   : in  std_ulogic; -- serial clock line input
+    twi_scl_o   : out std_ulogic; -- serial clock line output
     -- interrupt --
     irq_o       : out std_ulogic -- transfer done IRQ
   );
@@ -341,15 +343,12 @@ begin
   arbiter.claimed <= '1' when (arbiter.busy = '1') or ((io_con.sda_in_ff(1) = '0') and (io_con.scl_in_ff(1) = '0')) else '0';
 
 
-  -- Tri-State Driver -----------------------------------------------------------------------
+  -- Tri-State Driver Interface -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- SDA and SCL need to be of type std_logic to be correctly resolved in simulation
-  twi_sda_io <= '0' when (io_con.sda_out = '0') else 'Z';
-  twi_scl_io <= '0' when (io_con.scl_out = '0') else 'Z';
-
-  -- read-back - "to_bit" to avoid hardware-vs-simulation mismatch --
-  io_con.sda_in <= to_stdulogic(to_bit(twi_sda_io));
-  io_con.scl_in <= to_stdulogic(to_bit(twi_scl_io));
+  twi_sda_o <= io_con.sda_out; -- NOTE: signal lines can only be actively driven low
+  twi_scl_o <= io_con.scl_out;
+  io_con.sda_in <= twi_sda_i;
+  io_con.scl_in <= twi_scl_i;
 
 
 end neorv32_twi_rtl;
