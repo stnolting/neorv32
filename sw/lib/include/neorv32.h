@@ -935,11 +935,12 @@ enum NEORV32_GPTMR_CTRL_enum {
 /**@{*/
 /** BUSKEEPER module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL; /**< offset 0: control register (#NEORV32_BUSKEEPER_CTRL_enum) */
+  uint32_t       CTRL;      /**< offset 0: control register (#NEORV32_BUSKEEPER_CTRL_enum) */
+  const uint32_t reserved ; /**< offset 4: reserved */
 } neorv32_buskeeper_t;
 
 /** BUSKEEPER module base address */
-#define NEORV32_BUSKEEPER_BASE (0xFFFFFF7CU)
+#define NEORV32_BUSKEEPER_BASE (0xFFFFFF78U)
 
 /** BUSKEEPER module hardware access (#neorv32_buskeeper_t) */
 #define NEORV32_BUSKEEPER (*((volatile neorv32_buskeeper_t*) (NEORV32_BUSKEEPER_BASE)))
