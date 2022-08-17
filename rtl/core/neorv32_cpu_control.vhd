@@ -73,7 +73,7 @@ entity neorv32_cpu_control is
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
     CPU_CNT_WIDTH                : natural; -- total width of CPU cycle and instret counters (0..64)
-    CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2, min 2
+    CPU_IPB_ENTRIES              : natural; -- entries in instruction prefetch buffer, has to be a power of 2, min 2
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -160,7 +160,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     wdata : ipb_data_t;
     we    : std_ulogic_vector(1 downto 0); -- trigger write
     free  : std_ulogic_vector(1 downto 0); -- free entry available?
-    half  : std_ulogic_vector(1 downto 0); -- half full?
     rdata : ipb_data_t;
     re    : std_ulogic_vector(1 downto 0); -- read enable
     avail : std_ulogic_vector(1 downto 0); -- data available?
@@ -227,11 +226,11 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- trap controller --
   type trap_ctrl_t is record
-    exc_buf       : std_ulogic_vector(exc_width_c-1 downto 0);
+    exc_buf       : std_ulogic_vector(exc_width_c-1 downto 0); -- synchronous exception buffer (one bit per exception)
     exc_fire      : std_ulogic; -- set if there is a valid source in the exception buffer
-    irq_buf       : std_ulogic_vector(irq_width_c-1 downto 0);
+    irq_buf       : std_ulogic_vector(irq_width_c-1 downto 0); -- asynchronous exception/interrupt buffer (one bit per interrupt source)
     irq_fire      : std_ulogic; -- set if there is a valid source in the interrupt buffer
-    cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR
+    cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR + debug-mode entry identifier
     cause_nxt     : std_ulogic_vector(6 downto 0);
     db_irq_fire   : std_ulogic; -- set if there is a valid IRQ source in the "enter debug mode" trap buffer
     db_irq_en     : std_ulogic; -- set if IRQs are allowed in debug mode
@@ -346,17 +345,13 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type debug_ctrl_state_t is (DEBUG_OFFLINE, DEBUG_PENDING, DEBUG_ONLINE, DEBUG_EXIT);
   type debug_ctrl_t is record
     state        : debug_ctrl_state_t;
-    -- decoded state --
     running      : std_ulogic; -- CPU is in debug mode
-    -- entering triggers --
     trig_hw      : std_ulogic; -- hardware trigger
-    trig_break   : std_ulogic; -- ebreak instruction
-    trig_halt    : std_ulogic; -- external request
-    trig_step    : std_ulogic; -- single-stepping mode
-    -- leave debug mode --
+    trig_break   : std_ulogic; -- ebreak instruction trigger
+    trig_halt    : std_ulogic; -- external request trigger
+    trig_step    : std_ulogic; -- single-stepping mode trigger
     dret         : std_ulogic; -- executed DRET instruction
-    -- misc --
-    ext_halt_req : std_ulogic;
+    ext_halt_req : std_ulogic; -- external halt request buffer
   end record;
   signal debug_ctrl : debug_ctrl_t;
 
@@ -414,7 +409,9 @@ begin
         when IF_REQUEST => -- request new 32-bit-aligned instruction word
         -- ------------------------------------------------------------
           fetch_engine.pmp_err <= i_pmp_fault_i;
-          fetch_engine.state   <= IF_PENDING;
+          if (ipb.free = "11") then -- wait for free IPB space
+            fetch_engine.state <= IF_PENDING;
+          end if;
 
         when IF_PENDING => -- wait for bus response and write instruction data to prefetch buffer
         -- ------------------------------------------------------------
@@ -424,24 +421,24 @@ begin
             fetch_engine.pmp_err   <= '0';
             if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
               fetch_engine.state <= IF_RESTART;
-            elsif (ipb.half /= "00") or (CPU_IPB_ENTRIES < 2) or -- no "safe" space left in IPB
-                  -- > this is something like a simple branch prediction (predict "always taken"):
-                  -- > do not trigger new instruction fetch when a branch instruction is executed
-                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_branch_c) or -- might be taken
-                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_jal_c) or    -- will be taken
-                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) = opcode_jalr_c) then -- will be taken
+            elsif -- > this is something like a simple branch prediction (predict "always taken"):
+                  -- > do not trigger new instruction fetch when a branch instruction is being executed;
+                  -- > the two LSB should be "11" for rv32, so we do not need to check them here
+                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_branch_c(6 downto 2)) or -- might be taken
+                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_jal_c(6 downto 2)) or    -- will be taken
+                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_jalr_c(6 downto 2)) then -- will be taken
               fetch_engine.state <= IF_WAIT;
             else -- request next instruction word
               fetch_engine.state <= IF_REQUEST;
             end if;
           end if;
 
-        when IF_WAIT => -- wait for free IPB space 
+        when IF_WAIT => -- wait for branch instruction
         -- ------------------------------------------------------------
-          if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
+          if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast) if taken branch
             fetch_engine.state <= IF_RESTART;
-          elsif (ipb.free = "11") then -- free entry in IPB (both buffers)
-            fetch_engine.state <= IF_REQUEST; -- request next instruction word
+          else
+            fetch_engine.state <= IF_REQUEST;
           end if;
 
         when others => -- undefined
@@ -455,8 +452,8 @@ begin
   -- PC output for instruction fetch --
   i_bus_addr_o <= fetch_engine.pc(data_width_c-1 downto 2) & "00"; -- 32-bit aligned
 
-  -- instruction fetch (read) request --
-  i_bus_re_o <= '1' when (fetch_engine.state = IF_REQUEST) else '0';
+  -- instruction fetch (read) request if IPB not full --
+  i_bus_re_o <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
 
   -- unaligned access error (no alignment exceptions possible when using C-extension) --
   fetch_engine.a_err <= '1' when (fetch_engine.unaligned = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
@@ -494,7 +491,7 @@ begin
       clk_i   => clk_i,                -- clock, rising edge
       rstn_i  => '1',                  -- async reset, low-active
       clear_i => fetch_engine.restart, -- sync reset, high-active
-      half_o  => ipb.half(i),          -- at least half full
+      half_o  => open,                 -- at least half full
       -- write port --
       wdata_i => ipb.wdata(i),         -- write data
       we_i    => ipb.we(i),            -- write enable
@@ -508,7 +505,7 @@ begin
 
 
 -- ****************************************************************************************************************************
--- Instruction Issue (decompress 16-bit instructions and assemble 32-bit instruction word)
+-- Instruction Issue (decompress 16-bit instructions and assemble a 32-bit instruction word)
 -- ****************************************************************************************************************************
 
   -- Issue Engine FSM Sync ------------------------------------------------------------------
@@ -543,7 +540,7 @@ begin
     -- start with LOW half-word --
     if (issue_engine.align = '0') or (CPU_EXTENSION_RISCV_C = false) then
       if (CPU_EXTENSION_RISCV_C = true) and (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed
-        issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is not 32-bit aligned
+        issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is not 32-bit-aligned
         issue_engine.valid(0)  <= ipb.avail(0);
         issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(0)(17 downto 16) & '1' & issue_engine.ci_i32;
       else -- aligned uncompressed
@@ -554,7 +551,7 @@ begin
     -- start with HIGH half-word --
     else
       if (CPU_EXTENSION_RISCV_C = true) and (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed
-        issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit aligned again
+        issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
         issue_engine.valid(1)  <= ipb.avail(1);
         issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(1)(17 downto 16) & '1' & issue_engine.ci_i32;
       else -- unaligned uncompressed
@@ -608,7 +605,7 @@ begin
   begin
     if rising_edge(clk_i) then
       opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
-      case opcode_v is -- save some bits here, the two LSBs are always "11" for rv32
+      case opcode_v is -- save some bits here - the two LSBs are always "11" for rv32
         when opcode_store_c => -- S-immediate: store
           imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
           imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
@@ -652,7 +649,7 @@ begin
         execute_engine.branch_taken <= not cmp_i(cmp_equal_c);
       when funct3_blt_c | funct3_bltu_c => -- branch if less (signed/unsigned)
         execute_engine.branch_taken <= cmp_i(cmp_less_c);
-      when others => -- branch if greater or equal (signed/unsigned), invalid funct3 are checked by illegal instr. logic
+      when others => -- branch if greater or equal (signed/unsigned), invalid funct3 are checked by the illegal instruction logic
         execute_engine.branch_taken <= not cmp_i(cmp_less_c);
     end case;
   end process branch_check;
@@ -753,7 +750,7 @@ begin
     -- default --
     ctrl_o <= ctrl;
     -- "commit" signals --
-    ctrl_o(ctrl_rf_wb_en_c) <= ctrl(ctrl_rf_wb_en_c) and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- prevent write if illegal instruction
+    ctrl_o(ctrl_rf_wb_en_c) <= ctrl(ctrl_rf_wb_en_c) and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- no write if illegal instruction
     -- current effective privilege level --
     ctrl_o(ctrl_priv_mode_c) <= csr.privilege_eff;
     if (csr.mstatus_mprv = '1') then -- effective privilege level for load/stores in M-mode
@@ -898,11 +895,9 @@ begin
     -- trap environment control --
     trap_ctrl.env_start_ack     <= '0';
     trap_ctrl.env_end           <= '0';
-
-    -- leave debug mode --
     debug_ctrl.dret             <= '0';
 
-    -- exception trigger --
+    -- exception triggers --
     trap_ctrl.instr_be          <= '0';
     trap_ctrl.instr_ma          <= '0';
     trap_ctrl.env_call          <= '0';
