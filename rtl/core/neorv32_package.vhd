@@ -235,7 +235,7 @@ package neorv32_package is
   constant xip_base_c           : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff40"; -- base address
   constant xip_size_c           : natural := 4*4; -- module's address space size in bytes
   constant xip_ctrl_addr_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff40";
-  constant xip_map_addr_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff44";
+--constant xip_reserved_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff44";
   constant xip_data_lo_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff48";
   constant xip_data_hi_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff4C";
 
