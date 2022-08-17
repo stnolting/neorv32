@@ -155,8 +155,8 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
  check        - check toolchain
  info         - show makefile/toolchain configuration
  exe          - compile and generate <neorv32_exe.bin> executable for upload via default bootloader (binary file, with header)
- bin          - compile and generate <neorv32_raw_exe.bin> RAW executable file (hex char file, no header)
- hex          - compile and generate <neorv32_raw_exe.hex> RAW executable file (binary file, no header)
+ bin          - compile and generate <neorv32_raw_exe.bin> RAW executable file (binary file, no header)
+ hex          - compile and generate <neorv32_raw_exe.hex> RAW executable file (hex char file, no header)
  image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder
  install      - compile, generate and install VHDL IMEM boot image (for application, no header)
  sim          - in-console simulation using default/simple testbench and GHDL
