@@ -165,7 +165,7 @@ entity neorv32_top is
     wb_ack_i       : in  std_ulogic := 'L'; -- transfer acknowledge
     wb_err_i       : in  std_ulogic := 'L'; -- transfer error
 
-    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
+    -- Advanced memory control signals --
     fence_o        : out std_ulogic; -- indicates an executed FENCE operation
     fencei_o       : out std_ulogic; -- indicates an executed FENCEI operation
 

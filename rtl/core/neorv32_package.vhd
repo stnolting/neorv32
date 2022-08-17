@@ -491,7 +491,7 @@ package neorv32_package is
   constant funct3_csrrci_c : std_ulogic_vector(2 downto 0) := "111"; -- csr read & clear bit immediate
   -- fence --
   constant funct3_fence_c  : std_ulogic_vector(2 downto 0) := "000"; -- fence - order IO/memory access
-  constant funct3_fencei_c : std_ulogic_vector(2 downto 0) := "001"; -- fencei - instruction stream sync
+  constant funct3_fencei_c : std_ulogic_vector(2 downto 0) := "001"; -- fence.i - instruction stream sync
 
   -- RISC-V Funct12 -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1056,7 +1056,7 @@ package neorv32_package is
       wb_cyc_o       : out std_ulogic; -- valid cycle
       wb_ack_i       : in  std_ulogic := 'L'; -- transfer acknowledge
       wb_err_i       : in  std_ulogic := 'L'; -- transfer error
-      -- Advanced memory control signals (available if MEM_EXT_EN = true) --
+      -- Advanced memory control signals --
       fence_o        : out std_ulogic; -- indicates an executed FENCE operation
       fencei_o       : out std_ulogic; -- indicates an executed FENCEI operation
       -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
