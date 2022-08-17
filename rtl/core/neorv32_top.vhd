@@ -73,7 +73,7 @@ entity neorv32_top is
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
     CPU_CNT_WIDTH                : natural := 64;     -- total width of CPU cycle and instret counters (0..64)
-    CPU_IPB_ENTRIES              : natural := 2;      -- entries is instruction prefetch buffer, has to be a power of 2, min 2
+    CPU_IPB_ENTRIES              : natural := 2;      -- entries in instruction prefetch buffer, has to be a power of 2, min 2
 
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..16)
@@ -373,6 +373,10 @@ architecture neorv32_top_rtl of neorv32_top is
   signal slink_rx_irq  : std_ulogic;
   signal xirq_irq      : std_ulogic;
   signal gptmr_irq     : std_ulogic;
+
+  -- tri-state drivers --
+  signal twi_sda_i, twi_sda_o : std_ulogic;
+  signal twi_scl_i, twi_scl_o : std_ulogic;
 
   -- misc --
   signal mtime_time  : std_ulogic_vector(63 downto 0); -- current system time from MTIME
@@ -1301,13 +1305,21 @@ begin
       -- clock generator --
       clkgen_en_o => twi_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
-      -- com lines --
-      twi_sda_io  => twi_sda_io,               -- serial data line
-      twi_scl_io  => twi_scl_io,               -- serial clock line
+      -- com lines (require external tri-state drivers) --
+      twi_sda_i   => twi_sda_i,                -- serial data line input
+      twi_sda_o   => twi_sda_o,                -- serial data line output
+      twi_scl_i   => twi_scl_i,                -- serial clock line input
+      twi_scl_o   => twi_scl_o,                -- serial clock line output
       -- interrupt --
       irq_o       => twi_irq                   -- transfer done IRQ
     );
     resp_bus(RESP_TWI).err <= '0'; -- no access error possible
+
+    -- tri-state drivers --
+    twi_sda_io <= '0' when (twi_sda_o = '0') else 'Z'; -- module can only pull the line low actively
+    twi_scl_io <= '0' when (twi_scl_o = '0') else 'Z';
+    twi_sda_i  <= to_stdulogic(to_bit(twi_sda_io)); -- "to_bit" to avoid hardware-vs-simulation mismatch
+    twi_scl_i  <= to_stdulogic(to_bit(twi_scl_io));
   end generate;
 
   neorv32_twi_inst_false:

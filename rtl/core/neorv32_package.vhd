@@ -63,7 +63,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070501"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070502"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1789,9 +1789,11 @@ package neorv32_package is
       -- clock generator --
       clkgen_en_o : out std_ulogic; -- enable clock generator
       clkgen_i    : in  std_ulogic_vector(07 downto 0);
-      -- com lines --
-      twi_sda_io  : inout std_logic; -- serial data line
-      twi_scl_io  : inout std_logic; -- serial clock line
+      -- com lines (require external tri-state drivers) --
+      twi_sda_i   : in  std_ulogic; -- serial data line input
+      twi_sda_o   : out std_ulogic; -- serial data line output
+      twi_scl_i   : in  std_ulogic; -- serial clock line input
+      twi_scl_o   : out std_ulogic; -- serial clock line output
       -- interrupt --
       irq_o       : out std_ulogic -- transfer done IRQ
     );
