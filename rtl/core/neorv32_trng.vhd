@@ -163,7 +163,9 @@ begin
       -- read access --
       data_o <= (others => '0');
       if (rden = '1') then
-        data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
+        if (fifo.avail = '1') then -- make sure the same RND data byte cannot be read twice
+          data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
+        end if;
         data_o(ctrl_sim_mode_c) <= bool_to_ulogic_f(sim_mode_c);
         data_o(ctrl_en_c)       <= enable;
         data_o(ctrl_valid_c)    <= fifo.avail;
@@ -180,7 +182,7 @@ begin
       NUM_INV_START => num_inv_start_c,
       NUM_INV_INC   => num_inv_inc_c,
       NUM_INV_DELAY => num_inv_delay_c,
-      POST_PROC_EN  => true, -- post-processing enabled!
+      POST_PROC_EN  => true, -- post-processing enabled to improve "random quality"
       IS_SIM        => sim_mode_c
     )
     port map (
@@ -191,7 +193,7 @@ begin
     );
 
 
-  -- Data FIFO ------------------------------------------------------------------------------
+  -- Data FIFO ("Random Pool") --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   rnd_pool_fifo_inst: neorv32_fifo
   generic map (
