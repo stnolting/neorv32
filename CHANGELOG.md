@@ -26,12 +26,13 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 * :sparkles: = new feature
 * :test_tube: = new (experimental) feature
 * :warning: = (major) change that might impact compatibility with previous versions
-* :lock: = security issue
+* :lock: = security-related
 * :rocket: = release
 
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 18.08.2022 | 1.7.5.5 | :lock: add **TRNG** read data protection; [#389](https://github.com/stnolting/neorv32/pull/389) |
 | 18.08.2022 | 1.7.5.4 | minor rtl cleanup in **PWM** module; [#388](https://github.com/stnolting/neorv32/pull/388) |
 | 17.08.2022 | 1.7.5.3 | optimized **CPU front-end** - faster instruction fetch; [#387](https://github.com/stnolting/neorv32/pull/387) |
 | 16.08.2022 | 1.7.5.2 | relocate TWI tri-state drivers; [#]386()https://github.com/stnolting/neorv32/pull/386 |

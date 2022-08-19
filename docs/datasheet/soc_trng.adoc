@@ -17,17 +17,15 @@
 
 **Theory of Operation**
 
-The NEORV32 true random number generator provides _physical_ true random numbers.
+The NEORV32 true random number generator provides _physically_ true random numbers.
 Instead of using a pseudo RNG like a LFSR, the TRNG uses a simple, straight-forward ring
 oscillator concept as physical entropy source. Hence, voltage, thermal and also semiconductor manufacturing
 fluctuations are used to provide a true physical entropy source.
 
 The TRNG features a platform independent architecture without FPGA-specific primitives, macros or
-attributes so it can be synthesized for _any_ FPGA.
-
-The TRNG is based on the **neoTRNG V2**, which is a "spin-off project" of the
-NEORV32 processor. More detailed information about the neoTRNG, it's architecture and a
-detailed evaluation of the random number quality can be found it it's repository: https://github.com/stnolting/neoTRNG
+attributes so it can be synthesized for _any_ FPGA. Ir is based on the **neoTRNG V2**, which is a "spin-off project" of the
+NEORV32 processor. More detailed information about the neoTRNG, its architecture and a
+detailed evaluation of the random number quality can be found it the neoTRNG repository: https://github.com/stnolting/neoTRNG
 
 .Inferring Latches
 [NOTE]
@@ -36,17 +34,29 @@ as this is what we actually want: the TRNG is based on latches, which implement 
 
 .Simulation
 [IMPORTANT]
-When simulating the processor the TRNG is automatically set to "simulation mode". In this mode, the physical entropy
-sources (= the ring oscillators) are replaced by a simple **pseudo RNG (LFSR)** providing very weak random data only.
+When simulating the processor the NEORV32 TRNG is automatically set to "simulation mode". In this mode, the physical entropy
+sources (= the ring oscillators) are replaced by a simple **pseudo RNG (LFSR)** providing weak pseudo-random data only.
 The _TRNG_CTRL_SIM_MODE_ flag of the control register is set if simulation mode is active.
 
 
 **Using the TRNG**
 
-The TRNG features a single register for status and data access. When the _TRNG_CTRL_EN_ control register (`CTRL`)
-bit is set, the TRNG is enabled and starts operation. As soon as the _TRNG_CTRL_VALID_ bit is set a random data byte
-is available and can be obtained from the lowest 8 bits of the `CTRL` register
-(_TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_LSB_).
+The TRNG features a single control register `CTRL` for control, status check and data access. When the _TRNG_CTRL_EN_
+bit is set, the TRNG is enabled and starts operation.
+
+.TRNG Reset
+[NOTE]
+The TRNG core does not provide a dedicated reset. In order to ensure correct operations, the TRNG should be
+disabled (=reset) by clearing the _TRNG_CTRL_EN_ and waiting some 1000s clock cycles before re-enabling it.
+
+As soon as the _TRNG_CTRL_VALID_ bit is set a new random data byte is available and can be obtained from the lowest 8 bits
+of the `CTRL` register (_TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_LSB_). If this bit is cleared, there is no valid data available
+and the lowest 8 bit of the `CTRL` register are set to all-zero.
+
+.Read Access Security
+[NOTE]
+The random data byte (_TRNG_CTRL_DATA_) in the control register is automatically cleared after each read access
+to prevent software from reading the _same_ random data byte more than once.
 
 An optional random data FIFO can be configured using the <<_io_trng_fifo>> generic. This FIFO automatically samples
 new random data from the TRNG to provide some kind of _random data pool_ for applications, which require a large number
@@ -54,12 +64,7 @@ of RND data in a short time. The minimal and default value for <<_io_trng_fifo>>
 than a real FIFO); the generic has to be a power of two.
 
 The random data FIFO can be cleared at any time either by disabling the TRNG via the _TRNG_CTRL_EN_ flag or by
-setting the _TRNG_CTRL_FIFO_CLR_ flag. Note that this falg is write-only and auto clears after being set.
-
-.TRNG Reset
-[NOTE]
-The TRNG core does not provide a dedicated reset. In order to ensure correct operations, the TRNG should be
-disabled (=reset) by clearing the _TRNG_CTRL_EN_ and waiting some 1000s clock cycles before re-enabling it.
+setting the _TRNG_CTRL_FIFO_CLR_ flag. Note that this flag is write-only and auto clears after being set. 
 
 
 **Register Map**
@@ -70,7 +75,7 @@ disabled (=reset) by clearing the _TRNG_CTRL_EN_ and waiting some 1000s clock cy
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
 .5+<| `0xffffffb8` .5+<| `NEORV32_TRNG.CTRL` <|`7:0` _TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_MSB_ ^| r/- <| 8-bit random data
-                                             <|`28` _TRNG_CTRL_FIFO_CLR_                         ^| -/w <| clear data FIFO when set (auto clears)
+                                             <|`28` _TRNG_CTRL_FIFO_CLR_                         ^| -/w <| flush random data FIFO when set (auto clears)
                                              <|`29` _TRNG_CTRL_SIM_MODE_                         ^| r/- <| simulation mode (PRNG!)
                                              <|`30` _TRNG_CTRL_EN_                               ^| r/w <| TRNG enable
                                              <|`31` _TRNG_CTRL_VALID_                            ^| r/- <| random data is valid when set
