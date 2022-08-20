@@ -952,9 +952,9 @@ be explicitly cleared by writing zero to the according <<_mip>> CSR bit.
 The NEORV32 CPU implements a 32-bit machine with separated instruction and data interfaces making the CPU a
 **Harvard Architecture**: the _instruction fetch interface_ (`i_bus_*`) is used for fetching instructions and the
 _data access interface_ (`d_bus_*`) is used to access data via load and store operations.
-Each of this interfaces can access an address space of up to 2^32^ bytes (4GB).
+Each of these interfaces can access an address space of up to 2^32^ bytes (4GB).
 The following table shows the signals of the data and instruction interfaces as seen from the CPU (`*_o` signals are driven
-by the CPU / outputs, `*_i` signals are read by the CPU / inputs). Both interfaces use the same protocol.
+by the CPU / outputs, `*_i` signals are read by the CPU / inputs). Both interfaces use the same <<_protocol>>.
 
 .CPU Bus Interface Signals
 [cols="<2,^1,^1,<6"]
@@ -969,56 +969,62 @@ by the CPU / outputs, `*_i` signals are read by the CPU / inputs). Both interfac
 | `i/d_bus_re_o`    | 1     | out       | bus read access request (one-shot)
 | `i/d_bus_ack_i`   | 1     | in        | accessed peripheral indicates a successful completion of the bus transaction
 | `i/d_bus_err_i`   | 1     | in        | accessed peripheral indicates an error during the bus transaction
-| `i/d_bus_fence_o` | 1     | out       | this signal is set for one cycle when the CPU executes an instruction/data fence operation
+| `i/d_bus_fence_o` | 1     | out       | this signal is set for one cycle when the CPU executes an instruction/data fence command
 | `i/d_bus_priv_o`  | 1     | out       | shows the effective privilege level of the bus access
 |=======================
 
 .Pipelined Transfers
 [NOTE]
-Currently, there a no pipelined or overlapping operations implemented within the same bus interface.
-So only a single transfer request can be "on the fly" (pending) at once. However, this is no real drawback. The
-minimal possible latency for a single access is two cycles, which equals the CPU's minimal execution latency
+Currently, there a no pipelined or overlapping operations (within the same bus interface) implemented.
+So only a single transfer request can be "in fly" (pending) at once. However, this is no real drawback. The
+minimal possible latency for a single access is two cycles, which is equal to the CPU's minimal execution latency
 for a single instruction.
 
 .Unaligned Memory Accesses
 [NOTE]
-Please note, that the NEORV32 CPU does not support the handling of unaligned memory accesses _in hardware_. Any
-unaligned memory access will raise an exception that can can be used to handle such accesses in _software_.
+Please note that the NEORV32 CPU does **not support the handling of unaligned memory accesses** in hardware. Any
+unaligned memory access will raise an exception that can be used to handle unaligned accesses in _software_
+(via emulation).
+
+.Signal Stability
+[NOTE]
+All outgoing bus interface signals (driven by the CPU) remain _stable_ until the bus access is completed. This simplifies
+the design of the bus interconnection network as well as the architecture of the individual processor modules.
 
 
 :sectnums:
 ===== Protocol
 
-An actual bus request is triggered either by the `*_bus_re_o` signal (for reading data) or by the `*_bus_we_o` signal
+A new bus request is triggered either by the `*_bus_re_o` signal (for reading data) or by the `*_bus_we_o` signal
 (for writing data). In case of a request, one of these signals is high for exactly one cycle. The transaction is
 completed when the accessed peripheral/memory either sets the `*_bus_ack_i` signal (-> successful completion) or the
-`*_bus_err_i` signal (-> failed completion). These bus response signal are also set only for one cycle active.
-An error indicated by the `*_bus_err_i` signal will raise the according "instruction bus access fault" or
+`*_bus_err_i` signal (-> failed completion). These bus response signals have to be also set only for one cycle.
+If a bus request is terminated by the `*_bus_err_i` signal the CPU will raise the according "instruction bus access fault" or
 "load/store bus access fault" exception.
 
 
 **Minimal Response Latency**
 
-The transfer can be completed directly in the same cycle as it was initiated (via the `*_bus_re_o` or `*_bus_we_o`
-signal) if the peripheral sets `*_bus_ack_i` or `*_bus_err_i` high for one cycle. However, in order to shorten the
-critical path such "asynchronous" completion should be avoided. The default NEORV32 processor-internal modules provide
-exactly **one cycle delay** between initiation and completion of transfers.
+The transfer can be completed within in the same cycle as it was initiated (asynchronous response) if the accessed module
+directly sets `*_bus_ack_i` or `*_bus_err_i` high for one cycle. However, in order to shorten the
+critical path such an "asynchronous" response should be avoided. The default NEORV32 processor-internal modules use a registered
+response with exactly **one cycle delay** between initiation and completion of transfers.
 
 
 **Maximal Response Latency**
 
-Processor-internal peripherals or memories do not have to respond within one cycle after a bus request has been initiated.
+The processor-internal modules do not have to respond within one cycle after a bus request has been initiated.
 However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window
-is defined by the global `max_proc_int_response_time_c` constant (default = 15 cycles; processor's VHDL package file `rtl/neorv32_package.vhd`).
-It defines the maximum number of cycles after which an _unacknowledged_ (`*_bus_ack_i` or `*_bus_err_i` signal from the **processor-internal bus**
-both not set) processor-internal bus
-transfer will time out and raises a **bus fault exception**. The <<_internal_bus_monitor_buskeeper>> keeps track of all _internal_ bus
-transactions to enforce this time window.
+is defined by the global `max_proc_int_response_time_c` constant (default = 15 cycles; defined in the processor's VHDL package file
+`rtl/neorv32_package.vhd`). It defines the maximum number of cycles after which an _unacknowledged_ (`*_bus_ack_i` or `*_bus_err_i`
+signals both not set) transfer will time out and will raise a **bus fault exception**. The <<_internal_bus_monitor_buskeeper>> keeps
+track of all _internal_ bus transactions to enforce this time window.
 
-If any bus operations times out (for example when accessing "address space holes") the BUSKEEPER will issue a bus
-error to the CPU that will raise the according instruction fetch or data access bus exception.
+If any bus operations times out - for example when accessing "address space holes" - the BUSKEEPER will issue a bus
+error to the CPU (via the according `*_bus_err_i` signal) that will raise the according instruction fetch or data access bus exception.
 Note that **the bus keeper does not track external accesses via the external memory bus interface**. However,
-the external memory bus interface also provides an _optional_ bus timeout (see section <<_processor_external_memory_interface_wishbone_axi4_lite>>).
+the external memory bus interface also provides an _optional_ bus timeout
+(see section <<_processor_external_memory_interface_wishbone_axi4_lite>>).
 
 .Interface Response
 [NOTE]
@@ -1041,18 +1047,18 @@ a| image::cpu_interface_write_long.png[write,300,150]
 
 **Write Access**
 
-For a write access, the access address (`bus_addr_o`), the data to be written (`bus_wdata_o`) and the byte
-enable signals (`bus_ben_o`) are set when `bus_we_o` goes high. These three signals are kept stable until the
-transaction is completed. In the example the accessed peripheral cannot answer directly in the next
-cycle after issuing. Here, the transaction is successful and the peripheral sets the `bus_ack_i` signal several
+For a write access the according access address (`bus_addr_o`), the data to-be-written (`bus_wdata_o`) and the byte
+enable identifier (`bus_ben_o`) are set when `bus_we_o` goes high. These three signals are kept stable until the
+transaction is completed. In the example the accessed peripheral cannot answer directly within the next
+cycle. Here, the transaction is successful and the peripheral sets the `bus_ack_i` signal _several_
 cycles after issuing.
 
 
 **Read Access**
 
-For a read access, the accessed address (`bus_addr_o`) is set when `bus_re_o` goes high. The address is kept
+For a read access the according access address (`bus_addr_o`) is set when `bus_re_o` goes high. The address is kept
 stable until the transaction is completed. In the example the accessed peripheral cannot answer
-directly in the next cycle after issuing. The peripheral hast to apply the read data right in the same cycle as
+directly within the next cycle. The peripheral hast to apply the read data right in the same cycle as
 the bus transaction is completed (here, the transaction is successful and the peripheral sets the `bus_ack_i`
 signal).
 
@@ -1061,14 +1067,14 @@ signal).
 
 The instruction interface will always access memory on word (= 32-bit) boundaries even if fetching
 compressed (16-bit) instructions. The data interface can access memory on byte (= 8-bit), half-word (= 16-
-bit) and word (= 32-bit) boundaries.
+bit) and word (= 32-bit) boundaries, but not all processor module support sub-word accesses.
 
 
 **Memory Barriers**
 
-Whenever the CPU executes a _fence_ instruction, the according interface signal is set high for one cycle
-(`d_bus_fence_o` for a `fence` instruction; `i_bus_fence_o` for a `fencei` instruction). It is the task of the
-memory system to perform the necessary operations (for example a cache flush and refill).
+Whenever the CPU executes a `fence` instruction, the according interface signal is set high for one cycle
+(`d_bus_fence_o` for a `fence` instruction; `i_bus_fence_o` for a `fence.i` instruction). It is the task of the
+memory system to perform the necessary operations (for example a cache flush/reload).
 
 
 
