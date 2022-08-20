@@ -30,6 +30,13 @@ The bootloader memory is _read-only_ and is automatically initialized with the b
 determined via synthesis and expanded to the next power of two. For example, if the bootloader code requires
 10kB of storage, a ROM with 16kB will be generated. The maximum size must not exceed 32kB.
 
+.Access Latency
+[NOTE]
+By default, the bootloader ROM has a fixed access latency of one clock cycle (like all other processor-internal
+modules). However, custom versions of this module may also have higher access latency. See section <<_bus_interface>>
+for more information.
+
+.Read-Only Access
 [NOTE]
 Any write access to the BOOTROM will raise a _store access fault_ exception.
 

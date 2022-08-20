@@ -1515,6 +1515,12 @@ hardware reset does not _directly_ reset the remaining module's logic - the inte
 enable bit in the according unit's control register is cleared. Software can trigger a module reset
 by clearing the enable bit of the module's control register. See section <<_processor_reset>> for more information.
 
+.Access Latency of Processor-Internal Modules
+[NOTE]
+By default all processor internal modules (memories and peripherals) have a fixed access latency of one clock cycle.
+However, a custom version of any module may also have higher access latency. See section <<_bus_interface>>
+for more information.
+
 .Software Access
 [TIP]
 Use the provided <<_core_libraries>> to interact with the peripheral devices. This

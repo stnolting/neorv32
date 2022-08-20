@@ -19,6 +19,12 @@ generic. The size in bytes is defined via the _MEM_INT_DMEM_SIZE_ generic. If th
 the memory is mapped into the data memory space and located right at the beginning of the data memory
 space (default `dspace_base_c` = 0x80000000). The DMEM is always implemented as true RAM.
 
+.Access Latency
+[NOTE]
+By default, the DMEM has a fixed access latency of one clock cycle (like all other processor-internal
+modules). However, custom versions of this module may also have higher access latency. See section <<_bus_interface>>
+for more information.
+
 .VHDL Source File
 [NOTE]
 The actual DMEM is split into two design files: a plain entity definition (`neorv32_dmem.entity.vhd`) and the actual

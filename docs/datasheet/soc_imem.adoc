@@ -31,6 +31,12 @@ with the actual application program image. The compiler toolchain will generate 
 file `rtl/core/neorv32_application_image.vhd`, which is automatically inserted into the IMEM. If
 the IMEM is implemented as RAM (default), the memory will **not be initialized at all**.
 
+.Access Latency
+[NOTE]
+By default, the IMEM has a fixed access latency of one clock cycle (like all other processor-internal
+modules). However, custom versions of this module may also have higher access latency. See section <<_bus_interface>>
+for more information.
+
 .VHDL Source File
 [NOTE]
 The actual IMEM is split into two design files: a plain entity definition (`neorv32_imem.entity.vhd`) and the actual
