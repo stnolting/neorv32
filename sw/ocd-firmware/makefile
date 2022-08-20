@@ -7,7 +7,7 @@
 # ********************************************************************************************* #
 # BSD 3-Clause License                                                                          #
 #                                                                                               #
-# Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+# Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
 #                                                                                               #
 # Redistribution and use in source and binary forms, with or without modification, are          #
 # permitted provided that the following conditions are met:                                     #
@@ -111,7 +111,7 @@ OBJCOPY = $(RISCV_PREFIX)objcopy
 SIZE    = $(RISCV_PREFIX)size
 
 # Host native compiler
-CC_X86 = g++ -Wall -O -g
+CC_X86 = gcc -Wall -O -g
 
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
@@ -119,8 +119,6 @@ IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 # Compiler & linker flags
 CC_OPTS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
 CC_OPTS += -Wl,--gc-sections -lm -lc -lgcc -lc
-# This accelerates instruction fetch after branches when C extension is enabled (irrelevant when C extension is disabled)
-CC_OPTS += -falign-functions=4 -falign-labels=4 -falign-loops=4 -falign-jumps=4
 CC_OPTS += $(USER_FLAGS)
 
 

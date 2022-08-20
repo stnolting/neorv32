@@ -40,11 +40,10 @@
  * Modified for the NEORV32 processor by Stephan Nolting. */
 
 
-OUTPUT_FORMAT("elf32-littleriscv", "elf32-littleriscv", "elf32-littleriscv")
+OUTPUT_FORMAT("elf32-littleriscv")
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
 SEARCH_DIR("/opt/riscv/riscv32-unknown-elf/lib")
-SEARCH_DIR("=/opt/riscv/riscv64-unknown-linux-gnu/lib")
 SEARCH_DIR("=/usr/local/lib")
 SEARCH_DIR("=/lib")
 SEARCH_DIR("=/usr/lib")
@@ -53,7 +52,7 @@ SEARCH_DIR("=/usr/lib")
 /* ************************************************************************************************* */
 /* +++ NEORV32 memory configuration +++                                                              */
 /* If the symbols are not explicitly defined the default configurations are used. If required, only  */
-/* the edit the very last entry in each row.                                                         */
+/* edit the very last entry in each row.                                                             */
 /* NOTE: section sizes have to be a multiple of 4 bytes; base addresses have to be 32-bit-aligned.   */
 /* ************************************************************************************************* */
 
