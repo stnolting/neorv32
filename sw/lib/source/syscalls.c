@@ -271,7 +271,7 @@ ssize_t _write(int file, const void *ptr, size_t len)
 
 extern char __heap_start[];
 extern char __heap_end[];
-static char *brk = __heap_start;
+static char *brk = &__heap_start[0];
 
 int _brk(void *addr)
 {
@@ -283,14 +283,14 @@ void *_sbrk(ptrdiff_t incr)
 {
     char *old_brk = brk;
 
-    if (__heap_start == __heap_end) {
+    if (&__heap_start[0] == &__heap_end[0]) {
         return NULL;
     }
 
-    if ((brk += incr) < __heap_end) {
+    if ((brk += incr) < &__heap_end[0]) {
         brk += incr;
     } else {
-        brk = __heap_end;
+        brk = &__heap_end[0];
     }
     return old_brk;
 }
