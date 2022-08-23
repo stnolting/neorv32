@@ -60,10 +60,10 @@ include::rationale.adoc[]
 === Project Key Features
 
 * all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
-* completely described in behavioral, platform-independent VHDL - no vendor- or technology-specific primitives, attributed, macros, libraries, etc. are used at all
+* completely described in behavioral, platform-independent VHDL - no vendor- or technology-specific primitives, attributes, macros, libraries, etc. are used at all
 * extensive configuration options for adapting the processor to the requirements of the application
-* highly (https://stnolting.github.io/neorv32/ug/#_comparative_summary)[extensible hardware] - on CPU, SoC and system level
-* aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-performance trade-off
+* highly https://stnolting.github.io/neorv32/ug/#_comparative_summary[extensible hardware] - on CPU, SoC and system level
+* aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
 * FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the register file)
 * optimized for high clock frequencies to ease timing closure and integration
 * from zero to _"hello world!"_ - completely open source and documented
