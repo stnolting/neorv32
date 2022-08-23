@@ -13,6 +13,9 @@ __pycache__
 *.hex
 *_image.vhd
 
+# GDB logs
+*.gdb_history
+
 # keep default VHDL memory images
 !rtl/core/*_image.vhd
 
