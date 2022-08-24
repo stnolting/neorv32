@@ -70,7 +70,6 @@ architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
     done    : std_ulogic;
     cnt     : std_ulogic_vector(index_size_f(data_width_c)-1 downto 0);
     sreg    : std_ulogic_vector(data_width_c-1 downto 0);
-    res     : std_ulogic_vector(data_width_c-1 downto 0);
   end record;
   signal shifter : shifter_t;
 

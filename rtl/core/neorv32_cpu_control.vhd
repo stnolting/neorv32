@@ -2564,18 +2564,17 @@ begin
 
   -- Debug Control --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ocd_en:
-  if (CPU_EXTENSION_RISCV_DEBUG = true) generate
-    debug_control: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        debug_ctrl.state        <= DEBUG_OFFLINE;
-        debug_ctrl.ext_halt_req <= '0';
-      elsif rising_edge(clk_i) then
-        -- external halt request (from Debug Module) --
-        debug_ctrl.ext_halt_req <= db_halt_req_i;
+  debug_control: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      debug_ctrl.state        <= DEBUG_OFFLINE;
+      debug_ctrl.ext_halt_req <= '0';
+    elsif rising_edge(clk_i) then
+      -- external halt request (from Debug Module) --
+      debug_ctrl.ext_halt_req <= db_halt_req_i;
 
-        -- state machine --
+      -- state machine --
+      if (CPU_EXTENSION_RISCV_DEBUG = true) then
         case debug_ctrl.state is
 
           when DEBUG_OFFLINE => -- not in debug mode, waiting for entering request
@@ -2605,9 +2604,11 @@ begin
             debug_ctrl.state <= DEBUG_OFFLINE;
 
         end case;
+      else -- debug mode not implemented
+        debug_ctrl.state <= DEBUG_OFFLINE;
       end if;
-    end process debug_control;
-  end generate; --/ocd_en
+    end if;
+  end process debug_control;
 
   -- CPU is *in* debug mode --
   debug_ctrl.running <= '1' when ((debug_ctrl.state = DEBUG_ONLINE) or (debug_ctrl.state = DEBUG_EXIT)) and (CPU_EXTENSION_RISCV_DEBUG = true) else '0';

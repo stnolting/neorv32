@@ -163,7 +163,14 @@ begin
   -- "asynchronous" read --
   fifo_read_async:
   if (FIFO_RSYNC = false) generate
-    rdata_o <= fifo.buf when (FIFO_DEPTH = 1) else fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
+    fifo_read: process(fifo)
+    begin
+      if (FIFO_DEPTH = 1) then
+        rdata_o <= fifo.buf;
+      else
+        rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
+      end if;
+    end process fifo_read;
   end generate;
 
   -- synchronous read --
