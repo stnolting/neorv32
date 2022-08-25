@@ -63,7 +63,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070506"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070507"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -111,6 +111,7 @@ package neorv32_package is
   function xor_reduce_f(a : std_ulogic_vector) return std_ulogic;
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
   function to_hstring32_f(input : std_ulogic_vector(31 downto 0)) return string;
+  function hexchar_to_stdulogicvector_f(input : character) return std_ulogic_vector;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
   function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector;
@@ -2395,6 +2396,33 @@ package body neorv32_package is
     end loop; -- i
     return res_v;
   end function to_hstring32_f;
+
+  -- Function: Convert hex char to 4-bit std_ulogic_vector ----------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function hexchar_to_stdulogicvector_f(input : character) return std_ulogic_vector is
+    variable res_v : std_ulogic_vector(3 downto 0);
+  begin
+    case input is
+      when '0'       => res_v := x"0";
+      when '1'       => res_v := x"1";
+      when '2'       => res_v := x"2";
+      when '3'       => res_v := x"3";
+      when '4'       => res_v := x"4";
+      when '5'       => res_v := x"5";
+      when '6'       => res_v := x"6";
+      when '7'       => res_v := x"7";
+      when '8'       => res_v := x"8";
+      when '9'       => res_v := x"9";
+      when 'a' | 'A' => res_v := x"a";
+      when 'b' | 'B' => res_v := x"b";
+      when 'c' | 'C' => res_v := x"c";
+      when 'd' | 'D' => res_v := x"d";
+      when 'e' | 'E' => res_v := x"e";
+      when 'f' | 'F' => res_v := x"f";
+      when others    => res_v := x"0";
+    end case;
+    return res_v;
+  end function hexchar_to_stdulogicvector_f;
 
   -- Function: Bit reversal -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

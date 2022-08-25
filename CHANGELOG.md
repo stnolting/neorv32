@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 24.08.2022 | 1.7.5.7 | minor rtl cleanups [#396](https://github.com/stnolting/neorv32/pull/396) |
 | 20.08.2022 | 1.7.5.6 | :sparkles: update software framework to GCC 12.1.0 (new prebuilt toolchains available!) [#391](https://github.com/stnolting/neorv32/pull/391) |
 | 18.08.2022 | 1.7.5.5 | :lock: add **TRNG** read data protection; [#389](https://github.com/stnolting/neorv32/pull/389) |
 | 18.08.2022 | 1.7.5.4 | minor rtl cleanup in **PWM** module; [#388](https://github.com/stnolting/neorv32/pull/388) |
