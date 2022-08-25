@@ -22,17 +22,28 @@ according to your needs).
 .Example AXI SoC using Xilinx Vivado
 image::neorv32_axi_soc.png[]
 
+.TWI Tri-State Drivers
+[IMPORTANT]
+Set the synthesis option "global" when generating the block design to maintain the internal TWI tri-state drivers.
+
 .True Random Number Generator
 [IMPORTANT]
 The NEORV32 TRNG peripheral is enabled by default in the `neorv32_top_axi4lite` AXI wrapper. Otherwise, Vivado
 cannot insert the wrapper into a block design (see https://github.com/stnolting/neorv32/issues/227.).
 footnote:[Seems like Vivado has problem evaluating design source files that have more than two in-file sub-entities.]
 If the TRNG is not needed, you can disable it by double-clicking on the module's block and de-selecting
-"Io Trng En" after inserting the module.
+"IO_TRNG_EN" after inserting the module.
 
-.TWI Tri-State Drivers
-[IMPORTANT]
-Set the synthesis option "global" when generating the block design to maintain the internal TWI tri-state drivers.
+**Combinatorial Loops DRC error**
+If the TRNG is enabled it is recommended to add the following commands to the project's constraints file in order
+to prevent DRC errors during bitstream generation:
+
+[source,xdc]
+----
+set_property SEVERITY {warning} [get_drc_checks LUTLP-1]
+set_property IS_ENABLED FALSE [get_drc_checks LUTLP-1]
+set_property ALLOW_COMBINATORIAL_LOOPS TRUE
+----
 
 [NOTE]
 Guide provided by GitHub user https://github.com/AWenzel83[`AWenzel83`] (see
