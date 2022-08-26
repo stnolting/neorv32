@@ -486,7 +486,7 @@ phase where the application might not provide a trap handling yet.
 ** All interrupt sources are disabled and all pending interrupts are cleared.
 . Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
 during the early boot phase.
-. Clear all counter CSRs and stop auto-increment.
+. Clear <<_cycleh>> and <<_instreth>> counter CSRs.
 . Clear the `.bss` section defined by the linker script.
 . Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
 . Call and execute all _constructors_ (if there are any)

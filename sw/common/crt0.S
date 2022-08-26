@@ -73,16 +73,13 @@ __crt0_cpu_csr_init:
   la   x10,   __crt0_trap_handler // configure early-boot trap handler
   csrw mtvec, x10
 
-  csrw mstatus, zero              // also disables IRQs globally
-  csrw mie,     zero              // disable all interrupt sources
-  csrw mip,     zero              // clear all pending interrupts
+  csrw mstatus,   zero // also disables IRQs globally
+  csrw mie,       zero // disable all interrupt sources
+  csrw mip,       zero // clear all pending interrupts
 
-  csrw 0x320,      zero           // stop all counters; use "mcountinhibit" literal address for lagacy toolchain compatibility
-  csrw mcounteren, zero           // no access from less-privileged modes to counter CSRs
-
-  csrw mcycle,    zero            // reset cycle counter
+  csrw mcycle,    zero // reset cycle counter
   csrw mcycleh,   zero
-  csrw minstret,  zero            // reset instructions-retired counter
+  csrw minstret,  zero // reset instructions-retired counter
   csrw minstreth, zero
 
 
