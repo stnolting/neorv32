@@ -286,9 +286,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mcounteren_tm     : std_ulogic; -- mcounteren.tm: allow time[h] access from user-mode
     mcounteren_ir     : std_ulogic; -- mcounteren.ir: allow instret[h] access from user-mode
     --
-    mcountinhibit_cy  : std_ulogic; -- mcounterinhibit.cy: enable auto-increment for [m]cycle[h]
-    mcountinhibit_ir  : std_ulogic; -- mcounterinhibit.ir: enable auto-increment for [m]instret[h]
-    mcountinhibit_hpm : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0); -- mcounterinhibit.hpm3: enable auto-increment for mhpmcounterx[h]
+    mcountinhibit_cy  : std_ulogic; -- mcounterinhibit.cy: inhibit auto-increment for [m]cycle[h]
+    mcountinhibit_ir  : std_ulogic; -- mcounterinhibit.ir: inhibit auto-increment for [m]instret[h]
+    mcountinhibit_hpm : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0); -- mcounterinhibit.hpm3: inhibit auto-increment for mhpmcounterx[h]
     --
     privilege         : std_ulogic; -- current privilege mode
     privilege_eff     : std_ulogic; -- current *effective* privilege mode
@@ -660,21 +660,19 @@ begin
   execute_engine_fsm_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      -- no dedicated reset required --
-      execute_engine.i_reg       <= (others => def_rst_val_c);
-      execute_engine.is_ci       <= def_rst_val_c;
-      execute_engine.is_ici      <= def_rst_val_c;
-      execute_engine.i_reg_last  <= (others => def_rst_val_c);
-      execute_engine.pc_last     <= (others => def_rst_val_c);
-      execute_engine.next_pc     <= (others => def_rst_val_c);
-      execute_engine.branched    <= def_rst_val_c;
-      -- registers that DO require a specific RESET state --
-      ctrl                       <= (others => '0');
-      execute_engine.pc          <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned!
       execute_engine.state       <= BRANCHED; -- reset is a branch from "somewhere"
-      execute_engine.state_prev  <= BRANCHED; -- actual reset value is not relevant
-      execute_engine.state_prev2 <= BRANCHED; -- actual reset value is not relevant
+      execute_engine.state_prev  <= BRANCHED;
+      execute_engine.state_prev2 <= BRANCHED;
+      execute_engine.branched    <= '1'; -- reset is a branch from "somewhere"
+      execute_engine.i_reg       <= (others => '0');
+      execute_engine.is_ci       <= '0';
+      execute_engine.is_ici      <= '0';
+      ctrl                       <= (others => '0');
       execute_engine.sleep       <= '0';
+      execute_engine.pc_last     <= (others => '-'); -- reset value is irrelevant
+      execute_engine.i_reg_last  <= (others => '-'); -- reset value is irrelevant
+      execute_engine.pc          <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned boot address
+      execute_engine.next_pc     <= (others => '0');
     elsif rising_edge(clk_i) then
       -- execute engine arbiter --
       execute_engine.state       <= execute_engine.state_nxt;
@@ -751,9 +749,9 @@ begin
     ctrl_o <= ctrl;
     -- "commit" signals --
     ctrl_o(ctrl_rf_wb_en_c) <= ctrl(ctrl_rf_wb_en_c) and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- no write if illegal instruction
-    -- current effective privilege level --
+    -- current (effective) privilege level --
     ctrl_o(ctrl_priv_mode_c) <= csr.privilege_eff;
-    if (csr.mstatus_mprv = '1') then -- effective privilege level for load/stores in M-mode
+    if (csr.mstatus_mprv = '1') then -- effective privilege level for loads and stores in M-mode
       ctrl_o(ctrl_bus_priv_c) <= csr.mstatus_mpp;
     else
       ctrl_o(ctrl_bus_priv_c) <= csr.privilege_eff;
@@ -885,29 +883,26 @@ begin
     execute_engine.is_ici_nxt   <= '0';
     execute_engine.sleep_nxt    <= execute_engine.sleep;
     execute_engine.branched_nxt <= execute_engine.branched;
-    --
     execute_engine.pc_mux_sel   <= '0';
     execute_engine.pc_we        <= '0';
 
-    -- instruction dispatch --
-    fetch_engine.reset          <= '0';
+    -- instruction dispatch defaults --
+    fetch_engine.reset <= '0';
 
-    -- trap environment control --
-    trap_ctrl.env_start_ack     <= '0';
-    trap_ctrl.env_end           <= '0';
-    debug_ctrl.dret             <= '0';
+    -- trap environment control defaults --
+    trap_ctrl.env_start_ack <= '0';
+    trap_ctrl.env_end       <= '0';
+    trap_ctrl.instr_be      <= '0';
+    trap_ctrl.instr_ma      <= '0';
+    trap_ctrl.env_call      <= '0';
+    trap_ctrl.break_point   <= '0';
+    debug_ctrl.dret         <= '0';
 
-    -- exception triggers --
-    trap_ctrl.instr_be          <= '0';
-    trap_ctrl.instr_ma          <= '0';
-    trap_ctrl.env_call          <= '0';
-    trap_ctrl.break_point       <= '0';
+    -- CSR access defaults --
+    csr.we_nxt <= '0';
+    csr.re_nxt <= '0';
 
-    -- CSR access --
-    csr.we_nxt                  <= '0';
-    csr.re_nxt                  <= '0';
-
-    -- CONTROL DEFAULTS --
+    -- CONTROL defaults --
     ctrl_nxt <= (others => '0'); -- default: all off
     ctrl_nxt(ctrl_alu_op2_c downto ctrl_alu_op0_c) <= alu_op_add_c; -- default ALU operation: ADD
     ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_alu_c; -- default RF input: ALU
@@ -924,17 +919,18 @@ begin
 
       when DISPATCH => -- Get new command from instruction issue engine
       -- ------------------------------------------------------------
-        -- PC & IR update --
+        -- update PC and compressed instruction status flags --
         execute_engine.pc_mux_sel <= '0'; -- next PC
         execute_engine.pc_we      <= not execute_engine.branched; -- update PC with next_pc if there was no actual branch
-        execute_engine.i_reg_nxt  <= issue_engine.data(31 downto 0);
         execute_engine.is_ci_nxt  <= issue_engine.data(32); -- this is a de-compressed instruction
-        execute_engine.is_ici_nxt <= issue_engine.data(35); -- illegal compressed instruction
+        execute_engine.is_ici_nxt <= issue_engine.data(35); -- this is an illegal compressed instruction
         --
         if (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- instruction available?
+          -- update IR *only* if we have a new instruction word available as this register must not contain non-defined values --
+          execute_engine.i_reg_nxt <= issue_engine.data(31 downto 0); -- <has to stay here>
           -- clear branch flipflop --
           execute_engine.branched_nxt <= '0';
-          -- IR update - exceptions --
+          -- instruction fetch exceptions --
           trap_ctrl.instr_ma <= issue_engine.data(33) and (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_C)); -- misaligned instruction fetch (if C disabled)
           trap_ctrl.instr_be <= issue_engine.data(34); -- bus access fault during instruction fetch
           -- any reason to go to trap state? --
@@ -1902,10 +1898,10 @@ begin
           if (csr.addr(11 downto 5) = csr_cnt_setup_c) then -- counter configuration CSR class
             -- R/W: mcountinhibit - machine counter-inhibit register --
             if (csr.addr(4 downto 0) = csr_mcountinhibit_c(4 downto 0)) then
-              csr.mcountinhibit_cy <= csr.wdata(0); -- enable auto-increment of [m]cycle[h] counter
-              csr.mcountinhibit_ir <= csr.wdata(2); -- enable auto-increment of [m]instret[h] counter
+              csr.mcountinhibit_cy <= csr.wdata(0); -- inhibit auto-increment of [m]cycle[h] counter
+              csr.mcountinhibit_ir <= csr.wdata(2); -- inhibit auto-increment of [m]instret[h] counter
               if (HPM_NUM_CNTS > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then -- any HPMs available?
-                csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- enable auto-increment of [m]hpmcounter*[h] counter
+                csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- inhibit auto-increment of [m]hpmcounter*[h] counter
               end if;
             end if;
             -- R/W: mhpmevent - machine performance-monitors event selector --
@@ -2200,10 +2196,10 @@ begin
           -- machine counter setup --
           -- --------------------------------------------------------------------
           when csr_mcountinhibit_c => -- mcountinhibit (r/w): machine counter-inhibit register
-            csr.rdata(0) <= csr.mcountinhibit_cy; -- enable auto-increment of [m]cycle[h] counter
-            csr.rdata(2) <= csr.mcountinhibit_ir; -- enable auto-increment of [m]instret[h] counter
+            csr.rdata(0) <= csr.mcountinhibit_cy; -- inhibit auto-increment of [m]cycle[h] counter
+            csr.rdata(2) <= csr.mcountinhibit_ir; -- inhibit auto-increment of [m]instret[h] counter
             if (HPM_NUM_CNTS > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then -- any HPMs available?
-              csr.rdata(csr.mcountinhibit_hpm'left+3 downto 3) <= csr.mcountinhibit_hpm; -- enable auto-increment of [m]hpmcounterx[h] counter
+              csr.rdata(csr.mcountinhibit_hpm'left+3 downto 3) <= csr.mcountinhibit_hpm; -- inhibit auto-increment of [m]hpmcounterx[h] counter
             end if;
 
           -- machine performance-monitoring event selector (r/w) --
