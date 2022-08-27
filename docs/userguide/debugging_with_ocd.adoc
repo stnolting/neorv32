@@ -94,6 +94,9 @@ the `misa` CSRs). The processor is halted and OpenOCD waits fot `gdb` to connect
 :sectnums:
 === Debugging with GDB
 
+[TIP]
+The GNU debugger is part of the RISC-V GCC toolchain (see <<_software_toolchain_setup>>).
+
 This guide uses the simple "blink example" from `sw/example/blink_led` as simplified test application to
 show the basics of in-system debugging.
 
@@ -117,7 +120,6 @@ This will generate an ELF file `main.elf` that contains all the symbols required
 Furthermore, an assembly listing file `main.asm` is generated that we will use to define breakpoints.
 
 Open another terminal in `sw/example/blink_led` and start `gdb`.
-The GNU debugger is part of the toolchain (see <<_software_toolchain_setup>>).
 
 .Starting GDB (on Linux (Ubuntu on Windows))
 [source, bash]
