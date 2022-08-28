@@ -37,11 +37,9 @@ are executed. Whenever an unexpected situation occurs the application code is in
 
 :recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
 
-:books: For detailed information take a look at the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
-The latest _PDF_ versions can be found [here](https://github.com/stnolting/neorv32/releases/tag/nightly).
+:books: For detailed information see the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
 
 :label: The project's change log is available in [`CHANGELOG.md`](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
-To see the changes between _official releases_ visit the project's [release page](https://github.com/stnolting/neorv32/releases).
 
 :package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) targeting
 various FPGA boards and toolchains to get you started. Also check out the list of
@@ -58,9 +56,8 @@ various FPGA boards and toolchains to get you started. Also check out the list o
 not working as expected. Or have a chat on our [gitter channel](https://gitter.im/neorv32/community).
 See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
 
-:rocket: Check out the [quick links below](#6-Getting-Started) or jump directly to the
-[*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started
-setting up _your_ NEORV32 Processor!
+:rocket: Check out the [quick links below](#6-Getting-Started) and the
+[*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started setting up _your_ NEORV32 processor!
 
 
 ### Key Features
