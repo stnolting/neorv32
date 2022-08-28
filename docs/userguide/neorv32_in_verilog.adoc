@@ -8,9 +8,8 @@ you can use an **all-Verilog** version of the processor provided by the https://
 [IMPORTANT]
 Note that this is **not a manual re-implementation of the core in Verilog** but rather an automated conversion.
 
-
 GHDL's synthesis feature is used to convert a pre-configured NEORV32 setup - including all peripherals, memories
-and memory images - into an unoptimized plain-Verilog netlist module file without any (technology-specific) primitives
+and memory images - into an unoptimized plain-Verilog netlist module file without any (technology-specific) primitives.
 
 .GHDL Synthesis
 [TIP]
