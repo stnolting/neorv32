@@ -39,11 +39,11 @@ are executed. Whenever an unexpected situation occurs the application code is in
 
 :books: For detailed information see the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
 
-:label: The project's change log is available in [`CHANGELOG.md`](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
+:label: The project's change log is available in [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
 
-:package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) targeting
-various FPGA boards and toolchains to get you started. Also check out the list of
-[community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects) there.
+:package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
+[community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
+targeting various FPGA boards and toolchains to get started.
 
 :heavy_check_mark: Automatic check for RISC-V specification [compliance](https://github.com/stnolting/neorv32-verif).
 
@@ -51,20 +51,19 @@ various FPGA boards and toolchains to get you started. Also check out the list o
 [FreeRTOS](https://github.com/stnolting/neorv32/tree/main/sw/example/demo_freeRTOS) operating systems and
 [LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC Builder Framework.
 
+:rocket: Check out the [quick links below](#6-Getting-Started) and the
+[*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started setting up _your_ NEORV32 processor!
+
 :bulb: Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
 [discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or if something is
 not working as expected. Or have a chat on our [gitter channel](https://gitter.im/neorv32/community).
 See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
 
-:rocket: Check out the [quick links below](#6-Getting-Started) and the
-[*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started setting up _your_ NEORV32 processor!
-
 
 ### Key Features
 
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
-- [x] completely described in behavioral, platform-independent VHDL - **no** platform-specific primitives, macros, attributes, etc.
-- [x] all-Verilog "version" [available](https://github.com/stnolting/neorv32-verilog)
+- [x] completely described in behavioral, platform-independent VHDL - **no** platform-specific primitives, macros, attributes, etc.; an all-Verilog "version" is also [available](https://github.com/stnolting/neorv32-verilog)
 - [x] extensive configuration options for adapting the processor to the requirements of the application
 - [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, processor and system level
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
