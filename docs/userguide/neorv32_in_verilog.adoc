@@ -4,7 +4,11 @@
 
 If you are more of a Verilog fan or if your EDA toolchain does not support VHDL or mixed-language designs
 you can use an **all-Verilog** version of the processor provided by the https://github.com/stnolting/neorv32-verilog[`neorv32-verilog`] repository.
+
+[IMPORTANT]
 Note that this is **not a manual re-implementation of the core in Verilog** but rather an automated conversion.
+
+
 GHDL's synthesis feature is used to convert a pre-configured NEORV32 setup - including all peripherals, memories
 and memory images - into an unoptimized plain-Verilog netlist module file without any (technology-specific) primitives
 
