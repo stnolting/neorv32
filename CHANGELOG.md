@@ -39,7 +39,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 | 18.08.2022 | 1.7.5.5 | :lock: add **TRNG** read data protection; [#389](https://github.com/stnolting/neorv32/pull/389) |
 | 18.08.2022 | 1.7.5.4 | minor rtl cleanup in **PWM** module; [#388](https://github.com/stnolting/neorv32/pull/388) |
 | 17.08.2022 | 1.7.5.3 | optimized **CPU front-end** - faster instruction fetch; [#387](https://github.com/stnolting/neorv32/pull/387) |
-| 16.08.2022 | 1.7.5.2 | relocate TWI tri-state drivers; [#]386()https://github.com/stnolting/neorv32/pull/386 |
+| 16.08.2022 | 1.7.5.2 | relocate TWI tri-state drivers; [#386](https://github.com/stnolting/neorv32/pull/386) |
 | 15.08.2022 | 1.7.5.1 | change base address of **BUSKEEPER**; [#385](https://github.com/stnolting/neorv32/pull/385) |
 | 15.08.2022 | [**:rocket:1.7.5**](https://github.com/stnolting/neorv32/releases/tag/v1.7.5) | **New release** |
 | 14.08.2022 | 1.7.4.10 | cleanup of FIFO rtl component [#384](https://github.com/stnolting/neorv32/pull/384) |
