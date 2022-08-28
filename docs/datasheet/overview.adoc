@@ -61,6 +61,7 @@ include::rationale.adoc[]
 
 * all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
 * completely described in behavioral, platform-independent VHDL - no vendor- or technology-specific primitives, attributes, macros, libraries, etc. are used at all
+* all-Verilog "version" https://github.com/stnolting/neorv32-verilog[available] (auto-generated netlist)
 * extensive configuration options for adapting the processor to the requirements of the application
 * highly https://stnolting.github.io/neorv32/ug/#_comparative_summary[extensible hardware] - on CPU, SoC and system level
 * aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off

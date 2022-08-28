@@ -1,0 +1,38 @@
+<<<
+:sectnums:
+== NEORV32 in Verilog
+
+If you are more of a Verilog fan or if your EDA toolchain does not support VHDL or mixed-language designs
+you can use an **all-Verilog** version of the processor provided by the https://github.com/stnolting/neorv32-verilog[`neorv32-verilog`] repository.
+
+[IMPORTANT]
+Note that this is **not a manual re-implementation of the core in Verilog** but rather an automated conversion.
+
+GHDL's synthesis feature is used to convert a pre-configured NEORV32 setup - including all peripherals, memories
+and memory images - into an unoptimized plain-Verilog netlist module file without any (technology-specific) primitives.
+
+.GHDL Synthesis
+[TIP]
+More information regarding GHDL's synthesis option can be found at https://ghdl.github.io/ghdl/using/Synthesis.html.
+
+An intermediate VHDL wrapper is provided that can be used to configure the processor (using VHDL generics) and to customize
+the interface ports. After conversion, a single Verilog file is generated that contains the whole NEORV32 processor.
+The original processor module hierarchy is preserved as well as most (all?) signal names, which allows easy inspection and debugging
+of simulation waveforms and synthesis results.
+
+.Example: interface of the resulting NEORV32 Verilog module (for a minimal SoC configuration)
+[source,verilog]
+----
+module neorv32_verilog_wrapper
+  (input  clk_i,
+   input  rstn_i,
+   input  uart0_rxd_i,
+   output uart0_txd_o);
+----
+
+The generated Verilog netlist has been tested with
+https://github.com/steveicarus/iverilog[Icarus Verilog]
+(simulation) and Xilinx Vivado (simulation and synthesis).
+
+[TIP]
+For detailed information check out the `neorv32-verilog` repository at https://github.com/stnolting/neorv32-verilog.
