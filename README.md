@@ -24,8 +24,8 @@
 
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/main/docs/figures/neorv32_processor.png)
 
-The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** written in platform-independent
-**VHDL** that is based on the NEORV32 [RISC-V](https://riscv.org/) CPU. The project is intended as auxiliary processor in larger SoC designs
+The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
+[RISC-V](https://riscv.org/) CPU. The project is intended as auxiliary processor in larger SoC designs
 or as *ready-to-go* stand-alone custom microcontroller that even fits into a Lattice iCE40 UltraPlus 5k
 low-power & low-density FPGA running at 24+ MHz.
 
@@ -34,6 +34,8 @@ Therefore, the CPU ensures that all memory access are acknowledged and no invali
 are executed. Whenever an unexpected situation occurs the application code is informed via precise and resumable hardware exceptions.
 
 :interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
+
+:recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
 
 :books: For detailed information take a look at the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
 The latest _PDF_ versions can be found [here](https://github.com/stnolting/neorv32/releases/tag/nightly).
@@ -51,20 +53,21 @@ various FPGA boards and toolchains to get you started. Also check out the list o
 [FreeRTOS](https://github.com/stnolting/neorv32/tree/main/sw/example/demo_freeRTOS) operating systems and
 [LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC Builder Framework.
 
-:bulb: Feel free to open a [new issue](https://github.com/stnolting/neorv32/issues) or start a
-[new discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or if something is
+:bulb: Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
+[discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or if something is
 not working as expected. Or have a chat on our [gitter channel](https://gitter.im/neorv32/community).
 See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
 
-:rocket: Check out the [quick links below](#6-Getting-Started) or directly jump to the
+:rocket: Check out the [quick links below](#6-Getting-Started) or jump directly to the
 [*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started
-setting up your NEORV32 setup!
+setting up _your_ NEORV32 Processor!
 
 
 ### Key Features
 
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
 - [x] completely described in behavioral, platform-independent VHDL - **no** platform-specific primitives, macros, attributes, etc.
+- [x] all-Verilog "version" [available](https://github.com/stnolting/neorv32-verilog)
 - [x] extensive configuration options for adapting the processor to the requirements of the application
 - [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, processor and system level
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
@@ -79,17 +82,21 @@ setting up your NEORV32 setup!
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
 [![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32)
 \
+[![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/main?longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor)
 [![Documentation](https://img.shields.io/github/workflow/status/stnolting/neorv32/Documentation/main?longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation)
-[![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/main?longCache=true&style=flat-square&label=Processor&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor)
+\
 [![riscv-arch-test](https://img.shields.io/github/workflow/status/stnolting/neorv32-verif/riscv-arch-test/main?longCache=true&style=flat-square&label=riscv-arch-test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verif/actions?query=workflow%3Ariscv-arch-test)
 [![Prebuilt_Toolchains](https://img.shields.io/github/workflow/status/stnolting/riscv-gcc-prebuilt/Test%20Toolchains/main?longCache=true&style=flat-square&label=Prebuilt%20Toolchains&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/riscv-gcc-prebuilt/actions/workflows/main.yml)
 [![Implementation](https://img.shields.io/github/workflow/status/stnolting/neorv32-setups/Implementation/main?longCache=true&style=flat-square&label=Implementation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-setups/actions?query=workflow%3AImplementation)
+[![neorv32-verilog](https://img.shields.io/github/workflow/status/stnolting/neorv32-verilog/Verification/main?longCache=true&style=flat-square&label=neorv32-verilog&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verilog/actions/workflows/main.yml)
 
 The NEORV32 is fully operational.
 The processor passes the official RISC-V architecture tests, which is checked by the
 [neorv32-verif](https://github.com/stnolting/neorv32-verif) repository. It can successfully run _any_ C program
 (for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example) folder) including CoreMark
 and FreeRTOS and can be synthesized for _any_ target technology - tested on Intel, Xilinx and Lattice FPGAs.
+The conversion into a plain Verilog netlist module is automatically checked by the
+[neorv32-verilog](https://github.com/stnolting/neorv32-verilog) repository.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -305,6 +312,7 @@ This overview provides some *quick links* to the most important sections of the
 * [Debugging via the On-Chip Debugger](https://stnolting.github.io/neorv32/ug/#_debugging_using_the_on_chip_debugger) - step through code *online* and *in-system*
 * [Simulation](https://stnolting.github.io/neorv32/ug/#_simulating_the_processor) - simulate the whole SoC
 * [LiteX Integration](https://stnolting.github.io/neorv32/ug/#_litex_soc_builder_support) - build a SoC using NEORV32 + [LiteX](https://github.com/enjoy-digital/litex)
+* [Convert to Verilog](https://stnolting.github.io/neorv32/ug/#_neorv32_in_verilog) - turn the NEORV32 into an all-Verilog design
 
 ### :copyright: Legal
 
