@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 28.08.2022 | [**:rocket:1.7.6**](https://github.com/stnolting/neorv32/releases/tag/v1.7.6) | **New release** |
 | 27.08.2022 | 1.7.5.9 | fix minor core rtl issues that were found while experimenting with a low-level netlist of the processor; [#398](https://github.com/stnolting/neorv32/pull/398) |
 | 26.08.2022 | 1.7.5.8 | cleanup **crt0** start-up code: remove setup of `mcountern` and `mcountinhibit` CSRs; [#397](https://github.com/stnolting/neorv32/pull/397) |
 | 24.08.2022 | 1.7.5.7 | minor rtl cleanups [#396](https://github.com/stnolting/neorv32/pull/396) |
