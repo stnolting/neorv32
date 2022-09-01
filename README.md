@@ -152,7 +152,8 @@ allows booting application code via UART or from external SPI flash
 * standard serial interfaces
 ([UART](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0),
 [SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi),
-[TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi))
+[TWI/I2C](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi)),
+[ONEWIRE/1-Wire](https://stnolting.github.io/neorv32/#_one_wire_serial_interface_controller_onewire))
 * general purpose IOs ([GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio)) and
 [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
 * smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly control NeoPixel(TM) LEDs
