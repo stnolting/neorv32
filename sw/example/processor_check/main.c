@@ -251,11 +251,6 @@ int main() {
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIFENCEI)) {
     asm volatile ("fence.i");
   }
-  asm volatile ("fence");
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIFENCEI)) {
-    asm volatile ("fence.i");
-  }
-  asm volatile ("fence");
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
     test_ok();
@@ -1584,7 +1579,7 @@ int main() {
   // Test invalid CSR access in user mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Invalid CSR access (mstatus) from U-mode ", cnt_test);
+  PRINT_STANDARD("[%i] Invalid CSR access from U-mode ", cnt_test);
 
   cnt_test++;
 
@@ -1760,7 +1755,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all HPM counters
   PRINT_STANDARD("\n\n--<< HPM.low (%u) >>--\n", num_hpm_cnts_global);
   PRINT_STANDARD("#00 Instr.:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET));
-  // HPM #01 does never exist!
+  // HPM #01 does not exist
   PRINT_STANDARD("#02 Clocks:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));
   PRINT_STANDARD("#03 C-instr.: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));
   PRINT_STANDARD("#04 IF wait:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));
