@@ -128,5 +128,5 @@ explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
                                               <|`29` _TWI_CTRL_CLAIMED_ ^| r/- <| set if the TWI bus is claimed by any controller
                                               <|`30` _TWI_CTRL_ACK_     ^| r/- <| ACK received when set, NACK received when cleared
                                               <|`31` _TWI_CTRL_BUSY_    ^| r/- <| transfer/START/STOP in progress when set
-| `0xffffffb4` | `NEORV32_TWI.DATA` |`7:0` _TWI_DATA_MSB_ : TWI_DATA_LSB_ | r/w | receive/transmit data
+| `0xffffffb4` | `NEORV32_TWI.DATA` |`7:0` _TWI_DATA_MSB_ : _TWI_DATA_LSB_ | r/w | receive/transmit data
 |=======================
