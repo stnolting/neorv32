@@ -139,7 +139,8 @@ entity neorv32_top is
     IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
+    IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
+    IO_ONEWIRE_EN                : boolean := false   -- implement 1-wire interface (ONEWIRE)?
   );
   port (
     -- Global control --
@@ -213,6 +214,9 @@ entity neorv32_top is
     twi_sda_io     : inout std_logic; -- twi serial data line
     twi_scl_io     : inout std_logic; -- twi serial clock line
 
+    -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
+    onewire_io     : inout std_logic; -- 1-wire bus
+
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          : out std_ulogic_vector(59 downto 0); -- pwm channels
 
@@ -260,19 +264,20 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clk_div       : std_ulogic_vector(11 downto 0);
   signal clk_div_ff    : std_ulogic_vector(11 downto 0);
   signal clk_gen       : std_ulogic_vector(07 downto 0);
-  signal clk_gen_en    : std_ulogic_vector(09 downto 0);
+  signal clk_gen_en    : std_ulogic_vector(10 downto 0);
   signal clk_gen_en_ff : std_ulogic;
   --
-  signal wdt_cg_en    : std_ulogic;
-  signal uart0_cg_en  : std_ulogic;
-  signal uart1_cg_en  : std_ulogic;
-  signal spi_cg_en    : std_ulogic;
-  signal twi_cg_en    : std_ulogic;
-  signal pwm_cg_en    : std_ulogic;
-  signal cfs_cg_en    : std_ulogic;
-  signal neoled_cg_en : std_ulogic;
-  signal gptmr_cg_en  : std_ulogic;
-  signal xip_cg_en    : std_ulogic;
+  signal wdt_cg_en     : std_ulogic;
+  signal uart0_cg_en   : std_ulogic;
+  signal uart1_cg_en   : std_ulogic;
+  signal spi_cg_en     : std_ulogic;
+  signal twi_cg_en     : std_ulogic;
+  signal pwm_cg_en     : std_ulogic;
+  signal cfs_cg_en     : std_ulogic;
+  signal neoled_cg_en  : std_ulogic;
+  signal gptmr_cg_en   : std_ulogic;
+  signal xip_cg_en     : std_ulogic;
+  signal onewire_cg_en : std_ulogic;
 
   -- CPU status --
   type cpu_status_t is record
@@ -351,7 +356,7 @@ architecture neorv32_top_rtl of neorv32_top is
   type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO,
                          RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI, RESP_TWI, RESP_PWM, RESP_WDT,
                          RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK, RESP_XIRQ,
-                         RESP_GPTMR, RESP_XIP_CT, RESP_XIP_ACC);
+                         RESP_GPTMR, RESP_XIP_CT, RESP_XIP_ACC, RESP_ONEWIRE);
 
   -- module response bus --
   type resp_bus_t is array (resp_bus_id_t) of resp_bus_entry_t;
@@ -373,10 +378,12 @@ architecture neorv32_top_rtl of neorv32_top is
   signal slink_rx_irq  : std_ulogic;
   signal xirq_irq      : std_ulogic;
   signal gptmr_irq     : std_ulogic;
+  signal onewire_irq   : std_ulogic;
 
   -- tri-state drivers --
   signal twi_sda_i, twi_sda_o : std_ulogic;
   signal twi_scl_i, twi_scl_o : std_ulogic;
+  signal onewire_i, onewire_o : std_ulogic;
 
   -- misc --
   signal mtime_time  : std_ulogic_vector(63 downto 0); -- current system time from MTIME
@@ -407,6 +414,7 @@ begin
   cond_sel_string_f(boolean(XIRQ_NUM_CH > 0), "XIRQ ", "") &
   cond_sel_string_f(IO_GPTMR_EN, "GPTMR ", "") &
   cond_sel_string_f(IO_XIP_EN, "XIP ", "") &
+  cond_sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ", "") &
   "" 
   severity note;
 
@@ -498,16 +506,17 @@ begin
   clk_gen(clk_div4096_c) <= clk_div(11) and (not clk_div_ff(11)); -- CLK/4096
 
   -- fresh clocks anyone? --
-  clk_gen_en(0) <= wdt_cg_en;
-  clk_gen_en(1) <= uart0_cg_en;
-  clk_gen_en(2) <= uart1_cg_en;
-  clk_gen_en(3) <= spi_cg_en;
-  clk_gen_en(4) <= twi_cg_en;
-  clk_gen_en(5) <= pwm_cg_en;
-  clk_gen_en(6) <= cfs_cg_en;
-  clk_gen_en(7) <= neoled_cg_en;
-  clk_gen_en(8) <= gptmr_cg_en;
-  clk_gen_en(9) <= xip_cg_en;
+  clk_gen_en(0)  <= wdt_cg_en;
+  clk_gen_en(1)  <= uart0_cg_en;
+  clk_gen_en(2)  <= uart1_cg_en;
+  clk_gen_en(3)  <= spi_cg_en;
+  clk_gen_en(4)  <= twi_cg_en;
+  clk_gen_en(5)  <= pwm_cg_en;
+  clk_gen_en(6)  <= cfs_cg_en;
+  clk_gen_en(7)  <= neoled_cg_en;
+  clk_gen_en(8)  <= gptmr_cg_en;
+  clk_gen_en(9)  <= xip_cg_en;
+  clk_gen_en(10) <= onewire_cg_en;
 
 
 -- ****************************************************************************************************************************
@@ -610,8 +619,8 @@ begin
   fast_irq(10) <= slink_rx_irq;  -- SLINK RX
   fast_irq(11) <= slink_tx_irq;  -- SLINK TX
   fast_irq(12) <= gptmr_irq;     -- general purpose timer
+  fast_irq(13) <= onewire_irq;   -- ONEWIRE operation done
   --
-  fast_irq(13) <= '0';           -- reserved
   fast_irq(14) <= '0';           -- reserved
   fast_irq(15) <= '0';           -- LOWEST PRIORITY - reserved
 
@@ -1530,19 +1539,19 @@ begin
     neorv32_gptmr_inst: neorv32_gptmr
     port map (
       -- host access --
-      clk_i     => clk_i,                      -- global clock line
-      rstn_i    => rstn_int,                   -- global reset line, low-active
-      addr_i    => p_bus.addr,                 -- address
-      rden_i    => io_rden,                    -- read enable
-      wren_i    => io_wren,                    -- write enable
-      data_i    => p_bus.wdata,                -- data in
-      data_o    => resp_bus(RESP_GPTMR).rdata, -- data out
-      ack_o     => resp_bus(RESP_GPTMR).ack,   -- transfer acknowledge
+      clk_i       => clk_i,                      -- global clock line
+      rstn_i      => rstn_int,                   -- global reset line, low-active
+      addr_i      => p_bus.addr,                 -- address
+      rden_i      => io_rden,                    -- read enable
+      wren_i      => io_wren,                    -- write enable
+      data_i      => p_bus.wdata,                -- data in
+      data_o      => resp_bus(RESP_GPTMR).rdata, -- data out
+      ack_o       => resp_bus(RESP_GPTMR).ack,   -- transfer acknowledge
       -- clock generator --
-      clkgen_en_o => gptmr_cg_en,              -- enable clock generator
+      clkgen_en_o => gptmr_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
       -- interrupt --
-      irq_o       => gptmr_irq                 -- transmission done interrupt
+      irq_o       => gptmr_irq                   -- transmission done interrupt
     );
     resp_bus(RESP_GPTMR).err <= '0'; -- no access error possible
   end generate;
@@ -1553,6 +1562,47 @@ begin
     --
     gptmr_cg_en <= '0';
     gptmr_irq   <= '0';
+  end generate;
+
+
+  -- 1-Wire Interface Controller (ONEWIRE) --------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_onewire_inst_true:
+  if (IO_ONEWIRE_EN = true) generate
+    neorv32_onewire_inst: neorv32_onewire
+    port map (
+    -- host access --
+      clk_i       => clk_i,                        -- global clock line
+      rstn_i      => rstn_int,                     -- global reset line, low-active
+      addr_i      => p_bus.addr,                   -- address
+      rden_i      => io_rden,                      -- read enable
+      wren_i      => io_wren,                      -- write enable
+      data_i      => p_bus.wdata,                  -- data in
+      data_o      => resp_bus(RESP_ONEWIRE).rdata, -- data out
+      ack_o       => resp_bus(RESP_ONEWIRE).ack,   -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o => onewire_cg_en,                -- enable clock generator
+      clkgen_i    => clk_gen,
+      -- com lines (require external tri-state drivers) --
+      onewire_i   => onewire_i,                    -- 1-wire line state
+      onewire_o   => onewire_o,                    -- 1-wire line pull-down
+      -- interrupt --
+      irq_o       => onewire_irq                   -- transfer done IRQ
+    );
+    resp_bus(RESP_ONEWIRE).err <= '0'; -- no access error possible
+
+    -- tri-state driver --
+    onewire_io <= '0' when (onewire_o = '0') else 'Z'; -- module can only pull the line low actively
+    onewire_i  <= to_stdulogic(to_bit(onewire_io)); -- "to_bit" to avoid hardware-vs-simulation mismatch
+  end generate;
+
+  neorv32_onewire_inst_false:
+  if (IO_ONEWIRE_EN = false) generate
+    resp_bus(RESP_ONEWIRE) <= resp_bus_entry_terminate_c;
+    --
+    onewire_io    <= 'Z';
+    onewire_cg_en <= '0';
+    onewire_irq   <= '0';
   end generate;
 
 
@@ -1597,7 +1647,8 @@ begin
     IO_NEOLED_EN         => IO_NEOLED_EN,         -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_XIRQ_NUM_CH       => XIRQ_NUM_CH,          -- number of external interrupt (XIRQ) channels to implement
     IO_GPTMR_EN          => IO_GPTMR_EN,          -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN            => IO_XIP_EN             -- implement execute in place module (XIP)?
+    IO_XIP_EN            => IO_XIP_EN,            -- implement execute in place module (XIP)?
+    IO_ONEWIRE_EN        => IO_ONEWIRE_EN         -- implement 1-wire interface (ONEWIRE)?
   )
   port map (
     -- host access --

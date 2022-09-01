@@ -63,7 +63,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070600"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070601"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -252,9 +252,11 @@ package neorv32_package is
   constant gptmr_count_addr_c   : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff68";
 --constant gptmr_reserve_addr_c : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff6c";
 
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff70"; -- base address
---constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
+  -- 1-Wire Interface Controller (ONEWIRE) --
+  constant onewire_base_c       : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff70"; -- base address
+  constant onewire_size_c       : natural := 2*4; -- module's address space size in bytes
+  constant onewire_ctrl_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff70";
+  constant onewire_data_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff74";
 
   -- Bus Access Monitor (BUSKEEPER) --
   constant buskeeper_base_c     : std_ulogic_vector(data_width_c-1 downto 0) := x"ffffff78"; -- base address
@@ -1034,7 +1036,8 @@ package neorv32_package is
       IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
       IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
       IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
-      IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
+      IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
+      IO_ONEWIRE_EN                : boolean := false   -- implement 1-wire interface (ONEWIRE)?
     );
     port (
       -- Global control --
@@ -1096,6 +1099,8 @@ package neorv32_package is
       -- TWI (available if IO_TWI_EN = true) --
       twi_sda_io     : inout std_logic; -- twi serial data line
       twi_scl_io     : inout std_logic; -- twi serial clock line
+      -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
+      onewire_io     : inout std_logic; -- 1-wire bus
       -- PWM (available if IO_PWM_NUM_CH > 0) --
       pwm_o          : out std_ulogic_vector(59 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
@@ -2068,6 +2073,30 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: 1-Wire Interface Controller (ONEWIRE) ---------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_onewire
+    port (
+      -- host access --
+      clk_i       : in  std_ulogic; -- global clock line
+      rstn_i      : in  std_ulogic; -- global reset line, low-active
+      addr_i      : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i      : in  std_ulogic; -- read enable
+      wren_i      : in  std_ulogic; -- write enable
+      data_i      : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o      : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o       : out std_ulogic; -- transfer acknowledge
+      -- clock generator --
+      clkgen_en_o : out std_ulogic; -- enable clock generator
+      clkgen_i    : in  std_ulogic_vector(07 downto 0);
+      -- com lines (require external tri-state drivers) --
+      onewire_i   : in  std_ulogic; -- 1-wire line state
+      onewire_o   : out std_ulogic; -- 1-wire line pull-down
+      -- interrupt --
+      irq_o       : out std_ulogic -- transfer done IRQ
+    );
+  end component;
+
   -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
@@ -2109,7 +2138,8 @@ package neorv32_package is
       IO_NEOLED_EN         : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
       IO_XIRQ_NUM_CH       : natural; -- number of external interrupt (XIRQ) channels to implement
       IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?
-      IO_XIP_EN            : boolean  -- implement execute in place module (XIP)?
+      IO_XIP_EN            : boolean; -- implement execute in place module (XIP)?
+      IO_ONEWIRE_EN        : boolean  -- implement 1-wire interface (ONEWIRE)?
     );
     port (
       -- host access --
