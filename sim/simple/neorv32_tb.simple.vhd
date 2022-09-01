@@ -111,6 +111,9 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   -- twi --
   signal twi_scl, twi_sda : std_logic;
 
+  -- 1-wire --
+  signal one_wire : std_logic;
+
   -- spi --
   signal spi_data : std_ulogic;
 
@@ -245,7 +248,8 @@ begin
     IO_NEOLED_EN                 => true,          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            => 8,             -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  => true,          -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN                    => true           -- implement execute in place module (XIP)?
+    IO_XIP_EN                    => true,          -- implement execute in place module (XIP)?
+    IO_ONEWIRE_EN                => true           -- implement 1-wire interface (ONEWIRE)?
   )
   port map (
     -- Global control --
@@ -307,6 +311,8 @@ begin
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io     => twi_sda,         -- twi serial data line
     twi_scl_io     => twi_scl,         -- twi serial clock line
+    -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
+    onewire_io     => one_wire,        -- 1-wire bus
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          => open,            -- pwm channels
     -- Custom Functions Subsystem IO --
@@ -328,6 +334,9 @@ begin
   -- TWI termination (pull-ups) --
   twi_scl <= 'H';
   twi_sda <= 'H';
+
+  -- 1-Wire termination (pull-up) --
+  one_wire <= 'H';
 
 
   -- UART Simulation Receiver ---------------------------------------------------------------
