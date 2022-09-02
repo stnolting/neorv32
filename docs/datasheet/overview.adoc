@@ -78,7 +78,7 @@ include::rationale.adoc[]
 ** official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]
 * **NEORV32 Processor (SoC)**: highly-configurable full-scale microcontroller-like processor system
 ** based on the NEORV32 CPU
-** optional serial interfaces (UARTs, TWI, SPI)
+** optional serial interfaces (UARTs, TWI, SPI, 1-Wire)
 ** optional timers and counters (watchdog, system timer)
 ** optional general purpose IO and PWM; a native NeoPixel(c)-compatible smart LED interface
 ** optional embedded memories / caches for data, instructions and bootloader
@@ -198,6 +198,7 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 │└neor32_application_image.vhd   - IMEM application initialization image
 ├neorv32_mtime.vhd               - Machine system timer
 ├neorv32_neoled.vhd              - NeoPixel (TM) compatible smart LED interface
+├neorv32_onewire.vhd             - One-Wire serial interface controller
 ├neorv32_pwm.vhd                 - Pulse-width modulation controller
 ├neorv32_slink.vhd               - Stream link controller
 ├neorv32_spi.vhd                 - Serial peripheral interface controller
@@ -288,7 +289,7 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| HW version: | `1.6.8.3`
+| HW version: | `1.6.8.3++`
 | Top entity: | `rtl/core/neorv32_top.vhd`
 | FPGA:       | Intel Cyclone IV E `EP4CE22F17C6`
 | Toolchain:  | Quartus Prime Lite 21.1
@@ -313,6 +314,7 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 | IMEM          | Processor-internal instruction memory (16kB)                   |  12 |   2 |   131072 |    0
 | MTIME         | Machine system timer                                           | 345 | 166 |        0 |    0
 | NEOLED        | Smart LED Interface (NeoPixel/WS28128) (FIFO_depth=1)          | 227 | 184 |        0 |    0
+| ONEWIRE       | 1-wire interface                                               | 107 |  77 |        0 |    0
 | PWM           | Pulse_width modulation controller (8 channels)                 | 128 | 117 |        0 |    0
 | SLINK         | Stream link interface (2xRX, 2xTX, FIFO_depth=1)               | 136 | 116 |        0 |    0
 | SPI           | Serial peripheral interface                                    | 114 |  94 |        0 |    0

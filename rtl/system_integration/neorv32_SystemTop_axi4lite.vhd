@@ -115,7 +115,8 @@ entity neorv32_SystemTop_axi4lite is
     IO_NEOLED_EN                 : boolean := true;   -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
+    IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
+    IO_ONEWIRE_EN                : boolean := false   -- implement 1-wire interface (ONEWIRE)?
   );
   port (
     -- ------------------------------------------------------------
@@ -185,6 +186,8 @@ entity neorv32_SystemTop_axi4lite is
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io    : inout std_logic; -- twi serial data line
     twi_scl_io    : inout std_logic; -- twi serial clock line
+    -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
+    onewire_io     : inout std_logic; -- 1-wire bus
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o         : out std_logic_vector(59 downto 0);  -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
@@ -359,7 +362,8 @@ begin
     IO_NEOLED_EN                 => IO_NEOLED_EN,       -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            => IO_NEOLED_TX_FIFO,  -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  => IO_GPTMR_EN,        -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN                    => IO_XIP_EN           -- implement execute in place module (XIP)?
+    IO_XIP_EN                    => IO_XIP_EN,          -- implement execute in place module (XIP)?
+    IO_ONEWIRE_EN                => IO_ONEWIRE_EN       -- implement 1-wire interface (ONEWIRE)?
   )
   port map (
     -- Global control --
@@ -411,6 +415,8 @@ begin
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  => twi_sda_io,      -- twi serial data line
     twi_scl_io  => twi_scl_io,      -- twi serial clock line
+    -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
+    onewire_io  => onewire_io,      -- 1-wire bus
     -- PWM available if IO_PWM_NUM_CH > 0) --
     pwm_o       => pwm_o_int,       -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --

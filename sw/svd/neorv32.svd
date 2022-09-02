@@ -430,6 +430,92 @@
       </registers>
     </peripheral>
 
+    <!-- ONEWIRE -->
+    <peripheral>
+      <name>ONEWIRE</name>
+      <description>1-Wire Interface Controller</description>
+      <groupName>ONEWIRE</groupName>
+      <baseAddress>0xFFFFFF70</baseAddress>
+
+      <interrupt><name>ONEWIRE_FIRQ</name><value>13</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x08</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>ONEWIRE_CTRL_EN</name>
+              <bitRange>[0:0]</bitRange>
+              <description>ONEWIRE controller enable</description>
+            </field>
+            <field>
+              <name>ONEWIRE_CTRL_PRSC</name>
+              <bitRange>[2:1]</bitRange>
+              <description>Clock prescaler select</description>
+            </field>
+            <field>
+              <name>ONEWIRE_CTRL_CLKDIV</name>
+              <bitRange>[10:3]</bitRange>
+              <description>Clock divider</description>
+            </field>
+            <field>
+              <name>ONEWIRE_CTRL_TRIG_RST</name>
+              <bitRange>[11:11]</bitRange>
+              <description>Trigger reset pulse and presence detect operation, auto-clears</description>
+            </field>
+            <field>
+              <name>ONEWIRE_CTRL_TRIG_BIT</name>
+              <bitRange>[12:12]</bitRange>
+              <description>Trigger single-bit transmission operation, auto-clears</description>
+            </field>
+            <field>
+              <name>ONEWIRE_CTRL_TRIG_BYTE</name>
+              <bitRange>[13:13]</bitRange>
+              <description>Trigger full-byte transmission operation, auto-clears</description>
+            </field>
+            <field>
+              <name>ONEWIRE_CTRL_SENSE</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>Current state of the 1-wire bus line</description>
+            </field>
+            <field>
+              <name>ONEWIRE_CTRL_PRESENCE</name>
+              <bitRange>[30:30]</bitRange>
+              <access>read-only</access>
+              <description>Set if device(s) found during presence detect phase</description>
+            </field>
+            <field>
+              <name>ONEWIRE_CTRL_BUSY</name>
+              <bitRange>[31:31]</bitRange>
+              <access>read-only</access>
+              <description>Operation in progress when set</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DATA</name>
+          <description>Read/write transmission data register</description>
+          <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>ONEWIRE_DATA</name>
+              <bitRange>[7:0]</bitRange>
+              <description>RTX data, transmitted LSB-first</description>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
     <!-- BUSKEEPER -->
     <peripheral>
       <name>BUSKEEPER</name>

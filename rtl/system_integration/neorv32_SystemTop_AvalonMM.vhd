@@ -129,7 +129,8 @@ entity neorv32_top_avalonmm is
     IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN                    : boolean := false   -- implement execute in place module (XIP)?
+    IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
+    IO_ONEWIRE_EN                : boolean := false   -- implement 1-wire interface (ONEWIRE)?
   );
   port (
     -- Global control --
@@ -199,6 +200,9 @@ entity neorv32_top_avalonmm is
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io     : inout std_logic := 'U'; -- twi serial data line
     twi_scl_io     : inout std_logic := 'U'; -- twi serial clock line
+
+    -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
+    onewire_io     : inout std_logic; -- 1-wire bus
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          : out std_ulogic_vector(59 downto 0); -- pwm channels
@@ -335,7 +339,8 @@ begin
     IO_NEOLED_EN => IO_NEOLED_EN,
     IO_NEOLED_TX_FIFO => IO_NEOLED_TX_FIFO,
     IO_GPTMR_EN => IO_GPTMR_EN,
-    IO_XIP_EN => IO_XIP_EN
+    IO_XIP_EN => IO_XIP_EN,
+    IO_ONEWIRE_EN => IO_ONEWIRE_EN
     )
   port map (
     -- Global control --
@@ -408,6 +413,9 @@ begin
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io => twi_sda_io,
     twi_scl_io => twi_scl_io,
+
+    -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
+    onewire_io => onewire_io,
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o => pwm_o,

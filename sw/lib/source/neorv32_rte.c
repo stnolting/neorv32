@@ -497,21 +497,22 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\n====== Peripherals ======\n");
 
   tmp = NEORV32_SYSINFO.SOC;
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_GPIO));   neorv32_uart0_printf(" GPIO\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_MTIME));  neorv32_uart0_printf(" MTIME\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_UART0));  neorv32_uart0_printf(" UART0\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_UART1));  neorv32_uart0_printf(" UART1\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_SPI));    neorv32_uart0_printf(" SPI\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_TWI));    neorv32_uart0_printf(" TWI\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_PWM));    neorv32_uart0_printf(" PWM\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_WDT));    neorv32_uart0_printf(" WDT\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_TRNG));   neorv32_uart0_printf(" TRNG\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_CFS));    neorv32_uart0_printf(" CFS\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_SLINK));  neorv32_uart0_printf(" SLINK\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_NEOLED)); neorv32_uart0_printf(" NEOLED\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_XIRQ));   neorv32_uart0_printf(" XIRQ\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_GPTMR));  neorv32_uart0_printf(" GPTMR\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_XIP));    neorv32_uart0_printf(" XIP\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_GPIO));    neorv32_uart0_printf(" GPIO\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_MTIME));   neorv32_uart0_printf(" MTIME\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_UART0));   neorv32_uart0_printf(" UART0\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_UART1));   neorv32_uart0_printf(" UART1\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_SPI));     neorv32_uart0_printf(" SPI\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_TWI));     neorv32_uart0_printf(" TWI\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_PWM));     neorv32_uart0_printf(" PWM\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_WDT));     neorv32_uart0_printf(" WDT\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_TRNG));    neorv32_uart0_printf(" TRNG\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_CFS));     neorv32_uart0_printf(" CFS\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_SLINK));   neorv32_uart0_printf(" SLINK\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_NEOLED));  neorv32_uart0_printf(" NEOLED\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_XIRQ));    neorv32_uart0_printf(" XIRQ\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_GPTMR));   neorv32_uart0_printf(" GPTMR\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_XIP));     neorv32_uart0_printf(" XIP\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_ONEWIRE)); neorv32_uart0_printf(" ONEWIRE\n");
 }
 
 

@@ -35,6 +35,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ external interrupt controller with up to 32 channels (<<_external_interrupt_controller_xirq,**XIRQ**>>)
 * _optional_ general purpose 32-bit timer (<<_general_purpose_timer_gptmr,**GPTMR**>>)
 * _optional_ execute in place module (<<_execute_in_place_module_xip,**XIP**>>)
+* _optional_ 1-wire serial interface controller (<<_one_wire_serial_interface_controller_onewire,**ONEWIRE**>>), compatible to the 1-wire standard
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
 * bus keeper to monitor processor-internal bus transactions (<<_internal_bus_monitor_buskeeper,**BUSKEEPER**>>)
 * system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
@@ -46,7 +47,7 @@ image::neorv32_processor.png[align=center]
 === Processor Top Entity - Signals
 
 The following table shows all interface signals of the processor top entity (`rtl/core/neorv32_top.vhd`).
-The type of all signals is `std_ulogic` or `std_ulogic_vector` (or arrays of those) - only the TWI signals are of type
+The type of all signals is `std_ulogic` or `std_ulogic_vector` (or arrays of those) - the bi-directional signals are of type
 `std_logic`.
 
 .Default Values of Inputs
@@ -126,6 +127,8 @@ bits/channels are hardwired to zero.
 4+^| **Two-Wire Interface Controller (<<_two_wire_serial_interface_controller_twi,TWI>>)**
 | `twi_sda_io`     |    1 | inout | serial data line
 | `twi_scl_io`     |    1 | inout | serial clock line
+4+^| **1-Wire Interface Controller (<<_one_wire_serial_interface_controller_twi,ONEWIRE>>)**
+| `onewire_io`     |    1 | inout | serial data line
 4+^| **Pulse-Width Modulation Channels (<<_pulse_width_modulation_controller_pwm,PWM>>)**
 | `pwm_o`          |   60 |   out | pulse-width modulated channels
 4+^| **Custom Functions Subsystem (<<_custom_functions_subsystem_cfs,CFS>>)**
@@ -1065,6 +1068,17 @@ functions subsystem entity.
 |======
 
 
+:sectnums!:
+===== _IO_ONEWIRE_EN_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **IO_ONE_EN** | _boolean_ | false
+3+| Implement the <<_one_wire_serial_interface_controller_onewire>> module when true.
+|======
+
+
 
 <<<
 // ####################################################################################################################
@@ -1215,7 +1229,8 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | 10      | <<_stream_link_interface_slink,SLINK>> | RX data buffer interrupt
 | 11      | <<_stream_link_interface_slink,SLINK>> | TX data buffer interrupt
 | 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
-| 13:15   | - | _reserved_, will never fire
+| 13      | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire operation done interrupt
+| 14:15   | - | _reserved_, will never fire
 |=======================
 
 .Trigger Type
@@ -1600,6 +1615,8 @@ include::soc_uart.adoc[]
 include::soc_spi.adoc[]
 
 include::soc_twi.adoc[]
+
+include::soc_onewire.adoc[]
 
 include::soc_pwm.adoc[]
 

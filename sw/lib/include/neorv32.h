@@ -603,7 +603,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define UART0_TX_FIRQ_ENABLE   CSR_MIE_FIRQ3E    /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
 #define UART0_TX_FIRQ_PENDING  CSR_MIP_FIRQ3P    /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
 #define UART0_TX_RTE_ID        RTE_TRAP_FIRQ_3   /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
-#define UART0_TX_TRAP_CODE     TRAP_CODE_FIRQ_4  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+#define UART0_TX_TRAP_CODE     TRAP_CODE_FIRQ_3  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
 /** @name Secondary Universal Asynchronous Receiver/Transmitter (UART1) */
 /**@{*/
@@ -661,6 +661,13 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define GPTMR_FIRQ_PENDING     CSR_MIP_FIRQ12P   /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
 #define GPTMR_RTE_ID           RTE_TRAP_FIRQ_12  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
 #define GPTMR_TRAP_CODE        TRAP_CODE_FIRQ_12 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+/**@}*/
+/** @name 1-Wire Interface Controller (ONEWIRE) */
+/**@{*/
+#define ONEWIRE_FIRQ_ENABLE    CSR_MIE_FIRQ13E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
+#define ONEWIRE_FIRQ_PENDING   CSR_MIP_FIRQ13P   /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
+#define ONEWIRE_RTE_ID         RTE_TRAP_FIRQ_13  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
+#define ONEWIRE_TRAP_CODE      TRAP_CODE_FIRQ_13 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
 /**@}*/
 
@@ -930,6 +937,52 @@ enum NEORV32_GPTMR_CTRL_enum {
 
 
 /**********************************************************************//**
+ * @name IO Device: 1-Wire Interface Controller (ONEWIRE)
+ **************************************************************************/
+/**@{*/
+/** ONEWIRE module prototype */
+typedef struct __attribute__((packed,aligned(4))) {
+  uint32_t CTRL; /**< offset 0: control register (#NEORV32_ONEWIRE_CTRL_enum) */
+  uint32_t DATA; /**< offset 4: transmission data register (#NEORV32_ONEWIRE_DATA_enum) */
+} neorv32_onewire_t;
+
+/** ONEWIRE module base address */
+#define NEORV32_ONEWIRE_BASE (0xFFFFFF70U)
+
+/** ONEWIRE module hardware access (#neorv32_onewire_t) */
+#define NEORV32_ONEWIRE (*((volatile neorv32_onewire_t*) (NEORV32_ONEWIRE_BASE)))
+
+/** ONEWIRE control register bits */
+enum NEORV32_ONEWIRE_CTRL_enum {
+  ONEWIRE_CTRL_EN        =  0, /**< ONEWIRE control register(0)  (r/w): ONEWIRE controller enable */
+  ONEWIRE_CTRL_PRSC0     =  1, /**< ONEWIRE control register(1)  (r/w): Clock prescaler select bit 0 */
+  ONEWIRE_CTRL_PRSC1     =  2, /**< ONEWIRE control register(2)  (r/w): Clock prescaler select bit 1 */
+  ONEWIRE_CTRL_CLKDIV0   =  3, /**< ONEWIRE control register(3)  (r/w): Clock divider bit 0 */
+  ONEWIRE_CTRL_CLKDIV1   =  4, /**< ONEWIRE control register(4)  (r/w): Clock divider bit 1 */
+  ONEWIRE_CTRL_CLKDIV2   =  5, /**< ONEWIRE control register(5)  (r/w): Clock divider bit 2 */
+  ONEWIRE_CTRL_CLKDIV3   =  6, /**< ONEWIRE control register(6)  (r/w): Clock divider bit 3 */
+  ONEWIRE_CTRL_CLKDIV4   =  7, /**< ONEWIRE control register(7)  (r/w): Clock divider bit 4 */
+  ONEWIRE_CTRL_CLKDIV5   =  8, /**< ONEWIRE control register(8)  (r/w): Clock divider bit 5 */
+  ONEWIRE_CTRL_CLKDIV6   =  9, /**< ONEWIRE control register(9)  (r/w): Clock divider bit 6 */
+  ONEWIRE_CTRL_CLKDIV7   = 10, /**< ONEWIRE control register(10) (r/w): Clock divider bit 7 */
+  ONEWIRE_CTRL_TRIG_RST  = 11, /**< ONEWIRE control register(11) (-/w): Trigger reset pulse, auto-clears */
+  ONEWIRE_CTRL_TRIG_BIT  = 12, /**< ONEWIRE control register(12) (-/w): Trigger single-bit transmission, auto-clears */
+  ONEWIRE_CTRL_TRIG_BYTE = 13, /**< ONEWIRE control register(13) (-/w): Trigger full-byte transmission, auto-clears */
+
+  ONEWIRE_CTRL_SENSE     = 29, /**< ONEWIRE control register(29) (r/-): Current state of the bus line */
+  ONEWIRE_CTRL_PRESENCE  = 30, /**< ONEWIRE control register(30) (r/-): Bus presence detected */
+  ONEWIRE_CTRL_BUSY      = 31, /**< ONEWIRE control register(31) (r/-): Operation in progress when set */
+};
+
+/** ONEWIRE receive/transmit data register bits */
+enum NEORV32_ONEWIRE_DATA_enum {
+  ONEWIRE_DATA_LSB = 0, /**< ONEWIRE data register(0) (r/w): Receive/transmit data (8-bit) LSB */
+  ONEWIRE_DATA_MSB = 7  /**< ONEWIRE data register(7) (r/w): Receive/transmit data (8-bit) MSB */
+};
+/**@}*/
+
+
+/**********************************************************************//**
  * @name IO Device: Bus Monitor (BUSKEEPER)
  **************************************************************************/
 /**@{*/
@@ -1165,7 +1218,7 @@ enum NEORV32_TWI_CTRL_enum {
   TWI_CTRL_BUSY    = 31  /**< TWI control register(31) (r/-): Transfer in progress, busy flag */
 };
 
-/** WTD receive/transmit data register bits */
+/** TWI receive/transmit data register bits */
 enum NEORV32_TWI_DATA_enum {
   TWI_DATA_LSB = 0, /**< TWI data register(0) (r/w): Receive/transmit data (8-bit) LSB */
   TWI_DATA_MSB = 7  /**< TWI data register(7) (r/w): Receive/transmit data (8-bit) MSB */
@@ -1366,7 +1419,8 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_NEOLED      = 27, /**< SYSINFO_FEATURES (27) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
   SYSINFO_SOC_IO_XIRQ        = 28, /**< SYSINFO_FEATURES (28) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
   SYSINFO_SOC_IO_GPTMR       = 29, /**< SYSINFO_FEATURES (29) (r/-): General purpose timer implemented when 1 (via IO_GPTMR_EN generic) */
-  SYSINFO_SOC_IO_XIP         = 30  /**< SYSINFO_FEATURES (30) (r/-): Execute in place module implemented when 1 (via IO_XIP_EN generic) */
+  SYSINFO_SOC_IO_XIP         = 30, /**< SYSINFO_FEATURES (30) (r/-): Execute in place module implemented when 1 (via IO_XIP_EN generic) */
+  SYSINFO_SOC_IO_ONEWIRE     = 30  /**< SYSINFO_FEATURES (31) (r/-): 1-wire interface controller implemented when 1 (via IO_ONEWIRE_EN generic) */
 };
 
 /** NEORV32_SYSINFO.CACHE (r/-): Cache configuration */
@@ -1413,6 +1467,7 @@ enum NEORV32_SYSINFO_SOC_enum {
 #include "neorv32_gptmr.h"
 #include "neorv32_mtime.h"
 #include "neorv32_neoled.h"
+#include "neorv32_onewire.h"
 #include "neorv32_pwm.h"
 #include "neorv32_slink.h"
 #include "neorv32_spi.h"
