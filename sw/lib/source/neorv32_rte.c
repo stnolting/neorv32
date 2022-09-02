@@ -135,15 +135,15 @@ int neorv32_rte_exception_uninstall(uint8_t id) {
  **************************************************************************/
 static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32_rte_core(void) {
 
-  register uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
+  uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
   neorv32_cpu_csr_write(CSR_MSCRATCH, rte_mepc); // backup for later
-  register uint32_t rte_mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
+  uint32_t rte_mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
 
   // compute return address
   if (((int32_t)rte_mcause) >= 0) { // modify pc only if not interrupt (MSB cleared)
 
     // get low half word of faulting instruction
-    register uint32_t rte_trap_inst = neorv32_cpu_load_unsigned_half(rte_mepc);
+    uint32_t rte_trap_inst = neorv32_cpu_load_unsigned_half(rte_mepc);
 
     rte_mepc += 4; // default: faulting instruction is uncompressed
     if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) { // C extension implemented?
@@ -157,7 +157,7 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32
   }
 
   // find according trap handler
-  register uint32_t rte_handler;
+  uint32_t rte_handler;
   switch (rte_mcause) {
     case TRAP_CODE_I_MISALIGNED: rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_MISALIGNED]; break;
     case TRAP_CODE_I_ACCESS:     rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_ACCESS]; break;
@@ -212,8 +212,8 @@ static void __neorv32_rte_debug_exc_handler(void) {
   neorv32_uart0_print("<RTE> ");
 
   // cause
-  register uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  register char tmp = (char)(trap_cause & 0xf);
+  uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
+  char tmp = (char)(trap_cause & 0xf);
   if (tmp >= 10) {
     tmp = 'a' + (tmp - 10);
   }
@@ -255,7 +255,7 @@ static void __neorv32_rte_debug_exc_handler(void) {
 
   // check cause if bus access fault exception
   if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_L_ACCESS) || (trap_cause == TRAP_CODE_S_ACCESS)) {
-    register uint32_t bus_err = NEORV32_BUSKEEPER.CTRL;
+    uint32_t bus_err = NEORV32_BUSKEEPER.CTRL;
     if (bus_err & (1<<BUSKEEPER_ERR_FLAG)) { // exception caused by bus system?
       if (bus_err & (1<<BUSKEEPER_ERR_TYPE)) {
         neorv32_uart0_print(" [TIMEOUT_ERR]");

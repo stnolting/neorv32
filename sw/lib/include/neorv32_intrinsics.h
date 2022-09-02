@@ -165,7 +165,7 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
  **************************************************************************/
 #define CUSTOM_INSTR_R1_TYPE(funct7, funct5, rs1, funct3, opcode) \
 ({                                                                \
-    register uint32_t __return;                                   \
+    uint32_t __return;                                   \
     asm volatile (                                                \
       ""                                                          \
       : [output] "=r" (__return)                                  \
@@ -192,7 +192,7 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
  **************************************************************************/
 #define CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, funct3, opcode) \
 ({                                                             \
-    register uint32_t __return;                                \
+    uint32_t __return;                                \
     asm volatile (                                             \
       ""                                                       \
       : [output] "=r" (__return)                               \
@@ -221,7 +221,7 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
  **************************************************************************/
 #define CUSTOM_INSTR_R3_TYPE(rs3, rs2, rs1, funct3, opcode) \
 ({                                                          \
-    register uint32_t __return;                             \
+    uint32_t __return;                             \
     asm volatile (                                          \
       ""                                                    \
       : [output] "=r" (__return)                            \
@@ -252,7 +252,7 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
  **************************************************************************/
 #define CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, opcode) \
 ({                                                      \
-    register uint32_t __return;                         \
+    uint32_t __return;                         \
     asm volatile (                                      \
       ""                                                \
       : [output] "=r" (__return)                        \

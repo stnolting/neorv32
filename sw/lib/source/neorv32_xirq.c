@@ -235,10 +235,10 @@ static void __neorv32_xirq_core(void) {
 
   neorv32_cpu_csr_write(CSR_MIP, ~(1 << XIRQ_FIRQ_PENDING)); // acknowledge XIRQ FIRQ
 
-  register uint32_t src = NEORV32_XIRQ.SCR; // get IRQ source (with highest priority)
+  uint32_t src = NEORV32_XIRQ.SCR; // get IRQ source (with highest priority)
 
   // execute handler
-  register uint32_t xirq_handler = __neorv32_xirq_vector_lut[src];
+  uint32_t xirq_handler = __neorv32_xirq_vector_lut[src];
   void (*handler_pnt)(void);
   handler_pnt = (void*)xirq_handler;
   (*handler_pnt)();
