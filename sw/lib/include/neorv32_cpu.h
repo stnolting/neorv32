@@ -78,8 +78,8 @@ extern void __attribute__ ((weak)) __neorv32_crt0_after_main(int32_t return_code
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_word(uint32_t addr, uint32_t wdata) {
 
-  register uint32_t reg_addr = addr;
-  register uint32_t reg_data = wdata;
+  uint32_t reg_addr = addr;
+  uint32_t reg_data = wdata;
 
   asm volatile ("sw %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr));
 }
@@ -95,8 +95,8 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_word(uint
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_half(uint32_t addr, uint16_t wdata) {
 
-  register uint32_t reg_addr = addr;
-  register uint32_t reg_data = (uint32_t)wdata;
+  uint32_t reg_addr = addr;
+  uint32_t reg_data = (uint32_t)wdata;
 
   asm volatile ("sh %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr));
 }
@@ -110,8 +110,8 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_half(uint
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_byte(uint32_t addr, uint8_t wdata) {
 
-  register uint32_t reg_addr = addr;
-  register uint32_t reg_data = (uint32_t)wdata;
+  uint32_t reg_addr = addr;
+  uint32_t reg_data = (uint32_t)wdata;
 
   asm volatile ("sb %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr));
 }
@@ -127,8 +127,8 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_byte(uint
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_word(uint32_t addr) {
 
-  register uint32_t reg_addr = addr;
-  register uint32_t reg_data;
+  uint32_t reg_addr = addr;
+  uint32_t reg_data;
 
   asm volatile ("lw %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
 
@@ -146,8 +146,8 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_word(u
  **************************************************************************/
 inline uint16_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_half(uint32_t addr) {
 
-  register uint32_t reg_addr = addr;
-  register uint16_t reg_data;
+  uint32_t reg_addr = addr;
+  uint16_t reg_data;
 
   asm volatile ("lhu %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
 
@@ -165,8 +165,8 @@ inline uint16_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_half(u
  **************************************************************************/
 inline int16_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_half(uint32_t addr) {
 
-  register uint32_t reg_addr = addr;
-  register int16_t reg_data;
+  uint32_t reg_addr = addr;
+  int16_t reg_data;
 
   asm volatile ("lh %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
 
@@ -182,8 +182,8 @@ inline int16_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_half(uint
  **************************************************************************/
 inline uint8_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_byte(uint32_t addr) {
 
-  register uint32_t reg_addr = addr;
-  register uint8_t reg_data;
+  uint32_t reg_addr = addr;
+  uint8_t reg_data;
 
   asm volatile ("lbu %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
 
@@ -199,8 +199,8 @@ inline uint8_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_byte(ui
  **************************************************************************/
 inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint32_t addr) {
 
-  register uint32_t reg_addr = addr;
-  register int8_t reg_data;
+  uint32_t reg_addr = addr;
+  int8_t reg_data;
 
   asm volatile ("lb %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
 
@@ -216,7 +216,7 @@ inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint3
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int csr_id) {
 
-  register uint32_t csr_data;
+  uint32_t csr_data;
 
   asm volatile ("csrr %[result], %[input_i]" : [result] "=r" (csr_data) : [input_i] "i" (csr_id));
   
@@ -232,7 +232,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int c
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_id, uint32_t data) {
 
-  register uint32_t csr_data = data;
+  uint32_t csr_data = data;
 
   asm volatile ("csrw %[input_i], %[input_j]" :  : [input_i] "i" (csr_id), [input_j] "r" (csr_data));
 }

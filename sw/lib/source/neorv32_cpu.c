@@ -103,7 +103,7 @@ int neorv32_cpu_irq_enable(uint8_t irq_sel) {
     return 1;
   }
 
-  register uint32_t mask = (uint32_t)(1 << irq_sel);
+  uint32_t mask = (uint32_t)(1 << irq_sel);
   asm volatile ("csrrs zero, mie, %0" : : "r" (mask));
   return 0;
 }
@@ -122,7 +122,7 @@ int neorv32_cpu_irq_disable(uint8_t irq_sel) {
     return 1;
   }
 
-  register uint32_t mask = (uint32_t)(1 << irq_sel);
+  uint32_t mask = (uint32_t)(1 << irq_sel);
   asm volatile ("csrrc zero, mie, %0" : : "r" (mask));
   return 0;
 }
@@ -142,7 +142,7 @@ uint64_t neorv32_cpu_get_cycle(void) {
     uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
   } cycles;
 
-  register uint32_t tmp1, tmp2, tmp3;
+  uint32_t tmp1, tmp2, tmp3;
   while(1) {
     tmp1 = neorv32_cpu_csr_read(CSR_CYCLEH);
     tmp2 = neorv32_cpu_csr_read(CSR_CYCLE);
@@ -193,7 +193,7 @@ uint64_t neorv32_cpu_get_instret(void) {
     uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
   } cycles;
 
-  register uint32_t tmp1, tmp2, tmp3;
+  uint32_t tmp1, tmp2, tmp3;
   while(1) {
     tmp1 = neorv32_cpu_csr_read(CSR_INSTRETH);
     tmp2 = neorv32_cpu_csr_read(CSR_INSTRET);
@@ -244,7 +244,7 @@ uint64_t neorv32_cpu_get_systime(void) {
     uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
   } cycles;
 
-  register uint32_t tmp1, tmp2, tmp3;
+  uint32_t tmp1, tmp2, tmp3;
   while(1) {
     tmp1 = neorv32_cpu_csr_read(CSR_TIMEH);
     tmp2 = neorv32_cpu_csr_read(CSR_TIME);
@@ -277,8 +277,8 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
   uint32_t clock = NEORV32_SYSINFO.CLK; // clock ticks per second
   clock = clock / 1000; // clock ticks per ms
 
-  register uint64_t wait_cycles = ((uint64_t)clock) * ((uint64_t)time_ms);
-  register uint64_t tmp = 0;
+  uint64_t wait_cycles = ((uint64_t)clock) * ((uint64_t)time_ms);
+  uint64_t tmp = 0;
 
   // MTIME available?
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
@@ -296,7 +296,7 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
     // warning! not really precise (especially if M extensions is not available)!
 
     const uint32_t loop_cycles_c = 16; // clock cycles per iteration of the ASM loop
-    register uint32_t iterations = (uint32_t)(wait_cycles / loop_cycles_c); // M (div) extension would be nice here!
+    uint32_t iterations = (uint32_t)(wait_cycles / loop_cycles_c); // M (div) extension would be nice here!
 
     asm volatile (" .balign 4                                        \n" // make sure this is 32-bit aligned
                   " __neorv32_cpu_delay_ms_start:                    \n"

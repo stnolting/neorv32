@@ -125,7 +125,7 @@ uint32_t pmp_num_regions;
  **************************************************************************/
 int main() {
 
-  register uint32_t tmp_a, tmp_b;
+  uint32_t tmp_a, tmp_b;
   uint8_t id;
 
   // disable global interrupts
@@ -922,7 +922,7 @@ int main() {
   neorv32_mtime_set_time(1); // prepare overflow
   neorv32_mtime_set_timecmp(0); // IRQ on overflow
 
-  register int test_cnt = 0;
+  int test_cnt = 0;
   while(test_cnt < 2) {
     test_cnt++;
   }
@@ -1808,7 +1808,7 @@ void global_trap_handler(void) {
   neorv32_cpu_csr_write(CSR_MIP, 0);
 
   // hack: always come back in MACHINE MODE
-  register uint32_t mask = (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L);
+  uint32_t mask = (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L);
   asm volatile ("csrrs zero, mstatus, %[input_j]" :  : [input_j] "r" (mask));
 }
 
