@@ -24,7 +24,8 @@ The 1-Wire protocol allows an (nearly) arbitrary number of devices but only a si
 The bus is based on a single tristate signal. The controller and all the devices can only pull-down the bus actively.
 Hence, an external pull-up resistor is required. Recommended values are between 1kΩ and 4kΩ depending on the bus
 characteristics (wire length, number of devices, etc.). Furthermore, a series resistor (~100Ω) at the controller side
-is recommended to control the slew rate and to reduce signal reflections.
+is recommended to control the slew rate and to reduce signal reflections. Also, additional external ESD protection clamp diodes
+should be added to the `onewire_io` bus line.
 
 [TIP]
 For more information regarding the 1-Wire bus and the device access mechanism
@@ -49,6 +50,9 @@ control register bits (the bits auto-clear):
 . generate reset pulse and check for device presence; triggered when setting _ONEWIRE_CTRL_TRIG_RST_
 . transfer a single-bit (read-while-write); triggered when setting _ONEWIRE_CTRL_TRIG_BIT_
 . transfer a full-byte (read-while-write); triggered when setting _ONEWIRE_CTRL_TRIG_BYTE_
+
+[IMPORTANT]
+Only one trigger bit may be set at once, otherwise undefined behavior might occur.
 
 When a single-bit operation has been triggered, the data previously written to `DATA[0]` will be send to the bus
 and `DATA[7]` will be sampled from the bus. Accordingly, a full-byte transmission will send the previously

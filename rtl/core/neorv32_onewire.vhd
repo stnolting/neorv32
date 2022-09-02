@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - 1-Wire Interface Controller (ONEWIRE) >>                                         #
+-- # << NEORV32 - 1-Wire Interface Host Controller (ONEWIRE) >>                                    #
 -- # ********************************************************************************************* #
 -- # Single-wire bus controller, compatible to the "Dallas 1-Wire Bus System".                     #
 -- # Provides three basic operations:                                                              #
@@ -8,7 +8,7 @@
 -- # * transfer full byte (read-while-write)                                                       #
 -- # After completing any of the operations the interrupt signal is triggered.                     #
 -- # The base time for bus interactions is configured using a 2-bit clock prescaler and a 8-bit    #
--- # clock divider. All bus operations are timed using (hardwired) multiples of the base time.     #
+-- # clock divider. All bus operations are timed using (hardwired) multiples of this base time.    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -80,6 +80,7 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
   constant t_reset_end_c       : unsigned(6 downto 0) := to_unsigned(48, 7); -- t4
   constant t_presence_sample_c : unsigned(6 downto 0) := to_unsigned(55, 7); -- t5
   constant t_presence_end_c    : unsigned(6 downto 0) := to_unsigned(96, 7); -- t6
+  -- -> see data sheet for more information about the t* timing values --
 
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
@@ -195,7 +196,7 @@ begin
         ctrl.trig_rst  <= data_i(ctrl_trig_rst_c);
         ctrl.trig_bit  <= data_i(ctrl_trig_bit_c);
         ctrl.trig_byte <= data_i(ctrl_trig_byte_c);
-      elsif (ctrl.enable = '0') or (serial.state(1) = '1') then -- cleared when disabled or when in RTX or RESET state
+      elsif (ctrl.enable = '0') or (serial.state(1) = '1') then -- cleared when disabled or when in RTX/RESET state
         ctrl.trig_rst  <= '0';
         ctrl.trig_bit  <= '0';
         ctrl.trig_byte <= '0';
@@ -210,9 +211,9 @@ begin
           data_o(ctrl_prsc1_c downto ctrl_prsc0_c)     <= ctrl.clk_prsc;
           data_o(ctrl_clkdiv7_c downto ctrl_clkdiv0_c) <= ctrl.clk_div;
           --
-          data_o(ctrl_sense_c)    <= serial.wire_in(1);
-          data_o(ctrl_presence_c) <= serial.presence;
-          data_o(ctrl_busy_c)     <= serial.busy;
+          data_o(ctrl_sense_c)                         <= serial.wire_in(1);
+          data_o(ctrl_presence_c)                      <= serial.presence;
+          data_o(ctrl_busy_c)                          <= serial.busy;
         -- data register --
         else -- if (addr = onewire_data_addr_c) then
           data_o(7 downto 0) <= serial.sreg;
@@ -239,7 +240,7 @@ begin
           clk_cnt <= clk_cnt + 1;
         end if;
       end if;
-      serial.tick_ff <= serial.tick; -- tick delayed by one clock cycle
+      serial.tick_ff <= serial.tick; -- tick delayed by one clock cycle (for precise bus state sampling)
     end if;
   end process tick_generator;
 
@@ -256,9 +257,9 @@ begin
   begin
     if rising_edge(clk_i) then
       -- input synchronizer --
-      serial.wire_in <= serial.wire_in(0) & onewire_i;
+      serial.wire_in <= serial.wire_in(0) & onewire_i; -- synchronize to prevent metastability
 
-      -- active bus control --
+      -- bus control --
       if (serial.busy = '0') or (serial.wire_hi = '1') then -- disabled/idle or active tristate request
         onewire_o <= '1'; -- release bus (tristate), high (by pull-up resistor) or actively pulled low by device(s)
       elsif (serial.wire_lo = '1') then
@@ -283,7 +284,7 @@ begin
           else
             serial.bit_cnt <= "111"; -- full-byte
           end if;
-          -- any request? --
+          -- any operation request? --
           if (ctrl.trig_rst = '1') or (ctrl.trig_bit = '1') or (ctrl.trig_byte = '1') then
             serial.state(1 downto 0) <= "01"; -- SYNC
           end if;
@@ -306,7 +307,7 @@ begin
           if ((serial.tick_cnt = t_write_one_c) and (serial.sreg(0) = '1')) or (serial.tick_cnt = t_slot_end_c) then
             serial.wire_hi <= '1'; -- release bus
           end if;
-          -- sample input (precisely once!) --
+          -- sample input (precisely / just once!) --
           if (serial.tick_cnt = t_read_sample_c) and (serial.tick_ff = '1') then
             serial.sample <= serial.wire_in(1);
           end if;
@@ -325,7 +326,7 @@ begin
             serial.tick_cnt <= serial.tick_cnt + 1;
           end if;
 
-        when "111" => -- RESET: send reset pulse and check for bus presence
+        when "111" => -- RESET: generate reset pulse and check for bus presence
         -- ------------------------------------------------------------
           if (serial.tick = '1') then
             serial.tick_cnt <= serial.tick_cnt + 1;
@@ -334,7 +335,7 @@ begin
           if (serial.tick_cnt = t_reset_end_c) then
             serial.wire_hi <= '1'; -- release bus
           end if;
-          -- sample device presence (precisely once!) --
+          -- sample device presence (precisely / just once!) --
           if (serial.tick_cnt = t_presence_sample_c) and (serial.tick_ff = '1') then
             serial.presence <= not serial.wire_in(1); -- set if bus is pulled low by any device
           end if;
@@ -348,7 +349,7 @@ begin
         -- ------------------------------------------------------------
           serial.sreg     <= (others => '0');
           serial.presence <= '0';
-          serial.state(1 downto 0) <= "00"; -- stay here, go to IDLE when activated
+          serial.state(1 downto 0) <= "00"; -- stay here, go to IDLE when module is enabled
 
       end case;
     end if;
