@@ -553,7 +553,7 @@ int main() {
   // Unaligned instruction address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] I_ALIGN (instr. align) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] I_ALG (instr. align) EXC ", cnt_test);
 
   // skip if C-mode is implemented
   if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) == 0) {
@@ -599,7 +599,7 @@ int main() {
   // Illegal instruction
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] I_ILLEG (illegal instr.) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] I_ILL (illegal instr.) EXC ", cnt_test);
 
   cnt_test++;
 
@@ -631,7 +631,7 @@ int main() {
   // Illegal compressed instruction
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] CI_ILLEG (illegal compr. instr.) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] CI_ILL (illegal compr. instr.) EXC ", cnt_test);
 
   // skip if C-mode is not implemented
   if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C))) {
@@ -683,7 +683,7 @@ int main() {
   // Unaligned load address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] L_ALIGN (load align) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] L_ALG (load align) EXC ", cnt_test);
   cnt_test++;
 
   // load from unaligned address
@@ -730,7 +730,7 @@ int main() {
   // Unaligned store address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] S_ALIGN (store align) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] S_ALG (store align) EXC ", cnt_test);
   cnt_test++;
 
   // initialize test variable
@@ -779,7 +779,7 @@ int main() {
   // Environment call from M-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] ENVCALL M-mode EXC ", cnt_test);
+  PRINT_STANDARD("[%i] ENVCALL M EXC ", cnt_test);
   cnt_test++;
 
   asm volatile("ecall");
@@ -796,7 +796,7 @@ int main() {
   // Environment call from U-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] ENVCALL U-mode EXC ", cnt_test);
+  PRINT_STANDARD("[%i] ENVCALL U EXC ", cnt_test);
 
   cnt_test++;
 
@@ -833,7 +833,6 @@ int main() {
 
   // wait some time for the IRQ to trigger and arrive the CPU
   asm volatile("nop");
-  asm volatile("nop");
 
   // disable interrupt
   neorv32_cpu_irq_disable(CSR_MIE_MTIE);
@@ -853,7 +852,7 @@ int main() {
   // Machine software interrupt (MSI) via testbench
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] MSI (testbench) IRQ ", cnt_test);
+  PRINT_STANDARD("[%i] MSI (sim) IRQ ", cnt_test);
 
   cnt_test++;
 
@@ -864,7 +863,6 @@ int main() {
   sim_irq_trigger(1 << CSR_MIE_MSIE);
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
   asm volatile("nop");
 
   // disable interrupt
@@ -883,7 +881,7 @@ int main() {
   // Machine external interrupt (MEI) via testbench
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] MEI (testbench) IRQ ", cnt_test);
+  PRINT_STANDARD("[%i] MEI (sim) IRQ ", cnt_test);
 
   cnt_test++;
 
@@ -894,7 +892,6 @@ int main() {
   sim_irq_trigger(1 << CSR_MIE_MEIE);
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
   asm volatile("nop");
 
   // enable interrupt
@@ -958,7 +955,6 @@ int main() {
   neorv32_mtime_set_timecmp(0); // IRQ on overflow
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
   asm volatile("nop");
 
   int was_pending = 0;
@@ -1290,7 +1286,6 @@ int main() {
 
     // wait for IRQs to arrive CPU
     asm volatile("nop");
-    asm volatile("nop");
     neorv32_cpu_irq_disable(XIRQ_FIRQ_ENABLE);
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == XIRQ_TRAP_CODE) && // FIRQ8 IRQ
@@ -1412,7 +1407,6 @@ int main() {
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
-    asm volatile("nop");
 
     // check if TX link fires IRQ
     if (neorv32_cpu_csr_read(CSR_MCAUSE) != SLINK_TX_TRAP_CODE) {
@@ -1453,7 +1447,6 @@ int main() {
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile("nop");
-    asm volatile("nop");
 
     // disable GPTMR interrupt
     neorv32_cpu_irq_disable(GPTMR_FIRQ_ENABLE);
@@ -1490,7 +1483,6 @@ int main() {
     neorv32_onewire_read_bit_blocking();
 
     // wait some time for the IRQ to arrive the CPU
-    asm volatile("nop");
     asm volatile("nop");
 
     // disable ONEWIRE interrupt
