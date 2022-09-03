@@ -560,6 +560,11 @@ the <<_mxisa>> CSR. +
 If _CPU_CNT_WIDTH_ is 0, the <<_cycleh>> and <<_instreth>> / <<_mcycleh>> and <<_minstreth>> CSRs are hardwired to zero
 and any write access to them is ignored.
 
+.Counter Reset
+[IMPORTANT]
+The counter CSRs do **not** provide a hardware reset. Hence, the CSRs have to be explicitly initialized by software
+before being used.
+
 
 :sectnums!:
 ===== **`cycle[h]`**
