@@ -143,7 +143,8 @@ begin
   -- Misc --
   sysinfo_mem(2)(13) <= bool_to_ulogic_f(is_simulation_c);     -- is this a simulation?
   sysinfo_mem(2)(14) <= bool_to_ulogic_f(ON_CHIP_DEBUGGER_EN); -- on-chip debugger implemented?
-  sysinfo_mem(2)(15) <= bool_to_ulogic_f(dedicated_reset_c);   -- dedicated hardware reset of all core registers?
+  --
+  sysinfo_mem(2)(15) <= '0'; -- reserved
   -- IO --
   sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_EN);    -- general purpose input/output port unit (GPIO) implemented?
   sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN);   -- machine system timer (MTIME) implemented?

@@ -1747,7 +1747,7 @@ begin
       csr.mip_firq_nclr     <= (others => '-');
       --
       csr.pmpcfg            <= (others => (others => '0'));
-      csr.pmpaddr           <= (others => (others => def_rst_val_c));
+      csr.pmpaddr           <= (others => (others => '-'));
       --
       csr.mhpmevent         <= (others => (others => '0'));
       --
@@ -2358,7 +2358,6 @@ begin
             csr.rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG);    -- RISC-V debug mode
             -- misc --
             csr.rdata(20) <= bool_to_ulogic_f(is_simulation_c);              -- is this a simulation?
-            csr.rdata(21) <= bool_to_ulogic_f(dedicated_reset_c);            -- dedicated hardware reset of all core registers?
             -- tuning options --
             csr.rdata(30) <= bool_to_ulogic_f(FAST_MUL_EN);                  -- DSP-based multiplication (M extensions only)
             csr.rdata(31) <= bool_to_ulogic_f(FAST_SHIFT_EN);                -- parallel logic for shifts (barrel shifters)
@@ -2383,19 +2382,10 @@ begin
 
   -- Control and Status Registers - Counters ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_counters: process(rstn_i, clk_i)
+  csr_counters: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      csr.mcycle           <= (others => def_rst_val_c);
-      csr.mcycle_ovfl      <= (others => def_rst_val_c);
-      csr.mcycleh          <= (others => def_rst_val_c);
-      csr.minstret         <= (others => def_rst_val_c);
-      csr.minstret_ovfl    <= (others => def_rst_val_c);
-      csr.minstreth        <= (others => def_rst_val_c);
-      csr.mhpmcounter      <= (others => (others => def_rst_val_c));
-      csr.mhpmcounter_ovfl <= (others => (others => def_rst_val_c));
-      csr.mhpmcounterh     <= (others => (others => def_rst_val_c));
-    elsif rising_edge(clk_i) then
+    -- NOTE: the counter CSRs do NOT have a dedicated reset and need to be initialized by software before being used!
+    if rising_edge(clk_i) then
 
       -- [m]cycle --
       if (cpu_cnt_lo_width_c > 0) and (CPU_EXTENSION_RISCV_Zicntr = true) then

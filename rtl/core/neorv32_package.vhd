@@ -47,10 +47,6 @@ package neorv32_package is
   -- if register x0 is implemented as actual physical register is has to be set to zero by the CPU hardware --
   constant reset_x0_c : boolean := true; -- has to be 'true' for the default register file rtl description (BRAM-based)
 
-  -- use dedicated hardware reset value for UNCRITICAL CPU registers (like pipeline buffers) --
-  -- FALSE = no hardware reset (might simplify HW), default; TRUE = reset to zero
-  constant dedicated_reset_c : boolean := false;
-
   -- "response time window" for processor-internal modules --
   -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception (min 2)
   constant max_proc_int_response_time_c : natural := 15;
@@ -63,7 +59,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070601"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070602"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -118,10 +114,6 @@ package neorv32_package is
   function popcount_f(input : std_ulogic_vector) return natural;
   function leading_zeros_f(input : std_ulogic_vector) return natural;
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
-
-  -- Internal (auto-generated) Configurations -----------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  constant def_rst_val_c : std_ulogic; -- Use a deferred constant, prevents compile error with Questa, see IEEE 1076-2008 14.4.2.1
 
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -2535,11 +2527,6 @@ package body neorv32_package is
     end loop; -- idx_v
     return mem_v;
   end function mem32_init_f;
-
-
-  -- Finally set deferred constants, see IEEE 1076-2008 14.4.2.1 (NEORV32 Issue #242) -------
-  -- -------------------------------------------------------------------------------------------
-  constant def_rst_val_c : std_ulogic := cond_sel_stdulogic_f(dedicated_reset_c, '0', '-');
 
 
 end neorv32_package;

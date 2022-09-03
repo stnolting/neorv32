@@ -1,21 +1,6 @@
 -- #################################################################################################
 -- # << NEORV32 - CPU Top Entity >>                                                                #
 -- # ********************************************************************************************* #
--- # NEORV32 CPU:                                                                                  #
--- # * neorv32_cpu.vhd                   - CPU top entity                                          #
--- #   * neorv32_cpu_alu.vhd             - Arithmetic/logic unit                                   #
--- #     * neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor                           #
--- #     * neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor                        #
--- #     * neorv32_cpu_cp_fpu.vhd        - Single-precision FPU co-processor                       #
--- #     * neorv32_cpu_cp_muldiv.vhd     - Integer multiplier/divider co-processor                 #
--- #     * neorv32_cpu_cp_shifter.vhd    - Base ISA shifter unit                                   #
--- #   * neorv32_cpu_bus.vhd             - Load/store unit & physical memory protection            #
--- #   * neorv32_cpu_control.vhd         - CPU control and CSR system                              #
--- #     * neorv32_cpu_decompressor.vhd  - Compressed instructions decoder                         #
--- #     * neorv32_fifo.vhd              - Instruction prefetch buffer                             #
--- #   * neorv32_cpu_regfile.vhd         - Data register file                                      #
--- # * neorv32_package.vhd               - Main CPU & Processor package file                       #
--- #                                                                                               #
 -- # Check out the CPU's online documentation for more information:                                #
 -- #  HQ:         https://github.com/stnolting/neorv32                                             #
 -- #  Data Sheet: https://stnolting.github.io/neorv32                                              #
@@ -188,11 +173,6 @@ begin
   -- simulation notifier --
   assert not (is_simulation_c = true)  report "NEORV32 CPU WARNING! Assuming this is a simulation." severity warning;
   assert not (is_simulation_c = false) report "NEORV32 CPU NOTE: Assuming this is real hardware." severity note;
-
-  -- hardware reset notifier --
-  assert not (dedicated_reset_c = false) report "NEORV32 CPU CONFIG NOTE: Implementing NO dedicated hardware reset for uncritical registers (default)." severity note;
-  assert not (dedicated_reset_c = true)  report "NEORV32 CPU CONFIG NOTE: Implementing defined hardware reset for uncritical registers (non-default, reset-to-zero, might increase area)." severity note;
-  assert not ((def_rst_val_c /= '-') and (def_rst_val_c /= '0')) report "NEORV32 CPU CONFIG ERROR! Invalid configuration of package <def_rst_val_c> constant (has to be '-' or '0')." severity error;
 
   -- CPU boot address --
   assert not (CPU_BOOT_ADDR(1 downto 0) /= "00") report "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
