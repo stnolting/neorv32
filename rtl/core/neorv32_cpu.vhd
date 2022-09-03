@@ -189,11 +189,6 @@ begin
   assert not (is_simulation_c = true)  report "NEORV32 CPU WARNING! Assuming this is a simulation." severity warning;
   assert not (is_simulation_c = false) report "NEORV32 CPU NOTE: Assuming this is real hardware." severity note;
 
-  -- hardware reset notifier --
-  assert not (dedicated_reset_c = false) report "NEORV32 CPU CONFIG NOTE: Implementing NO dedicated hardware reset for uncritical registers (default)." severity note;
-  assert not (dedicated_reset_c = true)  report "NEORV32 CPU CONFIG NOTE: Implementing defined hardware reset for uncritical registers (non-default, reset-to-zero, might increase area)." severity note;
-  assert not ((def_rst_val_c /= '-') and (def_rst_val_c /= '0')) report "NEORV32 CPU CONFIG ERROR! Invalid configuration of package <def_rst_val_c> constant (has to be '-' or '0')." severity error;
-
   -- CPU boot address --
   assert not (CPU_BOOT_ADDR(1 downto 0) /= "00") report "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
   assert false report "NEORV32 CPU CONFIG NOTE: Boot from address 0x" & to_hstring32_f(CPU_BOOT_ADDR) & "." severity note;

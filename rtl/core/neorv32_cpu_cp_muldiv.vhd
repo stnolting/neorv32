@@ -122,11 +122,11 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl.state    <= S_IDLE;
-      ctrl.rs2_abs  <= (others => def_rst_val_c);
-      ctrl.cnt      <= (others => def_rst_val_c);
-      ctrl.cp_op_ff <= (others => def_rst_val_c);
+      ctrl.rs2_abs  <= (others => '-');
+      ctrl.cnt      <= (others => '-');
+      ctrl.cp_op_ff <= (others => '-');
       ctrl.out_en   <= '0';
-      div.sign_mod  <= def_rst_val_c;
+      div.sign_mod  <= '-';
     elsif rising_edge(clk_i) then
       -- defaults --
       ctrl.out_en <= '0';
@@ -234,11 +234,9 @@ begin
   if (FAST_MUL_EN = false) generate
 
     -- shift-and-add algorithm --
-    multiplier_core: process(rstn_i, clk_i)
+    multiplier_core: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        mul.prod <= (others => def_rst_val_c);
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if (mul.start = '1') then -- start new multiplication
           mul.prod(63 downto 32) <= (others => '0');
           mul.prod(31 downto 00) <= rs1_i;
@@ -282,12 +280,9 @@ begin
   if (DIVISION_EN = true) generate
 
     -- restoring division algorithm --
-    divider_core: process(rstn_i, clk_i)
+    divider_core: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        div.quotient  <= (others => def_rst_val_c);
-        div.remainder <= (others => def_rst_val_c);
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if (div.start = '1') then -- start new division
           if ((rs1_i(rs1_i'left) and ctrl.rs1_is_signed) = '1') then -- signed division?
             div.quotient <= std_ulogic_vector(0 - unsigned(rs1_i)); -- make positive

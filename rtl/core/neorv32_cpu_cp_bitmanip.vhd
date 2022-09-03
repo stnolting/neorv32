@@ -230,11 +230,11 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl_state    <= S_IDLE;
-      cmd_buf       <= (others => def_rst_val_c);
-      rs1_reg       <= (others => def_rst_val_c);
-      rs2_reg       <= (others => def_rst_val_c);
-      sha_reg       <= (others => def_rst_val_c);
-      less_reg      <= def_rst_val_c;
+      cmd_buf       <= (others => '-');
+      rs1_reg       <= (others => '-');
+      rs2_reg       <= (others => '-');
+      sha_reg       <= (others => '-');
+      less_reg      <= '-';
       clmul.start   <= '0';
       shifter.start <= '0';
       valid         <= '0';
@@ -307,15 +307,10 @@ begin
   serial_shifter:
   if (FAST_SHIFT_EN = false) generate
 
-    shifter_unit: process(rstn_i, clk_i)
+    shifter_unit: process(clk_i)
       variable new_bit_v : std_ulogic;
     begin
-      if (rstn_i = '0') then
-        shifter.cnt     <= (others => def_rst_val_c);
-        shifter.sreg    <= (others => def_rst_val_c);
-        shifter.cnt_max <= (others => def_rst_val_c);
-        shifter.bcnt    <= (others => def_rst_val_c);
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if (shifter.start = '1') then -- trigger new shift
           shifter.cnt <= (others => '0');
           -- shift operand --
@@ -429,12 +424,9 @@ begin
 
   -- Carry-Less Multiplication Core ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  clmul_core: process(rstn_i, clk_i)
+  clmul_core: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      clmul.cnt  <= (others => def_rst_val_c);
-      clmul.prod <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (clmul.start = '1') then -- start new multiplication
         clmul.cnt                 <= (others => '0');
         clmul.cnt(clmul.cnt'left) <= '1';

@@ -137,7 +137,7 @@ begin
   mem_adr_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      mar        <= (others => def_rst_val_c);
+      mar        <= (others => '0');
       misaligned <= '0';
     elsif rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
@@ -158,12 +158,9 @@ begin
 
   -- Write Data -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_do_reg: process(rstn_i, clk_i)
+  mem_do_reg: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      d_bus_wdata_o <= (others => def_rst_val_c);
-      d_bus_ben_o   <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
         -- byte enable and data alignment --
         case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is -- data size
@@ -197,11 +194,9 @@ begin
 
   -- Read Data ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  read_align: process(rstn_i, clk_i)
+  read_align: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      rdata_o <= (others => def_rst_val_c);
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       -- input data alignment and sign extension --
       case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is
         when "00" => -- byte
