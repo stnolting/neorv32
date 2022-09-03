@@ -301,7 +301,6 @@ void neorv32_rte_print_hw_config(void) {
   // general
   neorv32_uart0_printf("Is simulation:     "); __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM));
   neorv32_uart0_printf("Clock speed:       %u Hz\n", NEORV32_SYSINFO.CLK);
-  neorv32_uart0_printf("Full HW reset:     "); __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_HW_RESET));
   neorv32_uart0_printf("On-chip debugger:  "); __neorv32_rte_print_true_false(NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_OCD));
 
   // IDs

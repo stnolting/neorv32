@@ -464,7 +464,6 @@ enum NEORV32_CSR_XISA_enum {
 
   // Misc
   CSR_MXISA_IS_SIM    = 20, /**< CPU mxisa CSR (20): this might be a simulation when set (r/-)*/
-  CSR_MXISA_HW_RESET  = 21, /**< CPU mxisa CSR (21): set if a dedicated hardware reset of all core registers is implemented (r/-)*/
 
   // Tuning options
   CSR_MXISA_FASTMUL   = 30, /**< CPU mxisa CSR (30): DSP-based multiplication (M extensions only) (r/-)*/ 
@@ -1403,7 +1402,6 @@ enum NEORV32_SYSINFO_SOC_enum {
 
   SYSINFO_SOC_IS_SIM         = 13, /**< SYSINFO_FEATURES (13) (r/-): Set during simulation (not guaranteed) */
   SYSINFO_SOC_OCD            = 14, /**< SYSINFO_FEATURES (14) (r/-): On-chip debugger implemented when 1 (via ON_CHIP_DEBUGGER_EN generic) */
-  SYSINFO_SOC_HW_RESET       = 15, /**< SYSINFO_FEATURES (15) (r/-): Dedicated hardware reset of core registers implemented when 1 (via package's dedicated_reset_c constant) */
 
   SYSINFO_SOC_IO_GPIO        = 16, /**< SYSINFO_FEATURES (16) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
   SYSINFO_SOC_IO_MTIME       = 17, /**< SYSINFO_FEATURES (17) (r/-): Machine system timer implemented when 1 (via IO_MTIME_EN generic) */
