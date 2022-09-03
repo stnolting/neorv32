@@ -1083,43 +1083,17 @@ memory system to perform the necessary operations (for example a cache flush/rel
 :sectnums:
 ==== CPU Hardware Reset
 
-In order to reduce routing constraints (and by this the actual hardware requirements), most uncritical
-registers of the NEORV32 CPU as well as most register of the whole NEORV32 Processor do not use **a
-dedicated hardware reset**. "Uncritical registers" in this context means that the initial value of these registers
-after power-up/reset is not relevant for a defined CPU boot process.
+In order to reduce routing constraints (and by this the actual hardware requirements), most _uncritical registers_
+of the NEORV32 CPU as well as most registers of the whole NEORV32 Processor do not use **a dedicated hardware reset**.
+"Uncritical registers" in this context means that the initial value of the according register(s)
+after power-up/reset is not relevant for a defined CPU boot/start process.
 
-
-**Rationale**
-
-A good example to illustrate the concept of uncritical registers is a pipelined processing engine. Each stage
-of the engine features an N-bit _data register_ and a 1-bit _status register_. The status register is set when the
-data in the according data register is valid. At the end of the pipeline the status register might trigger a write-back
-of the processing result to some kind of memory. The initial status of the data registers after power-up is
-irrelevant as long as the status registers are all reset to a defined value that indicates there is no valid data in
-the pipeline's data register. Therefore, the pipeline data register do no require a dedicated reset as they do not
-control the actual operation (in contrast to the status register). This makes the pipeline data registers from
-this example "uncritical registers".
-
-
-**NEORV32 CPU Reset**
+Many CPU-internal register do provide an asynchronous reset described in the VHDL code, but the "don't care" value
+(VHDL `'-'`) is used for initialization of uncritical registers - effectively generating a flip-flop without a
+reset input.
 
 In terms of the NEORV32 CPU, there are several pipeline registers, state machine registers and even some status
 and control registers (CSRs) that do not require a defined initial state to ensure a correct boot process. The
 pipeline register will get initialized by the CPU's internal state machines, which are initialized from the main
-control engine that actually features a defined reset.
+control engine that actually features a defined hardware reset.
 
-
-**Reset Configuration**
-
-Most CPU-internal register do provide an asynchronous reset in the VHDL code, but the "don't care" value
-(VHDL `'-'`) is used for initialization of all uncritical registers - effectively generating a flip-flop without a
-reset. However, certain applications or situations (like advanced gate-level / timing simulations) might
-require a more deterministic reset state. For this case, a defined reset level (reset-to-low) of most CPU registers can
-be configured by enabling a constant in the main VHDL package file (`rtl/core/neorv32_package.vhd`):
-
-[source,vhdl]
-----
--- use dedicated hardware reset value for UNCRITICAL registers --
--- FALSE=reset value is irrelevant (might simplify HW), default; TRUE=defined LOW reset value
-constant dedicated_reset_c : boolean := false;
-----
