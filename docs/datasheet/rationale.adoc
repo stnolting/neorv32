@@ -1,7 +1,8 @@
 :sectnums:
 === Rationale
 
-**Why did you make this?**
+:sectnums!:
+==== Why did you make this?
 
 Processor and CPU architecture designs are fascinating things: they are the magic frontier where software meets hardware.
 This project started as something like a _journey_ into this magic realm to understand how things actually work
@@ -16,7 +17,8 @@ This project aims to provide a _simple to understand_ and _easy to use_ yet _pow
 that targets FPGA and RISC-V beginners as well as advanced users.
 
 
-**Why a _soft-core_ processor?**
+:sectnums!:
+==== Why a _soft-core_ processor?
 
 As a matter of fact soft-core processors _cannot_ compete with discrete (like FPGA hard-macro) processors in terms
 of performance, energy efficiency and size. But they do fill a niche in FPGA design space: for example, soft-core processors
@@ -29,7 +31,8 @@ _exactly_ the features that are required by the application: additional memories
 co-processors and even user-defined instructions.
 
 
-**Why RISC-V?**
+:sectnums!:
+==== Why RISC-V?
 
 image::riscv_logo.png[width=250,align=left]
 
@@ -53,7 +56,8 @@ Finally, I really like the RISC-V ISA itself. It aims to be a clean, orthogonal 
 resembles with the basic concepts of _RISC_: simple yet effective.
 
 
-**Yet another RISC-V core? What makes it special?**
+:sectnums!:
+==== Yet another RISC-V core? What makes it special?
 
 The NEORV32 is not based on another RISC-V core. It was build entirely from ground up (just following the official
 ISA specs). The project does not intend to replace certain RISC-V cores or
@@ -70,7 +74,8 @@ and even memory accesses that are checked for address space holes and determinis
 devices. Precise exceptions allow a defined and fully-synchronized state of the CPU at every time an in every situation.
 
 
-**A multi-cycle architecture?!?!**
+:sectnums!:
+==== A multi-cycle architecture?!?!
 
 Most mainstream CPUs out there are pipelined architectures to increase throughput. In contrast, most CPUs used for
 teaching are single-cycle designs since they are probably the most easiest to understand. But what about the
