@@ -132,6 +132,7 @@ and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/
 * `machine` and `user` privilege modes
 * implements **all** standard RISC-V exceptions and interrupts (including MTI, MEI & MSI)
 * 16 fast interrupt request channels as NEORV32-specific extension
+* _intrinsic_ libraries for the `B` and `Zfinx` extensions
 
 **Memory**
 
@@ -183,11 +184,6 @@ _custom RISC-V instructions_
 * on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) accessible via standard JTAG interface
 * compliant to the "Minimal RISC-V Debug Specification Version 0.13.2"
 * compatible with **OpenOCD** + **gdb** and **Segger Embedded Studio**
-
-
-:warning: The `B`, `Zfinx` and `Zmmul` RISC-V ISA extensions are frozen and officially ratified but there is no
-upstream gcc support yet (will be available with GCC12). To circumvent this, the NEORV32 software framework provides
-_intrinsic libraries_ for the `B` and `Zfinx` extensions.
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
@@ -268,9 +264,13 @@ developed and debugged with open source tools ([GHDL](https://github.com/ghdl/gh
 This overview provides some *quick links* to the most important sections of the
 [online Data Sheet](https://stnolting.github.io/neorv32) and the [online User Guide](https://stnolting.github.io/neorv32/ug).
 
-### :interrobang: Rationale
+### :mag: Project Overview
 
-* [Rationale](https://stnolting.github.io/neorv32/#_rationale) - NEORV32: Why? How come? What for?
+* **[NEORV32 Project](https://stnolting.github.io/neorv32/#_overview) - introduction**
+  * [Rationale](https://stnolting.github.io/neorv32/#_rationale) - why? how come? what for?
+  * [Key Features](https://stnolting.github.io/neorv32/#_project_key_features) - what makes it special
+  * [Structure](https://stnolting.github.io/neorv32/#_project_folder_structure) - folders and RTL files
+  * [Metrics](https://stnolting.github.io/neorv32/#_fpga_implementation_results) - FPGA implementation and performance evaluation
 
 ### :electric_plug: Hardware Overview
 
@@ -281,7 +281,7 @@ This overview provides some *quick links* to the most important sections of the
   * [SoC Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - IO/peripheral modules and memories
   * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - in-system debugging of the processor via JTAG
 
-* **[NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the CPU**
+* **[NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - the Core**
   * [RISC-V Compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs and what is not
   * [Architecture](https://stnolting.github.io/neorv32/#_architecture) - a look under the hood
   * [Full Virtualization](https://stnolting.github.io/neorv32/#_full_virtualization) - execution safety
