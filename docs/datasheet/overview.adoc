@@ -59,6 +59,8 @@ include::rationale.adoc[]
 :sectnums:
 === Project Key Features
 
+**Project**
+
 * all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
 * completely described in behavioral, platform-independent VHDL - no vendor- or technology-specific primitives, attributes, macros, libraries, etc. are used at all
 * all-Verilog "version" https://github.com/stnolting/neorv32-verilog[available] (auto-generated netlist)
@@ -69,29 +71,37 @@ include::rationale.adoc[]
 * optimized for high clock frequencies to ease timing closure and integration
 * from zero to _"hello world!"_ - completely open source and documented
 * easy to use even for FPGA/RISC-V starters – intended to _work out of the box_
-* **NEORV32 CPU**: 32-bit `rv32i` RISC-V CPU
-** fully RISC-V compatible: passes the https://github.com/stnolting/neorv32-verif[official architecture tests]
-** base ISA + privileged ISA (optional) + several ISA extensions (optional)
-** option to add custom RISC-V instructions as custom ISA extension
-** rich set of customization options (ISA extensions, design goal: performance / area (/ energy), ...)
-** aims to support <<_full_virtualization>> capabilities to increase execution safety
-** official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]
-* **NEORV32 Processor (SoC)**: highly-configurable full-scale microcontroller-like processor system
-** based on the NEORV32 CPU
-** optional serial interfaces (UARTs, TWI, SPI, 1-Wire)
-** optional timers and counters (watchdog, system timer)
-** optional general purpose IO and PWM; a native NeoPixel(c)-compatible smart LED interface
-** optional embedded memories / caches for data, instructions and bootloader
-** optional external memory interface (Wishbone / AXI4-Lite) and stream link interface (AXI4-Stream) for custom connectivity
-** optional execute_in_place (XIP) module to execute code _directly_ form external SPI flash
-** on-chip debugger compatible with OpenOCD and gdb including hardware trigger module
-* **Software framework**
-** GCC-based toolchain - https://github.com/stnolting/riscv-gcc-prebuilt[prebuilt toolchains available]; application compilation based on GNU makefiles
-** internal bootloader with serial user interface (via UART)
-** core libraries and HAL for high-level usage of the provided functions and peripherals
-** processor-specific runtime environment and several example programs
-** doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
-** FreeRTOS port + demos available
+
+**NEORV32 CPU (the core)**
+
+* 32-bit `rv32i` RISC-V CPU
+* fully RISC-V compatible - passes the https://github.com/stnolting/neorv32-verif[official architecture tests]
+* base ISA + privileged ISA (optional) + several ISA extensions (optional)
+* option to add custom RISC-V instructions as custom ISA extension
+* rich set of customization options (ISA extensions, design goal: performance / area (/ energy), ...)
+* aims to support <<_full_virtualization>> capabilities to increase execution safety
+* official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]
+
+**NEORV32 Processor (the SoC)**
+
+* highly-configurable full-scale microcontroller-like processor system
+* based on the NEORV32 CPU
+* optional standard serial interfaces (UART, TWI, SPI, 1-Wire)
+* optional timers and counters (watchdog, system timer)
+* optional general purpose IO and PWM; a native NeoPixel(c)-compatible smart LED interface
+* optional embedded memories / caches for data, instructions and bootloader
+* optional external memory interface (Wishbone / AXI4-Lite) and stream link interface (AXI4-Stream) for custom connectivity
+* optional execute_in_place (XIP) module to execute code _directly_ form external SPI flash
+* on-chip debugger compatible with OpenOCD and gdb including hardware trigger module
+
+**Software framework**
+
+* GCC-based toolchain - https://github.com/stnolting/riscv-gcc-prebuilt[prebuilt toolchains available]; application compilation based on GNU makefiles
+* internal bootloader with serial user interface (via UART)
+* core libraries and HAL for high-level usage of the provided functions and peripherals
+* processor-specific runtime environment and several example programs
+* doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
+* FreeRTOS port + demos available
 
 [TIP]
 For more in-depth details regarding the feature provided by he hardware see the according sections:
@@ -140,14 +150,14 @@ neorv32                - Project home folder
 └sw                    - Software framework
  ├bootloader           - Sources of the processor-internal bootloader
  ├common               - Linker script, crt0.S start-up code and central makefile
- ├example              - Various example programs
+ ├example              - Example programs for the core and the SoC modules
  │└...
  ├lib                  - Processor core library
  │├include             - Header files (*.h)
  │└source              - Source files (*.c)
- ├image_gen            - Helper program to generate NEORV32 executables^
- ├ocd_firmware         - Source code for on-chip debugger's "park loop"
- ├openocd              - OpenOCD on-chip debugger configuration files
+ ├image_gen            - Helper program to generate NEORV32 executables
+ ├ocd_firmware         - Firmware for the on-chip debugger's "park loop"
+ ├openocd              - OpenOCD configuration files
  └svd                  - Processor system view description file (CMSIS-SVD)
 ...................................
 
@@ -289,10 +299,10 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| HW version: | `1.6.8.3++`
-| Top entity: | `rtl/core/neorv32_top.vhd`
-| FPGA:       | Intel Cyclone IV E `EP4CE22F17C6`
-| Toolchain:  | Quartus Prime Lite 21.1
+| HW version:  | `1.6.8.3++`
+| Top entity:  | `rtl/core/neorv32_top.vhd`
+| FPGA:        | Intel Cyclone IV E `EP4CE22F17C6`
+| Toolchain:   | Quartus Prime Lite 21.1
 | Constraints: | **no timing constraints**, "_balanced optimization_"
 |=======================
 
@@ -332,13 +342,10 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 Note that not all IOs were actually connected to FPGA pins (for example some GPIO inputs and outputs)
 when generating these reports.
 
-
-<<<
-:sectnums:
-==== Exemplary Setups
-
-Check out the `neorv32-setups` repository (@GitHub: https://github.com/stnolting/neorv32-setups),
-which provides several demo setups for various FPGA boards and toolchains.
+.Exemplary Setups
+[TIP]
+Check out the `neorv32-setups` repository (on GitHub: https://github.com/stnolting/neorv32-setups),
+which provides several demo setups and community projects for various FPGA boards and toolchains.
 
 
 <<<
@@ -352,7 +359,7 @@ system. The according sources can be found in the `sw/example/coremark` folder.
 
 .Dhrystone
 [TIP]
-A _simple_ port of the Dhrystone benchmark is also available in `sw/example/dhrystone`.
+A very simple port of the Dhrystone benchmark is also available in `sw/example/dhrystone`.
 
 The resulting CoreMark score is defined as CoreMark iterations per second.
 The execution time is determined via the RISC-V `[m]cycle[h]` CSRs. The relative CoreMark score is
