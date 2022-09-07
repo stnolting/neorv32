@@ -91,7 +91,7 @@ information about those CSRs.
 
 [NOTE]
 The following CSR sections provide a "headline" for each CSRs. It shows the 12-bit CSR address, the assembly name of the CSR,
-a short description and the ISA extension(s) that are required for implementing the according CSR.
+a short description and, ISA extension(s) that are required for implementing the according CSR and the reset value.
 
 
 <<<
@@ -107,9 +107,8 @@ a short description and the ISA extension(s) that are required for implementing 
 [frame="topbot",grid="none"]
 |=======================
 | 0x001 | `fflags` - **Floating-point accrued exceptions** | `Zicsr` + `Zfinx`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 [cols="^1,^1,<10"]
 [options="header",grid="rows"]
@@ -131,9 +130,8 @@ Reset value: `0x00000000`
 [frame="topbot",grid="none"]
 |=======================
 | 0x002 | `frm` - **Floating-point dynamic rounding mode** | `Zicsr` + `Zfinx`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 [cols="^1,^1,<10"]
 [options="header",grid="rows"]
@@ -151,9 +149,8 @@ Reset value: `0x00000000`
 [frame="topbot",grid="none"]
 |=======================
 | 0x003 | `fcsr` - **Floating-point control and status register** | `Zicsr` + `Zfinx`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 [cols="^1,^1,<10"]
 [options="header",grid="rows"]
@@ -177,10 +174,10 @@ Reset value: `0x00000000`
 [frame="topbot",grid="none"]
 |=======================
 | 0x30a | `menvcfg` - **Machine environment configuration register** | `Zicsr` + `U`
+3+<| Reset value: `0x00000000`
 |=======================
 
-Reset value: `0x00000000`
-
+[NOTE]
 The features of this CSR are not implemented yet. The register is read-only and always returns zero.
 
 
@@ -191,10 +188,10 @@ The features of this CSR are not implemented yet. The register is read-only and 
 [frame="topbot",grid="none"]
 |=======================
 | 0x31a | `menvcfgh` - **Machine environment configuration register - high word** | `Zicsr` + `U`
+3+<| Reset value: `0x00000000`
 |=======================
 
-Reset value: `0x00000000`
-
+[NOTE]
 The features of this CSR are not implemented yet. The register is read-only and always returns zero.
 
 
@@ -210,9 +207,8 @@ The features of this CSR are not implemented yet. The register is read-only and 
 [frame="topbot",grid="none"]
 |=======================
 | 0x300 | `mstatus` - **Machine status register** | `Zicsr`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 [cols="^1,^3,^1,<9"]
 [options="header",grid="rows"]
@@ -233,11 +229,10 @@ Reset value: `0x00000000`
 [frame="topbot",grid="none"]
 |=======================
 | 0x301 | `misa` - **ISA and extensions** | `Zicsr`
+3+<| Reset value: `define`
 |=======================
 
-Reset value: _defined_
-
-[IMPORTANT]
+[NOTE]
 The NEORV32 `misa` CSR is read-only. Hence, active CPU extensions are entirely defined by pre-synthesis configurations
 and cannot be switch on/off during runtime. For compatibility reasons any write access to this CSR is simply ignored and
 will _not_ cause an illegal instruction exception.
@@ -267,9 +262,8 @@ Machine-mode software can discover available `Z*` _sub-extensions_ (like `Zicsr`
 [frame="topbot",grid="none"]
 |=======================
 | 0x304 | `mie` - **Machine interrupt-enable register** | `Zicsr`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 [cols="^1,^3,^1,<9"]
 [options="header",grid="rows"]
@@ -289,9 +283,8 @@ Reset value: `0x00000000`
 [frame="topbot",grid="none"]
 |=======================
 | 0x305 | `mtvec` - **Machine trap-handler base address** | `Zicsr`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 [cols="^1,^1,<10"]
 [options="header",grid="rows"]
@@ -309,9 +302,8 @@ Reset value: `0x00000000`
 [frame="topbot",grid="none"]
 |=======================
 | 0x306 | `mcounteren` - **Machine counter enable** | `Zicsr` + `U`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 [cols="^1,^3,^1,<9"]
 [options="header",grid="rows"]
@@ -337,10 +329,10 @@ CPU these bits are hardwired to zero. Hence, user-level software cannot access t
 [frame="topbot",grid="none"]
 |=======================
 | 0x310 | `mstatush` - **Machine status register - high word** | `Zicsr`
+3+<| Reset value: `0x00000000`
 |=======================
 
-Reset value: `0x00000000`
-
+[NOTE]
 The features of this CSR are not implemented yet. The register is read-only and always returns zero.
 
 
@@ -356,9 +348,8 @@ The features of this CSR are not implemented yet. The register is read-only and 
 [frame="topbot",grid="none"]
 |=======================
 | 0x340 | `mscratch` - **Scratch register for machine trap handlers** | `Zicsr`
+3+<| Reset value: `UNDEFINED`
 |=======================
-
-Reset value: `UNDEFINED`
 
 
 :sectnums!:
@@ -368,9 +359,8 @@ Reset value: `UNDEFINED`
 [frame="topbot",grid="none"]
 |=======================
 | 0x341 | `mepc` - **Machine exception program counter** | `Zicsr`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 
 :sectnums!:
@@ -380,9 +370,8 @@ Reset value: `0x00000000`
 [frame="topbot",grid="none"]
 |=======================
 | 0x342 | `mcause` - **Machine trap cause** | `Zicsr`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 [cols="^1,^1,<10"]
 [options="header",grid="rows"]
@@ -404,10 +393,10 @@ See section <<_neorv32_trap_listing>> for more information.
 [frame="topbot",grid="none"]
 |=======================
 | 0x343 | `mtval` - **Machine bad address or instruction** | `Zicsr`
+3+<| Reset value: `0x00000000`
 |=======================
 
-Reset value: `0x00000000`
-
+[NOTE]
 The NEORV32 `mtval` CSR is read-only. However, a write access will _not_ raise an illegal instruction exception.
 
 [cols="^5,^5"]
@@ -436,9 +425,8 @@ See section <<_neorv32_trap_listing>> for more information.
 [frame="topbot",grid="none"]
 |=======================
 | 0x344 | `mip` - **Machine interrupt pending** | `Zicsr`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 The `mip` CSR shows the currently _pending_ interrupts.
 The bits for the standard RISC-V interrupts are read-only. Hence, these interrupts cannot be cleared using the `mip` register and must
@@ -494,9 +482,8 @@ However, any access beyond `pmpcfg3` or `pmpaddr15`, which are the last physical
 | 0x3a0 | `pmpcfg0` - **Physical memory protection configuration register (region 0-3)** | `Zicsr` + `PMP`
 3+<| ...
 |  0x3a3| `pmpcfg3` - **Physical memory protection configuration register (region 12-15)** | `Zicsr` + `PMP`
+3+<| Reset value: all `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 [cols="^1,^2,^1,<11"]
 [options="header",grid="rows"]
@@ -526,9 +513,8 @@ See the RISC-V specs. for more information.
 | 0x3b0 | `pmpaddr0` - **Physical memory protection address registers (region 0)** | `Zicsr` + `PMP`
 3+<| ...
 | 0x3bf | `pmpaddr15` - **Physical memory protection address registers (region 15)** | `Zicsr` + `PMP`
+3+<| Reset value: all `0x00000000`
 |=======================
-
-Reset value: `UNDEFINED`
 
 .Physical Address Size
 [NOTE]
@@ -574,9 +560,8 @@ before being used.
 |=======================
 | 0xc00 | `cycle` - **Cycle counter - low word** | `Zicsr` + `Zicntr`
 | 0xc80 | `cycleh` - **Cycle counter - high word** | `Zicsr` + `Zicntr`
+3+<| Reset value: all `UNDEFINED`
 |=======================
-
-Reset value: `UNDEFINED`
 
 
 :sectnums!:
@@ -587,9 +572,8 @@ Reset value: `UNDEFINED`
 |=======================
 | 0xc01 | `time` - **System time - low word** | `Zicsr` + `Zicntr`
 | 0xc81 | `timeh` - **System time - high word** | `Zicsr` + `Zicntr`
+3+<| Reset value: all `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 
 :sectnums!:
@@ -600,9 +584,8 @@ Reset value: `0x00000000`
 |=======================
 | 0xc02 | `instret` - **Instructions-retired counter - low word** | `Zicsr` + `Zicntr`
 | 0xc82 | `instreth` - **Instructions-retired counter - high word** | `Zicsr` + `Zicntr`
+3+<| Reset value: all `UNDEFINED`
 |=======================
-
-Reset value: `UNDEFINED`
 
 
 :sectnums!:
@@ -613,9 +596,8 @@ Reset value: `UNDEFINED`
 |=======================
 | 0xb00 | `mcycle` - **Machine cycle counter - low word** | `Zicsr` + `Zicntr`
 | 0xb80 | `mcycleh` - **Machine cycle counter - high word** | `Zicsr` + `Zicntr`
+3+<| Reset value: all `UNDEFINED`
 |=======================
-
-Reset value: `UNDEFINED`
 
 
 :sectnums!:
@@ -626,9 +608,8 @@ Reset value: `UNDEFINED`
 |=======================
 | 0xb02 | `minstret` - **Machine instructions-retired counter - low word** | `Zicsr` + `Zicntr`
 | 0xb82 | `minstreth` - **Machine instructions-retired counter - high word** | `Zicsr` + `Zicntr`
+3+<| Reset value: all `UNDEFINED`
 |=======================
-
-Reset value: `UNDEFINED`
 
 
 
@@ -663,9 +644,8 @@ If <<_hpm_num_cnts>> is less than 64, all remaining MSB-aligned bits are hardwir
 | 0x232 | `mhpmevent3` - **Machine hardware performance monitor event select (counter 3)** | `Zicsr` + `Zihpm`
 3+<| ...
 | 0x33f | `mhpmevent31` - **Machine hardware performance monitor event select (counter 31)** | `Zicsr` + `Zihpm`
+3+<| Reset value: all `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 The value in these CSRs define the architectural events that cause an increment of the according `mhpmcounter*[h]` counter(s).
 All available events are listed in the table below. If more than one event is selected, the according counter will increment if _any_ of
@@ -707,9 +687,8 @@ cycle even if more than one trigger event is observed.
 | 0xb83 | `mhpmcounter3h` - **Machine hardware performance monitor - counter 3 high** | `Zicsr` + `Zihpm`
 3+<| ...
 | 0xb9f | `mhpmcounter31h` - **Machine hardware performance monitor - counter 31 high** | `Zicsr` + `Zihpm`
+3+<| Reset value: all `UNDEFINED`
 |=======================
-
-Reset value: `UNDEFINED`
 
 
 <<<
@@ -724,9 +703,8 @@ Reset value: `UNDEFINED`
 [frame="topbot",grid="none"]
 |=======================
 | 0x320 | `mcountinhibit` - **Machine counter-inhibit register** | `Zicsr`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 [cols="^1,^3,^1,<9"]
 [options="header",grid="rows"]
@@ -753,9 +731,8 @@ All machine information registers can only be accessed in machine mode and are r
 [frame="topbot",grid="none"]
 |=======================
 | 0xf11 | `mvendorid` - **Machine vendor ID** | `Zicsr`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 The features of this CSR are not implemented yet. The register is read-only and always returns zero.
 
@@ -767,9 +744,8 @@ The features of this CSR are not implemented yet. The register is read-only and 
 [frame="topbot",grid="none"]
 |=======================
 | 0xf12 | `marchid` - **Machine architecture ID** | `Zicsr`
+3+<| Reset value: `0x00000013`
 |=======================
-
-Reset value: `0x00000013`
 
 The `marchid` CSR is read-only and shows the NEORV32 official RISC-V open-source architecture ID
 (decimal: 19, 32-bit hexadecimal: 0x00000013).
@@ -782,9 +758,8 @@ The `marchid` CSR is read-only and shows the NEORV32 official RISC-V open-source
 [frame="topbot",grid="none"]
 |=======================
 | 0xf13 | `mimpid` - **Machine implementation ID** | `Zicsr`
+3+<| Reset value: `define`
 |=======================
-
-Reset value: _defined_
 
 The `mimpid` CSR is read-only and shows the version of the
 NEORV32 as BCD-coded number (example: `mimpid` = _0x01020312_ → 01.02.03.12 → version 1.2.3.12).
@@ -797,9 +772,8 @@ NEORV32 as BCD-coded number (example: `mimpid` = _0x01020312_ → 01.02.03.12 �
 [frame="topbot",grid="none"]
 |=======================
 | 0xf14 | `mhartid` - **Machine hardware thread ID** | `Zicsr`
+3+<| Reset value: `define`
 |=======================
-
-Reset value: _defined_
 
 The `mhartid` CSR is read-only and shows the core's hart ID, which is assigned via the <<_hw_thread_id>> top generic.
 
@@ -811,9 +785,8 @@ The `mhartid` CSR is read-only and shows the core's hart ID, which is assigned v
 [frame="topbot",grid="none"]
 |=======================
 | 0xf15 | `mconfigptr` - **Machine configuration pointer register** | `zicsr`
+3+<| Reset value: `0x00000000`
 |=======================
-
-Reset value: `0x00000000`
 
 The features of this CSR are not implemented yet. The register is read-only and always returns zero.
 
@@ -835,9 +808,8 @@ outside of machine-mode will raise an illegal instruction exception.
 [frame="topbot",grid="none"]
 |=======================
 | 0x7c0 | `mxisa` - **Machine EXTENDED ISA and Extensions register** | `Zicsr` + `X`
+3+<| Reset value: `define`
 |=======================
-
-Reset value: _defined_
 
 NEORV32-specific read-only CSR that helps machine-mode software to discover `Z*` sub-extensions and CPU options.
 

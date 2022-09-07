@@ -329,7 +329,7 @@ read-only. Writing '1' to these bits/fields will be ignored.
 | 23:11 | _reserved_    | r/- | reserved; always zero
 | 12    | `busy`        | r/- | `1` when a command is being executed
 | 11    | _reserved_    | r/- | reserved; always zero
-| 10:8  | `cmerr`       | r/w | error during command execution (see below); has to be cleared by writing `111`
+| 10:8  | `cmderr`      | r/w | error during command execution (see below); has to be cleared by writing `111`
 | 7:4   | _reserved_    | r/- | reserved; always zero
 | 3:0   | `datacount`   | r/- | `0001`; number of implemented `data` registers for abstract commands = 1
 |=======================
@@ -578,8 +578,8 @@ is raised.
 [frame="topbot",grid="none"]
 |======
 | 0x7b0 | **Debug control and status register** | `dcsr`
-3+| Reset value: `0x40000413`
-3+| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to configure debug mode and provides additional status information.
+3+<| Reset value: `0x40000413`
+3+<| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to configure debug mode and provides additional status information.
 The following bits are implemented. The reaming bits are read-only and always read as zero.
 |======
 
@@ -620,8 +620,8 @@ Cause codes in `dcsr.cause` (highest priority first):
 [frame="topbot",grid="none"]
 |======
 | 0x7b1 | **Debug program counter** | `dpc`
-3+| Reset value: `0x00000000`
-3+| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to store the current program counter when
+3+<| Reset value: `0x00000000`
+3+<| The `dcsr` CSR is compatible to the RISC-V debug spec. It is used to store the current program counter when
 debug mode is entered. The `dret` instruction will return to `dpc` by moving `dpc` to `pc`.
 |======
 
@@ -633,8 +633,8 @@ debug mode is entered. The `dret` instruction will return to `dpc` by moving `dp
 [frame="topbot",grid="none"]
 |======
 | 0x7b2 | **Debug scratch register 0** | `dscratch0`
-3+| Reset value: `0x00000000`
-3+| The `dscratch0` CSR is compatible to the RISC-V debug spec. It provides a general purpose debug mode-only scratch register.
+3+<| Reset value: `0x00000000`
+3+<| The `dscratch0` CSR is compatible to the RISC-V debug spec. It provides a general purpose debug mode-only scratch register.
 |======
 
 
@@ -674,8 +674,8 @@ Hence, the CSRs of this module are only relevant for the debugger.
 [frame="topbot",grid="none"]
 |======
 | 0x7a0 | **Trigger select register** | `tselect`
-3+| Reset value: `0x00000000`
-3+| This CSR is hardwired to zero indicating there is only one trigger available. Any write access is ignored.
+3+<| Reset value: `0x00000000`
+3+<| This CSR is hardwired to zero indicating there is only one trigger available. Any write access is ignored.
 |======
 
 
@@ -686,8 +686,8 @@ Hence, the CSRs of this module are only relevant for the debugger.
 [frame="topbot",grid="none"]
 |======
 | 0x7a1 | **Trigger data register 1 / match control register** | `tdata1` / `mcontrol`
-3+| Reset value: `0x28041048`
-3+| This CSR is used to configure the address match trigger. Only one bit is writable, the remaining bits are hardwired (see table below).
+3+<| Reset value: `0x28041048`
+3+<| This CSR is used to configure the address match trigger. Only one bit is writable, the remaining bits are hardwired (see table below).
 Write attempts to the hardwired bits are ignored.
 |======
 
@@ -723,8 +723,8 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7a2 | **Trigger data register 2** | `tdata2`
-3+| Reset value: `0x00000000`
-3+| Since only the "address match trigger" type is supported, this r/w CSR is used to store the address of the triggering instruction.
+3+<| Reset value: `0x00000000`
+3+<| Since only the "address match trigger" type is supported, this r/w CSR is used to store the address of the triggering instruction.
 |======
 
 
@@ -735,8 +735,8 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7a3 | **Trigger data register 3** | `tdata3`
-3+| Reset value: `0x00000000`
-3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
+3+<| Reset value: `0x00000000`
+3+<| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
 |======
 
 
@@ -747,8 +747,8 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7a4 | **Trigger information register** | `tinfo`
-3+| Reset value: `0x00000004`
-3+| This CSR is hardwired to "4" indicating there is only an "address match trigger" available. Any write access is ignored.
+3+<| Reset value: `0x00000004`
+3+<| This CSR is hardwired to "4" indicating there is only an "address match trigger" available. Any write access is ignored.
 |======
 
 
@@ -759,8 +759,8 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7a5 | **Trigger control register** | `tcontrol`
-3+| Reset value: `0x00000000`
-3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
+3+<| Reset value: `0x00000000`
+3+<| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
 |======
 
 
@@ -771,8 +771,8 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7a8 | **Machine context register** | `mcontext`
-3+| Reset value: `0x00000000`
-3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
+3+<| Reset value: `0x00000000`
+3+<| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
 |======
 
 
@@ -783,7 +783,7 @@ Write attempts to the hardwired bits are ignored.
 [frame="topbot",grid="none"]
 |======
 | 0x7aa | **Supervisor context register** | `scontext`
-3+| Reset value: `0x00000000`
-3+| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
+3+<| Reset value: `0x00000000`
+3+<| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
 |======
 
