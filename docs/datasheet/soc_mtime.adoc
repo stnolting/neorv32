@@ -29,8 +29,8 @@ The interrupt remain active (=pending) until `TIME` becomes less `TIMECMP` again
 
 .Reset
 [NOTE]
-After a hardware reset the `TIME` register is reset to all-zero and the `TIMECMP` register is reset to all-one to prevent
-accidental interrupt requests during early boot phase.
+After a hardware reset the `TIME` register is reset to **all-zero** and the `TIMECMP` register is reset to **all-one**
+to prevent accidental interrupt requests during early boot phase.
 
 .External MTIME Input
 [NOTE]
