@@ -342,7 +342,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal csr : csr_t;
 
   -- debug mode controller --
-  type debug_ctrl_state_t is (DEBUG_OFFLINE, DEBUG_PENDING, DEBUG_ONLINE, DEBUG_EXIT);
+  type debug_ctrl_state_t is (DEBUG_OFFLINE, DEBUG_PENDING, DEBUG_ONLINE, DEBUG_LEAVING);
   type debug_ctrl_t is record
     state        : debug_ctrl_state_t;
     running      : std_ulogic; -- CPU is in debug mode
@@ -510,16 +510,14 @@ begin
 
   -- Issue Engine FSM Sync ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  issue_engine_fsm_sync: process(rstn_i, clk_i)
+  issue_engine_fsm_sync: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      issue_engine.align <= '0'; -- always start aligned after reset
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_C = true) then
         if (fetch_engine.restart = '1') then
           issue_engine.align <= execute_engine.pc(1); -- branch to unaligned address?
         elsif (execute_engine.state = DISPATCH) then
-          issue_engine.align <= (issue_engine.align and (not issue_engine.align_clr)) or issue_engine.align_set;
+          issue_engine.align <= (issue_engine.align and (not issue_engine.align_clr)) or issue_engine.align_set; -- "RS" flip-flop
         end if;
       else
         issue_engine.align <= '0'; -- always aligned
@@ -540,7 +538,7 @@ begin
     -- start with LOW half-word --
     if (issue_engine.align = '0') or (CPU_EXTENSION_RISCV_C = false) then
       if (CPU_EXTENSION_RISCV_C = true) and (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed
-        issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is not 32-bit-aligned
+        issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
         issue_engine.valid(0)  <= ipb.avail(0);
         issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(0)(17 downto 16) & '1' & issue_engine.ci_i32;
       else -- aligned uncompressed
@@ -551,7 +549,7 @@ begin
     -- start with HIGH half-word --
     else
       if (CPU_EXTENSION_RISCV_C = true) and (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed
-        issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
+        issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word IS 32-bit-aligned again
         issue_engine.valid(1)  <= ipb.avail(1);
         issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(1)(17 downto 16) & '1' & issue_engine.ci_i32;
       else -- unaligned uncompressed
@@ -576,9 +574,7 @@ begin
       FPU_ENABLE => CPU_EXTENSION_RISCV_Zfinx -- floating-point instructions enabled
     )
     port map (
-      -- instruction input --
       ci_instr16_i => issue_engine.ci_i16, -- compressed instruction input
-      -- instruction output --
       ci_illegal_o => issue_engine.ci_ill, -- illegal compressed instruction
       ci_instr32_o => issue_engine.ci_i32  -- 32-bit decompressed instruction
     );
@@ -977,7 +973,7 @@ begin
 
 
       when EXECUTE => -- Decode and execute instruction (control has to be here for exactly 1 cycle in any case!)
-      -- NOTE: register file is read this stage; due to the sync read data will be available in the _next_ state
+      -- NOTE: register file is read in this stage; due to the sync read, data will be available in the _next_ state
       -- ------------------------------------------------------------
         case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
@@ -1744,10 +1740,10 @@ begin
       csr.mepc              <= (others => '0');
       csr.mcause            <= (others => '0');
       csr.mtval             <= (others => '0');
-      csr.mip_firq_nclr     <= (others => '-');
+      csr.mip_firq_nclr     <= (others => '-'); -- no reset required
       --
       csr.pmpcfg            <= (others => (others => '0'));
-      csr.pmpaddr           <= (others => (others => '-'));
+      csr.pmpaddr           <= (others => (others => '0'));
       --
       csr.mhpmevent         <= (others => (others => '0'));
       --
@@ -2041,7 +2037,6 @@ begin
                 csr.mstatus_mpp <= csr.privilege; -- backup previous privilege mode
               end if;
             end if;
-
           -- EXIT: return from trap --
           elsif (trap_ctrl.env_end = '1') then
             if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then -- return from debug mode
@@ -2564,10 +2559,10 @@ begin
         case debug_ctrl.state is
 
           when DEBUG_OFFLINE => -- not in debug mode, waiting for entering request
-            if (debug_ctrl.trig_halt = '1') or   -- external request (from DM)
-               (debug_ctrl.trig_break = '1') or  -- ebreak instruction
-               (debug_ctrl.trig_hw = '1') or     -- hardware trigger module
-               (debug_ctrl.trig_step = '1') then -- single-stepping mode
+            if (debug_ctrl.trig_halt  = '1') or -- external request (from DM)
+               (debug_ctrl.trig_break = '1') or -- ebreak instruction
+               (debug_ctrl.trig_hw    = '1') or -- hardware trigger module
+               (debug_ctrl.trig_step  = '1') then -- single-stepping mode
               debug_ctrl.state <= DEBUG_PENDING;
             end if;
 
@@ -2578,10 +2573,10 @@ begin
 
           when DEBUG_ONLINE => -- we are in debug mode
             if (debug_ctrl.dret = '1') then -- DRET instruction
-              debug_ctrl.state <= DEBUG_EXIT;
+              debug_ctrl.state <= DEBUG_LEAVING;
             end if;
 
-          when DEBUG_EXIT => -- leaving debug mode
+          when DEBUG_LEAVING => -- leaving debug mode
             if (execute_engine.state = TRAP_EXECUTE) then -- processing trap exit
               debug_ctrl.state <= DEBUG_OFFLINE;
             end if;
@@ -2597,7 +2592,7 @@ begin
   end process debug_control;
 
   -- CPU is *in* debug mode --
-  debug_ctrl.running <= '1' when ((debug_ctrl.state = DEBUG_ONLINE) or (debug_ctrl.state = DEBUG_EXIT)) and (CPU_EXTENSION_RISCV_DEBUG = true) else '0';
+  debug_ctrl.running <= '1' when ((debug_ctrl.state = DEBUG_ONLINE) or (debug_ctrl.state = DEBUG_LEAVING)) and (CPU_EXTENSION_RISCV_DEBUG = true) else '0';
 
   -- entry debug mode triggers --
   debug_ctrl.trig_hw    <= hw_trigger_fire and (not debug_ctrl.running); -- enter debug mode by HW trigger module request
@@ -2652,7 +2647,7 @@ begin
   csr.tdata1_rd(6)            <= '1'; -- m: trigger enabled when in machine mode
   csr.tdata1_rd(5)            <= '0'; -- h: hypervisor mode not supported
   csr.tdata1_rd(4)            <= '0'; -- s: supervisor mode not supported
-  csr.tdata1_rd(3)            <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- u: trigger enabled when in user mode
+  csr.tdata1_rd(3)            <= '1' when (CPU_EXTENSION_RISCV_U = true) else '0'; -- u: trigger enabled when in user mode
   csr.tdata1_rd(2)            <= csr.tdata1_exe; -- execute: enable trigger
   csr.tdata1_rd(1)            <= '0'; -- store: store address or data matching not supported
   csr.tdata1_rd(0)            <= '0'; -- load: load address or data matching not supported
