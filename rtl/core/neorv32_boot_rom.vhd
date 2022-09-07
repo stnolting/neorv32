@@ -78,8 +78,11 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Implementing internal bootloader ROM (" & natural'image(boot_rom_size_c) & " bytes)." severity note;
-  assert not (boot_rom_size_c > boot_rom_max_size_c) report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range! Max "& natural'image(boot_rom_max_size_c) & " bytes." severity error;
+  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Implementing internal bootloader ROM (" &
+                      natural'image(boot_rom_size_c) & " bytes)." severity note;
+
+  assert not (boot_rom_size_c > boot_rom_max_size_c) report "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range! Max " &
+                                                            natural'image(boot_rom_max_size_c) & " bytes." severity error;
 
 
   -- Access Control -------------------------------------------------------------------------

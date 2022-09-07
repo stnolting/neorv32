@@ -128,16 +128,14 @@ begin
       end if;
 
       -- mtime write access buffer --
+      mtime_lo_we <= '0';
       if (wren = '1') and (addr = mtime_time_lo_addr_c) then
         mtime_lo_we <= '1';
-      else
-        mtime_lo_we <= '0';
       end if;
       --
+      mtime_hi_we <= '0';
       if (wren = '1') and (addr = mtime_time_hi_addr_c) then
         mtime_hi_we <= '1';
-      else
-        mtime_hi_we <= '0';
       end if;
 
       -- mtime low --

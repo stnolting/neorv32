@@ -134,12 +134,9 @@ begin
 
   -- Access Address -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_adr_reg: process(rstn_i, clk_i)
+  mem_adr_reg: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      mar        <= (others => '0');
-      misaligned <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
         mar <= addr_i; -- memory address register
         case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is -- alignment check

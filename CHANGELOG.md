@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 07.09.2022 | 1.7.6.3 | minor rtl edits and cleanups; [#406](https://github.com/stnolting/neorv32/pull/406) |
 | 03.09.2022 | 1.7.6.2 | cleanup hardware reset logic; [#405](https://github.com/stnolting/neorv32/pull/405) |
 | 02.09.2022 | 1.7.6.1 | :sparkles: add new processor module: **1-Wire Interface Controller** (ONEWIRE); [#402](https://github.com/stnolting/neorv32/pull/402) |
 | 28.08.2022 | [**:rocket:1.7.6**](https://github.com/stnolting/neorv32/releases/tag/v1.7.6) | **New release** |

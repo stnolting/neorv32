@@ -207,6 +207,10 @@ begin
         arbiter.re_trig   <= cb_rd_req_buf;
         arbiter.state_nxt <= B_BUSY;
 
+      when others => -- undefined
+      -- ------------------------------------------------------------
+        arbiter.state_nxt <= IDLE;
+
     end case;
   end process arbiter_comb;
 
