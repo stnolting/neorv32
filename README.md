@@ -25,10 +25,10 @@
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/main/docs/figures/neorv32_processor.png)
 
 The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
-[RISC-V](https://riscv.org/) CPU written in **platform-independent VHDL**. The processor is intended as auxiliary
+[RISC-V](https://riscv.org/) CPU and written in **platform-independent VHDL**. The processor is intended as auxiliary
 controller in larger SoC designs or as *ready-to-go* stand-alone custom microcontroller that even fits into a
 Lattice iCE40 UltraPlus low-power & low-density FPGA. The project is intended to work _out of the box_ and targets
-FPGA / RISC-V starters as well as advanced users.
+FPGA / RISC-V beginners as well as advanced users.
 
 Special focus is paid on **execution safety** to provide defined and predictable behavior at any time.
 Therefore, the CPU ensures that _all_ memory accesses are properly acknowledged and that _all_ invalid/malformed
@@ -69,8 +69,8 @@ See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUT
 - [x] extensive configuration options for adapting the processor to the requirements of the application
 - [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, processor and system level
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
-- [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the register file)
-- [x] optimized for high clock frequencies to ease timing closure and integration
+- [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the CPU's register file)
+- [x] optimized for high clock frequencies to ease integration / timing closure
 - [x] from zero to _"hello world!"_ - completely open source and documented
 - [x] easy to use even for FPGA / RISC-V starters – intended to **work out of the box**
 
