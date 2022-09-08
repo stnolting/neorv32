@@ -449,20 +449,6 @@ The state of this generic can be retrieved by software via the <<_mxisa>> CSR.
 
 
 :sectnums!:
-===== _CPU_CNT_WIDTH_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_CNT_WIDTH** | _natural_ | 64
-3+| This generic configures the total size of the CPU's <<_mcycleh>> and <<_minstreth>> CSRs (low word + high word).
-The maximum value is 64, the minimum value is 0. See section <<_machine_counter_and_timer_csrs>> for more information.
-This generic is only relevant if the `Zicntr` ISa extension is enabled (<<_cpu_extension_riscv_zicntr>>).
-Note: configurations with a counter width of less than 64 bits do not comply to the RISC-V specs.
-|======
-
-
-:sectnums!:
 ===== _CPU_IPB_ENTRIES_
 
 [cols="4,4,2"]
