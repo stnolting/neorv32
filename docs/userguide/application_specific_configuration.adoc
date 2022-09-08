@@ -52,9 +52,9 @@ and DMEM memories.
 * Use the _embedded_ RISC-V CPU architecture extension (`CPU_EXTENSION_RISCV_E`) to reduce block RAM utilization.
 * The compressed instructions extension (`CPU_EXTENSION_RISCV_C`) requires additional logic for the decoder but
 also reduces program code size by approximately 30%.
-* If not explicitly used/required, constrain the CPU's counter sizes: `CPU_CNT_WIDTH` for `[m]instret[h]`
-(number of instruction) and `[m]cycle[h]` (number of cycles) counters. You can even remove these counters
-by setting `CPU_CNT_WIDTH => 0` if they are not used at all (note, this is not RISC-V compliant).
+* If not explicitly used/required, exclude the CPU standart counters `[m]instret[h]`
+(number of instruction) and `[m]cycle[h]` (number of cycles) from synthesis by disabling the `Zicntr` ISA extension
+(note, this is not RISC-V compliant).
 * Reduce the CPU's prefetch buffer size (`CPU_IPB_ENTRIES`).
 * Map CPU shift operations to a small and iterative shifter unit (`FAST_SHIFT_EN => false`).
 * If you have unused DSP block available, you can map multiplication operations to those slices instead of
@@ -75,7 +75,7 @@ adds additional register stages to maintain critical path length. Obviously, thi
 In order to optimize for a minimal critical path (= maximum clock speed) the following points should be considered:
 
 * Complex CPU extensions (in terms of hardware requirements) should be avoided (examples: floating-point unit, physical memory protection).
-* Large carry chains (>32-bit) should be avoided (constrain CPU counter sizes: e.g. `CPU_CNT_WIDTH => 32` and `HPM_NUM_CNTS => 32`).
+* Large carry chains (>32-bit) should be avoided (i.e. constrain the HPM counter sizes via `HPM_CNT_WIDTH`).
 * If the target FPGA provides sufficient DSP resources, CPU multiplication operations can be mapped to DSP slices (`FAST_MUL_EN => true`)
 reducing LUT usage and critical path impact while also increasing overall performance.
 * Use the synchronous (registered) RX path configuration of the external memory interface (`MEM_EXT_ASYNC_RX => false`).
