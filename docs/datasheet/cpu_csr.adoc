@@ -526,30 +526,14 @@ The two MSBs of each `pmpaddr` are hardwired to zero (= bits 33:32 of the physic
 :sectnums:
 ==== (Machine) Counter and Timer CSRs
 
-[NOTE]
-The <<_cpu_cnt_width>> generic defines the total size of the CPU's <<_cycleh>> and <<_instreth>>
-/ <<_mcycleh>> and <<_minstreth>>
-counter CSRs (low and high words combined); the time CSRs are not affected by this generic. Note that any
-configuration with <<_cpu_cnt_width>> less than 64 is not RISC-V compliant.
-
-.Effective CPU counter width (`[m]cycle` & `[m]instret`)
-[IMPORTANT]
-If _CPU_CNT_WIDTH_ is less than 64 (the default value) and greater than or equal 32, the according
-MSBs of `[m]cycleh` and `[m]instreth` are read-only and always read as zero. This configuration
-will also set the _CSR_MXISA_ZXSCNT_ flag ("small counters") in the <<_mxisa>> CSR. +
- +
-If _CPU_CNT_WIDTH_ is less than 32 and greater than 0, the `[m]cycleh` and `[m]instreth` CSRs are hardwired to zero
-and any write access to them is ignored. Furthermore, the according MSBs of `[m]cycle` and `[m]instret` are read-only
-and always read as zero. This configuration will also set the _CSR_MXISA_ZXSCNT_ flag ("small counters") in
-the <<_mxisa>> CSR. +
- +
-If _CPU_CNT_WIDTH_ is 0, the <<_cycleh>> and <<_instreth>> / <<_mcycleh>> and <<_minstreth>> CSRs are hardwired to zero
-and any write access to them is ignored.
-
 .Counter Reset
 [IMPORTANT]
 The counter CSRs do **not** provide a hardware reset. Hence, the CSRs have to be explicitly initialized by software
 before being used.
+
+.Counter Size
+[NOTE]
+When implemented (by enabling the `Zicntr` ISA extension) the standard CPU counters are always 64-bit wide (low-word + high-word).
 
 
 :sectnums!:
@@ -826,7 +810,7 @@ NEORV32-specific read-only CSR that helps machine-mode software to discover `Z*`
 |  9    | _CSR_MXISA_ZIHPM_     | r/- | `Zihpm` (hardware performance monitors) extension available when set (via top's <<_cpu_extension_riscv_zihpm>> generic)
 |  8    | _CSR_MXISA_PMP_       | r/- | PMP` (physical memory protection) extension available when set (via top's <<_pmp_num_regions>> generic)
 |  7    | _CSR_MXISA_ZICNTR_    | r/- | `Zicntr` extension (`I` sub-extension) available when set - `[m]cycle`, `[m]instret` and `[m]time` CSRs available when set (via top's <<_cpu_extension_riscv_zicntr>> generic)
-|  6    | _CSR_MXISA_ZXSCNT_    | r/- | Custom extension - _Small_ CPU counters: `[m]cycle` & `[m]instret` CSRs have less than 64-bit when set (via top's <<_cpu_cnt_width>> generic)
+|  6    | -                     | r/- | _reserved_, read as zero
 |  5    | _CSR_MXISA_ZFINX_     | r/- | `Zfinx` extension (`F` sub-/alternative-extension: FPU using `x` registers) available when set (via top's <<_cpu_extension_riscv_zfinx>> generic)
 |  4    | -                     | r/- | _reserved_, read as zero
 |  3    | _CSR_MXISA_ZXCFU_     | r/- | `Zxcfu` extension (custom functions unit for custom RISC-V instructions) available when set (via top's <<_cpu_extension_riscv_zxcfu>> generic)
