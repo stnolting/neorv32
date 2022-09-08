@@ -25,9 +25,9 @@
 ![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/main/docs/figures/neorv32_processor.png)
 
 The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
-[RISC-V](https://riscv.org/) CPU. The project is intended as auxiliary processor in larger SoC designs
-or as *ready-to-go* stand-alone custom microcontroller that even fits into a Lattice iCE40 UltraPlus 5k
-low-power & low-density FPGA running at 24+ MHz.
+[RISC-V](https://riscv.org/) CPU written in platform-independent VHDL. The project is intended as auxiliary
+processor in larger SoC designs or as *ready-to-go* stand-alone custom microcontroller that even fits into a
+Lattice iCE40 UltraPlus 5k low-power & low-density FPGA running at 24+ MHz.
 
 Special focus is paid on **execution safety** to provide defined and predictable behavior at any time.
 Therefore, the CPU ensures that all memory access are acknowledged and no invalid/malformed instructions
