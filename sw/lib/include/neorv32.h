@@ -456,8 +456,8 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_ZXCFU     =  3, /**< CPU mxisa CSR  (3): custom RISC-V instructions (r/-)*/
 
   CSR_MXISA_ZFINX     =  5, /**< CPU mxisa CSR  (5): FPU using x registers, "F-alternative" (r/-)*/
-  CSR_MXISA_ZXSCNT    =  6, /**< CPU mxisa CSR  (6): reduced-size CPU counters (from Zicntr) (r/-)*/ 
-  CSR_MXISA_ZICNTR    =  7, /**< CPU mxisa CSR  (7): base instructions, cycle and time CSRs (r/-)*/
+
+  CSR_MXISA_ZICNTR    =  7, /**< CPU mxisa CSR  (7): standard instruction, cycle and time counter CSRs (r/-)*/
   CSR_MXISA_PMP       =  8, /**< CPU mxisa CSR  (8): physical memory protection (also "Smpmp") (r/-)*/
   CSR_MXISA_ZIHPM     =  9, /**< CPU mxisa CSR  (9): hardware performance monitors (r/-)*/
   CSR_MXISA_DEBUGMODE = 10, /**< CPU mxisa CSR (10): RISC-V debug mode (r/-)*/
