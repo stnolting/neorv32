@@ -336,15 +336,13 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal csr : csr_t;
 
-  -- counter CSRs write access decoder --
+  -- counter CSRs write access --
+  type hpm_we_t is array (0 to 1) of std_ulogic_vector(28 downto 0);
   type cnt_csr_we_t is record
     wdata    : std_ulogic_vector(data_width_c-1 downto 0);
-    cycle    : std_ulogic;
-    cycleh   : std_ulogic;
-    instret  : std_ulogic;
-    instreth : std_ulogic;
-    hpm      : std_ulogic_vector(28 downto 0);
-    hpmh     : std_ulogic_vector(28 downto 0);
+    cycle    : std_ulogic_vector(1 downto 0);
+    instret  : std_ulogic_vector(1 downto 0);
+    hpm      : hpm_we_t;
   end record;
   signal cnt_csr_we : cnt_csr_we_t;
 
@@ -2381,45 +2379,6 @@ begin
 -- CPU Counters / HPMs
 -- ****************************************************************************************************************************
 
-  -- Control and Status Registers - Counters - Write Access Decoder -------------------------
-  -- -------------------------------------------------------------------------------------------
-  csr_counters_we_decoder: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      -- defaults --
-      cnt_csr_we.cycle    <= '0';
-      cnt_csr_we.cycleh   <= '0';
-      cnt_csr_we.instret  <= '0';
-      cnt_csr_we.instreth <= '0';
-      cnt_csr_we.hpm      <= (others => '0');
-      cnt_csr_we.hpmh     <= (others => '0');
-      cnt_csr_we.wdata    <= csr.wdata; -- buffer write data
-
-      -- write access --
-      if (csr.we = '1') then
-        if (csr.addr(11 downto 8) = csr_class_mcnt_c) then -- machine-mode counter access only
-          -- NOTE: no need to check bits 6:5 of the CSR address here as they're always zero - an
-          -- exception is raised if they're not all-zero
-          if (csr.addr(4 downto 0) = csr_mcycle_c(4 downto 0)) then -- / csr_mcycleh_c
-            cnt_csr_we.cycle  <= not csr.addr(7); -- low
-            cnt_csr_we.cycleh <=     csr.addr(7); -- high
-          end if;
-          if (csr.addr(4 downto 0) = csr_minstret_c(4 downto 0)) then -- / csr_minstreth_c
-            cnt_csr_we.instret  <= not csr.addr(7); -- low
-            cnt_csr_we.instreth <=     csr.addr(7); -- high
-          end if;
-          for i in 0 to 28 loop
-            if (csr.addr(4 downto 0) = std_ulogic_vector(unsigned(csr_mhpmcounter3_c(4 downto 0)) + i)) then -- / csr_mhpmcounter3h_c
-              cnt_csr_we.hpm(i)  <= not csr.addr(7); -- low
-              cnt_csr_we.hpmh(i) <=     csr.addr(7); -- high
-            end if;
-          end loop;
-        end if;
-      end if;
-    end if;
-  end process csr_counters_we_decoder;
-
-
   -- Control and Status Registers - Counters ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_counters: process(clk_i)
@@ -2427,45 +2386,74 @@ begin
     -- NOTE: the counter CSRs do NOT have a dedicated reset and need to be initialized by software before being used!
     if rising_edge(clk_i) then
 
-      -- [machine] standard CPU counters --
+      -- write enable - defaults --
+      cnt_csr_we.cycle   <= (others => '0');
+      cnt_csr_we.instret <= (others => '0');
+      cnt_csr_we.hpm     <= (others => (others => '0'));
+
+      -- write enable - access decoder --
+      if (csr.we = '1') then
+        cnt_csr_we.wdata <= csr.wdata; -- buffer actual write data
+        if (csr.addr(11 downto 8) = csr_class_mcnt_c) then -- machine-mode counter access only
+          -- NOTE: no need to check bits 6:5 of the CSR address here as they're always zero - an
+          -- exception is raised if they're not all-zero
+          if (csr.addr(4 downto 0) = csr_mcycle_c(4 downto 0)) then -- / csr_mcycleh_c
+            cnt_csr_we.cycle(0) <= not csr.addr(7); -- low word
+            cnt_csr_we.cycle(1) <=     csr.addr(7); -- high word
+          end if;
+          if (csr.addr(4 downto 0) = csr_minstret_c(4 downto 0)) then -- / csr_minstreth_c
+            cnt_csr_we.instret(0) <= not csr.addr(7); -- low word
+            cnt_csr_we.instret(1) <=     csr.addr(7); -- high word
+          end if;
+          for i in 0 to 28 loop
+            if (csr.addr(4 downto 0) = std_ulogic_vector(unsigned(csr_mhpmcounter3_c(4 downto 0)) + i)) then -- / csr_mhpmcounter3h_c
+              cnt_csr_we.hpm(0)(i) <= not csr.addr(7); -- low word
+              cnt_csr_we.hpm(1)(i) <=     csr.addr(7); -- high word
+            end if;
+          end loop;
+        end if;
+      end if;
+
+
+      -- [machine] standard CPU counters (cycle & instret) --
       if (CPU_EXTENSION_RISCV_Zicntr = true) then -- implemented at all?
 
         -- mcycle --
-        csr.mcycle_ovfl(0) <= csr.mcycle_nxt(csr.mcycle_nxt'left) and (not csr.mcountinhibit_cy) and cnt_event(hpmcnt_event_cy_c) and (not debug_ctrl.running);
-        if (cnt_csr_we.cycle = '1') then -- write access
+        if (cnt_csr_we.cycle(0) = '1') then -- write access
           csr.mcycle <= cnt_csr_we.wdata;
         elsif (csr.mcountinhibit_cy = '0') and (cnt_event(hpmcnt_event_cy_c) = '1') and (debug_ctrl.running = '0') then -- non-inhibited automatic update and not in debug mode
           csr.mcycle <= csr.mcycle_nxt(csr.mcycle_nxt'left-1 downto 0);
         end if;
+        csr.mcycle_ovfl(0) <= csr.mcycle_nxt(csr.mcycle_nxt'left) and (not csr.mcountinhibit_cy) and cnt_event(hpmcnt_event_cy_c) and (not debug_ctrl.running);
 
         -- mcycleh --
-        if (cnt_csr_we.cycleh = '1') then -- write access
+        if (cnt_csr_we.cycle(1) = '1') then -- write access
           csr.mcycleh <= cnt_csr_we.wdata;
         else -- automatic update
           csr.mcycleh <= std_ulogic_vector(unsigned(csr.mcycleh) + unsigned(csr.mcycle_ovfl));
         end if;
 
         -- minstret --
-        csr.minstret_ovfl(0) <= csr.minstret_nxt(csr.minstret_nxt'left) and (not csr.mcountinhibit_ir) and cnt_event(hpmcnt_event_ir_c) and (not debug_ctrl.running);
-        if (cnt_csr_we.instret = '1') then -- write access
+        if (cnt_csr_we.instret(0) = '1') then -- write access
           csr.minstret <= cnt_csr_we.wdata;
         elsif (csr.mcountinhibit_ir = '0') and (cnt_event(hpmcnt_event_ir_c) = '1') and (debug_ctrl.running = '0') then -- non-inhibited automatic update and not in debug mode
           csr.minstret <= csr.minstret_nxt(csr.minstret_nxt'left-1 downto 0);
         end if;
+        csr.minstret_ovfl(0) <= csr.minstret_nxt(csr.minstret_nxt'left) and (not csr.mcountinhibit_ir) and cnt_event(hpmcnt_event_ir_c) and (not debug_ctrl.running);
 
         -- minstreth --
-        if (cnt_csr_we.instreth = '1') then -- write access
+        if (cnt_csr_we.instret(1) = '1') then -- write access
           csr.minstreth <= cnt_csr_we.wdata;
         else -- automatic update
           csr.minstreth <= std_ulogic_vector(unsigned(csr.minstreth) + unsigned(csr.minstret_ovfl));
         end if;
 
       else
-        csr.mcycle_ovfl   <= (others => '0');
         csr.mcycle        <= (others => '0');
+        csr.mcycle_ovfl   <= (others => '0');
         csr.mcycleh       <= (others => '0');
-        csr.minstret_ovfl <= (others => '0');
         csr.minstret      <= (others => '0');
+        csr.minstret_ovfl <= (others => '0');
         csr.minstreth     <= (others => '0');
       end if;
 
@@ -2476,9 +2464,9 @@ begin
         -- [m]hpmcounter* --
         if (hpm_cnt_lo_width_c > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then
           csr.mhpmcounter_ovfl(i)(0) <= csr.mhpmcounter_nxt(i)(csr.mhpmcounter_nxt(i)'left) and (not csr.mcountinhibit_hpm(i)) and hpmcnt_trigger(i);
-          if (cnt_csr_we.hpm(i) = '1') then -- write access
+          if (cnt_csr_we.hpm(0)(i) = '1') then -- write access
             csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0) <= cnt_csr_we.wdata(hpm_cnt_lo_width_c-1 downto 0);
-          elsif (csr.mcountinhibit_hpm(i) = '0') and (hpmcnt_trigger(i) = '1') then -- non-inhibited automatic update
+          elsif (csr.mcountinhibit_hpm(i) = '0') and (hpmcnt_trigger(i) = '1') then -- non-inhibited automatic update (and not in debug mode)
             csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0) <= csr.mhpmcounter_nxt(i)(hpm_cnt_lo_width_c-1 downto 0);
           end if;
         else
@@ -2488,7 +2476,7 @@ begin
 
         -- [m]hpmcounter*h --
         if (hpm_cnt_hi_width_c > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then
-          if (cnt_csr_we.hpmh(i) = '1') then -- write access
+          if (cnt_csr_we.hpm(1)(i) = '1') then -- write access
             csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0) <= cnt_csr_we.wdata(hpm_cnt_hi_width_c-1 downto 0);
           else -- automatic update
             csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0)) + unsigned(csr.mhpmcounter_ovfl(i)));
