@@ -337,7 +337,8 @@ begin
     FIFO_DEPTH => UART_TX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 32,           -- size of data elements in fifo (32-bit only for simulation)
     FIFO_RSYNC => false,        -- async read
-    FIFO_SAFE  => true          -- safe access
+    FIFO_SAFE  => true,         -- safe access
+    FIFO_GATE  => false         -- no output gate required
   )
   port map (
     -- control --
@@ -512,7 +513,8 @@ begin
     FIFO_DEPTH => UART_RX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 10,           -- size of data elements in fifo
     FIFO_RSYNC => false,        -- async read
-    FIFO_SAFE  => true          -- safe access
+    FIFO_SAFE  => true,         -- safe access
+    FIFO_GATE  => true          -- set read data to zero if no valid data available
   )
   port map (
     -- control --
