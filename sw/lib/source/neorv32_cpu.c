@@ -264,11 +264,8 @@ uint64_t neorv32_cpu_get_systime(void) {
 /**********************************************************************//**
  * Delay function using busy wait.
  *
- * @note This function uses MTIME as time base. A simple ASM loop
- * is used as fall back if system timer is not implemented.
- *
- * @warning Delay time might be less precise if M extensions is not available
- * (especially if MTIME unit is not available).
+ * @note This function uses MTIME as time base. A simple (imprecise) ASM loop
+ * is used as fall back if the system timer is not implemented.
  *
  * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
  **************************************************************************/
@@ -625,9 +622,9 @@ uint32_t neorv32_cpu_hpm_get_num_counters(void) {
 /**********************************************************************//**
  * Hardware performance monitors (HPM): Get total counter width
  *
- * @warning This function overrides mhpmcounter3[h] CSRs.
+ * @warning This function overrides the mhpmcounter3[h] CSRs.
  *
- * @return Size of HPM counter bits (1-64, 0 if not implemented at all).
+ * @return Size of HPM counters (1-64, 0 if not implemented at all).
  **************************************************************************/
 uint32_t neorv32_cpu_hpm_get_size(void) {
 
@@ -653,49 +650,6 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
   else {
     size = 32;
     tmp = neorv32_cpu_csr_read(CSR_MHPMCOUNTER3H);
-  }
-
-  for (i=0; i<32; i++) {
-    if (tmp & (1<<i)) {
-      size++;
-    }
-  }
-
-  return size;
-}
-
-
-/**********************************************************************//**
- * CPU base counters (cycle, instret): Get total counter width
- *
- * @warning This function overrides mcycle[h] CSRs.
- *
- * @return Size of CPU counters (1-64, 0 if not implemented at all).
- **************************************************************************/
-uint32_t neorv32_cpu_cnt_get_size(void) {
-
-  uint32_t tmp, size, i;
-
-  // counters implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZICNTR)) == 0) {
-    return 0;
-  }
-
-  // inhibit auto-update of HPM counter3
-  tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
-  tmp |= 1 << CSR_MCOUNTINHIBIT_CY;
-  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp);
-
-  neorv32_cpu_csr_write(CSR_MCYCLE,  0xffffffff);
-  neorv32_cpu_csr_write(CSR_MCYCLEH, 0xffffffff);
-
-  if (neorv32_cpu_csr_read(CSR_MCYCLE) == 0) {
-    size = 0;
-    tmp = neorv32_cpu_csr_read(CSR_MHPMCOUNTER3);
-  }
-  else {
-    size = 32;
-    tmp = neorv32_cpu_csr_read(CSR_MCYCLEH);
   }
 
   for (i=0; i<32; i++) {

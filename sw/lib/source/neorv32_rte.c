@@ -364,9 +364,6 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_ZXCFU)) {
     neorv32_uart0_printf("Zxcfu ");
   }
-  if (tmp & (1<<CSR_MXISA_ZXSCNT)) {
-    neorv32_uart0_printf("Zxscnt(!) ");
-  }
   if (tmp & (1<<CSR_MXISA_DEBUGMODE)) {
     neorv32_uart0_printf("DebugMode ");
   }
@@ -395,16 +392,6 @@ void neorv32_rte_print_hw_config(void) {
   uint32_t hpm_num = neorv32_cpu_hpm_get_num_counters();
   if (hpm_num != 0) {
     neorv32_uart0_printf("%u counter(s), %u bit", hpm_num, neorv32_cpu_hpm_get_size());
-  }
-  else {
-    neorv32_uart0_printf("not implemented");
-  }
-
-  // check RISC-V CPU counters
-  neorv32_uart0_printf("\nBase counters:     ");
-  uint32_t cnt_size = neorv32_cpu_cnt_get_size();
-  if (hpm_num != 0) {
-    neorv32_uart0_printf("%u bit", cnt_size);
   }
   else {
     neorv32_uart0_printf("not implemented");

@@ -190,7 +190,6 @@ begin
     -- Extension Options --
     FAST_MUL_EN                  => true,          -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => true,          -- use barrel shifter for shift operations
-    CPU_CNT_WIDTH                => 64,            -- total width of CPU cycle and instret counters (0..64)
     CPU_IPB_ENTRIES              => 2,             -- entries is instruction prefetch buffer, has to be a power of 2, min 2
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              => 5,             -- number of regions (0..16)

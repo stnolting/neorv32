@@ -598,7 +598,7 @@ will raise an illegal instruction exception if <<_mstatus>>`.TW` is set.
 ==== **`Zicntr`** CPU Base Counters
 
 The `Zicntr` ISA extension adds the basic cycle `[m]cycle[h]`), instruction-retired (`[m]instret[h]`) and time (`time[h]`)
-counters. This extensions is stated as _mandatory_ by the RISC-V spec. However, size-constrained setups may remove support for
+counters. This extensions is stated as _mandatory_ by the RISC-V spec. However, area-constrained setups may remove support for
 these counters. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Zicntr`-related CSRs.
 These are available if the `Zicntr` ISA extensions is enabled via the <<_cpu_extension_riscv_zicntr>> generic.
 
@@ -606,10 +606,10 @@ Additional CSRs:
 
 * <<_cycleh>>, <<_mcycleh>> - cycle counter
 * <<_instreth>>, <<_minstreth>> - instructions-retired counter
-* <<_timeh>> - system _wall-clock_ time
+* <<_timeh>> - system _wall-clock_ time (driven by the <<_machine_system_timer_mtime>>)
 
 [NOTE]
-Disabling the `Zicntr` extension does not remove the `time[h]`-driving MTIME unit.
+Disabling the `Zicntr` extension does not remove the `time[h]`-driving <<_machine_system_timer_mtime>>.
 
 If the `Zicntr` ISA extension is disabled, all accesses to the according counter CSRs will raise an illegal instruction exception.
 

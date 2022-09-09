@@ -174,7 +174,6 @@ begin
     -- Tuning Options --
     FAST_MUL_EN                  => configs_c.fast_ops(CONFIG),     -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => configs_c.fast_ops(CONFIG),     -- use barrel shifter for shift operations
-    CPU_CNT_WIDTH                => 64,                             -- total width of CPU cycle and instret counters (0..64)
     CPU_IPB_ENTRIES              => configs_c.ipb(CONFIG),          -- entries in instruction prefetch buffer, has to be a power of 2, min 2
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              => configs_c.pmp_nr(CONFIG),       -- number of regions (0..16)
