@@ -489,7 +489,8 @@ begin
       FIFO_DEPTH => CPU_IPB_ENTRIES,     -- number of fifo entries; has to be a power of two; min 1
       FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in fifo
       FIFO_RSYNC => false,               -- we NEED to read data asynchronously
-      FIFO_SAFE  => false                -- no safe access required (ensured by FIFO-external control)
+      FIFO_SAFE  => false,               -- no safe access required (ensured by FIFO-external control)
+      FIFO_GATE  => false                -- no output gate required
     )
     port map (
       -- control --
