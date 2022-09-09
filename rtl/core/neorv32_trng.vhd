@@ -75,6 +75,7 @@ architecture neorv32_trng_rtl of neorv32_trng is
   -- control register bits --
   constant ctrl_data_lsb_c : natural :=  0; -- r/-: Random data byte LSB
   constant ctrl_data_msb_c : natural :=  7; -- r/-: Random data byte MSB
+  --
   constant ctrl_fifo_clr_c : natural := 28; -- -/w: Clear data FIFO (auto clears)
   constant ctrl_sim_mode_c : natural := 29; -- r/-: TRNG implemented in PRNG simulation mode
   constant ctrl_en_c       : natural := 30; -- r/w: TRNG enable
@@ -163,9 +164,8 @@ begin
       -- read access --
       data_o <= (others => '0');
       if (rden = '1') then
-        if (fifo.avail = '1') then -- make sure the same RND data byte cannot be read twice
-          data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
-        end if;
+        data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
+        --
         data_o(ctrl_sim_mode_c) <= bool_to_ulogic_f(sim_mode_c);
         data_o(ctrl_en_c)       <= enable;
         data_o(ctrl_valid_c)    <= fifo.avail;
@@ -200,7 +200,8 @@ begin
     FIFO_DEPTH => IO_TRNG_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,            -- size of data elements in fifo
     FIFO_RSYNC => false,        -- async read
-    FIFO_SAFE  => true          -- safe access
+    FIFO_SAFE  => true,         -- safe access
+    FIFO_GATE  => true          -- make sure the same RND data byte cannot be read twice
   )
   port map (
     -- control --

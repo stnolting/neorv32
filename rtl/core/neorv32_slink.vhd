@@ -284,7 +284,8 @@ begin
       FIFO_DEPTH => SLINK_TX_FIFO, -- number of fifo entries; has to be a power of two; min 1
       FIFO_WIDTH => 32+1,          -- size of data elements in fifo
       FIFO_RSYNC => false,         -- async read
-      FIFO_SAFE  => true           -- safe access
+      FIFO_SAFE  => true,          -- safe access
+      FIFO_GATE  => false          -- no output gate required
     )
     port map (
       clk_i                => clk_i,            -- clock, rising edge
@@ -334,7 +335,8 @@ begin
       FIFO_DEPTH => SLINK_RX_FIFO, -- number of fifo entries; has to be a power of two; min 1
       FIFO_WIDTH => 32+1,          -- size of data elements in fifo
       FIFO_RSYNC => false,         -- async read
-      FIFO_SAFE  => true           -- safe access
+      FIFO_SAFE  => true,          -- safe access
+      FIFO_GATE  => false          -- no output gate required
     )
     port map (
       clk_i                => clk_i,            -- clock, rising edge

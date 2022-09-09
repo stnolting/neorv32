@@ -44,7 +44,8 @@ entity neorv32_fifo is
     FIFO_DEPTH : natural; -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH : natural; -- size of data elements in fifo
     FIFO_RSYNC : boolean; -- false = async read; true = sync read
-    FIFO_SAFE  : boolean  -- true = allow read/write only if entry available
+    FIFO_SAFE  : boolean; -- true = allow read/write only if entry available
+    FIFO_GATE  : boolean  -- true = use output gate (set to zero if no valid data available)
   );
   port (
     -- control --
@@ -82,6 +83,8 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
   end record;
   signal fifo : fifo_t;
 
+  -- misc --
+  signal rdata      : std_ulogic_vector(FIFO_WIDTH-1 downto 0);
   signal level_diff : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0);
 
 begin
@@ -127,21 +130,22 @@ begin
   fifo.match <= '1' when (fifo.r_pnt(fifo.r_pnt'left-1 downto 0) = fifo.w_pnt(fifo.w_pnt'left-1 downto 0)) or (FIFO_DEPTH = 1) else '0';
   fifo.full  <= '1' when (fifo.r_pnt(fifo.r_pnt'left) /= fifo.w_pnt(fifo.w_pnt'left)) and (fifo.match = '1') else '0';
   fifo.empty <= '1' when (fifo.r_pnt(fifo.r_pnt'left)  = fifo.w_pnt(fifo.w_pnt'left)) and (fifo.match = '1') else '0';
+
   fifo.free  <= not fifo.full;
   fifo.avail <= not fifo.empty;
-  level_diff <= std_ulogic_vector(unsigned(fifo.w_pnt) - unsigned(fifo.r_pnt));
 
   free_o  <= fifo.free;
   avail_o <= fifo.avail;
 
-  fifo_half_level:
-  if (FIFO_DEPTH > 1) generate
-    half_o <= level_diff(level_diff'left-1) or fifo.full;
-  end generate;
-
   fifo_half_level_simple:
   if (FIFO_DEPTH = 1) generate
     half_o <= fifo.full;
+  end generate;
+
+  fifo_half_level_complex:
+  if (FIFO_DEPTH > 1) generate
+    level_diff <= std_ulogic_vector(unsigned(fifo.w_pnt) - unsigned(fifo.r_pnt));
+    half_o     <= level_diff(level_diff'left-1) or fifo.full;
   end generate;
 
 
@@ -166,9 +170,9 @@ begin
     fifo_read: process(fifo)
     begin
       if (FIFO_DEPTH = 1) then
-        rdata_o <= fifo.buf;
+        rdata <= fifo.buf;
       else
-        rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
+        rdata <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
       end if;
     end process fifo_read;
   end generate;
@@ -180,13 +184,21 @@ begin
     begin
       if rising_edge(clk_i) then
         if (FIFO_DEPTH = 1) then
-          rdata_o <= fifo.buf;
+          rdata <= fifo.buf;
         else
-          rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
+          rdata <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
         end if;
       end if;
     end process fifo_read;
   end generate;
+
+
+  -- Output Gate ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- Since the FIFO memory (block RAM) does not have a reset, this option can be used to
+  -- ensure the output data is always *defined* (by setting the output to all-zero if
+  -- not valid data is available).
+  rdata_o <= rdata when ((FIFO_GATE = false) or (fifo.avail = '1')) else (others => '0');
 
 
 end neorv32_fifo_rtl;

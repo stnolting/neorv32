@@ -287,7 +287,8 @@ begin
     FIFO_DEPTH => FIFO_DEPTH, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 32+2,       -- size of data elements in fifo
     FIFO_RSYNC => true,       -- sync read
-    FIFO_SAFE  => true        -- safe access
+    FIFO_SAFE  => true,       -- safe access
+    FIFO_GATE  => false       -- no output gate required
   )
   port map (
     -- control --
