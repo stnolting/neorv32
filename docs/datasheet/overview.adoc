@@ -372,8 +372,8 @@ defined as CoreMark score divided by the CPU's clock frequency in MHz.
 | HW version:     | `1.5.7.10`
 | Hardware:       | 32kB int. IMEM, 16kB int. DMEM, no caches, 100MHz clock
 | CoreMark:       | 2000 iterations, MEM_METHOD is MEM_STACK
-| Compiler:       | RISCV32-GCC 10.2.0
-| Compiler flags: | default, see makefile
+| Compiler:       | RISCV32-GCC 10.2.0 (compiled with `march=rv32i mabi=ilp32`)
+| Compiler flags: | default (with `-O3`), see makefile
 |=======================
 
 .CoreMark results
@@ -385,10 +385,6 @@ defined as CoreMark score divided by the CPU's clock frequency in MHz.
 | _medium_ (`rv32imc_Zicsr`)                      |          62.50 | **0.6250**    | **5.34**
 | _performance_ (`rv32imc_Zicsr` + perf. options) |          95.23 | **0.9523**    | **3.54**
 |=======================
-
-[NOTE]
-The CoreMark results were generated using a `rv32i` toolchain. This toolchain supports standard extensions
-like `M` and `C` but the built-in libraries only use the base `I` ISA.
 
 [NOTE]
 The "_performance_" CPU configuration uses the <<_fast_mul_en>> and <<_fast_shift_en>> options.
