@@ -220,9 +220,9 @@ static void __neorv32_rte_debug_exc_handler(void) {
     case TRAP_CODE_S_ACCESS:     neorv32_uart0_print("Store access fault"); break;
     case TRAP_CODE_UENV_CALL:    neorv32_uart0_print("Environment call from U-mode"); break;
     case TRAP_CODE_MENV_CALL:    neorv32_uart0_print("Environment call from M-mode"); break;
-    case TRAP_CODE_MSI:          neorv32_uart0_print("Machine software interrupt"); break;
-    case TRAP_CODE_MTI:          neorv32_uart0_print("Machine timer interrupt"); break;
-    case TRAP_CODE_MEI:          neorv32_uart0_print("Machine external interrupt"); break;
+    case TRAP_CODE_MSI:          neorv32_uart0_print("Machine software IRQ"); break;
+    case TRAP_CODE_MTI:          neorv32_uart0_print("Machine timer IRQ"); break;
+    case TRAP_CODE_MEI:          neorv32_uart0_print("Machine external IRQ"); break;
     case TRAP_CODE_FIRQ_0:
     case TRAP_CODE_FIRQ_1:
     case TRAP_CODE_FIRQ_2:
@@ -238,7 +238,7 @@ static void __neorv32_rte_debug_exc_handler(void) {
     case TRAP_CODE_FIRQ_12:
     case TRAP_CODE_FIRQ_13:
     case TRAP_CODE_FIRQ_14:
-    case TRAP_CODE_FIRQ_15:      neorv32_uart0_print("Fast interrupt "); __neorv32_rte_print_hex_word(trap_cause & 0xf); break;
+    case TRAP_CODE_FIRQ_15:      neorv32_uart0_print("Fast IRQ "); __neorv32_rte_print_hex_word(trap_cause & 0xf); break;
     default:                     neorv32_uart0_print("Unknown trap cause: "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
@@ -260,11 +260,24 @@ static void __neorv32_rte_debug_exc_handler(void) {
 
   // instruction address
   neorv32_uart0_print(" @ PC=");
-  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
+  uint32_t mepc = neorv32_cpu_csr_read(CSR_MEPC);
+  __neorv32_rte_print_hex_word(mepc);
 
   // additional info
-  neorv32_uart0_print(", MTVAL=");
-  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
+  if (trap_cause == TRAP_CODE_I_ILLEGAL) { // illegal instruction
+    neorv32_uart0_print(", INST=");
+    if ((neorv32_cpu_load_unsigned_byte(mepc) & 3) != 3) { // is compressed instruction
+      __neorv32_rte_print_hex_word((uint32_t)neorv32_cpu_load_unsigned_half(mepc));
+    }
+    else {
+      __neorv32_rte_print_hex_word(neorv32_cpu_load_unsigned_word(mepc));
+    }
+  }
+  else if ((trap_cause & 0x80000000U) == 0) { // not an interrupt
+    neorv32_uart0_print(", ADDR=");
+    __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
+  }
+
   neorv32_uart0_print(" </RTE>\n");
 }
 
