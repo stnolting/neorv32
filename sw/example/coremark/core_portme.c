@@ -187,8 +187,8 @@ portable_init(core_portable *p, int *argc, char *argv[])
   neorv32_uart0_printf("NEORV32: Executing coremark (%u iterations). This may take some time...\n\n", (uint32_t)ITERATIONS);
 
   // clear cycle counter
-  neorv32_cpu_set_mcycle(0);
   neorv32_cpu_csr_write(CSR_MCOUNTEREN, -1); // enable access to all counters
+  neorv32_cpu_set_mcycle(0);
 
 /*
 #error \
@@ -249,10 +249,10 @@ portable_fini(core_portable *p)
   if (num_hpm_cnts_global > 11) {neorv32_uart0_printf(" > Illegal operations:           %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER14)); }
   neorv32_uart0_printf("\n");
 
-  neorv32_uart0_printf("NEORV32: Executed instructions      0x%x%x\n", (uint32_t)exe_instructions.uint32[1], (uint32_t)exe_instructions.uint32[0]);
-  neorv32_uart0_printf("NEORV32: CoreMark core clock cycles 0x%x%x\n", (uint32_t)exe_time.uint32[1], (uint32_t)exe_time.uint32[0]);
+  neorv32_uart0_printf("NEORV32: Executed instructions:       0x%x%x\n", (uint32_t)exe_instructions.uint32[1], (uint32_t)exe_instructions.uint32[0]);
+  neorv32_uart0_printf("NEORV32: CoreMark core clock cycles:  0x%x%x\n", (uint32_t)exe_time.uint32[1], (uint32_t)exe_time.uint32[0]);
 
   uint64_t average_cpi_int = exe_time.uint64 / exe_instructions.uint64;
-  neorv32_uart0_printf("NEORV32: Average CPI (integer part only): %u cycles/instruction\n", (uint32_t)average_cpi_int);
+  neorv32_uart0_printf("NEORV32: Average CPI (integer  only): %u cycles/instruction\n", (uint32_t)average_cpi_int);
 
 }

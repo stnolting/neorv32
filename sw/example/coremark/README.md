@@ -17,7 +17,7 @@ Make sure to define `RUN_COREMARK` *when invoking* `make` (via `USER_FLAGS+=-DRU
 
 To build the executable for a certain CPU configuration and a certain optimization level of the benchmark, type (`rv32imc` and `O3` in this example):
 
-`> make USER_FLAGS+=-DRUN_COREMARK MARCH=rv32imc EFFORT=-O3 clean_all exe`
+`> make USER_FLAGS+=-DRUN_COREMARK MARCH=rv32imc EFFORT=-Ofast clean_all exe`
 
 
 # Running
@@ -27,16 +27,16 @@ Upload the generated executable `neorv32_exe.bin` via the bootloader ('u' comman
 ```
 << NEORV32 Bootloader >>
 
-BLDV: Nov  7 2020
-HWV:  0x01040700
-CLK:  0x05F5E100 Hz
-USER: 0x10000DE0
-MISA: 0x40901104
-PROC: 0x007F0015
-IMEM: 0x00008000 bytes @ 0x00000000
-DMEM: 0x00008000 bytes @ 0x80000000
+BLDV: Aug 26 2022
+HWV:  0x01070605
+CID:  0x00000000
+CLK:  0x05f5e100
+ISA:  0x40901104 + 0xc000068b
+SOC:  0xff7f400f
+IMEM: 0x00008000 bytes @0x00000000
+DMEM: 0x00002000 bytes @0x80000000
 
-Autoboot in 8s. Press key to abort.
+Autoboot in 8s. Press any key to abort.
 Aborted.
 
 Available CMDs:
@@ -45,24 +45,25 @@ Available CMDs:
  u: Upload
  s: Store to flash
  l: Load from flash
+ x: Boot from flash (XIP)
  e: Execute
 CMD:> u
 Awaiting neorv32_exe.bin... OK
 CMD:> e
-Booting...
+Booting from 0x00000000...
 
 NEORV32: Processor running at 100000000 Hz
 NEORV32: Executing coremark (2000 iterations). This may take some time...
 
 2K performance run parameters for coremark.
 CoreMark Size    : 666
-Total ticks      : 3036959876
-Total time (secs): 30
-Iterations/Sec   : 66
+Total ticks      : 2140481 k
+Total time (secs): 21
+Iterations/Sec   : 95
 Iterations       : 2000
-Compiler version : GCC10.1.0
+Compiler version : GCC12.1.0
 Compiler flags   : -> default, see makefile
-Memory location  : STACK
+Memory location  : STATIC
 seedcrc          : 0xe9f5
 [0]crclist       : 0xe714
 [0]crcmatrix     : 0x1fd7
@@ -70,9 +71,12 @@ seedcrc          : 0xe9f5
 [0]crcfinal      : 0x4983
 Correct operation validated. See README.md for run and reporting rules.
 
-NEORV32: All reported numbers only show the integer results.
+NEORV32: All reported numbers only show the integer part.
 
-NEORV32: Executed instructions      0x00000000_24b8576e
-NEORV32: CoreMark core clock cycles 0x00000000_b5045484
-NEORV32: Average CPI (integer part only): 4 cycles/instruction
+NEORV32: HPM results (low words only)
+no HPMs available
+
+NEORV32: Executed instructions:       0x0000000023472cce
+NEORV32: CoreMark core clock cycles:  0x000000007f95277d
+NEORV32: Average CPI (integer  only): 3 cycles/instruction
 ```
