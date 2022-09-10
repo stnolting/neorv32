@@ -52,6 +52,7 @@ static void __neorv32_rte_debug_exc_handler(void);
 static void __neorv32_rte_print_true_false(int state);
 static void __neorv32_rte_print_checkbox(int state);
 static void __neorv32_rte_print_hex_word(uint32_t num);
+static void __neorv32_rte_print_hex_half(uint16_t num);
 
 
 /**********************************************************************//**
@@ -179,7 +180,7 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32
   if (((int32_t)neorv32_cpu_csr_read(CSR_MCAUSE)) >= 0) { // modify pc only if not interrupt (MSB cleared)
 
     // get low half word of faulting instruction
-    uint32_t rte_trap_inst = neorv32_cpu_load_unsigned_half(rte_mepc);
+    uint32_t rte_trap_inst = (uint32_t)neorv32_cpu_load_unsigned_half(rte_mepc);
 
     rte_mepc += 4; // default: faulting instruction is uncompressed
     if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) { // C extension implemented?
@@ -266,11 +267,13 @@ static void __neorv32_rte_debug_exc_handler(void) {
   // additional info
   if (trap_cause == TRAP_CODE_I_ILLEGAL) { // illegal instruction
     neorv32_uart0_print(", INST=");
-    if ((neorv32_cpu_load_unsigned_byte(mepc) & 3) != 3) { // is compressed instruction
-      __neorv32_rte_print_hex_word((uint32_t)neorv32_cpu_load_unsigned_half(mepc));
+    uint32_t instr_lo = (uint32_t)neorv32_cpu_load_unsigned_half(mepc);
+    uint32_t instr_hi = (uint32_t)neorv32_cpu_load_unsigned_half(mepc + 2);
+    if ((instr_lo & 3) != 3) { // is compressed instruction
+      __neorv32_rte_print_hex_half(instr_lo);
     }
     else {
-      __neorv32_rte_print_hex_word(neorv32_cpu_load_unsigned_word(mepc));
+      __neorv32_rte_print_hex_word(((uint32_t)instr_hi << 16) | (uint32_t)instr_lo);
     }
   }
   else if ((trap_cause & 0x80000000U) == 0) { // not an interrupt
@@ -278,6 +281,7 @@ static void __neorv32_rte_debug_exc_handler(void) {
     __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
   }
 
+  // outro
   neorv32_uart0_print(" </RTE>\n");
 }
 
@@ -555,6 +559,26 @@ void __neorv32_rte_print_hex_word(uint32_t num) {
   int i;
   for (i=0; i<8; i++) {
     uint32_t index = (num >> (28 - 4*i)) & 0xF;
+    neorv32_uart0_putc(hex_symbols[index]);
+  }
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Private function to print 16-bit number
+ * as 4-digit hexadecimal value (with "0x" suffix).
+ *
+ * @param[in] num Number to print as hexadecimal.
+ **************************************************************************/
+void __neorv32_rte_print_hex_half(uint16_t num) {
+
+  static const char hex_symbols[16] = "0123456789ABCDEF";
+
+  neorv32_uart0_print("0x");
+
+  int i;
+  for (i=0; i<4; i++) {
+    uint32_t index = (num >> (12 - 4*i)) & 0xF;
     neorv32_uart0_putc(hex_symbols[index]);
   }
 }
