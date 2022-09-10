@@ -129,36 +129,14 @@ int neorv32_rte_exception_uninstall(uint8_t id) {
  * This is the core of the NEORV32 RTE.
  *
  * @note This function must no be explicitly used by the user.
- * @note The RTE core uses mscratch CSR to store the trap-causing mepc for further (user-defined) processing.
  *
  * @warning When using the the RTE, this function is the ONLY function that can use the 'interrupt' attribute!
  **************************************************************************/
 static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32_rte_core(void) {
 
-  uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
-  neorv32_cpu_csr_write(CSR_MSCRATCH, rte_mepc); // backup for later
-  uint32_t rte_mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
-
-  // compute return address
-  if (((int32_t)rte_mcause) >= 0) { // modify pc only if not interrupt (MSB cleared)
-
-    // get low half word of faulting instruction
-    uint32_t rte_trap_inst = neorv32_cpu_load_unsigned_half(rte_mepc);
-
-    rte_mepc += 4; // default: faulting instruction is uncompressed
-    if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) { // C extension implemented?
-      if ((rte_trap_inst & 3) != 3) { // faulting instruction is compressed instruction
-        rte_mepc -= 2;
-      }
-    }
-
-    // store new return address
-    neorv32_cpu_csr_write(CSR_MEPC, rte_mepc);
-  }
-
   // find according trap handler
   uint32_t rte_handler;
-  switch (rte_mcause) {
+  switch (neorv32_cpu_csr_read(CSR_MCAUSE)) {
     case TRAP_CODE_I_MISALIGNED: rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_MISALIGNED]; break;
     case TRAP_CODE_I_ACCESS:     rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_ACCESS]; break;
     case TRAP_CODE_I_ILLEGAL:    rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_ILLEGAL]; break;
@@ -195,6 +173,24 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32
   void (*handler_pnt)(void);
   handler_pnt = (void*)rte_handler;
   (*handler_pnt)();
+
+  // compute return address
+  uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
+  if (((int32_t)neorv32_cpu_csr_read(CSR_MCAUSE)) >= 0) { // modify pc only if not interrupt (MSB cleared)
+
+    // get low half word of faulting instruction
+    uint32_t rte_trap_inst = neorv32_cpu_load_unsigned_half(rte_mepc);
+
+    rte_mepc += 4; // default: faulting instruction is uncompressed
+    if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) { // C extension implemented?
+      if ((rte_trap_inst & 3) != 3) { // faulting instruction is compressed instruction
+        rte_mepc -= 2;
+      }
+    }
+
+    // store new return address
+    neorv32_cpu_csr_write(CSR_MEPC, rte_mepc);
+  }
 }
 
 
@@ -213,13 +209,6 @@ static void __neorv32_rte_debug_exc_handler(void) {
 
   // cause
   uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  char tmp = (char)(trap_cause & 0xf);
-  if (tmp >= 10) {
-    tmp = 'a' + (tmp - 10);
-  }
-  else {
-    tmp = '0' + tmp;
-  }
   switch (trap_cause) {
     case TRAP_CODE_I_MISALIGNED: neorv32_uart0_print("Instruction address misaligned"); break;
     case TRAP_CODE_I_ACCESS:     neorv32_uart0_print("Instruction access fault"); break;
@@ -249,7 +238,7 @@ static void __neorv32_rte_debug_exc_handler(void) {
     case TRAP_CODE_FIRQ_12:
     case TRAP_CODE_FIRQ_13:
     case TRAP_CODE_FIRQ_14:
-    case TRAP_CODE_FIRQ_15:      neorv32_uart0_print("Fast interrupt "); neorv32_uart0_putc(tmp); break;
+    case TRAP_CODE_FIRQ_15:      neorv32_uart0_print("Fast interrupt "); __neorv32_rte_print_hex_word(trap_cause & 0xf); break;
     default:                     neorv32_uart0_print("Unknown trap cause: "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
@@ -271,7 +260,7 @@ static void __neorv32_rte_debug_exc_handler(void) {
 
   // instruction address
   neorv32_uart0_print(" @ PC=");
-  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MSCRATCH)); // rte core stores original mepc to mscratch
+  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
 
   // additional info
   neorv32_uart0_print(", MTVAL=");
