@@ -83,11 +83,6 @@ The CPU does not support the resolution of unaligned memory access by the hardwa
 RISC-V-compatibility issue but an important thing to know. Any kind of unaligned memory access
 will raise an exception to allow a software-based emulation provided by the application.
 
-.`mtval` after Executing an Illegal Compressed Instruction
-[WARNING]
-If an illegal-instruction exception is caused by a **compressed** instruction (16-bit, `C` ISA extension)
-the according **de-compressed** instruction word (32-bit ) is written to `mtval`.
-
 
 <<<
 // ####################################################################################################################
@@ -866,13 +861,7 @@ be used in plain C code. The "`mepc`" and "`mtval`" columns show the value writt
 * **IPC** - address of interrupted instruction (instruction has not been executed yet)
 * **PC** - address of instruction that caused the trap
 * **ADR** - bad memory access address that caused the trap
-* **INST** - the faulting 32-bit instruction word itself (see warning below!)
 * **0** - zero
-
-.**INST** Value
-[WARNING]
-If an illegal-instruction exception is caused by a **compressed** instruction (16-bit, `C` ISA extension)
-the according **de-compressed** instruction word (32-bit ) is written to `mtval`.
 
 .NEORV32 Trap Listing
 [cols="3,6,5,14,11,4,4"]
@@ -882,7 +871,7 @@ the according **de-compressed** instruction word (32-bit ) is written to `mtval`
 7+^| **Synchronous Exceptions**
 | 1     | `0x00000000` | 0.0      | _TRAP_CODE_I_MISALIGNED_ | instruction address misaligned         | **PC**  | **ADR**
 | 2     | `0x00000001` | 0.1      | _TRAP_CODE_I_ACCESS_     | instruction access bus fault           | **PC**  | **ADR**
-| 3     | `0x00000002` | 0.2      | _TRAP_CODE_I_ILLEGAL_    | illegal instruction                    | **PC**  | **INST**
+| 3     | `0x00000002` | 0.2      | _TRAP_CODE_I_ILLEGAL_    | illegal instruction                    | **PC**  | **0**
 | 4     | `0x0000000B` | 0.11     | _TRAP_CODE_MENV_CALL_    | environment call from M-mode (`ecall`) | **PC**  | **0**
 | 5     | `0x00000008` | 0.8      | _TRAP_CODE_UENV_CALL_    | environment call from U-mode (`ecall`) | **PC**  | **0**
 | 6     | `0x00000003` | 0.3      | _TRAP_CODE_BREAKPOINT_   | software breakpoint (`ebreak`)         | **PC**  | **0**

@@ -392,16 +392,12 @@ See section <<_neorv32_trap_listing>> for more information.
 [cols="1,8,>3"]
 [frame="topbot",grid="none"]
 |=======================
-| 0x343 | `mtval` - **Machine bad address or instruction** | `Zicsr`
+| 0x343 | `mtval` - **Machine trap value register** | `Zicsr`
 3+<| Reset value: `0x00000000`
 |=======================
 
-[NOTE]
-The NEORV32 `mtval` CSR is read-only. However, a write access will _not_ raise an illegal instruction exception.
-
-[WARNING]
-If an illegal-instruction exception is caused by a **compressed** instruction (16-bit, `C` ISA extension)
-the according **de-compressed** instruction word (32-bit ) is written to `mtval`.
+[IMPORTANT]
+The NEORV32 `mtval` CSR is **read-only**. However, a write access will _not_ raise an illegal instruction exception.
 
 [cols="^5,^5"]
 [options="header",grid="rows"]
@@ -409,8 +405,7 @@ the according **de-compressed** instruction word (32-bit ) is written to `mtval`
 | Trap cause | `mtval` content
 | misaligned instruction fetch address or instruction fetch access fault | address of faulting instruction fetch
 | misaligned load address, load access fault, misaligned store address or store access fault | program counter (= address) of faulting instruction
-| illegal instruction | actual instruction word of faulting instruction (decoded 32-bit instruction word if caused by a compressed instruction)
-| anything else including interrupts | _0x00000000_ (always zero)
+| everything else (including all interrupts) | 0x00000000 (all-zero)
 |=======================
 
 [NOTE]
