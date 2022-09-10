@@ -160,15 +160,15 @@ neorv32_rte_exception_uninstall(RTE_TRAP_MTI);
 
 ==== Default RTE Trap Handlers
 
-The default RTE trap handlers are executed when a certain trap is triggered that is not handled by a user-defined
-application-specific trap handler. These default handler will just output a message giving additional debug information
-via UART0 to inform the user and will try to resume normal execution of the application.
+The default RTE trap handlers are executed when a certain trap is triggered that is not (yet) handled by a user-defined
+application-specific trap handler. The default handler will output a message giving additional debug information
+via UART0 to inform the user and will try to resume normal program execution.
 
 .Continuing Execution
 [IMPORTAN]
-In most cases the RTE can successfully continue operation when it catches an interrupt request, which is not handled
-by the actual application program. However, if the RTE catches an un_handled exception like a bus access fault
-continuing execution will most likely fail and the CPU will crash.
+In most cases the RTE can successfully continue operation - for example if it catches an **interrupt** request that is not handled
+by the actual application program. However, if the RTE catches an un-handled **exception** like a bus access fault
+continuing execution will most likely fail making the CPU crash.
 
 .RTE Default Trap Handler Output Examples
 [source]
