@@ -1604,7 +1604,7 @@ int main() {
   neorv32_cpu_csr_read(0xfff); // CSR not available
 
   PRINT_STANDARD(" ");
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) != mcause_never_c) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     test_ok();
   }
   else {
