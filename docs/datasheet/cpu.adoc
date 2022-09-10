@@ -83,6 +83,11 @@ The CPU does not support the resolution of unaligned memory access by the hardwa
 RISC-V-compatibility issue but an important thing to know. Any kind of unaligned memory access
 will raise an exception to allow a software-based emulation provided by the application.
 
+.`mtval` after Executing an Illegal Compressed Instruction
+[WARNING]
+If an illegal-instruction exception is caused by a **compressed** instruction (16-bit, `C` ISA extension)
+the according **de-compressed** instruction word (32-bit ) is written to `mtval`.
+
 
 <<<
 // ####################################################################################################################
@@ -861,8 +866,13 @@ be used in plain C code. The "`mepc`" and "`mtval`" columns show the value writt
 * **IPC** - address of interrupted instruction (instruction has not been executed yet)
 * **PC** - address of instruction that caused the trap
 * **ADR** - bad memory access address that caused the trap
-* **INST** - the faulting instruction word itself
+* **INST** - the faulting 32-bit instruction word itself (see warning below!)
 * **0** - zero
+
+.**INST** Value
+[WARNING]
+If an illegal-instruction exception is caused by a **compressed** instruction (16-bit, `C` ISA extension)
+the according **de-compressed** instruction word (32-bit ) is written to `mtval`.
 
 .NEORV32 Trap Listing
 [cols="3,6,5,14,11,4,4"]

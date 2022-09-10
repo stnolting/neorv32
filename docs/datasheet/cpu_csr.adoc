@@ -399,6 +399,10 @@ See section <<_neorv32_trap_listing>> for more information.
 [NOTE]
 The NEORV32 `mtval` CSR is read-only. However, a write access will _not_ raise an illegal instruction exception.
 
+[WARNING]
+If an illegal-instruction exception is caused by a **compressed** instruction (16-bit, `C` ISA extension)
+the according **de-compressed** instruction word (32-bit ) is written to `mtval`.
+
 [cols="^5,^5"]
 [options="header",grid="rows"]
 |=======================
