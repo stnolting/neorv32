@@ -615,7 +615,6 @@ int main() {
 
   // make sure this has cause an illegal exception
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) && // illegal instruction exception
-      (neorv32_cpu_csr_read(CSR_MTVAL) == 0x3020007f) && // correct instruction word
       ((neorv32_cpu_csr_read(CSR_MSTATUS) & (1 << CSR_MSTATUS_MIE)) == 0)) { // MIE should still be cleared
     test_ok();
   }
@@ -1605,7 +1604,7 @@ int main() {
   neorv32_cpu_csr_read(0xfff); // CSR not available
 
   PRINT_STANDARD(" ");
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) != mcause_never_c) {
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     test_ok();
   }
   else {

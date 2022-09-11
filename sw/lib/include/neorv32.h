@@ -118,7 +118,7 @@ enum NEORV32_CSR_enum {
   CSR_MSCRATCH       = 0x340, /**< 0x340 - mscratch (r/w): Machine scratch register */
   CSR_MEPC           = 0x341, /**< 0x341 - mepc     (r/w): Machine exception program counter */
   CSR_MCAUSE         = 0x342, /**< 0x342 - mcause   (r/w): Machine trap cause */
-  CSR_MTVAL          = 0x343, /**< 0x343 - mtval    (r/-): Machine bad address or instruction */
+  CSR_MTVAL          = 0x343, /**< 0x343 - mtval    (r/-): Machine trap value register */
   CSR_MIP            = 0x344, /**< 0x344 - mip      (r/-): Machine interrupt pending register */
 
   /* physical memory protection */

@@ -197,7 +197,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     i_reg        : std_ulogic_vector(31 downto 0);
     i_reg_nxt    : std_ulogic_vector(31 downto 0);
-    i_reg_last   : std_ulogic_vector(31 downto 0); -- last executed instruction
     --
     is_ci        : std_ulogic; -- current instruction is de-compressed instruction
     is_ci_nxt    : std_ulogic;
@@ -672,7 +671,6 @@ begin
       ctrl                       <= (others => '0');
       execute_engine.sleep       <= '0';
       execute_engine.pc_last     <= (others => '-'); -- reset value is irrelevant
-      execute_engine.i_reg_last  <= (others => '-'); -- reset value is irrelevant
       execute_engine.pc          <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned boot address
       execute_engine.next_pc     <= (others => '0');
     elsif rising_edge(clk_i) then
@@ -695,10 +693,9 @@ begin
         execute_engine.sleep <= execute_engine.sleep_nxt;
       end if;
 
-      -- PC & IR of "last executed" instruction for trap handling --
+      -- PC of "last executed" instruction for trap handling --
       if (execute_engine.state = EXECUTE) then
-        execute_engine.pc_last    <= execute_engine.pc;
-        execute_engine.i_reg_last <= execute_engine.i_reg;
+        execute_engine.pc_last <= execute_engine.pc;
       end if;
 
       -- PC update --
@@ -1726,7 +1723,6 @@ begin
   -- Control and Status Registers - Write Access --------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_write_access: process(rstn_i, clk_i)
-    variable cause_v : std_ulogic_vector(6 downto 0);
   begin
     if (rstn_i = '0') then
       csr.we                <= '0';
@@ -1850,7 +1846,7 @@ begin
             end if;
             -- R/W: mcause - machine trap cause --
             if (csr.addr(3 downto 0) = csr_mcause_c(3 downto 0)) then
-              csr.mcause <= csr.wdata(31) & csr.wdata(4 downto 0); -- type + identifier
+              csr.mcause <= csr.wdata(31) & csr.wdata(4 downto 0); -- type (async/sync) & identifier
             end if;
             -- R/W: mip - machine interrupt pending --
             if (csr.addr(3 downto 0) = csr_mip_c(3 downto 0)) then
@@ -1992,15 +1988,11 @@ begin
               end if;
 
               -- trap value --
-              cause_v := trap_ctrl.cause;
-              cause_v(5) := '0'; -- bit 5 is always zero here (= normal trapping / no debug-mode-entry), so we do not need to check that again
-              case cause_v is
+              case trap_ctrl.cause is
                 when trap_ima_c | trap_iba_c => -- misaligned instruction address OR instruction access error
                   csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
                 when trap_lma_c | trap_lbe_c | trap_sma_c | trap_sbe_c => -- misaligned load/store address OR load/store access error
                   csr.mtval <= mar_i; -- faulting data access address
-                when trap_iil_c => -- illegal instruction
-                  csr.mtval <= execute_engine.i_reg_last; -- faulting instruction word (decompressed if C-instruction)
                 when others => -- everything else including all interrupts
                   csr.mtval <= (others => '0');
               end case;
