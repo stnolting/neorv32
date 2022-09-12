@@ -935,8 +935,8 @@ begin
           -- any reason to go to trap state? --
           if (execute_engine.sleep = '1') or -- enter sleep state
              (trap_ctrl.exc_fire = '1') or -- exception during LAST instruction (e.g. illegal instruction)
-             (trap_ctrl.env_start = '1') or -- pending trap (IRQ or exception)
-             ((issue_engine.data(33) = '1') and (CPU_EXTENSION_RISCV_C = false)) or -- misaligned instruction fetch address (if C disabled)
+             (trap_ctrl.env_start = '1') or -- pending trap (IRQ or late exception)
+             ((issue_engine.data(33) = '1') and (CPU_EXTENSION_RISCV_C = false)) or -- misaligned instruction fetch address (if C disabled) during instruction fetch
              (issue_engine.data(34) = '1') then -- bus access fault during instruction fetch
             execute_engine.state_nxt <= TRAP_ENTER;
           else
@@ -947,8 +947,8 @@ begin
 
       when TRAP_ENTER => -- Begin trap environment; stay here for sleep mode
       -- ------------------------------------------------------------
-        -- this also serves as additional "delay" cycle to wait for (other) potential sync. exceptions
-        -- to reach the trap controller logic (issue #325)
+        -- this also serves as additional "delay" cycle to wait for (other) potential
+        -- sync. exceptions to reach the trap controller logic (issue #325)
         if (trap_ctrl.env_start = '1') then -- trap triggered?
           execute_engine.state_nxt <= TRAP_START;
         end if;
@@ -960,7 +960,7 @@ begin
         execute_engine.state_nxt <= TRAP_EXECUTE;
 
 
-      when TRAP_EXIT => -- Return from trap environment - get xEPC
+      when TRAP_EXIT => -- Return from trap environment and get xEPC
       -- ------------------------------------------------------------
         trap_ctrl.env_end        <= '1';
         execute_engine.state_nxt <= TRAP_EXECUTE;
@@ -1137,7 +1137,6 @@ begin
       -- ------------------------------------------------------------
         -- get and store return address (only relevant for jump-and-link operations) --
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_npc_c; -- next PC
-        ctrl_nxt(ctrl_rf_wb_en_c) <= execute_engine.i_reg(instr_opcode_lsb_c+2); -- valid RF write-back? (is jump-and-link?)
         -- destination address --
         execute_engine.pc_mux_sel <= '1'; -- PC <= alu.add = branch/jump destination
         execute_engine.pc_we      <= '1'; -- update PC with destination; will be overridden again in DISPATCH if branch not taken
@@ -1146,6 +1145,10 @@ begin
           execute_engine.state_nxt <= BRANCHED;
         else
           execute_engine.state_nxt <= DISPATCH;
+        end if;
+        -- valid RF write-back? --
+        if (execute_engine.i_reg(instr_opcode_lsb_c+2) = '1') then -- is jump-and-link?
+          ctrl_nxt(ctrl_rf_wb_en_c) <= '1';
         end if;
 
 
@@ -1163,7 +1166,7 @@ begin
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
         if (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- not an illegal instruction
-          ctrl_nxt(ctrl_bus_req_c) <= '1'; -- trigger read request
+          ctrl_nxt(ctrl_bus_req_c) <= '1'; -- trigger memory request
         end if;
         execute_engine.state_nxt <= MEM_WAIT;
 
@@ -1495,8 +1498,8 @@ begin
         end if;
 
         -- interrupt buffer: machine software/external/timer interrupt --
-        trap_ctrl.irq_buf(irq_msi_irq_c)   <= csr.mie_msie and msw_irq_i;
-        trap_ctrl.irq_buf(irq_mei_irq_c)  <= csr.mie_meie and mext_irq_i;
+        trap_ctrl.irq_buf(irq_msi_irq_c) <= csr.mie_msie and msw_irq_i;
+        trap_ctrl.irq_buf(irq_mei_irq_c) <= csr.mie_meie and mext_irq_i;
         trap_ctrl.irq_buf(irq_mti_irq_c) <= csr.mie_mtie and mtime_irq_i;
 
         -- interrupt queue: NEORV32-specific fast interrupts (FIRQ) - require manual ACK/clear via mip CSR --
