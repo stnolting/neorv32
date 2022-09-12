@@ -463,7 +463,10 @@ begin
   fetch_engine.a_err <= '1' when (fetch_engine.unaligned = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
 
   -- instruction bus response --
-  fetch_engine.resp <= '1' when (i_bus_ack_i = '1') or (i_bus_err_i = '1') or (fetch_engine.pmp_err = '1') or (fetch_engine.a_err = '1') else '0';
+  fetch_engine.resp <= '1' when (i_bus_ack_i = '1') or -- bus acknowledge
+                                (i_bus_err_i = '1') or -- bus access error
+                                (fetch_engine.pmp_err = '1') or -- PMP error
+                                (fetch_engine.a_err = '1') else '0'; -- alignment error
 
   -- IPB instruction data and status --
   ipb.wdata(0) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
@@ -1554,7 +1557,6 @@ begin
     trap_lma_c  when (trap_ctrl.exc_buf(exc_lalign_c)    = '1') else -- exception: 0.4 load address misaligned
     trap_sbe_c  when (trap_ctrl.exc_buf(exc_saccess_c)   = '1') else -- exception: 0.7 store access fault
     trap_lbe_c  when (trap_ctrl.exc_buf(exc_laccess_c)   = '1') else -- exception: 0.5 load access fault
-  
     -- ------------------------------------------------------------------------------------
     -- (re-)enter debug mode requests: basically, these are standard traps that have some
     -- special handling - they have the highest INTERRUPT priority in order to enter debug
@@ -1565,7 +1567,6 @@ begin
     --
     trap_db_halt_c  when (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') else -- external halt request (async)
     trap_db_step_c  when (trap_ctrl.irq_buf(irq_db_step_c)  = '1') else -- single stepping (async)
-  
     -- ------------------------------------------------------------------------------------
     -- custom FAST interrupts (*asynchronous* exceptions)
     -- ------------------------------------------------------------------------------------
@@ -1585,7 +1586,6 @@ begin
     trap_firq13_c when (trap_ctrl.irq_buf(irq_firq_13_c) = '1') else -- interrupt: 1.29 fast interrupt channel 13
     trap_firq14_c when (trap_ctrl.irq_buf(irq_firq_14_c) = '1') else -- interrupt: 1.30 fast interrupt channel 14
     trap_firq15_c when (trap_ctrl.irq_buf(irq_firq_15_c) = '1') else -- interrupt: 1.31 fast interrupt channel 15
-  
     -- ------------------------------------------------------------------------------------
     -- standard RISC-V interrupts (*asynchronous* exceptions)
     -- ------------------------------------------------------------------------------------
