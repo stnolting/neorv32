@@ -44,7 +44,7 @@ package neorv32_package is
   constant ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- default instruction memory address space base address
   constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- default data memory address space base address
 
-  -- if register x0 is implemented as actual physical register is has to be set to zero by the CPU hardware --
+  -- if register x0 is implemented as a *physical register* it has to be explicitly set to zero by the CPU hardware --
   constant reset_x0_c : boolean := true; -- has to be 'true' for the default register file rtl description (BRAM-based)
 
   -- "response time window" for processor-internal modules --
@@ -59,7 +59,7 @@ package neorv32_package is
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant data_width_c : natural := 32; -- native data path width - do not change!
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070606"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070607"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -443,7 +443,7 @@ package neorv32_package is
   -- system/csr --
   constant opcode_fence_c  : std_ulogic_vector(6 downto 0) := "0001111"; -- fence / fence.i
   constant opcode_system_c : std_ulogic_vector(6 downto 0) := "1110011"; -- system/csr access (type via funct3)
-  -- floating point operations (Zfinx-only) (F/D/H/Q) --
+  -- floating point operations --
   constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single operand instruction
   -- official "custom0/1" RISC-V opcodes - free for custom instructions --
   constant opcode_cust0_c  : std_ulogic_vector(6 downto 0) := "0001011"; -- custom instructions 0
@@ -858,7 +858,7 @@ package neorv32_package is
   constant trap_db_halt_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00011"; -- external halt request (async)
   constant trap_db_step_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00100"; -- single-stepping (async)
 
-  -- CPU Control Exception System -----------------------------------------------------------
+  -- CPU Trap System ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- exception source bits --
   constant exc_iaccess_c   : natural :=  0; -- instruction access fault
@@ -877,9 +877,9 @@ package neorv32_package is
   --
   constant exc_width_c     : natural := 12; -- length of this list in bits
   -- interrupt source bits --
-  constant irq_msw_irq_c   : natural :=  0; -- machine software interrupt
-  constant irq_mtime_irq_c : natural :=  1; -- machine timer interrupt
-  constant irq_mext_irq_c  : natural :=  2; -- machine external interrupt
+  constant irq_msi_irq_c   : natural :=  0; -- machine software interrupt
+  constant irq_mti_irq_c   : natural :=  1; -- machine timer interrupt
+  constant irq_mei_irq_c   : natural :=  2; -- machine external interrupt
   constant irq_firq_0_c    : natural :=  3; -- fast interrupt channel 0
   constant irq_firq_1_c    : natural :=  4; -- fast interrupt channel 1
   constant irq_firq_2_c    : natural :=  5; -- fast interrupt channel 2
