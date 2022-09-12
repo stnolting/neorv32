@@ -483,14 +483,14 @@ The `crt0.S` start-up performs the following operations:
 . Initialize all integer registers `x1 - x31` (or just `x1 - x15` when using the `E` CPU extension is enabled) to a defined value.
 . Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ exceptions. This is used for the very early boot
 phase where the application might not provide a trap handling yet.
-** Set <<_mstatus>>`.mpp` to `11`; previous mode is machine mode.
-** All interrupt sources are disabled and all pending interrupts are cleared.
+** Clear <<_mstatus>>`.
+** Clear <<_mie>> disabling all interrupt sources and clearing all pending interrupts.
+** Clear <<_cycleh>> and <<_instreth>> counter CSRs.
 . Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
 during the early boot phase.
-. Clear <<_cycleh>> and <<_instreth>> counter CSRs.
 . Clear the `.bss` section defined by the linker script.
 . Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
-. Call and execute all _constructors_ (if there are any)
+. Call and execute all _constructors_ (if there are any).
 . Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
 . If `main` returns:
 ** interrupts are globally disabled by clearing <<_mstatus>>`.mie`.
