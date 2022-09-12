@@ -74,8 +74,7 @@ __crt0_cpu_csr_init:
   csrw mtvec, x10
 
   csrw mstatus,   zero // also disables IRQs globally
-  csrw mie,       zero // disable all interrupt sources
-  csrw mip,       zero // clear all pending interrupts
+  csrw mie,       zero // disable all interrupt sources; also clears all pending IRQs
 
   csrw mcycle,    zero // reset cycle counter
   csrw mcycleh,   zero
