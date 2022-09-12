@@ -1495,9 +1495,9 @@ begin
         end if;
 
         -- interrupt buffer: machine software/external/timer interrupt --
-        trap_ctrl.irq_buf(irq_msw_irq_c)   <= csr.mie_msie and msw_irq_i;
-        trap_ctrl.irq_buf(irq_mext_irq_c)  <= csr.mie_meie and mext_irq_i;
-        trap_ctrl.irq_buf(irq_mtime_irq_c) <= csr.mie_mtie and mtime_irq_i;
+        trap_ctrl.irq_buf(irq_msi_irq_c)   <= csr.mie_msie and msw_irq_i;
+        trap_ctrl.irq_buf(irq_mei_irq_c)  <= csr.mie_meie and mext_irq_i;
+        trap_ctrl.irq_buf(irq_mti_irq_c) <= csr.mie_mtie and mtime_irq_i;
 
         -- interrupt queue: NEORV32-specific fast interrupts (FIRQ) - require manual ACK/clear via mip CSR --
         trap_ctrl.irq_buf(irq_firq_15_c downto irq_firq_0_c) <= (trap_ctrl.irq_buf(irq_firq_15_c downto irq_firq_0_c) or (csr.mie_firqe and firq_i)) and csr.mip_firq_nclr;
@@ -1534,166 +1534,62 @@ begin
 
   -- Trap Priority Encoder ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trap_priority: process(trap_ctrl)
-  begin
-    -- ----------------------------------------------------------------------------------------
-    -- the following traps are caused by *synchronous* exceptions; we do not need a
-    -- specific acknowledge mask since only _one_ exception (the one with highest priority)
-    -- is allowed to kick in at once
-    -- ----------------------------------------------------------------------------------------
-
-    -- exception: 0.0 instruction address misaligned --
-    if (trap_ctrl.exc_buf(exc_ialign_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_ima_c;
-
-    -- exception: 0.1 instruction access fault --
-    elsif (trap_ctrl.exc_buf(exc_iaccess_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_iba_c;
-
-    -- exception: 0.2 illegal instruction --
-    elsif (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_iil_c;
-
-
-    -- exception: 0.11 environment call from M-mode --
-    elsif (trap_ctrl.exc_buf(exc_m_envcall_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_menv_c;
-
-    -- exception: 0.8 environment call from U-mode --
-    elsif (trap_ctrl.exc_buf(exc_u_envcall_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_uenv_c;
-
-    -- exception: 0.3 breakpoint --
-    elsif (trap_ctrl.exc_buf(exc_break_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_brk_c;
-
-
-    -- exception: 0.6 store address misaligned -
-    elsif (trap_ctrl.exc_buf(exc_salign_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_sma_c;
-
-    -- exception: 0.4 load address misaligned --
-    elsif (trap_ctrl.exc_buf(exc_lalign_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_lma_c;
-
-    -- exception: 0.7 store access fault --
-    elsif (trap_ctrl.exc_buf(exc_saccess_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_sbe_c;
-
-    -- exception: 0.5 load access fault --
-    elsif (trap_ctrl.exc_buf(exc_laccess_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_lbe_c;
-
-    -- ----------------------------------------------------------------------------------------
-    -- (re-)enter debug mode requests: basically, these are standard traps that have some
-    -- special handling - they have the highest INTERRUPT priority in order to go to debug
-    -- when requested even if other IRQs are pending right now
-    -- ----------------------------------------------------------------------------------------
-
-    -- hardware trigger (sync) --
-    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.exc_buf(exc_db_hw_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_db_hw_c;
-
-    -- break instruction (sync) --
-    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.exc_buf(exc_db_break_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_db_break_c;
-
-
-    -- external halt request (async) --
-    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.irq_buf(irq_db_halt_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_db_halt_c;
-
-    -- single stepping (async) --
-    elsif (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.irq_buf(irq_db_step_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_db_step_c;
-
-    -- ----------------------------------------------------------------------------------------
-    -- custom FAST interrupts (*asynchronous* exceptions)
-    -- ----------------------------------------------------------------------------------------
-
-    -- interrupt: 1.16 fast interrupt channel 0 --
-    elsif (trap_ctrl.irq_buf(irq_firq_0_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq0_c;
-
-    -- interrupt: 1.17 fast interrupt channel 1 --
-    elsif (trap_ctrl.irq_buf(irq_firq_1_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq1_c;
-
-    -- interrupt: 1.18 fast interrupt channel 2 --
-    elsif (trap_ctrl.irq_buf(irq_firq_2_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq2_c;
-
-    -- interrupt: 1.19 fast interrupt channel 3 --
-    elsif (trap_ctrl.irq_buf(irq_firq_3_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq3_c;
-
-    -- interrupt: 1.20 fast interrupt channel 4 --
-    elsif (trap_ctrl.irq_buf(irq_firq_4_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq4_c;
-
-    -- interrupt: 1.21 fast interrupt channel 5 --
-    elsif (trap_ctrl.irq_buf(irq_firq_5_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq5_c;
-
-    -- interrupt: 1.22 fast interrupt channel 6 --
-    elsif (trap_ctrl.irq_buf(irq_firq_6_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq6_c;
-
-    -- interrupt: 1.23 fast interrupt channel 7 --
-    elsif (trap_ctrl.irq_buf(irq_firq_7_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq7_c;
-
-    -- interrupt: 1.24 fast interrupt channel 8 --
-    elsif (trap_ctrl.irq_buf(irq_firq_8_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq8_c;
-
-    -- interrupt: 1.25 fast interrupt channel 9 --
-    elsif (trap_ctrl.irq_buf(irq_firq_9_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq9_c;
-
-    -- interrupt: 1.26 fast interrupt channel 10 --
-    elsif (trap_ctrl.irq_buf(irq_firq_10_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq10_c;
-
-    -- interrupt: 1.27 fast interrupt channel 11 --
-    elsif (trap_ctrl.irq_buf(irq_firq_11_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq11_c;
-
-    -- interrupt: 1.28 fast interrupt channel 12 --
-    elsif (trap_ctrl.irq_buf(irq_firq_12_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq12_c;
-
-    -- interrupt: 1.29 fast interrupt channel 13 --
-    elsif (trap_ctrl.irq_buf(irq_firq_13_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq13_c;
-
-    -- interrupt: 1.30 fast interrupt channel 14 --
-    elsif (trap_ctrl.irq_buf(irq_firq_14_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq14_c;
-
-    -- interrupt: 1.31 fast interrupt channel 15 --
-    elsif (trap_ctrl.irq_buf(irq_firq_15_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_firq15_c;
-
-    -- ----------------------------------------------------------------------------------------
-    -- standard RISC-V interrupts (*asynchronous* exceptions)
-    -- ----------------------------------------------------------------------------------------
-
-    -- interrupt: 1.11 machine external interrupt (MEI) --
-    elsif (trap_ctrl.irq_buf(irq_mext_irq_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_mei_c;
-
-    -- interrupt: 1.3 machine SW interrupt (MSI) --
-    elsif (trap_ctrl.irq_buf(irq_msw_irq_c) = '1') then
-      trap_ctrl.cause_nxt <= trap_msi_c;
-
-    -- interrupt: 1.7 machine timer interrupt (MTI) --
-    else--if (trap_ctrl.irq_buf(irq_mtime_irq_c) = '1') then -- last condition, so NO "IF" required
-      trap_ctrl.cause_nxt <= trap_mti_c;
-
-    end if;
-  end process trap_priority;
+  trap_ctrl.cause_nxt <=
+    -- ------------------------------------------------------------------------------------
+    -- *synchronous* exceptions - no need for a specific acknowledge mask since only
+    -- a single exception (the one with highest priority) is allowed to kick in at once
+    -- ------------------------------------------------------------------------------------
+    trap_ima_c  when (trap_ctrl.exc_buf(exc_ialign_c)    = '1') else -- exception: 0.0 instruction address misaligned
+    trap_iba_c  when (trap_ctrl.exc_buf(exc_iaccess_c)   = '1') else -- exception: 0.1 instruction access fault
+    trap_iil_c  when (trap_ctrl.exc_buf(exc_iillegal_c)  = '1') else -- exception: 0.2 illegal instruction
+    --
+    trap_menv_c when (trap_ctrl.exc_buf(exc_m_envcall_c) = '1') else -- exception: 0.11 environment call from M-mode
+    trap_uenv_c when (trap_ctrl.exc_buf(exc_u_envcall_c) = '1') else -- exception: 0.8 environment call from U-mode
+    trap_brk_c  when (trap_ctrl.exc_buf(exc_break_c)     = '1') else -- exception: 0.3 breakpoint
+    --
+    trap_sma_c  when (trap_ctrl.exc_buf(exc_salign_c)    = '1') else -- exception: 0.6 store address misaligned
+    trap_lma_c  when (trap_ctrl.exc_buf(exc_lalign_c)    = '1') else -- exception: 0.4 load address misaligned
+    trap_sbe_c  when (trap_ctrl.exc_buf(exc_saccess_c)   = '1') else -- exception: 0.7 store access fault
+    trap_lbe_c  when (trap_ctrl.exc_buf(exc_laccess_c)   = '1') else -- exception: 0.5 load access fault
   
+    -- ------------------------------------------------------------------------------------
+    -- (re-)enter debug mode requests: basically, these are standard traps that have some
+    -- special handling - they have the highest INTERRUPT priority in order to enter debug
+    -- mode even if other INTERRUPTs are pending right now
+    -- ------------------------------------------------------------------------------------
+    trap_db_hw_c    when (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') else -- hardware trigger (sync)
+    trap_db_break_c when (trap_ctrl.exc_buf(exc_db_break_c) = '1') else -- break instruction (sync)
+    --
+    trap_db_halt_c  when (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') else -- external halt request (async)
+    trap_db_step_c  when (trap_ctrl.irq_buf(irq_db_step_c)  = '1') else -- single stepping (async)
+  
+    -- ------------------------------------------------------------------------------------
+    -- custom FAST interrupts (*asynchronous* exceptions)
+    -- ------------------------------------------------------------------------------------
+    trap_firq0_c  when (trap_ctrl.irq_buf(irq_firq_0_c)  = '1') else -- interrupt: 1.16 fast interrupt channel 0
+    trap_firq1_c  when (trap_ctrl.irq_buf(irq_firq_1_c)  = '1') else -- interrupt: 1.17 fast interrupt channel 1
+    trap_firq2_c  when (trap_ctrl.irq_buf(irq_firq_2_c)  = '1') else -- interrupt: 1.18 fast interrupt channel 2
+    trap_firq3_c  when (trap_ctrl.irq_buf(irq_firq_3_c)  = '1') else -- interrupt: 1.19 fast interrupt channel 3
+    trap_firq4_c  when (trap_ctrl.irq_buf(irq_firq_4_c)  = '1') else -- interrupt: 1.20 fast interrupt channel 4
+    trap_firq5_c  when (trap_ctrl.irq_buf(irq_firq_5_c)  = '1') else -- interrupt: 1.21 fast interrupt channel 5
+    trap_firq6_c  when (trap_ctrl.irq_buf(irq_firq_6_c)  = '1') else -- interrupt: 1.22 fast interrupt channel 6
+    trap_firq7_c  when (trap_ctrl.irq_buf(irq_firq_7_c)  = '1') else -- interrupt: 1.23 fast interrupt channel 7
+    trap_firq8_c  when (trap_ctrl.irq_buf(irq_firq_8_c)  = '1') else -- interrupt: 1.24 fast interrupt channel 8
+    trap_firq9_c  when (trap_ctrl.irq_buf(irq_firq_9_c)  = '1') else -- interrupt: 1.25 fast interrupt channel 9
+    trap_firq10_c when (trap_ctrl.irq_buf(irq_firq_10_c) = '1') else -- interrupt: 1.26 fast interrupt channel 10
+    trap_firq11_c when (trap_ctrl.irq_buf(irq_firq_11_c) = '1') else -- interrupt: 1.27 fast interrupt channel 11
+    trap_firq12_c when (trap_ctrl.irq_buf(irq_firq_12_c) = '1') else -- interrupt: 1.28 fast interrupt channel 12
+    trap_firq13_c when (trap_ctrl.irq_buf(irq_firq_13_c) = '1') else -- interrupt: 1.29 fast interrupt channel 13
+    trap_firq14_c when (trap_ctrl.irq_buf(irq_firq_14_c) = '1') else -- interrupt: 1.30 fast interrupt channel 14
+    trap_firq15_c when (trap_ctrl.irq_buf(irq_firq_15_c) = '1') else -- interrupt: 1.31 fast interrupt channel 15
+  
+    -- ------------------------------------------------------------------------------------
+    -- standard RISC-V interrupts (*asynchronous* exceptions)
+    -- ------------------------------------------------------------------------------------
+    trap_mei_c when (trap_ctrl.irq_buf(irq_mei_irq_c) = '1') else -- interrupt: 1.11 machine external interrupt (MEI)
+    trap_msi_c when (trap_ctrl.irq_buf(irq_msi_irq_c) = '1') else -- interrupt: 1.3 machine SW interrupt (MSI)
+    trap_mti_c; --  (trap_ctrl.irq_buf(irq_mti_irq_c) = '1')      -- interrupt: 1.7 machine timer interrupt (MTI)
+
 
 -- ****************************************************************************************************************************
 -- Control and Status Registers (CSRs)
@@ -1990,7 +1886,7 @@ begin
               -- trap value --
               case trap_ctrl.cause is
                 when trap_ima_c | trap_iba_c => -- misaligned instruction address OR instruction access error
-                  csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction
+                  csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction access
                 when trap_lma_c | trap_lbe_c | trap_sma_c | trap_sbe_c => -- misaligned load/store address OR load/store access error
                   csr.mtval <= mar_i; -- faulting data access address
                 when others => -- everything else including all interrupts
@@ -2155,9 +2051,9 @@ begin
           when csr_mtval_c => -- mtval (r/-): machine bad address or instruction
             csr.rdata <= csr.mtval;
           when csr_mip_c => -- mip (r/w): machine interrupt pending
-            csr.rdata(03) <= trap_ctrl.irq_buf(irq_msw_irq_c);
-            csr.rdata(07) <= trap_ctrl.irq_buf(irq_mtime_irq_c);
-            csr.rdata(11) <= trap_ctrl.irq_buf(irq_mext_irq_c);
+            csr.rdata(03) <= trap_ctrl.irq_buf(irq_msi_irq_c);
+            csr.rdata(07) <= trap_ctrl.irq_buf(irq_mti_irq_c);
+            csr.rdata(11) <= trap_ctrl.irq_buf(irq_mei_irq_c);
             csr.rdata(31 downto 16) <= trap_ctrl.irq_buf(irq_firq_15_c downto irq_firq_0_c);
 
           -- physical memory protection - configuration (r/w) --
