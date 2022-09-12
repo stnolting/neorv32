@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 12.09.2022 | 1.7.6.7 | minor rtl edits and cleanups; [#410](https://github.com/stnolting/neorv32/pull/410) |
 | 10.09.2022 | 1.7.6.6 | :warning: set `mtval` to _zero_ on any illegal instruction exception - removes redundancies, simplifies hardware; [#409](https://github.com/stnolting/neorv32/pull/409) |
 | 09.09.2022 | 1.7.6.5 | minor rtl edits; add "output gate" to FIFO component; [#408](https://github.com/stnolting/neorv32/pull/408) |
 | 08.09.2022 | 1.7.6.4 | :warning: cleanup CPU standard counters and remove _CPU_CNT_WIDTH_ generic; [#407](https://github.com/stnolting/neorv32/pull/407) |
