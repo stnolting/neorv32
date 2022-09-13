@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 13.09.2022 | 1.7.6.8 | :bug: bug fix: clearing `mie`'s FIRQ bits did not clear the according _pending_ FIRQs; [#411](https://github.com/stnolting/neorv32/pull/411) |
 | 12.09.2022 | 1.7.6.7 | minor rtl edits and cleanups; [#410](https://github.com/stnolting/neorv32/pull/410) |
 | 10.09.2022 | 1.7.6.6 | :warning: set `mtval` to _zero_ on any illegal instruction exception - removes redundancies, simplifies hardware; [#409](https://github.com/stnolting/neorv32/pull/409) |
 | 09.09.2022 | 1.7.6.5 | minor rtl edits; add "output gate" to FIFO component; [#408](https://github.com/stnolting/neorv32/pull/408) |
