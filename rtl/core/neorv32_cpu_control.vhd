@@ -269,10 +269,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mstatus_mprv      : std_ulogic; -- mstatus.MPRV: effective privilege level for machine-mode load/stores
     mstatus_tw        : std_ulogic; -- mstatus.TW: do not allow user mode to execute WFI instruction when set
     --
-    mie_msie          : std_ulogic; -- mie.MSIE: machine software interrupt enable (R/W)
-    mie_meie          : std_ulogic; -- mie.MEIE: machine external interrupt enable (R/W)
-    mie_mtie          : std_ulogic; -- mie.MEIE: machine timer interrupt enable (R/W)
-    mie_firqe         : std_ulogic_vector(15 downto 0); -- mie.firq*e: fast interrupt enabled (R/W)
+    mie_msi           : std_ulogic; -- mie.MSIE: machine software interrupt enable (R/W)
+    mie_mei           : std_ulogic; -- mie.MEIE: machine external interrupt enable (R/W)
+    mie_mti           : std_ulogic; -- mie.MEIE: machine timer interrupt enable (R/W)
+    mie_firq          : std_ulogic_vector(15 downto 0); -- mie.firq*e: fast interrupt enabled (R/W)
     --
     mip_firq_nclr     : std_ulogic_vector(15 downto 0); -- clear pending FIRQ (active-low)
     --
@@ -1501,14 +1501,17 @@ begin
         end if;
 
         -- interrupt buffer: machine software/external/timer interrupt --
-        trap_ctrl.irq_buf(irq_msi_irq_c) <= csr.mie_msie and msw_irq_i;
-        trap_ctrl.irq_buf(irq_mei_irq_c) <= csr.mie_meie and mext_irq_i;
-        trap_ctrl.irq_buf(irq_mti_irq_c) <= csr.mie_mtie and mtime_irq_i;
+        -- > request lines have to stay high until acknowledged by source-specific mechanism!
+        trap_ctrl.irq_buf(irq_msi_irq_c) <= csr.mie_msi and msw_irq_i;
+        trap_ctrl.irq_buf(irq_mei_irq_c) <= csr.mie_mei and mext_irq_i;
+        trap_ctrl.irq_buf(irq_mti_irq_c) <= csr.mie_mti and mtime_irq_i;
 
-        -- interrupt queue: NEORV32-specific fast interrupts (FIRQ) - require manual ACK/clear via mip CSR --
-        trap_ctrl.irq_buf(irq_firq_15_c downto irq_firq_0_c) <= (trap_ctrl.irq_buf(irq_firq_15_c downto irq_firq_0_c) or (csr.mie_firqe and firq_i)) and csr.mip_firq_nclr;
+        -- interrupt queue: NEORV32-specific fast interrupts (FIRQ) --
+        -- > require manual ACK/clear via mip CSR
+        for i in 0 to 15 loop
+          trap_ctrl.irq_buf(irq_firq_0_c + i) <= (trap_ctrl.irq_buf(irq_firq_0_c + i) or firq_i(i)) and csr.mie_firq(i) and csr.mip_firq_nclr(i);
+        end loop;
 
-        -- ----------------------------------------------------------
 
         -- trap environment control --
         if (trap_ctrl.env_start = '0') then -- no started trap handler yet
@@ -1632,10 +1635,10 @@ begin
       csr.mstatus_mpp       <= '0';
       csr.mstatus_mprv      <= '0';
       csr.mstatus_tw        <= '0';
-      csr.mie_msie          <= '0';
-      csr.mie_meie          <= '0';
-      csr.mie_mtie          <= '0';
-      csr.mie_firqe         <= (others => '0');
+      csr.mie_msi           <= '0';
+      csr.mie_mei           <= '0';
+      csr.mie_mti           <= '0';
+      csr.mie_firq          <= (others => '0');
       csr.mtvec             <= (others => '0');
       csr.mscratch          <= x"19880704";
       csr.mepc              <= (others => '0');
@@ -1713,10 +1716,10 @@ begin
             end if;
             -- R/W: mie - machine interrupt enable register --
             if (csr.addr(2 downto 0) = csr_mie_c(2 downto 0)) then
-              csr.mie_msie  <= csr.wdata(03); -- machine SW IRQ enable
-              csr.mie_mtie  <= csr.wdata(07); -- machine TIMER IRQ enable
-              csr.mie_meie  <= csr.wdata(11); -- machine EXT IRQ enable
-              csr.mie_firqe <= csr.wdata(31 downto 16); -- fast interrupt channels 0..15
+              csr.mie_msi  <= csr.wdata(03); -- machine SW IRQ enable
+              csr.mie_mti  <= csr.wdata(07); -- machine TIMER IRQ enable
+              csr.mie_mei  <= csr.wdata(11); -- machine EXT IRQ enable
+              csr.mie_firq <= csr.wdata(31 downto 16); -- fast interrupt channels 0..15
             end if;
             -- R/W: mtvec - machine trap-handler base address (for ALL exceptions) --
             if (csr.addr(2 downto 0) = csr_mtvec_c(2 downto 0)) then
@@ -2031,10 +2034,10 @@ begin
             csr.rdata(30) <= '1'; -- 32-bit architecture (MXL lo)
             csr.rdata(31) <= '0'; -- 32-bit architecture (MXL hi)
           when csr_mie_c => -- mie (r/w): machine interrupt-enable register
-            csr.rdata(03) <= csr.mie_msie; -- machine software IRQ enable
-            csr.rdata(07) <= csr.mie_mtie; -- machine timer IRQ enable
-            csr.rdata(11) <= csr.mie_meie; -- machine external IRQ enable
-            csr.rdata(31 downto 16) <= csr.mie_firqe;
+            csr.rdata(03) <= csr.mie_msi; -- machine software IRQ enable
+            csr.rdata(07) <= csr.mie_mti; -- machine timer IRQ enable
+            csr.rdata(11) <= csr.mie_mei; -- machine external IRQ enable
+            csr.rdata(31 downto 16) <= csr.mie_firq;
           when csr_mtvec_c => -- mtvec (r/w): machine trap-handler base address (for ALL exceptions)
             csr.rdata <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
           when csr_mcounteren_c => -- mcounteren (r/w): machine counter enable register,  hardwired to zero if user mode is not implemented
