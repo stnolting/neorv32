@@ -79,9 +79,9 @@ The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only 
 
 .No Hardware Support of Misaligned Memory Accesses
 [WARNING]
-The CPU does not support the resolution of unaligned memory access by the hardware. This is not a
-RISC-V-compatibility issue but an important thing to know. Any kind of unaligned memory access
-will raise an exception to allow a software-based emulation provided by the application.
+The CPU does not support resolving unaligned memory access by the hardware (this is not a
+RISC-V-incompatibility issue but an important thing to know!). Any kind of unaligned memory access
+will raise an exception to allow a _software-based_ emulation provided by the application.
 
 
 <<<
@@ -395,12 +395,6 @@ By default, the bit-manipulation unit uses an _iterative_ approach to compute sh
 like `clz` and `rol`. To increase performance (at the cost of additional hardware resources) the 
 <<_fast_shift_en>> generic can be enabled to implement full-parallel logic (like barrel shifters) for all
 shift-related `B` instructions.
-
-[WARNING]
-The `B` extension is frozen and officially ratified. However, there is no
-software support for this extension in the upstream GCC RISC-V port yet. An
-intrinsic library is provided to utilize the provided `B` extension features from C-language
-code (see `sw/example/bitmanip_test`) to circumvent this.
 
 
 ==== **`C`** - Compressed Instructions

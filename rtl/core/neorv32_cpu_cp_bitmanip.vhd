@@ -7,11 +7,11 @@
 -- # - Zbs: Single-bit instructions                                                                #
 -- # - Zbc: Carry-less multiplication instructions                                                 #
 -- #                                                                                               #
--- # Processor/CPU configuration generic FAST_MUL_EN can be used to enable implementation of fast  #
--- # (full-parallel) logic for all shift-related instructions (ROL, ROR[I], CLZ, CTZ, CPOP).       #
+-- # Processor/CPU configuration generic FAST_MUL_EN is also used to enable implementation of fast #
+-- # (full-parallel) logic for all shift-related B-instructions (ROL, ROR[I], CLZ, CTZ, CPOP).     #
 -- #                                                                                               #
 -- # NOTE: This is a first implementation of the bit-manipulation co-processor that supports all   #
--- #       sub-sets of the B extension. Hence, it is not yet optimized for area, latency or speed. #
+-- #       sub-sets of the B extension. Hence, it is not yet optimized for area/latency/speed.     #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -198,14 +198,14 @@ begin
   --
   cmd(op_orcb_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "101") else '0';
   --
-  cmd(op_clz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "000") else '0';
-  cmd(op_ctz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "001") else '0';
-  cmd(op_cpop_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "010") and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') else '0';
-  cmd(op_sextb_c)  <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "100") and (ctrl_i(ctrl_ir_funct3_2_c) = '0')  and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') else '0';
-  cmd(op_sexth_c)  <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "101") and (ctrl_i(ctrl_ir_funct3_2_c) = '0') and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') else '0';
-  cmd(op_rol_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "001") and (ctrl_i(ctrl_ir_opcode7_5_c) = '1') else '0';
-  cmd(op_ror_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "101") and (ctrl_i(ctrl_ir_funct3_2_c) = '1') else '0';
-  cmd(op_rev8_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "101") else '0';
+  cmd(op_clz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "000") and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
+  cmd(op_ctz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "001") and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
+  cmd(op_cpop_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "010") and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
+  cmd(op_sextb_c)  <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "100") and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
+  cmd(op_sexth_c)  <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "101") and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
+  cmd(op_rol_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c  downto ctrl_ir_funct3_0_c)  = "001") and (ctrl_i(ctrl_ir_opcode7_5_c) = '1') else '0';
+  cmd(op_ror_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c  downto ctrl_ir_funct3_0_c)  = "101") and                                         (ctrl_i(ctrl_ir_funct3_2_c) = '1') else '0';
+  cmd(op_rev8_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c  downto ctrl_ir_funct3_0_c)  = "101") else '0';
 
   -- Zba - Address generation instructions --
   cmd(op_sh1add_c) <= '1' when (zba_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) = "01") else '0';
