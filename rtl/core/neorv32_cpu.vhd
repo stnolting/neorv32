@@ -146,8 +146,9 @@ begin
   -- CPU ISA Configuration ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-  "NEORV32 CPU CONFIG NOTE: ISA (MARCH) = " &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_E, "RV32E", "RV32I") &
+  "NEORV32 CPU CONFIG NOTE: Core ISA ('MARCH') = " &
+  cond_sel_string_f(boolean(data_width_c = 32), "RV32", "RV64") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_E, "E", "I") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_M, "M", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_C, "C", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_B, "B", "") &
@@ -159,7 +160,7 @@ begin
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx, "_Zfinx", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul, "_Zmmul", "") &
   cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu, "_Zxcfu", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG, "_DebugMode", "") &
+  cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG, "_<DebugMode>", "") &
   ""
   severity note;
 
@@ -167,11 +168,14 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- say hello --
-  assert false report "The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32" severity note;
+  assert false report "The NEORV32 RISC-V Processor - github.com/stnolting/neorv32" severity note;
 
   -- simulation notifier --
   assert not (is_simulation_c = true)  report "NEORV32 CPU WARNING! Assuming this is a simulation." severity warning;
   assert not (is_simulation_c = false) report "NEORV32 CPU NOTE: Assuming this is real hardware." severity note;
+
+  -- native data width check --
+  assert not ((data_width_c /= 32) and (data_width_c /= 64)) report "NEORV32 CPU CONFIG ERROR! Invalid <data_width_c> data path width (has to be 32 or 64)." severity error; 
 
   -- CPU boot address --
   assert not (CPU_BOOT_ADDR(1 downto 0) /= "00") report "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
@@ -208,7 +212,7 @@ begin
   assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zifencei> extension to be enabled." severity error;
 
   -- fast multiplication option --
-  assert not (FAST_MUL_EN = true) report "NEORV32 CPU CONFIG NOTE: <FAST_MUL_EN> enabled. Inferring DSP blocks for multiplications." severity note;
+  assert not (FAST_MUL_EN = true) report "NEORV32 CPU CONFIG NOTE: <FAST_MUL_EN> enabled. Trying to infer DSP blocks for multiplications." severity note;
 
   -- fast shift option --
   assert not (FAST_SHIFT_EN = true) report "NEORV32 CPU CONFIG NOTE: <FAST_SHIFT_EN> enabled. Implementing full-parallel logic / barrel shifters." severity note;
