@@ -179,7 +179,7 @@ continuing execution will most likely fail making the CPU crash.
 <RTE> Fast IRQ 0x00000003 @ PC=0x00000820 </RTE> <4>
 ----
 <1> Illegal 32-bit instruction at address 0x000002d6.
-<3> Illegal 16-bit instruction at address 0x00000302.
+<2> Illegal 16-bit instruction at address 0x00000302.
 <3> Misaligned load access at address 0x00000440 (trying to load a full word from 0x80000101).
 <4> Fast interrupt request from channel 3 before executing instruction at address 0x00000820.
 

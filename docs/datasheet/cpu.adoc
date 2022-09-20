@@ -57,9 +57,14 @@ This documentation assumes the reader is familiar with the official RISC-V "User
 :sectnums:
 === RISC-V Compatibility
 
-The NEORV32 CPU passes the tests of the _official RISC-V Architecture Test Framework (v2.x)_. This framework is used to check
-RISC-V implementations for compatibility with the official RISC-V ISA specifications. The NEORV32 port of this test framework
-has been moved to a separate repository: https://github.com/stnolting/neorv32-verif
+.RISCOF
+[NOTE]
+https://github.com/stnolting/neorv32-riscof[image:https://github.com/stnolting/neorv32-riscof/actions/workflows/main.yml/badge.svg[title='github.com/stnolting/neorv32-riscof']] +
+The NEORV32 CPU passes the tests of the **official RISCOF RISC-V Architecture Test Framework**. This framework is used to check
+RISC-V implementations for compatibility to the official RISC-V use/privileged ISA specifications. The NEORV32 port of this
+test framework is available in a separate repository: https://github.com/stnolting/neorv32-riscof
+
+
 
 :sectnums:
 ==== RISC-V Incompatibility Issues and Limitations

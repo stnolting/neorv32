@@ -75,7 +75,7 @@ include::rationale.adoc[]
 **NEORV32 CPU (the core)**
 
 * 32-bit `rv32i` RISC-V CPU
-* fully RISC-V compatible - passes the https://github.com/stnolting/neorv32-verif[official architecture tests]
+* fully RISC-V ISA compatible - checked by the https://github.com/stnolting/neorv32-riscof[official RISCOF architecture tests]
 * base ISA + privileged ISA (optional) + several ISA extensions (optional)
 * option to add custom RISC-V instructions as custom ISA extension
 * rich set of customization options (ISA extensions, design goal: performance / area (/ energy), ...)

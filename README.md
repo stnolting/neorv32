@@ -47,7 +47,7 @@ informed via _precise and resumable_ hardware exceptions.
 [community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
 targeting various FPGA boards and toolchains to get started.
 
-:heavy_check_mark: Automatic check for RISC-V specification [compliance](https://github.com/stnolting/neorv32-verif).
+:heavy_check_mark: Automatic verification of RISC-V spec. compatibility using [RISCOF](https://github.com/stnolting/neorv32-riscof).
 
 :kite: Support for [Zephyr](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) &
 [FreeRTOS](https://github.com/stnolting/neorv32/tree/main/sw/example/demo_freeRTOS) operating systems and
@@ -72,7 +72,7 @@ See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUT
 - [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the CPU's register file)
 - [x] optimized for high clock frequencies to ease integration / timing closure
 - [x] from zero to _"hello world!"_ - completely open source and documented
-- [x] easy to use even for FPGA / RISC-V starters – intended to **work out of the box**
+- [x] easy to use even for FPGA / RISC-V starters – intended to _work out of the box_
 
 
 ### Status
@@ -82,15 +82,14 @@ See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUT
 \
 [![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/main?longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor)
 [![Documentation](https://img.shields.io/github/workflow/status/stnolting/neorv32/Documentation/main?longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation)
-\
-[![riscv-arch-test](https://img.shields.io/github/workflow/status/stnolting/neorv32-verif/riscv-arch-test/main?longCache=true&style=flat-square&label=riscv-arch-test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verif/actions?query=workflow%3Ariscv-arch-test)
+[![neorv32-riscof](https://img.shields.io/github/workflow/status/stnolting/neorv32-riscof/NEORV32%20RISCOF%20Verification/main?longCache=true&style=flat-square&label=neorv32-riscof&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-riscof/actions/workflows/main.yml)
 [![Prebuilt_Toolchains](https://img.shields.io/github/workflow/status/stnolting/riscv-gcc-prebuilt/Test%20Toolchains/main?longCache=true&style=flat-square&label=Prebuilt%20Toolchains&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/riscv-gcc-prebuilt/actions/workflows/main.yml)
 [![Implementation](https://img.shields.io/github/workflow/status/stnolting/neorv32-setups/Implementation/main?longCache=true&style=flat-square&label=Implementation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-setups/actions?query=workflow%3AImplementation)
-[![neorv32-verilog](https://img.shields.io/github/workflow/status/stnolting/neorv32-verilog/Verification/main?longCache=true&style=flat-square&label=neorv32-verilog&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verilog/actions/workflows/main.yml)
+[![neorv32-verilog](https://img.shields.io/github/workflow/status/stnolting/neorv32-verilog/neorv32-verilog%20check/main?longCache=true&style=flat-square&label=neorv32-verilog&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verilog/actions/workflows/main.yml)
 
 The NEORV32 is fully operational.
-The processor passes the official RISC-V architecture tests, which is checked by the
-[neorv32-verif](https://github.com/stnolting/neorv32-verif) repository. It can successfully run _any_ C program
+The processor passes the official RISC-V architecture tests to ensure compatibility with the RISC-V ISA specs., which is checked by the
+[neorv32-riscof](https://github.com/stnolting/neorv32-riscof) repository. It can successfully run _any_ C program
 (for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example) folder) including CoreMark
 and FreeRTOS and can be synthesized for _any_ target technology - tested on Intel, Xilinx and Lattice FPGAs.
 The conversion into a plain Verilog netlist module is automatically checked by the
@@ -132,7 +131,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 *Unprivileged ISA Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-spec.pdf))
 and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf)).
 * `machine` and `user` privilege modes
-* implements **all** standard RISC-V exceptions and interrupts (including MTI, MEI & MSI)
+* implements **all** standard RISC-V exceptions and interrupts (MTI, MEI & MSI)
 * 16 fast interrupt request channels as NEORV32-specific extension
 * _intrinsic_ libraries for the `B` and `Zfinx` extensions
 
@@ -204,9 +203,6 @@ using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimizatio
 :bulb: An incremental list of the CPU extensions and the Processor modules found in the
 [_Data Sheet: FPGA Implementation Results_](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
 
-:bulb: The [`neorv32-setups`](https://github.com/stnolting/neorv32-setups) repository provides exemplary FPGA
-setups targeting various FPGA boards and toolchains.
-
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
 
@@ -250,12 +246,12 @@ maximum clock speed, minimal area or minimal power consumption:
 developed and debugged with open source tools ([GHDL](https://github.com/ghdl/ghdl), Yosys, nextpnr, openOCD, gtkwave, ...)
 * [continuous integration](https://github.com/stnolting/neorv32/actions) is available for:
   * allowing users to see the expected execution/output of the tools
-  * ensuring [specification compliance](https://github.com/stnolting/neorv32-verif)
+  * ensuring RISC-V specification compatibility using [RISCOF](https://github.com/stnolting/neorv32-riscof)
   * catching regressions
   * providing ready-to-use and up-to-date [bitstreams](https://github.com/stnolting/neorv32-setups/actions/workflows/Implementation.yml)
     and [documentation](https://stnolting.github.io/neorv32/)
 
-:bulb: Want to know more? Check out [_Data Sheet: Software Framework_](https://stnolting.github.io/neorv32/#_software_framework).
+:bulb: Want to know more? Check out the [_Data Sheet: Software Framework_](https://stnolting.github.io/neorv32/#_software_framework).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
 
