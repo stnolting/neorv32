@@ -7,11 +7,12 @@
 [![userguide (pdf)](https://img.shields.io/badge/user%20guide-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor)](https://github.com/stnolting/neorv32/releases/tag/nightly)
 [![userguide (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat-square)](https://stnolting.github.io/neorv32/ug)
 [![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen)](https://stnolting.github.io/neorv32/sw/files.html)
+[![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
 [![Gitter](https://img.shields.io/badge/Chat-on%20gitter-4db797.svg?longCache=true&style=flat-square&logo=gitter&logoColor=e8ecef)](https://gitter.im/neorv32/community)
 
 1. [Overview](#1-Overview)
    * [Key Features](#Key-Features)
-   * [Status](#status)
+   * [Project Status](#Project-Status)
 2. [Features](#2-Features)
 3. [FPGA Implementation Results](#3-FPGA-Implementation-Results)
 4. [Performance](#4-Performance)
@@ -41,7 +42,7 @@ informed via _precise and resumable_ hardware exceptions.
 
 :recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
 
-:heavy_check_mark: [Automatic verification](https://github.com/stnolting/neorv32-riscof) of RISC-V spec. compatibility using RISCOF.
+:heavy_check_mark: [Automatic verification](https://github.com/stnolting/neorv32-riscof) of RISC-V spec. compatibility using **RISCOF**.
 
 :package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
 [community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
@@ -75,19 +76,20 @@ See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUT
 - [x] easy to use even for FPGA / RISC-V starters – intended to _work out of the box_
 
 
-### Status
+### Project Status
 
-[![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
-[![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32)
-\
-[![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/main?longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor)
-[![Documentation](https://img.shields.io/github/workflow/status/stnolting/neorv32/Documentation/main?longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation)
-[![neorv32-riscof](https://img.shields.io/github/workflow/status/stnolting/neorv32-riscof/NEORV32%20RISCOF%20Verification/main?longCache=true&style=flat-square&label=neorv32-riscof&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-riscof/actions/workflows/main.yml)
-[![Prebuilt_Toolchains](https://img.shields.io/github/workflow/status/stnolting/riscv-gcc-prebuilt/Test%20Toolchains/main?longCache=true&style=flat-square&label=Prebuilt%20Toolchains&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/riscv-gcc-prebuilt/actions/workflows/main.yml)
-[![Implementation](https://img.shields.io/github/workflow/status/stnolting/neorv32-setups/Implementation/main?longCache=true&style=flat-square&label=Implementation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-setups/actions?query=workflow%3AImplementation)
-[![neorv32-verilog](https://img.shields.io/github/workflow/status/stnolting/neorv32-verilog/neorv32-verilog%20check/main?longCache=true&style=flat-square&label=neorv32-verilog&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verilog/actions/workflows/main.yml)
+|         | Repository | CI Status |
+|:--------|:-----------|:---------:|
+| GitHub Pages                 | [neorv32](https://github.com/stnolting/neorv32)                       | [![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32) | |
+| Online documentation         | [neorv32](https://github.com/stnolting/neorv32)                       | [![Documentation](https://img.shields.io/github/workflow/status/stnolting/neorv32/Documentation/main?longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation) |
+| Prebuilt GCC toolchains      | [riscv-gcc-prebuilt](https://github.com/stnolting/riscv-gcc-prebuilt) | [![Prebuilt_Toolchains](https://img.shields.io/github/workflow/status/stnolting/riscv-gcc-prebuilt/Test%20Toolchains/main?longCache=true&style=flat-square&label=Prebuilt%20Toolchains&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/riscv-gcc-prebuilt/actions/workflows/main.yml) |
+| RISCOC core verification     | [neorv32-riscof](https://github.com/stnolting/neorv32-riscof)         | [![neorv32-riscof](https://img.shields.io/github/workflow/status/stnolting/neorv32-riscof/NEORV32%20RISCOF%20Verification/main?longCache=true&style=flat-square&label=neorv32-riscof&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-riscof/actions/workflows/main.yml) |
+| Processor (SoC) verification | [neorv32](https://github.com/stnolting/neorv32)                       | [![Processor](https://img.shields.io/github/workflow/status/stnolting/neorv32/Processor/main?longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor) |
+| FPGA implementations         | [neorv32-setups](https://github.com/stnolting/neorv32-setups)         | [![Implementation](https://img.shields.io/github/workflow/status/stnolting/neorv32-setups/Implementation/main?longCache=true&style=flat-square&label=Implementation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-setups/actions?query=workflow%3AImplementation) |
+| Verilog version              | [neorv32-verilog](https://github.com/stnolting/neorv32-verilog)       | [![neorv32-verilog](https://img.shields.io/github/workflow/status/stnolting/neorv32-verilog/neorv32-verilog%20check/main?longCache=true&style=flat-square&label=neorv32-verilog&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verilog/actions/workflows/main.yml) |
 
-The NEORV32 is fully operational.
+**:rocket: The NEORV32 is fully operational.**
+
 The processor passes the official RISC-V architecture tests to ensure compatibility with the RISC-V ISA specs., which is checked by the
 [neorv32-riscof](https://github.com/stnolting/neorv32-riscof) repository. It can successfully run _any_ C program
 (for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example) folder) including CoreMark
