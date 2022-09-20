@@ -8,6 +8,7 @@ all: pdf html ug-pdf ug-html
 pdf:
 	[ -f revnumber.txt ] && REVNUMBER='-a revnumber='"$$(cat revnumber.txt)" || unset REVNUMBER; \
 	asciidoctor-pdf $$REVNUMBER \
+	  -a allow-uri-read \
 	  -a pdf-theme=neorv32-theme.yml \
 	  -r asciidoctor-diagram \
 	  datasheet/main.adoc \
@@ -25,6 +26,7 @@ html:
 ug-pdf:
 	[ -f revnumber.txt ] && REVNUMBER='-a revnumber='"$$(cat revnumber.txt)" || unset REVNUMBER; \
 	asciidoctor-pdf $$REVNUMBER \
+	  -a allow-uri-read \
 	  -a pdf-theme=neorv32-theme.yml \
 	  -r asciidoctor-diagram \
 	  userguide/main.adoc \
