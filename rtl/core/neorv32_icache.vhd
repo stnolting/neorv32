@@ -55,15 +55,15 @@ entity neorv32_icache is
     clear_i      : in  std_ulogic; -- cache clear
     miss_o       : out std_ulogic; -- cache miss
     -- host controller interface --
-    host_addr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    host_rdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    host_addr_i  : in  std_ulogic_vector(31 downto 0); -- bus access address
+    host_rdata_o : out std_ulogic_vector(31 downto 0); -- bus read data
     host_re_i    : in  std_ulogic; -- read enable
     host_ack_o   : out std_ulogic; -- bus transfer acknowledge
     host_err_o   : out std_ulogic; -- bus transfer error
     -- peripheral bus interface --
     bus_cached_o : out std_ulogic; -- set if cached (!) access in progress
-    bus_addr_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    bus_rdata_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    bus_addr_o   : out std_ulogic_vector(31 downto 0); -- bus access address
+    bus_rdata_i  : in  std_ulogic_vector(31 downto 0); -- bus read data
     bus_re_o     : out std_ulogic; -- read enable
     bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
     bus_err_i    : in  std_ulogic  -- bus transfer error
