@@ -52,6 +52,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
+    XLEN                         : natural; -- data path width
     HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
     CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
@@ -86,8 +87,8 @@ entity neorv32_cpu_control is
     rstn_i        : in  std_ulogic; -- global reset, low-active, async
     ctrl_o        : out std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     -- instruction fetch interface --
-    i_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    i_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    i_bus_addr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- bus access address
+    i_bus_rdata_i : in  std_ulogic_vector(31 downto 0); -- bus read data
     i_bus_re_o    : out std_ulogic; -- read enable
     i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
     i_bus_err_i   : in  std_ulogic; -- bus transfer error
@@ -97,15 +98,15 @@ entity neorv32_cpu_control is
     bus_d_wait_i  : in  std_ulogic; -- wait for bus
     -- data input --
     cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
-    alu_add_i     : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU address result
-    rs1_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
+    alu_add_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU address result
+    rs1_i         : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     -- data output --
-    imm_o         : out std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-    curr_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- current PC (corresponding to current instruction)
-    next_pc_o     : out std_ulogic_vector(data_width_c-1 downto 0); -- next PC (corresponding to next instruction)
-    csr_rdata_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
+    imm_o         : out std_ulogic_vector(XLEN-1 downto 0); -- immediate
+    curr_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
+    next_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- next PC (corresponding to next instruction)
+    csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
     -- FPU interface --
-    fpu_flags_i   : in  std_ulogic_vector(04 downto 0); -- exception flags
+    fpu_flags_i   : in  std_ulogic_vector(4 downto 0); -- exception flags
     -- debug mode (halt) request --
     db_halt_req_i : in  std_ulogic;
     -- interrupts (risc-v compliant) --
@@ -120,7 +121,7 @@ entity neorv32_cpu_control is
     pmp_addr_o    : out pmp_addr_if_t; -- addresses
     pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
     -- bus access exceptions --
-    mar_i         : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory address register
+    mar_i         : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
     ma_load_i     : in  std_ulogic; -- misaligned load data address
     ma_store_i    : in  std_ulogic; -- misaligned store data address
     be_load_i     : in  std_ulogic; -- bus error on load data access
@@ -141,7 +142,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     state_prev : fetch_engine_state_t;
     restart    : std_ulogic;
     unaligned  : std_ulogic;
-    pc         : std_ulogic_vector(data_width_c-1 downto 0);
+    pc         : std_ulogic_vector(XLEN-1 downto 0);
     reset      : std_ulogic;
     resp       : std_ulogic; -- bus response
     a_err      : std_ulogic; -- alignment error
@@ -204,12 +205,12 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     is_ici_nxt   : std_ulogic;
     --
     branch_taken : std_ulogic; -- branch condition fulfilled
-    pc           : std_ulogic_vector(data_width_c-1 downto 0); -- actual PC, corresponding to current executed instruction
+    pc           : std_ulogic_vector(XLEN-1 downto 0); -- actual PC, corresponding to current executed instruction
     pc_mux_sel   : std_ulogic; -- source select for PC update
     pc_we        : std_ulogic; -- PC update enabled
-    next_pc      : std_ulogic_vector(data_width_c-1 downto 0); -- next PC, corresponding to next instruction to be executed
-    next_pc_inc  : std_ulogic_vector(data_width_c-1 downto 0); -- increment to get next PC
-    pc_last      : std_ulogic_vector(data_width_c-1 downto 0); -- PC of last executed instruction
+    next_pc      : std_ulogic_vector(XLEN-1 downto 0); -- next PC, corresponding to next instruction to be executed
+    next_pc_inc  : std_ulogic_vector(XLEN-1 downto 0); -- increment to get next PC
+    pc_last      : std_ulogic_vector(XLEN-1 downto 0); -- PC of last executed instruction
     --
     sleep        : std_ulogic; -- CPU in sleep mode
     sleep_nxt    : std_ulogic;
@@ -247,21 +248,21 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- RISC-V control and status registers (CSRs) --
   type pmpcfg_t       is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
   type pmpcfg_rd_t    is array (0 to 3) of std_ulogic_vector(31 downto 0);
-  type pmpaddr_t      is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+  type pmpaddr_t      is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
   type mhpmevent_t    is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
-  type mhpmevent_rd_t is array (0 to 28) of std_ulogic_vector(data_width_c-1 downto 0);
-  type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(data_width_c-1 downto 0);
-  type mhpmcnt_nxt_t  is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(data_width_c downto 0);
+  type mhpmevent_rd_t is array (0 to 28) of std_ulogic_vector(XLEN-1 downto 0);
+  type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(XLEN-1 downto 0);
+  type mhpmcnt_nxt_t  is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(XLEN downto 0);
   type mhpmcnt_ovfl_t is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(0 downto 0);
-  type mhpmcnt_rd_t   is array (0 to 29) of std_ulogic_vector(data_width_c-1 downto 0);
+  type mhpmcnt_rd_t   is array (0 to 29) of std_ulogic_vector(XLEN-1 downto 0);
   type csr_t is record
     addr              : std_ulogic_vector(11 downto 0); -- csr address
     we                : std_ulogic; -- csr write enable
     we_nxt            : std_ulogic;
     re                : std_ulogic; -- csr read enable
     re_nxt            : std_ulogic;
-    wdata             : std_ulogic_vector(data_width_c-1 downto 0); -- csr write data
-    rdata             : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
+    wdata             : std_ulogic_vector(XLEN-1 downto 0); -- csr write data
+    rdata             : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
     --
     mstatus_mie       : std_ulogic; -- mstatus.MIE: global IRQ enable (R/W)
     mstatus_mpie      : std_ulogic; -- mstatus.MPIE: previous global IRQ enable (R/W)
@@ -287,24 +288,24 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     privilege         : std_ulogic; -- current privilege mode
     privilege_eff     : std_ulogic; -- current *effective* privilege mode
     --
-    mepc              : std_ulogic_vector(data_width_c-1 downto 0); -- mepc: machine exception pc (R/W)
+    mepc              : std_ulogic_vector(XLEN-1 downto 0); -- mepc: machine exception pc (R/W)
     mcause            : std_ulogic_vector(5 downto 0); -- mcause: machine trap cause (R/W)
-    mtvec             : std_ulogic_vector(data_width_c-1 downto 0); -- mtvec: machine trap-handler base address (R/W), bit 1:0 == 00
-    mtval             : std_ulogic_vector(data_width_c-1 downto 0); -- mtval: machine bad address or instruction (R/W)
+    mtvec             : std_ulogic_vector(XLEN-1 downto 0); -- mtvec: machine trap-handler base address (R/W), bit 1:0 == 00
+    mtval             : std_ulogic_vector(XLEN-1 downto 0); -- mtval: machine bad address or instruction (R/W)
     --
     mhpmevent         : mhpmevent_t; -- mhpmevent*: machine performance-monitoring event selector (R/W)
     mhpmevent_rd      : mhpmevent_rd_t; -- read data
     --
-    mscratch          : std_ulogic_vector(data_width_c-1 downto 0); -- mscratch: scratch register (R/W)
+    mscratch          : std_ulogic_vector(XLEN-1 downto 0); -- mscratch: scratch register (R/W)
     --
-    mcycle            : std_ulogic_vector(data_width_c-1 downto 0); -- mcycle (R/W)
-    mcycle_nxt        : std_ulogic_vector(data_width_c downto 0);
-    mcycle_ovfl       : std_ulogic_vector(00 downto 0); -- counter low-to-high-word overflow
-    mcycleh           : std_ulogic_vector(data_width_c-1 downto 0); -- mcycleh (R/W)
-    minstret          : std_ulogic_vector(data_width_c-1 downto 0); -- minstret (R/W)
-    minstret_nxt      : std_ulogic_vector(data_width_c downto 0);
-    minstret_ovfl     : std_ulogic_vector(00 downto 0); -- counter low-to-high-word overflow
-    minstreth         : std_ulogic_vector(data_width_c-1 downto 0); -- minstreth (R/W)
+    mcycle            : std_ulogic_vector(XLEN-1 downto 0); -- mcycle (R/W)
+    mcycle_nxt        : std_ulogic_vector(XLEN downto 0);
+    mcycle_ovfl       : std_ulogic_vector(0 downto 0); -- counter low-to-high-word overflow
+    mcycleh           : std_ulogic_vector(XLEN-1 downto 0); -- mcycleh (R/W)
+    minstret          : std_ulogic_vector(XLEN-1 downto 0); -- minstret (R/W)
+    minstret_nxt      : std_ulogic_vector(XLEN downto 0);
+    minstret_ovfl     : std_ulogic_vector(0 downto 0); -- counter low-to-high-word overflow
+    minstreth         : std_ulogic_vector(XLEN-1 downto 0); -- minstreth (R/W)
     --
     mhpmcounter       : mhpmcnt_t; -- mhpmcounter* (R/W), plus carry bit
     mhpmcounter_nxt   : mhpmcnt_nxt_t;
@@ -317,28 +318,28 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pmpcfg_rd         : pmpcfg_rd_t; -- physical memory protection - configuration read-back
     pmpaddr           : pmpaddr_t; -- physical memory protection - address registers (bits 33:2 of PHYSICAL address)
     --
-    frm               : std_ulogic_vector(02 downto 0); -- frm (R/W): FPU rounding mode
-    fflags            : std_ulogic_vector(04 downto 0); -- fflags (R/W): FPU exception flags
+    frm               : std_ulogic_vector(2 downto 0); -- frm (R/W): FPU rounding mode
+    fflags            : std_ulogic_vector(4 downto 0); -- fflags (R/W): FPU exception flags
     --
     dcsr_ebreakm      : std_ulogic; -- dcsr.ebreakm (R/W): behavior of ebreak instruction on m-mode
     dcsr_ebreaku      : std_ulogic; -- dcsr.ebreaku (R/W): behavior of ebreak instruction on u-mode
     dcsr_step         : std_ulogic; -- dcsr.step (R/W): single-step mode
     dcsr_prv          : std_ulogic; -- dcsr.prv (R/W): current privilege level when entering debug mode
-    dcsr_cause        : std_ulogic_vector(02 downto 0); -- dcsr.cause (R/-): why was debug mode entered
-    dcsr_rd           : std_ulogic_vector(data_width_c-1 downto 0); -- dcsr (R/(W)): debug mode control and status register
-    dpc               : std_ulogic_vector(data_width_c-1 downto 0); -- dpc (R/W): debug mode program counter
-    dscratch0         : std_ulogic_vector(data_width_c-1 downto 0); -- dscratch0 (R/W): debug mode scratch register 0
+    dcsr_cause        : std_ulogic_vector(2 downto 0); -- dcsr.cause (R/-): why was debug mode entered
+    dcsr_rd           : std_ulogic_vector(XLEN-1 downto 0); -- dcsr (R/(W)): debug mode control and status register
+    dpc               : std_ulogic_vector(XLEN-1 downto 0); -- dpc (R/W): debug mode program counter
+    dscratch0         : std_ulogic_vector(XLEN-1 downto 0); -- dscratch0 (R/W): debug mode scratch register 0
     --
     tdata1_exe        : std_ulogic; -- enable (match) trigger
-    tdata1_rd         : std_ulogic_vector(data_width_c-1 downto 0); -- tdata1 (R/(W)): trigger register read-back
-    tdata2            : std_ulogic_vector(data_width_c-1 downto 0); -- tdata2 (R/W): address-match register
+    tdata1_rd         : std_ulogic_vector(XLEN-1 downto 0); -- tdata1 (R/(W)): trigger register read-back
+    tdata2            : std_ulogic_vector(XLEN-1 downto 0); -- tdata2 (R/W): address-match register
   end record;
   signal csr : csr_t;
 
   -- counter CSRs write access --
   type hpm_we_t is array (0 to 1) of std_ulogic_vector(28 downto 0);
   type cnt_csr_we_t is record
-    wdata    : std_ulogic_vector(data_width_c-1 downto 0);
+    wdata    : std_ulogic_vector(XLEN-1 downto 0);
     cycle    : std_ulogic_vector(1 downto 0);
     instret  : std_ulogic_vector(1 downto 0);
     hpm      : hpm_we_t;
@@ -406,7 +407,7 @@ begin
 
         when IF_RESTART => -- set new fetch start address
         -- ------------------------------------------------------------
-          fetch_engine.pc        <= execute_engine.pc(data_width_c-1 downto 2) & "00"; -- initialize with "real" PC, 32-bit aligned
+          fetch_engine.pc        <= execute_engine.pc(XLEN-1 downto 2) & "00"; -- initialize with "real" PC, 32-bit aligned
           fetch_engine.unaligned <= execute_engine.pc(1);
           fetch_engine.state     <= IF_REQUEST;
 
@@ -454,7 +455,7 @@ begin
   end process fetch_engine_fsm;
 
   -- PC output for instruction fetch --
-  i_bus_addr_o <= fetch_engine.pc(data_width_c-1 downto 2) & "00"; -- 32-bit aligned
+  i_bus_addr_o <= fetch_engine.pc(XLEN-1 downto 2) & "00"; -- 32-bit aligned
 
   -- instruction fetch (read) request if IPB not full --
   i_bus_re_o <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
@@ -609,34 +610,34 @@ begin
   begin
     if rising_edge(clk_i) then
       opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
-      case opcode_v is -- save some bits here - the two LSBs are always "11" for rv32
+      case opcode_v is -- save some bits here - the two LSBs are always "11" 32-bit instructions
         when opcode_store_c => -- S-immediate: store
-          imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
-          imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
-          imm_o(04 downto 01) <= execute_engine.i_reg(11 downto 08);
-          imm_o(00)           <= execute_engine.i_reg(07);
+          imm_o(XLEN-1 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
+          imm_o(10 downto 05)     <= execute_engine.i_reg(30 downto 25);
+          imm_o(04 downto 01)     <= execute_engine.i_reg(11 downto 08);
+          imm_o(00)               <= execute_engine.i_reg(07);
         when opcode_branch_c => -- B-immediate: conditional branches
-          imm_o(31 downto 12) <= (others => execute_engine.i_reg(31)); -- sign extension
-          imm_o(11)           <= execute_engine.i_reg(07);
-          imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
-          imm_o(04 downto 01) <= execute_engine.i_reg(11 downto 08);
-          imm_o(00)           <= '0';
+          imm_o(XLEN-1 downto 12) <= (others => execute_engine.i_reg(31)); -- sign extension
+          imm_o(11)               <= execute_engine.i_reg(07);
+          imm_o(10 downto 05)     <= execute_engine.i_reg(30 downto 25);
+          imm_o(04 downto 01)     <= execute_engine.i_reg(11 downto 08);
+          imm_o(00)               <= '0';
         when opcode_lui_c | opcode_auipc_c => -- U-immediate: lui, auipc
-          imm_o(31 downto 20) <= execute_engine.i_reg(31 downto 20);
-          imm_o(19 downto 12) <= execute_engine.i_reg(19 downto 12);
-          imm_o(11 downto 00) <= (others => '0');
+          imm_o(XLEN-1 downto 20) <= execute_engine.i_reg(31 downto 20);
+          imm_o(19 downto 12)     <= execute_engine.i_reg(19 downto 12);
+          imm_o(11 downto 00)     <= (others => '0');
         when opcode_jal_c => -- J-immediate: unconditional jumps
-          imm_o(31 downto 20) <= (others => execute_engine.i_reg(31)); -- sign extension
-          imm_o(19 downto 12) <= execute_engine.i_reg(19 downto 12);
-          imm_o(11)           <= execute_engine.i_reg(20);
-          imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
-          imm_o(04 downto 01) <= execute_engine.i_reg(24 downto 21);
-          imm_o(00)           <= '0';
+          imm_o(XLEN-1 downto 20) <= (others => execute_engine.i_reg(31)); -- sign extension
+          imm_o(19 downto 12)     <= execute_engine.i_reg(19 downto 12);
+          imm_o(11)               <= execute_engine.i_reg(20);
+          imm_o(10 downto 05)     <= execute_engine.i_reg(30 downto 25);
+          imm_o(04 downto 01)     <= execute_engine.i_reg(24 downto 21);
+          imm_o(00)               <= '0';
         when others => -- I-immediate: ALU-immediate, loads, jump-and-link with register
-          imm_o(31 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
-          imm_o(10 downto 05) <= execute_engine.i_reg(30 downto 25);
-          imm_o(04 downto 01) <= execute_engine.i_reg(24 downto 21);
-          imm_o(00)           <= execute_engine.i_reg(20);
+          imm_o(XLEN-1 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
+          imm_o(10 downto 05)     <= execute_engine.i_reg(30 downto 25);
+          imm_o(04 downto 01)     <= execute_engine.i_reg(24 downto 21);
+          imm_o(00)               <= execute_engine.i_reg(20);
       end case;
     end if;
   end process imm_gen;
@@ -674,7 +675,7 @@ begin
       ctrl                       <= (others => '0');
       execute_engine.sleep       <= '0';
       execute_engine.pc_last     <= (others => '-'); -- reset value is irrelevant
-      execute_engine.pc          <= CPU_BOOT_ADDR(data_width_c-1 downto 2) & "00"; -- 32-bit aligned boot address
+      execute_engine.pc          <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
       execute_engine.next_pc     <= (others => '0');
     elsif rising_edge(clk_i) then
       -- execute engine arbiter --
@@ -704,9 +705,9 @@ begin
       -- PC update --
       if (execute_engine.pc_we = '1') then
         if (execute_engine.pc_mux_sel = '0') then
-          execute_engine.pc <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- normal (linear) increment OR trap enter/exit
+          execute_engine.pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0'; -- normal (linear) increment OR trap enter/exit
         else
-          execute_engine.pc <= alu_add_i(data_width_c-1 downto 1) & '0'; -- jump/taken_branch
+          execute_engine.pc <= alu_add_i(XLEN-1 downto 1) & '0'; -- jump/taken_branch
         end if;
       end if;
 
@@ -718,13 +719,13 @@ begin
           elsif (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_DEBUG = true) then -- any other exception INSIDE debug mode
             execute_engine.next_pc <= std_ulogic_vector(unsigned(CPU_DEBUG_ADDR) + 4); -- start at "parking loop" <exception_entry>
           else -- normal start of trap
-            execute_engine.next_pc <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- trap enter
+            execute_engine.next_pc <= csr.mtvec(XLEN-1 downto 2) & "00"; -- trap enter
           end if;
         when TRAP_EXIT => -- LEAVING trap environment
           if (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_DEBUG = true) then -- debug mode exit
-            execute_engine.next_pc <= csr.dpc(data_width_c-1 downto 1) & '0'; -- debug mode exit
+            execute_engine.next_pc <= csr.dpc(XLEN-1 downto 1) & '0'; -- debug mode exit
           else -- normal end of trap
-            execute_engine.next_pc <= csr.mepc(data_width_c-1 downto 1) & '0'; -- trap exit
+            execute_engine.next_pc <= csr.mepc(XLEN-1 downto 1) & '0'; -- trap exit
           end if;
         when EXECUTE => -- NORMAL pc increment
           execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc)); -- next linear PC
@@ -735,12 +736,12 @@ begin
   end process execute_engine_fsm_sync;
 
   -- PC increment for next linear instruction (+2 for compressed instr., +4 otherwise) --
-  execute_engine.next_pc_inc(data_width_c-1 downto 4) <= (others => '0');
+  execute_engine.next_pc_inc(XLEN-1 downto 4) <= (others => '0');
   execute_engine.next_pc_inc(3 downto 0) <= x"4" when ((execute_engine.is_ci = '0') or (CPU_EXTENSION_RISCV_C = false)) else x"2";
 
   -- PC output --
-  curr_pc_o <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- current PC
-  next_pc_o <= execute_engine.next_pc(data_width_c-1 downto 1) & '0'; -- next PC
+  curr_pc_o <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- current PC
+  next_pc_o <= execute_engine.next_pc(XLEN-1 downto 1) & '0'; -- next PC
 
 
   -- CPU Control Bus Output -----------------------------------------------------------------
@@ -1604,7 +1605,7 @@ begin
   -- Control and Status Registers - Write Data ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_write_data: process(execute_engine.i_reg, csr.rdata, rs1_i)
-    variable tmp_v : std_ulogic_vector(data_width_c-1 downto 0);
+    variable tmp_v : std_ulogic_vector(XLEN-1 downto 0);
   begin
     -- immediate/register operand --
     if (execute_engine.i_reg(instr_funct3_msb_c) = '1') then
@@ -1723,7 +1724,7 @@ begin
             end if;
             -- R/W: mtvec - machine trap-handler base address (for ALL exceptions) --
             if (csr.addr(2 downto 0) = csr_mtvec_c(2 downto 0)) then
-              csr.mtvec <= csr.wdata(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
+              csr.mtvec <= csr.wdata(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0
             end if;
             -- R/W: mcounteren - machine counter enable register --
             if (CPU_EXTENSION_RISCV_U = true) then -- this CSR is hardwired to zero if user mode is not implemented
@@ -1782,11 +1783,11 @@ begin
                 if (i < PMP_NUM_REGIONS-1) then
                   if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') and -- unlocked access
                     ((csr.pmpcfg(i+1)(7) = '0') or (csr.pmpcfg(i+1)(3) = '0')) then -- pmpcfg(i+1) not "LOCKED TOR" [TOR-mode only!]
-                    csr.pmpaddr(i) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+                    csr.pmpaddr(i) <= csr.wdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
                   end if;
                 else -- very last entry
                   if (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) and (csr.pmpcfg(i)(7) = '0') then -- unlocked access
-                    csr.pmpaddr(i) <= csr.wdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+                    csr.pmpaddr(i) <= csr.wdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
                   end if;
                 end if;
               end loop; -- i (PMP regions)
@@ -1830,7 +1831,7 @@ begin
               end if;
               -- R/W: dpc - debug mode program counter --
               if (csr.addr(1 downto 0) = csr_dpc_c(1 downto 0)) then
-                csr.dpc <= csr.wdata(data_width_c-1 downto 1) & '0';
+                csr.dpc <= csr.wdata(XLEN-1 downto 1) & '0';
               end if;
               -- R/W: dscratch0 - debug mode scratch register 0 --
               if (csr.addr(1 downto 0) = csr_dscratch0_c(1 downto 0)) then
@@ -1850,7 +1851,7 @@ begin
                 end if;
                 -- R/W: tdata2 - address compare --
                 if (csr.addr(3 downto 0) = csr_tdata2_c(3 downto 0)) then
-                  csr.tdata2 <= csr.wdata(data_width_c-1 downto 1) & '0';
+                  csr.tdata2 <= csr.wdata(XLEN-1 downto 1) & '0';
                 end if;
               end if;
             end if;
@@ -1884,15 +1885,15 @@ begin
 
               -- trap PC --
               if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS (async source)
-                csr.mepc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
+                csr.mepc <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
               else -- for sync. EXCEPTIONS (sync source)
-                csr.mepc <= execute_engine.pc_last(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
+                csr.mepc <= execute_engine.pc_last(XLEN-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
               end if;
 
               -- trap value --
               case trap_ctrl.cause is
                 when trap_ima_c | trap_iba_c => -- misaligned instruction address OR instruction access error
-                  csr.mtval <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- address of faulting instruction access
+                  csr.mtval <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- address of faulting instruction access
                 when trap_lma_c | trap_lbe_c | trap_sma_c | trap_sbe_c => -- misaligned load/store address OR load/store access error
                   csr.mtval <= mar_i; -- faulting data access address
                 when others => -- everything else including all interrupts
@@ -1914,9 +1915,9 @@ begin
 
               -- trap PC --
               if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS (async source)
-                csr.dpc <= execute_engine.pc(data_width_c-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
+                csr.dpc <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
               else -- for sync. EXCEPTIONS (sync source)
-                csr.dpc <= execute_engine.pc_last(data_width_c-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
+                csr.dpc <= execute_engine.pc_last(XLEN-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
               end if;
 
             end if;
@@ -1971,7 +1972,7 @@ begin
     pmp_ctrl_o    <= (others => (others => '0'));
     csr.pmpcfg_rd <= (others => (others => '0'));
     for i in 0 to PMP_NUM_REGIONS-1 loop
-      pmp_addr_o(i)(data_width_c-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i);
+      pmp_addr_o(i)(XLEN-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i);
       pmp_ctrl_o(i) <= csr.pmpcfg(i);
       csr.pmpcfg_rd(i/4)(8*(i mod 4)+7 downto 8*(i mod 4)+0) <= csr.pmpcfg(i);
     end loop;
@@ -2039,7 +2040,7 @@ begin
             csr.rdata(11) <= csr.mie_mei; -- machine external IRQ enable
             csr.rdata(31 downto 16) <= csr.mie_firq;
           when csr_mtvec_c => -- mtvec (r/w): machine trap-handler base address (for ALL exceptions)
-            csr.rdata <= csr.mtvec(data_width_c-1 downto 2) & "00"; -- mtvec.MODE=0
+            csr.rdata <= csr.mtvec(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0
           when csr_mcounteren_c => -- mcounteren (r/w): machine counter enable register,  hardwired to zero if user mode is not implemented
             csr.rdata(0) <= csr.mcounteren_cy and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- enable user-level access to cycle[h]
             csr.rdata(1) <= csr.mcounteren_tm and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- enable user-level access to time[h]
@@ -2050,7 +2051,7 @@ begin
           when csr_mscratch_c => -- mscratch (r/w): machine scratch register
             csr.rdata <= csr.mscratch;
           when csr_mepc_c => -- mepc (r/w): machine exception program counter
-            csr.rdata <= csr.mepc(data_width_c-1 downto 1) & '0';
+            csr.rdata <= csr.mepc(XLEN-1 downto 1) & '0';
           when csr_mcause_c => -- mcause (r/w): machine trap cause
             csr.rdata(31)         <= csr.mcause(5);
             csr.rdata(4 downto 0) <= csr.mcause(4 downto 0);
@@ -2071,22 +2072,22 @@ begin
 
           -- physical memory protection - addresses (r/w) --
           -- --------------------------------------------------------------------
-          when csr_pmpaddr0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(00); else NULL; end if;
-          when csr_pmpaddr1_c  => if (PMP_NUM_REGIONS > 01) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(01); else NULL; end if;
-          when csr_pmpaddr2_c  => if (PMP_NUM_REGIONS > 02) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(02); else NULL; end if;
-          when csr_pmpaddr3_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(03); else NULL; end if;
-          when csr_pmpaddr4_c  => if (PMP_NUM_REGIONS > 04) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(04); else NULL; end if;
-          when csr_pmpaddr5_c  => if (PMP_NUM_REGIONS > 05) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(05); else NULL; end if;
-          when csr_pmpaddr6_c  => if (PMP_NUM_REGIONS > 06) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(06); else NULL; end if;
-          when csr_pmpaddr7_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(07); else NULL; end if;
-          when csr_pmpaddr8_c  => if (PMP_NUM_REGIONS > 08) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(08); else NULL; end if;
-          when csr_pmpaddr9_c  => if (PMP_NUM_REGIONS > 09) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(09); else NULL; end if;
-          when csr_pmpaddr10_c => if (PMP_NUM_REGIONS > 10) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(10); else NULL; end if;
-          when csr_pmpaddr11_c => if (PMP_NUM_REGIONS > 11) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(11); else NULL; end if;
-          when csr_pmpaddr12_c => if (PMP_NUM_REGIONS > 12) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(12); else NULL; end if;
-          when csr_pmpaddr13_c => if (PMP_NUM_REGIONS > 13) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(13); else NULL; end if;
-          when csr_pmpaddr14_c => if (PMP_NUM_REGIONS > 14) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(14); else NULL; end if;
-          when csr_pmpaddr15_c => if (PMP_NUM_REGIONS > 15) then csr.rdata(data_width_c-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(15); else NULL; end if;
+          when csr_pmpaddr0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(00); else NULL; end if;
+          when csr_pmpaddr1_c  => if (PMP_NUM_REGIONS > 01) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(01); else NULL; end if;
+          when csr_pmpaddr2_c  => if (PMP_NUM_REGIONS > 02) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(02); else NULL; end if;
+          when csr_pmpaddr3_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(03); else NULL; end if;
+          when csr_pmpaddr4_c  => if (PMP_NUM_REGIONS > 04) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(04); else NULL; end if;
+          when csr_pmpaddr5_c  => if (PMP_NUM_REGIONS > 05) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(05); else NULL; end if;
+          when csr_pmpaddr6_c  => if (PMP_NUM_REGIONS > 06) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(06); else NULL; end if;
+          when csr_pmpaddr7_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(07); else NULL; end if;
+          when csr_pmpaddr8_c  => if (PMP_NUM_REGIONS > 08) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(08); else NULL; end if;
+          when csr_pmpaddr9_c  => if (PMP_NUM_REGIONS > 09) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(09); else NULL; end if;
+          when csr_pmpaddr10_c => if (PMP_NUM_REGIONS > 10) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(10); else NULL; end if;
+          when csr_pmpaddr11_c => if (PMP_NUM_REGIONS > 11) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(11); else NULL; end if;
+          when csr_pmpaddr12_c => if (PMP_NUM_REGIONS > 12) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(12); else NULL; end if;
+          when csr_pmpaddr13_c => if (PMP_NUM_REGIONS > 13) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(13); else NULL; end if;
+          when csr_pmpaddr14_c => if (PMP_NUM_REGIONS > 14) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(14); else NULL; end if;
+          when csr_pmpaddr15_c => if (PMP_NUM_REGIONS > 15) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(15); else NULL; end if;
 
           -- machine counter setup --
           -- --------------------------------------------------------------------
@@ -2550,7 +2551,7 @@ begin
 
   -- trigger to enter debug-mode: instruction address match (fire AFTER execution) --
   hw_trigger_fire <= '1' when (CPU_EXTENSION_RISCV_DEBUG = true) and (csr.tdata1_exe = '1') and
-                              (csr.tdata2(data_width_c-1 downto 1) = execute_engine.pc(data_width_c-1 downto 1)) and
+                              (csr.tdata2(XLEN-1 downto 1) = execute_engine.pc(XLEN-1 downto 1)) and
                               (execute_engine.state = EXECUTE) else '0';
 
 
