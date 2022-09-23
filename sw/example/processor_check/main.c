@@ -295,7 +295,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("<skipped, n.a.>\n");
+    PRINT_STANDARD("[skipped, n.a.]\n");
   }
 
 
@@ -489,7 +489,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("<skipped, n.a.>\n");
+    PRINT_STANDARD("[skipped, n.a.]\n");
   }
 
 
@@ -573,7 +573,7 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("<skipped, n.a. with C-ext>\n");
+    PRINT_STANDARD("[skipped, n.a. with C-ext]\n");
   }
 
 
@@ -650,7 +650,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("<skipped, n.a. with C-ext>\n");
+    PRINT_STANDARD("[skipped, n.a. with C-ext]\n");
   }
 
 
@@ -674,7 +674,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("<skipped>\n");
+    PRINT_STANDARD("[skipped]\n");
   }
 
 
@@ -1019,7 +1019,7 @@ int main() {
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] FIRQ1 (CFS) ", cnt_test);
-  PRINT_STANDARD("<skipped, n.a.>\n");
+  PRINT_STANDARD("[skipped, n.a.]\n");
 
 
   // ----------------------------------------------------------
@@ -1503,7 +1503,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 14..15 (reserved)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ14..15 <skipped, n.a.>\n", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ14..15 [skipped, n.a.]\n", cnt_test);
 
 
   // ----------------------------------------------------------
@@ -1736,7 +1736,7 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("<skipped, n.a.>\n");
+    PRINT_STANDARD("[skipped, n.a.]\n");
   }
 
 
@@ -1827,7 +1827,7 @@ void xirq_trap_handler1(void) {
  **************************************************************************/
 void test_ok(void) {
 
-  PRINT_STANDARD("%c[1m<ok>%c[0m\n", 27, 27);
+  PRINT_STANDARD("%c[1m[ok]%c[0m\n", 27, 27);
   cnt_ok++;
 }
 
@@ -1837,7 +1837,7 @@ void test_ok(void) {
  **************************************************************************/
 void test_fail(void) {
 
-  PRINT_CRITICAL("%c[1m<fail>%c[0m\n", 27, 27);
+  PRINT_CRITICAL("%c[1m[fail]%c[0m\n", 27, 27);
   cnt_fail++;
 }
 
