@@ -47,7 +47,6 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    XLEN                         : natural := 32; -- data path width
     HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
     CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
@@ -83,7 +82,7 @@ entity neorv32_cpu is
     sleep_o       : out std_ulogic; -- cpu is in sleep mode when set
     debug_o       : out std_ulogic; -- cpu is in debug mode when set
     -- instruction bus interface --
-    i_bus_addr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- bus access address
+    i_bus_addr_o  : out std_ulogic_vector(31 downto 0); -- bus access address
     i_bus_rdata_i : in  std_ulogic_vector(31 downto 0); -- bus read data
     i_bus_re_o    : out std_ulogic; -- read request
     i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
@@ -91,10 +90,10 @@ entity neorv32_cpu is
     i_bus_fence_o : out std_ulogic; -- executed FENCEI operation
     i_bus_priv_o  : out std_ulogic; -- current effective privilege level
     -- data bus interface --
-    d_bus_addr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- bus access address
-    d_bus_rdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- bus read data
-    d_bus_wdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- bus write data
-    d_bus_ben_o   : out std_ulogic_vector((XLEN/8)-1 downto 0); -- byte enable
+    d_bus_addr_o  : out std_ulogic_vector(31 downto 0); -- bus access address
+    d_bus_rdata_i : in  std_ulogic_vector(31 downto 0); -- bus read data
+    d_bus_wdata_o : out std_ulogic_vector(31 downto 0); -- bus write data
+    d_bus_ben_o   : out std_ulogic_vector(3 downto 0); -- byte enable
     d_bus_we_o    : out std_ulogic; -- write request
     d_bus_re_o    : out std_ulogic; -- read request
     d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
@@ -115,6 +114,11 @@ entity neorv32_cpu is
 end neorv32_cpu;
 
 architecture neorv32_cpu_rtl of neorv32_cpu is
+
+  -- RV64: WORK IN PROGRESS -----------------------------------------------------------------------
+  -- not available as CPU generic as rv64 ISA extension is not (fully) supported yet
+  constant XLEN : natural := 32; -- data path width
+  -- ----------------------------------------------------------------------------------------------
 
   -- local signals --
   signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus

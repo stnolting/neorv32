@@ -1120,7 +1120,6 @@ package neorv32_package is
   component neorv32_cpu
     generic (
       -- General --
-      XLEN                         : natural := 32; -- data path width
       HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
       CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
@@ -1156,7 +1155,7 @@ package neorv32_package is
       sleep_o       : out std_ulogic; -- cpu is in sleep mode when set
       debug_o       : out std_ulogic; -- cpu is in debug mode when set
       -- instruction bus interface --
-      i_bus_addr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- bus access address
+      i_bus_addr_o  : out std_ulogic_vector(31 downto 0); -- bus access address
       i_bus_rdata_i : in  std_ulogic_vector(31 downto 0); -- bus read data
       i_bus_re_o    : out std_ulogic; -- read request
       i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
@@ -1164,10 +1163,10 @@ package neorv32_package is
       i_bus_fence_o : out std_ulogic; -- executed FENCEI operation
       i_bus_priv_o  : out std_ulogic; -- current effective privilege level
       -- data bus interface --
-      d_bus_addr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- bus access address
-      d_bus_rdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- bus read data
-      d_bus_wdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- bus write data
-      d_bus_ben_o   : out std_ulogic_vector((XLEN/8)-1 downto 0); -- byte enable
+      d_bus_addr_o  : out std_ulogic_vector(31 downto 0); -- bus access address
+      d_bus_rdata_i : in  std_ulogic_vector(31 downto 0); -- bus read data
+      d_bus_wdata_o : out std_ulogic_vector(31 downto 0); -- bus write data
+      d_bus_ben_o   : out std_ulogic_vector(3 downto 0); -- byte enable
       d_bus_we_o    : out std_ulogic; -- write request
       d_bus_re_o    : out std_ulogic; -- read request
       d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
