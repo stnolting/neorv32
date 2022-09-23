@@ -44,7 +44,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_shifter is
   generic (
-    FAST_SHIFT_EN : boolean -- implement fast but large barrel shifter
+    XLEN          : natural; -- data path width
+    FAST_SHIFT_EN : boolean  -- implement fast but large barrel shifter
   );
   port (
     -- global control --
@@ -53,10 +54,10 @@ entity neorv32_cpu_cp_shifter is
     ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     start_i : in  std_ulogic; -- trigger operation
     -- data input --
-    rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
-    shamt_i : in  std_ulogic_vector(index_size_f(data_width_c)-1 downto 0); -- shift amount
+    rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
+    shamt_i : in  std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
     -- result and status --
-    res_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
+    res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
     valid_o : out std_ulogic -- data output valid
   );
 end neorv32_cpu_cp_shifter;
@@ -68,16 +69,16 @@ architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
     busy    : std_ulogic;
     busy_ff : std_ulogic;
     done    : std_ulogic;
-    cnt     : std_ulogic_vector(index_size_f(data_width_c)-1 downto 0);
-    sreg    : std_ulogic_vector(data_width_c-1 downto 0);
+    cnt     : std_ulogic_vector(index_size_f(XLEN)-1 downto 0);
+    sreg    : std_ulogic_vector(XLEN-1 downto 0);
   end record;
   signal shifter : shifter_t;
 
   -- barrel shifter --
-  type bs_level_t is array (index_size_f(data_width_c) downto 0) of std_ulogic_vector(data_width_c-1 downto 0);
+  type bs_level_t is array (index_size_f(XLEN) downto 0) of std_ulogic_vector(XLEN-1 downto 0);
   signal bs_level  : bs_level_t;
   signal bs_start  : std_ulogic;
-  signal bs_result : std_ulogic_vector(data_width_c-1 downto 0);
+  signal bs_result : std_ulogic_vector(XLEN-1 downto 0);
 
 begin
 
@@ -134,15 +135,15 @@ begin
     begin
       -- input level: convert left shifts to right shifts --
       if (ctrl_i(ctrl_ir_funct3_2_c) = '0') then -- is left shift?
-        bs_level(index_size_f(data_width_c)) <= bit_rev_f(rs1_i); -- reverse bit order of input operand
+        bs_level(index_size_f(XLEN)) <= bit_rev_f(rs1_i); -- reverse bit order of input operand
       else
-        bs_level(index_size_f(data_width_c)) <= rs1_i;
+        bs_level(index_size_f(XLEN)) <= rs1_i;
       end if;
       -- shifter array (right-shifts only) --
-      for i in index_size_f(data_width_c)-1 downto 0 loop
+      for i in index_size_f(XLEN)-1 downto 0 loop
         if (shamt_i(i) = '1') then
-          bs_level(i)(data_width_c-1 downto data_width_c-(2**i)) <= (others => (bs_level(i+1)(data_width_c-1) and ctrl_i(ctrl_ir_funct12_10_c)));
-          bs_level(i)((data_width_c-(2**i))-1 downto 0) <= bs_level(i+1)(data_width_c-1 downto 2**i);
+          bs_level(i)(XLEN-1 downto XLEN-(2**i)) <= (others => (bs_level(i+1)(XLEN-1) and ctrl_i(ctrl_ir_funct12_10_c)));
+          bs_level(i)((XLEN-(2**i))-1 downto 0) <= bs_level(i+1)(XLEN-1 downto 2**i);
         else
           bs_level(i) <= bs_level(i+1);
         end if;

@@ -43,6 +43,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_alu is
   generic (
+    XLEN                      : natural; -- data path width
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_B     : boolean; -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_M     : boolean; -- implement mul/div extension?
@@ -59,14 +60,14 @@ entity neorv32_cpu_alu is
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     -- data input --
-    rs1_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
-    rs2_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
-    pc_i        : in  std_ulogic_vector(data_width_c-1 downto 0); -- current PC
-    imm_i       : in  std_ulogic_vector(data_width_c-1 downto 0); -- immediate
+    rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
+    rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+    pc_i        : in  std_ulogic_vector(XLEN-1 downto 0); -- current PC
+    imm_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- immediate
     -- data output --
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
-    res_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
-    add_o       : out std_ulogic_vector(data_width_c-1 downto 0); -- address computation result
+    res_o       : out std_ulogic_vector(XLEN-1 downto 0); -- ALU result
+    add_o       : out std_ulogic_vector(XLEN-1 downto 0); -- address computation result
     fpu_flags_o : out std_ulogic_vector(4 downto 0); -- FPU exception flags
     -- status --
     idone_o     : out std_ulogic -- iterative processing units done?
@@ -76,19 +77,19 @@ end neorv32_cpu_alu;
 architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
 
   -- comparator --
-  signal cmp_opx : std_ulogic_vector(data_width_c downto 0);
-  signal cmp_opy : std_ulogic_vector(data_width_c downto 0);
+  signal cmp_opx : std_ulogic_vector(XLEN downto 0);
+  signal cmp_opy : std_ulogic_vector(XLEN downto 0);
   signal cmp     : std_ulogic_vector(1 downto 0); -- comparator status
 
   -- operands --
-  signal opa, opb : std_ulogic_vector(data_width_c-1 downto 0);
+  signal opa, opb : std_ulogic_vector(XLEN-1 downto 0);
 
   -- intermediate results --
-  signal addsub_res : std_ulogic_vector(data_width_c downto 0);
-  signal cp_res     : std_ulogic_vector(data_width_c-1 downto 0);
+  signal addsub_res : std_ulogic_vector(XLEN downto 0);
+  signal cp_res     : std_ulogic_vector(XLEN-1 downto 0);
 
   -- co-processor interface --
-  type cp_data_if_t  is array (0 to 5) of std_ulogic_vector(data_width_c-1 downto 0);
+  type cp_data_if_t  is array (0 to 5) of std_ulogic_vector(XLEN-1 downto 0);
   signal cp_result : cp_data_if_t; -- co-processor i result
   signal cp_start  : std_ulogic_vector(5 downto 0); -- trigger co-processor i
   signal cp_valid  : std_ulogic_vector(5 downto 0); -- co-processor i done
@@ -114,7 +115,7 @@ begin
   -- Adder/Subtracter Core ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   arithmetic_core: process(ctrl_i, opa, opb)
-    variable opa_v, opb_v : std_ulogic_vector(data_width_c downto 0);
+    variable opa_v, opb_v : std_ulogic_vector(XLEN downto 0);
   begin
     -- operand sign-extension --
     opa_v := (opa(opa'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & opa;
@@ -128,7 +129,7 @@ begin
   end process arithmetic_core;
 
   -- direct output of adder result --
-  add_o <= addsub_res(data_width_c-1 downto 0);
+  add_o <= addsub_res(XLEN-1 downto 0);
 
 
   -- ALU Operation Select -------------------------------------------------------------------
@@ -136,15 +137,15 @@ begin
   alu_core: process(ctrl_i, addsub_res, cp_res, rs1_i, opb)
   begin
     case ctrl_i(ctrl_alu_op2_c downto ctrl_alu_op0_c) is
-      when alu_op_add_c  => res_o <= addsub_res(data_width_c-1 downto 0); -- default
-      when alu_op_sub_c  => res_o <= addsub_res(data_width_c-1 downto 0);
+      when alu_op_add_c  => res_o <= addsub_res(XLEN-1 downto 0); -- default
+      when alu_op_sub_c  => res_o <= addsub_res(XLEN-1 downto 0);
       when alu_op_cp_c   => res_o <= cp_res;
       when alu_op_slt_c  => res_o <= (others => '0'); res_o(0) <= addsub_res(addsub_res'left); -- carry/borrow
       when alu_op_movb_c => res_o <= opb;
       when alu_op_xor_c  => res_o <= rs1_i xor opb; -- only rs1 required for logic ops (opa would also contain pc)
       when alu_op_or_c   => res_o <= rs1_i or  opb;
       when alu_op_and_c  => res_o <= rs1_i and opb;
-      when others        => res_o <= addsub_res(data_width_c-1 downto 0); -- don't care
+      when others        => res_o <= addsub_res(XLEN-1 downto 0); -- don't care
     end case;
   end process alu_core;
 
@@ -170,6 +171,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_shifter_inst: neorv32_cpu_cp_shifter
   generic map (
+    XLEN          => XLEN,         -- data path width
     FAST_SHIFT_EN => FAST_SHIFT_EN -- use barrel shifter for shift operations
   )
   port map (
@@ -180,7 +182,7 @@ begin
     start_i => cp_start(0),  -- trigger operation
     -- data input --
     rs1_i   => rs1_i,        -- rf source 1
-    shamt_i => opb(index_size_f(data_width_c)-1 downto 0), -- shift amount
+    shamt_i => opb(index_size_f(XLEN)-1 downto 0), -- shift amount
     -- result and status --
     res_o   => cp_result(0), -- operation result
     valid_o => cp_valid(0)   -- data output valid
@@ -193,6 +195,7 @@ begin
   if (CPU_EXTENSION_RISCV_M = true) or (CPU_EXTENSION_RISCV_Zmmul = true) generate
     neorv32_cpu_cp_muldiv_inst: neorv32_cpu_cp_muldiv
     generic map (
+      XLEN        => XLEN,                 -- data path width
       FAST_MUL_EN => FAST_MUL_EN,          -- use DSPs for faster multiplication
       DIVISION_EN => CPU_EXTENSION_RISCV_M -- implement divider hardware
     )
@@ -224,6 +227,7 @@ begin
   if (CPU_EXTENSION_RISCV_B = true) generate
     neorv32_cpu_cp_bitmanip_inst: neorv32_cpu_cp_bitmanip
     generic map (
+      XLEN          => XLEN,         -- data path width
       FAST_SHIFT_EN => FAST_SHIFT_EN -- use barrel shifter for shift operations
     )
     port map (
@@ -236,7 +240,7 @@ begin
       cmp_i   => cmp,          -- comparator status
       rs1_i   => rs1_i,        -- rf source 1
       rs2_i   => rs2_i,        -- rf source 2
-      shamt_i => opb(index_size_f(data_width_c)-1 downto 0), -- shift amount
+      shamt_i => opb(index_size_f(XLEN)-1 downto 0), -- shift amount
       -- result and status --
       res_o   => cp_result(2), -- operation result
       valid_o => cp_valid(2)   -- data output valid
@@ -255,6 +259,9 @@ begin
   neorv32_cpu_cp_fpu_inst_true:
   if (CPU_EXTENSION_RISCV_Zfinx = true) generate
     neorv32_cpu_cp_fpu_inst: neorv32_cpu_cp_fpu
+    generic map (
+      XLEN => XLEN -- data path width
+    )
     port map (
       -- global control --
       clk_i    => clk_i,        -- global clock, rising edge  
@@ -285,6 +292,9 @@ begin
   neorv32_cpu_cp_cfu_inst_true:
   if (CPU_EXTENSION_RISCV_Zxcfu = true) generate
     neorv32_cpu_cp_cfu_inst: neorv32_cpu_cp_cfu
+    generic map (
+    XLEN => XLEN -- data path width
+    )
     port map (
       -- global control --
       clk_i   => clk_i,        -- global clock, rising edge
