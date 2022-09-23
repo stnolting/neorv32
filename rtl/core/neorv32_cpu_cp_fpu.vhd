@@ -56,6 +56,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_fpu is
+  generic (
+    XLEN : natural -- data path width
+  );
   port (
     -- global control --
     clk_i    : in  std_ulogic; -- global clock, rising edge
@@ -64,10 +67,10 @@ entity neorv32_cpu_cp_fpu is
     start_i  : in  std_ulogic; -- trigger operation
     -- data input --
     cmp_i    : in  std_ulogic_vector(1 downto 0); -- comparator status
-    rs1_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
-    rs2_i    : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
+    rs1_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
+    rs2_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     -- result and status --
-    res_o    : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
+    res_o    : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
     fflags_o : out std_ulogic_vector(4 downto 0); -- exception flags
     valid_o  : out std_ulogic -- data output valid
   );

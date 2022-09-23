@@ -287,8 +287,8 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- bus interface - instruction fetch --
   type bus_i_interface_t is record
-    addr   : std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    addr   : std_ulogic_vector(31 downto 0); -- bus access address
+    rdata  : std_ulogic_vector(31 downto 0); -- bus read data
     re     : std_ulogic; -- read request
     ack    : std_ulogic; -- bus transfer acknowledge
     err    : std_ulogic; -- bus transfer error
@@ -301,9 +301,9 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- bus interface - data access --
   type bus_d_interface_t is record
-    addr   : std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    rdata  : std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    wdata  : std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
+    addr   : std_ulogic_vector(31 downto 0); -- bus access address
+    rdata  : std_ulogic_vector(31 downto 0); -- bus read data
+    wdata  : std_ulogic_vector(31 downto 0); -- bus write data
     ben    : std_ulogic_vector(03 downto 0); -- byte enable
     we     : std_ulogic; -- write request
     re     : std_ulogic; -- read request
@@ -345,10 +345,12 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- module response bus - entry type --
   type resp_bus_entry_t is record
-    rdata : std_ulogic_vector(data_width_c-1 downto 0);
+    rdata : std_ulogic_vector(31 downto 0);
     ack   : std_ulogic;
     err   : std_ulogic;
   end record;
+
+  -- termination for unused/unimplemented bus endpoints --
   constant resp_bus_entry_terminate_c : resp_bus_entry_t := (rdata => (others => '0'), ack => '0', err => '0');
 
   -- module response bus - device ID --
@@ -724,7 +726,7 @@ begin
 
   -- bus response --
   bus_response: process(resp_bus)
-    variable rdata_v : std_ulogic_vector(data_width_c-1 downto 0);
+    variable rdata_v : std_ulogic_vector(31 downto 0);
     variable ack_v   : std_ulogic;
     variable err_v   : std_ulogic;
   begin
@@ -990,7 +992,7 @@ begin
 
   -- IO Access? -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  io_acc  <= '1' when (p_bus.addr(data_width_c-1 downto index_size_f(io_size_c)) = io_base_c(data_width_c-1 downto index_size_f(io_size_c))) else '0';
+  io_acc  <= '1' when (p_bus.addr(31 downto index_size_f(io_size_c)) = io_base_c(31 downto index_size_f(io_size_c))) else '0';
   io_rden <= '1' when (io_acc = '1') and (p_bus.re = '1') and (p_bus.src = '0')    else '0'; -- PMA: read access only from data interface
   io_wren <= '1' when (io_acc = '1') and (p_bus.we = '1') and (p_bus.ben = "1111") else '0'; -- PMA: full-word write accesses only (reduces HW complexity)
 

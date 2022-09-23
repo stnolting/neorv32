@@ -45,6 +45,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_muldiv is
   generic (
+    XLEN        : natural; -- data path width
     FAST_MUL_EN : boolean; -- use DSPs for faster multiplication
     DIVISION_EN : boolean  -- implement divider hardware
   );
@@ -55,10 +56,10 @@ entity neorv32_cpu_cp_muldiv is
     ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     start_i : in  std_ulogic; -- trigger operation
     -- data input --
-    rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
-    rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
+    rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
+    rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     -- result and status --
-    res_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
+    res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
     valid_o : out std_ulogic -- data output valid
   );
 end neorv32_cpu_cp_muldiv;
@@ -79,14 +80,14 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   type state_t is (S_IDLE, S_BUSY, S_DONE);
   type ctrl_t is record
     state         : state_t;
-    cnt           : std_ulogic_vector(4 downto 0); -- iteration counter
+    cnt           : std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- iteration counter
     cp_op         : std_ulogic_vector(2 downto 0); -- operation to execute
     cp_op_ff      : std_ulogic_vector(2 downto 0); -- operation that was executed
     op            : std_ulogic; -- 0 = mul, 1 = div
     rs1_is_signed : std_ulogic;
     rs2_is_signed : std_ulogic;
     out_en        : std_ulogic;
-    rs2_abs       : std_ulogic_vector(data_width_c-1 downto 0);
+    rs2_abs       : std_ulogic_vector(XLEN-1 downto 0);
   end record;
   signal ctrl : ctrl_t;
 
@@ -94,23 +95,23 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   type div_t is record
     start     : std_ulogic; -- start new division
     sign_mod  : std_ulogic; -- result sign correction
-    remainder : std_ulogic_vector(data_width_c-1 downto 0);
-    quotient  : std_ulogic_vector(data_width_c-1 downto 0);
-    sub       : std_ulogic_vector(data_width_c   downto 0); -- try subtraction (and restore if underflow)
-    res_u     : std_ulogic_vector(data_width_c-1 downto 0); -- unsigned result
-    res       : std_ulogic_vector(data_width_c-1 downto 0);
+    remainder : std_ulogic_vector(XLEN-1 downto 0);
+    quotient  : std_ulogic_vector(XLEN-1 downto 0);
+    sub       : std_ulogic_vector(XLEN   downto 0); -- try subtraction (and restore if underflow)
+    res_u     : std_ulogic_vector(XLEN-1 downto 0); -- unsigned result
+    res       : std_ulogic_vector(XLEN-1 downto 0);
   end record;
   signal div : div_t;
 
   -- multiplier core --
   type mul_t is record
     start  : std_ulogic; -- start new multiplication
-    prod   : std_ulogic_vector((2*data_width_c)-1 downto 0); -- product
-    add    : std_ulogic_vector(data_width_c downto 0); -- addition step
+    prod   : std_ulogic_vector((2*XLEN)-1 downto 0); -- product
+    add    : std_ulogic_vector(XLEN downto 0); -- addition step
     p_sext : std_ulogic; -- product sign-extension
-    dsp_x  : signed(data_width_c downto 0); -- input for using DSPs
-    dsp_y  : signed(data_width_c downto 0); -- input for using DSPs
-    dsp_z  : signed(65 downto 0);
+    dsp_x  : signed(XLEN downto 0); -- input for using DSPs
+    dsp_y  : signed(XLEN downto 0); -- input for using DSPs
+    dsp_z  : signed(2*XLEN+1 downto 0);
   end record;
   signal mul : mul_t;
 
@@ -137,7 +138,7 @@ begin
         when S_IDLE => -- wait for start signal
           -- arbitration
           ctrl.cp_op_ff <= ctrl.cp_op;
-          ctrl.cnt      <= "11110"; -- iterative cycle counter
+          ctrl.cnt      <= std_ulogic_vector(to_unsigned(XLEN-2, index_size_f(XLEN))); -- iterative cycle counter
           if (start_i = '1') then -- trigger new operation
             if (DIVISION_EN = true) then
               -- DIV: check relevant input signs for result sign compensation --
@@ -165,7 +166,7 @@ begin
 
         when S_BUSY => -- processing
           ctrl.cnt <= std_ulogic_vector(unsigned(ctrl.cnt) - 1);
-          if (ctrl.cnt = "00000") or (ctrl_i(ctrl_trap_c) = '1') then -- abort on trap
+          if (or_reduce_f(ctrl.cnt) = '0') or (ctrl_i(ctrl_trap_c) = '1') then -- abort on trap
             ctrl.state <= S_DONE;
           end if;
 

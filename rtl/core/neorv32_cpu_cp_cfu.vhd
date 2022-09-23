@@ -45,6 +45,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_cfu is
+  generic (
+    XLEN : natural -- data path width
+  );
   port (
     -- global control --
     clk_i   : in  std_ulogic; -- global clock, rising edge
@@ -52,10 +55,10 @@ entity neorv32_cpu_cp_cfu is
     ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     start_i : in  std_ulogic; -- trigger operation
     -- data input --
-    rs1_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 1
-    rs2_i   : in  std_ulogic_vector(data_width_c-1 downto 0); -- rf source 2
+    rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
+    rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     -- result and status --
-    res_o   : out std_ulogic_vector(data_width_c-1 downto 0); -- operation result
+    res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
     valid_o : out std_ulogic -- data output valid
   );
 end neorv32_cpu_cp_cfu;
@@ -66,7 +69,7 @@ architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
   type control_t is record
     busy   : std_ulogic; -- CFU is busy
     done   : std_ulogic; -- set to '1' when processing is done
-    result : std_ulogic_vector(data_width_c-1 downto 0); -- user's processing result (for write-back to register file)
+    result : std_ulogic_vector(XLEN-1 downto 0); -- user's processing result (for write-back to register file)
     funct3 : std_ulogic_vector(2 downto 0); -- "funct3" bit-field from custom instruction
     funct7 : std_ulogic_vector(6 downto 0); -- "funct7" bit-field from custom instruction
   end record;

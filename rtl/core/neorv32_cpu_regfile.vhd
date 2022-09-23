@@ -52,33 +52,34 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_regfile is
   generic (
-    CPU_EXTENSION_RISCV_E : boolean -- implement embedded RF extension?
+    XLEN                  : natural; -- data path width
+    CPU_EXTENSION_RISCV_E : boolean  -- implement embedded RF extension?
   );
   port (
     -- global control --
     clk_i  : in  std_ulogic; -- global clock, rising edge
     ctrl_i : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
     -- data input --
-    alu_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- ALU result
-    mem_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
-    csr_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- CSR read data
-    pc2_i  : in  std_ulogic_vector(data_width_c-1 downto 0); -- next PC
+    alu_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU result
+    mem_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- memory read data
+    csr_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
+    pc2_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- next PC
     -- data output --
-    rs1_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- operand 1
-    rs2_o  : out std_ulogic_vector(data_width_c-1 downto 0)  -- operand 2
+    rs1_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 1
+    rs2_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- operand 2
   );
 end neorv32_cpu_regfile;
 
 architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
 
   -- register file --
-  type   reg_file_t is array (31 downto 0) of std_ulogic_vector(data_width_c-1 downto 0);
-  type   reg_file_emb_t is array (15 downto 0) of std_ulogic_vector(data_width_c-1 downto 0);
+  type   reg_file_t is array (31 downto 0) of std_ulogic_vector(XLEN-1 downto 0);
+  type   reg_file_emb_t is array (15 downto 0) of std_ulogic_vector(XLEN-1 downto 0);
   signal reg_file     : reg_file_t;
   signal reg_file_emb : reg_file_emb_t;
 
   -- access --
-  signal rf_wdata : std_ulogic_vector(data_width_c-1 downto 0); -- actual write-back data
+  signal rf_wdata : std_ulogic_vector(XLEN-1 downto 0); -- actual write-back data
   signal rf_we    : std_ulogic; -- write enable
   signal rd_zero  : std_ulogic; -- writing to x0?
   signal opa_addr : std_ulogic_vector(4 downto 0); -- rs1/dst address

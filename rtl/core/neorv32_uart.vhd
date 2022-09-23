@@ -99,10 +99,10 @@ end neorv32_uart;
 architecture neorv32_uart_rtl of neorv32_uart is
 
   -- interface configuration for UART0 / UART1 --
-  constant uart_id_base_c      : std_ulogic_vector(data_width_c-1 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_base_c,      uart1_base_c);
-  constant uart_id_size_c      : natural                                    := cond_sel_natural_f(        UART_PRIMARY, uart0_size_c,      uart1_size_c);
-  constant uart_id_ctrl_addr_c : std_ulogic_vector(data_width_c-1 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_ctrl_addr_c, uart1_ctrl_addr_c);
-  constant uart_id_rtx_addr_c  : std_ulogic_vector(data_width_c-1 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_rtx_addr_c,  uart1_rtx_addr_c);
+  constant uart_id_base_c      : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_base_c,      uart1_base_c);
+  constant uart_id_size_c      : natural                        := cond_sel_natural_f(        UART_PRIMARY, uart0_size_c,      uart1_size_c);
+  constant uart_id_ctrl_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_ctrl_addr_c, uart1_ctrl_addr_c);
+  constant uart_id_rtx_addr_c  : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_rtx_addr_c,  uart1_rtx_addr_c);
 
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit

@@ -82,18 +82,18 @@ entity neorv32_cpu is
     sleep_o       : out std_ulogic; -- cpu is in sleep mode when set
     debug_o       : out std_ulogic; -- cpu is in debug mode when set
     -- instruction bus interface --
-    i_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    i_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
+    i_bus_addr_o  : out std_ulogic_vector(31 downto 0); -- bus access address
+    i_bus_rdata_i : in  std_ulogic_vector(31 downto 0); -- bus read data
     i_bus_re_o    : out std_ulogic; -- read request
     i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
     i_bus_err_i   : in  std_ulogic; -- bus transfer error
     i_bus_fence_o : out std_ulogic; -- executed FENCEI operation
     i_bus_priv_o  : out std_ulogic; -- current effective privilege level
     -- data bus interface --
-    d_bus_addr_o  : out std_ulogic_vector(data_width_c-1 downto 0); -- bus access address
-    d_bus_rdata_i : in  std_ulogic_vector(data_width_c-1 downto 0); -- bus read data
-    d_bus_wdata_o : out std_ulogic_vector(data_width_c-1 downto 0); -- bus write data
-    d_bus_ben_o   : out std_ulogic_vector(03 downto 0); -- byte enable
+    d_bus_addr_o  : out std_ulogic_vector(31 downto 0); -- bus access address
+    d_bus_rdata_i : in  std_ulogic_vector(31 downto 0); -- bus read data
+    d_bus_wdata_o : out std_ulogic_vector(31 downto 0); -- bus write data
+    d_bus_ben_o   : out std_ulogic_vector(3 downto 0); -- byte enable
     d_bus_we_o    : out std_ulogic; -- write request
     d_bus_re_o    : out std_ulogic; -- read request
     d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
@@ -115,25 +115,30 @@ end neorv32_cpu;
 
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
+  -- RV64: WORK IN PROGRESS -----------------------------------------------------------------------
+  -- not available as CPU generic as rv64 ISA extension is not (fully) supported yet
+  constant XLEN : natural := 32; -- data path width
+  -- ----------------------------------------------------------------------------------------------
+
   -- local signals --
   signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
-  signal imm         : std_ulogic_vector(data_width_c-1 downto 0); -- immediate
-  signal rs1, rs2    : std_ulogic_vector(data_width_c-1 downto 0); -- source registers
-  signal alu_res     : std_ulogic_vector(data_width_c-1 downto 0); -- alu result
-  signal alu_add     : std_ulogic_vector(data_width_c-1 downto 0); -- alu address result
+  signal imm         : std_ulogic_vector(XLEN-1 downto 0); -- immediate
+  signal rs1, rs2    : std_ulogic_vector(XLEN-1 downto 0); -- source registers
+  signal alu_res     : std_ulogic_vector(XLEN-1 downto 0); -- alu result
+  signal alu_add     : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0); -- comparator result
-  signal mem_rdata   : std_ulogic_vector(data_width_c-1 downto 0); -- memory read data
+  signal mem_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- memory read data
   signal alu_idone   : std_ulogic; -- iterative alu operation done
   signal bus_d_wait  : std_ulogic; -- wait for current bus data access
-  signal csr_rdata   : std_ulogic_vector(data_width_c-1 downto 0); -- csr read data
-  signal mar         : std_ulogic_vector(data_width_c-1 downto 0); -- current memory address register
+  signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
+  signal mar         : std_ulogic_vector(XLEN-1 downto 0); -- current memory address register
   signal ma_load     : std_ulogic; -- misaligned load data address
   signal ma_store    : std_ulogic; -- misaligned store data address
   signal be_load     : std_ulogic; -- bus error on load data access
   signal be_store    : std_ulogic; -- bus error on store data access
-  signal fetch_pc    : std_ulogic_vector(data_width_c-1 downto 0); -- pc for instruction fetch
-  signal curr_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- current pc (for current executed instruction)
-  signal next_pc     : std_ulogic_vector(data_width_c-1 downto 0); -- next pc (for next executed instruction)
+  signal fetch_pc    : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
+  signal curr_pc     : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for current executed instruction)
+  signal next_pc     : std_ulogic_vector(XLEN-1 downto 0); -- next pc (for next executed instruction)
   signal fpu_flags   : std_ulogic_vector(4 downto 0); -- FPU exception flags
   signal i_pmp_fault : std_ulogic; -- instruction fetch PMP fault
 
@@ -143,39 +148,36 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
 begin
 
-  -- CPU ISA Configuration ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert false report
-  "NEORV32 CPU CONFIG NOTE: Core ISA ('MARCH') = " &
-  cond_sel_string_f(boolean(data_width_c = 32), "RV32", "RV64") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_E, "E", "I") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_M, "M", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_C, "C", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_B, "B", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_U, "U", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_Zicsr, "_Zicsr", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_Zicntr", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm, "_Zihpm", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_Zifencei, "_Zifencei", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx, "_Zfinx", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul, "_Zmmul", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu, "_Zxcfu", "") &
-  cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG, "_<DebugMode>", "") &
-  ""
-  severity note;
-
-
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- say hello --
   assert false report "The NEORV32 RISC-V Processor - github.com/stnolting/neorv32" severity note;
+
+  -- CPU ISA configuration --
+  assert false report
+    "NEORV32 CPU CONFIG NOTE: Core ISA ('MARCH') = RV32" &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_E, "E", "I") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_M, "M", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_C, "C", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_B, "B", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_U, "U", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicsr, "_Zicsr", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_Zicntr", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm, "_Zihpm", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zifencei, "_Zifencei", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx, "_Zfinx", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul, "_Zmmul", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu, "_Zxcfu", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG, "_<DebugMode>", "") &
+    ""
+    severity note;
 
   -- simulation notifier --
   assert not (is_simulation_c = true)  report "NEORV32 CPU WARNING! Assuming this is a simulation." severity warning;
   assert not (is_simulation_c = false) report "NEORV32 CPU NOTE: Assuming this is real hardware." severity note;
 
   -- native data width check --
-  assert not ((data_width_c /= 32) and (data_width_c /= 64)) report "NEORV32 CPU CONFIG ERROR! Invalid <data_width_c> data path width (has to be 32 or 64)." severity error; 
+  assert not (XLEN /= 32) report "NEORV32 CPU CONFIG ERROR! <XLEN> native data path width has to be 32 (bit)." severity error; 
 
   -- CPU boot address --
   assert not (CPU_BOOT_ADDR(1 downto 0) /= "00") report "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
@@ -223,6 +225,7 @@ begin
   neorv32_cpu_control_inst: neorv32_cpu_control
   generic map (
     -- General --
+    XLEN                         => XLEN,                         -- data path width
     HW_THREAD_ID                 => HW_THREAD_ID,                 -- hardware thread id
     CPU_BOOT_ADDR                => CPU_BOOT_ADDR,                -- cpu boot address
     CPU_DEBUG_ADDR               => CPU_DEBUG_ADDR,               -- cpu debug mode start address
@@ -312,6 +315,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_regfile_inst: neorv32_cpu_regfile
   generic map (
+    XLEN                  => XLEN,                 -- data path width
     CPU_EXTENSION_RISCV_E => CPU_EXTENSION_RISCV_E -- implement embedded RF extension?
   )
   port map (
@@ -333,6 +337,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_inst: neorv32_cpu_alu
   generic map (
+    XLEN                      => XLEN,                      -- data path width
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_B     => CPU_EXTENSION_RISCV_B,     -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_M     => CPU_EXTENSION_RISCV_M,     -- implement mul/div extension?
@@ -367,6 +372,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_bus_inst: neorv32_cpu_bus
   generic map (
+    XLEN                => XLEN,               -- data path width
     PMP_NUM_REGIONS     => PMP_NUM_REGIONS,    -- number of regions (0..16)
     PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   )
