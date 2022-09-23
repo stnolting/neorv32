@@ -101,15 +101,15 @@ chip-internal extension options:
 [cols="<1,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
-|                                | Custom Functions Unit | Custom Functions Subsystem | Stream Link Interface  | External Bus Interface
-| **SoC location**               | CPU-internal          | processor-internal         | processor-external     | processor-external
-| **HW complexity/size**         | small                 | medium                     | large                  | large
-| **CPU-independent operation**  | no                    | yes                        | yes                    | yes
-| **CPU interface**              | register-file access  | memory-mapped              | memory-mapped          | memory-mapped
-| **Low-level access mechanism** | custom instructions   | load/store                 | load/store             | load/store
-| **Arbitrary accesses**         | yes                   | yes                        | no, only sequential    | yes
-| **Access latency**             | minimal               | low                        | low                    | medium to high
-| **External IO interfaces**     | no                    | yes, but limited           | yes                    | yes
-| **Interrupt-capable**          | no                    | yes                        | yes                    | user-defined
+|                                 | Custom Functions Unit | Custom Functions Subsystem | Stream Link Interface  | External Bus Interface
+| **SoC location**                | CPU-internal          | processor-internal         | processor-external     | processor-external
+| **HW complexity/size**          | small                 | medium                     | large                  | large
+| **CPU-independent operation**   | no                    | yes                        | partly                 | yes
+| **CPU interface**               | register-file access  | memory-mapped              | memory-mapped          | memory-mapped
+| **Low-level access mechanism**  | custom instructions   | load/store                 | load/store             | load/store
+| **Arbitrary accesses**          | yes                   | yes                        | no, only sequential    | yes
+| **Access latency**              | minimal               | low                        | low                    | medium to high
+| **Buffered access (e.g. FIFO)** | no                    | user-defined               | yes                    | user-defined
+| **External IO interfaces**      | no                    | yes, but limited           | yes                    | yes
+| **Interrupt-capable**           | no                    | yes                        | yes                    | user-defined
 |=======================
-
