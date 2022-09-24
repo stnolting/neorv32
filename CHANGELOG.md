@@ -32,6 +32,7 @@ mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 24.08.2022 | [**:rocket:1.7.7**](https://github.com/stnolting/neorv32/releases/tag/v1.7.7) | **New release** |
 | 23.09.2022 | 1.7.6.10 | cleanup native data path size (remove `data_width_c` package constant); initial preparations to **support RV64 ISA extension** somewhere in the future; [#417](https://github.com/stnolting/neorv32/pull/417) |
 | 18.09.2022 | 1.7.6.9 | :bug: fixed instruction decoding collision in **`B` ISA extensions** - `B` extension is now fully operational and verified (see [neorv32-riscof](https://github.com/stnolting/neorv32-riscof))! [#413](https://github.com/stnolting/neorv32/pull/413) |
 | 13.09.2022 | 1.7.6.8 | :bug: bug fix: clearing `mie`'s FIRQ bits did not clear the according _pending_ FIRQs; [#411](https://github.com/stnolting/neorv32/pull/411) |
