@@ -1236,7 +1236,7 @@ begin
       when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c | csr_mxisa_c =>
         csr_acc_valid <= (not csr_wacc_v) and csr.privilege_eff; -- M-mode only, read-only
 
-      -- user-mode registers --
+      -- CSRs that are available if user-mode is implemented --
       when csr_mcounteren_c | csr_menvcfg_c | csr_menvcfgh_c =>
         csr_acc_valid <= csr.privilege_eff and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);
 
@@ -2045,6 +2045,11 @@ begin
             csr.rdata(0) <= csr.mcounteren_cy and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- enable user-level access to cycle[h]
             csr.rdata(1) <= csr.mcounteren_tm and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- enable user-level access to time[h]
             csr.rdata(2) <= csr.mcounteren_ir and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- enable user-level access to instret[h]
+
+          -- machine configuration --
+          -- --------------------------------------------------------------------
+--        when csr_menvcfg_c  => if (CPU_EXTENSION_RISCV_U = true) then csr.rdata <= (others => '0'); else NULL; end if; -- hardwired to zero
+--        when csr_menvcfgh_c => if (CPU_EXTENSION_RISCV_U = true) then csr.rdata <= (others => '0'); else NULL; end if; -- hardwired to zero
 
           -- machine trap handling --
           -- --------------------------------------------------------------------
