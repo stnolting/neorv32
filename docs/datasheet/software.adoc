@@ -151,24 +151,25 @@ $ make
 <<< NEORV32 SW Application Makefile >>>
 Make sure to add the bin folder of RISC-V GCC to your PATH variable.
 
-== Targets ==
- help         - show this text
- check        - check toolchain
- info         - show makefile/toolchain configuration
- exe          - compile and generate <neorv32_exe.bin> executable for upload via default bootloader (binary file, with header)
- bin          - compile and generate <neorv32_raw_exe.bin> RAW executable file (binary file, no header)
- hex          - compile and generate <neorv32_raw_exe.hex> RAW executable file (hex char file, no header)
- image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder
- install      - compile, generate and install VHDL IMEM boot image (for application, no header)
- sim          - in-console simulation using default/simple testbench and GHDL
- all          - exe + install + hex + bin
- elf_info     - show ELF layout info
- clean        - clean up project home folder
- clean_all    - clean up whole project, core libraries and image generator
- bl_image     - compile and generate VHDL BOOTROM boot image (for bootloader only, no header) in local folder
- bootloader   - compile, generate and install VHDL BOOTROM boot image (for bootloader only, no header)
+=== Targets ===
+ help       - show this text
+ check      - check toolchain
+ info       - show makefile/toolchain configuration
+ asm        - compile and generate <main.asm> assembly listing file for manual debugging
+ elf        - compile and generate <main.elf> ELF file
+ bin        - compile and generate <neorv32_raw_exe.bin> RAW executable file (binary file, no header)
+ hex        - compile and generate <neorv32_raw_exe.hex> RAW executable file (hex char file, no header)
+ image      - compile and generate VHDL IMEM boot image (for application, no header) in local folder
+ install    - compile, generate and install VHDL IMEM boot image (for application, no header)
+ sim        - in-console simulation using default/simple testbench and GHDL
+ all        - exe + install + hex + bin + asm
+ elf_info   - show ELF layout info
+ clean      - clean up project home folder
+ clean_all  - clean up whole project, core libraries and image generator
+ bl_image   - compile and generate VHDL BOOTROM boot image (for bootloader only, no header) in local folder
+ bootloader - compile, generate and install VHDL BOOTROM boot image (for bootloader only, no header)
 
-== Variables ==
+=== Variables ===
  USER_FLAGS   - Custom toolchain flags [append only], default ""
  EFFORT       - Optimization level, default "-Os"
  MARCH        - Machine architecture, default "rv32i"
@@ -255,6 +256,7 @@ The following default compiler flags are used for compiling an application. Thes
 | `-lc`                 | Search for the standard C library when linking.
 | `-lgcc`               | Make sure we have no unresolved references to internal GCC library subroutines.
 | `-mno-fdiv`           | Use built-in software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
+| `-g3`                 | Include (advanced) debugging information in ELF.
 |=======================
 
 :sectnums:
