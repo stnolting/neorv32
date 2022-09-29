@@ -18,7 +18,8 @@ https://gitter.im/neorv32/community[image:https://img.shields.io/badge/Chat-on%2
 https://github.com/stnolting/neorv32/releases/tag/nightly[image:https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor[title='datasheet (pdf)']]
 https://stnolting.github.io/neorv32[image:https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat-square[title='datasheet (html)']]
 https://github.com/stnolting/neorv32/releases/tag/nightly[image:https://img.shields.io/badge/user%20guide-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor[title='userguide (pdf)']]
-https://stnolting.github.io/neorv32/sw/files.html[image:https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen[title='doxygen']]
-
+https://stnolting.github.io/neorv32/sw/files.html[image:https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen[title='doxygen']] +
+https://github.com/stnolting/neorv32/releases[image:https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub[title='release']]
+https://github.com/stnolting/neorv32/releases[image:https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat-square&logo=GitHub[title='release-commits']]
 
 include::content.adoc[]
