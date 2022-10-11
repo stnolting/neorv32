@@ -188,8 +188,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal decode_aux : decode_aux_t;
 
   -- instruction execution engine --
-  type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_START, TRAP_EXIT, TRAP_EXECUTE,
-                                  EXECUTE, ALU_WAIT, BRANCH, BRANCHED, SYSTEM, MEM_REQ, MEM_WAIT);
+  -- make sure reset state is the first item in the list (discussion #415)
+  type execute_engine_state_t is (BRANCHED, DISPATCH, TRAP_ENTER, TRAP_START, TRAP_EXIT,
+                                  TRAP_EXECUTE, EXECUTE, ALU_WAIT, BRANCH, SYSTEM, MEM_REQ, MEM_WAIT);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
