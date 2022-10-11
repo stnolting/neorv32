@@ -16,7 +16,7 @@ The processor can determine its version by reading the `mimpid` CSR (at CSR addr
 A 8x4-bit BCD representation is used. Leading zeros are optional. Example:
 
 ```
-mimpid = 0x01040312 => 01.04.03.12 => Version 01.04.03.12 => v1.4.3.12
+mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 ```
 
 
