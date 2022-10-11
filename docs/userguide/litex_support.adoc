@@ -34,7 +34,11 @@ LiteX: external interrupt - the "RISC-V machine external interrupt" is not suppo
 [start=1]
 . Install LiteX and the RISC-V compiler following the excellent quick start guide: https://github.com/enjoy-digital/litex/wiki#quick-start-guide
 . The NEORV32 port for LiteX uses GHDL and yosys for converting the VHDL files via the https://github.com/ghdl/ghdl-yosys-plugin[GHDL-yosys-plugin].
-You can download prebuilt packages for example from https://github.com/YosysHQ/fpga-toolchain (_no longer maintained, but still works fine_).
+You can download prebuilt packages for example from https://github.com/YosysHQ/fpga-toolchain, which is _no longer maintained. It is superdesed
+by https://github.com/YosysHQ/fpga-toolchain.
+. _EXPERIMENTAL:_ GHDL provides a https://ghdl.github.io/ghdl/using/Synthesis.html[synthesis options], which converts a VHDL setup into a plain-Verilog
+netlist module (not tested on LiteX yet). Check out https://github.com/stnolting/neorv32-verilog[neorv32-verilog] for more information.
+
 
 .GHDL-yosys Plugin
 [WARNING]
