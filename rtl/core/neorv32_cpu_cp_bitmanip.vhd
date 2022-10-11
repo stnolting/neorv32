@@ -9,9 +9,6 @@
 -- #                                                                                               #
 -- # Processor/CPU configuration generic FAST_MUL_EN is also used to enable implementation of fast #
 -- # (full-parallel) logic for all shift-related B-instructions (ROL, ROR[I], CLZ, CTZ, CPOP).     #
--- #                                                                                               #
--- # NOTE: This is a first implementation of the bit-manipulation co-processor that supports all   #
--- #       sub-sets of the B extension. Hence, it is not yet optimized for area/latency/speed.     #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -185,8 +182,8 @@ begin
 
   -- Instruction Decoding (One-Hot) ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- a minimal decoding logic is used here just to distinguish between the different B instruction
-  -- a more precise decoding and valid-instruction check is done by the CPU control unit
+  -- A minimal decoding logic is used here just to distinguish between the different B instruction.
+  -- A more precise decoding as well as a valid-instruction-check is performed by the CPU control unit.
 
   -- Zbb - Basic bit-manipulation instructions --
   cmd(op_andn_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "11") else '0';
@@ -542,7 +539,7 @@ begin
   res_out(op_binv_c) <= res_int(op_binv_c) when (cmd_buf(op_binv_c) = '1') else (others => '0');
   res_out(op_bset_c) <= res_int(op_bset_c) when (cmd_buf(op_bset_c) = '1') else (others => '0');
   --
-  res_out(op_clmul_c)  <= res_int(op_clmul_c)  when (cmd_buf(op_clmul_c) = '1')  else (others => '0');
+  res_out(op_clmul_c)  <= res_int(op_clmul_c)  when (cmd_buf(op_clmul_c)  = '1') else (others => '0');
   res_out(op_clmulh_c) <= res_int(op_clmulh_c) when (cmd_buf(op_clmulh_c) = '1') else (others => '0');
   res_out(op_clmulr_c) <= res_int(op_clmulr_c) when (cmd_buf(op_clmulr_c) = '1') else (others => '0');
 
