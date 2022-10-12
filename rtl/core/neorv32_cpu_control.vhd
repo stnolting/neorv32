@@ -1108,9 +1108,9 @@ begin
       when SYSTEM => -- system environment operation
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c; -- only relevant for CSR access
-        execute_engine.state_nxt <= DISPATCH; -- default
         if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and -- ENVIRONMENT
            (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- and NOT already identified as illegal instruction
+          execute_engine.state_nxt <= DISPATCH; -- default
           case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
             when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ecall
             when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- ebreak
@@ -1119,6 +1119,7 @@ begin
             when others           => execute_engine.sleep_nxt <= '1'; -- "funct12_wfi_c" - wfi/sleep
           end case;
         else -- CSR ACCESS - there will be no state change if illegal instruction
+          execute_engine.state_nxt <= DISPATCH;
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
              (decode_aux.rs1_zero = '0') then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
@@ -2283,10 +2284,25 @@ begin
 
   -- Control and Status Registers - Counters ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_counters: process(clk_i)
+  csr_counters: process(rstn_i, clk_i)
   begin
-    -- NOTE: the counter CSRs do NOT have a dedicated reset and need to be initialized by software before being used!
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      -- write access --
+      cnt_csr_we.cycle     <= (others => '0');
+      cnt_csr_we.instret   <= (others => '0');
+      cnt_csr_we.hpm       <= (others => (others => '0'));
+      cnt_csr_we.wdata     <= (others => '-'); -- no reset required
+      -- counters --
+      csr.mcycle           <= (others => '0');
+      csr.mcycle_ovfl      <= (others => '0');
+      csr.mcycleh          <= (others => '0');
+      csr.minstret         <= (others => '0');
+      csr.minstret_ovfl    <= (others => '0');
+      csr.minstreth        <= (others => '0');
+      csr.mhpmcounter_ovfl <= (others => (others => '0'));
+      csr.mhpmcounter      <= (others => (others => '0'));
+      csr.mhpmcounterh     <= (others => (others => '0'));
+    elsif rising_edge(clk_i) then
 
       -- write enable - defaults --
       cnt_csr_we.cycle   <= (others => '0');
