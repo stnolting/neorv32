@@ -74,6 +74,10 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_litex_core_complex is
+  generic (
+    CONFIG : natural; -- configuration select (0=minimal, 1=lite, 2=standard, 3=full)
+    DEBUG  : boolean  -- enable on-chip debugger, valid for all configurations
+  );
   port (
     -- Global control --
     clk_i       : in  std_ulogic; -- global clock, rising edge
@@ -103,11 +107,6 @@ entity neorv32_litex_core_complex is
 end neorv32_litex_core_complex;
 
 architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
-
-  -- configuration select ----------------------------------------------------------------------------
-  constant CONFIG : natural := 0;     -- configuration select (0=minimal, 1=lite, 2=standard, 3=full)
-  constant DEBUG  : boolean := false; -- enable on-chip debugger, valid for all configurations
-  -- -------------------------------------------------------------------------------------------------
 
   -- advance configuration --
   constant num_configs_c : natural := 4;     -- number of pre-defined configurations
