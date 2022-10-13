@@ -7,12 +7,6 @@ the CSR access instructions. The *[ASM]* name can be used for (inline) assembly 
 understood by the assembler/compiler. The *[C]* names are defined by the NEORV32 core library and can be
 used as immediate in plain C code. The *R/W* column shows whether the CSR can be read and/or written.
 
-.CSR Reset Value
-[IMPORTANT]
-Please note that some CSRs do *not* provide a dedicated reset. Hence, these CSRs are not initialized by a
-hardware reset and provide an **UNDEFINED** state after reset. In general, all CSRs should be explicitly initialized
-by software before being used.
-
 .Not Implemented CSRs / Bits
 [NOTE]
 All CSR bits that are unused / not implemented / not shown are _hardwired to zero_. All CSRs that are not
@@ -90,8 +84,8 @@ information about those CSRs.
 |=======================
 
 [NOTE]
-The following CSR sections provide a "headline" for each CSRs. It shows the 12-bit CSR address, the assembly name of the CSR,
-a short description and, ISA extension(s) that are required for implementing the according CSR and the reset value.
+The following CSR sections provide a "headline" for each CSRs. It shows the 12-bit CSR address, the register's ISA/assembly name,
+a short description, the reset value and all ISA extension(s) that are required for implementing the according CSR.
 
 
 <<<
@@ -229,7 +223,7 @@ The features of this CSR are not implemented yet. The register is read-only and 
 [frame="topbot",grid="none"]
 |=======================
 | 0x301 | `misa` - **ISA and extensions** | `Zicsr`
-3+<| Reset value: `define`
+3+<| Reset value: `DEFINED`
 |=======================
 
 [NOTE]
@@ -348,7 +342,7 @@ The features of this CSR are not implemented yet. The register is read-only and 
 [frame="topbot",grid="none"]
 |=======================
 | 0x340 | `mscratch` - **Scratch register for machine trap handlers** | `Zicsr`
-3+<| Reset value: `UNDEFINED`
+3+<| Reset value: `DEFINED`
 |=======================
 
 
@@ -525,11 +519,6 @@ The two MSBs of each `pmpaddr` are hardwired to zero (= bits 33:32 of the physic
 :sectnums:
 ==== (Machine) Counter and Timer CSRs
 
-.Counter Reset
-[IMPORTANT]
-The counter CSRs do **not** provide a hardware reset. Hence, the CSRs have to be explicitly initialized by software
-before being used.
-
 .Counter Size
 [NOTE]
 When implemented (by enabling the `Zicntr` ISA extension) the standard CPU counters are always 64-bit wide (low-word + high-word).
@@ -543,7 +532,7 @@ When implemented (by enabling the `Zicntr` ISA extension) the standard CPU count
 |=======================
 | 0xc00 | `cycle` - **Cycle counter - low word** | `Zicsr` + `Zicntr`
 | 0xc80 | `cycleh` - **Cycle counter - high word** | `Zicsr` + `Zicntr`
-3+<| Reset value: all `UNDEFINED`
+3+<| Reset value: all `0x00000000`
 |=======================
 
 
@@ -567,7 +556,7 @@ When implemented (by enabling the `Zicntr` ISA extension) the standard CPU count
 |=======================
 | 0xc02 | `instret` - **Instructions-retired counter - low word** | `Zicsr` + `Zicntr`
 | 0xc82 | `instreth` - **Instructions-retired counter - high word** | `Zicsr` + `Zicntr`
-3+<| Reset value: all `UNDEFINED`
+3+<| Reset value: all `0x00000000`
 |=======================
 
 
@@ -579,7 +568,7 @@ When implemented (by enabling the `Zicntr` ISA extension) the standard CPU count
 |=======================
 | 0xb00 | `mcycle` - **Machine cycle counter - low word** | `Zicsr` + `Zicntr`
 | 0xb80 | `mcycleh` - **Machine cycle counter - high word** | `Zicsr` + `Zicntr`
-3+<| Reset value: all `UNDEFINED`
+3+<| Reset value: all `0x00000000`
 |=======================
 
 
@@ -591,7 +580,7 @@ When implemented (by enabling the `Zicntr` ISA extension) the standard CPU count
 |=======================
 | 0xb02 | `minstret` - **Machine instructions-retired counter - low word** | `Zicsr` + `Zicntr`
 | 0xb82 | `minstreth` - **Machine instructions-retired counter - high word** | `Zicsr` + `Zicntr`
-3+<| Reset value: all `UNDEFINED`
+3+<| Reset value: all `0x00000000`
 |=======================
 
 
@@ -670,7 +659,7 @@ cycle even if more than one trigger event is observed.
 | 0xb83 | `mhpmcounter3h` - **Machine hardware performance monitor - counter 3 high** | `Zicsr` + `Zihpm`
 3+<| ...
 | 0xb9f | `mhpmcounter31h` - **Machine hardware performance monitor - counter 31 high** | `Zicsr` + `Zihpm`
-3+<| Reset value: all `UNDEFINED`
+3+<| Reset value: all `0x00000000`
 |=======================
 
 
@@ -741,7 +730,7 @@ The `marchid` CSR is read-only and shows the NEORV32 official RISC-V open-source
 [frame="topbot",grid="none"]
 |=======================
 | 0xf13 | `mimpid` - **Machine implementation ID** | `Zicsr`
-3+<| Reset value: `define`
+3+<| Reset value: `DEFINED`
 |=======================
 
 The `mimpid` CSR is read-only and shows the version of the
@@ -755,7 +744,7 @@ NEORV32 as BCD-coded number (example: `mimpid` = _0x01020312_ â†’ 01.02.03.12 â†
 [frame="topbot",grid="none"]
 |=======================
 | 0xf14 | `mhartid` - **Machine hardware thread ID** | `Zicsr`
-3+<| Reset value: `define`
+3+<| Reset value: `DEFINED`
 |=======================
 
 The `mhartid` CSR is read-only and shows the core's hart ID, which is assigned via the <<_hw_thread_id>> top generic.
@@ -791,7 +780,7 @@ outside of machine-mode will raise an illegal instruction exception.
 [frame="topbot",grid="none"]
 |=======================
 | 0x7c0 | `mxisa` - **Machine EXTENDED ISA and Extensions register** | `Zicsr` + `X`
-3+<| Reset value: `define`
+3+<| Reset value: `DEFINED`
 |=======================
 
 NEORV32-specific read-only CSR that helps machine-mode software to discover `Z*` sub-extensions and CPU options.

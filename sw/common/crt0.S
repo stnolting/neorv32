@@ -67,7 +67,7 @@ __crt0_pointer_init:
 
 
 // ************************************************************************************************
-// Setup CPU core CSRs (some of them DO NOT have a dedicated reset and need to be explicitly initialized)
+// Setup CPU core CSRs
 // ************************************************************************************************
 __crt0_cpu_csr_init:
   la   x10,   __crt0_trap_handler // configure early-boot trap handler
