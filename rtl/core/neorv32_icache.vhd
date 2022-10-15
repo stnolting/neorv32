@@ -82,7 +82,7 @@ architecture neorv32_icache_rtl of neorv32_icache is
   generic (
     ICACHE_NUM_BLOCKS : natural := 4;  -- number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE : natural := 16; -- block size in bytes (min 4), has to be a power of 2
-    ICACHE_NUM_SETS   : natural := 1   -- associativity; 0=direct-mapped, 1=2-way set-associative
+    ICACHE_NUM_SETS   : natural := 1   -- associativity; 1=direct-mapped, 2=2-way set-associative
   );
   port (
     -- global control --
