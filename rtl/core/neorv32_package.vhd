@@ -58,7 +58,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070702"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070703"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -2475,13 +2475,19 @@ package body neorv32_package is
   -- Function: Test if input number is a power of two ---------------------------------------
   -- -------------------------------------------------------------------------------------------
   function is_power_of_two_f(input : natural) return boolean is
+    variable tmp : unsigned(31 downto 0);
   begin
-    if (input = 1) then -- 2^0
-      return true;
-    elsif ((input / 2) /= 0) and ((input mod 2) = 0) then
+    if (input = 0) then
+      return false;
+    elsif (input = 1) then
       return true;
     else
-      return false;
+      tmp := to_unsigned(input, 32);
+      if ((tmp and (tmp - 1)) = 0) then
+        return true;
+      else
+        return false;
+      end if;
     end if;
   end function is_power_of_two_f;
 
