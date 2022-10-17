@@ -301,11 +301,11 @@ int neorv32_uart0_getc_safe(char *data) {
  **************************************************************************/
 int neorv32_uart0_char_received(void) {
 
-  if ((NEORV32_UART0.DATA & (1<<UART_DATA_AVAIL)) != 0) {
-    return 1;
+  if (NEORV32_UART0.CTRL & (1<<UART_CTRL_RX_EMPTY)) {
+    return 0;
   }
   else {
-    return 0;
+    return 1;
   }
 }
 
@@ -676,11 +676,11 @@ int neorv32_uart1_getc_safe(char *data) {
  **************************************************************************/
 int neorv32_uart1_char_received(void) {
 
-  if ((NEORV32_UART1.DATA & (1<<UART_DATA_AVAIL)) != 0) {
-    return 1;
+  if (NEORV32_UART1.CTRL & (1<<UART_CTRL_RX_EMPTY)) {
+    return 0;
   }
   else {
-    return 0;
+    return 1;
   }
 }
 
