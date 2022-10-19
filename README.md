@@ -195,7 +195,7 @@ for custom tightly-coupled co-processors, accelerators or interfaces
 
 ## 3. FPGA Implementation Results
 
-Implementation results for exemplary CPU configurations generated for an Intel Cyclone IV `EP4CE22F17C6` FPGA
+Implementation results for **exemplary CPU configurations** generated for an Intel Cyclone IV `EP4CE22F17C6` FPGA
 using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimization_, f_max from _Slow 1200mV 0C Model_).
 
 | CPU Configuration (version [1.6.9.8](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
@@ -203,6 +203,13 @@ using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimizatio
 | `rv32i_Zicsr`          | 1328 |  678 | 1024 | 0 | 128 MHz |
 | `rv32i_Zicsr_Zicntr`   | 1614 |  808 | 1024 | 0 | 128 MHz |
 | `rv32imc_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 128 MHz |
+
+Implementation results for an **exemplary SoC/Processor configurations** generated for a Xilinx Artix-7 `xc7a35ticsg324-1L` FPGA
+using Xilinx Vivado 2019.2 (no constraints except for clock speed).
+
+| SoC Configuration (version [1.7.7.3](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md))    | LUTs | FFs  | BRAMs | DSPs | Clock   |
+|:------------------------------------------------------------------------------------------------------|:----:|:----:|:-----:|:----:|:-------:|
+| CPU: `rv32imcu_Zicsr_Zicnt_DEBUG` + `FST_MUL` + `FAST_SHIFT`; Peripherals: `UART0` + `MTIME` + `GPIO` | 2488 | 1807 |     7 |    4 | 150 MHz |
 
 :bulb: An incremental list of the CPU extensions and the Processor modules found in the
 [_Data Sheet: FPGA Implementation Results_](https://stnolting.github.io/neorv32/#_fpga_implementation_results).

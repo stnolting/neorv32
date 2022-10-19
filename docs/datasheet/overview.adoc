@@ -342,6 +342,28 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 Note that not all IOs were actually connected to FPGA pins (for example some GPIO inputs and outputs)
 when generating these reports.
 
+
+:sectnums:
+==== Processor - Exemplary Setups
+
+[cols="<2,<8"]
+[grid="topbot"]
+|=======================
+| HW version:  | `1.7.7.3`
+| CPU:         | `rv32imcu_Zicsr_Zicnt_DEBUG` + `FST_MUL` + `FAST_SHIFT`
+| Peripherals: | `UART0` + `MTIME` + `GPIO`
+| FPGA:        | Xilinx Artix-7 `xc7a35ticsg324-1L`
+| Toolchain:   | Xilinx Vivado 2019.2
+| Constraints: | clock constrained to 150 MHz, default/standard synthesis & implementation settings
+|=======================
+
+[cols="^1,^1,^1,^1,^1"]
+[options="header",grid="rows"]
+|=======================
+| LUTs  | FFs  | BRAMs | DSPs | Clock
+| 2488  | 1807 |     7 |    4 | 150 MHz
+|=======================
+
 .Exemplary Setups
 [TIP]
 Check out the `neorv32-setups` repository (on GitHub: https://github.com/stnolting/neorv32-setups),
