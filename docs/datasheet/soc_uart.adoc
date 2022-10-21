@@ -90,10 +90,12 @@ UART0 supports optional hardware flow control using the standard CTS (clear to s
 / ready to receive "RTR") signals. Both hardware control flow mechanisms can be enabled individually.
 
 * If **RTS hardware flow control** is enabled by setting the _UART_CTRL_RTS_EN_ control register flag, the UART
-will pull the `uart0_rts_o` signal low if the UART's receiver is ready to receive new data.
-As long as this signal is low the connected device can send new data. `uart0_rts_o` is always LOW if the UART is disabled.
-The RTS line is de-asserted (going high) as soon as the start bit of a new incoming char has been
-detected.
+will drive the `uart0_rts_o` signal low if the UART RX FIFO is less than half full. As long as this signal is low,
+the connected device can send new data. `uart0_rts_o` is always low if the UART is disabled.
+
+[WARNING]
+If the _UART0_RX_FIFO_ configuration generic is set to it's minimum (=1), the RTS signal already goes low
+when a single character has been received by the UART that has not yet been read by the software.
 
 * If **CTS hardware flow control** is enabled by setting the _UART_CTRL_CTS_EN_ control register flag, the UART's
 transmitter will not start sending a new data until the `uart0_cts_i` signal goes low. During this time, the UART busy flag

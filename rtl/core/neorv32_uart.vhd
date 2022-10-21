@@ -502,8 +502,8 @@ begin
     end if;
   end process uart_rx_engine;
 
-  -- RX engine ready for a new char? --
-  rx_engine.rtr <= '1' when (rx_engine.state = S_RX_IDLE) and (ctrl(ctrl_en_c) = '1') else '0';
+  -- Enough space (incl. safety margin) in RX buffer for a new char (FIFO less than half-full)? --
+  rx_engine.rtr <= '1' when (rx_buffer.half = '0') and (ctrl(ctrl_en_c) = '1') else '0';
 
 
   -- RX FIFO --------------------------------------------------------------------------------
