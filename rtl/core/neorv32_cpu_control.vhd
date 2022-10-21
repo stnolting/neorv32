@@ -1501,6 +1501,11 @@ begin
           trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_start_ack);
           trap_ctrl.irq_buf(irq_db_halt_c)  <= debug_ctrl.trig_halt;
           trap_ctrl.irq_buf(irq_db_step_c)  <= debug_ctrl.trig_step;
+        else
+          trap_ctrl.exc_buf(exc_db_break_c) <= '0';
+          trap_ctrl.exc_buf(exc_db_hw_c)    <= '0';
+          trap_ctrl.irq_buf(irq_db_halt_c)  <= '0';
+          trap_ctrl.irq_buf(irq_db_step_c)  <= '0';
         end if;
 
         -- interrupt buffer: machine software/external/timer interrupt --
@@ -1684,9 +1689,10 @@ begin
       csr.mip_firq_nclr <= (others => '1'); -- active low
 
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
-        -- --------------------------------------------------------------------------------
-        -- CSR access by application software
-        -- --------------------------------------------------------------------------------
+
+        -- ********************************************************************************
+        -- Manual CSR access by application software
+        -- ********************************************************************************
         if (csr.we = '1') then -- manual write access and not illegal instruction
 
           -- user floating-point CSRs --
@@ -1860,9 +1866,9 @@ begin
           end if;
 
 
-        -- --------------------------------------------------------------------------------
-        -- CSR access by hardware
-        -- --------------------------------------------------------------------------------
+        -- ********************************************************************************
+        -- Automatic CSR access by hardware
+        -- ********************************************************************************
         else
 
           -- --------------------------------------------------------------------
@@ -1960,7 +1966,8 @@ begin
           end if;
 
         end if; -- /hardware csr access
-      end if;
+      end if; -- /Zicsr implemented
+
     end if;
   end process csr_write_access;
 
