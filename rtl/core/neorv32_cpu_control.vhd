@@ -1652,6 +1652,7 @@ begin
       csr.mepc              <= (others => '0');
       csr.mcause            <= (others => '0');
       csr.mtval             <= (others => '0');
+      --
       csr.mip_firq_nclr     <= (others => '-'); -- no reset required
       --
       csr.pmpcfg            <= (others => (others => '0'));
@@ -1765,7 +1766,7 @@ begin
             end if;
           end if;
 
-          -- physical memory protection --
+          -- machine physical memory protection --
           -- --------------------------------------------------------------------
           if (PMP_NUM_REGIONS > 0) then
             -- R/W: pmpcfg* - PMP configuration registers --
@@ -1848,7 +1849,7 @@ begin
             end if;
           end if;
 
-          -- trigger module CSRs - only writable in DEBUG MODE (dmode == 1) --
+          -- trigger module CSRs - writable only in DEBUG MODE (dmode == 1) --
           -- --------------------------------------------------------------------
           if (CPU_EXTENSION_RISCV_DEBUG = true) then
             if (csr.addr(11 downto 4) = csr_class_trigger_c) then -- trigger CSR class
@@ -1966,8 +1967,57 @@ begin
           end if;
 
         end if; -- /hardware csr access
-      end if; -- /Zicsr implemented
 
+
+        -- ********************************************************************************
+        -- Override - tie unimplemented registers to all-zero
+        -- ********************************************************************************
+
+        -- no FPU --
+        if (CPU_EXTENSION_RISCV_Zfinx = false) then
+          csr.frm    <= (others => '0');
+          csr.fflags <= (others => '0');
+        end if;
+
+        -- no user mode --
+        if (CPU_EXTENSION_RISCV_U = false) then
+          csr.mstatus_mpp  <= '0';
+          csr.mstatus_mprv <= '0';
+          csr.mstatus_tw   <= '0';
+          --
+          csr.mcounteren_cy <= '0';
+          csr.mcounteren_tm <= '0';
+          csr.mcounteren_ir <= '0';
+          --
+          csr.dcsr_ebreaku <= '0';
+          csr.dcsr_prv     <= '0';
+        end if;
+
+        -- no PMP --
+        if (PMP_NUM_REGIONS = 0) then
+          csr.pmpcfg  <= (others => (others => '0'));
+          csr.pmpaddr <= (others => (others => '0'));
+        end if;
+
+        -- no HPMs --
+        if (HPM_NUM_CNTS = 0) or (CPU_EXTENSION_RISCV_Zihpm = false) then
+          csr.mcountinhibit_hpm <= (others => '0');
+          csr.mhpmevent         <= (others => (others => '0'));
+        end if;
+
+        -- no debug mode --
+        if (CPU_EXTENSION_RISCV_DEBUG = false) then
+          csr.dcsr_ebreakm <= '0';
+          csr.dcsr_step    <= '0';
+          csr.dcsr_ebreaku <= '0';
+          csr.dcsr_prv     <= priv_mode_m_c;
+          csr.dpc          <= (others => '0');
+          csr.dscratch0    <= (others => '0');
+          csr.tdata1_exe   <= '0';
+          csr.tdata2       <= (others => '0');
+        end if;
+
+      end if; -- /Zicsr implemented
     end if;
   end process csr_write_access;
 
