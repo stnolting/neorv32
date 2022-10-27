@@ -34,7 +34,7 @@
 
 
 /**********************************************************************//**
- * @file blink_led/main.c
+ * @file demo_blink_led/main.c
  * @author Stephan Nolting
  * @brief Minimal blinking LED demo program using the lowest 8 bits of the GPIO.output port.
  **************************************************************************/
