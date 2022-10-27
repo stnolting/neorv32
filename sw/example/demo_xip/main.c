@@ -80,7 +80,7 @@ int program_xip_flash(uint32_t *src, uint32_t base_addr, uint32_t size);
 
 /**********************************************************************//**
  * @name Simple demo program to be stored to the XIP flash.
- * @note This is a the "raw HEX version" from the rv32i-only "sw/example/blink_led" demo program (using "make clean_all hex").
+ * @note This is a the "raw HEX version" from the rv32i-only "sw/example/demo_blink_led" demo program (using "make clean_all hex").
  * This program has been compiled using a modified linker script:
  * rom ORIGIN = XIP base page + flash base address (= XIP_PAGE_BASE_ADDR + FLASH_BASE)
  **************************************************************************/
