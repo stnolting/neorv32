@@ -105,7 +105,7 @@ _USER_FLAGS_ variable (do not forget the `-D` suffix flag):
 
 [source, bash]
 ----
-sw/example/blink_led$ make USER_FLAGS+=-DUART0_SIM_MODE clean_all all
+sw/example/demo_blink_led$ make USER_FLAGS+=-DUART0_SIM_MODE clean_all all
 ----
 
 The provided define will change the default UART0/UART1 setup function in order to set the simulation
@@ -139,7 +139,7 @@ faster / direct-to-console UART output.
 
 [source, bash]
 ----
-sw/example/blink_led$ make USER_FLAGS+=-DUART0_SIM_MODE clean_all sim
+sw/example/demo_blink_led$ make USER_FLAGS+=-DUART0_SIM_MODE clean_all sim
 [...]
 Blinking LED demo program
 ----

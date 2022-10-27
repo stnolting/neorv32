@@ -137,7 +137,7 @@ The makefile is invoked by simply executing `make` in the console. For example:
 
 [source,bash]
 ----
-neorv32/sw/example/blink_led$ make
+neorv32/sw/example/demo_blink_led$ make
 ----
 
 :sectnums:
@@ -191,7 +191,7 @@ makefile (`sw/common/common.mk`):
 The makefile configuration variables can be overridden or extended directly when invoking the makefile. For
 example `$ make MARCH=rv32ic clean_all exe` overrides the default `MARCH` variable definitions.
 Permanent modifications/definitions can be made in the project-local makefile
-(e.g., `sw/example/blink_led/makefile`).
+(e.g., `sw/example/demo_blink_led/makefile`).
 
 .Default Makefile Configuration
 [source,makefile]

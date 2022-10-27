@@ -97,17 +97,17 @@ the `misa` CSRs). The processor is halted and OpenOCD waits fot `gdb` to connect
 [TIP]
 The GNU debugger is part of the RISC-V GCC toolchain (see <<_software_toolchain_setup>>).
 
-This guide uses the simple "blink example" from `sw/example/blink_led` as simplified test application to
+This guide uses the simple "blink example" from `sw/example/demo_blink_led` as simplified test application to
 show the basics of in-system debugging.
 
 At first, the application needs to be compiled. We will use the minimal machine architecture configuration
 (`rv32i`) here to be independent of the actual processor/CPU configuration.
-Navigate to `sw/example/blink_led` and compile the application:
+Navigate to `sw/example/demo_blink_led` and compile the application:
 
 .Compile the test application
 [source, bash]
 --------------------------
-.../neorv32/sw/example/blink_led$ make MARCH=rv32i USER_FLAGS+=-g clean_all all
+.../neorv32/sw/example/demo_blink_led$ make MARCH=rv32i USER_FLAGS+=-g clean_all all
 --------------------------
 
 .Adding debug symbols to the executable
@@ -119,12 +119,12 @@ to the generated ELF file. This is optional but will provide more sophisticated 
 This will generate an ELF file `main.elf` that contains all the symbols required for debugging.
 Furthermore, an assembly listing file `main.asm` is generated that we will use to define breakpoints.
 
-Open another terminal in `sw/example/blink_led` and start `gdb`.
+Open another terminal in `sw/example/demo_blink_led` and start `gdb`.
 
 .Starting GDB (on Linux (Ubuntu on Windows))
 [source, bash]
 --------------------------
-.../neorv32/sw/example/blink_led$ riscv32-unknown-elf-gdb
+.../neorv32/sw/example/demo_blink_led$ riscv32-unknown-elf-gdb
 GNU gdb (GDB) 10.1
 Copyright (C) 2020 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -144,7 +144,7 @@ Type "apropos word" to search for commands related to "word".
 --------------------------
 
 Now connect to OpenOCD using the default port 3333 on your machine.
-We will use the previously generated ELF file `main.elf` from the `blink_led` example.
+We will use the previously generated ELF file `main.elf` from the `demo_blink_led` example.
 Finally, upload the program to the processor and start debugging.
 
 [NOTE]
@@ -173,12 +173,12 @@ Transfer rate: 43 KB/sec, 2132 bytes/write.
 --------------------------
 <1> Connect to OpenOCD
 <2> The CPU was still executing code from the bootloader ROM - but that does not matter here
-<3> Select `mail.elf` from the `blink_led` example
+<3> Select `mail.elf` from the `demo_blink_led` example
 <4> Upload the executable
 
 After the upload, GDB will make the processor jump to the beginning of the uploaded executable
 (by default, this is the beginning of the instruction memory at `0x00000000`) skipping the bootloader
-and halting the CPU right before executing the `blink_led` application.
+and halting the CPU right before executing the `demo_blink_led` application.
 
 [IMPORTANT]
 After gdb has connected to the CPU, it is recommended to disable the CPU's global interrupt flag
@@ -193,15 +193,15 @@ interrupt flag can be cleared using the following gdb command:
 
 The following steps are just a small showcase that illustrate a simple debugging scheme.
 
-While compiling `blink_led`, an assembly listing file `main.asm` was generated.
+While compiling `demo_blink_led`, an assembly listing file `main.asm` was generated.
 Open this file with a text editor to check out what the CPU is going to do when resumed.
 
-The `blink_led` example implements a simple counter on the 8 lowest GPIO output ports. The program uses
+The `demo_blink_led` example implements a simple counter on the 8 lowest GPIO output ports. The program uses
 "busy wait" to have a visible delay between increments. This waiting is done by calling the `neorv32_cpu_delay_ms`
 function. We will add a _breakpoint_ right at the end of this wait function so we can step through the iterations
 of the counter.
 
-.Cut-out from `main.asm` generated from the `blink_led` example
+.Cut-out from `main.asm` generated from the `demo_blink_led` example
 [source, assembly]
 --------------------------
 00000688 <__neorv32_cpu_delay_ms_end>:

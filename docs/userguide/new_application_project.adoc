@@ -4,7 +4,7 @@
 
 [start=1]
 . The easiest way of creating a _new_ software application project is to copy an _existing_ one. This will keep all
-file dependencies. For example you can copy `sw/example/blink_led` to `sw/example/flux_capacitor`.
+file dependencies. For example you can copy `sw/example/demo_blink_led` to `sw/example/flux_capacitor`.
 . If you want to place you application somewhere outside `sw/example` you need to adapt the application's makefile.
 In the makefile you will find a variable that keeps the relative or absolute path to the NEORV32 repository home
 folder. Just modify this variable according to your new project's home location:

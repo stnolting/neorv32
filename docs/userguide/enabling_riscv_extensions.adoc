@@ -5,7 +5,7 @@
 Whenever you enable/disable a RISC-V CPU extensions via the according `CPU_EXTENSION_RISCV_x` generic, you need to
 adapt the toolchain configuration so the compiler can actually generate according code for it.
 
-To do so, open the makefile of your project (for example `sw/example/blink_led/makefile`) and scroll to the
+To do so, open the makefile of your project (for example `sw/example/demo_blink_led/makefile`) and scroll to the
 "USER CONFIGURATION" section right at the beginning of the file. You need to modify the `MARCH` variable and eventually
 the `MABI` variable according to your CPU hardware configuration.
 

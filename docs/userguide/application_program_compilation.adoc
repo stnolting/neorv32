@@ -12,13 +12,13 @@ run custom programs on your FPGA setup without having a UART.
 
 [start=1]
 . Open a terminal console and navigate to one of the project's example programs. For instance, navigate to the
-simple `sw/example_blink_led` example program. This program uses the NEORV32 GPIO module to display
+simple `sw/example_demo_blink_led` example program. This program uses the NEORV32 GPIO module to display
 an 8-bit counter on the lowest eight bit of the `gpio_o` output port.
 . To compile the project and generate an executable simply execute:
 
 [source,bash]
 ----
-neorv32/sw/example/blink_led$ make clean_all exe
+neorv32/sw/example/demo_blink_led$ make clean_all exe
 ----
 
 [start=3]
@@ -30,7 +30,7 @@ the executable size:
 
 [source,bash]
 ----
-neorv32/sw/example/blink_led$ make clean_all exe
+neorv32/sw/example/demo_blink_led$ make clean_all exe
 Memory utilization:
    text    data     bss     dec     hex filename
    3176       0     120    3296     ce0 main.elf
