@@ -46,7 +46,7 @@ Using the IMEM as ROM:
 
 [source,bash]
 ----
-neorv32/sw/example/blink_led$ make clean_all install
+neorv32/sw/example/demo_blink_led$ make clean_all install
 Memory utilization:
    text    data     bss     dec     hex filename
    3176       0     120    3296     ce0 main.elf

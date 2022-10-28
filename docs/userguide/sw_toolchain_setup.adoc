@@ -88,7 +88,7 @@ execute the following command:
 
 [source,bash]
 ----
-neorv32/sw/example/blink_led$ make check
+neorv32/sw/example/demo_blink_led$ make check
 ----
 
 This will test all the tools required for generating NEORV32 executables.
