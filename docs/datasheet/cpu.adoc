@@ -1073,25 +1073,3 @@ bit) and word (= 32-bit) boundaries, but not all processor module support sub-wo
 Whenever the CPU executes a `fence` instruction, the according interface signal is set high for one cycle
 (`d_bus_fence_o` for a `fence` instruction; `i_bus_fence_o` for a `fence.i` instruction). It is the task of the
 memory system to perform the necessary operations (for example a cache flush/reload).
-
-
-
-<<<
-// ####################################################################################################################
-:sectnums:
-==== CPU Hardware Reset
-
-In order to reduce routing constraints (and by this the actual hardware requirements), most _uncritical registers_
-of the NEORV32 CPU as well as most registers of the whole NEORV32 Processor do not use **a dedicated hardware reset**.
-"Uncritical registers" in this context means that the initial value of the according register(s)
-after power-up/reset is not relevant for a defined CPU boot/start process.
-
-Many CPU-internal register do provide an asynchronous reset described in the VHDL code, but the "don't care" value
-(VHDL `'-'`) is used for initialization of uncritical registers - effectively generating a flip-flop without a
-reset input.
-
-In terms of the NEORV32 CPU, there are several pipeline registers, state machine registers and even some status
-and control registers (CSRs) that do not require a defined initial state to ensure a correct boot process. The
-pipeline register will get initialized by the CPU's internal state machines, which are initialized from the main
-control engine that actually features a defined hardware reset.
-
