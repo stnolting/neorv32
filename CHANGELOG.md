@@ -32,6 +32,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 01.11.2022 | 1.7.7.6 | :warning: rework **SPI module**; [#438](https://github.com/stnolting/neorv32/pull/438) |
 | 24.10.2022 | 1.7.7.5 | :test_tube: remove weird Quartus latch warnings by modifying VHDL coding style; [#434](https://github.com/stnolting/neorv32/pull/434) |
 | 19.10.2022 | 1.7.7.4 | optimize UART's `RTS` (hardware flow control) behavior; [#433](https://github.com/stnolting/neorv32/pull/433) |
 | 15.10.2022 | 1.7.7.3 | :bug: fix bug in `is_power_of_two_f` VHDL function (thanks Alan!); [#482](https://github.com/stnolting/neorv32/pull/428) |
