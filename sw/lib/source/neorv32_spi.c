@@ -64,24 +64,44 @@ int neorv32_spi_available(void) {
  * Enable and configure SPI controller. The SPI control register bits are listed in #NEORV32_SPI_CTRL_enum.
  *
  * @param[in] prsc Clock prescaler select (0..7).  See #NEORV32_CLOCK_PRSC_enum.
+ * @prama[in] cdiv Clock divider (0..15).
  * @param[in] clk_phase Clock phase (0=sample on rising edge, 1=sample on falling edge).
  * @param[in] clk_polarity Clock polarity (when idle).
  * @param[in] data_size Data transfer size (0: 8-bit, 1: 16-bit, 2: 24-bit, 3: 32-bit).
  * @param[in] irq_config Interrupt configuration (0,1: PHY transfer done, 2: TX FIFO becomes less than half full, 3: TX FIFO becomes empty).
  **************************************************************************/
-void neorv32_spi_setup(int prsc, int clk_phase, int clk_polarity, int data_size, int irq_config) {
+void neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, int data_size, int irq_config) {
 
   NEORV32_SPI.CTRL = 0; // reset
 
   uint32_t tmp = 0;
-  tmp =  1                               << SPI_CTRL_EN;
-  tmp |= (uint32_t)(prsc         & 0x07) << SPI_CTRL_PRSC0;
+  tmp |= (uint32_t)(1            & 0x01) << SPI_CTRL_EN;
   tmp |= (uint32_t)(clk_phase    & 0x01) << SPI_CTRL_CPHA;
   tmp |= (uint32_t)(clk_polarity & 0x01) << SPI_CTRL_CPOL;
   tmp |= (uint32_t)(data_size    & 0x03) << SPI_CTRL_SIZE0;
+  tmp |= (uint32_t)(prsc         & 0x07) << SPI_CTRL_PRSC0;
+  tmp |= (uint32_t)(cdiv         & 0x0f) << SPI_CTRL_CDIV0;
   tmp |= (uint32_t)(irq_config   & 0x03) << SPI_CTRL_IRQ0;
 
   NEORV32_SPI.CTRL = tmp;
+}
+
+
+/**********************************************************************//**
+ * Get configured clock speed in Hz.
+ *
+ * @return Actual configured SPI clock speed in Hz.
+ **************************************************************************/
+uint32_t neorv32_spi_get_clock_speed(void) {
+
+  const uint32_t PRSC_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
+
+  uint32_t ctrl = NEORV32_SPI.CTRL;
+  uint32_t prsc_sel = (ctrl >> SPI_CTRL_PRSC0) & 0x7;
+  uint32_t clock_div = (ctrl >> SPI_CTRL_CDIV0) & 0xf;
+
+  uint32_t tmp = 2 * PRSC_LUT[prsc_sel] * clock_div;
+  return NEORV32_SYSINFO.CLK / tmp;
 }
 
 
@@ -116,54 +136,28 @@ int neorv32_spi_get_fifo_depth(void) {
 
 
 /**********************************************************************//**
- * Enable high-speed SPI mode (running at half of the processor clock).
+ * Activate single SPI chip select signal.
  *
- * @note High-speed SPI mode ignores the programmed clock prescaler configuration.
- **************************************************************************/
-void neorv32_spi_highspeed_enable(void) {
-
-  NEORV32_SPI.CTRL |= 1 << SPI_CTRL_HIGHSPEED;
-}
-
-
-/**********************************************************************//**
- * Disable high-speed SPI mode.
- *
- * @note High-speed SPI mode ignores the programmed clock prescaler configuration.
- **************************************************************************/
-void neorv32_spi_highspeed_disable(void) {
-
-  NEORV32_SPI.CTRL &= ~(1 << SPI_CTRL_HIGHSPEED);
-}
-
-
-/**********************************************************************//**
- * Activate SPI chip select signal.
- *
- * @note The chip select output lines are LOW when activated.
+ * @note The SPI chip select output lines are LOW when activated.
  *
  * @param cs Chip select line to activate (0..7).
  **************************************************************************/
 void neorv32_spi_cs_en(int cs) {
 
-  uint32_t cs_mask = (uint32_t)(1 << (cs & 0x07));
-  cs_mask = cs_mask << SPI_CTRL_CS0;
-  NEORV32_SPI.CTRL |= cs_mask;
+  uint32_t tmp = NEORV32_SPI.CTRL;
+  tmp &= ~(0xf << SPI_CTRL_CS_SEL0); // clear old configuration
+  tmp |= (1 << SPI_CTRL_CS_EN) | ((cs & 7) << SPI_CTRL_CS_SEL0); // set new configuration
+  NEORV32_SPI.CTRL = tmp;
 }
 
 
 /**********************************************************************//**
- * Deactivate SPI chip select signal.
+ * Deactivate currently active SPI chip select signal.
  *
- * @note The chip select output lines are HIGH when deactivated.
- *
- * @param cs Chip select line to deactivate (0..7).
+ * @note The SPI chip select output lines are HIGH when deactivated.
  **************************************************************************/
-void neorv32_spi_cs_dis(int cs) {
-
-  uint32_t cs_mask = (uint32_t)(1 << (cs & 0x07));
-  cs_mask = cs_mask << SPI_CTRL_CS0;
-  NEORV32_SPI.CTRL &= ~cs_mask;
+void neorv32_spi_cs_dis(void) {
+  NEORV32_SPI.CTRL &= ~(1 << SPI_CTRL_CS_EN);
 }
 
 

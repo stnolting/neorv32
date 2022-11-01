@@ -45,14 +45,12 @@
 
 // prototypes
 int      neorv32_spi_available(void);
-void     neorv32_spi_setup(int prsc, int clk_phase, int clk_polarity, int data_size, int irq_config);
+void     neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, int data_size, int irq_config);
 void     neorv32_spi_disable(void);
 void     neorv32_spi_enable(void);
 int      neorv32_spi_get_fifo_depth(void);
-void     neorv32_spi_highspeed_enable(void);
-void     neorv32_spi_highspeed_disable(void);
 void     neorv32_spi_cs_en(int cs);
-void     neorv32_spi_cs_dis(int cs);
+void     neorv32_spi_cs_dis(void);
 uint32_t neorv32_spi_trans(uint32_t tx_data);
 void     neorv32_spi_put_nonblocking(uint32_t tx_data);
 uint32_t neorv32_spi_get_nonblocking(void);
