@@ -278,7 +278,7 @@ int main(void) {
 #if (SPI_EN != 0)
   // setup SPI for 8-bit, clock-mode 0
   if (neorv32_spi_available()) {
-    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0, 0);
+    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0, 0, 0);
   }
 #endif
 
@@ -779,7 +779,7 @@ uint8_t spi_flash_read_byte(uint32_t addr) {
   spi_flash_write_addr(addr);
   uint8_t rdata = (uint8_t)neorv32_spi_trans(0);
 
-  neorv32_spi_cs_dis(SPI_FLASH_CS);
+  neorv32_spi_cs_dis();
 
   return rdata;
 #else
@@ -805,7 +805,7 @@ void spi_flash_write_byte(uint32_t addr, uint8_t wdata) {
   spi_flash_write_addr(addr);
   neorv32_spi_trans(wdata);
 
-  neorv32_spi_cs_dis(SPI_FLASH_CS);
+  neorv32_spi_cs_dis();
 
   while(1) {
     if ((spi_flash_read_status() & (1 << FLASH_SREG_BUSY)) == 0) { // write in progress flag cleared?
@@ -856,7 +856,7 @@ void spi_flash_erase_sector(uint32_t addr) {
   neorv32_spi_trans(SPI_FLASH_CMD_SECTOR_ERASE);
   spi_flash_write_addr(addr);
 
-  neorv32_spi_cs_dis(SPI_FLASH_CS);
+  neorv32_spi_cs_dis();
 
   while(1) {
     if ((spi_flash_read_status() & (1 << FLASH_SREG_BUSY)) == 0) { // write in progress flag cleared?
@@ -875,7 +875,7 @@ void spi_flash_write_enable(void) {
 #if (SPI_EN != 0)
   neorv32_spi_cs_en(SPI_FLASH_CS);
   neorv32_spi_trans(SPI_FLASH_CMD_WRITE_ENABLE);
-  neorv32_spi_cs_dis(SPI_FLASH_CS);
+  neorv32_spi_cs_dis();
 #endif
 }
 
@@ -888,7 +888,7 @@ void spi_flash_write_disable(void) {
 #if (SPI_EN != 0)
   neorv32_spi_cs_en(SPI_FLASH_CS);
   neorv32_spi_trans(SPI_FLASH_CMD_WRITE_DISABLE);
-  neorv32_spi_cs_dis(SPI_FLASH_CS);
+  neorv32_spi_cs_dis();
 #endif
 }
 
@@ -906,7 +906,7 @@ uint32_t spi_flash_read_status(void) {
   neorv32_spi_trans(SPI_FLASH_CMD_READ_STATUS);
   uint32_t res = neorv32_spi_trans(0);
 
-  neorv32_spi_cs_dis(SPI_FLASH_CS);
+  neorv32_spi_cs_dis();
 
   return res;
 #else
