@@ -111,7 +111,7 @@ architecture neorv32_spi_rtl of neorv32_spi is
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
-  -- control register --
+  -- control register - see bit definitions above --
   type ctrl_t is record
     enable   : std_ulogic;
     cpha     : std_ulogic;
@@ -126,8 +126,8 @@ architecture neorv32_spi_rtl of neorv32_spi is
   signal ctrl : ctrl_t;
 
   -- clock generator --
-  signal cdiv_cnt   : std_ulogic_vector(3 downto 0);
-  signal spi_clk_en : std_ulogic;
+  signal cdiv_cnt   : std_ulogic_vector(3 downto 0); -- clock divider
+  signal spi_clk_en : std_ulogic; -- actual SPI "clock"
 
   -- interrupt generator --
   signal irq_gen : std_ulogic_vector(1 downto 0);
@@ -384,8 +384,8 @@ begin
         spi_clk_en <= '0'; -- default
         if (clkgen_i(to_integer(unsigned(ctrl.prsc))) = '1') then -- pre-scaled clock
           if (cdiv_cnt = ctrl.cdiv) then -- clock divider for fine-tuning
-            cdiv_cnt   <= (others => '0');
             spi_clk_en <= '1';
+            cdiv_cnt   <= (others => '0');
           else
             cdiv_cnt <= std_ulogic_vector(unsigned(cdiv_cnt) + 1);
           end if;
