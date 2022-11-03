@@ -2,8 +2,9 @@
 -- # << NEORV32 - Two-Wire Interface Controller (TWI) >>                                           #
 -- # ********************************************************************************************* #
 -- # Supports START and STOP conditions, 8 bit data + ACK/NACK transfers and clock stretching.     #
--- # Supports ACKs by the controller. No multi-controller support and no peripheral mode support   #
--- # yet. Interrupt: "transmission done"                                                           #
+-- # Supports ACKs by the controller. 8 clock pre-scalers + 4-bit clock divider for bus clock      #
+-- # configuration. No multi-controller support and no peripheral mode support yet.                #
+-- # Interrupt: "transmission done"                                                                #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
