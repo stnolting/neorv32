@@ -133,7 +133,7 @@ int main() {
                           " start - generate START condition\n"
                           " stop  - generate STOP condition\n"
                           " send  - write & read single byte to/from bus\n"
-                          " clock - configure bus clock\n"
+                          " clock - configure bus clock (will reset TWI module!)\n"
                           " stat  - check if the TWI bus is currently claimed by any controller\n"
                           " mack  - enable/disable MASTER-ACK (ACK send by controller)\n\n"
                           "Start a new transmission by generating a START condition. Next, transfer the 7-bit device address\n"
