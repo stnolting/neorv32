@@ -1236,8 +1236,8 @@ int main() {
 
     cnt_test++;
 
-    // configure TWI, fastest clock
-    neorv32_twi_setup(CLK_PRSC_2);
+    // configure TWI, fastest clock, no clock stretching
+    neorv32_twi_setup(CLK_PRSC_2, 0, 0);
 
     // enable TWI FIRQ
     neorv32_cpu_irq_enable(TWI_FIRQ_ENABLE);
