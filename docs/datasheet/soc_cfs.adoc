@@ -5,9 +5,9 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_gfs.vhd | 
-| Software driver file(s): | neorv32_gfs.c |
-|                          | neorv32_gfs.h |
+| Hardware source file(s): | neorv32_cfs.vhd | 
+| Software driver file(s): | neorv32_cfs.c |
+|                          | neorv32_cfs.h |
 | Top entity port:         | `cfs_in_i`  | custom input conduit
 |                          | `cfs_out_o` | custom output conduit
 | Configuration generics:  | _IO_CFS_EN_ | implement CFS when _true_
