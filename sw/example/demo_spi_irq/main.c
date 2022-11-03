@@ -113,8 +113,8 @@ int main()
   neorv32_spi_init(&g_neorv32_spi);
     // Configure
   neorv32_spi_disable();
-    // neorv32_spi_setup(int prsc, int clk_phase, int clk_polarity, int data_size, int irq_config)
-  neorv32_spi_setup(0, 0, 0, 0, 3);  // spi mode 0, 8bit, IRQ: 0-: PHY going idle, 10: TX fifo less than half full, 11: TX fifo empty
+    // neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, int data_size, int irq_config)
+  neorv32_spi_setup(0, 0, 0, 0, 0, 3);  // spi mode 0, 8bit, IRQ: 0-: PHY going idle, 10: TX fifo less than half full, 11: TX fifo empty
   neorv32_spi_enable();
 
   // IRQ based data transfer

@@ -123,8 +123,8 @@ int main() {
       neorv32_uart0_printf("Available commands:\n"
                           " help  - show this text\n"
                           " setup - configure SPI module (clock speed, clock mode, data size)\n"
-                          " en    - enable chip-select line (set low)\n"
-                          " dis   - disable chip-select line (set high)\n"
+                          " en    - enable single chip-select line (set low)\n"
+                          " dis   - disable all chip-select lines (set high)\n"
                           " trans - SPI data transmission (write & read to/from SPI)\n"
                           "\n"
                           "Configure the SPI module using 'setup'. Enable a certain module using 'cs-en',\n"
@@ -164,29 +164,23 @@ void spi_cs(uint32_t type) {
 
   if (type) {
     neorv32_uart0_printf("Chip-select line to ENABLE (set low) [0..7]: ");
-  }
-  else {
-    neorv32_uart0_printf("Chip-select line to DISABLE (set high) [0..7]: ");
-  }
-
-  while (1) {
-    neorv32_uart0_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
-    channel = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
-    if (channel > 7) {
-      neorv32_uart0_printf("\nInvalid channel selection!\n");
-      return;
+    while (1) {
+      neorv32_uart0_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
+      channel = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+      if (channel > 7) {
+        neorv32_uart0_printf("\nInvalid channel selection!\n");
+        return;
+      }
+      else {
+        neorv32_uart0_printf("\n");
+        break;
+      }
     }
-    else {
-      neorv32_uart0_printf("\n");
-      break;
-    }
-  }
-
-  if (type) {
     neorv32_spi_cs_en(channel);
   }
   else {
-    neorv32_spi_cs_dis(channel);
+    neorv32_uart0_printf("Disabling chip select lines.\n");
+    neorv32_spi_cs_dis();
   }
 }
 
@@ -248,16 +242,18 @@ void spi_trans(void) {
  **************************************************************************/
 void spi_setup(void) {
 
+  const uint32_t PRSC_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
+
   char terminal_buffer[9];
-  uint8_t spi_prsc, clk_phase, clk_pol, data_size;
+  uint8_t spi_prsc, clk_div, clk_phase, clk_pol, data_size;
   uint32_t tmp;
 
   // ---- SPI clock ----
 
   while (1) {
-  neorv32_uart0_printf("Select SPI clock prescaler (0..7): ");
-  neorv32_uart0_scan(terminal_buffer, 2, 1);
-  tmp = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+    neorv32_uart0_printf("Select SPI clock prescaler (0..7): ");
+    neorv32_uart0_scan(terminal_buffer, 2, 1);
+    tmp = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
     if (tmp > 8) {
       neorv32_uart0_printf("\nInvalid selection!\n");
     }
@@ -267,27 +263,19 @@ void spi_setup(void) {
     }
   }
 
-  uint32_t div = 0;
-  switch (spi_prsc) {
-    case 0: div = 2 * 2; break;
-    case 1: div = 2 * 4; break;
-    case 2: div = 2 * 8; break;
-    case 3: div = 2 * 64; break;
-    case 4: div = 2 * 128; break;
-    case 5: div = 2 * 1024; break;
-    case 6: div = 2 * 2048; break;
-    case 7: div = 2 * 4096; break;
-    default: div = 0; break;
-  }
-  uint32_t clock = NEORV32_SYSINFO.CLK / div;
+  neorv32_uart0_printf("\nEnter clock divider (0..15, as one hex char): ");
+  neorv32_uart0_scan(terminal_buffer, 2, 1);
+  clk_div = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+
+  uint32_t clock = NEORV32_SYSINFO.CLK / (2 * PRSC_LUT[spi_prsc] * (1 + clk_div));
   neorv32_uart0_printf("\n+ New SPI clock speed = %u Hz\n", clock);
 
   // ---- SPI clock mode ----
 
   while (1) {
-  neorv32_uart0_printf("Select SPI clock mode (0..3): ");
-  neorv32_uart0_scan(terminal_buffer, 2, 1);
-  tmp = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+    neorv32_uart0_printf("Select SPI clock mode (0..3): ");
+    neorv32_uart0_scan(terminal_buffer, 2, 1);
+    tmp = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
     if (tmp > 4) {
       neorv32_uart0_printf("\nInvalid selection!\n");
     }
@@ -302,9 +290,9 @@ void spi_setup(void) {
   // ---- SPI transfer data quantity ----
 
   while (1) {
-  neorv32_uart0_printf("Select SPI data transfer size in bytes (1,2,3,4): ");
-  neorv32_uart0_scan(terminal_buffer, 2, 1);
-  tmp = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+    neorv32_uart0_printf("Select SPI data transfer size in bytes (1,2,3,4): ");
+    neorv32_uart0_scan(terminal_buffer, 2, 1);
+    tmp = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
     if ( (tmp < 1) || (tmp > 4)) {
       neorv32_uart0_printf("\nInvalid selection!\n");
     }
@@ -315,7 +303,7 @@ void spi_setup(void) {
   }
   neorv32_uart0_printf("\n+ New SPI data size = %u byte(s)\n\n", tmp);
 
-  neorv32_spi_setup(spi_prsc, clk_phase, clk_pol, data_size, 0);
+  neorv32_spi_setup(spi_prsc, clk_div, clk_phase, clk_pol, data_size, 0);
   spi_configured = 1; // SPI is configured now
   spi_size = tmp;
 }

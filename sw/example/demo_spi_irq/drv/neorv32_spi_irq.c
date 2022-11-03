@@ -85,7 +85,7 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
         ((uint8_t *) self->ptrSpiBuf)[self->uint32Read] = (uint8_t) (NEORV32_SPI.DATA & 0xff);  // capture from last transfer
       }
       if ( self->uint32Read == self->uint32Total ) {  // transfer done, no new data
-        neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
+        neorv32_spi_cs_dis(); // deselect slave
         self->uint32Total = 0;
         self->uint8IsBusy = 0;
         break;
@@ -104,7 +104,7 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
         ((uint16_t *) self->ptrSpiBuf)[self->uint32Read] = (uint16_t) (NEORV32_SPI.DATA & 0xffff);  // capture from last transfer
       }
       if ( self->uint32Read == self->uint32Total ) {  // transfer done, no new data
-        neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
+        neorv32_spi_cs_dis(); // deselect slave
         self->uint32Total = 0;
         self->uint8IsBusy = 0;
         break;
@@ -123,7 +123,7 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
         ((uint32_t *) self->ptrSpiBuf)[self->uint32Read] = NEORV32_SPI.DATA;  // capture from last transfer
       }
       if ( self->uint32Read == self->uint32Total ) {  // transfer done, no new data
-        neorv32_spi_cs_dis(self->uint8Csn); // deselect slave
+        neorv32_spi_cs_dis(); // deselect slave
         self->uint32Total = 0;
         self->uint8IsBusy = 0;
         break;

@@ -823,62 +823,67 @@
           <addressOffset>0x00</addressOffset>
           <fields>
             <field>
-              <name>SPI_CTRL_CS</name>
-              <bitRange>[7:0]</bitRange>
-              <description>Direct chip select line</description>
-            </field>
-            <field>
               <name>SPI_CTRL_EN</name>
-              <bitRange>[8:8]</bitRange>
+              <bitRange>[0:0]</bitRange>
               <description>SPI enable flag</description>
             </field>
             <field>
               <name>SPI_CTRL_CPHA</name>
-              <bitRange>[9:9]</bitRange>
+              <bitRange>[1:1]</bitRange>
               <description>Clock phase</description>
             </field>
             <field>
-              <name>SPI_CTRL_PRSC</name>
-              <bitRange>[12:10]</bitRange>
-              <description>Clock prescaler select</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_SIZE</name>
-              <bitRange>[14:13]</bitRange>
-              <description>Data transfer size</description>
-            </field>
-            <field>
               <name>SPI_CTRL_CPOL</name>
-              <bitRange>[15:15]</bitRange>
+              <bitRange>[2:2]</bitRange>
               <description>Clock polarity</description>
             </field>
             <field>
-              <name>SPI_CTRL_HIGHSPEED</name>
-              <bitRange>[16:16]</bitRange>
-              <description>SPI high-speed mode enable (ignoring SPI_CTRL_PRSC)</description>
+              <name>SPI_CTRL_SIZE</name>
+              <bitRange>[4:3]</bitRange>
+              <description>Data transfer size</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_CS_SEL</name>
+              <bitRange>[7:5]</bitRange>
+              <description>CS select</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_CS_EN</name>
+              <bitRange>[8:8]</bitRange>
+              <description>Enable selected CS line</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_PRSC</name>
+              <bitRange>[11:9]</bitRange>
+              <description>Clock prescaler select</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_CDIV</name>
+              <bitRange>[15:12]</bitRange>
+              <description>SPI clock divider</description>
             </field>
             <field>
               <name>SPI_CTRL_IRQ</name>
-              <bitRange>[18:17]</bitRange>
+              <bitRange>[17:16]</bitRange>
               <description>Interrupt configuration</description>
             </field>
             <field>
               <name>SPI_CTRL_FIFO</name>
-              <bitRange>[22:19]</bitRange>
+              <bitRange>[26:23]</bitRange>
               <access>read-only</access>
               <description>log2(FIFO size)</description>
             </field>
             <field>
-              <name>SPI_CTRL_TX_EMPTY</name>
-              <bitRange>[25:25]</bitRange>
-              <access>read-only</access>
-              <description>TX FIFO is empty</description>
-            </field>
-            <field>
               <name>SPI_CTRL_RX_AVAIL</name>
-              <bitRange>[28:28]</bitRange>
+              <bitRange>[27:27]</bitRange>
               <access>read-only</access>
               <description>RX FIFO data available (RX FIFO not empty)</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_TX_EMPTY</name>
+              <bitRange>[28:28]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO is empty</description>
             </field>
             <field>
               <name>SPI_CTRL_TX_HALF</name>
