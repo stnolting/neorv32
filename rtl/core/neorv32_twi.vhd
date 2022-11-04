@@ -2,8 +2,9 @@
 -- # << NEORV32 - Two-Wire Interface Controller (TWI) >>                                           #
 -- # ********************************************************************************************* #
 -- # Supports START and STOP conditions, 8 bit data + ACK/NACK transfers and clock stretching.     #
--- # Supports ACKs by the controller. No multi-controller support and no peripheral mode support   #
--- # yet. Interrupt: "transmission done"                                                           #
+-- # Supports ACKs by the controller. 8 clock pre-scalers + 4-bit clock divider for bus clock      #
+-- # configuration. No multi-controller support and no peripheral mode support yet.                #
+-- # Interrupt: "transmission done"                                                                #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -74,13 +75,18 @@ architecture neorv32_twi_rtl of neorv32_twi is
   constant lo_abb_c : natural := index_size_f(twi_size_c); -- low address boundary bit
 
   -- control register --
-  constant ctrl_en_c      : natural := 0; -- r/w: TWI enable
-  constant ctrl_start_c   : natural := 1; -- -/w: Generate START condition
-  constant ctrl_stop_c    : natural := 2; -- -/w: Generate STOP condition
-  constant ctrl_prsc0_c   : natural := 3; -- r/w: CLK prsc bit 0
-  constant ctrl_prsc1_c   : natural := 4; -- r/w: CLK prsc bit 1
-  constant ctrl_prsc2_c   : natural := 5; -- r/w: CLK prsc bit 2
-  constant ctrl_mack_c    : natural := 6; -- r/w: generate ACK by controller for transmission
+  constant ctrl_en_c      : natural :=  0; -- r/w: TWI enable
+  constant ctrl_start_c   : natural :=  1; -- -/w: Generate START condition
+  constant ctrl_stop_c    : natural :=  2; -- -/w: Generate STOP condition
+  constant ctrl_mack_c    : natural :=  3; -- r/w: generate ACK by controller for transmission
+  constant ctrl_csen_c    : natural :=  4; -- r/w: allow clock stretching when set
+  constant ctrl_prsc0_c   : natural :=  5; -- r/w: CLK prsc bit 0
+  constant ctrl_prsc1_c   : natural :=  6; -- r/w: CLK prsc bit 1
+  constant ctrl_prsc2_c   : natural :=  7; -- r/w: CLK prsc bit 2
+  constant ctrl_cdiv0_c   : natural :=  8; -- r/w: clock divider bit 0
+  constant ctrl_cdiv1_c   : natural :=  9; -- r/w: clock divider bit 1
+  constant ctrl_cdiv2_c   : natural := 10; -- r/w: clock divider bit 2
+  constant ctrl_cdiv3_c   : natural := 11; -- r/w: clock divider bit 3
   --
   constant ctrl_claimed_c : natural := 29; -- r/-: Set if bus is still claimed
   constant ctrl_ack_c     : natural := 30; -- r/-: Set if ACK received
@@ -95,19 +101,21 @@ architecture neorv32_twi_rtl of neorv32_twi is
   -- control register --
   type ctrl_t is record
     enable : std_ulogic;
-    prsc   : std_ulogic_vector(2 downto 0);
     mack   : std_ulogic;
+    csen   : std_ulogic;
+    prsc   : std_ulogic_vector(2 downto 0);
+    cdiv   : std_ulogic_vector(3 downto 0);
   end record;
   signal ctrl : ctrl_t;
 
   -- clock generator --
   type clk_gen_t is record
-    clk_tick     : std_ulogic;
-    clk_tick_ff  : std_ulogic;
-    phase_gen    : std_ulogic_vector(3 downto 0);
+    cnt          : std_ulogic_vector(3 downto 0); -- clock divider
+    tick         : std_ulogic; -- actual TWI "clock"
+    phase_gen    : std_ulogic_vector(3 downto 0); -- clock phase generator
     phase_gen_ff : std_ulogic_vector(3 downto 0);
     phase        : std_ulogic_vector(3 downto 0);
-    halt         : std_ulogic;
+    halt         : std_ulogic; -- active clock stretching
   end record;
   signal clk_gen : clk_gen_t;
 
@@ -117,9 +125,9 @@ architecture neorv32_twi_rtl of neorv32_twi is
     state_nxt : std_ulogic_vector(1 downto 0);
     bitcnt    : std_ulogic_vector(3 downto 0);
     rtx_sreg  : std_ulogic_vector(8 downto 0); -- main rx/tx shift reg
-    rtx_done  : std_ulogic;
+    rtx_done  : std_ulogic; -- transmission done
     busy      : std_ulogic;
-    claimed   : std_ulogic;
+    claimed   : std_ulogic; -- bus is currently claimed by _this_ controller
   end record;
   signal arbiter : arbiter_t;
 
@@ -150,8 +158,10 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl.enable <= '0';
-      ctrl.prsc   <= (others => '0');
       ctrl.mack   <= '0';
+      ctrl.csen   <= '0';
+      ctrl.prsc   <= (others => '0');
+      ctrl.cdiv   <= (others => '0');
       ack_o       <= '-';
       data_o      <= (others => '-');
     elsif rising_edge(clk_i) then
@@ -160,8 +170,10 @@ begin
       if (wren = '1') then
         if (addr = twi_ctrl_addr_c) then
           ctrl.enable <= data_i(ctrl_en_c);
-          ctrl.prsc   <= data_i(ctrl_prsc2_c downto ctrl_prsc0_c);
           ctrl.mack   <= data_i(ctrl_mack_c);
+          ctrl.csen   <= data_i(ctrl_csen_c);
+          ctrl.prsc   <= data_i(ctrl_prsc2_c downto ctrl_prsc0_c);
+          ctrl.cdiv   <= data_i(ctrl_cdiv3_c downto ctrl_cdiv0_c);
         end if;
       end if;
       -- read access --
@@ -169,8 +181,10 @@ begin
       if (rden = '1') then
         if (addr = twi_ctrl_addr_c) then
           data_o(ctrl_en_c)                        <= ctrl.enable;
-          data_o(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
           data_o(ctrl_mack_c)                      <= ctrl.mack;
+          data_o(ctrl_csen_c)                      <= ctrl.csen;
+          data_o(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
+          data_o(ctrl_cdiv3_c downto ctrl_cdiv0_c) <= ctrl.cdiv;
           --
           data_o(ctrl_claimed_c) <= arbiter.claimed;
           data_o(ctrl_ack_c)     <= not arbiter.rtx_sreg(0);
@@ -185,27 +199,43 @@ begin
 
   -- Clock Generation -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- clock generator enable --
-  clkgen_en_o <= ctrl.enable;
-
-  -- twi clock select --
-  clk_gen.clk_tick <= clkgen_i(to_integer(unsigned(ctrl.prsc)));
-
-  -- generate four non-overlapping clock ticks --
   clock_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      clk_gen.clk_tick_ff  <= clk_gen.clk_tick;
-      clk_gen.phase_gen_ff <= clk_gen.phase_gen;
-      if (arbiter.state(2) = '0') or (arbiter.state(1 downto 0) = "00") then -- offline or idle
-        clk_gen.phase_gen <= "0001"; -- make sure to start with a new phase, bit stepping: 0-1-2-3
+      if (ctrl.enable = '0') then -- reset/disabled
+        clk_gen.tick <= '0';
+        clk_gen.cnt  <= (others => '0');
       else
-        if (clk_gen.clk_tick_ff = '1') and (clk_gen.halt = '0') then -- clock tick and no clock stretching detected
-          clk_gen.phase_gen <= clk_gen.phase_gen(2 downto 0) & clk_gen.phase_gen(3); -- rotate left
+        clk_gen.tick <= '0'; -- default
+        if (clkgen_i(to_integer(unsigned(ctrl.prsc))) = '1') then -- pre-scaled clock
+          if (clk_gen.cnt = ctrl.cdiv) then -- clock divider for fine-tuning
+            clk_gen.tick <= '1';
+            clk_gen.cnt  <= (others => '0');
+          else
+            clk_gen.cnt <= std_ulogic_vector(unsigned(clk_gen.cnt) + 1);
+          end if;
         end if;
       end if;
     end if;
   end process clock_generator;
+
+  -- clock generator enable --
+  clkgen_en_o <= ctrl.enable;
+
+  -- generate four non-overlapping clock phases --
+  phase_generator: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      clk_gen.phase_gen_ff <= clk_gen.phase_gen;
+      if (arbiter.state(2) = '0') or (arbiter.state(1 downto 0) = "00") then -- offline or idle
+        clk_gen.phase_gen <= "0001"; -- make sure to start with a new phase, bit stepping: 0-1-2-3
+      else
+        if (clk_gen.tick = '1') and (clk_gen.halt = '0') then -- clock tick and no clock stretching detected
+          clk_gen.phase_gen <= clk_gen.phase_gen(2 downto 0) & clk_gen.phase_gen(3); -- rotate left
+        end if;
+      end if;
+    end if;
+  end process phase_generator;
 
   -- TWI bus signals are set/sampled using 4 clock phases --
   clk_gen.phase(0) <= clk_gen.phase_gen_ff(0) and (not clk_gen.phase_gen(0)); -- first step
@@ -215,7 +245,7 @@ begin
 
   -- Clock Stretching Detector --
   -- controller wants to pull SCL high, but SCL is pulled low by peripheral --
-  clk_gen.halt <= '1' when (io_con.scl_out = '1') and (io_con.scl_in_ff(1) = '0') else '0';
+  clk_gen.halt <= '1' when (io_con.scl_out = '1') and (io_con.scl_in_ff(1) = '0') and (ctrl.csen = '1') else '0';
 
 
   -- TWI Transceiver ------------------------------------------------------------------------
@@ -256,7 +286,7 @@ begin
             end if;
           end if;
           -- start operation on next TWI clock pulse --
-          if (arbiter.state_nxt /= "00") and (clk_gen.clk_tick_ff = '1') then
+          if (arbiter.state_nxt /= "00") and (clk_gen.tick = '1') then
             arbiter.state(1 downto 0) <= arbiter.state_nxt;
           end if;
 

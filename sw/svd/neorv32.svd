@@ -950,14 +950,24 @@
               <description>Generate STOP condition, auto-clears</description>
             </field>
             <field>
+              <name>TWI_CTRL_MACK</name>
+              <bitRange>[3:3]</bitRange>
+              <description>Generate ACK by controller for each transmission</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_CSEN</name>
+              <bitRange>[4:4]</bitRange>
+              <description>Allow clock stretching when set</description>
+            </field>
+            <field>
               <name>TWI_CTRL_PRSC</name>
-              <bitRange>[5:3]</bitRange>
+              <bitRange>[7:5]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
-              <name>TWI_CTRL_MACK</name>
-              <bitRange>[6:6]</bitRange>
-              <description>Generate ACK by controller for each transmission</description>
+              <name>TWI_CTRL_CDIV</name>
+              <bitRange>[11:8]</bitRange>
+              <description>TWI clock divider</description>
             </field>
             <field>
               <name>TWI_CTRL_CLAIMED</name>
