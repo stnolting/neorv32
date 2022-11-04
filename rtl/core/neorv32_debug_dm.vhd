@@ -136,12 +136,12 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- debug module DMI registers / access --
   type progbuf_t is array (0 to 1) of std_ulogic_vector(31 downto 0);
   type dm_reg_t is record
-    dmcontrol_ndmreset : std_ulogic;
-    dmcontrol_dmactive : std_ulogic;
+    dmcontrol_ndmreset           : std_ulogic;
+    dmcontrol_dmactive           : std_ulogic;
     abstractauto_autoexecdata    : std_ulogic;
     abstractauto_autoexecprogbuf : std_ulogic_vector(01 downto 0);
-    progbuf     : progbuf_t;
-    command     : std_ulogic_vector(31 downto 0);
+    progbuf                      : progbuf_t;
+    command                      : std_ulogic_vector(31 downto 0);
     --
     halt_req    : std_ulogic;
     resume_req  : std_ulogic;
@@ -243,12 +243,12 @@ begin
     if rising_edge(clk_i) then
       if (dm_reg.dmcontrol_dmactive = '0') or (dmi_rstn_i = '0') then -- DM reset / DM disabled
         dm_ctrl.state           <= CMD_IDLE;
-        dm_ctrl.ldsw_progbuf    <= (others => '-');
+        dm_ctrl.ldsw_progbuf    <= instr_sw_c;
         dci.execute_req         <= '0';
-        dm_ctrl.pbuf_en         <= '-';
+        dm_ctrl.pbuf_en         <= '0';
         --
-        dm_ctrl.illegal_cmd     <= '-';
-        dm_ctrl.illegal_state   <= '-';
+        dm_ctrl.illegal_cmd     <= '0';
+        dm_ctrl.illegal_state   <= '0';
         dm_ctrl.cmderr          <= "000";
         --
         dm_ctrl.hart_reset      <= '0';
@@ -441,8 +441,8 @@ begin
         -- debug module control --
         if (dmi_req_addr_i = addr_dmcontrol_c) then
           dm_reg.halt_req           <= dmi_req_data_i(31); -- haltreq (-/w): write 1 to request halt; has to be cleared again by debugger
-          dm_reg.resume_req         <= dmi_req_data_i(30); -- resumereq (-/w1): write 1 to request resume
-          dm_reg.reset_ack          <= dmi_req_data_i(28); -- ackhavereset (-/w1)
+          dm_reg.resume_req         <= dmi_req_data_i(30); -- resumereq (-/w1): write 1 to request resume; auto-clears
+          dm_reg.reset_ack          <= dmi_req_data_i(28); -- ackhavereset (-/w1): write 1 to ACK reset; auto-clears
           dm_reg.dmcontrol_ndmreset <= dmi_req_data_i(01); -- ndmreset (r/w): soc reset
           dm_reg.dmcontrol_dmactive <= dmi_req_data_i(00); -- dmactive (r/w): DM reset
         end if;
@@ -488,7 +488,7 @@ begin
           end if;
         end if;
 
-        -- invalid access (while command is executing) --
+        -- invalid access while command is executing --
         if (dm_ctrl.busy = '1') then -- busy
           if (dmi_req_addr_i = addr_abstractcs_c) or
              (dmi_req_addr_i = addr_command_c) or
