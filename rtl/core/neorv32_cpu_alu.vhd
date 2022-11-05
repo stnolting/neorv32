@@ -163,7 +163,7 @@ begin
   idone_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5);
 
   -- co-processor result --
-  -- > "cp_result" data has to be always zero unless co-processor was actually triggered
+  -- > "cp_result" data has to be always zero unless unique co-processor was actually triggered
   cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5);
 
 
@@ -293,7 +293,7 @@ begin
   if (CPU_EXTENSION_RISCV_Zxcfu = true) generate
     neorv32_cpu_cp_cfu_inst: neorv32_cpu_cp_cfu
     generic map (
-    XLEN => XLEN -- data path width
+      XLEN => XLEN -- data path width
     )
     port map (
       -- global control --

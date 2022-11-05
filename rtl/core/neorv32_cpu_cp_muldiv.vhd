@@ -82,7 +82,7 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
     state         : state_t;
     cnt           : std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- iteration counter
     cp_op         : std_ulogic_vector(2 downto 0); -- operation to execute
-    cp_op_ff      : std_ulogic_vector(2 downto 0); -- operation that was executed
+    cp_op_ff      : std_ulogic_vector(2 downto 0);
     op            : std_ulogic; -- 0 = mul, 1 = div
     rs1_is_signed : std_ulogic;
     rs2_is_signed : std_ulogic;
