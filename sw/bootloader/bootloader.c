@@ -351,6 +351,7 @@ int main(void) {
 
       if (neorv32_uart0_available()) { // wait for any key to be pressed
         if (neorv32_uart0_char_received()) {
+          neorv32_uart0_char_received_get(); // discard received char
           break;
         }
       }
