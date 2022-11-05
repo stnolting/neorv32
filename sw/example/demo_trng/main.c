@@ -145,6 +145,7 @@ void print_random_data(void) {
     neorv32_uart0_printf("%u ", (uint32_t)(trng_data));
     num_samples++;
     if (neorv32_uart0_char_received()) { // abort when key pressed
+      neorv32_uart0_char_received_get(); // discard received char
       break;
     }
   }
@@ -166,6 +167,8 @@ void generate_histogram(void) {
   neorv32_uart0_printf("Press any key to start.\n");
 
   while(neorv32_uart0_char_received() == 0);
+  neorv32_uart0_char_received_get(); // discard received char
+
   neorv32_uart0_printf("Sampling... Press any key to stop.\n");
 
   // clear histogram
@@ -192,6 +195,7 @@ void generate_histogram(void) {
     // abort conditions
     if ((neorv32_uart0_char_received()) || // abort when key pressed
         (cnt & 0x80000000UL)) { // to prevent overflow
+      neorv32_uart0_char_received_get(); // discard received char
       break;
     }
   }

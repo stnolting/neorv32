@@ -136,6 +136,7 @@ int main(void) {
     while (neorv32_uart0_char_received() == 0) {
       xorshift32();
     }
+    neorv32_uart0_char_received_get(); // discard received char
 
 
     // initialize universe using random data
@@ -163,6 +164,7 @@ int main(void) {
 
       // user abort?
       if (neorv32_uart0_char_received()) {
+        neorv32_uart0_char_received_get(); // discard received char
         neorv32_uart0_printf("\nRestart (y/n)?");
         if (neorv32_uart0_getc() == 'y') {
           break;
