@@ -439,6 +439,7 @@ begin
     end loop; -- r
   end process pmp_check_address;
 
+
   -- check mode --
   pmp_check_mode: process(pmp_ctrl_i, pmp)
   begin
@@ -459,17 +460,20 @@ begin
     end loop; -- r
   end process pmp_check_mode;
 
+
   -- check permission --
   pmp_check_permission: process(ctrl_i, pmp_ctrl_i)
   begin
     for r in 0 to PMP_NUM_REGIONS-1 loop
+
       -- instruction fetch access --
       if (ctrl_i(ctrl_priv_mode_c) = priv_mode_m_c) then -- M mode: always allow if lock bit not set, otherwise check permission
         pmp.perm_ex(r) <= (not pmp_ctrl_i(r)(pmp_cfg_l_c)) or pmp_ctrl_i(r)(pmp_cfg_x_c);
       else -- U mode: always check permission
         pmp.perm_ex(r) <= pmp_ctrl_i(r)(pmp_cfg_x_c);
       end if;
-      -- load/store accesses from M mode can also use U mode's permissions if MSTATUS.MPRV is set
+ 
+      -- load/store accesses from M mod (can also use U mode's permissions if MSTATUS.MPRV is set) --
       if (ctrl_i(ctrl_bus_priv_c) = priv_mode_m_c) then -- M mode: always allow if lock bit not set, otherwise check permission
         pmp.perm_rd(r) <= (not pmp_ctrl_i(r)(pmp_cfg_l_c)) or pmp_ctrl_i(r)(pmp_cfg_r_c);
         pmp.perm_wr(r) <= (not pmp_ctrl_i(r)(pmp_cfg_l_c)) or pmp_ctrl_i(r)(pmp_cfg_w_c);
@@ -477,8 +481,10 @@ begin
         pmp.perm_rd(r) <= pmp_ctrl_i(r)(pmp_cfg_r_c);
         pmp.perm_wr(r) <= pmp_ctrl_i(r)(pmp_cfg_w_c);
       end if;
+ 
     end loop; -- r
   end process pmp_check_permission;
+
 
   -- check for access fault (using static prioritization) --
   pmp_check_fault: process(ctrl_i, pmp)
@@ -490,6 +496,7 @@ begin
     tmp_if_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_priv_mode_c) /= priv_mode_m_c); -- default: fault if U mode
     tmp_ld_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_bus_priv_c)  /= priv_mode_m_c); -- default: fault if U mode
     tmp_st_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_bus_priv_c)  /= priv_mode_m_c); -- default: fault if U mode
+ 
     for r in PMP_NUM_REGIONS-1 downto 0 loop -- start with lowest priority
       -- instruction fetch access --
       if (pmp.i_match(r) = '1') then -- address matches region r

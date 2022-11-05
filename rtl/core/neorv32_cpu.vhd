@@ -116,7 +116,7 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- RV64: WORK IN PROGRESS -----------------------------------------------------------------------
-  -- not available as CPU generic as rv64 ISA extension is not (fully) supported yet
+  -- not available as CPU generic as rv64 ISA extension is not (fully) supported yet!
   constant XLEN : natural := 32; -- data path width
   -- ----------------------------------------------------------------------------------------------
 
@@ -156,19 +156,19 @@ begin
   -- CPU ISA configuration --
   assert false report
     "NEORV32 CPU CONFIG NOTE: Core ISA ('MARCH') = RV32" &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_E, "E", "I") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_M, "M", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_C, "C", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_B, "B", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_U, "U", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicsr, "_Zicsr", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_Zicntr", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm, "_Zihpm", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_E,        "E", "I") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_M,        "M", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_C,        "C", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_B,        "B", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_U,        "U", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicsr,    "_Zicsr", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr,   "_Zicntr", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm,    "_Zihpm", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zifencei, "_Zifencei", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx, "_Zfinx", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul, "_Zmmul", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu, "_Zxcfu", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG, "_<DebugMode>", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,    "_Zfinx", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,    "_Zmmul", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,    "_Zxcfu", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG,    "_<DebugMode>", "") &
     ""
     severity note;
 
@@ -176,7 +176,7 @@ begin
   assert not (is_simulation_c = true)  report "NEORV32 CPU WARNING! Assuming this is a simulation." severity warning;
   assert not (is_simulation_c = false) report "NEORV32 CPU NOTE: Assuming this is real hardware." severity note;
 
-  -- native data width check --
+  -- native data width check (work in progress!) --
   assert not (XLEN /= 32) report "NEORV32 CPU CONFIG ERROR! <XLEN> native data path width has to be 32 (bit)." severity error; 
 
   -- CPU boot address --
