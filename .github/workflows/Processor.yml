@@ -29,7 +29,7 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: '⚙️ Build Software Framework Tests'
       uses: docker://ghcr.io/stnolting/neorv32/sim
@@ -49,7 +49,7 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: '⚙️ Build and install Processor Check software'
       uses: docker://ghcr.io/stnolting/neorv32/sim
@@ -65,7 +65,7 @@ jobs:
           all
 
     - name: '📤 Archive Processor Check application image'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: application
         path: rtl/core/neorv32_application_image.vhd
@@ -97,7 +97,7 @@ jobs:
 #     shell: bash
 #
 #   - name: '🧰 Checkout'
-#     uses: actions/checkout@v2
+#     uses: actions/checkout@v3
 #     with:
 #       # The command 'git describe' (used for version) needs the history.
 #       fetch-depth: 0
