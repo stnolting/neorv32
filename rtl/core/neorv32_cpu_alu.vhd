@@ -77,8 +77,8 @@ end neorv32_cpu_alu;
 architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
 
   -- comparator --
-  signal cmp_opx : std_ulogic_vector(XLEN downto 0);
-  signal cmp_opy : std_ulogic_vector(XLEN downto 0);
+  signal cmp_rs1 : std_ulogic_vector(XLEN downto 0);
+  signal cmp_rs2 : std_ulogic_vector(XLEN downto 0);
   signal cmp     : std_ulogic_vector(1 downto 0); -- comparator status
 
   -- operands --
@@ -98,11 +98,11 @@ begin
 
   -- Comparator Unit (for conditional branches) ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cmp_opx <= (rs1_i(rs1_i'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs1_i;
-  cmp_opy <= (rs2_i(rs2_i'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs2_i;
+  cmp_rs1 <= (rs1_i(rs1_i'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs1_i; -- optional sign-extension
+  cmp_rs2 <= (rs2_i(rs2_i'left) and (not ctrl_i(ctrl_alu_unsigned_c))) & rs2_i; -- optional sign-extension
 
   cmp(cmp_equal_c) <= '1' when (rs1_i = rs2_i) else '0';
-  cmp(cmp_less_c)  <= '1' when (signed(cmp_opx) < signed(cmp_opy)) else '0'; -- signed or unsigned comparison
+  cmp(cmp_less_c)  <= '1' when (signed(cmp_rs1) < signed(cmp_rs2)) else '0'; -- signed or unsigned comparison
   cmp_o            <= cmp;
 
 
@@ -163,7 +163,7 @@ begin
   idone_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5);
 
   -- co-processor result --
-  -- > "cp_result" data has to be always zero unless co-processor was actually triggered
+  -- > "cp_result" data has to be always zero unless unique co-processor was actually triggered
   cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5);
 
 
@@ -293,7 +293,7 @@ begin
   if (CPU_EXTENSION_RISCV_Zxcfu = true) generate
     neorv32_cpu_cp_cfu_inst: neorv32_cpu_cp_cfu
     generic map (
-    XLEN => XLEN -- data path width
+      XLEN => XLEN -- data path width
     )
     port map (
       -- global control --

@@ -147,16 +147,17 @@ begin
   -- Configuration Info ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-  "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - " &
-  cond_sel_string_f(PIPE_MODE, "PIPELINED", "CLASSIC/STANDARD") & " Wishbone protocol, " &
-  cond_sel_string_f(boolean(BUS_TIMEOUT /= 0), "auto-timeout (" & integer'image(BUS_TIMEOUT) & " cycles), ", "NO auto-timeout, ") &
-  cond_sel_string_f(BIG_ENDIAN, "BIG", "LITTLE") & "-endian byte order, " &
-  cond_sel_string_f(ASYNC_RX, "ASYNC ", "buffered ") & "RX path, " &
-  cond_sel_string_f(ASYNC_TX, "ASYNC ", "buffered ") & "TX path"
-  severity note;
+    "NEORV32 PROCESSOR CONFIG NOTE: Ext. Bus Interface - " &
+    cond_sel_string_f(PIPE_MODE, "PIPELINED", "CLASSIC/STANDARD") & " Wishbone protocol, " &
+    cond_sel_string_f(boolean(BUS_TIMEOUT /= 0), "auto-timeout (" & integer'image(BUS_TIMEOUT) & " cycles), ", "NO auto-timeout, ") &
+    cond_sel_string_f(BIG_ENDIAN, "BIG", "LITTLE") & "-endian byte order, " &
+    cond_sel_string_f(ASYNC_RX, "ASYNC ", "buffered ") & "RX path, " &
+    cond_sel_string_f(ASYNC_TX, "ASYNC ", "buffered ") & "TX path"
+    severity note;
 
   -- no timeout warning --
-  assert not (BUS_TIMEOUT  = 0) report "NEORV32 PROCESSOR CONFIG WARNING! Ext. Bus Interface - NO auto-timeout (can cause permanent CPU stall!)." severity warning;
+  assert not (BUS_TIMEOUT  = 0)
+    report "NEORV32 PROCESSOR CONFIG WARNING! Ext. Bus Interface - NO auto-timeout (can cause permanent CPU stall!)." severity warning;
 
 
   -- Access Control -------------------------------------------------------------------------

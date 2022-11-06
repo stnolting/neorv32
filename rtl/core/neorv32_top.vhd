@@ -423,28 +423,42 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- boot configuration --
-  assert not (INT_BOOTLOADER_EN = true) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Indirect boot via bootloader (processor-internal BOOTROM)." severity note;
-  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-internal IMEM)." severity note;
-  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-external memory)." severity note;
+  assert not (INT_BOOTLOADER_EN = true) report
+    "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Indirect boot via bootloader (processor-internal BOOTROM)." severity note;
+  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = true)) report
+    "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-internal IMEM)." severity note;
+  assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report
+    "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-external memory)." severity note;
   --
-  assert not ((MEM_EXT_EN = false) and (MEM_INT_DMEM_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal IMEM." severity error;
-  assert not ((MEM_EXT_EN = false) and (MEM_INT_IMEM_EN = false) and (INT_BOOTLOADER_EN = false)) report "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal IMEM and bootloader." severity error;
+  assert not ((MEM_EXT_EN = false) and (MEM_INT_DMEM_EN = false)) report
+    "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal IMEM." severity error;
+  assert not ((MEM_EXT_EN = false) and (MEM_INT_IMEM_EN = false) and (INT_BOOTLOADER_EN = false)) report
+    "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal IMEM and bootloader." severity error;
 
   -- memory size --
-  assert not ((MEM_INT_DMEM_EN = true) and (is_power_of_two_f(MEM_INT_IMEM_SIZE) = false)) report "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_IMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
-  assert not ((MEM_INT_IMEM_EN = true) and (is_power_of_two_f(MEM_INT_DMEM_SIZE) = false)) report "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_DMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
+  assert not ((MEM_INT_DMEM_EN = true) and (is_power_of_two_f(MEM_INT_IMEM_SIZE) = false)) report
+    "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_IMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
+  assert not ((MEM_INT_IMEM_EN = true) and (is_power_of_two_f(MEM_INT_DMEM_SIZE) = false)) report
+    "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_DMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
 
   -- memory layout --
-  assert not (ispace_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 32-bit-aligned." severity error;
-  assert not (dspace_base_c(1 downto 0) /= "00") report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 32-bit-aligned." severity error;
-  assert not ((ispace_base_c(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) /= imem_align_check_c) and (MEM_INT_IMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address has to be aligned to IMEM size." severity error;
-  assert not ((dspace_base_c(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) /= dmem_align_check_c) and (MEM_INT_DMEM_EN = true)) report "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address has to be aligned to DMEM size." severity error;
+  assert not (ispace_base_c(1 downto 0) /= "00") report
+    "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 32-bit-aligned." severity error;
+  assert not (dspace_base_c(1 downto 0) /= "00") report
+    "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 32-bit-aligned." severity error;
+  assert not ((ispace_base_c(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) /= imem_align_check_c) and (MEM_INT_IMEM_EN = true)) report
+    "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address has to be aligned to IMEM size." severity error;
+  assert not ((dspace_base_c(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) /= dmem_align_check_c) and (MEM_INT_DMEM_EN = true)) report
+    "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address has to be aligned to DMEM size." severity error;
   --
-  assert not (ispace_base_c /= x"00000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for INSTRUCTION ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
-  assert not (dspace_base_c /= x"80000000") report "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for DATA ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
+  assert not (ispace_base_c /= x"00000000") report
+    "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for INSTRUCTION ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
+  assert not (dspace_base_c /= x"80000000") report
+    "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for DATA ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
 
   -- on-chip debugger --
-  assert not (ON_CHIP_DEBUGGER_EN = true) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD)." severity note;
+  assert not (ON_CHIP_DEBUGGER_EN = true) report
+    "NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD)." severity note;
 
 
 -- ****************************************************************************************************************************

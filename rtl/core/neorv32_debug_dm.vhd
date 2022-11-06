@@ -136,12 +136,12 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- debug module DMI registers / access --
   type progbuf_t is array (0 to 1) of std_ulogic_vector(31 downto 0);
   type dm_reg_t is record
-    dmcontrol_ndmreset : std_ulogic;
-    dmcontrol_dmactive : std_ulogic;
+    dmcontrol_ndmreset           : std_ulogic;
+    dmcontrol_dmactive           : std_ulogic;
     abstractauto_autoexecdata    : std_ulogic;
     abstractauto_autoexecprogbuf : std_ulogic_vector(01 downto 0);
-    progbuf     : progbuf_t;
-    command     : std_ulogic_vector(31 downto 0);
+    progbuf                      : progbuf_t;
+    command                      : std_ulogic_vector(31 downto 0);
     --
     halt_req    : std_ulogic;
     resume_req  : std_ulogic;
@@ -243,12 +243,12 @@ begin
     if rising_edge(clk_i) then
       if (dm_reg.dmcontrol_dmactive = '0') or (dmi_rstn_i = '0') then -- DM reset / DM disabled
         dm_ctrl.state           <= CMD_IDLE;
-        dm_ctrl.ldsw_progbuf    <= (others => '-');
+        dm_ctrl.ldsw_progbuf    <= instr_sw_c;
         dci.execute_req         <= '0';
-        dm_ctrl.pbuf_en         <= '-';
+        dm_ctrl.pbuf_en         <= '0';
         --
-        dm_ctrl.illegal_cmd     <= '-';
-        dm_ctrl.illegal_state   <= '-';
+        dm_ctrl.illegal_cmd     <= '0';
+        dm_ctrl.illegal_state   <= '0';
         dm_ctrl.cmderr          <= "000";
         --
         dm_ctrl.hart_reset      <= '0';
@@ -346,7 +346,7 @@ begin
 
         -- error flags --
         -- ------------------------------------------------------------
-        if (dm_ctrl.cmderr = "000") then -- set new error
+        if (dm_ctrl.cmderr = "000") then -- ready to set new error
           if (dm_ctrl.illegal_state = '1') then -- cannot execute since hart is not in expected state
             dm_ctrl.cmderr <= "100";
           elsif (dci.exception_ack = '1') then -- exception during execution
@@ -441,8 +441,8 @@ begin
         -- debug module control --
         if (dmi_req_addr_i = addr_dmcontrol_c) then
           dm_reg.halt_req           <= dmi_req_data_i(31); -- haltreq (-/w): write 1 to request halt; has to be cleared again by debugger
-          dm_reg.resume_req         <= dmi_req_data_i(30); -- resumereq (-/w1): write 1 to request resume
-          dm_reg.reset_ack          <= dmi_req_data_i(28); -- ackhavereset (-/w1)
+          dm_reg.resume_req         <= dmi_req_data_i(30); -- resumereq (-/w1): write 1 to request resume; auto-clears
+          dm_reg.reset_ack          <= dmi_req_data_i(28); -- ackhavereset (-/w1): write 1 to ACK reset; auto-clears
           dm_reg.dmcontrol_ndmreset <= dmi_req_data_i(01); -- ndmreset (r/w): soc reset
           dm_reg.dmcontrol_dmactive <= dmi_req_data_i(00); -- dmactive (r/w): DM reset
         end if;
@@ -488,7 +488,7 @@ begin
           end if;
         end if;
 
-        -- invalid access (while command is executing) --
+        -- invalid access while command is executing --
         if (dm_ctrl.busy = '1') then -- busy
           if (dmi_req_addr_i = addr_abstractcs_c) or
              (dmi_req_addr_i = addr_command_c) or
@@ -512,11 +512,11 @@ begin
   dci.wdata   <= dmi_req_data_i;
 
   -- CPU halt/resume request --
-  cpu_halt_req_o <= dm_reg.halt_req and dm_reg.dmcontrol_dmactive; -- single shot
-  dci.resume_req <= dm_ctrl.hart_resume_req; -- permanent
+  cpu_halt_req_o <= dm_reg.halt_req and dm_reg.dmcontrol_dmactive; -- single-shot
+  dci.resume_req <= dm_ctrl.hart_resume_req; -- active until explicitly cleared
 
   -- SoC reset --
-  cpu_ndmrstn_o <= not (dm_reg.dmcontrol_ndmreset and dm_reg.dmcontrol_dmactive);
+  cpu_ndmrstn_o <= not (dm_reg.dmcontrol_ndmreset and dm_reg.dmcontrol_dmactive); -- to processor's reset generator
 
   -- build program buffer array for cpu access --
   cpu_progbuf(0) <= dm_ctrl.ldsw_progbuf; -- pseudo program buffer for GPR access
@@ -525,8 +525,8 @@ begin
   cpu_progbuf(3) <= instr_ebreak_c; -- implicit ebreak instruction
 
   -- DMI status --
-  dmi_resp_err_o  <= '0'; -- what can go wrong?
-  dmi_req_ready_o <= '1'; -- always ready for new read/write accesses
+  dmi_resp_err_o  <= '0'; -- what can go wrong? ;)
+  dmi_req_ready_o <= '1'; -- always ready for new read/write access
 
 
   -- Debug Module Interface - Read Access ---------------------------------------------------
@@ -543,61 +543,61 @@ begin
 
         -- debug module status register --
         when addr_dmstatus_c =>
-          dmi_resp_data_o(31 downto 23) <= (others => '0'); -- reserved (r/-)
-          dmi_resp_data_o(22)           <= '1'; -- impebreak (r/-): there is an implicit ebreak instruction after the visible program buffer
-          dmi_resp_data_o(21 downto 20) <= (others => '0'); -- reserved (r/-)
-          dmi_resp_data_o(19)           <= dm_ctrl.hart_reset; -- allhavereset (r/-): there is only one hart that can be reset
-          dmi_resp_data_o(18)           <= dm_ctrl.hart_reset; -- anyhavereset (r/-): there is only one hart that can be reset
-          dmi_resp_data_o(17)           <= dm_ctrl.hart_resume_ack; -- allresumeack (r/-): there is only one hart that can acknowledge resume request
-          dmi_resp_data_o(16)           <= dm_ctrl.hart_resume_ack; -- anyresumeack (r/-): there is only one hart that can acknowledge resume request
-          dmi_resp_data_o(15)           <= '0'; -- allnonexistent (r/-): there is only one hart that is always existent
-          dmi_resp_data_o(14)           <= '0'; -- anynonexistent (r/-): there is only one hart that is always existent
+          dmi_resp_data_o(31 downto 23) <= (others => '0');           -- reserved (r/-)
+          dmi_resp_data_o(22)           <= '1';                       -- impebreak (r/-): there is an implicit ebreak instruction after the visible program buffer
+          dmi_resp_data_o(21 downto 20) <= (others => '0');           -- reserved (r/-)
+          dmi_resp_data_o(19)           <= dm_ctrl.hart_reset;        -- allhavereset (r/-): there is only one hart that can be reset
+          dmi_resp_data_o(18)           <= dm_ctrl.hart_reset;        -- anyhavereset (r/-): there is only one hart that can be reset
+          dmi_resp_data_o(17)           <= dm_ctrl.hart_resume_ack;   -- allresumeack (r/-): there is only one hart that can acknowledge resume request
+          dmi_resp_data_o(16)           <= dm_ctrl.hart_resume_ack;   -- anyresumeack (r/-): there is only one hart that can acknowledge resume request
+          dmi_resp_data_o(15)           <= '0';                       -- allnonexistent (r/-): there is only one hart that is always existent
+          dmi_resp_data_o(14)           <= '0';                       -- anynonexistent (r/-): there is only one hart that is always existent
           dmi_resp_data_o(13)           <= dm_reg.dmcontrol_ndmreset; -- allunavail (r/-): there is only one hart that is unavailable during reset
           dmi_resp_data_o(12)           <= dm_reg.dmcontrol_ndmreset; -- anyunavail (r/-): there is only one hart that is unavailable during reset
-          dmi_resp_data_o(11)           <= not dm_ctrl.hart_halted; -- allrunning (r/-): there is only one hart that can be RUNNING or HALTED
-          dmi_resp_data_o(10)           <= not dm_ctrl.hart_halted; -- anyrunning (r/-): there is only one hart that can be RUNNING or HALTED
-          dmi_resp_data_o(09)           <= dm_ctrl.hart_halted; -- allhalted (r/-): there is only one hart that can be RUNNING or HALTED
-          dmi_resp_data_o(08)           <= dm_ctrl.hart_halted; -- anyhalted (r/-): there is only one hart that can be RUNNING or HALTED
-          dmi_resp_data_o(07)           <= '1'; -- authenticated (r/-): authentication passed since there is no authentication
-          dmi_resp_data_o(06)           <= '0'; -- authbusy (r/-): always ready since there is no authentication
-          dmi_resp_data_o(05)           <= '0'; -- hasresethaltreq (r/-): halt-on-reset not implemented
-          dmi_resp_data_o(04)           <= '0'; -- confstrptrvalid (r/-): no configuration string available
-          dmi_resp_data_o(03 downto 00) <= "0010"; -- version (r/-): compatible to version 0.13
+          dmi_resp_data_o(11)           <= not dm_ctrl.hart_halted;   -- allrunning (r/-): there is only one hart that can be RUNNING or HALTED
+          dmi_resp_data_o(10)           <= not dm_ctrl.hart_halted;   -- anyrunning (r/-): there is only one hart that can be RUNNING or HALTED
+          dmi_resp_data_o(09)           <= dm_ctrl.hart_halted;       -- allhalted (r/-): there is only one hart that can be RUNNING or HALTED
+          dmi_resp_data_o(08)           <= dm_ctrl.hart_halted;       -- anyhalted (r/-): there is only one hart that can be RUNNING or HALTED
+          dmi_resp_data_o(07)           <= '1';                       -- authenticated (r/-): authentication passed since there is no authentication
+          dmi_resp_data_o(06)           <= '0';                       -- authbusy (r/-): always ready since there is no authentication
+          dmi_resp_data_o(05)           <= '0';                       -- hasresethaltreq (r/-): halt-on-reset not implemented
+          dmi_resp_data_o(04)           <= '0';                       -- confstrptrvalid (r/-): no configuration string available
+          dmi_resp_data_o(03 downto 00) <= "0010";                    -- version (r/-): compatible to version 0.13
 
         -- debug module control --
         when addr_dmcontrol_c =>
-          dmi_resp_data_o(31)           <= '0'; -- haltreq (-/w): write-only
-          dmi_resp_data_o(30)           <= '0'; -- resumereq (-/w1): write-only
-          dmi_resp_data_o(29)           <= '0'; -- hartreset (r/w): not supported
-          dmi_resp_data_o(28)           <= '0'; -- ackhavereset (-/w1): write-only
-          dmi_resp_data_o(27)           <= '0'; -- reserved (r/-)
-          dmi_resp_data_o(26)           <= '0'; -- hasel (r/-) - there is a single currently selected hart
-          dmi_resp_data_o(25 downto 16) <= (others => '0'); -- hartsello (r/-) - there is only one hart
-          dmi_resp_data_o(15 downto 06) <= (others => '0'); -- hartselhi (r/-) - there is only one hart
-          dmi_resp_data_o(05 downto 04) <= (others => '0'); -- reserved (r/-)
-          dmi_resp_data_o(03)           <= '0'; -- setresethaltreq (-/w1): halt-on-reset request - halt-on-reset not implemented
-          dmi_resp_data_o(02)           <= '0'; -- clrresethaltreq (-/w1): halt-on-reset ack - halt-on-reset not implemented
+          dmi_resp_data_o(31)           <= '0';                       -- haltreq (-/w): write-only
+          dmi_resp_data_o(30)           <= '0';                       -- resumereq (-/w1): write-only
+          dmi_resp_data_o(29)           <= '0';                       -- hartreset (r/w): not supported
+          dmi_resp_data_o(28)           <= '0';                       -- ackhavereset (-/w1): write-only
+          dmi_resp_data_o(27)           <= '0';                       -- reserved (r/-)
+          dmi_resp_data_o(26)           <= '0';                       -- hasel (r/-) - there is a single currently selected hart
+          dmi_resp_data_o(25 downto 16) <= (others => '0');           -- hartsello (r/-) - there is only one hart
+          dmi_resp_data_o(15 downto 06) <= (others => '0');           -- hartselhi (r/-) - there is only one hart
+          dmi_resp_data_o(05 downto 04) <= (others => '0');           -- reserved (r/-)
+          dmi_resp_data_o(03)           <= '0';                       -- setresethaltreq (-/w1): halt-on-reset request - halt-on-reset not implemented
+          dmi_resp_data_o(02)           <= '0';                       -- clrresethaltreq (-/w1): halt-on-reset ack - halt-on-reset not implemented
           dmi_resp_data_o(01)           <= dm_reg.dmcontrol_ndmreset; -- ndmreset (r/w): soc reset
           dmi_resp_data_o(00)           <= dm_reg.dmcontrol_dmactive; -- dmactive (r/w): DM reset
 
         -- hart info --
         when addr_hartinfo_c =>
-          dmi_resp_data_o(31 downto 24) <= (others => '0'); -- reserved (r/-)
-          dmi_resp_data_o(23 downto 20) <= nscratch_c; -- nscratch (r/-): number of dscratch CSRs
-          dmi_resp_data_o(19 downto 17) <= (others => '0'); -- reserved (r/-)
-          dmi_resp_data_o(16)           <= dataaccess_c; -- dataaccess (r/-): 1: data registers are memory-mapped, 0: data reisters are CSR-mapped
-          dmi_resp_data_o(15 downto 12) <= datasize_c; -- datasize (r/-): number data registers in memory/CSR space
-          dmi_resp_data_o(11 downto 00) <= dataaddr_c; -- dataaddr (r/-): data registers base address (memory/CSR)
+          dmi_resp_data_o(31 downto 24) <= (others => '0');           -- reserved (r/-)
+          dmi_resp_data_o(23 downto 20) <= nscratch_c;                -- nscratch (r/-): number of dscratch CSRs
+          dmi_resp_data_o(19 downto 17) <= (others => '0');           -- reserved (r/-)
+          dmi_resp_data_o(16)           <= dataaccess_c;              -- dataaccess (r/-): 1: data registers are memory-mapped, 0: data reisters are CSR-mapped
+          dmi_resp_data_o(15 downto 12) <= datasize_c;                -- datasize (r/-): number data registers in memory/CSR space
+          dmi_resp_data_o(11 downto 00) <= dataaddr_c;                -- dataaddr (r/-): data registers base address (memory/CSR)
 
         -- abstract control and status --
         when addr_abstractcs_c =>
-          dmi_resp_data_o(31 downto 24) <= (others => '0'); -- reserved (r/-)
-          dmi_resp_data_o(28 downto 24) <= "00010"; -- progbufsize (r/-): number of words in program buffer = 2
-          dmi_resp_data_o(12)           <= dm_ctrl.busy; -- busy (r/-): abstract command in progress (1) / idle (0)
-          dmi_resp_data_o(11)           <= '0'; -- reserved (r/-)
-          dmi_resp_data_o(10 downto 08) <= dm_ctrl.cmderr; -- cmderr (r/w1c): any error during execution?
-          dmi_resp_data_o(07 downto 04) <= (others => '0'); -- reserved (r/-)
-          dmi_resp_data_o(03 downto 00) <= "0001"; -- datacount (r/-): number of implemented data registers = 1
+          dmi_resp_data_o(31 downto 24) <= (others => '0');           -- reserved (r/-)
+          dmi_resp_data_o(28 downto 24) <= "00010";                   -- progbufsize (r/-): number of words in program buffer = 2
+          dmi_resp_data_o(12)           <= dm_ctrl.busy;              -- busy (r/-): abstract command in progress (1) / idle (0)
+          dmi_resp_data_o(11)           <= '0';                       -- reserved (r/-)
+          dmi_resp_data_o(10 downto 08) <= dm_ctrl.cmderr;            -- cmderr (r/w1c): any error during execution?
+          dmi_resp_data_o(07 downto 04) <= (others => '0');           -- reserved (r/-)
+          dmi_resp_data_o(03 downto 00) <= "0001";                    -- datacount (r/-): number of implemented data registers = 1
 
 --      -- abstract command (-/w) --
 --      when addr_command_c =>
@@ -605,7 +605,7 @@ begin
 
         -- abstract command autoexec (r/w) --
         when addr_abstractauto_c =>
-          dmi_resp_data_o(00) <= dm_reg.abstractauto_autoexecdata; -- autoexecdata(0): read/write access to data0 triggers execution of program buffer
+          dmi_resp_data_o(00) <= dm_reg.abstractauto_autoexecdata;       -- autoexecdata(0):    read/write access to data0 triggers execution of program buffer
           dmi_resp_data_o(16) <= dm_reg.abstractauto_autoexecprogbuf(0); -- autoexecprogbuf(0): read/write access to progbuf0 triggers execution of program buffer
           dmi_resp_data_o(17) <= dm_reg.abstractauto_autoexecprogbuf(1); -- autoexecprogbuf(1): read/write access to progbuf1 triggers execution of program buffer
 
@@ -634,9 +634,10 @@ begin
         -- not implemented (r/-) --
         when others =>
           dmi_resp_data_o <= (others => '0');
+
       end case;
 
-      -- invalid read access (while command is executing)
+      -- invalid read access while command is executing --
       -- ------------------------------------------------------------
       if (dmi_req_valid_i = '1') and (dmi_req_op_i = '0') then -- valid DMI read request
         if (dm_ctrl.busy = '1') then -- busy
@@ -718,7 +719,7 @@ begin
             cpu_data_o <= cpu_progbuf(to_integer(unsigned(cpu_addr_i(3 downto 2))));
           when "10" => -- data buffer
             cpu_data_o <= data_buf;
-          when others => -- status/control register
+          when others => -- control and status register
             cpu_data_o(sreg_resume_req_c)  <= dci.resume_req;
             cpu_data_o(sreg_execute_req_c) <= dci.execute_req;
         end case;
