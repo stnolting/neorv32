@@ -198,11 +198,11 @@ for custom tightly-coupled co-processors, accelerators or interfaces
 Implementation results for **exemplary CPU configurations** generated for an Intel Cyclone IV `EP4CE22F17C6` FPGA
 using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimization_, f_max from _Slow 1200mV 0C Model_).
 
-| CPU Configuration (version [1.6.9.8](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
+| CPU Configuration (version [1.7.7.8](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
 |:-----------------------|:----:|:----:|:----:|:-:|:-------:|
-| `rv32i_Zicsr`          | 1328 |  678 | 1024 | 0 | 128 MHz |
-| `rv32i_Zicsr_Zicntr`   | 1614 |  808 | 1024 | 0 | 128 MHz |
-| `rv32imc_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 128 MHz |
+| `rv32i_Zicsr`          | 1328 |  678 | 1024 | 0 | 130 MHz |
+| `rv32i_Zicsr_Zicntr`   | 1614 |  808 | 1024 | 0 | 130 MHz |
+| `rv32imc_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 130 MHz |
 
 Implementation results for an **exemplary SoC/Processor configurations** generated for a Xilinx Artix-7 `xc7a35ticsg324-1L` FPGA
 using Xilinx Vivado 2019.2 (no constraints except for clock speed).

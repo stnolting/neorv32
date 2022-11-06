@@ -250,7 +250,7 @@ just _exemplary_. If not otherwise mentioned all implementations use the default
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| HW version:  | `1.6.9.8`
+| HW version:  | `1.7.7.8`
 | Top entity:  | `rtl/core/neorv32_cpu.vhd`
 | FPGA:        | Intel Cyclone IV E `EP4CE22F17C6`
 | Toolchain:   | Quartus Prime Lite 21.1
@@ -261,15 +261,15 @@ just _exemplary_. If not otherwise mentioned all implementations use the default
 [options="header",grid="rows"]
 |=======================
 | CPU ISA Configuration                             | LEs  | FFs  | MEM bits | DSPs | _f~max~_
-| `rv32e`                                           |  830 |  400 |      512 |    0 | 129 MHz
-| `rv32i`                                           |  834 |  400 |     1024 |    0 | 129 MHz
-| `rv32i_Zicsr`                                     | 1328 |  678 |     1024 |    0 | 128 MHz
-| `rv32i_Zicsr_Zicntr`                              | 1614 |  808 |     1024 |    0 | 128 MHz
-| `rv32im_Zicsr_Zicntr`                             | 2087 |  983 |     1024 |    0 | 128 MHz
-| `rv32imc_Zicsr_Zicntr`                            | 2338 |  992 |     1024 |    0 | 128 MHz
-| `rv32imcb_Zicsr_Zicntr`                           | 3175 | 1247 |     1024 |    0 | 128 MHz
-| `rv32imcbu_Zicsr_Zicntr`                          | 3186 | 1254 |     1024 |    0 | 128 MHz
-| `rv32imcbu_Zicsr_Zicntr_Zifencei`                 | 3187 | 1254 |     1024 |    0 | 128 MHz
+| `rv32e`                                           |  830 |  400 |      512 |    0 | 130 MHz
+| `rv32i`                                           |  834 |  400 |     1024 |    0 | 130 MHz
+| `rv32i_Zicsr`                                     | 1328 |  678 |     1024 |    0 | 130 MHz
+| `rv32i_Zicsr_Zicntr`                              | 1614 |  808 |     1024 |    0 | 130 MHz
+| `rv32im_Zicsr_Zicntr`                             | 2087 |  983 |     1024 |    0 | 130 MHz
+| `rv32imc_Zicsr_Zicntr`                            | 2338 |  992 |     1024 |    0 | 130 MHz
+| `rv32imcb_Zicsr_Zicntr`                           | 3175 | 1247 |     1024 |    0 | 130 MHz
+| `rv32imcbu_Zicsr_Zicntr`                          | 3186 | 1254 |     1024 |    0 | 130 MHz
+| `rv32imcbu_Zicsr_Zicntr_Zifencei`                 | 3187 | 1254 |     1024 |    0 | 130 MHz
 | `rv32imcbu_Zicsr_Zicntr_Zifencei_Zfinx`           | 4450 | 1906 |     1024 |    7 | 123 MHz
 | `rv32imcbu_Zicsr_Zicntr_Zifencei_Zfinx_DebugMode` | 4825 | 2018 |     1024 |    7 | 123 MHz
 |=======================
