@@ -538,7 +538,7 @@ begin
 
   -- Issue Engine FSM Comb ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  issue_engine_fsm_comb: process(issue_engine.align, ipb)
+  issue_engine_fsm_comb: process(issue_engine, ipb)
   begin
     -- defaults --
     issue_engine.align_set <= '0';
@@ -877,8 +877,7 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, issue_engine,
-                                   csr, ctrl, alu_idone_i, bus_d_wait_i)
+  execute_engine_fsm_comb: process(execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, issue_engine, csr, ctrl, alu_idone_i, bus_d_wait_i)
   begin
     -- arbiter defaults --
     execute_engine.state_nxt    <= execute_engine.state;
@@ -1279,12 +1278,12 @@ begin
 --         csr_hpmcounter27h_c | csr_hpmcounter28h_c | csr_hpmcounter29h_c | csr_hpmcounter30h_c | csr_hpmcounter31h_c =>
 --      csr_acc_valid <= '0'; -- >>> NOT IMPLEMENTED <<<
 
-      -- user-level counters/timers (read-only) --
+      -- counter and timer CSRs --
       when csr_cycle_c | csr_cycleh_c | csr_time_c | csr_timeh_c | csr_instret_c | csr_instreth_c =>
         case csr.addr(1 downto 0) is
-          when "00"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.privilege_eff or csr.mcounteren_cy); -- cyle[h]: M-mode, U-mode if authorized, implemented at all, read-only
-          when "01"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.privilege_eff or csr.mcounteren_tm); -- time[h]: M-mode, U-mode if authorized, implemented at all, read-only
-          when "10"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.privilege_eff or csr.mcounteren_ir); -- instret[h]: M-mode, U-mode if authorized, implemented at all read-only
+          when "00"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.privilege_eff or csr.mcounteren_cy); -- cycle[h]: M-mode; U-mode if authorized and implemented at all, read-only
+          when "01"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.privilege_eff or csr.mcounteren_tm); -- time[h]: M-mode; U-mode if authorized and implemented at all, read-only
+          when "10"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.privilege_eff or csr.mcounteren_ir); -- instret[h]: M-mode; U-mode if authorized and implemented at all, read-only
           when others => csr_acc_valid <= '0';
         end case;
 
@@ -1300,6 +1299,7 @@ begin
       -- undefined / not implemented --
       when others =>
         csr_acc_valid <= '0'; -- invalid access
+
     end case;
   end process csr_access_check;
 
@@ -2068,8 +2068,10 @@ begin
           -- --------------------------------------------------------------------
           when csr_fflags_c => -- fflags (r/w): floating-point (FPU) exception flags
             if (CPU_EXTENSION_RISCV_Zfinx) then csr.rdata(4 downto 0) <= csr.fflags; else NULL; end if;
+
           when csr_frm_c => -- frm (r/w): floating-point (FPU) rounding mode
             if (CPU_EXTENSION_RISCV_Zfinx) then csr.rdata(2 downto 0) <= csr.frm; else NULL; end if;
+
           when csr_fcsr_c => -- fcsr (r/w): floating-point (FPU) control/status (frm + fflags)
             if (CPU_EXTENSION_RISCV_Zfinx) then csr.rdata(7 downto 0) <= csr.frm & csr.fflags; else NULL; end if;
 
@@ -2081,8 +2083,10 @@ begin
             csr.rdata(12 downto 11) <= (others => csr.mstatus_mpp); -- MPP: machine previous privilege mode
             csr.rdata(17) <= csr.mstatus_mprv;
             csr.rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- TW
+
 --        when csr_mstatush_c => -- mstatush (r/w): machine status register - high word, implemented but always zero
 --          csr.rdata <= (others => '0');
+
           when csr_misa_c => -- misa (r/-): ISA and extensions
             csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
@@ -2093,13 +2097,16 @@ begin
             csr.rdata(23) <= '1';                                         -- X CPU extension (non-standard extensions / NEORV32-specific)
             csr.rdata(30) <= '1'; -- 32-bit architecture (MXL lo)
             csr.rdata(31) <= '0'; -- 32-bit architecture (MXL hi)
+
           when csr_mie_c => -- mie (r/w): machine interrupt-enable register
             csr.rdata(03) <= csr.mie_msi; -- machine software IRQ enable
             csr.rdata(07) <= csr.mie_mti; -- machine timer IRQ enable
             csr.rdata(11) <= csr.mie_mei; -- machine external IRQ enable
             csr.rdata(31 downto 16) <= csr.mie_firq;
+
           when csr_mtvec_c => -- mtvec (r/w): machine trap-handler base address (for ALL exceptions)
             csr.rdata <= csr.mtvec(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0
+
           when csr_mcounteren_c => -- mcounteren (r/w): machine counter enable register,  hardwired to zero if user mode is not implemented
             csr.rdata(0) <= csr.mcounteren_cy and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- enable user-level access to cycle[h]
             csr.rdata(1) <= csr.mcounteren_tm and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- enable user-level access to time[h]
@@ -2114,13 +2121,17 @@ begin
           -- --------------------------------------------------------------------
           when csr_mscratch_c => -- mscratch (r/w): machine scratch register
             csr.rdata <= csr.mscratch;
+
           when csr_mepc_c => -- mepc (r/w): machine exception program counter
             csr.rdata <= csr.mepc(XLEN-1 downto 1) & '0';
+
           when csr_mcause_c => -- mcause (r/w): machine trap cause
             csr.rdata(31)         <= csr.mcause(5);
             csr.rdata(4 downto 0) <= csr.mcause(4 downto 0);
+
           when csr_mtval_c => -- mtval (r/-): machine bad address or instruction
             csr.rdata <= csr.mtval;
+
           when csr_mip_c => -- mip (r/w): machine interrupt pending
             csr.rdata(03) <= trap_ctrl.irq_buf(irq_msi_irq_c);
             csr.rdata(07) <= trap_ctrl.irq_buf(irq_mti_irq_c);
