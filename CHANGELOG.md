@@ -40,7 +40,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 | 15.10.2022 | 1.7.7.3 | :bug: fix bug in `is_power_of_two_f` VHDL function (thanks Alan!); [#428](https://github.com/stnolting/neorv32/pull/428) |
 | 12.10.2022 | 1.7.7.2 | add dedicated hardware reset to _all_ CPU counters (`[m]cycle[h]`, `[m]instret[h]`, `[m]hpmcounter[h]`); :sparkles: **all CSRs now provide a dedicated hardware reset**; [#426](https://github.com/stnolting/neorv32/pull/426) |
 | 09.10.2022 | 1.7.7.1 | fix Quartus synthesis issue (VHDL): make sure reset state is the _first_ entry in a state list [#423](https://github.com/stnolting/neorv32/pull/423) |
-| 24.08.2022 | [**:rocket:1.7.7**](https://github.com/stnolting/neorv32/releases/tag/v1.7.7) | **New release** |
+| 24.09.2022 | [**:rocket:1.7.7**](https://github.com/stnolting/neorv32/releases/tag/v1.7.7) | **New release** |
 | 23.09.2022 | 1.7.6.10 | cleanup native data path size (remove `data_width_c` package constant); initial preparations to **support RV64 ISA extension** somewhere in the future; [#417](https://github.com/stnolting/neorv32/pull/417) |
 | 18.09.2022 | 1.7.6.9 | :bug: fixed instruction decoding collision in **`B` ISA extensions** - `B` extension is now fully operational and verified (see [neorv32-riscof](https://github.com/stnolting/neorv32-riscof))! [#413](https://github.com/stnolting/neorv32/pull/413) |
 | 13.09.2022 | 1.7.6.8 | :bug: bug fix: clearing `mie`'s FIRQ bits did not clear the according _pending_ FIRQs; [#411](https://github.com/stnolting/neorv32/pull/411) |
