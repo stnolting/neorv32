@@ -80,7 +80,7 @@ include::rationale.adoc[]
 * option to add custom RISC-V instructions as custom ISA extension
 * rich set of customization options (ISA extensions, design goal: performance / area (/ energy), ...)
 * aims to support <<_full_virtualization>> capabilities to increase execution safety
-* official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]
+* official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]: decimal **19**; hexadecimal `0x00000013`
 
 **NEORV32 Processor (the SoC)**
 

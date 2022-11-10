@@ -34,7 +34,7 @@ image::neorv32_cpu_block.png[width=600,align=center]
 ** `PMP` - physical memory protection
 ** `Debug` - <<_cpu_debug_mode>> (part of the on.chip debugger) including hardware <<_trigger_module>>
 * <<_risc_v_compatibility>>: Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications - passes the official RISC-V Architecture Tests (v2+)
-* Official RISC-V open-source architecture ID
+* Official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]: decimal **19**; hexadecimal `0x00000013`
 * Supports _all_ of the machine-level <<_traps_exceptions_and_interrupts>> from the RISC-V specifications (including bus access exceptions and all unimplemented/illegal/malformed instructions)
 ** This is a special aspect on _execution safety_ by <<_full_virtualization>>
 ** Standard RISC-V interrupts (_external_, _timer_, _software_) plus 16 custom _fast_ interrupts
