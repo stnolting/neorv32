@@ -223,7 +223,7 @@ int main() {
       (tmp_a & ((1 << PMPCFG_L) << 1*8)) ||
       (tmp_a & ((1 << PMPCFG_L) << 2*8)) ||
       (tmp_a & ((1 << PMPCFG_L) << 3*8))) {
-    PRINT_CRITICAL("\nERROR! PMP is already locked!\n");
+    PRINT_CRITICAL("\nERROR! PMP locked!\n");
     return 1;
   }
 

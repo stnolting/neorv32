@@ -27,7 +27,7 @@ def task_BuildAndInstallSoftwareFrameworkTests():
             # Compile and install test application
             # Redirect UART0 TX to text.io simulation output via <UART0_SIM_MODE> user flag
             "echo 'Compiling and installing CPU (/Processor) test application'",
-            "make -C sw/example/processor_check clean_all USER_FLAGS+=-DRUN_CHECK USER_FLAGS+=-DUART0_SIM_MODE USER_FLAGS+=-DUART1_SIM_MODE MARCH=rv32imc info all",
+            "make -C sw/example/processor_check clean_all USER_FLAGS+=-DRUN_CHECK USER_FLAGS+=-DUART0_SIM_MODE USER_FLAGS+=-DUART1_SIM_MODE USER_FLAGS+=-flto MARCH=rv32imc info all",
         ],
         "doc": "Build all sw/example/*; install bootloader and processor check",
     }
