@@ -80,6 +80,7 @@ void neorv32_mtime_set_time(uint64_t time) {
   NEORV32_MTIME.TIME_HI = cycles.uint32[1];
   NEORV32_MTIME.TIME_LO = cycles.uint32[0];
 
+  asm volatile("nop"); // delay to wait for low-word/high-word update
 }
 
 
