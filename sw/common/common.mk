@@ -126,7 +126,7 @@ IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 
 # Compiler & linker flags
 CC_OPTS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
-CC_OPTS += -Wl,--gc-sections -lm -lc -lgcc -lc -g3
+CC_OPTS += -Wl,--gc-sections -lm -lc -lgcc -lc -g
 CC_OPTS += $(USER_FLAGS)
 
 

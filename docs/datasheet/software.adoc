@@ -256,7 +256,7 @@ The following default compiler flags are used for compiling an application. Thes
 | `-lc`                 | Search for the standard C library when linking.
 | `-lgcc`               | Make sure we have no unresolved references to internal GCC library subroutines.
 | `-mno-fdiv`           | Use built-in software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
-| `-g3`                 | Include (advanced) debugging information in ELF.
+| `-g`                  | Include debugging information/symbols in ELF.
 |=======================
 
 :sectnums:
