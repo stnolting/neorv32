@@ -150,10 +150,19 @@ int main() {
 #endif
 
 
-  // ----------------------------------------------
   // setup RTE
+  // -----------------------------------------------
   neorv32_rte_setup(); // this will install a full-detailed debug handler for ALL traps
-  // ----------------------------------------------
+  int install_err = 0;
+  // initialize ALL provided trap handler (overriding the default debug handlers)
+  for (id=0; id<NEORV32_RTE_NUM_TRAPS; id++) {
+    install_err += neorv32_rte_exception_install(id, global_trap_handler);
+  }
+  if (install_err) {
+    PRINT_CRITICAL("RTE fail!\n");
+    return 1;
+  }
+
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
@@ -185,18 +194,6 @@ int main() {
   neorv32_rte_print_hw_config();
 
 
-  // configure RTE
-  // -----------------------------------------------
-  int install_err = 0;
-  // initialize ALL provided trap handler (overriding the default debug handlers)
-  for (id=0; id<NEORV32_RTE_NUM_TRAPS; id++) {
-    install_err += neorv32_rte_exception_install(id, global_trap_handler);
-  }
-  if (install_err) {
-    PRINT_CRITICAL("RTE fail!\n");
-    return 1;
-  }
-
   // **********************************************************************************************
   // Run CPU and SoC tests
   // **********************************************************************************************
@@ -220,7 +217,17 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Initial PMP setup ", cnt_test);
 
-  if (pmp_num_regions >= 4) {
+  // check if PMP is already locked
+  tmp_a = neorv32_cpu_csr_read(CSR_PMPCFG0);
+  if ((tmp_a & ((1 << PMPCFG_L) << 0*8)) ||
+      (tmp_a & ((1 << PMPCFG_L) << 1*8)) ||
+      (tmp_a & ((1 << PMPCFG_L) << 2*8)) ||
+      (tmp_a & ((1 << PMPCFG_L) << 3*8))) {
+    PRINT_CRITICAL("\nERROR! PMP is already locked!\n");
+    return 1;
+  }
+
+  if (pmp_num_regions >= 4) { // sufficient regions for tests
     cnt_test++;
 
     // full access for M & U mode
@@ -236,6 +243,10 @@ int main() {
     else {
       test_fail();
     }
+  }
+  else if ((pmp_num_regions > 0) && (pmp_num_regions < 4)) {
+    PRINT_CRITICAL("\nERROR! Insufficient PMP regions!\n");
+    return 1;
   }
 
 
