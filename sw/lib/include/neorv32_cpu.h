@@ -208,7 +208,7 @@ inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint3
 
 
 /**********************************************************************//**
- * Read data from CPU configuration and status register (CSR).
+ * Read data from CPU control and status register (CSR).
  *
  * @param[in] csr_id ID of CSR to read. See #NEORV32_CSR_enum.
  * @return Read data (uint32_t).
@@ -224,7 +224,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int c
 
 
 /**********************************************************************//**
- * Write data to CPU configuration and status register (CSR).
+ * Write data to CPU control and status register (CSR).
  *
  * @param[in] csr_id ID of CSR to write. See #NEORV32_CSR_enum.
  * @param[in] data Data to write (uint32_t).
@@ -281,7 +281,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_breakpoint(void) {
 
 
 /**********************************************************************//**
- * Trigger "environment call" exception (via ECALL instruction).
+ * Trigger environment call exception (via ECALL instruction).
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_env_call(void) {
 
