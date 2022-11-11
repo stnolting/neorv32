@@ -1437,11 +1437,11 @@ The figure below shows the exemplary concepts for the two most common boot scena
 image::neorv32_boot_configurations.png[800]
 
 [NOTE]
-The configuration of internal or external data memory (DMEM; <<_mem_int_dmem_en>> = _true_ / _false_) is not further
+The configuration of internal or external data memory (DMEM; <<_mem_int_dmem_en>> = _true_ / _false_) is not
 relevant for the boot configuration itself. Hence, it is not further illustrated here.
 
 There are two general boot scenarios: _Indirect Boot_ (1a and 1b) and _Direct Boot_ (2a and 2b) configured via the
-<<_int_bootloader_en>> generic  If this generic is set **true** the _indirect_ boot scenario is used. This is also the
+<<_int_bootloader_en>> generic. If this generic is set **true** the _indirect_ boot scenario is used. This is also the
 default boot configuration of the processor. If <<_int_bootloader_en>> is set **false** the _direct_ boot scenario is used.
 
 [NOTE]
@@ -1483,7 +1483,6 @@ In contrast, boot scenario **2b** uses a processor-external IMEM (<<_mem_int_ime
 system designer is responsible for providing an initialized external memory that contains the actual application to be executed.
 If the external memory is not already initialized after reset, a simple ROM containing a "polling loop" can be implemented that is
 exited as soon as the application logic has finished initializing the memory with the actual application code.
-
 
 
 <<<
