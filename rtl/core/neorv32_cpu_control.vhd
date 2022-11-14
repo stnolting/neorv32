@@ -611,12 +611,11 @@ begin
   begin
     if rising_edge(clk_i) then
       opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
-      case opcode_v is -- save some bits here - the two LSBs are always "11" 32-bit instructions
+      case opcode_v is -- save some bits here - the two LSBs are always "11" for 32-bit instructions
         when opcode_store_c => -- S-immediate: store
           imm_o(XLEN-1 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
           imm_o(10 downto 05)     <= execute_engine.i_reg(30 downto 25);
-          imm_o(04 downto 01)     <= execute_engine.i_reg(11 downto 08);
-          imm_o(00)               <= execute_engine.i_reg(07);
+          imm_o(04 downto 00)     <= execute_engine.i_reg(11 downto 07);
         when opcode_branch_c => -- B-immediate: conditional branches
           imm_o(XLEN-1 downto 12) <= (others => execute_engine.i_reg(31)); -- sign extension
           imm_o(11)               <= execute_engine.i_reg(07);
@@ -624,20 +623,17 @@ begin
           imm_o(04 downto 01)     <= execute_engine.i_reg(11 downto 08);
           imm_o(00)               <= '0';
         when opcode_lui_c | opcode_auipc_c => -- U-immediate: lui, auipc
-          imm_o(XLEN-1 downto 20) <= execute_engine.i_reg(31 downto 20);
-          imm_o(19 downto 12)     <= execute_engine.i_reg(19 downto 12);
+          imm_o(XLEN-1 downto 12) <= execute_engine.i_reg(31 downto 12);
           imm_o(11 downto 00)     <= (others => '0');
         when opcode_jal_c => -- J-immediate: unconditional jumps
           imm_o(XLEN-1 downto 20) <= (others => execute_engine.i_reg(31)); -- sign extension
           imm_o(19 downto 12)     <= execute_engine.i_reg(19 downto 12);
           imm_o(11)               <= execute_engine.i_reg(20);
-          imm_o(10 downto 05)     <= execute_engine.i_reg(30 downto 25);
-          imm_o(04 downto 01)     <= execute_engine.i_reg(24 downto 21);
+          imm_o(10 downto 01)     <= execute_engine.i_reg(30 downto 21);
           imm_o(00)               <= '0';
         when others => -- I-immediate: ALU-immediate, loads, jump-and-link with register
           imm_o(XLEN-1 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
-          imm_o(10 downto 05)     <= execute_engine.i_reg(30 downto 25);
-          imm_o(04 downto 01)     <= execute_engine.i_reg(24 downto 21);
+          imm_o(10 downto 01)     <= execute_engine.i_reg(30 downto 21);
           imm_o(00)               <= execute_engine.i_reg(20);
       end case;
     end if;
@@ -1065,11 +1061,13 @@ begin
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
-            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c+1) = funct3_fence_c(2 downto 1)) then -- FENCE / FENCE.I
-              ctrl_nxt(ctrl_bus_fence_c)  <= not execute_engine.i_reg(instr_funct3_lsb_c); -- FENCE
-              ctrl_nxt(ctrl_bus_fencei_c) <= execute_engine.i_reg(instr_funct3_lsb_c) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- FENCE.I
+            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then
+              ctrl_nxt(ctrl_bus_fence_c) <= '1'; -- FENCE
             end if;
-            execute_engine.state_nxt <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC)
+            if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then
+              ctrl_nxt(ctrl_bus_fencei_c) <= '1'; -- FENCE.I
+            end if;
+            execute_engine.state_nxt <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (= PC <= PC)
 
 
           when opcode_fop_c => -- floating-point operations
@@ -1092,7 +1090,7 @@ begin
             end if;
 
 
-          when others => -- opcode_system_c - environment operation / csr access / ILLEGAL OPCODE (will cause NO state change)
+          when opcode_system_c => -- environment operation / CSR access
           -- ------------------------------------------------------------
             csr.re_nxt <= '1'; -- always read CSR, only relevant for CSR access
             if (CPU_EXTENSION_RISCV_Zicsr = true) then
@@ -1100,6 +1098,11 @@ begin
             else
               execute_engine.state_nxt <= DISPATCH;
             end if;
+
+
+          when others => -- ILLEGAL OPCODE
+          -- ------------------------------------------------------------
+            execute_engine.state_nxt <= DISPATCH;
 
         end case; -- /EXECUTE
 
@@ -1117,7 +1120,7 @@ begin
             when funct12_dret_c   => execute_engine.state_nxt <= TRAP_EXIT; debug_ctrl.dret <= '1'; -- dret
             when others           => execute_engine.sleep_nxt <= '1'; -- "funct12_wfi_c" - wfi/sleep
           end case;
-        else -- CSR ACCESS - there will be no state change if illegal instruction
+        else -- CSR ACCESS - no CSR will be altered if illegal instruction
           execute_engine.state_nxt <= DISPATCH;
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
@@ -1880,12 +1883,11 @@ begin
           end if;
 
           -- --------------------------------------------------------------------
-          -- TRAP ENTER: write machine trap cause, PC and value register
+          -- TRAP ENTER
           -- --------------------------------------------------------------------
           if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
 
-            -- trap entry: write mcause, mepc and mtval --
-            -- > no update when in debug-mode!
+            -- NORMAL trap entry: write mcause, mepc and mtval - no update when in debug-mode! --
             -- --------------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_DEBUG = false) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.running = '0')) then
 
@@ -1909,10 +1911,17 @@ begin
                   csr.mtval <= (others => '0');
               end case;
 
+              -- update privilege level and interrupt enable stack --
+              csr.mstatus_mie  <= '0'; -- disable interrupts
+              csr.mstatus_mpie <= csr.mstatus_mie; -- backup previous mie state
+              if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
+                csr.privilege   <= priv_mode_m_c; -- execute trap in machine mode
+                csr.mstatus_mpp <= csr.privilege; -- backup previous privilege mode
+              end if;
+
             end if;
 
-            -- DEBUG MODE entry: write dpc and dcsr --
-            -- > no update when already in debug-mode!
+            -- DEBUG MODE entry: write dpc and dcsr - no update when already in debug-mode! --
             -- --------------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then
 
@@ -1931,32 +1940,22 @@ begin
 
             end if;
 
-          end if;
-
           -- --------------------------------------------------------------------
-          -- mstatus: context switch
+          -- TRAP EXIT
           -- --------------------------------------------------------------------
-          -- ENTER: trap handler starting --
-          if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
-            if (CPU_EXTENSION_RISCV_DEBUG = false) or -- normal trapping (debug mode NOT implemented)
-               ((debug_ctrl.running = '0') and (trap_ctrl.cause(5) = '0')) then -- not IN debug mode and not ENTERING debug mode
-              csr.mstatus_mie  <= '0'; -- disable interrupts
-              csr.mstatus_mpie <= csr.mstatus_mie; -- backup previous mie state
-              if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
-                csr.privilege   <= priv_mode_m_c; -- execute trap in machine mode
-                csr.mstatus_mpp <= csr.privilege; -- backup previous privilege mode
-              end if;
-            end if;
-          -- EXIT: return from trap --
           elsif (trap_ctrl.env_end = '1') then
-            if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then -- return from debug mode
-              if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
+
+            -- return from debug mode --
+            if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then
+              if (CPU_EXTENSION_RISCV_U = true) then
                 csr.privilege <= csr.dcsr_prv;
               end if;
-            else -- return from "normal trap"
+
+            -- return from "normal trap" --
+            else
               csr.mstatus_mie  <= csr.mstatus_mpie; -- restore global IRQ enable flag
               csr.mstatus_mpie <= '1';
-              if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
+              if (CPU_EXTENSION_RISCV_U = true) then
                 csr.privilege   <= csr.mstatus_mpp; -- restore previous privilege mode
                 csr.mstatus_mpp <= '0'; -- MRET has to clear mstatus.MPP
                 if (csr.mstatus_mpp /= priv_mode_m_c) then
@@ -1964,6 +1963,7 @@ begin
                 end if;
               end if;
             end if;
+
           end if;
 
         end if; -- /hardware csr access
@@ -1981,16 +1981,18 @@ begin
 
         -- no user mode --
         if (CPU_EXTENSION_RISCV_U = false) then
-          csr.mstatus_mpp  <= '0';
-          csr.mstatus_mprv <= '0';
-          csr.mstatus_tw   <= '0';
+          csr.privilege     <= priv_mode_m_c;
+          --
+          csr.mstatus_mpp   <= '0';
+          csr.mstatus_mprv  <= '0';
+          csr.mstatus_tw    <= '0';
           --
           csr.mcounteren_cy <= '0';
           csr.mcounteren_tm <= '0';
           csr.mcounteren_ir <= '0';
           --
-          csr.dcsr_ebreaku <= '0';
-          csr.dcsr_prv     <= '0';
+          csr.dcsr_ebreaku  <= '0';
+          csr.dcsr_prv      <= '0';
         end if;
 
         -- no PMP --
