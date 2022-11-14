@@ -722,8 +722,8 @@ include::cpu_cfu.adoc[]
 === Instruction Timing
 
 The instruction timing listed in the table below shows the required clock cycles for executing a certain
-instruction. These instruction cycles assume a bus access without additional wait states and a filled
-pipeline.
+instruction. These instruction cycles assume a bus access without additional wait states (memory Latency = 1)
+and a filled pipeline.
 
 Average CPI (cycles per instructions) values for "real applications" like for executing the CoreMark benchmark for different CPU
 configurations are presented in <<_cpu_performance>>.
@@ -733,43 +733,43 @@ configurations are presented in <<_cpu_performance>>.
 [options="header", grid="rows"]
 |=======================
 | Class | ISA | Instruction(s) | Execution cycles
-| ALU            | `I/E` | `addi` `slti` `sltiu` `xori` `ori` `andi` `add` `sub` `slt` `sltu` `xor` `or` `and` `lui` `auipc` | 2
-| ALU            | `C`   | `c.addi4spn` `c.nop` `c.addi` `c.li` `c.addi16sp` `c.lui` `c.andi` `c.sub` `c.xor` `c.or` `c.and` `c.add` `c.mv` | 2
-| ALU            | `I/E` | `slli` `srli` `srai` `sll` `srl` `sra` | 3 + SAfootnote:[Shift amount.]/4 + SA%4; FAST_SHIFTfootnote:[Barrel shift when `FAST_SHIFT_EN` is enabled.]: 4; TINY_SHIFTfootnote:[Serial shift when `TINY_SHIFT_EN` is enabled.]: 2..32
-| ALU            | `C`   | `c.srli` `c.srai` `c.slli` | 3 + SAfootnote:[Shift amount (0..31).]; FAST_SHIFTfootnote:[Barrel shifter when `FAST_SHIFT_EN` is enabled.]:
-| Branches       | `I/E` | `beq` `bne` `blt` `bge` `bltu` `bgeu` | Taken: 5 + (ML-1)footnote:[Memory latency.]; Not taken: 3
-| Branches       | `C`   | `c.beqz` `c.bnez`                     | Taken: 5 + (ML-1); Not taken: 3
-| Jumps / Calls  | `I/E` | `jal` `jalr`                  | 5 + (ML-1)
-| Jumps / Calls  | `C`   | `c.jal` `c.j` `c.jr` `c.jalr` | 5 + (ML-1)
-| Memory access  | `I/E` | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw` | 5 + (ML-2)
-| Memory access  | `C`   | `c.lw` `c.sw` `c.lwsp` `c.swsp`           | 5 + (ML-2)
-| Memory access  | `A`   | `lr.w` `sc.w`                             | 5 + (ML-2)
-| MulDiv         | `M`   | `mul` `mulh` `mulhsu` `mulhu` | 2+32+2; FAST_MULfootnote:[DSP-based multiplication; enabled via `FAST_MUL_EN`.]: 4
-| MulDiv         | `M`   | `div` `divu` `rem` `remu`     | 2+32+2
-| System         | `Zicsr`     | `csrrw` `csrrs` `csrrc` `csrrwi` `csrrsi` `csrrci` | 3
+| ALU            | `I/E` | `add[i]` `slt[i]` `slt[i]u` `xor[i]` `or[i]` `and[i]` `sub` `lui` `auipc`                            | 2
+| ALU            | `C`   | `c.addi4spn` `c.nop` `c.add[i]` `c.li` `c.addi16sp` `c.lui` `c.and[i]` `c.sub` `c.xor` `c.or` `c.mv` | 2
+| ALU            | `I/E` | `sll[i]` `srl[i]` `sra[i]` | 3 + _shift_amount_; FAST_SHIFT: 4
+| ALU            | `C`   | `c.srli` `c.srai` `c.slli` | 3 + _shift_amount_; FAST_SHIFT: 4
+| Branches       | `I/E` | `beq` `bne` `blt` `bge` `bltu` `bgeu` | Taken: 6; not taken: 3
+| Branches       | `C`   | `c.beqz` `c.bnez`                     | Taken: 6; not taken: 3
+| Jumps / Calls  | `I/E` | `jal[r]`                 | 6
+| Jumps / Calls  | `C`   | `c.jal[r]` `c.j` `c.jr`  | 6
+| Memory access  | `I/E` | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw` | 4
+| Memory access  | `C`   | `c.lw` `c.sw` `c.lwsp` `c.swsp`           | 4
+| Memory access  | `A`   | `lr.w` `sc.w`                             | 4
+| MulDiv         | `M`   | `mul` `mulh` `mulhsu` `mulhu` | 36; FAST_MUL: 4
+| MulDiv         | `M`   | `div` `divu` `rem` `remu`     | 36
+| System         | `Zicsr`     | `csrrw[i]` `csrrs[i]` `csrrc[i]` | 3
 | System         | `Zicsr`     | `ecall` `ebreak` | 3
 | System         | `Zicsr`+`C` | `c.break`        | 3
 | System         | `Zicsr`     | `wfi`            | 3
 | System         | `Zicsr`     | `mret` `dret`    | 5
-| Fence          | `I/E`       | `fence`   | 4 + ML
-| Fence          | `Zifencei`  | `fence.i` | 4 + ML
+| Fence          | `I/E`       | `fence`   | 5
+| Fence          | `Zifencei`  | `fence.i` | 5
 | Floating-point - artihmetic | `Zfinx` | `fadd.s` | 110
 | Floating-point - artihmetic | `Zfinx` | `fsub.s` | 112
 | Floating-point - artihmetic | `Zfinx` | `fmul.s` | 22
-| Floating-point - compare    | `Zfinx` | `fmin.s` `fmax.s` `feq.s` `flt.s` `fle.s` | 13
+| Floating-point - compare    | `Zfinx` | `fmin.s` `fmax.s` `feq.s` `flt.s` `fle.s`  | 13
 | Floating-point - misc       | `Zfinx` | `fsgnj.s` `fsgnjn.s` `fsgnjx.s` `fclass.s` | 12
 | Floating-point - conversion | `Zfinx` | `fcvt.w.s` `fcvt.wu.s` | 47
 | Floating-point - conversion | `Zfinx` | `fcvt.s.w` `fcvt.s.wu` | 48
 | Bit-manipulation - arithmetic/logic    | `B(Zbb)` | `min[u]` `max[u]` `sext.b` `sext.h` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 4
 | Bit-manipulation - shifts              | `B(Zbb)` | `clz` `ctz` | 4 + 1..32; FAST_SHIFT: 4
-| Bit-manipulation - shifts              | `B(Zbb)` | `cpop` | 4 + 32; FAST_SHIFT: 4
-| Bit-manipulation - shifts              | `B(Zbb)` | `rol` `ror[i]` | 4 + SA; FAST_SHIFT: 4
+| Bit-manipulation - shifts              | `B(Zbb)` | `cpop` | 36; FAST_SHIFT: 4
+| Bit-manipulation - shifts              | `B(Zbb)` | `rol` `ror[i]` | 4 + _shift_amount_; FAST_SHIFT: 4
 | Bit-manipulation - shifted-add         | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 4
 | Bit-manipulation - single-bit          | `B(Zbs)` | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 4
-| Bit-manipulation - carry-less multiply | `B(Zbc)` | `clmul` `clmulh` `clmulr` | 4 + 32
-| Custom instructions (CFU) | `Zxcfu` | - | min. 4
+| Bit-manipulation - carry-less multiply | `B(Zbc)` | `clmul` `clmulh` `clmulr` | 36
+| Custom instructions (CFU) | `Zxcfu` | - | _custom_ (min. 4)
 | | | | 
-| _Illegal instructions_    | `Zicsr` | - | min. 2
+| _Illegal instructions_    | `Zicsr` | - | 2
 |=======================
 
 [NOTE]
