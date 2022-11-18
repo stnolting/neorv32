@@ -32,6 +32,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 14.11.2022 | 1.7.7.9 | minor rtl edits and code optimizations; [#442](https://github.com/stnolting/neorv32/pull/442) |
 | 05.11.2022 | 1.7.7.8 | minor rtl edits; [#441](https://github.com/stnolting/neorv32/pull/441) |
 | 03.11.2022 | 1.7.7.7 | :sparkles: add fine-grained clock configuration for **TWI** module: add fine-grained clock configuration, add clock stretching configuration flag; [#440](https://github.com/stnolting/neorv32/pull/440) |
 | 01.11.2022 | 1.7.7.6 | :warning: rework **SPI module**; [#438](https://github.com/stnolting/neorv32/pull/438) |
