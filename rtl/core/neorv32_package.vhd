@@ -38,6 +38,10 @@ use ieee.numeric_std.all;
 
 package neorv32_package is
 
+-- ****************************************************************************************************************************
+-- Architecture Configuration and Constants
+-- ****************************************************************************************************************************
+
   -- Architecture Configuration -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- address space --
@@ -58,7 +62,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070800"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070801"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -74,6 +78,10 @@ package neorv32_package is
 -- synthesis translate_on
 -- pragma translate_on
   ;
+
+-- ****************************************************************************************************************************
+-- Custom Types and Functions
+-- ****************************************************************************************************************************
 
   -- External Interface Types ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -113,6 +121,10 @@ package neorv32_package is
   function popcount_f(input : std_ulogic_vector) return natural;
   function leading_zeros_f(input : std_ulogic_vector) return natural;
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
+
+-- ****************************************************************************************************************************
+-- Address Space Layout
+-- ****************************************************************************************************************************
 
   -- Processor-Internal Address Space Layout ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -321,86 +333,24 @@ package neorv32_package is
   constant sysinfo_base_c       : std_ulogic_vector(31 downto 0) := x"ffffffe0"; -- base address
   constant sysinfo_size_c       : natural := 8*4; -- module's address space size in bytes
 
-  -- Main CPU Control Bus -------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- register file --
-  constant ctrl_rf_wb_en_c      : natural :=  0; -- write back enable
-  constant ctrl_rf_rs1_adr0_c   : natural :=  1; -- source register 1 address bit 0
-  constant ctrl_rf_rs1_adr1_c   : natural :=  2; -- source register 1 address bit 1
-  constant ctrl_rf_rs1_adr2_c   : natural :=  3; -- source register 1 address bit 2
-  constant ctrl_rf_rs1_adr3_c   : natural :=  4; -- source register 1 address bit 3
-  constant ctrl_rf_rs1_adr4_c   : natural :=  5; -- source register 1 address bit 4
-  constant ctrl_rf_rs2_adr0_c   : natural :=  6; -- source register 2 address bit 0
-  constant ctrl_rf_rs2_adr1_c   : natural :=  7; -- source register 2 address bit 1
-  constant ctrl_rf_rs2_adr2_c   : natural :=  8; -- source register 2 address bit 2
-  constant ctrl_rf_rs2_adr3_c   : natural :=  9; -- source register 2 address bit 3
-  constant ctrl_rf_rs2_adr4_c   : natural := 10; -- source register 2 address bit 4
-  constant ctrl_rf_rd_adr0_c    : natural := 11; -- destination register address bit 0
-  constant ctrl_rf_rd_adr1_c    : natural := 12; -- destination register address bit 1
-  constant ctrl_rf_rd_adr2_c    : natural := 13; -- destination register address bit 2
-  constant ctrl_rf_rd_adr3_c    : natural := 14; -- destination register address bit 3
-  constant ctrl_rf_rd_adr4_c    : natural := 15; -- destination register address bit 4
-  constant ctrl_rf_mux0_c       : natural := 16; -- input source select lsb
-  constant ctrl_rf_mux1_c       : natural := 17; -- input source select msb
-  constant ctrl_rf_zero_we_c    : natural := 18; -- allow/force write access to x0
-  -- alu --
-  constant ctrl_alu_op0_c       : natural := 19; -- ALU operation select bit 0
-  constant ctrl_alu_op1_c       : natural := 20; -- ALU operation select bit 1
-  constant ctrl_alu_op2_c       : natural := 21; -- ALU operation select bit 2
-  constant ctrl_alu_opa_mux_c   : natural := 22; -- operand A select (0=rs1, 1=PC)
-  constant ctrl_alu_opb_mux_c   : natural := 23; -- operand B select (0=rs2, 1=IMM)
-  constant ctrl_alu_unsigned_c  : natural := 24; -- is unsigned ALU operation
-  constant ctrl_alu_frm0_c      : natural := 25; -- FPU rounding mode bit 0
-  constant ctrl_alu_frm1_c      : natural := 26; -- FPU rounding mode bit 1
-  constant ctrl_alu_frm2_c      : natural := 27; -- FPU rounding mode bit 2
-  -- alu co-processor trigger (one-hot selection) --
-  constant ctrl_cp_trig0_c      : natural := 28; -- trigger CP0
-  constant ctrl_cp_trig1_c      : natural := 29; -- trigger CP1
-  constant ctrl_cp_trig2_c      : natural := 30; -- trigger CP2
-  constant ctrl_cp_trig3_c      : natural := 31; -- trigger CP3
-  constant ctrl_cp_trig4_c      : natural := 32; -- trigger CP4
-  constant ctrl_cp_trig5_c      : natural := 33; -- trigger CP5
-  -- bus interface --
-  constant ctrl_bus_req_c       : natural := 34; -- trigger memory request
-  constant ctrl_bus_mo_we_c     : natural := 35; -- memory address and data output register write enable
-  constant ctrl_bus_fence_c     : natural := 36; -- fence operation
-  constant ctrl_bus_fencei_c    : natural := 37; -- fence.i operation
-  constant ctrl_bus_priv_c      : natural := 38; -- effective privilege level for load/store
-  -- instruction word control blocks --
-  constant ctrl_ir_funct3_0_c   : natural := 39; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 40; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 41; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 42; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 43; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 44; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 45; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 46; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 47; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 48; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 49; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 50; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 51; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 52; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 53; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 54; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 55; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 56; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 57; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 58; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 59; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 60; -- opcode7 bit 6
-  -- cpu status --
-  constant ctrl_priv_mode_c     : natural := 61; -- effective privilege mode
-  constant ctrl_sleep_c         : natural := 62; -- set when CPU is in sleep mode
-  constant ctrl_trap_c          : natural := 63; -- set when CPU is entering trap execution
-  constant ctrl_debug_running_c : natural := 64; -- set when CPU is in debug mode
-  -- control bus size --
-  constant ctrl_width_c         : natural := 65; -- control bus size
+-- ****************************************************************************************************************************
+-- SoC Definitions
+-- ****************************************************************************************************************************
 
-  -- Comparator Bus -------------------------------------------------------------------------
+  -- SoC Clock Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant cmp_equal_c : natural := 0;
-  constant cmp_less_c  : natural := 1; -- for signed and unsigned comparisons
+  constant clk_div2_c    : natural := 0;
+  constant clk_div4_c    : natural := 1;
+  constant clk_div8_c    : natural := 2;
+  constant clk_div64_c   : natural := 3;
+  constant clk_div128_c  : natural := 4;
+  constant clk_div1024_c : natural := 5;
+  constant clk_div2048_c : natural := 6;
+  constant clk_div4096_c : natural := 7;
+
+-- ****************************************************************************************************************************
+-- RISC-V ISA Definitions
+-- ****************************************************************************************************************************
 
   -- RISC-V 32-Bit Instruction Word Layout --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -701,7 +651,6 @@ package neorv32_package is
   constant csr_mhpmcounter29h_c : std_ulogic_vector(11 downto 0) := x"b9d";
   constant csr_mhpmcounter30h_c : std_ulogic_vector(11 downto 0) := x"b9e";
   constant csr_mhpmcounter31h_c : std_ulogic_vector(11 downto 0) := x"b9f";
-
   -- <<< standard read-only CSRs >>> --
   -- user counters/timers --
   constant csr_class_ucnt_c     : std_ulogic_vector(03 downto 0) := x"c"; -- user-mode counters
@@ -778,10 +727,101 @@ package neorv32_package is
   constant csr_mimpid_c         : std_ulogic_vector(11 downto 0) := x"f13";
   constant csr_mhartid_c        : std_ulogic_vector(11 downto 0) := x"f14";
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
-
   -- <<< NEORV32-specific (custom) read-only CSRs >>> ---
   -- machine extended ISA extensions information --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
+
+  -- PMP Modes ------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant pmp_mode_off_c   : std_ulogic_vector(1 downto 0) := "00"; -- null region (disabled)
+  constant pmp_mode_tor_c   : std_ulogic_vector(1 downto 0) := "01"; -- top of range
+  constant pmp_mode_na4_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
+  constant pmp_mode_napot_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
+
+-- ****************************************************************************************************************************
+-- CPU Control
+-- ****************************************************************************************************************************
+
+  -- Main CPU Control Bus -------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- register file --
+  constant ctrl_rf_wb_en_c      : natural :=  0; -- write back enable
+  constant ctrl_rf_rs1_adr0_c   : natural :=  1; -- source register 1 address bit 0
+  constant ctrl_rf_rs1_adr1_c   : natural :=  2; -- source register 1 address bit 1
+  constant ctrl_rf_rs1_adr2_c   : natural :=  3; -- source register 1 address bit 2
+  constant ctrl_rf_rs1_adr3_c   : natural :=  4; -- source register 1 address bit 3
+  constant ctrl_rf_rs1_adr4_c   : natural :=  5; -- source register 1 address bit 4
+  constant ctrl_rf_rs2_adr0_c   : natural :=  6; -- source register 2 address bit 0
+  constant ctrl_rf_rs2_adr1_c   : natural :=  7; -- source register 2 address bit 1
+  constant ctrl_rf_rs2_adr2_c   : natural :=  8; -- source register 2 address bit 2
+  constant ctrl_rf_rs2_adr3_c   : natural :=  9; -- source register 2 address bit 3
+  constant ctrl_rf_rs2_adr4_c   : natural := 10; -- source register 2 address bit 4
+  constant ctrl_rf_rd_adr0_c    : natural := 11; -- destination register address bit 0
+  constant ctrl_rf_rd_adr1_c    : natural := 12; -- destination register address bit 1
+  constant ctrl_rf_rd_adr2_c    : natural := 13; -- destination register address bit 2
+  constant ctrl_rf_rd_adr3_c    : natural := 14; -- destination register address bit 3
+  constant ctrl_rf_rd_adr4_c    : natural := 15; -- destination register address bit 4
+  constant ctrl_rf_mux0_c       : natural := 16; -- input source select lsb
+  constant ctrl_rf_mux1_c       : natural := 17; -- input source select msb
+  constant ctrl_rf_zero_we_c    : natural := 18; -- allow/force write access to x0
+  -- alu --
+  constant ctrl_alu_op0_c       : natural := 19; -- ALU operation select bit 0
+  constant ctrl_alu_op1_c       : natural := 20; -- ALU operation select bit 1
+  constant ctrl_alu_op2_c       : natural := 21; -- ALU operation select bit 2
+  constant ctrl_alu_opa_mux_c   : natural := 22; -- operand A select (0=rs1, 1=PC)
+  constant ctrl_alu_opb_mux_c   : natural := 23; -- operand B select (0=rs2, 1=IMM)
+  constant ctrl_alu_unsigned_c  : natural := 24; -- is unsigned ALU operation
+  constant ctrl_alu_frm0_c      : natural := 25; -- FPU rounding mode bit 0
+  constant ctrl_alu_frm1_c      : natural := 26; -- FPU rounding mode bit 1
+  constant ctrl_alu_frm2_c      : natural := 27; -- FPU rounding mode bit 2
+  -- alu co-processor trigger (one-hot selection) --
+  constant ctrl_cp_trig0_c      : natural := 28; -- trigger CP0
+  constant ctrl_cp_trig1_c      : natural := 29; -- trigger CP1
+  constant ctrl_cp_trig2_c      : natural := 30; -- trigger CP2
+  constant ctrl_cp_trig3_c      : natural := 31; -- trigger CP3
+  constant ctrl_cp_trig4_c      : natural := 32; -- trigger CP4
+  constant ctrl_cp_trig5_c      : natural := 33; -- trigger CP5
+  -- bus interface --
+  constant ctrl_bus_req_c       : natural := 34; -- trigger memory request
+  constant ctrl_bus_mo_we_c     : natural := 35; -- memory address and data output register write enable
+  constant ctrl_bus_fence_c     : natural := 36; -- fence operation
+  constant ctrl_bus_fencei_c    : natural := 37; -- fence.i operation
+  constant ctrl_bus_priv_c      : natural := 38; -- effective privilege level for load/store
+  -- instruction word control blocks --
+  constant ctrl_ir_funct3_0_c   : natural := 39; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 40; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 41; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 42; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 43; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 44; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 45; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 46; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 47; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 48; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 49; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 50; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 51; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 52; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 53; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 54; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 55; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 56; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 57; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 58; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 59; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 60; -- opcode7 bit 6
+  -- cpu status --
+  constant ctrl_priv_mode_c     : natural := 61; -- effective privilege mode
+  constant ctrl_sleep_c         : natural := 62; -- set when CPU is in sleep mode
+  constant ctrl_trap_c          : natural := 63; -- set when CPU is entering trap execution
+  constant ctrl_debug_running_c : natural := 64; -- set when CPU is in debug mode
+  -- control bus size --
+  constant ctrl_width_c         : natural := 65; -- control bus size
+
+  -- Comparator Bus -------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  constant cmp_equal_c : natural := 0;
+  constant cmp_less_c  : natural := 1; -- for signed and unsigned comparisons
 
   -- CPU Co-Processor IDs -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -909,13 +949,6 @@ package neorv32_package is
   constant priv_mode_m_c : std_ulogic := '1'; -- machine mode
   constant priv_mode_u_c : std_ulogic := '0'; -- user mode
 
-  -- PMP Modes ------------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  constant pmp_mode_off_c   : std_ulogic_vector(1 downto 0) := "00"; -- null region (disabled)
-  constant pmp_mode_tor_c   : std_ulogic_vector(1 downto 0) := "01"; -- top of range
-  constant pmp_mode_na4_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
-  constant pmp_mode_napot_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
-
   -- HPM Event System -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant hpmcnt_event_cy_c      : natural := 0;  -- Active cycle
@@ -936,16 +969,9 @@ package neorv32_package is
   --
   constant hpmcnt_event_size_c    : natural := 15; -- length of this list
 
-  -- SoC Clock Generator --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  constant clk_div2_c    : natural := 0;
-  constant clk_div4_c    : natural := 1;
-  constant clk_div8_c    : natural := 2;
-  constant clk_div64_c   : natural := 3;
-  constant clk_div128_c  : natural := 4;
-  constant clk_div1024_c : natural := 5;
-  constant clk_div2048_c : natural := 6;
-  constant clk_div4096_c : natural := 7;
+-- ****************************************************************************************************************************
+-- Entity Definitions
+-- ****************************************************************************************************************************
 
   -- Component: NEORV32 Processor Top Entity ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -2254,6 +2280,10 @@ end neorv32_package;
 
 package body neorv32_package is
 
+-- ****************************************************************************************************************************
+-- Functions
+-- ****************************************************************************************************************************
+
   -- Function: Minimal required number of bits to represent <input> numbers -----------------
   -- -------------------------------------------------------------------------------------------
   function index_size_f(input : natural) return natural is
@@ -2552,6 +2582,9 @@ package body neorv32_package is
 
 end neorv32_package;
 
+-- ****************************************************************************************************************************
+-- Additional Packages
+-- ****************************************************************************************************************************
 
   -- Prototype Definition: bootloader_init_image --------------------------------------------
   -- -------------------------------------------------------------------------------------------
