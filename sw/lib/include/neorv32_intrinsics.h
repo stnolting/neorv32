@@ -233,7 +233,7 @@ asm(".set RISCV_OPCODE_CUSTOM3 , 0b1111011");
     );                                                      \
     asm volatile (                                          \
       ".word (                                              \
-        ((( regnum_%3 ) & 0x1f) << 25) |                    \
+        ((( regnum_%3 ) & 0x1f) << 27) |                    \
         ((( regnum_%2 ) & 0x1f) << 20) |                    \
         ((( regnum_%1 ) & 0x1f) << 15) |                    \
         (((" #funct3 ") & 0x07) << 12) |                    \
