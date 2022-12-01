@@ -154,18 +154,20 @@ asm(".set regnum_t4  , 29");
 asm(".set regnum_t5  , 30");
 asm(".set regnum_t6  , 31");
 
-/** Official RISC-V opcodes for custom extensions (CUSTOM0, CUSTOM1) */
+/** Official RISC-V opcodes for custom extensions (custom-x) */
 asm(".set RISCV_OPCODE_CUSTOM0 , 0b0001011");
 asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
+asm(".set RISCV_OPCODE_CUSTOM2 , 0b1011011");
+asm(".set RISCV_OPCODE_CUSTOM3 , 0b1111011");
 /**@}*/
 
 
 /**********************************************************************//**
- * @name Custom instruction R1-type format
+ * @name Custom instruction R2-type format
  **************************************************************************/
-#define CUSTOM_INSTR_R1_TYPE(funct7, funct5, rs1, funct3, opcode) \
+#define CUSTOM_INSTR_R2_TYPE(funct7, funct5, rs1, funct3, opcode) \
 ({                                                                \
-    uint32_t __return;                                   \
+    uint32_t __return;                                            \
     asm volatile (                                                \
       ""                                                          \
       : [output] "=r" (__return)                                  \
@@ -188,11 +190,11 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
 
 
 /**********************************************************************//**
- * @name Custom instruction R2-type format
+ * @name Custom instruction R3-type format
  **************************************************************************/
-#define CUSTOM_INSTR_R2_TYPE(funct7, rs2, rs1, funct3, opcode) \
+#define CUSTOM_INSTR_R3_TYPE(funct7, rs2, rs1, funct3, opcode) \
 ({                                                             \
-    uint32_t __return;                                \
+    uint32_t __return;                                         \
     asm volatile (                                             \
       ""                                                       \
       : [output] "=r" (__return)                               \
@@ -217,11 +219,11 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
 
 
 /**********************************************************************//**
- * @name Custom instruction R3-type format
+ * @name Custom instruction R4-type format
  **************************************************************************/
-#define CUSTOM_INSTR_R3_TYPE(rs3, rs2, rs1, funct3, opcode) \
+#define CUSTOM_INSTR_R4_TYPE(rs3, rs2, rs1, funct3, opcode) \
 ({                                                          \
-    uint32_t __return;                             \
+    uint32_t __return;                                      \
     asm volatile (                                          \
       ""                                                    \
       : [output] "=r" (__return)                            \
@@ -252,7 +254,7 @@ asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
  **************************************************************************/
 #define CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, opcode) \
 ({                                                      \
-    uint32_t __return;                         \
+    uint32_t __return;                                  \
     asm volatile (                                      \
       ""                                                \
       : [output] "=r" (__return)                        \
