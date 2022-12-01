@@ -66,7 +66,7 @@
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_clz(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00000, rs1, 0b001, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0110000, 0b00000, rs1, 0b001, 0b0010011);
 }
 
 
@@ -78,7 +78,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_clz(uint32_t rs1
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_ctz(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00001, rs1, 0b001, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0110000, 0b00001, rs1, 0b001, 0b0010011);
 }
 
 
@@ -90,7 +90,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_ctz(uint32_t rs1
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_cpop(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00010, rs1, 0b001, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0110000, 0b00010, rs1, 0b001, 0b0010011);
 }
 
 
@@ -102,7 +102,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_cpop(uint32_t rs
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sextb(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00100, rs1, 0b001, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0110000, 0b00100, rs1, 0b001, 0b0010011);
 }
 
 
@@ -114,7 +114,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sextb(uint32_t r
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sexth(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0110000, 0b00101, rs1, 0b001, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0110000, 0b00101, rs1, 0b001, 0b0010011);
 }
 
 
@@ -126,7 +126,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sexth(uint32_t r
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_zexth(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0000100, 0b00000, rs1, 0b100, 0b0110011);
+  return CUSTOM_INSTR_R2_TYPE(0b0000100, 0b00000, rs1, 0b100, 0b0110011);
 }
 
 
@@ -139,7 +139,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_zexth(uint32_t r
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_min(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0000101, rs2, rs1, 0b100, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0000101, rs2, rs1, 0b100, 0b0110011);
 }
 
 
@@ -152,7 +152,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_min(uint32_t rs1
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_minu(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0000101, rs2, rs1, 0b101, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0000101, rs2, rs1, 0b101, 0b0110011);
 }
 
 
@@ -165,7 +165,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_minu(uint32_t rs
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_max(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0000101, rs2, rs1, 0b110, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0000101, rs2, rs1, 0b110, 0b0110011);
 }
 
 
@@ -178,7 +178,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_max(uint32_t rs1
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_maxu(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0000101, rs2, rs1, 0b111, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0000101, rs2, rs1, 0b111, 0b0110011);
 }
 
 
@@ -191,7 +191,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_maxu(uint32_t rs
  **************************************************************************/
 inline inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_andn(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0100000, rs2, rs1, 0b111, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0100000, rs2, rs1, 0b111, 0b0110011);
 }
 
 
@@ -204,7 +204,7 @@ inline inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_andn(uint
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_orn(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0100000, rs2, rs1, 0b110, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0100000, rs2, rs1, 0b110, 0b0110011);
 }
 
 
@@ -217,7 +217,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_orn(uint32_t rs1
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_xnor(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0100000, rs2, rs1, 0b100, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0100000, rs2, rs1, 0b100, 0b0110011);
 }
 
 
@@ -230,7 +230,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_xnor(uint32_t rs
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_rol(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0110000, rs2, rs1, 0b001, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0110000, rs2, rs1, 0b001, 0b0110011);
 }
 
 
@@ -243,7 +243,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_rol(uint32_t rs1
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_ror(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0110000, rs2, rs1, 0b101, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0110000, rs2, rs1, 0b101, 0b0110011);
 }
 
 
@@ -256,7 +256,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_ror(uint32_t rs1
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_rori20(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0110000, 0b10100, rs1, 0b101, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0110000, 0b10100, rs1, 0b101, 0b0010011);
 }
 
 
@@ -268,7 +268,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_rori20(uint32_t 
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_orcb(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0010100, 0b00111, rs1, 0b101, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0010100, 0b00111, rs1, 0b101, 0b0010011);
 }
 
 
@@ -280,7 +280,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_orcb(uint32_t rs
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_rev8(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0110100, 0b11000, rs1, 0b101, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0110100, 0b11000, rs1, 0b101, 0b0010011);
 }
 
 
@@ -297,7 +297,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_rev8(uint32_t rs
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sh1add(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0010000, rs2, rs1, 0b010, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0010000, rs2, rs1, 0b010, 0b0110011);
 }
 
 
@@ -310,7 +310,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sh1add(uint32_t 
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sh2add(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0010000, rs2, rs1, 0b100, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0010000, rs2, rs1, 0b100, 0b0110011);
 }
 
 /**********************************************************************//**
@@ -322,7 +322,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sh2add(uint32_t 
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sh3add(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0010000, rs2, rs1, 0b110, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0010000, rs2, rs1, 0b110, 0b0110011);
 }
 
 
@@ -340,7 +340,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_sh3add(uint32_t 
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bclr(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0100100, rs2, rs1, 0b001, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0100100, rs2, rs1, 0b001, 0b0110011);
 }
 
 
@@ -353,7 +353,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bclr(uint32_t rs
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bclri20(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0100100, 0b10100, rs1, 0b001, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0100100, 0b10100, rs1, 0b001, 0b0010011);
 }
 
 
@@ -366,7 +366,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bclri20(uint32_t
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bext(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0100100, rs2, rs1, 0b101, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0100100, rs2, rs1, 0b101, 0b0110011);
 }
 
 
@@ -379,7 +379,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bext(uint32_t rs
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bexti20(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0100100, 0b10100, rs1, 0b101, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0100100, 0b10100, rs1, 0b101, 0b0010011);
 }
 
 
@@ -392,7 +392,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bexti20(uint32_t
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_binv(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0110100, rs2, rs1, 0b001, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0110100, rs2, rs1, 0b001, 0b0110011);
 }
 
 
@@ -405,7 +405,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_binv(uint32_t rs
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_binvi20(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0110100, 0b10100, rs1, 0b001, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0110100, 0b10100, rs1, 0b001, 0b0010011);
 }
 
 
@@ -418,7 +418,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_binvi20(uint32_t
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bset(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0010100, rs2, rs1, 0b001, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0010100, rs2, rs1, 0b001, 0b0110011);
 }
 
 
@@ -431,7 +431,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bset(uint32_t rs
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bseti20(uint32_t rs1) {
 
-  return CUSTOM_INSTR_R1_TYPE(0b0010100, 0b10100, rs1, 0b001, 0b0010011);
+  return CUSTOM_INSTR_R2_TYPE(0b0010100, 0b10100, rs1, 0b001, 0b0010011);
 }
 
 
@@ -449,7 +449,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_bseti20(uint32_t
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_clmul(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0000101, rs2, rs1, 0b001, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0000101, rs2, rs1, 0b001, 0b0110011);
 }
 
 
@@ -462,7 +462,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_clmul(uint32_t r
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_clmulh(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0000101, rs2, rs1, 0b011, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0000101, rs2, rs1, 0b011, 0b0110011);
 }
 
 
@@ -475,7 +475,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_clmulh(uint32_t 
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_clmulr(uint32_t rs1, uint32_t rs2) {
 
-  return CUSTOM_INSTR_R2_TYPE(0b0000101, rs1, rs2, 0b010, 0b0110011);
+  return CUSTOM_INSTR_R3_TYPE(0b0000101, rs1, rs2, 0b010, 0b0110011);
 }
 
 
