@@ -32,6 +32,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 01.12.2022 | 1.7.8.1 | package cleanup; [#447](https://github.com/stnolting/neorv32/pull/447) |
 | 28.11.2022 | [**:rocket:1.7.8**](https://github.com/stnolting/neorv32/releases/tag/v1.7.8) | **New release** |
 | 14.11.2022 | 1.7.7.9 | minor rtl edits and code optimizations; [#442](https://github.com/stnolting/neorv32/pull/442) |
 | 05.11.2022 | 1.7.7.8 | minor rtl edits; [#441](https://github.com/stnolting/neorv32/pull/441) |
