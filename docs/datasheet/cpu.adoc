@@ -654,24 +654,26 @@ Any additional flags within the `fence.i` instruction word are ignore by the har
 
 ==== **`Zxcfu`** Custom Instructions Extension (CFU)
 
-The `Zxcfu` presents a NEORV32-specific _custom RISC-V_ ISA extension (`Z` = sub-extension, `x` = platform-specific
+The `Zxcfu` presents a NEORV32-specific extension to the RISC-V ISA (`Z` = sub-extension, `x` = platform-specific
 custom extension, `cfu` = name of the custom extension). When enabled via the <<_cpu_extension_riscv_zxcfu>> configuration
 generic, this ISA extensions adds the <<_custom_functions_unit_cfu>> to the CPU core. The CFU is a module that
 allows to add **custom RISC-V instructions** to the processor core.
 
-The CPU is implemented as ALU co-processor and is integrated right into the CPU's pipeline providing minimal data
-transfer latency as it has direct access to the core's register file. Up to 1024 custom instructions can be
-implemented within the CFU. These instructions are mapped to an OPCODE space that has been explicitly reserved by
+The CPU is implemented as additional ALU co-processor and is integrated right into the CPU's pipeline providing minimal
+data transfer latency as it has direct access to the core's register file. The CFU supports **RISC-V R3-type** instructions
+as well as **RISC-V R4-type** instructions. Up to 1024 custom R3-type instructions and up to 8 custom R4-type instruction
+can be implemented within the CFU. These instructions are mapped to an opcode space that has been explicitly reserved by
 the RISC-V spec for custom extensions.
 
 Software can utilize the custom instructions by using _intrinsic functions_, which are inline assembly functions that
-behave like "regular" C functions.
+behave like regular C functions.
 
 [TIP]
-For more information regarding the CFU see section <<_custom_functions_unit_cfu>>.
+For more detailed information regarding the CFU, it's hardware and the according software interface
+see section <<_custom_functions_unit_cfu>>.
 
 [TIP]
-The CFU / `Zxcfu` ISA extension is intended for application-specific _instructions_.
+The CFU module / `Zxcfu` ISA extension is intended for user-defined **instructions**.
 If you like to add more complex accelerators or interfaces that can also operate independently of
 the CPU take a look at the memory-mapped <<_custom_functions_subsystem_cfs>>.
 
