@@ -759,6 +759,7 @@ begin
     -- register addresses --
     ctrl_o(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c) <= execute_engine.i_reg(instr_rs1_msb_c downto instr_rs1_lsb_c);
     ctrl_o(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c) <= execute_engine.i_reg(instr_rs2_msb_c downto instr_rs2_lsb_c);
+    ctrl_o(ctrl_rf_rs3_adr4_c downto ctrl_rf_rs3_adr0_c) <= execute_engine.i_reg(instr_rs3_msb_c downto instr_rs3_lsb_c);
     ctrl_o(ctrl_rf_rd_adr4_c  downto ctrl_rf_rd_adr0_c)  <= execute_engine.i_reg(instr_rd_msb_c  downto instr_rd_lsb_c);
     -- instruction's function blocks --
     ctrl_o(ctrl_ir_opcode7_6_c  downto ctrl_ir_opcode7_0_c) <= execute_engine.i_reg(instr_opcode_msb_c  downto instr_opcode_lsb_c);
@@ -1080,7 +1081,7 @@ begin
             end if;
 
 
-          when opcode_cust0_c => -- CFU: custom RISC-V instructions (CUSTOM0 OPCODE space)
+          when opcode_cust0_c | opcode_cust1_c => -- CFU: custom RISC-V instructions (CUSTOM0/1 OPCODE space)
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zxcfu = true) then
               ctrl_nxt(ctrl_cp_trig0_c + cp_sel_cfu_c) <= '1'; -- trigger CFU CP
@@ -1435,12 +1436,24 @@ begin
         else
           illegal_cmd <= '1';
         end if;
-        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
+        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or
+                       execute_engine.i_reg(instr_rs1_msb_c) or
+                       execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
-      when opcode_cust0_c => -- CFU: custom instructions
+      when opcode_cust0_c => -- CFU: custom0 instructions (r3-type)
       -- ------------------------------------------------------------
         illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- CFU extension not implemented
-        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
+        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or
+                       execute_engine.i_reg(instr_rs1_msb_c) or
+                       execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
+
+      when opcode_cust1_c => -- CFU: custom1 instructions (r4-type)
+      -- ------------------------------------------------------------
+        illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- CFU extension not implemented
+        illegal_reg <= execute_engine.i_reg(instr_rs3_msb_c) or
+                       execute_engine.i_reg(instr_rs2_msb_c) or
+                       execute_engine.i_reg(instr_rs1_msb_c) or
+                       execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
       when others => -- illegal opcode
       -- ------------------------------------------------------------
