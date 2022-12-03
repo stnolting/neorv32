@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32 - CFU Custom Instructions Example Program >>                                       #
+// # << NEORV32 - CFU: Custom Instructions Example Program >>                                      #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -37,6 +37,8 @@
  * @file demo_cfu/main.c
  * @author Stephan Nolting
  * @brief Example program showing how to use the CFU's custom instructions.
+ * Take a look at the "hardware-counterpart" of this CFU example in
+ * 'rtl/core/neorv32_cpu_cp_cfu.vhd'.
  **************************************************************************/
 #include <neorv32.h>
 
@@ -89,8 +91,7 @@ int main() {
     return 1; // UART0 not available, exit
   }
 
-  // check if the CFU is implemented at all
-  // note that the CFU is wrapped in the core's "Zxcfu" ISA extension
+  // check if the CFU is implemented at all (the CFU is wrapped in the core's "Zxcfu" ISA extension)
   if (neorv32_cpu_cfu_available() == 0) {
     neorv32_uart0_printf("ERROR! CFU ('Zxcfu' ISA extensions) not implemented!\n");
     return 1;
@@ -98,79 +99,82 @@ int main() {
 
 
   // intro
-  neorv32_uart0_printf("\n<<< NEORV32 Custom Functions Unit (CFU) 'Custom Instructions' Example Program >>>\n\n");
+  neorv32_uart0_printf("\n<<< NEORV32 Custom Functions Unit (CFU) - Custom Instructions Example Program >>>\n\n");
 
-  neorv32_uart0_printf("NOTE: This program assumes the _default_ CFU hardware module, which implements\n"
-                       "      four simple data conversion instructions.\n\n");
-
-  neorv32_uart0_printf("NOTE: This program (and it's comments) just shows how to USE the CFU's custom\n"
-                       "      instructions. The actual implementation of these instructions is done\n"
-                       "      in the CFU hardware module (-> rtl/core/neorv32_cpu_cp_cfu.vhd).\n\n");
+  neorv32_uart0_printf("[NOTE] This program assumes the _default_ CFU hardware module, which\n"
+                       "       implements some exemplary data processing instructions.\n\n");
 
 
-  // The CFU custom instruction can be used as plain C functions with the help of the NEORV32 CFU intrinsics.
-  //
-  // There are 8 "prototypes" for the CFU instructions:
-  // > neorv32_cfu_cmd0(funct7, rs1, rs2) - sets the instruction's "funct3" bit field to 000
-  // > neorv32_cfu_cmd1(funct7, rs1, rs2) - sets the instruction's "funct3" bit field to 001
-  // > ...
-  // > neorv32_cfu_cmd7(funct7, rs1, rs2) - sets the instruction's "funct3" bit field to 111
-  //
-  // Every "call" of these functions is turned into a single 32-bit R2-type RISC-V instruction (= "intrinsics").
-  // - No overhead at all! Maximum throughput!
-  //
-  // Each neorv32_cfu_cmd* function requires three arguments:
-  // > funct7: a compile-time static 7-bit immediate (for the instruction's "funct7" bit field)
-  // > rs1:    a 32-bit operand A (this is the first register file source rs1)
-  // > rs2:    a 32-bit operand B (this is the second register file source rs2)
-  //
-  // The rs* operands can be literals, variables, function return values, ... you name it.
-  // The 7-bit immediate ("funct7") can be used to pass _compile-time static_ literals to the CFU
-  // or to do a more fine-grained function selection - it all depends on your hardware implementation.
-  //
-  // Each neorv32_cfu_cmd* function returns a 32-bit uint32_t data word, which represents
-  // the result of the according instruction.
+/*
+  The CFU custom instructions can be used as plain C functions as they are simple "intrinsics".
 
-  uint32_t i, opa, opb;
+  There are 2 "prototype primitives" for the CFU instructions:
+  > neorv32_cfu_r3_instr(funct7, funct3, rs1, rs2) - for r3-type instructions
+  > neorv32_cfu_r4_instr(funct3, rs1, rs2, rs3)    - for r4-type instructions
 
-  neorv32_uart0_printf("\n--- CFU \"binary to gray\" instruction (funct3 = 000) ---\n");
+  Every "call" of these functions is turned into a single 32-bit ISC-V instruction word
+  without any calling overhead at all.
+
+  The "rs*" operands can be literals, variables, function return values, ... - you name it.
+  The 7-bit immediate ("funct7") and the 3-bit immediate ("funct3") values can be used to pass
+  _compile-time static_ literals to the CFU or to do a fine-grained function selection.
+
+  Each "neorv32_cfu_r*_instr" function returns a 32-bit data word of type uint32_t that represents
+  the result of the according instruction.
+*/
+
+  uint32_t i, rs1, rs2, rs3;
+
+  // ------------------------------------
+  // R3-type instructions
+  // ------------------------------------
+
+  neorv32_uart0_printf("\n--- CFU 'bit reversal' instruction ---\n");
   for (i=0; i<TESTCASES; i++) {
-    opa = xorshift32(); // get random test data
-    opb = 0;
-    // passing of two variables (opa and opb):
-    neorv32_uart0_printf("%u: neorv32_cfu_cmd0 - OPA = 0x%x, OPB = 0x%x, ", i, opa, opb);
-    neorv32_uart0_printf("Result = 0x%x\n", neorv32_cfu_cmd0(0b0000000, opa, opb));
-  }
-
-  neorv32_uart0_printf("\n--- CFU \"gray to binary\" instruction (funct3 = 001) ---\n");
-  for (i=0; i<TESTCASES; i++) {
-    opa = xorshift32();
-    neorv32_uart0_printf("%u: neorv32_cfu_cmd1 - OPA = 0x%x, OPB = 0x%x, ", i, opa, 0);
-    // you can also pass literals instead of variables (0 instead of opb):
-    neorv32_uart0_printf("Result = 0x%x\n", neorv32_cfu_cmd1(0b0000000, opa, 0));
-  }
-
-  neorv32_uart0_printf("\n--- CFU \"bit reversal\" instruction (funct3 = 010) ---\n");
-  for (i=0; i<TESTCASES; i++) {
-    opa = xorshift32();
-    neorv32_uart0_printf("%u: neorv32_cfu_cmd2 - OPA = 0x%x, OPB = 0x%x, ", i, opa, 0);
+    rs1 = xorshift32();
+    neorv32_uart0_printf("%u: neorv32_cfu_r3_instr(funct7=0b1111111, funct3=0b000, [rs1]=0x%x, [rs2]=0x%x) = ", i, rs1, 0);
     // here we are setting the funct7 bit-field to all-one; however, this is not
-    // used at all by the default CFU hardware module
-    // note that all funct3/funct7 combinations are treated as "valid" by the CPU
-    // - so there is no chance of causing an illegal instruction exception when using the CFU intrinsics
-    neorv32_uart0_printf("Result = 0x%x\n", neorv32_cfu_cmd2(0b1111111, opa, 0));
+    // used at all by the default CFU hardware module.
+    neorv32_uart0_printf("0x%x\n", neorv32_cfu_r3_instr(0b1111111, 0b000, rs1, 0));
   }
 
-  neorv32_uart0_printf("\n--- CFU \"logical XNOR\" instruction (funct3 = 011) ---\n");
+  neorv32_uart0_printf("\n--- CFU 'logical XNOR' instruction ---\n");
   for (i=0; i<TESTCASES; i++) {
-    opa = xorshift32();
-    opb = xorshift32();
-    neorv32_uart0_printf("%u: neorv32_cfu_cmd3 - OPA = 0x%x, OPB = 0x%x, ", i, opa, opb);
-    neorv32_uart0_printf("Result = 0x%x\n", neorv32_cfu_cmd3(0b0000000, opa, opb));
+    rs1 = xorshift32();
+    rs2 = xorshift32();
+    neorv32_uart0_printf("%u: neorv32_cfu_r3_instr(funct7=0b0000000, funct3=0b001, [rs1]=0x%x, [rs2]=0x%x) = ", i, rs1, rs2);
+    neorv32_uart0_printf("0x%x\n", neorv32_cfu_r3_instr(0b0000000, 0b001, rs1, rs2));
+  }
+
+  // ------------------------------------
+  // R4-type instructions
+  // ------------------------------------
+
+// You can use <defines> to simplify the usage of the CFU instructions.
+#define madd_lo(a, b, c) neorv32_cfu_r4_instr(0b000, a, b, c)
+#define madd_hi(a, b, c) neorv32_cfu_r4_instr(0b001, a, b, c)
+
+  neorv32_uart0_printf("\n--- CFU 'multiply-add (low-part)' instruction ---\n");
+  for (i=0; i<TESTCASES; i++) {
+    rs1 = xorshift32();
+    rs2 = xorshift32();
+    rs3 = xorshift32();
+    neorv32_uart0_printf("%u: neorv32_cfu_r4_instr(funct3=0b000, [rs1]=0x%x, [rs2]=0x%x, [rs3]=0x%x) = ", i, rs1, rs2, rs3);
+    neorv32_uart0_printf("0x%x\n", madd_lo(rs1, rs2, rs3));
+  }
+
+  neorv32_uart0_printf("\n--- CFU 'multiply-add (high-part)' instruction ---\n");
+  for (i=0; i<TESTCASES; i++) {
+    rs1 = xorshift32();
+    rs2 = xorshift32();
+    rs3 = xorshift32();
+    neorv32_uart0_printf("%u: neorv32_cfu_r4_instr(funct3=0b001, [rs1]=0x%x, [rs2]=0x%x, [rs3]=0x%x) = ", i, rs1, rs2, rs3);
+    neorv32_uart0_printf("0x%x\n", madd_hi(rs1, rs2, rs3));
   }
 
 
   neorv32_uart0_printf("\nCFU demo program completed.\n");
 
   return 0;
+
 }
