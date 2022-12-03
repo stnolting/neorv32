@@ -69,6 +69,7 @@ entity neorv32_cpu_cp_fpu is
     cmp_i    : in  std_ulogic_vector(1 downto 0); -- comparator status
     rs1_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+    rs3_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
     -- result and status --
     res_o    : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
     fflags_o : out std_ulogic_vector(4 downto 0); -- exception flags
