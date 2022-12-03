@@ -53,7 +53,8 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_regfile is
   generic (
     XLEN                  : natural; -- data path width
-    CPU_EXTENSION_RISCV_E : boolean  -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_E : boolean; -- implement embedded RF extension?
+    RS3_EN                : boolean  -- enable third read port
   );
   port (
     -- global control --
@@ -66,7 +67,8 @@ entity neorv32_cpu_regfile is
     pc2_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- next PC
     -- data output --
     rs1_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 1
-    rs2_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- operand 2
+    rs2_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 2
+    rs3_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- operand 3
   );
 end neorv32_cpu_regfile;
 
@@ -84,6 +86,7 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   signal rd_zero  : std_ulogic; -- writing to x0?
   signal opa_addr : std_ulogic_vector(4 downto 0); -- rs1/dst address
   signal opb_addr : std_ulogic_vector(4 downto 0); -- rs2 address
+  signal opc_addr : std_ulogic_vector(4 downto 0); -- rs3 address
 
 begin
 
@@ -114,6 +117,9 @@ begin
         end if;
         rs1_o <= reg_file(to_integer(unsigned(opa_addr(4 downto 0))));
         rs2_o <= reg_file(to_integer(unsigned(opb_addr(4 downto 0))));
+        if (RS3_EN = true) then -- implement third read port?
+          rs3_o <= reg_file(to_integer(unsigned(opc_addr(4 downto 0))));
+        end if;
       end if;
     end process rf_access;
   end generate;
@@ -129,6 +135,9 @@ begin
         end if;
         rs1_o <= reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0))));
         rs2_o <= reg_file_emb(to_integer(unsigned(opb_addr(3 downto 0))));
+        if (RS3_EN = true) then -- implement third read port?
+          rs3_o <= reg_file(to_integer(unsigned(opc_addr(3 downto 0))));
+        end if;
       end if;
     end process rf_access;
   end generate;
@@ -142,6 +151,7 @@ begin
               ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) when (ctrl_i(ctrl_rf_wb_en_c) = '1') else -- rd
               ctrl_i(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- rs1
   opb_addr <= ctrl_i(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c); -- rs2
+  opc_addr <= ctrl_i(ctrl_rf_rs3_adr4_c downto ctrl_rf_rs3_adr0_c); -- rs3
 
 
 end neorv32_cpu_regfile_rtl;

@@ -62,6 +62,7 @@ entity neorv32_cpu_alu is
     -- data input --
     rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+    rs3_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
     pc_i        : in  std_ulogic_vector(XLEN-1 downto 0); -- current PC
     imm_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- immediate
     -- data output --
@@ -272,6 +273,7 @@ begin
       cmp_i    => cmp,          -- comparator status
       rs1_i    => rs1_i,        -- rf source 1
       rs2_i    => rs2_i,        -- rf source 2
+      rs3_i    => rs3_i,        -- rf source 3
       -- result and status --
       res_o    => cp_result(3), -- operation result
       fflags_o => fpu_flags_o,  -- exception flags
@@ -304,6 +306,7 @@ begin
       -- data input --
       rs1_i   => rs1_i,        -- rf source 1
       rs2_i   => rs2_i,        -- rf source 2
+      rs3_i   => rs3_i,        -- rf source 3
       -- result and status --
       res_o   => cp_result(4), -- operation result
       valid_o => cp_valid(4)   -- data output valid

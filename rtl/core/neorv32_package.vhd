@@ -62,7 +62,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070801"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070802"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -364,6 +364,8 @@ package neorv32_package is
   constant instr_rs1_msb_c     : natural := 19; -- source register 1 address bit 4
   constant instr_rs2_lsb_c     : natural := 20; -- source register 2 address bit 0
   constant instr_rs2_msb_c     : natural := 24; -- source register 2 address bit 4
+  constant instr_rs3_lsb_c     : natural := 27; -- source register 3 address bit 0
+  constant instr_rs3_msb_c     : natural := 31; -- source register 3 address bit 4
   constant instr_funct7_lsb_c  : natural := 25; -- funct7 bit 0
   constant instr_funct7_msb_c  : natural := 31; -- funct7 bit 6
   constant instr_funct12_lsb_c : natural := 20; -- funct12 bit 0
@@ -394,9 +396,11 @@ package neorv32_package is
   constant opcode_system_c : std_ulogic_vector(6 downto 0) := "1110011"; -- system/csr access (type via funct3)
   -- floating point operations --
   constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single operand instruction
-  -- official "custom0/1" RISC-V opcodes - free for custom instructions --
-  constant opcode_cust0_c  : std_ulogic_vector(6 downto 0) := "0001011"; -- custom instructions 0
---constant opcode_cust1_c  : std_ulogic_vector(6 downto 0) := "0101011"; -- custom instructions 1
+  -- official *custom* RISC-V opcodes - free for custom instructions --
+  constant opcode_cust0_c  : std_ulogic_vector(6 downto 0) := "0001011"; -- custom-0
+  constant opcode_cust1_c  : std_ulogic_vector(6 downto 0) := "0101011"; -- custom-1
+--constant opcode_cust2_c  : std_ulogic_vector(6 downto 0) := "1011011"; -- custom-2
+--constant opcode_cust3_c  : std_ulogic_vector(6 downto 0) := "1111011"; -- custom-3
 
   -- RISC-V Funct3 --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -756,67 +760,72 @@ package neorv32_package is
   constant ctrl_rf_rs2_adr2_c   : natural :=  8; -- source register 2 address bit 2
   constant ctrl_rf_rs2_adr3_c   : natural :=  9; -- source register 2 address bit 3
   constant ctrl_rf_rs2_adr4_c   : natural := 10; -- source register 2 address bit 4
-  constant ctrl_rf_rd_adr0_c    : natural := 11; -- destination register address bit 0
-  constant ctrl_rf_rd_adr1_c    : natural := 12; -- destination register address bit 1
-  constant ctrl_rf_rd_adr2_c    : natural := 13; -- destination register address bit 2
-  constant ctrl_rf_rd_adr3_c    : natural := 14; -- destination register address bit 3
-  constant ctrl_rf_rd_adr4_c    : natural := 15; -- destination register address bit 4
-  constant ctrl_rf_mux0_c       : natural := 16; -- input source select lsb
-  constant ctrl_rf_mux1_c       : natural := 17; -- input source select msb
-  constant ctrl_rf_zero_we_c    : natural := 18; -- allow/force write access to x0
+  constant ctrl_rf_rs3_adr0_c   : natural := 11; -- source register 3 address bit 0
+  constant ctrl_rf_rs3_adr1_c   : natural := 12; -- source register 3 address bit 1
+  constant ctrl_rf_rs3_adr2_c   : natural := 13; -- source register 3 address bit 2
+  constant ctrl_rf_rs3_adr3_c   : natural := 14; -- source register 3 address bit 3
+  constant ctrl_rf_rs3_adr4_c   : natural := 15; -- source register 3 address bit 4
+  constant ctrl_rf_rd_adr0_c    : natural := 16; -- destination register address bit 0
+  constant ctrl_rf_rd_adr1_c    : natural := 17; -- destination register address bit 1
+  constant ctrl_rf_rd_adr2_c    : natural := 18; -- destination register address bit 2
+  constant ctrl_rf_rd_adr3_c    : natural := 19; -- destination register address bit 3
+  constant ctrl_rf_rd_adr4_c    : natural := 20; -- destination register address bit 4
+  constant ctrl_rf_mux0_c       : natural := 21; -- input source select lsb
+  constant ctrl_rf_mux1_c       : natural := 22; -- input source select msb
+  constant ctrl_rf_zero_we_c    : natural := 23; -- allow/force write access to x0
   -- alu --
-  constant ctrl_alu_op0_c       : natural := 19; -- ALU operation select bit 0
-  constant ctrl_alu_op1_c       : natural := 20; -- ALU operation select bit 1
-  constant ctrl_alu_op2_c       : natural := 21; -- ALU operation select bit 2
-  constant ctrl_alu_opa_mux_c   : natural := 22; -- operand A select (0=rs1, 1=PC)
-  constant ctrl_alu_opb_mux_c   : natural := 23; -- operand B select (0=rs2, 1=IMM)
-  constant ctrl_alu_unsigned_c  : natural := 24; -- is unsigned ALU operation
-  constant ctrl_alu_frm0_c      : natural := 25; -- FPU rounding mode bit 0
-  constant ctrl_alu_frm1_c      : natural := 26; -- FPU rounding mode bit 1
-  constant ctrl_alu_frm2_c      : natural := 27; -- FPU rounding mode bit 2
+  constant ctrl_alu_op0_c       : natural := 24; -- ALU operation select bit 0
+  constant ctrl_alu_op1_c       : natural := 25; -- ALU operation select bit 1
+  constant ctrl_alu_op2_c       : natural := 26; -- ALU operation select bit 2
+  constant ctrl_alu_opa_mux_c   : natural := 27; -- operand A select (0=rs1, 1=PC)
+  constant ctrl_alu_opb_mux_c   : natural := 28; -- operand B select (0=rs2, 1=IMM)
+  constant ctrl_alu_unsigned_c  : natural := 29; -- is unsigned ALU operation
+  constant ctrl_alu_frm0_c      : natural := 30; -- FPU rounding mode bit 0
+  constant ctrl_alu_frm1_c      : natural := 31; -- FPU rounding mode bit 1
+  constant ctrl_alu_frm2_c      : natural := 32; -- FPU rounding mode bit 2
   -- alu co-processor trigger (one-hot selection) --
-  constant ctrl_cp_trig0_c      : natural := 28; -- trigger CP0
-  constant ctrl_cp_trig1_c      : natural := 29; -- trigger CP1
-  constant ctrl_cp_trig2_c      : natural := 30; -- trigger CP2
-  constant ctrl_cp_trig3_c      : natural := 31; -- trigger CP3
-  constant ctrl_cp_trig4_c      : natural := 32; -- trigger CP4
-  constant ctrl_cp_trig5_c      : natural := 33; -- trigger CP5
+  constant ctrl_cp_trig0_c      : natural := 33; -- trigger CP0
+  constant ctrl_cp_trig1_c      : natural := 34; -- trigger CP1
+  constant ctrl_cp_trig2_c      : natural := 35; -- trigger CP2
+  constant ctrl_cp_trig3_c      : natural := 36; -- trigger CP3
+  constant ctrl_cp_trig4_c      : natural := 37; -- trigger CP4
+  constant ctrl_cp_trig5_c      : natural := 38; -- trigger CP5
   -- bus interface --
-  constant ctrl_bus_req_c       : natural := 34; -- trigger memory request
-  constant ctrl_bus_mo_we_c     : natural := 35; -- memory address and data output register write enable
-  constant ctrl_bus_fence_c     : natural := 36; -- fence operation
-  constant ctrl_bus_fencei_c    : natural := 37; -- fence.i operation
-  constant ctrl_bus_priv_c      : natural := 38; -- effective privilege level for load/store
+  constant ctrl_bus_req_c       : natural := 39; -- trigger memory request
+  constant ctrl_bus_mo_we_c     : natural := 40; -- memory address and data output register write enable
+  constant ctrl_bus_fence_c     : natural := 41; -- fence operation
+  constant ctrl_bus_fencei_c    : natural := 42; -- fence.i operation
+  constant ctrl_bus_priv_c      : natural := 43; -- effective privilege level for load/store
   -- instruction word control blocks --
-  constant ctrl_ir_funct3_0_c   : natural := 39; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 40; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 41; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 42; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 43; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 44; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 45; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 46; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 47; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 48; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 49; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 50; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 51; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 52; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 53; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 54; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 55; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 56; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 57; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 58; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 59; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 60; -- opcode7 bit 6
+  constant ctrl_ir_funct3_0_c   : natural := 44; -- funct3 bit 0
+  constant ctrl_ir_funct3_1_c   : natural := 45; -- funct3 bit 1
+  constant ctrl_ir_funct3_2_c   : natural := 46; -- funct3 bit 2
+  constant ctrl_ir_funct12_0_c  : natural := 47; -- funct12 bit 0
+  constant ctrl_ir_funct12_1_c  : natural := 48; -- funct12 bit 1
+  constant ctrl_ir_funct12_2_c  : natural := 49; -- funct12 bit 2
+  constant ctrl_ir_funct12_3_c  : natural := 50; -- funct12 bit 3
+  constant ctrl_ir_funct12_4_c  : natural := 51; -- funct12 bit 4
+  constant ctrl_ir_funct12_5_c  : natural := 52; -- funct12 bit 5
+  constant ctrl_ir_funct12_6_c  : natural := 53; -- funct12 bit 6
+  constant ctrl_ir_funct12_7_c  : natural := 54; -- funct12 bit 7
+  constant ctrl_ir_funct12_8_c  : natural := 55; -- funct12 bit 8
+  constant ctrl_ir_funct12_9_c  : natural := 56; -- funct12 bit 9
+  constant ctrl_ir_funct12_10_c : natural := 57; -- funct12 bit 10
+  constant ctrl_ir_funct12_11_c : natural := 58; -- funct12 bit 11
+  constant ctrl_ir_opcode7_0_c  : natural := 59; -- opcode7 bit 0
+  constant ctrl_ir_opcode7_1_c  : natural := 60; -- opcode7 bit 1
+  constant ctrl_ir_opcode7_2_c  : natural := 61; -- opcode7 bit 2
+  constant ctrl_ir_opcode7_3_c  : natural := 62; -- opcode7 bit 3
+  constant ctrl_ir_opcode7_4_c  : natural := 63; -- opcode7 bit 4
+  constant ctrl_ir_opcode7_5_c  : natural := 64; -- opcode7 bit 5
+  constant ctrl_ir_opcode7_6_c  : natural := 65; -- opcode7 bit 6
   -- cpu status --
-  constant ctrl_priv_mode_c     : natural := 61; -- effective privilege mode
-  constant ctrl_sleep_c         : natural := 62; -- set when CPU is in sleep mode
-  constant ctrl_trap_c          : natural := 63; -- set when CPU is entering trap execution
-  constant ctrl_debug_running_c : natural := 64; -- set when CPU is in debug mode
+  constant ctrl_priv_mode_c     : natural := 66; -- effective privilege mode
+  constant ctrl_sleep_c         : natural := 67; -- set when CPU is in sleep mode
+  constant ctrl_trap_c          : natural := 68; -- set when CPU is entering trap execution
+  constant ctrl_debug_running_c : natural := 69; -- set when CPU is in debug mode
   -- control bus size --
-  constant ctrl_width_c         : natural := 65; -- control bus size
+  constant ctrl_width_c         : natural := 70; -- control bus size
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1299,7 +1308,8 @@ package neorv32_package is
   component neorv32_cpu_regfile
     generic (
       XLEN                  : natural; -- data path width
-      CPU_EXTENSION_RISCV_E : boolean  -- implement embedded RF extension?
+      CPU_EXTENSION_RISCV_E : boolean; -- implement embedded RF extension?
+      RS3_EN                : boolean  -- enable third read port
     );
     port (
       -- global control --
@@ -1312,7 +1322,8 @@ package neorv32_package is
       pc2_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- next PC
       -- data output --
       rs1_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 1
-      rs2_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- operand 2
+      rs2_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 2
+      rs3_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- operand 3
     );
   end component;
 
@@ -1339,6 +1350,7 @@ package neorv32_package is
       -- data input --
       rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
       rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+      rs3_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
       pc_i        : in  std_ulogic_vector(XLEN-1 downto 0); -- current PC
       imm_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- immediate
       -- data output --
@@ -1436,6 +1448,7 @@ package neorv32_package is
       cmp_i    : in  std_ulogic_vector(1 downto 0); -- comparator status
       rs1_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
       rs2_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+      rs3_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
       -- result and status --
       res_o    : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
       fflags_o : out std_ulogic_vector(4 downto 0); -- exception flags
@@ -1458,6 +1471,7 @@ package neorv32_package is
       -- data input --
       rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
       rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+      rs3_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
       -- result and status --
       res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
       valid_o : out std_ulogic -- data output valid
