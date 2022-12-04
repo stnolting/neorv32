@@ -1433,29 +1433,40 @@ begin
       -- ------------------------------------------------------------
         if (CPU_EXTENSION_RISCV_Zfinx = true) and (decode_aux.is_f_op = '1') then -- is supported floating-point instruction
           illegal_cmd <= '0';
+          illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or
+                         execute_engine.i_reg(instr_rs1_msb_c) or
+                         execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
         else
           illegal_cmd <= '1';
+          illegal_reg <= '0';
         end if;
-        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or
-                       execute_engine.i_reg(instr_rs1_msb_c) or
-                       execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
       when opcode_cust0_c => -- CFU: custom0 instructions (r3-type)
       -- ------------------------------------------------------------
-        illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- CFU extension not implemented
-        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or
-                       execute_engine.i_reg(instr_rs1_msb_c) or
-                       execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
+        if (CPU_EXTENSION_RISCV_Zxcfu = true) then -- CFU extension implemented
+          illegal_cmd <= '0';
+          illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or
+                         execute_engine.i_reg(instr_rs1_msb_c) or
+                         execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
+        else
+          illegal_cmd <= '1';
+          illegal_reg <= '0';
+        end if;
 
       when opcode_cust1_c => -- CFU: custom1 instructions (r4-type)
       -- ------------------------------------------------------------
-        illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- CFU extension not implemented
-        illegal_reg <= execute_engine.i_reg(instr_rs3_msb_c) or
-                       execute_engine.i_reg(instr_rs2_msb_c) or
-                       execute_engine.i_reg(instr_rs1_msb_c) or
-                       execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
+        if (CPU_EXTENSION_RISCV_Zxcfu = true) then -- CFU extension implemented
+          illegal_cmd <= '0';
+          illegal_reg <= execute_engine.i_reg(instr_rs3_msb_c) or
+                         execute_engine.i_reg(instr_rs2_msb_c) or
+                         execute_engine.i_reg(instr_rs1_msb_c) or
+                         execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
+        else
+          illegal_cmd <= '1';
+          illegal_reg <= '0';
+        end if;
 
-      when others => -- illegal opcode
+      when others => -- undefined/illegal opcode
       -- ------------------------------------------------------------
         illegal_cmd <= '1';
 
