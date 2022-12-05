@@ -120,10 +120,15 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant XLEN : natural := 32; -- data path width
   -- ----------------------------------------------------------------------------------------------
 
+  -- local constants --
+  constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- third register file read port (rs3)
+
   -- local signals --
   signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
   signal imm         : std_ulogic_vector(XLEN-1 downto 0); -- immediate
-  signal rs1, rs2    : std_ulogic_vector(XLEN-1 downto 0); -- source registers
+  signal rs1         : std_ulogic_vector(XLEN-1 downto 0); -- source register 1
+  signal rs2         : std_ulogic_vector(XLEN-1 downto 0); -- source register 2
+  signal rs3         : std_ulogic_vector(XLEN-1 downto 0); -- source register 3
   signal alu_res     : std_ulogic_vector(XLEN-1 downto 0); -- alu result
   signal alu_add     : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0); -- comparator result
@@ -338,8 +343,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_regfile_inst: neorv32_cpu_regfile
   generic map (
-    XLEN                  => XLEN,                 -- data path width
-    CPU_EXTENSION_RISCV_E => CPU_EXTENSION_RISCV_E -- implement embedded RF extension?
+    XLEN                  => XLEN,                  -- data path width
+    CPU_EXTENSION_RISCV_E => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension?
+    RS3_EN                => regfile_rs3_en_c       -- enable third read port
   )
   port map (
     -- global control --
@@ -352,7 +358,8 @@ begin
     pc2_i  => next_pc,   -- next PC
     -- data output --
     rs1_o  => rs1,       -- operand 1
-    rs2_o  => rs2        -- operand 2
+    rs2_o  => rs2,       -- operand 2
+    rs3_o  => rs3        -- operand 3
   );
 
 
@@ -379,6 +386,7 @@ begin
     -- data input --
     rs1_i       => rs1,       -- rf source 1
     rs2_i       => rs2,       -- rf source 2
+    rs3_i       => rs3,       -- rf source 3
     pc_i        => curr_pc,   -- current PC
     imm_i       => imm,       -- immediate
     -- data output --

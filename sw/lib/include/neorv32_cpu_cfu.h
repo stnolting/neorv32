@@ -51,12 +51,15 @@ int neorv32_cpu_cfu_available(void);
 /**@{*/
 /** R3-type CFU custom instruction prototype */
 #define neorv32_cfu_r3_instr(funct7, funct3, rs1, rs2) CUSTOM_INSTR_R3_TYPE(funct7, rs2, rs1, funct3, RISCV_OPCODE_CUSTOM0)
+/** R4-type CFU custom instruction prototype */
+#define neorv32_cfu_r4_instr(funct3, rs1, rs2, rs3) CUSTOM_INSTR_R4_TYPE(rs3, rs2, rs1, funct3, RISCV_OPCODE_CUSTOM1)
 /**@}*/
 
 
 /**********************************************************************//**
- * @name Backward-compatibility layer (before version v1.7.8.x)
- * do not use for new designs!
+ * @name Backward-compatibility layer (before version v1.7.8.2)
+ * @note DO NOT USE FOR NEW DESIGNS!
+ * @note THESE WRAPPERS WILL BE REMOVED IN THE FUTURE!
  **************************************************************************/
 /**@{*/
 /** R3-type CFU custom instruction 0 (funct3 = 000) */
