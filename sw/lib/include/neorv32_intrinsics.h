@@ -154,7 +154,7 @@ asm(".set regnum_t4  , 29");
 asm(".set regnum_t5  , 30");
 asm(".set regnum_t6  , 31");
 
-/** Official RISC-V opcodes for custom extensions (custom-x) */
+/** Official RISC-V opcodes for custom ISA extensions */
 asm(".set RISCV_OPCODE_CUSTOM0 , 0b0001011");
 asm(".set RISCV_OPCODE_CUSTOM1 , 0b0101011");
 asm(".set RISCV_OPCODE_CUSTOM2 , 0b1011011");
@@ -163,7 +163,7 @@ asm(".set RISCV_OPCODE_CUSTOM3 , 0b1111011");
 
 
 /**********************************************************************//**
- * @name Custom instruction R2-type format
+ * @name R2-type instruction format, RISC-V-standard
  **************************************************************************/
 #define CUSTOM_INSTR_R2_TYPE(funct7, funct5, rs1, funct3, opcode) \
 ({                                                                \
@@ -190,7 +190,7 @@ asm(".set RISCV_OPCODE_CUSTOM3 , 0b1111011");
 
 
 /**********************************************************************//**
- * @name Custom instruction R3-type format
+ * @name R3-type instruction format, RISC-V-standard
  **************************************************************************/
 #define CUSTOM_INSTR_R3_TYPE(funct7, rs2, rs1, funct3, opcode) \
 ({                                                             \
@@ -219,7 +219,7 @@ asm(".set RISCV_OPCODE_CUSTOM3 , 0b1111011");
 
 
 /**********************************************************************//**
- * @name Custom instruction R4-type format
+ * @name R4-type instruction format, RISC-V-standard
  **************************************************************************/
 #define CUSTOM_INSTR_R4_TYPE(rs3, rs2, rs1, funct3, opcode) \
 ({                                                          \
@@ -250,7 +250,42 @@ asm(".set RISCV_OPCODE_CUSTOM3 , 0b1111011");
 
 
 /**********************************************************************//**
- * @name Custom instruction I-type format
+ * @name R5-type instruction format
+ * @warning NOT RISC-V-standard, NEORV32-specific!
+ **************************************************************************/
+#define CUSTOM_INSTR_R5_TYPE(rs4, rs3, rs2, rs1, opcode) \
+({                                                       \
+    uint32_t __return;                                   \
+    asm volatile (                                       \
+      ""                                                 \
+      : [output] "=r" (__return)                         \
+      : [input_i] "r" (rs1),                             \
+        [input_j] "r" (rs2),                             \
+        [input_k] "r" (rs3),                             \
+        [input_l] "r" (rs4)                              \
+    );                                                   \
+    asm volatile (                                       \
+      ".word (                                           \
+        (((  regnum_%3 )       & 0x1f) << 27) |          \
+        (((( regnum_%4 ) >> 3) & 0x03) << 25) |          \
+        (((  regnum_%2 )       & 0x1f) << 20) |          \
+        (((  regnum_%1 )       & 0x1f) << 15) |          \
+        (((  regnum_%4 )       & 0x07) << 12) |          \
+        (((  regnum_%0 )       & 0x1f) <<  7) |          \
+        (((" #opcode ")        & 0x7f) <<  0)            \
+      );"                                                \
+      : [rd] "=r" (__return)                             \
+      : "r" (rs1),                                       \
+        "r" (rs2),                                       \
+        "r" (rs3),                                       \
+        "r" (rs4)                                        \
+    );                                                   \
+    __return;                                            \
+})
+
+
+/**********************************************************************//**
+ * @name I-type instruction format, RISC-V-standard
  **************************************************************************/
 #define CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, opcode) \
 ({                                                      \
