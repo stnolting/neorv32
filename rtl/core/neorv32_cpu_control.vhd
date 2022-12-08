@@ -1441,30 +1441,10 @@ begin
           illegal_reg <= '0';
         end if;
 
-      when opcode_cust0_c => -- CFU: custom0 instructions (r3-type)
+      when opcode_cust0_c | opcode_cust1_c => -- custom instructions (CFU)
       -- ------------------------------------------------------------
-        if (CPU_EXTENSION_RISCV_Zxcfu = true) then -- CFU extension implemented
-          illegal_cmd <= '0';
-          illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or
-                         execute_engine.i_reg(instr_rs1_msb_c) or
-                         execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
-        else
-          illegal_cmd <= '1';
-          illegal_reg <= '0';
-        end if;
-
-      when opcode_cust1_c => -- CFU: custom1 instructions (r4-type)
-      -- ------------------------------------------------------------
-        if (CPU_EXTENSION_RISCV_Zxcfu = true) then -- CFU extension implemented
-          illegal_cmd <= '0';
-          illegal_reg <= execute_engine.i_reg(instr_rs3_msb_c) or
-                         execute_engine.i_reg(instr_rs2_msb_c) or
-                         execute_engine.i_reg(instr_rs1_msb_c) or
-                         execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
-        else
-          illegal_cmd <= '1';
-          illegal_reg <= '0';
-        end if;
+        illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- CFU extension implemented?
+        illegal_reg <= '0'; -- custom instruction do not trap if a register above x15 is used when E ISA extension is enabled
 
       when others => -- undefined/illegal opcode
       -- ------------------------------------------------------------
@@ -1568,11 +1548,15 @@ begin
 
   -- any exception/interrupt? --
   trap_ctrl.exc_fire <= '1' when (or_reduce_f(trap_ctrl.exc_buf) = '1') else '0'; -- sync. exceptions CANNOT be masked
-  trap_ctrl.irq_fire <= '1' when ((or_reduce_f(trap_ctrl.irq_buf) = '1') and (csr.mstatus_mie = '1') and (trap_ctrl.db_irq_en = '1')) or -- interrupts CAN be masked
-                                 (trap_ctrl.db_irq_fire = '1') else '0'; -- but not the DEBUG halt IRQ
+  trap_ctrl.irq_fire <= '1' when ((or_reduce_f(trap_ctrl.irq_buf) = '1') and -- pending IRQ
+                                  ((csr.mstatus_mie = '1') or (csr.privilege = priv_mode_u_c)) and -- allow IRQs when in M-mode and MIE is set OR when in U-mode (MIE irrelevant)
+                                  (trap_ctrl.db_irq_en = '1')) or -- see below
+                                 (trap_ctrl.db_irq_fire = '1') else '0'; -- debug-mode halt IRQ cannot be masked
 
-  -- debug mode (entry) interrupts --
-  trap_ctrl.db_irq_en   <= '0' when (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) else '1'; -- no interrupts when IN debug mode or IN single-step mode
+  -- NO interrupts when IN debug mode or when IN single-stepping mode --
+  trap_ctrl.db_irq_en <= '0' when (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) else '1';
+
+  -- "non-maskable interrupt for debug-mode entry
   trap_ctrl.db_irq_fire <= (trap_ctrl.irq_buf(irq_db_step_c) or trap_ctrl.irq_buf(irq_db_halt_c)) when (CPU_EXTENSION_RISCV_DEBUG = true) else '0'; -- "NMI" for debug mode entry
 
 
@@ -1936,12 +1920,10 @@ begin
               end case;
 
               -- update privilege level and interrupt enable stack --
+              csr.privilege    <= priv_mode_m_c; -- execute trap in machine mode
               csr.mstatus_mie  <= '0'; -- disable interrupts
               csr.mstatus_mpie <= csr.mstatus_mie; -- backup previous mie state
-              if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
-                csr.privilege   <= priv_mode_m_c; -- execute trap in machine mode
-                csr.mstatus_mpp <= csr.privilege; -- backup previous privilege mode
-              end if;
+              csr.mstatus_mpp  <= csr.privilege; -- backup previous privilege mode
 
             end if;
 
@@ -1977,15 +1959,18 @@ begin
 
             -- return from "normal trap" --
             else
-              csr.mstatus_mie  <= csr.mstatus_mpie; -- restore global IRQ enable flag
-              csr.mstatus_mpie <= '1';
               if (CPU_EXTENSION_RISCV_U = true) then
                 csr.privilege   <= csr.mstatus_mpp; -- restore previous privilege mode
-                csr.mstatus_mpp <= '0'; -- MRET has to clear mstatus.MPP
+                csr.mstatus_mpp <= priv_mode_u_c; -- set to least-privileged mode that is supported
                 if (csr.mstatus_mpp /= priv_mode_m_c) then
                   csr.mstatus_mprv <= '0'; -- clear if return priv. mode is less than M
                 end if;
+              else
+                csr.privilege   <= priv_mode_m_c;
+                csr.mstatus_mpp <= priv_mode_m_c;
               end if;
+              csr.mstatus_mie  <= csr.mstatus_mpie; -- restore global IRQ enable flag
+              csr.mstatus_mpie <= '1';
             end if;
 
           end if;
@@ -2005,9 +1990,6 @@ begin
 
         -- no user mode --
         if (CPU_EXTENSION_RISCV_U = false) then
-          csr.privilege     <= priv_mode_m_c;
-          --
-          csr.mstatus_mpp   <= '0';
           csr.mstatus_mprv  <= '0';
           csr.mstatus_tw    <= '0';
           --

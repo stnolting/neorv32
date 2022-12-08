@@ -1519,9 +1519,10 @@ int main() {
 
   // ----------------------------------------------------------
   // Test WFI ("sleep") instruction (executed in user mode), wakeup via MTIME
+  // mstatus.mie is cleared before to check if machine-mode IRQ still trigger in user-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] WFI (wake-up via MTIME) ", cnt_test);
+  PRINT_STANDARD("[%i] user-mode WFI (wake-up via MTIME) ", cnt_test);
 
   cnt_test++;
 
@@ -1532,7 +1533,11 @@ int main() {
   neorv32_cpu_irq_enable(CSR_MIE_MTIE);
 
   // clear mstatus.TW to allow execution of WFI also in user-mode
-  neorv32_cpu_csr_write(CSR_MSTATUS, neorv32_cpu_csr_read(CSR_MSTATUS) & ~(1<<CSR_MSTATUS_TW));
+  // clear mstatus.MIE and mstatus.MPIE to check if IRQ can still trigger in User-mode
+  // clear mstatus.TW to allow execution of WFI also in user-mode
+  tmp_a = neorv32_cpu_csr_read(CSR_MSTATUS);
+  tmp_a &= ~((1<<CSR_MSTATUS_TW) | (1<<CSR_MSTATUS_MIE) | (1<<CSR_MSTATUS_MPIE));
+  neorv32_cpu_csr_write(CSR_MSTATUS, tmp_a);
 
   // put CPU into sleep mode (from user mode)
   neorv32_cpu_goto_user_mode();
@@ -1543,6 +1548,9 @@ int main() {
   // no more mtime interrupts
   neorv32_cpu_irq_disable(CSR_MIE_MTIE);
   neorv32_mtime_set_timecmp(-1);
+
+  // re-enable machine-mode IRQ enable flag
+  neorv32_cpu_eint();
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) != TRAP_CODE_MTI) {
     test_fail();

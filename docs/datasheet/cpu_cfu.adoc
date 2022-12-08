@@ -38,9 +38,11 @@ implement custom **R4-type** instructions. The according binary encoding of thes
 * `custom-1`: `0101011` (R4-type instructions)
 
 .CFU Instructions - Exceptions
-[NOTE]
+[IMPORTANT]
 The CPU control logic will only analyze the opcode of the custom instructions to check if the
 instruction word is valid. All remaining bit-fields are **not checked** by the CPU instruction decoding logic.
+This also means that the MSB of the register fields is not evaluated even if the `E` ISA extension is enabled
+(for standard RISC-V instructions this would cause an exception).
 Hence, a custom CFU instruction can never raise an illegal instruction exception. If the CFU is not
 implemented at all (`Zxcfu` ISA extension is not enabled) any instruction with opcode custom-0 or custom-1
 will raise an illegal instruction exception.
@@ -64,7 +66,7 @@ image::cfu_r3type_instruction.png[align=center]
 * `rs1`: address of first source register
 * `funct3`: 3-bit immediate
 * `rd`: address of destination register
-* `opcode`: always `0001011` (RISC-V "custom-0" opcode)
+* `opcode`: `0001011` (RISC-V "custom-0" opcode)
 
 .RISC-V compatibility
 [NOTE]
@@ -94,7 +96,7 @@ image::cfu_r4type_instruction.png[align=center]
 * `rs1`: address of first source register
 * `funct3`: 3-bit immediate
 * `rd`: address of destination register
-* `opcode`: always `0101011` (RISC-V "custom-1" opcode)
+* `opcode`: `0101011` (RISC-V "custom-1" opcode)
 
 .RISC-V compatibility
 [NOTE]
