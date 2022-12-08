@@ -671,7 +671,7 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
  *
  * @warning This function requires the U ISA extension to be implemented.
  **************************************************************************/
-void __attribute__((naked)) neorv32_cpu_goto_user_mode(void) {
+void __attribute__((naked,noinline)) neorv32_cpu_goto_user_mode(void) {
 
   // make sure to use NO registers in here! -> naked
 
