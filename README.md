@@ -141,7 +141,7 @@ and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/
 * 16 fast interrupt request channels as NEORV32-specific extension
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as `Zxcfu` ISA extension)
 for up to 1024 R3-type and up to 8 R4-type _custom RISC-V instructions_
-* _intrinsic_ libraries for the `B` and `Zfinx` extensions
+* _intrinsic_ library for the `Zfinx` extension as it is not yet supported by upstream GCC
 
 **Memory**
 

@@ -373,7 +373,6 @@ Executing an instruction from an extension that is not supported yet or that is 
 The `B` ISA extension adds instructions for bit-manipulation operations. This extension is enabled if the
 <<_cpu_extension_riscv_b>> configuration generic is _true_.
 The official RISC-V specifications can be found here: https://github.com/riscv/riscv-bitmanip
-A copy of the spec is also available in `docs/references`.
 
 The NEORV32 `B` ISA extension includes the following sub-extensions (according to the RISC-V
 bit-manipulation spec. v.093) and their corresponding instructions:
@@ -665,8 +664,8 @@ as well as **RISC-V R4-type** instructions. Up to 1024 custom R3-type instructio
 can be implemented within the CFU. These instructions are mapped to an opcode space that has been explicitly reserved by
 the RISC-V spec for custom extensions.
 
-Software can utilize the custom instructions by using _intrinsic functions_, which are inline assembly functions that
-behave like regular C functions.
+Software can utilize the custom instructions by using _intrinsic_, which are basically inline assembly functions that
+behave like regular C functions and thqat evaluate to a single custom instruction word (not calling overhead at all).
 
 [TIP]
 For more detailed information regarding the CFU, it's hardware and the according software interface
