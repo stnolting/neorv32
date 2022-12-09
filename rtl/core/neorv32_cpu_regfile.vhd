@@ -123,7 +123,9 @@ begin
   rd_zero <= '1' when (ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) = "00000") else '0';
   rf_we   <= (ctrl_i(ctrl_rf_wb_en_c) and (not rd_zero)) or ctrl_i(ctrl_rf_zero_we_c); -- do not write to x0 unless explicitly forced
 
-  -- "normal" (RV32I) register file with 32 registers --
+
+  -- RV32I Register File with 32 Entries ----------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   reg_file_rv32i:
   if (CPU_EXTENSION_RISCV_E = false) generate
     rf_access: process(clk_i)
@@ -136,15 +138,21 @@ begin
         rs2_o <= reg_file(to_integer(unsigned(opb_addr(4 downto 0))));
         if (RS3_EN = true) then -- implement third read port?
           rs3_o <= reg_file(to_integer(unsigned(opc_addr(4 downto 0))));
+        else
+          rs3_o <= (others => '0');
         end if;
         if (RS4_EN = true) then -- implement fourth read port?
           rs4_o <= reg_file(to_integer(unsigned(opd_addr(4 downto 0))));
+        else
+          rs4_o <= (others => '0');
         end if;
       end if;
     end process rf_access;
   end generate;
 
-  -- "embedded" (RV32E) register file with 16 registers --
+
+  -- RV32E Register File with 16 Entries ----------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   reg_file_rv32e:
   if (CPU_EXTENSION_RISCV_E = true) generate
     rf_access: process(clk_i)
@@ -156,24 +164,17 @@ begin
         rs1_o <= reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0))));
         rs2_o <= reg_file_emb(to_integer(unsigned(opb_addr(3 downto 0))));
         if (RS3_EN = true) then -- implement third read port?
-          rs3_o <= reg_file(to_integer(unsigned(opc_addr(3 downto 0))));
+          rs3_o <= reg_file_emb(to_integer(unsigned(opc_addr(3 downto 0))));
+        else
+          rs3_o <= (others => '0');
         end if;
         if (RS4_EN = true) then -- implement fourth read port?
-          rs4_o <= reg_file(to_integer(unsigned(opd_addr(3 downto 0))));
+          rs4_o <= reg_file_emb(to_integer(unsigned(opd_addr(3 downto 0))));
+        else
+          rs4_o <= (others => '0');
         end if;
       end if;
     end process rf_access;
-  end generate;
-
-  -- terminate unimplemented read ports --
-  terminate_rs3:
-  if (RS3_EN = false) generate
-    rs3_o <= (others => '0');
-  end generate;
-
-  terminate_rs4:
-  if (RS4_EN = false) generate
-    rs4_o <= (others => '0');
   end generate;
 
 
