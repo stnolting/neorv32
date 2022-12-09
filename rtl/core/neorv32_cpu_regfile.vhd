@@ -136,12 +136,16 @@ begin
         end if;
         rs1_o <= reg_file(to_integer(unsigned(opa_addr(4 downto 0))));
         rs2_o <= reg_file(to_integer(unsigned(opb_addr(4 downto 0))));
-        if (RS3_EN = true) then -- implement third read port?
+
+        -- optional 3rd read port --
+        if (RS3_EN = true) then
           rs3_o <= reg_file(to_integer(unsigned(opc_addr(4 downto 0))));
         else
           rs3_o <= (others => '0');
         end if;
-        if (RS4_EN = true) then -- implement fourth read port?
+
+        -- optional 4th read port --
+        if (RS4_EN = true) then
           rs4_o <= reg_file(to_integer(unsigned(opd_addr(4 downto 0))));
         else
           rs4_o <= (others => '0');
@@ -163,11 +167,15 @@ begin
         end if;
         rs1_o <= reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0))));
         rs2_o <= reg_file_emb(to_integer(unsigned(opb_addr(3 downto 0))));
-        if (RS3_EN = true) then -- implement third read port?
+
+        -- optional 3rd read port --
+        if (RS3_EN = true) then
           rs3_o <= reg_file_emb(to_integer(unsigned(opc_addr(3 downto 0))));
         else
           rs3_o <= (others => '0');
         end if;
+
+        -- optional 4th read port --
         if (RS4_EN = true) then -- implement fourth read port?
           rs4_o <= reg_file_emb(to_integer(unsigned(opd_addr(3 downto 0))));
         else
