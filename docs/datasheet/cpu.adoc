@@ -659,13 +659,11 @@ generic, this ISA extensions adds the <<_custom_functions_unit_cfu>> to the CPU 
 allows to add **custom RISC-V instructions** to the processor core.
 
 The CPU is implemented as additional ALU co-processor and is integrated right into the CPU's pipeline providing minimal
-data transfer latency as it has direct access to the core's register file. The CFU supports **RISC-V R3-type** instructions
-as well as **RISC-V R4-type** instructions. Up to 1024 custom R3-type instructions and up to 8 custom R4-type instruction
-can be implemented within the CFU. These instructions are mapped to an opcode space that has been explicitly reserved by
-the RISC-V spec for custom extensions.
+data transfer latency as it has direct access to the core's register file. The CFU utilizes the RISC-V `custom` opcodes
+that have been explicitly reserved by the RISC-V spec for custom extensions.
 
 Software can utilize the custom instructions by using _intrinsic_, which are basically inline assembly functions that
-behave like regular C functions and thqat evaluate to a single custom instruction word (not calling overhead at all).
+behave like regular C functions but that evaluate to a single custom instruction word (not calling overhead at all).
 
 [TIP]
 For more detailed information regarding the CFU, it's hardware and the according software interface
