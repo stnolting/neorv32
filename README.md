@@ -140,7 +140,7 @@ and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/
 * implements **all** standard RISC-V exceptions and interrupts (including MTI, MEI & MSI)
 * 16 fast interrupt request channels as NEORV32-specific extension
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as `Zxcfu` ISA extension)
-for up to 1024 R3-type and up to 8 R4-type _custom RISC-V instructions_
+for _custom RISC-V instructions_ (R3-type, R4-type and R5-type)
 * _intrinsic_ library for the `Zfinx` extension as it is not yet supported by upstream GCC
 
 **Memory**
