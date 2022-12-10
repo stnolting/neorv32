@@ -1081,7 +1081,7 @@ begin
             end if;
 
 
-          when opcode_cust0_c | opcode_cust1_c => -- CFU: custom RISC-V instructions (CUSTOM0/1 OPCODE space)
+          when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => -- CFU: custom RISC-V instructions (CUSTOM0/1 OPCODE space)
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zxcfu = true) then
               ctrl_nxt(ctrl_cp_trig0_c + cp_sel_cfu_c) <= '1'; -- trigger CFU CP
@@ -1441,7 +1441,7 @@ begin
           illegal_reg <= '0';
         end if;
 
-      when opcode_cust0_c | opcode_cust1_c => -- custom instructions (CFU)
+      when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => -- custom instructions (CFU)
       -- ------------------------------------------------------------
         illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- CFU extension implemented?
         illegal_reg <= '0'; -- custom instruction do not trap if a register above x15 is used when E ISA extension is enabled

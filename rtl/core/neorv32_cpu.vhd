@@ -121,7 +121,8 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- ----------------------------------------------------------------------------------------------
 
   -- local constants --
-  constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- third register file read port (rs3)
+  constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port (rs3)
+  constant regfile_rs4_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu; -- 4th register file read port (rs4)
 
   -- local signals --
   signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
@@ -129,6 +130,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal rs1         : std_ulogic_vector(XLEN-1 downto 0); -- source register 1
   signal rs2         : std_ulogic_vector(XLEN-1 downto 0); -- source register 2
   signal rs3         : std_ulogic_vector(XLEN-1 downto 0); -- source register 3
+  signal rs4         : std_ulogic_vector(XLEN-1 downto 0); -- source register 4
   signal alu_res     : std_ulogic_vector(XLEN-1 downto 0); -- alu result
   signal alu_add     : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0); -- comparator result
@@ -345,7 +347,8 @@ begin
   generic map (
     XLEN                  => XLEN,                  -- data path width
     CPU_EXTENSION_RISCV_E => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension?
-    RS3_EN                => regfile_rs3_en_c       -- enable third read port
+    RS3_EN                => regfile_rs3_en_c,      -- enable 3rd read port
+    RS4_EN                => regfile_rs4_en_c       -- enable 4th read port
   )
   port map (
     -- global control --
@@ -359,7 +362,8 @@ begin
     -- data output --
     rs1_o  => rs1,       -- operand 1
     rs2_o  => rs2,       -- operand 2
-    rs3_o  => rs3        -- operand 3
+    rs3_o  => rs3,       -- operand 3
+    rs4_o  => rs4        -- operand 4
   );
 
 
@@ -387,6 +391,7 @@ begin
     rs1_i       => rs1,       -- rf source 1
     rs2_i       => rs2,       -- rf source 2
     rs3_i       => rs3,       -- rf source 3
+    rs4_i       => rs4,       -- rf source 4
     pc_i        => curr_pc,   -- current PC
     imm_i       => imm,       -- immediate
     -- data output --

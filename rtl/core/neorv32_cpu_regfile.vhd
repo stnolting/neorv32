@@ -10,7 +10,8 @@
 -- #                                                                                               #
 -- # The register file uses synchronous read accesses and a *single* (multiplexed) address port    #
 -- # for writing and reading rd/rs1 and a single read-only port for rs2. Therefore, the whole      #
--- # register file can be mapped to a single true-dual-port block RAM.                             #
+-- # register file can be mapped to a single true-dual-port block RAM. A third and a fourth read   #
+-- # port can be optionally enabled.                                                               #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -54,7 +55,8 @@ entity neorv32_cpu_regfile is
   generic (
     XLEN                  : natural; -- data path width
     CPU_EXTENSION_RISCV_E : boolean; -- implement embedded RF extension?
-    RS3_EN                : boolean  -- enable third read port
+    RS3_EN                : boolean; -- enable 3rd read port
+    RS4_EN                : boolean  -- enable 4th read port
   );
   port (
     -- global control --
@@ -68,7 +70,8 @@ entity neorv32_cpu_regfile is
     -- data output --
     rs1_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 1
     rs2_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 2
-    rs3_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- operand 3
+    rs3_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 4
+    rs4_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- operand 3
   );
 end neorv32_cpu_regfile;
 
@@ -87,6 +90,7 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   signal opa_addr : std_ulogic_vector(4 downto 0); -- rs1/dst address
   signal opb_addr : std_ulogic_vector(4 downto 0); -- rs2 address
   signal opc_addr : std_ulogic_vector(4 downto 0); -- rs3 address
+  signal opd_addr : std_ulogic_vector(4 downto 0); -- rs4 address
 
 begin
 
@@ -106,7 +110,22 @@ begin
 
   -- Register File Access -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- "normal" (RV32I) register file with 32 registers --
+  -- access addresses --
+  opa_addr <= "00000" when (ctrl_i(ctrl_rf_zero_we_c) = '1') else -- force rd = zero
+              ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) when (ctrl_i(ctrl_rf_wb_en_c) = '1') else -- rd
+              ctrl_i(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- rs1
+  opb_addr <= ctrl_i(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c); -- rs2
+  opc_addr <= ctrl_i(ctrl_rf_rs3_adr4_c downto ctrl_rf_rs3_adr0_c); -- rs3
+  opd_addr <= ctrl_i(ctrl_ir_funct12_6_c downto ctrl_ir_funct12_5_c) &
+              ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c); -- rs4: [26:25] & [14:12]; not RISC-V-standard!
+
+  -- write enable --
+  rd_zero <= '1' when (ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) = "00000") else '0';
+  rf_we   <= (ctrl_i(ctrl_rf_wb_en_c) and (not rd_zero)) or ctrl_i(ctrl_rf_zero_we_c); -- do not write to x0 unless explicitly forced
+
+
+  -- RV32I Register File with 32 Entries ----------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   reg_file_rv32i:
   if (CPU_EXTENSION_RISCV_E = false) generate
     rf_access: process(clk_i)
@@ -117,14 +136,27 @@ begin
         end if;
         rs1_o <= reg_file(to_integer(unsigned(opa_addr(4 downto 0))));
         rs2_o <= reg_file(to_integer(unsigned(opb_addr(4 downto 0))));
-        if (RS3_EN = true) then -- implement third read port?
+
+        -- optional 3rd read port --
+        if (RS3_EN = true) then
           rs3_o <= reg_file(to_integer(unsigned(opc_addr(4 downto 0))));
+        else
+          rs3_o <= (others => '0');
+        end if;
+
+        -- optional 4th read port --
+        if (RS4_EN = true) then
+          rs4_o <= reg_file(to_integer(unsigned(opd_addr(4 downto 0))));
+        else
+          rs4_o <= (others => '0');
         end if;
       end if;
     end process rf_access;
   end generate;
 
-  -- "embedded" (RV32E) register file with 16 registers --
+
+  -- RV32E Register File with 16 Entries ----------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   reg_file_rv32e:
   if (CPU_EXTENSION_RISCV_E = true) generate
     rf_access: process(clk_i)
@@ -135,23 +167,23 @@ begin
         end if;
         rs1_o <= reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0))));
         rs2_o <= reg_file_emb(to_integer(unsigned(opb_addr(3 downto 0))));
-        if (RS3_EN = true) then -- implement third read port?
-          rs3_o <= reg_file(to_integer(unsigned(opc_addr(3 downto 0))));
+
+        -- optional 3rd read port --
+        if (RS3_EN = true) then
+          rs3_o <= reg_file_emb(to_integer(unsigned(opc_addr(3 downto 0))));
+        else
+          rs3_o <= (others => '0');
+        end if;
+
+        -- optional 4th read port --
+        if (RS4_EN = true) then -- implement fourth read port?
+          rs4_o <= reg_file_emb(to_integer(unsigned(opd_addr(3 downto 0))));
+        else
+          rs4_o <= (others => '0');
         end if;
       end if;
     end process rf_access;
   end generate;
-
-  -- write enable --
-  rd_zero <= '1' when (ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) = "00000") else '0';
-  rf_we   <= (ctrl_i(ctrl_rf_wb_en_c) and (not rd_zero)) or ctrl_i(ctrl_rf_zero_we_c); -- do not write to x0 unless explicitly forced
-
-  -- access addresses --
-  opa_addr <= "00000" when (ctrl_i(ctrl_rf_zero_we_c) = '1') else -- force rd = zero
-              ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) when (ctrl_i(ctrl_rf_wb_en_c) = '1') else -- rd
-              ctrl_i(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- rs1
-  opb_addr <= ctrl_i(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c); -- rs2
-  opc_addr <= ctrl_i(ctrl_rf_rs3_adr4_c downto ctrl_rf_rs3_adr0_c); -- rs3
 
 
 end neorv32_cpu_regfile_rtl;

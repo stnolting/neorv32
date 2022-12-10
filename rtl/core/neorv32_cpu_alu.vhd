@@ -63,6 +63,7 @@ entity neorv32_cpu_alu is
     rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     rs3_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
+    rs4_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 4
     pc_i        : in  std_ulogic_vector(XLEN-1 downto 0); -- current PC
     imm_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- immediate
     -- data output --
@@ -90,10 +91,10 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal cp_res     : std_ulogic_vector(XLEN-1 downto 0);
 
   -- co-processor interface --
-  type cp_data_if_t  is array (0 to 5) of std_ulogic_vector(XLEN-1 downto 0);
-  signal cp_result : cp_data_if_t; -- co-processor i result
-  signal cp_start  : std_ulogic_vector(5 downto 0); -- trigger co-processor i
-  signal cp_valid  : std_ulogic_vector(5 downto 0); -- co-processor i done
+  type cp_data_if_t  is array (0 to 4) of std_ulogic_vector(XLEN-1 downto 0);
+  signal cp_result : cp_data_if_t; -- co-processor result
+  signal cp_start  : std_ulogic_vector(4 downto 0); -- trigger co-processor
+  signal cp_valid  : std_ulogic_vector(4 downto 0); -- co-processor done
 
 begin
 
@@ -157,15 +158,15 @@ begin
 
   -- co-processor select / start trigger --
   -- > "cp_start" is high for one cycle to trigger operation of the according co-processor
-  cp_start(5 downto 0) <= ctrl_i(ctrl_cp_trig5_c downto ctrl_cp_trig0_c);
+  cp_start(4 downto 0) <= ctrl_i(ctrl_cp_trig4_c downto ctrl_cp_trig0_c);
 
   -- co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before output data (cp_result) is valid
-  idone_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5);
+  idone_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4);
 
   -- co-processor result --
   -- > "cp_result" data has to be always zero unless unique co-processor was actually triggered
-  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5);
+  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4);
 
 
   -- Co-Processor 0: Shifter Unit (CPU Base ISA) --------------------------------------------
@@ -307,6 +308,7 @@ begin
       rs1_i   => rs1_i,        -- rf source 1
       rs2_i   => rs2_i,        -- rf source 2
       rs3_i   => rs3_i,        -- rf source 3
+      rs4_i   => rs4_i,        -- rf source 4
       -- result and status --
       res_o   => cp_result(4), -- operation result
       valid_o => cp_valid(4)   -- data output valid
@@ -318,12 +320,6 @@ begin
     cp_result(4) <= (others => '0');
     cp_valid(4)  <= '0';
   end generate;
-
-
-  -- Co-Processor 5: Reserved ---------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  cp_result(5) <= (others => '0');
-  cp_valid(5)  <= '0';
 
 
 end neorv32_cpu_cpu_rtl;
