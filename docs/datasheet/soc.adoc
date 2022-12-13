@@ -454,11 +454,17 @@ The state of this generic can be retrieved by software via the <<_mxisa>> CSR.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **CPU_IPB_ENTRIES** | _natural_ | 2
+| **CPU_IPB_ENTRIES** | _natural_ | 1
 3+| This generic configures the number of entries in the CPU's instruction prefetch buffer.
-The value has to be a power of two and has to be greater than or equal to two (>= 2).
-Long linear sequences of code can benefit from an increased IPB size.
+The value has to be a power of two and has to be greater than or equal to one (>= 1). The
+IPB can help improving memory access latency. Furthermore, long linear code sequences will
+benefit from an increased IPB size.
 |======
+
+[WARNING]
+If the compressed ISA extension `_CPU_EXTENSION_RISCV_C_` (<<_cpu_extension_riscv_c>>) is enabled and the IPB depth
+is set to 1, this configuration is internally overridden and the IPB will be implemented with **2** entries. This is required
+for handling unaligned 32-bit instructions.
 
 
 // ####################################################################################################################
