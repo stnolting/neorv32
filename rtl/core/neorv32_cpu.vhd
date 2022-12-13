@@ -67,7 +67,7 @@ entity neorv32_cpu is
     -- Extension Options --
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
-    CPU_IPB_ENTRIES              : natural; -- entries in instruction prefetch buffer, has to be a power of 2, min 2
+    CPU_IPB_ENTRIES              : natural; -- entries in instruction prefetch buffer, has to be a power of 2, min 1
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -120,9 +120,13 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant XLEN : natural := 32; -- data path width
   -- ----------------------------------------------------------------------------------------------
 
-  -- local constants --
+  -- local constants: additional register file read ports --
   constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port (rs3)
   constant regfile_rs4_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu; -- 4th register file read port (rs4)
+
+  -- local constant: instruction prefetch buffer depth --
+  constant ipb_override_c : boolean := (CPU_EXTENSION_RISCV_C = true) and (CPU_IPB_ENTRIES < 2); -- override IPB size: set to 2?
+  constant ipb_depth_c    : natural := cond_sel_natural_f(ipb_override_c, 2, CPU_IPB_ENTRIES);
 
   -- local signals --
   signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
@@ -206,8 +210,8 @@ begin
   -- Instruction prefetch buffer --
   assert not (is_power_of_two_f(CPU_IPB_ENTRIES) = false) report
     "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <CPU_IPB_ENTRIES> has to be a power of two." severity error;
-  assert not (CPU_IPB_ENTRIES < 2) report
-    "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <CPU_IPB_ENTRIES> has to be >= 2." severity error;
+  assert not (ipb_override_c = true) report
+    "NEORV32 CPU CONFIG WARNING! Overriding <CPU_IPB_ENTRIES> configuration (setting =2) because C ISA extension is enabled." severity warning;
 
   -- PMP --
   assert not (PMP_NUM_REGIONS > 0) report
@@ -276,7 +280,7 @@ begin
     -- Tuning Options --
     FAST_MUL_EN                  => FAST_MUL_EN,                  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,                -- use barrel shifter for shift operations
-    CPU_IPB_ENTRIES              => CPU_IPB_ENTRIES,              -- entries is instruction prefetch buffer, has to be a power of 2, min 2
+    CPU_IPB_ENTRIES              => ipb_depth_c,                  -- entries is instruction prefetch buffer, has to be a power of 2, min 1
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS,              -- number of regions (0..16)
     PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY,          -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
