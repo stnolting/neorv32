@@ -250,7 +250,7 @@ just _exemplary_. If not otherwise mentioned all implementations use the default
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| HW version:  | `1.7.7.8`
+| HW version:  | `1.7.8.5`
 | Top entity:  | `rtl/core/neorv32_cpu.vhd`
 | FPGA:        | Intel Cyclone IV E `EP4CE22F17C6`
 | Toolchain:   | Quartus Prime Lite 21.1
@@ -261,10 +261,10 @@ just _exemplary_. If not otherwise mentioned all implementations use the default
 [options="header",grid="rows"]
 |=======================
 | CPU ISA Configuration                             | LEs  | FFs  | MEM bits | DSPs | _f~max~_
-| `rv32e`                                           |  830 |  400 |      512 |    0 | 130 MHz
-| `rv32i`                                           |  834 |  400 |     1024 |    0 | 130 MHz
-| `rv32i_Zicsr`                                     | 1328 |  678 |     1024 |    0 | 130 MHz
-| `rv32i_Zicsr_Zicntr`                              | 1614 |  808 |     1024 |    0 | 130 MHz
+| `rv32e`                                           |  720 |  360 |      512 |    0 | 130 MHz
+| `rv32i`                                           |  724 |  364 |     1024 |    0 | 130 MHz
+| `rv32i_Zicsr`                                     | 1223 |  607 |     1024 |    0 | 130 MHz
+| `rv32i_Zicsr_Zicntr`                              | 1578 |  773 |     1024 |    0 | 130 MHz
 | `rv32im_Zicsr_Zicntr`                             | 2087 |  983 |     1024 |    0 | 130 MHz
 | `rv32imc_Zicsr_Zicntr`                            | 2338 |  992 |     1024 |    0 | 130 MHz
 | `rv32imcb_Zicsr_Zicntr`                           | 3175 | 1247 |     1024 |    0 | 130 MHz

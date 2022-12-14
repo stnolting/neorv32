@@ -140,30 +140,48 @@ begin
   fifo_half_level_simple:
   if (FIFO_DEPTH = 1) generate
     half_o <= fifo.full;
-  end generate;
+  end generate; -- /fifo_half_level_simple
 
   fifo_half_level_complex:
   if (FIFO_DEPTH > 1) generate
     level_diff <= std_ulogic_vector(unsigned(fifo.w_pnt) - unsigned(fifo.r_pnt));
     half_o     <= level_diff(level_diff'left-1) or fifo.full;
-  end generate;
+  end generate; -- /fifo_half_level_complex
 
 
-  -- FIFO Memory ----------------------------------------------------------------------------
+  -- FIFO Memory - Write --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fifo_write: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (fifo.we = '1') then
-        if (FIFO_DEPTH = 1) then
-          fifo.buf <= wdata_i;
-        else
+  -- "real" FIFO memory (several entries) --
+  fifo_memory:
+  if (FIFO_DEPTH > 1) generate
+    fifo_write: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        if (fifo.we = '1') then
           fifo.data(to_integer(unsigned(fifo.w_pnt(fifo.w_pnt'left-1 downto 0)))) <= wdata_i;
         end if;
       end if;
-    end if;
-  end process fifo_write;
+    end process fifo_write;
+    fifo.buf <= (others => '0'); -- unused
+  end generate; -- /fifo_memory
 
+  -- simple register/buffer (single entry) --
+  fifo_buffer:
+  if (FIFO_DEPTH = 1) generate
+    fifo_write: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        if (fifo.we = '1') then
+          fifo.buf <= wdata_i;
+        end if;
+      end if;
+    end process fifo_write;
+    fifo.data <= (others => (others => '0')); -- unused
+  end generate; -- /fifo_buffer
+
+
+  -- FIFO Memory - Read ---------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   -- "asynchronous" read --
   fifo_read_async:
   if (FIFO_RSYNC = false) generate
@@ -175,7 +193,7 @@ begin
         rdata <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
       end if;
     end process fifo_read;
-  end generate;
+  end generate; -- /fifo_read_async
 
   -- synchronous read --
   fifo_read_sync:
@@ -190,7 +208,7 @@ begin
         end if;
       end if;
     end process fifo_read;
-  end generate;
+  end generate; -- /fifo_read_sync
 
 
   -- Output Gate ----------------------------------------------------------------------------
