@@ -55,7 +55,8 @@ entity neorv32_cpu_control is
     XLEN                         : natural; -- data path width
     HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
-    CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
+    CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
+    CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
@@ -712,9 +713,9 @@ begin
       case execute_engine.state is
         when TRAP_START => -- STARTING trap environment
           if (trap_ctrl.cause(5) = '1') and (CPU_EXTENSION_RISCV_DEBUG = true) then -- trap cause: debug mode (re-)entry
-            execute_engine.next_pc <= CPU_DEBUG_ADDR; -- debug mode enter; start at "parking loop" <normal_entry>
+            execute_engine.next_pc <= CPU_DEBUG_PARK_ADDR; -- debug mode enter; start at "parking loop" <normal_entry>
           elsif (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_DEBUG = true) then -- any other exception INSIDE debug mode
-            execute_engine.next_pc <= std_ulogic_vector(unsigned(CPU_DEBUG_ADDR) + 4); -- start at "parking loop" <exception_entry>
+            execute_engine.next_pc <= CPU_DEBUG_EXC_ADDR; -- debug mode enter: start at "parking loop" <exception_entry>
           else -- normal start of trap
             execute_engine.next_pc <= csr.mtvec(XLEN-1 downto 2) & "00"; -- trap enter
           end if;
@@ -1068,7 +1069,7 @@ begin
             if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then
               ctrl_nxt(ctrl_bus_fencei_c) <= '1'; -- FENCE.I
             end if;
-            execute_engine.state_nxt <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (= PC <= PC)
+            execute_engine.state_nxt <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC)
 
 
           when opcode_fop_c => -- floating-point operations
@@ -1081,7 +1082,7 @@ begin
             end if;
 
 
-          when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => -- CFU: custom RISC-V instructions (CUSTOM0/1 OPCODE space)
+          when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => -- CFU: custom RISC-V instructions
           -- ------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_Zxcfu = true) then
               ctrl_nxt(ctrl_cp_trig0_c + cp_sel_cfu_c) <= '1'; -- trigger CFU CP
@@ -1433,9 +1434,7 @@ begin
       -- ------------------------------------------------------------
         if (CPU_EXTENSION_RISCV_Zfinx = true) and (decode_aux.is_f_op = '1') then -- is supported floating-point instruction
           illegal_cmd <= '0';
-          illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or
-                         execute_engine.i_reg(instr_rs1_msb_c) or
-                         execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
+          illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
         else
           illegal_cmd <= '1';
           illegal_reg <= '0';

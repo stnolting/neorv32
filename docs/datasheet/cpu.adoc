@@ -323,6 +323,10 @@ and are not listed here. However, the CPU provides some _specific_ generics that
 NEORV32 processor setup. These generics are assigned by the processor setup only and are not available for user defined configuration.
 The _specific_ generics are listed below.
 
+
+:sectnums!:
+==== _CPU_BOOT_ADDR_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
@@ -332,13 +336,33 @@ generic is configured with the base address of the bootloader ROM (default) or w
 memory (IMEM) if the bootloader is disabled (_INT_BOOTLOADER_EN_ = _false_). See section <<_address_space>> for more information.
 |======
 
+
+:sectnums!:
+==== _CPU_DEBUG_PARK_ADDR_
+
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **CPU_DEBUG_ADDR** | _std_ulogic_vector(31 downto 0)_ | _no default value_
-3+| This address defines the entry address for the "execution based" on-chip debugger. By default, this generic is configured with the base address
-of the debugger memory. See section <<_on_chip_debugger_ocd>> for more information.
+| **CPU_DEBUG_PARK_ADDR** | _std_ulogic_vector(31 downto 0)_ | _no default value_
+3+| This address defines the "park loop" entry address for the "execution based" on-chip debugger.
+See section <<_on_chip_debugger_ocd>> for more information.
 |======
+
+
+:sectnums!:
+==== _CPU_DEBUG_EXC_ADDR_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_DEBUG_EXC_ADDR** | _std_ulogic_vector(31 downto 0)_ | _no default value_
+3+| This address defines the "exception" entry address for the "execution based" on-chip debugger.
+See section <<_on_chip_debugger_ocd>> for more information.
+|======
+
+
+:sectnums!:
+==== _CPU_EXTENSION_RISCV_DEBUG_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]

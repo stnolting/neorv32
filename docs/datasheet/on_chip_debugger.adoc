@@ -451,14 +451,16 @@ address space. However, these effective addresses are mirrored to fill up the wh
 Hence, any CPU access within this address space will succeed.
 
 .DM CPU access - address map (divided into four sections)
-[cols="^2,^4,^2,<7"]
+[cols="^3,^4,^2,<7"]
 [options="header",grid="rows"]
 |=======================
-| Base address | Name [VHDL package]              | Actual size | Description
-| `0xfffff800` | `dm_code_base_c` (= `dm_base_c`) |   128 bytes | Code ROM for the "park loop" code
-| `0xfffff880` | `dm_pbuf_base_c`                 |    16 bytes | Program buffer, provided by DM
-| `0xfffff900` | `dm_data_base_c`                 |     4 bytes | Data buffer (`dm.data0`)
-| `0xfffff980` | `dm_sreg_base_c`                 |     4 bytes | Control and status register
+| Base address          | Name [VHDL package]              | Actual size | Description
+| `0xfffff800`          | `dm_code_base_c` (= `dm_base_c`) |   128 bytes | Code ROM for the "park loop" code
+| `0xfffff880`          | `dm_pbuf_base_c`                 |    16 bytes | Program buffer, provided by DM
+| `0xfffff900`          | `dm_data_base_c`                 |     4 bytes | Data buffer (`dm.data0`)
+| `0xfffff980`          | `dm_sreg_base_c`                 |     4 bytes | Control and status register
+| `dm_code_base_c` + 16 | `dm_park_entry_c`                |           - | Normal entry address
+| `dm_code_base_c` +  0 | `dm_exc_entry_c`                 |           - | Exception entry address
 |=======================
 
 [NOTE]
@@ -466,10 +468,12 @@ From the CPU's point of view, the DM is mapped to an _"unused"_ address range wi
 <<_address_space>> right between the bootloader ROM (BOOTROM) and the actual processor-internal IO
 space at addresses `0xfffff800` - `0xfffff9ff`
 
-When the CPU enters or re-enters (for example via `ebreak` in the DM's program buffer) debug mode, it jumps to
-the beginning of the DM's "park loop" code ROM at `dm_code_base_c`. This is the _normal entry point_ for the
-park loop code. If an exception is encountered during debug mode, the CPU jumps to `dm_code_base_c + 4`,
-which is the _exception entry point_.
+When the CPU enters or re-enters debug mode (for example via an `ebreak` in the DM's program buffer), it jumps to
+address of the _normal entry point_ for the park loop code defined by the <<_cpu_debug_park_addr>> generic.
+By default, this generic is set to `dm_park_entry_c`, which is defined in main package file.
+If an exception is encountered during debug mode, the CPU jumps to the address of the _exception entry point_
+defined  by the <<_cpu_debug_exc_addr>> generic. By default, this generic is set to `dm_exc_entry_c`, which is
+defined in main package file.
 
 **Status Register**
 
@@ -537,8 +541,8 @@ From a hardware point of view, these "entry conditions" are special synchronous 
 * the `wfi` instruction acts as a `nop` (also during single-stepping)
 * if an exception occurs:
 ** if the exception was caused by any debug-mode entry action the CPU jumps to the _normal entry point_
-   (= _CPU_DEBUG_ADDR_) of the park loop again (for example when executing `ebreak` _in_ debug-mode)
-** for all other exception sources the CPU jumps to the _exception entry point_ ( = _CPU_DEBUG_ADDR_ + 4)
+   (defined by <<_cpu_debug_park_addr>> generic) of the park loop again (for example when executing `ebreak` _in_ debug-mode)
+** for all other exception sources the CPU jumps to the _exception entry point_ (defined by <<_cpu_debug_exc_addr>> generic)
    to signal an exception to the DM; the CPU restarts the park loop again afterwards
 * interrupts are disabled; however, they will remain pending and will get executed after the CPU has left debug mode
 * if the DM makes a resume request, the park loop exits and the CPU leaves debug mode (executing `dret`)

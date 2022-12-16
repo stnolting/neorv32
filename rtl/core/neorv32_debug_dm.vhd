@@ -88,10 +88,10 @@ end neorv32_debug_dm;
 architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
   -- DM configuration --
-  constant nscratch_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of dscratch* registers in CPU = 1
-  constant dataaccess_c : std_ulogic                     := '1';    -- 1: abstract data is memory-mapped, 0: abstract data is CSR-mapped
-  constant datasize_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of data registers in memory/CSR space = 1
+  constant nscratch_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of dscratch* registers in CPU
+  constant datasize_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of data registers in memory/CSR space
   constant dataaddr_c   : std_ulogic_vector(11 downto 0) := dm_data_base_c(11 downto 0); -- signed base address of data registers in memory/CSR space
+  constant dataaccess_c : std_ulogic                     := '1';    -- 1: abstract data is memory-mapped, 0: abstract data is CSR-mapped
 
   -- available DMI registers --
   constant addr_data0_c        : std_ulogic_vector(6 downto 0) := "000" & x"4";
@@ -193,32 +193,29 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- copied manually from 'sw/ocd-firmware/neorv32_debug_mem_code.vhd' --
   type code_rom_file_t is array (0 to 31) of std_ulogic_vector(31 downto 0);
   constant code_rom_file : code_rom_file_t := (
-    00000000 => x"0180006f",
-    00000001 => x"7b241073",
-    00000002 => x"02000413",
-    00000003 => x"98802023",
-    00000004 => x"7b202473",
-    00000005 => x"00100073",
-    00000006 => x"7b241073",
-    00000007 => x"00100413",
-    00000008 => x"98802023",
-    00000009 => x"98002403",
-    00000010 => x"00847413",
-    00000011 => x"02041263",
-    00000012 => x"98002403",
-    00000013 => x"00247413",
-    00000014 => x"00041463",
-    00000015 => x"fe9ff06f",
-    00000016 => x"00400413",
-    00000017 => x"98802023",
-    00000018 => x"7b202473",
-    00000019 => x"7b200073",
-    00000020 => x"01000413",
-    00000021 => x"98802023",
-    00000022 => x"7b202473",
-    00000023 => x"0000100f",
-    00000024 => x"88000067",
-    others   => x"00100073"  -- ebreak
+    000000 => x"7b241073",
+    000001 => x"02000413",
+    000002 => x"98802023",
+    000003 => x"0080006f",
+    000004 => x"7b241073",
+    000005 => x"00100413",
+    000006 => x"98802023",
+    000007 => x"98002403",
+    000008 => x"00847413",
+    000009 => x"02041063",
+    000010 => x"98002403",
+    000011 => x"00247413",
+    000012 => x"fe0406e3",
+    000013 => x"00400413",
+    000014 => x"98802023",
+    000015 => x"7b202473",
+    000016 => x"7b200073",
+    000017 => x"01000413",
+    000018 => x"98802023",
+    000019 => x"7b202473",
+    000020 => x"0000100f",
+    000021 => x"88000067",
+    others => x"00100073" -- ebreak
   );
 
   -- global access control --
@@ -364,7 +361,7 @@ begin
         -- hart status --
         -- ------------------------------------------------------------
 
-        -- HALTED --
+        -- HALTED ACK --
         if (dm_reg.dmcontrol_ndmreset = '1') then
           dm_ctrl.hart_halted <= '0';
         elsif (dci.halt_ack = '1') then
@@ -680,13 +677,13 @@ begin
   write_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- Data buffer --
+      -- data buffer --
       if (dci.data_we = '1') then -- DM write access
         data_buf <= dci.wdata;
-      elsif (maddr = "10") and (wren = '1') then -- BUS write access
+      elsif (maddr = "10") and (wren = '1') then -- CPU write access
         data_buf <= cpu_data_i;
       end if;
-      -- Control and Status Register --
+      -- control and status register --
       dci.halt_ack      <= '0'; -- all writable flags auto-clear
       dci.resume_ack    <= '0';
       dci.execute_ack   <= '0';
@@ -711,7 +708,7 @@ begin
     if rising_edge(clk_i) then
       cpu_ack_o  <= rden or wren;
       cpu_data_o <= (others => '0');
-      if (rden = '1') then -- output gate
+      if (rden = '1') then -- output enable
         case maddr is -- module select
           when "00" => -- code ROM
             cpu_data_o <= code_rom_file(to_integer(unsigned(cpu_addr_i(6 downto 2))));
