@@ -62,7 +62,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070805"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070806"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -149,6 +149,9 @@ package neorv32_package is
   constant dm_pbuf_base_c       : std_ulogic_vector(31 downto 0) := x"fffff880";
   constant dm_data_base_c       : std_ulogic_vector(31 downto 0) := x"fffff900";
   constant dm_sreg_base_c       : std_ulogic_vector(31 downto 0) := x"fffff980";
+  -- OCD firmware entry points - this needs to be sync with the OCD firmware (sw/ocd-firmware/park_loop.S) --
+  constant dm_park_entry_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(dm_code_base_c) + 16); -- normal entry point
+  constant dm_exc_entry_c       : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(dm_code_base_c) +  0); -- entry point for exceptions
 
   -- IO: Peripheral Devices ("IO") Area --
   -- Control register(s) (including the device-enable flag) should be located at the base address of each device
@@ -1155,7 +1158,8 @@ package neorv32_package is
       -- General --
       HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
-      CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
+      CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
+      CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
       CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
@@ -1227,7 +1231,8 @@ package neorv32_package is
       XLEN                         : natural; -- data path width
       HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
-      CPU_DEBUG_ADDR               : std_ulogic_vector(31 downto 0); -- cpu debug mode start address
+      CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
+      CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
       CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?

@@ -546,7 +546,8 @@ begin
     -- General --
     HW_THREAD_ID                 => HW_THREAD_ID,                 -- hardware thread id
     CPU_BOOT_ADDR                => cpu_boot_addr_c,              -- cpu boot address
-    CPU_DEBUG_ADDR               => dm_base_c,                    -- cpu debug mode start address
+    CPU_DEBUG_PARK_ADDR          => dm_park_entry_c,              -- cpu debug mode parking loop entry address
+    CPU_DEBUG_EXC_ADDR           => dm_exc_entry_c,               -- cpu debug mode exception entry address
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
