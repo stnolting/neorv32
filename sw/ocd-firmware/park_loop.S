@@ -1,9 +1,9 @@
 /* ################################################################################################# */
-/* # << NEORV32 - park_loop.S - Execution-Based On-Chip Debugger - Park Loop Code >>               # */
+/* # << NEORV32 - park_loop.S - Execution-Based On-Chip Debugger Firmware - Park Loop Code >>      # */
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
-/* # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     # */
+/* # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
 /* # permitted provided that the following conditions are met:                                     # */
@@ -50,42 +50,36 @@
 .section .text
 .balign 4
 .option norvc
-.global _start
-.global entry_normal
+.global __start
 .global entry_exception
+.global entry_normal
 
+__start:
 
-_start:
-
-// BASE + 0: entry for ebreak in debug-mode, halt request or return from single-stepped instruction
-entry_normal:
-    jal    zero, parking_loop_start
-
-// BASE + 4: entry for exceptions - signal EXCEPTION to DM and restart parking loop
+// BASE + 0: entry for exceptions - signal EXCEPTION to DM and restart parking loop
 entry_exception:
     csrw   dscratch0, s0                    // save s0 to dscratch0 so we have a general purpose register available
-    addi   s0, zero, SREG_EXCEPTION_ACK     // mask exception acknowledge flag
+    addi   s0, zero, SREG_EXCEPTION_ACK     // set exception acknowledge flag
     sw     s0, DBMEM_SREG_BASE(zero)        // trigger exception acknowledge to inform DM
-    csrr   s0, dscratch0                    // restore s0 from dscratch0
-    ebreak                                  // restart parking loop
+    jal    zero, parking_loop_halt          // start parking loop
 
+// BASE + 16: entry for ebreak in debug-mode, halt request or return from single-stepped instruction
 // "parking loop": endless loop that polls the status register to check if the DM
 // wants to execute code from the program buffer or to resume normal CPU/application operation
-parking_loop_start:
+entry_normal:
     csrw   dscratch0, s0                    // save s0 to dscratch0 so we have a general purpose register available
+parking_loop_halt:
     addi   s0, zero, SREG_HALTED_ACK
     sw     s0, DBMEM_SREG_BASE(zero)        // ACK that CPU has halted
 
 parking_loop:
     lw     s0, DBMEM_SREG_BASE(zero)        // get status register
     andi   s0, s0, SREG_EXECUTE_REQ         // request to execute program buffer?
-    bnez   s0, execute_progbuf              // execute program buffer
+    bnez   s0, execute                      // execute program buffer
 
     lw     s0, DBMEM_SREG_BASE(zero)        // get status register
     andi   s0, s0, SREG_RESUME_REQ          // request to resume?
-    bnez   s0, resume                       // resume normal operation
-
-    jal    zero, parking_loop               // restart parking loop polling
+    beqz   s0, parking_loop                 // no: restart parking loop; yes: resume normal operation
 
 // resume normal operation
 resume:
@@ -95,7 +89,7 @@ resume:
     dret                                    // end debug mode
 
 // execute program buffer
-execute_progbuf:
+execute:
     addi   s0, zero, SREG_EXECUTE_ACK
     sw     s0, DBMEM_SREG_BASE(zero)        // ACK that execution is about to start
     csrr   s0, dscratch0                    // restore s0 from dscratch0

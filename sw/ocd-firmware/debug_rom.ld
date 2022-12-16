@@ -1,7 +1,7 @@
 /* ################################################################################################# */
 /* # << NEORV32 - RISC-V GCC Linker Script >>                                                      # */
 /* # ********************************************************************************************* # */
-/* # For the execution based on-chip debugger code memory (/ROM() - "park loop" code               # */
+/* # For the execution-based on-chip debugger code memory (/ROM() - "park loop" code (firmware)    # */
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
@@ -34,37 +34,19 @@
 /* # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting # */
 /* ################################################################################################# */
 
-/* Default linker script, for normal executables */
-/* Copyright (C) 2014-2020 Free Software Foundation, Inc.
-   Copying and distribution of this script, with or without modification,
-   are permitted in any medium without royalty provided the copyright
-   notice and this notice are preserved.  */
-
-/* modified for the NEORV32 processor by Stephan Nolting */
-
-
 OUTPUT_FORMAT("elf32-littleriscv")
 OUTPUT_ARCH(riscv)
-ENTRY(_start)
-SEARCH_DIR("/opt/riscv/riscv32-unknown-elf/lib")
-SEARCH_DIR("=/usr/local/lib")
-SEARCH_DIR("=/lib")
-SEARCH_DIR("=/usr/lib")
+ENTRY(__start)
 
 MEMORY
 {
-  debug_mem  (rx) : ORIGIN = 0xFFFFF800, LENGTH = 128
+  debug_mem (rx) : ORIGIN = 0xFFFFF800, LENGTH = 128
 }
-/* ************************************************************************* */
 
 SECTIONS
 {
-
-  /* Actual instructions */
   .text :
   {
     KEEP(*(.text));
-
   } > debug_mem
-
 }
