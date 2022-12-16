@@ -467,6 +467,7 @@ int main() {
 
   // ----------------------------------------------------------
   // External memory interface test
+  // (and iCache block-/word-wise error check)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Ext. memory access (@0x%x) ", cnt_test, (uint32_t)EXT_MEM_BASE);
@@ -485,8 +486,8 @@ int main() {
       test_fail();
     }
     else {
-
       // execute program
+      asm volatile("fence.i"); // flush i-cache
       tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
       asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
     
