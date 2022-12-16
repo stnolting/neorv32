@@ -92,6 +92,7 @@ architecture neorv32_icache_rtl of neorv32_icache is
     host_addr_i    : in  std_ulogic_vector(31 downto 0); -- access address
     host_re_i      : in  std_ulogic; -- read enable
     host_rdata_o   : out std_ulogic_vector(31 downto 0); -- read data
+    host_rstat_o   : out std_ulogic; -- read status
     -- access status (1 cycle delay to access) --
     hit_o          : out std_ulogic; -- hit access
     -- ctrl cache access (write-only) --
@@ -99,6 +100,7 @@ architecture neorv32_icache_rtl of neorv32_icache is
     ctrl_addr_i    : in  std_ulogic_vector(31 downto 0); -- access address
     ctrl_we_i      : in  std_ulogic; -- write enable (full-word)
     ctrl_wdata_i   : in  std_ulogic_vector(31 downto 0); -- write data
+    ctrl_wstat_i   : in  std_ulogic; -- write status
     ctrl_tag_we_i  : in  std_ulogic; -- write tag to selected block
     ctrl_valid_i   : in  std_ulogic; -- make selected block valid
     ctrl_invalid_i : in  std_ulogic  -- make selected block invalid
@@ -110,11 +112,13 @@ architecture neorv32_icache_rtl of neorv32_icache is
     clear           : std_ulogic; -- cache clear
     host_addr       : std_ulogic_vector(31 downto 0); -- cpu access address
     host_rdata      : std_ulogic_vector(31 downto 0); -- cpu read data
+    host_rstat      : std_ulogic; -- cpu read status
     hit             : std_ulogic; -- hit access
     ctrl_en         : std_ulogic; -- control access enable
     ctrl_addr       : std_ulogic_vector(31 downto 0); -- control access address
     ctrl_we         : std_ulogic; -- control write enable
     ctrl_wdata      : std_ulogic_vector(31 downto 0); -- control write data
+    ctrl_wstat      : std_ulogic; -- control write status
     ctrl_tag_we     : std_ulogic; -- control tag write enabled
     ctrl_valid_we   : std_ulogic; -- control valid flag set
     ctrl_invalid_we : std_ulogic; -- control valid flag clear
@@ -122,8 +126,8 @@ architecture neorv32_icache_rtl of neorv32_icache is
   signal cache : cache_if_t;
 
   -- control engine --
-  type ctrl_engine_state_t is (S_IDLE, S_CACHE_CLEAR, S_CACHE_CHECK, S_CACHE_MISS, S_BUS_DOWNLOAD_REQ, S_BUS_DOWNLOAD_GET,
-                               S_CACHE_RESYNC_0, S_CACHE_RESYNC_1, S_BUS_ERROR);
+  type ctrl_engine_state_t is (S_IDLE, S_CACHE_CLEAR, S_CACHE_CHECK, S_CACHE_MISS, S_BUS_DOWNLOAD_REQ,
+                               S_BUS_DOWNLOAD_GET, S_CACHE_RESYNC_0, S_CACHE_RESYNC_1);
   type ctrl_t is record
     state         : ctrl_engine_state_t; -- current state
     state_nxt     : ctrl_engine_state_t; -- next state
@@ -141,12 +145,18 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- configuration --
-  assert not (is_power_of_two_f(ICACHE_NUM_BLOCKS) = false) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache number of blocks <ICACHE_NUM_BLOCKS> has to be a power of 2." severity error;
-  assert not (is_power_of_two_f(ICACHE_BLOCK_SIZE) = false) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache block size <ICACHE_BLOCK_SIZE> has to be a power of 2." severity error;
-  assert not ((is_power_of_two_f(ICACHE_NUM_SETS) = false)) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache associativity <ICACHE_NUM_SETS> has to be a power of 2." severity error;
-  assert not (ICACHE_NUM_BLOCKS < 1) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache number of blocks <ICACHE_NUM_BLOCKS> has to be >= 1." severity error;
-  assert not (ICACHE_BLOCK_SIZE < 4) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache block size <ICACHE_BLOCK_SIZE> has to be >= 4." severity error;
-  assert not ((ICACHE_NUM_SETS = 0) or (ICACHE_NUM_SETS > 2)) report "NEORV32 PROCESSOR CONFIG ERROR! i-cache associativity <ICACHE_NUM_SETS> has to be 1 (direct-mapped) or 2 (2-way set-associative)." severity error;
+  assert not (is_power_of_two_f(ICACHE_NUM_BLOCKS) = false) report
+    "NEORV32 PROCESSOR CONFIG ERROR! i-cache number of blocks <ICACHE_NUM_BLOCKS> has to be a power of 2." severity error;
+  assert not (is_power_of_two_f(ICACHE_BLOCK_SIZE) = false) report
+    "NEORV32 PROCESSOR CONFIG ERROR! i-cache block size <ICACHE_BLOCK_SIZE> has to be a power of 2." severity error;
+  assert not ((is_power_of_two_f(ICACHE_NUM_SETS) = false)) report
+    "NEORV32 PROCESSOR CONFIG ERROR! i-cache associativity <ICACHE_NUM_SETS> has to be a power of 2." severity error;
+  assert not (ICACHE_NUM_BLOCKS < 1) report
+    "NEORV32 PROCESSOR CONFIG ERROR! i-cache number of blocks <ICACHE_NUM_BLOCKS> has to be >= 1." severity error;
+  assert not (ICACHE_BLOCK_SIZE < 4) report
+    "NEORV32 PROCESSOR CONFIG ERROR! i-cache block size <ICACHE_BLOCK_SIZE> has to be >= 4." severity error;
+  assert not ((ICACHE_NUM_SETS = 0) or (ICACHE_NUM_SETS > 2)) report
+    "NEORV32 PROCESSOR CONFIG ERROR! i-cache associativity <ICACHE_NUM_SETS> has to be 1 (direct-mapped) or 2 (2-way set-associative)." severity error;
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------
@@ -157,7 +167,7 @@ begin
       ctrl.state     <= S_CACHE_CLEAR; -- to reset cache information memory, which does not have an explicit reset
       ctrl.re_buf    <= '0';
       ctrl.clear_buf <= '0';
-      ctrl.addr_reg  <= (others => '-');
+      ctrl.addr_reg  <= (others => '0');
     elsif rising_edge(clk_i) then
       ctrl.state     <= ctrl.state_nxt;
       ctrl.re_buf    <= ctrl.re_buf_nxt;
@@ -184,6 +194,7 @@ begin
     cache.ctrl_addr       <= ctrl.addr_reg;
     cache.ctrl_we         <= '0';
     cache.ctrl_wdata      <= bus_rdata_i;
+    cache.ctrl_wstat      <= bus_err_i;
     cache.ctrl_tag_we     <= '0';
     cache.ctrl_valid_we   <= '0';
     cache.ctrl_invalid_we <= '0';
@@ -218,7 +229,11 @@ begin
       when S_CACHE_CHECK => -- finalize host access if cache hit
       -- ------------------------------------------------------------
         if (cache.hit = '1') then -- cache HIT
-          host_ack_o     <= '1';
+          if (cache.host_rstat = '1') then -- data word from cache marked as faulty?
+            host_err_o <= '1';
+          else
+            host_ack_o <= '1';
+          end if;
           ctrl.state_nxt <= S_IDLE;
         else -- cache MISS
           ctrl.state_nxt <= S_CACHE_MISS;
@@ -243,9 +258,7 @@ begin
       -- ------------------------------------------------------------
         cache.ctrl_en <= '1'; -- we are in cache control mode
         --
-        if (bus_err_i = '1') then -- bus error
-          ctrl.state_nxt <= S_BUS_ERROR;
-        elsif (bus_ack_i = '1') then -- ACK = write to cache and get next word
+        if (bus_ack_i = '1') or (bus_err_i = '1') then -- ACK or ERROR = write to cache and get next word
           cache.ctrl_we <= '1'; -- write to cache
           if (and_reduce_f(ctrl.addr_reg((2+cache_offset_size_c)-1 downto 2)) = '1') then -- block complete?
             cache.ctrl_tag_we   <= '1'; -- current block is valid now
@@ -263,12 +276,11 @@ begin
 
       when S_CACHE_RESYNC_1 => -- re-sync host/cache access: finalize CPU request
       -- ------------------------------------------------------------
-        host_ack_o     <= '1';
-        ctrl.state_nxt <= S_IDLE;
-
-      when S_BUS_ERROR => -- bus error during download
-      -- ------------------------------------------------------------
-        host_err_o     <= '1';
+        if (cache.host_rstat = '1') then -- data word from cache marked as faulty?
+          host_err_o <= '1';
+        else
+          host_ack_o <= '1';
+        end if;
         ctrl.state_nxt <= S_IDLE;
 
       when others => -- undefined
@@ -285,7 +297,7 @@ begin
   bus_cached_o <= '1' when (ctrl.state = S_BUS_DOWNLOAD_REQ) or (ctrl.state = S_BUS_DOWNLOAD_GET) else '0';
 
 
-	-- Cache Memory ---------------------------------------------------------------------------
+  -- Cache Memory ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_icache_memory_inst: neorv32_icache_memory
   generic map (
@@ -301,6 +313,7 @@ begin
     host_addr_i    => cache.host_addr,      -- access address
     host_re_i      => host_re_i,            -- read enable
     host_rdata_o   => cache.host_rdata,     -- read data
+    host_rstat_o   => cache.host_rstat,     -- read status
     -- access status (1 cycle delay to access) --
     hit_o          => cache.hit,            -- hit access
     -- ctrl cache access (write-only) --
@@ -308,6 +321,7 @@ begin
     ctrl_addr_i    => cache.ctrl_addr,      -- access address
     ctrl_we_i      => cache.ctrl_we,        -- write enable (full-word)
     ctrl_wdata_i   => cache.ctrl_wdata,     -- write data
+    ctrl_wstat_i   => cache.ctrl_wstat,     -- write status
     ctrl_tag_we_i  => cache.ctrl_tag_we,    -- write tag to selected block
     ctrl_valid_i   => cache.ctrl_valid_we,  -- make selected block valid
     ctrl_invalid_i => cache.ctrl_invalid_we -- make selected block invalid
@@ -382,6 +396,7 @@ entity neorv32_icache_memory is
     host_addr_i    : in  std_ulogic_vector(31 downto 0); -- access address
     host_re_i      : in  std_ulogic; -- read enable
     host_rdata_o   : out std_ulogic_vector(31 downto 0); -- read data
+    host_rstat_o   : out std_ulogic; -- read status
     -- access status (1 cycle delay to access) --
     hit_o          : out std_ulogic; -- hit access
     -- ctrl cache access (write-only) --
@@ -389,6 +404,7 @@ entity neorv32_icache_memory is
     ctrl_addr_i    : in  std_ulogic_vector(31 downto 0); -- access address
     ctrl_we_i      : in  std_ulogic; -- write enable (full-word)
     ctrl_wdata_i   : in  std_ulogic_vector(31 downto 0); -- write data
+    ctrl_wstat_i   : in  std_ulogic; -- write status
     ctrl_tag_we_i  : in  std_ulogic; -- write tag to selected block
     ctrl_valid_i   : in  std_ulogic; -- make selected block valid
     ctrl_invalid_i : in  std_ulogic  -- make selected block invalid
@@ -426,14 +442,14 @@ architecture neorv32_icache_memory_rtl of neorv32_icache_memory is
   end record;
   signal host_acc_addr, ctrl_acc_addr : acc_addr_t;
 
-  -- cache data memory --
-  type cache_mem_t is array (0 to cache_entries_c-1) of std_ulogic_vector(31 downto 0);
+  -- cache data memory (32-bit data + 1-bit status) --
+  type cache_mem_t is array (0 to cache_entries_c-1) of std_ulogic_vector(31+1 downto 0);
   signal cache_data_memory_s0 : cache_mem_t; -- set 0
   signal cache_data_memory_s1 : cache_mem_t; -- set 1
 
   -- cache data memory access --
-  type cache_rdata_t is array (0 to 1) of std_ulogic_vector(31 downto 0);
-  signal cache_rdata  : cache_rdata_t;
+  type cache_rdata_t is array (0 to 1) of std_ulogic_vector(31+1 downto 0);
+  signal cache_rd     : cache_rdata_t;
   signal cache_index  : std_ulogic_vector(cache_index_size_c-1 downto 0);
   signal cache_offset : std_ulogic_vector(cache_offset_size_c-1 downto 0);
   signal cache_addr   : std_ulogic_vector((cache_index_size_c+cache_offset_size_c)-1 downto 0); -- index & offset
@@ -450,7 +466,7 @@ architecture neorv32_icache_memory_rtl of neorv32_icache_memory is
 
 begin
 
-	-- Access Address Decomposition -----------------------------------------------------------
+  -- Access Address Decomposition -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   host_acc_addr.tag    <= host_addr_i(31 downto 31-(cache_tag_size_c-1));
   host_acc_addr.index  <= host_addr_i(31-cache_tag_size_c downto 2+cache_offset_size_c);
@@ -461,7 +477,7 @@ begin
   ctrl_acc_addr.offset <= ctrl_addr_i(2+(cache_offset_size_c-1) downto 2); -- discard byte offset
 
 
-	-- Cache Access History -------------------------------------------------------------------
+  -- Cache Access History -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   access_history: process(clk_i)
   begin
@@ -480,7 +496,7 @@ begin
   set_select <= '0' when (ICACHE_NUM_SETS = 1) else (not history.to_be_replaced);
 
 
-	-- Status flag memory ---------------------------------------------------------------------
+  -- Status flag memory ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   status_memory: process(clk_i)
   begin
@@ -511,7 +527,7 @@ begin
   end process status_memory;
 
 
-	-- Tag memory -----------------------------------------------------------------------------
+  -- Tag memory -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   tag_memory: process(clk_i)
   begin
@@ -543,26 +559,27 @@ begin
   hit_o <= '1' when (or_reduce_f(hit) = '1') else '0';
 
 
-	-- Cache Data Memory ----------------------------------------------------------------------
+  -- Cache Data Memory ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   cache_mem_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
       if (cache_we = '1') then -- write access from control (full-word)
         if (set_select = '0') or (ICACHE_NUM_SETS = 1) then
-          cache_data_memory_s0(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i;
+          cache_data_memory_s0(to_integer(unsigned(cache_addr))) <= ctrl_wstat_i & ctrl_wdata_i;
         else
-          cache_data_memory_s1(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i;
+          cache_data_memory_s1(to_integer(unsigned(cache_addr))) <= ctrl_wstat_i & ctrl_wdata_i;
         end if;
       end if;
       -- read access from host (full-word) --
-      cache_rdata(0) <= cache_data_memory_s0(to_integer(unsigned(cache_addr)));
-      cache_rdata(1) <= cache_data_memory_s1(to_integer(unsigned(cache_addr)));
+      cache_rd(0) <= cache_data_memory_s0(to_integer(unsigned(cache_addr)));
+      cache_rd(1) <= cache_data_memory_s1(to_integer(unsigned(cache_addr)));
     end if;
   end process cache_mem_access;
 
   -- data output --
-  host_rdata_o <= cache_rdata(0) when (hit(0) = '1') or (ICACHE_NUM_SETS = 1) else cache_rdata(1);
+  host_rdata_o <= cache_rd(0)(31 downto 0) when (hit(0) = '1') or (ICACHE_NUM_SETS = 1) else cache_rd(1)(31 downto 0);
+  host_rstat_o <= cache_rd(0)(32)          when (hit(0) = '1') or (ICACHE_NUM_SETS = 1) else cache_rd(1)(32);
 
   -- cache block ram access address --
   cache_addr <= cache_index & cache_offset;
