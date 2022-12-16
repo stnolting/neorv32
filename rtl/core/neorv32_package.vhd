@@ -149,7 +149,7 @@ package neorv32_package is
   constant dm_pbuf_base_c       : std_ulogic_vector(31 downto 0) := x"fffff880";
   constant dm_data_base_c       : std_ulogic_vector(31 downto 0) := x"fffff900";
   constant dm_sreg_base_c       : std_ulogic_vector(31 downto 0) := x"fffff980";
-  -- OCD firmware entry points - this needs to be sync with the OCD firmware (sw/ocd-firmware/park_loop.S) --
+  -- park loop entry points - these need to be sync with the OCD firmware (sw/ocd-firmware/park_loop.S) --
   constant dm_park_entry_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(dm_code_base_c) + 16); -- normal entry point
   constant dm_exc_entry_c       : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(dm_code_base_c) +  0); -- entry point for exceptions
 
