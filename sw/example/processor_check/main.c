@@ -475,29 +475,24 @@ int main() {
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT)) {
     cnt_test++;
 
-    // create test program in RAM
-    static const uint32_t dummy_ext_program[2] __attribute__((aligned(8))) = {
-      0x3407D073, // csrwi mscratch, 15
-      0x00008067  // ret (32-bit)
-    };
+    // clear scratch CSR
+    neorv32_cpu_csr_write(CSR_MSCRATCH, 0);
 
-    // copy to external memory
-    if (memcpy((void*)EXT_MEM_BASE, (void*)&dummy_ext_program, (size_t)sizeof(dummy_ext_program)) == NULL) {
-      test_fail();
+    // setup test program in external memory
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+0, 0x3407D073); // csrwi mscratch, 15
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+4, 0x00008067); // ret (32-bit)
+
+    // execute program
+    asm volatile("fence.i"); // flush i-cache
+    tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
+    asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
+
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) && // make sure there was no exception
+        (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15)) { // make sure the program was executed in the right way
+      test_ok();
     }
     else {
-      // execute program
-      asm volatile("fence.i"); // flush i-cache
-      tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
-      asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
-    
-      if ((neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) && // make sure there was no exception
-          (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15)) { // make sure the program was executed in the right way
-        test_ok();
-      }
-      else {
-        test_fail();
-      }
+      test_fail();
     }
   }
   else {
@@ -596,10 +591,19 @@ int main() {
   PRINT_STANDARD("[%i] I_ACC (instr. bus access) EXC ", cnt_test);
   cnt_test++;
 
-  // call unreachable aligned address
-  ((void (*)(void))ADDR_UNREACHABLE)();
+  // put two "ret" instructions to the beginning of the external memory module
+  neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+0, 0x00008067); // exception handler hack will see this instruction as exception source
+  neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+4, 0x00008067); // and will try to resume execution here
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ACCESS) {
+  // jump to beginning of external memory minus 4 bytes
+  // this will cause an instruction access fault as there is no module responding to the fetch request
+  // the exception handler will try to resume at the instruction 4 bytes ahead, which is the "ret" we just created
+  asm volatile("fence.i"); // flush i-cache
+  tmp_a = ((uint32_t)EXT_MEM_BASE) - 4;
+  asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
+
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ACCESS) && // correct exception cause
+      (neorv32_cpu_csr_read(CSR_MTVAL) == tmp_a))  { // correct trap value (address of instruction that caused ifetch error)
     test_ok();
   }
   else {
@@ -1817,6 +1821,11 @@ void global_trap_handler(void) {
 
   // clear all pending FIRQs
   neorv32_cpu_csr_write(CSR_MIP, 0);
+
+  // hack: make "instruction access fault" exception resumable as we exactly know how to handle it here
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ACCESS) {
+    neorv32_cpu_csr_write(CSR_MEPC, neorv32_cpu_csr_read(CSR_MEPC) + 4);
+  }
 
   // hack: always come back in MACHINE MODE
   uint32_t mask = (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L);
