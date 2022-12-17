@@ -887,7 +887,7 @@ official RISC-V privileged architecture spec. The "ID [C]" names are defined by 
 be used in plain C code. The "`mepc`" and "`mtval`" columns show the value written to <<_mepc>> and <<_mtval>> CSRs when a trap is triggered:
 
 * **IPC** - address of interrupted instruction (instruction has not been executed yet)
-* **PC** - address of instruction that caused the trap
+* **PC** - address of instruction that caused the trap (instruction has been executed)
 * **ADR** - bad memory access address that caused the trap
 * **0** - zero
 
@@ -898,7 +898,7 @@ be used in plain C code. The "`mepc`" and "`mtval`" columns show the value writt
 | Prio. | `mcause`     | [RISC-V] | ID [C]                   | Cause                                  | `mepc`  | `mtval`
 7+^| **Synchronous Exceptions**
 | 1     | `0x00000000` | 0.0      | _TRAP_CODE_I_MISALIGNED_ | instruction address misaligned         | **PC**  | **ADR**
-| 2     | `0x00000001` | 0.1      | _TRAP_CODE_I_ACCESS_     | instruction access bus fault           | **PC**  | **ADR**
+| 2     | `0x00000001` | 0.1      | _TRAP_CODE_I_ACCESS_     | instruction access bus fault           | **IPC** | **ADR**
 | 3     | `0x00000002` | 0.2      | _TRAP_CODE_I_ILLEGAL_    | illegal instruction                    | **PC**  | **0**
 | 4     | `0x0000000B` | 0.11     | _TRAP_CODE_MENV_CALL_    | environment call from M-mode (`ecall`) | **PC**  | **0**
 | 5     | `0x00000008` | 0.8      | _TRAP_CODE_UENV_CALL_    | environment call from U-mode (`ecall`) | **PC**  | **0**
@@ -937,7 +937,7 @@ The following table provides a summarized description of the actual events for t
 [options="header",grid="rows"]
 |=======================
 | Trap ID [C] | Triggered when ...
-| _TRAP_CODE_I_MISALIGNED_ | fetching a 32-bit instruction word that is not 32-bit-aligned (_see note below!_)
+| _TRAP_CODE_I_MISALIGNED_ | fetching a 32-bit instruction word that is not 32-bit-aligned (see note below)
 | _TRAP_CODE_I_ACCESS_     | bus timeout or bus error during instruction word fetch
 | _TRAP_CODE_I_ILLEGAL_    | trying to execute an invalid instruction word (malformed or not supported) or on a privilege violation
 | _TRAP_CODE_MENV_CALL_    | executing `ecall` instruction in machine-mode
@@ -953,14 +953,12 @@ The following table provides a summarized description of the actual events for t
 | _TRAP_CODE_MTI_          | processor-internal machine timer overflow OR user-defined processor-external source (via dedicated top-entity signal)
 |=======================
 
-.Misaligned Instruction Address Exception
-[NOTE]
-For 32-bit-only instructions (= no `C` extension) the misaligned instruction exception
-is raised if bit 1 of the fetch address is set (i.e. not on a 32-bit boundary). If the `C` extension is implemented
-there will never be a misaligned instruction exception _at all_.
-In both cases bit 0 of the program counter (and all related CSRs) is hardwired to zero.
+.Resumable Exceptions
+[WARNING]
+Note that not all exceptions are resumable. For example, the "instruction access fault" exception or the "instruction address misaligned"
+exception are not resumable in most cases. These exception might indicate a fatal memory hardware failure.
 
-.Trigger Type
+.Interrupt Trigger Type
 [IMPORTANT]
 The RISC-V standard interrupts (MEI, MSI and MTI) are **level-triggered and high-active**. Once set the signal has to stay high until
 the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register). The RISC-V standard interrupts
@@ -968,6 +966,13 @@ can **NOT** be acknowledged by writing zero to the according <<_mip>> CSR bit. +
 +
 In contrast, the NEORV32 fast interrupt request channels become pending after being triggering by **a rising edge**. A pending FIRQ has to
 be explicitly cleared by writing zero to the according <<_mip>> CSR bit.
+
+.Misaligned Instruction Address Exception
+[NOTE]
+For 32-bit-only instructions (= no `C` extension) the misaligned instruction exception
+is raised if bit 1 of the fetch address is set (i.e. not on a 32-bit boundary). If the `C` extension is implemented
+there will never be a misaligned instruction exception _at all_.
+In both cases bit 0 of the program counter (and all related CSRs) is hardwired to zero.
 
 
 
