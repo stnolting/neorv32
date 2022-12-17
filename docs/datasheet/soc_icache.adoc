@@ -23,10 +23,8 @@ The cache is implemented if the _ICACHE_EN_ generic is true. The size of the cac
 _ICACHE_BLOCK_SIZE_ (the size of a single cache block/page/line in bytes; has to be a power of two and >=
 4 bytes), _ICACHE_NUM_BLOCKS_ (the total amount of cache blocks; has to be a power of two and >= 1) and
 the actual cache associativity _ICACHE_ASSOCIATIVITY_ (number of sets; 1 = direct-mapped, 2 = 2-way set-associative,
-has to be a power of two and >= 1).
-
-If the cache associativity (_ICACHE_ASSOCIATIVITY_) is greater than 1 the LRU replacement policy (least recently
-used) is used.
+has to be a power of two and >= 1). If the cache associativity (_ICACHE_ASSOCIATIVITY_) is greater than one
+the LRU replacement policy (least recently used) is used.
 
 .Cache Memory HDL
 [NOTE]
@@ -56,8 +54,8 @@ Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_c
 
 **Bus Access Fault Handling**
 
-The cache always loads a complete cache block (_ICACHE_BLOCK_SIZE_ bytes) aligned to it's size every time a
-cache miss is detected. If any of the accessed addresses within a single block do not successfully
-acknowledge the transfer (i.e. issuing an error signal or timing out) the whole cache block is invalidated and
-any access to an address within this cache block will raise an instruction fetch bus error exception.
-
+The cache always loads a complete cache block (_ICACHE_BLOCK_SIZE_ bytes; aligned to the block size) every time a
+cache miss is detected. Each cached word from this block provides a single status bit that indicates if the
+according bus access was successful or caused a bus error. Hence, the whole cache block remains valid even
+if certain addresses inside caused a bus error. If the CPU accesses any of the faulty cache words, an
+instruction access error exception is raised.

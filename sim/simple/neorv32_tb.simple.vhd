@@ -70,6 +70,8 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   constant f_clock_c               : natural := 100000000; -- main clock in Hz
   constant baud0_rate_c            : natural := 19200; -- simulation UART0 (primary UART) baud rate
   constant baud1_rate_c            : natural := 19200; -- simulation UART1 (secondary UART) baud rate
+  constant icache_en_c             : boolean := true; -- implement i-cache
+  constant icache_block_size_c     : natural := 64; -- i-cache block size in bytes
   -- simulated external Wishbone memory A (can be used as external IMEM) --
   constant ext_mem_a_base_addr_c   : std_ulogic_vector(31 downto 0) := x"00000000"; -- wishbone memory base address (external IMEM base)
   constant ext_mem_a_size_c        : natural := MEM_INT_IMEM_SIZE; -- wishbone memory size in bytes
@@ -80,7 +82,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   constant ext_mem_b_latency_c     : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulated external Wishbone memory C (can be used to simulate external IO access) --
   constant ext_mem_c_base_addr_c   : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address (default begin of EXTERNAL IO area)
-  constant ext_mem_c_size_c        : natural := 64; -- wishbone memory size in bytes
+  constant ext_mem_c_size_c        : natural := icache_block_size_c/2; -- wishbone memory size in bytes, should be smaller than an iCACHE block
   constant ext_mem_c_latency_c     : natural := 128; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulation interrupt trigger --
   constant irq_trigger_base_addr_c : std_ulogic_vector(31 downto 0) := x"FF000000";
@@ -204,9 +206,9 @@ begin
     MEM_INT_DMEM_EN              => int_dmem_c,    -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => dmem_size_c,   -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_EN                    => true,          -- implement instruction cache
+    ICACHE_EN                    => icache_en_c,   -- implement instruction cache
     ICACHE_NUM_BLOCKS            => 8,             -- i-cache: number of blocks (min 2), has to be a power of 2
-    ICACHE_BLOCK_SIZE            => 64,            -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_BLOCK_SIZE            => icache_block_size_c, -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         => 2,             -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
     -- External memory interface --
     MEM_EXT_EN                   => true,          -- implement external memory bus interface?
