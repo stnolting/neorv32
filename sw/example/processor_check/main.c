@@ -475,29 +475,24 @@ int main() {
   if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT)) {
     cnt_test++;
 
-    // create test program in RAM
-    static const uint32_t dummy_ext_program[2] __attribute__((aligned(8))) = {
-      0x3407D073, // csrwi mscratch, 15
-      0x00008067  // ret (32-bit)
-    };
+    // clear scratch CSR
+    neorv32_cpu_csr_write(CSR_MSCRATCH, 0);
 
-    // copy to external memory
-    if (memcpy((void*)EXT_MEM_BASE, (void*)&dummy_ext_program, (size_t)sizeof(dummy_ext_program)) == NULL) {
-      test_fail();
+    // setup test program in external memory
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+0, 0x3407D073); // csrwi mscratch, 15
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+4, 0x00008067); // ret (32-bit)
+
+    // execute program
+    asm volatile("fence.i"); // flush i-cache
+    tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
+    asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
+
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) && // make sure there was no exception
+        (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15)) { // make sure the program was executed in the right way
+      test_ok();
     }
     else {
-      // execute program
-      asm volatile("fence.i"); // flush i-cache
-      tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
-      asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
-    
-      if ((neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) && // make sure there was no exception
-          (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15)) { // make sure the program was executed in the right way
-        test_ok();
-      }
-      else {
-        test_fail();
-      }
+      test_fail();
     }
   }
   else {
