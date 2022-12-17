@@ -135,9 +135,11 @@ int neorv32_rte_exception_uninstall(uint8_t id) {
  **************************************************************************/
 static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32_rte_core(void) {
 
+  uint32_t rte_mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
+
   // find according trap handler
   uint32_t rte_handler;
-  switch (neorv32_cpu_csr_read(CSR_MCAUSE)) {
+  switch (rte_mcause) {
     case TRAP_CODE_I_MISALIGNED: rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_MISALIGNED]; break;
     case TRAP_CODE_I_ACCESS:     rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_ACCESS]; break;
     case TRAP_CODE_I_ILLEGAL:    rte_handler = __neorv32_rte_vector_lut[RTE_TRAP_I_ILLEGAL]; break;
@@ -176,8 +178,10 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32
   (*handler_pnt)();
 
   // compute return address
-  uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
-  if (((int32_t)neorv32_cpu_csr_read(CSR_MCAUSE)) >= 0) { // modify pc only if not interrupt (MSB cleared)
+  // WARNING: some exceptions are absolutely NOT resumable! (instruction access faultd)
+  if (((int32_t)rte_mcause) >= 0) { // modify pc only if not interrupt (MSB cleared)
+
+    uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
 
     // get low half word of faulting instruction
     uint32_t rte_trap_inst = (uint32_t)neorv32_cpu_load_unsigned_half(rte_mepc);
