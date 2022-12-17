@@ -7,10 +7,15 @@ the CSR access instructions. The *[ASM]* name can be used for (inline) assembly 
 understood by the assembler/compiler. The *[C]* names are defined by the NEORV32 core library and can be
 used as immediate in plain C code. The *R/W* column shows whether the CSR can be read and/or written.
 
-.Not Implemented CSRs / Bits
+.CSRs that are not Implemented
 [NOTE]
 All CSR bits that are unused / not implemented / not shown are _hardwired to zero_. All CSRs that are not
 implemented (not supported or disabled) will raise an illegal instruction exception if accessed.
+
+.WARL Behavior
+[NOTE]
+All writable CSRs provide **WARL** behavior (write all values; read only legal values). Application software
+should read back a CSR after writing to check if the targeted bits can actually be modified (or are read-only). 
 
 .Debug-Mode CSRs
 [NOTE]
