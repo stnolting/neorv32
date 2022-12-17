@@ -229,6 +229,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     irq_fire      : std_ulogic; -- set if there is a valid source in the interrupt buffer
     cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR + debug-mode entry identifier
     cause_nxt     : std_ulogic_vector(6 downto 0);
+    epc           : std_ulogic_vector(XLEN-1 downto 0); -- exception program counter
     db_irq_fire   : std_ulogic; -- set if there is a valid IRQ source in the "enter debug mode" trap buffer
     db_irq_en     : std_ulogic; -- set if IRQs are allowed in debug mode
     --
@@ -429,7 +430,7 @@ begin
             if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
               fetch_engine.state <= IF_RESTART;
             elsif -- > this is something like a simple branch prediction (predict "always taken"):
-                  -- > do not trigger new instruction fetch when a branch instruction is being executed;
+                  -- > do not trigger new instruction fetch when a branch instruction is being executed (wait for branch destination);
                   -- > the two LSB should be "11" for rv32, so we do not need to check them here
                   (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_branch_c(6 downto 2)) or -- might be taken
                   (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_jal_c(6 downto 2)) or    -- will be taken
@@ -1558,6 +1559,10 @@ begin
   -- "non-maskable interrupt for debug-mode entry
   trap_ctrl.db_irq_fire <= (trap_ctrl.irq_buf(irq_db_step_c) or trap_ctrl.irq_buf(irq_db_halt_c)) when (CPU_EXTENSION_RISCV_DEBUG = true) else '0'; -- "NMI" for debug mode entry
 
+  -- exception program counter (for updating xCAUSE CSRs) --
+  trap_ctrl.epc <= (execute_engine.pc(XLEN-1 downto 1) & '0') when (((trap_ctrl.cause(trap_ctrl.cause'left)) = '1') or (trap_ctrl.cause = trap_iba_c)) else -- interrupted instruction
+                   (execute_engine.pc_last(XLEN-1 downto 1) & '0'); -- last executed instruction
+
 
   -- Trap Priority Encoder ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1902,11 +1907,7 @@ begin
               csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- type + identifier
 
               -- trap PC --
-              if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS (async source)
-                csr.mepc <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
-              else -- for sync. EXCEPTIONS (sync source)
-                csr.mepc <= execute_engine.pc_last(XLEN-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
-              end if;
+              csr.mepc <= trap_ctrl.epc;
 
               -- trap value --
               case trap_ctrl.cause is
@@ -1937,11 +1938,7 @@ begin
               csr.dcsr_prv <= csr.privilege;
 
               -- trap PC --
-              if (trap_ctrl.cause(trap_ctrl.cause'left) = '1') then -- for INTERRUPTS (async source)
-                csr.dpc <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- this is the CURRENT pc = interrupted instruction
-              else -- for sync. EXCEPTIONS (sync source)
-                csr.dpc <= execute_engine.pc_last(XLEN-1 downto 1) & '0'; -- this is the LAST pc = last executed instruction
-              end if;
+              csr.dpc <= trap_ctrl.epc;
 
             end if;
 
