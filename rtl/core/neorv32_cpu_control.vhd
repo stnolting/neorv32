@@ -2015,6 +2015,7 @@ begin
           csr.dcsr_step    <= '0';
           csr.dcsr_ebreaku <= '0';
           csr.dcsr_prv     <= priv_mode_m_c;
+          csr.dcsr_cause   <= (others => '0');
           csr.dpc          <= (others => '0');
           csr.dscratch0    <= (others => '0');
           csr.tdata1_exe   <= '0';
