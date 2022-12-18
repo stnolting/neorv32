@@ -1235,8 +1235,7 @@ begin
       -- machine trap setup/handling & counters --
       when csr_mstatus_c | csr_mstatush_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mscratch_c | csr_mepc_c | csr_mcause_c | csr_mip_c | csr_mtval_c |
            csr_mcycle_c | csr_mcycleh_c | csr_minstret_c | csr_minstreth_c | csr_mcountinhibit_c =>
-        -- NOTE: MISA and MTVAL are read-only in the NEORV32 but we do not cause an exception here for compatibility.
-        -- Machine-level code should read-back those CSRs after writing them to realize they are read-only.
+        -- NOTE: NEORV32's MISA CSR is read-only but we do not cause an exception here for compatibility.
         csr_acc_valid <= csr.privilege_eff; -- M-mode only 
 
       -- machine information registers & NEORV32-specific registers, read-only --
@@ -1775,6 +1774,10 @@ begin
             if (csr.addr(3 downto 0) = csr_mcause_c(3 downto 0)) then
               csr.mcause <= csr.wdata(31) & csr.wdata(4 downto 0); -- type (async/sync) & identifier
             end if;
+           -- R/W: mtval - machine trap value --
+           if (csr.addr(3 downto 0) = csr_mtval_c(3 downto 0)) then
+             csr.mtval <= csr.wdata;
+           end if;
             -- R/W: mip - machine interrupt pending --
             if (csr.addr(3 downto 0) = csr_mip_c(3 downto 0)) then
               csr.mip_firq_nclr <= csr.wdata(31 downto 16); -- set low to clear according bit (FIRQs only)
@@ -2134,7 +2137,7 @@ begin
             csr.rdata(31)         <= csr.mcause(5);
             csr.rdata(4 downto 0) <= csr.mcause(4 downto 0);
 
-          when csr_mtval_c => -- mtval (r/-): machine bad address or instruction
+          when csr_mtval_c => -- mtval (r/w): machine bad address or instruction
             csr.rdata <= csr.mtval;
 
           when csr_mip_c => -- mip (r/w): machine interrupt pending
