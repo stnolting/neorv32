@@ -46,7 +46,7 @@ information about those CSRs.
 | 0x340   | <<_mscratch>>                       | _CSR_MSCRATCH_       | r/w | Machine scratch register
 | 0x341   | <<_mepc>>                           | _CSR_MEPC_           | r/w | Machine exception program counter
 | 0x342   | <<_mcause>>                         | _CSR_MCAUSE_         | r/w | Machine trap cause
-| 0x343   | <<_mtval>>                          | _CSR_MTVAL_          | r/- | Machine bad address or instruction
+| 0x343   | <<_mtval>>                          | _CSR_MTVAL_          | r/w | Machine bad address or instruction
 | 0x344   | <<_mip>>                            | _CSR_MIP_            | r/w | Machine interrupt pending register
 5+^| **<<_machine_physical_memory_protection_csrs>>**
 | 0x3a0   | <<_pmpcfg, `pmpcfg0`>>              | _CSR_PMPCFG0_        | r/w | Physical memory protection configuration for region 0-3
@@ -399,9 +399,6 @@ See section <<_neorv32_trap_listing>> for more information.
 3+<| Reset value: `0x00000000`
 |=======================
 
-[IMPORTANT]
-The NEORV32 `mtval` CSR is **read-only**. However, a write access will _not_ raise an illegal instruction exception.
-
 [cols="^5,^5"]
 [options="header",grid="rows"]
 |=======================
@@ -412,8 +409,8 @@ The NEORV32 `mtval` CSR is **read-only**. However, a write access will _not_ rai
 |=======================
 
 [NOTE]
-In case an invalid compressed instruction raised an illegal instruction exception, `mtval` will show the
-according de-compressed instruction word. To get the "real" 16-bit instruction that caused the exception
+In case an invalid **compressed instruction** raised an illegal instruction exception, `mtval` will show the
+according de-compressed instruction word. To get the actually 16-bit instruction that caused the exception
 perform a memory load using the address stored in <<_mepc>>.
 
 [TIP]

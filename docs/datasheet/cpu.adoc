@@ -73,8 +73,8 @@ This list shows the currently identified issues regarding full RISC-V-compatibil
 
 .Read-Only "Read-Write" CSRs
 [IMPORTANT]
-The NEORV32 <<_misa>> and <<_mtval>> CSRs are _read-only_ - the RISC-V specs. declares
-these registers to be _read/write_. Any machine-mode write access to them is ignored and will _not_
+The NEORV32 <<_misa>> CSR is _read-only_. Hence, ISA capabilities are fixed at synthesis time and cannot be
+enabled/disabled dynamically at runtime. Any machine-mode write access to this CSR is ignored and will _not_
 cause any exceptions or side-effects to maintain RISC-V compatibility.
 
 .Physical Memory Protection (PMP)
@@ -83,7 +83,7 @@ The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only 
 (top of region) mode and only up to 16 PMP regions.
 
 .No Hardware Support of Misaligned Memory Accesses
-[WARNING]
+[IMPORTANT]
 The CPU does not support resolving unaligned memory access by the hardware (this is not a
 RISC-V-incompatibility issue but an important thing to know!). Any kind of unaligned memory access
 will raise an exception to allow a _software-based_ emulation provided by the application.
