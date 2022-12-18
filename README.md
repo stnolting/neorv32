@@ -41,7 +41,7 @@ informed via _precise and resumable_ hardware exceptions.
 
 :recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
 
-:heavy_check_mark: [Automatic verification](https://github.com/stnolting/neorv32-riscof) of RISC-V spec. compatibility using **RISCOF**.
+:heavy_check_mark: [Continouos integration](#Project-Status) to check for regressions (including RISC-V ISA compatibility using **RISCOF**).
 
 :package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
 [community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
