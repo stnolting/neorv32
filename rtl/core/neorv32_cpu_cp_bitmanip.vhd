@@ -372,7 +372,7 @@ begin
       for i in index_size_f(XLEN)-1 downto 0 loop
         if (sha_reg(i) = '1') then
           bs_level(i)(XLEN-1 downto XLEN-(2**i)) <= bs_level(i+1)((2**i)-1 downto 0);
-          bs_level(i)((XLEN-(2**i))-1 downto 0) <= bs_level(i+1)(XLEN-1 downto 2**i);
+          bs_level(i)((XLEN-(2**i))-1 downto 0)  <= bs_level(i+1)(XLEN-1 downto 2**i);
         else
           bs_level(i) <= bs_level(i+1);
         end if;

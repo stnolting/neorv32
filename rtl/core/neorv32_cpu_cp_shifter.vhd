@@ -87,25 +87,25 @@ begin
   serial_shifter:
   if (FAST_SHIFT_EN = false) generate
 
-    -- shifter core --
     serial_shifter_core: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
         shifter.busy_ff <= '0';
         shifter.busy    <= '0';
-        shifter.cnt     <= (others => '-'); -- no reset required
-        shifter.sreg    <= (others => '-'); -- no reset required
+        shifter.cnt     <= (others => '0');
+        shifter.sreg    <= (others => '0');
       elsif rising_edge(clk_i) then
+        -- arbitration --
         shifter.busy_ff <= shifter.busy;
         if (start_i = '1') then
           shifter.busy <= '1';
         elsif (shifter.done = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- abort on trap
           shifter.busy <= '0';
         end if;
-        --
+        -- shift register --
         if (start_i = '1') then -- trigger new shift
-          shifter.cnt  <= shamt_i; -- shift amount
-          shifter.sreg <= rs1_i; -- shift data
+          shifter.cnt  <= shamt_i;
+          shifter.sreg <= rs1_i;
         elsif (or_reduce_f(shifter.cnt) = '1') then -- running shift (cnt != 0)
           shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 1);
           if (ctrl_i(ctrl_ir_funct3_2_c) = '0') then -- SLL: shift left logical
@@ -133,17 +133,17 @@ begin
     -- shifter core --
     barrel_shifter_core: process(rs1_i, shamt_i, ctrl_i, bs_level)
     begin
-      -- input level: convert left shifts to right shifts --
+      -- input layer: convert left shifts to right shifts by reversing --
       if (ctrl_i(ctrl_ir_funct3_2_c) = '0') then -- is left shift?
         bs_level(index_size_f(XLEN)) <= bit_rev_f(rs1_i); -- reverse bit order of input operand
       else
         bs_level(index_size_f(XLEN)) <= rs1_i;
       end if;
       -- shifter array (right-shifts only) --
-      for i in index_size_f(XLEN)-1 downto 0 loop
+      for i in (index_size_f(XLEN)-1) downto 0 loop
         if (shamt_i(i) = '1') then
           bs_level(i)(XLEN-1 downto XLEN-(2**i)) <= (others => (bs_level(i+1)(XLEN-1) and ctrl_i(ctrl_ir_funct12_10_c)));
-          bs_level(i)((XLEN-(2**i))-1 downto 0) <= bs_level(i+1)(XLEN-1 downto 2**i);
+          bs_level(i)((XLEN-(2**i))-1 downto 0)  <= bs_level(i+1)(XLEN-1 downto 2**i);
         else
           bs_level(i) <= bs_level(i+1);
         end if;
@@ -159,7 +159,7 @@ begin
       end if;
     end process barrel_shifter_buf;
 
-    -- output gate and re-convert original left shifts --
+    -- output layer: output gate and re-convert original left shifts --
     res_o <= (others => '0') when (bs_start = '0') else bit_rev_f(bs_result) when (ctrl_i(ctrl_ir_funct3_2_c) = '0') else bs_result;
 
     -- processing done --
