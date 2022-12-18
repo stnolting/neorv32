@@ -118,8 +118,8 @@ enum NEORV32_CSR_enum {
   CSR_MSCRATCH       = 0x340, /**< 0x340 - mscratch (r/w): Machine scratch register */
   CSR_MEPC           = 0x341, /**< 0x341 - mepc     (r/w): Machine exception program counter */
   CSR_MCAUSE         = 0x342, /**< 0x342 - mcause   (r/w): Machine trap cause */
-  CSR_MTVAL          = 0x343, /**< 0x343 - mtval    (r/-): Machine trap value register */
-  CSR_MIP            = 0x344, /**< 0x344 - mip      (r/-): Machine interrupt pending register */
+  CSR_MTVAL          = 0x343, /**< 0x343 - mtval    (r/w): Machine trap value register */
+  CSR_MIP            = 0x344, /**< 0x344 - mip      (r/w): Machine interrupt pending register */
 
   /* physical memory protection */
   CSR_PMPCFG0        = 0x3a0, /**< 0x3a0 - pmpcfg0 (r/w): Physical memory protection configuration register 0 (entries 0..3) */
@@ -154,10 +154,10 @@ enum NEORV32_CSR_enum {
   CSR_MCONTEXT       = 0x7a8, /**< 0x7a8 - mcontext (r/(w)): Machine context register */
   CSR_SCONTEXT       = 0x7aa, /**< 0x7aa - scontext (r/(w)): Supervisor context register */
 
-  /* not accessible by m-mode software */
-//CSR_DCSR           = 0x7b0, /**< 0x7b0 - dcsr     (-/-): Debug status and control register */
-//CSR_DPC            = 0x7b1, /**< 0x7b1 - dpc      (-/-): Debug program counter */
-//CSR_DSCRATCH       = 0x7b2, /**< 0x7b2 - dscratch (-/-): Debug scratch register */
+  /* CPU debug mode CSRs - not accessible by software running outside of debug mode */
+  CSR_DCSR           = 0x7b0, /**< 0x7b0 - dcsr      (-/-): Debug status and control register */
+  CSR_DPC            = 0x7b1, /**< 0x7b1 - dpc       (-/-): Debug program counter */
+  CSR_DSCRATCH0      = 0x7b2, /**< 0x7b2 - dscratch0 (-/-): Debug scratch register */
 
   /* counter and timers - low word */
   CSR_MCYCLE         = 0xb00, /**< 0xb00 - mcycle   (r/w): Machine cycle counter low word */
