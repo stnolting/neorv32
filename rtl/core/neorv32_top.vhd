@@ -460,6 +460,10 @@ begin
   assert not (ON_CHIP_DEBUGGER_EN = true) report
     "NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD)." severity note;
 
+  -- instruction cache --
+  assert not ((ICACHE_EN = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report
+    "NEORV32 CPU CONFIG WARNING! The <CPU_EXTENSION_RISCV_Zifencei> is required to perform i-cache memory sync operations." severity warning;
+
 
 -- ****************************************************************************************************************************
 -- Clock and Reset System
