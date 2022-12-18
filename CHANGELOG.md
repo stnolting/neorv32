@@ -32,6 +32,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 18.12.2022 | 1.7.8.9 | `mtval` is no longer read-only and can now be written by machine-mode code; [#460](https://github.com/stnolting/neorv32/pull/460) |
 | 17.12.2022 | 1.7.8.8 | :bug: fix incorrect value written to `mepc` when encountering an "instruction access fault" exception; [#458](https://github.com/stnolting/neorv32/pull/458) |
 | 16.12.2022 | 1.7.8.7 | :bug: fix **instruction cache** block invalidation when a bus access error occurs during memory block fetch (after cache miss); [#457](https://github.com/stnolting/neorv32/pull/457) |
 | 16.12.2022 | 1.7.8.6 | :test_tube: optimized park-loop code (**on-chip debugger firmware**) providing slightly faster debugging response; added explicit address generics for defining debug mode entry points; [#456](https://github.com/stnolting/neorv32/pull/456) |
