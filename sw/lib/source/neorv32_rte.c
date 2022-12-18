@@ -178,7 +178,7 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32
   (*handler_pnt)();
 
   // compute return address
-  // WARNING: some exceptions are absolutely NOT resumable! (instruction access faultd)
+  // WARNING: some exceptions are absolutely NOT resumable! (e.g. instruction access fault)
   if (((int32_t)rte_mcause) >= 0) { // modify pc only if not interrupt (MSB cleared)
 
     uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
