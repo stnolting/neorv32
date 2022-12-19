@@ -3,13 +3,13 @@
 -- # ********************************************************************************************* #
 -- # CPU operations are controlled by several "engines" (modules). These engines operate in        #
 -- # parallel to implement a simple pipeline:                                                      #
--- #  + Fetch engine:   Fetches 32-bit chunks of instruction words                                 #
--- #  + Issue engine:   Decodes compressed instructions, aligns and queues instruction words       #
--- #  + Execute engine: Multi-cycle execution of instructions (generate control signals)           #
--- #  + Trap engine:    Handles interrupts and exceptions                                          #
--- #  + CSR module:     Read/write access to control and status registers                          #
--- #  + Debug module:   CPU debug mode handling (on-chip debugger)                                 #
--- #  + Trigger module: Hardware-assisted breakpoints (on-chip debugger)                           #
+-- #  + Fetch engine:    Fetches 32-bit chunks of instruction words                                #
+-- #  + Issue engine:    Decodes compressed instructions, aligns and queues instruction words      #
+-- #  + Execute engine:  Multi-cycle execution of instructions (generate control signals)          #
+-- #  + Trap controller: Handles interrupts and exceptions                                         #
+-- #  + CSR module:      Read/write access to control and status registers                         #
+-- #  + Debug module:    CPU debug mode handling (on-chip debugger)                                #
+-- #  + Trigger module:  Hardware-assisted breakpoints (on-chip debugger)                          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -190,8 +190,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
   -- make sure reset state is the first item in the list (discussion #415)
-  type execute_engine_state_t is (BRANCHED, DISPATCH, TRAP_ENTER, TRAP_START, TRAP_EXIT,
-                                  TRAP_EXECUTE, EXECUTE, ALU_WAIT, BRANCH, SYSTEM, MEM_REQ, MEM_WAIT);
+  type execute_engine_state_t is (BRANCHED, DISPATCH, TRAP_ENTER, TRAP_START, TRAP_EXIT, TRAP_EXECUTE,
+                                  EXECUTE, ALU_WAIT, BRANCH, SYSTEM, MEM_REQ, MEM_WAIT);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
