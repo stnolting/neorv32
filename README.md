@@ -35,25 +35,18 @@ Therefore, the CPU ensures that _all_ memory accesses are properly acknowledged 
 instructions are always detected as such. Whenever an unexpected situation occurs the application software is
 informed via _precise and resumable_ hardware exceptions.
 
-:interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
-
-:books: For detailed information see the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
-
-:recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
-
-:heavy_check_mark: [Continuous integration](#Project-Status) to check for regressions (including RISC-V ISA compatibility test using **RISCOF**).
-
-:package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
+* :interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
+* :books: For detailed information see the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
+* :recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
+* :heavy_check_mark: [Continuous integration](#Project-Status) to check for regressions (including RISC-V ISA compatibility test using **RISCOF**).
+* :package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
 [community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
 targeting various FPGA boards and toolchains to get started.
-
-:kite: Support for [Zephyr](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) &
+* :kite: Support for [Zephyr](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) &
 [FreeRTOS](https://github.com/stnolting/neorv32/tree/main/sw/example/demo_freeRTOS) operating systems and
 [LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC Builder Framework.
-
-:label: The project's change log is available in [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
-
-:rocket: Check out the [quick links below](#6-Getting-Started) and the
+* :label: The project's change log is available in [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
+* :rocket: Check out the [quick links below](#6-Getting-Started) and the
 [*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started setting up _your_ NEORV32 processor!
 
 :bulb: Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
