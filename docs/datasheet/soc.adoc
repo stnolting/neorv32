@@ -537,7 +537,7 @@ If the size is less than 64-bit, the unused MSB-aligned counter bits are hardwir
 [frame="all",grid="none"]
 |======
 | **MEM_INT_IMEM_EN** | _boolean_ | false
-3+| Implement processor-internal <<_instruction_memory_imem> when true.
+3+| Implement processor-internal <<_instruction_memory_imem>> when true.
 See sections <<_address_space>> for more information.
 |======
 

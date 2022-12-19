@@ -10,7 +10,7 @@ used as immediate in plain C code. The *R/W* column shows whether the CSR can be
 .CSRs that are not Implemented
 [NOTE]
 All CSR bits that are unused / not implemented / not shown are _hardwired to zero_. All CSRs that are not
-implemented (not supported or disabled) will raise an illegal instruction exception if accessed.
+implemented (not supported or disabled) will raise an illegal instruction exception when being accessed.
 
 .WARL Behavior
 [NOTE]
@@ -386,7 +386,7 @@ The features of this CSR are not implemented yet. The register is read-only and 
 |=======================
 
 [TIP]
-See section <<_neorv32_trap_listing>> for more information.
+See section <<_traps_exceptions_and_interrupts> for more information.
 
 
 :sectnums!:
@@ -414,7 +414,7 @@ according de-compressed instruction word. To get the actually 16-bit instruction
 perform a memory load using the address stored in <<_mepc>>.
 
 [TIP]
-See section <<_neorv32_trap_listing>> for more information.
+See section <<_traps_exceptions_and_interrupts> for more information.
 
 
 :sectnums!:
