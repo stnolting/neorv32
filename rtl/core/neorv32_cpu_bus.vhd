@@ -377,8 +377,8 @@ begin
     if (rstn_i = '0') then
       arbiter.pend      <= '0';
       arbiter.err       <= '0';
-      arbiter.pmp_r_err <= '-';
-      arbiter.pmp_w_err <= '-';
+      arbiter.pmp_r_err <= '0';
+      arbiter.pmp_w_err <= '0';
     elsif rising_edge(clk_i) then
       arbiter.pmp_r_err <= ld_pmp_fault;
       arbiter.pmp_w_err <= st_pmp_fault;
