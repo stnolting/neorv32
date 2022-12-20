@@ -119,36 +119,37 @@ begin
   rden   <= acc_en and rden_i;
 
 
-  -- Read/Write Access ----------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ack_o    <= '-';
-      data_o   <= (others => '-');
-      err_flag <= '0'; -- required
+      err_flag <= '0';
       err_type <= '0';
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      ack_o <= wren or rden;
+      if (control.bus_err = '1') then -- sticky error flag
+        err_flag <= '1';
+        err_type <= control.err_type;
+      elsif (wren = '1') or (rden = '1') then -- clear on read or write access
+        err_flag <= '0';
+      end if;
+    end if;
+  end process write_access;
 
-      -- read access --
+
+  -- Read Access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      ack_o  <= wren or rden; -- bus handshake
       data_o <= (others => '0');
       if (rden = '1') then
         data_o(ctrl_err_type_c) <= err_type;
         data_o(ctrl_err_flag_c) <= err_flag;
       end if;
-      --
-      if (control.bus_err = '1') then -- sticky error flag
-        err_flag <= '1';
-        err_type <= control.err_type;
-      else
-        if ((wren or rden) = '1') then -- clear on read or write access
-          err_flag <= '0';
-        end if;
-      end if;
     end if;
-  end process rw_access;
+  end process read_access;
 
 
   -- Keeper ---------------------------------------------------------------------------------
@@ -156,11 +157,11 @@ begin
   keeper_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      control.pending  <= '0'; -- required
-      control.bus_err  <= '0'; -- required
-      control.err_type <= '-';
-      control.timeout  <= (others => '-');
-      control.ignore   <= '-';
+      control.pending  <= '0';
+      control.bus_err  <= '0';
+      control.err_type <= '0';
+      control.timeout  <= (others => '0');
+      control.ignore   <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
       control.bus_err <= '0';

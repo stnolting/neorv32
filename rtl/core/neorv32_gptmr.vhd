@@ -48,7 +48,7 @@ entity neorv32_gptmr is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
@@ -109,22 +109,16 @@ begin
   rden   <= acc_en and rden_i;
 
 
-  -- Read/Write Access ----------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       timer.cnt_we <= '0';
       ctrl         <= (others => '0');
       timer.thres  <= (others => '0');
-      ack_o        <= '-';
-      data_o       <= (others => '-');
     elsif rising_edge(clk_i) then
-      -- bus access acknowledge --
-      ack_o <= rden or wren;
-
-      -- write access --
-      timer.cnt_we <= '0';
+      timer.cnt_we <= '0'; -- default
       if (wren = '1') then
         if (addr = gptmr_ctrl_addr_c) then -- control register
           ctrl(ctrl_en_c)    <= data_i(ctrl_en_c);
@@ -140,8 +134,22 @@ begin
           timer.cnt_we <= '1';
         end if;
       end if;
+    end if;
+  end process write_access;
 
-      -- read access --
+  -- clock generator enable --
+  clkgen_en_o <= ctrl(ctrl_en_c);
+
+  -- clock select --
+  gptmr_clk_en <= clkgen_i(to_integer(unsigned(ctrl(ctrl_prsc2_c downto ctrl_prsc0_c))));
+
+
+  -- Read Access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      ack_o  <= rden or wren; -- bus access acknowledge
       data_o <= (others => '0');
       if (rden = '1') then
         case addr(3 downto 2) is
@@ -158,13 +166,7 @@ begin
         end case;
       end if;
     end if;
-  end process rw_access;
-
-  -- clock generator enable --
-  clkgen_en_o <= ctrl(ctrl_en_c);
-
-  -- clock select --
-  gptmr_clk_en <= clkgen_i(to_integer(unsigned(ctrl(ctrl_prsc2_c downto ctrl_prsc0_c))));
+  end process read_access;
 
 
   -- Timer Core -----------------------------------------------------------------------------

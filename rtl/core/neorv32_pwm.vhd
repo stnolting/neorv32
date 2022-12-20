@@ -49,7 +49,7 @@ entity neorv32_pwm is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
@@ -112,20 +112,15 @@ begin
   wren   <= acc_en and wren_i;
 
 
-  -- Write access ---------------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  wr_access: process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       enable <= '0';
       prsc   <= (others => '0');
       pwm_ch <= (others => (others => '0'));
-      ack_o  <= '-';
-      data_o <= (others => '-');
     elsif rising_edge(clk_i) then
-      ack_o <= rden or wren;
-
-      -- write access --
       if (wren = '1') then
         -- control register --
         if (addr = pwm_ctrl_addr_c) then
@@ -139,8 +134,20 @@ begin
           end if;
         end loop;
       end if;
+    end if;
+  end process write_access;
 
-      -- read access --
+  -- PWM clock select --
+  clkgen_en_o <= enable; -- enable clock generator
+  prsc_tick   <= clkgen_i(to_integer(unsigned(prsc)));
+
+
+  -- Read access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      ack_o  <= rden or wren; -- bus handshake
       data_o <= (others => '0');
       if (rden = '1') then
         case addr(5 downto 2) is
@@ -164,7 +171,7 @@ begin
         end case;
       end if;
     end if;
-  end process wr_access;
+  end process read_access;
 
   -- duty cycle read-back --
   pwm_dc_rd_gen: process(pwm_ch)
@@ -174,10 +181,6 @@ begin
       pwm_ch_rd(i) <= pwm_ch(i);
     end loop;
   end process pwm_dc_rd_gen;
-
-  -- PWM clock select --
-  clkgen_en_o <= enable; -- enable clock generator
-  prsc_tick   <= clkgen_i(to_integer(unsigned(prsc)));
 
 
   -- PWM Core -------------------------------------------------------------------------------

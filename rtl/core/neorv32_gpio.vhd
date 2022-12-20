@@ -46,7 +46,7 @@ entity neorv32_gpio is
   port (
     -- host access --
     clk_i  : in  std_ulogic; -- global clock line
-    rstn_i : in  std_ulogic; -- global reset line, low-active
+    rstn_i : in  std_ulogic; -- global reset line, low-active, async
     addr_i : in  std_ulogic_vector(31 downto 0); -- address
     rden_i : in  std_ulogic; -- read enable
     wren_i : in  std_ulogic; -- write enable
@@ -86,24 +86,14 @@ begin
   rden   <= acc_en and rden_i;
 
 
-  -- Read/Write Access ----------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ack_o   <= '-';
-      err_o   <= '-';
       dout_lo <= (others => '0');
       dout_hi <= (others => '0');
-      din_lo  <= (others => '-');
-      din_hi  <= (others => '-');
-      data_o  <= (others => '-');
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      ack_o <= (wren and addr(3)) or rden;
-      err_o <= wren and (not addr(3)); -- INPUT registers are read only!
-
-      -- write access --
       if (wren = '1') then
         if (addr = gpio_out_lo_addr_c) then
           dout_lo <= data_i;
@@ -112,12 +102,22 @@ begin
           dout_hi <= data_i;
         end if;
       end if;
+    end if;
+  end process write_access;
 
-      -- input buffer (prevent metastability) --
-      din_lo <= gpio_i(31 downto 00);
-      din_hi <= gpio_i(63 downto 32);
+  -- GPIO output --
+  gpio_o <= dout_hi & dout_lo;
 
-      -- read access --
+
+  -- Read Access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      -- bus handshake --
+      ack_o <= (wren and addr(3)) or rden;
+      err_o <= wren and (not addr(3)); -- INPUT registers are read only!
+      -- read data --
       data_o <= (others => '0');
       if (rden = '1') then
         case addr(3 downto 2) is
@@ -127,12 +127,17 @@ begin
           when others => data_o <= dout_hi;
         end case;
       end if;
-
     end if;
-  end process rw_access;
+  end process read_access;
 
-  -- output --
-  gpio_o <= dout_hi & dout_lo;
+  -- sample buffer to prevent metastability --
+  input_buffer: process (clk_i)
+  begin
+    if rising_edge(clk_i) then
+      din_lo <= gpio_i(31 downto 00);
+      din_hi <= gpio_i(63 downto 32);
+    end if;
+  end process input_buffer;
 
 
 end neorv32_gpio_rtl;

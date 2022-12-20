@@ -52,7 +52,7 @@ entity neorv32_onewire is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
@@ -159,9 +159,9 @@ begin
   rden   <= acc_en and rden_i;
 
 
-  -- Read/Write Access ----------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl.enable    <= '0';
@@ -170,13 +170,8 @@ begin
       ctrl.trig_rst  <= '0';
       ctrl.trig_bit  <= '0';
       ctrl.trig_byte <= '0';
-      tx_data        <= (others => '-');
-      ack_o          <= '-';
-      data_o         <= (others => '-');
+      tx_data        <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      ack_o <= rden or wren;
-
       -- write access --
       if (wren = '1') then
         -- control register --
@@ -201,8 +196,16 @@ begin
         ctrl.trig_bit  <= '0';
         ctrl.trig_byte <= '0';
       end if;
+    end if;
+  end process write_access;
 
-      -- read access --
+
+  -- Read Access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      ack_o  <= rden or wren; -- bus handshake
       data_o <= (others => '0');
       if (rden = '1') then
         -- control register --
@@ -220,7 +223,7 @@ begin
         end if;
       end if;
     end if;
-  end process rw_access;
+  end process read_access;
 
 
   -- Tick Generator -------------------------------------------------------------------------

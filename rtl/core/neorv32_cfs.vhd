@@ -214,8 +214,8 @@ begin
       cfs_reg_wr(2) <= (others => '0');
       cfs_reg_wr(3) <= (others => '0');
       --
-      ack_o  <= '-'; -- no actual reset required
-      data_o <= (others => '-'); -- no actual reset required
+      ack_o  <= '0';
+      data_o <= (others => '0');
     elsif rising_edge(clk_i) then -- synchronous interface for read and write accesses
       -- transfer/access acknowledge --
       -- default: required for the CPU to check the CFS is answering a bus read OR write request;

@@ -50,7 +50,7 @@ entity neorv32_spi is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
@@ -177,9 +177,9 @@ begin
   rden   <= acc_en and rden_i;
 
 
-  -- Read/Write Access ----------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl.enable    <= '0';
@@ -191,15 +191,7 @@ begin
       ctrl.prsc      <= (others => '0');
       ctrl.cdiv      <= (others => '0');
       ctrl.irq_mode  <= (others => '0');
-      --
-      ack_o  <= '-';
-      data_o <= (others => '-');
     elsif rising_edge(clk_i) then
-
-      -- bus access acknowledge --
-      ack_o <= rden or wren;
-
-      -- write access --
       if (wren = '1') then
         if (addr = spi_ctrl_addr_c) then -- control register
           ctrl.enable    <= data_i(ctrl_en_c);
@@ -217,8 +209,16 @@ begin
           end if;
         end if;
       end if;
+    end if;
+  end process write_access;
 
-      -- read access --
+
+  -- Read Access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      ack_o  <= rden or wren; -- bus access acknowledge
       data_o <= (others => '0');
       if (rden = '1') then
         if (addr = spi_ctrl_addr_c) then -- control register
@@ -251,9 +251,8 @@ begin
           data_o <= rx_fifo.rdata;
         end if;
       end if;
-
     end if;
-  end process rw_access;
+  end process read_access;
 
 
   -- Direct Chip-Select (low-active) --------------------------------------------------------
@@ -284,7 +283,7 @@ begin
     port map (
       -- control --
       clk_i   => clk_i,         -- clock, rising edge
-      rstn_i  => '1',           -- async reset, low-active
+      rstn_i  => rstn_i,        -- async reset, low-active
       clear_i => tx_fifo.clear, -- sync reset, high-active
       half_o  => tx_fifo.half,  -- FIFO at least half-full
       -- write port --
@@ -321,7 +320,7 @@ begin
     port map (
       -- control --
       clk_i   => clk_i,         -- clock, rising edge
-      rstn_i  => '1',           -- async reset, low-active
+      rstn_i  => rstn_i,        -- async reset, low-active
       clear_i => rx_fifo.clear, -- sync reset, high-active
       half_o  => rx_fifo.half,  -- FIFO at least half-full
       -- write port --
