@@ -50,7 +50,7 @@ entity neorv32_trng is
   port (
     -- host access --
     clk_i  : in  std_ulogic; -- global clock line
-    rstn_i : in  std_ulogic; -- global reset line, low-active
+    rstn_i : in  std_ulogic; -- global reset line, low-active, async
     addr_i : in  std_ulogic_vector(31 downto 0); -- address
     rden_i : in  std_ulogic; -- read enable
     wren_i : in  std_ulogic; -- write enable
@@ -139,29 +139,29 @@ begin
   rden   <= acc_en and rden_i;
 
 
-  -- Read/Write Access ----------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      fifo_clr <= '-';
       enable   <= '0';
-      ack_o    <= '-';
-      data_o   <= (others => '-');
-    elsif rising_edge(clk_i) then
-      -- host bus acknowledge --
-      ack_o <= wren or rden;
-
-      -- defaults --
       fifo_clr <= '0';
-
-      -- write access --
+    elsif rising_edge(clk_i) then
+      fifo_clr <= '0'; -- default
       if (wren = '1') then
         enable   <= data_i(ctrl_en_c);
         fifo_clr <= data_i(ctrl_fifo_clr_c);
       end if;
+    end if;
+  end process write_access;
 
-      -- read access --
+
+  -- Read Access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      ack_o  <= wren or rden; -- host bus acknowledge
       data_o <= (others => '0');
       if (rden = '1') then
         data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
@@ -171,7 +171,7 @@ begin
         data_o(ctrl_valid_c)    <= fifo.avail;
       end if;
     end if;
-  end process rw_access;
+  end process read_access;
 
 
   -- neoTRNG True Random Number Generator ---------------------------------------------------
@@ -206,7 +206,7 @@ begin
   port map (
     -- control --
     clk_i   => clk_i,      -- clock, rising edge
-    rstn_i  => '1',        -- async reset, low-active
+    rstn_i  => rstn_i,     -- async reset, low-active
     clear_i => fifo.clear, -- sync reset, high-active
     half_o  => open,
     -- write port --

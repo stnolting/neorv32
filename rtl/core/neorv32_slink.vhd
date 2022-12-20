@@ -54,7 +54,7 @@ entity neorv32_slink is
   port (
     -- host access --
     clk_i          : in  std_ulogic; -- global clock line
-    rstn_i         : in  std_ulogic; -- global reset line, low-active
+    rstn_i         : in  std_ulogic; -- global reset line, low-active, async
     addr_i         : in  std_ulogic_vector(31 downto 0); -- address
     rden_i         : in  std_ulogic; -- read enable
     wren_i         : in  std_ulogic; -- write enable
@@ -171,23 +171,16 @@ begin
   rden   <= acc_en and rden_i;
 
 
-  -- Read/Write Access ----------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       enable       <= '0';
       irq_rx_mode  <= (others => '0');
       irq_tx_mode  <= (others => '0');
       tx_fifo_last <= (others => '0');
-      ack_o        <= '-';
-      data_o       <= (others => '-');
     elsif rising_edge(clk_i) then
-
-      -- bus access acknowledge --
-      ack_o <= rden or wren;
-
-      -- write access (control registers) --
       if (wren = '1') then
         if (addr = slink_ctrl_c) then -- control register
           enable <= data_i(ctrl_en_c);
@@ -200,8 +193,16 @@ begin
           tx_fifo_last <= data_i(status_last_msb_c downto status_last_lsb_c);
         end if;
       end if;
+    end if;
+  end process write_access;
 
-      -- read access --
+
+  -- Read Access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      ack_o  <= rden or wren; -- bus access acknowledge
       data_o <= (others => '0');
       if (rden = '1') then
         case addr is
@@ -236,12 +237,11 @@ begin
           when slink_link5_c => data_o <= rx_fifo.rdata(5); -- RX link 5 data
           when slink_link6_c => data_o <= rx_fifo.rdata(6); -- RX link 6 data
           when slink_link7_c => data_o <= rx_fifo.rdata(7); -- RX link 7 data
-          when others => data_o <= (others => '0');
+          when others        => data_o <= (others => '0');
         end case;
       end if;
-
     end if;
-  end process rw_access;
+  end process read_access;
 
 
   -- Link Control ---------------------------------------------------------------------------

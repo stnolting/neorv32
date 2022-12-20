@@ -689,8 +689,8 @@ begin
   end generate;
 
   -- yet unused --
-  i_cache.fence <= '-';
-  i_cache.src   <= '-';
+  i_cache.fence <= '0';
+  i_cache.src   <= '0';
 
 
   -- CPU Bus Switch -------------------------------------------------------------------------
@@ -903,7 +903,7 @@ begin
     port map (
       -- global control --
       clk_i      => clk_i,                         -- global clock line
-      rstn_i     => rstn_int,                      -- global reset line, low-active
+      rstn_i     => rstn_int,                      -- global reset line, low-active, async
       -- host access --
       src_i      => p_bus.src,                     -- access type (0: data, 1:instruction)
       addr_i     => p_bus.addr,                    -- address
@@ -958,7 +958,7 @@ begin
     port map (
       -- global control --
       clk_i       => clk_i,                        -- global clock line
-      rstn_i      => rstn_int,                     -- global reset line, low-active
+      rstn_i      => rstn_int,                     -- global reset line, low-active, async
       -- host access: control register access port --
       ct_addr_i   => p_bus.addr,                   -- address
       ct_rden_i   => io_rden,                      -- read enable
@@ -1067,7 +1067,7 @@ begin
     port map (
       -- host access --
       clk_i  => clk_i,                     -- global clock line
-      rstn_i => rstn_int,                  -- global reset line, low-active
+      rstn_i => rstn_int,                  -- global reset line, low-active, async
       addr_i => p_bus.addr,                -- address
       rden_i => io_rden,                   -- read enable
       wren_i => io_wren,                   -- write enable
@@ -1136,7 +1136,7 @@ begin
     port map (
       -- host access --
       clk_i  => clk_i,                      -- global clock line
-      rstn_i => rstn_int,                   -- global reset line, low-active
+      rstn_i => rstn_int,                   -- global reset line, low-active, async
       addr_i => p_bus.addr,                 -- address
       rden_i => io_rden,                    -- read enable
       wren_i => io_wren,                    -- write enable
@@ -1192,7 +1192,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                      -- global clock line
-      rstn_i      => rstn_int,                   -- global reset line, low-active
+      rstn_i      => rstn_int,                   -- global reset line, low-active, async
       addr_i      => p_bus.addr,                 -- address
       rden_i      => io_rden,                    -- read enable
       wren_i      => io_wren,                    -- write enable
@@ -1240,7 +1240,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                      -- global clock line
-      rstn_i      => rstn_int,                   -- global reset line, low-active
+      rstn_i      => rstn_int,                   -- global reset line, low-active, async
       addr_i      => p_bus.addr,                 -- address
       rden_i      => io_rden,                    -- read enable
       wren_i      => io_wren,                    -- write enable
@@ -1286,7 +1286,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line
-      rstn_i      => rstn_int,                 -- global reset line, low-active
+      rstn_i      => rstn_int,                 -- global reset line, low-active, async
       addr_i      => p_bus.addr,               -- address
       rden_i      => io_rden,                  -- read enable
       wren_i      => io_wren,                  -- write enable
@@ -1327,7 +1327,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line
-      rstn_i      => rstn_int,                 -- global reset line, low-active
+      rstn_i      => rstn_int,                 -- global reset line, low-active, async
       addr_i      => p_bus.addr,               -- address
       rden_i      => io_rden,                  -- read enable
       wren_i      => io_wren,                  -- write enable
@@ -1376,7 +1376,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                    -- global clock line
-      rstn_i      => rstn_int,                 -- global reset line, low-active
+      rstn_i      => rstn_int,                 -- global reset line, low-active, async
       addr_i      => p_bus.addr,               -- address
       rden_i      => io_rden,                  -- read enable
       wren_i      => io_wren,                  -- write enable
@@ -1412,7 +1412,7 @@ begin
     port map (
       -- host access --
       clk_i  => clk_i,                     -- global clock line
-      rstn_i => rstn_int,                  -- global reset line, low-active
+      rstn_i => rstn_int,                  -- global reset line, low-active, async
       addr_i => p_bus.addr,                -- address
       rden_i => io_rden,                   -- read enable
       wren_i => io_wren,                   -- write enable
@@ -1440,7 +1440,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                       -- global clock line
-      rstn_i      => rstn_int,                    -- global reset line, low-active
+      rstn_i      => rstn_int,                    -- global reset line, low-active, async
       addr_i      => p_bus.addr,                  -- address
       rden_i      => io_rden,                     -- read enable
       wren_i      => io_wren,                     -- write enable
@@ -1482,7 +1482,7 @@ begin
     port map (
       -- host access --
       clk_i          => clk_i,                      -- global clock line
-      rstn_i         => rstn_int,                   -- global reset line, low-active
+      rstn_i         => rstn_int,                   -- global reset line, low-active, async
       addr_i         => p_bus.addr,                 -- address
       rden_i         => io_rden,                    -- read enable
       wren_i         => io_wren,                    -- write enable
@@ -1532,7 +1532,7 @@ begin
     port map (
       -- host access --
       clk_i     => clk_i,                     -- global clock line
-      rstn_i    => rstn_int,                  -- global reset line, low-active
+      rstn_i    => rstn_int,                  -- global reset line, low-active, async
       addr_i    => p_bus.addr,                -- address
       rden_i    => io_rden,                   -- read enable
       wren_i    => io_wren,                   -- write enable
@@ -1563,7 +1563,7 @@ begin
     port map (
       -- host access --
       clk_i       => clk_i,                      -- global clock line
-      rstn_i      => rstn_int,                   -- global reset line, low-active
+      rstn_i      => rstn_int,                   -- global reset line, low-active, async
       addr_i      => p_bus.addr,                 -- address
       rden_i      => io_rden,                    -- read enable
       wren_i      => io_wren,                    -- write enable
@@ -1596,7 +1596,7 @@ begin
     port map (
     -- host access --
       clk_i       => clk_i,                        -- global clock line
-      rstn_i      => rstn_int,                     -- global reset line, low-active
+      rstn_i      => rstn_int,                     -- global reset line, low-active, async
       addr_i      => p_bus.addr,                   -- address
       rden_i      => io_rden,                      -- read enable
       wren_i      => io_wren,                      -- write enable

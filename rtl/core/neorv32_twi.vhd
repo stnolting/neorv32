@@ -48,7 +48,7 @@ entity neorv32_twi is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
@@ -152,9 +152,9 @@ begin
   rden   <= acc_en and rden_i;
 
 
-  -- Read/Write Access ----------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl.enable <= '0';
@@ -162,11 +162,7 @@ begin
       ctrl.csen   <= '0';
       ctrl.prsc   <= (others => '0');
       ctrl.cdiv   <= (others => '0');
-      ack_o       <= '-';
-      data_o      <= (others => '-');
     elsif rising_edge(clk_i) then
-      ack_o <= rden or wren;
-      -- write access --
       if (wren = '1') then
         if (addr = twi_ctrl_addr_c) then
           ctrl.enable <= data_i(ctrl_en_c);
@@ -176,7 +172,16 @@ begin
           ctrl.cdiv   <= data_i(ctrl_cdiv3_c downto ctrl_cdiv0_c);
         end if;
       end if;
-      -- read access --
+    end if;
+  end process write_access;
+
+
+  -- Read Access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      ack_o  <= rden or wren; -- bus handshake
       data_o <= (others => '0');
       if (rden = '1') then
         if (addr = twi_ctrl_addr_c) then
@@ -194,7 +199,7 @@ begin
         end if;
       end if;
     end if;
-  end process rw_access;
+  end process read_access;
 
 
   -- Clock Generation -----------------------------------------------------------------------

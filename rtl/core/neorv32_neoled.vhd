@@ -60,7 +60,7 @@ entity neorv32_neoled is
   port (
     -- host access --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
     addr_i      : in  std_ulogic_vector(31 downto 0); -- address
     rden_i      : in  std_ulogic; -- read enable
     wren_i      : in  std_ulogic; -- write enable
@@ -198,9 +198,9 @@ begin
   rden   <= acc_en and rden_i;
 
 
-  -- Read/Write Access ----------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl.enable   <= '0';
@@ -211,13 +211,7 @@ begin
       ctrl.t_total  <= (others => '0');
       ctrl.t0_high  <= (others => '0');
       ctrl.t1_high  <= (others => '0');
-      ack_o         <= '-';
-      data_o        <= (others => '-');
     elsif rising_edge(clk_i) then
-      -- access acknowledge --
-      ack_o <= wren or rden;
-
-      -- write access: control register --
       if (wren = '1') and (addr = neoled_ctrl_addr_c) then
         ctrl.enable   <= data_i(ctrl_en_c);
         ctrl.mode     <= data_i(ctrl_mode_c);
@@ -228,8 +222,24 @@ begin
         ctrl.t0_high  <= data_i(ctrl_t_0h_4_c  downto ctrl_t_0h_0_c);
         ctrl.t1_high  <= data_i(ctrl_t_1h_4_c  downto ctrl_t_1h_0_c);
       end if;
+    end if;
+  end process write_access;
 
-      -- read access: control register --
+  -- enable external clock generator --
+  clkgen_en_o <= ctrl.enable;
+
+  -- FIFO write access --
+  tx_buffer.we    <= '1' when (wren = '1') and (addr = neoled_data_addr_c) else '0';
+  tx_buffer.wdata <= ctrl.strobe & ctrl.mode & data_i;
+  tx_buffer.clear <= not ctrl.enable;
+
+
+  -- Read Access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      ack_o  <= wren or rden; -- access acknowledge
       data_o <= (others => '0');
       if (rden = '1') then -- and (addr = neoled_ctrl_addr_c) then
         data_o(ctrl_en_c)                            <= ctrl.enable;
@@ -248,15 +258,7 @@ begin
         data_o(ctrl_tx_busy_c)                       <= serial.busy;
       end if;
     end if;
-  end process rw_access;
-
-  -- enable external clock generator --
-  clkgen_en_o <= ctrl.enable;
-
-  -- FIFO write access --
-  tx_buffer.we    <= '1' when (wren = '1') and (addr = neoled_data_addr_c) else '0';
-  tx_buffer.wdata <= ctrl.strobe & ctrl.mode & data_i;
-  tx_buffer.clear <= not ctrl.enable;
+  end process read_access;
 
 
   -- IRQ Generator --------------------------------------------------------------------------
@@ -293,7 +295,7 @@ begin
   port map (
     -- control --
     clk_i   => clk_i,           -- clock, rising edge
-    rstn_i  => '1',             -- async reset, low-active
+    rstn_i  => rstn_i,          -- async reset, low-active
     clear_i => tx_buffer.clear, -- sync reset, high-active
     half_o  => tx_buffer.half,  -- FIFO is at least half full
     -- write port --

@@ -55,7 +55,7 @@ entity neorv32_xirq is
   port (
     -- host access --
     clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- global reset line, low-active
+    rstn_i    : in  std_ulogic; -- global reset line, low-active, async
     addr_i    : in  std_ulogic_vector(31 downto 0); -- address
     rden_i    : in  std_ulogic; -- read enable
     wren_i    : in  std_ulogic; -- write enable
@@ -116,33 +116,33 @@ begin
   rden   <= acc_en and rden_i;
 
 
-  -- Read/Write Access ----------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rw_access: process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       clr_pending <= (others => '0'); -- clear all pending interrupts
       irq_enable  <= (others => '0');
-      ack_o       <= '-';
-      data_o      <= (others => '-');
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      ack_o <= rden or wren;
-
-      -- write access --
       clr_pending <= (others => '1');
       if (wren = '1') then
-        -- channel-enable --
-        if (addr = xirq_enable_addr_c) then
+        if (addr = xirq_enable_addr_c) then -- channel-enable
           irq_enable <= data_i(XIRQ_NUM_CH-1 downto 0);
         end if;
-        -- clear pending IRQs --
-        if (addr = xirq_pending_addr_c) then
+        if (addr = xirq_pending_addr_c) then -- clear pending IRQs
           clr_pending <= data_i(XIRQ_NUM_CH-1 downto 0); -- set zero to clear pending IRQ
         end if;
       end if;
+    end if;
+  end process write_access;
 
-      -- read access --
+
+  -- Read Access ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  read_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      ack_o  <= rden or wren; -- bus handshake
       data_o <= (others => '0');
       if (rden = '1') then
         case addr is
@@ -153,7 +153,7 @@ begin
         end case;
       end if;
     end if;
-  end process rw_access;
+  end process read_access;
 
 
   -- IRQ Trigger --------------------------------------------------------------

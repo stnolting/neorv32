@@ -183,11 +183,11 @@ begin
       ctrl.we       <= '0';
       ctrl.adr      <= (others => '0');
       ctrl.wdat     <= (others => '0');
-      ctrl.rdat     <= (others => '-');
+      ctrl.rdat     <= (others => '0');
       ctrl.sel      <= (others => '0');
-      ctrl.timeout  <= (others => '-');
-      ctrl.ack      <= '-';
-      ctrl.err      <= '-';
+      ctrl.timeout  <= (others => '0');
+      ctrl.ack      <= '0';
+      ctrl.err      <= '0';
       ctrl.tmo      <= '0';
       ctrl.src      <= '0';
       ctrl.priv     <= '0';

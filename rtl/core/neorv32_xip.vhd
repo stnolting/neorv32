@@ -49,7 +49,7 @@ entity neorv32_xip is
   port (
     -- global control --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
     -- host access: control register access port --
     ct_addr_i   : in  std_ulogic_vector(31 downto 0); -- address
     ct_rden_i   : in  std_ulogic; -- read enable
@@ -185,28 +185,18 @@ begin
   ct_rden   <= ct_acc_en and ct_rden_i;
 
 
-  -- Control Read/Write Access --------------------------------------------------------------
+  -- Control Write Access -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_rw_access : process(rstn_i, clk_i)
+  ctrl_write_access : process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl        <= (others => '0');
-      spi_data_lo <= (others => '-');
-      spi_data_hi <= (others => '-');
-      spi_trigger <= '-';
-      --
-      ct_data_o   <= (others => '-');
-      ct_ack_o    <= '-';
-    elsif rising_edge(clk_i) then
-      -- access acknowledge --
-      ct_ack_o <= ct_wren or ct_rden;
-
-      -- defaults --
+      spi_data_lo <= (others => '0');
+      spi_data_hi <= (others => '0');
       spi_trigger <= '0';
-
-      -- write access --
+    elsif rising_edge(clk_i) then
+      spi_trigger <= '0';
       if (ct_wren = '1') then -- only full-word writes!
-
         -- control register --
         if (ct_addr = xip_ctrl_addr_c) then
           ctrl(ctrl_enable_c)                                <= ct_data_i(ctrl_enable_c);
@@ -222,20 +212,32 @@ begin
           ctrl(ctrl_highspeed_c)                             <= ct_data_i(ctrl_highspeed_c);
           ctrl(ctrl_burst_en_c)                              <= ct_data_i(ctrl_burst_en_c);
         end if;
-
         -- SPI direct data access register lo --
         if (ct_addr = xip_data_lo_addr_c) then
           spi_data_lo <= ct_data_i;
         end if;
-
         -- SPI direct data access register hi --
         if (ct_addr = xip_data_hi_addr_c) then
           spi_data_hi <= ct_data_i;
           spi_trigger <= '1'; -- trigger direct SPI transaction
         end if;
       end if;
+    end if;
+  end process ctrl_write_access;
 
-      -- read access --
+  -- XIP enabled --
+  xip_en_o <= ctrl(ctrl_enable_c);
+
+  -- XIP page output --
+  xip_page_o <= ctrl(ctrl_page3_c downto ctrl_page0_c);
+
+
+  -- Control Read Access --------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  ctrl_read_access : process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      ct_ack_o  <= ct_wren or ct_rden; -- access acknowledge
       ct_data_o <= (others => '0');
       if (ct_rden = '1') then
         case ct_addr(3 downto 2) is
@@ -262,13 +264,7 @@ begin
         end case;
       end if;
     end if;
-  end process ctrl_rw_access;
-
-  -- XIP enabled --
-  xip_en_o <= ctrl(ctrl_enable_c);
-
-  -- XIP page output --
-  xip_page_o <= ctrl(ctrl_page3_c downto ctrl_page0_c);
+  end process ctrl_read_access;
 
 
   -- XIP Address Computation Logic ----------------------------------------------------------
