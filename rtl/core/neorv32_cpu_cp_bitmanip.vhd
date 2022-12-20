@@ -228,11 +228,11 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl_state    <= S_IDLE;
-      cmd_buf       <= (others => '-');
-      rs1_reg       <= (others => '-');
-      rs2_reg       <= (others => '-');
-      sha_reg       <= (others => '-');
-      less_reg      <= '-';
+      cmd_buf       <= (others => '0');
+      rs1_reg       <= (others => '0');
+      rs2_reg       <= (others => '0');
+      sha_reg       <= (others => '0');
+      less_reg      <= '0';
       clmul.start   <= '0';
       shifter.start <= '0';
       valid         <= '0';
@@ -402,8 +402,7 @@ begin
     case ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) is
       when "01"   => opb_v := rs1_reg(rs1_reg'left-1 downto 0) & '0';   -- << 1
       when "10"   => opb_v := rs1_reg(rs1_reg'left-2 downto 0) & "00";  -- << 2
-      when "11"   => opb_v := rs1_reg(rs1_reg'left-3 downto 0) & "000"; -- << 3
-      when others => opb_v := (others => '-'); -- undefined
+      when others => opb_v := rs1_reg(rs1_reg'left-3 downto 0) & "000"; -- << 3
     end case;
     adder_core <= std_ulogic_vector(unsigned(rs2_reg) + unsigned(opb_v));
   end process shift_adder;
