@@ -62,7 +62,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070810"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070811"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -440,6 +440,7 @@ package neorv32_package is
   constant funct3_csrrw_c  : std_ulogic_vector(2 downto 0) := "001"; -- csr r/w
   constant funct3_csrrs_c  : std_ulogic_vector(2 downto 0) := "010"; -- csr read & set bit
   constant funct3_csrrc_c  : std_ulogic_vector(2 downto 0) := "011"; -- csr read & clear bit
+  constant funct3_csril_c  : std_ulogic_vector(2 downto 0) := "100"; -- undefined/illegal
   constant funct3_csrrwi_c : std_ulogic_vector(2 downto 0) := "101"; -- csr r/w immediate
   constant funct3_csrrsi_c : std_ulogic_vector(2 downto 0) := "110"; -- csr read & set bit immediate
   constant funct3_csrrci_c : std_ulogic_vector(2 downto 0) := "111"; -- csr read & clear bit immediate
