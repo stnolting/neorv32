@@ -160,16 +160,16 @@ begin
   -- > "cp_start" is high for one cycle to trigger operation of the according co-processor
   cp_start(4 downto 0) <= ctrl_i(ctrl_cp_trig4_c downto ctrl_cp_trig0_c);
 
-  -- co-processor operation done? --
-  -- > "cp_valid" signal has to be set (for one cycle) one cycle before output data (cp_result) is valid
+  -- (iterative) co-processor operation done? --
+  -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
   idone_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4);
 
   -- co-processor result --
-  -- > "cp_result" data has to be always zero unless unique co-processor was actually triggered
+  -- > "cp_result" data has to be always zero unless the specific co-processor has been actually triggered
   cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4);
 
 
-  -- Co-Processor 0: Shifter Unit (CPU Base ISA) --------------------------------------------
+  -- Co-Processor 0: Shifter Unit ('I'/'E' Base ISA) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_shifter_inst: neorv32_cpu_cp_shifter
   generic map (

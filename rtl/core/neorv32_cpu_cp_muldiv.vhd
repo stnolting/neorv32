@@ -123,11 +123,11 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl.state    <= S_IDLE;
-      ctrl.rs2_abs  <= (others => '-');
-      ctrl.cnt      <= (others => '-');
-      ctrl.cp_op_ff <= (others => '-');
+      ctrl.rs2_abs  <= (others => '0');
+      ctrl.cnt      <= (others => '0');
+      ctrl.cp_op_ff <= (others => '0');
       ctrl.out_en   <= '0';
-      div.sign_mod  <= '-';
+      div.sign_mod  <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
       ctrl.out_en <= '0';
@@ -223,9 +223,9 @@ begin
   -- no parallel multiplier --
   multiplier_core_parallel_none:
   if (FAST_MUL_EN = false) generate
-    mul.dsp_x <= (others => '-');
-    mul.dsp_y <= (others => '-');
-    mul.dsp_z <= (others => '-');
+    mul.dsp_x <= (others => '0');
+    mul.dsp_y <= (others => '0');
+    mul.dsp_z <= (others => '0');
   end generate;
 
 
@@ -270,8 +270,8 @@ begin
   -- no serial multiplier --
   multiplier_core_serial_none:
   if (FAST_MUL_EN = true) generate
-    mul.add    <= (others => '-');
-    mul.p_sext <= '-';
+    mul.add    <= (others => '0');
+    mul.p_sext <= '0';
   end generate;
 
 
@@ -314,10 +314,10 @@ begin
   -- no divider --
   divider_core_serial_none:
   if (DIVISION_EN = false) generate
-    div.remainder <= (others => '-');
-    div.quotient  <= (others => '-');
-    div.sub       <= (others => '-');
-    div.res_u     <= (others => '-');
+    div.remainder <= (others => '0');
+    div.quotient  <= (others => '0');
+    div.sub       <= (others => '0');
+    div.res_u     <= (others => '0');
     div.res       <= (others => '0');
   end generate;
 

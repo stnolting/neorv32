@@ -371,8 +371,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal illegal_cmd : std_ulogic;
   signal illegal_reg : std_ulogic; -- illegal register (>x15) - E-extension
 
-  -- access (privilege) check --
-  signal csr_acc_valid : std_ulogic; -- valid CSR access (implemented and valid access rights)
+  -- CSR access/privilege and r/w check --
+  signal csr_acc_valid : std_ulogic; -- valid CSR access (implemented and valid priv. level)
+  signal csr_rw_valid  : std_ulogic; -- valid CSR access (valid r/w access rights)
 
   -- hardware trigger module --
   signal hw_trigger_fire : std_ulogic;
@@ -501,7 +502,7 @@ begin
     port map (
       -- control --
       clk_i   => clk_i,                -- clock, rising edge
-      rstn_i  => '1',                  -- async reset, low-active
+      rstn_i  => rstn_i,               -- async reset, low-active
       clear_i => fetch_engine.restart, -- sync reset, high-active
       half_o  => open,                 -- at least half full
       -- write port --
@@ -645,17 +646,12 @@ begin
   -- Branch Condition Check -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   branch_check: process(execute_engine.i_reg, cmp_i)
-  begin
-    case execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-      when funct3_beq_c => -- branch if equal
-        execute_engine.branch_taken <= cmp_i(cmp_equal_c);
-      when funct3_bne_c => -- branch if not equal
-        execute_engine.branch_taken <= not cmp_i(cmp_equal_c);
-      when funct3_blt_c | funct3_bltu_c => -- branch if less (signed/unsigned)
-        execute_engine.branch_taken <= cmp_i(cmp_less_c);
-      when others => -- branch if greater or equal (signed/unsigned), invalid funct3 are checked by the illegal instruction logic
-        execute_engine.branch_taken <= not cmp_i(cmp_less_c);
-    end case;
+  begin -- this is hacky!
+    if (execute_engine.i_reg(instr_funct3_msb_c) = '0') then -- beq / bne
+      execute_engine.branch_taken <= cmp_i(cmp_equal_c) xor execute_engine.i_reg(instr_funct3_lsb_c);
+    else -- blt(u) / bge(u)
+      execute_engine.branch_taken <= cmp_i(cmp_less_c)  xor execute_engine.i_reg(instr_funct3_lsb_c);
+    end if;
   end process branch_check;
 
 
@@ -673,7 +669,7 @@ begin
       execute_engine.is_ici      <= '0';
       ctrl                       <= (others => '0');
       execute_engine.sleep       <= '0';
-      execute_engine.pc_last     <= (others => '-'); -- reset value is irrelevant
+      execute_engine.pc_last     <= (others => '0');
       execute_engine.pc          <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
       execute_engine.next_pc     <= (others => '0');
     elsif rising_edge(clk_i) then
@@ -1103,35 +1099,11 @@ begin
             end if;
 
 
-          when others => -- ILLEGAL OPCODE
+          when others => -- illegal opcode
           -- ------------------------------------------------------------
             execute_engine.state_nxt <= DISPATCH;
 
         end case; -- /EXECUTE
-
-
-      when SYSTEM => -- system environment operation
-      -- ------------------------------------------------------------
-        ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c; -- only relevant for CSR access
-        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and -- ENVIRONMENT
-           (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- and NOT already identified as illegal instruction
-          execute_engine.state_nxt <= DISPATCH; -- default
-          case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
-            when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ecall
-            when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- ebreak
-            when funct12_mret_c   => execute_engine.state_nxt <= TRAP_EXIT; -- mret
-            when funct12_dret_c   => execute_engine.state_nxt <= TRAP_EXIT; debug_ctrl.dret <= '1'; -- dret
-            when others           => execute_engine.sleep_nxt <= '1'; -- "funct12_wfi_c" - wfi/sleep
-          end case;
-        else -- CSR ACCESS - no CSR will be altered if illegal instruction
-          execute_engine.state_nxt <= DISPATCH;
-          if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
-             (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
-             (decode_aux.rs1_zero = '0') then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
-            csr.we_nxt <= '1';
-          end if;
-          ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
-        end if;
 
 
       when ALU_WAIT => -- wait for multi-cycle ALU operation (ALU co-processor) to finish
@@ -1186,8 +1158,8 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_mem_c; -- memory read data
         -- wait for memory response --
-        if ((trap_ctrl.exc_buf(exc_laccess_c) or trap_ctrl.exc_buf(exc_saccess_c) or -- bus error exception
-             trap_ctrl.exc_buf(exc_lalign_c) or trap_ctrl.exc_buf(exc_salign_c) or -- alignment error exception
+        if ((trap_ctrl.exc_buf(exc_laccess_c) or trap_ctrl.exc_buf(exc_saccess_c) or -- bus access error
+             trap_ctrl.exc_buf(exc_lalign_c)  or trap_ctrl.exc_buf(exc_salign_c)  or -- alignment error
              trap_ctrl.exc_buf(exc_iillegal_c)) = '1') then -- illegal instruction
           execute_engine.state_nxt <= DISPATCH; -- abort!
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
@@ -1195,6 +1167,30 @@ begin
             ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- data write-back
           end if;
           execute_engine.state_nxt <= DISPATCH;
+        end if;
+
+
+      when SYSTEM => -- system environment operation
+      -- ------------------------------------------------------------
+        ctrl_nxt(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) <= rf_mux_csr_c; -- only relevant for CSR access
+        if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and -- ENVIRONMENT
+           (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- and NOT already identified as illegal instruction
+          execute_engine.state_nxt <= DISPATCH; -- default
+          case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
+            when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ecall
+            when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- ebreak
+            when funct12_mret_c   => execute_engine.state_nxt <= TRAP_EXIT; -- mret
+            when funct12_dret_c   => execute_engine.state_nxt <= TRAP_EXIT; debug_ctrl.dret <= '1'; -- dret
+            when others           => execute_engine.sleep_nxt <= '1'; -- "funct12_wfi_c" - wfi/sleep
+          end case;
+        else -- CSR ACCESS - no CSR will be altered if illegal instruction
+          execute_engine.state_nxt <= DISPATCH;
+          if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
+             (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
+             (decode_aux.rs1_zero = '0') then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
+            csr.we_nxt <= '1';
+          end if;
+          ctrl_nxt(ctrl_rf_wb_en_c) <= '1'; -- valid RF write-back
         end if;
 
 
@@ -1210,21 +1206,26 @@ begin
 -- Illegal Instruction and CSR Access Check
 -- ****************************************************************************************************************************
 
-  -- CSR Access Check -----------------------------------------------------------------------
+  -- CSR Access Check: R/W Capabilities -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_access_check: process(execute_engine.i_reg, decode_aux, csr, debug_ctrl)
-    variable csr_wacc_v : std_ulogic; -- actual CSR write
+  csr_rw_check: process(csr.addr, execute_engine.i_reg, decode_aux.rs1_zero)
   begin
-    -- is this CSR instruction really going to write to a CSR? --
-    if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or -- always write CSR
-       (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- always write CSR
-       (decode_aux.rs1_zero = '0') then -- clear/set: write CSR if rs1/imm5 is NOT zero
-      csr_wacc_v := '1';
+    if (csr.addr(11 downto 10) = "11") and -- CSR is read-only
+       -- is this CSR instruction really going to write to the CSR? --
+       ((execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or -- always write CSR
+        (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- always write CSR
+        (decode_aux.rs1_zero = '0')) then -- clear/set: write CSR if rs1/imm5 is NOT zero
+      csr_rw_valid <= '0'; -- invalid access
     else
-      csr_wacc_v := '0';
+      csr_rw_valid <= '1'; -- all fine
     end if;
+  end process csr_rw_check;
+  
 
-    -- check CSR access --
+  -- CSR Access Check: Availability and Access Rights ---------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  csr_access_check: process(execute_engine.i_reg, csr, debug_ctrl)
+  begin
     csr_acc_valid <= '0'; -- default: invalid access
     case csr.addr is
 
@@ -1232,25 +1233,19 @@ begin
       when csr_fflags_c | csr_frm_c | csr_fcsr_c =>
         csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- full access for everyone if FPU implemented
 
-      -- machine trap setup/handling & counters --
+      -- machine trap setup/handling, counters, environment & information registers --
       when csr_mstatus_c | csr_mstatush_c | csr_misa_c | csr_mie_c | csr_mtvec_c | csr_mscratch_c | csr_mepc_c | csr_mcause_c | csr_mip_c | csr_mtval_c |
-           csr_mcycle_c | csr_mcycleh_c | csr_minstret_c | csr_minstreth_c | csr_mcountinhibit_c =>
-        -- NOTE: NEORV32's MISA CSR is read-only but we do not cause an exception here for compatibility.
+           csr_mcycle_c | csr_mcycleh_c | csr_minstret_c | csr_minstreth_c | csr_mcountinhibit_c | csr_mcounteren_c | csr_menvcfg_c | csr_menvcfgh_c |
+           csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c | csr_mxisa_c =>
+        -- NOTE: MISA is read-only but we do not cause an exception here for compatibility.
+        -- NOTE: MCOUNTEREN is also available if U-mode is disabled, but is hardwired to zero in that case.
         csr_acc_valid <= csr.privilege_eff; -- M-mode only 
-
-      -- machine information registers & NEORV32-specific registers, read-only --
-      when csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c | csr_mxisa_c =>
-        csr_acc_valid <= (not csr_wacc_v) and csr.privilege_eff; -- M-mode only, read-only
-
-      -- CSRs that are available if user-mode is implemented --
-      when csr_mcounteren_c | csr_menvcfg_c | csr_menvcfgh_c =>
-        csr_acc_valid <= csr.privilege_eff and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);
 
       -- physical memory protection (PMP) --
       when csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  | -- address
            csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c | csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c |
            csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c => -- configuration
-        csr_acc_valid <= csr.privilege_eff and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- M-mode only
+        csr_acc_valid <= csr.privilege_eff and bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- M-mode only and implemented
 
       -- machine hardware performance monitors (MHPM) --
       when csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   | csr_mhpmcounter7_c   | csr_mhpmcounter8_c   | -- counter LOW
@@ -1268,7 +1263,7 @@ begin
            csr_mhpmevent15_c    | csr_mhpmevent16_c    | csr_mhpmevent17_c    | csr_mhpmevent18_c    | csr_mhpmevent19_c    | csr_mhpmevent20_c    |
            csr_mhpmevent21_c    | csr_mhpmevent22_c    | csr_mhpmevent23_c    | csr_mhpmevent24_c    | csr_mhpmevent25_c    | csr_mhpmevent26_c    |
            csr_mhpmevent27_c    | csr_mhpmevent28_c    | csr_mhpmevent29_c    | csr_mhpmevent30_c    | csr_mhpmevent31_c =>
-        csr_acc_valid <= csr.privilege_eff and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm); -- M-mode only
+        csr_acc_valid <= csr.privilege_eff and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm); -- M-mode only and implemented
 
 --    -- user hardware performance monitors (HPM) --
 --    when csr_hpmcounter3_c   | csr_hpmcounter4_c   | csr_hpmcounter5_c   | csr_hpmcounter6_c   | csr_hpmcounter7_c   | csr_hpmcounter8_c   | -- counter LOW
@@ -1286,9 +1281,9 @@ begin
       -- counter and timer CSRs --
       when csr_cycle_c | csr_cycleh_c | csr_time_c | csr_timeh_c | csr_instret_c | csr_instreth_c =>
         case csr.addr(1 downto 0) is
-          when "00"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.privilege_eff or csr.mcounteren_cy); -- cycle[h]: M-mode; U-mode if authorized and implemented at all, read-only
-          when "01"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.privilege_eff or csr.mcounteren_tm); -- time[h]: M-mode; U-mode if authorized and implemented at all, read-only
-          when "10"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (not csr_wacc_v) and (csr.privilege_eff or csr.mcounteren_ir); -- instret[h]: M-mode; U-mode if authorized and implemented at all, read-only
+          when "00"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (csr.privilege_eff or csr.mcounteren_cy); -- cycle[h]: M-mode; U-mode if authorized and implemented
+          when "01"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (csr.privilege_eff or csr.mcounteren_tm); -- time[h]: M-mode; U-mode if authorized and implemented
+          when "10"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (csr.privilege_eff or csr.mcounteren_ir); -- instret[h]: M-mode; U-mode if authorized and implemented
           when others => csr_acc_valid <= '0';
         end case;
 
@@ -1311,7 +1306,7 @@ begin
 
   -- Illegal Instruction Check --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  illegal_instruction_check: process(execute_engine, decode_aux, csr, csr_acc_valid, debug_ctrl)
+  illegal_instruction_check: process(execute_engine, decode_aux, csr, csr_acc_valid, csr_rw_valid, debug_ctrl)
   begin
     -- defaults --
     illegal_cmd <= '0';
@@ -1418,10 +1413,11 @@ begin
           else
             illegal_cmd <= '1';
           end if;
-        else -- CSR access
-          if (csr_acc_valid = '0') then -- invalid CSR access?
-            illegal_cmd <= '1';
-          end if;
+        elsif ((csr_acc_valid = '0') or (csr_rw_valid = '0')) or -- invalid CSR access?
+              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csril_c) then -- invalid CSR access instruction (invalid funct3?)
+          illegal_cmd <= '1';
+        else
+          illegal_cmd <= '0';
         end if;
         -- illegal E-CPU register? --
         if (execute_engine.i_reg(instr_funct3_msb_c) = '0') then -- reg-reg CSR (or ENV where rd=rs1=zero)
@@ -1667,7 +1663,7 @@ begin
       csr.mcause            <= (others => '0');
       csr.mtval             <= (others => '0');
       --
-      csr.mip_firq_nclr     <= (others => '-'); -- no reset required
+      csr.mip_firq_nclr     <= (others => '0');
       --
       csr.pmpcfg            <= (others => (others => '0'));
       csr.pmpaddr           <= (others => (others => '0'));
@@ -1905,13 +1901,10 @@ begin
             -- NORMAL trap entry: write mcause, mepc and mtval - no update when in debug-mode! --
             -- --------------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_DEBUG = false) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.running = '0')) then
-
-              -- trap cause ID code --
+              -- trap cause ID --
               csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- type + identifier
-
               -- trap PC --
               csr.mepc <= trap_ctrl.epc;
-
               -- trap value --
               case trap_ctrl.cause is
                 when trap_ima_c | trap_iba_c => -- misaligned instruction address OR instruction access error
@@ -1921,28 +1914,22 @@ begin
                 when others => -- everything else including all interrupts
                   csr.mtval <= (others => '0');
               end case;
-
               -- update privilege level and interrupt enable stack --
               csr.privilege    <= priv_mode_m_c; -- execute trap in machine mode
               csr.mstatus_mie  <= '0'; -- disable interrupts
               csr.mstatus_mpie <= csr.mstatus_mie; -- backup previous mie state
               csr.mstatus_mpp  <= csr.privilege; -- backup previous privilege mode
-
             end if;
 
             -- DEBUG MODE entry: write dpc and dcsr - no update when already in debug-mode! --
             -- --------------------------------------------------------------------
             if (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then
-
-              -- trap cause ID code --
+              -- trap cause ID --
               csr.dcsr_cause <= trap_ctrl.cause(2 downto 0); -- why did we enter debug mode?
-
               -- current privilege mode when debug mode was entered --
               csr.dcsr_prv <= csr.privilege;
-
               -- trap PC --
               csr.dpc <= trap_ctrl.epc;
-
             end if;
 
           -- --------------------------------------------------------------------
@@ -1972,7 +1959,7 @@ begin
               csr.mstatus_mpie <= '1';
             end if;
 
-          end if;
+          end if; -- /trap exit
 
         end if; -- /hardware csr access
 
@@ -2367,7 +2354,7 @@ begin
       cnt_csr_we.cycle     <= (others => '0');
       cnt_csr_we.instret   <= (others => '0');
       cnt_csr_we.hpm       <= (others => (others => '0'));
-      cnt_csr_we.wdata     <= (others => '-'); -- no reset required
+      cnt_csr_we.wdata     <= (others => '0');
       -- counters --
       csr.mcycle           <= (others => '0');
       csr.mcycle_ovfl      <= (others => '0');
