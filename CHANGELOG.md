@@ -32,6 +32,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 21.12.2022 | [**:rocket:1.7.9**](https://github.com/stnolting/neorv32/releases/tag/v1.7.9) | **New release** |
 | 21.12.2022 | 1.7.8.11 | CPU: remove explicit reset-to-don't-care; branch and CSR access check logic optimizations; close further illegal instruction encoding hole; [#462](https://github.com/stnolting/neorv32/pull/462) |
 | 20.12.2022 | 1.7.8.10 | SOC: rework r/w access logic; split read and write accesses into two processes; removed explicit reset-to-don't-care; [#461](https://github.com/stnolting/neorv32/pull/461) |
 | 18.12.2022 | 1.7.8.9 | `mtval` is no longer read-only and can now be written by machine-mode software; [#460](https://github.com/stnolting/neorv32/pull/460) |
