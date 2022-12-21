@@ -8,14 +8,15 @@ understood by the assembler/compiler. The *[C]* names are defined by the NEORV32
 used as immediate in plain C code. The *R/W* column shows whether the CSR can be read and/or written.
 
 .CSRs that are not Implemented
-[NOTE]
+[IMPORTANT]
 All CSR bits that are unused / not implemented / not shown are _hardwired to zero_. All CSRs that are not
-implemented (not supported or disabled) will raise an illegal instruction exception when being accessed.
+implemented, not supported or disabled will raise an illegal instruction exception when being accessed.
 
 .WARL Behavior
-[NOTE]
+[IMPORTANT]
 All writable CSRs provide **WARL** behavior (write all values; read only legal values). Application software
-should read back a CSR after writing to check if the targeted bits can actually be modified (or are read-only). 
+should always read back a CSR after writing to check if the targeted bits can actually be modified (or are
+just read-only). 
 
 .Debug-Mode CSRs
 [NOTE]
@@ -317,6 +318,8 @@ Machine-mode software can discover available `Z*` _sub-extensions_ (like `Zicsr`
 | 1     | _CSR_MCOUNTEREN_TM_ | r/w | **TM**: User-level code is allowed to read `time[h]` CSRs when set
 | 0     | _CSR_MCOUNTEREN_CY_ | r/w | **CY**: User-level code is allowed to read `instret[h]` CSRs when set
 |=======================
+
+If User mode is not implemented this register is read-only and always return zero when read.
 
 .HPM Access
 [NOTE]
