@@ -1131,6 +1131,11 @@ _enable_ bit in the according module's control register), it is automatically de
 :sectnums:
 === Processor Reset
 
+.Processor Reset Signal
+[IMPORTANT]
+Always make sure to connect the processor's reset signal `rstn_i` to a valid reset source (a button, the "locked"
+signal of a PLL, a dedicated reset controller, etc.). **Do not assign a static value / connect a static signal to it!**
+
 The processor-wide reset can be triggered at any of the following sources:
 
 * the asynchronous low-active `rstn_i` top entity input signal
