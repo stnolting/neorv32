@@ -75,7 +75,7 @@ bits/channels are hardwired to zero.
 | `jtag_trst_i`    |   1 |     in | TAP reset, low-active (optional footnote:[Pull high if not used.])
 | `jtag_tck_i`     |   1 |     in | serial clock
 | `jtag_tdi_i`     |   1 |     in | serial data input
-| `jtag_tdo_o`     |   1 |    out | serial data output footnote:[If the on-chip debugger is not implemented (_ON_CHIP_DEBUGGER_EN_ = false) `jtag_tdi_i` is directly forwarded to `jtag_tdo_o` to maintain the JTAG chain.]
+| `jtag_tdo_o`     |   1 |    out | serial data output footnote:[If the on-chip debugger is not implemented (<<_on_chip_debugger_en>> = false) `jtag_tdi_i` is directly forwarded to `jtag_tdo_o` to maintain the JTAG chain.]
 | `jtag_tms_i`     |   1 |     in | mode select
 4+^| **External Bus Interface (<<_processor_external_memory_interface_wishbone_axi4_lite,WISHBONE>>)**
 | `wb_tag_o`       |   3 |    out | tag (access type identifier)
