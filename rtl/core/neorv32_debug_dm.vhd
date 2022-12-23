@@ -1,8 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - RISC-V-Compatible Debug Module (DM) >>                                           #
 -- # ********************************************************************************************* #
--- # Compatible to the "Minimal RISC-V External Debug Spec. Version 0.13.2"                        #
--- # -> "Execution-based" debugging scheme                                                         # 
+-- # Compatible to the "Minimal RISC-V External Debug Spec. Version 1.0" using "execution-based"   #
+-- # debugging scheme (via the program buffer).                                                    #
 -- # ********************************************************************************************* #
 -- # Key features:                                                                                 #
 -- # * register access commands only                                                               #
@@ -76,6 +76,7 @@ entity neorv32_debug_dm is
     cpu_addr_i       : in  std_ulogic_vector(31 downto 0); -- address
     cpu_rden_i       : in  std_ulogic; -- read enable
     cpu_wren_i       : in  std_ulogic; -- write enable
+    cpu_ben_i        : in  std_ulogic_vector(03 downto 0); -- byte write enable
     cpu_data_i       : in  std_ulogic_vector(31 downto 0); -- data in
     cpu_data_o       : out std_ulogic_vector(31 downto 0); -- data out
     cpu_ack_o        : out std_ulogic; -- transfer acknowledge
@@ -182,40 +183,34 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant lo_abb_c : natural := index_size_f(dm_size_c); -- low address boundary bit
 
   -- status and control register - bits --
-  constant sreg_halt_ack_c      : natural := 0; -- -/w: CPU is halted in debug mode and waits in park loop
-  constant sreg_resume_req_c    : natural := 1; -- r/-: DM requests CPU to resume
-  constant sreg_resume_ack_c    : natural := 2; -- -/w: CPU starts resuming
-  constant sreg_execute_req_c   : natural := 3; -- r/-: DM requests to execute program buffer
-  constant sreg_execute_ack_c   : natural := 4; -- -/w: CPU starts to execute program buffer
-  constant sreg_exception_ack_c : natural := 5; -- -/w: CPU has detected an exception
+  -- for write access we only care about the actual BYTE-writes! --
+  constant sreg_halt_ack_c      : natural :=  0; -- -/w: CPU is halted in debug mode and waits in park loop
+  constant sreg_resume_req_c    : natural :=  8; -- r/-: DM requests CPU to resume
+  constant sreg_resume_ack_c    : natural :=  8; -- -/w: CPU starts resuming
+  constant sreg_execute_req_c   : natural := 16; -- r/-: DM requests to execute program buffer
+  constant sreg_execute_ack_c   : natural := 16; -- -/w: CPU starts to execute program buffer
+  constant sreg_exception_ack_c : natural := 24; -- -/w: CPU has detected an exception
 
   -- code ROM containing "park loop" --
   -- copied manually from 'sw/ocd-firmware/neorv32_debug_mem_code.vhd' --
-  type code_rom_file_t is array (0 to 31) of std_ulogic_vector(31 downto 0);
+  type code_rom_file_t is array (0 to 15) of std_ulogic_vector(31 downto 0);
   constant code_rom_file : code_rom_file_t := (
-    000000 => x"7b241073",
-    000001 => x"02000413",
-    000002 => x"98802023",
-    000003 => x"0080006f",
-    000004 => x"7b241073",
-    000005 => x"00100413",
-    000006 => x"98802023",
-    000007 => x"98002403",
-    000008 => x"00847413",
-    000009 => x"02041063",
-    000010 => x"98002403",
-    000011 => x"00247413",
-    000012 => x"fe0406e3",
-    000013 => x"00400413",
-    000014 => x"98802023",
-    000015 => x"7b202473",
-    000016 => x"7b200073",
-    000017 => x"01000413",
-    000018 => x"98802023",
-    000019 => x"7b202473",
-    000020 => x"0000100f",
-    000021 => x"88000067",
-    others => x"00100073" -- ebreak
+    00 => x"8c0001a3",
+    01 => x"00100073",
+    02 => x"7b241073",
+    03 => x"8c000023",
+    04 => x"8c204403",
+    05 => x"00041c63",
+    06 => x"8c104403",
+    07 => x"fe0408e3",
+    08 => x"8c8000a3",
+    09 => x"7b202473",
+    10 => x"7b200073",
+    11 => x"8c000123",
+    12 => x"7b202473",
+    13 => x"0000100f",
+    14 => x"84000067",
+    15 => x"00000073"
   );
 
   -- global access control --
@@ -515,7 +510,7 @@ begin
   -- SoC reset --
   cpu_ndmrstn_o <= not (dm_reg.dmcontrol_ndmreset and dm_reg.dmcontrol_dmactive); -- to processor's reset generator
 
-  -- build program buffer array for cpu access --
+  -- construct program buffer array for CPU access --
   cpu_progbuf(0) <= dm_ctrl.ldsw_progbuf; -- pseudo program buffer for GPR access
   cpu_progbuf(1) <= instr_nop_c when (dm_ctrl.pbuf_en = '0') else dm_reg.progbuf(0);
   cpu_progbuf(2) <= instr_nop_c when (dm_ctrl.pbuf_en = '0') else dm_reg.progbuf(1);
@@ -559,7 +554,7 @@ begin
           dmi_resp_data_o(06)           <= '0';                       -- authbusy (r/-): always ready since there is no authentication
           dmi_resp_data_o(05)           <= '0';                       -- hasresethaltreq (r/-): halt-on-reset not implemented
           dmi_resp_data_o(04)           <= '0';                       -- confstrptrvalid (r/-): no configuration string available
-          dmi_resp_data_o(03 downto 00) <= "0010";                    -- version (r/-): compatible to version 0.13
+          dmi_resp_data_o(03 downto 00) <= "0011";                    -- version (r/-): compatible to spec. version 1.0
 
         -- debug module control --
         when addr_dmcontrol_c =>
@@ -614,11 +609,11 @@ begin
         when addr_data0_c =>
           dmi_resp_data_o <= dci.rdata;
 
-        -- program buffer (r/w) --
-        when addr_progbuf0_c =>
-          dmi_resp_data_o <= dm_reg.progbuf(0); -- program buffer 0
-        when addr_progbuf1_c =>
-          dmi_resp_data_o <= dm_reg.progbuf(1); -- program buffer 1
+--      -- program buffer (-/w) --
+--      when addr_progbuf0_c =>
+--        dmi_resp_data_o <= dm_reg.progbuf(0); -- program buffer 0
+--      when addr_progbuf1_c =>
+--        dmi_resp_data_o <= dm_reg.progbuf(1); -- program buffer 1
 
 --      -- system bus access control and status (r/-) --
 --      when addr_sbcs_c =>
@@ -674,25 +669,40 @@ begin
 
   -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  write_access: process(clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      data_buf          <= (others => '0');
+      dci.halt_ack      <= '0';
+      dci.resume_ack    <= '0';
+      dci.execute_ack   <= '0';
+      dci.exception_ack <= '0';
+    elsif rising_edge(clk_i) then
       -- data buffer --
       if (dci.data_we = '1') then -- DM write access
         data_buf <= dci.wdata;
       elsif (maddr = "10") and (wren = '1') then -- CPU write access
         data_buf <= cpu_data_i;
       end if;
-      -- control and status register --
+      -- control and status register CPU write access --
+      -- NOTE: we only check the individual BYTE ACCESSES - not the actual write data --
       dci.halt_ack      <= '0'; -- all writable flags auto-clear
       dci.resume_ack    <= '0';
       dci.execute_ack   <= '0';
       dci.exception_ack <= '0';
       if (maddr = "11") and (wren = '1') then
-        dci.halt_ack      <= cpu_data_i(sreg_halt_ack_c);
-        dci.resume_ack    <= cpu_data_i(sreg_resume_ack_c);
-        dci.execute_ack   <= cpu_data_i(sreg_execute_ack_c);
-        dci.exception_ack <= cpu_data_i(sreg_exception_ack_c);
+        if (cpu_ben_i(sreg_halt_ack_c/8) = '1') then
+          dci.halt_ack <= '1';
+        end if;
+        if (cpu_ben_i(sreg_resume_ack_c/8) = '1') then
+          dci.resume_ack <= '1';
+        end if;
+        if (cpu_ben_i(sreg_execute_ack_c/8) = '1') then
+          dci.execute_ack <= '1';
+        end if;
+        if (cpu_ben_i(sreg_exception_ack_c/8) = '1') then
+          dci.exception_ack <= '1';
+        end if;
       end if;
     end if;
   end process write_access;
@@ -711,7 +721,7 @@ begin
       if (rden = '1') then -- output enable
         case maddr is -- module select
           when "00" => -- code ROM
-            cpu_data_o <= code_rom_file(to_integer(unsigned(cpu_addr_i(6 downto 2))));
+            cpu_data_o <= code_rom_file(to_integer(unsigned(cpu_addr_i(5 downto 2))));
           when "01" => -- program buffer
             cpu_data_o <= cpu_progbuf(to_integer(unsigned(cpu_addr_i(3 downto 2))));
           when "10" => -- data buffer
