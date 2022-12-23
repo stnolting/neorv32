@@ -70,7 +70,8 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
-    CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
+    CPU_EXTENSION_RISCV_Sdext    : boolean; -- implement external debug mode extension?
+    CPU_EXTENSION_RISCV_Sdtrig   : boolean; -- implement trigger module extension?
     -- Tuning Options --
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
@@ -334,6 +335,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     dscratch0         : std_ulogic_vector(XLEN-1 downto 0); -- dscratch0 (R/W): debug mode scratch register 0
     --
     tdata1_exe        : std_ulogic; -- enable (match) trigger
+    tdata1_action     : std_ulogic; -- enter debug mode / ebreak exception when trigger fires
+    tdata1_dmode      : std_ulogic; -- set to ignore tdata* CSR access from machine-mode
     tdata1_rd         : std_ulogic_vector(XLEN-1 downto 0); -- tdata1 (R/(W)): trigger register read-back
     tdata2            : std_ulogic_vector(XLEN-1 downto 0); -- tdata2 (R/W): address-match register
   end record;
@@ -686,7 +689,7 @@ begin
       ctrl <= ctrl_nxt;
 
       -- sleep mode --
-      if (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then
+      if (CPU_EXTENSION_RISCV_Sdext = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) then
         execute_engine.sleep <= '0'; -- no sleep when in debug mode
       else
         execute_engine.sleep <= execute_engine.sleep_nxt;
@@ -709,15 +712,15 @@ begin
       -- next PC logic --
       case execute_engine.state is
         when TRAP_START => -- STARTING trap environment
-          if (trap_ctrl.cause(5) = '1') and (CPU_EXTENSION_RISCV_DEBUG = true) then -- trap cause: debug mode (re-)entry
+          if (trap_ctrl.cause(5) = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- trap cause: debug mode (re-)entry
             execute_engine.next_pc <= CPU_DEBUG_PARK_ADDR; -- debug mode enter; start at "parking loop" <normal_entry>
-          elsif (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_DEBUG = true) then -- any other exception INSIDE debug mode
+          elsif (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- any other exception INSIDE debug mode
             execute_engine.next_pc <= CPU_DEBUG_EXC_ADDR; -- debug mode enter: start at "parking loop" <exception_entry>
           else -- normal start of trap
             execute_engine.next_pc <= csr.mtvec(XLEN-1 downto 2) & "00"; -- trap enter
           end if;
         when TRAP_EXIT => -- LEAVING trap environment
-          if (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_DEBUG = true) then -- debug mode exit
+          if (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- debug mode exit
             execute_engine.next_pc <= csr.dpc(XLEN-1 downto 1) & '0'; -- debug mode exit
           else -- normal end of trap
             execute_engine.next_pc <= csr.mepc(XLEN-1 downto 1) & '0'; -- trap exit
@@ -1289,12 +1292,11 @@ begin
 
       -- debug mode CSRs --
       when csr_dcsr_c | csr_dpc_c | csr_dscratch0_c =>
-        csr_acc_valid <= debug_ctrl.running and bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG); -- access only in debug-mode
+        csr_acc_valid <= debug_ctrl.running and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdext); -- access only in debug-mode
 
       -- trigger module CSRs --
       when csr_tselect_c | csr_tdata1_c | csr_tdata2_c | csr_tdata3_c | csr_tinfo_c | csr_tcontrol_c | csr_mcontext_c | csr_scontext_c =>
-        -- access in debug-mode or M-mode only (M-mode: writes to tdata* are ignored as DMODE is hardwired to 1)
-        csr_acc_valid <= (debug_ctrl.running or csr.privilege_eff) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG);
+        csr_acc_valid <= (debug_ctrl.running or csr.privilege_eff) and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdtrig); -- access in debug-mode or M-mode only
 
       -- undefined / not implemented --
       when others =>
@@ -1489,16 +1491,17 @@ begin
         trap_ctrl.exc_buf(exc_iillegal_c)  <= (trap_ctrl.exc_buf(exc_iillegal_c)  or trap_ctrl.instr_il)                           and (not trap_ctrl.env_start_ack);
 
         -- exception queue: break point --
-        if (CPU_EXTENSION_RISCV_DEBUG = true) then
-          trap_ctrl.exc_buf(exc_break_c) <= (not trap_ctrl.env_start_ack) and (trap_ctrl.exc_buf(exc_break_c) or 
+        if (CPU_EXTENSION_RISCV_Sdext = true) then
+          trap_ctrl.exc_buf(exc_break_c) <= (not trap_ctrl.env_start_ack) and (trap_ctrl.exc_buf(exc_break_c) or
+            (hw_trigger_fire and (not csr.tdata1_action)) or -- trigger module fires and enter-debug is disabled
             (trap_ctrl.break_point and (    csr.privilege) and (not csr.dcsr_ebreakm) and (not debug_ctrl.running)) or -- break to machine-trap-handler when in machine mode on "ebreak"
             (trap_ctrl.break_point and (not csr.privilege) and (not csr.dcsr_ebreaku) and (not debug_ctrl.running))); -- break to machine-trap-handler when in user mode on "ebreak"
         else
-          trap_ctrl.exc_buf(exc_break_c) <= (trap_ctrl.exc_buf(exc_break_c) or trap_ctrl.break_point) and (not trap_ctrl.env_start_ack);
+          trap_ctrl.exc_buf(exc_break_c) <= (trap_ctrl.exc_buf(exc_break_c) or trap_ctrl.break_point or hw_trigger_fire) and (not trap_ctrl.env_start_ack);
         end if;
 
         -- exception queue / interrupt buffer: enter debug mode --
-        if (CPU_EXTENSION_RISCV_DEBUG = true) then
+        if (CPU_EXTENSION_RISCV_Sdext = true) then
           trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_start_ack);
           trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_start_ack);
           trap_ctrl.irq_buf(irq_db_halt_c)  <= debug_ctrl.trig_halt;
@@ -1549,10 +1552,10 @@ begin
                                  (trap_ctrl.db_irq_fire = '1') else '0'; -- debug-mode halt IRQ cannot be masked
 
   -- NO interrupts when IN debug mode or when IN single-stepping mode --
-  trap_ctrl.db_irq_en <= '0' when (CPU_EXTENSION_RISCV_DEBUG = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) else '1';
+  trap_ctrl.db_irq_en <= '0' when (CPU_EXTENSION_RISCV_Sdext = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) else '1';
 
   -- "non-maskable interrupt for debug-mode entry
-  trap_ctrl.db_irq_fire <= (trap_ctrl.irq_buf(irq_db_step_c) or trap_ctrl.irq_buf(irq_db_halt_c)) when (CPU_EXTENSION_RISCV_DEBUG = true) else '0'; -- "NMI" for debug mode entry
+  trap_ctrl.db_irq_fire <= (trap_ctrl.irq_buf(irq_db_step_c) or trap_ctrl.irq_buf(irq_db_halt_c)) when (CPU_EXTENSION_RISCV_Sdext = true) else '0'; -- "NMI" for debug mode entry
 
   -- exception program counter (for updating xCAUSE CSRs) --
   trap_ctrl.epc <= (execute_engine.pc(XLEN-1 downto 1) & '0') when (((trap_ctrl.cause(trap_ctrl.cause'left)) = '1') or (trap_ctrl.cause = trap_iba_c)) else -- interrupted instruction
@@ -1687,6 +1690,8 @@ begin
       csr.dscratch0         <= (others => '0');
       --
       csr.tdata1_exe        <= '0';
+      csr.tdata1_action     <= '0';
+      csr.tdata1_dmode      <= '0';
       csr.tdata2            <= (others => '0');
 
     elsif rising_edge(clk_i) then
@@ -1838,7 +1843,7 @@ begin
 
           -- debug mode CSRs --
           -- --------------------------------------------------------------------
-          if (CPU_EXTENSION_RISCV_DEBUG = true) then
+          if (CPU_EXTENSION_RISCV_Sdext = true) then
             if (csr.addr(11 downto 2) = csr_class_debug_c) then -- debug CSR class
               -- R/W: dcsr - debug mode control and status register --
               if (csr.addr(1 downto 0) = csr_dcsr_c(1 downto 0)) then
@@ -1860,14 +1865,16 @@ begin
             end if;
           end if;
 
-          -- trigger module CSRs - writable only in DEBUG MODE (dmode == 1) --
+          -- trigger module CSRs --
           -- --------------------------------------------------------------------
-          if (CPU_EXTENSION_RISCV_DEBUG = true) then
+          if (CPU_EXTENSION_RISCV_Sdtrig = true) then
             if (csr.addr(11 downto 4) = csr_class_trigger_c) then -- trigger CSR class
-              if (debug_ctrl.running = '1') then -- actual write only in debug mode
+              if (debug_ctrl.running = '1') or (csr.tdata1_dmode = '0') then -- exclusive access from debug-mode
                 -- R/W: tdata1 - match control --
                 if (csr.addr(3 downto 0) = csr_tdata1_c(3 downto 0)) then
-                  csr.tdata1_exe <= csr.wdata(2);
+                  csr.tdata1_exe    <= csr.wdata(2);
+                  csr.tdata1_action <= csr.wdata(12);
+                  csr.tdata1_dmode  <= csr.wdata(27);
                 end if;
                 -- R/W: tdata2 - address compare --
                 if (csr.addr(3 downto 0) = csr_tdata2_c(3 downto 0)) then
@@ -1897,7 +1904,7 @@ begin
 
             -- NORMAL trap entry: write mcause, mepc and mtval - no update when in debug-mode! --
             -- --------------------------------------------------------------------
-            if (CPU_EXTENSION_RISCV_DEBUG = false) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.running = '0')) then
+            if (CPU_EXTENSION_RISCV_Sdext = false) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.running = '0')) then
               -- trap cause ID --
               csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- type + identifier
               -- trap PC --
@@ -1920,7 +1927,7 @@ begin
 
             -- DEBUG MODE entry: write dpc and dcsr - no update when already in debug-mode! --
             -- --------------------------------------------------------------------
-            if (CPU_EXTENSION_RISCV_DEBUG = true) and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then
+            if (CPU_EXTENSION_RISCV_Sdext = true) and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then
               -- trap cause ID --
               csr.dcsr_cause <= trap_ctrl.cause(2 downto 0); -- why did we enter debug mode?
               -- current privilege mode when debug mode was entered --
@@ -1935,7 +1942,7 @@ begin
           elsif (trap_ctrl.env_end = '1') then
 
             -- return from debug mode --
-            if (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') then
+            if (CPU_EXTENSION_RISCV_Sdext = true) and (debug_ctrl.running = '1') then
               if (CPU_EXTENSION_RISCV_U = true) then
                 csr.privilege <= csr.dcsr_prv;
               end if;
@@ -1997,7 +2004,7 @@ begin
         end if;
 
         -- no debug mode --
-        if (CPU_EXTENSION_RISCV_DEBUG = false) then
+        if (CPU_EXTENSION_RISCV_Sdext = false) then
           csr.dcsr_ebreakm <= '0';
           csr.dcsr_step    <= '0';
           csr.dcsr_ebreaku <= '0';
@@ -2005,8 +2012,13 @@ begin
           csr.dcsr_cause   <= (others => '0');
           csr.dpc          <= (others => '0');
           csr.dscratch0    <= (others => '0');
-          csr.tdata1_exe   <= '0';
-          csr.tdata2       <= (others => '0');
+        end if;
+
+        -- no trigger module--
+        if (CPU_EXTENSION_RISCV_Sdtrig = false) then
+          csr.tdata1_exe    <= '0';
+          csr.tdata1_action <= '0';
+          csr.tdata2        <= (others => '0');
         end if;
 
       end if; -- /Zicsr implemented
@@ -2014,7 +2026,7 @@ begin
   end process csr_write_access;
 
   -- effective privilege mode is MACHINE when in debug mode --
-  csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_DEBUG = true) and (debug_ctrl.running = '1') else csr.privilege;
+  csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_Sdext = true) and (debug_ctrl.running = '1') else csr.privilege;
 
   -- PMP output to bus unit and configuration read-back --
   pmp_connect: process(csr)
@@ -2287,20 +2299,20 @@ begin
 
           -- debug mode CSRs --
           -- --------------------------------------------------------------------
-          when csr_dcsr_c      => if (CPU_EXTENSION_RISCV_DEBUG) then csr.rdata <= csr.dcsr_rd;   else NULL; end if; -- dcsr (r/w): debug mode control and status
-          when csr_dpc_c       => if (CPU_EXTENSION_RISCV_DEBUG) then csr.rdata <= csr.dpc;       else NULL; end if; -- dpc (r/w): debug mode program counter
-          when csr_dscratch0_c => if (CPU_EXTENSION_RISCV_DEBUG) then csr.rdata <= csr.dscratch0; else NULL; end if; -- dscratch0 (r/w): debug mode scratch register 0
+          when csr_dcsr_c      => if (CPU_EXTENSION_RISCV_Sdext) then csr.rdata <= csr.dcsr_rd;   else NULL; end if; -- dcsr (r/w): debug mode control and status
+          when csr_dpc_c       => if (CPU_EXTENSION_RISCV_Sdext) then csr.rdata <= csr.dpc;       else NULL; end if; -- dpc (r/w): debug mode program counter
+          when csr_dscratch0_c => if (CPU_EXTENSION_RISCV_Sdext) then csr.rdata <= csr.dscratch0; else NULL; end if; -- dscratch0 (r/w): debug mode scratch register 0
 
           -- trigger module CSRs --
           -- --------------------------------------------------------------------
---        when csr_tselect_c  => if (CPU_EXTENSION_RISCV_DEBUG) then csr.rdata <= (others => '0'); else NULL; end if; -- tselect (r/w): always zero = only 1 trigger available
-          when csr_tdata1_c   => if (CPU_EXTENSION_RISCV_DEBUG) then csr.rdata <= csr.tdata1_rd;   else NULL; end if; -- tdata1 (r/w): match control
-          when csr_tdata2_c   => if (CPU_EXTENSION_RISCV_DEBUG) then csr.rdata <= csr.tdata2;      else NULL; end if; -- tdata2 (r/w): address-compare
---        when csr_tdata3_c   => if (CPU_EXTENSION_RISCV_DEBUG) then csr.rdata <= (others => '0'); else NULL; end if; -- tdata3 (r/w): implemented but always zero
-          when csr_tinfo_c    => if (CPU_EXTENSION_RISCV_DEBUG) then csr.rdata <= x"00000004";     else NULL; end if; -- tinfo (r/w): address-match trigger only
---        when csr_tcontrol_c => if (CPU_EXTENSION_RISCV_DEBUG) then csr.rdata <= (others => '0'); else NULL; end if; -- tcontrol (r/w): implemented but always zero
---        when csr_mcontext_c => if (CPU_EXTENSION_RISCV_DEBUG) then csr.rdata <= (others => '0'); else NULL; end if; -- mcontext (r/w): implemented but always zero
---        when csr_scontext_c => if (CPU_EXTENSION_RISCV_DEBUG) then csr.rdata <= (others => '0'); else NULL; end if; -- scontext (r/w): implemented but always zero
+--        when csr_tselect_c  => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= (others => '0'); else NULL; end if; -- tselect (r/w): always zero = only 1 trigger available
+          when csr_tdata1_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= csr.tdata1_rd;   else NULL; end if; -- tdata1 (r/w): match control
+          when csr_tdata2_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= csr.tdata2;      else NULL; end if; -- tdata2 (r/w): address-compare
+--        when csr_tdata3_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= (others => '0'); else NULL; end if; -- tdata3 (r/w): implemented but always zero
+          when csr_tinfo_c    => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= x"00000004";     else NULL; end if; -- tinfo (r/w): address-match trigger only
+--        when csr_tcontrol_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= (others => '0'); else NULL; end if; -- tcontrol (r/w): implemented but always zero
+--        when csr_mcontext_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= (others => '0'); else NULL; end if; -- mcontext (r/w): implemented but always zero
+--        when csr_scontext_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= (others => '0'); else NULL; end if; -- scontext (r/w): implemented but always zero
 
           -- NEORV32-specific (RISC-V "custom") read-only CSRs --
           -- --------------------------------------------------------------------
@@ -2317,7 +2329,8 @@ begin
             csr.rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr);   -- Zicntr: base instructions, cycle and time CSRs
             csr.rdata(08) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP: physical memory protection (Zspmp)
             csr.rdata(09) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm);    -- Zihpm: hardware performance monitors
-            csr.rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_DEBUG);    -- RISC-V debug mode
+            csr.rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdext);    -- Sdext: RISC-V (external) debug mode
+            csr.rdata(11) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdtrig);   -- Sdtrig: trigger module
             -- misc --
             csr.rdata(20) <= bool_to_ulogic_f(is_simulation_c);              -- is this a simulation?
             -- tuning options --
@@ -2560,7 +2573,7 @@ begin
       debug_ctrl.ext_halt_req <= db_halt_req_i;
 
       -- state machine --
-      if (CPU_EXTENSION_RISCV_DEBUG = true) then
+      if (CPU_EXTENSION_RISCV_Sdext = true) then
         case debug_ctrl.state is
 
           when DEBUG_OFFLINE => -- not in debug mode, waiting for entering request
@@ -2597,10 +2610,10 @@ begin
   end process debug_control;
 
   -- CPU is *in* debug mode --
-  debug_ctrl.running <= '1' when ((debug_ctrl.state = DEBUG_ONLINE) or (debug_ctrl.state = DEBUG_LEAVING)) and (CPU_EXTENSION_RISCV_DEBUG = true) else '0';
+  debug_ctrl.running <= '1' when ((debug_ctrl.state = DEBUG_ONLINE) or (debug_ctrl.state = DEBUG_LEAVING)) and (CPU_EXTENSION_RISCV_Sdext = true) else '0';
 
   -- entry debug mode triggers --
-  debug_ctrl.trig_hw    <= hw_trigger_fire and (not debug_ctrl.running); -- enter debug mode by HW trigger module request
+  debug_ctrl.trig_hw    <= hw_trigger_fire and (not debug_ctrl.running) and csr.tdata1_action; -- enter debug mode by HW trigger module request
   debug_ctrl.trig_break <= trap_ctrl.break_point and (debug_ctrl.running or -- re-enter debug mode
                            ((    csr.privilege) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
                            ((not csr.privilege) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
@@ -2632,7 +2645,7 @@ begin
 -- ****************************************************************************************************************************
 
   -- trigger to enter debug-mode: instruction address match (fire AFTER execution) --
-  hw_trigger_fire <= '1' when (CPU_EXTENSION_RISCV_DEBUG = true) and (csr.tdata1_exe = '1') and
+  hw_trigger_fire <= '1' when (CPU_EXTENSION_RISCV_Sdtrig = true) and (csr.tdata1_exe = '1') and
                               (csr.tdata2(XLEN-1 downto 1) = execute_engine.pc(XLEN-1 downto 1)) and
                               (execute_engine.state = EXECUTE) else '0';
 
@@ -2640,13 +2653,13 @@ begin
   -- Match Control CSR (mcontrol @ tdata1) - Read-Back --------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr.tdata1_rd(31 downto 28) <= "0010"; -- type: address(/data) match trigger
-  csr.tdata1_rd(27)           <= '1'; -- dmode: only debug-mode can write tdata* registers
+  csr.tdata1_rd(27)           <= csr.tdata1_dmode; -- dmode: set to ignore machine-mode access to tdata* CSRs
   csr.tdata1_rd(26 downto 21) <= "000000"; -- maskmax: only exact values
   csr.tdata1_rd(20)           <= '0'; -- hit: feature not implemented
   csr.tdata1_rd(19)           <= '0'; -- select: fire on address match
   csr.tdata1_rd(18)           <= '1'; -- timing: trigger **after** executing the triggering instruction
   csr.tdata1_rd(17 downto 16) <= "00"; -- sizelo: match against an access of any size
-  csr.tdata1_rd(15 downto 12) <= "0001"; -- action: enter debug mode on trigger
+  csr.tdata1_rd(15 downto 12) <= "000" & csr.tdata1_action; -- action: 1: enter debug mode on trigger, 0: ebreak exception on trigger
   csr.tdata1_rd(11)           <= '0'; -- chain: chaining not supported - there is only one trigger
   csr.tdata1_rd(10 downto 07) <= "0000"; -- match: only full-address-match
   csr.tdata1_rd(6)            <= '1'; -- m: trigger enabled when in machine mode
