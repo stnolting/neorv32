@@ -63,11 +63,11 @@ entry_exception:
 
 // BASE + 8: entry for ebreak in debug-mode, halt request or return from single-stepped instruction
 entry_normal:
-  sb     zero, (DBMEM_SREG_BASE+SREG_HALTED_ACK)(zero)    // ACK that CPU has halted
   csrw   dscratch0, s0                                    // save s0 to dscratch0 so we have a general purpose register available
 
 // polling loop - waiting for requests
 park_loop:
+  sb     zero, (DBMEM_SREG_BASE+SREG_HALTED_ACK)(zero)    // ACK that CPU is halted
   lbu    s0, (DBMEM_SREG_BASE+SREG_EXECUTE_REQ)(zero)     // request to execute program buffer?
   bnez   s0, execute                                  
   lbu    s0, (DBMEM_SREG_BASE+SREG_RESUME_REQ)(zero)      // request to resume?
