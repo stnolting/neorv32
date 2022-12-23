@@ -252,7 +252,8 @@ Software can retrieve this value from the <<_system_configuration_information_me
 [frame="all",grid="none"]
 |======
 | **ON_CHIP_DEBUGGER_EN** | _boolean_ | false
-3+| Implement the on-chip debugger (OCD) and the CPU debug mode when true.
+3+| Implement the on-chip debugger (OCD) and the CPU debug mode when true. This generic is directly passed
+to the CPU's <<_cpu_extension_riscv_sdext>> and <<_cpu_extension_riscv_sdtrig>> generics.
 See section <<_on_chip_debugger_ocd>> for more information.
 |======
 
