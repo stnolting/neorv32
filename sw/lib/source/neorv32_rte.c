@@ -374,8 +374,11 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_ZXCFU)) {
     neorv32_uart0_printf("Zxcfu ");
   }
-  if (tmp & (1<<CSR_MXISA_DEBUGMODE)) {
-    neorv32_uart0_printf("DebugMode ");
+  if (tmp & (1<<CSR_MXISA_SDEXT)) {
+    neorv32_uart0_printf("Sdext ");
+  }
+  if (tmp & (1<<CSR_MXISA_SDTRIG)) {
+    neorv32_uart0_printf("Sdtrig ");
   }
 
   // CPU tuning options
