@@ -16,13 +16,7 @@ implemented, not supported or disabled will raise an illegal instruction excepti
 [IMPORTANT]
 All writable CSRs provide **WARL** behavior (write all values; read only legal values). Application software
 should always read back a CSR after writing to check if the targeted bits can actually be modified (or are
-just read-only). 
-
-.Debug-Mode CSRs
-[NOTE]
-The CSRs related to the CPU's debug mode (used by the <<_on_chip_debugger_ocd>>) are not listed here as they are
-not accessible by "normal" software. See sections <<_cpu_debug_mode_csrs>> and <<_trigger_module_csrs>> for more
-information about those CSRs.
+just read-only).
 
 .NEORV32 Control and Status Registers (CSRs)
 [cols="<2,<4,<5,^1,<11"]
@@ -56,6 +50,19 @@ information about those CSRs.
 | 0x3b0   | <<_pmpaddr, `pmpaddr0`>>            | _CSR_PMPADDR0_       | r/w | Physical memory protection address register region 0
 5+<| ...
 | 0x3ef   | <<_pmpaddr, `pmpaddr15`>>           | _CSR_PMPADDR15_      | r/w | Physical memory protection address register region 15
+5+^| **<<_trigger_module_csrs>>**
+| 0x7a0   | <<_tselect>>                        | _CSR_TSELECT_        | r/w | Trigger select register
+| 0x7a1   | <<_tdata1>>                         | _CSR_TDATA1_         | r/w | Trigger data register 1
+| 0x7a2   | <<_tdata2>>                         | _CSR_TDATA2_         | r/w | Trigger data register 2
+| 0x7a3   | <<_tdata3>>                         | _CSR_TDATA3_         | r/w | Trigger data register 3
+| 0x7a4   | <<_tinfo>>                          | _CSR_TINFO_          | r/w | Trigger information register
+| 0x7a5   | <<_tcontrol>>                       | _CSR_TCONTROL_       | r/w | Trigger control register
+| 0x7a8   | <<_mcontext>>                       | _CSR_MCONTEXT_       | r/w | Machine context register
+| 0x7aa   | <<_scontext>>                       | _CSR_SCONTEXT_       | r/w | Supervisor context register
+5+^| **<<_cpu_debug_mode_csrs>>**
+| 0x7b0   | <<_dcsr>>                           | -                    | r/w | Debug control and status register
+| 0x7b1   | <<_dpc>>                            | -                    | r/w | Debug program counter
+| 0x7b2   | <<_dscratch0>>                      | -                    | r/w | Debug scratch register 0
 5+^| **<<_machine_counter_and_timer_csrs>>**
 | 0xb00   | <<_mcycleh, `mcycle`>>              | _CSR_MCYCLE_         | r/w | Machine cycle counter low word
 | 0xb02   | <<_minstreth, `minstret`>>          | _CSR_MINSTRET_       | r/w | Machine instruction-retired counter low word
@@ -803,7 +810,8 @@ NEORV32-specific read-only CSR that helps machine-mode software to discover `Z*`
 | 31:21 | -                     | r/- | _reserved_, read as zero
 | 20    | _CSR_MXISA_IS_SIM_    | r/- | set if CPU is being **simulated** (⚠️ not guaranteed)
 | 19:11 | -                     | r/- | _reserved_, read as zero
-| 10    | _CSR_MXISA_DEBUGMODE_ | r/- | RISC-V CPU `debug_mode` available when set (via top's <<_on_chip_debugger_en>> generic)
+| 11    | _CSR_MXISA_SDTRIG_    | r/- | `Sdtrig`extension (trigger module) available when set (via top's <<_cpu_extension_riscv_sdtrig>> generic)
+| 10    | _CSR_MXISA_SDEXT_     | r/- | `Sdext` extension (debug mode) available when set (via top's <<_cpu_extension_riscv_sdext>> generic)
 |  9    | _CSR_MXISA_ZIHPM_     | r/- | `Zihpm` (hardware performance monitors) extension available when set (via top's <<_cpu_extension_riscv_zihpm>> generic)
 |  8    | _CSR_MXISA_PMP_       | r/- | PMP` (physical memory protection) extension available when set (via top's <<_pmp_num_regions>> generic)
 |  7    | _CSR_MXISA_ZICNTR_    | r/- | `Zicntr` extension (`I` sub-extension) available when set - `[m]cycle`, `[m]instret` and `[m]time` CSRs available when set (via top's <<_cpu_extension_riscv_zicntr>> generic)
