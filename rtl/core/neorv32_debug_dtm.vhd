@@ -209,7 +209,7 @@ begin
     elsif rising_edge(clk_i) then
 
       -- serial data input: instruction register --
-      if (tap_ctrl_state = IR_CAPTURE) then -- preload phase
+      if (tap_ctrl_state = LOGIC_RESET) or (tap_ctrl_state = IR_CAPTURE) then -- preload phase
         tap_reg.ireg <= "00001"; -- IDCODE
       elsif (tap_ctrl_state = IR_SHIFT) then -- access phase
         if (tap_sync.tck_rising = '1') then -- [JTAG-SYNC] evaluate TDI on rising edge of TCK
@@ -286,7 +286,7 @@ begin
       -- DMI status and control --
       dmi_ctrl.dmihardreset <= '0'; -- default
       dmi_ctrl.dmireset     <= '0'; -- default
-      if (tap_ctrl_state = DR_UPDATE) and (dr_update_trig.valid = '1') and (tap_reg.ireg = "10000") then
+      if (dr_update_trig.valid = '1') and (tap_reg.ireg = "10000") then
         dmi_ctrl.dmireset     <= tap_reg.dtmcs(16);
         dmi_ctrl.dmihardreset <= tap_reg.dtmcs(17);
       end if;
@@ -298,7 +298,7 @@ begin
         case dmi_ctrl.state is
 
           when DMI_IDLE => -- waiting for new request
-            if (tap_ctrl_state = DR_UPDATE) and (dr_update_trig.valid = '1') and (tap_reg.ireg = "10001") then
+            if (dr_update_trig.valid = '1') and (tap_reg.ireg = "10001") then
               dmi_ctrl.addr  <= tap_reg.dmi(40 downto 34);
               dmi_ctrl.wdata <= tap_reg.dmi(33 downto 02);
               if (tap_reg.dmi(1 downto 0) = "01") then -- read
