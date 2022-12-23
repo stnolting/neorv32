@@ -1715,6 +1715,7 @@ begin
       cpu_addr_i       => p_bus.addr,               -- address
       cpu_rden_i       => p_bus.re,                 -- read enable
       cpu_wren_i       => p_bus.we,                 -- write enable
+      cpu_ben_i        => p_bus.ben,                -- byte write enable
       cpu_data_i       => p_bus.wdata,              -- data in
       cpu_data_o       => resp_bus(RESP_OCD).rdata, -- data out
       cpu_ack_o        => resp_bus(RESP_OCD).ack,   -- transfer acknowledge
