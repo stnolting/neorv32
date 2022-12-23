@@ -1945,6 +1945,9 @@ begin
             if (CPU_EXTENSION_RISCV_Sdext = true) and (debug_ctrl.running = '1') then
               if (CPU_EXTENSION_RISCV_U = true) then
                 csr.privilege <= csr.dcsr_prv;
+                if (csr.dcsr_prv /= priv_mode_m_c) then
+                  csr.mstatus_mprv <= '0'; -- clear if return priv. mode is less than M
+                end if;
               end if;
 
             -- return from "normal trap" --
