@@ -565,7 +565,8 @@ begin
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu    => CPU_EXTENSION_RISCV_Zxcfu,    -- implement custom (instr.) functions unit?
-    CPU_EXTENSION_RISCV_DEBUG    => ON_CHIP_DEBUGGER_EN,          -- implement CPU debug mode?
+    CPU_EXTENSION_RISCV_Sdext    => ON_CHIP_DEBUGGER_EN,          -- implement external debug mode extension?
+    CPU_EXTENSION_RISCV_Sdtrig   => ON_CHIP_DEBUGGER_EN,          -- implement debug mode trigger module extension?
     -- Extension Options --
     FAST_MUL_EN                  => FAST_MUL_EN,                  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,                -- use barrel shifter for shift operations

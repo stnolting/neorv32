@@ -62,7 +62,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070902"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070903"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1174,7 +1174,8 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
-      CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
+      CPU_EXTENSION_RISCV_Sdext    : boolean; -- implement external debug mode extension?
+      CPU_EXTENSION_RISCV_Sdtrig   : boolean; -- implement trigger module extension?
       -- Tuning Options --
       FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
@@ -1247,7 +1248,8 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
       CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
-      CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
+      CPU_EXTENSION_RISCV_Sdext    : boolean; -- implement external debug mode extension?
+      CPU_EXTENSION_RISCV_Sdtrig   : boolean; -- implement trigger module extension?
       -- Extension Options --
       FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
