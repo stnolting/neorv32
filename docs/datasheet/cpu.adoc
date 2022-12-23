@@ -746,6 +746,10 @@ A simple PMP example program can be found in `sw/example/demo_pmp`.
 Reducing the minimal PMP region size / granularity via the <<_pmp_min_granularity>> top entity generic
 will reduce hardware utilization and also reduces impact on critical path.
 
+.PMP Rules when in Debug Mode
+[NOTE]
+When in debug-mode all PMP rules are ignored making the debugger have maximum access rights.
+
 
 === **`Sdext** External Debug Support
 
