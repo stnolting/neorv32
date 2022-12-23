@@ -866,50 +866,50 @@ package neorv32_package is
   -- MSB:   1 = async exception (IRQ), 0 = sync exception (e.g. ebreak)
   -- MSB-1: 1 = entry to debug mode, 0 = normal trapping
   -- RISC-V compliant synchronous exceptions --
-  constant trap_ima_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0.0:  instruction misaligned
-  constant trap_iba_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 0.1:  instruction access fault
-  constant trap_iil_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00010"; -- 0.2:  illegal instruction
-  constant trap_brk_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00011"; -- 0.3:  breakpoint
-  constant trap_lma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00100"; -- 0.4:  load address misaligned
-  constant trap_lbe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00101"; -- 0.5:  load access fault
-  constant trap_sma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00110"; -- 0.6:  store address misaligned
-  constant trap_sbe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00111"; -- 0.7:  store access fault
-  constant trap_uenv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01000"; -- 0.8:  environment call from u-mode
---constant trap_senv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01001"; -- 0.9:  environment call from s-mode
---constant trap_henv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01010"; -- 0.10: environment call from h-mode
-  constant trap_menv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01011"; -- 0.11: environment call from m-mode
---constant trap_ipf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01100"; -- 0.12: instruction page fault
---constant trap_lpf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01101"; -- 0.13: load page fault
---constant trap_???_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01110"; -- 0.14: reserved
---constant trap_spf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01111"; -- 0.15: store page fault
+  constant trap_ima_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0:  instruction misaligned
+  constant trap_iba_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 1:  instruction access fault
+  constant trap_iil_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00010"; -- 2:  illegal instruction
+  constant trap_brk_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00011"; -- 3:  breakpoint
+  constant trap_lma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00100"; -- 4:  load address misaligned
+  constant trap_lbe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00101"; -- 5:  load access fault
+  constant trap_sma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00110"; -- 6:  store address misaligned
+  constant trap_sbe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00111"; -- 7:  store access fault
+  constant trap_uenv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01000"; -- 8:  environment call from u-mode
+--constant trap_senv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01001"; -- 9:  environment call from s-mode
+--constant trap_henv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01010"; -- 10: environment call from h-mode
+  constant trap_menv_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "01011"; -- 11: environment call from m-mode
+--constant trap_ipf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01100"; -- 12: instruction page fault
+--constant trap_lpf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01101"; -- 13: load page fault
+--constant trap_???_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01110"; -- 14: reserved
+--constant trap_spf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01111"; -- 15: store page fault
   -- NEORV32-specific (RISC-V custom) synchronous exceptions --
 -- none implemented yet
   -- RISC-V compliant asynchronous exceptions (interrupts) --
-  constant trap_msi_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00011"; -- 1.3:  machine software interrupt
-  constant trap_mti_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00111"; -- 1.7:  machine timer interrupt
-  constant trap_mei_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "01011"; -- 1.11: machine external interrupt
+  constant trap_msi_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00011"; -- 3:  machine software interrupt
+  constant trap_mti_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00111"; -- 7:  machine timer interrupt
+  constant trap_mei_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "01011"; -- 11: machine external interrupt
   -- NEORV32-specific (RISC-V custom) asynchronous exceptions (interrupts) --
-  constant trap_firq0_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10000"; -- 1.16: fast interrupt 0
-  constant trap_firq1_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10001"; -- 1.17: fast interrupt 1
-  constant trap_firq2_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10010"; -- 1.18: fast interrupt 2
-  constant trap_firq3_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10011"; -- 1.19: fast interrupt 3
-  constant trap_firq4_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10100"; -- 1.20: fast interrupt 4
-  constant trap_firq5_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10101"; -- 1.21: fast interrupt 5
-  constant trap_firq6_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10110"; -- 1.22: fast interrupt 6
-  constant trap_firq7_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10111"; -- 1.23: fast interrupt 7
-  constant trap_firq8_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "11000"; -- 1.24: fast interrupt 8
-  constant trap_firq9_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "11001"; -- 1.25: fast interrupt 9
-  constant trap_firq10_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11010"; -- 1.26: fast interrupt 10
-  constant trap_firq11_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11011"; -- 1.27: fast interrupt 11
-  constant trap_firq12_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11100"; -- 1.28: fast interrupt 12
-  constant trap_firq13_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11101"; -- 1.29: fast interrupt 13
-  constant trap_firq14_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11110"; -- 1.30: fast interrupt 14
-  constant trap_firq15_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11111"; -- 1.31: fast interrupt 15
+  constant trap_firq0_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10000"; -- 16: fast interrupt 0
+  constant trap_firq1_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10001"; -- 17: fast interrupt 1
+  constant trap_firq2_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10010"; -- 18: fast interrupt 2
+  constant trap_firq3_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10011"; -- 19: fast interrupt 3
+  constant trap_firq4_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10100"; -- 20: fast interrupt 4
+  constant trap_firq5_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10101"; -- 21: fast interrupt 5
+  constant trap_firq6_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10110"; -- 22: fast interrupt 6
+  constant trap_firq7_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10111"; -- 23: fast interrupt 7
+  constant trap_firq8_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "11000"; -- 24: fast interrupt 8
+  constant trap_firq9_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "11001"; -- 25: fast interrupt 9
+  constant trap_firq10_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11010"; -- 26: fast interrupt 10
+  constant trap_firq11_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11011"; -- 27: fast interrupt 11
+  constant trap_firq12_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11100"; -- 28: fast interrupt 12
+  constant trap_firq13_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11101"; -- 29: fast interrupt 13
+  constant trap_firq14_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11110"; -- 30: fast interrupt 14
+  constant trap_firq15_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11111"; -- 31: fast interrupt 15
   -- entering debug mode (sync./async. exceptions) --
-  constant trap_db_break_c : std_ulogic_vector(6 downto 0) := "0" & "1" & "00001"; -- d.0.1: break instruction (sync)
-  constant trap_db_hw_c    : std_ulogic_vector(6 downto 0) := "0" & "1" & "00010"; -- d.0.2: hardware trigger (sync)
-  constant trap_db_halt_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00011"; -- d.1.3: external halt request (async)
-  constant trap_db_step_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00100"; -- d.1.4: single-stepping (async)
+  constant trap_db_break_c : std_ulogic_vector(6 downto 0) := "0" & "1" & "00001"; -- 1: break instruction (sync)
+  constant trap_db_hw_c    : std_ulogic_vector(6 downto 0) := "0" & "1" & "00010"; -- 2: hardware trigger (sync)
+  constant trap_db_halt_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00011"; -- 3: external halt request (async)
+  constant trap_db_step_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00100"; -- 4: single-stepping (async)
 
   -- CPU Trap System ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
