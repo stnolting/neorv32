@@ -538,7 +538,7 @@ as only the sub-byte accesses (so, the actual bus transactions) are tracked by t
 === CPU Debug Mode
 
 The NEORV32 CPU Debug Mode `DB` or `DEBUG` is compatible to the **Minimal RISC-V Debug Specification 1.0**
-`Sdext` (external debug) ISA extension. When enabled via the <<_cpu_extension_riscv_debug>> generic (CPU) and/or
+`Sdext` (external debug) ISA extension. When enabled via the <<_cpu_extension_riscv_sdext>> generic (CPU) and/or
 the <<_on_chip_debugger_en>> (Processor) it adds a new CPU operation mode ("debug mode"), three additional CSRs
 (section <<_cpu_debug_mode_csrs>>) and one additional instruction (`dret`) to the core.
 
@@ -676,29 +676,28 @@ debug mode is entered. The `dret` instruction will return to `dpc` by moving `dp
 :sectnums:
 === Trigger Module
 
-The NEORV32 trigger module implements a subset of the features described in the "RISC-V Debug Specification / Trigger Module"
-(RISC-V `Sdtrig` ISA extension). It is always implemented when the CPU debug mode / the on-chip debugger is implemented.
+The RISC-V `Sdtrig` ISA extension add a programmable _trigger module_ to the processor when enabled
+(via the <<_cpu_extension_riscv_sdtrig>>). The NEORV32 trigger module implements a subset of the features
+described in the "RISC-V Debug Specification / Trigger Module".
 
-[IMPORTANT]
-The trigger module only provides a single trigger of _instruction address match_ type. This trigger will fire
-**after** the instruction at the specific address has been executed.
-
-The trigger module only provides a single trigger supporting only the "instruction address match" type. This limitation
+The trigger module only provides a _single_ trigger supporting only the "instruction address match" type. This limitation
 is granted by the RISC-V specs. and is sufficient to **debug code executed from read-only memory (ROM)**.
 "Normal" _software_ breakpoints (using GDB's `b`/`break` command) are implemented by temporarily replacing the according
-instruction word by a BREAK instruction. This is not possible when debugging code that is executed from read-only memory
+instruction word by an `ebreak` instruction. This is not possible when debugging code that is executed from read-only memory
 (for example when debugging programs that are executed via the <<_execute_in_place_module_xip>>).
 Therefore, the NEORV32 trigger module provides a single "instruction address match" trigger to enter debug mode when
 executing the instruction at a specific address. These "hardware-assisted breakpoints" are used by GDB's `hb`/`hbreak` command.
 
+The trigger module can also be used independently of the CPU debug-mode (so independent of the on-chip debugger).
+Machine-mode software can use the trigger module to raise a Break exception when the instruction at a programmable
+address gets executed.
 
 :sectnums:
 ==== Trigger Module CSRs
 
-The trigger module provides 8 additional CSRs, which accessible in debug mode and also in machine-mode. Since the
-trigger module does not support _native mode_ writes from machine-mode software to those CSRs are ignored.
-Hence, the CSRs of this module are only relevant for the debugger.
-
+The `Sdtrig` ISA extension add 8 additional CSRs, which are accessible in debug-mode and also in machine-mode.
+Machine-level accesses can be ignore by setting <<_tdata1>>`.dmode´. This is automatically done by GDB if it uses the trigger module
+for implementing a "hardware breakpoint"
 
 :sectnums!:
 ===== **`tselect`**
@@ -719,7 +718,7 @@ Hence, the CSRs of this module are only relevant for the debugger.
 [frame="topbot",grid="none"]
 |======
 | 0x7a1 | **Trigger data register 1 / match control register** | `tdata1` / `mcontrol`
-3+<| Reset value: `0x28041048`
+3+<| Reset value: `0x20040040`
 3+<| This CSR is used to configure the address match trigger. Only one bit is writable, the remaining bits are hardwired (see table below).
 Write attempts to the hardwired bits are ignored.
 |======
@@ -730,13 +729,13 @@ Write attempts to the hardwired bits are ignored.
 |=======================
 | Bit   | Name [RISC-V] | R/W | Description
 | 31:28 | `type`        | r/- | `0010` - address match trigger
-| 27    | `dmode`       | r/- | `1` - only debug-mode can write to the `tdata*` CSRs
+| 27    | `dmode`       | r/w | set to ignore `tdata*` CSR accesses from machine-mode
 | 26:21 | `maskmax`     | r/- | `000000` - only exact values
 | 20    | `hit`         | r/- | `0` - feature not supported
 | 19    | `select`      | r/- | `0` - fire trigger on address match
 | 18    | `timing`      | r/- | `1` - trigger **after** executing the triggering instruction
 | 17:16 | `sizelo`      | r/- | `00` - match against an access of any size
-| 15:12 | `action`      | r/- | `0001` - enter debug mode on trigger fire
+| 15:12 | `action`      | r/w | `0001` = enter debug-mode on trigger fire; `0000` = normal m-mode break exception on trigger fire
 | 11    | `chain`       | r/- | `0` - chaining is not supported - there is only one trigger
 | 10:6  | `match`       | r/- | `0000` - only full-address match
 | 6     | `m`           | r/- | `1` - trigger enabled when in machine-mode
@@ -757,7 +756,7 @@ Write attempts to the hardwired bits are ignored.
 |======
 | 0x7a2 | **Trigger data register 2** | `tdata2`
 3+<| Reset value: `0x00000000`
-3+<| Since only the "address match trigger" type is supported, this r/w CSR is used to store the address of the triggering instruction.
+3+<| Since only the "address match trigger" type is supported, this r/w CSR is used to configure the address of the triggering instruction.
 |======
 
 
@@ -819,4 +818,3 @@ Write attempts to the hardwired bits are ignored.
 3+<| Reset value: `0x00000000`
 3+<| This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
 |======
-
