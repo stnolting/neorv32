@@ -123,7 +123,8 @@ see the [_open-source architecture ID list_](https://github.com/riscv/riscv-isa-
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_integer_multiplication)]
 [[`Zxcfu`](https://stnolting.github.io/neorv32/#_zxcfu_custom_instructions_extension_cfu)]
 [[`PMP`](https://stnolting.github.io/neorv32/#_pmp_physical_memory_protection)]
-[[`DEBUG`](https://stnolting.github.io/neorv32/#_cpu_debug_mode)]
+[[`Sdext`](https://stnolting.github.io/neorv32/#_sdext_external_debug_support)]
+[[`Sdtrig`](https://stnolting.github.io/neorv32/#_sdtrig_trigger_module)]
 * compatible to subsets of the RISC-V
 *Unprivileged ISA Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-spec.pdf))
 and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf)).
@@ -204,7 +205,7 @@ using Xilinx Vivado 2019.2 (no constraints except for clock speed).
 |:------------------------------------------------------------------------------------------------------|:----:|:----:|:-----:|:----:|:-------:|
 | CPU: `rv32imcu_Zicsr_Zicnt_DEBUG` + `FST_MUL` + `FAST_SHIFT`; Peripherals: `UART0` + `MTIME` + `GPIO` | 2488 | 1807 |     7 |    4 | 150 MHz |
 
-:bulb: An incremental list of the CPU extensions and the Processor modules found in the
+:bulb: An incremental list of the CPU extensions and the Processor modules can be found in the
 [_Data Sheet: FPGA Implementation Results_](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]
