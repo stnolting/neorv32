@@ -2613,7 +2613,7 @@ begin
 
   -- Debug Control and Status Register (dcsr) - Read-Back -----------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr.dcsr_rd(31 downto 28) <= "0100"; -- xdebugver: external debug support compatible to spec
+  csr.dcsr_rd(31 downto 28) <= "0100"; -- xdebugver: external debug support compatible to spec. version 1.0
   csr.dcsr_rd(27 downto 16) <= (others => '0'); -- reserved
   csr.dcsr_rd(15)           <= csr.dcsr_ebreakm; -- ebreakm: what happens on ebreak in m-mode? (normal trap OR debug-enter)
   csr.dcsr_rd(14)           <= '0'; -- ebreakh: hypervisor mode not implemented
