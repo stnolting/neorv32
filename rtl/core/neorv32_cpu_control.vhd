@@ -1563,56 +1563,53 @@ begin
   -- -------------------------------------------------------------------------------------------
   trap_ctrl.cause_nxt <=
     -- ------------------------------------------------------------------------------------
-    -- *synchronous* exceptions - no need for a specific acknowledge mask since only
+    -- EXCEPTIONS - no need for a specific acknowledge mask since only
     -- a single exception (the one with highest priority) is allowed to kick in at once
     -- ------------------------------------------------------------------------------------
-    trap_ima_c  when (trap_ctrl.exc_buf(exc_ialign_c)    = '1') else -- exception: 0.0 instruction address misaligned
-    trap_iba_c  when (trap_ctrl.exc_buf(exc_iaccess_c)   = '1') else -- exception: 0.1 instruction access fault
-    trap_iil_c  when (trap_ctrl.exc_buf(exc_iillegal_c)  = '1') else -- exception: 0.2 illegal instruction
-    --
-    trap_menv_c when (trap_ctrl.exc_buf(exc_m_envcall_c) = '1') else -- exception: 0.11 environment call from M-mode
-    trap_uenv_c when (trap_ctrl.exc_buf(exc_u_envcall_c) = '1') else -- exception: 0.8 environment call from U-mode
-    trap_brk_c  when (trap_ctrl.exc_buf(exc_break_c)     = '1') else -- exception: 0.3 breakpoint
-    --
-    trap_sma_c  when (trap_ctrl.exc_buf(exc_salign_c)    = '1') else -- exception: 0.6 store address misaligned
-    trap_lma_c  when (trap_ctrl.exc_buf(exc_lalign_c)    = '1') else -- exception: 0.4 load address misaligned
-    trap_sbe_c  when (trap_ctrl.exc_buf(exc_saccess_c)   = '1') else -- exception: 0.7 store access fault
-    trap_lbe_c  when (trap_ctrl.exc_buf(exc_laccess_c)   = '1') else -- exception: 0.5 load access fault
+    trap_ima_c  when (trap_ctrl.exc_buf(exc_ialign_c)    = '1') else -- instruction address misaligned
+    trap_iba_c  when (trap_ctrl.exc_buf(exc_iaccess_c)   = '1') else -- instruction access fault
+    trap_iil_c  when (trap_ctrl.exc_buf(exc_iillegal_c)  = '1') else -- illegal instruction
+    trap_menv_c when (trap_ctrl.exc_buf(exc_m_envcall_c) = '1') else -- environment call from M-mode
+    trap_uenv_c when (trap_ctrl.exc_buf(exc_u_envcall_c) = '1') else -- environment call from U-mode
+    trap_brk_c  when (trap_ctrl.exc_buf(exc_break_c)     = '1') else -- breakpoint
+    trap_sma_c  when (trap_ctrl.exc_buf(exc_salign_c)    = '1') else -- store address misaligned
+    trap_lma_c  when (trap_ctrl.exc_buf(exc_lalign_c)    = '1') else -- load address misaligned
+    trap_sbe_c  when (trap_ctrl.exc_buf(exc_saccess_c)   = '1') else -- store access fault
+    trap_lbe_c  when (trap_ctrl.exc_buf(exc_laccess_c)   = '1') else -- load access fault
     -- ------------------------------------------------------------------------------------
-    -- (re-)enter debug mode requests: basically, these are standard traps that have some
-    -- special handling - they have the highest INTERRUPT priority in order to enter debug
-    -- mode even if other INTERRUPTs are pending right now
+    -- EXCEPTIONS and INTERRUPTS to (re-)enter debug mode: basically, these are standard
+    -- traps that have some special handling - they have the highest INTERRUPT priority
+    -- in order to enter debug mode even if other interrupts are pending
     -- ------------------------------------------------------------------------------------
+    trap_db_halt_c  when (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') else -- external halt request (async)
     trap_db_hw_c    when (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') else -- hardware trigger (sync)
     trap_db_break_c when (trap_ctrl.exc_buf(exc_db_break_c) = '1') else -- break instruction (sync)
-    --
-    trap_db_halt_c  when (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') else -- external halt request (async)
     trap_db_step_c  when (trap_ctrl.irq_buf(irq_db_step_c)  = '1') else -- single stepping (async)
     -- ------------------------------------------------------------------------------------
-    -- custom FAST interrupts (*asynchronous* exceptions)
+    -- custom fast INTERRUPTS
     -- ------------------------------------------------------------------------------------
-    trap_firq0_c  when (trap_ctrl.irq_buf(irq_firq_0_c)  = '1') else -- interrupt: 1.16 fast interrupt channel 0
-    trap_firq1_c  when (trap_ctrl.irq_buf(irq_firq_1_c)  = '1') else -- interrupt: 1.17 fast interrupt channel 1
-    trap_firq2_c  when (trap_ctrl.irq_buf(irq_firq_2_c)  = '1') else -- interrupt: 1.18 fast interrupt channel 2
-    trap_firq3_c  when (trap_ctrl.irq_buf(irq_firq_3_c)  = '1') else -- interrupt: 1.19 fast interrupt channel 3
-    trap_firq4_c  when (trap_ctrl.irq_buf(irq_firq_4_c)  = '1') else -- interrupt: 1.20 fast interrupt channel 4
-    trap_firq5_c  when (trap_ctrl.irq_buf(irq_firq_5_c)  = '1') else -- interrupt: 1.21 fast interrupt channel 5
-    trap_firq6_c  when (trap_ctrl.irq_buf(irq_firq_6_c)  = '1') else -- interrupt: 1.22 fast interrupt channel 6
-    trap_firq7_c  when (trap_ctrl.irq_buf(irq_firq_7_c)  = '1') else -- interrupt: 1.23 fast interrupt channel 7
-    trap_firq8_c  when (trap_ctrl.irq_buf(irq_firq_8_c)  = '1') else -- interrupt: 1.24 fast interrupt channel 8
-    trap_firq9_c  when (trap_ctrl.irq_buf(irq_firq_9_c)  = '1') else -- interrupt: 1.25 fast interrupt channel 9
-    trap_firq10_c when (trap_ctrl.irq_buf(irq_firq_10_c) = '1') else -- interrupt: 1.26 fast interrupt channel 10
-    trap_firq11_c when (trap_ctrl.irq_buf(irq_firq_11_c) = '1') else -- interrupt: 1.27 fast interrupt channel 11
-    trap_firq12_c when (trap_ctrl.irq_buf(irq_firq_12_c) = '1') else -- interrupt: 1.28 fast interrupt channel 12
-    trap_firq13_c when (trap_ctrl.irq_buf(irq_firq_13_c) = '1') else -- interrupt: 1.29 fast interrupt channel 13
-    trap_firq14_c when (trap_ctrl.irq_buf(irq_firq_14_c) = '1') else -- interrupt: 1.30 fast interrupt channel 14
-    trap_firq15_c when (trap_ctrl.irq_buf(irq_firq_15_c) = '1') else -- interrupt: 1.31 fast interrupt channel 15
+    trap_firq0_c  when (trap_ctrl.irq_buf(irq_firq_0_c)  = '1') else -- fast interrupt channel 0
+    trap_firq1_c  when (trap_ctrl.irq_buf(irq_firq_1_c)  = '1') else -- fast interrupt channel 1
+    trap_firq2_c  when (trap_ctrl.irq_buf(irq_firq_2_c)  = '1') else -- fast interrupt channel 2
+    trap_firq3_c  when (trap_ctrl.irq_buf(irq_firq_3_c)  = '1') else -- fast interrupt channel 3
+    trap_firq4_c  when (trap_ctrl.irq_buf(irq_firq_4_c)  = '1') else -- fast interrupt channel 4
+    trap_firq5_c  when (trap_ctrl.irq_buf(irq_firq_5_c)  = '1') else -- fast interrupt channel 5
+    trap_firq6_c  when (trap_ctrl.irq_buf(irq_firq_6_c)  = '1') else -- fast interrupt channel 6
+    trap_firq7_c  when (trap_ctrl.irq_buf(irq_firq_7_c)  = '1') else -- fast interrupt channel 7
+    trap_firq8_c  when (trap_ctrl.irq_buf(irq_firq_8_c)  = '1') else -- fast interrupt channel 8
+    trap_firq9_c  when (trap_ctrl.irq_buf(irq_firq_9_c)  = '1') else -- fast interrupt channel 9
+    trap_firq10_c when (trap_ctrl.irq_buf(irq_firq_10_c) = '1') else -- fast interrupt channel 10
+    trap_firq11_c when (trap_ctrl.irq_buf(irq_firq_11_c) = '1') else -- fast interrupt channel 11
+    trap_firq12_c when (trap_ctrl.irq_buf(irq_firq_12_c) = '1') else -- fast interrupt channel 12
+    trap_firq13_c when (trap_ctrl.irq_buf(irq_firq_13_c) = '1') else -- fast interrupt channel 13
+    trap_firq14_c when (trap_ctrl.irq_buf(irq_firq_14_c) = '1') else -- fast interrupt channel 14
+    trap_firq15_c when (trap_ctrl.irq_buf(irq_firq_15_c) = '1') else -- fast interrupt channel 15
     -- ------------------------------------------------------------------------------------
-    -- standard RISC-V interrupts (*asynchronous* exceptions)
+    -- standard RISC-V INTERRUPTS
     -- ------------------------------------------------------------------------------------
-    trap_mei_c when (trap_ctrl.irq_buf(irq_mei_irq_c) = '1') else -- interrupt: 1.11 machine external interrupt (MEI)
-    trap_msi_c when (trap_ctrl.irq_buf(irq_msi_irq_c) = '1') else -- interrupt: 1.3 machine SW interrupt (MSI)
-    trap_mti_c; --  (trap_ctrl.irq_buf(irq_mti_irq_c) = '1')      -- interrupt: 1.7 machine timer interrupt (MTI)
+    trap_mei_c when (trap_ctrl.irq_buf(irq_mei_irq_c) = '1') else -- machine external interrupt (MEI)
+    trap_msi_c when (trap_ctrl.irq_buf(irq_msi_irq_c) = '1') else -- machine SW interrupt (MSI)
+    trap_mti_c; --  (trap_ctrl.irq_buf(irq_mti_irq_c) = '1')      -- machine timer interrupt (MTI)
 
 
 -- ****************************************************************************************************************************
