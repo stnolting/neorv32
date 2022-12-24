@@ -3,8 +3,7 @@
 The most recent version of the **NEORV32** project can be found at the top of this list.
 "Stable releases" are linked and highlighted :rocket:.
 The latest release is [![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases).
-A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases). The most recent version of the *NEORV32 data sheet*
-can be found [online at GitHub-pages](https://stnolting.github.io/neorv32).
+A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases).
 
 Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org).
 The _hardware version identifier_ uses an additional custom element (`MAJOR.MINOR.PATCH.custom`) to track _individual_ changes.
@@ -22,17 +21,18 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 ### Version History
 
-* :bug: = bug-fix
-* :sparkles: = new feature
-* :test_tube: = new (experimental) feature
-* :warning: = (major) change that might impact compatibility with previous versions
-* :lock: = security-related
-* :rocket: = release
+* :bug: bug-fix
+* :sparkles: new feature
+* :test_tube: new (experimental) feature
+* :warning: (major) change that might impact compatibility with previous versions
+* :lock: security-related
+* :rocket: release
 
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
-| 23.12.2022 | 1.7.9.2 | :sparkles: upgrade the **on-chip debugger (OCD)** to spec. version 1.0; major logic and debugging response time optimizations ;[#463](https://github.com/stnolting/neorv32/pull/463) |
+| 23.12.2022 | 1.7.9.3 | :warning: add explicit `Sdext` and `Sdtrig` ISA extension generics (replacing `DEBUG`); :sparkles: trigger-module can now also be used by machine-mode software without the on-chip debugger, add minimal example program `sw/example/demo_trigger_module`; [#465](https://github.com/stnolting/neorv32/pull/465) |
+| 23.12.2022 | 1.7.9.2 | :sparkles: upgrade the **on-chip debugger (OCD)** to spec. version 1.0; major logic and debugging response time optimizations; [#463](https://github.com/stnolting/neorv32/pull/463) |
 | 22.12.2022 | 1.7.9.1 | remove signal initialization (in reset generator) as some FPGAs do not support FF initialization via bitstream; [#464](https://github.com/stnolting/neorv32/pull/464) |
 | 21.12.2022 | [**:rocket:1.7.9**](https://github.com/stnolting/neorv32/releases/tag/v1.7.9) | **New release** |
 | 21.12.2022 | 1.7.8.11 | CPU: remove explicit reset-to-don't-care; branch and CSR access check logic optimizations; close further illegal instruction encoding hole; [#462](https://github.com/stnolting/neorv32/pull/462) |

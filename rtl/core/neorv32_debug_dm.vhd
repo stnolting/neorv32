@@ -586,7 +586,7 @@ begin
           dmi_resp_data_o(31 downto 24) <= (others => '0');           -- reserved (r/-)
           dmi_resp_data_o(28 downto 24) <= "00010";                   -- progbufsize (r/-): number of words in program buffer = 2
           dmi_resp_data_o(12)           <= dm_ctrl.busy;              -- busy (r/-): abstract command in progress (1) / idle (0)
-          dmi_resp_data_o(11)           <= '0';                       -- reserved (r/-)
+          dmi_resp_data_o(11)           <= '1';                       -- relaxedpriv (r/-): PMP rules are ignored when in debug-mode
           dmi_resp_data_o(10 downto 08) <= dm_ctrl.cmderr;            -- cmderr (r/w1c): any error during execution?
           dmi_resp_data_o(07 downto 04) <= (others => '0');           -- reserved (r/-)
           dmi_resp_data_o(03 downto 00) <= "0001";                    -- datacount (r/-): number of implemented data registers = 1

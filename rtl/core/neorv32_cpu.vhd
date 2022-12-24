@@ -64,7 +64,8 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
-    CPU_EXTENSION_RISCV_DEBUG    : boolean; -- implement CPU debug mode?
+    CPU_EXTENSION_RISCV_Sdext    : boolean; -- implement external debug mode extension?
+    CPU_EXTENSION_RISCV_Sdtrig   : boolean; -- implement trigger module extension?
     -- Extension Options --
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
@@ -180,7 +181,8 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,    "_Zfinx", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,    "_Zmmul", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,    "_Zxcfu", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_DEBUG,    "_<DebugMode>", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,    "_Sdext", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdtrig,   "_Sdtrig", "") &
     ""
     severity note;
 
@@ -241,9 +243,9 @@ begin
     "NEORV32 CPU CONFIG ERROR! <M> and <Zmmul> extensions cannot co-exist!" severity error;
 
   -- Debug mode --
-  assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zicsr = false)) report
+  assert not ((CPU_EXTENSION_RISCV_Sdext = true) and (CPU_EXTENSION_RISCV_Zicsr = false)) report
     "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
-  assert not ((CPU_EXTENSION_RISCV_DEBUG = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report
+  assert not ((CPU_EXTENSION_RISCV_Sdext = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report
     "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zifencei> extension to be enabled." severity error;
 
   -- fast multiplication option --
@@ -278,7 +280,8 @@ begin
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu    => CPU_EXTENSION_RISCV_Zxcfu,    -- implement custom (instr.) functions unit?
-    CPU_EXTENSION_RISCV_DEBUG    => CPU_EXTENSION_RISCV_DEBUG,    -- implement CPU debug mode?
+    CPU_EXTENSION_RISCV_Sdext    => CPU_EXTENSION_RISCV_Sdext,    -- implement external debug mode extension?
+    CPU_EXTENSION_RISCV_Sdtrig   => CPU_EXTENSION_RISCV_Sdtrig,   -- implement trigger module extension?
     -- Tuning Options --
     FAST_MUL_EN                  => FAST_MUL_EN,                  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,                -- use barrel shifter for shift operations

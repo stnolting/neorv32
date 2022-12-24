@@ -32,7 +32,8 @@ image::neorv32_cpu_block.png[width=600,align=center]
 ** `Zmmul` - integer multiplication hardware
 ** `Zxcfu` - custom instructions extension
 ** `PMP` - physical memory protection
-** `Debug` - <<_cpu_debug_mode>> (part of the on.chip debugger) including hardware <<_trigger_module>>
+** `Sdext` - external debug support
+** `Sdtrig` - trigger module
 * <<_risc_v_compatibility>>: Compatible to the RISC-V user specifications and a subset of the RISC-V privileged architecture specifications - passes the official RISC-V Architecture Tests (v2+)
 * Official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]: decimal **19**; hexadecimal `0x00000013`
 * Supports _all_ of the machine-level <<_traps_exceptions_and_interrupts>> from the RISC-V specifications (including bus access exceptions and all unimplemented/illegal/malformed instructions)
@@ -363,13 +364,25 @@ See section <<_on_chip_debugger_ocd>> for more information.
 
 
 :sectnums!:
-==== _CPU_EXTENSION_RISCV_DEBUG_
+==== _CPU_EXTENSION_RISCV_Sdext_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **CPU_EXTENSION_RISCV_DEBUG** | _boolean_ | _no default value_
-3+| Implement RISC-V-compatible "debug" CPU operation mode. See section <<_cpu_debug_mode>> for more information.
+| **CPU_EXTENSION_RISCV_Sdext** | _boolean_ | _no default value_
+3+| Implement RISC-V-compatible "debug" CPU operation mode required for the on-chip debugger.
+See section <<_cpu_debug_mode>> for more information.
+|======
+
+
+:sectnums!:
+==== _CPU_EXTENSION_RISCV_Sdtrig_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_EXTENSION_RISCV_Sdtrig** | _boolean_ | _no default value_
+3+| Implement RISC-V-compatible trigger module. See section <<_cpu_debug_mode>> for more information.
 |======
 
 
@@ -732,6 +745,23 @@ A simple PMP example program can be found in `sw/example/demo_pmp`.
 [TIP]
 Reducing the minimal PMP region size / granularity via the <<_pmp_min_granularity>> top entity generic
 will reduce hardware utilization and also reduces impact on critical path.
+
+.PMP Rules when in Debug Mode
+[NOTE]
+When in debug-mode all PMP rules are ignored making the debugger have maximum access rights.
+
+
+=== **`Sdext** External Debug Support
+
+This ISA extension enables the RISC-V-compatible "external debug support" by implementing
+the CPU "debug mode", which is required for the on-chip debugger.
+See section <<_on_chip_debugger_ocd>> / <<_cpu_debug_mode>> for more information.
+
+
+=== **`Sdtrig`** Trigger Module
+
+This ISA extension implements the RISC-V-compatible trigger module.
+See section <<_on_chip_debugger_ocd>> / <<_trigger_module>> for more information.
 
 
 <<<
