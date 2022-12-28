@@ -59,7 +59,7 @@ extern const volatile unsigned int __crt0_main_exit;
 void unimplemented_syscall()
 {
   if (neorv32_uart0_available()) {
-    neorv32_uart0_print("<syscalls.c> Unimplemented system call called!\n");
+    neorv32_uart0_puts("<syscalls.c> Unimplemented system call called!\n");
   }
 }
 
