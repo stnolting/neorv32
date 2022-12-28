@@ -76,7 +76,7 @@ void neorv32_rte_setup(void) {
   // clear BUSKEEPER error flags
   NEORV32_BUSKEEPER.CTRL = 0;
 
-  // install debug handler for all sources
+  // install debug handler for all trap sources
   uint8_t id;
   for (id = 0; id < (sizeof(__neorv32_rte_vector_lut)/sizeof(__neorv32_rte_vector_lut[0])); id++) {
     neorv32_rte_handler_uninstall(id); // this will configure the debug handler
@@ -121,9 +121,7 @@ int neorv32_rte_handler_uninstall(uint8_t id) {
 
 
 /**********************************************************************//**
- * This is the core of the NEORV32 RTE.
- *
- * @note This function must no be explicitly used by the user.
+ * This is the [private!] core of the NEORV32 RTE.
  *
  * @warning When using the the RTE, this function is the ONLY function that uses the 'interrupt' attribute!
  **************************************************************************/
