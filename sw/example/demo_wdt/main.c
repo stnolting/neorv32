@@ -82,25 +82,25 @@ int main() {
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
   // simple text output via UART (strings only)
-  neorv32_uart0_print("\nWatchdog system reset demo program\n\n");
+  neorv32_uart0_puts("\nWatchdog system reset demo program\n\n");
 
 
   // show the cause of the last processor reset
-  neorv32_uart0_print("Cause of last processor reset: ");
+  neorv32_uart0_puts("Cause of last processor reset: ");
   uint8_t wdt_cause = neorv32_wdt_get_cause();
 
   if (wdt_cause == 0) {
-    neorv32_uart0_print("External reset\n");
+    neorv32_uart0_puts("External reset\n");
   }
   else if (wdt_cause == 1) {
-    neorv32_uart0_print("Watchdog\n");
+    neorv32_uart0_puts("Watchdog\n");
   }
   else {
-    neorv32_uart0_print("Undefined\n");
+    neorv32_uart0_puts("Undefined\n");
   }
 
 
-  // the watchod has a 20-bit counter, which triggers either an interrupt or a system reset
+  // the watchdog has a 20-bit counter, which triggers either an interrupt or a system reset
   // when overflowing
 
   // init watchdog (watchdog timer increment = cpu_clock/64, trigger reset on overflow, lock
@@ -109,11 +109,11 @@ int main() {
 
 
 
-  neorv32_uart0_print("\n\nWill reset WDT 64 times.\n"
-                     "A system reset will be executed in the following time out.\n"
-                     "Press any key to trigger manual WDT hardware reset by WDT access with wrong password.\n"
-                     "Restart this program after reset to check for the reset cause.\n\n"
-                     "WDT resets: ");
+  neorv32_uart0_puts("\n\nWill reset WDT 64 times.\n"
+                    "A system reset will be executed in the following time out.\n"
+                    "Press any key to trigger manual WDT hardware reset by WDT access with wrong password.\n"
+                    "Restart this program after reset to check for the reset cause.\n\n"
+                    "WDT resets: ");
 
   uint8_t i;
   for (i=0; i<64; i++) {

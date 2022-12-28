@@ -73,13 +73,13 @@ int main() {
 
   // check if MTIME unit is implemented at all
   if (neorv32_mtime_available() == 0) {
-    neorv32_uart0_print("ERROR! MTIME timer not implemented!\n");
+    neorv32_uart0_puts("ERROR! MTIME timer not implemented!\n");
     return 1;
   }
 
   // Intro
-  neorv32_uart0_print("RISC-V Machine System Timer (MTIME) demo Program.\n"
-                      "Toggles GPIO.output(0) at 1Hz using the RISC-V 'MTI' interrupt.\n\n");
+  neorv32_uart0_puts("RISC-V Machine System Timer (MTIME) demo Program.\n"
+                     "Toggles GPIO.output(0) at 1Hz using the RISC-V 'MTI' interrupt.\n\n");
 
 
   // clear GPIO output port
@@ -87,7 +87,7 @@ int main() {
 
 
   // install MTIME interrupt handler to RTE
-  neorv32_rte_exception_install(RTE_TRAP_MTI, mtime_irq_handler);
+  neorv32_rte_handler_install(RTE_TRAP_MTI, mtime_irq_handler);
 
   // configure MTIME timer's first interrupt to appear after SYSTEM_CLOCK / 2 cycles (toggle at 2Hz)
   // starting from _now_

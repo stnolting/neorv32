@@ -156,7 +156,7 @@ int main() {
   int install_err = 0;
   // initialize ALL provided trap handler (overriding the default debug handlers)
   for (id=0; id<NEORV32_RTE_NUM_TRAPS; id++) {
-    install_err += neorv32_rte_exception_install(id, global_trap_handler);
+    install_err += neorv32_rte_handler_install(id, global_trap_handler);
   }
   if (install_err) {
     PRINT_CRITICAL("RTE fail!\n");
@@ -1622,7 +1622,7 @@ int main() {
   cnt_test++;
 
   // uninstall custom handler and use default RTE debug handler
-  neorv32_rte_exception_uninstall(RTE_TRAP_I_ILLEGAL);
+  neorv32_rte_handler_uninstall(RTE_TRAP_I_ILLEGAL);
 
   // trigger illegal instruction exception
   neorv32_cpu_csr_read(0xfff); // CSR not available
@@ -1636,7 +1636,7 @@ int main() {
   }
 
   // restore original handler
-  neorv32_rte_exception_install(RTE_TRAP_I_ILLEGAL, global_trap_handler);
+  neorv32_rte_handler_install(RTE_TRAP_I_ILLEGAL, global_trap_handler);
 
 
   // ----------------------------------------------------------

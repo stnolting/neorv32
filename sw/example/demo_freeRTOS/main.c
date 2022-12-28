@@ -178,7 +178,7 @@ void vToggleLED( void )
 
 void vSendString( const char * pcString )
 {
-	neorv32_uart0_print( ( const char * ) pcString );
+	neorv32_uart0_puts( ( const char * ) pcString );
 }
 
 /*-----------------------------------------------------------*/
@@ -196,7 +196,7 @@ void vApplicationMallocFailedHook( void )
 	to query the size of free heap space that remains (although it does not
 	provide information on how the remaining heap might be fragmented). */
 	taskDISABLE_INTERRUPTS();
-  neorv32_uart0_print("FreeRTOS_FAULT: vApplicationMallocFailedHook (solution: increase 'configTOTAL_HEAP_SIZE' in FreeRTOSConfig.h)\n");
+  neorv32_uart0_puts("FreeRTOS_FAULT: vApplicationMallocFailedHook (solution: increase 'configTOTAL_HEAP_SIZE' in FreeRTOSConfig.h)\n");
 	__asm volatile( "ebreak" );
 	for( ;; );
 }
@@ -227,7 +227,7 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
 	configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
 	function is called if a stack overflow is detected. */
 	taskDISABLE_INTERRUPTS();
-  neorv32_uart0_print("FreeRTOS_FAULT: vApplicationStackOverflowHook\n");
+  neorv32_uart0_puts("FreeRTOS_FAULT: vApplicationStackOverflowHook\n");
 	__asm volatile( "ebreak" );
 	for( ;; );
 }
@@ -262,7 +262,7 @@ int main() {
 
   // init UART at default baud rate, no parity bits, ho hw flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
-  neorv32_uart0_print("ERROR! FreeRTOS has not been compiled. Use >>make USER_FLAGS+=-DRUN_FREERTOS_DEMO clean_all exe<< to compile it.\n");
+  neorv32_uart0_puts("ERROR! FreeRTOS has not been compiled. Use >>make USER_FLAGS+=-DRUN_FREERTOS_DEMO clean_all exe<< to compile it.\n");
   return 1;
 }
 #endif
