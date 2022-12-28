@@ -7,7 +7,7 @@ by wrapping the CPU's _privileged architecture_ (i.e. trap-related CSRs) into a 
 The NEORV32 RTE is a software library (`sw/lib/source/neorv32_rte.c`) that is part of the default processor library set.
 It provides public functions via `sw/lib/include/neorv32_rte.h` for application interaction.
 
-Once initialized, the RTE provides <<_default_rte_trap_handlers>> that catch all possible exceptions. These
+Once initialized, the RTE provides <<_default_rte_trap_handlers>> that catch all possible traps. These
 default handlers just output a message via UART to inform the user when a certain trap has been triggered. The
 default handlers can be overridden by the application code to install application-specific handler functions for each trap.
 
@@ -25,15 +25,15 @@ For the **C standard runtime library** see section <<c_standard_library>>.
 
 The RTE handles the trap-related CSRs of the CPU's privileged architecture (<<_machine_trap_handling_csrs>>).
 It initializes the <<_mtvec>> CSR, which provides the base entry point for all trap
-handlers. The address stored to this register reflects the **first-level exception handler**, which is provided by the
+handlers. The address stored to this register reflects the **first-level trap handler**, which is provided by the
 NEORV32 RTE. Whenever an exception or interrupt is triggered this first-level handler is executed.
 
-The first-level handler performs a complete context save, analyzes the source of the exception/interrupt and
-calls the according **second-level exception handler**, which takes care of the actual exception/interrupt
+The first-level handler performs a complete context save, analyzes the source of the trap and
+calls the according **second-level trap handler**, which takes care of the actual exception/interrupt
 handling. For this, the RTE manages a private look-up table to store the addresses of the according trap
 handlers.
 
-After the initial RTE setup, each entry in the RTE's trap handler's look-up table is initialized with a
+After the initial RTE setup, each entry in the RTE's trap handler look-up table is initialized with a
 <<_default_rte_trap_handlers>>. These default handler do not execute any trap-related operations - they
 just output a message via the *primary UART (UART0)* to inform the user that a trap has occurred, that is not
 handled by the actual application. After sending this message, the RTE tries to continue executing the user program.
@@ -59,7 +59,7 @@ by installing user-defined ones:
 .Function Prototype: Installing an Application-Specific Trap Handler
 [source,c]
 ----
-int neorv32_rte_exception_install(uint8_t id, void (*handler)(void));
+int neorv32_rte_handler_install(uint8_t id, void (*handler)(void));
 ----
 
 The first argument `id` defines the "trap ID" (for example a certain interrupt request) that shall be handled
@@ -74,15 +74,15 @@ The custom handler functions need to have a specific format without any argument
 ----
 void custom_trap_handler_xyz(void) {
 
-  // handle exception/interrupt...
+  // handle trap...
 }
 ----
 
 .Custom Trap Handler Attributes
 [WARNING]
-Do NOT use the `((interrupt))` attribute for the application exception handler functions! This
+Do NOT use the `((interrupt))` attribute for the application trap handler functions! This
 will place a `mret` instruction to the end of it making it impossible to return to the first-level
-exception handler of the RTE core, which will cause stack corruption.
+trap handler of the RTE core, which will cause stack corruption.
 
 The trap identifier `id` specifies the according trap cause. These can be an _asynchronous trap_ like
 an interrupt from one of the processor modules or a _synchronous trap_ triggered by software-caused events
@@ -132,7 +132,7 @@ the RISC-V machine timer (MTIME) interrupt:
 .Example: Installing the MTIME IRQ Handler
 [source,c]
 ----
-neorv32_rte_exception_install(RTE_TRAP_MTI, custom_mtime_irq_handler);
+neorv32_rte_handler_install(RTE_TRAP_MTI, custom_mtime_irq_handler);
 ----
 
 User-defined trap handlers can also be un-installed. This will remove the users trap handler from the RTE core
@@ -141,7 +141,7 @@ and will re-install the <<_default_rte_trap_handlers>> for the specific trap.
 .Function Prototype: Installing an Application-Specific Trap Handler
 [source,c]
 ----
-int neorv32_rte_exception_uninstall(uint8_t id);
+int neorv32_rte_handler_uninstall(uint8_t id);
 ----
 
 The argument `id` defines the identifier of the according trap that shall be un-installed. The function return zero
@@ -154,7 +154,7 @@ RISC-V machine timer (MTIME) interrupt:
 .Example: Removing the Custom MTIME IRQ Handler
 [source,c]
 ----
-neorv32_rte_exception_uninstall(RTE_TRAP_MTI);
+neorv32_rte_handler_uninstall(RTE_TRAP_MTI);
 ----
 
 
@@ -167,7 +167,7 @@ via UART0 to inform the user and will try to resume normal program execution.
 .Continuing Execution
 [WARNING]
 In most cases the RTE can successfully continue operation - for example if it catches an **interrupt** request that is not handled
-by the actual application program. However, if the RTE catches an un-handled **exception** like a bus access fault
+by the actual application program. However, if the RTE catches an un-handled **trap** like a bus access fault
 continuing execution will most likely fail making the CPU crash.
 
 .RTE Default Trap Handler Output Examples
