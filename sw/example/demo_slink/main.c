@@ -108,8 +108,8 @@ int main() {
 
 
   // NEORV32 runtime environment: install SLINK FIRQ handlers
-  neorv32_rte_exception_install(SLINK_RX_RTE_ID, slink_rx_firq_handler);
-  neorv32_rte_exception_install(SLINK_TX_RTE_ID, slink_tx_firq_handler);
+  neorv32_rte_handler_install(SLINK_RX_RTE_ID, slink_rx_firq_handler);
+  neorv32_rte_handler_install(SLINK_TX_RTE_ID, slink_tx_firq_handler);
   neorv32_cpu_irq_enable(SLINK_RX_FIRQ_ENABLE); // enable SLINK RX FIRQ
   neorv32_cpu_irq_enable(SLINK_TX_FIRQ_ENABLE); // enable SLINK RX FIRQ
   neorv32_cpu_eint(); // enable global interrupt flag

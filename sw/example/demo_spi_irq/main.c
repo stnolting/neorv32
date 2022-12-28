@@ -104,7 +104,7 @@ int main()
   }
 
   // enable IRQ system
-  neorv32_rte_exception_install(SPI_RTE_ID, spi_irq_handler); // SPI to RTE
+  neorv32_rte_handler_install(SPI_RTE_ID, spi_irq_handler); // SPI to RTE
   neorv32_cpu_irq_enable(SPI_FIRQ_ENABLE);    // FIRQ6: SPI Interrupt
   neorv32_cpu_eint();                         // enable global interrupts
 

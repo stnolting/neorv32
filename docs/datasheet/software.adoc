@@ -103,6 +103,7 @@ footnote:[This driver file only represents a stub, since the real CFS drivers ar
 | `neorv32_xip.c`     | `neorv32_xip.h`        | HW driver functions for the **XIP**
 | `neorv32_xirq.c`    | `neorv32_xirq.h`       | HW driver functions for the **XIRQ**
 | `syscalls.c`        | -                      | newlib "system calls"
+| -                   | `legacy.h`             | backwards compatibility wrappers and functions (do not use for new designs)
 |=======================
 
 .Core Library Documentation

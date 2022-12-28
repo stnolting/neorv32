@@ -124,7 +124,7 @@ int main() {
 
   // check if Zfinx extension is implemented at all
   if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZFINX)) == 0) {
-    neorv32_uart0_print("Error! <Zfinx> extension not synthesized!\n");
+    neorv32_uart0_puts("Error! <Zfinx> extension not synthesized!\n");
     return 1;
   }
 

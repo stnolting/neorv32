@@ -87,7 +87,7 @@ int neorv32_xirq_setup(void) {
   }
 
   // register XIRQ handler in NEORV32 RTE
-  return neorv32_rte_exception_install(XIRQ_RTE_ID, __neorv32_xirq_core);
+  return neorv32_rte_handler_install(XIRQ_RTE_ID, __neorv32_xirq_core);
 }
 
 

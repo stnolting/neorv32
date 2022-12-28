@@ -111,7 +111,7 @@ int main() {
 /*
   // install "ONEWIRE operation done interrupt" - this is optional
   neorv32_uart0_printf("Installing ONEWIRE 'operation done' interrupt handler...\n");
-  neorv32_rte_exception_install(ONEWIRE_RTE_ID, onewire_firq_handler);
+  neorv32_rte_handler_install(ONEWIRE_RTE_ID, onewire_firq_handler);
   neorv32_cpu_irq_enable(ONEWIRE_FIRQ_ENABLE); // enable ONEWIRE FIRQ
   neorv32_cpu_eint(); // enable global interrupt flag
 */

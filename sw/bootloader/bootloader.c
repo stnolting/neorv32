@@ -206,7 +206,7 @@ enum NEORV32_EXECUTABLE_enum {
 #define str(a) #a
 /** Print to UART 0 */
 #if (UART_EN != 0)
-  #define PRINT_TEXT(...) neorv32_uart0_print(__VA_ARGS__)
+  #define PRINT_TEXT(...) neorv32_uart0_puts(__VA_ARGS__)
   #define PRINT_XNUM(a) print_hex_word(a)
   #define PRINT_GETC(a) neorv32_uart0_getc()
   #define PRINT_PUTC(a) neorv32_uart0_putc(a)

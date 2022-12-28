@@ -41,6 +41,13 @@
 #ifndef neorv32_rte_h
 #define neorv32_rte_h
 
+
+/**********************************************************************//**
+ * NEORV32 runtime environment: Number of available traps.
+ **************************************************************************/
+#define NEORV32_RTE_NUM_TRAPS 29
+
+
 /**********************************************************************//**
  * NEORV32 runtime environment trap IDs.
  **************************************************************************/
@@ -77,16 +84,10 @@ enum NEORV32_RTE_TRAP_enum {
 };
 
 
-/**********************************************************************//**
- * NEORV32 runtime environment: Number of available traps.
- **************************************************************************/
-#define NEORV32_RTE_NUM_TRAPS 29
-
-
 // prototypes
 void neorv32_rte_setup(void);
-int  neorv32_rte_exception_install(uint8_t id, void (*handler)(void));
-int  neorv32_rte_exception_uninstall(uint8_t id);
+int  neorv32_rte_handler_install(uint8_t id, void (*handler)(void));
+int  neorv32_rte_handler_uninstall(uint8_t id);
 
 void neorv32_rte_print_hw_config(void);
 void neorv32_rte_print_hw_version(void);

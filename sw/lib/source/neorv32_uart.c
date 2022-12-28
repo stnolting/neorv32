@@ -331,7 +331,7 @@ char neorv32_uart0_char_received_get(void) {
  *
  * @param[in] s Pointer to string.
  **************************************************************************/
-void neorv32_uart0_print(const char *s) {
+void neorv32_uart0_puts(const char *s) {
 
   char c = 0;
   while ((c = *s++)) {
@@ -373,7 +373,7 @@ void neorv32_uart0_printf(const char *format, ...) {
       c = *format++;
       switch (c) {
         case 's': // string
-          neorv32_uart0_print(va_arg(a, char*));
+          neorv32_uart0_puts(va_arg(a, char*));
           break;
         case 'c': // char
           neorv32_uart0_putc((char)va_arg(a, int));
@@ -386,11 +386,11 @@ void neorv32_uart0_printf(const char *format, ...) {
             neorv32_uart0_putc('-');
           }
           __neorv32_uart_itoa((uint32_t)n, string_buf);
-          neorv32_uart0_print(string_buf);
+          neorv32_uart0_puts(string_buf);
           break;
         case 'u': // 32-bit unsigned
           __neorv32_uart_itoa(va_arg(a, uint32_t), string_buf);
-          neorv32_uart0_print(string_buf);
+          neorv32_uart0_puts(string_buf);
           break;
         case 'x': // 32-bit hexadecimal
         case 'p':
@@ -399,7 +399,7 @@ void neorv32_uart0_printf(const char *format, ...) {
           if (c == 'X') {
             __neorv32_uart_touppercase(11, string_buf);
           }
-          neorv32_uart0_print(string_buf);
+          neorv32_uart0_puts(string_buf);
           break;
         default: // unsupported format
           neorv32_uart0_putc('%');
@@ -438,7 +438,7 @@ int neorv32_uart0_scan(char *buffer, int max_size, int echo) {
     if (c == '\b') { // BACKSPACE
       if (length != 0) {
         if (echo) {
-          neorv32_uart0_print("\b \b"); // delete last char in console
+          neorv32_uart0_puts("\b \b"); // delete last char in console
         }
         buffer--;
         length--;
@@ -706,7 +706,7 @@ char neorv32_uart1_char_received_get(void) {
  *
  * @param[in] s Pointer to string.
  **************************************************************************/
-void neorv32_uart1_print(const char *s) {
+void neorv32_uart1_puts(const char *s) {
 
   char c = 0;
   while ((c = *s++)) {
@@ -748,7 +748,7 @@ void neorv32_uart1_printf(const char *format, ...) {
       c = *format++;
       switch (c) {
         case 's': // string
-          neorv32_uart1_print(va_arg(a, char*));
+          neorv32_uart1_puts(va_arg(a, char*));
           break;
         case 'c': // char
           neorv32_uart1_putc((char)va_arg(a, int));
@@ -761,11 +761,11 @@ void neorv32_uart1_printf(const char *format, ...) {
             neorv32_uart1_putc('-');
           }
           __neorv32_uart_itoa((uint32_t)n, string_buf);
-          neorv32_uart1_print(string_buf);
+          neorv32_uart1_puts(string_buf);
           break;
         case 'u': // 32-bit unsigned
           __neorv32_uart_itoa(va_arg(a, uint32_t), string_buf);
-          neorv32_uart1_print(string_buf);
+          neorv32_uart1_puts(string_buf);
           break;
         case 'x': // 32-bit hexadecimal
         case 'p':
@@ -774,7 +774,7 @@ void neorv32_uart1_printf(const char *format, ...) {
           if (c == 'X') {
             __neorv32_uart_touppercase(11, string_buf);
           }
-          neorv32_uart1_print(string_buf);
+          neorv32_uart1_puts(string_buf);
           break;
         default: // unsupported format
           neorv32_uart1_putc('%');
@@ -813,7 +813,7 @@ int neorv32_uart1_scan(char *buffer, int max_size, int echo) {
     if (c == '\b') { // BACKSPACE
       if (length != 0) {
         if (echo) {
-          neorv32_uart1_print("\b \b"); // delete last char in console
+          neorv32_uart1_puts("\b \b"); // delete last char in console
         }
         buffer--;
         length--;

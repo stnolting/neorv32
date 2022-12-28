@@ -59,7 +59,7 @@ char neorv32_uart0_getc(void);
 int  neorv32_uart0_char_received(void);
 int  neorv32_uart0_getc_safe(char *data);
 char neorv32_uart0_char_received_get(void);
-void neorv32_uart0_print(const char *s);
+void neorv32_uart0_puts(const char *s);
 void neorv32_uart0_printf(const char *format, ...);
 int  neorv32_uart0_scan(char *buffer, int max_size, int echo);
 
@@ -74,7 +74,7 @@ char neorv32_uart1_getc(void);
 int  neorv32_uart1_char_received(void);
 int  neorv32_uart1_getc_safe(char *data);
 char neorv32_uart1_char_received_get(void);
-void neorv32_uart1_print(const char *s);
+void neorv32_uart1_puts(const char *s);
 void neorv32_uart1_printf(const char *format, ...);
 int  neorv32_uart1_scan(char *buffer, int max_size, int echo);
 
