@@ -1471,6 +1471,9 @@ enum NEORV32_SYSINFO_SOC_enum {
 #include "neorv32_xip.h"
 #include "neorv32_xirq.h"
 
+// backwards compatibility layer
+#include "legacy.h"
+
 #ifdef __cplusplus
 }
 #endif
