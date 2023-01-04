@@ -8,7 +8,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -325,16 +325,15 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- debug module interface (DMI) --
   type dmi_t is record
-    rstn       : std_ulogic;
-    req_valid  : std_ulogic;
-    req_ready  : std_ulogic; -- DMI is allowed to make new requests when set
-    req_addr   : std_ulogic_vector(06 downto 0);
-    req_op     : std_ulogic; -- 0=read, 1=write
-    req_data   : std_ulogic_vector(31 downto 0);
-    resp_valid : std_ulogic; -- response valid when set
-    resp_ready : std_ulogic; -- ready to receive respond
-    resp_data  : std_ulogic_vector(31 downto 0);
-    resp_err   : std_ulogic; -- 0=ok, 1=error
+    req_valid   : std_ulogic;
+    req_ready   : std_ulogic; -- DMI is allowed to make new requests when set
+    req_address : std_ulogic_vector(05 downto 0);
+    req_op      : std_ulogic_vector(01 downto 0);
+    req_data    : std_ulogic_vector(31 downto 0);
+    rsp_valid   : std_ulogic; -- response valid when set
+    rsp_ready   : std_ulogic; -- ready to receive respond
+    rsp_data    : std_ulogic_vector(31 downto 0);
+    rsp_op      : std_ulogic_vector(01 downto 0);
   end record;
   signal dmi : dmi_t;
 
@@ -1690,60 +1689,44 @@ begin
 -- On-Chip Debugger Complex
 -- ****************************************************************************************************************************
 
-
-  -- On-Chip Debugger - Debug Module (DM) ---------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  neorv32_neorv32_debug_dm_true:
+  neorv32_neorv32_ocd_inst_true:
   if (ON_CHIP_DEBUGGER_EN = true) generate
+
+    -- On-Chip Debugger - Debug Module (DM) ---------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
     neorv32_debug_dm_inst: neorv32_debug_dm
     port map (
       -- global control --
-      clk_i            => clk_i,                    -- global clock line
-      rstn_i           => rstn_ext,                 -- external reset, low-active
+      clk_i             => clk_i,                    -- global clock line
+      rstn_i            => rstn_ext,                 -- external reset, low-active
       -- debug module interface (DMI) --
-      dmi_rstn_i       => dmi.rstn,
-      dmi_req_valid_i  => dmi.req_valid,
-      dmi_req_ready_o  => dmi.req_ready,
-      dmi_req_addr_i   => dmi.req_addr,
-      dmi_req_op_i     => dmi.req_op,
-      dmi_req_data_i   => dmi.req_data,
-      dmi_resp_valid_o => dmi.resp_valid,           -- response valid when set
-      dmi_resp_ready_i => dmi.resp_ready,           -- ready to receive respond
-      dmi_resp_data_o  => dmi.resp_data,
-      dmi_resp_err_o   => dmi.resp_err,             -- 0=ok, 1=error
+      dmi_req_valid_i   => dmi.req_valid,
+      dmi_req_ready_o   => dmi.req_ready,
+      dmi_req_address_i => dmi.req_address,
+      dmi_req_data_i    => dmi.req_data,
+      dmi_req_op_i      => dmi.req_op,
+      dmi_rsp_valid_o   => dmi.rsp_valid,
+      dmi_rsp_ready_i   => dmi.rsp_ready,
+      dmi_rsp_data_o    => dmi.rsp_data,
+      dmi_rsp_op_o      => dmi.rsp_op,
       -- CPU bus access --
-      cpu_debug_i      => cpu_s.debug,              -- CPU is in debug mode
-      cpu_addr_i       => p_bus.addr,               -- address
-      cpu_rden_i       => p_bus.re,                 -- read enable
-      cpu_wren_i       => p_bus.we,                 -- write enable
-      cpu_ben_i        => p_bus.ben,                -- byte write enable
-      cpu_data_i       => p_bus.wdata,              -- data in
-      cpu_data_o       => resp_bus(RESP_OCD).rdata, -- data out
-      cpu_ack_o        => resp_bus(RESP_OCD).ack,   -- transfer acknowledge
+      cpu_debug_i       => cpu_s.debug,              -- CPU is in debug mode
+      cpu_addr_i        => p_bus.addr,               -- address
+      cpu_rden_i        => p_bus.re,                 -- read enable
+      cpu_wren_i        => p_bus.we,                 -- write enable
+      cpu_ben_i         => p_bus.ben,                -- byte write enable
+      cpu_data_i        => p_bus.wdata,              -- data in
+      cpu_data_o        => resp_bus(RESP_OCD).rdata, -- data out
+      cpu_ack_o         => resp_bus(RESP_OCD).ack,   -- transfer acknowledge
       -- CPU control --
-      cpu_ndmrstn_o    => dci_ndmrstn,              -- soc reset
-      cpu_halt_req_o   => dci_halt_req              -- request hart to halt (enter debug mode)
+      cpu_ndmrstn_o     => dci_ndmrstn,              -- soc reset
+      cpu_halt_req_o    => dci_halt_req              -- request hart to halt (enter debug mode)
     );
     resp_bus(RESP_OCD).err <= '0'; -- no access error possible
-  end generate;
-
-  neorv32_debug_dm_false:
-  if (ON_CHIP_DEBUGGER_EN = false) generate
-    dmi.req_ready  <= '0';
-    dmi.resp_valid <= '0';
-    dmi.resp_data  <= (others => '0');
-    dmi.resp_err   <= '0';
-    --
-    resp_bus(RESP_OCD) <= resp_bus_entry_terminate_c;
-    dci_ndmrstn  <= '1';
-    dci_halt_req <= '0';
-  end generate;
 
 
-  -- On-Chip Debugger - Debug Transport Module (DTM) ----------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  neorv32_neorv32_debug_dtm_true:
-  if (ON_CHIP_DEBUGGER_EN = true) generate
+    -- On-Chip Debugger - Debug Transport Module (DTM) ----------------------------------------
+    -- -------------------------------------------------------------------------------------------
     neorv32_debug_dtm_inst: neorv32_debug_dtm
     generic map (
       IDCODE_VERSION => jtag_tap_idcode_version_c, -- version
@@ -1752,38 +1735,34 @@ begin
     )
     port map (
       -- global control --
-      clk_i            => clk_i,          -- global clock line
-      rstn_i           => rstn_ext,       -- external reset, low-active
+      clk_i             => clk_i,    -- global clock line
+      rstn_i            => rstn_ext, -- external reset, low-active
       -- jtag connection --
-      jtag_trst_i      => jtag_trst_i,
-      jtag_tck_i       => jtag_tck_i,
-      jtag_tdi_i       => jtag_tdi_i,
-      jtag_tdo_o       => jtag_tdo_o,
-      jtag_tms_i       => jtag_tms_i,
+      jtag_trst_i       => jtag_trst_i,
+      jtag_tck_i        => jtag_tck_i,
+      jtag_tdi_i        => jtag_tdi_i,
+      jtag_tdo_o        => jtag_tdo_o,
+      jtag_tms_i        => jtag_tms_i,
       -- debug module interface (DMI) --
-      dmi_rstn_o       => dmi.rstn,
-      dmi_req_valid_o  => dmi.req_valid,
-      dmi_req_ready_i  => dmi.req_ready,  -- DMI is allowed to make new requests when set
-      dmi_req_addr_o   => dmi.req_addr,
-      dmi_req_op_o     => dmi.req_op,     -- 0=read, 1=write
-      dmi_req_data_o   => dmi.req_data,
-      dmi_resp_valid_i => dmi.resp_valid, -- response valid when set
-      dmi_resp_ready_o => dmi.resp_ready, -- ready to receive respond
-      dmi_resp_data_i  => dmi.resp_data,
-      dmi_resp_err_i   => dmi.resp_err    -- 0=ok, 1=error
+      dmi_req_valid_o   => dmi.req_valid,
+      dmi_req_ready_i   => dmi.req_ready,
+      dmi_req_address_o => dmi.req_address,
+      dmi_req_data_o    => dmi.req_data,
+      dmi_req_op_o      => dmi.req_op,
+      dmi_rsp_valid_i   => dmi.rsp_valid,
+      dmi_rsp_ready_o   => dmi.rsp_ready,
+      dmi_rsp_data_i    => dmi.rsp_data,
+      dmi_rsp_op_i      => dmi.rsp_op
     );
+
   end generate;
 
-  neorv32_debug_dtm_false:
+  neorv32_debug_ocd_inst_false:
   if (ON_CHIP_DEBUGGER_EN = false) generate
-    jtag_tdo_o <= jtag_tdi_i; -- feed-through
-    --
-    dmi.rstn       <= '0';
-    dmi.req_valid  <= '0';
-    dmi.req_addr   <= (others => '0');
-    dmi.req_op     <= '0';
-    dmi.req_data   <= (others => '0');
-    dmi.resp_ready <= '0';
+    jtag_tdo_o         <= jtag_tdi_i; -- JTAG feed-through
+    resp_bus(RESP_OCD) <= resp_bus_entry_terminate_c;
+    dci_ndmrstn        <= '1';
+    dci_halt_req       <= '0';
   end generate;
 
 
