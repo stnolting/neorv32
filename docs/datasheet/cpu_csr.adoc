@@ -539,6 +539,11 @@ The two MSBs of each `pmpaddr` are hardwired to zero (= bits 33:32 of the physic
 [NOTE]
 When implemented (by enabling the `Zicntr` ISA extension) the standard CPU counters are always 64-bit wide (low-word + high-word).
 
+.Instruction Retired Counter Increment
+[NOTE]
+The `[m]instret[h]` counter always increments when a instruction enters the pipeline's execute stage no matter
+if this instruction is meant to retire or if it causes an exception.
+
 
 :sectnums!:
 ===== **`cycle[h]`**

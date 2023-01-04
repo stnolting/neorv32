@@ -105,10 +105,10 @@ micro-operations. In order to increase performance, the CPU's front-end (instruc
 (instruction execution) are de-couples via a FIFO. Therefore, the front-end can already fetch new instructions while
 the back-end is still processing the previously-fetched instruction.
 
-Basically, the NEORV32 CPU is somewhere between a classical pipelined architecture, where each stage
+Basically, the CPU's micro architecture is somewhere between a classical pipelined architecture, where each stage
 requires exactly one processing cycle (if not stalled) and a classical multi-cycle architecture, which executes
 every single instruction (_including_ fetch) in a series of consecutive micro-operations. The combination of
-these two classical design paradigms allows an increased instruction execution in contrast to a pure multi-cycle
+these two design paradigms allows an increased instruction execution in contrast to a pure multi-cycle
 approach (due to overlapping operation of fetch and execute) at a reduced hardware footprint (due to the
 multi-cycle concept).
 
@@ -116,6 +116,10 @@ As a Von-Neumann machine, the CPU provides independent interfaces for instructio
 these two bus interfaces are merged into a single processor-internal bus via a prioritizing bus switch (data accesses
 have higher priority). Hence, _all_ memory addresses including peripheral devices are mapped to a single unified 32-bit
 address space.
+
+[NOTE]
+The CPU does not perform any out-of-order operations. Hence, it is not vulnerable to security issues
+caused by speculative execution (e.g. Spectre an Meltdown). 
 
 
 :sectnums:
@@ -175,18 +179,20 @@ The control unit is based on several modules (also called "engines").
 
 **Front-End**
 
-The front-end is responsible for fetching instruction data in chunks of 32-bits. This can be one aligned 32-bit instruction,
-two aligned 16-bit instructions or a mixture if 32-bit instructions are not aligned to 32-bit boundaries. The instruction
-data including control and exception information is stored to a FIFO queue - the instruction prefetch buffer (IPB). The depth
-of this FIFO can be configured by the <<_cpu_ipb_entries>> top generic.
+The front-end is responsible for fetching instruction data in chunks of 32-bits. This can be a single aligned 32-bit instruction,
+two aligned 16-bit instructions or a mixture of those. The instruction data including control and exception information is stored
+to a FIFO queue - the instruction prefetch buffer (IPB). The depth of this FIFO can be configured by the <<_cpu_ipb_entries>> top
+generic.
 
 The FIFO allows the front-end to do "speculative" instruction fetches, as it keeps fetching the next consecutive instruction
 all the time. This also allows to decouple front-end (instruction fetch) and back-end (instruction execution) so both modules
-can operate in parallel to increase performance.
+can operate in parallel to increase performance. However, all potential side effects that are caused by this "speculative"
+instruction fetch are already handled by the CPU front-end ensuring a defined execution stage while preventing security
+side attacks (like Spectre and Meltdown).
 
 .Branch Prediction
 [NOTE]
-The front-end implements a very simple branch prediction (predict = always taken) that stops fetching further instruction while
+The front-end implements a very simple branch prediction (predict = always taken) that **stops** fetching further instruction while
 a branch/jump/call operation is in progress.
 
 
