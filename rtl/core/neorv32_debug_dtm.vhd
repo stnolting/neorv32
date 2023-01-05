@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -46,25 +46,24 @@ entity neorv32_debug_dtm is
   );
   port (
     -- global control --
-    clk_i            : in  std_ulogic; -- global clock line
-    rstn_i           : in  std_ulogic; -- global reset line, low-active
+    clk_i             : in  std_ulogic; -- global clock line
+    rstn_i            : in  std_ulogic; -- global reset line, low-active
     -- jtag connection --
-    jtag_trst_i      : in  std_ulogic;
-    jtag_tck_i       : in  std_ulogic;
-    jtag_tdi_i       : in  std_ulogic;
-    jtag_tdo_o       : out std_ulogic;
-    jtag_tms_i       : in  std_ulogic;
+    jtag_trst_i       : in  std_ulogic;
+    jtag_tck_i        : in  std_ulogic;
+    jtag_tdi_i        : in  std_ulogic;
+    jtag_tdo_o        : out std_ulogic;
+    jtag_tms_i        : in  std_ulogic;
     -- debug module interface (DMI) --
-    dmi_rstn_o       : out std_ulogic;
-    dmi_req_valid_o  : out std_ulogic;
-    dmi_req_ready_i  : in  std_ulogic; -- DMI is allowed to make new requests when set
-    dmi_req_addr_o   : out std_ulogic_vector(06 downto 0);
-    dmi_req_op_o     : out std_ulogic; -- 0=read, 1=write
-    dmi_req_data_o   : out std_ulogic_vector(31 downto 0);
-    dmi_resp_valid_i : in  std_ulogic; -- response valid when set
-    dmi_resp_ready_o : out std_ulogic; -- ready to receive respond
-    dmi_resp_data_i  : in  std_ulogic_vector(31 downto 0);
-    dmi_resp_err_i   : in  std_ulogic -- 0=ok, 1=error
+    dmi_req_valid_o   : out std_ulogic;
+    dmi_req_ready_i   : in  std_ulogic; -- DMI is allowed to make new requests when set
+    dmi_req_address_o : out std_ulogic_vector(05 downto 0);
+    dmi_req_data_o    : out std_ulogic_vector(31 downto 0);
+    dmi_req_op_o      : out std_ulogic_vector(01 downto 0);
+    dmi_rsp_valid_i   : in  std_ulogic; -- response valid when set
+    dmi_rsp_ready_o   : out std_ulogic; -- ready to receive response
+    dmi_rsp_data_i    : in  std_ulogic_vector(31 downto 0);
+    dmi_rsp_op_i      : in  std_ulogic_vector(01 downto 0)
   );
 end neorv32_debug_dtm;
 
@@ -73,7 +72,7 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
   -- DMI Configuration (fixed!) --
   constant dmi_idle_c    : std_ulogic_vector(02 downto 0) := "000"; -- no idle cycles required
   constant dmi_version_c : std_ulogic_vector(03 downto 0) := "0001"; -- debug spec. version (0.13 & 1.0)
-  constant dmi_abits_c   : std_ulogic_vector(05 downto 0) := "000111"; -- number of DMI address bits (7)
+  constant dmi_abits_c   : std_ulogic_vector(05 downto 0) := "000110"; -- number of DMI address bits (6)
 
   -- tap JTAG signal synchronizer --
   type tap_sync_t is record
@@ -110,7 +109,7 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
     bypass           : std_ulogic;
     idcode           : std_ulogic_vector(31 downto 0);
     dtmcs, dtmcs_nxt : std_ulogic_vector(31 downto 0);
-    dmi,   dmi_nxt   : std_ulogic_vector((7+32+2)-1 downto 0); -- 7-bit address + 32-bit data + 2-bit operation
+    dmi,   dmi_nxt   : std_ulogic_vector((6+32+2)-1 downto 0); -- 6-bit address + 32-bit data + 2-bit operation
   end record;
   signal tap_reg : tap_reg_t;
 
@@ -121,10 +120,10 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
     state        : dmi_ctrl_state_t;
     dmihardreset : std_ulogic;
     dmireset     : std_ulogic;
-    err          : std_ulogic; -- sticky error
+    rsp          : std_ulogic_vector(01 downto 0); -- sticky response status
     rdata        : std_ulogic_vector(31 downto 0);
     wdata        : std_ulogic_vector(31 downto 0);
-    addr         : std_ulogic_vector(06 downto 0);
+    addr         : std_ulogic_vector(05 downto 0);
   end record;
   signal dmi_ctrl : dmi_ctrl_t;
 
@@ -264,9 +263,9 @@ begin
   tap_reg.dtmcs_nxt(03 downto 00) <= dmi_version_c; -- version
 
   -- DMI register read access --
-  tap_reg.dmi_nxt(40 downto 34) <= dmi_ctrl.addr; -- address
+  tap_reg.dmi_nxt(39 downto 34) <= dmi_ctrl.addr; -- address
   tap_reg.dmi_nxt(33 downto 02) <= dmi_ctrl.rdata; -- read data
-  tap_reg.dmi_nxt(01 downto 00) <= "11" when (dmi_ctrl.state /= DMI_IDLE) else (dmi_ctrl.err & '0'); -- status
+  tap_reg.dmi_nxt(01 downto 00) <= "11" when (dmi_ctrl.state /= DMI_IDLE) else (dmi_ctrl.rsp); -- status
 
 
   -- Debug Module Interface -----------------------------------------------------------------
@@ -277,7 +276,7 @@ begin
       dmi_ctrl.state        <= DMI_IDLE;
       dmi_ctrl.dmihardreset <= '1';
       dmi_ctrl.dmireset     <= '1';
-      dmi_ctrl.err          <= '0';
+      dmi_ctrl.rsp          <= "00";
       dmi_ctrl.rdata        <= (others => '0');
       dmi_ctrl.wdata        <= (others => '0');
       dmi_ctrl.addr         <= (others => '0');
@@ -299,7 +298,7 @@ begin
 
           when DMI_IDLE => -- waiting for new request
             if (dr_update_trig.valid = '1') and (tap_reg.ireg = "10001") then
-              dmi_ctrl.addr  <= tap_reg.dmi(40 downto 34);
+              dmi_ctrl.addr  <= tap_reg.dmi(39 downto 34);
               dmi_ctrl.wdata <= tap_reg.dmi(33 downto 02);
               if (tap_reg.dmi(1 downto 0) = "01") then -- read
                 dmi_ctrl.state <= DMI_READ_WAIT;
@@ -313,12 +312,12 @@ begin
               dmi_ctrl.state <= DMI_READ;
             end if;
 
-          when DMI_READ => -- start read access
+          when DMI_READ => -- trigger/start read access
             dmi_ctrl.state <= DMI_READ_BUSY;
 
           when DMI_READ_BUSY => -- pending read access
-            if (dmi_resp_valid_i = '1') then
-              dmi_ctrl.rdata <= dmi_resp_data_i;
+            if (dmi_rsp_valid_i = '1') then
+              dmi_ctrl.rdata <= dmi_rsp_data_i;
               dmi_ctrl.state <= DMI_IDLE;
             end if;
 
@@ -327,11 +326,11 @@ begin
               dmi_ctrl.state <= DMI_WRITE;
             end if;
 
-          when DMI_WRITE => -- start write access
+          when DMI_WRITE => -- trigger/start write access
             dmi_ctrl.state <= DMI_WRITE_BUSY;
 
           when DMI_WRITE_BUSY => -- pending write access
-            if (dmi_resp_valid_i = '1') then
+            if (dmi_rsp_valid_i = '1') then
               dmi_ctrl.state <= DMI_IDLE;
             end if;
 
@@ -339,19 +338,21 @@ begin
             dmi_ctrl.state <= DMI_IDLE;
 
         end case;
+      end if;
 
-        -- sticky error flag --
-        if (dmi_ctrl.dmireset = '1') or (dmi_ctrl.dmihardreset = '1') then
-          dmi_ctrl.err <= '0';
-        elsif (dmi_ctrl.state = DMI_READ) or (dmi_ctrl.state = DMI_READ_BUSY) or
-              (dmi_ctrl.state = DMI_WRITE) or (dmi_ctrl.state = DMI_WRITE_BUSY) then
-          dmi_ctrl.err <= dmi_ctrl.err or dmi_resp_err_i; -- sticky error
+      -- sticky response flags --
+      if (dmi_ctrl.dmireset = '1') or (dmi_ctrl.dmihardreset = '1') then
+        dmi_ctrl.rsp <= "00";
+      else
+        if (dmi_ctrl.state /= DMI_IDLE) and (dr_update_trig.valid = '1') and (tap_reg.ireg = "10001") then -- access attempt while DMI is busy
+          dmi_ctrl.rsp <= "11";
+        elsif (dmi_ctrl.state = DMI_READ_BUSY) or (dmi_ctrl.state = DMI_WRITE_BUSY) then -- accumulate DMI response
+          dmi_ctrl.rsp <= dmi_ctrl.rsp or dmi_rsp_op_i;
         end if;
       end if;
 
     end if;
   end process dmi_controller;
-
 
   -- trigger for UPDATE state --
   tap_update_trigger: process(rstn_i, clk_i)
@@ -363,17 +364,15 @@ begin
     end if;
   end process tap_update_trigger;
 
-  dr_update_trig.is_update <= '1' when (tap_ctrl_state = DR_UPDATE) else '0'; -- we are in DR update state
-  dr_update_trig.valid     <= '1' when (dr_update_trig.is_update = '1') and -- we ARE in DR update
-                                       (dr_update_trig.is_update_ff = '0') else '0'; -- but we were not before
+  dr_update_trig.is_update <= '1' when (tap_ctrl_state = DR_UPDATE) else '0';
+  dr_update_trig.valid     <= '1' when (dr_update_trig.is_update = '1') and (dr_update_trig.is_update_ff = '0') else '0';
 
   -- direct DMI output --
-  dmi_rstn_o       <= '0' when (dmi_ctrl.dmihardreset = '1') else '1';
-  dmi_req_valid_o  <= '1' when (dmi_ctrl.state = DMI_READ) or (dmi_ctrl.state = DMI_WRITE) else '0';
-  dmi_req_op_o     <= '1' when (dmi_ctrl.state = DMI_WRITE) or (dmi_ctrl.state = DMI_WRITE_BUSY) else '0';
-  dmi_resp_ready_o <= '1' when (dmi_ctrl.state = DMI_READ_BUSY) or (dmi_ctrl.state = DMI_WRITE_BUSY) else '0';
-  dmi_req_addr_o   <= dmi_ctrl.addr;
-  dmi_req_data_o   <= dmi_ctrl.wdata;
+  dmi_req_valid_o   <= '1' when (dmi_ctrl.state = DMI_READ) or (dmi_ctrl.state = DMI_WRITE) else '0';
+  dmi_req_op_o      <= tap_reg.dmi(1 downto 0);
+  dmi_rsp_ready_o   <= '1' when (dmi_ctrl.state = DMI_READ_BUSY) or (dmi_ctrl.state = DMI_WRITE_BUSY) else '0';
+  dmi_req_address_o <= dmi_ctrl.addr;
+  dmi_req_data_o    <= dmi_ctrl.wdata;
 
 
 end neorv32_debug_dtm_rtl;

@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -62,7 +62,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070903"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070904"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -2241,31 +2241,30 @@ package neorv32_package is
   component neorv32_debug_dm
     port (
       -- global control --
-      clk_i            : in  std_ulogic; -- global clock line
-      rstn_i           : in  std_ulogic; -- global reset line, low-active
+      clk_i             : in  std_ulogic; -- global clock line
+      rstn_i            : in  std_ulogic; -- global reset line, low-active
       -- debug module interface (DMI) --
-      dmi_rstn_i       : in  std_ulogic;
-      dmi_req_valid_i  : in  std_ulogic;
-      dmi_req_ready_o  : out std_ulogic; -- DMI is allowed to make new requests when set
-      dmi_req_addr_i   : in  std_ulogic_vector(06 downto 0);
-      dmi_req_op_i     : in  std_ulogic; -- 0=read, 1=write
-      dmi_req_data_i   : in  std_ulogic_vector(31 downto 0);
-      dmi_resp_valid_o : out std_ulogic; -- response valid when set
-      dmi_resp_ready_i : in  std_ulogic; -- ready to receive respond
-      dmi_resp_data_o  : out std_ulogic_vector(31 downto 0);
-      dmi_resp_err_o   : out std_ulogic; -- 0=ok, 1=error
+      dmi_req_valid_i   : in  std_ulogic;
+      dmi_req_ready_o   : out std_ulogic; -- DMI is allowed to make new requests when set
+      dmi_req_address_i : in  std_ulogic_vector(05 downto 0);
+      dmi_req_data_i    : in  std_ulogic_vector(31 downto 0);
+      dmi_req_op_i      : in  std_ulogic_vector(01 downto 0);
+      dmi_rsp_valid_o   : out std_ulogic; -- response valid when set
+      dmi_rsp_ready_i   : in  std_ulogic; -- ready to receive respond
+      dmi_rsp_data_o    : out std_ulogic_vector(31 downto 0);
+      dmi_rsp_op_o      : out std_ulogic_vector(01 downto 0);
       -- CPU bus access --
-      cpu_debug_i      : in  std_ulogic; -- CPU is in debug mode
-      cpu_addr_i       : in  std_ulogic_vector(31 downto 0); -- address
-      cpu_rden_i       : in  std_ulogic; -- read enable
-      cpu_wren_i       : in  std_ulogic; -- write enable
-      cpu_ben_i        : in  std_ulogic_vector(03 downto 0); -- byte write enable
-      cpu_data_i       : in  std_ulogic_vector(31 downto 0); -- data in
-      cpu_data_o       : out std_ulogic_vector(31 downto 0); -- data out
-      cpu_ack_o        : out std_ulogic; -- transfer acknowledge
+      cpu_debug_i       : in  std_ulogic; -- CPU is in debug mode
+      cpu_addr_i        : in  std_ulogic_vector(31 downto 0); -- address
+      cpu_rden_i        : in  std_ulogic; -- read enable
+      cpu_wren_i        : in  std_ulogic; -- write enable
+      cpu_ben_i         : in  std_ulogic_vector(03 downto 0); -- byte write enable
+      cpu_data_i        : in  std_ulogic_vector(31 downto 0); -- data in
+      cpu_data_o        : out std_ulogic_vector(31 downto 0); -- data out
+      cpu_ack_o         : out std_ulogic; -- transfer acknowledge
       -- CPU control --
-      cpu_ndmrstn_o    : out std_ulogic; -- soc reset
-      cpu_halt_req_o   : out std_ulogic  -- request hart to halt (enter debug mode)
+      cpu_ndmrstn_o     : out std_ulogic; -- soc reset
+      cpu_halt_req_o    : out std_ulogic  -- request hart to halt (enter debug mode)
     );
   end component;
 
@@ -2279,25 +2278,24 @@ package neorv32_package is
     );
     port (
       -- global control --
-      clk_i            : in  std_ulogic; -- global clock line
-      rstn_i           : in  std_ulogic; -- global reset line, low-active
+      clk_i             : in  std_ulogic; -- global clock line
+      rstn_i            : in  std_ulogic; -- global reset line, low-active
       -- jtag connection --
-      jtag_trst_i      : in  std_ulogic;
-      jtag_tck_i       : in  std_ulogic;
-      jtag_tdi_i       : in  std_ulogic;
-      jtag_tdo_o       : out std_ulogic;
-      jtag_tms_i       : in  std_ulogic;
+      jtag_trst_i       : in  std_ulogic;
+      jtag_tck_i        : in  std_ulogic;
+      jtag_tdi_i        : in  std_ulogic;
+      jtag_tdo_o        : out std_ulogic;
+      jtag_tms_i        : in  std_ulogic;
       -- debug module interface (DMI) --
-      dmi_rstn_o       : out std_ulogic;
-      dmi_req_valid_o  : out std_ulogic;
-      dmi_req_ready_i  : in  std_ulogic; -- DMI is allowed to make new requests when set
-      dmi_req_addr_o   : out std_ulogic_vector(06 downto 0);
-      dmi_req_op_o     : out std_ulogic; -- 0=read, 1=write
-      dmi_req_data_o   : out std_ulogic_vector(31 downto 0);
-      dmi_resp_valid_i : in  std_ulogic; -- response valid when set
-      dmi_resp_ready_o : out std_ulogic; -- ready to receive respond
-      dmi_resp_data_i  : in  std_ulogic_vector(31 downto 0);
-      dmi_resp_err_i   : in  std_ulogic -- 0=ok, 1=error
+      dmi_req_valid_o   : out std_ulogic;
+      dmi_req_ready_i   : in  std_ulogic; -- DMI is allowed to make new requests when set
+      dmi_req_address_o : out std_ulogic_vector(05 downto 0);
+      dmi_req_data_o    : out std_ulogic_vector(31 downto 0);
+      dmi_req_op_o      : out std_ulogic_vector(01 downto 0);
+      dmi_rsp_valid_i   : in  std_ulogic; -- response valid when set
+      dmi_rsp_ready_o   : out std_ulogic; -- ready to receive response
+      dmi_rsp_data_i    : in  std_ulogic_vector(31 downto 0);
+      dmi_rsp_op_i      : in  std_ulogic_vector(01 downto 0)
     );
   end component;
 
