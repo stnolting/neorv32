@@ -87,11 +87,9 @@ end neorv32_debug_dm;
 
 architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
-  -- DM configuration --
-  constant nscratch_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of dscratch registers in CPU
-  constant datasize_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of data registers in memory/CSR space
-  constant dataaddr_c   : std_ulogic_vector(11 downto 0) := dm_data_base_c(11 downto 0); -- signed base address of data registers in memory/CSR space
-  constant dataaccess_c : std_ulogic                     := '1';    -- 1: abstract data is memory-mapped, 0: abstract data is CSR-mapped
+  -- **********************************************************
+  -- DMI Access
+  -- **********************************************************
 
   -- DM operations --
   constant dmi_nop_c      : std_ulogic_vector(1 downto 0) := "00"; -- no operation
@@ -118,25 +116,9 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant instr_sw_c     : std_ulogic_vector(31 downto 0) := x"00002023"; -- sw zero, 0(zero)
   constant instr_ebreak_c : std_ulogic_vector(31 downto 0) := x"00100073"; -- ebreak
 
-  -- debug module controller --
-  type dm_ctrl_state_t is (CMD_IDLE, CMD_EXE_CHECK, CMD_EXE_PREPARE, CMD_EXE_TRIGGER, CMD_EXE_BUSY, CMD_EXE_ERROR);
-  type dm_ctrl_t is record
-    -- fsm --
-    state           : dm_ctrl_state_t;
-    busy            : std_ulogic;
-    ldsw_progbuf    : std_ulogic_vector(31 downto 0);
-    pbuf_en         : std_ulogic;
-    -- error flags --
-    illegal_state   : std_ulogic;
-    illegal_cmd     : std_ulogic;
-    cmderr          : std_ulogic_vector(02 downto 0);
-    -- hart status --
-    hart_halted     : std_ulogic;
-    hart_resume_req : std_ulogic;
-    hart_resume_ack : std_ulogic;
-    hart_reset      : std_ulogic;
-  end record;
-  signal dm_ctrl : dm_ctrl_t;
+  -- DMI access --
+  signal dmi_wren : std_ulogic;
+  signal dmi_rden : std_ulogic;
 
   -- debug module DMI registers / access --
   type progbuf_t is array (0 to 1) of std_ulogic_vector(31 downto 0);
@@ -164,30 +146,46 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   signal cpu_progbuf : cpu_progbuf_t;
 
   -- **********************************************************
-  -- CPU Bus Interface
+  -- DM Control
   -- **********************************************************
 
-  -- Debug Core Interface
-  type dci_t is record
-    halt_ack      : std_ulogic; -- CPU (re-)entered HALT state (single-shot)
-    resume_req    : std_ulogic; -- DM wants the CPU to resume when set
-    resume_ack    : std_ulogic; -- CPU starts resuming when set (single-shot)
-    execute_req   : std_ulogic; -- DM wants CPU to execute program buffer when set
-    execute_ack   : std_ulogic; -- CPU starts executing program buffer when set (single-shot)
-    exception_ack : std_ulogic; -- CPU has detected an exception (single-shot)
-    progbuf       : std_ulogic_vector(255 downto 0); -- program buffer, 4 32-bit entries
-    data_we       : std_ulogic; -- write abstract data
-    wdata         : std_ulogic_vector(31 downto 0); -- abstract write data
-    rdata         : std_ulogic_vector(31 downto 0); -- abstract read data
+  -- DM configuration --
+  constant nscratch_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of dscratch registers in CPU
+  constant datasize_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of data registers in memory/CSR space
+  constant dataaddr_c   : std_ulogic_vector(11 downto 0) := dm_data_base_c(11 downto 0); -- signed base address of data registers in memory/CSR space
+  constant dataaccess_c : std_ulogic                     := '1';    -- 1: abstract data is memory-mapped, 0: abstract data is CSR-mapped
+
+  -- debug module controller --
+  type dm_ctrl_state_t is (CMD_IDLE, CMD_EXE_CHECK, CMD_EXE_PREPARE, CMD_EXE_TRIGGER, CMD_EXE_BUSY, CMD_EXE_ERROR);
+  type dm_ctrl_t is record
+    -- fsm --
+    state           : dm_ctrl_state_t;
+    busy            : std_ulogic;
+    ldsw_progbuf    : std_ulogic_vector(31 downto 0);
+    pbuf_en         : std_ulogic;
+    -- error flags --
+    illegal_state   : std_ulogic;
+    illegal_cmd     : std_ulogic;
+    cmderr          : std_ulogic_vector(02 downto 0);
+    -- hart status --
+    hart_halted     : std_ulogic;
+    hart_resume_req : std_ulogic;
+    hart_resume_ack : std_ulogic;
+    hart_reset      : std_ulogic;
   end record;
-  signal dci : dci_t;
+  signal dm_ctrl : dm_ctrl_t;
+
+
+  -- **********************************************************
+  -- CPU Bus Interface
+  -- **********************************************************
 
   -- IO space: module base address --
   constant hi_abb_c : natural := 31; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(dm_size_c); -- low address boundary bit
 
   -- status and control register - bits --
-  -- for write access we only care about the actual BYTE-writes! --
+  -- for write access we only care about the actual BYTE WRITE ACCESSES! --
   constant sreg_halt_ack_c      : natural :=  0; -- -/w: CPU is halted in debug mode and waits in park loop
   constant sreg_resume_req_c    : natural :=  8; -- r/-: DM requests CPU to resume
   constant sreg_resume_ack_c    : natural :=  8; -- -/w: CPU starts resuming
@@ -217,6 +215,21 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     15 => x"00000073"
   );
 
+  -- Debug Core Interface
+  type dci_t is record
+    halt_ack      : std_ulogic; -- CPU (re-)entered HALT state (single-shot)
+    resume_req    : std_ulogic; -- DM wants the CPU to resume when set
+    resume_ack    : std_ulogic; -- CPU starts resuming when set (single-shot)
+    execute_req   : std_ulogic; -- DM wants CPU to execute program buffer when set
+    execute_ack   : std_ulogic; -- CPU starts executing program buffer when set (single-shot)
+    exception_ack : std_ulogic; -- CPU has detected an exception (single-shot)
+    progbuf       : std_ulogic_vector(255 downto 0); -- program buffer, 4 32-bit entries
+    data_we       : std_ulogic; -- write abstract data
+    wdata         : std_ulogic_vector(31 downto 0); -- abstract write data
+    rdata         : std_ulogic_vector(31 downto 0); -- abstract read data
+  end record;
+  signal dci : dci_t;
+
   -- global access control --
   signal acc_en : std_ulogic;
   signal rden   : std_ulogic;
@@ -232,25 +245,26 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
 begin
 
+  -- DMI Access -----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  dmi_wren <= '1' when (dmi_req_valid_i = '1') and (dmi_req_op_i = dmi_write_c) else '0';
+  dmi_rden <= '1' when (dmi_req_valid_i = '1') and (dmi_req_op_i = dmi_read_c)  else '0';
+
+
   -- Debug Module Command Controller --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   dm_controller: process(clk_i)
   begin
     if rising_edge(clk_i) then
       if (dm_reg.dmcontrol_dmactive = '0') then -- DM reset / DM disabled
-        dm_ctrl.state           <= CMD_IDLE;
-        dm_ctrl.ldsw_progbuf    <= instr_sw_c;
-        dci.execute_req         <= '0';
-        dm_ctrl.pbuf_en         <= '0';
+        dm_ctrl.state         <= CMD_IDLE;
+        dm_ctrl.ldsw_progbuf  <= instr_sw_c;
+        dci.execute_req       <= '0';
+        dm_ctrl.pbuf_en       <= '0';
         --
-        dm_ctrl.illegal_cmd     <= '0';
-        dm_ctrl.illegal_state   <= '0';
-        dm_ctrl.cmderr          <= "000";
-        --
-        dm_ctrl.hart_reset      <= '0';
-        dm_ctrl.hart_halted     <= '0';
-        dm_ctrl.hart_resume_req <= '0';
-        dm_ctrl.hart_resume_ack <= '0';
+        dm_ctrl.illegal_cmd   <= '0';
+        dm_ctrl.illegal_state <= '0';
+        dm_ctrl.cmderr        <= "000";
       else -- DM active
 
         -- defaults --
@@ -258,12 +272,12 @@ begin
         dm_ctrl.illegal_cmd   <= '0';
         dm_ctrl.illegal_state <= '0';
 
-        -- command execution fsm --
+        -- command execution engine --
         case dm_ctrl.state is
 
           when CMD_IDLE => -- wait for new abstract command
           -- ------------------------------------------------------------
-            if (dmi_req_valid_i = '1') and (dmi_req_op_i = dmi_write_c) then -- valid DM write access
+            if (dmi_wren = '1') then -- valid DM write access
               if (dmi_req_address_i = addr_command_c) then
                 if (dm_ctrl.cmderr = "000") then -- only execute if no error
                   dm_ctrl.state <= CMD_EXE_CHECK;
@@ -339,8 +353,7 @@ begin
 
         end case;
 
-
-        -- error flags --
+        -- error code --
         -- ------------------------------------------------------------
         if (dm_ctrl.cmderr = "000") then -- ready to set new error
           if (dm_ctrl.illegal_state = '1') then -- cannot execute since hart is not in expected state
@@ -356,44 +369,6 @@ begin
           dm_ctrl.cmderr <= "000";
         end if;
 
-
-        -- hart status --
-        -- ------------------------------------------------------------
-
-        -- HALTED ACK --
-        if (dm_reg.dmcontrol_ndmreset = '1') then
-          dm_ctrl.hart_halted <= '0';
-        elsif (dci.halt_ack = '1') then
-          dm_ctrl.hart_halted <= '1';
-        elsif (dci.resume_ack = '1') then
-          dm_ctrl.hart_halted <= '0';
-        end if;
-
-        -- RESUME REQ --
-        if (dm_reg.dmcontrol_ndmreset = '1') then
-          dm_ctrl.hart_resume_req <= '0';
-        elsif (dm_reg.resume_req = '1') then
-          dm_ctrl.hart_resume_req <= '1';
-        elsif (dci.resume_ack = '1') then
-          dm_ctrl.hart_resume_req <= '0';
-        end if;
-
-        -- RESUME ACK --
-        if (dm_reg.dmcontrol_ndmreset = '1') then
-          dm_ctrl.hart_resume_ack <= '0';
-        elsif (dci.resume_ack = '1') then
-          dm_ctrl.hart_resume_ack <= '1';
-        elsif (dm_reg.resume_req = '1') then
-          dm_ctrl.hart_resume_ack <= '0';
-        end if;
-
-        -- hart has been RESET --
-        if (dm_reg.dmcontrol_ndmreset = '1') then
-          dm_ctrl.hart_reset <= '1';
-        elsif (dm_reg.reset_ack = '1') then
-          dm_ctrl.hart_reset <= '0';
-        end if;
-
       end if;
     end if;
   end process dm_controller;
@@ -402,12 +377,61 @@ begin
   dm_ctrl.busy <= '0' when (dm_ctrl.state = CMD_IDLE) else '1';
 
 
+  -- Hart Status ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  hart_status: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      dm_ctrl.hart_halted     <= '0';
+      dm_ctrl.hart_resume_req <= '0';
+      dm_ctrl.hart_resume_ack <= '0';
+      dm_ctrl.hart_reset      <= '0';
+    elsif rising_edge(clk_i) then
+ 
+      -- HALTED ACK --
+      if (dm_reg.dmcontrol_ndmreset = '1') then
+        dm_ctrl.hart_halted <= '0';
+      elsif (dci.halt_ack = '1') then
+        dm_ctrl.hart_halted <= '1';
+      elsif (dci.resume_ack = '1') then
+        dm_ctrl.hart_halted <= '0';
+      end if;
+
+      -- RESUME REQ --
+      if (dm_reg.dmcontrol_ndmreset = '1') then
+        dm_ctrl.hart_resume_req <= '0';
+      elsif (dm_reg.resume_req = '1') then
+        dm_ctrl.hart_resume_req <= '1';
+      elsif (dci.resume_ack = '1') then
+        dm_ctrl.hart_resume_req <= '0';
+      end if;
+
+      -- RESUME ACK --
+      if (dm_reg.dmcontrol_ndmreset = '1') then
+        dm_ctrl.hart_resume_ack <= '0';
+      elsif (dci.resume_ack = '1') then
+        dm_ctrl.hart_resume_ack <= '1';
+      elsif (dm_reg.resume_req = '1') then
+        dm_ctrl.hart_resume_ack <= '0';
+      end if;
+
+      -- hart has been RESET --
+      if (dm_reg.dmcontrol_ndmreset = '1') then -- explicit RESET triggered by DM
+        dm_ctrl.hart_reset <= '1';
+      elsif (dm_reg.reset_ack = '1') then
+        dm_ctrl.hart_reset <= '0';
+      end if;
+
+    end if;
+  end process hart_status;
+
+
   -- Debug Module Interface - Write Access --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   dmi_write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      dm_reg.dmcontrol_ndmreset <= '0';
+      dm_reg.dmcontrol_ndmreset <= '0'; -- no system SoC reset
       dm_reg.dmcontrol_dmactive <= '0'; -- DM is in reset state after hardware reset
       --
       dm_reg.abstractauto_autoexecdata    <= '0';
@@ -432,7 +456,7 @@ begin
       dm_reg.autoexec_wr <= '0';
 
       -- DMI access --
-      if (dmi_req_valid_i = '1') and (dmi_req_op_i = dmi_write_c) then -- valid DMI write request
+      if (dmi_wren = '1') then -- valid DMI write request
 
         -- debug module control --
         if (dmi_req_address_i = addr_dmcontrol_c) then
@@ -504,7 +528,7 @@ begin
   -- Direct Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- write to abstract data register --
-  dci.data_we <= '1' when (dmi_req_valid_i = '1') and (dmi_req_op_i = dmi_write_c) and (dmi_req_address_i = addr_data0_c) and (dm_ctrl.busy = '0') else '0';
+  dci.data_we <= '1' when (dmi_wren = '1') and (dmi_req_address_i = addr_data0_c) and (dm_ctrl.busy = '0') else '0';
   dci.wdata   <= dmi_req_data_i;
 
   -- CPU halt/resume request --
@@ -512,7 +536,7 @@ begin
   dci.resume_req <= dm_ctrl.hart_resume_req; -- active until explicitly cleared
 
   -- SoC reset --
-  cpu_ndmrstn_o <= not (dm_reg.dmcontrol_ndmreset and dm_reg.dmcontrol_dmactive); -- to processor's reset generator
+  cpu_ndmrstn_o <= '0' when (dm_reg.dmcontrol_ndmreset = '1') and (dm_reg.dmcontrol_dmactive = '1') else '1'; -- to processor's reset generator
 
   -- construct program buffer array for CPU access --
   cpu_progbuf(0) <= dm_ctrl.ldsw_progbuf; -- pseudo program buffer for GPR access
@@ -631,7 +655,7 @@ begin
 
       -- invalid read access while command is executing --
       -- ------------------------------------------------------------
-      if (dmi_req_valid_i = '1') and (dmi_req_op_i = dmi_read_c) then -- valid DMI read request
+      if (dmi_rden = '1') then -- valid DMI read request
         if (dm_ctrl.busy = '1') then -- busy
           if (dmi_req_address_i = addr_data0_c) or
              (dmi_req_address_i = addr_progbuf0_c) or
@@ -643,7 +667,7 @@ begin
 
       -- auto execution trigger --
       -- ------------------------------------------------------------
-      if (dmi_req_valid_i = '1') and (dmi_req_op_i = dmi_read_c) then -- valid DMI read request
+      if (dmi_rden = '1') then -- valid DMI read request
         if ((dmi_req_address_i = addr_data0_c)    and (dm_reg.abstractauto_autoexecdata = '1')) or
            ((dmi_req_address_i = addr_progbuf0_c) and (dm_reg.abstractauto_autoexecprogbuf(0) = '1')) or
            ((dmi_req_address_i = addr_progbuf1_c) and (dm_reg.abstractauto_autoexecprogbuf(1) = '1')) then
