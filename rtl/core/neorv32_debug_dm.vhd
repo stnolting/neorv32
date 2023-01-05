@@ -639,9 +639,9 @@ begin
 
 --      -- program buffer (-/w) --
 --      when addr_progbuf0_c =>
---        dmi_rsp_data_o <= dm_reg.progbuf(0); -- program buffer 0
+--        dmi_rsp_data_o <= dm_reg.progbuf(0); -- program buffer 0, register is write-only
 --      when addr_progbuf1_c =>
---        dmi_rsp_data_o <= dm_reg.progbuf(1); -- program buffer 1
+--        dmi_rsp_data_o <= dm_reg.progbuf(1); -- program buffer 1, register is write-only
 
 --      -- system bus access control and status (r/-) --
 --      when addr_sbcs_c =>
