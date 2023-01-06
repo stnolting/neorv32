@@ -115,11 +115,11 @@ see the [_open-source architecture ID list_](https://github.com/riscv/riscv-isa-
 [[`M`](https://stnolting.github.io/neorv32/#_m_integer_multiplication_and_division)]
 [[`U`](https://stnolting.github.io/neorv32/#_u_less_privileged_user_mode)]
 [[`X`](https://stnolting.github.io/neorv32/#_x_neorv32_specific_custom_extensions)]
-[[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_single_precision_floating_point_operations)]
 [[`Zicsr`](https://stnolting.github.io/neorv32/#_zicsr_control_and_status_register_access_privileged_architecture)]
 [[`Zicntr`](https://stnolting.github.io/neorv32/#_zicntr_cpu_base_counters)]
 [[`Zihpm`](https://stnolting.github.io/neorv32/#_zihpm_hardware_performance_monitors)]
 [[`Zifencei`](https://stnolting.github.io/neorv32/#_zifencei_instruction_stream_synchronization)]
+[[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_single_precision_floating_point_operations)]
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_integer_multiplication)]
 [[`Zxcfu`](https://stnolting.github.io/neorv32/#_zxcfu_custom_instructions_extension_cfu)]
 [[`PMP`](https://stnolting.github.io/neorv32/#_pmp_physical_memory_protection)]
@@ -132,10 +132,10 @@ and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/
 * implements **all** standard RISC-V exceptions and interrupts (including MTI, MEI & MSI)
 * 16 fast interrupt request channels as NEORV32-specific extension
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as `Zxcfu` ISA extension)
-for _custom RISC-V instructions_ (R3-type, R4-type and R5-type)
-* _intrinsic_ library for the `Zfinx` extension as it is not yet supported by upstream GCC
+for _custom RISC-V instructions_ (R3-type, R4-type and R5-type);
+* _intrinsic_ libraries for the `Zxcfu` and `Zfinx` ISA extensions
 
-**Memory**
+**Memories**
 
 * processor-internal data and instruction memories ([DMEM](https://stnolting.github.io/neorv32/#_data_memory_dmem) /
 [IMEM](https://stnolting.github.io/neorv32/#_instruction_memory_imem)) &
@@ -143,7 +143,7 @@ cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruc
 * pre-installed bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with serial user interface;
 allows booting application code via UART or from external SPI flash
 
-**Timers**
+**Timers and Counters**
 
 * 64-bit machine system timer ([MTIME](https://stnolting.github.io/neorv32/#_machine_system_timer_mtime)), RISC-V spec. compatible
 * 32-bit general purpose timer ([GPTMR](https://stnolting.github.io/neorv32/#_general_purpose_timer_gptmr))
@@ -181,7 +181,7 @@ for custom tightly-coupled co-processors, accelerators or interfaces
 **Debugging**
 
 * on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) accessible via standard JTAG interface
-* compliant to the "Minimal RISC-V Debug Specification Version 0.13.2"
+* compliant to the "Minimal RISC-V Debug Specification Version 1.0"
 * compatible with **OpenOCD** + **gdb** and **Segger Embedded Studio**
 
 [[back to top](#The-NEORV32-RISC-V-Processor)]

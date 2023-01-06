@@ -144,7 +144,7 @@ the register file do never occur in the same clock cycle, so no bypass logic is 
 ==== CPU Arithmetic Logic Unit
 
 The arithmetic/logic unit (ALU) is used for processing data from the register file and also for memory and branch address computations.
-All simple <<_i_base_integer_isa> data processing operations (`add`, `and`, ...) are implemented as combinatorial logic requiring only a single cycle to
+All simple <<_i_base_integer_isa>> data processing operations (`add`, `and`, ...) are implemented as combinatorial logic requiring only a single cycle to
 complete. More sophisticated instructions (shift operations from the base ISA and all further ISA extensions) are processed by so-called
 "ALU co-processors".
 
@@ -925,7 +925,7 @@ clear the MSB.
 
 The "Prio." column shows the priority of each trap. The highest priority is 1. The "`mcause`" column shows the
 cause ID of the according trap that is written to <<_mcause>> CSR.  The "ID [C]" names are defined by the NEORV32
-core library (the runtime environment _RTE_) and can be used in plain C code. The <<_mepc>> and <<_mtval> columns
+core library (the runtime environment _RTE_) and can be used in plain C code. The <<_mepc>> and <<_mtval>> columns
 show the values written to the according CSRs when a trap is triggered:
 
 * **I-PC** - address of interrupted instruction (instruction has not been executed yet)

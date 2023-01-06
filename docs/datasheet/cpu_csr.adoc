@@ -44,12 +44,8 @@ just read-only).
 | 0x343   | <<_mtval>>                          | _CSR_MTVAL_          | r/w | Machine bad address or instruction
 | 0x344   | <<_mip>>                            | _CSR_MIP_            | r/w | Machine interrupt pending register
 5+^| **<<_machine_physical_memory_protection_csrs>>**
-| 0x3a0   | <<_pmpcfg, `pmpcfg0`>>              | _CSR_PMPCFG0_        | r/w | Physical memory protection configuration for region 0-3
-5+<| ...
-| 0x3a3   | <<_pmpcfg, `pmpcfg3`>>              | _CSR_PMPCFG3_        | r/w | Physical memory protection configuration for region 11..15
-| 0x3b0   | <<_pmpaddr, `pmpaddr0`>>            | _CSR_PMPADDR0_       | r/w | Physical memory protection address register region 0
-5+<| ...
-| 0x3ef   | <<_pmpaddr, `pmpaddr15`>>           | _CSR_PMPADDR15_      | r/w | Physical memory protection address register region 15
+| 0x3a0   | <<_pmpcfg, `pmpcfg0`>>   .. <<_pmpcfg, `pmpcfg3`>>    | _CSR_PMPCFG0_  .. _CSR_PMPCFG3_   | r/w | Physical memory protection configuration for region 0..15
+| 0x3b0   | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr15`>> | _CSR_PMPADDR0_ .. _CSR_PMPADDR15_ | r/w | Physical memory protection address register region 0..15
 5+^| **<<_trigger_module_csrs>>**
 | 0x7a0   | <<_tselect>>                        | _CSR_TSELECT_        | r/w | Trigger select register
 | 0x7a1   | <<_tdata1>>                         | _CSR_TDATA1_         | r/w | Trigger data register 1
@@ -66,24 +62,18 @@ just read-only).
 5+^| **<<_machine_counter_and_timer_csrs>>**
 | 0xb00   | <<_mcycleh, `mcycle`>>              | _CSR_MCYCLE_         | r/w | Machine cycle counter low word
 | 0xb02   | <<_minstreth, `minstret`>>          | _CSR_MINSTRET_       | r/w | Machine instruction-retired counter low word
-| 0xb80   | <<_mcycleh>>                        | _CSR_MCYCLE_         | r/w | Machine cycle counter high word
-| 0xb82   | <<_minstreth>>                      | _CSR_MINSTRET_       | r/w | Machine instruction-retired counter high word
+| 0xb80   | <<_mcycleh, `mcycleh`>>             | _CSR_MCYCLEH_        | r/w | Machine cycle counter high word
+| 0xb82   | <<_minstreth, `minstreth`>>         | _CSR_MINSTRETH_      | r/w | Machine instruction-retired counter high word
 | 0xc00   | <<_cycleh, `cycle`>>                | _CSR_CYCLE_          | r/- | Cycle counter low word
 | 0xc01   | <<_timeh, `time`>>                  | _CSR_TIME_           | r/- | System time (from MTIME) low word
 | 0xc02   | <<_instreth, `instret`>>            | _CSR_INSTRET_        | r/- | Instruction-retired counter low word
-| 0xc80   | <<_cycleh>>                         | _CSR_CYCLEH_         | r/- | Cycle counter high word
-| 0xc81   | <<_timeh>>                          | _CSR_TIMEH_          | r/- | System time (from MTIME) high word
-| 0xc82   | <<_instreth>>                       | _CSR_INSTRETH_       | r/- | Instruction-retired counter high word
+| 0xc80   | <<_cycleh, `cycleh`>>               | _CSR_CYCLEH_         | r/- | Cycle counter high word
+| 0xc81   | <<_timeh, `timeh`>>                 | _CSR_TIMEH_          | r/- | System time (from MTIME) high word
+| 0xc82   | <<_instreth, `instreth`>>           | _CSR_INSTRETH_       | r/- | Instruction-retired counter high word
 5+^| **<<_hardware_performance_monitors_hpm_csrs>>**
-| 0x323   | <<_mhpmevent, `mhpmevent3`>>        | _CSR_MHPMEVENT3_     | r/w | Machine performance-monitoring event select for counter 3
-5+<| ...
-| 0x33f   | <<_mhpmevent, `mhpmevent31`>>       | _CSR_MHPMEVENT31_    | r/w | Machine performance-monitoring event select for counter 31
-| 0xb03   | <<_mhpmcounterh, `mhpmcounter3`>>   | _CSR_MHPMCOUNTER3_   | r/w | Machine performance-monitoring counter 3 low word
-5+<| ...
-| 0xb1f   | <<_mhpmcounterh, `mhpmcounter31`>>  | _CSR_MHPMCOUNTER31_  | r/w | Machine performance-monitoring counter 31 low word
-| 0xb83   | <<_mhpmcounterh, `mhpmcounter3h`>>  | _CSR_MHPMCOUNTER3H_  | r/w | Machine performance-monitoring counter 3 high word
-5+<| ...
-| 0xb9f   | <<_mhpmcounterh, `mhpmcounter31h`>> | _CSR_MHPMCOUNTER31H_ | r/w | Machine performance-monitoring counter 31 high word
+| 0x323   | <<_mhpmevent, `mhpmevent3`>>       ,, <<_mhpmevent, `mhpmevent31`>>       | _CSR_MHPMEVENT3_    .. _CSR_MHPMEVENT31_   | r/w | Machine performance-monitoring event select for counter 3..31
+| 0xb03   | <<_mhpmcounterh, `mhpmcounter3`>>  ,, <<_mhpmcounterh, `mhpmcounter31`>>  | _CSR_MHPMCOUNTER3_  .. _CSR_MHPMCOUNTER3H_ | r/w | Machine performance-monitoring counter 3..31 low word
+| 0xb83   | <<_mhpmcounterh, `mhpmcounter3h`>> ,, <<_mhpmcounterh, `mhpmcounter31h`>> | _CSR_MHPMCOUNTER3H_ .. _CSR_MHPMCOUNTER31H_| r/w | Machine performance-monitoring counter 3..31 high word
 5+^| **<<_machine_counter_setup_csrs>>**
 | 0x320   | <<_mcountinhibit>>                  | _CSR_MCOUNTINHIBIT_  | r/w | Machine counter-enable register
 5+^| **<<_machine_information_csrs>>**
@@ -396,7 +386,7 @@ The features of this CSR are not implemented yet. The register is read-only and 
 |=======================
 
 [TIP]
-See section <<_traps_exceptions_and_interrupts> for more information.
+See section <<_traps_exceptions_and_interrupts>> for more information.
 
 
 :sectnums!:
@@ -424,7 +414,7 @@ according de-compressed instruction word. To get the actually 16-bit instruction
 perform a memory load using the address stored in <<_mepc>>.
 
 [TIP]
-See section <<_traps_exceptions_and_interrupts> for more information.
+See section <<_traps_exceptions_and_interrupts>> for more information.
 
 
 :sectnums!:

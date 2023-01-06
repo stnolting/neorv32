@@ -20,7 +20,7 @@ The Bus Keeper is a fundamental component of the processor's internal bus system
 to maintain execution safety. The Bus Keeper monitors every single bus transactions that is intimated by the CPU.
 If an accessed device responds with an error condition or do not respond within a specific _access time window_,
 the according bus access fault exception is raised. The following exceptions can be raised by the Bus Keeper
-(see section <<_traps_exceptions_and_interrupts> for all available CPU traps):
+(see section <<_traps_exceptions_and_interrupts>> for all available CPU traps):
 
 * `TRAP_CODE_I_ACCESS`: error during instruction fetch bus access
 * `TRAP_CODE_S_ACCESS`: error during data store bus access
