@@ -13,7 +13,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -343,17 +343,17 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal csr : csr_t;
 
   -- counter CSRs write access --
-  type hpm_we_t is array (0 to 1) of std_ulogic_vector(28 downto 0);
   type cnt_csr_we_t is record
-    wdata    : std_ulogic_vector(XLEN-1 downto 0);
-    cycle    : std_ulogic_vector(1 downto 0);
-    instret  : std_ulogic_vector(1 downto 0);
-    hpm      : hpm_we_t;
+    wdata   : std_ulogic_vector(XLEN-1 downto 0);
+    cycle   : std_ulogic_vector(1 downto 0);
+    instret : std_ulogic_vector(1 downto 0);
+    hpm_lo  : std_ulogic_vector(28 downto 0);
+    hpm_hi  : std_ulogic_vector(28 downto 0);
   end record;
   signal cnt_csr_we : cnt_csr_we_t;
 
   -- debug mode controller --
-  type debug_ctrl_state_t is (DEBUG_OFFLINE, DEBUG_PENDING, DEBUG_ONLINE, DEBUG_LEAVING);
+  type debug_ctrl_state_t is (DEBUG_OFFLINE, DEBUG_ONLINE, DEBUG_LEAVING);
   type debug_ctrl_t is record
     state        : debug_ctrl_state_t;
     running      : std_ulogic; -- CPU is in debug mode
@@ -1266,29 +1266,12 @@ begin
            csr_mhpmevent15_c    | csr_mhpmevent16_c    | csr_mhpmevent17_c    | csr_mhpmevent18_c    | csr_mhpmevent19_c    | csr_mhpmevent20_c    |
            csr_mhpmevent21_c    | csr_mhpmevent22_c    | csr_mhpmevent23_c    | csr_mhpmevent24_c    | csr_mhpmevent25_c    | csr_mhpmevent26_c    |
            csr_mhpmevent27_c    | csr_mhpmevent28_c    | csr_mhpmevent29_c    | csr_mhpmevent30_c    | csr_mhpmevent31_c =>
-        csr_acc_valid <= csr.privilege_eff and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm); -- M-mode only and implemented
+        csr_acc_valid <= csr.privilege_eff and bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm); -- M-mode only and implemented at all
 
---    -- user hardware performance monitors (HPM) --
---    when csr_hpmcounter3_c   | csr_hpmcounter4_c   | csr_hpmcounter5_c   | csr_hpmcounter6_c   | csr_hpmcounter7_c   | csr_hpmcounter8_c   | -- counter LOW
---         csr_hpmcounter9_c   | csr_hpmcounter10_c  | csr_hpmcounter11_c  | csr_hpmcounter12_c  | csr_hpmcounter13_c  | csr_hpmcounter14_c  |
---         csr_hpmcounter15_c  | csr_hpmcounter16_c  | csr_hpmcounter17_c  | csr_hpmcounter18_c  | csr_hpmcounter19_c  | csr_hpmcounter20_c  |
---         csr_hpmcounter21_c  | csr_hpmcounter22_c  | csr_hpmcounter23_c  | csr_hpmcounter24_c  | csr_hpmcounter25_c  | csr_hpmcounter26_c  |
---         csr_hpmcounter27_c  | csr_hpmcounter28_c  | csr_hpmcounter29_c  | csr_hpmcounter30_c  | csr_hpmcounter31_c  |
---         csr_hpmcounter3h_c  | csr_hpmcounter4h_c  | csr_hpmcounter5h_c  | csr_hpmcounter6h_c  | csr_hpmcounter7h_c  | csr_hpmcounter8h_c  | -- counter HIGH
---         csr_hpmcounter9h_c  | csr_hpmcounter10h_c | csr_hpmcounter11h_c | csr_hpmcounter12h_c | csr_hpmcounter13h_c | csr_hpmcounter14h_c |
---         csr_hpmcounter15h_c | csr_hpmcounter16h_c | csr_hpmcounter17h_c | csr_hpmcounter18h_c | csr_hpmcounter19h_c | csr_hpmcounter20h_c |
---         csr_hpmcounter21h_c | csr_hpmcounter22h_c | csr_hpmcounter23h_c | csr_hpmcounter24h_c | csr_hpmcounter25h_c | csr_hpmcounter26h_c |
---         csr_hpmcounter27h_c | csr_hpmcounter28h_c | csr_hpmcounter29h_c | csr_hpmcounter30h_c | csr_hpmcounter31h_c =>
---      csr_acc_valid <= '0'; -- >>> NOT IMPLEMENTED <<<
-
-      -- counter and timer CSRs --
-      when csr_cycle_c | csr_cycleh_c | csr_time_c | csr_timeh_c | csr_instret_c | csr_instreth_c =>
-        case csr.addr(1 downto 0) is
-          when "00"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (csr.privilege_eff or csr.mcounteren_cy); -- cycle[h]: M-mode; U-mode if authorized and implemented
-          when "01"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (csr.privilege_eff or csr.mcounteren_tm); -- time[h]: M-mode; U-mode if authorized and implemented
-          when "10"   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (csr.privilege_eff or csr.mcounteren_ir); -- instret[h]: M-mode; U-mode if authorized and implemented
-          when others => csr_acc_valid <= '0';
-        end case;
+      -- counter and timer CSRs (access valid when counters are implemented at all and when in M-mode or when in U-mode and authorized) --
+      when csr_cycle_c   | csr_cycleh_c   => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (csr.privilege_eff or csr.mcounteren_cy);
+      when csr_time_c    | csr_timeh_c    => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (csr.privilege_eff or csr.mcounteren_tm);
+      when csr_instret_c | csr_instreth_c => csr_acc_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr) and (csr.privilege_eff or csr.mcounteren_ir);
 
       -- debug mode CSRs --
       when csr_dcsr_c | csr_dpc_c | csr_dscratch0_c =>
@@ -2366,7 +2349,8 @@ begin
       -- write access --
       cnt_csr_we.cycle     <= (others => '0');
       cnt_csr_we.instret   <= (others => '0');
-      cnt_csr_we.hpm       <= (others => (others => '0'));
+      cnt_csr_we.hpm_lo    <= (others => '0');
+      cnt_csr_we.hpm_hi    <= (others => '0');
       cnt_csr_we.wdata     <= (others => '0');
       -- counters --
       csr.mcycle           <= (others => '0');
@@ -2383,7 +2367,8 @@ begin
       -- write enable - defaults --
       cnt_csr_we.cycle   <= (others => '0');
       cnt_csr_we.instret <= (others => '0');
-      cnt_csr_we.hpm     <= (others => (others => '0'));
+      cnt_csr_we.hpm_lo  <= (others => '0');
+      cnt_csr_we.hpm_hi  <= (others => '0');
 
       -- write enable - access decoder --
       if (csr.we = '1') then
@@ -2401,8 +2386,8 @@ begin
           end if;
           for i in 0 to 28 loop
             if (csr.addr(4 downto 0) = std_ulogic_vector(unsigned(csr_mhpmcounter3_c(4 downto 0)) + i)) then -- / csr_mhpmcounter3h_c
-              cnt_csr_we.hpm(0)(i) <= not csr.addr(7); -- low word
-              cnt_csr_we.hpm(1)(i) <=     csr.addr(7); -- high word
+              cnt_csr_we.hpm_lo(i) <= not csr.addr(7); -- low word
+              cnt_csr_we.hpm_hi(i) <=     csr.addr(7); -- high word
             end if;
           end loop;
         end if;
@@ -2410,6 +2395,7 @@ begin
 
 
       -- [machine] standard CPU counters (cycle & instret) --
+      -- --------------------------------------------------------------------
       if (CPU_EXTENSION_RISCV_Zicntr = true) then -- implemented at all?
 
         -- mcycle --
@@ -2453,12 +2439,13 @@ begin
 
 
       -- [machine] hardware performance monitors (counters) --
+      -- --------------------------------------------------------------------
       for i in 0 to HPM_NUM_CNTS-1 loop
 
         -- [m]hpmcounter* --
         if (hpm_cnt_lo_width_c > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then
           csr.mhpmcounter_ovfl(i)(0) <= csr.mhpmcounter_nxt(i)(csr.mhpmcounter_nxt(i)'left) and (not csr.mcountinhibit_hpm(i)) and hpmcnt_trigger(i);
-          if (cnt_csr_we.hpm(0)(i) = '1') then -- write access
+          if (cnt_csr_we.hpm_lo(i) = '1') then -- write access
             csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0) <= cnt_csr_we.wdata(hpm_cnt_lo_width_c-1 downto 0);
           elsif (csr.mcountinhibit_hpm(i) = '0') and (hpmcnt_trigger(i) = '1') then -- non-inhibited automatic update (and not in debug mode)
             csr.mhpmcounter(i)(hpm_cnt_lo_width_c-1 downto 0) <= csr.mhpmcounter_nxt(i)(hpm_cnt_lo_width_c-1 downto 0);
@@ -2470,7 +2457,7 @@ begin
 
         -- [m]hpmcounter*h --
         if (hpm_cnt_hi_width_c > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then
-          if (cnt_csr_we.hpm(1)(i) = '1') then -- write access
+          if (cnt_csr_we.hpm_hi(i) = '1') then -- write access
             csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0) <= cnt_csr_we.wdata(hpm_cnt_hi_width_c-1 downto 0);
           else -- automatic update
             csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0) <= std_ulogic_vector(unsigned(csr.mhpmcounterh(i)(hpm_cnt_hi_width_c-1 downto 0)) + unsigned(csr.mhpmcounter_ovfl(i)));
@@ -2569,25 +2556,14 @@ begin
   debug_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      debug_ctrl.state        <= DEBUG_OFFLINE;
       debug_ctrl.ext_halt_req <= '0';
+      debug_ctrl.state        <= DEBUG_OFFLINE;
     elsif rising_edge(clk_i) then
-      -- external halt request (from Debug Module) --
-      debug_ctrl.ext_halt_req <= db_halt_req_i;
-
-      -- state machine --
       if (CPU_EXTENSION_RISCV_Sdext = true) then
-        case debug_ctrl.state is
+        debug_ctrl.ext_halt_req <= db_halt_req_i; -- external halt request (from Debug Module)
+        case debug_ctrl.state is -- state machine
 
-          when DEBUG_OFFLINE => -- not in debug mode, waiting for entering request
-            if (debug_ctrl.trig_halt  = '1') or -- external request (from DM)
-               (debug_ctrl.trig_break = '1') or -- ebreak instruction
-               (debug_ctrl.trig_hw    = '1') or -- hardware trigger module
-               (debug_ctrl.trig_step  = '1') then -- single-stepping mode
-              debug_ctrl.state <= DEBUG_PENDING;
-            end if;
-
-          when DEBUG_PENDING => -- waiting to start debug mode
+          when DEBUG_OFFLINE => -- waiting to start debug mode
             if (trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause(5) = '1') then -- processing trap entry into debug mode
               debug_ctrl.state <= DEBUG_ONLINE;
             end if;
@@ -2598,7 +2574,7 @@ begin
             end if;
 
           when DEBUG_LEAVING => -- leaving debug mode
-            if (execute_engine.state = TRAP_EXECUTE) then -- processing trap exit
+            if (execute_engine.state = TRAP_EXECUTE) then -- processing trap exit (updating PC and status registers)
               debug_ctrl.state <= DEBUG_OFFLINE;
             end if;
 
@@ -2607,16 +2583,17 @@ begin
 
         end case;
       else -- debug mode not implemented
-        debug_ctrl.state <= DEBUG_OFFLINE;
+        debug_ctrl.ext_halt_req <= '0';
+        debug_ctrl.state        <= DEBUG_OFFLINE;
       end if;
     end if;
   end process debug_control;
 
-  -- CPU is *in* debug mode --
-  debug_ctrl.running <= '1' when ((debug_ctrl.state = DEBUG_ONLINE) or (debug_ctrl.state = DEBUG_LEAVING)) and (CPU_EXTENSION_RISCV_Sdext = true) else '0';
+  -- CPU is in debug mode --
+  debug_ctrl.running <= '0' when (CPU_EXTENSION_RISCV_Sdext = false) or (debug_ctrl.state = DEBUG_OFFLINE) else '1';
 
   -- entry debug mode triggers --
-  debug_ctrl.trig_hw    <= hw_trigger_fire and (not debug_ctrl.running) and csr.tdata1_action; -- enter debug mode by HW trigger module request
+  debug_ctrl.trig_hw    <= hw_trigger_fire and (not debug_ctrl.running) and csr.tdata1_action and csr.tdata1_dmode; -- enter debug mode by HW trigger module request (only valid if DMOE = 1)
   debug_ctrl.trig_break <= trap_ctrl.break_point and (debug_ctrl.running or -- re-enter debug mode
                            ((    csr.privilege) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
                            ((not csr.privilege) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
