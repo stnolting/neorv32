@@ -980,19 +980,19 @@ The following table provides a summarized description of the actual events for t
 |=======================
 | Trap ID [C] | Triggered when ...
 | _TRAP_CODE_I_MISALIGNED_ | fetching a 32-bit instruction word that is not 32-bit-aligned (see note below)
-| _TRAP_CODE_I_ACCESS_     | bus timeout or bus error during instruction word fetch
+| _TRAP_CODE_I_ACCESS_     | bus timeout or bus access error during instruction word fetch
 | _TRAP_CODE_I_ILLEGAL_    | trying to execute an invalid instruction word (malformed or not supported) or on a privilege violation
 | _TRAP_CODE_MENV_CALL_    | executing `ecall` instruction in machine-mode
 | _TRAP_CODE_UENV_CALL_    | executing `ecall` instruction in user-mode
-| _TRAP_CODE_BREAKPOINT_   | executing `ebreak` instruction
-| _TRAP_CODE_S_MISALIGNED_ | storing data to an address that is not naturally aligned to the data size (byte, half, word) being stored
-| _TRAP_CODE_L_MISALIGNED_ | loading data from an address that is not naturally aligned to the data size  (byte, half, word) being loaded
-| _TRAP_CODE_S_ACCESS_     | bus timeout or bus error during load data operation
-| _TRAP_CODE_L_ACCESS_     | bus timeout or bus error during store data operation
+| _TRAP_CODE_BREAKPOINT_   | executing `ebreak` instruction or if <<_trigger_module>> fires
+| _TRAP_CODE_S_MISALIGNED_ | storing data to an address that is not naturally aligned to the data size (byte, half, word)
+| _TRAP_CODE_L_MISALIGNED_ | loading data from an address that is not naturally aligned to the data size  (byte, half, word)
+| _TRAP_CODE_S_ACCESS_     | bus timeout or bus access error during load data operation
+| _TRAP_CODE_L_ACCESS_     | bus timeout or bus access error during store data operation
 | _TRAP_CODE_FIRQ_0_ ... _TRAP_CODE_FIRQ_15_| caused by interrupt-condition of processor-internal modules, see <<_neorv32_specific_fast_interrupt_requests>>
-| _TRAP_CODE_MEI_          | user-defined processor-external source (via dedicated top-entity signal)
-| _TRAP_CODE_MSI_          | user-defined processor-external source (via dedicated top-entity signal)
-| _TRAP_CODE_MTI_          | processor-internal machine timer overflow OR user-defined processor-external source (via dedicated top-entity signal)
+| _TRAP_CODE_MEI_          | machine external interrupt (via dedicated top-entity signal)
+| _TRAP_CODE_MSI_          | machine software interrupt (via dedicated top-entity signal)
+| _TRAP_CODE_MTI_          | machine timer interrupt (internal machine timer or via dedicated top-entity signal)
 |=======================
 
 .Resumable Exceptions
