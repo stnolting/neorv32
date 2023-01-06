@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -102,6 +102,7 @@ architecture neorv32_trng_rtl of neorv32_trng is
     );
     port (
       clk_i    : in  std_ulogic; -- global clock line
+      rstn_i   : in  std_ulogic; -- global reset line, low-active, async, optional
       enable_i : in  std_ulogic; -- unit enable (high-active), reset unit when low
       data_o   : out std_ulogic_vector(7 downto 0); -- random data byte output
       valid_o  : out std_ulogic  -- data_o is valid when set
@@ -187,6 +188,7 @@ begin
     )
     port map (
       clk_i    => clk_i,
+      rstn_i   => rstn_i,
       enable_i => enable,
       data_o   => fifo.wdata,
       valid_o  => fifo.we
@@ -254,7 +256,7 @@ end neorv32_trng_rtl;
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -298,6 +300,7 @@ entity neoTRNG is
   );
   port (
     clk_i    : in  std_ulogic; -- global clock line
+    rstn_i   : in  std_ulogic; -- global reset line, low-active, async, optional
     enable_i : in  std_ulogic; -- unit enable (high-active), reset unit when low
     data_o   : out std_ulogic_vector(7 downto 0); -- random data byte output
     valid_o  : out std_ulogic  -- data_o is valid when set
@@ -315,6 +318,7 @@ architecture neoTRNG_rtl of neoTRNG is
     );
     port (
       clk_i    : in  std_ulogic; -- system clock
+      rstn_i   : in  std_ulogic; -- global reset line, low-active, async, optional
       select_i : in  std_ulogic; -- delay select
       enable_i : in  std_ulogic; -- enable chain input
       enable_o : out std_ulogic; -- enable chain output
@@ -362,6 +366,10 @@ architecture neoTRNG_rtl of neoTRNG is
   end record;
   signal post : post_t;
 
+  -- data output --
+  signal data  : std_ulogic_vector(7 downto 0);
+  signal valid : std_ulogic;
+
 begin
 
   -- Sanity Checks --------------------------------------------------------------------------
@@ -387,6 +395,7 @@ begin
     )
     port map (
       clk_i    => clk_i,
+      rstn_i   => rstn_i,
       select_i => cell_array.input(i),
       enable_i => cell_array.en_in(i),
       enable_o => cell_array.en_out(i),
@@ -417,10 +426,11 @@ begin
 
   -- Synchronizer ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  synchronizer: process(clk_i)
+  synchronizer: process(rstn_i, clk_i)
   begin
-    -- no more metastability beyond this point --
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      rnd_sync <= (others => '0');
+    elsif rising_edge(clk_i) then -- no more metastability beyond this point
       rnd_sync(1) <= rnd_sync(0);
       rnd_sync(0) <= cell_array.output(NUM_CELLS-1);
     end if;
@@ -429,9 +439,12 @@ begin
 
   -- John von Neumann Randomness Extractor (De-Biasing) -------------------------------------
   -- -------------------------------------------------------------------------------------------
-  debiasing_sync: process(clk_i)
+  debiasing_sync: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      db.sreg  <= (others => '0');
+      db.state <= '0';
+    elsif rising_edge(clk_i) then
       db.sreg <= db.sreg(0) & rnd_sync(rnd_sync'left);
       -- start operation when last cell is enabled and process in every second cycle --
       db.state <= (not db.state) and cell_array.en_out(NUM_CELLS-1);
@@ -456,9 +469,15 @@ begin
 
   -- Sample Unit ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sample_unit: process(clk_i)
+  sample_unit: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      sample.enable <= '0';
+      sample.cnt    <= (others => '0');
+      sample.run    <= '0';
+      sample.sreg   <= (others => '0');
+      sample.valid  <= '0';
+    elsif rising_edge(clk_i) then
       sample.enable <= enable_i;
 
       -- sample chunks of 8 bit --
@@ -490,9 +509,14 @@ begin
   post_processing_enable:
   if (POST_PROC_EN = true) generate
 
-    post_processing: process(clk_i)
+    post_processing: process(rstn_i, clk_i)
     begin
-      if rising_edge(clk_i) then
+      if (rstn_i = '0') then
+        post.state <= (others => '0');
+        post.valid <= '0';
+        post.cnt   <= (others => '0');
+        post.buf   <= (others => '0');
+      elsif rising_edge(clk_i) then
         -- defaults --
         post.state(1) <= sample.run;
         post.valid    <= '0';
@@ -522,18 +546,19 @@ begin
       end if;
     end process post_processing;
 
-    -- data output --
-    data_o  <= post.buf;
-    valid_o <= post.valid;
-
+    data  <= post.buf;
+    valid <= post.valid;
   end generate; -- /post_processing_enable
 
   post_processing_disable:
   if (POST_PROC_EN = false) generate
-    -- data output --
-    data_o  <= sample.sreg;
-    valid_o <= sample.valid;
+    data  <= sample.sreg;
+    valid <= sample.valid;
   end generate;
+
+  -- data output --
+  data_o  <= data;
+  valid_o <= valid;
 
 
 end neoTRNG_rtl;
@@ -561,7 +586,7 @@ end neoTRNG_rtl;
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -602,6 +627,7 @@ entity neoTRNG_cell is
   );
   port (
     clk_i    : in  std_ulogic; -- system clock
+    rstn_i   : in  std_ulogic; -- global reset line, low-active, async, optional
     select_i : in  std_ulogic; -- delay select
     enable_i : in  std_ulogic; -- enable chain input
     enable_o : out std_ulogic; -- enable chain output
@@ -674,9 +700,11 @@ begin
   sim_rng:
   if (IS_SIM = true) generate
     assert false report "neoTRNG WARNING: Implementing simulation-only PRNG (LFSR)!" severity warning;
-    sim_lfsr: process(clk_i)
+    sim_lfsr: process(rstn_i, clk_i)
     begin
-      if rising_edge(clk_i) then
+      if (rstn_i = '0') then
+        lfsr <= (others => '0');
+      elsif rising_edge(clk_i) then
         if (enable_sreg_l(enable_sreg_l'left) = '0') then
           lfsr <= std_ulogic_vector(to_unsigned(NUM_INV_S, 16));
         else
@@ -695,9 +723,12 @@ begin
   -- Using individual enable signals for each inverter from a shift register to prevent the synthesis tool
   -- from removing all but one inverter (since they implement "logical identical functions" (='toggle')).
   -- This makes the TRNG platform independent (since we do not need to use primitives to ensure a correct architecture).
-  ctrl_unit: process(clk_i)
+  ctrl_unit: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      enable_sreg_s <= (others => '0');
+      enable_sreg_l <= (others => '0');
+    elsif rising_edge(clk_i) then
       enable_sreg_s <= enable_sreg_s(enable_sreg_s'left-1 downto 0) & enable_i;
       enable_sreg_l <= enable_sreg_l(enable_sreg_l'left-1 downto 0) & enable_sreg_s(enable_sreg_s'left);
     end if;
@@ -708,4 +739,3 @@ begin
 
 
 end neoTRNG_cell_rtl;
-
