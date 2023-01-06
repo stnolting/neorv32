@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -1539,7 +1539,6 @@ int main() {
 
   // clear mstatus.TW to allow execution of WFI also in user-mode
   // clear mstatus.MIE and mstatus.MPIE to check if IRQ can still trigger in User-mode
-  // clear mstatus.TW to allow execution of WFI also in user-mode
   tmp_a = neorv32_cpu_csr_read(CSR_MSTATUS);
   tmp_a &= ~((1<<CSR_MSTATUS_TW) | (1<<CSR_MSTATUS_MIE) | (1<<CSR_MSTATUS_MPIE));
   neorv32_cpu_csr_write(CSR_MSTATUS, tmp_a);
