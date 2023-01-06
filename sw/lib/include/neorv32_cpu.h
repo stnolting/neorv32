@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -255,6 +255,8 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
 
 /**********************************************************************//**
  * Enable global CPU interrupts (via MIE flag in mstatus CSR).
+ *
+ * @note Interrupts are always enabled when the CPU is in user-mode.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_eint(void) {
 
@@ -264,28 +266,12 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_eint(void) {
 
 /**********************************************************************//**
  * Disable global CPU interrupts (via MIE flag in mstatus CSR).
+ *
+ * @note Interrupts are always enabled when the CPU is in user-mode.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_dint(void) {
 
   asm volatile ("csrrci zero, mstatus, %0" : : "i" (1 << CSR_MSTATUS_MIE));
-}
-
-
-/**********************************************************************//**
- * Trigger breakpoint exception (via EBREAK instruction).
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_breakpoint(void) {
-
-  asm volatile ("ebreak");
-}
-
-
-/**********************************************************************//**
- * Trigger environment call exception (via ECALL instruction).
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_env_call(void) {
-
-  asm volatile ("ecall");
 }
 
 

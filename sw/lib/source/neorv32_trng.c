@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -61,7 +61,8 @@ int neorv32_trng_available(void) {
 
 
 /**********************************************************************//**
- * Enable TRNG.
+ * Reset and enable TRNG.
+ * @note This will take a while.
  **************************************************************************/
 void neorv32_trng_enable(void) {
 
@@ -70,14 +71,14 @@ void neorv32_trng_enable(void) {
   NEORV32_TRNG.CTRL = 0; // reset
 
   // wait for all internal components to reset
-  for (i=0; i<256; i++) {
+  for (i=0; i<512; i++) {
     asm volatile ("nop");
   }
 
   NEORV32_TRNG.CTRL = 1 << TRNG_CTRL_EN; // activate
 
   // "warm-up"
-  for (i=0; i<256; i++) {
+  for (i=0; i<512; i++) {
     asm volatile ("nop");
   }
 
@@ -87,7 +88,7 @@ void neorv32_trng_enable(void) {
 
 
 /**********************************************************************//**
- * Disable TRNG.
+ * Reset and disable TRNG.
  **************************************************************************/
 void neorv32_trng_disable(void) {
 
