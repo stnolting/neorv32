@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -53,7 +53,7 @@
 void neorv32_spi_init(t_neorv32_spi *self) {
 
   self->uint8IsBusy = 0;
-  self->uint32Fifo = (uint32_t) neorv32_spi_get_fifo_depth(); // acquire FIFO depth in elements
+  self->uint16Fifo = (uint16_t) neorv32_spi_get_fifo_depth(); // acquire FIFO depth in elements
   self->uint32Total = 0;
   self->uint32Write = 0;  // write element count
   self->uint32Read = 0; // read element count
@@ -68,8 +68,8 @@ void neorv32_spi_init(t_neorv32_spi *self) {
  **************************************************************************/
 void neorv32_spi_isr(t_neorv32_spi *self) {
 
-  uint32_t  uint32Buf;  // help variable
-  uint32_t  uint32Lim;  // loop limit
+  volatile uint32_t uint32Buf;  // help variable
+  uint32_t          uint32Lim;  // loop limit
 
 
   neorv32_cpu_csr_write(CSR_MIP, ~(1<<SPI_FIRQ_PENDING)); // ack/clear FIRQ
@@ -91,7 +91,7 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
         break;
       }
       // write next packet
-      uint32Lim = min(self->uint32Write+self->uint32Fifo, self->uint32Total);
+      uint32Lim = min(self->uint32Write+self->uint16Fifo, self->uint32Total);
       for ( ; self->uint32Write<uint32Lim; (self->uint32Write)++ ) {
         uint32Buf = 0;
         uint32Buf |= ((uint8_t *) self->ptrSpiBuf)[self->uint32Write];
@@ -110,7 +110,7 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
         break;
       }
       // write next packet
-      uint32Lim = min(self->uint32Write+self->uint32Fifo, self->uint32Total);
+      uint32Lim = min(self->uint32Write+self->uint16Fifo, self->uint32Total);
       for ( ; self->uint32Write<uint32Lim; (self->uint32Write)++ ) {
         uint32Buf = 0;
         uint32Buf |= ((uint16_t *) self->ptrSpiBuf)[self->uint32Write];
@@ -129,7 +129,7 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
         break;
       }
       // write next packet
-      uint32Lim = min(self->uint32Write+self->uint32Fifo, self->uint32Total);
+      uint32Lim = min(self->uint32Write+self->uint16Fifo, self->uint32Total);
       for ( ; self->uint32Write<uint32Lim; (self->uint32Write)++ ) {
         uint32Buf = 0;
         uint32Buf |= ((uint32_t *) self->ptrSpiBuf)[self->uint32Write];
@@ -158,7 +158,7 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
  **************************************************************************/
 int neorv32_spi_rw(t_neorv32_spi *self, void *spi, uint8_t csn, uint32_t num_elem, uint8_t data_byte) {
 
-  uint32_t  uint32Buf;  // help variable
+  volatile uint32_t uint32Buf;  // help variable
 
   if ( 0 != self->uint8IsBusy ) {
     return 1; // transfer active, no new request
