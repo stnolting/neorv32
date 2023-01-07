@@ -153,9 +153,13 @@ to the host interface (e.g. USB-UART converter).
 . Program the generated bitstream into your FPGA and press the button connected to the reset signal.
 . Done! The LED(s) connected to `gpio_o` should be flashing now.
 
+.Going Further
 [TIP]
-After the GCC toolchain for compiling RISC-V source code is ready (chapter <<_general_software_framework_setup>>),
-you can advance to one of these chapters to learn how to get a software executable into your processor setup:
-* If you are using the `neorv32_testsetup_approm.vhd` setup: See section <<_installing_an_executable_directly_into_memory>>.
-* If you are using the `neorv32_testsetup_bootloader.vhd` setup: See section <<_uploading_and_starting_of_a_binary_executable_image_via_uart>>.
-* If you are using the `neorv32_testsetup_on_chip_debugger.vhd` setup: See section <<_debugging_using_the_on_chip_debugger>>.
+Now that the hardware is ready, you can advance to one of these chapters to learn how to get a software executable
+into your processor setup (setup the GCC toolchain before; next section <<_general_software_framework_setup>>): +
+ +
+`neorv32_testsetup_approm.vhd`: <<_installing_an_executable_directly_into_memory>>
+ +
+`neorv32_testsetup_bootloader.vhd`: <<_uploading_and_starting_of_a_binary_executable_image_via_uart>>
+ +
+`neorv32_testsetup_on_chip_debugger.vhd`: <<_debugging_using_the_on_chip_debugger>>
