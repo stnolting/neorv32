@@ -11,10 +11,10 @@ on _your_ FPGA board.
 If you want to use a more sophisticated pre-defined setup to start with, check out the
 `setups` folder, which provides example setups for various FPGA, boards and toolchains.
 
-The NEORV32 project features two minimalistic pre-configured test setups in
+The NEORV32 project features three minimalistic pre-configured test setups in
 https://github.com/stnolting/neorv32/blob/main/rtl/test_setups[`rtl/test_setups`].
-Both test setups only implement very basic processor and CPU features.
-The main difference between the two setups is the processor boot concept - so how to get a software executable
+These test setups only implement very basic processor and CPU features.
+The main difference between the setups is the processor boot concept - so how to get a software executable
 _into_ the processor:
 
 * **`rtl/test_setups/neorv32_testsetup_approm.vhd`**: this setup does not require a connection via UART. The
@@ -22,6 +22,9 @@ software executable is "installed" into the bitstream to initialize a read-only 
 if your FPGA board does _not_ provide a UART interface.
 * **`rtl/test_setups/neorv32_testsetup_bootloader.vhd`**: this setups uses the UART and the default NEORV32
 bootloader to upload new software executables. Use this setup if your board _does_ provide a UART interface.
+* **`rtl/test_setups/neorv32_testsetup_on_chip_debugger.vhd`**: besides the UARt bootloader, this setups uses
+on-chip debugger to upload and inspect new software executables. Use this setup if your board _does_ provide a JTAG
+interface (the UART is optional).
 
 .NEORV32 "hello world" test setup (`rtl/test_setups/neorv32_testsetup_bootloader.vhd`)
 image::neorv32_test_setup.png[align=center]
@@ -143,14 +146,20 @@ or _inside_ the test setup if this is your top entity (low-active LEDs example: 
 your FPGA board. Check whether it is low-active or high-active - the reset signal of the processor is
 **low-active**, so maybe you need to invert the input signal.
 . If possible, connected _at least_ bit `0` of the GPIO output port `gpio_o` to a LED (see "Signal Polarity" note above).
-. Finally, if your are using the UART-based test setup (`neorv32_testsetup_bootloader.vhd`)
-connect the UART communication signals `uart0_txd_o` and `uart0_rxd_i` to the host interface (e.g. USB-UART converter).
+. If your are using a UART-based test setup connect the UART communication signals `uart0_txd_o` and `uart0_rxd_i`
+to the host interface (e.g. USB-UART converter).
+. If your are using the on-chip debugger setup connect the processor's JTAG signal `jtag_*` to a suitable JTAG adapter.
 . Perform the project HDL compilation (synthesis, mapping, bitstream generation).
 . Program the generated bitstream into your FPGA and press the button connected to the reset signal.
-. Done! The LED at `gpio_o(0)` should be flashing now.
+. Done! The LED(s) connected to `gpio_o` should be flashing now.
 
+.Going Further
 [TIP]
-After the GCC toolchain for compiling RISC-V source code is ready (chapter <<_general_software_framework_setup>>),
-you can advance to one of these chapters to learn how to get a software executable into your processor setup:
-* If you are using the `neorv32_testsetup_approm.vhd` setup: See section <<_installing_an_executable_directly_into_memory>>.
-* If you are using the `neorv32_testsetup_bootloader.vhd` setup: See section <<_uploading_and_starting_of_a_binary_executable_image_via_uart>>.
+Now that the hardware is ready, you can advance to one of these chapters to learn how to get a software executable
+into your processor setup (setup the GCC toolchain before; next section <<_general_software_framework_setup>>): +
+ +
+`neorv32_testsetup_approm.vhd`: <<_installing_an_executable_directly_into_memory>>
+ +
+`neorv32_testsetup_bootloader.vhd`: <<_uploading_and_starting_of_a_binary_executable_image_via_uart>>
+ +
+`neorv32_testsetup_on_chip_debugger.vhd`: <<_debugging_using_the_on_chip_debugger>>
