@@ -3,7 +3,7 @@
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
-/* # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     # */
+/* # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
 /* # permitted provided that the following conditions are met:                                     # */
@@ -187,7 +187,7 @@ __crt0_main_entry:
   jal  x1,  main          // call actual app's main function
 
 __crt0_main_exit:         // main's "return" and "exit" will arrive here
-  csrci mstatus, (1 << 3) // disable global IRQs (clear mstatus.mie)
+  csrw mie, zero          // disable all interrupt sources
   csrw mscratch, a0       // backup main's return code to mscratch (for debugger)
 
 
