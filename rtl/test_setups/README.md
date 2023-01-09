@@ -33,9 +33,9 @@ your FPGA/board.
 This setup configures a `rv32imc_Zicsr_Zicntr` CPU with 16kB IMEM (as pre-initialized ROM),
 8kB DMEM and includes the **GPIO** module to drive 8 external signals (`gpio_o`)
 and the **MTIME** module for generating timer interrupts.
-The setup uses the ["indirect boot"](https://stnolting.github.io/neorv32/#_indirect_boot)
+The setup uses the ["direct boot"](https://stnolting.github.io/neorv32/#_direct_boot)
 configuration, so software applications are "installed" directly into the
-processor-internal IMEM during synthesis.
+processor-internal IMEM (via the bitstream) during synthesis.
 
 :books: See User Guide section
 [Installing an Executable Directly Into Memory](https://stnolting.github.io/neorv32/ug/#_installing_an_executable_directly_into_memory).
@@ -47,8 +47,9 @@ This setup configures a `rv32imc_Zicsr_Zicntr` CPU with 16kB IMEM (as RAM), 8kB 
 and includes the **GPIO** module to drive 8 external signals (`gpio_o`), the **MTIME**
 module for generating timer interrupts and **UART0** to interface with the bootloader or application
 (via `uart0_txd_o` and `uart0_rxd_i`) via a serial terminal.
-The setup uses the ["direct boot"](https://stnolting.github.io/neorv32/#_direct_boot)
-configuration, so software applications can be uploaded and run at any timer via a serial terminal.
+The setup uses the ["indirect boot"](https://stnolting.github.io/neorv32/#_indirect_boot)
+configuration, so software applications can be uploaded and run at any timer via the bootloader
+and a serial terminal.
 
 :books: See User Guide section
 [Uploading and Starting of a Binary Executable Image via UART](https://stnolting.github.io/neorv32/ug/#_uploading_and_starting_of_a_binary_executable_image_via_uart).
@@ -61,9 +62,9 @@ and includes the **GPIO** module to drive 8 external signals (`gpio_o`), the **M
 module for generating timer interrupts, **UART0** to interface with the bootloader or application
 (via `uart0_txd_o` and `uart0_rxd_i`) via a serial terminal and also the RISC-V-compatible
 on-chip debugger (**OCD**), which is accessible via a standard JTAG interface (`jtag_*`).
-The setup uses the ["direct boot"](https://stnolting.github.io/neorv32/#_direct_boot)
-configuration, so software applications can be uploaded and run at any timer via a serial terminal
-and also via the on-chip debugger.
+The setup uses the ["indirect boot"](https://stnolting.github.io/neorv32/#_indirect_boot)
+configuration, so software applications can be uploaded and run at any timer via the bootloader
+and a serial terminal and also via the on-chip debugger.
 
 :books: See User Guide section
 [Debugging using the On-Chip Debugger](https://stnolting.github.io/neorv32/ug/#_debugging_using_the_on_chip_debugger).
