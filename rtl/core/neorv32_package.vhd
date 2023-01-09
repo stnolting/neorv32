@@ -2089,7 +2089,7 @@ package neorv32_package is
       clkgen_en_o : out std_ulogic; -- enable clock generator
       clkgen_i    : in  std_ulogic_vector(07 downto 0);
       -- interrupt --
-      irq_o       : out std_ulogic -- transmission done interrupt
+      irq_o       : out std_ulogic -- timer match interrupt
     );
   end component;
 

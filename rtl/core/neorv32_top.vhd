@@ -637,7 +637,7 @@ begin
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer IRQ
   fast_irq(10) <= slink_rx_irq;  -- SLINK RX
   fast_irq(11) <= slink_tx_irq;  -- SLINK TX
-  fast_irq(12) <= gptmr_irq;     -- general purpose timer
+  fast_irq(12) <= gptmr_irq;     -- general purpose timer match
   fast_irq(13) <= onewire_irq;   -- ONEWIRE operation done
   --
   fast_irq(14) <= '0';           -- reserved
@@ -1574,7 +1574,7 @@ begin
       clkgen_en_o => gptmr_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
       -- interrupt --
-      irq_o       => gptmr_irq                   -- transmission done interrupt
+      irq_o       => gptmr_irq                   -- timer match interrupt
     );
     resp_bus(RESP_GPTMR).err <= '0'; -- no access error possible
   end generate;
