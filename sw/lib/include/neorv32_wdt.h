@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -45,10 +45,9 @@
 
 // prototypes
 int  neorv32_wdt_available(void);
-void neorv32_wdt_setup(uint8_t prsc, uint8_t mode, uint8_t lock);
+void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en);
 int  neorv32_wdt_disable(void);
-void neorv32_wdt_reset(void);
+void neorv32_wdt_feed(void);
 int  neorv32_wdt_get_cause(void);
-void neorv32_wdt_force(void);
 
 #endif // neorv32_wdt_h

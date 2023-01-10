@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -1254,7 +1254,7 @@ enum NEORV32_TRNG_CTRL_enum {
 /**@{*/
 /** WDT module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_WDT_CTRL_enum) */
+  uint32_t CTRL; /**< offset 0: control register (#NEORV32_WDT_CTRL_enum) */
 } neorv32_wdt_t;
 
 /** WDT module base address */
@@ -1263,26 +1263,17 @@ typedef struct __attribute__((packed,aligned(4))) {
 /** WDT module hardware access (#neorv32_wdt_t) */
 #define NEORV32_WDT (*((volatile neorv32_wdt_t*) (NEORV32_WDT_BASE)))
 
-/** WDT access password */
-#define NEORV32_WDT_PWD (0xCA36)
-
 /** WDT control register bits */
 enum NEORV32_WDT_CTRL_enum {
-  WDT_CTRL_EN       =  0, /**< WDT control register(0) (r/w): Watchdog enable */
-  WDT_CTRL_CLK_SEL0 =  1, /**< WDT control register(1) (r/w): Clock prescaler select bit 0 */
-  WDT_CTRL_CLK_SEL1 =  2, /**< WDT control register(2) (r/w): Clock prescaler select bit 1 */
-  WDT_CTRL_CLK_SEL2 =  3, /**< WDT control register(3) (r/w): Clock prescaler select bit 2 */
-  WDT_CTRL_MODE     =  4, /**< WDT control register(4) (r/w): Watchdog mode: 0=timeout causes interrupt, 1=timeout causes processor reset */
-  WDT_CTRL_RCAUSE   =  5, /**< WDT control register(5) (r/-): Cause of last system reset: 0=external reset, 1=watchdog */
-  WDT_CTRL_RESET    =  6, /**< WDT control register(6) (-/w): Reset WDT counter when set, auto-clears */
-  WDT_CTRL_FORCE    =  7, /**< WDT control register(7) (-/w): Force WDT action, auto-clears */
-  WDT_CTRL_LOCK     =  8, /**< WDT control register(8) (r/w): Lock write access to control register, clears on reset (HW or WDT) only */
-  WDT_CTRL_DBEN     =  9, /**< WDT control register(9) (r/w): Allow WDT to continue operation even when in debug mode */
-  WDT_CTRL_HALF     = 10, /**< WDT control register(10) (r/-): Set if at least half of the max. timeout counter value has been reached */
-  WDT_CTRL_PAUSE    = 11, /**< WDT control register(11) (r/w): Pause WDT when CPU is in sleep mode */
+  WDT_CTRL_EN          =  0, /**< WDT control register(0) (r/w): Watchdog enable */
+  WDT_CTRL_LOCK        =  1, /**< WDT control register(1) (r/w): Lock write access to control register, clears on reset only */
+  WDT_CTRL_DBEN        =  2, /**< WDT control register(2) (r/w): Allow WDT to continue operation even when CPU is in debug mode */
+  WDT_CTRL_SEN         =  3, /**< WDT control register(3) (r/w): Allow WDT to continue operation even when CPU is in sleep mode */
+  WDT_CTRL_RESET       =  4, /**< WDT control register(4) (-/w): Reset WDT counter when set, auto-clears */
+  WDT_CTRL_RCAUSE      =  5, /**< WDT control register(5) (r/-): Cause of last system reset: 0=external reset, 1=watchdog */
 
-  WDT_CTRL_PWD_LSB  = 16, /**< WDT control register(16) (-/w): Watchdog access password, LSB ("NEORV32_WDT_PWD") */
-  WDT_CTRL_PWD_MSB  = 31  /**< WDT control register(31) (-/w): Watchdog access password, MSB ("NEORV32_WDT_PWD") */
+  WDT_CTRL_TIMEOUT_LSB =  8, /**< WDT control register(8)  (r/w): Timeout value, LSB */
+  WDT_CTRL_TIMEOUT_MSB = 31  /**< WDT control register(31) (r/w): Timeout value, MSB */
 };
 /**@}*/
 
