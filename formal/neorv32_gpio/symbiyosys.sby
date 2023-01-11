@@ -1,0 +1,24 @@
+[tasks]
+cover
+bmc
+prove
+
+[options]
+depth 20
+cover: mode cover
+bmc: mode bmc
+prove: mode prove
+
+[engines]
+cover: smtbmc z3
+bmc: abc bmc3
+prove: aiger suprove
+
+[script]
+ghdl --std=08 --work=neorv32 neorv32_package.vhd neorv32_gpio.vhd neorv32_gpio_vu.vhd -e neorv32_gpio
+prep -auto-top
+
+[files]
+../../rtl/core/neorv32_package.vhd
+../../rtl/core/neorv32_gpio.vhd
+neorv32_gpio_vu.vhd
