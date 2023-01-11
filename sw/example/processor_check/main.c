@@ -131,7 +131,7 @@ int main() {
   // disable global interrupts
   neorv32_cpu_dint();
 
-  // init UARTs at default baud rate, no parity bits, no hw flow control
+  // setup UARTs at default baud rate, no parity bits, no HW flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
   NEORV32_UART1.CTRL = NEORV32_UART0.CTRL; // copy configuration to initialize UART1
 
@@ -1010,13 +1010,15 @@ int main() {
     // enable fast interrupt
     neorv32_cpu_irq_enable(WDT_FIRQ_ENABLE);
 
-    // configure WDT
-    neorv32_wdt_setup(CLK_PRSC_4096, 0, 1); // highest clock prescaler, trigger IRQ on timeout, lock access
-    NEORV32_WDT.CTRL = 0; // try to deactivate WDT (should fail as access is locked)
-    neorv32_wdt_force(); // force watchdog into action
+    // configure WDT:
+    // timeout = 1*4096 cycles, no lock, disable in debug mode, enable in sleep mode
+    neorv32_wdt_setup(1, 0, 0, 1);
 
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile("nop");
+    // wait in sleep mode for WDT interrupt
+    asm volatile("wfi");
+
+    // disable watchdog and IRQ channel
+    NEORV32_WDT.CTRL = 0;
     neorv32_cpu_irq_disable(WDT_FIRQ_ENABLE);
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == WDT_TRAP_CODE) {
@@ -1025,9 +1027,6 @@ int main() {
     else {
       test_fail();
     }
-
-    // no more WDT interrupts
-    neorv32_wdt_disable();
   }
 
 

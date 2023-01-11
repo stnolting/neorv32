@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -36,9 +36,8 @@
 /**********************************************************************//**
  * @file demo_wdt/main.c
  * @author Stephan Nolting
- * @brief Watchdog system reset demo program.
+ * @brief Watchdog demo program.
  **************************************************************************/
-
 #include <neorv32.h>
 
 
@@ -48,90 +47,93 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
+/** WDT timeout (until system reset) in seconds */
+#define WDT_TIMEOUT_S 4
 /**@}*/
+
+
+/**********************************************************************//**
+ * Watchdog FIRQ handler - executed when the WDT has reached half of
+ * the configured timeout interval.
+ **************************************************************************/
+void wdt_firq_handler(void) {
+
+  neorv32_cpu_csr_write(CSR_MIP, ~(1<<WDT_FIRQ_PENDING)); // clear/ack pending FIRQ
+  neorv32_uart0_puts("WDT IRQ! Timeout imminent!\n");
+}
 
 
 /**********************************************************************//**
  * Main function
  *
- * @note This program requires the WDT and the UART to be synthesized.
+ * @note This program requires the WDT and UART0 to be synthesized.
  *
  * @return 0 if execution was successful
  **************************************************************************/
 int main() {
 
-  // check if WDT unit is implemented at all
-  if (neorv32_wdt_available() == 0) {
-    return 1; // nope, no WDT unit synthesized
-  }
-
-  // check if UART unit is implemented at all
-  if (neorv32_uart0_available() == 0) {
-    return 1; // nope, no UART unit synthesized
-  }
-
-
-  // capture all exceptions and give debug info via UART
-  // this is not required, but keeps us safe
+  // setup NEORV32 runtime environment for capturing all traps
   neorv32_rte_setup();
 
-  // init UART at default baud rate, no parity bits, ho hw flow control
+  // setup UART0 at default baud rate, no parity bits, ho HW flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
-  // check available hardware extensions and compare with compiler flags
-  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
+  // check if WDT is implemented at all
+  if (neorv32_wdt_available() == 0) {
+    return 1; // WDT not synthesized
+  }
 
-  // simple text output via UART (strings only)
-  neorv32_uart0_puts("\nWatchdog system reset demo program\n\n");
+  // check if UART0 is implemented at all
+  if (neorv32_uart0_available() == 0) {
+    return 1; // UART0 not synthesized
+  }
+
+
+  // intro
+  neorv32_uart0_puts("\n<< Watchdog Demo Program >>\n\n");
 
 
   // show the cause of the last processor reset
   neorv32_uart0_puts("Cause of last processor reset: ");
-  uint8_t wdt_cause = neorv32_wdt_get_cause();
-
-  if (wdt_cause == 0) {
-    neorv32_uart0_puts("External reset\n");
-  }
-  else if (wdt_cause == 1) {
-    neorv32_uart0_puts("Watchdog\n");
+  if (neorv32_wdt_get_cause() == 0) {
+    neorv32_uart0_puts("External reset\n\n");
   }
   else {
-    neorv32_uart0_puts("Undefined\n");
+    neorv32_uart0_puts("Watchdog timeout\n\n");
   }
 
 
-  // the watchdog has a 20-bit counter, which triggers either an interrupt or a system reset
-  // when overflowing
+  // configure and enable WDT interrupt
+  // this IRQ will trigger when half of the configured WDT timeout interval has been reached
+  neorv32_uart0_puts("Configuring WDT interrupt...\n");
+  neorv32_rte_handler_install(WDT_RTE_ID, wdt_firq_handler);
+  neorv32_cpu_irq_enable(WDT_FIRQ_ENABLE);
+  neorv32_cpu_eint(); // enable global interrupt flag
 
-  // init watchdog (watchdog timer increment = cpu_clock/64, trigger reset on overflow, lock
-  // access so nobody can alter the configuration until next reset)
-  neorv32_wdt_setup(CLK_PRSC_64, 1, 1);
 
-
-
-  neorv32_uart0_puts("\n\nWill reset WDT 64 times.\n"
-                    "A system reset will be executed in the following time out.\n"
-                    "Press any key to trigger manual WDT hardware reset by WDT access with wrong password.\n"
-                    "Restart this program after reset to check for the reset cause.\n\n"
-                    "WDT resets: ");
-
-  uint8_t i;
-  for (i=0; i<64; i++) {
-    neorv32_uart0_putc('.');
-    neorv32_wdt_reset(); // reset watchdog
-    neorv32_cpu_delay_ms(80); // wait some time
-
-    // trigger manual reset if key pressed
-    if (neorv32_uart0_char_received()) { // just check, if a char has been received
-      neorv32_wdt_force(); // access wdt with wrong password
-    }
+  // compute WDT timeout value
+  // - the WDT counter increments at f_wdt = f_main / 4096
+  uint32_t timeout = WDT_TIMEOUT_S * (NEORV32_SYSINFO.CLK / 4096);
+  if (timeout & 0xFF000000U) { // check if timeout value fits into 24-bit
+    neorv32_uart0_puts("Timeout value does not fit into 24-bit!\n");
+    return -1;
   }
 
-  while (1) { // wait for the watchdog time-out or trigger manual reset if key pressed
-    if (neorv32_uart0_char_received()) { // just check, if a char has been received
-      neorv32_wdt_force(); // access wdt with wrong password
-    }
+  // setup watchdog: no lock, disable in debug mode, enable in sleep mode
+  neorv32_uart0_puts("Starting WDT...\n");
+  neorv32_wdt_setup(timeout, 0, 0, 1);
+
+
+  // feed the watchdog
+  neorv32_uart0_puts("Resetting WDT...\n");
+  neorv32_wdt_feed(); // reset internal counter to zero
+
+
+  // go to sleep mode and wait for watchdog to kick in
+  neorv32_uart0_puts("Entering sleep mode and waiting for WDT timeout...\n");
+  while(1) {
+    neorv32_cpu_sleep();
   }
 
-  return 0;
+  return 0; // will never be reached
 }

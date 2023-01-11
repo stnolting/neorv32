@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 10.01.2023 | 1.7.9.7 | :warning: rework **watchdog timer (WDT)**; [#474](https://github.com/stnolting/neorv32/pull/474) |
 | 06.01.2023 | 1.7.9.6 | update [neoTRNG v2](https://github.com/stnolting/neoTRNG); [#472](https://github.com/stnolting/neorv32/pull/472) |
 | 06.01.2023 | 1.7.9.5 | CPU control: logic optimization and fix minor bug in trigger module; [#470](https://github.com/stnolting/neorv32/pull/470) |
 | 04.01.2023 | 1.7.9.4 | update **on-chip debugger**: :test_tube: remove debug module's `haltsum0` register; rework DMI to comply with RISC-V debug spec.; minor edits, updates and fixes; [#468](https://github.com/stnolting/neorv32/pull/468) |
