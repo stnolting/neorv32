@@ -381,6 +381,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- hardware trigger module --
   signal hw_trigger_fire : std_ulogic;
 
+  -- misc --
+  signal imm_opcode : std_ulogic_vector(06 downto 0); -- simplified opcode for immediate generator
+  signal csr_raddr  : std_ulogic_vector(11 downto 0); -- CSR read address (AND-gated)
+
 begin
 
 -- ****************************************************************************************************************************
@@ -524,57 +528,64 @@ begin
 -- Instruction Issue (decompress 16-bit instructions and assemble a 32-bit instruction word)
 -- ****************************************************************************************************************************
 
-  -- Issue Engine FSM Sync ------------------------------------------------------------------
+  -- Issue Engine FSM (required only if C extension is enabled) -----------------------------
   -- -------------------------------------------------------------------------------------------
-  issue_engine_fsm_sync: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (CPU_EXTENSION_RISCV_C = true) then
+  issue_engine_enabled:
+  if (CPU_EXTENSION_RISCV_C = true) generate
+
+    issue_engine_fsm_sync: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
         if (fetch_engine.restart = '1') then
           issue_engine.align <= execute_engine.pc(1); -- branch to unaligned address?
         elsif (execute_engine.state = DISPATCH) then
           issue_engine.align <= (issue_engine.align and (not issue_engine.align_clr)) or issue_engine.align_set; -- "RS" flip-flop
         end if;
+      end if;
+    end process issue_engine_fsm_sync;
+
+    issue_engine_fsm_comb: process(issue_engine, ipb)
+    begin
+      -- defaults --
+      issue_engine.align_set <= '0';
+      issue_engine.align_clr <= '0';
+      issue_engine.valid     <= "00";
+
+      -- start with LOW half-word --
+      if (issue_engine.align = '0')  then
+        if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed
+          issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
+          issue_engine.valid(0)  <= ipb.avail(0);
+          issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(0)(17 downto 16) & '1' & issue_engine.ci_i32;
+        else -- aligned uncompressed
+          issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
+          issue_engine.data  <= '0' & (ipb.rdata(1)(17 downto 16) or ipb.rdata(0)(17 downto 16)) &
+                                '0' & (ipb.rdata(1)(15 downto 00)  & ipb.rdata(0)(15 downto 00));
+        end if;
+      -- start with HIGH half-word --
       else
-        issue_engine.align <= '0'; -- always aligned
+        if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed
+          issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word IS 32-bit-aligned again
+          issue_engine.valid(1)  <= ipb.avail(1);
+          issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(1)(17 downto 16) & '1' & issue_engine.ci_i32;
+        else -- unaligned uncompressed
+          issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
+          issue_engine.data  <= '0' & (ipb.rdata(0)(17 downto 16) or ipb.rdata(1)(17 downto 16)) &
+                                '0' & (ipb.rdata(0)(15 downto 00)  & ipb.rdata(1)(15 downto 00));
+        end if;
       end if;
-    end if;
-  end process issue_engine_fsm_sync;
+    end process issue_engine_fsm_comb;
 
+  end generate; -- /issue_engine_enabled
 
-  -- Issue Engine FSM Comb ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  issue_engine_fsm_comb: process(issue_engine, ipb)
-  begin
-    -- defaults --
-    issue_engine.align_set <= '0';
-    issue_engine.align_clr <= '0';
-    issue_engine.valid     <= "00";
+  issue_engine_disabled:
+  if (CPU_EXTENSION_RISCV_C = false) generate
 
-    -- start with LOW half-word --
-    if (issue_engine.align = '0') or (CPU_EXTENSION_RISCV_C = false) then
-      if (CPU_EXTENSION_RISCV_C = true) and (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed
-        issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
-        issue_engine.valid(0)  <= ipb.avail(0);
-        issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(0)(17 downto 16) & '1' & issue_engine.ci_i32;
-      else -- aligned uncompressed
-        issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-        issue_engine.data  <= '0' & (ipb.rdata(1)(17 downto 16) or ipb.rdata(0)(17 downto 16)) &
-                              '0' & (ipb.rdata(1)(15 downto 00)  & ipb.rdata(0)(15 downto 00));
-      end if;
-    -- start with HIGH half-word --
-    else
-      if (CPU_EXTENSION_RISCV_C = true) and (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed
-        issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word IS 32-bit-aligned again
-        issue_engine.valid(1)  <= ipb.avail(1);
-        issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(1)(17 downto 16) & '1' & issue_engine.ci_i32;
-      else -- unaligned uncompressed
-        issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-        issue_engine.data  <= '0' & (ipb.rdata(0)(17 downto 16) or ipb.rdata(1)(17 downto 16)) &
-                              '0' & (ipb.rdata(0)(15 downto 00)  & ipb.rdata(1)(15 downto 00));
-      end if;
-    end if;
-  end process issue_engine_fsm_comb;
+    issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
+    issue_engine.data  <= '0' & (ipb.rdata(1)(17 downto 16) or ipb.rdata(0)(17 downto 16)) &
+                          '0' & (ipb.rdata(1)(15 downto 00)  & ipb.rdata(0)(15 downto 00));
+
+  end generate; -- /issue_engine_disabled
 
   -- update IPB FIFOs (ready-for-next)? --
   ipb.re(0) <= '1' when (issue_engine.valid(0) = '1') and (execute_engine.state = DISPATCH) else '0';
@@ -613,11 +624,9 @@ begin
   -- Immediate Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   imm_gen: process(clk_i)
-    variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     if rising_edge(clk_i) then
-      opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
-      case opcode_v is -- save some bits here - the two LSBs are always "11" for 32-bit instructions
+      case imm_opcode is 
         when opcode_store_c => -- S-immediate: store
           imm_o(XLEN-1 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
           imm_o(10 downto 05)     <= execute_engine.i_reg(30 downto 25);
@@ -644,6 +653,9 @@ begin
       end case;
     end if;
   end process imm_gen;
+
+  -- save some bits here - the two LSBs are always "11" for 32-bit instructions --
+  imm_opcode <= execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
 
 
   -- Branch Condition Check -----------------------------------------------------------------
@@ -2031,23 +2043,12 @@ begin
   -- Control and Status Registers - Read Access ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_read_access: process(clk_i)
-    variable csr_addr_v : std_ulogic_vector(11 downto 0);
   begin
     if rising_edge(clk_i) then
       csr.re    <= csr.re_nxt; -- read access?
       csr.rdata <= (others => '0'); -- default output, unimplemented CSRs/CSR bits read as zero
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
-
-        -- AND-gate CSR read address: csr.rdata is zero if csr.re is not set --
-        if (csr.re = '1') then
-          csr_addr_v(11 downto 10) := csr.addr(11 downto 10);
-          csr_addr_v(09 downto 08) := (others => csr.addr(8)); -- !!! WARNING: MACHINE (11) and USER (00) CSRS ONLY !!!
-          csr_addr_v(07 downto 00) := csr.addr(07 downto 00);
-        else -- reduce switching activity if not accessed
-          csr_addr_v := (others => '0'); -- = csr_zero_c
-        end if;
-
-        case csr_addr_v is
+        case csr_raddr is
 
           -- hardware-only CSRs --
           -- --------------------------------------------------------------------
@@ -2332,6 +2333,10 @@ begin
       end if;
     end if;
   end process csr_read_access;
+
+  -- AND-gate CSR read address: csr.rdata is zero if csr.re is not set --
+  -- > [WARNING] MACHINE (9:8 = 11) and USER (9:8 = 00) CSRs only!
+  csr_raddr <= (csr.addr(11 downto 10) & csr.addr(8) & csr.addr(8) & csr.addr(7 downto 0)) when (csr.re = '1') else (others => '0');
 
   -- CSR read data output --
   csr_rdata_o <= csr.rdata;
