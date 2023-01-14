@@ -250,9 +250,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ctrl_nxt, ctrl : std_ulogic_vector(ctrl_width_c-1 downto 0);
 
   -- RISC-V control and status registers (CSRs) --
-  type pmpcfg_t       is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
-  type pmpcfg_rd_t    is array (0 to 3) of std_ulogic_vector(31 downto 0);
-  type pmpaddr_t      is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+  type pmpcfg_t       is array (0 to 15) of std_ulogic_vector(7 downto 0);
+  type pmpcfg_rd_t    is array (0 to 03) of std_ulogic_vector(XLEN-1 downto 0); -- 4 configuration registers at once
+  type pmpaddr_t      is array (0 to 15) of std_ulogic_vector(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+  type pmpaddr_rd_t   is array (0 to 15) of std_ulogic_vector(XLEN-1 downto 0);
   type mhpmevent_t    is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type mhpmevent_rd_t is array (0 to 28) of std_ulogic_vector(XLEN-1 downto 0);
   type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(XLEN-1 downto 0);
@@ -321,6 +322,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pmpcfg            : pmpcfg_t; -- physical memory protection - configuration registers
     pmpcfg_rd         : pmpcfg_rd_t; -- physical memory protection - configuration read-back
     pmpaddr           : pmpaddr_t; -- physical memory protection - address registers (bits 33:2 of PHYSICAL address)
+    pmpaddr_rd        : pmpaddr_rd_t; -- physical memory protection - address read-back
     --
     frm               : std_ulogic_vector(2 downto 0); -- frm (R/W): FPU rounding mode
     fflags            : std_ulogic_vector(4 downto 0); -- fflags (R/W): FPU exception flags
@@ -475,10 +477,8 @@ begin
   fetch_engine.a_err <= '1' when (fetch_engine.unaligned = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
 
   -- instruction bus response --
-  fetch_engine.resp <= '1' when (i_bus_ack_i = '1') or -- bus acknowledge
-                                (i_bus_err_i = '1') or -- bus access error
-                                (fetch_engine.pmp_err = '1') or -- PMP error
-                                (fetch_engine.a_err = '1') else '0'; -- alignment error
+  -- [NOTE] PMP and alignment-error will keep pending until the actually triggered bus access completes (or fails)
+  fetch_engine.resp <= '1' when (i_bus_ack_i = '1') or (i_bus_err_i = '1') else '0';
 
   -- IPB instruction data and status --
   ipb.wdata(0) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
@@ -581,9 +581,8 @@ begin
   issue_engine_disabled:
   if (CPU_EXTENSION_RISCV_C = false) generate
 
-    issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-    issue_engine.data  <= '0' & (ipb.rdata(1)(17 downto 16) or ipb.rdata(0)(17 downto 16)) &
-                          '0' & (ipb.rdata(1)(15 downto 00)  & ipb.rdata(0)(15 downto 00));
+    issue_engine.valid <= (others => ipb.avail(0)); -- only use status flags from IPB[0]
+    issue_engine.data  <= '0' & ipb.rdata(0)(17 downto 16) & '0' & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
 
   end generate; -- /issue_engine_disabled
 
@@ -2029,12 +2028,14 @@ begin
   -- PMP output to bus unit and configuration read-back --
   pmp_connect: process(csr)
   begin
-    pmp_addr_o    <= (others => (others => '0'));
-    pmp_ctrl_o    <= (others => (others => '0'));
-    csr.pmpcfg_rd <= (others => (others => '0'));
+    pmp_addr_o     <= (others => (others => '0'));
+    pmp_ctrl_o     <= (others => (others => '0'));
+    csr.pmpaddr_rd <= (others => (others => '0'));
+    csr.pmpcfg_rd  <= (others => (others => '0'));
     for i in 0 to PMP_NUM_REGIONS-1 loop
       pmp_addr_o(i)(XLEN-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i);
       pmp_ctrl_o(i) <= csr.pmpcfg(i);
+      csr.pmpaddr_rd(i)(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(i);
       csr.pmpcfg_rd(i/4)(8*(i mod 4)+7 downto 8*(i mod 4)+0) <= csr.pmpcfg(i);
     end loop;
   end process pmp_connect;
@@ -2131,29 +2132,16 @@ begin
 
           -- physical memory protection - configuration (r/w) --
           -- --------------------------------------------------------------------
-          when csr_pmpcfg0_c => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpcfg_rd(0); else NULL; end if;
-          when csr_pmpcfg1_c => if (PMP_NUM_REGIONS > 04) then csr.rdata <= csr.pmpcfg_rd(1); else NULL; end if;
-          when csr_pmpcfg2_c => if (PMP_NUM_REGIONS > 08) then csr.rdata <= csr.pmpcfg_rd(2); else NULL; end if;
-          when csr_pmpcfg3_c => if (PMP_NUM_REGIONS > 12) then csr.rdata <= csr.pmpcfg_rd(3); else NULL; end if;
+          when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c | csr_pmpcfg3_c =>
+            if (PMP_NUM_REGIONS > 0) then csr.rdata <= csr.pmpcfg_rd(to_integer(unsigned(csr_raddr(1 downto 0)))); else NULL; end if;
 
           -- physical memory protection - addresses (r/w) --
           -- --------------------------------------------------------------------
-          when csr_pmpaddr0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(00); else NULL; end if;
-          when csr_pmpaddr1_c  => if (PMP_NUM_REGIONS > 01) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(01); else NULL; end if;
-          when csr_pmpaddr2_c  => if (PMP_NUM_REGIONS > 02) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(02); else NULL; end if;
-          when csr_pmpaddr3_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(03); else NULL; end if;
-          when csr_pmpaddr4_c  => if (PMP_NUM_REGIONS > 04) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(04); else NULL; end if;
-          when csr_pmpaddr5_c  => if (PMP_NUM_REGIONS > 05) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(05); else NULL; end if;
-          when csr_pmpaddr6_c  => if (PMP_NUM_REGIONS > 06) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(06); else NULL; end if;
-          when csr_pmpaddr7_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(07); else NULL; end if;
-          when csr_pmpaddr8_c  => if (PMP_NUM_REGIONS > 08) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(08); else NULL; end if;
-          when csr_pmpaddr9_c  => if (PMP_NUM_REGIONS > 09) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(09); else NULL; end if;
-          when csr_pmpaddr10_c => if (PMP_NUM_REGIONS > 10) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(10); else NULL; end if;
-          when csr_pmpaddr11_c => if (PMP_NUM_REGIONS > 11) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(11); else NULL; end if;
-          when csr_pmpaddr12_c => if (PMP_NUM_REGIONS > 12) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(12); else NULL; end if;
-          when csr_pmpaddr13_c => if (PMP_NUM_REGIONS > 13) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(13); else NULL; end if;
-          when csr_pmpaddr14_c => if (PMP_NUM_REGIONS > 14) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(14); else NULL; end if;
-          when csr_pmpaddr15_c => if (PMP_NUM_REGIONS > 15) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(15); else NULL; end if;
+          when csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  |
+               csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  |
+               csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c |
+               csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c =>
+            if (PMP_NUM_REGIONS > 0) then csr.rdata <= csr.pmpaddr_rd(to_integer(unsigned(csr_raddr(3 downto 0)))); else NULL; end if;
 
           -- machine counter setup --
           -- --------------------------------------------------------------------
