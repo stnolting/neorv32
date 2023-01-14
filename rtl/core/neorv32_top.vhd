@@ -1143,12 +1143,17 @@ begin
       data_i => p_bus.wdata,                -- data in
       data_o => resp_bus(RESP_MTIME).rdata, -- data out
       ack_o  => resp_bus(RESP_MTIME).ack,   -- transfer acknowledge
-      -- time output for CPU --
+      -- system time --
       time_o => mtime_time,                 -- current system time
       -- interrupt --
       irq_o  => mtime_irq                   -- interrupt request
     );
     resp_bus(RESP_MTIME).err <= '0'; -- no access error possible
+
+    -- system time output --
+    -- [note] delay low word output by one clock cycle to compensate for MTIME's 1-cycle overflow delay
+    mtime_o(31 downto 00) <= mtime_time(31 downto 00) when rising_edge(clk_i);
+    mtime_o(63 downto 32) <= mtime_time(63 downto 32);
   end generate;
 
   neorv32_mtime_inst_false:
@@ -1157,26 +1162,8 @@ begin
     --
     mtime_time <= mtime_i; -- use external machine timer time signal
     mtime_irq  <= mtime_irq_i; -- use external machine timer interrupt
+    mtime_o    <= (others => '0');
   end generate;
-
-  -- system time output LO --
-  mtime_sync: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      -- buffer low word one clock cycle to compensate for MTIME's 1-cycle delay
-      -- when overflowing from low-word to high-word -> only relevant for processor-external devices;
-      -- processor-internal devices (= the CPU) do not care about this delay offset as 64-bit MTIME.TIME
-      -- cannot be accessed within a single cycle
-      if (IO_MTIME_EN = true) then
-        mtime_o(31 downto 0) <= mtime_time(31 downto 0);
-      else
-        mtime_o(31 downto 0) <= (others => '0');
-      end if;
-    end if;
-  end process mtime_sync;
-
-  -- system time output HI --
-  mtime_o(63 downto 32) <= mtime_time(63 downto 32) when (IO_MTIME_EN = true) else (others => '0');
 
 
   -- Primary Universal Asynchronous Receiver/Transmitter (UART0) ----------------------------
