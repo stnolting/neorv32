@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 14.01.2023 | 1.7.9.8 | minor CPU control edits, optimizations and fixes ;[#476](https://github.com/stnolting/neorv32/pull/476) |
 | 10.01.2023 | 1.7.9.7 | :warning: rework **watchdog timer (WDT)**; [#474](https://github.com/stnolting/neorv32/pull/474) |
 | 06.01.2023 | 1.7.9.6 | update [neoTRNG v2](https://github.com/stnolting/neoTRNG); [#472](https://github.com/stnolting/neorv32/pull/472) |
 | 06.01.2023 | 1.7.9.5 | CPU control: logic optimization and fix minor bug in trigger module; [#470](https://github.com/stnolting/neorv32/pull/470) |

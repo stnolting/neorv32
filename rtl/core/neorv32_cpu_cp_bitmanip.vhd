@@ -12,7 +12,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -413,9 +413,7 @@ begin
   shift_one_hot: process(sha_reg)
   begin
     one_hot_core <= (others => '0');
-    if (zbs_en_c = true) then
-      one_hot_core(to_integer(unsigned(sha_reg))) <= '1';
-    end if;
+    one_hot_core(to_integer(unsigned(sha_reg))) <= '1';
   end process shift_one_hot;
 
 

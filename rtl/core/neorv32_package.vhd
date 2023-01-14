@@ -62,7 +62,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070907"; -- NEORV32 version - no touchy!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070908"; -- NEORV32 version - no touchy!
   constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -517,6 +517,8 @@ package neorv32_package is
   -- machine counter setup --
   constant csr_cnt_setup_c      : std_ulogic_vector(06 downto 0) := x"3" & "001"; -- counter setup
   constant csr_mcountinhibit_c  : std_ulogic_vector(11 downto 0) := x"320";
+  constant csr_mcnt_hwdummy0_c  : std_ulogic_vector(11 downto 0) := x"321"; -- dummy register (only for decoding; not accessible)
+  constant csr_mcnt_hwdummy1_c  : std_ulogic_vector(11 downto 0) := x"322"; -- dummy register (only for decoding; not accessible)
   constant csr_mhpmevent3_c     : std_ulogic_vector(11 downto 0) := x"323";
   constant csr_mhpmevent4_c     : std_ulogic_vector(11 downto 0) := x"324";
   constant csr_mhpmevent5_c     : std_ulogic_vector(11 downto 0) := x"325";
@@ -1720,7 +1722,7 @@ package neorv32_package is
       data_i : in  std_ulogic_vector(31 downto 0); -- data in
       data_o : out std_ulogic_vector(31 downto 0); -- data out
       ack_o  : out std_ulogic; -- transfer acknowledge
-      -- time output for CPU --
+      -- system time --
       time_o : out std_ulogic_vector(63 downto 0); -- current system time
       -- interrupt --
       irq_o  : out std_ulogic  -- interrupt request

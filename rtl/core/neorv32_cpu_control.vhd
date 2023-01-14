@@ -250,9 +250,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ctrl_nxt, ctrl : std_ulogic_vector(ctrl_width_c-1 downto 0);
 
   -- RISC-V control and status registers (CSRs) --
-  type pmpcfg_t       is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
-  type pmpcfg_rd_t    is array (0 to 3) of std_ulogic_vector(31 downto 0);
-  type pmpaddr_t      is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+  type pmpcfg_t       is array (0 to 15) of std_ulogic_vector(7 downto 0);
+  type pmpcfg_rd_t    is array (0 to 03) of std_ulogic_vector(XLEN-1 downto 0); -- 4 configuration registers at once
+  type pmpaddr_t      is array (0 to 15) of std_ulogic_vector(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+  type pmpaddr_rd_t   is array (0 to 15) of std_ulogic_vector(XLEN-1 downto 0);
   type mhpmevent_t    is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type mhpmevent_rd_t is array (0 to 28) of std_ulogic_vector(XLEN-1 downto 0);
   type mhpmcnt_t      is array (0 to HPM_NUM_CNTS-1) of std_ulogic_vector(XLEN-1 downto 0);
@@ -321,6 +322,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pmpcfg            : pmpcfg_t; -- physical memory protection - configuration registers
     pmpcfg_rd         : pmpcfg_rd_t; -- physical memory protection - configuration read-back
     pmpaddr           : pmpaddr_t; -- physical memory protection - address registers (bits 33:2 of PHYSICAL address)
+    pmpaddr_rd        : pmpaddr_rd_t; -- physical memory protection - address read-back
     --
     frm               : std_ulogic_vector(2 downto 0); -- frm (R/W): FPU rounding mode
     fflags            : std_ulogic_vector(4 downto 0); -- fflags (R/W): FPU exception flags
@@ -380,6 +382,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- hardware trigger module --
   signal hw_trigger_fire : std_ulogic;
+
+  -- misc --
+  signal imm_opcode : std_ulogic_vector(06 downto 0); -- simplified opcode for immediate generator
+  signal csr_raddr  : std_ulogic_vector(11 downto 0); -- CSR read address (AND-gated)
 
 begin
 
@@ -471,10 +477,8 @@ begin
   fetch_engine.a_err <= '1' when (fetch_engine.unaligned = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
 
   -- instruction bus response --
-  fetch_engine.resp <= '1' when (i_bus_ack_i = '1') or -- bus acknowledge
-                                (i_bus_err_i = '1') or -- bus access error
-                                (fetch_engine.pmp_err = '1') or -- PMP error
-                                (fetch_engine.a_err = '1') else '0'; -- alignment error
+  -- [NOTE] PMP and alignment-error will keep pending until the actually triggered bus access completes (or fails)
+  fetch_engine.resp <= '1' when (i_bus_ack_i = '1') or (i_bus_err_i = '1') else '0';
 
   -- IPB instruction data and status --
   ipb.wdata(0) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
@@ -524,57 +528,63 @@ begin
 -- Instruction Issue (decompress 16-bit instructions and assemble a 32-bit instruction word)
 -- ****************************************************************************************************************************
 
-  -- Issue Engine FSM Sync ------------------------------------------------------------------
+  -- Issue Engine FSM (required only if C extension is enabled) -----------------------------
   -- -------------------------------------------------------------------------------------------
-  issue_engine_fsm_sync: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (CPU_EXTENSION_RISCV_C = true) then
+  issue_engine_enabled:
+  if (CPU_EXTENSION_RISCV_C = true) generate
+
+    issue_engine_fsm_sync: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
         if (fetch_engine.restart = '1') then
           issue_engine.align <= execute_engine.pc(1); -- branch to unaligned address?
         elsif (execute_engine.state = DISPATCH) then
           issue_engine.align <= (issue_engine.align and (not issue_engine.align_clr)) or issue_engine.align_set; -- "RS" flip-flop
         end if;
+      end if;
+    end process issue_engine_fsm_sync;
+
+    issue_engine_fsm_comb: process(issue_engine, ipb)
+    begin
+      -- defaults --
+      issue_engine.align_set <= '0';
+      issue_engine.align_clr <= '0';
+      issue_engine.valid     <= "00";
+
+      -- start with LOW half-word --
+      if (issue_engine.align = '0')  then
+        if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed
+          issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
+          issue_engine.valid(0)  <= ipb.avail(0);
+          issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(0)(17 downto 16) & '1' & issue_engine.ci_i32;
+        else -- aligned uncompressed
+          issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
+          issue_engine.data  <= '0' & (ipb.rdata(1)(17 downto 16) or ipb.rdata(0)(17 downto 16)) &
+                                '0' & (ipb.rdata(1)(15 downto 00)  & ipb.rdata(0)(15 downto 00));
+        end if;
+      -- start with HIGH half-word --
       else
-        issue_engine.align <= '0'; -- always aligned
+        if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed
+          issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word IS 32-bit-aligned again
+          issue_engine.valid(1)  <= ipb.avail(1);
+          issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(1)(17 downto 16) & '1' & issue_engine.ci_i32;
+        else -- unaligned uncompressed
+          issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
+          issue_engine.data  <= '0' & (ipb.rdata(0)(17 downto 16) or ipb.rdata(1)(17 downto 16)) &
+                                '0' & (ipb.rdata(0)(15 downto 00)  & ipb.rdata(1)(15 downto 00));
+        end if;
       end if;
-    end if;
-  end process issue_engine_fsm_sync;
+    end process issue_engine_fsm_comb;
 
+  end generate; -- /issue_engine_enabled
 
-  -- Issue Engine FSM Comb ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  issue_engine_fsm_comb: process(issue_engine, ipb)
-  begin
-    -- defaults --
-    issue_engine.align_set <= '0';
-    issue_engine.align_clr <= '0';
-    issue_engine.valid     <= "00";
+  issue_engine_disabled:
+  if (CPU_EXTENSION_RISCV_C = false) generate
 
-    -- start with LOW half-word --
-    if (issue_engine.align = '0') or (CPU_EXTENSION_RISCV_C = false) then
-      if (CPU_EXTENSION_RISCV_C = true) and (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed
-        issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
-        issue_engine.valid(0)  <= ipb.avail(0);
-        issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(0)(17 downto 16) & '1' & issue_engine.ci_i32;
-      else -- aligned uncompressed
-        issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-        issue_engine.data  <= '0' & (ipb.rdata(1)(17 downto 16) or ipb.rdata(0)(17 downto 16)) &
-                              '0' & (ipb.rdata(1)(15 downto 00)  & ipb.rdata(0)(15 downto 00));
-      end if;
-    -- start with HIGH half-word --
-    else
-      if (CPU_EXTENSION_RISCV_C = true) and (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed
-        issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word IS 32-bit-aligned again
-        issue_engine.valid(1)  <= ipb.avail(1);
-        issue_engine.data      <= issue_engine.ci_ill & ipb.rdata(1)(17 downto 16) & '1' & issue_engine.ci_i32;
-      else -- unaligned uncompressed
-        issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-        issue_engine.data  <= '0' & (ipb.rdata(0)(17 downto 16) or ipb.rdata(1)(17 downto 16)) &
-                              '0' & (ipb.rdata(0)(15 downto 00)  & ipb.rdata(1)(15 downto 00));
-      end if;
-    end if;
-  end process issue_engine_fsm_comb;
+    issue_engine.valid <= (others => ipb.avail(0)); -- only use status flags from IPB[0]
+    issue_engine.data  <= '0' & ipb.rdata(0)(17 downto 16) & '0' & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
+
+  end generate; -- /issue_engine_disabled
 
   -- update IPB FIFOs (ready-for-next)? --
   ipb.re(0) <= '1' when (issue_engine.valid(0) = '1') and (execute_engine.state = DISPATCH) else '0';
@@ -613,11 +623,9 @@ begin
   -- Immediate Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   imm_gen: process(clk_i)
-    variable opcode_v : std_ulogic_vector(6 downto 0);
   begin
     if rising_edge(clk_i) then
-      opcode_v := execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
-      case opcode_v is -- save some bits here - the two LSBs are always "11" for 32-bit instructions
+      case imm_opcode is 
         when opcode_store_c => -- S-immediate: store
           imm_o(XLEN-1 downto 11) <= (others => execute_engine.i_reg(31)); -- sign extension
           imm_o(10 downto 05)     <= execute_engine.i_reg(30 downto 25);
@@ -644,6 +652,9 @@ begin
       end case;
     end if;
   end process imm_gen;
+
+  -- save some bits here - the two LSBs are always "11" for 32-bit instructions --
+  imm_opcode <= execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
 
 
   -- Branch Condition Check -----------------------------------------------------------------
@@ -2017,12 +2028,14 @@ begin
   -- PMP output to bus unit and configuration read-back --
   pmp_connect: process(csr)
   begin
-    pmp_addr_o    <= (others => (others => '0'));
-    pmp_ctrl_o    <= (others => (others => '0'));
-    csr.pmpcfg_rd <= (others => (others => '0'));
+    pmp_addr_o     <= (others => (others => '0'));
+    pmp_ctrl_o     <= (others => (others => '0'));
+    csr.pmpaddr_rd <= (others => (others => '0'));
+    csr.pmpcfg_rd  <= (others => (others => '0'));
     for i in 0 to PMP_NUM_REGIONS-1 loop
       pmp_addr_o(i)(XLEN-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= csr.pmpaddr(i);
       pmp_ctrl_o(i) <= csr.pmpcfg(i);
+      csr.pmpaddr_rd(i)(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(i);
       csr.pmpcfg_rd(i/4)(8*(i mod 4)+7 downto 8*(i mod 4)+0) <= csr.pmpcfg(i);
     end loop;
   end process pmp_connect;
@@ -2031,23 +2044,12 @@ begin
   -- Control and Status Registers - Read Access ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_read_access: process(clk_i)
-    variable csr_addr_v : std_ulogic_vector(11 downto 0);
   begin
     if rising_edge(clk_i) then
       csr.re    <= csr.re_nxt; -- read access?
       csr.rdata <= (others => '0'); -- default output, unimplemented CSRs/CSR bits read as zero
       if (CPU_EXTENSION_RISCV_Zicsr = true) then
-
-        -- AND-gate CSR read address: csr.rdata is zero if csr.re is not set --
-        if (csr.re = '1') then
-          csr_addr_v(11 downto 10) := csr.addr(11 downto 10);
-          csr_addr_v(09 downto 08) := (others => csr.addr(8)); -- !!! WARNING: MACHINE (11) and USER (00) CSRS ONLY !!!
-          csr_addr_v(07 downto 00) := csr.addr(07 downto 00);
-        else -- reduce switching activity if not accessed
-          csr_addr_v := (others => '0'); -- = csr_zero_c
-        end if;
-
-        case csr_addr_v is
+        case csr_raddr is
 
           -- hardware-only CSRs --
           -- --------------------------------------------------------------------
@@ -2130,29 +2132,16 @@ begin
 
           -- physical memory protection - configuration (r/w) --
           -- --------------------------------------------------------------------
-          when csr_pmpcfg0_c => if (PMP_NUM_REGIONS > 00) then csr.rdata <= csr.pmpcfg_rd(0); else NULL; end if;
-          when csr_pmpcfg1_c => if (PMP_NUM_REGIONS > 04) then csr.rdata <= csr.pmpcfg_rd(1); else NULL; end if;
-          when csr_pmpcfg2_c => if (PMP_NUM_REGIONS > 08) then csr.rdata <= csr.pmpcfg_rd(2); else NULL; end if;
-          when csr_pmpcfg3_c => if (PMP_NUM_REGIONS > 12) then csr.rdata <= csr.pmpcfg_rd(3); else NULL; end if;
+          when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c | csr_pmpcfg3_c =>
+            if (PMP_NUM_REGIONS > 0) then csr.rdata <= csr.pmpcfg_rd(to_integer(unsigned(csr_raddr(1 downto 0)))); else NULL; end if;
 
           -- physical memory protection - addresses (r/w) --
           -- --------------------------------------------------------------------
-          when csr_pmpaddr0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(00); else NULL; end if;
-          when csr_pmpaddr1_c  => if (PMP_NUM_REGIONS > 01) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(01); else NULL; end if;
-          when csr_pmpaddr2_c  => if (PMP_NUM_REGIONS > 02) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(02); else NULL; end if;
-          when csr_pmpaddr3_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(03); else NULL; end if;
-          when csr_pmpaddr4_c  => if (PMP_NUM_REGIONS > 04) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(04); else NULL; end if;
-          when csr_pmpaddr5_c  => if (PMP_NUM_REGIONS > 05) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(05); else NULL; end if;
-          when csr_pmpaddr6_c  => if (PMP_NUM_REGIONS > 06) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(06); else NULL; end if;
-          when csr_pmpaddr7_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(07); else NULL; end if;
-          when csr_pmpaddr8_c  => if (PMP_NUM_REGIONS > 08) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(08); else NULL; end if;
-          when csr_pmpaddr9_c  => if (PMP_NUM_REGIONS > 09) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(09); else NULL; end if;
-          when csr_pmpaddr10_c => if (PMP_NUM_REGIONS > 10) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(10); else NULL; end if;
-          when csr_pmpaddr11_c => if (PMP_NUM_REGIONS > 11) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(11); else NULL; end if;
-          when csr_pmpaddr12_c => if (PMP_NUM_REGIONS > 12) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(12); else NULL; end if;
-          when csr_pmpaddr13_c => if (PMP_NUM_REGIONS > 13) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(13); else NULL; end if;
-          when csr_pmpaddr14_c => if (PMP_NUM_REGIONS > 14) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(14); else NULL; end if;
-          when csr_pmpaddr15_c => if (PMP_NUM_REGIONS > 15) then csr.rdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= csr.pmpaddr(15); else NULL; end if;
+          when csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  |
+               csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  |
+               csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c |
+               csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c =>
+            if (PMP_NUM_REGIONS > 0) then csr.rdata <= csr.pmpaddr_rd(to_integer(unsigned(csr_raddr(3 downto 0)))); else NULL; end if;
 
           -- machine counter setup --
           -- --------------------------------------------------------------------
@@ -2332,6 +2321,10 @@ begin
       end if;
     end if;
   end process csr_read_access;
+
+  -- AND-gate CSR read address: csr.rdata is zero if csr.re is not set --
+  -- > [WARNING] MACHINE (9:8 = 11) and USER (9:8 = 00) CSRs only!
+  csr_raddr <= (csr.addr(11 downto 10) & csr.addr(8) & csr.addr(8) & csr.addr(7 downto 0)) when (csr.re = '1') else (others => '0');
 
   -- CSR read data output --
   csr_rdata_o <= csr.rdata;

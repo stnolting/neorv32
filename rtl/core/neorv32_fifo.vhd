@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -127,9 +127,17 @@ begin
 
   -- FIFO Status ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fifo.match <= '1' when (fifo.r_pnt(fifo.r_pnt'left-1 downto 0) = fifo.w_pnt(fifo.w_pnt'left-1 downto 0)) or (FIFO_DEPTH = 1) else '0';
-  fifo.full  <= '1' when (fifo.r_pnt(fifo.r_pnt'left) /= fifo.w_pnt(fifo.w_pnt'left)) and (fifo.match = '1') else '0';
-  fifo.empty <= '1' when (fifo.r_pnt(fifo.r_pnt'left)  = fifo.w_pnt(fifo.w_pnt'left)) and (fifo.match = '1') else '0';
+  check_large:
+  if (FIFO_DEPTH > 1) generate
+    fifo.match <= '1' when (fifo.r_pnt(fifo.r_pnt'left-1 downto 0) = fifo.w_pnt(fifo.w_pnt'left-1 downto 0)) else '0';
+    fifo.full  <= '1' when (fifo.r_pnt(fifo.r_pnt'left) /= fifo.w_pnt(fifo.w_pnt'left)) and (fifo.match = '1') else '0';
+    fifo.empty <= '1' when (fifo.r_pnt(fifo.r_pnt'left)  = fifo.w_pnt(fifo.w_pnt'left)) and (fifo.match = '1') else '0';
+  end generate; -- /check_large
+  check_small:
+  if (FIFO_DEPTH <= 1) generate
+    fifo.full  <= '1' when (fifo.r_pnt(0) /= fifo.w_pnt(0)) else '0';
+    fifo.empty <= '1' when (fifo.r_pnt(0)  = fifo.w_pnt(0)) else '0';
+  end generate; -- /check_small
 
   fifo.free  <= not fifo.full;
   fifo.avail <= not fifo.empty;
