@@ -226,10 +226,6 @@ entity neorv32_top is
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_ulogic; -- async serial data line
 
-    -- System time --
-    mtime_i        : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
-    mtime_o        : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
-
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- IRQ channels
 
@@ -386,7 +382,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal onewire_i, onewire_o : std_ulogic;
 
   -- misc --
-  signal mtime_time  : std_ulogic_vector(63 downto 0); -- current system time from MTIME
   signal ext_timeout : std_ulogic;
   signal ext_access  : std_ulogic;
   signal xip_access  : std_ulogic;
@@ -602,8 +597,6 @@ begin
     d_bus_err_i   => cpu_d.err,   -- bus transfer error
     d_bus_fence_o => cpu_d.fence, -- executed FENCE operation
     d_bus_priv_o  => cpu_d.priv,  -- current effective privilege level
-    -- system time input from MTIME --
-    time_i        => mtime_time,  -- current system time
     -- non-maskable interrupt --
     msw_irq_i     => msw_irq_i,   -- machine software interrupt
     mext_irq_i    => mext_irq_i,  -- machine external interrupt request
@@ -1143,26 +1136,17 @@ begin
       data_i => p_bus.wdata,                -- data in
       data_o => resp_bus(RESP_MTIME).rdata, -- data out
       ack_o  => resp_bus(RESP_MTIME).ack,   -- transfer acknowledge
-      -- system time --
-      time_o => mtime_time,                 -- current system time
       -- interrupt --
       irq_o  => mtime_irq                   -- interrupt request
     );
     resp_bus(RESP_MTIME).err <= '0'; -- no access error possible
-
-    -- system time output --
-    -- [note] delay low word output by one clock cycle to compensate for MTIME's 1-cycle overflow delay
-    mtime_o(31 downto 00) <= mtime_time(31 downto 00) when rising_edge(clk_i);
-    mtime_o(63 downto 32) <= mtime_time(63 downto 32);
   end generate;
 
   neorv32_mtime_inst_false:
   if (IO_MTIME_EN = false) generate
     resp_bus(RESP_MTIME) <= resp_bus_entry_terminate_c;
     --
-    mtime_time <= mtime_i; -- use external machine timer time signal
-    mtime_irq  <= mtime_irq_i; -- use external machine timer interrupt
-    mtime_o    <= (others => '0');
+    mtime_irq <= mtime_irq_i; -- use external machine timer interrupt
   end generate;
 
 

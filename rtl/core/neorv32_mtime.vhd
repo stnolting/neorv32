@@ -53,8 +53,6 @@ entity neorv32_mtime is
     data_i : in  std_ulogic_vector(31 downto 0); -- data in
     data_o : out std_ulogic_vector(31 downto 0); -- data out
     ack_o  : out std_ulogic; -- transfer acknowledge
-    -- system time --
-    time_o : out std_ulogic_vector(63 downto 0); -- current system time
     -- interrupt --
     irq_o  : out std_ulogic  -- interrupt request
   );
@@ -172,9 +170,6 @@ begin
       end if;
     end if;
   end process read_access;
-
-  -- system time output for cpu --
-  time_o <= mtime_hi & mtime_lo; -- NOTE: low and high words are not in-sync here!
 
 
   -- Comparator -----------------------------------------------------------------------------
