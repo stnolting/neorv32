@@ -103,8 +103,8 @@ begin
   write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      mtimecmp_lo   <= (others => '1'); -- all-one to prevent accidental interrupt after reset
-      mtimecmp_hi   <= (others => '1');
+      mtimecmp_lo   <= (others => '0');
+      mtimecmp_hi   <= (others => '0');
       mtime_lo_we   <= '0';
       mtime_hi_we   <= '0';
       mtime_lo      <= (others => '0');
