@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -191,10 +191,7 @@ entity neorv32_ProcessorTop_stdlogic is
     cfs_in_i       : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom inputs
     cfs_out_o      : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom outputs
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o       : out std_logic; -- async serial data line
-    -- System time --
-    mtime_i        : in  std_logic_vector(63 downto 0) := (others => '0'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
-    mtime_o        : out std_logic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
+    neoled_o       : out std_logic; -- async serial data line´
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_logic_vector(31 downto 0) := (others => '0'); -- IRQ channels
     -- CPU Interrupts --
@@ -273,9 +270,6 @@ architecture neorv32_ProcessorTop_stdlogic_rtl of neorv32_ProcessorTop_stdlogic 
   signal cfs_out_o_int   : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
   --
   signal neoled_o_int    : std_ulogic;
-  --
-  signal mtime_i_int     : std_ulogic_vector(63 downto 0);
-  signal mtime_o_int     : std_ulogic_vector(63 downto 0);
   --
   signal xirq_i_int      : std_ulogic_vector(31 downto 0);
   --
@@ -440,9 +434,6 @@ begin
     cfs_out_o      => cfs_out_o_int,   -- custom outputs
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       => neoled_o_int,    -- async serial data line
-    -- System time --
-    mtime_i        => mtime_i_int,     -- current system time from ext. MTIME (if IO_MTIME_EN = false)
-    mtime_o        => mtime_o_int,     -- current system time from int. MTIME (if IO_MTIME_EN = true)
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         => xirq_i_int,      -- IRQ channels
     -- CPU Interrupts --
@@ -516,9 +507,6 @@ begin
   cfs_out_o       <= std_logic_vector(cfs_out_o_int);
 
   neoled_o        <= std_logic(neoled_o_int);
-
-  mtime_i_int     <= std_ulogic_vector(mtime_i);
-  mtime_o         <= std_logic_vector(mtime_o_int);
 
   xirq_i_int      <= std_ulogic_vector(xirq_i);
 
