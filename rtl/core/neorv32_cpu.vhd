@@ -8,7 +8,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -102,8 +102,6 @@ entity neorv32_cpu is
     d_bus_err_i   : in  std_ulogic; -- bus transfer error
     d_bus_fence_o : out std_ulogic; -- executed FENCE operation
     d_bus_priv_o  : out std_ulogic; -- current effective privilege level
-    -- system time input from MTIME --
-    time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
     -- interrupts (risc-v compliant) --
     msw_irq_i     : in  std_ulogic;-- machine software interrupt
     mext_irq_i    : in  std_ulogic;-- machine external interrupt
@@ -327,8 +325,6 @@ begin
     mtime_irq_i   => mtime_irq_i,   -- machine timer interrupt
     -- fast interrupts (custom) --
     firq_i        => firq_i,        -- fast interrupt trigger
-    -- system time input from MTIME --
-    time_i        => time_i,        -- current system time
     -- physical memory protection --
     pmp_addr_o    => pmp_addr,      -- addresses
     pmp_ctrl_o    => pmp_ctrl,      -- configs
