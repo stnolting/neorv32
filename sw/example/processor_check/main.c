@@ -403,47 +403,6 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test mcounteren: do not allow cycle[h] access from user-mode
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] mcounteren.cy CSR ", cnt_test);
-
-  cnt_test++;
-
-  // do not allow user-level code to access cycle[h] CSRs
-  tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTEREN);
-  tmp_a &= ~(1<<CSR_MCOUNTEREN_CY); // clear access right
-  neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
-
-  neorv32_cpu_csr_write(CSR_MCYCLE, 0);
-  neorv32_cpu_csr_write(CSR_MCYCLEH, 123); // make sure CSR is != 0 for this test
-
-  // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-  neorv32_cpu_goto_user_mode();
-  {
-    // access to cycle CSR is no longer allowed
-    asm volatile (" li    %[result], 0xcc11aa22       \n" // initialize
-                  " csrrw %[result], cycleh, %[input]   " // read and write CSR_CYCLE, not allowed and should not alter [result] nor CSR
-                  : [result] "=r" (tmp_a) : [input] "r" (tmp_a) );
-  }
-
-  // make sure there was an illegal instruction trap
-  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) &&
-      (neorv32_cpu_csr_read(CSR_CYCLEH) == 123) && // csr not altered
-      (tmp_a == 0xcc11aa22)) { // destination register not altered
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
-
-  // re-allow user-level code to access cycle[h] CSRs
-  tmp_a = neorv32_cpu_csr_read(CSR_MCOUNTEREN);
-  tmp_a |= (1<<CSR_MCOUNTEREN_CY); // re-allow access right
-  neorv32_cpu_csr_write(CSR_MCOUNTEREN, tmp_a);
-
-
-  // ----------------------------------------------------------
   // Execute MRET in U-mode (has to trap!)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
@@ -501,14 +460,14 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Illegal CSR access (CSR not implemented)
+  // Illegal CSR access
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Non-existent CSR ", cnt_test);
+  PRINT_STANDARD("[%i] Illegal CSR ", cnt_test);
 
   cnt_test++;
 
-  tmp_a = neorv32_cpu_csr_read(0xfff); // CSR 0xfff not implemented
+  tmp_a = neorv32_cpu_csr_read(CSR_DSCRATCH0); // only accessible in debug mode
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     test_ok();
@@ -526,7 +485,7 @@ int main() {
 
   cnt_test++;
 
-  neorv32_cpu_csr_write(CSR_TIME, 0); // time CSR is read-only
+  neorv32_cpu_csr_write(CSR_CYCLE, 0); // cycle CSR is read-only
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     test_ok();
@@ -544,9 +503,9 @@ int main() {
 
   cnt_test++;
 
-  // time CSR is read-only, but no actual write is performed because rs1=r0
+  // cycle CSR is read-only, but no actual write is performed because rs1=r0
   // -> should cause no exception
-  asm volatile("csrrs zero, time, zero");
+  asm volatile("csrrs zero, cycle, zero");
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
     test_ok();
