@@ -136,9 +136,6 @@ bits/channels are hardwired to zero.
 | `cfs_out_o`      |   32 |   out | custom CFS output signal conduit
 4+^| **Smart LED Interface - NeoPixel(TM) compatible (<<_smart_led_interface_neoled,NEOLED>>)**
 | `neoled_o`       |    1 |   out | asynchronous serial data output
-4+^| **System time (<<_machine_system_timer_mtime,MTIME>>)**
-| `mtime_i`        |   64 |    in | machine timer time from _external MTIME_ unit if the processor-internal _MTIME_ unit is not implemented
-| `mtime_o`        |   64 |   out | machine timer time from _internal MTIME_ unit if the processor-internal _MTIME_ unit is implemented
 4+^| **External Interrupts (<<_processor_interrupts, XIRQ>>)**
 | `xirq_i`         |   32 |    in | external interrupt requests
 4+^| **RISC-V Machine-Level <<_processor_interrupts, CPU Interrupts>>**
