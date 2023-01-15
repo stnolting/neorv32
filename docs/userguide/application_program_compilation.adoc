@@ -33,10 +33,10 @@ the executable size:
 neorv32/sw/example/demo_blink_led$ make clean_all exe
 Memory utilization:
    text    data     bss     dec     hex filename
-   3176       0     120    3296     ce0 main.elf
+   1004       0       0    1004     3ec main.elf
 Compiling ../../../sw/image_gen/image_gen
 Executable (neorv32_exe.bin) size in bytes:
-3188
+1016
 ----
 
 [NOTE]

@@ -49,8 +49,10 @@ Using the IMEM as ROM:
 neorv32/sw/example/demo_blink_led$ make clean_all install
 Memory utilization:
    text    data     bss     dec     hex filename
-   3176       0     120    3296     ce0 main.elf
+   1004       0       0    1004     3ec main.elf
 Compiling ../../../sw/image_gen/image_gen
+Executable (neorv32_exe.bin) size in bytes:
+1016
 Installing application image to ../../../rtl/core/neorv32_application_image.vhd
 ----
 
@@ -67,5 +69,5 @@ The synthesis tool / simulator will print asserts to inform about the (IMEM) mem
 [source]
 ----
 NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-internal IMEM).
-NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (3176 bytes), pre-initialized with application.
+NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (1016 bytes), pre-initialized with application.
 ----
