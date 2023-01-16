@@ -307,22 +307,22 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     minstreth         : std_ulogic_vector(XLEN-1 downto 0); -- minstreth (R/W)
     --
     mhpmcounter       : mhpmcnt_t; -- mhpmcounter* (R/W), plus carry bit
-    mhpmcounter_nxt   : mhpmcnt_nxt_t;
+    mhpmcounter_nxt   : mhpmcnt_nxt_t; -- low-word to high-word counter overflow
     mhpmcounter_ovfl  : mhpmcnt_ovfl_t; -- counter low-to-high-word overflow
     mhpmcounterh      : mhpmcnt_t; -- mhpmcounter*h (R/W)
-    mhpmcounter_rd    : mhpmcnt_rd_t; -- mhpmcounter* (R/W): actual read data
-    mhpmcounterh_rd   : mhpmcnt_rd_t; -- mhpmcounter*h (R/W): actual read data
+    mhpmcounter_rd    : mhpmcnt_rd_t; -- counter low read-back
+    mhpmcounterh_rd   : mhpmcnt_rd_t; --  counter high read-back
     --
-    pmpcfg            : pmpcfg_t; -- physical memory protection - configuration registers
-    pmpcfg_rd         : pmpcfg_rd_t; -- physical memory protection - configuration read-back
-    pmpaddr           : pmpaddr_t; -- physical memory protection - address registers (bits 33:2 of PHYSICAL address)
-    pmpaddr_rd        : pmpaddr_rd_t; -- physical memory protection - address read-back
+    pmpcfg            : pmpcfg_t; -- PMP configuration registers
+    pmpcfg_rd         : pmpcfg_rd_t; -- PMP configuration read-back
+    pmpaddr           : pmpaddr_t; -- PMP address registers (bits 33:2 of PHYSICAL address)
+    pmpaddr_rd        : pmpaddr_rd_t; -- PMP address read-back
     --
     frm               : std_ulogic_vector(2 downto 0); -- frm (R/W): FPU rounding mode
     fflags            : std_ulogic_vector(4 downto 0); -- fflags (R/W): FPU exception flags
     --
-    dcsr_ebreakm      : std_ulogic; -- dcsr.ebreakm (R/W): behavior of ebreak instruction on m-mode
-    dcsr_ebreaku      : std_ulogic; -- dcsr.ebreaku (R/W): behavior of ebreak instruction on u-mode
+    dcsr_ebreakm      : std_ulogic; -- dcsr.ebreakm (R/W): behavior of ebreak instruction in m-mode
+    dcsr_ebreaku      : std_ulogic; -- dcsr.ebreaku (R/W): behavior of ebreak instruction in u-mode
     dcsr_step         : std_ulogic; -- dcsr.step (R/W): single-step mode
     dcsr_prv          : std_ulogic; -- dcsr.prv (R/W): current privilege level when entering debug mode
     dcsr_cause        : std_ulogic_vector(2 downto 0); -- dcsr.cause (R/-): why was debug mode entered

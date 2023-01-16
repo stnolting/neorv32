@@ -52,18 +52,18 @@ package neorv32_package is
   constant reset_x0_c : boolean := true; -- has to be 'true' for the default register file rtl description (BRAM-based)
 
   -- "response time window" for processor-internal modules --
-  -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception (min 2)
-  constant max_proc_int_response_time_c : natural := 15;
+  -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception
+  constant max_proc_int_response_time_c : natural := 15; -- min 2
 
-  -- jtag tap - identifier --
+  -- JTAG tap - identifier --
   constant jtag_tap_idcode_version_c : std_ulogic_vector(03 downto 0) := x"0"; -- version
   constant jtag_tap_idcode_partid_c  : std_ulogic_vector(15 downto 0) := x"cafe"; -- part number
   constant jtag_tap_idcode_manid_c   : std_ulogic_vector(10 downto 0) := "00000000000"; -- manufacturer id
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070909"; -- NEORV32 version - no touchy!
-  constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070909"; -- NEORV32 version
+  constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
