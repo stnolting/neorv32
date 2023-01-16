@@ -135,8 +135,9 @@ begin
   end generate; -- /check_large
   check_small:
   if (FIFO_DEPTH <= 1) generate
-    fifo.full  <= '1' when (fifo.r_pnt(0) /= fifo.w_pnt(0)) else '0';
-    fifo.empty <= '1' when (fifo.r_pnt(0)  = fifo.w_pnt(0)) else '0';
+    fifo.match <= '1' when (fifo.r_pnt(0) = fifo.w_pnt(0)) else '0';
+    fifo.full  <= not fifo.match;
+    fifo.empty <= fifo.match;
   end generate; -- /check_small
 
   fifo.free  <= not fifo.full;
