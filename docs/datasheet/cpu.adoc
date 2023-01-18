@@ -668,12 +668,8 @@ The actual number of implemented HPM counters is defined by the <<_hpm_num_cnts>
 Additional CSRs:
 
 * <<_mhpmevent>> 3..31 (depending on <<_hpm_num_cnts>>) - event configuration CSRs
-* <<_mhpmcounterh>> 3..31 (depending on <<_hpm_num_cnts>>) - counter CSRs
-
-[IMPORTANT]
-The HPM counter CSRs can only be accessed in machine-mode. Hence, the according <<_mcounteren>> CSR bits
-are always zero and read-only. Any access from less-privileged modes will raise an illegal instruction
-exception.
+* <<_mhpmcounterh>> 3..31 (depending on <<_hpm_num_cnts>>) - machine-level counter CSRs
+* <<_hpmcounterh>> 3..31 (depending on <<_hpm_num_cnts>>) - user-level counter CSRs
 
 [TIP]
 Auto-increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
