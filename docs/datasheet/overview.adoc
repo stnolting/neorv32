@@ -274,13 +274,6 @@ just _exemplary_. If not otherwise mentioned all implementations use the default
 | `rv32imcbu_Zicsr_Zicntr_Zifencei_Zfinx_DebugMode` | 4825 | 2018 |     1024 |    7 | 123 MHz
 |=======================
 
-.**RISC-V Compliance**
-[NOTE]
-The `Zicsr` ISA extension implements the privileged machine architecture
-(see <<_zicsr_control_and_status_register_access_privileged_architecture>>). The `Zicntr` ISA
-extension implements the basic counters and timers (see <<_zicntr_cpu_base_counters>>). Both
-extensions are _mandatory_ in order to comply with the RISC-V architecture specifications.
-
 [NOTE]
 The table above does not show _all_ CPU ISA extensions. More sophisticated and application-specific
 options like PMP and HMP are not included in this overview.
