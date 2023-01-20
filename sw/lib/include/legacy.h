@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -121,6 +121,22 @@ inline int __attribute__((deprecated("Use 'neorv32_rte_handler_uninstall()' inst
 /** R3-type CFU custom instruction 7 (funct3 = 111) */
 #define neorv32_cfu_cmd7(funct7, rs1, rs2) neorv32_cfu_r3_instr(funct7, 7, rs1, rs2)
 /**@}*/
+
+
+// ================================================================================================
+// CPU Core
+// ================================================================================================
+
+/**********************************************************************//**
+ * Get current system time from time[h] CSR.
+ *
+ * @note This function requires the MTIME system timer to be implemented.
+ *
+ * @return Current system time (64 bit).
+ **************************************************************************/
+inline uint64_t __attribute__((deprecated("Use 'neorv32_mtime_get_time()' instead."))) neorv32_cpu_get_systime(void) {
+  return neorv32_mtime_get_time();
+}
 
 
 

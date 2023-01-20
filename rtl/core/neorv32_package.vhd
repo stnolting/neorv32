@@ -52,18 +52,18 @@ package neorv32_package is
   constant reset_x0_c : boolean := true; -- has to be 'true' for the default register file rtl description (BRAM-based)
 
   -- "response time window" for processor-internal modules --
-  -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception (min 2)
-  constant max_proc_int_response_time_c : natural := 15;
+  -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception
+  constant max_proc_int_response_time_c : natural := 15; -- min 2
 
-  -- jtag tap - identifier --
+  -- JTAG tap - identifier --
   constant jtag_tap_idcode_version_c : std_ulogic_vector(03 downto 0) := x"0"; -- version
   constant jtag_tap_idcode_partid_c  : std_ulogic_vector(15 downto 0) := x"cafe"; -- part number
   constant jtag_tap_idcode_manid_c   : std_ulogic_vector(10 downto 0) := "00000000000"; -- manufacturer id
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070908"; -- NEORV32 version - no touchy!
-  constant archid_c     : natural := 19; -- official RISC-V architecture ID - hands off!
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01070909"; -- NEORV32 version
+  constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -517,8 +517,6 @@ package neorv32_package is
   -- machine counter setup --
   constant csr_cnt_setup_c      : std_ulogic_vector(06 downto 0) := x"3" & "001"; -- counter setup
   constant csr_mcountinhibit_c  : std_ulogic_vector(11 downto 0) := x"320";
-  constant csr_mcnt_hwdummy0_c  : std_ulogic_vector(11 downto 0) := x"321"; -- dummy register (only for decoding; not accessible)
-  constant csr_mcnt_hwdummy1_c  : std_ulogic_vector(11 downto 0) := x"322"; -- dummy register (only for decoding; not accessible)
   constant csr_mhpmevent3_c     : std_ulogic_vector(11 downto 0) := x"323";
   constant csr_mhpmevent4_c     : std_ulogic_vector(11 downto 0) := x"324";
   constant csr_mhpmevent5_c     : std_ulogic_vector(11 downto 0) := x"325";
@@ -598,7 +596,6 @@ package neorv32_package is
   constant csr_class_mcnt_c     : std_ulogic_vector(03 downto 0) := x"b"; -- machine-mode counters
   constant csr_mcycle_c         : std_ulogic_vector(11 downto 0) := x"b00";
   constant csr_minstret_c       : std_ulogic_vector(11 downto 0) := x"b02";
-  --
   constant csr_mhpmcounter3_c   : std_ulogic_vector(11 downto 0) := x"b03";
   constant csr_mhpmcounter4_c   : std_ulogic_vector(11 downto 0) := x"b04";
   constant csr_mhpmcounter5_c   : std_ulogic_vector(11 downto 0) := x"b05";
@@ -631,7 +628,6 @@ package neorv32_package is
   --
   constant csr_mcycleh_c        : std_ulogic_vector(11 downto 0) := x"b80";
   constant csr_minstreth_c      : std_ulogic_vector(11 downto 0) := x"b82";
-  --
   constant csr_mhpmcounter3h_c  : std_ulogic_vector(11 downto 0) := x"b83";
   constant csr_mhpmcounter4h_c  : std_ulogic_vector(11 downto 0) := x"b84";
   constant csr_mhpmcounter5h_c  : std_ulogic_vector(11 downto 0) := x"b85";
@@ -665,9 +661,7 @@ package neorv32_package is
   -- user counters/timers --
   constant csr_class_ucnt_c     : std_ulogic_vector(03 downto 0) := x"c"; -- user-mode counters
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
-  constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
   constant csr_instret_c        : std_ulogic_vector(11 downto 0) := x"c02";
-  --
   constant csr_hpmcounter3_c    : std_ulogic_vector(11 downto 0) := x"c03";
   constant csr_hpmcounter4_c    : std_ulogic_vector(11 downto 0) := x"c04";
   constant csr_hpmcounter5_c    : std_ulogic_vector(11 downto 0) := x"c05";
@@ -699,9 +693,7 @@ package neorv32_package is
   constant csr_hpmcounter31_c   : std_ulogic_vector(11 downto 0) := x"c1f";
   --
   constant csr_cycleh_c         : std_ulogic_vector(11 downto 0) := x"c80";
-  constant csr_timeh_c          : std_ulogic_vector(11 downto 0) := x"c81";
   constant csr_instreth_c       : std_ulogic_vector(11 downto 0) := x"c82";
-  --
   constant csr_hpmcounter3h_c   : std_ulogic_vector(11 downto 0) := x"c83";
   constant csr_hpmcounter4h_c   : std_ulogic_vector(11 downto 0) := x"c84";
   constant csr_hpmcounter5h_c   : std_ulogic_vector(11 downto 0) := x"c85";
@@ -1142,9 +1134,6 @@ package neorv32_package is
       cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
       -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
       neoled_o       : out std_ulogic; -- async serial data line
-      -- System time --
-      mtime_i        : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- current system time from ext. MTIME (if IO_MTIME_EN = false)
-      mtime_o        : out std_ulogic_vector(63 downto 0); -- current system time from int. MTIME (if IO_MTIME_EN = true)
       -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
       xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- IRQ channels
       -- CPU Interrupts --
@@ -1214,8 +1203,6 @@ package neorv32_package is
       d_bus_err_i   : in  std_ulogic; -- bus transfer error
       d_bus_fence_o : out std_ulogic; -- executed FENCE operation
       d_bus_priv_o  : out std_ulogic; -- current effective privilege level
-      -- system time input from MTIME --
-      time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
       -- interrupts (risc-v compliant) --
       msw_irq_i     : in  std_ulogic; -- machine software interrupt
       mext_irq_i    : in  std_ulogic; -- machine external interrupt
@@ -1297,8 +1284,6 @@ package neorv32_package is
       mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
       -- fast interrupts (custom) --
       firq_i        : in  std_ulogic_vector(15 downto 0);
-      -- system time input from MTIME --
-      time_i        : in  std_ulogic_vector(63 downto 0); -- current system time
       -- physical memory protection --
       pmp_addr_o    : out pmp_addr_if_t; -- addresses
       pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
@@ -1722,8 +1707,6 @@ package neorv32_package is
       data_i : in  std_ulogic_vector(31 downto 0); -- data in
       data_o : out std_ulogic_vector(31 downto 0); -- data out
       ack_o  : out std_ulogic; -- transfer acknowledge
-      -- system time --
-      time_o : out std_ulogic_vector(63 downto 0); -- current system time
       -- interrupt --
       irq_o  : out std_ulogic  -- interrupt request
     );

@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -231,37 +231,6 @@ void neorv32_cpu_set_minstret(uint64_t value) {
   neorv32_cpu_csr_write(CSR_MINSTRET,  cycles.uint32[0]);
 
   asm volatile("nop"); // delay due to CPU-internal instret write buffer
-}
-
-
-/**********************************************************************//**
- * Get current system time from time[h] CSR.
- *
- * @note This function requires the MTIME system timer to be implemented.
- *
- * @return Current system time (64 bit).
- **************************************************************************/
-uint64_t neorv32_cpu_get_systime(void) {
-
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } cycles;
-
-  uint32_t tmp1, tmp2, tmp3;
-  while(1) {
-    tmp1 = neorv32_cpu_csr_read(CSR_TIMEH);
-    tmp2 = neorv32_cpu_csr_read(CSR_TIME);
-    tmp3 = neorv32_cpu_csr_read(CSR_TIMEH);
-    if (tmp1 == tmp3) {
-      break;
-    }
-  }
-
-  cycles.uint32[0] = tmp2;
-  cycles.uint32[1] = tmp3;
-
-  return cycles.uint64;
 }
 
 

@@ -229,8 +229,7 @@ ISA extension. When the CPU is in sleep mode, all CPU-internal operations are st
 Note that this does _not affect_ the operation of any peripheral/IO modules like interfaces and timers. Furthermore,
 the CPU will continue to buffer/enqueue all incoming interrupt requests.
 
-The CPU will leave sleep mode as soon as any interrupt source becomes _pending_. This requires that interrupts are globally
-enabled by setting `<<_mstatus>>.mie` and that at least one interrupt source is enabled in <<_mie>>.
+The CPU will leave sleep mode as soon as any interrupt source becomes _pending_.
 
 [IMPORTANT]
 If sleep mode is entered without at least one enabled interrupt source the CPU will be _permanently_ halted.
@@ -304,8 +303,6 @@ direction seen from the CPU.
 | `d_bus_err_i`    |     1 | in  | bus transfer terminate from accessed peripheral
 | `d_bus_fence_o`  |     1 | out | indicates an executed `fence` instruction
 | `d_bus_priv_o`   |     1 | out | current _effective_ CPU privilege level (`0` = user, `1` = machine)
-4+^| **System Time (for <<_timeh>> CSR)**
-| `time_i`         |    64 | in  | system time input from <<_machine_system_timer_mtime>>
 4+^| **Interrupts, RISC-V-compatible (<<_traps_exceptions_and_interrupts>>)**
 | `msw_irq_i`      |     1 | in  | RISC-V machine software interrupt
 | `mext_irq_i`     |     1 | in  | RISC-V machine external interrupt
@@ -639,8 +636,8 @@ will raise an illegal instruction exception if <<_mstatus>>`.TW` is set.
 
 ==== **`Zicntr`** CPU Base Counters
 
-The `Zicntr` ISA extension adds the basic cycle `[m]cycle[h]`), instruction-retired (`[m]instret[h]`) and time (`time[h]`)
-counters. This extensions is stated as _mandatory_ by the RISC-V spec. However, area-constrained setups may remove support for
+The `Zicntr` ISA extension adds the basic cycle `[m]cycle[h]`) and instruction-retired (`[m]instret[h]`) counters.
+This extensions is stated as _mandatory_ by the RISC-V spec. However, area-constrained setups may remove support for
 these counters. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Zicntr`-related CSRs.
 These are available if the `Zicntr` ISA extensions is enabled via the <<_cpu_extension_riscv_zicntr>> generic.
 
@@ -648,10 +645,9 @@ Additional CSRs:
 
 * <<_cycleh>>, <<_mcycleh>> - cycle counter
 * <<_instreth>>, <<_minstreth>> - instructions-retired counter
-* <<_timeh>> - system _wall-clock_ time (driven by the <<_machine_system_timer_mtime>>)
 
-[NOTE]
-Disabling the `Zicntr` extension does not remove the `time[h]`-driving <<_machine_system_timer_mtime>>.
+[IMPORTANT]
+The `Zicntr` ISA extension does not include the `time[h]` CSRs.
 
 If the `Zicntr` ISA extension is disabled, all accesses to the according counter CSRs will raise an illegal instruction exception.
 
@@ -671,12 +667,8 @@ The actual number of implemented HPM counters is defined by the <<_hpm_num_cnts>
 Additional CSRs:
 
 * <<_mhpmevent>> 3..31 (depending on <<_hpm_num_cnts>>) - event configuration CSRs
-* <<_mhpmcounterh>> 3..31 (depending on <<_hpm_num_cnts>>) - counter CSRs
-
-[IMPORTANT]
-The HPM counter CSRs can only be accessed in machine-mode. Hence, the according <<_mcounteren>> CSR bits
-are always zero and read-only. Any access from less-privileged modes will raise an illegal instruction
-exception.
+* <<_mhpmcounterh>> 3..31 (depending on <<_hpm_num_cnts>>) - machine-level counter CSRs
+* <<_hpmcounterh>> 3..31 (depending on <<_hpm_num_cnts>>) - user-level counter CSRs
 
 [TIP]
 Auto-increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
@@ -873,7 +865,7 @@ the second highest priority will get serviced and so on until no further interru
 
 .Interrupts when in User-Mode
 [IMPORTANT]
-IF the core is currently operating in less privileged user-mode, (machine-mode) interrupts are globally enabled
+If the core is currently operating in less privileged user-mode, (machine-mode) interrupts are globally enabled
 even if <<_mstatus>>`.mie` is cleared.
 
 .Interrupt Signal Requirements - Standard RISC-V Interrupts
