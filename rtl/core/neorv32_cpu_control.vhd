@@ -282,7 +282,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     mcountinhibit_cy  : std_ulogic; -- mcounterinhibit.cy: inhibit auto-increment for [m]cycle[h]
     mcountinhibit_ir  : std_ulogic; -- mcounterinhibit.ir: inhibit auto-increment for [m]instret[h]
-    mcountinhibit_hpm : std_ulogic_vector(HPM_NUM_CNTS-1 downto 0); -- mcounterinhibit.hpm: inhibit auto-increment for mhpmcounterx[h]
+    mcountinhibit_hpm : std_ulogic_vector(28 downto 0); -- mcounterinhibit.hpm: inhibit auto-increment for mhpmcounterx[h]
     --
     privilege         : std_ulogic; -- current privilege mode
     privilege_eff     : std_ulogic; -- current *effective* privilege mode
@@ -1533,7 +1533,7 @@ begin
         -- interrupt queue: NEORV32-specific fast interrupts (FIRQ) --
         -- > require manual ACK/clear via mip CSR
         for i in 0 to 15 loop
-          trap_ctrl.irq_buf(irq_firq_0_c + i) <= (trap_ctrl.irq_buf(irq_firq_0_c + i) or firq_i(i)) and csr.mie_firq(i) and csr.mip_firq_nclr(i);
+          trap_ctrl.irq_buf(irq_firq_0_c + i) <= (trap_ctrl.irq_buf(irq_firq_0_c + i) or firq_i(i)) and csr.mip_firq_nclr(i);
         end loop;
 
 
@@ -1823,8 +1823,10 @@ begin
           if (csr.addr(11 downto 5) = csr_cnt_setup_c) then -- counter configuration CSR class
             -- R/W: mcountinhibit - machine counter-inhibit register --
             if (csr.addr(4 downto 0) = csr_mcountinhibit_c(4 downto 0)) then
-              csr.mcountinhibit_cy <= csr.wdata(0); -- inhibit auto-increment of [m]cycle[h] counter
-              csr.mcountinhibit_ir <= csr.wdata(2); -- inhibit auto-increment of [m]instret[h] counter
+              if (CPU_EXTENSION_RISCV_Zicntr = true) then
+                csr.mcountinhibit_cy <= csr.wdata(0); -- inhibit auto-increment of [m]cycle[h] counter
+                csr.mcountinhibit_ir <= csr.wdata(2); -- inhibit auto-increment of [m]instret[h] counter
+              end if;
               if (HPM_NUM_CNTS > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then -- any HPMs available?
                 csr.mcountinhibit_hpm <= csr.wdata(csr.mcountinhibit_hpm'left+3 downto 3); -- inhibit auto-increment of [m]hpmcounter*[h] counter
               end if;
@@ -2001,6 +2003,12 @@ begin
           csr.mhpmevent         <= (others => (others => '0'));
         end if;
 
+        -- no base counters --
+        if (CPU_EXTENSION_RISCV_Zicntr = false) then
+          csr.mcountinhibit_cy <= '0';
+          csr.mcountinhibit_ir <= '0';
+        end if;
+
         -- no debug mode --
         if (CPU_EXTENSION_RISCV_Sdext = false) then
           csr.dcsr_ebreakm <= '0';
@@ -2162,10 +2170,12 @@ begin
           -- machine counter setup --
           -- --------------------------------------------------------------------
           when csr_mcountinhibit_c => -- mcountinhibit (r/w): machine counter-inhibit register
-            csr.rdata(0) <= csr.mcountinhibit_cy; -- inhibit auto-increment of [m]cycle[h] counter
-            csr.rdata(2) <= csr.mcountinhibit_ir; -- inhibit auto-increment of [m]instret[h] counter
-            if (HPM_NUM_CNTS > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then -- any HPMs available?
-              csr.rdata(csr.mcountinhibit_hpm'left+3 downto 3) <= csr.mcountinhibit_hpm; -- inhibit auto-increment of [m]hpmcounterx[h] counter
+            if (CPU_EXTENSION_RISCV_Zicntr = true) then
+              csr.rdata(0) <= csr.mcountinhibit_cy; -- inhibit auto-increment of [m]cycle[h] counter
+              csr.rdata(2) <= csr.mcountinhibit_ir; -- inhibit auto-increment of [m]instret[h] counter
+            end if;
+            if (HPM_NUM_CNTS > 0) and (CPU_EXTENSION_RISCV_Zihpm = true) then -- any HPMs implemented?
+              csr.rdata((HPM_NUM_CNTS+3)-1 downto 3) <= csr.mcountinhibit_hpm(HPM_NUM_CNTS-1 downto 0); -- inhibit auto-increment of [m]hpmcounter*[h] counter
             end if;
 
           -- HPM event selector (r/w) --
@@ -2297,7 +2307,7 @@ begin
           -- --------------------------------------------------------------------
           -- machine extended ISA extensions information --
           when csr_mxisa_c =>
-            -- ISA extended (sub-)extensions --
+            -- extended ISA (sub-)extensions --
             csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr: privileged architecture (!!!)
             csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei: instruction stream sync.
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul: mul/div
