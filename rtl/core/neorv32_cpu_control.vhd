@@ -1533,7 +1533,7 @@ begin
         -- interrupt queue: NEORV32-specific fast interrupts (FIRQ) --
         -- > require manual ACK/clear via mip CSR
         for i in 0 to 15 loop
-          trap_ctrl.irq_buf(irq_firq_0_c + i) <= (trap_ctrl.irq_buf(irq_firq_0_c + i) or firq_i(i)) and csr.mip_firq_nclr(i);
+          trap_ctrl.irq_buf(irq_firq_0_c + i) <= (trap_ctrl.irq_buf(irq_firq_0_c + i) or firq_i(i)) and csr.mie_firq(i) and csr.mip_firq_nclr(i);
         end loop;
 
 
