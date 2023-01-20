@@ -746,9 +746,9 @@ The `mcountinhibit` CSR can be used to halt specific counter CSRs.
 [options="header",grid="rows"]
 |=======================
 | Bit  | Name [C] | R/W | Event
-| 3:31 | _CSR_MCOUNTINHIBIT_HPM3_ : _CSR_MCOUNTINHIBIT_HPM31_ | r/w | **HPMx**: `0` = The `[m]hpmcount*[h]` CSRs will auto-increment according to the configured `mhpmevent*` selector
-| 2    | _CSR_MCOUNTINHIBIT_CY_ | r/w | **CY**: `0` = The `[m]cycle[h]` CSRs will auto-increment with each clock cycle (if CPU is not in sleep state) when set
-| 0    | _CSR_MCOUNTINHIBIT_IR_ | r/w | **IR**: `0` = The `[m]instret[h]` CSRs will auto-increment with each committed instruction when set
+| 3:31 | _CSR_MCOUNTINHIBIT_HPM3_ : _CSR_MCOUNTINHIBIT_HPM31_ | r/w | **HPMx**: Set to `1` to halt `[m]hpmcount*[h]`; hardwired to zero if `Zihpm` ISA extension is disabled
+| 2    | _CSR_MCOUNTINHIBIT_CY_ | r/w | **CY**: Set to `1` to halt `[m]cycle[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
+| 0    | _CSR_MCOUNTINHIBIT_IR_ | r/w | **IR**: Set to `1` to halt `[m]instret[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
 |=======================
 
 

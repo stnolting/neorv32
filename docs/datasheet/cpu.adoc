@@ -229,8 +229,7 @@ ISA extension. When the CPU is in sleep mode, all CPU-internal operations are st
 Note that this does _not affect_ the operation of any peripheral/IO modules like interfaces and timers. Furthermore,
 the CPU will continue to buffer/enqueue all incoming interrupt requests.
 
-The CPU will leave sleep mode as soon as any interrupt source becomes _pending_. This requires that interrupts are globally
-enabled by setting `<<_mstatus>>.mie` and that at least one interrupt source is enabled in <<_mie>>.
+The CPU will leave sleep mode as soon as any interrupt source becomes _pending_.
 
 [IMPORTANT]
 If sleep mode is entered without at least one enabled interrupt source the CPU will be _permanently_ halted.
@@ -866,7 +865,7 @@ the second highest priority will get serviced and so on until no further interru
 
 .Interrupts when in User-Mode
 [IMPORTANT]
-IF the core is currently operating in less privileged user-mode, (machine-mode) interrupts are globally enabled
+If the core is currently operating in less privileged user-mode, (machine-mode) interrupts are globally enabled
 even if <<_mstatus>>`.mie` is cleared.
 
 .Interrupt Signal Requirements - Standard RISC-V Interrupts
