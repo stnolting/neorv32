@@ -102,7 +102,7 @@ int main (void)
 
 
   { /* *****  NEORV32-SPECIFIC ***** */
-    neorv32_cpu_dint(); // no interrupt, thanks
+    neorv32_cpu_csr_write(CSR_MIE, 0); // no interrupt, thanks
     neorv32_rte_setup(); // capture all exceptions and give debug information, ho hw flow control
     neorv32_uart0_setup(19200, PARITY_NONE, FLOW_CONTROL_NONE);
     // check available hardware extensions and compare with compiler flags
@@ -118,7 +118,7 @@ int main (void)
     #warning DHRYSTONE HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_DHRYSTONE clean_all exe<< to compile it.
 
     // inform the user if you are actually executing this
-    neorv32_uart0_printf("ERROR! CoreMark has not been compiled. Use >>make USER_FLAGS+=-DRUN_COREMARK clean_all exe<< to compile it.\n");
+    neorv32_uart0_printf("ERROR! DhryStone has not been compiled. Use >>make USER_FLAGS+=-RUN_DHRYSTONE clean_all exe<< to compile it.\n");
 
     while(1);
 #endif
@@ -195,7 +195,7 @@ int main (void)
 */
 
   { /* *****  NEORV32-SPECIFIC ***** */
-    Begin_Time = (long)neorv32_cpu_get_systime();
+    Begin_Time = (long)neorv32_mtime_get_time();
   } /* ***** /NEORV32-SPECIFIC ***** */
 
   for (Run_Index = 1; Run_Index <= Number_Of_Runs; ++Run_Index)
@@ -262,7 +262,7 @@ int main (void)
 */
 
   { /* *****  NEORV32-SPECIFIC ***** */
-    End_Time = (long)neorv32_cpu_get_systime();
+    End_Time = (long)neorv32_mtime_get_time();
   } /* ***** /NEORV32-SPECIFIC ***** */
   
 

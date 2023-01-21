@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -87,11 +87,8 @@ int main() {
   // this is not required, but keeps us safe
   neorv32_rte_setup();
 
-  // init UART at default baud rate, no parity bits, ho hw flow control
+  // setup UART at default baud rate, no parity bits, no HW flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
-
-  // check available hardware extensions and compare with compiler flags
-  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
   // print project logo via UART
   neorv32_rte_print_logo();

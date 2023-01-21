@@ -42,8 +42,6 @@
 #define neorv32_cpu_h
 
 // prototypes
-int      neorv32_cpu_irq_enable(uint8_t irq_sel);
-int      neorv32_cpu_irq_disable(uint8_t irq_sel);
 uint64_t neorv32_cpu_get_cycle(void);
 void     neorv32_cpu_set_mcycle(uint64_t value);
 uint64_t neorv32_cpu_get_instret(void);
@@ -67,7 +65,7 @@ extern void __attribute__ ((weak)) __neorv32_crt0_after_main(int32_t return_code
 
 
 /**********************************************************************//**
- * Conditional store unsigned word to address space.
+ * Store unsigned word to address space.
  *
  * @note An unaligned access address will raise an alignment exception.
  *
@@ -237,6 +235,34 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_
 
 
 /**********************************************************************//**
+ * Set bit(s) in CPU control and status register (CSR).
+ *
+ * @param[in] csr_id ID of CSR to write. See #NEORV32_CSR_enum.
+ * @param[in] mask Bit mask (high-active) to set bits (uint32_t).
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_cpu_csr_set(const int csr_id, uint32_t mask) {
+
+  uint32_t csr_data = mask;
+
+  asm volatile ("csrs %[input_i], %[input_j]" :  : [input_i] "i" (csr_id), [input_j] "r" (csr_data));
+}
+
+
+/**********************************************************************//**
+ * Clear bit(s) in CPU control and status register (CSR).
+ *
+ * @param[in] csr_id ID of CSR to write. See #NEORV32_CSR_enum.
+ * @param[in] mask Bit mask (high-active) to clear bits (uint32_t).
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int csr_id, uint32_t mask) {
+
+  uint32_t csr_data = mask;
+
+  asm volatile ("csrc %[input_i], %[input_j]" :  : [input_i] "i" (csr_id), [input_j] "r" (csr_data));
+}
+
+
+/**********************************************************************//**
  * Put CPU into "sleep" mode.
  *
  * @note This function executes the WFI instruction.
@@ -249,28 +275,6 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_
 inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
 
   asm volatile ("wfi");
-}
-
-
-/**********************************************************************//**
- * Enable global CPU interrupts (via MIE flag in mstatus CSR).
- *
- * @note Interrupts are always enabled when the CPU is in user-mode.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_eint(void) {
-
-  asm volatile ("csrrsi zero, mstatus, %0" : : "i" (1 << CSR_MSTATUS_MIE));
-}
-
-
-/**********************************************************************//**
- * Disable global CPU interrupts (via MIE flag in mstatus CSR).
- *
- * @note Interrupts are always enabled when the CPU is in user-mode.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_dint(void) {
-
-  asm volatile ("csrrci zero, mstatus, %0" : : "i" (1 << CSR_MSTATUS_MIE));
 }
 
 

@@ -482,25 +482,21 @@ and placed right before the actual application code so it gets executed right af
 The `crt0.S` start-up performs the following operations:
 
 [start=1]
-. Disable interrupts globally by clearing <<_mstatus>> (including `mie`).
-. Initialize all integer registers `x1 - x31` (or just `x1 - x15` when using the `E` CPU extension is enabled) to a defined value.
-. Initialize all CPU core CSRs and also install a default "dummy" trap handler for _all_ exceptions. This is used for the very early boot
-phase where the application might not provide a trap handling yet.
-** Clear <<_mstatus>>`.
-** Clear <<_mie>> disabling all interrupt sources and clearing all pending interrupts.
-** Clear <<_cycleh>> and <<_instreth>> counter CSRs.
+. Clear <<_mstatus>>.
+. Clear <<_mie>> disabling all interrupt sources.
+. Install an early-boot dummy trap handler to <<_mtvec>>.
 . Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
-during the early boot phase.
-. Clear the `.bss` section defined by the linker script.
-. Copy read-only data from the `.text` section to the `.data` section to set initialized variables.
-. Call and execute all _constructors_ (if there are any).
+. Initialize all integer register `x1 - x31` (only `x1 - x15` if the `E` CPU extension is enabled).
+. Setup `.data` section to configure initialized variables.
+. Clear the `.bss` section.
+. Call all _constructors_ (if there are any).
 . Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
 . If `main` returns:
-** interrupts are disabled by clearing all IRQ sources <<_mie>.
-** `mains`'s return value is copied to the <<_mscratch>> CSR to allow inspection by the on-chip debugger.
-** call and execute all _destructors_ (if there are any).
-** an optional <<_after_main_handler>> is called (if defined at all).
-** the CPU enters sleep mode (using the `wfi` instruction) or remains in an endless loop (if `wfi` "returns").
+** Tnterrupts are disabled by clearing <<_mie>>.
+** `mains`'s return value is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
+** Call all _destructors_ (if there are any).
+** An optional <<_after_main_handler>> is called (if defined at all).
+** The CPU enters sleep mode (using the `wfi` instruction) or remains in an endless loop (if `wfi` "returns").
 
 .Bootloader Start-Up Code
 [NOTE]

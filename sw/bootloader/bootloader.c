@@ -305,10 +305,12 @@ int main(void) {
 
   // Configure machine system timer interrupt
   if (neorv32_mtime_available()) {
+    NEORV32_MTIME.TIME_LO = 0;
+    NEORV32_MTIME.TIME_HI = 0;
     NEORV32_MTIME.TIMECMP_LO = NEORV32_SYSINFO.CLK/4;
     NEORV32_MTIME.TIMECMP_HI = 0;
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate MTIME IRQ source
-    neorv32_cpu_eint(); // enable global interrupts
+    neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
   }
 
 
@@ -458,7 +460,7 @@ void print_help(void) {
 void start_app(int boot_xip) {
 
   // deactivate global IRQs
-  neorv32_cpu_dint();
+  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
   register uint32_t app_base = NEORV32_SYSINFO.ISPACE_BASE; // default = start at beginning of IMEM
 #if (XIP_EN != 0)
@@ -698,7 +700,7 @@ void system_error(uint8_t err_code) {
   PRINT_TEXT("\a\nERR_"); // output error code with annoying bell sound
   PRINT_TEXT(error_message[err_code]);
 
-  neorv32_cpu_dint(); // deactivate IRQs
+  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // deactivate IRQs
 
   // permanently light up status LED
 #if (STATUS_LED_EN != 0)

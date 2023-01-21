@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -97,7 +97,7 @@ int neorv32_xirq_setup(void) {
 void neorv32_xirq_global_enable(void) {
 
   // enable XIRQ fast interrupt channel
-  neorv32_cpu_irq_enable(XIRQ_FIRQ_ENABLE);
+  neorv32_cpu_csr_set(CSR_MIE, 1 << XIRQ_FIRQ_ENABLE);
 }
 
 
@@ -107,7 +107,7 @@ void neorv32_xirq_global_enable(void) {
 void neorv32_xirq_global_disable(void) {
 
   // enable XIRQ fast interrupt channel
-  neorv32_cpu_irq_disable(XIRQ_FIRQ_ENABLE);
+  neorv32_cpu_csr_clr(CSR_MIE, 1 << XIRQ_FIRQ_ENABLE);
 }
 
 
@@ -123,7 +123,7 @@ int neorv32_xirq_get_num(void) {
 
   if (neorv32_xirq_available()) {
 
-    neorv32_cpu_irq_disable(XIRQ_FIRQ_ENABLE); // make sure XIRQ cannot fire
+    neorv32_cpu_csr_clr(CSR_MIE, 1 << XIRQ_FIRQ_ENABLE); // make sure XIRQ cannot fire
     NEORV32_XIRQ.IER = 0xffffffff; // try to set all enable flags
     enable = NEORV32_XIRQ.IER; // read back actually set flags
 

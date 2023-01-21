@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -93,8 +93,8 @@ int main() {
   neorv32_gptmr_setup(CLK_PRSC_8, 1, NEORV32_SYSINFO.CLK / (8 * 2));
 
   // enable interrupt
-  neorv32_cpu_irq_enable(GPTMR_FIRQ_ENABLE); // enable GPTMR FIRQ channel
-  neorv32_cpu_eint(); // enable global interrupt flag
+  neorv32_cpu_csr_set(CSR_MIE, 1 << GPTMR_FIRQ_ENABLE); // enable GPTMR FIRQ channel
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 
 
   // go to sleep mode and wait for interrupt

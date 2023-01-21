@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -84,8 +84,11 @@ int main() {
   // configure trigger module
   uint32_t trig_addr = (uint32_t)(&dummy_function);
   neorv32_cpu_csr_write(CSR_TDATA2, trig_addr); // trigger address
-  neorv32_cpu_csr_write(CSR_TDATA1, (1<<2)); // set 'exe': enable trigger
   neorv32_uart0_printf("Trigger address set to 0x%x.\n", trig_addr);
+
+  neorv32_cpu_csr_write(CSR_TDATA1, (1 <<  2) | // exe = 1: enable trigger module operation
+                                    (0 << 12) | // action = 0: raise ebereak exception but do not enter debug-mode
+                                    (0 << 27)); // dnode = 0: no exclusive access to trigger module from debug-mode
 
   neorv32_uart0_printf("Calling dummy function... (this will cause the EBREAK exception)\n");
   // call function - this will cause the trigger module to fire, which will result in an EBREAK
@@ -103,5 +106,5 @@ int main() {
  **************************************************************************/
 void __attribute__ ((noinline)) dummy_function(void) {
 
-  neorv32_uart0_printf("Hello from the dummy program!\n");
+  neorv32_uart0_printf("Hello from the dummy function!\n");
 }
