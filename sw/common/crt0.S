@@ -35,74 +35,59 @@
 .file "crt0.S"
 .section .text.crt0
 .balign 4
-.global _start
+.global __crt0_entry
 .global __crt0_main_exit
 
-
-_start:
+__crt0_entry:
 .cfi_startproc
 .cfi_undefined ra
 
-
 // ************************************************************************************************
-// We need to ensure interrupts are globally disabled at start. This is required if this code
+// We need to ensure interrupts are completely disabled at start. This is required if this code
 // is part of a program uploaded by the on-chip debugger (potentionally taking control from the
 // bootloader). We setup a new stack pointer here and WE DO NOT WANT TO trap to an outdated trap
 // handler with a modified stack pointer.
 // ************************************************************************************************
-  csrrwi zero, mstatus, 0 // clear mstatus; disable global interrupt flag
-
-
-// ************************************************************************************************
-// Setup pointers using linker script symbols
-// ************************************************************************************************
-__crt0_pointer_init:
-  .option push
-  .option norelax
-
-  la sp, __crt0_stack_begin // stack pointer
-  la gp, __global_pointer$  // global pointer
-
-  .option pop
+  csrrwi zero, mstatus, 0 // clear mstatus; disable machine-level interrupts
 
 
 // ************************************************************************************************
 // Setup CPU core CSRs
 // ************************************************************************************************
 __crt0_cpu_csr_init:
-  la   x10,   __crt0_trap_handler // configure early-boot trap handler
-  csrw mtvec, x10
-
-  csrw mstatus,   zero // also disables IRQs globally
-  csrw mie,       zero // disable all interrupt sources; also clears all pending IRQs
-
-  csrw mcycle,    zero // reset cycle counter
-  csrw mcycleh,   zero
-  csrw minstret,  zero // reset instructions-retired counter
-  csrw minstreth, zero
+  csrw mie,   zero                // disable all interrupt sources
+  la   x1,    __crt0_trap_handler // configure early-boot trap handler
+  csrw mtvec, x1
 
 
 // ************************************************************************************************
 // Initialize integer register file
 // ************************************************************************************************
+__crt0_pointer_init:
+  .option push
+  .option norelax
+  // Setup pointers using linker script symbols
+  la sp, __crt0_stack_begin // stack pointer
+  la gp, __global_pointer$  // global pointer
+  .option pop
+
 __crt0_reg_file_init:
 //addi  x0, x0, 0 // hardwired to zero
-//addi  x1, x0, 0 // return address; implicitly initialized within crt0
+//addi  x1, x0, 0 // implicitly initialized within crt0
 //addi  x2, x0, 0 // stack pointer sp
 //addi  x3, x0, 0 // global pointer gp
   addi  x4, x0, 0
   addi  x5, x0, 0
   addi  x6, x0, 0
   addi  x7, x0, 0
-//addi  x8, x0, 0 // implicitly initialized within crt0
-//addi  x9, x0, 0 // implicitly initialized within crt0
+  addi  x8, x0, 0
+  addi  x9, x0, 0
 //addi x10, x0, 0 // implicitly initialized within crt0
 //addi x11, x0, 0 // implicitly initialized within crt0
 //addi x12, x0, 0 // implicitly initialized within crt0
 //addi x13, x0, 0 // implicitly initialized within crt0
 //addi x14, x0, 0 // implicitly initialized within crt0
 //addi x15, x0, 0 // implicitly initialized within crt0
-
 #ifndef __riscv_32e // initialize upper half (if E extension is not implemented)
   addi x16, x0, 0
   addi x17, x0, 0
@@ -169,7 +154,7 @@ __crt0_call_constructors:
 
 __crt0_call_constructors_loop:
   bge  x8, x9, __crt0_call_constructors_loop_end
-  lw   x1, 0(s3)
+  lw   x1, 0(x8)
   jalr x1, 0(x1)
   addi x8, x8, 4
   j    __crt0_call_constructors_loop
@@ -182,13 +167,13 @@ __crt0_call_constructors_loop_end:
 // Setup arguments and call main function
 // ************************************************************************************************
 __crt0_main_entry:
-  addi x10, zero, 0       // x10 = a0 = argc = 0
-  addi x11, zero, 0       // x11 = a1 = argv = 0
-  jal  x1,  main          // call actual app's main function
+  addi x10, zero, 0 // x10 = a0 = argc = 0
+  addi x11, zero, 0 // x11 = a1 = argv = 0
+  jal  x1,  main    // call actual app's main function
 
-__crt0_main_exit:         // main's "return" and "exit" will arrive here
-  csrw mie, zero          // disable all interrupt sources
-  csrw mscratch, a0       // backup main's return code to mscratch (for debugger)
+__crt0_main_exit:   // main's "return" and "exit" will arrive here
+  csrw mie, zero    // disable all interrupt sources
+  csrw mscratch, a0 // backup main's return code to mscratch (for debugger)
 
 
 // ************************************************************************************************
