@@ -129,15 +129,51 @@ inline int __attribute__((deprecated("Use 'neorv32_rte_handler_uninstall()' inst
 
 /**********************************************************************//**
  * Get current system time from time[h] CSR.
- *
  * @note This function requires the MTIME system timer to be implemented.
- *
  * @return Current system time (64 bit).
  **************************************************************************/
 inline uint64_t __attribute__((deprecated("Use 'neorv32_mtime_get_time()' instead."))) neorv32_cpu_get_systime(void) {
   return neorv32_mtime_get_time();
 }
 
+/**********************************************************************//**
+ * Enable global CPU interrupts (via MIE flag in mstatus CSR).
+ * @note Interrupts are always enabled when the CPU is in user-mode.
+ **************************************************************************/
+inline void __attribute__ ((always_inline, deprecated("Use 'neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE)' instead."))) neorv32_cpu_eint(void) {
 
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+}
+
+/**********************************************************************//**
+ * Disable global CPU interrupts (via MIE flag in mstatus CSR).
+ * @note Interrupts are always enabled when the CPU is in user-mode.
+ **************************************************************************/
+inline void __attribute__ ((always_inline, deprecated("Use 'neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE)' instead."))) neorv32_cpu_dint(void) {
+
+  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+}
+
+/**********************************************************************//**
+ * Enable specific interrupt source.
+ * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
+ * @return 0 if success, 1 if error (invalid irq_sel).
+ **************************************************************************/
+inline int __attribute__((deprecated("Use 'neorv32_cpu_csr_set(CSR_MSTATUS, 1 << channel)' instead."))) neorv32_cpu_irq_enable(uint8_t irq_sel) {
+
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << irq_sel);
+  return 0;
+}
+
+/**********************************************************************//**
+ * Disable specific interrupt source.
+ * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
+ * @return 0 if success, 1 if error (invalid irq_sel).
+ **************************************************************************/
+inline int __attribute__((deprecated("Use 'neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << channel)' instead."))) neorv32_cpu_irq_disable(uint8_t irq_sel) {
+
+  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << irq_sel);
+  return 0;
+}
 
 #endif // neorv32_legacy_h

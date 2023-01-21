@@ -65,73 +65,12 @@
 /**********************************************************************//**
  * >Private< helper functions.
  **************************************************************************/
-static int __neorv32_cpu_irq_id_check(uint8_t irq_sel);
 static uint32_t __neorv32_cpu_pmp_cfg_read(uint32_t index);
 static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data);
 
 
 /**********************************************************************//**
- * Private function: Check IRQ id.
- *
- * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
- * @return 0 if success, 1 if error (invalid irq_sel).
- **************************************************************************/
-static int __neorv32_cpu_irq_id_check(uint8_t irq_sel) {
-
-  if ((irq_sel == CSR_MIE_MSIE) || (irq_sel == CSR_MIE_MTIE) || (irq_sel == CSR_MIE_MEIE) ||
-     ((irq_sel >= CSR_MIE_FIRQ0E) && (irq_sel <= CSR_MIE_FIRQ15E))) {
-    return 0;
-  }
-  else {
-    return 1;
-  }
-}
-
-
-/**********************************************************************//**
- * Enable specific CPU interrupt.
- *
- * @note Interrupts have to be globally enabled via neorv32_cpu_eint(void), too.
- *
- * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
- * @return 0 if success, 1 if error (invalid irq_sel).
- **************************************************************************/
-int neorv32_cpu_irq_enable(uint8_t irq_sel) {
-
-  // check IRQ id
-  if (__neorv32_cpu_irq_id_check(irq_sel)) {
-    return 1;
-  }
-
-  uint32_t mask = (uint32_t)(1 << irq_sel);
-  asm volatile ("csrrs zero, mie, %0" : : "r" (mask));
-  return 0;
-}
-
-
-/**********************************************************************//**
- * Disable specific CPU interrupt.
- *
- * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
- * @return 0 if success, 1 if error (invalid irq_sel).
- **************************************************************************/
-int neorv32_cpu_irq_disable(uint8_t irq_sel) {
-
-  // check IRQ id
-  if (__neorv32_cpu_irq_id_check(irq_sel)) {
-    return 1;
-  }
-
-  uint32_t mask = (uint32_t)(1 << irq_sel);
-  asm volatile ("csrrc zero, mie, %0" : : "r" (mask));
-  return 0;
-}
-
-
-/**********************************************************************//**
- * Get cycle count from cycle[h].
- *
- * @note The cycle[h] CSR is shadowed copy of the mcycle[h] CSR.
+ * Get cycle counter from cycle[h].
  *
  * @return Current cycle counter (64 bit).
  **************************************************************************/
@@ -160,7 +99,7 @@ uint64_t neorv32_cpu_get_cycle(void) {
 
 
 /**********************************************************************//**
- * Set mcycle[h] counter.
+ * Set machine cycle counter mcycle[h].
  *
  * @param[in] value New value for mcycle[h] CSR (64-bit).
  **************************************************************************/
@@ -173,6 +112,7 @@ void neorv32_cpu_set_mcycle(uint64_t value) {
 
   cycles.uint64 = value;
 
+  // prevent low-to-high word overflow while writing
   neorv32_cpu_csr_write(CSR_MCYCLE,  0);
   neorv32_cpu_csr_write(CSR_MCYCLEH, cycles.uint32[1]);
   neorv32_cpu_csr_write(CSR_MCYCLE,  cycles.uint32[0]);
@@ -183,8 +123,6 @@ void neorv32_cpu_set_mcycle(uint64_t value) {
 
 /**********************************************************************//**
  * Get retired instructions counter from instret[h].
- *
- * @note The instret[h] CSR is shadowed copy of the instret[h] CSR.
  *
  * @return Current instructions counter (64 bit).
  **************************************************************************/
@@ -213,7 +151,7 @@ uint64_t neorv32_cpu_get_instret(void) {
 
 
 /**********************************************************************//**
- * Set retired instructions counter minstret[h].
+ * Set machine retired instructions counter minstret[h].
  *
  * @param[in] value New value for mcycle[h] CSR (64-bit).
  **************************************************************************/
@@ -226,6 +164,7 @@ void neorv32_cpu_set_minstret(uint64_t value) {
 
   cycles.uint64 = value;
 
+  // prevent low-to-high word overflow while writing
   neorv32_cpu_csr_write(CSR_MINSTRET,  0);
   neorv32_cpu_csr_write(CSR_MINSTRETH, cycles.uint32[1]);
   neorv32_cpu_csr_write(CSR_MINSTRET,  cycles.uint32[0]);
@@ -237,8 +176,9 @@ void neorv32_cpu_set_minstret(uint64_t value) {
 /**********************************************************************//**
  * Delay function using busy wait.
  *
- * @note This function uses MTIME as time base. A simple (imprecise) ASM loop
- * is used as fall back if the system timer is not implemented.
+ * @note This function uses the cycle CPU counter if available. Otherwise
+ * the MTIME system timer is used if available. A simple loop is used as
+ * alternative fall-back (imprecise!).
  *
  * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
  **************************************************************************/
@@ -246,27 +186,32 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
 
   uint32_t clock = NEORV32_SYSINFO.CLK; // clock ticks per second
   clock = clock / 1000; // clock ticks per ms
-
   uint64_t wait_cycles = ((uint64_t)clock) * ((uint64_t)time_ms);
   uint64_t tmp = 0;
 
-  // MTIME available?
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
+  // use CYCLE CSRs
+  // -------------------------------------------
+  if ( (neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZICNTR)) && // cycle counter available?
+       ((neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT) & (1<<CSR_MCOUNTINHIBIT_CY)) == 0) ) { // counter is running?
 
-    // use MTIME machine timer
-    tmp = neorv32_mtime_get_time() + wait_cycles;
-    while(1) {
-      if (neorv32_mtime_get_time() >= tmp) {
-        break;
-      }
-    }
+    tmp = neorv32_cpu_get_cycle() + wait_cycles;
+    while (neorv32_cpu_get_cycle() < tmp);
   }
+
+  // use MTIME machine timer
+  // -------------------------------------------
+  else if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_MTIME)) { // MTIME timer available?
+
+    tmp = neorv32_mtime_get_time() + wait_cycles;
+    while (neorv32_mtime_get_time() < tmp);
+  }
+
+  // simple loop as fall-back (imprecise!)
+  // -------------------------------------------
   else {
-    // use ASM loop
-    // warning! not really precise (especially if M extensions is not available)!
 
     const uint32_t loop_cycles_c = 16; // clock cycles per iteration of the ASM loop
-    uint32_t iterations = (uint32_t)(wait_cycles / loop_cycles_c); // M (div) extension would be nice here!
+    uint32_t iterations = (uint32_t)(wait_cycles / loop_cycles_c);
 
     asm volatile (" .balign 4                                        \n" // make sure this is 32-bit aligned
                   " __neorv32_cpu_delay_ms_start:                    \n"
@@ -373,7 +318,7 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
   }
 
   neorv32_cpu_csr_write(CSR_PMPCFG0, neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xffffff00); // disable entry 0
-  neorv32_cpu_csr_write(CSR_PMPADDR0, -1UL); // try to set all bits
+  neorv32_cpu_csr_write(CSR_PMPADDR0, -1); // try to set all bits
   uint32_t tmp = neorv32_cpu_csr_read(CSR_PMPADDR0);
 
   // no bits set at all -> fail
@@ -401,7 +346,7 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
  * @warning Only TOR mode is supported.
  *
  * @note This function requires the PMP CPU extension.
- * @note Only use available PMP regions. Check before using neorv32_cpu_pmp_get_regions(void).
+ * @note Only use available PMP regions. Check before via neorv32_cpu_pmp_get_regions(void).
  *
  * @param[in] index Region number (index, 0..PMP_NUM_REGIONS-1).
  * @param[in] base Region base address.
@@ -467,9 +412,7 @@ int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint8_t conf
 
 
 /**********************************************************************//**
- * Internal helper function: Read PMP configuration register 0..15
- *
- * @warning This function requires the PMP CPU extension.
+ * Internal helper function: Read PMP configuration register 0..15.
  *
  * @param[in] index PMP CFG configuration register ID (0..15).
  * @return PMP CFG read data.
@@ -477,7 +420,7 @@ int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint8_t conf
 static uint32_t __neorv32_cpu_pmp_cfg_read(uint32_t index) {
 
   uint32_t tmp = 0;
-  switch(index & 3) {
+  switch (index & 3) {
     case 0: tmp = neorv32_cpu_csr_read(CSR_PMPCFG0); break;
     case 1: tmp = neorv32_cpu_csr_read(CSR_PMPCFG1); break;
     case 2: tmp = neorv32_cpu_csr_read(CSR_PMPCFG2); break;
@@ -490,16 +433,14 @@ static uint32_t __neorv32_cpu_pmp_cfg_read(uint32_t index) {
 
 
 /**********************************************************************//**
- * Internal helper function: Write PMP configuration register 0..4
- *
- * @warning This function requires the PMP CPU extension.
+ * Internal helper function: Write PMP configuration register 0..3.
  *
  * @param[in] index PMP CFG configuration register ID (0..4).
  * @param[in] data PMP CFG write data.
  **************************************************************************/
 static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data) {
 
-  switch(index & 3) {
+  switch (index & 3) {
     case 0: neorv32_cpu_csr_write(CSR_PMPCFG0, data); break;
     case 1: neorv32_cpu_csr_write(CSR_PMPCFG1, data); break;
     case 2: neorv32_cpu_csr_write(CSR_PMPCFG2, data); break;
@@ -512,8 +453,6 @@ static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data) {
 /**********************************************************************//**
  * Hardware performance monitors (HPM): Get number of available HPM counters.
  *
- * @warning This function overrides all available mhpmcounter* CSRs.
- *
  * @return Returns number of available HPM counters (0..29).
  **************************************************************************/
 uint32_t neorv32_cpu_hpm_get_num_counters(void) {
@@ -523,72 +462,25 @@ uint32_t neorv32_cpu_hpm_get_num_counters(void) {
     return 0;
   }
 
-  // inhibit all HPM counters
-  uint32_t tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
-  tmp |= 0xfffffff8;
+  uint32_t mcountinhibit_tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
+
+  // try to set all HPM bits
+  uint32_t tmp = mcountinhibit_tmp;
+  tmp |= 0xfffffff8U;
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp);
 
-  // try setting all mhpmcounter* CSRs to 1
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER15, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER16, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER17, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER18, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER19, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER20, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER21, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER22, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER23, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER24, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER25, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER26, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER27, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER28, 1);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER29, 1);
+  // count actually set bits
+  uint32_t cnt = 0;
+  tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT) >> 3; // remove IR, TM and CY
+  while (tmp) {
+    cnt++;
+    tmp >>= 1;
+  }
 
-  // sum up all written ones (only available HPM counter CSRs will return =! 0)
-  uint32_t num_hpm_cnts = 0;
+  // restore
+  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, mcountinhibit_tmp);
 
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER3);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER4);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER5);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER6);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER7);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER8);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER9);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER10);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER11);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER12);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER13);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER14);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER15);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER16);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER17);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER18);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER19);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER20);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER21);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER22);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER23);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER24);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER25);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER26);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER27);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER28);
-  num_hpm_cnts += neorv32_cpu_csr_read(CSR_MHPMCOUNTER29);
-
-  return num_hpm_cnts;
+  return cnt;
 }
 
 
@@ -601,7 +493,7 @@ uint32_t neorv32_cpu_hpm_get_num_counters(void) {
  **************************************************************************/
 uint32_t neorv32_cpu_hpm_get_size(void) {
 
-  uint32_t tmp, size, i;
+  uint32_t tmp, cnt;
 
   // HPMs implemented at all?
   if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIHPM)) == 0) {
@@ -613,32 +505,33 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
   tmp |= 1 << CSR_MCOUNTINHIBIT_HPM3;
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp);
 
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0xffffffff);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER3H, 0xffffffff);
+  // try to set all 64 counter bits
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER3, -1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER3H, -1);
 
-  if (neorv32_cpu_csr_read(CSR_MHPMCOUNTER3H) == 0) {
-    size = 0;
-    tmp = neorv32_cpu_csr_read(CSR_MHPMCOUNTER3);
-  }
-  else {
-    size = 32;
-    tmp = neorv32_cpu_csr_read(CSR_MHPMCOUNTER3H);
-  }
+  // count actually set bits
+  cnt = 0;
 
-  for (i=0; i<32; i++) {
-    if (tmp & (1<<i)) {
-      size++;
-    }
+  tmp = neorv32_cpu_csr_read(CSR_MHPMCOUNTER3);
+  while (tmp) {
+    cnt++;
+    tmp >>= 1;
   }
 
-  return size;
+  tmp = neorv32_cpu_csr_read(CSR_MHPMCOUNTER3H);
+  while (tmp) {
+    cnt++;
+    tmp >>= 1;
+  }
+
+  return cnt;
 }
 
 
 /**********************************************************************//**
  * Switch from privilege mode MACHINE to privilege mode USER.
  *
- * @warning This function requires the U ISA extension to be implemented.
+ * @note This function will **return** with the CPU being in user mode.
  **************************************************************************/
 void __attribute__((naked,noinline)) neorv32_cpu_goto_user_mode(void) {
 
