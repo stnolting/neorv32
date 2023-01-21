@@ -107,8 +107,8 @@ int main() {
   // this IRQ will trigger when half of the configured WDT timeout interval has been reached
   neorv32_uart0_puts("Configuring WDT interrupt...\n");
   neorv32_rte_handler_install(WDT_RTE_ID, wdt_firq_handler);
-  neorv32_cpu_irq_enable(WDT_FIRQ_ENABLE);
-  neorv32_cpu_eint(); // enable global interrupt flag
+  neorv32_cpu_csr_set(CSR_MIE, 1 << WDT_FIRQ_ENABLE); // enable WDT FIRQ channel
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 
 
   // compute WDT timeout value

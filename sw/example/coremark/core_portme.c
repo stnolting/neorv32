@@ -149,8 +149,8 @@ portable_init(core_portable *p, int *argc, char *argv[])
 #endif
 {
   /* NEORV32-specific */
-  neorv32_cpu_dint(); // no interrupt, thanks
-  neorv32_rte_setup(); // capture all exceptions and give debug information, ho hw flow control
+  neorv32_cpu_csr_write(CSR_MIE, 0); // no interrupt, thanks
+  neorv32_rte_setup(); // capture all exceptions and give debug information, no HW flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
 

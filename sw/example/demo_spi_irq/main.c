@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -105,8 +105,8 @@ int main()
 
   // enable IRQ system
   neorv32_rte_handler_install(SPI_RTE_ID, spi_irq_handler); // SPI to RTE
-  neorv32_cpu_irq_enable(SPI_FIRQ_ENABLE);    // FIRQ6: SPI Interrupt
-  neorv32_cpu_eint();                         // enable global interrupts
+  neorv32_cpu_csr_set(CSR_MIE, 1 << SPI_FIRQ_ENABLE); // enable SPI FIRQ
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 
   // SPI
     // SPI Control

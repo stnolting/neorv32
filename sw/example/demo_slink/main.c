@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -72,7 +72,7 @@ int main() {
   // capture all exceptions and give debug info via UART0
   neorv32_rte_setup();
 
-  // init UART0 at default baud rate, no parity bits, no hw flow control
+  // setup UART0 at default baud rate, no parity bits, no HW flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // check if UART0 unit is implemented at all
@@ -110,9 +110,9 @@ int main() {
   // NEORV32 runtime environment: install SLINK FIRQ handlers
   neorv32_rte_handler_install(SLINK_RX_RTE_ID, slink_rx_firq_handler);
   neorv32_rte_handler_install(SLINK_TX_RTE_ID, slink_tx_firq_handler);
-  neorv32_cpu_irq_enable(SLINK_RX_FIRQ_ENABLE); // enable SLINK RX FIRQ
-  neorv32_cpu_irq_enable(SLINK_TX_FIRQ_ENABLE); // enable SLINK RX FIRQ
-  neorv32_cpu_eint(); // enable global interrupt flag
+  neorv32_cpu_csr_set(CSR_MIE, 1 << SLINK_RX_FIRQ_ENABLE); // enable SLINK RX FIRQ
+  neorv32_cpu_csr_set(CSR_MIE, 1 << SLINK_TX_FIRQ_ENABLE); // enable SLINK RX FIRQ
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 
 
   // do some demo transmissions
