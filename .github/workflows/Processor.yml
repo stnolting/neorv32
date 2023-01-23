@@ -78,6 +78,22 @@ jobs:
         cmd: ./sim/run.py --ci-mode -v
 
 
+  Formal-Container:
+    runs-on: ubuntu-latest
+
+    name: '🛳️ Container | Formal'
+
+    steps:
+
+    - name: '🧰 Repository Checkout'
+      uses: actions/checkout@v3
+
+    - name: '🚧 Run Processor Hardware Formal Tests with GHDL and SymbiYosys'
+      uses: docker://ghcr.io/hdl/amd64/formal/all
+      with:
+        args: ./formal/test.sh prove
+
+
 # Windows:
 #   runs-on: windows-latest
 #   strategy:
