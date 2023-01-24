@@ -105,7 +105,7 @@ begin
   );
 
 
-  ASSUMES : if ASSUMES generate
+  CONSTRAIN : if ASSUMES generate
 
     assume no_read_write_during_reset;
     assume no_read_write_until_write_resp;
