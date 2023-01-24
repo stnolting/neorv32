@@ -7,6 +7,12 @@ MAKE=make
 cd $(dirname "$0")
 
 case "$1" in
+  bmc)
+    true
+  ;;
+  cover)
+    true
+  ;;
   prove)
     true
   ;;
