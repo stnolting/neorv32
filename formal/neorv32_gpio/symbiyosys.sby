@@ -15,10 +15,11 @@ bmc: abc bmc3
 prove: aiger suprove
 
 [script]
-ghdl --std=08 --work=neorv32 neorv32_package.vhd neorv32_gpio.vhd neorv32_gpio_vu.vhd -e neorv32_gpio
+ghdl --std=08 --work=neorv32 neorv32_package.vhd neorv32_gpio.vhd neorv32_bus_protocol.vhd neorv32_gpio_vu.vhd -e neorv32_gpio
 prep -auto-top
 
 [files]
 ../../rtl/core/neorv32_package.vhd
 ../../rtl/core/neorv32_gpio.vhd
+../lib/neorv32_bus_protocol.vhd
 neorv32_gpio_vu.vhd

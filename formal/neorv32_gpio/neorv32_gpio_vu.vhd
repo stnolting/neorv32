@@ -54,28 +54,12 @@ vunit neorv32_gpio_vu (neorv32_gpio(neorv32_gpio_rtl)) {
   restrict {not rstn_i[*3]; rstn_i[+]}[*1];
 
 
-  -- Some assumptions about the bus interface
-  -- These assumptions are based on the bus interface specification
-  -- in section '3.12.12. Bus Interface' of the neorv32 documentation.
-  -- They should later moved into a separate module for reusability.
+  -- Instantiate bus protocol tester in assume mode
+  bus_protocol : entity work.neorv32_bus_protocol
+  generic map (ASSUMES => true)
+  port map (clk_i, rstn_i, addr_i, rden_i, wren_i, data_i, data_o, ack_o , err_o);
 
-  -- No read / write request during reset
-  assume always (not rstn_i -> not wren_i and not rden_i);
-
-  -- Read / write requests last one cycle only
-  -- There are no new requests until peripheral responds
-  assume always (wren_i -> next (not wren_i and not rden_i until_ ack_o or err_o));
-  assume always (rden_i -> next (not rden_i and not wren_i until_ ack_o or err_o));
-  assume never (wren_i and rden_i);
-
-  -- Signal stability during write bus cycle
-  assume always (wren_i -> next (stable(addr_i) until_ (ack_o or err_o)));
-  assume always (wren_i -> next (stable(data_o) until_ (ack_o or err_o)));
-
-  -- Signal stability during read bus cycle
-  assume always (rden_i -> next (stable(addr_i) until_ (ack_o or err_o)));
-
-  -- @TODO: Remove address restriction
+  -- @TODO: Refine address restriction
   assume always wren_i or rden_i -> addr_i(addr_i'left downto 8) = x"FFFFFF";
 
 
