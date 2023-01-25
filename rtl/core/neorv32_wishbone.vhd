@@ -16,7 +16,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -151,8 +151,8 @@ begin
     cond_sel_string_f(PIPE_MODE, "PIPELINED", "CLASSIC/STANDARD") & " Wishbone protocol, " &
     cond_sel_string_f(boolean(BUS_TIMEOUT /= 0), "auto-timeout (" & integer'image(BUS_TIMEOUT) & " cycles), ", "NO auto-timeout, ") &
     cond_sel_string_f(BIG_ENDIAN, "BIG", "LITTLE") & "-endian byte order, " &
-    cond_sel_string_f(ASYNC_RX, "ASYNC ", "buffered ") & "RX path, " &
-    cond_sel_string_f(ASYNC_TX, "ASYNC ", "buffered ") & "TX path"
+    cond_sel_string_f(ASYNC_RX, "ASYNC ", "registered ") & "RX, " &
+    cond_sel_string_f(ASYNC_TX, "ASYNC ", "registered ") & "TX"
     severity note;
 
   -- no timeout warning --

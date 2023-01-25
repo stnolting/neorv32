@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -86,15 +86,20 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert false report "NEORV32 PROCESSOR CONFIG NOTE: Using DEFAULT platform-agnostic IMEM." severity note;
-  assert not (IMEM_AS_IROM = true)  report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (" & natural'image(IMEM_SIZE) &
-  " bytes), pre-initialized with application (" & natural'image(imem_app_size_c) & " bytes)." severity note;
-  --
-  assert not (IMEM_AS_IROM = false) report "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as blank RAM (" & natural'image(IMEM_SIZE) &
-  " bytes)." severity note;
-  --
-  assert not ((IMEM_AS_IROM = true) and (imem_app_size_c > IMEM_SIZE)) report "NEORV32 PROCESSOR CONFIG ERROR: Application (image = " & natural'image(imem_app_size_c) &
-  " bytes) does not fit into processor-internal IMEM (ROM = " & natural'image(IMEM_SIZE) & " bytes)!" severity error;
+  assert false report
+    "NEORV32 PROCESSOR CONFIG NOTE: Using DEFAULT platform-agnostic IMEM." severity note;
+
+  assert not (IMEM_AS_IROM = true) report
+    "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (" & natural'image(IMEM_SIZE) &
+    " bytes), pre-initialized with application (" & natural'image(imem_app_size_c) & " bytes)." severity note;
+
+  assert not (IMEM_AS_IROM = false) report
+    "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as blank RAM (" & natural'image(IMEM_SIZE) &
+    " bytes)." severity note;
+
+  assert not ((IMEM_AS_IROM = true) and (imem_app_size_c > IMEM_SIZE)) report
+    "NEORV32 PROCESSOR CONFIG ERROR: Application (image = " & natural'image(imem_app_size_c) &
+    " bytes) does not fit into processor-internal IMEM (ROM = " & natural'image(IMEM_SIZE) & " bytes)!" severity error;
 
 
   -- Access Control -------------------------------------------------------------------------
