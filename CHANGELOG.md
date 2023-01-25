@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 25.01.2023 | [**:rocket:1.8.0**](https://github.com/stnolting/neorv32/releases/tag/v1.8.0) | **New release** |
 | 21.01.2023 | 1.7.9.10 | update software framework; :bug: fix bug in constructor calling in `crt0` start-up code; [#478](https://github.com/stnolting/neorv32/pull/478) |
 | 15.01.2023 | 1.7.9.9 | :warning: rework **CPU counters**; remove `mtime_i/o` top entity ports; remove `time[h]` CSRs; [#477](https://github.com/stnolting/neorv32/pull/477) |
 | 14.01.2023 | 1.7.9.8 | minor CPU control edits, optimizations and fixes; [#476](https://github.com/stnolting/neorv32/pull/476) |
