@@ -35,9 +35,11 @@
 .file "crt0.S"
 .section .text.crt0
 .balign 4
+.global _start
 .global __crt0_entry
 .global __crt0_main_exit
 
+_start:
 __crt0_entry:
 .cfi_startproc
 .cfi_undefined ra
