@@ -150,6 +150,12 @@ register. The following table shows the available data registers and their addre
 See the https://github.com/riscv/riscv-debug-spec[RISC-V debug specification] for more information regarding the data
 registers and operations. A local copy can be found in `docs/references`.
 
+[NOTE]
+Most FPGAs are programmed over a JTAG connection itself and support the use of it in user designs with instantiation of
+platform-specific entities. So instead of two JTAG connections, one to program the FPGA and one to debug the core,
+only one connection is needed. See the setups in [`neorv32-setups`](https://github.com/stnolting/neorv32-setups)
+for example implementations.
+
 
 
 <<<
