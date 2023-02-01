@@ -72,11 +72,10 @@ test framework is available in a separate repository: https://github.com/stnolti
 
 This list shows the currently identified issues regarding full RISC-V-compatibility.
 
-.Read-Only "Read-Write" CSRs
+.Pending Interrupts
 [IMPORTANT]
-The NEORV32 <<_misa>> CSR is _read-only_. Hence, ISA capabilities are fixed at synthesis time and cannot be
-enabled/disabled dynamically at runtime. Any machine-mode write access to this CSR is ignored and will _not_
-cause any exceptions or side-effects to maintain RISC-V compatibility.
+An interrupt can only become pending (bit in `mip` becomes set) if the interrupt channel is enabled
+via the according <<_mie>> bit. Clearing a bit in <<_mie>> will also clear the according <<_mip>> bit.
 
 .Physical Memory Protection (PMP)
 [IMPORTANT]
