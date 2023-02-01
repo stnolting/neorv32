@@ -1,4 +1,4 @@
-[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/main/docs/figures/neorv32_logo_front.png)](https://github.com/stnolting/neorv32)
+[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/main/docs/figures/neorv32_logo_riscv.png)](https://github.com/stnolting/neorv32)
 
 # The NEORV32 RISC-V Processor
 

@@ -4,10 +4,10 @@ include::../attrs.adoc[]
 :icons: font
 :imagesdir: img
 :toc: left
-:title-logo-image: neorv32_logo_dark.png[pdfwidth=6.25in,align=center]
+:title-logo-image: neorv32_logo_riscv.png[pdfwidth=6.25in,align=center]
 :favicon: img/icon.png
 
-image::neorv32_logo_transparent.png[align=center]
+image::neorv32_logo.png[align=center]
 
 image::riscv_logo.png[width=350,align=center]
 
