@@ -229,8 +229,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR + debug-mode entry identifier
     cause_nxt     : std_ulogic_vector(6 downto 0);
     epc           : std_ulogic_vector(XLEN-1 downto 0); -- exception program counter
-    db_irq_fire   : std_ulogic; -- set if there is a valid IRQ source in the "enter debug mode" trap buffer
-    db_irq_en     : std_ulogic; -- set if IRQs are allowed in debug mode
     --
     env_start     : std_ulogic; -- start trap handler env
     env_start_ack : std_ulogic; -- start of trap handler acknowledged
@@ -1472,101 +1470,105 @@ begin
 
 
 -- ****************************************************************************************************************************
--- Exception and Interrupt (= Traps) Control
+-- Trap Controller for Interrupts and Exceptions
 -- ****************************************************************************************************************************
+
+  -- Trap Buffer ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  trap_buffer: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      trap_ctrl.exc_buf <= (others => '0');
+      trap_ctrl.irq_buf <= (others => '0');
+    elsif rising_edge(clk_i) then
+      -- exception queue: misaligned load/store/instruction address --
+      trap_ctrl.exc_buf(exc_lalign_c) <= (trap_ctrl.exc_buf(exc_lalign_c) or ma_load_i)          and (not trap_ctrl.env_start_ack);
+      trap_ctrl.exc_buf(exc_salign_c) <= (trap_ctrl.exc_buf(exc_salign_c) or ma_store_i)         and (not trap_ctrl.env_start_ack);
+      trap_ctrl.exc_buf(exc_ialign_c) <= (trap_ctrl.exc_buf(exc_ialign_c) or trap_ctrl.instr_ma) and (not trap_ctrl.env_start_ack);
+
+      -- exception queue: load/store/instruction bus access error --
+      trap_ctrl.exc_buf(exc_laccess_c) <= (trap_ctrl.exc_buf(exc_laccess_c) or be_load_i)          and (not trap_ctrl.env_start_ack);
+      trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or be_store_i)         and (not trap_ctrl.env_start_ack);
+      trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_start_ack);
+
+      -- exception queue: illegal instruction / environment calls --
+      trap_ctrl.exc_buf(exc_m_envcall_c) <= (trap_ctrl.exc_buf(exc_m_envcall_c) or (trap_ctrl.env_call and (    csr.privilege))) and (not trap_ctrl.env_start_ack);
+      trap_ctrl.exc_buf(exc_u_envcall_c) <= (trap_ctrl.exc_buf(exc_u_envcall_c) or (trap_ctrl.env_call and (not csr.privilege))) and (not trap_ctrl.env_start_ack);
+      trap_ctrl.exc_buf(exc_iillegal_c)  <= (trap_ctrl.exc_buf(exc_iillegal_c)  or trap_ctrl.instr_il)                           and (not trap_ctrl.env_start_ack);
+
+      -- exception queue: break point --
+      if (CPU_EXTENSION_RISCV_Sdext = true) then
+        trap_ctrl.exc_buf(exc_break_c) <= (not trap_ctrl.env_start_ack) and (trap_ctrl.exc_buf(exc_break_c) or
+          (hw_trigger_fire and (not csr.tdata1_action)) or -- trigger module fires and enter-debug is disabled
+          (trap_ctrl.break_point and (    csr.privilege) and (not csr.dcsr_ebreakm) and (not debug_ctrl.running)) or -- enter M-mode handler on ebreak in M-mode
+          (trap_ctrl.break_point and (not csr.privilege) and (not csr.dcsr_ebreaku) and (not debug_ctrl.running))); -- enter M-mode handler on ebreak in U-mode
+      else
+        trap_ctrl.exc_buf(exc_break_c) <= (trap_ctrl.exc_buf(exc_break_c) or trap_ctrl.break_point or hw_trigger_fire) and (not trap_ctrl.env_start_ack);
+      end if;
+
+      -- exception queue / interrupt buffer: enter debug mode --
+      if (CPU_EXTENSION_RISCV_Sdext = true) then
+        trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_start_ack);
+        trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_start_ack);
+        trap_ctrl.irq_buf(irq_db_halt_c)  <= debug_ctrl.trig_halt;
+        trap_ctrl.irq_buf(irq_db_step_c)  <= debug_ctrl.trig_step;
+      else
+        trap_ctrl.exc_buf(exc_db_break_c) <= '0';
+        trap_ctrl.exc_buf(exc_db_hw_c)    <= '0';
+        trap_ctrl.irq_buf(irq_db_halt_c)  <= '0';
+        trap_ctrl.irq_buf(irq_db_step_c)  <= '0';
+      end if;
+
+      -- interrupt buffer: RISC-V machine interrupts (high until explicitly acknowledged by module-specific mechanism) --
+      trap_ctrl.irq_buf(irq_msi_irq_c) <= csr.mie_msi and msw_irq_i;
+      trap_ctrl.irq_buf(irq_mei_irq_c) <= csr.mie_mei and mext_irq_i;
+      trap_ctrl.irq_buf(irq_mti_irq_c) <= csr.mie_mti and mtime_irq_i;
+
+      -- interrupt queue: NEORV32-specific FIRQs (require manual ACK/clear via mip CSR) --
+      trap_ctrl.irq_buf(irq_firq_15_c downto irq_firq_0_c) <= ((trap_ctrl.irq_buf(irq_firq_15_c downto irq_firq_0_c) and csr.mip_firq_nclr) or firq_i) and csr.mie_firq;
+    end if;
+  end process trap_buffer;
+
 
   -- Trap Controller ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   trap_controller: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      trap_ctrl.exc_buf   <= (others => '0');
-      trap_ctrl.irq_buf   <= (others => '0');
       trap_ctrl.env_start <= '0';
       trap_ctrl.cause     <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (CPU_EXTENSION_RISCV_Zicsr = true) then
-        -- exception queue: misaligned load/store/instruction address --
-        trap_ctrl.exc_buf(exc_lalign_c) <= (trap_ctrl.exc_buf(exc_lalign_c) or ma_load_i)          and (not trap_ctrl.env_start_ack);
-        trap_ctrl.exc_buf(exc_salign_c) <= (trap_ctrl.exc_buf(exc_salign_c) or ma_store_i)         and (not trap_ctrl.env_start_ack);
-        trap_ctrl.exc_buf(exc_ialign_c) <= (trap_ctrl.exc_buf(exc_ialign_c) or trap_ctrl.instr_ma) and (not trap_ctrl.env_start_ack);
-
-        -- exception queue: load/store/instruction bus access error --
-        trap_ctrl.exc_buf(exc_laccess_c) <= (trap_ctrl.exc_buf(exc_laccess_c) or be_load_i)          and (not trap_ctrl.env_start_ack);
-        trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or be_store_i)         and (not trap_ctrl.env_start_ack);
-        trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_start_ack);
-
-        -- exception queue: illegal instruction / environment calls --
-        trap_ctrl.exc_buf(exc_m_envcall_c) <= (trap_ctrl.exc_buf(exc_m_envcall_c) or (trap_ctrl.env_call and (    csr.privilege))) and (not trap_ctrl.env_start_ack);
-        trap_ctrl.exc_buf(exc_u_envcall_c) <= (trap_ctrl.exc_buf(exc_u_envcall_c) or (trap_ctrl.env_call and (not csr.privilege))) and (not trap_ctrl.env_start_ack);
-        trap_ctrl.exc_buf(exc_iillegal_c)  <= (trap_ctrl.exc_buf(exc_iillegal_c)  or trap_ctrl.instr_il)                           and (not trap_ctrl.env_start_ack);
-
-        -- exception queue: break point --
-        if (CPU_EXTENSION_RISCV_Sdext = true) then
-          trap_ctrl.exc_buf(exc_break_c) <= (not trap_ctrl.env_start_ack) and (trap_ctrl.exc_buf(exc_break_c) or
-            (hw_trigger_fire and (not csr.tdata1_action)) or -- trigger module fires and enter-debug is disabled
-            (trap_ctrl.break_point and (    csr.privilege) and (not csr.dcsr_ebreakm) and (not debug_ctrl.running)) or -- break to machine-trap-handler when in machine mode on "ebreak"
-            (trap_ctrl.break_point and (not csr.privilege) and (not csr.dcsr_ebreaku) and (not debug_ctrl.running))); -- break to machine-trap-handler when in user mode on "ebreak"
-        else
-          trap_ctrl.exc_buf(exc_break_c) <= (trap_ctrl.exc_buf(exc_break_c) or trap_ctrl.break_point or hw_trigger_fire) and (not trap_ctrl.env_start_ack);
+      if (trap_ctrl.env_start = '0') then -- no started trap handler yet
+        if ((trap_ctrl.exc_fire = '1')) or -- exception firing
+           -- trigger IRQ only in EXECUTE or TRAP_ENTER (e.g. during sleep) state to continue execution even on permanent interrupt request
+           ((trap_ctrl.irq_fire = '1') and ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP_ENTER))) then -- IRQ firing
+          trap_ctrl.env_start <= '1'; -- now execute engine can start trap handler
         end if;
-
-        -- exception queue / interrupt buffer: enter debug mode --
-        if (CPU_EXTENSION_RISCV_Sdext = true) then
-          trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_start_ack);
-          trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_start_ack);
-          trap_ctrl.irq_buf(irq_db_halt_c)  <= debug_ctrl.trig_halt;
-          trap_ctrl.irq_buf(irq_db_step_c)  <= debug_ctrl.trig_step;
-        else
-          trap_ctrl.exc_buf(exc_db_break_c) <= '0';
-          trap_ctrl.exc_buf(exc_db_hw_c)    <= '0';
-          trap_ctrl.irq_buf(irq_db_halt_c)  <= '0';
-          trap_ctrl.irq_buf(irq_db_step_c)  <= '0';
+      else -- trap environment ready to start
+        trap_ctrl.cause <= trap_ctrl.cause_nxt; -- capture trap ID
+        if (trap_ctrl.env_start_ack = '1') then -- start of trap handler acknowledged by execute engine
+          trap_ctrl.env_start <= '0';
         end if;
-
-        -- interrupt buffer: machine software/external/timer interrupt --
-        -- > request lines have to stay high until acknowledged by source-specific mechanism!
-        trap_ctrl.irq_buf(irq_msi_irq_c) <= csr.mie_msi and msw_irq_i;
-        trap_ctrl.irq_buf(irq_mei_irq_c) <= csr.mie_mei and mext_irq_i;
-        trap_ctrl.irq_buf(irq_mti_irq_c) <= csr.mie_mti and mtime_irq_i;
-
-        -- interrupt queue: NEORV32-specific fast interrupts (FIRQ) --
-        -- > require manual ACK/clear via mip CSR
-        for i in 0 to 15 loop
-          trap_ctrl.irq_buf(irq_firq_0_c + i) <= (trap_ctrl.irq_buf(irq_firq_0_c + i) or firq_i(i)) and csr.mie_firq(i) and csr.mip_firq_nclr(i);
-        end loop;
-
-
-        -- trap environment control --
-        if (trap_ctrl.env_start = '0') then -- no started trap handler yet
-          if ((trap_ctrl.exc_fire = '1')) or -- sync. exception firing
-             -- trigger IRQs in EXECUTE or TRAP_ENTER (e.g. during sleep) state only to continue execution even on permanent IRQ
-             ((trap_ctrl.irq_fire = '1') and ((execute_engine.state = EXECUTE) or (execute_engine.state = TRAP_ENTER))) then -- async. exception (IRQ) firing
-            trap_ctrl.env_start <= '1'; -- now execute engine can start trap handler
-          end if;
-        else -- trap environment ready to start
-          trap_ctrl.cause <= trap_ctrl.cause_nxt; -- capture trap ID for mcause csr
-          if (trap_ctrl.env_start_ack = '1') then -- start of trap handler acknowledged by execute engine
-            trap_ctrl.env_start <= '0';
-          end if;
-        end if;
-
       end if;
     end if;
   end process trap_controller;
 
-  -- any exception/interrupt? --
+
+  -- Trap Trigger ---------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- any exception? --
   trap_ctrl.exc_fire <= '1' when (or_reduce_f(trap_ctrl.exc_buf) = '1') else '0'; -- sync. exceptions CANNOT be masked
-  trap_ctrl.irq_fire <= '1' when ((or_reduce_f(trap_ctrl.irq_buf) = '1') and -- pending IRQ
-                                  ((csr.mstatus_mie = '1') or (csr.privilege = priv_mode_u_c)) and -- allow IRQs when in M-mode and MIE is set OR when in U-mode (MIE irrelevant)
-                                  (trap_ctrl.db_irq_en = '1')) or -- see below
-                                 (trap_ctrl.db_irq_fire = '1') else '0'; -- debug-mode halt IRQ cannot be masked
 
-  -- NO interrupts when IN debug mode or when IN single-stepping mode --
-  trap_ctrl.db_irq_en <= '0' when (CPU_EXTENSION_RISCV_Sdext = true) and ((debug_ctrl.running = '1') or (csr.dcsr_step = '1')) else '1';
-
-  -- "non-maskable interrupt for debug-mode entry
-  trap_ctrl.db_irq_fire <= (trap_ctrl.irq_buf(irq_db_step_c) or trap_ctrl.irq_buf(irq_db_halt_c)) when (CPU_EXTENSION_RISCV_Sdext = true) else '0'; -- "NMI" for debug mode entry
+  -- any interrupt? --
+  trap_ctrl.irq_fire <= '1' when
+    (
+     (or_reduce_f(trap_ctrl.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending IRQ
+     ((csr.mstatus_mie = '1') or (csr.privilege = priv_mode_u_c)) and -- take IRQ when in M-mode and MIE=1 OR when in U-mode
+     (debug_ctrl.running = '0') and -- no machine IRQs when in debug-mode
+     (csr.dcsr_step = '0') -- no machine IRQs when in single-stepping mode
+    ) or
+    (trap_ctrl.irq_buf(irq_db_step_c) = '1') or -- debug-mode single-step IRQ
+    (trap_ctrl.irq_buf(irq_db_halt_c) = '1') else '0'; -- debug-mode halt IRQ
 
   -- exception program counter (for updating xCAUSE CSRs) --
   trap_ctrl.epc <= (execute_engine.pc(XLEN-1 downto 1) & '0') when (((trap_ctrl.cause(trap_ctrl.cause'left)) = '1') or (trap_ctrl.cause = trap_iba_c)) else -- interrupted instruction
@@ -1600,7 +1602,7 @@ begin
     trap_db_break_c when (trap_ctrl.exc_buf(exc_db_break_c) = '1') else -- break instruction (sync)
     trap_db_step_c  when (trap_ctrl.irq_buf(irq_db_step_c)  = '1') else -- single stepping (async)
     -- ------------------------------------------------------------------------------------
-    -- custom fast INTERRUPTS
+    -- NEORV32-specific fast INTERRUPTS
     -- ------------------------------------------------------------------------------------
     trap_firq0_c  when (trap_ctrl.irq_buf(irq_firq_0_c)  = '1') else -- fast interrupt channel 0
     trap_firq1_c  when (trap_ctrl.irq_buf(irq_firq_1_c)  = '1') else -- fast interrupt channel 1
@@ -1775,7 +1777,7 @@ begin
            if (csr.addr(3 downto 0) = csr_mtval_c(3 downto 0)) then
              csr.mtval <= csr.wdata;
            end if;
-            -- R/W: mip - machine interrupt pending --
+            -- R/C: mip - machine interrupt pending --
             if (csr.addr(3 downto 0) = csr_mip_c(3 downto 0)) then
               csr.mip_firq_nclr <= csr.wdata(31 downto 16); -- set low to clear according bit (FIRQs only)
             end if;
@@ -1870,7 +1872,7 @@ begin
           -- --------------------------------------------------------------------
           if (CPU_EXTENSION_RISCV_Sdtrig = true) then
             if (csr.addr(11 downto 4) = csr_class_trigger_c) then -- trigger CSR class
-              if (debug_ctrl.running = '1') or (csr.tdata1_dmode = '0') then -- exclusive access from debug-mode
+              if (debug_ctrl.running = '1') or (csr.tdata1_dmode = '0') then -- exclusive access from debug-mode?
                 -- R/W: tdata1 - match control --
                 if (csr.addr(3 downto 0) = csr_tdata1_c(3 downto 0)) then
                   csr.tdata1_exe    <= csr.wdata(2);
@@ -2137,10 +2139,10 @@ begin
           when csr_mtval_c => -- mtval (r/w): machine bad address or instruction
             csr.rdata <= csr.mtval;
 
-          when csr_mip_c => -- mip (r/w): machine interrupt pending
-            csr.rdata(03) <= trap_ctrl.irq_buf(irq_msi_irq_c);
-            csr.rdata(07) <= trap_ctrl.irq_buf(irq_mti_irq_c);
-            csr.rdata(11) <= trap_ctrl.irq_buf(irq_mei_irq_c);
+          when csr_mip_c => -- mip (r/c): machine interrupt pending
+            csr.rdata(03)           <= trap_ctrl.irq_buf(irq_msi_irq_c);
+            csr.rdata(07)           <= trap_ctrl.irq_buf(irq_mti_irq_c);
+            csr.rdata(11)           <= trap_ctrl.irq_buf(irq_mei_irq_c);
             csr.rdata(31 downto 16) <= trap_ctrl.irq_buf(irq_firq_15_c downto irq_firq_0_c);
 
           -- physical memory protection - configuration (r/w) --
@@ -2600,10 +2602,10 @@ begin
   debug_ctrl.running <= '0' when (CPU_EXTENSION_RISCV_Sdext = false) or (debug_ctrl.state = DEBUG_OFFLINE) else '1';
 
   -- entry debug mode triggers --
-  debug_ctrl.trig_hw    <= hw_trigger_fire and (not debug_ctrl.running) and csr.tdata1_action and csr.tdata1_dmode; -- enter debug mode by HW trigger module request (only valid if DMOE = 1)
+  debug_ctrl.trig_hw    <= hw_trigger_fire and (not debug_ctrl.running) and csr.tdata1_action and csr.tdata1_dmode; -- enter debug mode by HW trigger module request (only valid if dmode = 1)
   debug_ctrl.trig_break <= trap_ctrl.break_point and (debug_ctrl.running or -- re-enter debug mode
-                           ((    csr.privilege) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
-                           ((not csr.privilege) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
+                           ((    csr.privilege) and csr.dcsr_ebreakm) or    -- enabled goto-debug-mode in machine mode on "ebreak"
+                           ((not csr.privilege) and csr.dcsr_ebreaku));     -- enabled goto-debug-mode in user mode on "ebreak"
   debug_ctrl.trig_halt  <= debug_ctrl.ext_halt_req and (not debug_ctrl.running); -- external halt request (if not halted already)
   debug_ctrl.trig_step  <= csr.dcsr_step and (not debug_ctrl.running); -- single-step mode (trigger when NOT CURRENTLY in debug mode)
 
