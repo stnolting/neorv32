@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -189,7 +189,7 @@ begin
   begin
     if rising_edge(clk_i) then
       -- pwm base counter --
-      if (enable = '0') then 
+      if (enable = '0') then
         pwm_cnt <= (others => '0');
       elsif (prsc_tick = '1') then
         pwm_cnt <= std_ulogic_vector(unsigned(pwm_cnt) + 1);

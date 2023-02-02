@@ -410,7 +410,7 @@ begin
   cond_sel_string_f(IO_GPTMR_EN, "GPTMR ", "") &
   cond_sel_string_f(IO_XIP_EN, "XIP ", "") &
   cond_sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ", "") &
-  "" 
+  ""
   severity note;
 
 

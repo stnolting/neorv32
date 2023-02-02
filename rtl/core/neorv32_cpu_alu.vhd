@@ -5,7 +5,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -266,7 +266,7 @@ begin
     )
     port map (
       -- global control --
-      clk_i    => clk_i,        -- global clock, rising edge  
+      clk_i    => clk_i,        -- global clock, rising edge
       rstn_i   => rstn_i,       -- global reset, low-active, async
       ctrl_i   => ctrl_i,       -- main control bus
       start_i  => cp_start(3),  -- trigger operation

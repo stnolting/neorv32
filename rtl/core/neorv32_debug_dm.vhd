@@ -387,7 +387,7 @@ begin
       dm_ctrl.hart_resume_ack <= '0';
       dm_ctrl.hart_reset      <= '0';
     elsif rising_edge(clk_i) then
- 
+
       -- HALTED ACK --
       if (dm_reg.dmcontrol_ndmreset = '1') then
         dm_ctrl.hart_halted <= '0';

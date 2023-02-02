@@ -5,7 +5,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -472,7 +472,7 @@ begin
       else -- U mode: always check permission
         pmp.perm_ex(r) <= pmp_ctrl_i(r)(pmp_cfg_x_c);
       end if;
- 
+
       -- load/store accesses from M mod (can also use U mode's permissions if MSTATUS.MPRV is set) --
       if (ctrl_i(ctrl_bus_priv_c) = priv_mode_m_c) then -- M mode: always allow if lock bit not set, otherwise check permission
         pmp.perm_rd(r) <= (not pmp_ctrl_i(r)(pmp_cfg_l_c)) or pmp_ctrl_i(r)(pmp_cfg_r_c);
@@ -481,7 +481,7 @@ begin
         pmp.perm_rd(r) <= pmp_ctrl_i(r)(pmp_cfg_r_c);
         pmp.perm_wr(r) <= pmp_ctrl_i(r)(pmp_cfg_w_c);
       end if;
- 
+
     end loop; -- r
   end process pmp_check_permission;
 
@@ -496,7 +496,7 @@ begin
     tmp_if_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_priv_mode_c) /= priv_mode_m_c); -- default: fault if U mode
     tmp_ld_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_bus_priv_c)  /= priv_mode_m_c); -- default: fault if U mode
     tmp_st_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_bus_priv_c)  /= priv_mode_m_c); -- default: fault if U mode
- 
+
     for r in PMP_NUM_REGIONS-1 downto 0 loop -- start with lowest priority
       -- instruction fetch access --
       if (pmp.i_match(r) = '1') then -- address matches region r

@@ -19,7 +19,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -657,7 +657,7 @@ begin
   multiplier.flags(fp_exc_nx_c) <= '0'; -- inexcat: not possible here
 
 
-  -- result class -- 
+  -- result class --
   multiplier_class_core: process(clk_i)
     variable a_pos_norm_v, a_neg_norm_v, b_pos_norm_v, b_neg_norm_v : std_ulogic;
     variable a_pos_subn_v, a_neg_subn_v, b_pos_subn_v, b_neg_subn_v : std_ulogic;
@@ -722,7 +722,7 @@ begin
         (a_pos_subn_v and b_pos_zero_v) or -- +denorm * +zero
         (a_neg_norm_v and b_neg_zero_v) or -- -norm   * -zero
         (a_neg_subn_v and b_neg_zero_v);   -- -denorm * -zero
-        
+
       -- -zero --
       multiplier.res_class(fp_class_neg_zero_c) <=
         (a_pos_zero_v and b_neg_zero_v) or -- +zero   * -zero
@@ -852,7 +852,7 @@ begin
     end if;
   end process adder_subtractor_core;
 
-  -- exceptions - unused -- 
+  -- exceptions - unused --
   addsub.flags(fp_exc_dz_c) <= '0'; -- division by zero -> not possible
   addsub.flags(fp_exc_of_c) <= '0'; -- not possible here (but may occur in normalizer)
   addsub.flags(fp_exc_uf_c) <= '0'; -- not possible here (but may occur in normalizer)
@@ -877,7 +877,7 @@ begin
   addsub.res_sum <= addsub.add_stage(27 downto 0);
 
 
-  -- result class -- 
+  -- result class --
   adder_subtractor_class_core: process(clk_i)
     variable a_pos_norm_v, a_neg_norm_v, b_pos_norm_v, b_neg_norm_v : std_ulogic;
     variable a_pos_subn_v, a_neg_subn_v, b_pos_subn_v, b_neg_subn_v : std_ulogic;

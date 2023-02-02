@@ -201,7 +201,7 @@ begin
   timeout_irq <= '1' when (cnt_started = '1') and (cnt = ('0' & ctrl.timeout(23 downto 1))) else '0'; -- half timeout value
   timeout_rst <= '1' when (cnt_started = '1') and (cnt = ctrl.timeout(23 downto 0)) else '0'; -- full timeout value
 
-  
+
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   irq_generator: process(clk_i)
@@ -216,8 +216,8 @@ begin
       end if;
     end if;
   end process irq_generator;
-  
-  
+
+
   -- Reset Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   reset_generator: process(rstn_int_i, clk_i)

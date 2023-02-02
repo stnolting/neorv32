@@ -8,7 +8,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -140,7 +140,7 @@ begin
 
 
 -- ****************************************************************************************************************************
--- CFU Hardware Documentation and Implementation Notes 
+-- CFU Hardware Documentation and Implementation Notes
 -- ****************************************************************************************************************************
 
   -- ----------------------------------------------------------------------------------------
@@ -182,7 +182,7 @@ begin
   --
   -- The four signals <rs1_i>, <rs2_i>, <rs3_i> and <rs4_i> provide the source operand data read from the CPU's register file.
   -- The source registers are adressed by the custom instruction word's 'rs1', 'rs2', 'rs3' and 'rs4' bit-fields.
-  -- 
+  --
   -- The actual CFU operation can be defined by using the <control.funct3> and/or <control.funct7> signals (if available for a
   -- certain R-type instruction). Both signals are directly driven by the according bit-fields of the custom instruction word.
   -- These immediates can be used to select the actual function or to provide small literals for certain operations (like shift

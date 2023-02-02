@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -113,7 +113,7 @@ begin
 
     -- actual decoder --
     case ci_instr16_i(ci_opcode_msb_c downto ci_opcode_lsb_c) is
-    
+
       when "00" => -- C0: Register-Based Loads and Stores
         case ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) is
 

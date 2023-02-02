@@ -17,7 +17,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -341,7 +341,7 @@ begin
 
           when S_INIT => -- initialize TX shift engine
           -- ------------------------------------------------------------
-            if (tx_buffer.rdata(32) = '0') then -- mode = "RGB" 
+            if (tx_buffer.rdata(32) = '0') then -- mode = "RGB"
               serial.mode    <= '0';
               serial.bit_cnt <= "011000"; -- total number of bits to send: 3x8=24
             else -- mode = "RGBW"

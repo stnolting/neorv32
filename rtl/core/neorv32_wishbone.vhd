@@ -9,7 +9,7 @@
 -- #                                                                                               #
 -- # The Wishbone gateway registers all outgoing signals. These signals will remain stable (gated) #
 -- # if there is no active Wishbone access. By default, also the incoming signals are registered,  #
--- # too. this can be disabled by setting ASYNC_RX = false.                                        # 
+-- # too. this can be disabled by setting ASYNC_RX = false.                                        #
 -- #                                                                                               #
 -- # Even when all processor-internal memories and IO devices are disabled, the EXTERNAL address   #
 -- # space ENDS at address 0xffff0000 (begin of internal BOOTROM/OCD/IO address space).            #

@@ -8,7 +8,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -136,7 +136,7 @@ architecture neorv32_slink_rtl of neorv32_slink is
     rdata : fifo_data_t;
     wdata : fifo_data_t;
   end record;
-  signal rx_fifo, tx_fifo: fifo_t; 
+  signal rx_fifo, tx_fifo: fifo_t;
 
   -- link select --
   signal link_sel : std_ulogic_vector(7 downto 0);
@@ -352,7 +352,7 @@ begin
       rdata_o(32)          => rx_fifo.rlast(i), -- end of packet
       avail_o              => rx_fifo.avail(i)  -- data available when set
     );
-  
+
     -- stream link interface --
     rx_fifo.wdata(i)  <= slink_rx_dat_i(i);
     rx_fifo.we(i)     <= slink_rx_val_i(i);
@@ -410,7 +410,7 @@ begin
       irq_tx_o <= enable and or_reduce_f(tx_irq.fire);
     end if;
   end process irq_generator;
-  
+
   -- edge detector --
   irq_detect: process(rx_irq.trigger, tx_irq.trigger)
   begin
