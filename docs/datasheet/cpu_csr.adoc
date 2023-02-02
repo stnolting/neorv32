@@ -288,6 +288,9 @@ The `mie` CSR is used to enable/disable individual interrupt sources.
 | 3     | _CSR_MIE_MSIE_ | r/w | **MSIE**: Machine _software_ interrupt enable
 |=======================
 
+[IMPORTANT]
+Clearing a bit in `mie` will also clear the according <<_mip>> bit (if the according interrupt channel was pending).
+
 
 :sectnums!:
 ===== **`mtvec`**
@@ -472,12 +475,9 @@ to clear the current interrupt request.
 | 3     | _CSR_MIP_MSIP_                       | r/- | **MSIP**: Machine _software_ interrupt pending; _cleared by platform-defined mechanism_
 |=======================
 
-.RISC-V Standard Interrupts
 [IMPORTANT]
-Pending RISC-V standard machine interrupts (MEI, MTI, MSI) **cannot** be acknowledged/cleared by clearing the according
-`mip` bit. The interrupt source has to keep the interrupt request signal high until explicitly acknowledged (e.g. by writing
-to a specific memory-mapped register). However, the RISC-V standard interrupts can be cleared at any time by clearing the
-according <<_mip>> bit(s).
+An interrupt can only become pending (bit in `mip` becomes set) if the interrupt channel is enabled
+via the according <<_mie>> bit.
 
 .FIRQ Channel Mapping
 [TIP]
