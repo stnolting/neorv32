@@ -800,6 +800,7 @@ int main() {
 
   // wait some time for the IRQ to trigger and arrive the CPU
   asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -829,6 +830,7 @@ int main() {
 
   // wait some time for the IRQ to arrive the CPU
   asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
   sim_irq_trigger(0);
@@ -855,6 +857,7 @@ int main() {
   sim_irq_trigger(1 << CSR_MIE_MEIE);
 
   // wait some time for the IRQ to arrive the CPU
+  asm volatile ("nop");
   asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -908,6 +911,7 @@ int main() {
   neorv32_mtime_set_timecmp(0); // force interrupt
 
   // wait some time for the IRQ to arrive the CPU
+  asm volatile ("nop");
   asm volatile ("nop");
 
   uint32_t was_pending = neorv32_cpu_csr_read(CSR_MIP) & (1 << CSR_MIP_MTIP); // should be pending now
@@ -988,6 +992,7 @@ int main() {
 
   // wait some time for the IRQ to arrive the CPU
   asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1030,6 +1035,7 @@ int main() {
 
   // wait some time for the IRQ to arrive the CPU
   asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1068,6 +1074,7 @@ int main() {
   while(neorv32_uart1_tx_busy());
 
   // wait some time for the IRQ to arrive the CPU
+  asm volatile ("nop");
   asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -1108,6 +1115,7 @@ int main() {
 
   // wait some time for the IRQ to arrive the CPU
   asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1141,6 +1149,7 @@ int main() {
 
   // wait some time for the IRQ to arrive the CPU
   asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1172,6 +1181,7 @@ int main() {
   neorv32_twi_start_trans(0xA5);
 
   // wait some time for the IRQ to arrive the CPU
+  asm volatile ("nop");
   asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -1209,6 +1219,7 @@ int main() {
 
   // wait for IRQs to arrive CPU
   asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1242,6 +1253,7 @@ int main() {
   neorv32_neoled_write_nonblocking(0);
 
   // wait some time for the IRQ to arrive the CPU
+  asm volatile ("nop");
   asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -1278,6 +1290,7 @@ int main() {
   }
 
   // wait some time for the IRQ to arrive the CPU
+  asm volatile ("nop");
   asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -1323,6 +1336,7 @@ int main() {
 
   // wait some time for the IRQ to arrive the CPU
   asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1360,6 +1374,7 @@ int main() {
 
   // wait some time for the IRQ to arrive the CPU
   asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1392,6 +1407,7 @@ int main() {
   neorv32_onewire_read_bit_blocking();
 
   // wait some time for the IRQ to arrive the CPU
+  asm volatile ("nop");
   asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
