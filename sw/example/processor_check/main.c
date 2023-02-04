@@ -1745,7 +1745,7 @@ void test_ok(void) {
  **************************************************************************/
 void test_fail(void) {
 
-  PRINT_CRITICAL("%c[1m[fail]%c[0m\n", 27, 27);
+  PRINT_CRITICAL("%c[1m[fail (%u)]%c[0m\n", 27, 27, cnt_test);
   cnt_fail++;
 }
 
