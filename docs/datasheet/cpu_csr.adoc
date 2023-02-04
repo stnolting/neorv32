@@ -288,9 +288,6 @@ The `mie` CSR is used to enable/disable individual interrupt sources.
 | 3     | _CSR_MIE_MSIE_ | r/w | **MSIE**: Machine _software_ interrupt enable
 |=======================
 
-[IMPORTANT]
-Clearing a bit in `mie` will also clear the according <<_mip>> bit (if the according interrupt channel was pending).
-
 
 :sectnums!:
 ===== **`mtvec`**
@@ -458,9 +455,11 @@ See section <<_traps_exceptions_and_interrupts>> for more information.
 3+<| Reset value: `0x00000000`
 |=======================
 
-The `mip` CSR shows the currently _pending_ machine-level interrupts.
-The bits for the standard RISC-V interrupts are read-only. Hence, these interrupts cannot be cleared using the
-`mip` register and must be cleared/acknowledged within the according interrupt-generating device.
+The `mip` CSR shows currently _pending_ machine-level interrupt requests. The bits for the standard RISC-V
+machine-level interrupts (`MEIP`, `MTIP`, `MSIP`) are read-only. Hence, these interrupts cannot be
+cleared/set using the `mip` register. These interrupts are cleared/acknowledged by mechanism that are
+specific for the interrupt-causing modules. the according interrupt-generating device.
+
 The upper 16 bits represent the status of the CPU's fast interrupt request lines (FIRQ). Once triggered, these
 bit have to be cleared manually by writing zero to the according `mip` bits (in the interrupt handler routine)
 to clear the current interrupt request.
@@ -474,10 +473,6 @@ to clear the current interrupt request.
 | 7     | _CSR_MIP_MTIP_                       | r/- | **MTIP**: Machine _timer_ interrupt pending; _cleared by platform-defined mechanism_
 | 3     | _CSR_MIP_MSIP_                       | r/- | **MSIP**: Machine _software_ interrupt pending; _cleared by platform-defined mechanism_
 |=======================
-
-[IMPORTANT]
-An interrupt can only become pending (bit in `mip` becomes set) if the interrupt channel is enabled
-via the according <<_mie>> bit.
 
 .FIRQ Channel Mapping
 [TIP]

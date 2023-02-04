@@ -72,11 +72,6 @@ test framework is available in a separate repository: https://github.com/stnolti
 
 This list shows the currently identified issues regarding full RISC-V-compatibility.
 
-.Pending Interrupts
-[IMPORTANT]
-An interrupt can only become pending (bit in `mip` becomes set) if the interrupt channel is enabled
-via the according <<_mie>> bit. Clearing a bit in <<_mie>> will also clear the according <<_mip>> bit.
-
 .Physical Memory Protection (PMP)
 [IMPORTANT]
 The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only implements the **TOR**

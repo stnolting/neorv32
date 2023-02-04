@@ -69,7 +69,7 @@
 //** for simulation only! */
 #ifdef SUPPRESS_OPTIONAL_UART_PRINT
 //** print standard output to UART0 */
-#define PRINT_STANDARD(...) 
+#define PRINT_STANDARD(...)
 //** print critical output to UART1 */
 #define PRINT_CRITICAL(...) neorv32_uart1_printf(__VA_ARGS__)
 #else
@@ -129,7 +129,7 @@ int main() {
   uint8_t id;
 
   // disable machine-mode interrupts
-  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); 
+  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
   // setup UARTs at default baud rate, no parity bits, no HW flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
@@ -252,7 +252,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test fence instructions 
+  // Test fence instructions
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] FENCE(.I) ", cnt_test);
@@ -385,7 +385,6 @@ int main() {
 
   // wait some time to have a nice "increment" (there should be NO increment at all!)
   asm volatile ("nop");
-  asm volatile ("nop");
 
   tmp_b = neorv32_cpu_csr_read(CSR_CYCLE);
 
@@ -443,7 +442,7 @@ int main() {
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+4, 0x00008067); // ret (32-bit)
 
     // execute program
-    asm volatile("fence.i"); // flush i-cache
+    asm volatile ("fence.i"); // flush i-cache
     tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
     asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
 
@@ -506,7 +505,7 @@ int main() {
 
   // cycle CSR is read-only, but no actual write is performed because rs1=r0
   // -> should cause no exception
-  asm volatile("csrrs zero, cycle, zero");
+  asm volatile ("csrrs zero, cycle, zero");
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
     test_ok();
@@ -529,7 +528,7 @@ int main() {
 
     // call unaligned address
     ((void (*)(void))ADDR_UNALIGNED_2)();
-    asm volatile("nop");
+    asm volatile ("nop");
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_MISALIGNED) {
       test_ok();
@@ -558,7 +557,7 @@ int main() {
   // jump to beginning of external memory minus 4 bytes
   // this will cause an instruction access fault as there is no module responding to the fetch request
   // the exception handler will try to resume at the instruction 4 bytes ahead, which is the "ret" we just created
-  asm volatile("fence.i"); // flush i-cache
+  asm volatile ("fence.i"); // flush i-cache
   tmp_a = ((uint32_t)EXT_MEM_BASE) - 4;
   asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
 
@@ -580,10 +579,8 @@ int main() {
   cnt_test++;
 
   // clear mstatus.mie and set mstatus.mpie
-  tmp_a = neorv32_cpu_csr_read(CSR_MSTATUS);
-  tmp_a &= ~(1 << CSR_MSTATUS_MIE);
-  tmp_a |=  (1 << CSR_MSTATUS_MPIE);
-  neorv32_cpu_csr_write(CSR_MSTATUS, tmp_a);
+  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MPIE);
 
   // illegal 32-bit instruction (MRET with incorrect opcode)
   asm volatile (".align 4 \n"
@@ -597,6 +594,9 @@ int main() {
   else {
     test_fail();
   }
+
+  // reenable machine-mode interrupts
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
 
   // ----------------------------------------------------------
@@ -637,7 +637,7 @@ int main() {
   if (NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IS_SIM)) {
     cnt_test++;
 
-    asm volatile("EBREAK");
+    asm volatile ("ebreak");
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_BREAKPOINT) {
       test_ok();
@@ -754,7 +754,7 @@ int main() {
   PRINT_STANDARD("[%i] ENVCALL M EXC ", cnt_test);
   cnt_test++;
 
-  asm volatile("ecall");
+  asm volatile ("ecall");
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MENV_CALL) {
     test_ok();
@@ -774,7 +774,7 @@ int main() {
   // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
   neorv32_cpu_goto_user_mode();
   {
-    asm volatile("ecall");
+    asm volatile ("ecall");
   }
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_UENV_CALL) {
@@ -799,7 +799,8 @@ int main() {
   neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
 
   // wait some time for the IRQ to trigger and arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -828,7 +829,8 @@ int main() {
   sim_irq_trigger(1 << CSR_MIE_MSIE);
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
   sim_irq_trigger(0);
@@ -855,7 +857,8 @@ int main() {
   sim_irq_trigger(1 << CSR_MIE_MEIE);
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
   sim_irq_trigger(0);
@@ -901,17 +904,15 @@ int main() {
   PRINT_STANDARD("[%i] Pending IRQ (MTIME) ", cnt_test);
   cnt_test++;
 
-  // disable machine-mode interrupts
-  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
-
-  // enable MTIME interrupt source
-  neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
+  // disable all interrupt setting
+  neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // fire MTIME IRQ
   neorv32_mtime_set_timecmp(0); // force interrupt
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   uint32_t was_pending = neorv32_cpu_csr_read(CSR_MIP) & (1 << CSR_MIP_MTIP); // should be pending now
 
@@ -926,10 +927,6 @@ int main() {
   else {
     test_fail();
   }
-
-  // restore interrupt enable setting
-  neorv32_cpu_csr_write(CSR_MIE, 0);
-  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
 
   // ----------------------------------------------------------
@@ -947,7 +944,7 @@ int main() {
   neorv32_wdt_setup(1, 0, 0, 1);
 
   // wait in sleep mode for WDT interrupt
-  asm volatile("wfi");
+  asm volatile ("wfi");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
   NEORV32_WDT.CTRL = 0;
@@ -994,7 +991,8 @@ int main() {
   while(neorv32_uart0_tx_busy());
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1036,7 +1034,8 @@ int main() {
   while(neorv32_uart0_tx_busy());
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1075,7 +1074,8 @@ int main() {
   while(neorv32_uart1_tx_busy());
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1114,7 +1114,8 @@ int main() {
   while(neorv32_uart1_tx_busy());
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1147,7 +1148,8 @@ int main() {
   while(neorv32_spi_busy()); // wait for current transfer to finish
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1179,7 +1181,8 @@ int main() {
   neorv32_twi_start_trans(0xA5);
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1215,7 +1218,8 @@ int main() {
   neorv32_gpio_port_set(3);
 
   // wait for IRQs to arrive CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1249,7 +1253,8 @@ int main() {
   neorv32_neoled_write_nonblocking(0);
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1276,7 +1281,6 @@ int main() {
   neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_RX_FIRQ_ENABLE);
 
   tmp_b = neorv32_slink_get_fifo_depth(0) + neorv32_slink_get_fifo_depth(1);
-  
   tmp_a = 0; // error counter
 
   // send data words via link 0 to fill TX and RX FIFOs
@@ -1286,7 +1290,8 @@ int main() {
   }
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1330,7 +1335,8 @@ int main() {
   tmp_a += neorv32_slink_tx(0, 0xACCABDDB, 0);
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1367,7 +1373,8 @@ int main() {
   neorv32_gptmr_setup(CLK_PRSC_2, 0, 2);
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1400,7 +1407,8 @@ int main() {
   neorv32_onewire_read_bit_blocking();
 
   // wait some time for the IRQ to arrive the CPU
-  asm volatile("nop");
+  asm volatile ("nop");
+  asm volatile ("nop");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1438,9 +1446,7 @@ int main() {
 
   // clear mstatus.TW to allow execution of WFI also in user-mode
   // clear mstatus.MIE and mstatus.MPIE to check if IRQ can still trigger in User-mode
-  tmp_a = neorv32_cpu_csr_read(CSR_MSTATUS);
-  tmp_a &= ~((1<<CSR_MSTATUS_TW) | (1<<CSR_MSTATUS_MIE) | (1<<CSR_MSTATUS_MPIE));
-  neorv32_cpu_csr_write(CSR_MSTATUS, tmp_a);
+  neorv32_cpu_csr_clr(CSR_MSTATUS, (1<<CSR_MSTATUS_TW) | (1<<CSR_MSTATUS_MIE) | (1<<CSR_MSTATUS_MPIE));
 
   // put CPU into sleep mode (from user mode)
   neorv32_cpu_goto_user_mode();
@@ -1466,7 +1472,7 @@ int main() {
   cnt_test++;
 
   // set mstatus.TW to disallow execution of WFI in user-mode
-  neorv32_cpu_csr_write(CSR_MSTATUS, neorv32_cpu_csr_read(CSR_MSTATUS) | (1<<CSR_MSTATUS_TW));
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_TW);
 
   // put CPU into sleep mode (from user mode)
   neorv32_cpu_goto_user_mode();
@@ -1610,16 +1616,12 @@ int main() {
     cnt_test++;
 
     // make M-mode load/store accesses use U-mode rights
-    tmp_b = neorv32_cpu_csr_read(CSR_MSTATUS);
-    tmp_b |= 1 << CSR_MSTATUS_MPRV; // set MPRV: M uses U permissions for load/stores
-    tmp_b &= ~(3 << CSR_MSTATUS_MPP_L); // clear MPP: use U as effective privilege mode
-    neorv32_cpu_csr_write(CSR_MSTATUS, tmp_b);
+    neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MPRV); // set MPRV: M uses U permissions for load/stores
+    neorv32_cpu_csr_clr(CSR_MSTATUS, 3 << CSR_MSTATUS_MPP_L); // clear MPP: use U as effective privilege mode
 
     neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access_addr), 0); // store access -> should fail
 
-    tmp_b = neorv32_cpu_csr_read(CSR_MSTATUS);
-    tmp_b &= ~(1 << CSR_MSTATUS_MPRV);
-    neorv32_cpu_csr_write(CSR_MSTATUS, tmp_b);
+    neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MPRV);
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && (pmp_access_addr == 0xcafe1234)) {
       test_ok();
@@ -1722,8 +1724,7 @@ void global_trap_handler(void) {
   }
 
   // hack: always come back in MACHINE MODE
-  uint32_t mask = (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L);
-  asm volatile ("csrrs zero, mstatus, %[input_j]" :  : [input_j] "r" (mask));
+  neorv32_cpu_csr_set(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
 }
 
 
@@ -1760,7 +1761,7 @@ void test_ok(void) {
  **************************************************************************/
 void test_fail(void) {
 
-  PRINT_CRITICAL("%c[1m[fail]%c[0m\n", 27, 27);
+  PRINT_CRITICAL("%c[1m[fail(%u)]%c[0m\n", 27, cnt_test, 27);
   cnt_fail++;
 }
 
