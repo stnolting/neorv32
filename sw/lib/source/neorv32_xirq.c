@@ -201,7 +201,7 @@ int neorv32_xirq_install(uint8_t ch, void (*handler)(void)) {
     NEORV32_XIRQ.IER |= mask; // enable channel
     return 0;
   }
-  return 1; 
+  return 1;
 }
 
 
@@ -223,7 +223,7 @@ int neorv32_xirq_uninstall(uint8_t ch) {
     NEORV32_XIRQ.IPR = ~mask; // clear if pending
     return 0;
   }
-  return 1; 
+  return 1;
 }
 
 

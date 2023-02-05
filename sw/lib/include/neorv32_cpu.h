@@ -215,7 +215,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int c
   uint32_t csr_data;
 
   asm volatile ("csrr %[result], %[input_i]" : [result] "=r" (csr_data) : [input_i] "i" (csr_id));
-  
+
   return csr_data;
 }
 

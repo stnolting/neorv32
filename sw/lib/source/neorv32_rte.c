@@ -98,7 +98,7 @@ int neorv32_rte_handler_install(uint8_t id, void (*handler)(void)) {
     __neorv32_rte_vector_lut[id] = (uint32_t)handler; // install handler
     return 0;
   }
-  return 1; 
+  return 1;
 }
 
 
@@ -116,7 +116,7 @@ int neorv32_rte_handler_uninstall(uint8_t id) {
     __neorv32_rte_vector_lut[id] = (uint32_t)(&__neorv32_rte_debug_handler); // use dummy handler in case the trap is accidentally triggered
     return 0;
   }
-  return 1; 
+  return 1;
 }
 
 
@@ -342,7 +342,7 @@ void neorv32_rte_print_hw_config(void) {
       neorv32_uart0_putc(' ');
     }
   }
-  
+
   // Z* CPU extensions
   tmp = neorv32_cpu_csr_read(CSR_MXISA);
   if (tmp & (1<<CSR_MXISA_ZICSR)) {

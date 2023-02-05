@@ -3,7 +3,7 @@
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
-/* # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     # */
+/* # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
 /* # permitted provided that the following conditions are met:                                     # */
@@ -69,7 +69,7 @@ entry_normal:
 park_loop:
   sb     zero, (DBMEM_SREG_BASE+SREG_HALTED_ACK)(zero)    // ACK that CPU is halted
   lbu    s0, (DBMEM_SREG_BASE+SREG_EXECUTE_REQ)(zero)     // request to execute program buffer?
-  bnez   s0, execute                                  
+  bnez   s0, execute
   lbu    s0, (DBMEM_SREG_BASE+SREG_RESUME_REQ)(zero)      // request to resume?
   beqz   s0, park_loop
 

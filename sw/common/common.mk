@@ -3,7 +3,7 @@
 # ********************************************************************************************* #
 # BSD 3-Clause License                                                                          #
 #                                                                                               #
-# Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+# Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 #                                                                                               #
 # Redistribution and use in source and binary forms, with or without modification, are          #
 # permitted provided that the following conditions are met:                                     #
@@ -217,7 +217,7 @@ $(APP_IMG): main.bin $(IMAGE_GEN)
 	@$(IMAGE_GEN) -app_img $< $@ $(shell basename $(CURDIR))
 
 # Install VHDL memory initialization file
-install-$(APP_IMG): $(APP_IMG)	
+install-$(APP_IMG): $(APP_IMG)
 	@set -e
 	@echo "Installing application image to $(NEORV32_RTL_PATH)/$(APP_IMG)"
 	@cp $(APP_IMG) $(NEORV32_RTL_PATH)/.

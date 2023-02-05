@@ -252,7 +252,7 @@ uint32_t neorv32_cpu_get_clk_from_prsc(int prsc) {
     case CLK_PRSC_4096 : res = clock/4096 ; break;
     default: break;
   }
-  
+
   return res;
 }
 
@@ -303,7 +303,7 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 
 
 /**********************************************************************//**
- * Physical memory protection (PMP): Get minimal region size (granularity). 
+ * Physical memory protection (PMP): Get minimal region size (granularity).
  *
  * @warning This function overrides PMPCFG0[0] and PMPADDR0 CSRs!
  * @note This function requires the PMP CPU extension.

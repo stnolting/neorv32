@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -93,7 +93,7 @@ int neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) 
   ctrl |= ((uint32_t)(cpha   & 0x01)) << XIP_CTRL_CPHA;
   ctrl |= ((uint32_t)(8            )) << XIP_CTRL_SPI_NBYTES_LSB; // set 8 bytes transfer size as default
   ctrl |= ((uint32_t)(rd_cmd & 0xff)) << XIP_CTRL_RD_CMD_LSB;
-  
+
   NEORV32_XIP.CTRL = ctrl;
 
   // send 64 SPI dummy clocks but without an active CS

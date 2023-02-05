@@ -452,7 +452,7 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_IS_SIM    = 20, /**< CPU mxisa CSR (20): this might be a simulation when set (r/-)*/
 
   // Tuning options
-  CSR_MXISA_FASTMUL   = 30, /**< CPU mxisa CSR (30): DSP-based multiplication (M extensions only) (r/-)*/ 
+  CSR_MXISA_FASTMUL   = 30, /**< CPU mxisa CSR (30): DSP-based multiplication (M extensions only) (r/-)*/
   CSR_MXISA_FASTSHIFT = 31  /**< CPU mxisa CSR (31): parallel logic for shifts (barrel shifters) (r/-)*/
 };
 
@@ -715,7 +715,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 /** memory-mapped double-word (64-bit) read/write register */
 #define IO_REG64 (volatile uint64_t*)
 /** memory-mapped byte (8-bit) read-only register */
-#define IO_ROM8  (const volatile uint8_t*) 
+#define IO_ROM8  (const volatile uint8_t*)
 /** memory-mapped half-word (16-bit) read-only register */
 #define IO_ROM16 (const volatile uint16_t*)
 /** memory-mapped word (32-bit) read-only register */
@@ -1070,7 +1070,7 @@ enum NEORV32_UART_CTRL_enum {
   UART_CTRL_TX_EMPTY = 16, /**< UART control register(16) (r/-): TX FIFO is empty */
   UART_CTRL_TX_HALF  = 17, /**< UART control register(17) (r/-): TX FIFO is at least half-full */
   UART_CTRL_TX_FULL  = 18, /**< UART control register(18) (r/-): TX FIFO is full */
-  
+
   UART_CTRL_RTS_EN   = 20, /**< UART control register(20) (r/w): Enable hardware flow control: Assert RTS output if UART.RX is ready to receive */
   UART_CTRL_CTS_EN   = 21, /**< UART control register(21) (r/w): Enable hardware flow control: UART.TX starts sending only if CTS input is asserted */
   UART_CTRL_PMODE0   = 22, /**< UART control register(22) (r/w): Parity configuration (0=even; 1=odd) */
