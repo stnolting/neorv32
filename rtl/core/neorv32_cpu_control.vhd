@@ -189,7 +189,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
   -- make sure reset state is the first item in the list (discussion #415)
-  type execute_engine_state_t is (BRANCHED, DISPATCH, TRAP_ENTER, TRAP_START, TRAP_EXIT, TRAP_EXECUTE,
+  type execute_engine_state_t is (BRANCHED, DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE,
                                   EXECUTE, ALU_WAIT, BRANCH, SYSTEM, MEM_REQ, MEM_WAIT);
   type execute_engine_t is record
     state        : execute_engine_state_t;
@@ -228,7 +228,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     irq_buf       : std_ulogic_vector(irq_width_c-1 downto 0); -- asynchronous exception/interrupt buffer (one bit per interrupt source)
     irq_fire      : std_ulogic; -- set if there is a valid source in the interrupt buffer
     cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR + debug-mode entry identifier
-    cause_nxt     : std_ulogic_vector(6 downto 0);
     epc           : std_ulogic_vector(XLEN-1 downto 0); -- exception program counter
     --
     env_start     : std_ulogic; -- start trap handler env
@@ -716,7 +715,7 @@ begin
 
       -- next PC logic --
       case execute_engine.state is
-        when TRAP_START => -- starting trap environment
+        when TRAP_ENTER => -- starting trap environment
           if (trap_ctrl.cause(5) = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- trap cause: debug mode (re-)entry
             execute_engine.next_pc <= CPU_DEBUG_PARK_ADDR; -- debug mode enter; start at "parking loop" <normal_entry>
           elsif (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- any other exception INSIDE debug mode
@@ -952,19 +951,12 @@ begin
         end if;
 
 
-      when TRAP_ENTER => -- Begin trap environment; stay here for sleep mode
-      -- ------------------------------------------------------------
-        -- this also serves as additional "delay" cycle to wait for (other) potential
-        -- sync. exceptions to reach the trap controller logic (issue #325)
-        if (trap_ctrl.env_start = '1') then -- trap triggered?
-          execute_engine.state_nxt <= TRAP_START;
-        end if;
-
-
-      when TRAP_START => -- Start trap environment and get trap vector
-      -- ------------------------------------------------------------
+    when TRAP_ENTER => -- Start trap environment and get trap vector; stay here for sleep mode
+    -- ------------------------------------------------------------
+      if (trap_ctrl.env_start = '1') then
         trap_ctrl.env_start_ack  <= '1';
         execute_engine.state_nxt <= TRAP_EXECUTE;
+      end if;
 
 
       when TRAP_EXIT => -- Return from trap environment and get xEPC
@@ -1487,7 +1479,7 @@ begin
       -- Exception Buffer -----------------------------------------------------
       -- If several exception sources trigger at once, all the requests will
       -- stay active until the trap environment is started. Only the exception
-      -- with highest priority will be used to update the  MCAUSE CSR.
+      -- with highest priority will be used to update the MCAUSE CSR.
       -- ----------------------------------------------------------------------
 
       -- misaligned load/store/instruction address --
@@ -1500,7 +1492,7 @@ begin
       trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or be_store_i)         and (not trap_ctrl.env_start_ack);
       trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_start_ack);
 
-      -- illegal instruction / environment calls --
+      -- illegal instruction & environment calls --
       trap_ctrl.exc_buf(exc_m_envcall_c) <= (trap_ctrl.exc_buf(exc_m_envcall_c) or (trap_ctrl.env_call and (    csr.privilege))) and (not trap_ctrl.env_start_ack);
       trap_ctrl.exc_buf(exc_u_envcall_c) <= (trap_ctrl.exc_buf(exc_u_envcall_c) or (trap_ctrl.env_call and (not csr.privilege))) and (not trap_ctrl.env_start_ack);
       trap_ctrl.exc_buf(exc_iillegal_c)  <= (trap_ctrl.exc_buf(exc_iillegal_c)  or trap_ctrl.instr_il)                           and (not trap_ctrl.env_start_ack);
@@ -1547,8 +1539,8 @@ begin
 
       -- Interrupt Masking Buffer ---------------------------------------------
       -- Masking of interrupt request lines. Furthermore, this buffer ensures
-      -- that an *active* interrupt request line *stays* active (even if disabled
-      -- via MIE) if the trap environment is *currently* starting.
+      -- that an *active* interrupt request line *stays* active (even if
+      -- disabled via MIE) if the trap environment is *currently* starting.
       -- ----------------------------------------------------------------------
 
       -- RISC-V machine interrupts --
@@ -1580,7 +1572,6 @@ begin
   begin
     if (rstn_i = '0') then
       trap_ctrl.env_start <= '0';
-      trap_ctrl.cause     <= (others => '0');
     elsif rising_edge(clk_i) then
       if (trap_ctrl.env_start = '0') then -- no started trap handler yet
         if ((trap_ctrl.exc_fire = '1')) or -- exception firing
@@ -1589,7 +1580,6 @@ begin
           trap_ctrl.env_start <= '1'; -- now execute engine can start trap handler
         end if;
       else -- trap environment ready to start
-        trap_ctrl.cause <= trap_ctrl.cause_nxt; -- capture trap ID
         if (trap_ctrl.env_start_ack = '1') then -- start of trap handler acknowledged by execute engine
           trap_ctrl.env_start <= '0';
         end if;
@@ -1621,55 +1611,49 @@ begin
 
   -- Trap Priority Encoder ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trap_ctrl.cause_nxt <=
-    -- ------------------------------------------------------------------------------------
-    -- EXCEPTIONS - no need for a specific acknowledge mask since only
-    -- a single exception (the one with highest priority) is allowed to kick in at once
-    -- ------------------------------------------------------------------------------------
-    trap_ima_c  when (trap_ctrl.exc_buf(exc_ialign_c)    = '1') else -- instruction address misaligned
-    trap_iba_c  when (trap_ctrl.exc_buf(exc_iaccess_c)   = '1') else -- instruction access fault
-    trap_iil_c  when (trap_ctrl.exc_buf(exc_iillegal_c)  = '1') else -- illegal instruction
-    trap_menv_c when (trap_ctrl.exc_buf(exc_m_envcall_c) = '1') else -- environment call from M-mode
-    trap_uenv_c when (trap_ctrl.exc_buf(exc_u_envcall_c) = '1') else -- environment call from U-mode
-    trap_brk_c  when (trap_ctrl.exc_buf(exc_break_c)     = '1') else -- breakpoint
-    trap_sma_c  when (trap_ctrl.exc_buf(exc_salign_c)    = '1') else -- store address misaligned
-    trap_lma_c  when (trap_ctrl.exc_buf(exc_lalign_c)    = '1') else -- load address misaligned
-    trap_sbe_c  when (trap_ctrl.exc_buf(exc_saccess_c)   = '1') else -- store access fault
-    trap_lbe_c  when (trap_ctrl.exc_buf(exc_laccess_c)   = '1') else -- load access fault
-    -- ------------------------------------------------------------------------------------
-    -- EXCEPTIONS and INTERRUPTS to (re-)enter debug mode: basically, these are standard
-    -- traps that have some special handling - they have the highest INTERRUPT priority
-    -- in order to enter debug mode even if other interrupts are pending
-    -- ------------------------------------------------------------------------------------
-    trap_db_halt_c  when (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') else -- external halt request (async)
-    trap_db_hw_c    when (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') else -- hardware trigger (sync)
-    trap_db_break_c when (trap_ctrl.exc_buf(exc_db_break_c) = '1') else -- break instruction (sync)
-    trap_db_step_c  when (trap_ctrl.irq_buf(irq_db_step_c)  = '1') else -- single stepping (async)
-    -- ------------------------------------------------------------------------------------
-    -- NEORV32-specific fast INTERRUPTS
-    -- ------------------------------------------------------------------------------------
-    trap_firq0_c  when (trap_ctrl.irq_buf(irq_firq_0_c)  = '1') else -- fast interrupt channel 0
-    trap_firq1_c  when (trap_ctrl.irq_buf(irq_firq_1_c)  = '1') else -- fast interrupt channel 1
-    trap_firq2_c  when (trap_ctrl.irq_buf(irq_firq_2_c)  = '1') else -- fast interrupt channel 2
-    trap_firq3_c  when (trap_ctrl.irq_buf(irq_firq_3_c)  = '1') else -- fast interrupt channel 3
-    trap_firq4_c  when (trap_ctrl.irq_buf(irq_firq_4_c)  = '1') else -- fast interrupt channel 4
-    trap_firq5_c  when (trap_ctrl.irq_buf(irq_firq_5_c)  = '1') else -- fast interrupt channel 5
-    trap_firq6_c  when (trap_ctrl.irq_buf(irq_firq_6_c)  = '1') else -- fast interrupt channel 6
-    trap_firq7_c  when (trap_ctrl.irq_buf(irq_firq_7_c)  = '1') else -- fast interrupt channel 7
-    trap_firq8_c  when (trap_ctrl.irq_buf(irq_firq_8_c)  = '1') else -- fast interrupt channel 8
-    trap_firq9_c  when (trap_ctrl.irq_buf(irq_firq_9_c)  = '1') else -- fast interrupt channel 9
-    trap_firq10_c when (trap_ctrl.irq_buf(irq_firq_10_c) = '1') else -- fast interrupt channel 10
-    trap_firq11_c when (trap_ctrl.irq_buf(irq_firq_11_c) = '1') else -- fast interrupt channel 11
-    trap_firq12_c when (trap_ctrl.irq_buf(irq_firq_12_c) = '1') else -- fast interrupt channel 12
-    trap_firq13_c when (trap_ctrl.irq_buf(irq_firq_13_c) = '1') else -- fast interrupt channel 13
-    trap_firq14_c when (trap_ctrl.irq_buf(irq_firq_14_c) = '1') else -- fast interrupt channel 14
-    trap_firq15_c when (trap_ctrl.irq_buf(irq_firq_15_c) = '1') else -- fast interrupt channel 15
-    -- ------------------------------------------------------------------------------------
-    -- standard RISC-V INTERRUPTS
-    -- ------------------------------------------------------------------------------------
-    trap_mei_c when (trap_ctrl.irq_buf(irq_mei_irq_c) = '1') else -- machine external interrupt (MEI)
-    trap_msi_c when (trap_ctrl.irq_buf(irq_msi_irq_c) = '1') else -- machine SW interrupt (MSI)
-    trap_mti_c; --  (trap_ctrl.irq_buf(irq_mti_irq_c) = '1')      -- machine timer interrupt (MTI)
+  trap_encoder: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      -- standard RISC-V exceptions --
+      if    (trap_ctrl.exc_buf(exc_ialign_c)    = '1') then trap_ctrl.cause <= trap_ima_c;  -- instruction address misaligned
+      elsif (trap_ctrl.exc_buf(exc_iaccess_c)   = '1') then trap_ctrl.cause <= trap_iba_c;  -- instruction access fault
+      elsif (trap_ctrl.exc_buf(exc_iillegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c;  -- illegal instruction
+      elsif (trap_ctrl.exc_buf(exc_m_envcall_c) = '1') then trap_ctrl.cause <= trap_menv_c; -- environment call from M-mode
+      elsif (trap_ctrl.exc_buf(exc_u_envcall_c) = '1') then trap_ctrl.cause <= trap_uenv_c; -- environment call from U-mode
+      elsif (trap_ctrl.exc_buf(exc_break_c)     = '1') then trap_ctrl.cause <= trap_brk_c;  -- breakpoint
+      elsif (trap_ctrl.exc_buf(exc_salign_c)    = '1') then trap_ctrl.cause <= trap_sma_c;  -- store address misaligned
+      elsif (trap_ctrl.exc_buf(exc_lalign_c)    = '1') then trap_ctrl.cause <= trap_lma_c;  -- load address misaligned
+      elsif (trap_ctrl.exc_buf(exc_saccess_c)   = '1') then trap_ctrl.cause <= trap_sbe_c;  -- store access fault
+      elsif (trap_ctrl.exc_buf(exc_laccess_c)   = '1') then trap_ctrl.cause <= trap_lbe_c;  -- load access fault
+      -- debug mode exceptions and interrupts --
+      elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request (async)
+      elsif (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') then trap_ctrl.cause <= trap_db_hw_c;    -- hardware trigger (sync)
+      elsif (trap_ctrl.exc_buf(exc_db_break_c) = '1') then trap_ctrl.cause <= trap_db_break_c; -- break instruction (sync)
+      elsif (trap_ctrl.irq_buf(irq_db_step_c)  = '1') then trap_ctrl.cause <= trap_db_step_c;  -- single stepping (async)
+      -- NEORV32-specific fast interrupts --
+      elsif (trap_ctrl.irq_buf(irq_firq_0_c)  = '1') then trap_ctrl.cause <= trap_firq0_c;  -- fast interrupt channel 0
+      elsif (trap_ctrl.irq_buf(irq_firq_1_c)  = '1') then trap_ctrl.cause <= trap_firq1_c;  -- fast interrupt channel 1
+      elsif (trap_ctrl.irq_buf(irq_firq_2_c)  = '1') then trap_ctrl.cause <= trap_firq2_c;  -- fast interrupt channel 2
+      elsif (trap_ctrl.irq_buf(irq_firq_3_c)  = '1') then trap_ctrl.cause <= trap_firq3_c;  -- fast interrupt channel 3
+      elsif (trap_ctrl.irq_buf(irq_firq_4_c)  = '1') then trap_ctrl.cause <= trap_firq4_c;  -- fast interrupt channel 4
+      elsif (trap_ctrl.irq_buf(irq_firq_5_c)  = '1') then trap_ctrl.cause <= trap_firq5_c;  -- fast interrupt channel 5
+      elsif (trap_ctrl.irq_buf(irq_firq_6_c)  = '1') then trap_ctrl.cause <= trap_firq6_c;  -- fast interrupt channel 6
+      elsif (trap_ctrl.irq_buf(irq_firq_7_c)  = '1') then trap_ctrl.cause <= trap_firq7_c;  -- fast interrupt channel 7
+      elsif (trap_ctrl.irq_buf(irq_firq_8_c)  = '1') then trap_ctrl.cause <= trap_firq8_c;  -- fast interrupt channel 8
+      elsif (trap_ctrl.irq_buf(irq_firq_9_c)  = '1') then trap_ctrl.cause <= trap_firq9_c;  -- fast interrupt channel 9
+      elsif (trap_ctrl.irq_buf(irq_firq_10_c) = '1') then trap_ctrl.cause <= trap_firq10_c; -- fast interrupt channel 10
+      elsif (trap_ctrl.irq_buf(irq_firq_11_c) = '1') then trap_ctrl.cause <= trap_firq11_c; -- fast interrupt channel 11
+      elsif (trap_ctrl.irq_buf(irq_firq_12_c) = '1') then trap_ctrl.cause <= trap_firq12_c; -- fast interrupt channel 12
+      elsif (trap_ctrl.irq_buf(irq_firq_13_c) = '1') then trap_ctrl.cause <= trap_firq13_c; -- fast interrupt channel 13
+      elsif (trap_ctrl.irq_buf(irq_firq_14_c) = '1') then trap_ctrl.cause <= trap_firq14_c; -- fast interrupt channel 14
+      elsif (trap_ctrl.irq_buf(irq_firq_15_c) = '1') then trap_ctrl.cause <= trap_firq15_c; -- fast interrupt channel 15
+      -- standard RISC-V interrupts --
+      elsif (trap_ctrl.irq_buf(irq_mei_irq_c) = '1') then trap_ctrl.cause <= trap_mei_c; -- machine external interrupt (MEI)
+      elsif (trap_ctrl.irq_buf(irq_msi_irq_c) = '1') then trap_ctrl.cause <= trap_msi_c; -- machine SW interrupt (MSI)
+      elsif (trap_ctrl.irq_buf(irq_mti_irq_c) = '1') then trap_ctrl.cause <= trap_mti_c; -- machine timer interrupt (MTI)
+      else trap_ctrl.cause <= trap_mti_c; end if; -- don't care
+    end if;
+  end process trap_encoder;
 
 
 -- ****************************************************************************************************************************
