@@ -2508,15 +2508,16 @@ begin
     end if;
   end process csr_counters;
 
-  -- mcycle & minstret increment LOW --
-  csr.mcycle_nxt   <= std_ulogic_vector(unsigned('0' & csr.mcycle)   + 1);
-  csr.minstret_nxt <= std_ulogic_vector(unsigned('0' & csr.minstret) + 1);
-
-  -- hpm counter increment LOW --
-  hmp_cnt_lo_inc:
-  for i in 0 to HPM_NUM_CNTS-1 generate
-    csr.mhpmcounter_nxt(i) <= std_ulogic_vector(unsigned('0' & csr.mhpmcounter(i)) + 1);
-  end generate;
+  -- counter increment --
+  cnt_increment: process(csr)
+  begin
+    csr.mcycle_nxt   <= std_ulogic_vector(unsigned('0' & csr.mcycle)   + 1);
+    csr.minstret_nxt <= std_ulogic_vector(unsigned('0' & csr.minstret) + 1);
+    csr.mhpmcounter_nxt <= (others => (others => '0'));
+    for i in 0 to HPM_NUM_CNTS-1 loop
+      csr.mhpmcounter_nxt(i) <= std_ulogic_vector(unsigned('0' & csr.mhpmcounter(i)) + 1);
+    end loop;
+  end process cnt_increment;
 
   -- hpm counter read --
   hpm_connect: process(csr)
