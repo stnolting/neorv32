@@ -31,7 +31,7 @@
 -- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 -- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
 -- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+-- # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32       (c) Stephan Nolting #
 -- #################################################################################################
 
 library ieee;
@@ -51,7 +51,7 @@ entity neorv32_cpu_bus is
     -- global control --
     clk_i         : in  std_ulogic; -- global clock, rising edge
     rstn_i        : in  std_ulogic := '0'; -- global reset, low-active, async
-    ctrl_i        : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+    ctrl_i        : in  ctrl_bus_t; -- main control bus
     -- cpu instruction fetch interface --
     fetch_pc_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- PC for instruction fetch
     i_pmp_fault_o : out std_ulogic; -- instruction fetch pmp fault
@@ -138,9 +138,9 @@ begin
   mem_adr_reg: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
+      if (ctrl_i.bus_mo_we = '1') then
         mar <= addr_i; -- memory address register
-        case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is -- alignment check
+        case ctrl_i.ir_funct3(1 downto 0) is -- alignment check
           when "00"   => misaligned <= '0'; -- byte
           when "01"   => misaligned <= addr_i(0); -- half-word
           when "10"   => misaligned <= addr_i(1) or addr_i(0); -- word
@@ -167,9 +167,9 @@ begin
     mem_do_reg: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
+        if (ctrl_i.bus_mo_we = '1') then
           d_bus_ben_o <= (others => '0'); -- default
-          case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is -- data size
+          case ctrl_i.ir_funct3(1 downto 0) is -- data size
 
             when "00" => -- byte
               for i in 0 to (XLEN/8)-1 loop
@@ -205,9 +205,9 @@ begin
       variable tmp_v : std_ulogic_vector(1 downto 0);
     begin
       if rising_edge(clk_i) then
-        if (ctrl_i(ctrl_bus_mo_we_c) = '1') then
+        if (ctrl_i.bus_mo_we = '1') then
           d_bus_ben_o <= (others => '0'); -- default
-          case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is -- data size
+          case ctrl_i.ir_funct3(1 downto 0) is -- data size
 
             when "00" => -- byte
               for i in 0 to (XLEN/8)-1 loop
@@ -258,7 +258,7 @@ begin
       variable tmp_v : std_ulogic_vector(1 downto 0);
     begin
       if rising_edge(clk_i) then
-        case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is
+        case ctrl_i.ir_funct3(1 downto 0) is
 
           when "00" => -- byte
             tmp_v := mar(1 downto 0);
@@ -301,7 +301,7 @@ begin
       variable tmp2_v : std_ulogic_vector(1 downto 0);
     begin
       if rising_edge(clk_i) then
-        case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is
+        case ctrl_i.ir_funct3(1 downto 0) is
 
           when "00" => -- byte
             tmp3_v := mar(2 downto 0);
@@ -367,7 +367,7 @@ begin
   end generate; -- /mem_di_reg_rv64
 
   -- sign extension --
-  data_sign <= not ctrl_i(ctrl_ir_funct3_2_c); -- NOT unsigned LOAD (LBU, LHU)
+  data_sign <= not ctrl_i.ir_funct3(2); -- NOT unsigned LOAD (LBU, LHU)
 
 
   -- Access Arbiter -------------------------------------------------------------------------
@@ -383,19 +383,19 @@ begin
       arbiter.pmp_r_err <= ld_pmp_fault;
       arbiter.pmp_w_err <= st_pmp_fault;
       if (arbiter.pend = '0') then -- idle
-        if (ctrl_i(ctrl_bus_req_c) = '1') then -- start bus access
+        if (ctrl_i.bus_req = '1') then -- start bus access
           arbiter.pend <= '1';
         end if;
         arbiter.err <= '0';
       else -- bus access in progress
         -- accumulate bus errors --
         if (d_bus_err_i = '1') or -- bus error
-           ((ctrl_i(ctrl_ir_opcode7_5_c) = '1') and (arbiter.pmp_w_err = '1')) or -- PMP store fault
-           ((ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (arbiter.pmp_r_err = '1')) then -- PMP load fault
+           ((ctrl_i.ir_opcode(5) = '1') and (arbiter.pmp_w_err = '1')) or -- PMP store fault
+           ((ctrl_i.ir_opcode(5) = '0') and (arbiter.pmp_r_err = '1')) then -- PMP load fault
           arbiter.err <= '1';
         end if;
         -- wait for normal termination or start of trap handling --
-        if (d_bus_ack_i = '1') or (ctrl_i(ctrl_trap_c) = '1') then
+        if (d_bus_ack_i = '1') or (ctrl_i.cpu_trap = '1') then
           arbiter.pend <= '0';
         end if;
       end if;
@@ -406,16 +406,16 @@ begin
   d_wait_o <= not d_bus_ack_i;
 
   -- output data access error to controller --
-  ma_load_o  <= '1' when (arbiter.pend = '1') and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (misaligned  = '1') else '0';
-  be_load_o  <= '1' when (arbiter.pend = '1') and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (arbiter.err = '1') else '0';
-  ma_store_o <= '1' when (arbiter.pend = '1') and (ctrl_i(ctrl_ir_opcode7_5_c) = '1') and (misaligned  = '1') else '0';
-  be_store_o <= '1' when (arbiter.pend = '1') and (ctrl_i(ctrl_ir_opcode7_5_c) = '1') and (arbiter.err = '1') else '0';
+  ma_load_o  <= '1' when (arbiter.pend = '1') and (ctrl_i.ir_opcode(5) = '0') and (misaligned  = '1') else '0';
+  be_load_o  <= '1' when (arbiter.pend = '1') and (ctrl_i.ir_opcode(5) = '0') and (arbiter.err = '1') else '0';
+  ma_store_o <= '1' when (arbiter.pend = '1') and (ctrl_i.ir_opcode(5) = '1') and (misaligned  = '1') else '0';
+  be_store_o <= '1' when (arbiter.pend = '1') and (ctrl_i.ir_opcode(5) = '1') and (arbiter.err = '1') else '0';
 
   -- data bus control interface (all source signals are driven by registers) --
-  d_bus_we_o    <= ctrl_i(ctrl_bus_req_c) and (    ctrl_i(ctrl_ir_opcode7_5_c)) and (not misaligned) and (not arbiter.pmp_w_err);
-  d_bus_re_o    <= ctrl_i(ctrl_bus_req_c) and (not ctrl_i(ctrl_ir_opcode7_5_c)) and (not misaligned) and (not arbiter.pmp_r_err);
-  d_bus_fence_o <= ctrl_i(ctrl_bus_fence_c);
-  d_bus_priv_o  <= ctrl_i(ctrl_bus_priv_c);
+  d_bus_we_o    <= ctrl_i.bus_req and (    ctrl_i.ir_opcode(5)) and (not misaligned) and (not arbiter.pmp_w_err);
+  d_bus_re_o    <= ctrl_i.bus_req and (not ctrl_i.ir_opcode(5)) and (not misaligned) and (not arbiter.pmp_r_err);
+  d_bus_fence_o <= ctrl_i.bus_fence;
+  d_bus_priv_o  <= ctrl_i.bus_priv;
 
 
   -- RISC-V Physical Memory Protection (PMP) ------------------------------------------------
@@ -467,14 +467,14 @@ begin
     for r in 0 to PMP_NUM_REGIONS-1 loop
 
       -- instruction fetch access --
-      if (ctrl_i(ctrl_priv_mode_c) = priv_mode_m_c) then -- M mode: always allow if lock bit not set, otherwise check permission
+      if (ctrl_i.cpu_priv = priv_mode_m_c) then -- M mode: always allow if lock bit not set, otherwise check permission
         pmp.perm_ex(r) <= (not pmp_ctrl_i(r)(pmp_cfg_l_c)) or pmp_ctrl_i(r)(pmp_cfg_x_c);
       else -- U mode: always check permission
         pmp.perm_ex(r) <= pmp_ctrl_i(r)(pmp_cfg_x_c);
       end if;
 
       -- load/store accesses from M mod (can also use U mode's permissions if MSTATUS.MPRV is set) --
-      if (ctrl_i(ctrl_bus_priv_c) = priv_mode_m_c) then -- M mode: always allow if lock bit not set, otherwise check permission
+      if (ctrl_i.bus_priv = priv_mode_m_c) then -- M mode: always allow if lock bit not set, otherwise check permission
         pmp.perm_rd(r) <= (not pmp_ctrl_i(r)(pmp_cfg_l_c)) or pmp_ctrl_i(r)(pmp_cfg_r_c);
         pmp.perm_wr(r) <= (not pmp_ctrl_i(r)(pmp_cfg_l_c)) or pmp_ctrl_i(r)(pmp_cfg_w_c);
       else -- U mode: always check permission
@@ -493,9 +493,9 @@ begin
     -- > This is a *structural* description of a prioritization logic (a multiplexer chain).
     -- > I prefer this style as I do not like using a loop with 'exit' - and I also think this style might be smaller
     -- > and faster (could use the carry chain?!) as the synthesizer has less freedom doing what *I* want. ;)
-    tmp_if_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_priv_mode_c) /= priv_mode_m_c); -- default: fault if U mode
-    tmp_ld_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_bus_priv_c)  /= priv_mode_m_c); -- default: fault if U mode
-    tmp_st_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i(ctrl_bus_priv_c)  /= priv_mode_m_c); -- default: fault if U mode
+    tmp_if_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i.cpu_priv /= priv_mode_m_c); -- default: fault if U mode
+    tmp_ld_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i.bus_priv /= priv_mode_m_c); -- default: fault if U mode
+    tmp_st_v(PMP_NUM_REGIONS) := bool_to_ulogic_f(ctrl_i.bus_priv /= priv_mode_m_c); -- default: fault if U mode
 
     for r in PMP_NUM_REGIONS-1 downto 0 loop -- start with lowest priority
       -- instruction fetch access --
@@ -518,7 +518,7 @@ begin
     pmp.st_fault <= tmp_st_v(0);
 
     -- > this is the behavioral version of the code above (instruction fetch access)
---  pmp.if_fault <= bool_to_ulogic_f(ctrl_i(ctrl_priv_mode_c) /= priv_mode_m_c); -- default: fault if U mode
+--  pmp.if_fault <= bool_to_ulogic_f(ctrl_i.cpu_priv /= priv_mode_m_c); -- default: fault if U mode
 --  for r in 0 to PMP_NUM_REGIONS-1 loop
 --    if (pmp.i_match(r) = '1') then
 --      pmp.if_fault <= not pmp.perm_ex(r); -- fault if no execute permission
@@ -528,9 +528,9 @@ begin
   end process pmp_check_fault;
 
   -- final PMP access fault signals (ignored when in debug mode) --
-  if_pmp_fault <= '1' when (pmp.if_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i(ctrl_debug_running_c) = '0') else '0';
-  ld_pmp_fault <= '1' when (pmp.ld_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i(ctrl_debug_running_c) = '0') else '0';
-  st_pmp_fault <= '1' when (pmp.st_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i(ctrl_debug_running_c) = '0') else '0';
+  if_pmp_fault <= '1' when (pmp.if_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i.cpu_debug = '0') else '0';
+  ld_pmp_fault <= '1' when (pmp.ld_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i.cpu_debug = '0') else '0';
+  st_pmp_fault <= '1' when (pmp.st_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i.cpu_debug = '0') else '0';
 
   -- instruction fetch PMP fault --
   i_pmp_fault_o <= if_pmp_fault;

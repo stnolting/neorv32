@@ -34,7 +34,7 @@
 -- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 -- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
 -- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+-- # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32       (c) Stephan Nolting #
 -- #################################################################################################
 
 library ieee;
@@ -52,7 +52,7 @@ entity neorv32_cpu_cp_cfu is
     -- global control --
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+    ctrl_i  : in  ctrl_bus_t; -- main control bus
     start_i : in  std_ulogic; -- trigger operation
     -- data input --
     rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
@@ -122,7 +122,7 @@ begin
           control.busy <= '1';
         end if;
       else -- busy
-        if (control.done = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- processing done? abort if trap (exception)
+        if (control.done = '1') or (ctrl_i.cpu_trap = '1') then -- processing done? abort if trap (exception)
           res_o        <= control.result; -- output result for just one cycle, CFU output has to be all-zero otherwise
           control.busy <= '0';
         end if;
@@ -134,9 +134,9 @@ begin
   valid_o <= control.busy and control.done; -- set one cycle before result data
 
   -- pack user-defined instruction type/function bits --
-  control.rtype  <= ctrl_i(ctrl_ir_opcode7_6_c  downto ctrl_ir_opcode7_5_c);
-  control.funct3 <= ctrl_i(ctrl_ir_funct3_2_c   downto ctrl_ir_funct3_0_c);
-  control.funct7 <= ctrl_i(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_5_c);
+  control.rtype  <= ctrl_i.ir_opcode(6 downto 5);
+  control.funct3 <= ctrl_i.ir_funct3;
+  control.funct7 <= ctrl_i.ir_funct12(11 downto 5);
 
 
 -- ****************************************************************************************************************************

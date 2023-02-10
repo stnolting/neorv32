@@ -45,7 +45,7 @@
 -- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 -- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
 -- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+-- # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32       (c) Stephan Nolting #
 -- #################################################################################################
 
 library ieee;
@@ -63,7 +63,7 @@ entity neorv32_cpu_cp_fpu is
     -- global control --
     clk_i    : in  std_ulogic; -- global clock, rising edge
     rstn_i   : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i   : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+    ctrl_i   : in  ctrl_bus_t; -- main control bus
     start_i  : in  std_ulogic; -- trigger operation
     -- data input --
     cmp_i    : in  std_ulogic_vector(1 downto 0); -- comparator status
@@ -275,14 +275,14 @@ begin
   -- Instruction Decoding -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- one-hot re-encoding --
-  cmd.instr_class  <= '1' when (ctrl_i(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_7_c) = "11100") else '0';
-  cmd.instr_comp   <= '1' when (ctrl_i(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_7_c) = "10100") else '0';
-  cmd.instr_i2f    <= '1' when (ctrl_i(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_7_c) = "11010") else '0';
-  cmd.instr_f2i    <= '1' when (ctrl_i(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_7_c) = "11000") else '0';
-  cmd.instr_sgnj   <= '1' when (ctrl_i(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_7_c) = "00100") else '0';
-  cmd.instr_minmax <= '1' when (ctrl_i(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_7_c) = "00101") else '0';
-  cmd.instr_addsub <= '1' when (ctrl_i(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_8_c) = "0000")  else '0';
-  cmd.instr_mul    <= '1' when (ctrl_i(ctrl_ir_funct12_11_c downto ctrl_ir_funct12_7_c) = "00010") else '0';
+  cmd.instr_class  <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11100") else '0';
+  cmd.instr_comp   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "10100") else '0';
+  cmd.instr_i2f    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11010") else '0';
+  cmd.instr_f2i    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11000") else '0';
+  cmd.instr_sgnj   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00100") else '0';
+  cmd.instr_minmax <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00101") else '0';
+  cmd.instr_addsub <= '1' when (ctrl_i.ir_funct12(11 downto 8) = "0000")  else '0';
+  cmd.instr_mul    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00010") else '0';
 
   -- binary re-encoding --
   cmd.funct <= op_mul_c     when (cmd.instr_mul    = '1') else
@@ -379,10 +379,10 @@ begin
           cmp_ff   <= cmp_i; -- main ALU comparator
           -- rounding mode --
           -- TODO / FIXME "round to nearest, ties to max magnitude" (0b100) is not supported yet
-          if (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "111") then
-            fpu_operands.frm <= '0' & ctrl_i(ctrl_alu_frm1_c downto ctrl_alu_frm0_c);
+          if (ctrl_i.ir_funct3 = "111") then
+            fpu_operands.frm <= '0' & ctrl_i.alu_frm(1 downto 0);
           else
-            fpu_operands.frm <= '0' & ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c);
+            fpu_operands.frm <= '0' & ctrl_i.ir_funct3(1 downto 0);
           end if;
           --
           if (start_i = '1') then
@@ -398,7 +398,7 @@ begin
 
         when S_BUSY => -- operation in progress (multi-cycle)
         -- -----------------------------------------------------------
-          if (fu_core_done = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- processing done? abort if trap
+          if (fu_core_done = '1') or (ctrl_i.cpu_trap = '1') then -- processing done? abort if trap
             ctrl_engine.valid <= '1';
             ctrl_engine.state <= S_IDLE;
           end if;
@@ -492,7 +492,7 @@ begin
 
     -- condition evaluation --
     fu_compare.result <= (others => '0');
-    case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is
+    case ctrl_i.ir_funct3(1 downto 0) is
       when "00" => -- FLE: less than or equal
         fu_compare.result(0) <= (comp_less_ff or comp_equal_ff) and (not (snan_v or qnan_v)); -- result is zero if either input is NaN
       when "01" => -- FLT: less than
@@ -518,11 +518,11 @@ begin
   begin
     -- comparison result - check for special cases: -0 is less than +0
     if ((fpu_operands.rs1_class(fp_class_neg_zero_c) = '1') and (fpu_operands.rs2_class(fp_class_pos_zero_c) = '1')) then
-      cond_v(0) := ctrl_i(ctrl_ir_funct3_0_c);
+      cond_v(0) := ctrl_i.ir_funct3(0);
     elsif ((fpu_operands.rs1_class(fp_class_pos_zero_c) = '1') and (fpu_operands.rs2_class(fp_class_neg_zero_c) = '1')) then
-      cond_v(0) := not ctrl_i(ctrl_ir_funct3_0_c);
+      cond_v(0) := not ctrl_i.ir_funct3(0);
     else -- "normal= comparison
-      cond_v(0) := comp_less_ff xnor ctrl_i(ctrl_ir_funct3_0_c); -- min/max select
+      cond_v(0) := comp_less_ff xnor ctrl_i.ir_funct3(0); -- min/max select
     end if;
 
     -- number NaN check --
@@ -555,7 +555,7 @@ begin
     rstn_i     => rstn_i,                         -- global reset, low-active, async
     start_i    => fu_conv_f2i.start,              -- trigger operation
     rmode_i    => fpu_operands.frm,               -- rounding mode
-    funct_i    => ctrl_i(ctrl_ir_funct12_0_c),    -- 0=signed, 1=unsigned
+    funct_i    => ctrl_i.ir_funct12(0),           -- 0=signed, 1=unsigned
     -- input --
     sign_i     => fpu_operands.rs1(31),           -- sign
     exponent_i => fpu_operands.rs1(30 downto 23), -- exponent
@@ -572,7 +572,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   sign_injector: process(ctrl_i, fpu_operands)
   begin
-    case ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) is
+    case ctrl_i.ir_funct3(1 downto 0) is
       when "00"   => fu_sign_inject.result(31) <= fpu_operands.rs2(31); -- FSGNJ
       when "01"   => fu_sign_inject.result(31) <= not fpu_operands.rs2(31); -- FSGNJN
       when "10"   => fu_sign_inject.result(31) <= fpu_operands.rs1(31) xor fpu_operands.rs2(31); -- FSGNJX
@@ -593,7 +593,7 @@ begin
     -- this process only computes the absolute input value
     -- the actual conversion is done by the normalizer
     if rising_edge(clk_i) then
-      if (ctrl_i(ctrl_ir_funct12_0_c) = '0') and (rs1_i(31) = '1') then -- convert signed integer
+      if (ctrl_i.ir_funct12(0) = '0') and (rs1_i(31) = '1') then -- convert signed integer
         fu_conv_i2f.result <= std_ulogic_vector(0 - unsigned(rs1_i));
         fu_conv_i2f.sign   <= rs1_i(31); -- original sign
       else -- convert unsigned integer
@@ -817,14 +817,14 @@ begin
       end if;
 
       -- actual addition/subtraction (incl. overflow) --
-      if ((ctrl_i(ctrl_ir_funct12_7_c) xor (fpu_operands.rs1(31) xor fpu_operands.rs2(31))) = '0') then -- add
+      if ((ctrl_i.ir_funct12(7) xor (fpu_operands.rs1(31) xor fpu_operands.rs2(31))) = '0') then -- add
         addsub.add_stage <= std_ulogic_vector(unsigned('0' & addsub.man_l) + unsigned('0' & addsub.man_s));
       else -- sub
         addsub.add_stage <= std_ulogic_vector(unsigned('0' & addsub.man_l) - unsigned('0' & addsub.man_s));
       end if;
 
       -- result sign --
-      if (ctrl_i(ctrl_ir_funct12_7_c) = '0') then -- add
+      if (ctrl_i.ir_funct12(7) = '0') then -- add
         if (fpu_operands.rs1(31) = fpu_operands.rs2(31)) then -- identical signs
           addsub.res_sign <= fpu_operands.rs1(31);
         else -- different signs
@@ -898,7 +898,7 @@ begin
       a_snan_v     := fpu_operands.rs1_class(fp_class_snan_c);        b_snan_v     := fpu_operands.rs2_class(fp_class_snan_c);
       a_qnan_v     := fpu_operands.rs1_class(fp_class_qnan_c);        b_qnan_v     := fpu_operands.rs2_class(fp_class_qnan_c);
 
-      if (ctrl_i(ctrl_ir_funct12_7_c) = '0') then -- addition
+      if (ctrl_i.ir_funct12(7) = '0') then -- addition
         -- +infinity --
         addsub.res_class(fp_class_pos_inf_c) <=
           (a_pos_inf_v  and b_pos_inf_v)  or -- +inf    + +inf

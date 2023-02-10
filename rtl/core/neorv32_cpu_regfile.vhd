@@ -15,7 +15,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -41,7 +41,7 @@
 -- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 -- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
 -- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+-- # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32       (c) Stephan Nolting #
 -- #################################################################################################
 
 library ieee;
@@ -61,7 +61,7 @@ entity neorv32_cpu_regfile is
   port (
     -- global control --
     clk_i  : in  std_ulogic; -- global clock, rising edge
-    ctrl_i : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+    ctrl_i : in  ctrl_bus_t; -- main control bus
     -- data input --
     alu_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU result
     mem_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- memory read data
@@ -98,7 +98,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   wb_select: process(ctrl_i, alu_i, mem_i, csr_i, pc2_i)
   begin
-    case ctrl_i(ctrl_rf_mux1_c downto ctrl_rf_mux0_c) is
+    case ctrl_i.rf_mux is
       when rf_mux_alu_c => rf_wdata <= alu_i; -- ALU result
       when rf_mux_mem_c => rf_wdata <= mem_i; -- memory read data
       when rf_mux_csr_c => rf_wdata <= csr_i; -- CSR read data
@@ -111,17 +111,16 @@ begin
   -- Register File Access -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- access addresses --
-  opa_addr <= "00000" when (ctrl_i(ctrl_rf_zero_we_c) = '1') else -- force rd = zero
-              ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) when (ctrl_i(ctrl_rf_wb_en_c) = '1') else -- rd
-              ctrl_i(ctrl_rf_rs1_adr4_c downto ctrl_rf_rs1_adr0_c); -- rs1
-  opb_addr <= ctrl_i(ctrl_rf_rs2_adr4_c downto ctrl_rf_rs2_adr0_c); -- rs2
-  opc_addr <= ctrl_i(ctrl_rf_rs3_adr4_c downto ctrl_rf_rs3_adr0_c); -- rs3
-  opd_addr <= ctrl_i(ctrl_ir_funct12_6_c downto ctrl_ir_funct12_5_c) &
-              ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c); -- rs4: [26:25] & [14:12]; not RISC-V-standard!
+  opa_addr <= "00000" when (ctrl_i.rf_zero_we = '1') else -- force rd = zero
+              ctrl_i.rf_rd when (ctrl_i.rf_wb_en = '1') else -- rd
+              ctrl_i.rf_rs1; -- rs1
+  opb_addr <= ctrl_i.rf_rs2; -- rs2
+  opc_addr <= ctrl_i.rf_rs3; -- rs3
+  opd_addr <= ctrl_i.ir_funct12(6 downto 5) & ctrl_i.ir_funct3; -- rs4: [26:25] & [14:12]; not RISC-V-standard!
 
   -- write enable --
-  rd_zero <= '1' when (ctrl_i(ctrl_rf_rd_adr4_c downto ctrl_rf_rd_adr0_c) = "00000") else '0';
-  rf_we   <= (ctrl_i(ctrl_rf_wb_en_c) and (not rd_zero)) or ctrl_i(ctrl_rf_zero_we_c); -- do not write to x0 unless explicitly forced
+  rd_zero <= '1' when (ctrl_i.rf_rd = "00000") else '0';
+  rf_we   <= (ctrl_i.rf_wb_en and (not rd_zero)) or ctrl_i.rf_zero_we; -- do not write to x0 unless explicitly forced
 
 
   -- RV32I Register File with 32 Entries ----------------------------------------------------

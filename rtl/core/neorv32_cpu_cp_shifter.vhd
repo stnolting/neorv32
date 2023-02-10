@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -32,7 +32,7 @@
 -- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 -- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
 -- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+-- # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32       (c) Stephan Nolting #
 -- #################################################################################################
 
 library ieee;
@@ -51,7 +51,7 @@ entity neorv32_cpu_cp_shifter is
     -- global control --
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+    ctrl_i  : in  ctrl_bus_t; -- main control bus
     start_i : in  std_ulogic; -- trigger operation
     -- data input --
     rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
@@ -99,7 +99,7 @@ begin
         shifter.busy_ff <= shifter.busy;
         if (start_i = '1') then
           shifter.busy <= '1';
-        elsif (shifter.done = '1') or (ctrl_i(ctrl_trap_c) = '1') then -- abort on trap
+        elsif (shifter.done = '1') or (ctrl_i.cpu_trap = '1') then -- abort on trap
           shifter.busy <= '0';
         end if;
         -- shift register --
@@ -108,10 +108,10 @@ begin
           shifter.sreg <= rs1_i;
         elsif (or_reduce_f(shifter.cnt) = '1') then -- running shift (cnt != 0)
           shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 1);
-          if (ctrl_i(ctrl_ir_funct3_2_c) = '0') then -- SLL: shift left logical
+          if (ctrl_i.ir_funct3(2) = '0') then -- SLL: shift left logical
             shifter.sreg <= shifter.sreg(shifter.sreg'left-1 downto 0) & '0';
           else -- SRL: shift right logical / SRA: shift right arithmetical
-            shifter.sreg <= (shifter.sreg(shifter.sreg'left) and ctrl_i(ctrl_ir_funct12_10_c)) & shifter.sreg(shifter.sreg'left downto 1);
+            shifter.sreg <= (shifter.sreg(shifter.sreg'left) and ctrl_i.ir_funct12(10)) & shifter.sreg(shifter.sreg'left downto 1);
           end if;
         end if;
       end if;
@@ -134,7 +134,7 @@ begin
     barrel_shifter_core: process(rs1_i, shamt_i, ctrl_i, bs_level)
     begin
       -- input layer: convert left shifts to right shifts by reversing --
-      if (ctrl_i(ctrl_ir_funct3_2_c) = '0') then -- is left shift?
+      if (ctrl_i.ir_funct3(2) = '0') then -- is left shift?
         bs_level(index_size_f(XLEN)) <= bit_rev_f(rs1_i); -- reverse bit order of input operand
       else
         bs_level(index_size_f(XLEN)) <= rs1_i;
@@ -142,7 +142,7 @@ begin
       -- shifter array (right-shifts only) --
       for i in (index_size_f(XLEN)-1) downto 0 loop
         if (shamt_i(i) = '1') then
-          bs_level(i)(XLEN-1 downto XLEN-(2**i)) <= (others => (bs_level(i+1)(XLEN-1) and ctrl_i(ctrl_ir_funct12_10_c)));
+          bs_level(i)(XLEN-1 downto XLEN-(2**i)) <= (others => (bs_level(i+1)(XLEN-1) and ctrl_i.ir_funct12(10)));
           bs_level(i)((XLEN-(2**i))-1 downto 0)  <= bs_level(i+1)(XLEN-1 downto 2**i);
         else
           bs_level(i) <= bs_level(i+1);
@@ -160,7 +160,7 @@ begin
     end process barrel_shifter_buf;
 
     -- output layer: output gate and re-convert original left shifts --
-    res_o <= (others => '0') when (bs_start = '0') else bit_rev_f(bs_result) when (ctrl_i(ctrl_ir_funct3_2_c) = '0') else bs_result;
+    res_o <= (others => '0') when (bs_start = '0') else bit_rev_f(bs_result) when (ctrl_i.ir_funct3(2) = '0') else bs_result;
 
     -- processing done --
     valid_o <= start_i;
