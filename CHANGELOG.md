@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 10.02.2023 | 1.8.0.5 | :test_tube: add CPU co-processor monitor (to auto-terminate operation if a co-processor operation takes too long); [#490](https://github.com/stnolting/neorv32/pull/490) |
 | 10.02.2023 | 1.8.0.4 | replace CPU-internal control bus by a VHDL `record` (much cleaner code); minor control optimizations; add 6ht CPU co-processor slot (yet unused); [#489](https://github.com/stnolting/neorv32/pull/489) |
 | 05.02.2023 | 1.8.0.3 | CPU control optimizations; [#487](https://github.com/stnolting/neorv32/pull/487) |
 | 04.02.2023 | 1.8.0.2 | fix RISC-V-incompatible behavior of `mip` CSR; [#486](https://github.com/stnolting/neorv32/pull/486) |
