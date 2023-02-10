@@ -1014,27 +1014,27 @@ begin
             end case;
 
             -- co-processor MULDIV operation (multi-cycle) --
-            if ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and 
+            if ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and
                 ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
                ((CPU_EXTENSION_RISCV_Zmmul = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and
                 (decode_aux.is_m_mul = '1')) then -- MUL
               ctrl_nxt.alu_cp_trig(cp_sel_muldiv_c) <= '1'; -- trigger MULDIV CP
-              execute_engine.state_nxt <= ALU_WAIT;
+              execute_engine.state_nxt              <= ALU_WAIT;
             -- co-processor BIT-MANIPULATION operation (multi-cycle) --
             elsif (CPU_EXTENSION_RISCV_B = true) and
                   (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_b_reg = '1')) or -- register operation
                    ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
               ctrl_nxt.alu_cp_trig(cp_sel_bitmanip_c) <= '1'; -- trigger BITMANIP CP
-              execute_engine.state_nxt <= ALU_WAIT;
+              execute_engine.state_nxt                <= ALU_WAIT;
             -- co-processor SHIFT operation (multi-cycle) --
             elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or
                   (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) then
               ctrl_nxt.alu_cp_trig(cp_sel_shifter_c) <= '1'; -- trigger SHIFTER CP
-              execute_engine.state_nxt <= ALU_WAIT;
+              execute_engine.state_nxt               <= ALU_WAIT;
             -- ALU CORE operation (single-cycle) --
             else
-              ctrl_nxt.rf_wb_en <= '1'; -- valid RF write-back
-              execute_engine.state_nxt  <= DISPATCH;
+              ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back
+              execute_engine.state_nxt <= DISPATCH;
             end if;
 
 

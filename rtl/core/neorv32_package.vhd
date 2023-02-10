@@ -55,6 +55,9 @@ package neorv32_package is
   -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception
   constant max_proc_int_response_time_c : natural := 15; -- min 2
 
+  -- log2 of co-processor timeout cycles --
+  constant cp_timeout_c : natural := 7; -- default = 7
+
   -- JTAG tap - identifier --
   constant jtag_tap_idcode_version_c : std_ulogic_vector(03 downto 0) := x"0"; -- version
   constant jtag_tap_idcode_partid_c  : std_ulogic_vector(15 downto 0) := x"cafe"; -- part number
@@ -62,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080004"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080005"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------

@@ -146,6 +146,9 @@ The co-processors are implemented as iterative units that require several cycles
 the co-processors are used to implement all further processing-based ISA extensions (e.g. <<_m_integer_multiplication_and_division>> and
 <<_b_bit_manipulation_operations>>). Custom RISC-V instructions (<<_custom_functions_unit_cfu>>) are also implemented as ALU co-processor.
 
+Once triggered, the selected co-processor is required to complete processing within a bound time window. Otherwise, the co-processor
+operation is terminated by the hardware and an illegal instruction exception is raised. The time window is 2^T^ clock cycles
+wide; _T_ is defined by the `cp_timeout_c` VHDL package constant (default = 7 -> 128 cycles).
 
 :sectnums:
 ==== CPU Bus Unit

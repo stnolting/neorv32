@@ -218,7 +218,7 @@ The default CFU hardware module already implement some exemplary instructions th
 by the CFU example program. See the CFU's VHDL source file (`rtl/core/neorv32_cpu_cp_cfu.vhd`), which
 is highly commented to explain the available signals and the handshake with the CPU pipeline.
 
-.CFU hardware resource requirements
+.CFU Hardware Resource Requirements
 [WARNING]
 Enabling the CFU and actually implementing R4-type and/or R5-type instructions (or more precisely, using
 the according operands for the CFU hardware) will add one or two additional read ports to the core's
@@ -226,11 +226,11 @@ register file increasing resource requirements.
 
 CFU operations can be entirely combinatorial (like bit-reversal) so the result is available at the end of
 the current clock cycle. Operations can also take several clock cycles to complete (like multiplications)
-and may also include internal states and memories. The CFU's internal controller unit takes care of
-interfacing the custom user logic to the CPU's pipeline.
+and may also include internal states and memories. The CFU's internal control/proxy unit takes care of
+interfacing the custom user logic to the CPU pipeline.
 
 .CFU Execution Time
 [NOTE]
-The CFU is not required to finish processing within a bound time. However, you should keep in mind that the
-CPU is _stalled_ until the CFU has finished processing. This also means the CPU cannot react to pending
-interrupts during this time affecting real-time behavior (interrupt requests will still be queued).
+The CFU has to complete computation within a **bound time window**. Otherwise, the CFU operation is terminated
+by the hardware and an illegal instruction exception is raised. See section <<_cpu_arithmetic_logic_unit>>
+for more information.
