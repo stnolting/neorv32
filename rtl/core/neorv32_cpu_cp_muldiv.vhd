@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -33,7 +33,7 @@
 -- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 -- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
 -- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+-- # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32       (c) Stephan Nolting #
 -- #################################################################################################
 
 library ieee;
@@ -53,7 +53,7 @@ entity neorv32_cpu_cp_muldiv is
     -- global control --
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+    ctrl_i  : in  ctrl_bus_t; -- main control bus
     start_i : in  std_ulogic; -- trigger operation
     -- data input --
     rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
@@ -166,7 +166,7 @@ begin
 
         when S_BUSY => -- processing
           ctrl.cnt <= std_ulogic_vector(unsigned(ctrl.cnt) - 1);
-          if (or_reduce_f(ctrl.cnt) = '0') or (ctrl_i(ctrl_trap_c) = '1') then -- abort on trap
+          if (or_reduce_f(ctrl.cnt) = '0') or (ctrl_i.cpu_trap = '1') then -- abort on trap
             ctrl.state <= S_DONE;
           end if;
 
@@ -184,8 +184,8 @@ begin
   valid_o <= '1' when (ctrl.state = S_DONE) else '0';
 
   -- co-processor operation --
-  ctrl.cp_op <= ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c);
-  ctrl.op    <= '1' when (ctrl_i(ctrl_ir_funct3_2_c) = '1') else '0';
+  ctrl.cp_op <= ctrl_i.ir_funct3;
+  ctrl.op    <= '1' when (ctrl_i.ir_funct3(2) = '1') else '0';
 
   -- input operands treated as signed? --
   ctrl.rs1_is_signed <= '1' when (ctrl.cp_op = cp_op_mulh_c) or (ctrl.cp_op = cp_op_mulhsu_c) or

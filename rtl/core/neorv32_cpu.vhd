@@ -1,11 +1,6 @@
 -- #################################################################################################
 -- # << NEORV32 - CPU Top Entity >>                                                                #
 -- # ********************************************************************************************* #
--- # Check out the CPU's online documentation for more information:                                #
--- #  HQ:         https://github.com/stnolting/neorv32                                             #
--- #  Data Sheet: https://stnolting.github.io/neorv32                                              #
--- #  User Guide: https://stnolting.github.io/neorv32/ug                                           #
--- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
 -- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
@@ -34,7 +29,7 @@
 -- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 -- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
 -- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+-- # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32       (c) Stephan Nolting #
 -- #################################################################################################
 
 library ieee;
@@ -129,7 +124,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant ipb_depth_c    : natural := cond_sel_natural_f(ipb_override_c, 2, CPU_IPB_ENTRIES);
 
   -- local signals --
-  signal ctrl        : std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+  signal ctrl        : ctrl_bus_t; -- main control bus
   signal imm         : std_ulogic_vector(XLEN-1 downto 0); -- immediate
   signal rs1         : std_ulogic_vector(XLEN-1 downto 0); -- source register 1
   signal rs2         : std_ulogic_vector(XLEN-1 downto 0); -- source register 2
@@ -139,7 +134,8 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal alu_add     : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0); -- comparator result
   signal mem_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- memory read data
-  signal alu_idone   : std_ulogic; -- iterative alu operation done
+  signal cp_done     : std_ulogic; -- ALU co-prefetch operation done
+  signal alu_exc     : std_ulogic; -- ALU exception
   signal bus_d_wait  : std_ulogic; -- wait for current bus data access
   signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
   signal mar         : std_ulogic_vector(XLEN-1 downto 0); -- current memory address register
@@ -304,7 +300,8 @@ begin
     i_bus_err_i   => i_bus_err_i,   -- bus transfer error
     i_pmp_fault_i => i_pmp_fault,   -- instruction fetch pmp fault
     -- status input --
-    alu_idone_i   => alu_idone,     -- ALU iterative operation done
+    alu_cp_done_i => cp_done,       -- ALU iterative operation done
+    alu_exc_i     => alu_exc,       -- ALU exception
     bus_d_wait_i  => bus_d_wait,    -- wait for bus
     -- data input --
     cmp_i         => alu_cmp,       -- comparator status
@@ -337,13 +334,13 @@ begin
   );
 
   -- CPU state --
-  sleep_o <= ctrl(ctrl_sleep_c); -- set when CPU is sleeping (after WFI)
-  debug_o <= ctrl(ctrl_debug_running_c); -- set when CPU is in debug mode
+  sleep_o <= ctrl.cpu_sleep; -- set when CPU is sleeping (after WFI)
+  debug_o <= ctrl.cpu_debug; -- set when CPU is in debug mode
 
   -- instruction fetch interface --
   i_bus_addr_o  <= fetch_pc;
-  i_bus_fence_o <= ctrl(ctrl_bus_fencei_c);
-  i_bus_priv_o  <= ctrl(ctrl_priv_mode_c);
+  i_bus_fence_o <= ctrl.bus_fencei;
+  i_bus_priv_o  <= ctrl.cpu_priv;
 
 
   -- Register File --------------------------------------------------------------------------
@@ -405,7 +402,8 @@ begin
     add_o       => alu_add,   -- address computation result
     fpu_flags_o => fpu_flags, -- FPU exception flags
     -- status --
-    idone_o     => alu_idone  -- iterative processing units done?
+    exc_o       => alu_exc,   -- ALU exception
+    cp_done_o   => cp_done    -- iterative processing units done?
   );
 
 

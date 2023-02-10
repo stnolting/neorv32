@@ -29,7 +29,7 @@
 -- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 -- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
 -- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+-- # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32       (c) Stephan Nolting #
 -- #################################################################################################
 
 library ieee;
@@ -62,7 +62,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080003"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080004"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -746,83 +746,66 @@ package neorv32_package is
 
   -- Main CPU Control Bus -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- register file --
-  constant ctrl_rf_wb_en_c      : natural :=  0; -- write back enable
-  constant ctrl_rf_rs1_adr0_c   : natural :=  1; -- source register 1 address bit 0
-  constant ctrl_rf_rs1_adr1_c   : natural :=  2; -- source register 1 address bit 1
-  constant ctrl_rf_rs1_adr2_c   : natural :=  3; -- source register 1 address bit 2
-  constant ctrl_rf_rs1_adr3_c   : natural :=  4; -- source register 1 address bit 3
-  constant ctrl_rf_rs1_adr4_c   : natural :=  5; -- source register 1 address bit 4
-  constant ctrl_rf_rs2_adr0_c   : natural :=  6; -- source register 2 address bit 0
-  constant ctrl_rf_rs2_adr1_c   : natural :=  7; -- source register 2 address bit 1
-  constant ctrl_rf_rs2_adr2_c   : natural :=  8; -- source register 2 address bit 2
-  constant ctrl_rf_rs2_adr3_c   : natural :=  9; -- source register 2 address bit 3
-  constant ctrl_rf_rs2_adr4_c   : natural := 10; -- source register 2 address bit 4
-  constant ctrl_rf_rs3_adr0_c   : natural := 11; -- source register 3 address bit 0
-  constant ctrl_rf_rs3_adr1_c   : natural := 12; -- source register 3 address bit 1
-  constant ctrl_rf_rs3_adr2_c   : natural := 13; -- source register 3 address bit 2
-  constant ctrl_rf_rs3_adr3_c   : natural := 14; -- source register 3 address bit 3
-  constant ctrl_rf_rs3_adr4_c   : natural := 15; -- source register 3 address bit 4
-  constant ctrl_rf_rd_adr0_c    : natural := 16; -- destination register address bit 0
-  constant ctrl_rf_rd_adr1_c    : natural := 17; -- destination register address bit 1
-  constant ctrl_rf_rd_adr2_c    : natural := 18; -- destination register address bit 2
-  constant ctrl_rf_rd_adr3_c    : natural := 19; -- destination register address bit 3
-  constant ctrl_rf_rd_adr4_c    : natural := 20; -- destination register address bit 4
-  constant ctrl_rf_mux0_c       : natural := 21; -- input source select lsb
-  constant ctrl_rf_mux1_c       : natural := 22; -- input source select msb
-  constant ctrl_rf_zero_we_c    : natural := 23; -- allow/force write access to x0
-  -- alu --
-  constant ctrl_alu_op0_c       : natural := 24; -- ALU operation select bit 0
-  constant ctrl_alu_op1_c       : natural := 25; -- ALU operation select bit 1
-  constant ctrl_alu_op2_c       : natural := 26; -- ALU operation select bit 2
-  constant ctrl_alu_opa_mux_c   : natural := 27; -- operand A select (0=rs1, 1=PC)
-  constant ctrl_alu_opb_mux_c   : natural := 28; -- operand B select (0=rs2, 1=IMM)
-  constant ctrl_alu_unsigned_c  : natural := 29; -- is unsigned ALU operation
-  constant ctrl_alu_frm0_c      : natural := 30; -- FPU rounding mode bit 0
-  constant ctrl_alu_frm1_c      : natural := 31; -- FPU rounding mode bit 1
-  constant ctrl_alu_frm2_c      : natural := 32; -- FPU rounding mode bit 2
-  -- alu co-processor trigger (one-hot selection) --
-  constant ctrl_cp_trig0_c      : natural := 33; -- trigger CP0
-  constant ctrl_cp_trig1_c      : natural := 34; -- trigger CP1
-  constant ctrl_cp_trig2_c      : natural := 35; -- trigger CP2
-  constant ctrl_cp_trig3_c      : natural := 36; -- trigger CP3
-  constant ctrl_cp_trig4_c      : natural := 37; -- trigger CP4
-  -- bus interface --
-  constant ctrl_bus_req_c       : natural := 38; -- trigger memory request
-  constant ctrl_bus_mo_we_c     : natural := 39; -- memory address and data output register write enable
-  constant ctrl_bus_fence_c     : natural := 40; -- fence operation
-  constant ctrl_bus_fencei_c    : natural := 41; -- fence.i operation
-  constant ctrl_bus_priv_c      : natural := 42; -- effective privilege level for load/store
-  -- instruction word control blocks --
-  constant ctrl_ir_funct3_0_c   : natural := 43; -- funct3 bit 0
-  constant ctrl_ir_funct3_1_c   : natural := 44; -- funct3 bit 1
-  constant ctrl_ir_funct3_2_c   : natural := 45; -- funct3 bit 2
-  constant ctrl_ir_funct12_0_c  : natural := 46; -- funct12 bit 0
-  constant ctrl_ir_funct12_1_c  : natural := 47; -- funct12 bit 1
-  constant ctrl_ir_funct12_2_c  : natural := 48; -- funct12 bit 2
-  constant ctrl_ir_funct12_3_c  : natural := 49; -- funct12 bit 3
-  constant ctrl_ir_funct12_4_c  : natural := 50; -- funct12 bit 4
-  constant ctrl_ir_funct12_5_c  : natural := 51; -- funct12 bit 5
-  constant ctrl_ir_funct12_6_c  : natural := 52; -- funct12 bit 6
-  constant ctrl_ir_funct12_7_c  : natural := 53; -- funct12 bit 7
-  constant ctrl_ir_funct12_8_c  : natural := 54; -- funct12 bit 8
-  constant ctrl_ir_funct12_9_c  : natural := 55; -- funct12 bit 9
-  constant ctrl_ir_funct12_10_c : natural := 56; -- funct12 bit 10
-  constant ctrl_ir_funct12_11_c : natural := 57; -- funct12 bit 11
-  constant ctrl_ir_opcode7_0_c  : natural := 58; -- opcode7 bit 0
-  constant ctrl_ir_opcode7_1_c  : natural := 59; -- opcode7 bit 1
-  constant ctrl_ir_opcode7_2_c  : natural := 60; -- opcode7 bit 2
-  constant ctrl_ir_opcode7_3_c  : natural := 61; -- opcode7 bit 3
-  constant ctrl_ir_opcode7_4_c  : natural := 62; -- opcode7 bit 4
-  constant ctrl_ir_opcode7_5_c  : natural := 63; -- opcode7 bit 5
-  constant ctrl_ir_opcode7_6_c  : natural := 64; -- opcode7 bit 6
-  -- cpu status --
-  constant ctrl_priv_mode_c     : natural := 65; -- effective privilege mode
-  constant ctrl_sleep_c         : natural := 66; -- set when CPU is in sleep mode
-  constant ctrl_trap_c          : natural := 67; -- set when CPU is entering trap execution
-  constant ctrl_debug_running_c : natural := 68; -- set when CPU is in debug mode
-  -- control bus size --
-  constant ctrl_width_c         : natural := 69; -- control bus size
+  type ctrl_bus_t is record
+    -- register file --
+    rf_wb_en      : std_ulogic; -- write back enable
+    rf_rs1        : std_ulogic_vector(04 downto 0); -- source register 1 address
+    rf_rs2        : std_ulogic_vector(04 downto 0); -- source register 2 address
+    rf_rs3        : std_ulogic_vector(04 downto 0); -- source register 3 address
+    rf_rd         : std_ulogic_vector(04 downto 0); -- destination register address
+    rf_mux        : std_ulogic_vector(01 downto 0); -- input source select
+    rf_zero_we    : std_ulogic;                     -- allow/force write access to x0
+    -- alu --
+    alu_op        : std_ulogic_vector(02 downto 0); -- ALU operation select
+    alu_opa_mux   : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
+    alu_opb_mux   : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
+    alu_unsigned  : std_ulogic;                     -- is unsigned ALU operation
+    alu_frm       : std_ulogic_vector(02 downto 0); -- FPU rounding mode
+    alu_cp_trig   : std_ulogic_vector(05 downto 0); -- trigger CP (one-hot)
+    -- bus interface --
+    bus_req       : std_ulogic;                     -- trigger memory request
+    bus_mo_we     : std_ulogic;                     -- memory address and data output register write enable
+    bus_fence     : std_ulogic;                     -- fence operation
+    bus_fencei    : std_ulogic;                     -- fence.i operation
+    bus_priv      : std_ulogic;                     -- effective privilege level for load/store
+    -- instruction word bit fields --
+    ir_funct3     : std_ulogic_vector(02 downto 0); -- funct3 bit-field
+    ir_funct12    : std_ulogic_vector(11 downto 0); -- funct12 bit-field
+    ir_opcode     : std_ulogic_vector(06 downto 0); -- opcode bit-field
+    -- cpu status --
+    cpu_priv      : std_ulogic;                     -- effective privilege mode
+    cpu_sleep     : std_ulogic;                     -- set when CPU is in sleep mode
+    cpu_trap      : std_ulogic;                     -- set when CPU is entering trap exec
+    cpu_debug     : std_ulogic;                     -- set when CPU is in debug mode
+  end record;
+
+  constant ctrl_bus_zero_c : ctrl_bus_t := (
+    rf_wb_en      => '0',
+    rf_rs1        => (others => '0'),
+    rf_rs2        => (others => '0'),
+    rf_rs3        => (others => '0'),
+    rf_rd         => (others => '0'),
+    rf_mux        => (others => '0'),
+    rf_zero_we    => '0',
+    alu_op        => (others => '0'),
+    alu_opa_mux   => '0',
+    alu_opb_mux   => '0',
+    alu_unsigned  => '0',
+    alu_frm       => (others => '0'),
+    alu_cp_trig   => (others => '0'),
+    bus_req       => '0',
+    bus_mo_we     => '0',
+    bus_fence     => '0',
+    bus_fencei    => '0',
+    bus_priv      => '0',
+    ir_funct3     => (others => '0'),
+    ir_funct12    => (others => '0'),
+    ir_opcode     => (others => '0'),
+    cpu_priv      => '0',
+    cpu_sleep     => '0',
+    cpu_trap      => '0',
+    cpu_debug     => '0'
+  );
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -836,6 +819,7 @@ package neorv32_package is
   constant cp_sel_bitmanip_c : natural := 2; -- CP2: bit manipulation ('B' extensions)
   constant cp_sel_fpu_c      : natural := 3; -- CP3: floating-point unit ('Zfinx' extension)
   constant cp_sel_cfu_c      : natural := 4; -- CP4: custom instructions CFU ('Zxcfu' extension)
+--constant cp_sel_???_c      : natural := 5; -- CP5: reserved
 
   -- ALU Function Codes [DO NOT CHANGE ENCODING!] -------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1254,7 +1238,7 @@ package neorv32_package is
       -- global control --
       clk_i         : in  std_ulogic; -- global clock, rising edge
       rstn_i        : in  std_ulogic; -- global reset, low-active, async
-      ctrl_o        : out std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      ctrl_o        : out ctrl_bus_t; -- main control bus
       -- instruction fetch interface --
       i_bus_addr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- bus access address
       i_bus_rdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- bus read data
@@ -1263,7 +1247,8 @@ package neorv32_package is
       i_bus_err_i   : in  std_ulogic; -- bus transfer error
       i_pmp_fault_i : in  std_ulogic; -- instruction fetch pmp fault
       -- status input --
-      alu_idone_i   : in  std_ulogic; -- ALU iterative operation done
+      alu_cp_done_i : in  std_ulogic; -- ALU iterative operation done
+      alu_exc_i     : in  std_ulogic; -- ALU exception
       bus_d_wait_i  : in  std_ulogic; -- wait for bus
       -- data input --
       cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
@@ -1308,7 +1293,7 @@ package neorv32_package is
     port (
       -- global control --
       clk_i  : in  std_ulogic; -- global clock, rising edge
-      ctrl_i : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      ctrl_i : in  ctrl_bus_t; -- main control bus
       -- data input --
       alu_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU result
       mem_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- memory read data
@@ -1341,7 +1326,7 @@ package neorv32_package is
       -- global control --
       clk_i       : in  std_ulogic; -- global clock, rising edge
       rstn_i      : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i      : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      ctrl_i      : in  ctrl_bus_t; -- main control bus
       -- data input --
       rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
       rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
@@ -1355,7 +1340,8 @@ package neorv32_package is
       add_o       : out std_ulogic_vector(XLEN-1 downto 0); -- address computation result
       fpu_flags_o : out std_ulogic_vector(4 downto 0); -- FPU exception flags
       -- status --
-      idone_o     : out std_ulogic -- iterative processing units done?
+      exc_o       : out std_ulogic; -- ALU exception
+      cp_done_o   : out std_ulogic -- co-processor operation done?
     );
   end component;
 
@@ -1370,7 +1356,7 @@ package neorv32_package is
       -- global control --
       clk_i   : in  std_ulogic; -- global clock, rising edge
       rstn_i  : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      ctrl_i  : in  ctrl_bus_t; -- main control bus
       start_i : in  std_ulogic; -- trigger operation
       -- data input --
       rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
@@ -1393,7 +1379,7 @@ package neorv32_package is
       -- global control --
       clk_i   : in  std_ulogic; -- global clock, rising edge
       rstn_i  : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      ctrl_i  : in  ctrl_bus_t; -- main control bus
       start_i : in  std_ulogic; -- trigger operation
       -- data input --
       rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
@@ -1415,7 +1401,7 @@ package neorv32_package is
       -- global control --
       clk_i   : in  std_ulogic; -- global clock, rising edge
       rstn_i  : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      ctrl_i  : in  ctrl_bus_t; -- main control bus
       start_i : in  std_ulogic; -- trigger operation
       -- data input --
       cmp_i   : in  std_ulogic_vector(1 downto 0); -- comparator status
@@ -1438,7 +1424,7 @@ package neorv32_package is
       -- global control --
       clk_i    : in  std_ulogic; -- global clock, rising edge
       rstn_i   : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i   : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      ctrl_i   : in  ctrl_bus_t; -- main control bus
       start_i  : in  std_ulogic; -- trigger operation
       -- data input --
       cmp_i    : in  std_ulogic_vector(1 downto 0); -- comparator status
@@ -1462,7 +1448,7 @@ package neorv32_package is
       -- global control --
       clk_i   : in  std_ulogic; -- global clock, rising edge
       rstn_i  : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      ctrl_i  : in  ctrl_bus_t; -- main control bus
       start_i : in  std_ulogic; -- trigger operation
       -- data input --
       rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
@@ -1487,7 +1473,7 @@ package neorv32_package is
       -- global control --
       clk_i         : in  std_ulogic; -- global clock, rising edge
       rstn_i        : in  std_ulogic := '0'; -- global reset, low-active, async
-      ctrl_i        : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+      ctrl_i        : in  ctrl_bus_t; -- main control bus
       -- cpu instruction fetch interface --
       fetch_pc_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- PC for instruction fetch
       i_pmp_fault_o : out std_ulogic; -- instruction fetch pmp fault

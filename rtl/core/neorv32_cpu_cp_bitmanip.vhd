@@ -38,7 +38,7 @@
 -- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 -- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
 -- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+-- # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32       (c) Stephan Nolting #
 -- #################################################################################################
 
 library ieee;
@@ -57,7 +57,7 @@ entity neorv32_cpu_cp_bitmanip is
     -- global control --
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i  : in  std_ulogic_vector(ctrl_width_c-1 downto 0); -- main control bus
+    ctrl_i  : in  ctrl_bus_t; -- main control bus
     start_i : in  std_ulogic; -- trigger operation
     -- data input --
     cmp_i   : in  std_ulogic_vector(1 downto 0); -- comparator status
@@ -186,40 +186,40 @@ begin
   -- A more precise decoding as well as a valid-instruction-check is performed by the CPU control unit.
 
   -- Zbb - Basic bit-manipulation instructions --
-  cmd(op_andn_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "11") else '0';
-  cmd(op_orn_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "10") else '0';
-  cmd(op_xnor_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_1_c downto ctrl_ir_funct3_0_c) = "00") else '0';
+  cmd(op_andn_c)   <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "11") else '0';
+  cmd(op_orn_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "10") else '0';
+  cmd(op_xnor_c)   <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "00") else '0';
   --
-  cmd(op_max_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) = "11") else '0';
-  cmd(op_min_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) = "10") else '0';
-  cmd(op_zexth_c)  <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '0') else '0';
+  cmd(op_max_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 1) = "11") else '0';
+  cmd(op_min_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 1) = "10") else '0';
+  cmd(op_zexth_c)  <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '0') else '0';
   --
-  cmd(op_orcb_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "101") else '0';
+  cmd(op_orcb_c)   <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2 downto 0) = "101") else '0';
   --
-  cmd(op_clz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "000") and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
-  cmd(op_ctz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "001") and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
-  cmd(op_cpop_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "010") and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
-  cmd(op_sextb_c)  <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "100") and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
-  cmd(op_sexth_c)  <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct12_2_c downto ctrl_ir_funct12_0_c) = "101") and (ctrl_i(ctrl_ir_opcode7_5_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
-  cmd(op_rol_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c  downto ctrl_ir_funct3_0_c)  = "001") and (ctrl_i(ctrl_ir_opcode7_5_c) = '1') else '0';
-  cmd(op_ror_c)    <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c  downto ctrl_ir_funct3_0_c)  = "101") and                                         (ctrl_i(ctrl_ir_funct3_2_c) = '1') else '0';
-  cmd(op_rev8_c)   <= '1' when (zbb_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c  downto ctrl_ir_funct3_0_c)  = "101") else '0';
+  cmd(op_clz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "000") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_ctz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "001") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_cpop_c)   <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "010") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_sextb_c)  <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "100") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_sexth_c)  <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "101") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_rol_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(02 downto 0) = "001") and (ctrl_i.ir_opcode(5) = '1') else '0';
+  cmd(op_ror_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(02 downto 0) = "101") and                                 (ctrl_i.ir_funct3(2) = '1') else '0';
+  cmd(op_rev8_c)   <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(02 downto 0) = "101") else '0';
 
   -- Zba - Address generation instructions --
-  cmd(op_sh1add_c) <= '1' when (zba_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) = "01") else '0';
-  cmd(op_sh2add_c) <= '1' when (zba_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) = "10") else '0';
-  cmd(op_sh3add_c) <= '1' when (zba_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '0') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) = "11") else '0';
+  cmd(op_sh1add_c) <= '1' when (zba_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(2 downto 1) = "01") else '0';
+  cmd(op_sh2add_c) <= '1' when (zba_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(2 downto 1) = "10") else '0';
+  cmd(op_sh3add_c) <= '1' when (zba_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(2 downto 1) = "11") else '0';
 
   -- Zbs - Single-bit instructions --
-  cmd(op_bclr_c)   <= '1' when (zbs_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
-  cmd(op_bext_c)   <= '1' when (zbs_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "10") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '1') else '0';
-  cmd(op_binv_c)   <= '1' when (zbs_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "11") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
-  cmd(op_bset_c)   <= '1' when (zbs_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "01") and (ctrl_i(ctrl_ir_funct12_7_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c) = '0') else '0';
+  cmd(op_bclr_c)   <= '1' when (zbs_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_bext_c)   <= '1' when (zbs_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '1') else '0';
+  cmd(op_binv_c)   <= '1' when (zbs_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_bset_c)   <= '1' when (zbs_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
 
   -- Zbc - Carry-less multiplication instructions --
-  cmd(op_clmul_c)  <= '1' when (zbc_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "001") else '0';
-  cmd(op_clmulh_c) <= '1' when (zbc_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "011") else '0';
-  cmd(op_clmulr_c) <= '1' when (zbc_en_c = true) and (ctrl_i(ctrl_ir_funct12_10_c downto ctrl_ir_funct12_9_c) = "00") and (ctrl_i(ctrl_ir_funct12_5_c) = '1') and (ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_0_c) = "010") else '0';
+  cmd(op_clmul_c)  <= '1' when (zbc_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 0) = "001") else '0';
+  cmd(op_clmulh_c) <= '1' when (zbc_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 0) = "011") else '0';
+  cmd(op_clmulr_c) <= '1' when (zbc_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 0) = "010") else '0';
 
 
   -- Co-Processor Controller ----------------------------------------------------------------
@@ -275,7 +275,7 @@ begin
 
         when S_BUSY_SHIFT => -- wait for multi-cycle shift operation to finish
         -- ------------------------------------------------------------
-          if (shifter.run = '0') or (ctrl_i(ctrl_trap_c) = '1') then -- abort on trap
+          if (shifter.run = '0') or (ctrl_i.cpu_trap = '1') then -- abort on trap
             valid      <= '1';
             ctrl_state <= S_IDLE;
           end if;
@@ -286,7 +286,7 @@ begin
 
         when S_BUSY_CLMUL => -- wait for multi-cycle clmul operation to finish
         -- ------------------------------------------------------------
-          if (clmul.busy = '0') or (ctrl_i(ctrl_trap_c) = '1') then -- abort on trap
+          if (clmul.busy = '0') or (ctrl_i.cpu_trap = '1') then -- abort on trap
             valid      <= '1';
             ctrl_state <= S_IDLE;
           end if;
@@ -399,7 +399,7 @@ begin
   shift_adder: process(rs1_reg, rs2_reg, ctrl_i)
     variable opb_v : std_ulogic_vector(XLEN-1 downto 0);
   begin
-    case ctrl_i(ctrl_ir_funct3_2_c downto ctrl_ir_funct3_1_c) is
+    case ctrl_i.ir_funct3(2 downto 1) is
       when "01"   => opb_v := rs1_reg(rs1_reg'left-1 downto 0) & '0';   -- << 1
       when "10"   => opb_v := rs1_reg(rs1_reg'left-2 downto 0) & "00";  -- << 2
       when others => opb_v := rs1_reg(rs1_reg'left-3 downto 0) & "000"; -- << 3
