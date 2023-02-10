@@ -92,10 +92,10 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal cp_res     : std_ulogic_vector(XLEN-1 downto 0);
 
   -- co-processor interface --
-  type cp_data_if_t  is array (0 to 4) of std_ulogic_vector(XLEN-1 downto 0);
+  type cp_data_if_t  is array (0 to 5) of std_ulogic_vector(XLEN-1 downto 0);
   signal cp_result : cp_data_if_t; -- co-processor result
-  signal cp_start  : std_ulogic_vector(4 downto 0); -- trigger co-processor
-  signal cp_valid  : std_ulogic_vector(4 downto 0); -- co-processor done
+  signal cp_start  : std_ulogic_vector(5 downto 0); -- trigger co-processor
+  signal cp_valid  : std_ulogic_vector(5 downto 0); -- co-processor done
 
 begin
 
@@ -164,15 +164,15 @@ begin
 
   -- co-processor select / start trigger --
   -- > "cp_start" is high for one cycle to trigger operation of the according co-processor
-  cp_start(4 downto 0) <= ctrl_i.alu_cp_trig;
+  cp_start(5 downto 0) <= ctrl_i.alu_cp_trig;
 
   -- (iterative) co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
-  cp_done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4);
+  cp_done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5);
 
   -- co-processor result --
   -- > "cp_result" data has to be always zero unless the specific co-processor has been actually triggered
-  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4);
+  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5);
 
 
   -- Co-Processor 0: Shifter Unit ('I'/'E' Base ISA) ----------------------------------------
@@ -326,6 +326,12 @@ begin
     cp_result(4) <= (others => '0');
     cp_valid(4)  <= '0';
   end generate;
+
+
+  -- Co-Processor 5: Reserved ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  cp_result(5) <= (others => '0');
+  cp_valid(5)  <= '0';
 
 
 end neorv32_cpu_cpu_rtl;

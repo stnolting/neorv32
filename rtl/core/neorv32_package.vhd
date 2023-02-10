@@ -761,7 +761,7 @@ package neorv32_package is
     alu_opb_mux   : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
     alu_unsigned  : std_ulogic;                     -- is unsigned ALU operation
     alu_frm       : std_ulogic_vector(02 downto 0); -- FPU rounding mode
-    alu_cp_trig   : std_ulogic_vector(04 downto 0); -- trigger CP (one-hot)
+    alu_cp_trig   : std_ulogic_vector(05 downto 0); -- trigger CP (one-hot)
     -- bus interface --
     bus_req       : std_ulogic;                     -- trigger memory request
     bus_mo_we     : std_ulogic;                     -- memory address and data output register write enable
@@ -819,6 +819,7 @@ package neorv32_package is
   constant cp_sel_bitmanip_c : natural := 2; -- CP2: bit manipulation ('B' extensions)
   constant cp_sel_fpu_c      : natural := 3; -- CP3: floating-point unit ('Zfinx' extension)
   constant cp_sel_cfu_c      : natural := 4; -- CP4: custom instructions CFU ('Zxcfu' extension)
+--constant cp_sel_???_c      : natural := 5; -- CP5: reserved
 
   -- ALU Function Codes [DO NOT CHANGE ENCODING!] -------------------------------------------
   -- -------------------------------------------------------------------------------------------
