@@ -80,7 +80,7 @@ entity neorv32_ProcessorTop_MinimalBoot is
     ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
     -- Processor peripherals --
-    IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM                  : natural := 0;      -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
     IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_PWM_NUM_CH                : natural := 3;      -- number of PWM channels to implement (0..60); 0 = disabled
