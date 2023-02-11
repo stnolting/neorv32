@@ -94,7 +94,7 @@ void neorv32_rte_setup(void) {
 int neorv32_rte_handler_install(uint8_t id, void (*handler)(void)) {
 
   // id valid?
-  if ((id >= RTE_TRAP_I_MISALIGNED) && (id <= CSR_MIE_FIRQ15E)) {
+  if ((id >= RTE_TRAP_I_MISALIGNED) && (id <= RTE_TRAP_FIRQ_15)) {
     __neorv32_rte_vector_lut[id] = (uint32_t)handler; // install handler
     return 0;
   }
@@ -112,7 +112,7 @@ int neorv32_rte_handler_install(uint8_t id, void (*handler)(void)) {
 int neorv32_rte_handler_uninstall(uint8_t id) {
 
   // id valid?
-  if ((id >= RTE_TRAP_I_MISALIGNED) && (id <= CSR_MIE_FIRQ15E)) {
+  if ((id >= RTE_TRAP_I_MISALIGNED) && (id <= RTE_TRAP_FIRQ_15)) {
     __neorv32_rte_vector_lut[id] = (uint32_t)(&__neorv32_rte_debug_handler); // use dummy handler in case the trap is accidentally triggered
     return 0;
   }
@@ -239,8 +239,12 @@ static void __neorv32_rte_debug_handler(void) {
     default:                     neorv32_uart0_puts("Unknown trap cause: "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
-  // check cause if bus access fault exception
-  if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_L_ACCESS) || (trap_cause == TRAP_CODE_S_ACCESS)) {
+  // check if FIRQ
+  if ((trap_cause >= TRAP_CODE_FIRQ_0) && (trap_cause <= TRAP_CODE_FIRQ_15)) {
+    neorv32_cpu_csr_clr(CSR_MIP, 1 << trap_cause & 0xf); // clear pending FIRQ
+  }
+  // check specific cause if bus access fault exception
+  else if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_L_ACCESS) || (trap_cause == TRAP_CODE_S_ACCESS)) {
     uint32_t bus_err = NEORV32_BUSKEEPER.CTRL;
     if (bus_err & (1<<BUSKEEPER_ERR_FLAG)) { // exception caused by bus system?
       if (bus_err & (1<<BUSKEEPER_ERR_TYPE)) {

@@ -164,6 +164,10 @@ The default RTE trap handlers are executed when a certain trap is triggered that
 application-specific trap handler. The default handler will output a message giving additional debug information
 via UART0 to inform the user and will try to resume normal program execution.
 
+.Fast Interrupts (FIRQs)
+[NOTE]
+The RTE default trap handlers will also clear the according <<_mip>> bit if an un-handled fast interrupt occurs.
+
 .Continuing Execution
 [WARNING]
 In most cases the RTE can successfully continue operation - for example if it catches an **interrupt** request that is not handled
@@ -225,7 +229,7 @@ The specific _message_ right at the beginning of the debug trap handler message 
 
 ===== Bus Access Faults
 
-For bus access faults the RTE default trap handlers also output the error code from the
+For bus access faults the RTE default trap handlers also outputs an error code from the
 <<_internal_bus_monitor_buskeeper>> to show the cause of the bus fault. One example is shown below.
 
 .RTE Default Trap Handler Output Example (Load Access Bus Fault)
