@@ -803,13 +803,14 @@ implemented reducing access latency by one cycle but eventually increasing the c
 ==== Processor Peripheral/IO Modules
 
 :sectnums!:
-===== _IO_GPIO_EN_
+===== _IO_GPIO_NUM_
 
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_GPIO_EN** | _boolean_ | false
-3+| Implement <<_general_purpose_input_and_output_port_gpio>> module when true.
+| **IO_GPIO_NUM** | _natural_ | 0
+3+| Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>. If set to zero,
+GPIO controller is not implemented at all.
 |======
 
 
