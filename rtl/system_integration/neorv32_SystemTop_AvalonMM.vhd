@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - Processor Top Entity with AvalonMM Compatible Master Interface >>                #
 -- # ********************************************************************************************* #
--- # (c) "AvalonMM", "NIOS-2", "Qsys", "MegaWizard"  and "Platform Designer"                       # 
+-- # (c) "AvalonMM", "NIOS-2", "Qsys", "MegaWizard"  and "Platform Designer"                       #
 -- # are trademarks of Intel                                                                       #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
@@ -106,7 +106,7 @@ entity neorv32_top_avalonmm is
     XIRQ_TRIGGER_POLARITY        : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
 
     -- Processor peripherals --
-    IO_GPIO_EN                   : boolean := false;  -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM                  : natural := 0;      -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  : boolean := false;  -- implement machine system timer (MTIME)?
     IO_UART0_EN                  : boolean := false;  -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART0_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
@@ -311,7 +311,7 @@ begin
     XIRQ_TRIGGER_POLARITY => XIRQ_TRIGGER_POLARITY,
 
     -- Processor peripherals --
-    IO_GPIO_EN => IO_GPIO_EN,
+    IO_GPIO_NUM => IO_GPIO_NUM,
     IO_MTIME_EN => IO_MTIME_EN,
     IO_UART0_EN => IO_UART0_EN,
     IO_UART0_RX_FIFO => IO_UART0_RX_FIFO,
@@ -429,7 +429,7 @@ begin
     msw_irq_i => msw_irq_i,
     mext_irq_i => mext_irq_i
   );
-  
+
   -- Wishbone to AvalonMM bridge
   read_o <= '1' when (wb_stb_o = '1' and wb_we_o = '0') else '0';
   write_o <= '1' when (wb_stb_o = '1' and wb_we_o = '1') else '0';
@@ -440,5 +440,5 @@ begin
   wb_dat_i <= std_ulogic_vector(readdata_i);
   wb_ack_i <= not(waitrequest_i);
   wb_err_i <= '0';
-  
+
 end neorv32_top_avalonmm_rtl;

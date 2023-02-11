@@ -171,7 +171,7 @@ begin
     ICACHE_ASSOCIATIVITY         => ICACHE_ASSOCIATIVITY,  -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
     -- Processor peripherals --
-    IO_GPIO_EN                   => IO_GPIO_EN,    -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM                  => IO_GPIO_NUM,   -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  => IO_MTIME_EN,   -- implement machine system timer (MTIME)?
     IO_UART0_EN                  => IO_UART0_EN,   -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_PWM_NUM_CH                => IO_PWM_NUM_CH, -- number of PWM channels to implement (0..60); 0 = disabled
@@ -182,7 +182,7 @@ begin
     clk_i       => clk_i,                        -- global clock, rising edge
     rstn_i      => rstn_i,                       -- global reset, low-active, async
 
-    -- GPIO (available if IO_GPIO_EN = true) --
+    -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o      => con_gpio_o,                   -- parallel output
     gpio_i      => (others => '0'),              -- parallel input
 
