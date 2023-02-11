@@ -116,7 +116,7 @@ entity neorv32_top is
     XIRQ_TRIGGER_POLARITY        : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
 
     -- Processor peripherals --
-    IO_GPIO_EN                   : boolean := false;  -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM                  : natural := 0;      -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  : boolean := false;  -- implement machine system timer (MTIME)?
     IO_UART0_EN                  : boolean := false;  -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART0_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
@@ -187,7 +187,7 @@ entity neorv32_top is
     slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
     slink_rx_lst_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- last data of packet
 
-    -- GPIO (available if IO_GPIO_EN = true) --
+    -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
     gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- parallel input
 
@@ -246,7 +246,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant dmem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) := (others => '0');
 
   -- helpers --
-  constant io_slink_en_c : boolean := boolean(SLINK_NUM_RX > 0) or boolean(SLINK_NUM_TX > 0); -- implement slink at all?
+  constant io_slink_en_c : boolean := boolean(SLINK_NUM_RX > 0) or boolean(SLINK_NUM_TX > 0); -- implement SLINK at all?`
 
   -- reset generator --
   signal rstn_ext_sreg : std_ulogic_vector(3 downto 0);
@@ -394,7 +394,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   assert false report
   "NEORV32 PROCESSOR CONFIG NOTE: Peripherals = " &
-  cond_sel_string_f(IO_GPIO_EN, "GPIO ", "") &
+  cond_sel_string_f(boolean(IO_GPIO_NUM > 0), "GPIO ", "") &
   cond_sel_string_f(IO_MTIME_EN, "MTIME ", "") &
   cond_sel_string_f(IO_UART0_EN, "UART0 ", "") &
   cond_sel_string_f(IO_UART1_EN, "UART1 ", "") &
@@ -1055,8 +1055,11 @@ begin
   -- General Purpose Input/Output Port (GPIO) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_gpio_inst_true:
-  if (IO_GPIO_EN = true) generate
+  if (IO_GPIO_NUM > 0) generate
     neorv32_gpio_inst: neorv32_gpio
+    generic map (
+      GPIO_NUM => IO_GPIO_NUM -- number of GPIO input/output pairs (0..64)
+    )
     port map (
       -- host access --
       clk_i  => clk_i,                     -- global clock line
@@ -1067,15 +1070,15 @@ begin
       data_i => p_bus.wdata,               -- data in
       data_o => resp_bus(RESP_GPIO).rdata, -- data out
       ack_o  => resp_bus(RESP_GPIO).ack,   -- transfer acknowledge
-      err_o  => resp_bus(RESP_GPIO).err,   -- transfer error
       -- parallel io --
       gpio_o => gpio_o,
       gpio_i => gpio_i
     );
+    resp_bus(RESP_GPIO).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_gpio_inst_false:
-  if (IO_GPIO_EN = false) generate
+  if (IO_GPIO_NUM = 0) generate
     resp_bus(RESP_GPIO) <= resp_bus_entry_terminate_c;
     --
     gpio_o <= (others => '0');
@@ -1627,7 +1630,7 @@ begin
     -- On-Chip Debugger --
     ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,  -- implement OCD?
     -- Processor peripherals --
-    IO_GPIO_EN           => IO_GPIO_EN,           -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM          => IO_GPIO_NUM,          -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN          => IO_MTIME_EN,          -- implement machine system timer (MTIME)?
     IO_UART0_EN          => IO_UART0_EN,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART1_EN          => IO_UART1_EN,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?

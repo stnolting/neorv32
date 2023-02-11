@@ -1,12 +1,9 @@
 -- #################################################################################################
 -- # << NEORV32 - General Purpose Parallel Input/Output Port (GPIO) >>                             #
 -- # ********************************************************************************************* #
--- # 64-bit general purpose parallel input & output port unit. Input/outputs are split into two    #
--- # 32-bit memory-mapped registers each.                                                          #
--- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -43,6 +40,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_gpio is
+  generic (
+    GPIO_NUM : natural -- number of GPIO input/output pairs (0..64)
+  );
   port (
     -- host access --
     clk_i  : in  std_ulogic; -- global clock line
@@ -53,7 +53,6 @@ entity neorv32_gpio is
     data_i : in  std_ulogic_vector(31 downto 0); -- data in
     data_o : out std_ulogic_vector(31 downto 0); -- data out
     ack_o  : out std_ulogic; -- transfer acknowledge
-    err_o  : out std_ulogic; -- transfer error
     -- parallel io --
     gpio_o : out std_ulogic_vector(63 downto 0);
     gpio_i : in  std_ulogic_vector(63 downto 0)
@@ -73,10 +72,15 @@ architecture neorv32_gpio_rtl of neorv32_gpio is
   signal rden   : std_ulogic; -- read enable
 
   -- accessible regs --
-  signal din_hi,  din_lo  : std_ulogic_vector(31 downto 0); -- r/-: parallel input hi/lo
-  signal dout_hi, dout_lo : std_ulogic_vector(31 downto 0); -- r/w: parallel output hi/lo
+  signal din, din_rd, dout, dout_rd : std_ulogic_vector(63 downto 0);
 
 begin
+
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not ((GPIO_NUM < 0) or (GPIO_NUM > 64)) report
+    "NEORV32 PROCESSOR CONFIG ERROR! Invalid GPIO pin number configuration (0..64)." severity error;
+
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -91,22 +95,18 @@ begin
   write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      dout_lo <= (others => '0');
-      dout_hi <= (others => '0');
+      dout <= (others => '0');
     elsif rising_edge(clk_i) then
       if (wren = '1') then
         if (addr = gpio_out_lo_addr_c) then
-          dout_lo <= data_i;
+          dout(31 downto 00) <= data_i;
         end if;
         if (addr = gpio_out_hi_addr_c) then
-          dout_hi <= data_i;
+          dout(63 downto 32) <= data_i;
         end if;
       end if;
     end if;
   end process write_access;
-
-  -- GPIO output --
-  gpio_o <= dout_hi & dout_lo;
 
 
   -- Read Access ----------------------------------------------------------------------------
@@ -115,29 +115,37 @@ begin
   begin
     if rising_edge(clk_i) then
       -- bus handshake --
-      ack_o <= (wren and addr(3)) or rden;
-      err_o <= wren and (not addr(3)); -- INPUT registers are read only!
+      ack_o <= wren or rden;
       -- read data --
       data_o <= (others => '0');
       if (rden = '1') then
         case addr(3 downto 2) is
-          when "00"   => data_o <= din_lo;
-          when "01"   => data_o <= din_hi;
-          when "10"   => data_o <= dout_lo;
-          when others => data_o <= dout_hi;
+          when "00"   => data_o <= din_rd(31 downto 00);
+          when "01"   => data_o <= din_rd(63 downto 32);
+          when "10"   => data_o <= dout_rd(31 downto 00);
+          when others => data_o <= dout_rd(63 downto 32);
         end case;
       end if;
     end if;
   end process read_access;
 
-  -- sample buffer to prevent metastability --
-  input_buffer: process (clk_i)
+
+  -- Physical Pin Mapping -------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  pin_mapping: process(din, dout)
   begin
-    if rising_edge(clk_i) then
-      din_lo <= gpio_i(31 downto 00);
-      din_hi <= gpio_i(63 downto 32);
-    end if;
-  end process input_buffer;
+    -- defaults --
+    din_rd  <= (others => '0');
+    dout_rd <= (others => '0');
+    for i in 0 to GPIO_NUM-1 loop
+      din_rd(i)  <= din(i);
+      dout_rd(i) <= dout(i);
+    end loop;
+  end process pin_mapping;
+
+  -- IO --
+  gpio_o <= dout_rd;
+  din    <= gpio_i when rising_edge(clk_i); -- sample buffer to prevent metastability
 
 
 end neorv32_gpio_rtl;

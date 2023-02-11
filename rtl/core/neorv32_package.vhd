@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080005"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080006"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -764,17 +764,17 @@ package neorv32_package is
     alu_opb_mux   : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
     alu_unsigned  : std_ulogic;                     -- is unsigned ALU operation
     alu_frm       : std_ulogic_vector(02 downto 0); -- FPU rounding mode
-    alu_cp_trig   : std_ulogic_vector(05 downto 0); -- trigger CP (one-hot)
+    alu_cp_trig   : std_ulogic_vector(05 downto 0); -- co-processor trigger (one-hot)
     -- bus interface --
     bus_req       : std_ulogic;                     -- trigger memory request
     bus_mo_we     : std_ulogic;                     -- memory address and data output register write enable
     bus_fence     : std_ulogic;                     -- fence operation
     bus_fencei    : std_ulogic;                     -- fence.i operation
     bus_priv      : std_ulogic;                     -- effective privilege level for load/store
-    -- instruction word bit fields --
-    ir_funct3     : std_ulogic_vector(02 downto 0); -- funct3 bit-field
-    ir_funct12    : std_ulogic_vector(11 downto 0); -- funct12 bit-field
-    ir_opcode     : std_ulogic_vector(06 downto 0); -- opcode bit-field
+    -- instruction word --
+    ir_funct3     : std_ulogic_vector(02 downto 0); -- funct3 bit field
+    ir_funct12    : std_ulogic_vector(11 downto 0); -- funct12 bit field
+    ir_opcode     : std_ulogic_vector(06 downto 0); -- opcode bit field
     -- cpu status --
     cpu_priv      : std_ulogic;                     -- effective privilege mode
     cpu_sleep     : std_ulogic;                     -- set when CPU is in sleep mode
@@ -782,32 +782,33 @@ package neorv32_package is
     cpu_debug     : std_ulogic;                     -- set when CPU is in debug mode
   end record;
 
+  -- control bus reset initializer --
   constant ctrl_bus_zero_c : ctrl_bus_t := (
-    rf_wb_en      => '0',
-    rf_rs1        => (others => '0'),
-    rf_rs2        => (others => '0'),
-    rf_rs3        => (others => '0'),
-    rf_rd         => (others => '0'),
-    rf_mux        => (others => '0'),
-    rf_zero_we    => '0',
-    alu_op        => (others => '0'),
-    alu_opa_mux   => '0',
-    alu_opb_mux   => '0',
-    alu_unsigned  => '0',
-    alu_frm       => (others => '0'),
-    alu_cp_trig   => (others => '0'),
-    bus_req       => '0',
-    bus_mo_we     => '0',
-    bus_fence     => '0',
-    bus_fencei    => '0',
-    bus_priv      => '0',
-    ir_funct3     => (others => '0'),
-    ir_funct12    => (others => '0'),
-    ir_opcode     => (others => '0'),
-    cpu_priv      => '0',
-    cpu_sleep     => '0',
-    cpu_trap      => '0',
-    cpu_debug     => '0'
+    rf_wb_en     => '0',
+    rf_rs1       => (others => '0'),
+    rf_rs2       => (others => '0'),
+    rf_rs3       => (others => '0'),
+    rf_rd        => (others => '0'),
+    rf_mux       => (others => '0'),
+    rf_zero_we   => '0',
+    alu_op       => (others => '0'),
+    alu_opa_mux  => '0',
+    alu_opb_mux  => '0',
+    alu_unsigned => '0',
+    alu_frm      => (others => '0'),
+    alu_cp_trig  => (others => '0'),
+    bus_req      => '0',
+    bus_mo_we    => '0',
+    bus_fence    => '0',
+    bus_fencei   => '0',
+    bus_priv     => '0',
+    ir_funct3    => (others => '0'),
+    ir_funct12   => (others => '0'),
+    ir_opcode    => (others => '0'),
+    cpu_priv     => '0',
+    cpu_sleep    => '0',
+    cpu_trap     => '0',
+    cpu_debug    => '0'
   );
 
   -- Comparator Bus -------------------------------------------------------------------------
@@ -1027,7 +1028,7 @@ package neorv32_package is
       XIRQ_TRIGGER_TYPE            : std_ulogic_vector(31 downto 0) := x"FFFFFFFF"; -- trigger type: 0=level, 1=edge
       XIRQ_TRIGGER_POLARITY        : std_ulogic_vector(31 downto 0) := x"FFFFFFFF"; -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
       -- Processor peripherals --
-      IO_GPIO_EN                   : boolean := false;  -- implement general purpose input/output port unit (GPIO)?
+      IO_GPIO_NUM                  : natural := 0;      -- number of GPIO input/output pairs (0..64)
       IO_MTIME_EN                  : boolean := false;  -- implement machine system timer (MTIME)?
       IO_UART0_EN                  : boolean := false;  -- implement primary universal asynchronous receiver/transmitter (UART0)?
       IO_UART0_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
@@ -1091,7 +1092,7 @@ package neorv32_package is
       slink_rx_val_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- valid input
       slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
       slink_rx_lst_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- last data of packet
-      -- GPIO (available if IO_GPIO_EN = true) --
+      -- GPIO (available if IO_GPIO_NUM > 0) --
       gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
       gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- parallel input
       -- primary UART0 (available if IO_UART0_EN = true) --
@@ -1704,6 +1705,9 @@ package neorv32_package is
   -- Component: General Purpose Input/Output Port (GPIO) ------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_gpio
+    generic (
+      GPIO_NUM : natural -- number of GPIO input/output pairs (0..64)
+    );
     port (
       -- host access --
       clk_i  : in  std_ulogic; -- global clock line
@@ -1714,7 +1718,6 @@ package neorv32_package is
       data_i : in  std_ulogic_vector(31 downto 0); -- data in
       data_o : out std_ulogic_vector(31 downto 0); -- data out
       ack_o  : out std_ulogic; -- transfer acknowledge
-      err_o  : out std_ulogic; -- transfer error
       -- parallel io --
       gpio_o : out std_ulogic_vector(63 downto 0);
       gpio_i : in  std_ulogic_vector(63 downto 0)
@@ -2154,7 +2157,7 @@ package neorv32_package is
       -- On-Chip Debugger --
       ON_CHIP_DEBUGGER_EN  : boolean; -- implement OCD?
       -- Processor peripherals --
-      IO_GPIO_EN           : boolean; -- implement general purpose input/output port unit (GPIO)?
+      IO_GPIO_NUM          : natural; -- number of GPIO input/output pairs (0..64)
       IO_MTIME_EN          : boolean; -- implement machine system timer (MTIME)?
       IO_UART0_EN          : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
       IO_UART1_EN          : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
