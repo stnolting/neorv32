@@ -92,7 +92,7 @@ entity neorv32_SystemTop_axi4lite is
     XIRQ_TRIGGER_TYPE            : std_logic_vector(31 downto 0) := x"FFFFFFFF"; -- trigger type: 0=level, 1=edge
     XIRQ_TRIGGER_POLARITY        : std_logic_vector(31 downto 0) := x"FFFFFFFF"; -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
     -- Processor peripherals --
-    IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM                  : natural := 0;      -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
     IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART0_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
@@ -339,7 +339,7 @@ begin
     XIRQ_TRIGGER_TYPE            => XIRQ_TRIGGER_TYPE_INT, -- trigger type: 0=level, 1=edge
     XIRQ_TRIGGER_POLARITY        => XIRQ_TRIGGER_POLARITY_INT, -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
     -- Processor peripherals --
-    IO_GPIO_EN                   => IO_GPIO_EN,         -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM                  => IO_GPIO_NUM,        -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  => IO_MTIME_EN,        -- implement machine system timer (MTIME)?
     IO_UART0_EN                  => IO_UART0_EN,        -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART0_RX_FIFO             => IO_UART0_RX_FIFO,   -- RX fifo depth, has to be a power of two, min 1
@@ -393,7 +393,7 @@ begin
     xip_clk_o   => xip_clk_o_int,   -- serial clock
     xip_sdi_i   => xip_sdi_i_int,   -- device data input
     xip_sdo_o   => xip_sdo_o_int,   -- controller data output
-    -- GPIO (available if IO_GPIO_EN = true) --
+    -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o      => gpio_o_int,      -- parallel output
     gpio_i      => gpio_i_int,      -- parallel input
     -- primary UART0 (available if IO_UART0_EN = true) --

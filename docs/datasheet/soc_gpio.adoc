@@ -10,25 +10,22 @@
 |                          | neorv32_gpio.h |
 | Top entity port:         | `gpio_o` | 64-bit parallel output port
 |                          | `gpio_i` | 64-bit parallel input port
-| Configuration generics:  | _IO_GPIO_EN_ | implement GPIO port when _true_
+| Configuration generics:  | _IO_GPIO_NUM_ | number of input/output pairs (0..64)
 | CPU interrupts:          | none |
 |=======================
 
-The general purpose parallel IO port unit provides a simple 64-bit parallel input port and a 64-bit parallel
-output port. These ports can be used chip-externally (for example to drive status LEDs, connect buttons, etc.)
-or chip-internally to provide control signals for other IP modules. The component is disabled for
-implementation when the _IO_GPIO_EN_ generic is set _false_. In this case the GPIO output port `gpio_o` is tied to all-zero.
+The general purpose parallel IO unit provides a simple parallel input and output port. These ports can be used chip-externally
+(for example to drive status LEDs, connect buttons, etc.) or chip-internally to provide control signals for other IP modules.
+The actual number of input/output pairs is defined by the _IO_GPIO_NUM_ generic. When set to zero, the GPIO module is excluded
+from synthesis and the output port `gpio_o` is tied to all-zero. If _IO_GPIO_NUM_ is less than the maximum value of 64
+only the LSB-aligned bits in `gpio_o` and `gpio_i` are actually connected while the remaining bits are unconnected or tied
+to zero, respectively.
 
 .Access Atomicity
 [NOTE]
 The GPIO modules uses two memory-mapped registers (each 32-bit) each for accessing the input and
 output signals. Since the CPU can only process 32-bit "at once" updating the entire output cannot
 be performed within a single clock cycle.
-
-.INPUT is read-only
-[NOTE]
-Write accesses to the `NEORV32_GPIO.INPUT_LO` and `NEORV32_GPIO.INPUT_HI` registers will raise a store bus
-error exception. The BUSKEEPER will indicate a "DEVICE_ERR" in this case.
 
 
 **Register Map**

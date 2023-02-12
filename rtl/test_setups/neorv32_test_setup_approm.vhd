@@ -80,14 +80,14 @@ begin
     MEM_INT_DMEM_EN              => true,              -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
     -- Processor peripherals --
-    IO_GPIO_EN                   => true,              -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM                  => 8,                 -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  => true               -- implement machine system timer (MTIME)?
   )
   port map (
     -- Global control --
     clk_i  => clk_i,     -- global clock, rising edge
     rstn_i => rstn_i,    -- global reset, low-active, async
-    -- GPIO (available if IO_GPIO_EN = true) --
+    -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o => con_gpio_o -- parallel output
   );
 

@@ -227,7 +227,7 @@ begin
     XIRQ_TRIGGER_TYPE            => (others => '1'), -- trigger type: 0=level, 1=edge
     XIRQ_TRIGGER_POLARITY        => (others => '1'), -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
     -- Processor peripherals --
-    IO_GPIO_EN                   => true,          -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM                  => 64,            -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  => true,          -- implement machine system timer (MTIME)?
     IO_UART0_EN                  => true,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART0_RX_FIFO             => 32,            -- RX fifo depth, has to be a power of two, min 1
@@ -291,7 +291,7 @@ begin
     slink_rx_val_i => slink_val,       -- valid input
     slink_rx_rdy_o => slink_rdy,       -- ready to receive
     slink_rx_lst_i => slink_lst,       -- last data of package
-    -- GPIO (available if IO_GPIO_EN = true) --
+    -- GPIO (available if IO_GPIO_NUM > true) --
     gpio_o         => gpio,            -- parallel output
     gpio_i         => gpio,            -- parallel input
     -- primary UART0 (available if IO_UART0_EN = true) --

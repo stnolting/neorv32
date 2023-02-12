@@ -82,7 +82,7 @@ entity neorv32_ProcessorTop_UP5KDemo is
     ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
     -- Processor peripherals --
-    IO_GPIO_EN                   : boolean := true;   -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM                  : natural := 64;     -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
     IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
@@ -94,7 +94,7 @@ entity neorv32_ProcessorTop_UP5KDemo is
     clk_i       : in  std_logic;
     rstn_i      : in  std_logic;
 
-    -- GPIO (available if IO_GPIO_EN = true) --
+    -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_i      : in  std_ulogic_vector(3 downto 0);
     gpio_o      : out std_ulogic_vector(3 downto 0);
 
@@ -211,7 +211,7 @@ begin
     ICACHE_ASSOCIATIVITY         => ICACHE_ASSOCIATIVITY,  -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
     -- Processor peripherals --
-    IO_GPIO_EN                   => IO_GPIO_EN,     -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM                  => IO_GPIO_NUM,    -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  => IO_MTIME_EN,    -- implement machine system timer (MTIME)?
     IO_UART0_EN                  => IO_UART0_EN,    -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_SPI_EN                    => IO_SPI_EN,      -- implement serial peripheral interface (SPI)?
@@ -224,7 +224,7 @@ begin
     clk_i       => clk_i,                        -- global clock, rising edge
     rstn_i      => rstn_i,                       -- global reset, low-active, async
 
-    -- GPIO (available if IO_GPIO_EN = true) --
+    -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o      => con_gpio_o,                   -- parallel output
     gpio_i      => con_gpio_i,                   -- parallel input
 

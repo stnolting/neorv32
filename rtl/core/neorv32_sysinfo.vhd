@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -67,7 +67,7 @@ entity neorv32_sysinfo is
     -- On-Chip Debugger --
     ON_CHIP_DEBUGGER_EN  : boolean; -- implement OCD?
     -- Processor peripherals --
-    IO_GPIO_EN           : boolean; -- implement general purpose input/output port unit (GPIO)?
+    IO_GPIO_NUM          : natural; -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN          : boolean; -- implement machine system timer (MTIME)?
     IO_UART0_EN          : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART1_EN          : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
@@ -146,22 +146,22 @@ begin
   --
   sysinfo_mem(2)(15) <= '0'; -- reserved
   -- IO --
-  sysinfo_mem(2)(16) <= bool_to_ulogic_f(IO_GPIO_EN);    -- general purpose input/output port unit (GPIO) implemented?
-  sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN);   -- machine system timer (MTIME) implemented?
-  sysinfo_mem(2)(18) <= bool_to_ulogic_f(IO_UART0_EN);   -- primary universal asynchronous receiver/transmitter (UART0) implemented?
-  sysinfo_mem(2)(19) <= bool_to_ulogic_f(IO_SPI_EN);     -- serial peripheral interface (SPI) implemented?
-  sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_EN);     -- two-wire interface (TWI) implemented?
-  sysinfo_mem(2)(21) <= bool_to_ulogic_f(boolean(IO_PWM_NUM_CH > 0)); -- pulse-width modulation unit (PWM) implemented?
-  sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_EN);     -- watch dog timer (WDT) implemented?
-  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFS_EN);     -- custom functions subsystem (CFS) implemented?
-  sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_EN);    -- true random number generator (TRNG) implemented?
-  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_SLINK_EN);   -- stream links (SLINK) implemented?
-  sysinfo_mem(2)(26) <= bool_to_ulogic_f(IO_UART1_EN);   -- secondary universal asynchronous receiver/transmitter (UART1) implemented?
-  sysinfo_mem(2)(27) <= bool_to_ulogic_f(IO_NEOLED_EN);  -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
+  sysinfo_mem(2)(16) <= bool_to_ulogic_f(boolean(IO_GPIO_NUM > 0));    -- general purpose input/output port unit (GPIO) implemented?
+  sysinfo_mem(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN);                 -- machine system timer (MTIME) implemented?
+  sysinfo_mem(2)(18) <= bool_to_ulogic_f(IO_UART0_EN);                 -- primary universal asynchronous receiver/transmitter (UART0) implemented?
+  sysinfo_mem(2)(19) <= bool_to_ulogic_f(IO_SPI_EN);                   -- serial peripheral interface (SPI) implemented?
+  sysinfo_mem(2)(20) <= bool_to_ulogic_f(IO_TWI_EN);                   -- two-wire interface (TWI) implemented?
+  sysinfo_mem(2)(21) <= bool_to_ulogic_f(boolean(IO_PWM_NUM_CH > 0));  -- pulse-width modulation unit (PWM) implemented?
+  sysinfo_mem(2)(22) <= bool_to_ulogic_f(IO_WDT_EN);                   -- watch dog timer (WDT) implemented?
+  sysinfo_mem(2)(23) <= bool_to_ulogic_f(IO_CFS_EN);                   -- custom functions subsystem (CFS) implemented?
+  sysinfo_mem(2)(24) <= bool_to_ulogic_f(IO_TRNG_EN);                  -- true random number generator (TRNG) implemented?
+  sysinfo_mem(2)(25) <= bool_to_ulogic_f(IO_SLINK_EN);                 -- stream links (SLINK) implemented?
+  sysinfo_mem(2)(26) <= bool_to_ulogic_f(IO_UART1_EN);                 -- secondary universal asynchronous receiver/transmitter (UART1) implemented?
+  sysinfo_mem(2)(27) <= bool_to_ulogic_f(IO_NEOLED_EN);                -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
   sysinfo_mem(2)(28) <= bool_to_ulogic_f(boolean(IO_XIRQ_NUM_CH > 0)); -- external interrupt controller (XIRQ) implemented?
-  sysinfo_mem(2)(29) <= bool_to_ulogic_f(IO_GPTMR_EN);   -- general purpose timer (GPTMR) implemented?
-  sysinfo_mem(2)(30) <= bool_to_ulogic_f(IO_XIP_EN);     -- execute in place module (XIP) implemented?
-  sysinfo_mem(2)(31) <= bool_to_ulogic_f(IO_ONEWIRE_EN); -- 1-wire interface (ONEWIRE) implemented?
+  sysinfo_mem(2)(29) <= bool_to_ulogic_f(IO_GPTMR_EN);                 -- general purpose timer (GPTMR) implemented?
+  sysinfo_mem(2)(30) <= bool_to_ulogic_f(IO_XIP_EN);                   -- execute in place module (XIP) implemented?
+  sysinfo_mem(2)(31) <= bool_to_ulogic_f(IO_ONEWIRE_EN);               -- 1-wire interface (ONEWIRE) implemented?
 
   -- SYSINFO(3): Cache configuration --
   sysinfo_mem(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE),    4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(block_size_in_bytes)

@@ -158,7 +158,6 @@ begin
     IO_MTIME_EN                  => IO_MTIME_EN,   -- implement machine system timer (MTIME)?
     IO_PWM_NUM_CH                => IO_PWM_NUM_CH, -- number of PWM channels to implement (0..60); 0 = disabled
     IO_WDT_EN                    => IO_WDT_EN      -- implement watch dog timer (WDT)?
-
   )
   port map (
     -- Global control --
