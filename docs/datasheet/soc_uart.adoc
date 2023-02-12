@@ -161,11 +161,11 @@ section https://stnolting.github.io/neorv32/ug/#_simulating_the_processor[Simula
 **Register Map**
 
 .UART0 register map (`struct NEORV32_UART0`)
-[cols="<6,<7,<10,^2,<18"]
+[cols="<3,<3,<4,^1,<4"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.21+<| `0xffffffa0` .21+<| `NEORV32_UART0.CTRL` <|`11:0` _UART_CTRL_BAUDxx_ ^| r/w <| 12-bit BAUD value configuration value
+.21+<| `0xffffffa0` .21+<| `NEORV32_UART0.CTRL` <|`11:0` _UART_CTRL_BAUDxx_ ^| r/w <| 12-bit Baud value configuration value
                                                 <|`12` _UART_CTRL_SIM_MODE_ ^| r/w <| enable **simulation mode**
                                                 <|`13` _UART_CTRL_RX_EMPTY_ ^| r/- <| RX FIFO is empty
                                                 <|`14` _UART_CTRL_RX_HALF_  ^| r/- <| RX FIFO is at least half-full
@@ -178,7 +178,7 @@ section https://stnolting.github.io/neorv32/ug/#_simulating_the_processor[Simula
                                                 <|`21` _UART_CTRL_CTS_EN_   ^| r/w <| enable CTS hardware flow control
                                                 <|`22` _UART_CTRL_PMODE0_   ^| r/w .2+<| parity bit enable and configuration (`00`/`01`= no parity; `10`=even parity; `11`=odd parity)
                                                 <|`23` _UART_CTRL_PMODE1_   ^| r/w 
-                                                <|`24` _UART_CTRL_PRSC0_    ^| r/w .3+<| 3-bit baudrate clock prescaler select
+                                                <|`24` _UART_CTRL_PRSC0_    ^| r/w .3+<| 3-bit Baud rate clock prescaler select
                                                 <|`25` _UART_CTRL_PRSC1_    ^| r/w 
                                                 <|`26` _UART_CTRL_PRSC2_    ^| r/w 
                                                 <|`27` _UART_CTRL_CTS_      ^| r/- <| current state of UART's CTS input signal
@@ -189,7 +189,7 @@ section https://stnolting.github.io/neorv32/ug/#_simulating_the_processor[Simula
 .6+<| `0xffffffa4` .6+<| `NEORV32_UART0.DATA` <|`7:0` _UART_DATA_MSB_ : _UART_DATA_LSB_ ^| r/w <| receive/transmit data (8-bit)
                                               <|`31:0` -                ^| -/w <| **simulation data output**
                                               <|`28` _UART_DATA_PERR_   ^| r/- <| RX parity error
-                                              <|`29` _UART_DATA_FERR_   ^| r/- <| RX data frame error (stop bit nt set)
+                                              <|`29` _UART_DATA_FERR_   ^| r/- <| RX data frame error (stop bit not set)
                                               <|`30` _UART_DATA_OVERR_  ^| r/- <| RX data overrun
                                               <|`31` _UART_DATA_AVAIL_  ^| r/- <| RX data available when set
 |=======================
@@ -238,35 +238,10 @@ data words.
 **Register Map**
 
 .UART1 register map (`struct NEORV32_UART1`)
-[cols="<6,<7,<10,^2,<18"]
+[cols="<3,<3,<4,^1,<4"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.21+<| `0xffffffd0` .21+<| `NEORV32_UART1.CTRL` <|`11:0` _UART_CTRL_BAUDxx_ ^| r/w <| 12-bit BAUD value configuration value
-                                                <|`12` _UART_CTRL_SIM_MODE_ ^| r/w <| enable **simulation mode**
-                                                <|`13` _UART_CTRL_RX_EMPTY_ ^| r/- <| RX FIFO is empty
-                                                <|`14` _UART_CTRL_RX_HALF_  ^| r/- <| RX FIFO is at least half-full
-                                                <|`15` _UART_CTRL_RX_FULL_  ^| r/- <| RX FIFO is full
-                                                <|`16` _UART_CTRL_TX_EMPTY_ ^| r/- <| TX FIFO is empty
-                                                <|`17` _UART_CTRL_TX_HALF_  ^| r/- <| TX FIFO is at least half-full
-                                                <|`18` _UART_CTRL_TX_FULL_  ^| r/- <| TX FIFO is full
-                                                <|`19` -                    ^| r/- <| _reserved_, read as zero
-                                                <|`20` _UART_CTRL_RTS_EN_   ^| r/w <| enable RTS hardware flow control
-                                                <|`21` _UART_CTRL_CTS_EN_   ^| r/w <| enable CTS hardware flow control
-                                                <|`22` _UART_CTRL_PMODE0_   ^| r/w .2+<| parity bit enable and configuration (`00`/`01`= no parity; `10`=even parity; `11`=odd parity)
-                                                <|`23` _UART_CTRL_PMODE1_   ^| r/w 
-                                                <|`24` _UART_CTRL_PRSC0_    ^| r/w .3+<| 3-bit baudrate clock prescaler select
-                                                <|`25` _UART_CTRL_PRSC1_    ^| r/w 
-                                                <|`26` _UART_CTRL_PRSC2_    ^| r/w 
-                                                <|`27` _UART_CTRL_CTS_      ^| r/- <| current state of UART's CTS input signal
-                                                <|`28` _UART_CTRL_EN_       ^| r/w <| UART enable
-                                                <|`29` _UART_CTRL_RX_IRQ_   ^| r/w <| RX IRQ mode: `1`=FIFO at least half-full; `0`=FIFO not empty; hardwired to zero if _UART0_RX_FIFO_ = 1
-                                                <|`30` _UART_CTRL_TX_IRQ_   ^| r/w <| TX IRQ mode: `1`=FIFO less than half-full; `0`=FIFO not full; hardwired to zero if _UART0_TX_FIFO_ = 1
-                                                <|`31` _UART_CTRL_TX_BUSY_  ^| r/- <| transmitter busy flag
-.6+<| `0xffffffd4` .6+<| `NEORV32_UART1.DATA` <|`7:0` _UART_DATA_MSB_ : _UART_DATA_LSB_ ^| r/w <| receive/transmit data (8-bit)
-                                              <|`31:0` -                ^| -/w <| **simulation data output**
-                                              <|`28` _UART_DATA_PERR_   ^| r/- <| RX parity error
-                                              <|`29` _UART_DATA_FERR_   ^| r/- <| RX data frame error (stop bit nt set)
-                                              <|`30` _UART_DATA_OVERR_  ^| r/- <| RX data overrun
-                                              <|`31` _UART_DATA_AVAIL_  ^| r/- <| RX data available when set
+| `0xffffffd0` | `NEORV32_UART1.CTRL` | ... | ... | Same as UART0
+| `0xffffffd4` | `NEORV32_UART1.DATA` | ... | ... | Same as UART0
 |=======================
