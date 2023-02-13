@@ -52,7 +52,7 @@ build instructions on the official RISC-V GNU toolchain GitHub page: https://git
 The NEORV32 implements a 32-bit RISC-V architecture and uses a 32-bit integer and soft-float ABI by default.
 Make sure the toolchain / toolchain build is configured accordingly.
 
-* `MARCH=rv32i`
+* `MARCH=rv32i_zicsr`
 * `MABI=ilp32`
 * `RISCV_PREFIX=riscv32-unknown-elf-`
 
@@ -173,7 +173,7 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
 === Variables ===
  USER_FLAGS   - Custom toolchain flags [append only], default ""
  EFFORT       - Optimization level, default "-Os"
- MARCH        - Machine architecture, default "rv32i"
+ MARCH        - Machine architecture, default "rv32i_zicsr"
  MABI         - Machine binary interface, default "ilp32"
  APP_INC      - C include folder(s) [append only], default "-I ."
  ASM_INC      - ASM include folder(s) [append only], default "-I ."
@@ -190,7 +190,7 @@ makefile (`sw/common/common.mk`):
 
 [TIP]
 The makefile configuration variables can be overridden or extended directly when invoking the makefile. For
-example `$ make MARCH=rv32ic clean_all exe` overrides the default `MARCH` variable definitions.
+example `$ make MARCH=rv32ic_zicsr clean_all exe` overrides the default `MARCH` variable definitions.
 Permanent modifications/definitions can be made in the project-local makefile
 (e.g., `sw/example/demo_blink_led/makefile`).
 
@@ -212,7 +212,7 @@ EFFORT ?= -Os
 # Compiler toolchain
 RISCV_PREFIX ?= riscv32-unknown-elf-
 # CPU architecture and ABI
-MARCH ?= rv32i
+MARCH ?= rv32i_zicsr
 MABI  ?= ilp32
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
@@ -232,7 +232,7 @@ files of these types in the project folder are automatically added via wild card
 | `EFFORT`       | Optimization level, optimize for size (`-Os`) is default; legal values: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Ofast`, ...
 | `RISCV_PREFIX` | The toolchain prefix to be used; follows the triplet naming convention `[architecture]-[host_system]-[output]-...`
 | `MARCH`        | The targeted RISC-V architecture/ISA; enable compiler support of optional CPU extension by adding the according extension
-name (e.g. `rv32im` for `M` CPU extension; see https://stnolting.github.io/neorv32/ug/#_enabling_risc_v_cpu_extensions[User Guide: Enabling RISC-V CPU Extensions]
+name (e.g. `rv32im_zicsr` for `M` CPU extension; see https://stnolting.github.io/neorv32/ug/#_enabling_risc_v_cpu_extensions[User Guide: Enabling RISC-V CPU Extensions]
 for more information
 | `MABI`         | Application binary interface (default: 32-bit integer ABI `ilp32`)
 | `USER_FLAGS`   | Additional flags that will be forwarded to the compiler tools
