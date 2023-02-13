@@ -37,8 +37,6 @@ def _gen_vhdl_ls(vu):
     """
     Generate the vhdl_ls.toml file required by VHDL-LS language server.
     """
-    import toml
-
     # Repo root
     parent = Path(__file__).parent.parent
 
@@ -54,6 +52,10 @@ def _gen_vhdl_ls(vu):
     with open(parent / 'vhdl_ls.toml', "w") as f:
         toml.dump(vhdl_ls, f)
 
-_gen_vhdl_ls(PRJ)
+try:
+    import toml
+    _gen_vhdl_ls(PRJ)
+except ModuleNotFoundError:
+    print("Install toml package to generate VHDL-LS language server configuration")
 
 PRJ.main()
