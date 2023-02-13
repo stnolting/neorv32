@@ -1503,10 +1503,9 @@ begin
       trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or be_store_i)         and (not trap_ctrl.env_start_ack);
       trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_start_ack);
 
-      -- illegal instruction & environment calls --
-      trap_ctrl.exc_buf(exc_m_envcall_c) <= (trap_ctrl.exc_buf(exc_m_envcall_c) or (trap_ctrl.env_call and (    csr.privilege))) and (not trap_ctrl.env_start_ack);
-      trap_ctrl.exc_buf(exc_u_envcall_c) <= (trap_ctrl.exc_buf(exc_u_envcall_c) or (trap_ctrl.env_call and (not csr.privilege))) and (not trap_ctrl.env_start_ack);
-      trap_ctrl.exc_buf(exc_iillegal_c)  <= (trap_ctrl.exc_buf(exc_iillegal_c)  or trap_ctrl.instr_il)                           and (not trap_ctrl.env_start_ack);
+      -- illegal instruction & environment call --
+      trap_ctrl.exc_buf(exc_envcall_c)  <= (trap_ctrl.exc_buf(exc_envcall_c)  or trap_ctrl.env_call) and (not trap_ctrl.env_start_ack);
+      trap_ctrl.exc_buf(exc_iillegal_c) <= (trap_ctrl.exc_buf(exc_iillegal_c) or trap_ctrl.instr_il) and (not trap_ctrl.env_start_ack);
 
       -- break point --
       if (CPU_EXTENSION_RISCV_Sdext = true) then
@@ -1629,8 +1628,7 @@ begin
       if    (trap_ctrl.exc_buf(exc_ialign_c)    = '1') then trap_ctrl.cause <= trap_ima_c;  -- instruction address misaligned
       elsif (trap_ctrl.exc_buf(exc_iaccess_c)   = '1') then trap_ctrl.cause <= trap_iba_c;  -- instruction access fault
       elsif (trap_ctrl.exc_buf(exc_iillegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c;  -- illegal instruction
-      elsif (trap_ctrl.exc_buf(exc_m_envcall_c) = '1') then trap_ctrl.cause <= trap_menv_c; -- environment call from M-mode
-      elsif (trap_ctrl.exc_buf(exc_u_envcall_c) = '1') then trap_ctrl.cause <= trap_uenv_c; -- environment call from U-mode
+      elsif (trap_ctrl.exc_buf(exc_envcall_c)   = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & csr.privilege & csr.privilege; -- environment call (U/M)
       elsif (trap_ctrl.exc_buf(exc_break_c)     = '1') then trap_ctrl.cause <= trap_brk_c;  -- breakpoint
       elsif (trap_ctrl.exc_buf(exc_salign_c)    = '1') then trap_ctrl.cause <= trap_sma_c;  -- store address misaligned
       elsif (trap_ctrl.exc_buf(exc_lalign_c)    = '1') then trap_ctrl.cause <= trap_lma_c;  -- load address misaligned
@@ -1638,7 +1636,7 @@ begin
       elsif (trap_ctrl.exc_buf(exc_laccess_c)   = '1') then trap_ctrl.cause <= trap_lbe_c;  -- load access fault
       -- debug mode exceptions and interrupts --
       elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request (async)
-      elsif (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') then trap_ctrl.cause <= trap_db_hw_c;    -- hardware trigger (sync)
+      elsif (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') then trap_ctrl.cause <= trap_db_trig_c;  -- hardware trigger (sync)
       elsif (trap_ctrl.exc_buf(exc_db_break_c) = '1') then trap_ctrl.cause <= trap_db_break_c; -- break instruction (sync)
       elsif (trap_ctrl.irq_buf(irq_db_step_c)  = '1') then trap_ctrl.cause <= trap_db_step_c;  -- single stepping (async)
       -- NEORV32-specific fast interrupts --
@@ -2065,6 +2063,7 @@ begin
         if (CPU_EXTENSION_RISCV_Sdtrig = false) then
           csr.tdata1_exe    <= '0';
           csr.tdata1_action <= '0';
+          csr.tdata1_dmode  <= '0';
           csr.tdata2        <= (others => '0');
         end if;
 
