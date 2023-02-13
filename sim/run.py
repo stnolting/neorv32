@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 from pathlib import Path
 from vunit import VUnit, VUnitCLI
 
@@ -42,20 +43,16 @@ def _gen_vhdl_ls(vu):
 
     proj = vu._project
     libs = proj.get_libraries()
-    vhdl_ls = {"libraries": {}}
-    for lib in libs:
-        files = [str(file).replace('\\', '/') for file in lib._source_files
-            # Conflicts with *.default.vhd
-            if not any(exclude in file for exclude in ('neorv32_imem.simple.vhd', 'neorv32_imem.legacy.vhd', 'neorv32_dmem.legacy.vhd'))
-        ]
-        vhdl_ls["libraries"][lib.name] = {"files": files}
-    with open(parent / 'vhdl_ls.toml', "w") as f:
-        toml.dump(vhdl_ls, f)
 
-try:
-    import toml
-    _gen_vhdl_ls(PRJ)
-except ModuleNotFoundError:
-    print("Install toml package to generate VHDL-LS language server configuration")
+    with open(parent / 'vhdl_ls.toml', "w") as f:
+        for lib in libs:
+            f.write(f"[libraries.{lib.name}]\n")
+            files = [str(file).replace('\\', '/') for file in lib._source_files
+                # Conflicts with *.default.vhd
+                if not any(exclude in file for exclude in ('neorv32_imem.simple.vhd', 'neorv32_imem.legacy.vhd', 'neorv32_dmem.legacy.vhd'))
+            ]
+            f.write(f"files = {json.dumps(files, indent=4)}\n")
+
+_gen_vhdl_ls(PRJ)
 
 PRJ.main()
