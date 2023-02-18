@@ -1470,7 +1470,7 @@ begin
   trap_ctrl.instr_il <= (illegal_cmd or alu_exc_i or -- illegal instruction or ALU processing exception
                          (bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and illegal_reg) or -- illegal register access in E extension
                          (bool_to_ulogic_f(CPU_EXTENSION_RISCV_C) and execute_engine.is_ici)) -- illegal compressed instruction
-                        when (execute_engine.state = EXECUTE) else '0'; -- evaluate in EXECUTE stage only
+                        when ((execute_engine.state = EXECUTE) or (execute_engine.state = ALU_WAIT)) else '0'; -- evaluate in execution stages only
 
 
 -- ****************************************************************************************************************************

@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -205,6 +205,20 @@ int main() {
     rs4 = xorshift32();
     neorv32_uart0_printf("%u: neorv32_cfu_r5_instr_b( [rs1]=0x%x, [rs2]=0x%x, [rs3]=0x%x, [rs3]=0x%x ) = ", i, rs1, rs2, rs3, rs4);
     neorv32_uart0_printf("0x%x\n", neorv32_cfu_r5_instr_b(rs1, rs2, rs3, rs4));
+  }
+
+
+  // ----------------------------------------------------------
+  // Unimplemented (=illegal) R3-type instruction
+  // ----------------------------------------------------------
+
+  neorv32_uart0_printf("\n--- CFU Unimplemented (= illegal) R3-Type ---\n");
+  for (i=0; i<TESTCASES; i++) {
+    rs1 = xorshift32();
+    rs2 = xorshift32();
+    // this funct3 is NOT implemented by the default CFU hardware causing an illegal instruction exception
+    neorv32_uart0_printf("%u: neorv32_cfu_r3_instr( funct7=0b0000000, funct3=0b111, [rs1]=0x%x, [rs2]=0x%x ) = ", i, rs1, rs2);
+    neorv32_uart0_printf("0x%x\n", neorv32_cfu_r3_instr(0b0000000, 0b111, rs1, rs2));
   }
 
 
