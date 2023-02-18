@@ -221,16 +221,17 @@ begin
   -- as all internal computations have completed, the <control.done> signal has to be set to indicate completion. This will
   -- complete CFU instruction operation and will also write the processing result <control.result> back to the CPU register file.
   --
-  -- [NOTE] The <control.done> **has to be set at some time** - otherwise the CPU will get stalled forever.
+  -- [NOTE] If the <control.done> signal is not set within a bound time window (default = 128 cycles) the CFU operation is
+  --        automatically terminated by the hardware and an illegal instruction exception is raised. This feature can also be
+  --        be used to implement custom CFU exceptions.
 
 
   -- ----------------------------------------------------------------------------------------
   -- Final Notes
   -- ----------------------------------------------------------------------------------------
-  -- The <control> record provides something like a "keeper" that ensures correct functionality (we do not want to
-  -- stall the CPU forever) and also a simple-to-use interface hardware designers can start with. Obviously, the control
-  -- instance adds one additional cycle of latency. Advanced users can remove this default control instance to obtain
-  -- maximum throughput.
+  -- The <control> record provides something like a "keeper" that ensures correct functionality and that also provides a
+  -- simple-to-use interface hardware designers can start with. However, the control instance adds one additional cycle of
+  -- latency. Advanced users can remove this default control instance to obtain maximum throughput.
 
 
 -- ****************************************************************************************************************************
@@ -300,7 +301,7 @@ begin
             control.done   <= '1'; -- pure-combinatorial, so we are done "immediately"
           when others => -- not implemented
             control.result <= (others => '0');
-            control.done   <= '1'; -- set high to prevent permanent CPU stall
+            control.done   <= '0'; -- this will cause an illegal instruction exception after timeout
         end case;
 
       -- --------------------------------------------------------
@@ -318,7 +319,7 @@ begin
             control.done   <= madd.done; -- iterative, wait for unit to finish
           when others => -- not implemented
             control.result <= (others => '0');
-            control.done   <= '1'; -- set high to prevent permanent CPU stall
+            control.done   <= '0'; -- this will cause an illegal instruction exception after timeout
         end case;
 
       -- --------------------------------------------------------
@@ -344,7 +345,7 @@ begin
       -- --------------------------------------------------------
 
         control.result <= (others => '0');
-        control.done   <= '1'; -- set high to prevent permanent CPU stall
+        control.done   <= '0';
 
     end case;
   end process out_select;
