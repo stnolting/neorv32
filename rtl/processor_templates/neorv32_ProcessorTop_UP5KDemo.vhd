@@ -87,7 +87,7 @@ entity neorv32_ProcessorTop_UP5KDemo is
     IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_NUM_CH                : natural := 3;      -- number of PWM channels to implement (0..60); 0 = disabled
+    IO_PWM_NUM_CH                : natural := 3;      -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    : boolean := true    -- implement watch dog timer (WDT)?
   );
   port (
@@ -130,7 +130,7 @@ architecture neorv32_ProcessorTop_UP5KDemo_rtl of neorv32_ProcessorTop_UP5KDemo 
   -- internal IO connection --
   signal con_gpio_o   : std_ulogic_vector(63 downto 0);
   signal con_gpio_i   : std_ulogic_vector(63 downto 0);
-  signal con_pwm_o    : std_ulogic_vector(59 downto 0);
+  signal con_pwm_o    : std_ulogic_vector(11 downto 0);
   signal con_spi_sck  : std_ulogic;
   signal con_spi_sdi  : std_ulogic;
   signal con_spi_sdo  : std_ulogic;
@@ -216,7 +216,7 @@ begin
     IO_UART0_EN                  => IO_UART0_EN,    -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_SPI_EN                    => IO_SPI_EN,      -- implement serial peripheral interface (SPI)?
     IO_TWI_EN                    => IO_TWI_EN,      -- implement two-wire interface (TWI)?
-    IO_PWM_NUM_CH                => IO_PWM_NUM_CH,  -- number of PWM channels to implement (0..60); 0 = disabled
+    IO_PWM_NUM_CH                => IO_PWM_NUM_CH,  -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    => IO_WDT_EN       -- implement watch dog timer (WDT)??
   )
   port map (

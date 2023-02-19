@@ -238,7 +238,7 @@ begin
     IO_SPI_EN                    => true,          -- implement serial peripheral interface (SPI)?
     IO_SPI_FIFO                  => 4,             -- SPI RTX fifo depth, has to be zero or a power of two
     IO_TWI_EN                    => true,          -- implement two-wire interface (TWI)?
-    IO_PWM_NUM_CH                => 30,            -- number of PWM channels to implement (0..60); 0 = disabled
+    IO_PWM_NUM_CH                => 12,            -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    => true,          -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => true,          -- implement true random number generator (TRNG)?
     IO_TRNG_FIFO                 => 4,             -- TRNG fifo depth, has to be a power of two, min 1
