@@ -89,7 +89,7 @@
       <name>PWM</name>
       <description>Pulse-width modulation controller</description>
       <groupName>PWM</groupName>
-      <baseAddress>0xFFFFFE80</baseAddress>
+      <baseAddress>0xFFFFFF%0</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -116,79 +116,19 @@
           </fields>
         </register>
         <register>
-          <name>DUTY0</name>
+          <name>DC[0]</name>
           <description>Duty cycle register 0</description>
           <addressOffset>0x04</addressOffset>
         </register>
         <register>
-          <name>DUTY1</name>
+          <name>DC[1]</name>
           <description>Duty cycle register 1</description>
           <addressOffset>0x08</addressOffset>
         </register>
         <register>
-          <name>DUTY2</name>
+          <name>DC[2]</name>
           <description>Duty cycle register 2</description>
           <addressOffset>0x0C</addressOffset>
-        </register>
-        <register>
-          <name>DUTY3</name>
-          <description>Duty cycle register 3</description>
-          <addressOffset>0x10</addressOffset>
-        </register>
-        <register>
-          <name>DUTY4</name>
-          <description>Duty cycle register 4</description>
-          <addressOffset>0x14</addressOffset>
-        </register>
-        <register>
-          <name>DUTY5</name>
-          <description>Duty cycle register 5</description>
-          <addressOffset>0x18</addressOffset>
-        </register>
-        <register>
-          <name>DUTY6</name>
-          <description>Duty cycle register 6</description>
-          <addressOffset>0x1C</addressOffset>
-        </register>
-        <register>
-          <name>DUTY7</name>
-          <description>Duty cycle register 7</description>
-          <addressOffset>0x20</addressOffset>
-        </register>
-        <register>
-          <name>DUTY8</name>
-          <description>Duty cycle register 8</description>
-          <addressOffset>0x24</addressOffset>
-        </register>
-        <register>
-          <name>DUTY9</name>
-          <description>Duty cycle register 9</description>
-          <addressOffset>0x28</addressOffset>
-        </register>
-        <register>
-          <name>DUTY10</name>
-          <description>Duty cycle register 10</description>
-          <addressOffset>0x2C</addressOffset>
-        </register>
-        <register>
-          <name>DUTY11</name>
-          <description>Duty cycle register 11</description>
-          <addressOffset>0x30</addressOffset>
-        </register>
-        <register>
-          <name>DUTY12</name>
-          <description>Duty cycle register 12</description>
-          <addressOffset>0x34</addressOffset>
-        </register>
-        <register>
-          <name>DUTY13</name>
-          <description>Duty cycle register 13</description>
-          <addressOffset>0x38</addressOffset>
-        </register>
-        <register>
-          <name>DUTY14</name>
-          <description>Duty cycle register 14</description>
-          <addressOffset>0x3C</addressOffset>
         </register>
       </registers>
     </peripheral>
