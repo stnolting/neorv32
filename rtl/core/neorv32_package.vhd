@@ -56,7 +56,7 @@ package neorv32_package is
   constant max_proc_int_response_time_c : natural := 15; -- min 2
 
   -- log2 of co-processor timeout cycles --
-  constant cp_timeout_c : natural := 7; -- default = 7
+  constant cp_timeout_c : natural := 7; -- default = 7 (= 128 cycles)
 
   -- JTAG tap - identifier --
   constant jtag_tap_idcode_version_c : std_ulogic_vector(03 downto 0) := x"0"; -- version
@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080008"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080009"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -129,8 +129,6 @@ package neorv32_package is
 -- Processor Address Space Layout
 -- ****************************************************************************************************************************
 
-  -- Processor-Internal Address Space Layout ------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
   -- Internal Instruction Memory (IMEM) and Date Memory (DMEM) --
   constant imem_base_c          : std_ulogic_vector(31 downto 0) := ispace_base_c; -- internal instruction memory base address
   constant dmem_base_c          : std_ulogic_vector(31 downto 0) := dspace_base_c; -- internal data memory base address
@@ -197,25 +195,9 @@ package neorv32_package is
   constant cfs_reg30_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe78";
   constant cfs_reg31_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe7c";
 
-  -- Pulse-Width Modulation Controller (PWM) --
-  constant pwm_base_c           : std_ulogic_vector(31 downto 0) := x"fffffe80"; -- base address
-  constant pwm_size_c           : natural := 16*4; -- module's address space size in bytes
-  constant pwm_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"fffffe80";
-  constant pwm_duty0_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe84";
-  constant pwm_duty1_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe88";
-  constant pwm_duty2_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe8c";
-  constant pwm_duty3_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe90";
-  constant pwm_duty4_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe94";
-  constant pwm_duty5_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe98";
-  constant pwm_duty6_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe9c";
-  constant pwm_duty7_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffea0";
-  constant pwm_duty8_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffea4";
-  constant pwm_duty9_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffea8";
-  constant pwm_duty10_addr_c    : std_ulogic_vector(31 downto 0) := x"fffffeac";
-  constant pwm_duty11_addr_c    : std_ulogic_vector(31 downto 0) := x"fffffeb0";
-  constant pwm_duty12_addr_c    : std_ulogic_vector(31 downto 0) := x"fffffeb4";
-  constant pwm_duty13_addr_c    : std_ulogic_vector(31 downto 0) := x"fffffeb8";
-  constant pwm_duty14_addr_c    : std_ulogic_vector(31 downto 0) := x"fffffebc";
+  -- reserved --
+--constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"fffffe80"; -- base address
+--constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
 
   -- Stream Link Interface (SLINK) --
   constant slink_base_c         : std_ulogic_vector(31 downto 0) := x"fffffec0"; -- base address
@@ -249,9 +231,13 @@ package neorv32_package is
   constant xip_data_lo_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffff48";
   constant xip_data_hi_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffff4C";
 
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff50"; -- base address
---constant reserved_size_c      : natural := 4*4; -- module's address space size in bytes
+  -- Pulse-Width Modulation Controller (PWM) --
+  constant pwm_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff50"; -- base address
+  constant pwm_size_c           : natural := 16*4; -- module's address space size in bytes
+  constant pwm_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"ffffff50";
+  constant pwm_dc0_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffff54";
+  constant pwm_dc1_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffff58";
+  constant pwm_dc2_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffff5c";
 
   -- General Purpose Timer (GPTMR) --
   constant gptmr_base_c         : std_ulogic_vector(31 downto 0) := x"ffffff60"; -- base address
@@ -343,8 +329,7 @@ package neorv32_package is
 -- SoC Definitions
 -- ****************************************************************************************************************************
 
-  -- SoC Clock Generator --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- SoC Clock Generator --
   constant clk_div2_c    : natural := 0;
   constant clk_div4_c    : natural := 1;
   constant clk_div8_c    : natural := 2;
@@ -1033,7 +1018,7 @@ package neorv32_package is
       IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
       IO_SPI_FIFO                  : natural := 0;      -- SPI RTX fifo depth, has to be zero or a power of two
       IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
-      IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..60); 0 = disabled
+      IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..12); 0 = disabled
       IO_WDT_EN                    : boolean := false;  -- implement watch dog timer (WDT)?
       IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
       IO_TRNG_FIFO                 : natural := 1;      -- TRNG fifo depth, has to be a power of two, min 1
@@ -1110,7 +1095,7 @@ package neorv32_package is
       -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
       onewire_io     : inout std_logic; -- 1-wire bus
       -- PWM (available if IO_PWM_NUM_CH > 0) --
-      pwm_o          : out std_ulogic_vector(59 downto 0); -- pwm channels
+      pwm_o          : out std_ulogic_vector(11 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
       cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => 'U'); -- custom CFS inputs conduit
       cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
@@ -1836,7 +1821,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_pwm
     generic (
-      NUM_CHANNELS : natural -- number of PWM channels (0..60)
+      NUM_CHANNELS : natural -- number of PWM channels (0..12)
     );
     port (
       -- host access --
@@ -1852,7 +1837,7 @@ package neorv32_package is
       clkgen_en_o : out std_ulogic; -- enable clock generator
       clkgen_i    : in  std_ulogic_vector(07 downto 0);
       -- pwm output channels --
-      pwm_o       : out std_ulogic_vector(59 downto 0)
+      pwm_o       : out std_ulogic_vector(11 downto 0)
     );
   end component;
 
