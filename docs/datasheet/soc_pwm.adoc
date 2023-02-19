@@ -8,18 +8,18 @@
 | Hardware source file(s): | neorv32_pwm.vhd | 
 | Software driver file(s): | neorv32_pwm.c |
 |                          | neorv32_pwm.h |
-| Top entity port:         | `pwm_o` | up to 60 PWM output channels (60-bit, fixed)
-| Configuration generics:  | _IO_PWM_NUM_CH_ | number of PWM channels to implement (0..60)
+| Top entity port:         | `pwm_o` | PWM output channels (12-bit)
+| Configuration generics:  | _IO_PWM_NUM_CH_ | number of PWM channels to implement (0..12)
 | CPU interrupts:          | none | 
 |=======================
 
-The PWM controller implements a pulse-width modulation controller with up to 60 independent channels and 8-
-bit resolution per channel. The actual number of implemented channels is defined by the _IO_PWM_NUM_CH_ generic.
+The PWM controller implements a pulse-width modulation controller with up to 12 independent channels and an
+8-bit resolution per channel. The actual number of implemented channels is defined by the _IO_PWM_NUM_CH_ generic.
 Setting this generic to zero will completely remove the PWM controller from the design.
 
 [NOTE]
-The `pwm_o` has a static size of 60-bit. Is less than 60 PWM channels are configured, only the LSB-aligned channels
-(bits) are used while the remaining bits are hardwired to zero.
+The `pwm_o` has a static size of 12-bit. If less than 12 PWM channels are configured, only the LSB-aligned channel
+bits are used while the remaining bits are hardwired to zero.
 
 The PWM controller is based on an 8-bit base counter with a programmable threshold comparators for each channel
 that defines the actual duty cycle. The controller can be used to drive fancy RGB-LEDs with 24-
@@ -32,10 +32,9 @@ can be used to smooth the generated "analog" signals.
 The PWM controller is activated by setting the _PWM_CTRL_EN_ bit in the module's control register `CTRL`. When this
 bit is cleared, the unit is reset and all PWM output channels are set to zero.
 The 8-bit duty cycle for each channel, which represents the channel's "intensity", is defined via an 8-bit value. The module
-provides up to 15 duty cycle registers `DUTY[0]` to `DUTY[14]` (depending on the number of implemented channels).
+provides up to 3 duty cycle registers `DC[0]` to `DC[2]` (depending on the number of implemented channels).
 Each register contains the duty cycle configuration for 4 consecutive channels. For example, the duty cycle of channel 0
-is defined via bits 7:0 in `DUTY[0]`. The duty cycle of channel 2 is defined via bits 15:0 in `DUTY[0]`.
-Channel 4's duty cycle is defined via bits 7:0 in `DUTY[1]` and so on.
+is defined via bits 7:0 in `DC[0]`. The duty cycle of channel 2 is defined via bits 15:0 in `DC[0]` and so on.
 
 [NOTE]
 Regardless of the configuration of _IO_PWM_NUM_CH_ all module registers can be accessed without raising an exception.
@@ -44,7 +43,7 @@ reading those values back. The duty-cycle of channels that were not implemented 
 
 Based on the configured duty cycle the according intensity of the channel can be computed by the following formula:
 
-_**Intensity~x~**_ = `DUTY[y](i*8+7 downto i*8)` / (2^8^)
+_**Intensity~x~**_ = `DC[y](i*8+7 downto i*8)` / (2^8^)
 
 The base frequency of the generated PWM signals is defined by the PWM core clock. This clock is derived
 from the main processor clock and divided by a prescaler via the 3-bit PWM_CTRL_PRSCx in the unit's control
@@ -70,17 +69,20 @@ _**f~PWM~**_ = _f~main~[Hz]_ / (2^8^ * `clock_prescaler`)
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.4+<| `0xfffffe80` .4+<| `NEORV32_PWM.CTRL` <|`0` _PWM_CTRL_EN_    ^| r/w | PWM enable
-                                            <|`1` _PWM_CTRL_PRSC0_ ^| r/w .3+<| 3-bit clock prescaler select
-                                            <|`2` _PWM_CTRL_PRSC1_ ^| r/w
-                                            <|`3` _PWM_CTRL_PRSC2_ ^| r/w
-.4+<| `0xfffffe84` .4+<| `NEORV32_PWM.DUTY[0]`  <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 0
-                                                <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 1
-                                                <|`23:16` ^| r/w <| 8-bit duty cycle for channel 2
-                                                <|`31:24` ^| r/w <| 8-bit duty cycle for channel 3
-| ...     | ...      | ...                       | r/w | ...
-.4+<| `0xfffffebc` .4+<| `NEORV32_PWM.DUTY[14]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 56
-                                                <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 57
-                                                <|`23:16` ^| r/w <| 8-bit duty cycle for channel 58
-                                                <|`31:24` ^| r/w <| 8-bit duty cycle for channel 59
+.4+<| `0xffffff50` .4+<| `NEORV32_PWM.CTRL`  <|`0` _PWM_CTRL_EN_    ^| r/w | PWM enable
+                                             <|`1` _PWM_CTRL_PRSC0_ ^| r/w .3+<| 3-bit clock prescaler select
+                                             <|`2` _PWM_CTRL_PRSC1_ ^| r/w
+                                             <|`3` _PWM_CTRL_PRSC2_ ^| r/w
+.4+<| `0xffffff54` .4+<| `NEORV32_PWM.DC[0]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 0
+                                             <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 1
+                                             <|`23:16` ^| r/w <| 8-bit duty cycle for channel 2
+                                             <|`31:24` ^| r/w <| 8-bit duty cycle for channel 3
+.4+<| `0xffffff58` .4+<| `NEORV32_PWM.DC[1]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 4
+                                             <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 5
+                                             <|`23:16` ^| r/w <| 8-bit duty cycle for channel 6
+                                             <|`31:24` ^| r/w <| 8-bit duty cycle for channel 7
+.4+<| `0xffffff5c` .4+<| `NEORV32_PWM.DC[2]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 8
+                                             <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 9
+                                             <|`23:16` ^| r/w <| 8-bit duty cycle for channel 10
+                                             <|`31:24` ^| r/w <| 8-bit duty cycle for channel 11
 |=======================
