@@ -743,32 +743,6 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 
 /**********************************************************************//**
- * @name IO Device: Pulse Width Modulation Controller (PWM)
- **************************************************************************/
-/**@{*/
-/** PWM module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL;     /**< offset 0: control register (#NEORV32_PWM_CTRL_enum) */
-  uint32_t DUTY[15]; /**< offset 4..60: duty cycle register 0..14 */
-} neorv32_pwm_t;
-
-/** PWM module base address */
-#define NEORV32_PWM_BASE (0xFFFFFE80U)
-
-/** PWM module hardware access (#neorv32_pwm_t) */
-#define NEORV32_PWM (*((volatile neorv32_pwm_t*) (NEORV32_PWM_BASE)))
-
-/** PWM control register bits */
-enum NEORV32_PWM_CTRL_enum {
-  PWM_CTRL_EN    =  0, /**< PWM control register(0) (r/w): PWM controller enable */
-  PWM_CTRL_PRSC0 =  1, /**< PWM control register(1) (r/w): Clock prescaler select bit 0 */
-  PWM_CTRL_PRSC1 =  2, /**< PWM control register(2) (r/w): Clock prescaler select bit 1 */
-  PWM_CTRL_PRSC2 =  3  /**< PWM control register(3) (r/w): Clock prescaler select bit 2 */
-};
-/**@}*/
-
-
-/**********************************************************************//**
  * @name IO Device: Stream link interface (SLINK)
  **************************************************************************/
 /**@{*/
@@ -878,6 +852,32 @@ enum NEORV32_XIP_CTRL_enum {
 
   XIP_CTRL_PHY_BUSY       = 30, /**< XIP control register(20) (r/-): SPI PHY is busy */
   XIP_CTRL_XIP_BUSY       = 31  /**< XIP control register(31) (r/-): XIP access in progress */
+};
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: Pulse Width Modulation Controller (PWM)
+ **************************************************************************/
+/**@{*/
+/** PWM module prototype */
+typedef struct __attribute__((packed,aligned(4))) {
+  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_PWM_CTRL_enum) */
+  uint32_t DC[3]; /**< offset 4..12: duty cycle register 0..2 */
+} neorv32_pwm_t;
+
+/** PWM module base address */
+#define NEORV32_PWM_BASE (0xFFFFFF50U)
+
+/** PWM module hardware access (#neorv32_pwm_t) */
+#define NEORV32_PWM (*((volatile neorv32_pwm_t*) (NEORV32_PWM_BASE)))
+
+/** PWM control register bits */
+enum NEORV32_PWM_CTRL_enum {
+  PWM_CTRL_EN    =  0, /**< PWM control register(0) (r/w): PWM controller enable */
+  PWM_CTRL_PRSC0 =  1, /**< PWM control register(1) (r/w): Clock prescaler select bit 0 */
+  PWM_CTRL_PRSC1 =  2, /**< PWM control register(2) (r/w): Clock prescaler select bit 1 */
+  PWM_CTRL_PRSC2 =  3  /**< PWM control register(3) (r/w): Clock prescaler select bit 2 */
 };
 /**@}*/
 

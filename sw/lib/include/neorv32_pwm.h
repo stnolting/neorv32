@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -45,11 +45,11 @@
 
 // prototypes
 int     neorv32_pwm_available(void);
-void    neorv32_pwm_setup(uint8_t prsc);
+void    neorv32_pwm_setup(int prsc);
 void    neorv32_pwm_disable(void);
 void    neorv32_pwm_enable(void);
 int     neorv32_pmw_get_num_channels(void);
-void    neorv32_pwm_set(uint8_t channel, uint8_t duty);
-uint8_t neorv32_pwm_get(uint8_t channel);
+void    neorv32_pwm_set(int channel, uint8_t dc);
+uint8_t neorv32_pwm_get(int channel);
 
 #endif // neorv32_pwm_h
