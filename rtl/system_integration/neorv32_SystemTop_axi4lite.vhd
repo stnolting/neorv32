@@ -103,7 +103,7 @@ entity neorv32_SystemTop_axi4lite is
     IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
     IO_SPI_FIFO                  : natural := 0;      -- SPI RTX fifo depth, has to be zero or a power of two
     IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
-    IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..60); 0 = disabled
+    IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := true;   -- implement true random number generator (TRNG)?
     IO_TRNG_FIFO                 : natural := 1;      -- TRNG fifo depth, has to be a power of two, min 1
@@ -188,7 +188,7 @@ entity neorv32_SystemTop_axi4lite is
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_io     : inout std_logic; -- 1-wire bus
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o         : out std_logic_vector(59 downto 0);  -- pwm channels
+    pwm_o         : out std_logic_vector(11 downto 0);  -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i      : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom inputs
     cfs_out_o     : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom outputs
@@ -242,7 +242,7 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   signal spi_sdi_i_int   : std_ulogic;
   signal spi_csn_o_int   : std_ulogic_vector(07 downto 0);
   --
-  signal pwm_o_int       : std_ulogic_vector(59 downto 0);
+  signal pwm_o_int       : std_ulogic_vector(11 downto 0);
   --
   signal cfs_in_i_int    : std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0);
   signal cfs_out_o_int   : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
@@ -350,7 +350,7 @@ begin
     IO_SPI_EN                    => IO_SPI_EN,          -- implement serial peripheral interface (SPI)?
     IO_SPI_FIFO                  => IO_SPI_FIFO,        -- SPI RTX fifo depth, has to be zero or a power of two
     IO_TWI_EN                    => IO_TWI_EN,          -- implement two-wire interface (TWI)?
-    IO_PWM_NUM_CH                => IO_PWM_NUM_CH,      -- number of PWM channels to implement (0..60); 0 = disabled
+    IO_PWM_NUM_CH                => IO_PWM_NUM_CH,      -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    => IO_WDT_EN,          -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   => IO_TRNG_EN,         -- implement true random number generator (TRNG)?
     IO_TRNG_FIFO                 => IO_TRNG_FIFO,       -- TRNG fifo depth, has to be a power of two, min 1

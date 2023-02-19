@@ -83,7 +83,7 @@ entity neorv32_ProcessorTop_MinimalBoot is
     IO_GPIO_NUM                  : natural := 0;      -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  : boolean := true;   -- implement machine system timer (MTIME)?
     IO_UART0_EN                  : boolean := true;   -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_PWM_NUM_CH                : natural := 3;      -- number of PWM channels to implement (0..60); 0 = disabled
+    IO_PWM_NUM_CH                : natural := 3;      -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    : boolean := true    -- implement watch dog timer (WDT)?
   );
   port (
@@ -108,7 +108,7 @@ architecture neorv32_ProcessorTop_MinimalBoot_rtl of neorv32_ProcessorTop_Minima
 
   -- internal IO connection --
   signal con_gpio_o : std_ulogic_vector(63 downto 0);
-  signal con_pwm_o  : std_ulogic_vector(59 downto 0);
+  signal con_pwm_o  : std_ulogic_vector(11 downto 0);
 
 begin
 
@@ -174,7 +174,7 @@ begin
     IO_GPIO_NUM                  => IO_GPIO_NUM,   -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  => IO_MTIME_EN,   -- implement machine system timer (MTIME)?
     IO_UART0_EN                  => IO_UART0_EN,   -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_PWM_NUM_CH                => IO_PWM_NUM_CH, -- number of PWM channels to implement (0..60); 0 = disabled
+    IO_PWM_NUM_CH                => IO_PWM_NUM_CH, -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    => IO_WDT_EN      -- implement watch dog timer (WDT)?
   )
   port map (

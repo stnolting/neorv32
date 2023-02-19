@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -48,40 +48,10 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
-/** Maximum PWM output intensity (0..255) */
-#define PWM_MAX 128
+/** Maximum PWM output intensity (8-bit) */
+#define PWM_MAX 200
 /**@}*/
 
-
-/**********************************************************************//**
- * Helper function to count the number of implemented PWM channels.
- *
- * @return Number of available PWM channels (0..60)
- **************************************************************************/
-int aux_get_pwm_num_channels(void) {
-
-  if (neorv32_pwm_available() == 0) {
-    return 0;
-  }
-
-  int i = 0;
-  uint32_t tmp = 0;
-
-  NEORV32_PWM.CTRL = 0; // disable PWM controller
-
-  for (i=0; i<15; i++) {
-    NEORV32_PWM.DUTY[i] = 0x01010101; // try to set all possible DUTY cycle values
-  }
-
-  for (i=0; i<15; i++) {
-    tmp += NEORV32_PWM.DUTY[i]; // read back
-  }
-
-  // add four byte subwords
-  tmp = ((tmp >>  0) & 0xff) + ((tmp >>  8) & 0xff) + ((tmp >> 16) & 0xff) + ((tmp >> 24) & 0xff);
-
-  return (int)(tmp & 0xff);
-}
 
 
 /**********************************************************************//**
@@ -99,11 +69,11 @@ int main() {
 
   // use UART0 if implemented
   if (neorv32_uart0_available()) {
-    // init UART at default baud rate, no parity bits, no hw flow control
+    // setup UART at default baud rate, no parity bits, no HW flow control
     neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
     // say hello
-    neorv32_uart0_printf("PWM demo program\n");
+    neorv32_uart0_printf("<<< PWM demo program >>>\n");
   }
 
   // check if PWM unit is implemented at all
@@ -114,7 +84,7 @@ int main() {
     return 1;
   }
 
-  int num_pwm_channels = aux_get_pwm_num_channels();
+  int num_pwm_channels = neorv32_pmw_get_num_channels();
 
   // check number of PWM channels
   if (neorv32_uart0_available()) {
@@ -131,7 +101,6 @@ int main() {
   // configure and enable PWM
   neorv32_pwm_setup(CLK_PRSC_64);
 
-
   uint8_t pwm = 0;
   uint8_t up = 1;
   uint8_t ch = 0;
@@ -141,7 +110,7 @@ int main() {
   
     // update duty cycle
     if (up) {
-      if (pwm == (PWM_MAX & 0xFF)) {
+      if (pwm == PWM_MAX) {
         up = 0;
       }
       else {
@@ -159,8 +128,7 @@ int main() {
     }
 
     neorv32_pwm_set(ch, pwm); // output new duty cycle
-
-    neorv32_cpu_delay_ms(5); // wait ~5ms
+    neorv32_cpu_delay_ms(3); // wait ~3ms
   }
 
   return 0;

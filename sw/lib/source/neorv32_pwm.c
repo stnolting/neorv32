@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -61,11 +61,12 @@ int neorv32_pwm_available(void) {
 
 
 /**********************************************************************//**
- * Enable and configure pulse width modulation controller. The PWM control register bits are listed in #NEORV32_PWM_CTRL_enum.
+ * Enable and configure pulse width modulation controller.
+ * The PWM control register bits are listed in #NEORV32_PWM_CTRL_enum.
  *
  * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
  **************************************************************************/
-void neorv32_pwm_setup(uint8_t prsc) {
+void neorv32_pwm_setup(int prsc) {
 
   NEORV32_PWM.CTRL = 0; // reset
 
@@ -107,12 +108,12 @@ int neorv32_pmw_get_num_channels(void) {
 
   neorv32_pwm_disable();
 
-  uint8_t index = 0;
-  uint8_t cnt = 0;
+  int i = 0;
+  uint32_t cnt = 0;
 
-  for (index=0; index<60; index++) {
-    neorv32_pwm_set(index, 1);
-    cnt += neorv32_pwm_get(index);
+  for (i=0; i<12; i++) {
+    neorv32_pwm_set(i, 1);
+    cnt += neorv32_pwm_get(i);
   }
 
   return (int)cnt;
@@ -122,44 +123,40 @@ int neorv32_pmw_get_num_channels(void) {
 /**********************************************************************//**
  * Set duty cycle for channel.
  *
- * @param[in] channel Channel select (0..59).
- * @param[in] duty Duty cycle (0..255).
+ * @param[in] channel Channel select (0..11).
+ * @param[in] dc Duty cycle (8-bit, LSB-aligned).
  **************************************************************************/
-void neorv32_pwm_set(uint8_t channel, uint8_t duty) {
+void neorv32_pwm_set(int channel, uint8_t dc) {
 
-  if (channel > 59) {
+  if (channel > 11) {
     return; // out-of-range
   }
 
-  // read-modify-write
-  uint32_t duty_mask = 0xff;
-  uint32_t duty_new  = (uint32_t)duty;
+  const uint32_t dc_mask = 0xff;
+  uint32_t dc_new  = (uint32_t)dc;
 
-  duty_mask = duty_mask << ((channel % 4) * 8);
-  duty_new  = duty_new  << ((channel % 4) * 8);
+  uint32_t tmp = NEORV32_PWM.DC[channel/4];
 
-  uint32_t duty_cycle = NEORV32_PWM.DUTY[channel/4];
+  tmp &= ~(dc_mask << ((channel % 4) * 8)); // clear previous duty cycle
+  tmp |=   dc_new  << ((channel % 4) * 8);  // set new duty cycle
 
-  duty_cycle &= ~duty_mask; // clear previous duty cycle
-  duty_cycle |= duty_new; // set new duty cycle
-
-  NEORV32_PWM.DUTY[channel/4] = duty_cycle;
+  NEORV32_PWM.DC[channel/4] = tmp;
 }
 
 
 /**********************************************************************//**
  * Get duty cycle from channel.
  *
- * @param[in] channel Channel select (0..59).
- * @return Duty cycle (0..255) of channel 'channel'.
+ * @param[in] channel Channel select (0..11).
+ * @return Duty cycle (8-bit, LSB-aligned) of channel 'channel'.
  **************************************************************************/
-uint8_t neorv32_pwm_get(uint8_t channel) {
+uint8_t neorv32_pwm_get(int channel) {
 
-  if (channel > 59) {
-    return 0; // out-of-range
+  if (channel > 11) {
+    return 0; // out of range
   }
 
-  uint32_t reg_data = NEORV32_PWM.DUTY[channel/4] >> (((channel % 4) * 8));
+  uint32_t rd = NEORV32_PWM.DC[channel/4] >> (((channel % 4) * 8));
 
-  return (uint8_t)reg_data;
+  return (uint8_t)rd;
 }

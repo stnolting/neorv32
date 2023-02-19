@@ -28,7 +28,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_memory_interface_wishbone_axi4_lite,**WISHBONE**>>)
 * _optional_ 32-bit stream link interface with up to 8 independent links, AXI4-Stream compatible (<<_stream_link_interface_slink,**SLINK**>>)
 * _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
-* _optional_ PWM controller with up to 60 channels & 8-bit duty cycle resolution (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
+* _optional_ PWM controller with up to 12 channels & 8-bit duty cycle resolution (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
 * _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**>>)
 * _optional_ custom functions subsystem for custom co-processor extensions (<<_custom_functions_subsystem_cfs,**CFS**>>)
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
@@ -130,7 +130,7 @@ bits/channels are hardwired to zero.
 4+^| **1-Wire Interface Controller (<<_one_wire_serial_interface_controller_twi,ONEWIRE>>)**
 | `onewire_io`     |    1 | inout | serial data line
 4+^| **Pulse-Width Modulation Channels (<<_pulse_width_modulation_controller_pwm,PWM>>)**
-| `pwm_o`          |   60 |   out | pulse-width modulated channels
+| `pwm_o`          |   12 |   out | pulse-width modulated channels
 4+^| **Custom Functions Subsystem (<<_custom_functions_subsystem_cfs,CFS>>)**
 | `cfs_in_i`       |   32 |    in | custom CFS input signal conduit
 | `cfs_out_o`      |   32 |   out | custom CFS output signal conduit
@@ -932,7 +932,7 @@ Maximum value is 32*1024.
 [frame="all",grid="none"]
 |======
 | **IO_PWM_NUM_CH** | _natural_ | 0
-3+| Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..60)
+3+| Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..12)
 The PWM controller is _not_ implemented if zero.
 |======
 
