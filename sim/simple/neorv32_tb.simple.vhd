@@ -151,12 +151,6 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   end record;
   signal ext_mem_a, ext_mem_b, ext_mem_c : ext_mem_t;
 
-  -- stream link interface - local echo --
-  signal slink_dat : sdata_8x32_t;
-  signal slink_val : std_ulogic_vector(7 downto 0);
-  signal slink_rdy : std_ulogic_vector(7 downto 0);
-  signal slink_lst : std_ulogic_vector(7 downto 0);
-
 begin
 
   -- Clock/Reset Generator ------------------------------------------------------------------
@@ -217,11 +211,6 @@ begin
     MEM_EXT_BIG_ENDIAN           => false,         -- byte order: true=big-endian, false=little-endian
     MEM_EXT_ASYNC_RX             => false,         -- use register buffer for RX data when false
     MEM_EXT_ASYNC_TX             => false,         -- use register buffer for TX data when false
-    -- Stream link interface --
-    SLINK_NUM_TX                 => 8,             -- number of TX links (0..8)
-    SLINK_NUM_RX                 => 8,             -- number of TX links (0..8)
-    SLINK_TX_FIFO                => 4,             -- TX fifo depth, has to be a power of two
-    SLINK_RX_FIFO                => 1,             -- RX fifo depth, has to be a power of two
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  => 32,            -- number of external IRQ channels (0..32)
     XIRQ_TRIGGER_TYPE            => (others => '1'), -- trigger type: 0=level, 1=edge
@@ -281,16 +270,6 @@ begin
     xip_clk_o      => open,            -- serial clock
     xip_sdi_i      => '0',             -- device data input
     xip_sdo_o      => open,            -- controller data output
-    -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
-    slink_tx_dat_o => slink_dat,       -- output data
-    slink_tx_val_o => slink_val,       -- valid output
-    slink_tx_rdy_i => slink_rdy,       -- ready to send
-    slink_tx_lst_o => slink_lst,       -- last data of package
-    -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
-    slink_rx_dat_i => slink_dat,       -- input data
-    slink_rx_val_i => slink_val,       -- valid input
-    slink_rx_rdy_o => slink_rdy,       -- ready to receive
-    slink_rx_lst_i => slink_lst,       -- last data of package
     -- GPIO (available if IO_GPIO_NUM > true) --
     gpio_o         => gpio,            -- parallel output
     gpio_i         => gpio,            -- parallel input
