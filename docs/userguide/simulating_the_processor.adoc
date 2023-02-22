@@ -171,7 +171,7 @@ Installing application image to ../../../rtl/core/neorv32_application_image.vhd 
 Simulating neorv32_application_image.vhd...
 Tip: Compile application with USER_FLAGS+=-DUART[0/1]_SIM_MODE to auto-enable UART[0/1]'s simulation mode (redirect UART output to simulator console). <4>
 Using simulation runtime args: --stop-time=10ms <5>
-../rtl/core/neorv32_top.vhd:347:3:@0ms:(assertion note): NEORV32 PROCESSOR IO Configuration: GPIO MTIME UART0 UART1 SPI TWI PWM WDT CFS SLINK NEOLED XIRQ <6>
+../rtl/core/neorv32_top.vhd:347:3:@0ms:(assertion note): NEORV32 PROCESSOR IO Configuration: GPIO MTIME UART0 UART1 SPI TWI PWM WDT CFS NEOLED XIRQ <6>
 ../rtl/core/neorv32_top.vhd:370:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-internal IMEM).
 ../rtl/core/neorv32_top.vhd:394:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD).
 ../rtl/core/neorv32_cpu.vhd:169:3:@0ms:(assertion note): NEORV32 CPU ISA Configuration (MARCH): RV32IMCU_Zbb_Zicsr_Zifencei_Zfinx_Debug
@@ -181,7 +181,6 @@ Using simulation runtime args: --stop-time=10ms <5>
 ../rtl/core/neorv32_wishbone.vhd:140:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing auto-timeout (255 cycles).
 ../rtl/core/neorv32_wishbone.vhd:144:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing LITTLE-endian byte order.
 ../rtl/core/neorv32_wishbone.vhd:148:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing registered RX path.
-../rtl/core/neorv32_slink.vhd:161:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Implementing 8 RX and 8 TX stream links.
 <7>
                                                                                        ##
                                                                                        ##         ##   ##   ##

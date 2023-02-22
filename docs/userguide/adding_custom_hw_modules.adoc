@@ -51,19 +51,6 @@ external bus interface is mapped into the processor's https://stnolting.github.i
 This allows a very simple still high-bandwidth communications. However, high bus traffic may increase access latencies.
 
 
-=== Stream Link Interface
-
-The link:++https://stnolting.github.io/neorv32/#_stream_link_interface_slink++[Stream Link Interface (SLINK)] provides a
-point-to-point, unidirectional and parallel data interface that can be used to transfer _streaming_ data. In
-contrast to the external bus interface, the streaming interface does not provide any kind of advanced control,
-so it can be seen as "constant address bursts" where data is transmitted _sequentially_ (no random accesses).
-While the CPU needs to "feed" the stream link interfaces with data (and read back incoming data), the actual
-processor-external processing of the data run independently of the CPU.
-
-The stream link interface provides less protocol overhead and less latency than the bus interface. Furthermore,
-FIFOs can be be configured to each direction (RX/TX) to allow more CPU-independent operation.
-
-
 === Custom Functions Subsystem
 
 The https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs[Custom Functions Subsystem (CFS)] is
@@ -94,22 +81,21 @@ chip-internal extension options:
 
 * https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu[Custom Functions Unit (CFU)] for CPU-internal custom RISC-V instructions
 * https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs[Custom Functions Subsystem (CFS)] for tightly-coupled processor-internal co-processors
-* https://stnolting.github.io/neorv32/#_stream_link_interface_slink[Stream Link Interface (SLIN)] for processor-external streaming modules
 * https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite[External Bus Interface (WISHBONE)] for processor-external memory-mapped modules
 
 .Comparison of On-Chip Extension Options
-[cols="<1,^1,^1,^1,^1"]
+[cols="<1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
-|                                 | Custom Functions Unit | Custom Functions Subsystem | Stream Link Interface  | External Bus Interface
-| **SoC location**                | CPU-internal          | processor-internal         | processor-external     | processor-external
-| **HW complexity/size**          | small                 | medium                     | large                  | large
-| **CPU-independent operation**   | no                    | yes                        | partly                 | yes
-| **CPU interface**               | register-file access  | memory-mapped              | memory-mapped          | memory-mapped
-| **Low-level access mechanism**  | custom instructions   | load/store                 | load/store             | load/store
-| **Arbitrary accesses**          | yes                   | yes                        | no, only sequential    | yes
-| **Access latency**              | minimal               | low                        | low                    | medium to high
-| **Buffered access (e.g. FIFO)** | no                    | user-defined               | yes                    | user-defined
-| **External IO interfaces**      | no                    | yes, but limited           | yes                    | yes
-| **Interrupt-capable**           | no                    | yes                        | yes                    | user-defined
+|                                 | Custom Functions Unit | Custom Functions Subsystem | External Bus Interface
+| **SoC location**                | CPU-internal          | processor-internal         | processor-external
+| **HW complexity/size**          | small                 | medium                     | large
+| **CPU-independent operation**   | no                    | yes                        | yes
+| **CPU interface**               | register-file access  | memory-mapped              | memory-mapped
+| **Low-level access mechanism**  | custom instructions   | load/store                 | load/store
+| **Arbitrary accesses**          | yes                   | yes                        | yes
+| **Access latency**              | minimal               | low                        | medium to high
+| **Buffered access (e.g. FIFO)** | no                    | user-defined               | user-defined
+| **External IO interfaces**      | no                    | yes, but limited           | yes
+| **Interrupt-capable**           | no                    | yes                        | user-defined
 |=======================
