@@ -502,7 +502,6 @@ void neorv32_rte_print_hw_config(void) {
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_WDT));     neorv32_uart0_printf(" WDT\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_TRNG));    neorv32_uart0_printf(" TRNG\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_CFS));     neorv32_uart0_printf(" CFS\n");
-  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_SLINK));   neorv32_uart0_printf(" SLINK\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_NEOLED));  neorv32_uart0_printf(" NEOLED\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_XIRQ));    neorv32_uart0_printf(" XIRQ\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_GPTMR));   neorv32_uart0_printf(" GPTMR\n");

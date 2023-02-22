@@ -629,17 +629,6 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define NEOLED_RTE_ID          RTE_TRAP_FIRQ_9   /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
 #define NEOLED_TRAP_CODE       TRAP_CODE_FIRQ_9  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
-/** @name Stream Link Interface (SLINK) */
-/**@{*/
-#define SLINK_RX_FIRQ_ENABLE   CSR_MIE_FIRQ10E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
-#define SLINK_RX_FIRQ_PENDING  CSR_MIP_FIRQ10P   /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
-#define SLINK_RX_RTE_ID        RTE_TRAP_FIRQ_10  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
-#define SLINK_RX_TRAP_CODE     TRAP_CODE_FIRQ_10 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
-#define SLINK_TX_FIRQ_ENABLE   CSR_MIE_FIRQ11E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
-#define SLINK_TX_FIRQ_PENDING  CSR_MIP_FIRQ11P   /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
-#define SLINK_TX_RTE_ID        RTE_TRAP_FIRQ_11  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
-#define SLINK_TX_TRAP_CODE     TRAP_CODE_FIRQ_11 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
-/**@}*/
 /** @name General Purpose Timer (GPTMR) */
 /**@{*/
 #define GPTMR_FIRQ_ENABLE      CSR_MIE_FIRQ12E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
@@ -739,75 +728,6 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** CFS module hardware access (#neorv32_cfs_t) */
 #define NEORV32_CFS (*((volatile neorv32_cfs_t*) (NEORV32_CFS_BASE)))
-/**@}*/
-
-
-/**********************************************************************//**
- * @name IO Device: Stream link interface (SLINK)
- **************************************************************************/
-/**@{*/
-/** SLINK module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
-  uint32_t       CTRL;        /**< offset 0: control register (#NEORV32_SLINK_CTRL_enum) */
-  uint32_t       IRQ;         /**< offset 4: interrupt configuration register (#NEORV32_SLINK_IRQ_enum) */
-  const uint32_t RX_STATUS;   /**< offset 8: RX links status (#NEORV32_SLINK_RX_STATUS_enum) */
-  uint32_t       TX_STATUS;   /**< offset 12: interrupt configuration register (#NEORV32_SLINK_TX_STATUS_enum) */
-  const uint32_t reserved[4]; /**< offset 16..28: reserved */
-  uint32_t       DATA[8];     /**< offset 32..60: stream link RX/TX data channels 0..7 */
-} neorv32_slink_t;
-
-/** SLINK module base address */
-#define NEORV32_SLINK_BASE (0xFFFFFEC0U)
-
-/** SLINK module hardware access (#neorv32_slink_t) */
-#define NEORV32_SLINK (*((volatile neorv32_slink_t*) (NEORV32_SLINK_BASE)))
-
-/** SLINK control register bits */
-enum NEORV32_SLINK_CTRL_enum {
-  SLINK_CTRL_EN          =  0, /**< SLINK control register(0) (r/w): SLINK controller enable */
-
-  SLINK_CTRL_RX_NUM_LSB  = 16, /**< SLINK control register(16) (r/-): number of available RX links bit 0 */
-  SLINK_CTRL_RX_NUM_MSB  = 19, /**< SLINK control register(19) (r/-): number of available RX links bit 3 */
-  SLINK_CTRL_TX_NUM_LSB  = 20, /**< SLINK control register(20) (r/-): number of available TX links bit 0 */
-  SLINK_CTRL_TX_NUM_MSB  = 23, /**< SLINK control register(23) (r/-): number of available TX links bit 3 */
-
-  SLINK_CTRL_RX_FIFO_LSB = 24, /**< SLINK control register(24) (r/-): log2(RX FIFO size) bit 0 */
-  SLINK_CTRL_RX_FIFO_MSB = 27, /**< SLINK control register(27) (r/-): log2(RX FIFO size) bit 3 */
-  SLINK_CTRL_TX_FIFO_LSB = 28, /**< SLINK control register(28) (r/-): log2(TX FIFO size) bit 0 */
-  SLINK_CTRL_TX_FIFO_MSB = 31  /**< SLINK control register(31) (r/-): log2(TX FIFO size) bit 3 */
-};
-
-/** SLINK interrupt configuration register bits */
-enum NEORV32_SLINK_IRQ_enum {
-  SLINK_IRQ_RX_LSB =  0, /**< SLINK IRQ configuration register(15:00) (r/w): RX link IRQ configuration, LSB */
-  SLINK_IRQ_RX_MSB = 15, /**< SLINK IRQ configuration register(15:00) (r/w): RX link IRQ configuration, MSB */
-  SLINK_IRQ_TX_LSB = 16, /**< SLINK IRQ configuration register(31:16) (r/w): TX link IRQ configuration, LSB */
-  SLINK_IRQ_TX_MSB = 31  /**< SLINK IRQ configuration register(31:16) (r/w): TX link IRQ configuration, MSB */
-};
-
-/** SLINK RX status register bits */
-enum NEORV32_SLINK_RX_STATUS_enum {
-  SLINK_RX_STATUS_EMPTY_LSB =  0, /**< SLINK RX status register(07:00) (r/-): RX link i FIFO empty, LSB */
-  SLINK_RX_STATUS_EMPTY_MSB =  7, /**< SLINK RX status register(07:00) (r/-): RX link i FIFO empty, MSB */
-  SLINK_RX_STATUS_HALF_LSB  =  8, /**< SLINK RX status register(15:08) (r/-): RX link i FIFO at least half full, LSB */
-  SLINK_RX_STATUS_HALF_MSB  = 15, /**< SLINK RX status register(15:08) (r/-): RX link i FIFO at least half full, MSB */
-  SLINK_RX_STATUS_FULL_LSB  = 16, /**< SLINK RX status register(23:16) (r/-): RX link i FIFO full, LSB */
-  SLINK_RX_STATUS_FULL_MSB  = 23, /**< SLINK RX status register(23:16) (r/-): RX link i FIFO full, MSB */
-  SLINK_RX_STATUS_LAST_LSB  = 24, /**< SLINK RX status register(31:24) (r/-): Set to indicate end of packet for RX link i, LSB */
-  SLINK_RX_STATUS_LAST_MSB  = 31  /**< SLINK RX status register(31:24) (r/-): Set to indicate end of packet for RX link i, MSB */
-};
-
-/** SLINK TX status register bits */
-enum NEORV32_SLINK_TX_STATUS_enum {
-  SLINK_TX_STATUS_EMPTY_LSB =  0, /**< SLINK TX status register(07:00) (r/-): TX link i FIFO empty, LSB */
-  SLINK_TX_STATUS_EMPTY_MSB =  7, /**< SLINK TX status register(07:00) (r/-): TX link i FIFO empty, MSB */
-  SLINK_TX_STATUS_HALF_LSB  =  8, /**< SLINK TX status register(15:08) (r/-): TX link i FIFO at least half full, LSB */
-  SLINK_TX_STATUS_HALF_MSB  = 15, /**< SLINK TX status register(15:08) (r/-): TX link i FIFO at least half full, MSB */
-  SLINK_TX_STATUS_FULL_LSB  = 16, /**< SLINK TX status register(23:16) (r/-): TX link i FIFO full, LSB */
-  SLINK_TX_STATUS_FULL_MSB  = 23, /**< SLINK TX status register(23:16) (r/-): TX link i FIFO full, MSB */
-  SLINK_TX_STATUS_LAST_LSB  = 24, /**< SLINK TX status register(31:24) (r/w): Set to mark end of packet for TX link i, LSB */
-  SLINK_TX_STATUS_LAST_MSB  = 31  /**< SLINK TX status register(31:24) (r/w): Set to mark end of packet for TX link i, MSB */
-};
 /**@}*/
 
 
@@ -1377,7 +1297,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_WDT         = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_EN generic) */
   SYSINFO_SOC_IO_CFS         = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions subsystem implemented when 1 (via IO_CFS_EN generic) */
   SYSINFO_SOC_IO_TRNG        = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
-  SYSINFO_SOC_IO_SLINK       = 25, /**< SYSINFO_FEATURES (25) (r/-): Stream link interface implemented when 1 (via SLINK_NUM_RX & SLINK_NUM_TX generics) */
+//SYSINFO_SOC_IO_reserved    = 25, /**< SYSINFO_FEATURES (25) (r/-): reserved */
   SYSINFO_SOC_IO_UART1       = 26, /**< SYSINFO_FEATURES (26) (r/-): Secondary universal asynchronous receiver/transmitter 1 implemented when 1 (via IO_UART1_EN generic) */
   SYSINFO_SOC_IO_NEOLED      = 27, /**< SYSINFO_FEATURES (27) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
   SYSINFO_SOC_IO_XIRQ        = 28, /**< SYSINFO_FEATURES (28) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
@@ -1432,7 +1352,6 @@ enum NEORV32_SYSINFO_SOC_enum {
 #include "neorv32_neoled.h"
 #include "neorv32_onewire.h"
 #include "neorv32_pwm.h"
-#include "neorv32_slink.h"
 #include "neorv32_spi.h"
 #include "neorv32_trng.h"
 #include "neorv32_twi.h"
