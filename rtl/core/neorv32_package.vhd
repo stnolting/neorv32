@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080009"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080010"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -85,11 +85,6 @@ package neorv32_package is
 -- ****************************************************************************************************************************
 -- Custom Types and Functions
 -- ****************************************************************************************************************************
-
-  -- External Interface Types ---------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  type sdata_8x32_t  is array (0 to 7) of std_ulogic_vector(31 downto 0);
-  type sdata_8x32r_t is array (0 to 7) of std_logic_vector(31 downto 0); -- resolved type
 
   -- Internal Interface Types ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -199,25 +194,9 @@ package neorv32_package is
 --constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"fffffe80"; -- base address
 --constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
 
-  -- Stream Link Interface (SLINK) --
-  constant slink_base_c         : std_ulogic_vector(31 downto 0) := x"fffffec0"; -- base address
-  constant slink_size_c         : natural := 16*4; -- module's address space size in bytes
-  constant slink_ctrl_c         : std_ulogic_vector(31 downto 0) := x"fffffec0";
-  constant slink_irq_c          : std_ulogic_vector(31 downto 0) := x"fffffec4";
-  constant slink_rx_status_c    : std_ulogic_vector(31 downto 0) := x"fffffec8";
-  constant slink_tx_status_c    : std_ulogic_vector(31 downto 0) := x"fffffecc";
---constant slink_reserved_c     : std_ulogic_vector(31 downto 0) := x"fffffed0";
---constant slink_reserved_c     : std_ulogic_vector(31 downto 0) := x"fffffed4";
---constant slink_reserved_c     : std_ulogic_vector(31 downto 0) := x"fffffed8";
---constant slink_reserved_c     : std_ulogic_vector(31 downto 0) := x"fffffedc";
-  constant slink_link0_c        : std_ulogic_vector(31 downto 0) := x"fffffee0";
-  constant slink_link1_c        : std_ulogic_vector(31 downto 0) := x"fffffee4";
-  constant slink_link2_c        : std_ulogic_vector(31 downto 0) := x"fffffee8";
-  constant slink_link3_c        : std_ulogic_vector(31 downto 0) := x"fffffeec";
-  constant slink_link4_c        : std_ulogic_vector(31 downto 0) := x"fffffef0";
-  constant slink_link5_c        : std_ulogic_vector(31 downto 0) := x"fffffef4";
-  constant slink_link6_c        : std_ulogic_vector(31 downto 0) := x"fffffef7";
-  constant slink_link7_c        : std_ulogic_vector(31 downto 0) := x"fffffefc";
+  -- reserved --
+--constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"fffffec0"; -- base address
+--constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- base address
@@ -997,11 +976,6 @@ package neorv32_package is
       MEM_EXT_BIG_ENDIAN           : boolean := false;  -- byte order: true=big-endian, false=little-endian
       MEM_EXT_ASYNC_RX             : boolean := false;  -- use register buffer for RX data when false
       MEM_EXT_ASYNC_TX             : boolean := false;  -- use register buffer for TX data when false
-      -- Stream link interface (SLINK) --
-      SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
-      SLINK_NUM_RX                 : natural := 0;      -- number of TX links (0..8)
-      SLINK_TX_FIFO                : natural := 1;      -- TX fifo depth, has to be a power of two
-      SLINK_RX_FIFO                : natural := 1;      -- RX fifo depth, has to be a power of two
       -- External Interrupts Controller (XIRQ) --
       XIRQ_NUM_CH                  : natural := 0;      -- number of external IRQ channels (0..32)
       XIRQ_TRIGGER_TYPE            : std_ulogic_vector(31 downto 0) := x"FFFFFFFF"; -- trigger type: 0=level, 1=edge
@@ -1061,16 +1035,6 @@ package neorv32_package is
       xip_clk_o      : out std_ulogic; -- serial clock
       xip_sdi_i      : in  std_ulogic := 'L'; -- device data input
       xip_sdo_o      : out std_ulogic; -- controller data output
-      -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
-      slink_tx_dat_o : out sdata_8x32_t; -- output data
-      slink_tx_val_o : out std_ulogic_vector(7 downto 0); -- valid output
-      slink_tx_rdy_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- ready to send
-      slink_tx_lst_o : out std_ulogic_vector(7 downto 0); -- last data of packet
-      -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
-      slink_rx_dat_i : in  sdata_8x32_t := (others => (others => 'U')); -- input data
-      slink_rx_val_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- valid input
-      slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
-      slink_rx_lst_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- last data of packet
       -- GPIO (available if IO_GPIO_NUM > 0) --
       gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
       gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- parallel input
@@ -1968,41 +1932,6 @@ package neorv32_package is
     );
   end component;
 
-  -- Component: Stream Link Interface (SLINK) -----------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_slink
-    generic (
-      SLINK_NUM_TX  : natural; -- number of TX links (0..8)
-      SLINK_NUM_RX  : natural; -- number of TX links (0..8)
-      SLINK_TX_FIFO : natural; -- TX fifo depth, has to be a power of two
-      SLINK_RX_FIFO : natural  -- RX fifo depth, has to be a power of two
-    );
-    port (
-      -- host access --
-      clk_i          : in  std_ulogic; -- global clock line
-      rstn_i         : in  std_ulogic; -- global reset line, low-active
-      addr_i         : in  std_ulogic_vector(31 downto 0); -- address
-      rden_i         : in  std_ulogic; -- read enable
-      wren_i         : in  std_ulogic; -- write enable
-      data_i         : in  std_ulogic_vector(31 downto 0); -- data in
-      data_o         : out std_ulogic_vector(31 downto 0); -- data out
-      ack_o          : out std_ulogic; -- transfer acknowledge
-      -- interrupt --
-      irq_tx_o       : out std_ulogic;
-      irq_rx_o       : out std_ulogic;
-      -- TX stream interfaces --
-      slink_tx_dat_o : out sdata_8x32_t; -- output data
-      slink_tx_val_o : out std_ulogic_vector(7 downto 0); -- valid output
-      slink_tx_rdy_i : in  std_ulogic_vector(7 downto 0); -- ready to send
-      slink_tx_lst_o : out std_ulogic_vector(7 downto 0); -- last data of packet
-      -- RX stream interfaces --
-      slink_rx_dat_i : in  sdata_8x32_t; -- input data
-      slink_rx_val_i : in  std_ulogic_vector(7 downto 0); -- valid input
-      slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
-      slink_rx_lst_i : in  std_ulogic_vector(7 downto 0)  -- last data of packet
-    );
-  end component;
-
   -- Component: External Interrupt Controller (XIRQ) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_xirq
@@ -2146,7 +2075,6 @@ package neorv32_package is
       IO_WDT_EN            : boolean; -- implement watch dog timer (WDT)?
       IO_TRNG_EN           : boolean; -- implement true random number generator (TRNG)?
       IO_CFS_EN            : boolean; -- implement custom functions subsystem (CFS)?
-      IO_SLINK_EN          : boolean; -- implement stream link interface?
       IO_NEOLED_EN         : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
       IO_XIRQ_NUM_CH       : natural; -- number of external interrupt (XIRQ) channels to implement
       IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?

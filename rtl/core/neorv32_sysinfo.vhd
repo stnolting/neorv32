@@ -77,7 +77,6 @@ entity neorv32_sysinfo is
     IO_WDT_EN            : boolean; -- implement watch dog timer (WDT)?
     IO_TRNG_EN           : boolean; -- implement true random number generator (TRNG)?
     IO_CFS_EN            : boolean; -- implement custom functions subsystem (CFS)?
-    IO_SLINK_EN          : boolean; -- implement stream link interface?
     IO_NEOLED_EN         : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_XIRQ_NUM_CH       : natural; -- number of external interrupt (XIRQ) channels to implement
     IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?
@@ -155,7 +154,7 @@ begin
   sysinfo(2)(22) <= bool_to_ulogic_f(IO_WDT_EN);           -- watch dog timer (WDT) implemented?
   sysinfo(2)(23) <= bool_to_ulogic_f(IO_CFS_EN);           -- custom functions subsystem (CFS) implemented?
   sysinfo(2)(24) <= bool_to_ulogic_f(IO_TRNG_EN);          -- true random number generator (TRNG) implemented?
-  sysinfo(2)(25) <= bool_to_ulogic_f(IO_SLINK_EN);         -- stream links (SLINK) implemented?
+  sysinfo(2)(25) <= '0';                                   -- reserved
   sysinfo(2)(26) <= bool_to_ulogic_f(IO_UART1_EN);         -- secondary universal asynchronous receiver/transmitter (UART1) implemented?
   sysinfo(2)(27) <= bool_to_ulogic_f(IO_NEOLED_EN);        -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
   sysinfo(2)(28) <= bool_to_ulogic_f(IO_XIRQ_NUM_CH > 0);  -- external interrupt controller (XIRQ) implemented?

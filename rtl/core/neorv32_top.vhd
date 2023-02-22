@@ -104,12 +104,6 @@ entity neorv32_top is
     MEM_EXT_ASYNC_RX             : boolean := false;  -- use register buffer for RX data when false
     MEM_EXT_ASYNC_TX             : boolean := false;  -- use register buffer for TX data when false
 
-    -- Stream link interface (SLINK) --
-    SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
-    SLINK_NUM_RX                 : natural := 0;      -- number of TX links (0..8)
-    SLINK_TX_FIFO                : natural := 1;      -- TX fifo depth, has to be a power of two
-    SLINK_RX_FIFO                : natural := 1;      -- RX fifo depth, has to be a power of two
-
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  : natural := 0;      -- number of external IRQ channels (0..32)
     XIRQ_TRIGGER_TYPE            : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger type: 0=level, 1=edge
@@ -175,18 +169,6 @@ entity neorv32_top is
     xip_sdi_i      : in  std_ulogic := 'L'; -- device data input
     xip_sdo_o      : out std_ulogic; -- controller data output
 
-    -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
-    slink_tx_dat_o : out sdata_8x32_t; -- output data
-    slink_tx_val_o : out std_ulogic_vector(7 downto 0); -- valid output
-    slink_tx_rdy_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- ready to send
-    slink_tx_lst_o : out std_ulogic_vector(7 downto 0); -- last data of packet
-
-    -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
-    slink_rx_dat_i : in  sdata_8x32_t := (others => (others => 'U')); -- input data
-    slink_rx_val_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- valid input
-    slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
-    slink_rx_lst_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- last data of packet
-
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
     gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- parallel input
@@ -244,9 +226,6 @@ architecture neorv32_top_rtl of neorv32_top is
   -- alignment check for internal memories --
   constant imem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) := (others => '0');
   constant dmem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) := (others => '0');
-
-  -- helpers --
-  constant io_slink_en_c : boolean := boolean(SLINK_NUM_RX > 0) or boolean(SLINK_NUM_TX > 0); -- implement SLINK at all?`
 
   -- reset generator --
   signal rstn_ext_sreg : std_ulogic_vector(3 downto 0);
@@ -351,8 +330,8 @@ architecture neorv32_top_rtl of neorv32_top is
   -- module response bus - device ID --
   type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO,
                          RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI, RESP_TWI, RESP_PWM, RESP_WDT,
-                         RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_SLINK, RESP_XIRQ,
-                         RESP_GPTMR, RESP_XIP_CT, RESP_XIP_ACC, RESP_ONEWIRE);
+                         RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_XIRQ, RESP_GPTMR,
+                         RESP_XIP_CT, RESP_XIP_ACC, RESP_ONEWIRE);
 
   -- module response bus --
   type resp_bus_t is array (resp_bus_id_t) of resp_bus_entry_t;
@@ -370,8 +349,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal twi_irq       : std_ulogic;
   signal cfs_irq       : std_ulogic;
   signal neoled_irq    : std_ulogic;
-  signal slink_tx_irq  : std_ulogic;
-  signal slink_rx_irq  : std_ulogic;
   signal xirq_irq      : std_ulogic;
   signal gptmr_irq     : std_ulogic;
   signal onewire_irq   : std_ulogic;
@@ -404,7 +381,6 @@ begin
   cond_sel_string_f(IO_WDT_EN, "WDT ", "") &
   cond_sel_string_f(IO_TRNG_EN, "TRNG ", "") &
   cond_sel_string_f(IO_CFS_EN, "CFS ", "") &
-  cond_sel_string_f(io_slink_en_c, "SLINK ", "") &
   cond_sel_string_f(IO_NEOLED_EN, "NEOLED ", "") &
   cond_sel_string_f(boolean(XIRQ_NUM_CH > 0), "XIRQ ", "") &
   cond_sel_string_f(IO_GPTMR_EN, "GPTMR ", "") &
@@ -628,11 +604,10 @@ begin
   fast_irq(07) <= twi_irq;       -- TWI transfer done
   fast_irq(08) <= xirq_irq;      -- external interrupt controller
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer IRQ
-  fast_irq(10) <= slink_rx_irq;  -- SLINK RX
-  fast_irq(11) <= slink_tx_irq;  -- SLINK TX
+  fast_irq(10) <= '0';           -- reserved
+  fast_irq(11) <= '0';           -- reserved
   fast_irq(12) <= gptmr_irq;     -- general purpose timer match
   fast_irq(13) <= onewire_irq;   -- ONEWIRE operation done
-  --
   fast_irq(14) <= '0';           -- reserved
   fast_irq(15) <= '0';           -- LOWEST PRIORITY - reserved
 
@@ -1442,62 +1417,11 @@ begin
   end generate;
 
 
-  -- Stream Link Interface (SLINK) ----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  neorv32_slink_inst_true:
-  if (io_slink_en_c = true) generate
-    neorv32_slink_inst: neorv32_slink
-    generic map (
-      SLINK_NUM_TX  => SLINK_NUM_TX,  -- number of TX links (0..8)
-      SLINK_NUM_RX  => SLINK_NUM_RX,  -- number of TX links (0..8)
-      SLINK_TX_FIFO => SLINK_TX_FIFO, -- TX fifo depth, has to be a power of two
-      SLINK_RX_FIFO => SLINK_RX_FIFO  -- RX fifo depth, has to be a power of two
-    )
-    port map (
-      -- host access --
-      clk_i          => clk_i,                      -- global clock line
-      rstn_i         => rstn_int,                   -- global reset line, low-active, async
-      addr_i         => p_bus.addr,                 -- address
-      rden_i         => io_rden,                    -- read enable
-      wren_i         => io_wren,                    -- write enable
-      data_i         => p_bus.wdata,                -- data in
-      data_o         => resp_bus(RESP_SLINK).rdata, -- data out
-      ack_o          => resp_bus(RESP_SLINK).ack,   -- transfer acknowledge
-      -- interrupt --
-      irq_tx_o       => slink_tx_irq,
-      irq_rx_o       => slink_rx_irq,
-      -- TX stream interfaces --
-      slink_tx_dat_o => slink_tx_dat_o,             -- output data
-      slink_tx_val_o => slink_tx_val_o,             -- valid output
-      slink_tx_rdy_i => slink_tx_rdy_i,             -- ready to send
-      slink_tx_lst_o => slink_tx_lst_o,             -- last data of packet
-      -- RX stream interfaces --
-      slink_rx_dat_i => slink_rx_dat_i,             -- input data
-      slink_rx_val_i => slink_rx_val_i,             -- valid input
-      slink_rx_rdy_o => slink_rx_rdy_o,             -- ready to receive
-      slink_rx_lst_i => slink_rx_lst_i              -- last data of packet
-    );
-    resp_bus(RESP_SLINK).err <= '0'; -- no access error possible
-  end generate;
-
-  neorv32_slink_inst_false:
-  if (io_slink_en_c = false) generate
-    resp_bus(RESP_SLINK) <= resp_bus_entry_terminate_c;
-    --
-    slink_tx_irq   <= '0';
-    slink_rx_irq   <= '0';
-    slink_tx_dat_o <= (others => (others => '0'));
-    slink_tx_val_o <= (others => '0');
-    slink_tx_lst_o <= (others => '0');
-    slink_rx_rdy_o <= (others => '0');
-  end generate;
-
-
   -- External Interrupt Controller (XIRQ) ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_xirq_inst_true:
   if (XIRQ_NUM_CH > 0) generate
-    neorv32_slink_inst: neorv32_xirq
+    neorv32_xirq_inst: neorv32_xirq
     generic map (
       XIRQ_NUM_CH           => XIRQ_NUM_CH,          -- number of external IRQ channels (0..32)
       XIRQ_TRIGGER_TYPE     => XIRQ_TRIGGER_TYPE,    -- trigger type: 0=level, 1=edge
@@ -1640,7 +1564,6 @@ begin
     IO_WDT_EN            => IO_WDT_EN,            -- implement watch dog timer (WDT)?
     IO_TRNG_EN           => IO_TRNG_EN,           -- implement true random number generator (TRNG)?
     IO_CFS_EN            => IO_CFS_EN,            -- implement custom functions subsystem (CFS)?
-    IO_SLINK_EN          => io_slink_en_c,        -- implement stream link interface?
     IO_NEOLED_EN         => IO_NEOLED_EN,         -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_XIRQ_NUM_CH       => XIRQ_NUM_CH,          -- number of external interrupt (XIRQ) channels to implement
     IO_GPTMR_EN          => IO_GPTMR_EN,          -- implement general purpose timer (GPTMR)?
