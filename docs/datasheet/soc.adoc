@@ -26,7 +26,6 @@ image::neorv32_processor.png[align=center]
 * _optional_ two wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
 * _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 64xOut, 64xIn
 * _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_memory_interface_wishbone_axi4_lite,**WISHBONE**>>)
-* _optional_ 32-bit stream link interface with up to 8 independent links, AXI4-Stream compatible (<<_stream_link_interface_slink,**SLINK**>>)
 * _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
 * _optional_ PWM controller with up to 12 channels & 8-bit duty cycle resolution (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
 * _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**>>)
@@ -97,15 +96,6 @@ bits/channels are hardwired to zero.
 | `xip_clk_o`      |    1 |   out | serial clock
 | `xip_sdi_i`      |    1 |    in | serial data input
 | `xip_sdo_o`      |    1 |   out | serial data output
-4+^| **Stream Link Interface (<<_stream_link_interface_slink,SLINK>>)**
-| `slink_tx_dat_o` | 8x32 |   out | TX link _i_ data
-| `slink_tx_val_o` |    8 |   out | TX link _i_ data valid
-| `slink_tx_rdy_i` |    8 |    in | TX link _i_ allowed to send
-| `slink_tx_lst_o` |    8 |    in | TX link _i_ end of packet
-| `slink_rx_dat_i` | 8x32 |    in | RX link _i_ data
-| `slink_rx_val_i` |    8 |    in | RX link _i_ data valid
-| `slink_rx_rdy_o` |    8 |   out | RX link _i_ ready to receive
-| `slink_rx_lst_i` |    8 |   out | RX link _i_ end of packet
 4+^| **General Purpose Inputs & Outputs (<<_general_purpose_input_and_output_port_gpio,GPIO>>)**
 | `gpio_o`         |   64 |   out | general purpose parallel output
 | `gpio_i`         |   64 |    in | general purpose parallel input
@@ -710,55 +700,6 @@ implemented reducing access latency by one cycle but eventually increasing the c
 |======
 
 
-
-// ####################################################################################################################
-:sectnums:
-==== Stream Link Interface
-
-:sectnums!:
-===== _SLINK_NUM_TX_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **SLINK_NUM_TX** | _natural_ | 0
-3+| Number of TX (send) <<_stream_link_interface_slink>> channels to implement. Valid values are 0..8.
-|======
-
-
-:sectnums!:
-===== _SLINK_NUM_RX_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **SLINK_NUM_RX** | _natural_ | 0
-3+| Number of RX (receive) <<_stream_link_interface_slink>> channels to implement. Valid values are 0..8.
-|======
-
-
-:sectnums!:
-===== _SLINK_TX_FIFO_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **SLINK_TX_FIFO** | _natural_ | 1
-3+| Internal FIFO depth for all implemented TX links. Valid values are 1..32k and have to be a power of two.
-|======
-
-
-:sectnums!:
-===== _SLINK_RX_FIFO_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **SLINK_RX_FIFO** | _natural_ | 1
-3+| Internal FIFO depth for all implemented RX links. Valid values are 1..32k and have to be a power of two.
-|======
-
-
 // ####################################################################################################################
 :sectnums:
 ==== External Interrupt Controller
@@ -1221,11 +1162,12 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI transmission done interrupt
 | 8       | <<_external_interrupt_controller_xirq,XIRQ>> | External interrupt controller interrupt
 | 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED TX buffer interrupt
-| 10      | <<_stream_link_interface_slink,SLINK>> | RX data buffer interrupt
-| 11      | <<_stream_link_interface_slink,SLINK>> | TX data buffer interrupt
+| 10      | - | _reserved_, will never fire
+| 11      | - | _reserved_, will never fire
 | 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
 | 13      | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire operation done interrupt
-| 14:15   | - | _reserved_, will never fire
+| 14      | - | _reserved_, will never fire
+| 15      | - | _reserved_, will never fire
 |=======================
 
 .Trigger Type
@@ -1595,8 +1537,6 @@ include::soc_icache.adoc[]
 include::soc_wishbone.adoc[]
 
 include::soc_buskeeper.adoc[]
-
-include::soc_slink.adoc[]
 
 include::soc_gpio.adoc[]
 
