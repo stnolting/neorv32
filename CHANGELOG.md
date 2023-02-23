@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 23.02.2023 | [**:rocket:1.8.1**](https://github.com/stnolting/neorv32/releases/tag/v1.8.1) | **New release** |
 | 22.02.2023 | 1.8.0.10 | :warning: **remove stream link interface (SLINK)**; [#502](https://github.com/stnolting/neorv32/pull/502) |
 | 19.02.2023 | 1.8.0.9 | :warning: constrain number of **PWM** channels to 12 (was 60); change base address of PWM module; [#501](https://github.com/stnolting/neorv32/pull/501) |
 | 18.02.2023 | 1.8.0.8 | :bug: fix minor bug in CPU's co-processor monitor; minor VHDL clean-ups and edits; [#500](https://github.com/stnolting/neorv32/pull/500) |
