@@ -151,58 +151,15 @@ architecture neorv32_tb_rtl of neorv32_tb is
   end record;
   signal ext_mem_a, ext_mem_b, ext_mem_c : ext_mem_t;
 
-  -- stream link interface - local echo --
-  signal slink_dat : sdata_8x32_t;
-  signal slink_val : std_ulogic_vector(7 downto 0);
-  signal slink_rdy : std_ulogic_vector(7 downto 0);
-  signal slink_lst : std_ulogic_vector(7 downto 0);
-
-  signal slink_transmitter_dat, slink_receiver_dat : sdata_8x32_t;
-  signal slink_transmitter_val, slink_receiver_val : std_ulogic_vector(7 downto 0);
-  signal slink_transmitter_rdy, slink_receiver_rdy : std_ulogic_vector(7 downto 0);
-
   constant uart0_rx_logger : logger_t := get_logger("UART0.RX");
   constant uart1_rx_logger : logger_t := get_logger("UART1.RX");
   constant uart0_rx_handle : uart_rx_t := new_uart_rx(uart0_baud_val_c, uart0_rx_logger);
   constant uart1_rx_handle : uart_rx_t := new_uart_rx(uart1_baud_val_c, uart1_rx_logger);
 
-  type axi_stream_master_vec_t is array(integer range <>) of axi_stream_master_t;
-  type axi_stream_slave_vec_t is array(integer range <>) of axi_stream_slave_t;
-
-  impure function init_slink_transmitters return axi_stream_master_vec_t is
-    variable result : axi_stream_master_vec_t(slink_transmitter_val'range);
-  begin
-    for idx in result'range loop
-      result(idx) := new_axi_stream_master(
-        data_length => slink_transmitter_dat(idx)'length,
-        stall_config => new_stall_config(0.05, 1, 10)
-      );
-    end loop;
-
-    return result;
-  end;
-
-  impure function init_slink_receivers return axi_stream_slave_vec_t is
-    variable result : axi_stream_slave_vec_t(slink_receiver_val'range);
-  begin
-    for idx in result'range loop
-      result(idx) := new_axi_stream_slave(
-        data_length => slink_receiver_dat(idx)'length,
-        stall_config => new_stall_config(0.05, 1, 10)
-      );
-    end loop;
-
-    return result;
-  end;
-
-  constant slink_transmitters : axi_stream_master_vec_t := init_slink_transmitters;
-  constant slink_receivers : axi_stream_slave_vec_t := init_slink_receivers;
-
 begin
   test_runner : process
     variable msg : msg_t;
     variable rnd : RandomPType;
-    variable value : std_logic_vector(slink_transmitter_dat(0)'range);
   begin
     test_runner_setup(runner, runner_cfg);
 
@@ -221,29 +178,8 @@ begin
     if ci_mode then
       -- No need to send the full expectation in one big chunk
       check_uart(net, uart1_rx_handle, nul & nul);
-      check_uart(net, uart1_rx_handle, "0/48" & cr & lf);
+      check_uart(net, uart1_rx_handle, "0/46" & cr & lf);
     end if;
-
-    -- Apply some random data on each SLINK inputs and expect it to
-    -- be echoed by the CPU. No blocking. Let the SLINK transmitters
-    -- and receivers do this work in parallel.
-    for idx in slink_transmitters'range loop
-      for iter in 1 to 100 loop
-        value := rnd.RandSlv(value'length);
-
-        -- SLINK is AXI Stream compatible so the SLINK transmitters and
-        -- and receivers are AXI Stream master and slave verification components (VCs).
-        -- The full-featured AXI Stream verification component interface (VCI) is used
-        -- but the AXI stream VCs also implements the basic stream VCI which also works
-        -- for simple transactions like these. To use that interface for pushing data
-        -- the AXI Steam VC must be "cast" to a basic stream VC using "as_stream"
-        --
-        -- push_stream(net, as_stream(slink_transmitters(idx)), value);
-
-        push_axi_stream(net, slink_transmitters(idx), value);
-        check_axi_stream(net, slink_receivers(idx), value, blocking => false);
-      end loop;
-    end loop;
 
     -- Wait until all expected data has been received
     --
@@ -253,9 +189,6 @@ begin
     -- to a sync VC
     wait_until_idle(net, as_sync(uart0_rx_handle));
     wait_until_idle(net, as_sync(uart1_rx_handle));
-    for idx in slink_receivers'range loop
-      wait_until_idle(net, as_sync(slink_receivers(idx)));
-    end loop;
 
     -- Wait a bit more if some extra unexpected data is produced. If so,
     -- uart_rx will fail
@@ -326,11 +259,6 @@ begin
     MEM_EXT_BIG_ENDIAN           => false,         -- byte order: true=big-endian, false=little-endian
     MEM_EXT_ASYNC_RX             => false,         -- use register buffer for RX data when false
     MEM_EXT_ASYNC_TX             => false,         -- use register buffer for TX data when false
-    -- Stream link interface --
-    SLINK_NUM_TX                 => 8,             -- number of TX links (0..8)
-    SLINK_NUM_RX                 => 8,             -- number of TX links (0..8)
-    SLINK_TX_FIFO                => 4,             -- TX fifo depth, has to be a power of two
-    SLINK_RX_FIFO                => 1,             -- RX fifo depth, has to be a power of two
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  => 32,            -- number of external IRQ channels (0..32)
     XIRQ_TRIGGER_TYPE            => (others => '1'), -- trigger type: 0=level, 1=edge
@@ -390,16 +318,6 @@ begin
     xip_clk_o      => open,            -- serial clock
     xip_sdi_i      => '1',             -- device data input
     xip_sdo_o      => open,            -- controller data output
-    -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
-    slink_tx_dat_o => slink_dat,       -- output data
-    slink_tx_val_o => slink_val,       -- valid output
-    slink_tx_rdy_i => slink_rdy,       -- ready to send
-    slink_tx_lst_o => slink_lst,       -- last data of package
-    -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
-    slink_rx_dat_i => slink_dat,       -- input data
-    slink_rx_val_i => slink_val,       -- valid input
-    slink_rx_rdy_o => slink_rdy,       -- ready to receive
-    slink_rx_lst_i => slink_lst,       -- last data of package
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o         => gpio,            -- parallel output
     gpio_i         => gpio,            -- parallel input
@@ -456,41 +374,6 @@ begin
     port map (
       clk => clk_gen,
       uart_txd => uart1_txd);
-
-  slink_transmitters_gen: for idx in slink_transmitters'range generate
-    slink_transmitter : entity vunit_lib.axi_stream_master
-      generic map(
-        master => slink_transmitters(idx)
-      )
-      port map(
-        aclk => clk_gen,
-        tvalid => slink_transmitter_val(idx),
-        tready => slink_transmitter_rdy(idx),
-        std_ulogic_vector(tdata) => slink_transmitter_dat(idx)
-      );
-  end generate;
-
-  slink_receivers_gen: for idx in slink_receivers'range generate
-  begin
-    slink_receiver : entity vunit_lib.axi_stream_slave
-      generic map(
-        slave => slink_receivers(idx)
-      )
-      port map(
-        aclk => clk_gen,
-        tvalid => slink_receiver_val(idx),
-        tready => slink_receiver_rdy(idx),
-        tdata => std_logic_vector(slink_receiver_dat(idx))
-      );
-  end generate;
-
-  -- TODO: connect these to the CPU SLINK interface once the
-  -- loopback SW has been implemented
-  temporary_connection : for idx in slink_transmitters'range generate
-    slink_receiver_val(idx) <= slink_transmitter_val(idx);
-    slink_transmitter_rdy(idx) <= slink_receiver_rdy(idx);
-    slink_receiver_dat(idx) <= slink_transmitter_dat(idx);
-  end generate;
 
 
   -- Wishbone Fabric ------------------------------------------------------------------------

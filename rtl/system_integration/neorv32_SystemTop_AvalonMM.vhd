@@ -94,12 +94,6 @@ entity neorv32_top_avalonmm is
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
-    -- Stream link interface (SLINK) --
-    SLINK_NUM_TX                 : natural := 0;      -- number of TX links (0..8)
-    SLINK_NUM_RX                 : natural := 0;      -- number of TX links (0..8)
-    SLINK_TX_FIFO                : natural := 1;      -- TX fifo depth, has to be a power of two
-    SLINK_RX_FIFO                : natural := 1;      -- RX fifo depth, has to be a power of two
-
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  : natural := 0;      -- number of external IRQ channels (0..32)
     XIRQ_TRIGGER_TYPE            : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger type: 0=level, 1=edge
@@ -161,18 +155,6 @@ entity neorv32_top_avalonmm is
     xip_clk_o      : out std_ulogic; -- serial clock
     xip_sdi_i      : in  std_ulogic := 'L'; -- device data input
     xip_sdo_o      : out std_ulogic; -- controller data output
-
-    -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
-    slink_tx_dat_o : out sdata_8x32_t; -- output data
-    slink_tx_val_o : out std_ulogic_vector(7 downto 0); -- valid output
-    slink_tx_rdy_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- ready to send
-    slink_tx_lst_o : out std_ulogic_vector(7 downto 0); -- last data of package
-
-    -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
-    slink_rx_dat_i : in  sdata_8x32_t := (others => (others => 'U')); -- input data
-    slink_rx_val_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- valid input
-    slink_rx_rdy_o : out std_ulogic_vector(7 downto 0); -- ready to receive
-    slink_rx_lst_i : in  std_ulogic_vector(7 downto 0) := (others => 'L'); -- last data of package
 
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
@@ -299,12 +281,6 @@ begin
     MEM_EXT_ASYNC_RX => false,
     MEM_EXT_ASYNC_TX => false,
 
-    -- Stream link interface (SLINK) --
-    SLINK_NUM_TX => SLINK_NUM_TX,
-    SLINK_NUM_RX => SLINK_NUM_RX,
-    SLINK_TX_FIFO => SLINK_TX_FIFO,
-    SLINK_RX_FIFO => SLINK_RX_FIFO,
-
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH => XIRQ_NUM_CH,
     XIRQ_TRIGGER_TYPE => XIRQ_TRIGGER_TYPE,
@@ -369,18 +345,6 @@ begin
     xip_clk_o => xip_clk_o,
     xip_sdi_i => xip_sdi_i,
     xip_sdo_o => xip_sdo_o,
-
-    -- TX stream interfaces (available if SLINK_NUM_TX > 0) --
-    slink_tx_dat_o => slink_tx_dat_o,
-    slink_tx_val_o => slink_tx_val_o,
-    slink_tx_rdy_i => slink_tx_rdy_i,
-    slink_tx_lst_o => slink_tx_lst_o,
-
-    -- RX stream interfaces (available if SLINK_NUM_RX > 0) --
-    slink_rx_dat_i => slink_rx_dat_i,
-    slink_rx_val_i => slink_rx_val_i,
-    slink_rx_rdy_o => slink_rx_rdy_o,
-    slink_rx_lst_i => slink_rx_lst_i,
 
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o => gpio_o,

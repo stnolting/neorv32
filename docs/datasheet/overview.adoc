@@ -210,7 +210,6 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_neoled.vhd              - NeoPixel (TM) compatible smart LED interface
 ├neorv32_onewire.vhd             - One-Wire serial interface controller
 ├neorv32_pwm.vhd                 - Pulse-width modulation controller
-├neorv32_slink.vhd               - Stream link controller
 ├neorv32_spi.vhd                 - Serial peripheral interface controller
 ├neorv32_sysinfo.vhd             - System configuration information memory
 ├neorv32_trng.vhd                - True random number generator
@@ -319,7 +318,6 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 | NEOLED        | Smart LED Interface (NeoPixel/WS28128) (FIFO_depth=1)          | 227 | 184 |        0 |    0
 | ONEWIRE       | 1-wire interface                                               | 107 |  77 |        0 |    0
 | PWM           | Pulse_width modulation controller (8 channels)                 | 128 | 117 |        0 |    0
-| SLINK         | Stream link interface (2xRX, 2xTX, FIFO_depth=1)               | 136 | 116 |        0 |    0
 | SPI           | Serial peripheral interface                                    | 114 |  94 |        0 |    0
 | **SYSINFO**   | System configuration information memory                        |  13 |  11 |        0 |    0
 | TRNG          | True random number generator                                   |  89 |  79 |        0 |    0

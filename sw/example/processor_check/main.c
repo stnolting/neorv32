@@ -1270,93 +1270,9 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 10 (SLINK RX)
+  // Fast interrupt channel 10..11
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FIRQ10 (SLINK RX) ", cnt_test);
-  cnt_test++;
-
-  // enable SLINK RX link 0 interrupt
-  neorv32_slink_setup(0b11 << (SLINK_IRQ_RX_LSB + 2*0)); // RX link 0: IRQ if FIFO becomes at least half full
-  neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_RX_FIRQ_ENABLE);
-
-  tmp_b = neorv32_slink_get_fifo_depth(0) + neorv32_slink_get_fifo_depth(1);
-  tmp_a = 0; // error counter
-
-  // send data words via link 0 to fill TX and RX FIFOs
-  while (tmp_b) {
-    tmp_a += neorv32_slink_tx(0, 0xA1B2C3D4, 1);
-    tmp_b--;
-  }
-
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile ("nop");
-  asm volatile ("nop");
-
-  neorv32_cpu_csr_write(CSR_MIE, 0);
-
-  // check if RX link fires IRQ
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) != SLINK_RX_TRAP_CODE) {
-    tmp_a++;
-  }
-
-  // get single data word from link 0
-  uint32_t slink_rx_data = 0;
-  if (neorv32_slink_rx(0, &slink_rx_data) != 1) { // make sure the received data is "end of packet"
-    tmp_a++;
-  }
-
-  if ((tmp_a == 0) && // local error counter = 0
-      (slink_rx_data == 0xA1B2C3D4)) { // correct data read-back
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
-
-  // shutdown SLINK
-  neorv32_slink_disable();
-
-
-  // ----------------------------------------------------------
-  // Fast interrupt channel 11 (SLINK TX)
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FIRQ11 (SLINK TX) ", cnt_test);
-  cnt_test++;
-
-  // enable SLINK TX link 0 interrupt
-  neorv32_slink_setup(0b10 << (SLINK_IRQ_TX_LSB + 2*0)); // TX link 0: IRQ if FIFO becomes empty
-  neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_TX_FIRQ_ENABLE);
-
-  tmp_a = 0; // error counter
-
-  // send single data word
-  tmp_a += neorv32_slink_tx(0, 0xACCABDDB, 0);
-
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile ("nop");
-  asm volatile ("nop");
-
-  neorv32_cpu_csr_write(CSR_MIE, 0);
-
-  // check if TX link fires IRQ
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) != SLINK_TX_TRAP_CODE) {
-    tmp_a++;
-  }
-
-  // read single data word
-  tmp_a += neorv32_slink_rx(0, &slink_rx_data);
-
-  if ((tmp_a == 0) && (slink_rx_data == 0xACCABDDB)) {
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
-
-  // shutdown SLINK
-  neorv32_slink_disable();
+  PRINT_STANDARD("[%i] FIRQ10..11 [skipped, n.a.]\n", cnt_test);
 
 
   // ----------------------------------------------------------
