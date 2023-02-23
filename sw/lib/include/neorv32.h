@@ -720,7 +720,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 /**@{*/
 /** CFS module prototype */
 typedef struct __attribute__((packed,aligned(4))) {
-  uint32_t REG[32]; /**< offset 4*0..4*31: CFS register 0..31, user-defined */
+  uint32_t REG[64]; /**< offset 4*0..4*63: CFS register 0..63, user-defined */
 } neorv32_cfs_t;
 
 /** CFS base address */
