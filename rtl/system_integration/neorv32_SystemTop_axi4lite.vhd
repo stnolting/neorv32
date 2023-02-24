@@ -391,8 +391,8 @@ begin
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o   => xip_csn_o_int,   -- chip-select, low-active
     xip_clk_o   => xip_clk_o_int,   -- serial clock
-    xip_sdi_i   => xip_sdi_i_int,   -- device data input
-    xip_sdo_o   => xip_sdo_o_int,   -- controller data output
+    xip_dat_i   => xip_dat_i_int,   -- device data input
+    xip_dat_o   => xip_dat_o_int,   -- controller data output
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o      => gpio_o_int,      -- parallel output
     gpio_i      => gpio_i_int,      -- parallel input
@@ -407,9 +407,9 @@ begin
     uart1_rts_o => uart1_rts_o_int, -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
     uart1_cts_i => uart1_cts_i_int, -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o   => spi_sck_o_int,   -- SPI serial clock
-    spi_sdo_o   => spi_sdo_o_int,   -- controller data out, peripheral data in
-    spi_sdi_i   => spi_sdi_i_int,   -- controller data in, peripheral data out
+    spi_clk_o   => spi_clk_o_int,   -- SPI serial clock
+    spi_dat_o   => spi_dat_o_int,   -- controller data out, peripheral data in
+    spi_dat_i   => spi_dat_i_int,   -- controller data in, peripheral data out
     spi_csn_o   => spi_csn_o_int,   -- SPI CS
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  => twi_sda_io,      -- twi serial data line
