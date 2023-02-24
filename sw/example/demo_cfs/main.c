@@ -1,9 +1,9 @@
 // #################################################################################################
-// # << NEORV32 - CFS Demo Program >>                                                              #
+// # << NEORV32 - Custom Functions Subsystem (CFS) Demo Program >>                                 #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -97,7 +97,7 @@ int main() {
                        " * NEORV32_CFS.REG[1] (r/w): convert gray to binary code\n"
                        " * NEORV32_CFS.REG[2] (r/w): bit reversal\n"
                        " * NEORV32_CFS.REG[3] (r/w): byte swap\n"
-                       "The remaining 28 CFS registers are unused and will return 0 when read.\n");
+                       "The remaining 60 CFS registers are unused and will return 0 when read.\n");
 
 
   // function examples

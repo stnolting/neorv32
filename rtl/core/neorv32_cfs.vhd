@@ -2,7 +2,7 @@
 -- # << NEORV32 - Custom Functions Subsystem (CFS) >>                                              #
 -- # ********************************************************************************************* #
 -- # Intended for tightly-coupled, application-specific custom co-processors. This module provides #
--- # 32x 32-bit memory-mapped interface registers, one interrupt request signal and custom IO      #
+-- # 64x 32-bit memory-mapped interface registers, one interrupt request signal and custom IO      #
 -- # conduits for processor-external or chip-external interface.                                   #
 -- #                                                                                               #
 -- # NOTE: This is just an example/illustration template. Modify/replace this file to implement    #
@@ -182,7 +182,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- Here we are reading/writing from/to the interface registers of the module and generate the CPU access handshake (bus response).
   --
-  -- The CFS provides up to 32 memory-mapped 32-bit interface registers. For instance, these could be used to provide a
+  -- The CFS provides up to 64 memory-mapped 32-bit interface registers. For instance, these could be used to provide a
   -- <control register> for global control of the unit, a <data register> for reading/writing from/to a data FIFO, a
   -- <command register> for issuing commands and a <status register> for status information.
   --

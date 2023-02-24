@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080100"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080101"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -156,7 +156,7 @@ package neorv32_package is
 
   -- Custom Functions Subsystem (CFS) --
   constant cfs_base_c           : std_ulogic_vector(31 downto 0) := x"fffffe00"; -- base address
-  constant cfs_size_c           : natural := 32*4; -- module's address space in bytes
+  constant cfs_size_c           : natural := 64*4; -- module's address space in bytes
   constant cfs_reg0_addr_c      : std_ulogic_vector(31 downto 0) := x"fffffe00";
   constant cfs_reg1_addr_c      : std_ulogic_vector(31 downto 0) := x"fffffe04";
   constant cfs_reg2_addr_c      : std_ulogic_vector(31 downto 0) := x"fffffe08";
@@ -189,14 +189,38 @@ package neorv32_package is
   constant cfs_reg29_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe74";
   constant cfs_reg30_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe78";
   constant cfs_reg31_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe7c";
-
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"fffffe80"; -- base address
---constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
-
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"fffffec0"; -- base address
---constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
+  constant cfs_reg32_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe80";
+  constant cfs_reg33_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe84";
+  constant cfs_reg34_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe88";
+  constant cfs_reg35_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe8c";
+  constant cfs_reg36_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe90";
+  constant cfs_reg37_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe94";
+  constant cfs_reg38_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe98";
+  constant cfs_reg39_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe9c";
+  constant cfs_reg40_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffea0";
+  constant cfs_reg41_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffea4";
+  constant cfs_reg42_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffea8";
+  constant cfs_reg43_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffeac";
+  constant cfs_reg44_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffeb0";
+  constant cfs_reg45_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffeb4";
+  constant cfs_reg46_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffeb8";
+  constant cfs_reg47_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffebc";
+  constant cfs_reg48_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffec0";
+  constant cfs_reg49_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffec4";
+  constant cfs_reg50_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffec8";
+  constant cfs_reg51_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffecc";
+  constant cfs_reg52_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffed0";
+  constant cfs_reg53_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffed4";
+  constant cfs_reg54_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffed8";
+  constant cfs_reg55_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffedc";
+  constant cfs_reg56_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffee0";
+  constant cfs_reg57_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffee4";
+  constant cfs_reg58_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffee8";
+  constant cfs_reg59_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffeec";
+  constant cfs_reg60_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffef0";
+  constant cfs_reg61_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffef4";
+  constant cfs_reg62_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffef8";
+  constant cfs_reg63_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffefc";
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- base address
