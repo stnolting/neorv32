@@ -363,7 +363,7 @@ begin
     uart1_cts_i => uart1_cts_i,
 
     -- SPI (available if IO_SPI_EN = true) --
-    spi_clk_o => spi_slk_o,
+    spi_clk_o => spi_clk_o,
     spi_dat_o => spi_dat_o,
     spi_dat_i => spi_dat_i,
     spi_csn_o => spi_csn_o,
