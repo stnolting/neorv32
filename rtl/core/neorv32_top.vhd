@@ -166,8 +166,8 @@ entity neorv32_top is
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o      : out std_ulogic; -- chip-select, low-active
     xip_clk_o      : out std_ulogic; -- serial clock
-    xip_sdi_i      : in  std_ulogic := 'L'; -- device data input
-    xip_sdo_o      : out std_ulogic; -- controller data output
+    xip_dat_i      : in  std_ulogic := 'L'; -- device data input
+    xip_dat_o      : out std_ulogic; -- controller data output
 
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
@@ -186,9 +186,9 @@ entity neorv32_top is
     uart1_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o      : out std_ulogic; -- SPI serial clock
-    spi_sdo_o      : out std_ulogic; -- controller data out, peripheral data in
-    spi_sdi_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
+    spi_clk_o      : out std_ulogic; -- SPI serial clock
+    spi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
+    spi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
     spi_csn_o      : out std_ulogic_vector(07 downto 0); -- chip-select
 
     -- TWI (available if IO_TWI_EN = true) --
@@ -600,7 +600,7 @@ begin
   fast_irq(03) <= uart0_txd_irq; -- primary UART (UART0) TX
   fast_irq(04) <= uart1_rxd_irq; -- secondary UART (UART1) RX
   fast_irq(05) <= uart1_txd_irq; -- secondary UART (UART1) TX
-  fast_irq(06) <= spi_irq;       -- SPI transfer done
+  fast_irq(06) <= spi_irq;       -- SPI interrupt
   fast_irq(07) <= twi_irq;       -- TWI transfer done
   fast_irq(08) <= xirq_irq;      -- external interrupt controller
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer IRQ
@@ -951,8 +951,8 @@ begin
       -- SPI device interface --
       spi_csn_o   => xip_csn_o,                    -- chip-select, low-active
       spi_clk_o   => xip_clk_o,                    -- serial clock
-      spi_data_i  => xip_sdi_i,                    -- device data output
-      spi_data_o  => xip_sdo_o                     -- controller data output
+      spi_dat_i   => xip_dat_i,                    -- device data output
+      spi_dat_o   => xip_dat_o                     -- controller data output
     );
     resp_bus(RESP_XIP_CT).err <= '0'; -- no access error possible
   end generate;
@@ -968,7 +968,7 @@ begin
     xip_cg_en  <= '0';
     xip_csn_o  <= '1';
     xip_clk_o  <= '0';
-    xip_sdo_o  <= '0';
+    xip_dat_o  <= '0';
   end generate;
 
 
@@ -1246,9 +1246,9 @@ begin
       clkgen_en_o => spi_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
       -- com lines --
-      spi_sck_o   => spi_sck_o,                -- SPI serial clock
-      spi_sdo_o   => spi_sdo_o,                -- controller data out, peripheral data in
-      spi_sdi_i   => spi_sdi_i,                -- controller data in, peripheral data out
+      spi_clk_o   => spi_clk_o,                -- SPI serial clock
+      spi_dat_o   => spi_dat_o,                -- controller data out, peripheral data in
+      spi_dat_i   => spi_dat_i,                -- controller data in, peripheral data out
       spi_csn_o   => spi_csn_o,                -- SPI CS
       -- interrupt --
       irq_o       => spi_irq                   -- transmission done interrupt
@@ -1260,8 +1260,8 @@ begin
   if (IO_SPI_EN = false) generate
     resp_bus(RESP_SPI) <= resp_bus_entry_terminate_c;
     --
-    spi_sck_o <= '0';
-    spi_sdo_o <= '0';
+    spi_clk_o <= '0';
+    spi_dat_o <= '0';
     spi_csn_o <= (others => '1'); -- CS lines are low-active
     spi_cg_en <= '0';
     spi_irq   <= '0';

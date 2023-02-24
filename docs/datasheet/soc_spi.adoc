@@ -8,9 +8,9 @@
 | Hardware source file(s): | neorv32_spi.vhd | 
 | Software driver file(s): | neorv32_spi.c |
 |                          | neorv32_spi.h |
-| Top entity port:         | `spi_sck_o` | 1-bit serial clock output
-|                          | `spi_sdo_o` | 1-bit serial data output
-|                          | `spi_sdi_i` | 1-bit serial data input
+| Top entity port:         | `spi_clk_o` | 1-bit serial clock output
+|                          | `spi_dat_o` | 1-bit serial data output
+|                          | `spi_dat_i` | 1-bit serial data input
 |                          | `spi_csn_i` | 8-bit dedicated chip select (low-active)
 | Configuration generics:  | _IO_SPI_EN_   | implement SPI controller when _true_
 |                          | _IO_SPI_FIFO_ | data FIFO size, has to be zero or a power of two
@@ -90,7 +90,7 @@ image::SPI_timing_diagram2.wikimedia.png[]
 | _SPI_CTRL_CPHA_ |    `0` |    `1` |    `0` |    `1` 
 |=======================
 
-The SPI clock frequency (`spi_sck_o`) is programmed by the 3-bit _SPI_CTRL_PRSCx_ clock prescaler for a coarse selection
+The SPI clock frequency (`spi_clk_o`) is programmed by the 3-bit _SPI_CTRL_PRSCx_ clock prescaler for a coarse selection
 and a 4-bit clock divider _SPI_CTRL_CDIVx_ for a fine selection.
 
 The following pre-scalers (_SPI_CTRL_PRSCx_) are available:

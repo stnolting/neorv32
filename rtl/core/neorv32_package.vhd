@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080101"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080102"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -224,7 +224,19 @@ package neorv32_package is
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- base address
---constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
+--constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
+
+  -- reserved --
+--constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- base address
+--constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
+
+  -- reserved --
+--constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff10"; -- base address
+--constant reserved_size_c      : natural := 4*4; -- module's address space size in bytes
+
+  -- reserved --
+--constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff20"; -- base address
+--constant reserved_size_c      : natural := 8*4; -- module's address space size in bytes
 
   -- Execute In Place Module (XIP) --
   constant xip_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff40"; -- base address
@@ -1057,8 +1069,8 @@ package neorv32_package is
       -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
       xip_csn_o      : out std_ulogic; -- chip-select, low-active
       xip_clk_o      : out std_ulogic; -- serial clock
-      xip_sdi_i      : in  std_ulogic := 'L'; -- device data input
-      xip_sdo_o      : out std_ulogic; -- controller data output
+      xip_dat_i      : in  std_ulogic := 'L'; -- device data input
+      xip_dat_o      : out std_ulogic; -- controller data output
       -- GPIO (available if IO_GPIO_NUM > 0) --
       gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
       gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- parallel input
@@ -1073,9 +1085,9 @@ package neorv32_package is
       uart1_rts_o    : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
       uart1_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
       -- SPI (available if IO_SPI_EN = true) --
-      spi_sck_o      : out std_ulogic; -- SPI serial clock
-      spi_sdo_o      : out std_ulogic; -- controller data out, peripheral data in
-      spi_sdi_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
+      spi_clk_o      : out std_ulogic; -- SPI serial clock
+      spi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
+      spi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
       spi_csn_o      : out std_ulogic_vector(07 downto 0); -- SPI CS
       -- TWI (available if IO_TWI_EN = true) --
       twi_sda_io     : inout std_logic; -- twi serial data line
@@ -1770,9 +1782,9 @@ package neorv32_package is
       clkgen_en_o : out std_ulogic; -- enable clock generator
       clkgen_i    : in  std_ulogic_vector(07 downto 0);
       -- com lines --
-      spi_sck_o   : out std_ulogic; -- SPI serial clock
-      spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
-      spi_sdi_i   : in  std_ulogic; -- controller data in, peripheral data out
+      spi_clk_o   : out std_ulogic; -- SPI serial clock
+      spi_dat_o   : out std_ulogic; -- controller data out, peripheral data in
+      spi_dat_i   : in  std_ulogic; -- controller data in, peripheral data out
       spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
       -- interrupt --
       irq_o       : out std_ulogic -- transmission done interrupt
@@ -2033,8 +2045,8 @@ package neorv32_package is
       -- SPI device interface --
       spi_csn_o   : out std_ulogic; -- chip-select, low-active
       spi_clk_o   : out std_ulogic; -- serial clock
-      spi_data_i  : in  std_ulogic; -- device data output
-      spi_data_o  : out std_ulogic  -- controller data output
+      spi_dat_i   : in  std_ulogic; -- device data output
+      spi_dat_o   : out std_ulogic  -- controller data output
     );
   end component;
 

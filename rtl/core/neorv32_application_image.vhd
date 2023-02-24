@@ -2,7 +2,7 @@
 -- Auto-generated memory initialization file (for APPLICATION) from source file <demo_blink_led/main.bin>
 -- Size: 1076 bytes
 -- MARCH: default
--- Built: 21.01.2023 15:20:33
+-- Built: 24.02.2023 18:13:22
 
 -- prototype defined in 'neorv32_package.vhd'
 package body neorv32_application_image is

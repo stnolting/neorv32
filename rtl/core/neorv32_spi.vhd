@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -61,9 +61,9 @@ entity neorv32_spi is
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(07 downto 0);
     -- com lines --
-    spi_sck_o   : out std_ulogic; -- SPI serial clock
-    spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
-    spi_sdi_i   : in  std_ulogic; -- controller data in, peripheral data out
+    spi_clk_o   : out std_ulogic; -- SPI serial clock
+    spi_dat_o   : out std_ulogic; -- controller data out, peripheral data in
+    spi_dat_i   : in  std_ulogic; -- controller data in, peripheral data out
     spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
     -- interrupt --
     irq_o       : out std_ulogic -- transmission done interrupt
@@ -275,7 +275,7 @@ begin
     tx_fifo_inst: neorv32_fifo
     generic map (
       FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
-      FIFO_WIDTH => 32,          -- size of data elements in fifo (32-bit only for simulation)
+      FIFO_WIDTH => 32,          -- size of data elements in fifo
       FIFO_RSYNC => false,       -- async read
       FIFO_SAFE  => true,        -- safe access
       FIFO_GATE  => false        -- no output gate required
@@ -312,7 +312,7 @@ begin
     rx_fifo_inst: neorv32_fifo
     generic map (
       FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
-      FIFO_WIDTH => 32,          -- size of data elements in fifo (32-bit only for simulation)
+      FIFO_WIDTH => 32,          -- size of data elements in fifo
       FIFO_RSYNC => false,       -- async read
       FIFO_SAFE  => true,        -- safe access
       FIFO_GATE  => false        -- no output gate required
@@ -412,7 +412,7 @@ begin
 
         when "100" => -- enabled but idle, waiting for new transmission trigger
         -- ------------------------------------------------------------
-          spi_sck_o <= ctrl.cpol;
+          spi_clk_o <= ctrl.cpol;
           rtx_engine.bitcnt <= (others => '0');
           if (rtx_engine.start = '1') then -- trigger new transmission
             rtx_engine.sreg <= tx_fifo.rdata;
@@ -423,7 +423,7 @@ begin
         -- ------------------------------------------------------------
           if (spi_clk_en = '1') then
             if (ctrl.cpha = '1') then -- clock phase shift
-              spi_sck_o <= not ctrl.cpol;
+              spi_clk_o <= not ctrl.cpol;
             end if;
             rtx_engine.state(1 downto 0) <= "10";
           end if;
@@ -431,8 +431,8 @@ begin
         when "110" => -- first half of bit transmission
         -- ------------------------------------------------------------
           if (spi_clk_en = '1') then
-            spi_sck_o                    <= not (ctrl.cpha xor ctrl.cpol);
-            rtx_engine.sdi_sync          <= spi_sdi_i; -- sample data input
+            spi_clk_o                    <= not (ctrl.cpha xor ctrl.cpol);
+            rtx_engine.sdi_sync          <= spi_dat_i; -- sample data input
             rtx_engine.bitcnt            <= std_ulogic_vector(unsigned(rtx_engine.bitcnt) + 1);
             rtx_engine.state(1 downto 0) <= "11";
           end if;
@@ -442,18 +442,18 @@ begin
           if (spi_clk_en = '1') then
             rtx_engine.sreg <= rtx_engine.sreg(30 downto 0) & rtx_engine.sdi_sync; -- shift and set output
             if (rtx_engine.bitcnt(5 downto 3) = rtx_engine.bytecnt) then -- all bits transferred?
-              spi_sck_o                    <= ctrl.cpol;
+              spi_clk_o                    <= ctrl.cpol;
               rtx_engine.done              <= '1'; -- done!
               rtx_engine.state(1 downto 0) <= "00"; -- transmission done
             else
-              spi_sck_o                    <= ctrl.cpha xor ctrl.cpol;
+              spi_clk_o                    <= ctrl.cpha xor ctrl.cpol;
               rtx_engine.state(1 downto 0) <= "10";
             end if;
           end if;
 
         when others => -- "0--": SPI deactivated
         -- ------------------------------------------------------------
-          spi_sck_o                    <= ctrl.cpol;
+          spi_clk_o                    <= ctrl.cpol;
           rtx_engine.sreg              <= (others => '0');
           rtx_engine.state(1 downto 0) <= "00";
 
@@ -468,10 +468,10 @@ begin
   data_size: process(ctrl, rtx_engine)
   begin
     case ctrl.rtx_size is
-      when "00"   => rtx_engine.bytecnt <= "001"; spi_sdo_o <= rtx_engine.sreg(07); -- 8-bit mode
-      when "01"   => rtx_engine.bytecnt <= "010"; spi_sdo_o <= rtx_engine.sreg(15); -- 16-bit mode
-      when "10"   => rtx_engine.bytecnt <= "011"; spi_sdo_o <= rtx_engine.sreg(23); -- 24-bit mode
-      when others => rtx_engine.bytecnt <= "100"; spi_sdo_o <= rtx_engine.sreg(31); -- 32-bit mode
+      when "00"   => rtx_engine.bytecnt <= "001"; spi_dat_o <= rtx_engine.sreg(07); -- 8-bit mode
+      when "01"   => rtx_engine.bytecnt <= "010"; spi_dat_o <= rtx_engine.sreg(15); -- 16-bit mode
+      when "10"   => rtx_engine.bytecnt <= "011"; spi_dat_o <= rtx_engine.sreg(23); -- 24-bit mode
+      when others => rtx_engine.bytecnt <= "100"; spi_dat_o <= rtx_engine.sreg(31); -- 32-bit mode
     end case;
   end process data_size;
 

@@ -94,8 +94,8 @@ bits/channels are hardwired to zero.
 4+^| **Execute In Place Interface (<<_execute_in_place_module_xip,**XIP**>>)**
 | `xip_csn_o`      |    1 |   out | chi select, low-active
 | `xip_clk_o`      |    1 |   out | serial clock
-| `xip_sdi_i`      |    1 |    in | serial data input
-| `xip_sdo_o`      |    1 |   out | serial data output
+| `xip_dat_i`      |    1 |    in | serial data input
+| `xip_dat_o`      |    1 |   out | serial data output
 4+^| **General Purpose Inputs & Outputs (<<_general_purpose_input_and_output_port_gpio,GPIO>>)**
 | `gpio_o`         |   64 |   out | general purpose parallel output
 | `gpio_i`         |   64 |    in | general purpose parallel input
@@ -110,9 +110,9 @@ bits/channels are hardwired to zero.
 | `uart1_rts_o`    |    1 |   out | RX ready to receive new char
 | `uart1_cts_i`    |    1 |    in | TX allowed to start sending
 4+^| **Serial Peripheral Interface Controller (<<_serial_peripheral_interface_controller_spi,SPI>>)**
-| `spi_sck_o`      |    1 |   out | controller clock line
-| `spi_sdo_o`      |    1 |   out | serial data output
-| `spi_sdi_i`      |    1 |    in | serial data input
+| `spi_clk_o`      |    1 |   out | controller clock line
+| `spi_dat_o`      |    1 |   out | serial data output
+| `spi_dat_i`      |    1 |    in | serial data input
 | `spi_csn_o`      |    8 |   out | dedicated chip select (low-active)
 4+^| **Two-Wire Interface Controller (<<_two_wire_serial_interface_controller_twi,TWI>>)**
 | `twi_sda_io`     |    1 | inout | serial data line

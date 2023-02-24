@@ -235,9 +235,9 @@ begin
     uart0_cts_i => uart_cts_i,                   -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o   => con_spi_sck,                  -- SPI serial clock
-    spi_sdo_o   => con_spi_sdo,                  -- controller data out, peripheral data in
-    spi_sdi_i   => con_spi_sdi,                  -- controller data in, peripheral data out
+    spi_clk_o   => con_spi_sck,                  -- SPI serial clock
+    spi_dat_o   => con_spi_sdo,                  -- controller data out, peripheral data in
+    spi_dat_i   => con_spi_sdi,                  -- controller data in, peripheral data out
     spi_csn_o   => con_spi_csn,                  -- SPI CS
 
     -- TWI (available if IO_TWI_EN = true) --

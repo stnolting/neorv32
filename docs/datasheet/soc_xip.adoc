@@ -10,8 +10,8 @@
 |                          | neorv32_xip.h |
 | Top entity port:         | `xip_csn_o` | 1-bit chip select, low-active
 |                          | `xip_clk_o` | 1-bit serial clock output
-|                          | `xip_sdi_i` | 1-bit serial data input
-|                          | `xip_sdo_o` | 1-bit serial data output
+|                          | `xip_dat_i` | 1-bit serial data input
+|                          | `xip_dat_o` | 1-bit serial data output
 | Configuration generics:  | _IO_XIP_EN_ | implement XIP module when _true_
 | CPU interrupts:          | none | 
 |=======================
