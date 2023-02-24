@@ -9,7 +9,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -74,8 +74,8 @@ entity neorv32_xip is
     -- SPI device interface --
     spi_csn_o   : out std_ulogic; -- chip-select, low-active
     spi_clk_o   : out std_ulogic; -- serial clock
-    spi_data_i  : in  std_ulogic; -- device data output
-    spi_data_o  : out std_ulogic  -- controller data output
+    spi_dat_i   : in  std_ulogic; -- device data output
+    spi_dat_o   : out std_ulogic  -- controller data output
   );
 end neorv32_xip;
 
@@ -160,8 +160,8 @@ architecture neorv32_xip_rtl of neorv32_xip is
     -- SPI interface --
     spi_csn_o    : out std_ulogic;
     spi_clk_o    : out std_ulogic;
-    spi_data_i   : in  std_ulogic;
-    spi_data_o   : out std_ulogic
+    spi_dat_i    : in  std_ulogic;
+    spi_dat_o    : out std_ulogic
   );
   end component;
 
@@ -420,8 +420,8 @@ begin
     -- SPI interface --
     spi_csn_o    => spi_csn_o,
     spi_clk_o    => spi_clk_o,
-    spi_data_i   => spi_data_i,
-    spi_data_o   => spi_data_o
+    spi_dat_i    => spi_dat_i,
+    spi_dat_o    => spi_dat_o
   );
 
 
@@ -437,7 +437,7 @@ end neorv32_xip_rtl;
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -493,8 +493,8 @@ entity neorv32_xip_phy is
     -- SPI interface --
     spi_csn_o    : out std_ulogic;
     spi_clk_o    : out std_ulogic;
-    spi_data_i   : in  std_ulogic;
-    spi_data_o   : out std_ulogic
+    spi_dat_i    : in  std_ulogic;
+    spi_dat_o    : out std_ulogic
   );
 end neorv32_xip_phy;
 
@@ -571,7 +571,7 @@ begin
           -- ------------------------------------------------------------
             if (spi_clk_en_i = '1') then
               spi_clk_o    <= not (cf_cpha_i xor cf_cpol_i);
-              ctrl.di_sync <= spi_data_i;
+              ctrl.di_sync <= spi_dat_i;
               ctrl.bitcnt  <= std_ulogic_vector(unsigned(ctrl.bitcnt) - 1);
               ctrl.state   <= S_RTX_B;
             end if;
@@ -608,7 +608,7 @@ begin
   op_busy_o <= '0' when (ctrl.state = S_IDLE) or (ctrl.state = S_WAIT) else '1';
 
   -- serial data output --
-  spi_data_o <= ctrl.sreg(ctrl.sreg'left);
+  spi_dat_o <= ctrl.sreg(ctrl.sreg'left);
 
   -- RX data --
   op_rdata_o <= ctrl.sreg(31 downto 0);

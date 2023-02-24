@@ -268,8 +268,8 @@ begin
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o      => open,            -- chip-select, low-active
     xip_clk_o      => open,            -- serial clock
-    xip_sdi_i      => '0',             -- device data input
-    xip_sdo_o      => open,            -- controller data output
+    xip_dat_i      => '0',             -- device data input
+    xip_dat_o      => open,            -- controller data output
     -- GPIO (available if IO_GPIO_NUM > true) --
     gpio_o         => gpio,            -- parallel output
     gpio_i         => gpio,            -- parallel input
@@ -284,9 +284,9 @@ begin
     uart1_rts_o    => uart1_cts,       -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
     uart1_cts_i    => uart1_cts,       -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o      => open,            -- SPI serial clock
-    spi_sdo_o      => spi_data,        -- controller data out, peripheral data in
-    spi_sdi_i      => spi_data,        -- controller data in, peripheral data out
+    spi_clk_o      => open,            -- SPI serial clock
+    spi_dat_o      => spi_data,        -- controller data out, peripheral data in
+    spi_dat_i      => spi_data,        -- controller data in, peripheral data out
     spi_csn_o      => open,            -- SPI CS
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io     => twi_sda,         -- twi serial data line
