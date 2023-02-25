@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080102"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080103"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -222,9 +222,11 @@ package neorv32_package is
   constant cfs_reg62_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffef8";
   constant cfs_reg63_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffefc";
 
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- base address
---constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
+  -- Serial Data Interface (SDI) --
+  constant sdi_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- base address
+  constant sdi_size_c           : natural := 2*4; -- module's address space size in bytes
+  constant sdi_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"ffffff00";
+  constant sdi_rtx_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffff04";
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- base address
@@ -1027,6 +1029,8 @@ package neorv32_package is
       IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
       IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
       IO_SPI_FIFO                  : natural := 0;      -- SPI RTX fifo depth, has to be zero or a power of two
+      IO_SDI_EN                    : boolean := false;  -- implement serial data interface (SDI)?
+      IO_SDI_FIFO                  : natural := 0;      -- SDI RTX fifo depth, has to be zero or a power of two
       IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
       IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..12); 0 = disabled
       IO_WDT_EN                    : boolean := false;  -- implement watch dog timer (WDT)?
@@ -1089,6 +1093,11 @@ package neorv32_package is
       spi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
       spi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
       spi_csn_o      : out std_ulogic_vector(07 downto 0); -- SPI CS
+      -- SDI (available if IO_SDI_EN = true) --
+      sdi_clk_i      : in  std_ulogic := 'U'; -- SDI serial clock
+      sdi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
+      sdi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
+      sdi_csn_i      : in  std_ulogic := 'H'; -- chip-select
       -- TWI (available if IO_TWI_EN = true) --
       twi_sda_io     : inout std_logic; -- twi serial data line
       twi_scl_io     : inout std_logic; -- twi serial clock line
@@ -2074,6 +2083,32 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: Serial Data Interface (SDI) -------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_sdi
+    generic (
+      RTX_FIFO : natural -- RTX fifo depth, has to be a power of two, min 1
+    );
+    port (
+      -- host access --
+      clk_i     : in  std_ulogic; -- global clock line
+      rstn_i    : in  std_ulogic; -- global reset line, low-active, async
+      addr_i    : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i    : in  std_ulogic; -- read enable
+      wren_i    : in  std_ulogic; -- write enable
+      data_i    : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o    : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o     : out std_ulogic; -- transfer acknowledge
+      -- SDI receiver input --
+      sdi_csn_i : in  std_ulogic; -- low-active chip-select
+      sdi_clk_i : in  std_ulogic; -- serial clock
+      sdi_dat_i : in  std_ulogic; -- serial data input
+      sdi_dat_o : out std_ulogic; -- serial data output
+      -- interrupts --
+      irq_o     : out std_ulogic
+    );
+  end component;
+
   -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
@@ -2106,6 +2141,7 @@ package neorv32_package is
       IO_UART0_EN          : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
       IO_UART1_EN          : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
       IO_SPI_EN            : boolean; -- implement serial peripheral interface (SPI)?
+      IO_SDI_EN            : boolean; -- implement serial data interface (SDI)?
       IO_TWI_EN            : boolean; -- implement two-wire interface (TWI)?
       IO_PWM_NUM_CH        : natural; -- number of PWM channels to implement
       IO_WDT_EN            : boolean; -- implement watch dog timer (WDT)?
