@@ -89,7 +89,7 @@
       <name>PWM</name>
       <description>Pulse-width modulation controller</description>
       <groupName>PWM</groupName>
-      <baseAddress>0xFFFFFF%0</baseAddress>
+      <baseAddress>0xFFFFFF50</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
