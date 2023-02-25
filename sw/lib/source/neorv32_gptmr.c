@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -45,7 +45,7 @@
 
 
 /**********************************************************************//**
- * Check if GPTMR unit was synthesized.
+ * Check if general purpose timer unit was synthesized.
  *
  * @return 0 if GPTMR was not synthesized, 1 if GPTMR is available.
  **************************************************************************/
@@ -61,35 +61,29 @@ int neorv32_gptmr_available(void) {
 
 
 /**********************************************************************//**
- * Enable and configure GP timer.
+ * Enable and configure general purpose timer.
  *
- * @param[in] prsc Clock prescaler select (0..7).  See #NEORV32_CLOCK_PRSC_enum.
+ * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
  * @param[in] mode 0=single-shot mode, 1=continuous mode
  * @param[in] threshold Threshold value to trigger interrupt.
  **************************************************************************/
-void neorv32_gptmr_setup(uint8_t prsc, uint8_t mode, uint32_t threshold) {
+void neorv32_gptmr_setup(int prsc, int mode, uint32_t threshold) {
 
-  NEORV32_GPTMR.CTRL = 0; // reset control
-
+  NEORV32_GPTMR.CTRL  = 0; // reset
   NEORV32_GPTMR.THRES = threshold;
-
   NEORV32_GPTMR.COUNT = 0; // reset counter
 
-  uint32_t ct_enable = 1;
-  ct_enable = ct_enable << GPTMR_CTRL_EN;
+  uint32_t tmp = 0;
+  tmp |= (uint32_t)(1    & 0x01) << GPTMR_CTRL_EN;
+  tmp |= (uint32_t)(prsc & 0x07) << GPTMR_CTRL_PRSC0;
+  tmp |= (uint32_t)(mode & 0x01) << GPTMR_CTRL_MODE;
 
-  uint32_t ct_prsc = (uint32_t)(prsc & 0x07);
-  ct_prsc = ct_prsc << GPTMR_CTRL_PRSC0;
-
-  uint32_t ct_mode = (uint32_t)(mode & 0x01);
-  ct_mode = ct_mode << GPTMR_CTRL_MODE;
-
-  NEORV32_GPTMR.CTRL = ct_enable | ct_prsc | ct_mode;
+  NEORV32_GPTMR.CTRL = tmp;
 }
 
 
 /**********************************************************************//**
- * Disable GP timer.
+ * Disable general purpose timer.
  **************************************************************************/
 void neorv32_gptmr_disable(void) {
 
@@ -98,7 +92,7 @@ void neorv32_gptmr_disable(void) {
 
 
 /**********************************************************************//**
- * Enable GP timer.
+ * Enable general purpose timer.
  **************************************************************************/
 void neorv32_gptmr_enable(void) {
 
@@ -107,7 +101,7 @@ void neorv32_gptmr_enable(void) {
 
 
 /**********************************************************************//**
- * Reset GP timer's counter register.
+ * Reset general purpose timer's counter register.
  **************************************************************************/
 void neorv32_gptmr_restart(void) {
 
