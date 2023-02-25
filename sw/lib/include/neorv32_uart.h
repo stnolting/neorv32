@@ -49,33 +49,50 @@
 #include <stdarg.h>
 
 // prototypes for UART0 (primary UART)
-int  neorv32_uart0_available(void);
-void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
-void neorv32_uart0_disable(void);
-void neorv32_uart0_enable(void);
-void neorv32_uart0_putc(char c);
-int  neorv32_uart0_tx_busy(void);
-char neorv32_uart0_getc(void);
-int  neorv32_uart0_char_received(void);
-int  neorv32_uart0_getc_safe(char *data);
-char neorv32_uart0_char_received_get(void);
-void neorv32_uart0_puts(const char *s);
-void neorv32_uart0_printf(const char *format, ...);
-int  neorv32_uart0_scan(char *buffer, int max_size, int echo);
+#define neorv32_uart0_available()                           neorv32_uart_available(UART0)
+#define neorv32_uart0_setup(baudrate,parity,flow_con)       neorv32_uart_setup(UART0, baudrate, parity, flow_con)
+#define neorv32_uart0_disable()                             neorv32_uart_disable(UART0)
+#define neorv32_uart0_enable()                              neorv32_uart_enable(UART0)
+#define neorv32_uart0_putc(c);                              neorv32_uart_putc(UART0, c);
+#define neorv32_uart0_tx_busy()                             neorv32_uart_tx_busy(UART0)
+#define neorv32_uart0_getc()                                neorv32_uart_getc(UART0)
+#define neorv32_uart0_char_received()                       neorv32_uart_char_received(UART0)
+#define neorv32_uart0_getc_safe(data)                       neorv32_uart_getc_safe(UART0, data)
+#define neorv32_uart0_char_received_get()                   neorv32_uart_char_received_get(UART0)
+#define neorv32_uart0_puts(s)                               neorv32_uart_puts(UART0, s)
+#define neorv32_uart0_printf(...)                           neorv32_uart_printf(UART0, __VA_ARGS__)
+#define neorv32_uart0_scan(buffer,max_size,echo)            neorv32_uart_scan(UART0, buffer, max_size, echo)   
 
 // prototypes for UART1 (secondary UART)
-int  neorv32_uart1_available(void);
-void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
-void neorv32_uart1_disable(void);
-void neorv32_uart1_enable(void);
-void neorv32_uart1_putc(char c);
-int  neorv32_uart1_tx_busy(void);
-char neorv32_uart1_getc(void);
-int  neorv32_uart1_char_received(void);
-int  neorv32_uart1_getc_safe(char *data);
-char neorv32_uart1_char_received_get(void);
-void neorv32_uart1_puts(const char *s);
-void neorv32_uart1_printf(const char *format, ...);
-int  neorv32_uart1_scan(char *buffer, int max_size, int echo);
+#define neorv32_uart1_available()                           neorv32_uart_available(UART1)
+#define neorv32_uart1_setup(baudrate,parity,flow_con)       neorv32_uart_setup(UART1, baudrate, parity, flow_con)
+#define neorv32_uart1_disable()                             neorv32_uart_disable(UART1)
+#define neorv32_uart1_enable()                              neorv32_uart_enable(UART1)
+#define neorv32_uart1_putc(c);                              neorv32_uart_putc(UART1, c);
+#define neorv32_uart1_tx_busy()                             neorv32_uart_tx_busy(UART1)
+#define neorv32_uart1_getc()                                neorv32_uart_getc(UART1)
+#define neorv32_uart1_char_received()                       neorv32_uart_char_received(UART1)
+#define neorv32_uart1_getc_safe(data)                       neorv32_uart_getc_safe(UART1, data)
+#define neorv32_uart1_char_received_get()                   neorv32_uart_char_received_get(UART1)
+#define neorv32_uart1_puts(s)                               neorv32_uart_puts(UART1, s)
+#define neorv32_uart1_printf(...)                           neorv32_uart_printf(UART1, __VA_ARGS__)
+#define neorv32_uart1_scan(buffer,max_size,echo)            neorv32_uart_scan(UART1, buffer, max_size, echo)   
+
+
+// prototypes for UARTx
+int  neorv32_uart_available(neorv32_uart_t *UARTx);
+void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint8_t parity, uint8_t flow_con);
+void neorv32_uart_disable(neorv32_uart_t *UARTx);
+void neorv32_uart_enable(neorv32_uart_t *UARTx);
+void neorv32_uart_putc(neorv32_uart_t *UARTx, char c);
+int  neorv32_uart_tx_busy(neorv32_uart_t *UARTx);
+char neorv32_uart_getc(neorv32_uart_t *UARTx);
+int  neorv32_uart_char_received(neorv32_uart_t *UARTx);
+int  neorv32_uart_getc_safe(neorv32_uart_t *UARTx, char *data);
+char neorv32_uart_char_received_get(neorv32_uart_t *UARTx);
+void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s);
+void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...);
+int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int echo);
+
 
 #endif // neorv32_uart_h
