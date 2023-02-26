@@ -1144,8 +1144,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MIE, 1 << SPI_FIRQ_ENABLE);
 
   // trigger SPI IRQ
-  neorv32_spi_trans(0);
-  while(neorv32_spi_busy()); // wait for current transfer to finish
+  neorv32_spi_trans(0); // blocking
 
   // wait some time for the IRQ to arrive the CPU
   asm volatile ("nop");
@@ -1270,9 +1269,52 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 10..11
+  // Fast interrupt channel 10 (reserved)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ10..11 [skipped, n.a.]\n", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ10 [skipped, n.a.]\n", cnt_test);
+
+
+  // ----------------------------------------------------------
+  // Fast interrupt channel 11 (SDI)
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] FIRQ11 (SDI) ", cnt_test);
+  cnt_test++;
+
+  // configure and enable SDI + SPI
+  neorv32_sdi_setup(1 << SDI_CTRL_IRQ_RX_AVAIL);
+  neorv32_spi_setup(CLK_PRSC_4, 0, 0, 0, 0, 0); // IRQ when SPI PHY becomes idle
+
+  // enable fast interrupt
+  neorv32_cpu_csr_write(CSR_MIE, 1 << SDI_FIRQ_ENABLE);
+
+  // write test data to SDI
+  neorv32_sdi_rx_clear();
+  neorv32_sdi_put(0xab);
+
+  // trigger SDI IRQ by sending data via SPI
+  neorv32_spi_cs_en(7); // select SDI
+  tmp_a = neorv32_spi_trans(0x83);
+  neorv32_spi_cs_dis();
+
+  // wait some time for the IRQ to arrive the CPU
+  asm volatile ("nop");
+  asm volatile ("nop");
+
+  neorv32_cpu_csr_write(CSR_MIE, 0);
+
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == SDI_TRAP_CODE) && // correct trap code
+      (neorv32_sdi_get_nonblocking() == 0x83) && // correct SDI read data
+      ((tmp_a & 0xff) == 0xab)) { // correct SPI read data
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
+
+  // disable SDI + SPI
+  neorv32_sdi_disable();
+  neorv32_spi_disable();
 
 
   // ----------------------------------------------------------

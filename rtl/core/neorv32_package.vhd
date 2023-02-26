@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080100"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080103"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -156,7 +156,7 @@ package neorv32_package is
 
   -- Custom Functions Subsystem (CFS) --
   constant cfs_base_c           : std_ulogic_vector(31 downto 0) := x"fffffe00"; -- base address
-  constant cfs_size_c           : natural := 32*4; -- module's address space in bytes
+  constant cfs_size_c           : natural := 64*4; -- module's address space in bytes
   constant cfs_reg0_addr_c      : std_ulogic_vector(31 downto 0) := x"fffffe00";
   constant cfs_reg1_addr_c      : std_ulogic_vector(31 downto 0) := x"fffffe04";
   constant cfs_reg2_addr_c      : std_ulogic_vector(31 downto 0) := x"fffffe08";
@@ -189,18 +189,56 @@ package neorv32_package is
   constant cfs_reg29_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe74";
   constant cfs_reg30_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe78";
   constant cfs_reg31_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe7c";
+  constant cfs_reg32_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe80";
+  constant cfs_reg33_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe84";
+  constant cfs_reg34_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe88";
+  constant cfs_reg35_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe8c";
+  constant cfs_reg36_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe90";
+  constant cfs_reg37_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe94";
+  constant cfs_reg38_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe98";
+  constant cfs_reg39_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffe9c";
+  constant cfs_reg40_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffea0";
+  constant cfs_reg41_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffea4";
+  constant cfs_reg42_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffea8";
+  constant cfs_reg43_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffeac";
+  constant cfs_reg44_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffeb0";
+  constant cfs_reg45_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffeb4";
+  constant cfs_reg46_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffeb8";
+  constant cfs_reg47_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffebc";
+  constant cfs_reg48_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffec0";
+  constant cfs_reg49_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffec4";
+  constant cfs_reg50_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffec8";
+  constant cfs_reg51_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffecc";
+  constant cfs_reg52_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffed0";
+  constant cfs_reg53_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffed4";
+  constant cfs_reg54_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffed8";
+  constant cfs_reg55_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffedc";
+  constant cfs_reg56_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffee0";
+  constant cfs_reg57_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffee4";
+  constant cfs_reg58_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffee8";
+  constant cfs_reg59_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffeec";
+  constant cfs_reg60_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffef0";
+  constant cfs_reg61_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffef4";
+  constant cfs_reg62_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffef8";
+  constant cfs_reg63_addr_c     : std_ulogic_vector(31 downto 0) := x"fffffefc";
+
+  -- Serial Data Interface (SDI) --
+  constant sdi_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- base address
+  constant sdi_size_c           : natural := 2*4; -- module's address space size in bytes
+  constant sdi_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"ffffff00";
+  constant sdi_rtx_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffff04";
 
   -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"fffffe80"; -- base address
---constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
+--constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- base address
+--constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
 
   -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"fffffec0"; -- base address
---constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
+--constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff10"; -- base address
+--constant reserved_size_c      : natural := 4*4; -- module's address space size in bytes
 
   -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- base address
---constant reserved_size_c      : natural := 16*4; -- module's address space size in bytes
+--constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff20"; -- base address
+--constant reserved_size_c      : natural := 8*4; -- module's address space size in bytes
 
   -- Execute In Place Module (XIP) --
   constant xip_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff40"; -- base address
@@ -991,6 +1029,8 @@ package neorv32_package is
       IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
       IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
       IO_SPI_FIFO                  : natural := 0;      -- SPI RTX fifo depth, has to be zero or a power of two
+      IO_SDI_EN                    : boolean := false;  -- implement serial data interface (SDI)?
+      IO_SDI_FIFO                  : natural := 0;      -- SDI RTX fifo depth, has to be zero or a power of two
       IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
       IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..12); 0 = disabled
       IO_WDT_EN                    : boolean := false;  -- implement watch dog timer (WDT)?
@@ -1033,8 +1073,8 @@ package neorv32_package is
       -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
       xip_csn_o      : out std_ulogic; -- chip-select, low-active
       xip_clk_o      : out std_ulogic; -- serial clock
-      xip_sdi_i      : in  std_ulogic := 'L'; -- device data input
-      xip_sdo_o      : out std_ulogic; -- controller data output
+      xip_dat_i      : in  std_ulogic := 'L'; -- device data input
+      xip_dat_o      : out std_ulogic; -- controller data output
       -- GPIO (available if IO_GPIO_NUM > 0) --
       gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
       gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- parallel input
@@ -1049,10 +1089,15 @@ package neorv32_package is
       uart1_rts_o    : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
       uart1_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
       -- SPI (available if IO_SPI_EN = true) --
-      spi_sck_o      : out std_ulogic; -- SPI serial clock
-      spi_sdo_o      : out std_ulogic; -- controller data out, peripheral data in
-      spi_sdi_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
+      spi_clk_o      : out std_ulogic; -- SPI serial clock
+      spi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
+      spi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
       spi_csn_o      : out std_ulogic_vector(07 downto 0); -- SPI CS
+      -- SDI (available if IO_SDI_EN = true) --
+      sdi_clk_i      : in  std_ulogic := 'U'; -- SDI serial clock
+      sdi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
+      sdi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
+      sdi_csn_i      : in  std_ulogic := 'H'; -- chip-select
       -- TWI (available if IO_TWI_EN = true) --
       twi_sda_io     : inout std_logic; -- twi serial data line
       twi_scl_io     : inout std_logic; -- twi serial clock line
@@ -1746,9 +1791,9 @@ package neorv32_package is
       clkgen_en_o : out std_ulogic; -- enable clock generator
       clkgen_i    : in  std_ulogic_vector(07 downto 0);
       -- com lines --
-      spi_sck_o   : out std_ulogic; -- SPI serial clock
-      spi_sdo_o   : out std_ulogic; -- controller data out, peripheral data in
-      spi_sdi_i   : in  std_ulogic; -- controller data in, peripheral data out
+      spi_clk_o   : out std_ulogic; -- SPI serial clock
+      spi_dat_o   : out std_ulogic; -- controller data out, peripheral data in
+      spi_dat_i   : in  std_ulogic; -- controller data in, peripheral data out
       spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
       -- interrupt --
       irq_o       : out std_ulogic -- transmission done interrupt
@@ -2009,8 +2054,8 @@ package neorv32_package is
       -- SPI device interface --
       spi_csn_o   : out std_ulogic; -- chip-select, low-active
       spi_clk_o   : out std_ulogic; -- serial clock
-      spi_data_i  : in  std_ulogic; -- device data output
-      spi_data_o  : out std_ulogic  -- controller data output
+      spi_dat_i   : in  std_ulogic; -- device data output
+      spi_dat_o   : out std_ulogic  -- controller data output
     );
   end component;
 
@@ -2035,6 +2080,32 @@ package neorv32_package is
       onewire_o   : out std_ulogic; -- 1-wire line pull-down
       -- interrupt --
       irq_o       : out std_ulogic -- transfer done IRQ
+    );
+  end component;
+
+  -- Component: Serial Data Interface (SDI) -------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_sdi
+    generic (
+      RTX_FIFO : natural -- RTX fifo depth, has to be a power of two, min 1
+    );
+    port (
+      -- host access --
+      clk_i     : in  std_ulogic; -- global clock line
+      rstn_i    : in  std_ulogic; -- global reset line, low-active, async
+      addr_i    : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i    : in  std_ulogic; -- read enable
+      wren_i    : in  std_ulogic; -- write enable
+      data_i    : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o    : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o     : out std_ulogic; -- transfer acknowledge
+      -- SDI receiver input --
+      sdi_csn_i : in  std_ulogic; -- low-active chip-select
+      sdi_clk_i : in  std_ulogic; -- serial clock
+      sdi_dat_i : in  std_ulogic; -- serial data input
+      sdi_dat_o : out std_ulogic; -- serial data output
+      -- interrupts --
+      irq_o     : out std_ulogic
     );
   end component;
 
@@ -2070,6 +2141,7 @@ package neorv32_package is
       IO_UART0_EN          : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
       IO_UART1_EN          : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
       IO_SPI_EN            : boolean; -- implement serial peripheral interface (SPI)?
+      IO_SDI_EN            : boolean; -- implement serial data interface (SDI)?
       IO_TWI_EN            : boolean; -- implement two-wire interface (TWI)?
       IO_PWM_NUM_CH        : natural; -- number of PWM channels to implement
       IO_WDT_EN            : boolean; -- implement watch dog timer (WDT)?

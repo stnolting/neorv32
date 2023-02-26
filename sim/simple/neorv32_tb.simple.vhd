@@ -116,8 +116,10 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   -- 1-wire --
   signal one_wire : std_logic;
 
-  -- spi --
-  signal spi_data : std_ulogic;
+  -- spi & sdi --
+  signal spi_csn: std_ulogic_vector(7 downto 0);
+  signal spi_di, spi_do, spi_clk : std_ulogic;
+  signal sdi_di, sdi_do, sdi_clk, sdi_csn : std_ulogic;
 
   -- irq --
   signal msi_ring, mei_ring : std_ulogic;
@@ -226,6 +228,8 @@ begin
     IO_UART1_TX_FIFO             => 1,             -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    => true,          -- implement serial peripheral interface (SPI)?
     IO_SPI_FIFO                  => 4,             -- SPI RTX fifo depth, has to be zero or a power of two
+    IO_SDI_EN                    => true,          -- implement serial data interface (SDI)?
+    IO_SDI_FIFO                  => 4,             -- SDI RTX fifo depth, has to be zero or a power of two
     IO_TWI_EN                    => true,          -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                => 12,            -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    => true,          -- implement watch dog timer (WDT)?
@@ -268,8 +272,8 @@ begin
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o      => open,            -- chip-select, low-active
     xip_clk_o      => open,            -- serial clock
-    xip_sdi_i      => '0',             -- device data input
-    xip_sdo_o      => open,            -- controller data output
+    xip_dat_i      => '0',             -- device data input
+    xip_dat_o      => open,            -- controller data output
     -- GPIO (available if IO_GPIO_NUM > true) --
     gpio_o         => gpio,            -- parallel output
     gpio_i         => gpio,            -- parallel input
@@ -284,10 +288,15 @@ begin
     uart1_rts_o    => uart1_cts,       -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
     uart1_cts_i    => uart1_cts,       -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o      => open,            -- SPI serial clock
-    spi_sdo_o      => spi_data,        -- controller data out, peripheral data in
-    spi_sdi_i      => spi_data,        -- controller data in, peripheral data out
-    spi_csn_o      => open,            -- SPI CS
+    spi_clk_o      => spi_clk,         -- SPI serial clock
+    spi_dat_o      => spi_do,          -- controller data out, peripheral data in
+    spi_dat_i      => spi_di,          -- controller data in, peripheral data out
+    spi_csn_o      => spi_csn,         -- SPI CS
+    -- SDI (available if IO_SDI_EN = true) --
+    sdi_clk_i      => sdi_clk,         -- SDI serial clock
+    sdi_dat_o      => sdi_do,          -- controller data out, peripheral data in
+    sdi_dat_i      => sdi_di,          -- controller data in, peripheral data out
+    sdi_csn_i      => sdi_csn,         -- chip-select
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io     => twi_sda,         -- twi serial data line
     twi_scl_io     => twi_scl,         -- twi serial clock line
@@ -314,6 +323,12 @@ begin
 
   -- 1-Wire termination (pull-up) --
   one_wire <= 'H';
+
+  -- SPI/SDI echo --
+  sdi_clk <= spi_clk;
+  sdi_csn <= spi_csn(7);
+  sdi_di  <= spi_do;
+  spi_di  <= sdi_do when (spi_csn(7) = '0') else spi_do;
 
 
   -- UART Simulation Receiver ---------------------------------------------------------------

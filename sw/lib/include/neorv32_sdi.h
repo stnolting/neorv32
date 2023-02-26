@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_gptmr.h - General Purpose Timer (GPTMR) HW Driver >>                      #
+// # << NEORV32: neorv32_sdi.h - Serial Data Interface Controller (SDI) HW Driver >>               #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -34,20 +34,25 @@
 
 
 /**********************************************************************//**
- * @file neorv32_gptmr.h
- * @brief General purpose timer (GPTMR) HW driver header file.
+ * @file neorv32_sdi.h
+ * @brief Serial data interface controller (SPPI) HW driver header file.
  *
- * @note These functions should only be used if the GPTMR unit was synthesized (IO_GPTMR_EN = true).
+ * @note These functions should only be used if the SDI unit was synthesized (IO_SDI_EN = true).
  **************************************************************************/
 
-#ifndef neorv32_gptmr_h
-#define neorv32_gptmr_h
+#ifndef neorv32_sdi_h
+#define neorv32_sdi_h
 
 // prototypes
-int  neorv32_gptmr_available(void);
-void neorv32_gptmr_setup(int prsc, int mode, uint32_t threshold);
-void neorv32_gptmr_disable(void);
-void neorv32_gptmr_enable(void);
-void neorv32_gptmr_restart(void);
+int     neorv32_sdi_available(void);
+void    neorv32_sdi_setup(uint32_t irq_mask);
+void    neorv32_sdi_rx_clear(void);
+void    neorv32_sdi_disable(void);
+void    neorv32_sdi_enable(void);
+int     neorv32_sdi_get_fifo_depth(void);
+int     neorv32_sdi_put(uint8_t data);
+void    neorv32_sdi_put_nonblocking(uint8_t data);
+int     neorv32_sdi_get(uint8_t* data);
+uint8_t neorv32_sdi_get_nonblocking(void);
 
-#endif // neorv32_gptmr_h
+#endif // neorv32_sdi_h

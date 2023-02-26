@@ -162,8 +162,8 @@ entity neorv32_SystemTop_axi4lite is
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o     : out std_logic; -- chip-select, low-active
     xip_clk_o     : out std_logic; -- serial clock
-    xip_sdi_i     : in  std_logic := '0'; -- device data input
-    xip_sdo_o     : out std_logic; -- controller data output
+    xip_dat_i     : in  std_logic := '0'; -- device data input
+    xip_dat_o     : out std_logic; -- controller data output
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o        : out std_logic_vector(63 downto 0); -- parallel output
     gpio_i        : in  std_logic_vector(63 downto 0) := (others => '0'); -- parallel input
@@ -178,9 +178,9 @@ entity neorv32_SystemTop_axi4lite is
     uart1_rts_o   : out std_logic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
     uart1_cts_i   : in  std_logic := '0'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o     : out std_logic; -- SPI serial clock
-    spi_sdo_o     : out std_logic; -- controller data out, peripheral data in
-    spi_sdi_i     : in  std_logic := '0'; -- controller data in, peripheral data out
+    spi_clk_o     : out std_logic; -- SPI serial clock
+    spi_dat_o     : out std_logic; -- controller data out, peripheral data in
+    spi_dat_i     : in  std_logic := '0'; -- controller data in, peripheral data out
     spi_csn_o     : out std_logic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io    : inout std_logic; -- twi serial data line
@@ -221,8 +221,8 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   --
   signal xip_csn_o_int   : std_ulogic;
   signal xip_clk_o_int   : std_ulogic;
-  signal xip_sdi_i_int   : std_ulogic;
-  signal xip_sdo_o_int   : std_ulogic;
+  signal xip_dat_i_int   : std_ulogic;
+  signal xip_dat_o_int   : std_ulogic;
   --
   signal gpio_o_int      : std_ulogic_vector(63 downto 0);
   signal gpio_i_int      : std_ulogic_vector(63 downto 0);
@@ -237,9 +237,9 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   signal uart1_rts_o_int : std_ulogic;
   signal uart1_cts_i_int : std_ulogic;
   --
-  signal spi_sck_o_int   : std_ulogic;
-  signal spi_sdo_o_int   : std_ulogic;
-  signal spi_sdi_i_int   : std_ulogic;
+  signal spi_clk_o_int   : std_ulogic;
+  signal spi_dat_o_int   : std_ulogic;
+  signal spi_dat_i_int   : std_ulogic;
   signal spi_csn_o_int   : std_ulogic_vector(07 downto 0);
   --
   signal pwm_o_int       : std_ulogic_vector(11 downto 0);
@@ -391,8 +391,8 @@ begin
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o   => xip_csn_o_int,   -- chip-select, low-active
     xip_clk_o   => xip_clk_o_int,   -- serial clock
-    xip_sdi_i   => xip_sdi_i_int,   -- device data input
-    xip_sdo_o   => xip_sdo_o_int,   -- controller data output
+    xip_dat_i   => xip_dat_i_int,   -- device data input
+    xip_dat_o   => xip_dat_o_int,   -- controller data output
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o      => gpio_o_int,      -- parallel output
     gpio_i      => gpio_i_int,      -- parallel input
@@ -407,9 +407,9 @@ begin
     uart1_rts_o => uart1_rts_o_int, -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
     uart1_cts_i => uart1_cts_i_int, -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o   => spi_sck_o_int,   -- SPI serial clock
-    spi_sdo_o   => spi_sdo_o_int,   -- controller data out, peripheral data in
-    spi_sdi_i   => spi_sdi_i_int,   -- controller data in, peripheral data out
+    spi_clk_o   => spi_clk_o_int,   -- SPI serial clock
+    spi_dat_o   => spi_dat_o_int,   -- controller data out, peripheral data in
+    spi_dat_i   => spi_dat_i_int,   -- controller data in, peripheral data out
     spi_csn_o   => spi_csn_o_int,   -- SPI CS
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  => twi_sda_io,      -- twi serial data line
@@ -434,8 +434,8 @@ begin
   -- type conversion --
   xip_csn_o       <= std_logic(xip_csn_o_int);
   xip_clk_o       <= std_logic(xip_clk_o_int);
-  xip_sdi_i_int   <= std_ulogic(xip_sdi_i);
-  xip_sdo_o       <= std_logic(xip_sdo_o_int);
+  xip_dat_i_int   <= std_ulogic(xip_dat_i);
+  xip_dat_o       <= std_logic(xip_dat_o_int);
 
   gpio_o          <= std_logic_vector(gpio_o_int);
   gpio_i_int      <= std_ulogic_vector(gpio_i);
@@ -455,9 +455,9 @@ begin
   uart1_rts_o     <= std_logic(uart1_rts_o_int);
   uart1_cts_i_int <= std_ulogic(uart1_cts_i);
 
-  spi_sck_o       <= std_logic(spi_sck_o_int);
-  spi_sdo_o       <= std_logic(spi_sdo_o_int);
-  spi_sdi_i_int   <= std_ulogic(spi_sdi_i);
+  spi_clk_o       <= std_logic(spi_clk_o_int);
+  spi_dat_o       <= std_logic(spi_dat_o_int);
+  spi_dat_i_int   <= std_ulogic(spi_dat_i);
   spi_csn_o       <= std_logic_vector(spi_csn_o_int);
 
   pwm_o           <= std_logic_vector(pwm_o_int);

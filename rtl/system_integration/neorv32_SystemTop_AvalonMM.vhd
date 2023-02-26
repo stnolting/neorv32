@@ -153,8 +153,8 @@ entity neorv32_top_avalonmm is
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o      : out std_ulogic; -- chip-select, low-active
     xip_clk_o      : out std_ulogic; -- serial clock
-    xip_sdi_i      : in  std_ulogic := 'L'; -- device data input
-    xip_sdo_o      : out std_ulogic; -- controller data output
+    xip_dat_i      : in  std_ulogic := 'L'; -- device data input
+    xip_dat_o      : out std_ulogic; -- controller data output
 
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
@@ -173,9 +173,9 @@ entity neorv32_top_avalonmm is
     uart1_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o      : out std_ulogic; -- SPI serial clock
-    spi_sdo_o      : out std_ulogic; -- controller data out, peripheral data in
-    spi_sdi_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
+    spi_clk_o      : out std_ulogic; -- SPI serial clock
+    spi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
+    spi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
     spi_csn_o      : out std_ulogic_vector(07 downto 0); -- chip-select
 
     -- TWI (available if IO_TWI_EN = true) --
@@ -343,8 +343,8 @@ begin
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o => xip_csn_o,
     xip_clk_o => xip_clk_o,
-    xip_sdi_i => xip_sdi_i,
-    xip_sdo_o => xip_sdo_o,
+    xip_dat_i => xip_dat_i,
+    xip_dat_o => xip_dat_o,
 
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o => gpio_o,
@@ -363,9 +363,9 @@ begin
     uart1_cts_i => uart1_cts_i,
 
     -- SPI (available if IO_SPI_EN = true) --
-    spi_sck_o => spi_sck_o,
-    spi_sdo_o => spi_sdo_o,
-    spi_sdi_i => spi_sdi_i,
+    spi_clk_o => spi_clk_o,
+    spi_dat_o => spi_dat_o,
+    spi_dat_i => spi_dat_i,
     spi_csn_o => spi_csn_o,
 
     -- TWI (available if IO_TWI_EN = true) --
