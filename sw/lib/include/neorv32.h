@@ -629,6 +629,13 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define NEOLED_RTE_ID          RTE_TRAP_FIRQ_9   /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
 #define NEOLED_TRAP_CODE       TRAP_CODE_FIRQ_9  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
+/** @name Serial Data Interface (SDI) */
+/**@{*/
+#define SDI_FIRQ_ENABLE        CSR_MIE_FIRQ11E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
+#define SDI_FIRQ_PENDING       CSR_MIP_FIRQ11P   /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
+#define SDI_RTE_ID             RTE_TRAP_FIRQ_11  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
+#define SDI_TRAP_CODE          TRAP_CODE_FIRQ_11 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+/**@}*/
 /** @name General Purpose Timer (GPTMR) */
 /**@{*/
 #define GPTMR_FIRQ_ENABLE      CSR_MIE_FIRQ12E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
@@ -728,6 +735,44 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 /** CFS module hardware access (#neorv32_cfs_t) */
 #define NEORV32_CFS (*((volatile neorv32_cfs_t*) (NEORV32_CFS_BASE)))
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name IO Device: Serial Data Interface (SDI)
+ **************************************************************************/
+/**@{*/
+/** SDI module prototype */
+typedef struct __attribute__((packed,aligned(4))) {
+  uint32_t CTRL; /**< offset 0: control register (#NEORV32_SDI_CTRL_enum) */
+  uint32_t DATA; /**< offset 4: data register */
+} neorv32_sdi_t;
+
+/** SDI module base address */
+#define NEORV32_SDI_BASE (0xFFFFFF00U)
+
+/** SDI module hardware access (#neorv32_sdi_t) */
+#define NEORV32_SDI (*((volatile neorv32_sdi_t*) (NEORV32_SDI_BASE)))
+
+/** SDI control register bits */
+enum NEORV32_SDI_CTRL_enum {
+  SDI_CTRL_EN           =  0, /**< SDI control register(00) (r/w): SID module enable */
+  SDI_CTRL_CLR_RX       =  1, /**< SDI control register(01) (-/w): Clear RX FIFO when set, auto-clear */
+
+  SDI_CTRL_FIFO_LSB     =  4, /**< SDI control register(04) (r/-): log2 of SDI FIFO size, LSB */
+  SDI_CTRL_FIFO_MSB     =  7, /**< SDI control register(07) (r/-): log2 of SDI FIFO size, MSB */
+
+  SDI_CTRL_IRQ_RX_AVAIL = 15, /**< SDI control register(15) (r/w): IRQ when RX FIFO not empty */
+  SDI_CTRL_IRQ_RX_HALF  = 16, /**< SDI control register(16) (r/w): IRQ when RX FIFO at least half full */
+  SDI_CTRL_IRQ_RX_FULL  = 17, /**< SDI control register(17) (r/w): IRQ when RX FIFO full */
+  SDI_CTRL_IRQ_TX_EMPTY = 18, /**< SDI control register(18) (r/w): IRQ when TX FIFO empty */
+
+  SDI_CTRL_RX_AVAIL     = 23, /**< SDI control register(23) (r/-): RX FIFO not empty */
+  SDI_CTRL_RX_HALF      = 24, /**< SDI control register(24) (r/-): RX FIFO at least half full */
+  SDI_CTRL_RX_FULL      = 25, /**< SDI control register(25) (r/-): RX FIFO full */
+  SDI_CTRL_TX_EMPTY     = 26, /**< SDI control register(26) (r/-): TX FIFO empty */
+  SDI_CTRL_TX_FULL      = 27  /**< SDI control register(27) (r/-): TX FIFO full */
+};
 /**@}*/
 
 
@@ -1297,7 +1342,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_WDT         = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_EN generic) */
   SYSINFO_SOC_IO_CFS         = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions subsystem implemented when 1 (via IO_CFS_EN generic) */
   SYSINFO_SOC_IO_TRNG        = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
-//SYSINFO_SOC_IO_reserved    = 25, /**< SYSINFO_FEATURES (25) (r/-): reserved */
+  SYSINFO_SOC_IO_SDI         = 25, /**< SYSINFO_FEATURES (25) (r/-): Serial data interface implemented when 1 (via IO_SDI_EN generic) */
   SYSINFO_SOC_IO_UART1       = 26, /**< SYSINFO_FEATURES (26) (r/-): Secondary universal asynchronous receiver/transmitter 1 implemented when 1 (via IO_UART1_EN generic) */
   SYSINFO_SOC_IO_NEOLED      = 27, /**< SYSINFO_FEATURES (27) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
   SYSINFO_SOC_IO_XIRQ        = 28, /**< SYSINFO_FEATURES (28) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
@@ -1352,6 +1397,7 @@ enum NEORV32_SYSINFO_SOC_enum {
 #include "neorv32_neoled.h"
 #include "neorv32_onewire.h"
 #include "neorv32_pwm.h"
+#include "neorv32_sdi.h"
 #include "neorv32_spi.h"
 #include "neorv32_trng.h"
 #include "neorv32_twi.h"

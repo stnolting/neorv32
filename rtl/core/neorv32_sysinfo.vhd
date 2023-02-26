@@ -72,6 +72,7 @@ entity neorv32_sysinfo is
     IO_UART0_EN          : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART1_EN          : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN            : boolean; -- implement serial peripheral interface (SPI)?
+    IO_SDI_EN            : boolean; -- implement serial data interface (SDI)?
     IO_TWI_EN            : boolean; -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH        : natural; -- number of PWM channels to implement
     IO_WDT_EN            : boolean; -- implement watch dog timer (WDT)?
@@ -154,7 +155,7 @@ begin
   sysinfo(2)(22) <= bool_to_ulogic_f(IO_WDT_EN);           -- watch dog timer (WDT) implemented?
   sysinfo(2)(23) <= bool_to_ulogic_f(IO_CFS_EN);           -- custom functions subsystem (CFS) implemented?
   sysinfo(2)(24) <= bool_to_ulogic_f(IO_TRNG_EN);          -- true random number generator (TRNG) implemented?
-  sysinfo(2)(25) <= '0';                                   -- reserved
+  sysinfo(2)(25) <= bool_to_ulogic_f(IO_SDI_EN);           -- serial data interface (SDI) implemented?
   sysinfo(2)(26) <= bool_to_ulogic_f(IO_UART1_EN);         -- secondary universal asynchronous receiver/transmitter (UART1) implemented?
   sysinfo(2)(27) <= bool_to_ulogic_f(IO_NEOLED_EN);        -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
   sysinfo(2)(28) <= bool_to_ulogic_f(IO_XIRQ_NUM_CH > 0);  -- external interrupt controller (XIRQ) implemented?

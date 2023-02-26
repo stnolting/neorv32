@@ -81,6 +81,134 @@
         <register><name>REG29</name><description>Application-defined</description><addressOffset>0x74</addressOffset></register>
         <register><name>REG30</name><description>Application-defined</description><addressOffset>0x78</addressOffset></register>
         <register><name>REG31</name><description>Application-defined</description><addressOffset>0x7C</addressOffset></register>
+        <register><name>REG32</name><description>Application-defined</description><addressOffset>0x80</addressOffset></register>
+        <register><name>REG33</name><description>Application-defined</description><addressOffset>0x84</addressOffset></register>
+        <register><name>REG34</name><description>Application-defined</description><addressOffset>0x88</addressOffset></register>
+        <register><name>REG35</name><description>Application-defined</description><addressOffset>0x8C</addressOffset></register>
+        <register><name>REG36</name><description>Application-defined</description><addressOffset>0x90</addressOffset></register>
+        <register><name>REG37</name><description>Application-defined</description><addressOffset>0x94</addressOffset></register>
+        <register><name>REG38</name><description>Application-defined</description><addressOffset>0x98</addressOffset></register>
+        <register><name>REG39</name><description>Application-defined</description><addressOffset>0x9C</addressOffset></register>
+        <register><name>REG40</name><description>Application-defined</description><addressOffset>0xA0</addressOffset></register>
+        <register><name>REG41</name><description>Application-defined</description><addressOffset>0xA4</addressOffset></register>
+        <register><name>REG42</name><description>Application-defined</description><addressOffset>0xA8</addressOffset></register>
+        <register><name>REG43</name><description>Application-defined</description><addressOffset>0xAC</addressOffset></register>
+        <register><name>REG44</name><description>Application-defined</description><addressOffset>0xB0</addressOffset></register>
+        <register><name>REG45</name><description>Application-defined</description><addressOffset>0xB4</addressOffset></register>
+        <register><name>REG46</name><description>Application-defined</description><addressOffset>0xB8</addressOffset></register>
+        <register><name>REG47</name><description>Application-defined</description><addressOffset>0xBC</addressOffset></register>
+        <register><name>REG48</name><description>Application-defined</description><addressOffset>0xC0</addressOffset></register>
+        <register><name>REG49</name><description>Application-defined</description><addressOffset>0xC4</addressOffset></register>
+        <register><name>REG50</name><description>Application-defined</description><addressOffset>0xC8</addressOffset></register>
+        <register><name>REG51</name><description>Application-defined</description><addressOffset>0xCC</addressOffset></register>
+        <register><name>REG52</name><description>Application-defined</description><addressOffset>0xD0</addressOffset></register>
+        <register><name>REG53</name><description>Application-defined</description><addressOffset>0xD4</addressOffset></register>
+        <register><name>REG54</name><description>Application-defined</description><addressOffset>0xD8</addressOffset></register>
+        <register><name>REG55</name><description>Application-defined</description><addressOffset>0xDC</addressOffset></register>
+        <register><name>REG56</name><description>Application-defined</description><addressOffset>0xE0</addressOffset></register>
+        <register><name>REG57</name><description>Application-defined</description><addressOffset>0xE4</addressOffset></register>
+        <register><name>REG58</name><description>Application-defined</description><addressOffset>0xE8</addressOffset></register>
+        <register><name>REG59</name><description>Application-defined</description><addressOffset>0xEC</addressOffset></register>
+        <register><name>REG60</name><description>Application-defined</description><addressOffset>0xF0</addressOffset></register>
+        <register><name>REG61</name><description>Application-defined</description><addressOffset>0xF4</addressOffset></register>
+        <register><name>REG62</name><description>Application-defined</description><addressOffset>0xF8</addressOffset></register>
+        <register><name>REG63</name><description>Application-defined</description><addressOffset>0xFC</addressOffset></register>
+      </registers>
+    </peripheral
+
+    <!-- SDI -->
+    <peripheral>
+      <name>SDI</name>
+      <description>Serial data interface controller</description>
+      <groupName>SDI</groupName>
+      <baseAddress>0xFFFFFF00</baseAddress>
+
+      <interrupt><name>SDI_FIRQ</name><value>11</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x08</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>SDI_CTRL_EN</name>
+              <bitRange>[0:0]</bitRange>
+              <description>SDI enable flag</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_CLR_RX</name>
+              <bitRange>[1:1]</bitRange>
+              <description>Clear RX FIFO, bit auto-clears</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_FIFO</name>
+              <bitRange>[7:4]</bitRange>
+              <description>Log2 of SDI FIFO size</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_IRQ_RX_AVAIL</name>
+              <bitRange>[15:15]</bitRange>
+              <description>Fire interrupt if RX FIFO is not empty</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_IRQ_RX_HALF</name>
+              <bitRange>[16:16]</bitRange>
+              <description>Fire interrupt if RX FIFO is at least half full</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_IRQ_RX_FULL</name>
+              <bitRange>[17:17]</bitRange>
+              <description>Fire interrupt if RX FIFO is full</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_IRQ_TX_EMPTY</name>
+              <bitRange>[18:18]</bitRange>
+              <description>Fire interrupt if TX FIFO is empty</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_RX_AVAIL</name>
+              <bitRange>[23:23]</bitRange>
+              <access>read-only</access>
+              <description>RX FIFO not empty (data available)</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_RX_HALF</name>
+              <bitRange>[24:24]</bitRange>
+              <access>read-only</access>
+              <description>RX FIFO at least half full</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_RX_FULL</name>
+              <bitRange>[25:25]</bitRange>
+              <access>read-only</access>
+              <description>RX FIFO full</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_TX_EMPTY</name>
+              <bitRange>[26:26]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO empty</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_TX_FULL</name>
+              <bitRange>[27:27]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO full</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DATA</name>
+          <description>RX/TX data register (lowest 8 bit)</description>
+          <addressOffset>0x04</addressOffset>
+        </register>
       </registers>
     </peripheral>
 

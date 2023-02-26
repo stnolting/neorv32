@@ -497,6 +497,7 @@ void neorv32_rte_print_hw_config(void) {
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_UART0));   neorv32_uart0_printf(" UART0\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_UART1));   neorv32_uart0_printf(" UART1\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_SPI));     neorv32_uart0_printf(" SPI\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_SDI));     neorv32_uart0_printf(" SDI\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_TWI));     neorv32_uart0_printf(" TWI\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_PWM));     neorv32_uart0_printf(" PWM\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_WDT));     neorv32_uart0_printf(" WDT\n");

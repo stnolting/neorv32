@@ -120,6 +120,8 @@ entity neorv32_top is
     IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
     IO_SPI_FIFO                  : natural := 0;      -- SPI RTX fifo depth, has to be zero or a power of two
+    IO_SDI_EN                    : boolean := false;  -- implement serial data interface (SDI)?
+    IO_SDI_FIFO                  : natural := 0;      -- SDI RTX fifo depth, has to be zero or a power of two
     IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    : boolean := false;  -- implement watch dog timer (WDT)?
@@ -190,6 +192,12 @@ entity neorv32_top is
     spi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
     spi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
     spi_csn_o      : out std_ulogic_vector(07 downto 0); -- chip-select
+
+    -- SDI (available if IO_SDI_EN = true) --
+    sdi_clk_i      : in  std_ulogic := 'U'; -- SDI serial clock
+    sdi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
+    sdi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
+    sdi_csn_i      : in  std_ulogic := 'H'; -- chip-select
 
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io     : inout std_logic; -- twi serial data line
@@ -331,7 +339,7 @@ architecture neorv32_top_rtl of neorv32_top is
   type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO,
                          RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI, RESP_TWI, RESP_PWM, RESP_WDT,
                          RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_XIRQ, RESP_GPTMR,
-                         RESP_XIP_CT, RESP_XIP_ACC, RESP_ONEWIRE);
+                         RESP_XIP_CT, RESP_XIP_ACC, RESP_ONEWIRE, RESP_SDI);
 
   -- module response bus --
   type resp_bus_t is array (resp_bus_id_t) of resp_bus_entry_t;
@@ -346,6 +354,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal uart1_rxd_irq : std_ulogic;
   signal uart1_txd_irq : std_ulogic;
   signal spi_irq       : std_ulogic;
+  signal sdi_irq       : std_ulogic;
   signal twi_irq       : std_ulogic;
   signal cfs_irq       : std_ulogic;
   signal neoled_irq    : std_ulogic;
@@ -376,6 +385,7 @@ begin
   cond_sel_string_f(IO_UART0_EN, "UART0 ", "") &
   cond_sel_string_f(IO_UART1_EN, "UART1 ", "") &
   cond_sel_string_f(IO_SPI_EN, "SPI ", "") &
+  cond_sel_string_f(IO_SDI_EN, "SDI ", "") &
   cond_sel_string_f(IO_TWI_EN, "TWI ", "") &
   cond_sel_string_f(boolean(IO_PWM_NUM_CH > 0), "PWM ", "") &
   cond_sel_string_f(IO_WDT_EN, "WDT ", "") &
@@ -605,7 +615,7 @@ begin
   fast_irq(08) <= xirq_irq;      -- external interrupt controller
   fast_irq(09) <= neoled_irq;    -- NEOLED buffer IRQ
   fast_irq(10) <= '0';           -- reserved
-  fast_irq(11) <= '0';           -- reserved
+  fast_irq(11) <= sdi_irq;       -- SDI interrupt
   fast_irq(12) <= gptmr_irq;     -- general purpose timer match
   fast_irq(13) <= onewire_irq;   -- ONEWIRE operation done
   fast_irq(14) <= '0';           -- reserved
@@ -1024,6 +1034,44 @@ begin
     cfs_cg_en <= '0';
     cfs_irq   <= '0';
     cfs_out_o <= (others => '0');
+  end generate;
+
+
+  -- Serial Data Interface (SDI) ------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_sdi_inst_true:
+  if (IO_SDI_EN = true) generate
+    neorv32_SDI_inst: neorv32_sdi
+    generic map (
+      RTX_FIFO => IO_SDI_FIFO -- RTX fifo depth, has to be a power of two, min 1
+    )
+    port map (
+      -- host access --
+      clk_i     => clk_i,                    -- global clock line
+      rstn_i    => rstn_int,                 -- global reset line, low-active, async
+      addr_i    => p_bus.addr,               -- address
+      rden_i    => io_rden,                  -- read enable
+      wren_i    => io_wren,                  -- write enable
+      data_i    => p_bus.wdata,              -- data in
+      data_o    => resp_bus(RESP_SDI).rdata, -- data out
+      ack_o     => resp_bus(RESP_SDI).ack,   -- transfer acknowledge
+      -- SDI receiver input --
+      sdi_csn_i => sdi_csn_i,                -- low-active chip-select
+      sdi_clk_i => sdi_clk_i,                -- serial clock
+      sdi_dat_i => sdi_dat_i,                -- serial data input
+      sdi_dat_o => sdi_dat_o,                -- serial data output
+      -- interrupts --
+      irq_o     => sdi_irq
+    );
+    resp_bus(RESP_SDI).err <= '0'; -- no access error possible
+  end generate;
+
+  neorv32_sdi_inst_false:
+  if (IO_SDI_EN = false) generate
+    resp_bus(RESP_SDI) <= resp_bus_entry_terminate_c;
+    --
+    sdi_dat_o <= '0';
+    sdi_irq   <= '0';
   end generate;
 
 
@@ -1559,6 +1607,7 @@ begin
     IO_UART0_EN          => IO_UART0_EN,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART1_EN          => IO_UART1_EN,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN            => IO_SPI_EN,            -- implement serial peripheral interface (SPI)?
+    IO_SDI_EN            => IO_SDI_EN,            -- implement serial data interface (SDI)?
     IO_TWI_EN            => IO_TWI_EN,            -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH        => IO_PWM_NUM_CH,        -- number of PWM channels to implement
     IO_WDT_EN            => IO_WDT_EN,            -- implement watch dog timer (WDT)?
