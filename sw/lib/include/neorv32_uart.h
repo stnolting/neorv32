@@ -49,17 +49,17 @@
 #include <stdarg.h>
 
 // prototypes for common used UART functions, applicable to UART0 and UART1
-void neorv32_uart_enable(volatile neorv32_uart_t *self);
-void neorv32_uart_disable(volatile neorv32_uart_t *self);
-void neorv32_uart_putc(volatile neorv32_uart_t *self, char c);
-int neorv32_uart_tx_busy(volatile neorv32_uart_t *self);
-char neorv32_uart_getc(volatile neorv32_uart_t *self);
-int neorv32_uart_getc_safe(volatile neorv32_uart_t *self, char *data);
-int neorv32_uart_char_received(volatile neorv32_uart_t *self);
-char neorv32_uart_char_received_get(volatile neorv32_uart_t *self);
-void neorv32_uart_puts(volatile neorv32_uart_t *self, const char *s);
-void neorv32_uart_printf(volatile neorv32_uart_t *self, const char *format, ...);
-int neorv32_uart_scan(volatile neorv32_uart_t *self, char *buffer, int max_size, int echo);
+void neorv32_uart_enable(volatile neorv32_uart_t *UARTx);
+void neorv32_uart_disable(volatile neorv32_uart_t *UARTx);
+void neorv32_uart_putc(volatile neorv32_uart_t *UARTx, char c);
+int neorv32_uart_tx_busy(volatile neorv32_uart_t *UARTx);
+char neorv32_uart_getc(volatile neorv32_uart_t *UARTx);
+int neorv32_uart_getc_safe(volatile neorv32_uart_t *UARTx, char *data);
+int neorv32_uart_char_received(volatile neorv32_uart_t *UARTx);
+char neorv32_uart_char_received_get(volatile neorv32_uart_t *UARTx);
+void neorv32_uart_puts(volatile neorv32_uart_t *UARTx, const char *s);
+void neorv32_uart_printf(volatile neorv32_uart_t *UARTx, const char *format, ...);
+int neorv32_uart_scan(volatile neorv32_uart_t *UARTx, char *buffer, int max_size, int echo);
 
 // prototypes for UART0 (primary UART)
 int  neorv32_uart0_available(void);
