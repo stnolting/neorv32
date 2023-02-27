@@ -743,7 +743,7 @@ typedef struct __attribute__((packed,aligned(4))) {
  **************************************************************************/
 /**@{*/
 /** SDI module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL; /**< offset 0: control register (#NEORV32_SDI_CTRL_enum) */
   uint32_t DATA; /**< offset 4: data register */
 } neorv32_sdi_t;
@@ -752,7 +752,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_SDI_BASE (0xFFFFFF00U)
 
 /** SDI module hardware access (#neorv32_sdi_t) */
-#define NEORV32_SDI (*((volatile neorv32_sdi_t*) (NEORV32_SDI_BASE)))
+#define NEORV32_SDI ((neorv32_sdi_t*) (NEORV32_SDI_BASE))
 
 /** SDI control register bits */
 enum NEORV32_SDI_CTRL_enum {
