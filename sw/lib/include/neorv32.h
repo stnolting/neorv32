@@ -699,29 +699,6 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 
 /**********************************************************************//**
- * @name Helper macros for easy memory-mapped register access (DEPRECATED!)
- **************************************************************************/
-/**@{*/
-/** memory-mapped byte (8-bit) read/write register */
-#define IO_REG8  (volatile uint8_t*)
-/** memory-mapped half-word (16-bit) read/write register */
-#define IO_REG16 (volatile uint16_t*)
-/** memory-mapped word (32-bit) read/write register */
-#define IO_REG32 (volatile uint32_t*)
-/** memory-mapped double-word (64-bit) read/write register */
-#define IO_REG64 (volatile uint64_t*)
-/** memory-mapped byte (8-bit) read-only register */
-#define IO_ROM8  (const volatile uint8_t*)
-/** memory-mapped half-word (16-bit) read-only register */
-#define IO_ROM16 (const volatile uint16_t*)
-/** memory-mapped word (32-bit) read-only register */
-#define IO_ROM32 (const volatile uint32_t*)
-/** memory-mapped double-word (64-bit) read-only register */
-#define IO_ROM64 (const volatile uint64_t*)
-/**@}*/
-
-
-/**********************************************************************//**
  * @name IO Device: Custom Functions Subsystem (CFS)
  **************************************************************************/
 /**@{*/
