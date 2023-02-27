@@ -726,7 +726,7 @@ typedef struct __attribute__((packed,aligned(4))) {
  **************************************************************************/
 /**@{*/
 /** CFS module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t REG[64]; /**< offset 4*0..4*63: CFS register 0..63, user-defined */
 } neorv32_cfs_t;
 
@@ -734,7 +734,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_CFS_BASE (0xFFFFFE00U)
 
 /** CFS module hardware access (#neorv32_cfs_t) */
-#define NEORV32_CFS (*((volatile neorv32_cfs_t*) (NEORV32_CFS_BASE)))
+#define NEORV32_CFS ((neorv32_cfs_t*) (NEORV32_CFS_BASE))
 /**@}*/
 
 
