@@ -971,7 +971,7 @@ typedef struct __attribute__((packed,aligned(4))) {
  **************************************************************************/
 /**@{*/
 /** MTIME module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t TIME_LO;    /**< offset 0:  time register low word */
   uint32_t TIME_HI;    /**< offset 4:  time register high word */
   uint32_t TIMECMP_LO; /**< offset 8:  compare register low word */
@@ -982,7 +982,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_MTIME_BASE (0xFFFFFF90U)
 
 /** MTIME module hardware access (#neorv32_mtime_t) */
-#define NEORV32_MTIME (*((volatile neorv32_mtime_t*) (NEORV32_MTIME_BASE)))
+#define NEORV32_MTIME ((neorv32_mtime_t*) (NEORV32_MTIME_BASE))
 /**@}*/
 
 
