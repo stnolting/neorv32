@@ -781,7 +781,7 @@ enum NEORV32_SDI_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** XIP module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;           /**< offset  0: control register (#NEORV32_XIP_CTRL_enum) */
   const uint32_t reserved; /**< offset  4: reserved */
   uint32_t DATA_LO;        /**< offset  8: SPI data register low */
@@ -792,7 +792,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_XIP_BASE (0xFFFFFF40U)
 
 /** XIP module hardware access (#neorv32_xip_t) */
-#define NEORV32_XIP (*((volatile neorv32_xip_t*) (NEORV32_XIP_BASE)))
+#define NEORV32_XIP ((neorv32_xip_t*) (NEORV32_XIP_BASE))
 
 /** XIP control/data register bits */
 enum NEORV32_XIP_CTRL_enum {
