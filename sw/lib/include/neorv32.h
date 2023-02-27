@@ -1227,7 +1227,7 @@ enum NEORV32_WDT_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** GPIO module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   const uint32_t INPUT_LO;  /**< offset 0:  parallel input port lower 32-bit, read-only */
   const uint32_t INPUT_HI;  /**< offset 4:  parallel input port upper 32-bit, read-only */
   uint32_t       OUTPUT_LO; /**< offset 8:  parallel output port lower 32-bit */
@@ -1238,7 +1238,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_GPIO_BASE (0xFFFFFFC0U)
 
 /** GPIO module hardware access (#neorv32_gpio_t) */
-#define NEORV32_GPIO (*((volatile neorv32_gpio_t*) (NEORV32_GPIO_BASE)))
+#define NEORV32_GPIO ((neorv32_gpio_t*) (NEORV32_GPIO_BASE))
 /**@}*/
 
 
