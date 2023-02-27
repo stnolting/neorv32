@@ -1231,8 +1231,8 @@ int main() {
     test_fail();
   }
 
-  NEORV32_XIRQ.IER = 0;
-  NEORV32_XIRQ.IPR = -1;
+  NEORV32_XIRQ->IER = 0;
+  NEORV32_XIRQ->IPR = -1;
 
 
   // ----------------------------------------------------------

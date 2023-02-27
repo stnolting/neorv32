@@ -951,7 +951,7 @@ enum NEORV32_BUSKEEPER_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** XIRQ module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t       IER;      /**< offset 0:  IRQ input enable register */
   uint32_t       IPR;      /**< offset 4:  pending IRQ register /ack/clear */
   uint32_t       SCR;      /**< offset 8:  interrupt source register */
@@ -962,7 +962,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_XIRQ_BASE (0xFFFFFF80U)
 
 /** XIRQ module hardware access (#neorv32_xirq_t) */
-#define NEORV32_XIRQ (*((volatile neorv32_xirq_t*) (NEORV32_XIRQ_BASE)))
+#define NEORV32_XIRQ ((neorv32_xirq_t*) (NEORV32_XIRQ_BASE))
 /**@}*/
 
 
