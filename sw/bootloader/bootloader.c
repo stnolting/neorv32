@@ -307,7 +307,7 @@ int main(void) {
   if (neorv32_mtime_available()) {
     NEORV32_MTIME->TIME_LO = 0;
     NEORV32_MTIME->TIME_HI = 0;
-    NEORV32_MTIME->TIMECMP_LO = NEORV32_SYSINFO>CLK/4;
+    NEORV32_MTIME->TIMECMP_LO = NEORV32_SYSINFO->CLK/4;
     NEORV32_MTIME->TIMECMP_HI = 0;
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate MTIME IRQ source
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
