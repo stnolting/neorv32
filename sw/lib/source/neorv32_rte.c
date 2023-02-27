@@ -74,7 +74,7 @@ void neorv32_rte_setup(void) {
   neorv32_cpu_csr_write(CSR_MIP, 0);
 
   // clear BUSKEEPER error flags
-  NEORV32_BUSKEEPER.CTRL = 0;
+  NEORV32_BUSKEEPER->CTRL = 0;
 
   // install debug handler for all trap sources
   uint8_t id;
@@ -245,7 +245,7 @@ static void __neorv32_rte_debug_handler(void) {
   }
   // check specific cause if bus access fault exception
   else if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_L_ACCESS) || (trap_cause == TRAP_CODE_S_ACCESS)) {
-    uint32_t bus_err = NEORV32_BUSKEEPER.CTRL;
+    uint32_t bus_err = NEORV32_BUSKEEPER->CTRL;
     if (bus_err & (1<<BUSKEEPER_ERR_FLAG)) { // exception caused by bus system?
       if (bus_err & (1<<BUSKEEPER_ERR_TYPE)) {
         neorv32_uart0_puts(" [TIMEOUT_ERR]");
