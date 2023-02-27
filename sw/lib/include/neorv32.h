@@ -826,7 +826,7 @@ enum NEORV32_XIP_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** PWM module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;  /**< offset 0: control register (#NEORV32_PWM_CTRL_enum) */
   uint32_t DC[3]; /**< offset 4..12: duty cycle register 0..2 */
 } neorv32_pwm_t;
@@ -835,7 +835,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_PWM_BASE (0xFFFFFF50U)
 
 /** PWM module hardware access (#neorv32_pwm_t) */
-#define NEORV32_PWM (*((volatile neorv32_pwm_t*) (NEORV32_PWM_BASE)))
+#define NEORV32_PWM ((neorv32_pwm_t*) (NEORV32_PWM_BASE))
 
 /** PWM control register bits */
 enum NEORV32_PWM_CTRL_enum {

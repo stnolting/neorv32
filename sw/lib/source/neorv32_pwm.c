@@ -68,7 +68,7 @@ int neorv32_pwm_available(void) {
  **************************************************************************/
 void neorv32_pwm_setup(int prsc) {
 
-  NEORV32_PWM.CTRL = 0; // reset
+  NEORV32_PWM->CTRL = 0; // reset
 
   uint32_t ct_enable = 1;
   ct_enable = ct_enable << PWM_CTRL_EN;
@@ -76,7 +76,7 @@ void neorv32_pwm_setup(int prsc) {
   uint32_t ct_prsc = (uint32_t)(prsc & 0x07);
   ct_prsc = ct_prsc << PWM_CTRL_PRSC0;
 
-  NEORV32_PWM.CTRL = ct_enable | ct_prsc;
+  NEORV32_PWM->CTRL = ct_enable | ct_prsc;
 }
 
 
@@ -85,7 +85,7 @@ void neorv32_pwm_setup(int prsc) {
  **************************************************************************/
 void neorv32_pwm_disable(void) {
 
-  NEORV32_PWM.CTRL &= ~((uint32_t)(1 << PWM_CTRL_EN));
+  NEORV32_PWM->CTRL &= ~((uint32_t)(1 << PWM_CTRL_EN));
 }
 
 
@@ -94,7 +94,7 @@ void neorv32_pwm_disable(void) {
  **************************************************************************/
 void neorv32_pwm_enable(void) {
 
-  NEORV32_PWM.CTRL |= ((uint32_t)(1 << PWM_CTRL_EN));
+  NEORV32_PWM->CTRL |= ((uint32_t)(1 << PWM_CTRL_EN));
 }
 
 
@@ -135,12 +135,12 @@ void neorv32_pwm_set(int channel, uint8_t dc) {
   const uint32_t dc_mask = 0xff;
   uint32_t dc_new  = (uint32_t)dc;
 
-  uint32_t tmp = NEORV32_PWM.DC[channel/4];
+  uint32_t tmp = NEORV32_PWM->DC[channel/4];
 
   tmp &= ~(dc_mask << ((channel % 4) * 8)); // clear previous duty cycle
   tmp |=   dc_new  << ((channel % 4) * 8);  // set new duty cycle
 
-  NEORV32_PWM.DC[channel/4] = tmp;
+  NEORV32_PWM->DC[channel/4] = tmp;
 }
 
 
@@ -156,7 +156,7 @@ uint8_t neorv32_pwm_get(int channel) {
     return 0; // out of range
   }
 
-  uint32_t rd = NEORV32_PWM.DC[channel/4] >> (((channel % 4) * 8));
+  uint32_t rd = NEORV32_PWM->DC[channel/4] >> (((channel % 4) * 8));
 
   return (uint8_t)rd;
 }
