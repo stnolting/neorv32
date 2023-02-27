@@ -852,7 +852,7 @@ enum NEORV32_PWM_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** GPTMR module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;           /**< offset  0: control register (#NEORV32_GPTMR_CTRL_enum) */
   uint32_t THRES;          /**< offset  4: threshold register */
   uint32_t COUNT;          /**< offset  8: counter register */
@@ -863,7 +863,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_GPTMR_BASE (0xFFFFFF60U)
 
 /** GPTMR module hardware access (#neorv32_gptmr_t) */
-#define NEORV32_GPTMR (*((volatile neorv32_gptmr_t*) (NEORV32_GPTMR_BASE)))
+#define NEORV32_GPTMR ((neorv32_gptmr_t*) (NEORV32_GPTMR_BASE))
 
 /** GPTMR control/data register bits */
 enum NEORV32_GPTMR_CTRL_enum {
