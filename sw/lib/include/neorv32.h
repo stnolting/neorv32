@@ -881,7 +881,7 @@ enum NEORV32_GPTMR_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** ONEWIRE module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL; /**< offset 0: control register (#NEORV32_ONEWIRE_CTRL_enum) */
   uint32_t DATA; /**< offset 4: transmission data register (#NEORV32_ONEWIRE_DATA_enum) */
 } neorv32_onewire_t;
@@ -890,7 +890,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_ONEWIRE_BASE (0xFFFFFF70U)
 
 /** ONEWIRE module hardware access (#neorv32_onewire_t) */
-#define NEORV32_ONEWIRE (*((volatile neorv32_onewire_t*) (NEORV32_ONEWIRE_BASE)))
+#define NEORV32_ONEWIRE ((neorv32_onewire_t*) (NEORV32_ONEWIRE_BASE))
 
 /** ONEWIRE control register bits */
 enum NEORV32_ONEWIRE_CTRL_enum {
