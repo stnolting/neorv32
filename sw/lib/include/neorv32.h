@@ -1169,7 +1169,7 @@ enum NEORV32_TWI_DATA_enum {
  **************************************************************************/
 /**@{*/
 /** TRNG module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;  /**< offset 0: control register (#NEORV32_TRNG_CTRL_enum) */
 } neorv32_trng_t;
 
@@ -1177,7 +1177,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_TRNG_BASE (0xFFFFFFB8U)
 
 /** TRNG module hardware access (#neorv32_trng_t) */
-#define NEORV32_TRNG (*((volatile neorv32_trng_t*) (NEORV32_TRNG_BASE)))
+#define NEORV32_TRNG ((neorv32_trng_t*) (NEORV32_TRNG_BASE))
 
 /** TRNG control/data register bits */
 enum NEORV32_TRNG_CTRL_enum {
