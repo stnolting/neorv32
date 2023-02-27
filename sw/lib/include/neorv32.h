@@ -675,7 +675,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 // ############################################################################################################################
 /**@{*/
 /** on-chip debugger - debug module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   const uint32_t CODE[16];      /**< offset 0: park loop code ROM (r/-) */
   const uint32_t PBUF[4];       /**< offset 64: program buffer (r/-) */
   const uint32_t reserved1[12]; /**< reserved */
@@ -689,7 +689,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_DM_BASE (0XFFFFF800U)
 
 /** on-chip debugger debug module hardware access (#neorv32_dm_t) */
-#define NEORV32_DM (*((volatile neorv32_dm_t*) (NEORV32_DM_BASE)))
+#define NEORV32_DM ((neorv32_dm_t*) (NEORV32_DM_BASE))
 /**@}*/
 
 
