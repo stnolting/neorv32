@@ -68,13 +68,13 @@ int neorv32_sdi_available(void) {
  **************************************************************************/
 void neorv32_sdi_setup(uint32_t irq_mask) {
 
-  NEORV32_SDI.CTRL = 0; // reset
+  NEORV32_SDI->CTRL = 0; // reset
 
   uint32_t tmp = 0;
   tmp |= (uint32_t)(1 & 0x01) << SDI_CTRL_EN;
   tmp |= (uint32_t)(irq_mask & (0x0f << SDI_CTRL_IRQ_RX_AVAIL));
 
-  NEORV32_SDI.CTRL = tmp;
+  NEORV32_SDI->CTRL = tmp;
 }
 
 
@@ -83,7 +83,7 @@ void neorv32_sdi_setup(uint32_t irq_mask) {
  **************************************************************************/
 void neorv32_sdi_rx_clear(void) {
 
-  NEORV32_SDI.CTRL |= (uint32_t)(1 << SDI_CTRL_CLR_RX);
+  NEORV32_SDI->CTRL |= (uint32_t)(1 << SDI_CTRL_CLR_RX);
 }
 
 
@@ -92,7 +92,7 @@ void neorv32_sdi_rx_clear(void) {
  **************************************************************************/
 void neorv32_sdi_disable(void) {
 
-  NEORV32_SDI.CTRL &= ~((uint32_t)(1 << SDI_CTRL_EN));
+  NEORV32_SDI->CTRL &= ~((uint32_t)(1 << SDI_CTRL_EN));
 }
 
 
@@ -101,7 +101,7 @@ void neorv32_sdi_disable(void) {
  **************************************************************************/
 void neorv32_sdi_enable(void) {
 
-  NEORV32_SDI.CTRL |= ((uint32_t)(1 << SDI_CTRL_EN));
+  NEORV32_SDI->CTRL |= ((uint32_t)(1 << SDI_CTRL_EN));
 }
 
 
@@ -112,7 +112,7 @@ void neorv32_sdi_enable(void) {
  **************************************************************************/
 int neorv32_sdi_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_SDI.CTRL >> SDI_CTRL_FIFO_LSB) & 0x0f;
+  uint32_t tmp = (NEORV32_SDI->CTRL >> SDI_CTRL_FIFO_LSB) & 0x0f;
   return (int)(1 << tmp);
 }
 
@@ -125,11 +125,11 @@ int neorv32_sdi_get_fifo_depth(void) {
  **************************************************************************/
 int neorv32_sdi_put(uint8_t data) {
 
-  if (NEORV32_SDI.CTRL & (1 << SDI_CTRL_TX_FULL)) {
+  if (NEORV32_SDI->CTRL & (1 << SDI_CTRL_TX_FULL)) {
     return -1;
   }
   else {
-    NEORV32_SDI.DATA = (uint32_t)data;
+    NEORV32_SDI->DATA = (uint32_t)data;
     return 0;
   }
 }
@@ -142,7 +142,7 @@ int neorv32_sdi_put(uint8_t data) {
  **************************************************************************/
 void neorv32_sdi_put_nonblocking(uint8_t data) {
 
-  NEORV32_SDI.DATA = (uint32_t)data;
+  NEORV32_SDI->DATA = (uint32_t)data;
 }
 
 
@@ -154,8 +154,8 @@ void neorv32_sdi_put_nonblocking(uint8_t data) {
  **************************************************************************/
 int neorv32_sdi_get(uint8_t* data) {
 
-  if (NEORV32_SDI.CTRL & (1 << SDI_CTRL_RX_AVAIL)) {
-    *data = (uint8_t)NEORV32_SDI.DATA;
+  if (NEORV32_SDI->CTRL & (1 << SDI_CTRL_RX_AVAIL)) {
+    *data = (uint8_t)NEORV32_SDI->DATA;
     return 0;
   }
   else {
@@ -171,5 +171,5 @@ int neorv32_sdi_get(uint8_t* data) {
  **************************************************************************/
 uint8_t neorv32_sdi_get_nonblocking(void) {
 
-  return (uint8_t)NEORV32_SDI.DATA;
+  return (uint8_t)NEORV32_SDI->DATA;
 }
