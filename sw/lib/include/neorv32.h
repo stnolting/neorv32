@@ -1197,7 +1197,7 @@ enum NEORV32_TRNG_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** WDT module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL; /**< offset 0: control register (#NEORV32_WDT_CTRL_enum) */
 } neorv32_wdt_t;
 
@@ -1205,7 +1205,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_WDT_BASE (0xFFFFFFBCU)
 
 /** WDT module hardware access (#neorv32_wdt_t) */
-#define NEORV32_WDT (*((volatile neorv32_wdt_t*) (NEORV32_WDT_BASE)))
+#define NEORV32_WDT ((neorv32_wdt_t*) (NEORV32_WDT_BASE))
 
 /** WDT control register bits */
 enum NEORV32_WDT_CTRL_enum {
