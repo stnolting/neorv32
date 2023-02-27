@@ -690,7 +690,7 @@ int main() {
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) && // load bus access error exception
       (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNREACHABLE) &&
       (tmp_b == 0xcafe1230) && // make sure dest. reg is not updated
-      (NEORV32_BUSKEEPER.CTRL = tmp_a)) { // buskeeper: error flag + timeout error
+      (NEORV32_BUSKEEPER->CTRL = tmp_a)) { // buskeeper: error flag + timeout error
     test_ok();
   }
   else {
@@ -739,7 +739,7 @@ int main() {
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && // store bus access error exception
       (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_READONLY) &&
-      (NEORV32_BUSKEEPER.CTRL == tmp_a)) { // buskeeper: error flag + device error
+      (NEORV32_BUSKEEPER->CTRL == tmp_a)) { // buskeeper: error flag + device error
     test_ok();
   }
   else {
