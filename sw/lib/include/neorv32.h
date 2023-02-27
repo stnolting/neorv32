@@ -1077,7 +1077,7 @@ enum NEORV32_UART_DATA_enum {
  **************************************************************************/
 /**@{*/
 /** SPI module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;  /**< offset 0: control register (#NEORV32_SPI_CTRL_enum) */
   uint32_t DATA;  /**< offset 4: data register */
 } neorv32_spi_t;
@@ -1086,7 +1086,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_SPI_BASE (0xFFFFFFA8U)
 
 /** SPI module hardware access (#neorv32_spi_t) */
-#define NEORV32_SPI (*((volatile neorv32_spi_t*) (NEORV32_SPI_BASE)))
+#define NEORV32_SPI ((neorv32_spi_t*) (NEORV32_SPI_BASE))
 
 /** SPI control register bits */
 enum NEORV32_SPI_CTRL_enum {
