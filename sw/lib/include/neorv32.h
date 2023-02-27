@@ -1125,7 +1125,7 @@ enum NEORV32_SPI_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** TWI module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;  /**< offset 0: control register (#NEORV32_TWI_CTRL_enum) */
   uint32_t DATA;  /**< offset 4: data register (#NEORV32_TWI_DATA_enum) */
 } neorv32_twi_t;
@@ -1134,7 +1134,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_TWI_BASE (0xFFFFFFB0U)
 
 /** TWI module hardware access (#neorv32_twi_t) */
-#define NEORV32_TWI (*((volatile neorv32_twi_t*) (NEORV32_TWI_BASE)))
+#define NEORV32_TWI ((neorv32_twi_t*) (NEORV32_TWI_BASE))
 
 /** TWI control register bits */
 enum NEORV32_TWI_CTRL_enum {

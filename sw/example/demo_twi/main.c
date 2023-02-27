@@ -247,7 +247,7 @@ void scan_twi(void) {
  **************************************************************************/
 void check_claimed(void) {
 
-  if (NEORV32_TWI.CTRL & (1 << TWI_CTRL_CLAIMED)) {
+  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_CLAIMED)) {
     if (bus_claimed == 0) {
       neorv32_uart0_printf("Bus claimed by another controller.\n");
     }
@@ -267,9 +267,9 @@ void check_claimed(void) {
 void toggle_mack(void) {
 
   // toggle MACK flag
-  NEORV32_TWI.CTRL ^= 1 << TWI_CTRL_MACK;
+  NEORV32_TWI->CTRL ^= 1 << TWI_CTRL_MACK;
 
-  if (NEORV32_TWI.CTRL & (1 << TWI_CTRL_MACK)) {
+  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_MACK)) {
     neorv32_uart0_printf("MACK enabled.\n");
   }
   else {
