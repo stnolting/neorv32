@@ -69,14 +69,14 @@ int neorv32_twi_available(void) {
  **************************************************************************/
 void neorv32_twi_setup(int prsc, int cdiv, int csen) {
 
-  NEORV32_TWI.CTRL = 0; // reset
+  NEORV32_TWI->CTRL = 0; // reset
 
   uint32_t ctrl = 0;
   ctrl |= ((uint32_t)(          1) << TWI_CTRL_EN);
   ctrl |= ((uint32_t)(prsc & 0x07) << TWI_CTRL_PRSC0);
   ctrl |= ((uint32_t)(cdiv & 0x0F) << TWI_CTRL_CDIV0);
   ctrl |= ((uint32_t)(csen & 0x01) << TWI_CTRL_CSEN);
-  NEORV32_TWI.CTRL = ctrl;
+  NEORV32_TWI->CTRL = ctrl;
 }
 
 
@@ -85,7 +85,7 @@ void neorv32_twi_setup(int prsc, int cdiv, int csen) {
  **************************************************************************/
 void neorv32_twi_disable(void) {
 
-  NEORV32_TWI.CTRL &= ~((uint32_t)(1 << TWI_CTRL_EN));
+  NEORV32_TWI->CTRL &= ~((uint32_t)(1 << TWI_CTRL_EN));
 }
 
 
@@ -94,7 +94,7 @@ void neorv32_twi_disable(void) {
  **************************************************************************/
 void neorv32_twi_enable(void) {
 
-  NEORV32_TWI.CTRL |= (uint32_t)(1 << TWI_CTRL_EN);
+  NEORV32_TWI->CTRL |= (uint32_t)(1 << TWI_CTRL_EN);
 }
 
 
@@ -103,7 +103,7 @@ void neorv32_twi_enable(void) {
  **************************************************************************/
 void neorv32_twi_mack_enable(void) {
 
-  NEORV32_TWI.CTRL |= ((uint32_t)(1 << TWI_CTRL_MACK));
+  NEORV32_TWI->CTRL |= ((uint32_t)(1 << TWI_CTRL_MACK));
 }
 
 
@@ -112,7 +112,7 @@ void neorv32_twi_mack_enable(void) {
  **************************************************************************/
 void neorv32_twi_mack_disable(void) {
 
-  NEORV32_TWI.CTRL &= ~((uint32_t)(1 << TWI_CTRL_MACK));
+  NEORV32_TWI->CTRL &= ~((uint32_t)(1 << TWI_CTRL_MACK));
 }
 
 
@@ -123,7 +123,7 @@ void neorv32_twi_mack_disable(void) {
  **************************************************************************/
 int neorv32_twi_busy(void) {
 
-  if (NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)) {
+  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_BUSY)) {
     return 1;
   }
   else {
@@ -158,11 +158,11 @@ int neorv32_twi_start_trans(uint8_t a) {
  **************************************************************************/
 int neorv32_twi_trans(uint8_t d) {
 
-  NEORV32_TWI.DATA = (uint32_t)d; // send data
-  while (NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
+  NEORV32_TWI->DATA = (uint32_t)d; // send data
+  while (NEORV32_TWI->CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
 
   // check for ACK/NACK
-  if (NEORV32_TWI.CTRL & (1 << TWI_CTRL_ACK)) {
+  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_ACK)) {
     return 0; // ACK received
   }
   else {
@@ -178,7 +178,7 @@ int neorv32_twi_trans(uint8_t d) {
  **************************************************************************/
 uint8_t neorv32_twi_get_data(void) {
 
-  return (uint8_t)NEORV32_TWI.DATA; // get RX data from previous transmission
+  return (uint8_t)NEORV32_TWI->DATA; // get RX data from previous transmission
 }
 
 
@@ -189,8 +189,8 @@ uint8_t neorv32_twi_get_data(void) {
  **************************************************************************/
 void neorv32_twi_generate_stop(void) {
 
-  NEORV32_TWI.CTRL |= (uint32_t)(1 << TWI_CTRL_STOP); // generate STOP condition
-  while (NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
+  NEORV32_TWI->CTRL |= (uint32_t)(1 << TWI_CTRL_STOP); // generate STOP condition
+  while (NEORV32_TWI->CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
 }
 
 
@@ -201,8 +201,8 @@ void neorv32_twi_generate_stop(void) {
  **************************************************************************/
 void neorv32_twi_generate_start(void) {
 
-  NEORV32_TWI.CTRL |= (1 << TWI_CTRL_START); // generate START condition
-  while (NEORV32_TWI.CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
+  NEORV32_TWI->CTRL |= (1 << TWI_CTRL_START); // generate START condition
+  while (NEORV32_TWI->CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
 }
 
 
@@ -213,7 +213,7 @@ void neorv32_twi_generate_start(void) {
  **************************************************************************/
 int neorv32_twi_bus_claimed(void) {
 
-  if (NEORV32_TWI.CTRL & (1 << TWI_CTRL_CLAIMED)) {
+  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_CLAIMED)) {
     return 1;
   }
   else {

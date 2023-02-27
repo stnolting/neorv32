@@ -68,14 +68,14 @@ void neorv32_trng_enable(void) {
 
   int i;
 
-  NEORV32_TRNG.CTRL = 0; // reset
+  NEORV32_TRNG->CTRL = 0; // reset
 
   // wait for all internal components to reset
   for (i=0; i<512; i++) {
     asm volatile ("nop");
   }
 
-  NEORV32_TRNG.CTRL = 1 << TRNG_CTRL_EN; // activate
+  NEORV32_TRNG->CTRL = 1 << TRNG_CTRL_EN; // activate
 
   // "warm-up"
   for (i=0; i<512; i++) {
@@ -92,7 +92,7 @@ void neorv32_trng_enable(void) {
  **************************************************************************/
 void neorv32_trng_disable(void) {
 
-  NEORV32_TRNG.CTRL = 0;
+  NEORV32_TRNG->CTRL = 0;
 }
 
 
@@ -101,7 +101,7 @@ void neorv32_trng_disable(void) {
  **************************************************************************/
 void neorv32_trng_fifo_clear(void) {
 
-  NEORV32_TRNG.CTRL |= 1 << TRNG_CTRL_FIFO_CLR; // bit auto clears
+  NEORV32_TRNG->CTRL |= 1 << TRNG_CTRL_FIFO_CLR; // bit auto clears
 }
 
 
@@ -113,7 +113,7 @@ void neorv32_trng_fifo_clear(void) {
  **************************************************************************/
 int neorv32_trng_get(uint8_t *data) {
 
-  uint32_t tmp = NEORV32_TRNG.CTRL;
+  uint32_t tmp = NEORV32_TRNG->CTRL;
   *data = (uint8_t)(tmp >> TRNG_CTRL_DATA_LSB);
 
   if (tmp & (1<<TRNG_CTRL_VALID)) { // output data valid?
@@ -134,7 +134,7 @@ int neorv32_trng_get(uint8_t *data) {
  **************************************************************************/
 int neorv32_trng_check_sim_mode(void) {
 
-  if (NEORV32_TRNG.CTRL & (1<<TRNG_CTRL_SIM_MODE)) {
+  if (NEORV32_TRNG->CTRL & (1<<TRNG_CTRL_SIM_MODE)) {
     return -1; // simulation mode (PRNG)
   }
   else {
