@@ -108,7 +108,7 @@ int main (void)
     // check available hardware extensions and compare with compiler flags
     neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
-    neorv32_uart0_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)NEORV32_SYSINFO.CLK);
+    neorv32_uart0_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)NEORV32_SYSINFO->CLK);
     neorv32_uart0_printf("NEORV32: Executing Dhrystone (%u iterations). This may take some time...\n\n", (uint32_t)DHRY_ITERS);
 
     // clear cycle counter
@@ -342,24 +342,24 @@ int main (void)
 #endif
 */
     { /* *****  NEORV32-SPECIFIC ***** */
-      neorv32_uart0_printf ("Microseconds for one run through Dhrystone: %u \n", (uint32_t)((User_Time * (Mic_secs_Per_Second / Number_Of_Runs)) / NEORV32_SYSINFO.CLK));
+      neorv32_uart0_printf ("Microseconds for one run through Dhrystone: %u \n", (uint32_t)((User_Time * (Mic_secs_Per_Second / Number_Of_Runs)) / NEORV32_SYSINFO->CLK));
 
-      uint32_t dhry_per_sec = (uint32_t)(NEORV32_SYSINFO.CLK / (User_Time / Number_Of_Runs));
+      uint32_t dhry_per_sec = (uint32_t)(NEORV32_SYSINFO->CLK / (User_Time / Number_Of_Runs));
 
       neorv32_uart0_printf ("Dhrystones per Second:                      %u \n\n", (uint32_t)dhry_per_sec);
 
       neorv32_uart0_printf("NEORV32: << DETAILED RESULTS (integer parts only) >>\n");
       neorv32_uart0_printf("NEORV32: Total cycles:      %u\n", (uint32_t)User_Time);
-      neorv32_uart0_printf("NEORV32: Cycles per second: %u\n", (uint32_t)NEORV32_SYSINFO.CLK);
+      neorv32_uart0_printf("NEORV32: Cycles per second: %u\n", (uint32_t)NEORV32_SYSINFO->CLK);
       neorv32_uart0_printf("NEORV32: Total runs:        %u\n", (uint32_t)Number_Of_Runs);
 
       neorv32_uart0_printf("\n");
       neorv32_uart0_printf("NEORV32: DMIPS/s:           %u\n", (uint32_t)dhry_per_sec);
-      neorv32_uart0_printf("NEORV32: DMIPS/s/MHz:       %u\n", (uint32_t)(dhry_per_sec / (NEORV32_SYSINFO.CLK / 1000000)));
+      neorv32_uart0_printf("NEORV32: DMIPS/s/MHz:       %u\n", (uint32_t)(dhry_per_sec / (NEORV32_SYSINFO->CLK / 1000000)));
 
       neorv32_uart0_printf("\n");
       neorv32_uart0_printf("NEORV32: VAX DMIPS/s:       %u\n", (uint32_t)dhry_per_sec/1757);
-      neorv32_uart0_printf("NEORV32: VAX DMIPS/s/MHz:   %u/1757\n", (uint32_t)(dhry_per_sec / (NEORV32_SYSINFO.CLK / 1000000)));
+      neorv32_uart0_printf("NEORV32: VAX DMIPS/s/MHz:   %u/1757\n", (uint32_t)(dhry_per_sec / (NEORV32_SYSINFO->CLK / 1000000)));
     } /* ***** /NEORV32-SPECIFIC ***** */
     /*
       neorv32_uart0_printf ("Microseconds for one run through Dhrystone: ");

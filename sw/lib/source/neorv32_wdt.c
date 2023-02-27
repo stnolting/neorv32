@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_wdt_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_WDT)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_WDT)) {
     return 1;
   }
   else {

@@ -1281,7 +1281,7 @@ enum NEORV32_NEOLED_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** SYSINFO module prototype - whole module is read-only */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   const uint32_t CLK;         /**< offset 0:  clock speed in Hz */
   const uint32_t CUSTOM_ID;   /**< offset 4:  custom user-defined ID (via top generic) */
   const uint32_t SOC;         /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
@@ -1296,9 +1296,9 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_SYSINFO_BASE (0xFFFFFFE0U)
 
 /** SYSINFO module hardware access (#neorv32_sysinfo_t) */
-#define NEORV32_SYSINFO (*((volatile neorv32_sysinfo_t*) (NEORV32_SYSINFO_BASE)))
+#define NEORV32_SYSINFO ((neorv32_sysinfo_t*) (NEORV32_SYSINFO_BASE))
 
-/** NEORV32_SYSINFO.SOC (r/-): Implemented processor devices/features */
+/** NEORV32_SYSINFO->SOC (r/-): Implemented processor devices/features */
 enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_BOOTLOADER     =  0, /**< SYSINFO_FEATURES  (0) (r/-): Bootloader implemented when 1 (via INT_BOOTLOADER_EN generic) */
   SYSINFO_SOC_MEM_EXT        =  1, /**< SYSINFO_FEATURES  (1) (r/-): External bus interface implemented when 1 (via MEM_EXT_EN generic) */
@@ -1328,7 +1328,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_ONEWIRE     = 31  /**< SYSINFO_FEATURES (31) (r/-): 1-wire interface controller implemented when 1 (via IO_ONEWIRE_EN generic) */
 };
 
-/** NEORV32_SYSINFO.CACHE (r/-): Cache configuration */
+/** NEORV32_SYSINFO->CACHE (r/-): Cache configuration */
  enum NEORV32_SYSINFO_CACHE_enum {
   SYSINFO_CACHE_IC_BLOCK_SIZE_0    =  0, /**< SYSINFO_CACHE  (0) (r/-): i-cache: log2(Block size in bytes), bit 0 (via ICACHE_BLOCK_SIZE generic) */
   SYSINFO_CACHE_IC_BLOCK_SIZE_1    =  1, /**< SYSINFO_CACHE  (1) (r/-): i-cache: log2(Block size in bytes), bit 1 (via ICACHE_BLOCK_SIZE generic) */

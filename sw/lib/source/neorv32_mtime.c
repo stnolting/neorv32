@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_mtime_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
     return 1;
   }
   else {

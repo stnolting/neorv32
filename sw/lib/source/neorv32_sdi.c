@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_sdi_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_SDI)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SDI)) {
     return 1;
   }
   else {

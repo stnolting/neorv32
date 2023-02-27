@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_neoled_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_NEOLED)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_NEOLED)) {
     return 1;
   }
   else {
@@ -111,7 +111,7 @@ void neorv32_neoled_setup_ws2812(void) {
   const uint32_t CLK_PRSC_FACTOR_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
 
   // get base clock period in multiples of 0.5ns
-  uint32_t t_clock_x500ps = (2 * 1000 * 1000 * 1000) / NEORV32_SYSINFO.CLK;
+  uint32_t t_clock_x500ps = (2 * 1000 * 1000 * 1000) / NEORV32_SYSINFO->CLK;
 
   // compute LED interface timing parameters
   uint32_t t_base         = 0;

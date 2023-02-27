@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_twi_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_TWI)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWI)) {
     return 1;
   }
   else {
