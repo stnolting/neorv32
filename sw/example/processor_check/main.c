@@ -947,7 +947,7 @@ int main() {
   asm volatile ("wfi");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
-  NEORV32_WDT.CTRL = 0;
+  NEORV32_WDT->CTRL = 0;
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == WDT_TRAP_CODE) {
     test_ok();
