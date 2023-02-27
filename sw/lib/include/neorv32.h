@@ -1238,7 +1238,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 #define NEORV32_GPIO_BASE (0xFFFFFFC0U)
 
 /** GPIO module hardware access (#neorv32_gpio_t) */
-#define NEORV32_GPIO ((volatile neorv32_gpio_t*) (NEORV32_GPIO_BASE))
+#define NEORV32_GPIO ((neorv32_gpio_t*) (NEORV32_GPIO_BASE))
 /**@}*/
 
 
