@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_pwm_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_PWM)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_PWM)) {
     return 1;
   }
   else {

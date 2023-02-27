@@ -307,7 +307,7 @@ int main(void) {
   if (neorv32_mtime_available()) {
     NEORV32_MTIME.TIME_LO = 0;
     NEORV32_MTIME.TIME_HI = 0;
-    NEORV32_MTIME.TIMECMP_LO = NEORV32_SYSINFO.CLK/4;
+    NEORV32_MTIME.TIMECMP_LO = NEORV32_SYSINFO->CLK/4;
     NEORV32_MTIME.TIMECMP_HI = 0;
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate MTIME IRQ source
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
@@ -321,22 +321,22 @@ int main(void) {
                      "BLDV: "__DATE__"\nHWV:  ");
   PRINT_XNUM(neorv32_cpu_csr_read(CSR_MIMPID));
   PRINT_TEXT("\nCID:  ");
-  PRINT_XNUM(NEORV32_SYSINFO.CUSTOM_ID);
+  PRINT_XNUM(NEORV32_SYSINFO->CUSTOM_ID);
   PRINT_TEXT("\nCLK:  ");
-  PRINT_XNUM(NEORV32_SYSINFO.CLK);
+  PRINT_XNUM(NEORV32_SYSINFO->CLK);
   PRINT_TEXT("\nISA:  ");
   PRINT_XNUM(neorv32_cpu_csr_read(CSR_MISA));
   PRINT_TEXT(" + ");
   PRINT_XNUM(neorv32_cpu_csr_read(CSR_MXISA));
   PRINT_TEXT("\nSOC:  ");
-  PRINT_XNUM(NEORV32_SYSINFO.SOC);
+  PRINT_XNUM(NEORV32_SYSINFO->SOC);
   PRINT_TEXT("\nIMEM: ");
-  PRINT_XNUM(NEORV32_SYSINFO.IMEM_SIZE); PRINT_TEXT(" bytes @");
-  PRINT_XNUM(NEORV32_SYSINFO.ISPACE_BASE);
+  PRINT_XNUM(NEORV32_SYSINFO->IMEM_SIZE); PRINT_TEXT(" bytes @");
+  PRINT_XNUM(NEORV32_SYSINFO->ISPACE_BASE);
   PRINT_TEXT("\nDMEM: ");
-  PRINT_XNUM(NEORV32_SYSINFO.DMEM_SIZE);
+  PRINT_XNUM(NEORV32_SYSINFO->DMEM_SIZE);
   PRINT_TEXT(" bytes @");
-  PRINT_XNUM(NEORV32_SYSINFO.DSPACE_BASE);
+  PRINT_XNUM(NEORV32_SYSINFO->DSPACE_BASE);
 
 
   // ------------------------------------------------
@@ -347,7 +347,7 @@ int main(void) {
   if (neorv32_mtime_available()) {
 
     PRINT_TEXT("\n\nAutoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
-    uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO.CLK);
+    uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO->CLK);
 
     while(1){
 
@@ -462,7 +462,7 @@ void start_app(int boot_xip) {
   // deactivate global IRQs
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
-  register uint32_t app_base = NEORV32_SYSINFO.ISPACE_BASE; // default = start at beginning of IMEM
+  register uint32_t app_base = NEORV32_SYSINFO->ISPACE_BASE; // default = start at beginning of IMEM
 #if (XIP_EN != 0)
   if (boot_xip) {
     app_base = (uint32_t)(XIP_PAGE_BASE_ADDR + SPI_BOOT_BASE_ADDR); // start from XIP mapped address
@@ -502,7 +502,7 @@ void __attribute__((__interrupt__)) bootloader_trap_handler(void) {
 #endif
     // set time for next IRQ
     if (neorv32_mtime_available()) {
-      neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (NEORV32_SYSINFO.CLK/4));
+      neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (NEORV32_SYSINFO->CLK/4));
     }
   }
 
@@ -553,7 +553,7 @@ void get_exe(int src) {
     PRINT_TEXT(")...\n");
 
     // flash checks
-    if (((NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IO_SPI)) == 0) || // SPI module not implemented?
+    if (((NEORV32_SYSINFO->SOC & (1<<SYSINFO_SOC_IO_SPI)) == 0) || // SPI module not implemented?
        (spi_flash_check() != 0)) { // check if flash ready (or available at all)
       system_error(ERROR_FLASH);
     }
@@ -571,7 +571,7 @@ void get_exe(int src) {
   uint32_t check = get_exe_word(src, addr + EXE_OFFSET_CHECKSUM); // complement sum checksum
 
   // transfer program data
-  uint32_t *pnt = (uint32_t*)NEORV32_SYSINFO.ISPACE_BASE;
+  uint32_t *pnt = (uint32_t*)NEORV32_SYSINFO->ISPACE_BASE;
   uint32_t checksum = 0;
   uint32_t d = 0, i = 0;
   addr = addr + EXE_OFFSET_DATA;
@@ -641,7 +641,7 @@ void save_exe(void) {
 
   // store data from instruction memory and update checksum
   uint32_t checksum = 0;
-  uint32_t *pnt = (uint32_t*)NEORV32_SYSINFO.ISPACE_BASE;
+  uint32_t *pnt = (uint32_t*)NEORV32_SYSINFO->ISPACE_BASE;
   addr = addr + EXE_OFFSET_DATA;
   uint32_t i = 0;
   while (i < size) { // in chunks of 4 bytes

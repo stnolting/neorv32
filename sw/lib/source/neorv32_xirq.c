@@ -59,7 +59,7 @@ static void __neorv32_xirq_dummy_handler(void);
  **************************************************************************/
 int neorv32_xirq_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_XIRQ)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_XIRQ)) {
     return 1;
   }
   else {

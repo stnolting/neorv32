@@ -152,9 +152,9 @@ static void prvSetupHardware( void )
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // check clock tick configuration
-  if (NEORV32_SYSINFO.CLK != (uint32_t)configCPU_CLOCK_HZ) {
+  if (NEORV32_SYSINFO->CLK != (uint32_t)configCPU_CLOCK_HZ) {
     neorv32_uart0_printf("Warning! Incorrect 'configCPU_CLOCK_HZ' configuration!\n"
-                         "Is %u Hz but should be %u Hz.\n\n", (uint32_t)configCPU_CLOCK_HZ, NEORV32_SYSINFO.CLK);
+                         "Is %u Hz but should be %u Hz.\n\n", (uint32_t)configCPU_CLOCK_HZ, NEORV32_SYSINFO->CLK);
   }
 
   // check available hardware ISA extensions and compare with compiler flags

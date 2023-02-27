@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_gptmr_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_GPTMR)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPTMR)) {
     return 1;
   }
   else {

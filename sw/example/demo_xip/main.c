@@ -388,7 +388,7 @@ int main() {
 
 
   // warning if i-cache is not implemented
-  if ((NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_ICACHE)) == 0) {
+  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_ICACHE)) == 0) {
     neorv32_uart0_printf("WARNING! No instruction cache implemented! The XIP program might run very slow...\n");
   }
 

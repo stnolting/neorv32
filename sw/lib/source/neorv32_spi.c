@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_spi_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_SPI)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SPI)) {
     return 1;
   }
   else {
@@ -101,7 +101,7 @@ uint32_t neorv32_spi_get_clock_speed(void) {
   uint32_t clock_div = (ctrl >> SPI_CTRL_CDIV0) & 0xf;
 
   uint32_t tmp = 2 * PRSC_LUT[prsc_sel] * clock_div;
-  return NEORV32_SYSINFO.CLK / tmp;
+  return NEORV32_SYSINFO->CLK / tmp;
 }
 
 

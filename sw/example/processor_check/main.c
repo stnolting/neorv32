@@ -56,7 +56,7 @@
 //** Unreachable word-aligned address */
 #define ADDR_UNREACHABLE    (IO_BASE_ADDRESS-4)
 //**Read-only word-aligned address */
-#define ADDR_READONLY       ((uint32_t)&NEORV32_SYSINFO.CLK)
+#define ADDR_READONLY       ((uint32_t)&NEORV32_SYSINFO->CLK)
 //** external memory base address */
 #define EXT_MEM_BASE        (0xF0000000)
 /**@}*/
@@ -431,7 +431,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Ext. memory access (@0x%x) ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_EXT)) {
     cnt_test++;
 
     // clear scratch CSR
@@ -634,7 +634,7 @@ int main() {
   PRINT_STANDARD("[%i] BREAK EXC ", cnt_test);
 
   // skip on real hardware since ebreak will make problems when running this test program via gdb
-  if (NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IS_SIM)) {
+  if (NEORV32_SYSINFO->SOC & (1<<SYSINFO_SOC_IS_SIM)) {
     cnt_test++;
 
     asm volatile ("ebreak");
