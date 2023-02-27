@@ -1247,7 +1247,7 @@ typedef struct __attribute__((packed,aligned(4))) {
  **************************************************************************/
 /**@{*/
 /** NEOLED module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL; /**< offset 0: control register */
   uint32_t DATA; /**< offset 4: data register (#NEORV32_NEOLED_CTRL_enum) */
 } neorv32_neoled_t;
@@ -1256,7 +1256,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_NEOLED_BASE (0xFFFFFFD8U)
 
 /** NEOLED module hardware access (#neorv32_neoled_t) */
-#define NEORV32_NEOLED (*((volatile neorv32_neoled_t*) (NEORV32_NEOLED_BASE)))
+#define NEORV32_NEOLED ((neorv32_neoled_t*) (NEORV32_NEOLED_BASE))
 
 /** NEOLED control register bits */
 enum NEORV32_NEOLED_CTRL_enum {
