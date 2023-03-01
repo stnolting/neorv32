@@ -93,10 +93,10 @@ int main() {
                        "      simple data conversion functions using four memory-mapped registers.\n\n");
 
   neorv32_uart0_printf("Default CFS memory-mapped registers:\n"
-                       " * NEORV32_CFS.REG[0] (r/w): convert binary to gray code\n"
-                       " * NEORV32_CFS.REG[1] (r/w): convert gray to binary code\n"
-                       " * NEORV32_CFS.REG[2] (r/w): bit reversal\n"
-                       " * NEORV32_CFS.REG[3] (r/w): byte swap\n"
+                       " * NEORV32_CFS->REG[0] (r/w): convert binary to gray code\n"
+                       " * NEORV32_CFS->REG[1] (r/w): convert gray to binary code\n"
+                       " * NEORV32_CFS->REG[2] (r/w): bit reversal\n"
+                       " * NEORV32_CFS->REG[3] (r/w): byte swap\n"
                        "The remaining 60 CFS registers are unused and will return 0 when read.\n");
 
 
@@ -104,29 +104,29 @@ int main() {
   neorv32_uart0_printf("\n--- CFS 'binary to gray' function ---\n");
   for (i=0; i<TESTCASES; i++) {
     tmp = xorshift32(); // get random test data
-    NEORV32_CFS.REG[0] = tmp; // write to CFS memory-mapped register 0
-    neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS.REG[0]); // read from CFS memory-mapped register 0
+    NEORV32_CFS->REG[0] = tmp; // write to CFS memory-mapped register 0
+    neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS->REG[0]); // read from CFS memory-mapped register 0
   }
 
   neorv32_uart0_printf("\n--- CFS 'gray to binary' function ---\n");
   for (i=0; i<TESTCASES; i++) {
     tmp = xorshift32(); // get random test data
-    NEORV32_CFS.REG[1] = tmp; // write to CFS memory-mapped register 1
-    neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS.REG[1]); // read from CFS memory-mapped register 1
+    NEORV32_CFS->REG[1] = tmp; // write to CFS memory-mapped register 1
+    neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS->REG[1]); // read from CFS memory-mapped register 1
   }
 
   neorv32_uart0_printf("\n--- CFS 'bit reversal' function ---\n");
   for (i=0; i<TESTCASES; i++) {
     tmp = xorshift32(); // get random test data
-    NEORV32_CFS.REG[2] = tmp; // write to CFS memory-mapped register 2
-    neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS.REG[2]); // read from CFS memory-mapped register 2
+    NEORV32_CFS->REG[2] = tmp; // write to CFS memory-mapped register 2
+    neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS->REG[2]); // read from CFS memory-mapped register 2
   }
 
   neorv32_uart0_printf("\n--- CFS 'byte swap' function ---\n");
   for (i=0; i<TESTCASES; i++) {
     tmp = xorshift32(); // get random test data
-    NEORV32_CFS.REG[3] = tmp; // write to CFS memory-mapped register 3
-    neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS.REG[3]); // read from CFS memory-mapped register 3
+    NEORV32_CFS->REG[3] = tmp; // write to CFS memory-mapped register 3
+    neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS->REG[3]); // read from CFS memory-mapped register 3
   }
 
 

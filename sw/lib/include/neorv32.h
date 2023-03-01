@@ -675,7 +675,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 // ############################################################################################################################
 /**@{*/
 /** on-chip debugger - debug module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   const uint32_t CODE[16];      /**< offset 0: park loop code ROM (r/-) */
   const uint32_t PBUF[4];       /**< offset 64: program buffer (r/-) */
   const uint32_t reserved1[12]; /**< reserved */
@@ -689,7 +689,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_DM_BASE (0XFFFFF800U)
 
 /** on-chip debugger debug module hardware access (#neorv32_dm_t) */
-#define NEORV32_DM (*((volatile neorv32_dm_t*) (NEORV32_DM_BASE)))
+#define NEORV32_DM ((neorv32_dm_t*) (NEORV32_DM_BASE))
 /**@}*/
 
 
@@ -699,34 +699,11 @@ typedef struct __attribute__((packed,aligned(4))) {
 
 
 /**********************************************************************//**
- * @name Helper macros for easy memory-mapped register access (DEPRECATED!)
- **************************************************************************/
-/**@{*/
-/** memory-mapped byte (8-bit) read/write register */
-#define IO_REG8  (volatile uint8_t*)
-/** memory-mapped half-word (16-bit) read/write register */
-#define IO_REG16 (volatile uint16_t*)
-/** memory-mapped word (32-bit) read/write register */
-#define IO_REG32 (volatile uint32_t*)
-/** memory-mapped double-word (64-bit) read/write register */
-#define IO_REG64 (volatile uint64_t*)
-/** memory-mapped byte (8-bit) read-only register */
-#define IO_ROM8  (const volatile uint8_t*)
-/** memory-mapped half-word (16-bit) read-only register */
-#define IO_ROM16 (const volatile uint16_t*)
-/** memory-mapped word (32-bit) read-only register */
-#define IO_ROM32 (const volatile uint32_t*)
-/** memory-mapped double-word (64-bit) read-only register */
-#define IO_ROM64 (const volatile uint64_t*)
-/**@}*/
-
-
-/**********************************************************************//**
  * @name IO Device: Custom Functions Subsystem (CFS)
  **************************************************************************/
 /**@{*/
 /** CFS module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t REG[64]; /**< offset 4*0..4*63: CFS register 0..63, user-defined */
 } neorv32_cfs_t;
 
@@ -734,7 +711,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_CFS_BASE (0xFFFFFE00U)
 
 /** CFS module hardware access (#neorv32_cfs_t) */
-#define NEORV32_CFS (*((volatile neorv32_cfs_t*) (NEORV32_CFS_BASE)))
+#define NEORV32_CFS ((neorv32_cfs_t*) (NEORV32_CFS_BASE))
 /**@}*/
 
 
@@ -743,7 +720,7 @@ typedef struct __attribute__((packed,aligned(4))) {
  **************************************************************************/
 /**@{*/
 /** SDI module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL; /**< offset 0: control register (#NEORV32_SDI_CTRL_enum) */
   uint32_t DATA; /**< offset 4: data register */
 } neorv32_sdi_t;
@@ -752,7 +729,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_SDI_BASE (0xFFFFFF00U)
 
 /** SDI module hardware access (#neorv32_sdi_t) */
-#define NEORV32_SDI (*((volatile neorv32_sdi_t*) (NEORV32_SDI_BASE)))
+#define NEORV32_SDI ((neorv32_sdi_t*) (NEORV32_SDI_BASE))
 
 /** SDI control register bits */
 enum NEORV32_SDI_CTRL_enum {
@@ -781,7 +758,7 @@ enum NEORV32_SDI_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** XIP module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;           /**< offset  0: control register (#NEORV32_XIP_CTRL_enum) */
   const uint32_t reserved; /**< offset  4: reserved */
   uint32_t DATA_LO;        /**< offset  8: SPI data register low */
@@ -792,7 +769,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_XIP_BASE (0xFFFFFF40U)
 
 /** XIP module hardware access (#neorv32_xip_t) */
-#define NEORV32_XIP (*((volatile neorv32_xip_t*) (NEORV32_XIP_BASE)))
+#define NEORV32_XIP ((neorv32_xip_t*) (NEORV32_XIP_BASE))
 
 /** XIP control/data register bits */
 enum NEORV32_XIP_CTRL_enum {
@@ -826,7 +803,7 @@ enum NEORV32_XIP_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** PWM module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;  /**< offset 0: control register (#NEORV32_PWM_CTRL_enum) */
   uint32_t DC[3]; /**< offset 4..12: duty cycle register 0..2 */
 } neorv32_pwm_t;
@@ -835,7 +812,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_PWM_BASE (0xFFFFFF50U)
 
 /** PWM module hardware access (#neorv32_pwm_t) */
-#define NEORV32_PWM (*((volatile neorv32_pwm_t*) (NEORV32_PWM_BASE)))
+#define NEORV32_PWM ((neorv32_pwm_t*) (NEORV32_PWM_BASE))
 
 /** PWM control register bits */
 enum NEORV32_PWM_CTRL_enum {
@@ -852,7 +829,7 @@ enum NEORV32_PWM_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** GPTMR module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;           /**< offset  0: control register (#NEORV32_GPTMR_CTRL_enum) */
   uint32_t THRES;          /**< offset  4: threshold register */
   uint32_t COUNT;          /**< offset  8: counter register */
@@ -863,7 +840,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_GPTMR_BASE (0xFFFFFF60U)
 
 /** GPTMR module hardware access (#neorv32_gptmr_t) */
-#define NEORV32_GPTMR (*((volatile neorv32_gptmr_t*) (NEORV32_GPTMR_BASE)))
+#define NEORV32_GPTMR ((neorv32_gptmr_t*) (NEORV32_GPTMR_BASE))
 
 /** GPTMR control/data register bits */
 enum NEORV32_GPTMR_CTRL_enum {
@@ -881,7 +858,7 @@ enum NEORV32_GPTMR_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** ONEWIRE module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL; /**< offset 0: control register (#NEORV32_ONEWIRE_CTRL_enum) */
   uint32_t DATA; /**< offset 4: transmission data register (#NEORV32_ONEWIRE_DATA_enum) */
 } neorv32_onewire_t;
@@ -890,7 +867,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_ONEWIRE_BASE (0xFFFFFF70U)
 
 /** ONEWIRE module hardware access (#neorv32_onewire_t) */
-#define NEORV32_ONEWIRE (*((volatile neorv32_onewire_t*) (NEORV32_ONEWIRE_BASE)))
+#define NEORV32_ONEWIRE ((neorv32_onewire_t*) (NEORV32_ONEWIRE_BASE))
 
 /** ONEWIRE control register bits */
 enum NEORV32_ONEWIRE_CTRL_enum {
@@ -927,7 +904,7 @@ enum NEORV32_ONEWIRE_DATA_enum {
  **************************************************************************/
 /**@{*/
 /** BUSKEEPER module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t       CTRL;      /**< offset 0: control register (#NEORV32_BUSKEEPER_CTRL_enum) */
   const uint32_t reserved ; /**< offset 4: reserved */
 } neorv32_buskeeper_t;
@@ -936,7 +913,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_BUSKEEPER_BASE (0xFFFFFF78U)
 
 /** BUSKEEPER module hardware access (#neorv32_buskeeper_t) */
-#define NEORV32_BUSKEEPER (*((volatile neorv32_buskeeper_t*) (NEORV32_BUSKEEPER_BASE)))
+#define NEORV32_BUSKEEPER ((neorv32_buskeeper_t*) (NEORV32_BUSKEEPER_BASE))
 
 /** BUSKEEPER control/data register bits */
 enum NEORV32_BUSKEEPER_CTRL_enum {
@@ -951,7 +928,7 @@ enum NEORV32_BUSKEEPER_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** XIRQ module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t       IER;      /**< offset 0:  IRQ input enable register */
   uint32_t       IPR;      /**< offset 4:  pending IRQ register /ack/clear */
   uint32_t       SCR;      /**< offset 8:  interrupt source register */
@@ -962,7 +939,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_XIRQ_BASE (0xFFFFFF80U)
 
 /** XIRQ module hardware access (#neorv32_xirq_t) */
-#define NEORV32_XIRQ (*((volatile neorv32_xirq_t*) (NEORV32_XIRQ_BASE)))
+#define NEORV32_XIRQ ((neorv32_xirq_t*) (NEORV32_XIRQ_BASE))
 /**@}*/
 
 
@@ -971,7 +948,7 @@ typedef struct __attribute__((packed,aligned(4))) {
  **************************************************************************/
 /**@{*/
 /** MTIME module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t TIME_LO;    /**< offset 0:  time register low word */
   uint32_t TIME_HI;    /**< offset 4:  time register high word */
   uint32_t TIMECMP_LO; /**< offset 8:  compare register low word */
@@ -982,7 +959,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_MTIME_BASE (0xFFFFFF90U)
 
 /** MTIME module hardware access (#neorv32_mtime_t) */
-#define NEORV32_MTIME (*((volatile neorv32_mtime_t*) (NEORV32_MTIME_BASE)))
+#define NEORV32_MTIME ((neorv32_mtime_t*) (NEORV32_MTIME_BASE))
 /**@}*/
 
 
@@ -1077,7 +1054,7 @@ enum NEORV32_UART_DATA_enum {
  **************************************************************************/
 /**@{*/
 /** SPI module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;  /**< offset 0: control register (#NEORV32_SPI_CTRL_enum) */
   uint32_t DATA;  /**< offset 4: data register */
 } neorv32_spi_t;
@@ -1086,7 +1063,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_SPI_BASE (0xFFFFFFA8U)
 
 /** SPI module hardware access (#neorv32_spi_t) */
-#define NEORV32_SPI (*((volatile neorv32_spi_t*) (NEORV32_SPI_BASE)))
+#define NEORV32_SPI ((neorv32_spi_t*) (NEORV32_SPI_BASE))
 
 /** SPI control register bits */
 enum NEORV32_SPI_CTRL_enum {
@@ -1125,7 +1102,7 @@ enum NEORV32_SPI_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** TWI module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;  /**< offset 0: control register (#NEORV32_TWI_CTRL_enum) */
   uint32_t DATA;  /**< offset 4: data register (#NEORV32_TWI_DATA_enum) */
 } neorv32_twi_t;
@@ -1134,7 +1111,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_TWI_BASE (0xFFFFFFB0U)
 
 /** TWI module hardware access (#neorv32_twi_t) */
-#define NEORV32_TWI (*((volatile neorv32_twi_t*) (NEORV32_TWI_BASE)))
+#define NEORV32_TWI ((neorv32_twi_t*) (NEORV32_TWI_BASE))
 
 /** TWI control register bits */
 enum NEORV32_TWI_CTRL_enum {
@@ -1169,7 +1146,7 @@ enum NEORV32_TWI_DATA_enum {
  **************************************************************************/
 /**@{*/
 /** TRNG module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;  /**< offset 0: control register (#NEORV32_TRNG_CTRL_enum) */
 } neorv32_trng_t;
 
@@ -1177,7 +1154,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_TRNG_BASE (0xFFFFFFB8U)
 
 /** TRNG module hardware access (#neorv32_trng_t) */
-#define NEORV32_TRNG (*((volatile neorv32_trng_t*) (NEORV32_TRNG_BASE)))
+#define NEORV32_TRNG ((neorv32_trng_t*) (NEORV32_TRNG_BASE))
 
 /** TRNG control/data register bits */
 enum NEORV32_TRNG_CTRL_enum {
@@ -1197,7 +1174,7 @@ enum NEORV32_TRNG_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** WDT module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL; /**< offset 0: control register (#NEORV32_WDT_CTRL_enum) */
 } neorv32_wdt_t;
 
@@ -1205,7 +1182,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_WDT_BASE (0xFFFFFFBCU)
 
 /** WDT module hardware access (#neorv32_wdt_t) */
-#define NEORV32_WDT (*((volatile neorv32_wdt_t*) (NEORV32_WDT_BASE)))
+#define NEORV32_WDT ((neorv32_wdt_t*) (NEORV32_WDT_BASE))
 
 /** WDT control register bits */
 enum NEORV32_WDT_CTRL_enum {
@@ -1227,7 +1204,7 @@ enum NEORV32_WDT_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** GPIO module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   const uint32_t INPUT_LO;  /**< offset 0:  parallel input port lower 32-bit, read-only */
   const uint32_t INPUT_HI;  /**< offset 4:  parallel input port upper 32-bit, read-only */
   uint32_t       OUTPUT_LO; /**< offset 8:  parallel output port lower 32-bit */
@@ -1238,7 +1215,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_GPIO_BASE (0xFFFFFFC0U)
 
 /** GPIO module hardware access (#neorv32_gpio_t) */
-#define NEORV32_GPIO (*((volatile neorv32_gpio_t*) (NEORV32_GPIO_BASE)))
+#define NEORV32_GPIO ((neorv32_gpio_t*) (NEORV32_GPIO_BASE))
 /**@}*/
 
 
@@ -1247,7 +1224,7 @@ typedef struct __attribute__((packed,aligned(4))) {
  **************************************************************************/
 /**@{*/
 /** NEOLED module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL; /**< offset 0: control register */
   uint32_t DATA; /**< offset 4: data register (#NEORV32_NEOLED_CTRL_enum) */
 } neorv32_neoled_t;
@@ -1256,7 +1233,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_NEOLED_BASE (0xFFFFFFD8U)
 
 /** NEOLED module hardware access (#neorv32_neoled_t) */
-#define NEORV32_NEOLED (*((volatile neorv32_neoled_t*) (NEORV32_NEOLED_BASE)))
+#define NEORV32_NEOLED ((neorv32_neoled_t*) (NEORV32_NEOLED_BASE))
 
 /** NEOLED control register bits */
 enum NEORV32_NEOLED_CTRL_enum {
@@ -1304,7 +1281,7 @@ enum NEORV32_NEOLED_CTRL_enum {
  **************************************************************************/
 /**@{*/
 /** SYSINFO module prototype - whole module is read-only */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   const uint32_t CLK;         /**< offset 0:  clock speed in Hz */
   const uint32_t CUSTOM_ID;   /**< offset 4:  custom user-defined ID (via top generic) */
   const uint32_t SOC;         /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
@@ -1319,9 +1296,9 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_SYSINFO_BASE (0xFFFFFFE0U)
 
 /** SYSINFO module hardware access (#neorv32_sysinfo_t) */
-#define NEORV32_SYSINFO (*((volatile neorv32_sysinfo_t*) (NEORV32_SYSINFO_BASE)))
+#define NEORV32_SYSINFO ((neorv32_sysinfo_t*) (NEORV32_SYSINFO_BASE))
 
-/** NEORV32_SYSINFO.SOC (r/-): Implemented processor devices/features */
+/** NEORV32_SYSINFO->SOC (r/-): Implemented processor devices/features */
 enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_BOOTLOADER     =  0, /**< SYSINFO_FEATURES  (0) (r/-): Bootloader implemented when 1 (via INT_BOOTLOADER_EN generic) */
   SYSINFO_SOC_MEM_EXT        =  1, /**< SYSINFO_FEATURES  (1) (r/-): External bus interface implemented when 1 (via MEM_EXT_EN generic) */
@@ -1351,7 +1328,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_ONEWIRE     = 31  /**< SYSINFO_FEATURES (31) (r/-): 1-wire interface controller implemented when 1 (via IO_ONEWIRE_EN generic) */
 };
 
-/** NEORV32_SYSINFO.CACHE (r/-): Cache configuration */
+/** NEORV32_SYSINFO->CACHE (r/-): Cache configuration */
  enum NEORV32_SYSINFO_CACHE_enum {
   SYSINFO_CACHE_IC_BLOCK_SIZE_0    =  0, /**< SYSINFO_CACHE  (0) (r/-): i-cache: log2(Block size in bytes), bit 0 (via ICACHE_BLOCK_SIZE generic) */
   SYSINFO_CACHE_IC_BLOCK_SIZE_1    =  1, /**< SYSINFO_CACHE  (1) (r/-): i-cache: log2(Block size in bytes), bit 1 (via ICACHE_BLOCK_SIZE generic) */

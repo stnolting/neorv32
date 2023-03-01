@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_spi_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_SPI)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SPI)) {
     return 1;
   }
   else {
@@ -72,7 +72,7 @@ int neorv32_spi_available(void) {
  **************************************************************************/
 void neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, int data_size, int irq_config) {
 
-  NEORV32_SPI.CTRL = 0; // reset
+  NEORV32_SPI->CTRL = 0; // reset
 
   uint32_t tmp = 0;
   tmp |= (uint32_t)(1            & 0x01) << SPI_CTRL_EN;
@@ -83,7 +83,7 @@ void neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, int 
   tmp |= (uint32_t)(cdiv         & 0x0f) << SPI_CTRL_CDIV0;
   tmp |= (uint32_t)(irq_config   & 0x03) << SPI_CTRL_IRQ0;
 
-  NEORV32_SPI.CTRL = tmp;
+  NEORV32_SPI->CTRL = tmp;
 }
 
 
@@ -96,12 +96,12 @@ uint32_t neorv32_spi_get_clock_speed(void) {
 
   const uint32_t PRSC_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
 
-  uint32_t ctrl = NEORV32_SPI.CTRL;
+  uint32_t ctrl = NEORV32_SPI->CTRL;
   uint32_t prsc_sel = (ctrl >> SPI_CTRL_PRSC0) & 0x7;
   uint32_t clock_div = (ctrl >> SPI_CTRL_CDIV0) & 0xf;
 
   uint32_t tmp = 2 * PRSC_LUT[prsc_sel] * clock_div;
-  return NEORV32_SYSINFO.CLK / tmp;
+  return NEORV32_SYSINFO->CLK / tmp;
 }
 
 
@@ -110,7 +110,7 @@ uint32_t neorv32_spi_get_clock_speed(void) {
  **************************************************************************/
 void neorv32_spi_disable(void) {
 
-  NEORV32_SPI.CTRL &= ~((uint32_t)(1 << SPI_CTRL_EN));
+  NEORV32_SPI->CTRL &= ~((uint32_t)(1 << SPI_CTRL_EN));
 }
 
 
@@ -119,7 +119,7 @@ void neorv32_spi_disable(void) {
  **************************************************************************/
 void neorv32_spi_enable(void) {
 
-  NEORV32_SPI.CTRL |= ((uint32_t)(1 << SPI_CTRL_EN));
+  NEORV32_SPI->CTRL |= ((uint32_t)(1 << SPI_CTRL_EN));
 }
 
 
@@ -130,7 +130,7 @@ void neorv32_spi_enable(void) {
  **************************************************************************/
 int neorv32_spi_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_SPI.CTRL >> SPI_CTRL_FIFO_LSB) & 0x0f;
+  uint32_t tmp = (NEORV32_SPI->CTRL >> SPI_CTRL_FIFO_LSB) & 0x0f;
   return (int)(1 << tmp);
 }
 
@@ -144,10 +144,10 @@ int neorv32_spi_get_fifo_depth(void) {
  **************************************************************************/
 void neorv32_spi_cs_en(int cs) {
 
-  uint32_t tmp = NEORV32_SPI.CTRL;
+  uint32_t tmp = NEORV32_SPI->CTRL;
   tmp &= ~(0xf << SPI_CTRL_CS_SEL0); // clear old configuration
   tmp |= (1 << SPI_CTRL_CS_EN) | ((cs & 7) << SPI_CTRL_CS_SEL0); // set new configuration
-  NEORV32_SPI.CTRL = tmp;
+  NEORV32_SPI->CTRL = tmp;
 }
 
 
@@ -157,7 +157,7 @@ void neorv32_spi_cs_en(int cs) {
  * @note The SPI chip select output lines are HIGH when deactivated.
  **************************************************************************/
 void neorv32_spi_cs_dis(void) {
-  NEORV32_SPI.CTRL &= ~(1 << SPI_CTRL_CS_EN);
+  NEORV32_SPI->CTRL &= ~(1 << SPI_CTRL_CS_EN);
 }
 
 
@@ -171,10 +171,10 @@ void neorv32_spi_cs_dis(void) {
  **************************************************************************/
 uint32_t neorv32_spi_trans(uint32_t tx_data) {
 
-  NEORV32_SPI.DATA = tx_data; // trigger transfer
-  while((NEORV32_SPI.CTRL & (1<<SPI_CTRL_BUSY)) != 0); // wait for current transfer to finish
+  NEORV32_SPI->DATA = tx_data; // trigger transfer
+  while((NEORV32_SPI->CTRL & (1<<SPI_CTRL_BUSY)) != 0); // wait for current transfer to finish
 
-  return NEORV32_SPI.DATA;
+  return NEORV32_SPI->DATA;
 }
 
 
@@ -185,7 +185,7 @@ uint32_t neorv32_spi_trans(uint32_t tx_data) {
  **************************************************************************/
 void neorv32_spi_put_nonblocking(uint32_t tx_data) {
 
-  NEORV32_SPI.DATA = tx_data; // trigger transfer
+  NEORV32_SPI->DATA = tx_data; // trigger transfer
 }
 
 
@@ -196,7 +196,7 @@ void neorv32_spi_put_nonblocking(uint32_t tx_data) {
  **************************************************************************/
 uint32_t neorv32_spi_get_nonblocking(void) {
 
-  return NEORV32_SPI.DATA;
+  return NEORV32_SPI->DATA;
 }
 
 
@@ -207,7 +207,7 @@ uint32_t neorv32_spi_get_nonblocking(void) {
  **************************************************************************/
 int neorv32_spi_busy(void) {
 
-  if ((NEORV32_SPI.CTRL & (1<<SPI_CTRL_BUSY)) != 0) {
+  if ((NEORV32_SPI->CTRL & (1<<SPI_CTRL_BUSY)) != 0) {
     return 1;
   }
   else {

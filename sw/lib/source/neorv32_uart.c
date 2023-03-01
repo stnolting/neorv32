@@ -94,7 +94,7 @@ int getchar(void) {
  **************************************************************************/
 int neorv32_uart0_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_UART0)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART0)) {
     return 1;
   }
   else {
@@ -119,7 +119,7 @@ void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 
   NEORV32_UART0.CTRL = 0; // reset
 
-  uint32_t clock = NEORV32_SYSINFO.CLK;
+  uint32_t clock = NEORV32_SYSINFO->CLK;
   uint16_t i = 0; // BAUD rate divisor
   uint8_t p = 0; // initial prsc = CLK/2
 
@@ -472,7 +472,7 @@ int neorv32_uart0_scan(char *buffer, int max_size, int echo) {
  **************************************************************************/
 int neorv32_uart1_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_UART1)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1)) {
     return 1;
   }
   else {
@@ -497,7 +497,7 @@ void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 
   NEORV32_UART1.CTRL = 0; // reset
 
-  uint32_t clock = NEORV32_SYSINFO.CLK;
+  uint32_t clock = NEORV32_SYSINFO->CLK;
   uint16_t i = 0; // BAUD rate divisor
   uint8_t p = 0; // initial prsc = CLK/2
 

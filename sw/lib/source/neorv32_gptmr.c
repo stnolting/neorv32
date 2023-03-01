@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_gptmr_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_GPTMR)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPTMR)) {
     return 1;
   }
   else {
@@ -69,16 +69,16 @@ int neorv32_gptmr_available(void) {
  **************************************************************************/
 void neorv32_gptmr_setup(int prsc, int mode, uint32_t threshold) {
 
-  NEORV32_GPTMR.CTRL  = 0; // reset
-  NEORV32_GPTMR.THRES = threshold;
-  NEORV32_GPTMR.COUNT = 0; // reset counter
+  NEORV32_GPTMR->CTRL  = 0; // reset
+  NEORV32_GPTMR->THRES = threshold;
+  NEORV32_GPTMR->COUNT = 0; // reset counter
 
   uint32_t tmp = 0;
   tmp |= (uint32_t)(1    & 0x01) << GPTMR_CTRL_EN;
   tmp |= (uint32_t)(prsc & 0x07) << GPTMR_CTRL_PRSC0;
   tmp |= (uint32_t)(mode & 0x01) << GPTMR_CTRL_MODE;
 
-  NEORV32_GPTMR.CTRL = tmp;
+  NEORV32_GPTMR->CTRL = tmp;
 }
 
 
@@ -87,7 +87,7 @@ void neorv32_gptmr_setup(int prsc, int mode, uint32_t threshold) {
  **************************************************************************/
 void neorv32_gptmr_disable(void) {
 
-  NEORV32_GPTMR.CTRL &= ~((uint32_t)(1 << GPTMR_CTRL_EN));
+  NEORV32_GPTMR->CTRL &= ~((uint32_t)(1 << GPTMR_CTRL_EN));
 }
 
 
@@ -96,7 +96,7 @@ void neorv32_gptmr_disable(void) {
  **************************************************************************/
 void neorv32_gptmr_enable(void) {
 
-  NEORV32_GPTMR.CTRL |= ((uint32_t)(1 << GPTMR_CTRL_EN));
+  NEORV32_GPTMR->CTRL |= ((uint32_t)(1 << GPTMR_CTRL_EN));
 }
 
 
@@ -105,5 +105,5 @@ void neorv32_gptmr_enable(void) {
  **************************************************************************/
 void neorv32_gptmr_restart(void) {
 
-  NEORV32_GPTMR.COUNT = 0;
+  NEORV32_GPTMR->COUNT = 0;
 }

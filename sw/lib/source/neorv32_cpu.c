@@ -184,7 +184,7 @@ void neorv32_cpu_set_minstret(uint64_t value) {
  **************************************************************************/
 void neorv32_cpu_delay_ms(uint32_t time_ms) {
 
-  uint32_t clock = NEORV32_SYSINFO.CLK; // clock ticks per second
+  uint32_t clock = NEORV32_SYSINFO->CLK; // clock ticks per second
   clock = clock / 1000; // clock ticks per ms
   uint64_t wait_cycles = ((uint64_t)clock) * ((uint64_t)time_ms);
   uint64_t tmp = 0;
@@ -200,7 +200,7 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
 
   // use MTIME machine timer
   // -------------------------------------------
-  else if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_MTIME)) { // MTIME timer available?
+  else if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) { // MTIME timer available?
 
     tmp = neorv32_mtime_get_time() + wait_cycles;
     while (neorv32_mtime_get_time() < tmp);
@@ -239,7 +239,7 @@ uint32_t neorv32_cpu_get_clk_from_prsc(int prsc) {
   }
 
   uint32_t res = 0;
-  uint32_t clock = NEORV32_SYSINFO.CLK; // SoC main clock in Hz
+  uint32_t clock = NEORV32_SYSINFO->CLK; // SoC main clock in Hz
 
   switch(prsc & 7) {
     case CLK_PRSC_2    : res = clock/2    ; break;

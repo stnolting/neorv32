@@ -56,7 +56,7 @@
 //** Unreachable word-aligned address */
 #define ADDR_UNREACHABLE    (IO_BASE_ADDRESS-4)
 //**Read-only word-aligned address */
-#define ADDR_READONLY       ((uint32_t)&NEORV32_SYSINFO.CLK)
+#define ADDR_READONLY       ((uint32_t)&NEORV32_SYSINFO->CLK)
 //** external memory base address */
 #define EXT_MEM_BASE        (0xF0000000)
 /**@}*/
@@ -431,7 +431,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Ext. memory access (@0x%x) ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_MEM_EXT)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_EXT)) {
     cnt_test++;
 
     // clear scratch CSR
@@ -634,7 +634,7 @@ int main() {
   PRINT_STANDARD("[%i] BREAK EXC ", cnt_test);
 
   // skip on real hardware since ebreak will make problems when running this test program via gdb
-  if (NEORV32_SYSINFO.SOC & (1<<SYSINFO_SOC_IS_SIM)) {
+  if (NEORV32_SYSINFO->SOC & (1<<SYSINFO_SOC_IS_SIM)) {
     cnt_test++;
 
     asm volatile ("ebreak");
@@ -690,7 +690,7 @@ int main() {
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) && // load bus access error exception
       (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNREACHABLE) &&
       (tmp_b == 0xcafe1230) && // make sure dest. reg is not updated
-      (NEORV32_BUSKEEPER.CTRL = tmp_a)) { // buskeeper: error flag + timeout error
+      (NEORV32_BUSKEEPER->CTRL = tmp_a)) { // buskeeper: error flag + timeout error
     test_ok();
   }
   else {
@@ -739,7 +739,7 @@ int main() {
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && // store bus access error exception
       (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_READONLY) &&
-      (NEORV32_BUSKEEPER.CTRL == tmp_a)) { // buskeeper: error flag + device error
+      (NEORV32_BUSKEEPER->CTRL == tmp_a)) { // buskeeper: error flag + device error
     test_ok();
   }
   else {
@@ -947,7 +947,7 @@ int main() {
   asm volatile ("wfi");
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
-  NEORV32_WDT.CTRL = 0;
+  NEORV32_WDT->CTRL = 0;
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == WDT_TRAP_CODE) {
     test_ok();
@@ -1231,8 +1231,8 @@ int main() {
     test_fail();
   }
 
-  NEORV32_XIRQ.IER = 0;
-  NEORV32_XIRQ.IPR = -1;
+  NEORV32_XIRQ->IER = 0;
+  NEORV32_XIRQ->IPR = -1;
 
 
   // ----------------------------------------------------------
@@ -1660,7 +1660,7 @@ int main() {
  **************************************************************************/
 void sim_irq_trigger(uint32_t sel) {
 
-  *(IO_REG32 (0xFF000000)) = sel;
+  *((volatile uint32_t*) (0xFF000000)) = sel;
 }
 
 

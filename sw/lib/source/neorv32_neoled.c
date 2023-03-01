@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_neoled_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_NEOLED)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_NEOLED)) {
     return 1;
   }
   else {
@@ -71,7 +71,7 @@ int neorv32_neoled_available(void) {
  **************************************************************************/
 void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one) {
 
-  NEORV32_NEOLED.CTRL = 0; // reset
+  NEORV32_NEOLED->CTRL = 0; // reset
 
   // module enable
   uint32_t ct_enable = 1 << NEOLED_CTRL_EN;
@@ -89,7 +89,7 @@ void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero,
   uint32_t ct_t_one = (t_high_one & 0x1f) << NEOLED_CTRL_T_ONE_H_0;
 
   // set new configuration
-  NEORV32_NEOLED.CTRL = ct_enable | ct_prsc | ct_t_total | ct_t_zero | ct_t_one;
+  NEORV32_NEOLED->CTRL = ct_enable | ct_prsc | ct_t_total | ct_t_zero | ct_t_one;
 }
 
 
@@ -111,7 +111,7 @@ void neorv32_neoled_setup_ws2812(void) {
   const uint32_t CLK_PRSC_FACTOR_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
 
   // get base clock period in multiples of 0.5ns
-  uint32_t t_clock_x500ps = (2 * 1000 * 1000 * 1000) / NEORV32_SYSINFO.CLK;
+  uint32_t t_clock_x500ps = (2 * 1000 * 1000 * 1000) / NEORV32_SYSINFO->CLK;
 
   // compute LED interface timing parameters
   uint32_t t_base         = 0;
@@ -161,10 +161,10 @@ void neorv32_neoled_setup_ws2812(void) {
  **************************************************************************/
 void neorv32_neoled_set_mode(uint32_t mode) {
 
-  uint32_t ctrl = NEORV32_NEOLED.CTRL;
+  uint32_t ctrl = NEORV32_NEOLED->CTRL;
   ctrl &= ~(0b1 << NEOLED_CTRL_MODE); // clear current mode
   ctrl |= ((mode & 1) << NEOLED_CTRL_MODE); // set new mode
-  NEORV32_NEOLED.CTRL = ctrl;
+  NEORV32_NEOLED->CTRL = ctrl;
 }
 
 
@@ -174,7 +174,7 @@ void neorv32_neoled_set_mode(uint32_t mode) {
 void neorv32_neoled_strobe_blocking(void) {
 
   while(1) { // wait for FIFO full flag to clear
-    if ((NEORV32_NEOLED.CTRL & (1 << NEOLED_CTRL_TX_FULL)) == 0) {
+    if ((NEORV32_NEOLED->CTRL & (1 << NEOLED_CTRL_TX_FULL)) == 0) {
       break;
     }
   }
@@ -189,11 +189,11 @@ void neorv32_neoled_strobe_blocking(void) {
 void neorv32_neoled_strobe_nonblocking(void) {
 
   const uint32_t mask = 1 << NEOLED_CTRL_STROBE; // strobe bit
-  uint32_t ctrl = NEORV32_NEOLED.CTRL;
+  uint32_t ctrl = NEORV32_NEOLED->CTRL;
 
-  NEORV32_NEOLED.CTRL = ctrl | mask; // set strobe bit
-  NEORV32_NEOLED.DATA = 0; // send any data to trigger strobe command
-  NEORV32_NEOLED.CTRL = ctrl & (~mask); // clear strobe bit
+  NEORV32_NEOLED->CTRL = ctrl | mask; // set strobe bit
+  NEORV32_NEOLED->DATA = 0; // send any data to trigger strobe command
+  NEORV32_NEOLED->CTRL = ctrl & (~mask); // clear strobe bit
 }
 
 
@@ -202,7 +202,7 @@ void neorv32_neoled_strobe_nonblocking(void) {
  **************************************************************************/
 void neorv32_neoled_enable(void) {
 
-  NEORV32_NEOLED.CTRL |= ((uint32_t)(1 << NEOLED_CTRL_EN));
+  NEORV32_NEOLED->CTRL |= ((uint32_t)(1 << NEOLED_CTRL_EN));
 }
 
 
@@ -211,7 +211,7 @@ void neorv32_neoled_enable(void) {
  **************************************************************************/
 void neorv32_neoled_disable(void) {
 
-  NEORV32_NEOLED.CTRL &= ~((uint32_t)(1 << NEOLED_CTRL_EN));
+  NEORV32_NEOLED->CTRL &= ~((uint32_t)(1 << NEOLED_CTRL_EN));
 }
 
 
@@ -225,7 +225,7 @@ void neorv32_neoled_disable(void) {
 void neorv32_neoled_write_blocking(uint32_t data) {
 
   while(1) { // wait for FIFO full flag to clear
-    if ((NEORV32_NEOLED.CTRL & (1 << NEOLED_CTRL_TX_FULL)) == 0) {
+    if ((NEORV32_NEOLED->CTRL & (1 << NEOLED_CTRL_TX_FULL)) == 0) {
       break;
     }
   }
@@ -241,7 +241,7 @@ void neorv32_neoled_write_blocking(uint32_t data) {
  **************************************************************************/
 uint32_t neorv32_neoled_get_buffer_size(void) {
 
-  uint32_t tmp = NEORV32_NEOLED.CTRL;
+  uint32_t tmp = NEORV32_NEOLED->CTRL;
   tmp = tmp >> NEOLED_CTRL_BUFS_0;
   tmp = tmp & 0xf; // isolate buffer size bits
 

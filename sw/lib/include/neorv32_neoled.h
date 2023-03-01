@@ -65,7 +65,7 @@ uint32_t neorv32_neoled_get_buffer_size(void);
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_neoled_write_nonblocking(uint32_t data) {
 
-  NEORV32_NEOLED.DATA = data; // send new LED data
+  NEORV32_NEOLED->DATA = data; // send new LED data
 }
 
 #endif // neorv32_neoled_h

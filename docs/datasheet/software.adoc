@@ -492,7 +492,7 @@ The `crt0.S` start-up performs the following operations:
 . Call all _constructors_ (if there are any).
 . Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
 . If `main` returns:
-** Tnterrupts are disabled by clearing <<_mie>>.
+** Interrupts are disabled by clearing <<_mie>>.
 ** `mains`'s return value is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
 ** Call all _destructors_ (if there are any).
 ** An optional <<_after_main_handler>> is called (if defined at all).

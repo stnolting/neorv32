@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_onewire_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_ONEWIRE)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_ONEWIRE)) {
     return 1;
   }
   else {
@@ -69,15 +69,15 @@ int neorv32_onewire_available(void) {
 int neorv32_onewire_setup(uint32_t t_base) {
 
   // reset
-  NEORV32_ONEWIRE.CTRL = 0;
-  NEORV32_ONEWIRE.DATA = 0;
+  NEORV32_ONEWIRE->CTRL = 0;
+  NEORV32_ONEWIRE->DATA = 0;
 
   const uint32_t PRSC_LUT[4] = {2, 4, 8, 64}; // subset of system clock prescalers
 
   uint32_t t_tick;
   uint32_t clkdiv;
   uint32_t clk_prsc_sel   = 0; // initial prsc = CLK/2
-  uint32_t t_clock_x250ps = (4 * 1000 * 1000 * 1000U) / NEORV32_SYSINFO.CLK; // t_clock in multiples of 0.25 ns
+  uint32_t t_clock_x250ps = (4 * 1000 * 1000 * 1000U) / NEORV32_SYSINFO->CLK; // t_clock in multiples of 0.25 ns
 
   // find best base tick configuration
   while (1) {
@@ -101,7 +101,7 @@ int neorv32_onewire_setup(uint32_t t_base) {
   ctrl |= 1                     << ONEWIRE_CTRL_EN;      // module enable
   ctrl |= (clk_prsc_sel & 0x3)  << ONEWIRE_CTRL_PRSC0;   // clock prescaler
   ctrl |= ((clkdiv - 1) & 0xff) << ONEWIRE_CTRL_CLKDIV0; // clock divider
-  NEORV32_ONEWIRE.CTRL = ctrl;
+  NEORV32_ONEWIRE->CTRL = ctrl;
 
   return (int)((t_clock_x250ps / 4) * PRSC_LUT[clk_prsc_sel] * clkdiv);
 }
@@ -112,7 +112,7 @@ int neorv32_onewire_setup(uint32_t t_base) {
  **************************************************************************/
 void neorv32_onewire_enable(void) {
 
-  NEORV32_ONEWIRE.CTRL |= (1 << ONEWIRE_CTRL_EN);
+  NEORV32_ONEWIRE->CTRL |= (1 << ONEWIRE_CTRL_EN);
 }
 
 
@@ -121,7 +121,7 @@ void neorv32_onewire_enable(void) {
  **************************************************************************/
 void neorv32_onewire_disable(void) {
 
-  NEORV32_ONEWIRE.CTRL &= ~(1 << ONEWIRE_CTRL_EN);
+  NEORV32_ONEWIRE->CTRL &= ~(1 << ONEWIRE_CTRL_EN);
 }
 
 
@@ -132,7 +132,7 @@ void neorv32_onewire_disable(void) {
  **************************************************************************/
 int neorv32_onewire_sense(void) {
 
-  if (NEORV32_ONEWIRE.CTRL & (1 << ONEWIRE_CTRL_SENSE)) {
+  if (NEORV32_ONEWIRE->CTRL & (1 << ONEWIRE_CTRL_SENSE)) {
     return 1;
   }
   else {
@@ -156,7 +156,7 @@ int neorv32_onewire_sense(void) {
 int neorv32_onewire_busy(void) {
 
   // check busy flag
-  if (NEORV32_ONEWIRE.CTRL & (1 << ONEWIRE_CTRL_BUSY)) {
+  if (NEORV32_ONEWIRE->CTRL & (1 << ONEWIRE_CTRL_BUSY)) {
     return 1;
   }
   else {
@@ -173,7 +173,7 @@ int neorv32_onewire_busy(void) {
 void neorv32_onewire_reset(void) {
 
   // trigger reset-pulse operation
-  NEORV32_ONEWIRE.CTRL |= 1 << ONEWIRE_CTRL_TRIG_RST;
+  NEORV32_ONEWIRE->CTRL |= 1 << ONEWIRE_CTRL_TRIG_RST;
 }
 
 
@@ -187,7 +187,7 @@ void neorv32_onewire_reset(void) {
 int neorv32_onewire_reset_get_presence(void) {
 
   // check presence bit
-  if (NEORV32_ONEWIRE.CTRL & (1 << ONEWIRE_CTRL_PRESENCE)) {
+  if (NEORV32_ONEWIRE->CTRL & (1 << ONEWIRE_CTRL_PRESENCE)) {
     return 0;
   }
   else {
@@ -204,10 +204,10 @@ int neorv32_onewire_reset_get_presence(void) {
 void neorv32_onewire_read_bit(void) {
 
   // output all-one
-  NEORV32_ONEWIRE.DATA = 0xff;
+  NEORV32_ONEWIRE->DATA = 0xff;
 
   // trigger bit operation
-  NEORV32_ONEWIRE.CTRL |= (1 << ONEWIRE_CTRL_TRIG_BIT);
+  NEORV32_ONEWIRE->CTRL |= (1 << ONEWIRE_CTRL_TRIG_BIT);
 }
 
 
@@ -221,7 +221,7 @@ void neorv32_onewire_read_bit(void) {
 uint8_t neorv32_onewire_read_bit_get(void) {
 
   // return read bit
-  if (NEORV32_ONEWIRE.DATA & (1 << 7)) { // LSB first -> read bit is in MSB
+  if (NEORV32_ONEWIRE->DATA & (1 << 7)) { // LSB first -> read bit is in MSB
     return 1;
   }
   else {
@@ -241,14 +241,14 @@ void neorv32_onewire_write_bit(uint8_t bit) {
 
   // set replicated bit
   if (bit) {
-    NEORV32_ONEWIRE.DATA = 0xff;
+    NEORV32_ONEWIRE->DATA = 0xff;
   }
   else {
-    NEORV32_ONEWIRE.DATA = 0x00;
+    NEORV32_ONEWIRE->DATA = 0x00;
   }
 
   // trigger bit operation
-  NEORV32_ONEWIRE.CTRL |= (1 << ONEWIRE_CTRL_TRIG_BIT);
+  NEORV32_ONEWIRE->CTRL |= (1 << ONEWIRE_CTRL_TRIG_BIT);
 }
 
 
@@ -260,10 +260,10 @@ void neorv32_onewire_write_bit(uint8_t bit) {
 void neorv32_onewire_read_byte(void) {
 
   // output all-one
-  NEORV32_ONEWIRE.DATA = 0xff;
+  NEORV32_ONEWIRE->DATA = 0xff;
 
   //trigger byte operation
-  NEORV32_ONEWIRE.CTRL |= (1 << ONEWIRE_CTRL_TRIG_BYTE);
+  NEORV32_ONEWIRE->CTRL |= (1 << ONEWIRE_CTRL_TRIG_BYTE);
 }
 
 
@@ -277,7 +277,7 @@ void neorv32_onewire_read_byte(void) {
 uint8_t neorv32_onewire_read_byte_get(void) {
 
   // return read bit
-  return (uint8_t)(NEORV32_ONEWIRE.DATA);
+  return (uint8_t)(NEORV32_ONEWIRE->DATA);
 }
 
 
@@ -291,10 +291,10 @@ uint8_t neorv32_onewire_read_byte_get(void) {
 void neorv32_onewire_write_byte(uint8_t byte) {
 
   // TX data
-  NEORV32_ONEWIRE.DATA = (uint32_t)byte;
+  NEORV32_ONEWIRE->DATA = (uint32_t)byte;
 
   // and trigger byte operation
-  NEORV32_ONEWIRE.CTRL |= (1 << ONEWIRE_CTRL_TRIG_BYTE);
+  NEORV32_ONEWIRE->CTRL |= (1 << ONEWIRE_CTRL_TRIG_BYTE);
 }
 
 
