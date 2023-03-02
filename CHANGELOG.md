@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 02.03.2023 | 1.8.1.4 | :bug: fix timeout bug in **FPU** (conversion and add/sub instructions); #528 |
 | 25.02.2023 | 1.8.1.3 | :sparkles: add new processor module: **Serial Data Interface (SDI)** - a SPI _device-class_ interface; [#505](https://github.com/stnolting/neorv32/pull/505) |
 | 24.02.2023 | 1.8.1.2 | :warning: rename top interface signals of **XIP** and **SIP** modules; [#504](https://github.com/stnolting/neorv32/pull/504) |
 | 23.02.2023 | 1.8.1.1 | CFS: add another 32 interface register (now having 64 memory-mapped registers for custom usage); [#503](https://github.com/stnolting/neorv32/pull/503) |
