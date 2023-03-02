@@ -91,6 +91,9 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
 
   -- float-to-integer unit --
   component neorv32_cpu_cp_fpu_f2i
+  generic (
+    XLEN       : in natural         -- data path width
+    );
   port (
     -- control --
     clk_i      : in  std_ulogic; -- global clock, rising edge
@@ -549,6 +552,9 @@ begin
   -- Convert: Float to [unsigned] Integer (FCVT.S.W) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_fpu_f2i_inst: neorv32_cpu_cp_fpu_f2i
+  generic map (
+    XLEN          => XLEN         -- data path width
+    )
   port map (
     -- control --
     clk_i      => clk_i,                          -- global clock, rising edge
@@ -802,11 +808,26 @@ begin
         addsub.man_r_ext <= '0';
         addsub.man_s_ext <= '0';
       elsif (addsub.exp_cnt(7 downto 0) /= addsub.large_exp) then -- shift right until same magnitude
-        addsub.man_sreg  <= '0' & addsub.man_sreg(addsub.man_sreg'left downto 1);
-        addsub.man_g_ext <= addsub.man_sreg(0);
-        addsub.man_r_ext <= addsub.man_g_ext;
-        addsub.man_s_ext <= addsub.man_s_ext or addsub.man_r_ext; -- sticky bit
-        addsub.exp_cnt   <= std_ulogic_vector(unsigned(addsub.exp_cnt) + 1);
+        -- Trip: Exponent difference larger than mantissa width + 3
+        -- When the difference between large_exp - small_exp is larger than 27
+        -- the normalizer will always shift the smaller mantissa to 0.
+        -- Catch: Set the smaller mantissa to 0 and the s_ext to '1' end go to next step.
+        -- Note: The comparison is 24 mantissa bits 1.23 + 3 underflow bits.
+        -- The +3 is to account for the grs underflow bits, could be set to +2 as we are always setting s to 1
+        if (unsigned(addsub.large_exp(7 downto 0)) - unsigned(addsub.small_exp(7 downto 0))) > 27 then
+          addsub.man_sreg  <= (others => '0');
+          addsub.man_g_ext <= '0';
+          addsub.man_r_ext <= '0';
+          -- set s_ext to 1 as it will always be 1 from the implied 1 being shifted out.
+          addsub.man_s_ext <= '1';
+          addsub.exp_cnt(7 downto 0) <= addsub.large_exp(7 downto 0);
+        else
+          addsub.man_sreg  <= '0' & addsub.man_sreg(addsub.man_sreg'left downto 1);
+          addsub.man_g_ext <= addsub.man_sreg(0);
+          addsub.man_r_ext <= addsub.man_g_ext;
+          addsub.man_s_ext <= addsub.man_s_ext or addsub.man_r_ext; -- sticky bit
+          addsub.exp_cnt   <= std_ulogic_vector(unsigned(addsub.exp_cnt) + 1);
+        end if;
       end if;
 
       -- mantissa check: find smaller number (magnitude-only) --
@@ -1563,6 +1584,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_fpu_f2i is
+  generic (
+    XLEN                      : natural -- data path width
+    );
   port (
     -- control --
     clk_i      : in  std_ulogic; -- global clock, rising edge
@@ -1682,7 +1706,18 @@ begin
                ctrl.class(fp_class_snan_c)     or ctrl.class(fp_class_qnan_c)) = '1') then
             ctrl.state <= S_FINALIZE;
           else
-            ctrl.state <= S_NORMALIZE_BUSY;
+            -- Trip: If the float exponent is to large to fit in an integer we are
+            -- shifting the float mantissa out of the integer causing an overflow.
+            -- We detect this when the exponent is larger than 127 + XLEN + 1.
+            -- Catch: When the exponent is larger than XLEN + 1 set the overflow flag and go to the next stage.
+            -- Note: We use 127 as that is an exponent of 0, XLEN for the integer width and + 1 for safety.
+            -- In principle the +1 shouldn't be needed.
+            if (unsigned(ctrl.cnt) > (127+XLEN+1)) then -- 0 + 32 + 1 or 127 + 32 + 1
+              ctrl.over <= '1';
+              ctrl.state <= S_FINALIZE;
+            else
+              ctrl.state <= S_NORMALIZE_BUSY;
+            end if;
           end if;
 
         when S_NORMALIZE_BUSY => -- running normalization cycle
