@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -34,9 +34,10 @@
 
 
 /**********************************************************************//**
- * @file floating_point_test/main.c
- * @author Stephan Nolting
- * @brief Verification program for the NEORV32 'Zfinx' extension (floating-point in x registers) using pseudo-random data as input; compares results from hardware against pure-sw reference functions.
+ * @file float_corner_test/main.c
+ * @author Mikael Mortensen
+ * @brief Verification program for the NEORV32 'Zfinx' extension (floating-point in x registers)
+ * using pseudo-random data as input; compares results from hardware against pure-sw reference functions.
  **************************************************************************/
 
 #include <neorv32.h>
@@ -95,7 +96,8 @@ void print_report(uint32_t num_err);
 
 
 /**********************************************************************//**
- * Main function; test all available operations of the NEORV32 'Zfinx' extensions using bit floating-point hardware intrinsics and software-only reference functions (emulation).
+ * Main function; test all available operations of the NEORV32 'Zfinx' extensions using bit
+ * floating-point hardware intrinsics and software-only reference functions (emulation).
  *
  * @note This program requires the Zfinx CPU extension.
  *
@@ -167,7 +169,7 @@ int main() {
   opa.binary_value = 0x7F000000;
   for (i=0;i<254; i++) {
     riscv_intrinsic_fcvt_wus(opa.float_value);
- 
+
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
       neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
       neorv32_uart0_printf("Conversion of opa with %d exponent timed out\n",opa.binary_value>>23);
