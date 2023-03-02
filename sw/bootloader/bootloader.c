@@ -337,6 +337,7 @@ int main(void) {
   PRINT_XNUM(NEORV32_SYSINFO->DMEM_SIZE);
   PRINT_TEXT(" bytes @");
   PRINT_XNUM(NEORV32_SYSINFO->DSPACE_BASE);
+  PRINT_TEXT("\n");
 
 
   // ------------------------------------------------
@@ -346,7 +347,7 @@ int main(void) {
 #if (AUTO_BOOT_TIMEOUT != 0)
   if (neorv32_mtime_available()) {
 
-    PRINT_TEXT("\n\nAutoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
+    PRINT_TEXT("\nAutoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
     uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO->CLK);
 
     while(1){
