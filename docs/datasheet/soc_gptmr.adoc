@@ -46,8 +46,8 @@ writing zero to it.
 
 **Timer Interrupt**
 
-The timer interrupt is triggered when the timer is enabled and `COUNT` matches `THRES`. The interrupt
-remains pending until explicitly cleared by writing zero to the according <<_mip>> CSR bit.
+The GPTMR interrupt is triggered when the timer is enabled and `COUNT` matches `THRES`. The interrupt
+remains pending inside the CPU until it explicitly cleared by writing zero to the according <<_mip>> CSR bit.
 
 
 **Register Map**
