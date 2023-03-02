@@ -1,5 +1,7 @@
 # NEORV32 `Zfinx` Floating-Point normalizer corner test
 
+:bulb: See https://github.com/stnolting/neorv32/pull/528 by [@mikaelsky](https://github.com/mikaelsky).
+
 This test case highlights instruction time outs with the FPU normalizer circuits. Instructions impacted are:
 FCVT.WU.S
 FCVT.W.S
