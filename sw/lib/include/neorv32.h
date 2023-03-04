@@ -968,7 +968,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
  **************************************************************************/
 /**@{*/
 /** UART module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;  /**< offset 0: control register (#NEORV32_UART_CTRL_enum) */
   uint32_t DATA;  /**< offset 4: data register (#NEORV32_UART_DATA_enum) */
 } neorv32_uart_t;
@@ -977,13 +977,13 @@ typedef struct __attribute__((packed,aligned(4))) {
 #define NEORV32_UART0_BASE (0xFFFFFFA0U)
 
 /** UART0 module hardware access (#neorv32_uart_t) */
-#define NEORV32_UART0 (*((volatile neorv32_uart_t*) (NEORV32_UART0_BASE)))
+#define NEORV32_UART0 ((neorv32_uart_t*) (NEORV32_UART0_BASE))
 
 /** UART1 module base address */
 #define NEORV32_UART1_BASE (0xFFFFFFD0U)
 
 /** UART1 module hardware access (#neorv32_uart_t) */
-#define NEORV32_UART1 (*((volatile neorv32_uart_t*) (NEORV32_UART1_BASE)))
+#define NEORV32_UART1 ((neorv32_uart_t*) (NEORV32_UART1_BASE))
 
 /** UART0/UART1 control register bits */
 enum NEORV32_UART_CTRL_enum {

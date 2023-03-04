@@ -93,7 +93,7 @@ int getchar(void) {
  * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
  * @return 0 if UART0/1 was not synthesized, 1 if UART0/1 is available.
  **************************************************************************/
-int neorv32_uart_available (volatile neorv32_uart_t *UARTx) {
+int neorv32_uart_available (neorv32_uart_t *UARTx) {
 
   int available = 0;
 
@@ -122,7 +122,7 @@ int neorv32_uart_available (volatile neorv32_uart_t *UARTx) {
  * @param[in] parity Parity configuration (00=off, 10=even, 11=odd), see #NEORV32_UART_PARITY_enum.
  * @param[in] flow_con Hardware flow control configuration (00=off, 01=RTS, 10=CTS, 11=RTS/CTS), see #NEORV32_UART_FLOW_CONTROL_enum.
  **************************************************************************/
-void neorv32_uart_setup(volatile neorv32_uart_t *UARTx, uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
+void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 
   uint32_t clock = NEORV32_SYSINFO->CLK;  // get system clock
   uint16_t i = 0;         // BAUD rate divisor
@@ -138,14 +138,14 @@ void neorv32_uart_setup(volatile neorv32_uart_t *UARTx, uint32_t baudrate, uint8
 
 #ifdef UART0_SIM_MODE
 #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only!
-  if (((uint32_t) &UARTx) == NEORV32_UART0_BASE) {
+  if (((uint32_t)UARTx) == NEORV32_UART0_BASE) {
     sim_mode = 1 << UART_CTRL_SIM_MODE;
   }
 #endif
 
 #ifdef UART1_SIM_MODE
 #warning UART1_SIM_MODE (secondary UART) enabled! Sending all UART1.TX data to text.io simulation output instead of real UART1 transmitter. Use this for simulations only!
-  if (((uint32_t) &UARTx) == NEORV32_UART1_BASE) {
+  if (((uint32_t)UARTx) == NEORV32_UART1_BASE) {
     sim_mode = 1 << UART_CTRL_SIM_MODE;
   }
 #endif
@@ -200,7 +200,7 @@ void neorv32_uart_setup(volatile neorv32_uart_t *UARTx, uint32_t baudrate, uint8
  *
  * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
  **************************************************************************/
-void neorv32_uart_enable(volatile neorv32_uart_t *UARTx) {
+void neorv32_uart_enable(neorv32_uart_t *UARTx) {
 
   UARTx->CTRL |= ((uint32_t)(1 << UART_CTRL_EN));
 }
@@ -211,7 +211,7 @@ void neorv32_uart_enable(volatile neorv32_uart_t *UARTx) {
  *
  * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
  **************************************************************************/
-void neorv32_uart_disable(volatile neorv32_uart_t *UARTx) {
+void neorv32_uart_disable(neorv32_uart_t *UARTx) {
 
   UARTx->CTRL &= ~((uint32_t)(1 << UART_CTRL_EN));
 }
@@ -225,7 +225,7 @@ void neorv32_uart_disable(volatile neorv32_uart_t *UARTx) {
  * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
  * @param[in] c Char to be send.
  **************************************************************************/
-void neorv32_uart_putc(volatile neorv32_uart_t *UARTx, char c) {
+void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {
 
   // wait for previous transfer to finish
   while ((UARTx->CTRL & (1<<UART_CTRL_TX_FULL)) != 0); // wait for space in TX FIFO
@@ -241,7 +241,7 @@ void neorv32_uart_putc(volatile neorv32_uart_t *UARTx, char c) {
  * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
  * @return 0 if idle, 1 if busy
  **************************************************************************/
-int neorv32_uart_tx_busy(volatile neorv32_uart_t *UARTx) {
+int neorv32_uart_tx_busy(neorv32_uart_t *UARTx) {
 
   uint32_t ctrl = UARTx->CTRL;
 
@@ -261,7 +261,7 @@ int neorv32_uart_tx_busy(volatile neorv32_uart_t *UARTx) {
  * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
  * @return Received char.
  **************************************************************************/
-char neorv32_uart_getc(volatile neorv32_uart_t *UARTx) {
+char neorv32_uart_getc(neorv32_uart_t *UARTx) {
 
   uint32_t d = 0;
   while (1) {
@@ -287,7 +287,7 @@ char neorv32_uart_getc(volatile neorv32_uart_t *UARTx) {
  * -3 = char received with parity error
  * -4 = char received with overrun error.
  **************************************************************************/
-int neorv32_uart_getc_safe(volatile neorv32_uart_t *UARTx, char *data) {
+int neorv32_uart_getc_safe(neorv32_uart_t *UARTx, char *data) {
 
   uint32_t uart_rx = UARTx->DATA;
 
@@ -327,7 +327,7 @@ int neorv32_uart_getc_safe(volatile neorv32_uart_t *UARTx, char *data) {
  * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
  * @return =!0 when a char has been received.
  **************************************************************************/
-int neorv32_uart_char_received(volatile neorv32_uart_t *UARTx) {
+int neorv32_uart_char_received(neorv32_uart_t *UARTx) {
 
   if (UARTx->CTRL & (1<<UART_CTRL_RX_EMPTY)) {
     return 0;
@@ -347,7 +347,7 @@ int neorv32_uart_char_received(volatile neorv32_uart_t *UARTx) {
  * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
  * @return Received char.
  **************************************************************************/
-char neorv32_uart_char_received_get(volatile neorv32_uart_t *UARTx) {
+char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) {
 
   return (char)(UARTx->DATA);
 }
@@ -361,7 +361,7 @@ char neorv32_uart_char_received_get(volatile neorv32_uart_t *UARTx) {
  * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
  * @param[in] s Pointer to string.
  **************************************************************************/
-void neorv32_uart_puts(volatile neorv32_uart_t *UARTx, const char *s) {
+void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
 
   char c = 0;
   while ((c = *s++)) {
@@ -391,7 +391,7 @@ void neorv32_uart_puts(volatile neorv32_uart_t *UARTx, const char *s) {
  * <TR><TD>%p</TD><TD>32-bit pointer, printed as 8-char hexadecimal - lower-case</TD></TR>
  * </TABLE>
  **************************************************************************/
-void neorv32_uart_printf(volatile neorv32_uart_t *UARTx, const char *format, ...) {
+void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {
 
   char c, string_buf[11];
   int32_t n;
@@ -460,7 +460,7 @@ void neorv32_uart_printf(volatile neorv32_uart_t *UARTx, const char *format, ...
  * @param[in] echo Echo UART input when 1.
  * @return Number of chars read.
  **************************************************************************/
-int neorv32_uart_scan(volatile neorv32_uart_t *UARTx, char *buffer, int max_size, int echo) {
+int neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int echo) {
 
   char c = 0;
   int length = 0;
