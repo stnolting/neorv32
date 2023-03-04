@@ -118,7 +118,7 @@ int main()
   neorv32_spi_enable();
 
   // IRQ based data transfer
-  memset(uint8MemBuf, 0, sizeof(uint8MemBuf)/sizeof(uint8MemBuf[0])); // fill with 0's
+  memset(uint8MemBuf, 0, sizeof(uint8MemBuf));  // fill with 0's
   uint8MemBuf[0] = 0x3;
   uint8MemBuf[1] = 0x0;
   uint8MemBuf[2] = 0x0;
