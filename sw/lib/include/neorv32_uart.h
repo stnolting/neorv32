@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -48,34 +48,19 @@
 // Libs required by functions
 #include <stdarg.h>
 
-// prototypes for UART0 (primary UART)
-int  neorv32_uart0_available(void);
-void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
-void neorv32_uart0_disable(void);
-void neorv32_uart0_enable(void);
-void neorv32_uart0_putc(char c);
-int  neorv32_uart0_tx_busy(void);
-char neorv32_uart0_getc(void);
-int  neorv32_uart0_char_received(void);
-int  neorv32_uart0_getc_safe(char *data);
-char neorv32_uart0_char_received_get(void);
-void neorv32_uart0_puts(const char *s);
-void neorv32_uart0_printf(const char *format, ...);
-int  neorv32_uart0_scan(char *buffer, int max_size, int echo);
-
-// prototypes for UART1 (secondary UART)
-int  neorv32_uart1_available(void);
-void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
-void neorv32_uart1_disable(void);
-void neorv32_uart1_enable(void);
-void neorv32_uart1_putc(char c);
-int  neorv32_uart1_tx_busy(void);
-char neorv32_uart1_getc(void);
-int  neorv32_uart1_char_received(void);
-int  neorv32_uart1_getc_safe(char *data);
-char neorv32_uart1_char_received_get(void);
-void neorv32_uart1_puts(const char *s);
-void neorv32_uart1_printf(const char *format, ...);
-int  neorv32_uart1_scan(char *buffer, int max_size, int echo);
+// prototypes for common used UART functions, applicable to UART0 and UART1
+int  neorv32_uart_available(neorv32_uart_t *UARTx);
+void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint8_t parity, uint8_t flow_con);
+void neorv32_uart_enable(neorv32_uart_t *UARTx);
+void neorv32_uart_disable(neorv32_uart_t *UARTx);
+void neorv32_uart_putc(neorv32_uart_t *UARTx, char c);
+int  neorv32_uart_tx_busy(neorv32_uart_t *UARTx);
+char neorv32_uart_getc(neorv32_uart_t *UARTx);
+int  neorv32_uart_getc_safe(neorv32_uart_t *UARTx, char *data);
+int  neorv32_uart_char_received(neorv32_uart_t *UARTx);
+char neorv32_uart_char_received_get(neorv32_uart_t *UARTx);
+void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s);
+void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...);
+int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int echo);
 
 #endif // neorv32_uart_h

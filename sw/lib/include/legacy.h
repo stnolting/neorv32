@@ -49,6 +49,44 @@
 // ================================================================================================
 
 /**********************************************************************//**
+ * @name UART0: Backward compatibility Wrapper, #neorv32_uart_h
+ **************************************************************************/
+/**@{*/
+#define neorv32_uart0_available()                         neorv32_uart_available(NEORV32_UART0)
+#define neorv32_uart0_setup(baudrate, parity, flow_con)   neorv32_uart_setup(NEORV32_UART0, baudrate, parity, flow_con)
+#define neorv32_uart0_disable()                           neorv32_uart_disable(NEORV32_UART0)
+#define neorv32_uart0_enable()                            neorv32_uart_enable(NEORV32_UART0)
+#define neorv32_uart0_putc(c)                             neorv32_uart_putc(NEORV32_UART0, c)
+#define neorv32_uart0_tx_busy()                           neorv32_uart_tx_busy(NEORV32_UART0)
+#define neorv32_uart0_getc()                              neorv32_uart_getc(NEORV32_UART0)
+#define neorv32_uart0_char_received()                     neorv32_uart_char_received(NEORV32_UART0)
+#define neorv32_uart0_getc_safe(data)                     neorv32_uart_getc_safe(NEORV32_UART0, *data)
+#define neorv32_uart0_char_received_get()                 neorv32_uart_char_received_get(NEORV32_UART0)
+#define neorv32_uart0_puts(s)                             neorv32_uart_puts(NEORV32_UART0, s)
+#define neorv32_uart0_printf(...)                         neorv32_uart_printf(NEORV32_UART0, __VA_ARGS__)
+#define neorv32_uart0_scan(buffer, max_size, echo)        neorv32_uart_scan(NEORV32_UART0, buffer, max_size, echo)
+/**@}*/
+
+/**********************************************************************//**
+ * @name UART1: Backward compatibility Wrapper, #neorv32_uart_h
+ **************************************************************************/
+/**@{*/
+#define neorv32_uart1_available()                         neorv32_uart_available(NEORV32_UART1)
+#define neorv32_uart1_setup(baudrate, parity, flow_con)   neorv32_uart_setup(NEORV32_UART1, baudrate, parity, flow_con)
+#define neorv32_uart1_disable()                           neorv32_uart_disable(NEORV32_UART1)
+#define neorv32_uart1_enable()                            neorv32_uart_enable(NEORV32_UART1)
+#define neorv32_uart1_putc(c)                             neorv32_uart_putc(NEORV32_UART1, c)
+#define neorv32_uart1_tx_busy()                           neorv32_uart_tx_busy(NEORV32_UART1)
+#define neorv32_uart1_getc()                              neorv32_uart_getc(NEORV32_UART1)
+#define neorv32_uart1_char_received()                     neorv32_uart_char_received(NEORV32_UART1)
+#define neorv32_uart1_getc_safe(data)                     neorv32_uart_getc_safe(NEORV32_UART1, *data)
+#define neorv32_uart1_char_received_get()                 neorv32_uart_char_received_get(NEORV32_UART1)
+#define neorv32_uart1_puts(s)                             neorv32_uart_puts(NEORV32_UART1, s)
+#define neorv32_uart1_printf(...)                         neorv32_uart_printf(NEORV32_UART1, __VA_ARGS__)
+#define neorv32_uart1_scan(buffer, max_size, echo)        neorv32_uart_scan(NEORV32_UART1, buffer, max_size, echo)
+/**@}*/
+
+/**********************************************************************//**
  * Print string (zero-terminated) via UART0. Print full line break "\r\n" for every '\n'.
  * @note This function is blocking.
  * @warning This function is deprecated!
