@@ -432,6 +432,9 @@ void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {
           }
           neorv32_uart_puts(UARTx, string_buf);
           break;
+        case '%': // escaped percent sign
+          neorv32_uart_putc(UARTx, '%');
+          break;
         default: // unsupported format
           neorv32_uart_putc(UARTx, '%');
           neorv32_uart_putc(UARTx, c);
