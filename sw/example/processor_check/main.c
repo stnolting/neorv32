@@ -133,7 +133,7 @@ int main() {
 
   // setup UARTs at default baud rate, no parity bits, no HW flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
-  NEORV32_UART1.CTRL = NEORV32_UART0.CTRL; // copy configuration to initialize UART1
+  NEORV32_UART1->CTRL = NEORV32_UART0->CTRL; // copy configuration to initialize UART1
 
 #ifdef SUPPRESS_OPTIONAL_UART_PRINT
   neorv32_uart0_disable(); // do not generate any UART0 output
@@ -975,12 +975,12 @@ int main() {
   while(neorv32_uart0_tx_busy());
 
   // backup current UART0 configuration
-  tmp_a = NEORV32_UART0.CTRL;
+  tmp_a = NEORV32_UART0->CTRL;
 
   // make sure UART is enabled
-  NEORV32_UART0.CTRL |= (1 << UART_CTRL_EN);
+  NEORV32_UART0->CTRL |= (1 << UART_CTRL_EN);
   // make sure sim mode is disabled
-  NEORV32_UART0.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+  NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
   // enable fast interrupt
   neorv32_cpu_csr_write(CSR_MIE, 1 << UART0_RX_FIRQ_ENABLE);
@@ -997,7 +997,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // restore original configuration
-  NEORV32_UART0.CTRL = tmp_a;
+  NEORV32_UART0->CTRL = tmp_a;
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == UART0_RX_TRAP_CODE) {
     test_ok();
@@ -1018,12 +1018,12 @@ int main() {
   while(neorv32_uart0_tx_busy());
 
   // backup current UART0 configuration
-  tmp_a = NEORV32_UART0.CTRL;
+  tmp_a = NEORV32_UART0->CTRL;
 
   // make sure UART is enabled
-  NEORV32_UART0.CTRL |= (1 << UART_CTRL_EN);
+  NEORV32_UART0->CTRL |= (1 << UART_CTRL_EN);
   // make sure sim mode is disabled
-  NEORV32_UART0.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+  NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
   // UART0 TX interrupt enable
   neorv32_cpu_csr_write(CSR_MIE, 1 << UART0_TX_FIRQ_ENABLE);
@@ -1040,7 +1040,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // restore original configuration
-  NEORV32_UART0.CTRL = tmp_a;
+  NEORV32_UART0->CTRL = tmp_a;
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == UART0_TX_TRAP_CODE) {
     test_ok();
@@ -1058,12 +1058,12 @@ int main() {
   cnt_test++;
 
   // backup current UART1 configuration
-  tmp_a = NEORV32_UART1.CTRL;
+  tmp_a = NEORV32_UART1->CTRL;
 
   // make sure UART is enabled
-  NEORV32_UART1.CTRL |= (1 << UART_CTRL_EN);
+  NEORV32_UART1->CTRL |= (1 << UART_CTRL_EN);
   // make sure sim mode is disabled
-  NEORV32_UART1.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+  NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
   // UART1 RX interrupt enable
   neorv32_cpu_csr_write(CSR_MIE, 1 << UART1_RX_FIRQ_ENABLE);
@@ -1080,7 +1080,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // restore original configuration
-  NEORV32_UART1.CTRL = tmp_a;
+  NEORV32_UART1->CTRL = tmp_a;
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == UART1_RX_TRAP_CODE) {
     test_ok();
@@ -1098,12 +1098,12 @@ int main() {
   cnt_test++;
 
   // backup current UART1 configuration
-  tmp_a = NEORV32_UART1.CTRL;
+  tmp_a = NEORV32_UART1->CTRL;
 
   // make sure UART is enabled
-  NEORV32_UART1.CTRL |= (1 << UART_CTRL_EN);
+  NEORV32_UART1->CTRL |= (1 << UART_CTRL_EN);
   // make sure sim mode is disabled
-  NEORV32_UART1.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+  NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
   // UART1 RX interrupt enable
   neorv32_cpu_csr_write(CSR_MIE, 1 << UART1_TX_FIRQ_ENABLE);
@@ -1120,7 +1120,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // restore original configuration
-  NEORV32_UART1.CTRL = tmp_a;
+  NEORV32_UART1->CTRL = tmp_a;
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == UART1_TX_TRAP_CODE) {
     test_ok();
@@ -1732,9 +1732,9 @@ void test_fail(void) {
 void __neorv32_crt0_after_main(int32_t return_code) {
 
   // make sure sim mode is disabled and UARTs are actually enabled
-  NEORV32_UART0.CTRL |=  (1 << UART_CTRL_EN);
-  NEORV32_UART0.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
-  NEORV32_UART1.CTRL = NEORV32_UART0.CTRL;
+  NEORV32_UART0->CTRL |=  (1 << UART_CTRL_EN);
+  NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+  NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
 
   // minimal result report
   PRINT_CRITICAL("%u/%u\n", (uint32_t)return_code, (uint32_t)cnt_test);
