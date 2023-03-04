@@ -86,7 +86,7 @@ int main()
   // this is not required, but keeps us safe
   neorv32_rte_setup();
 
-  // setup UART0 at default baud rate, no parity bits, no hw flow control
+  // setup UART0 at default baud rate, no parity bits, no HW flow control
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
 
   // check if UART0 unit is implemented at all
@@ -114,7 +114,7 @@ int main()
     // Configure
   neorv32_spi_disable();
     // neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, int data_size, int irq_config)
-  neorv32_spi_setup(0, 0, 0, 0, 0, 3);  // spi mode 0, 8bit, IRQ: 0-: PHY going idle, 10: TX fifo less than half full, 11: TX fifo empty
+  neorv32_spi_setup(0, 0, 0, 0, 1<<SPI_CTRL_IRQ_TX_EMPTY);  // spi mode 0, IRQ: 0-: PHY going idle, 10: TX fifo less than half full, 11: TX fifo empty
   neorv32_spi_enable();
 
   // IRQ based data transfer

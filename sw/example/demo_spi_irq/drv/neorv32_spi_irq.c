@@ -71,9 +71,6 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
   volatile uint32_t uint32Buf;  // help variable
   uint32_t          uint32Lim;  // loop limit
 
-
-  neorv32_cpu_csr_write(CSR_MIP, ~(1<<SPI_FIRQ_PENDING)); // ack/clear FIRQ
-
   if ( 0 == self->uint32Total ) { // leave if accidentally called ISR
     return;
   }
@@ -137,8 +134,11 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
       }
       break;
     default:  // unknown
-      return;
+      break;
   }
+
+  neorv32_cpu_csr_clr(CSR_MIP, 1 << SPI_FIRQ_PENDING); // ack/clear pending FIRQ
+
   return;
 }
 
