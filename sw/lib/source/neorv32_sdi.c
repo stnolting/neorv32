@@ -1,9 +1,9 @@
 // #################################################################################################
-// # << NEORV32: neorv32_spi.c - Serial Peripheral Interface Controller (SPI) HW Driver >>         #
+// # << NEORV32: neorv32_sdi.c - Serial Data Interface Controller (SDI) HW Driver >>               #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -34,24 +34,24 @@
 
 
 /**********************************************************************//**
- * @file neorv32_spi.c
- * @brief Serial peripheral interface controller (SPI) HW driver source file.
+ * @file neorv32_sdi.c
+ * @brief Serial data interface controller (SDI) HW driver source file.
  *
- * @note These functions should only be used if the SPI unit was synthesized (IO_SPI_EN = true).
+ * @note These functions should only be used if the SDI unit was synthesized (IO_SDI_EN = true).
  **************************************************************************/
 
 #include "neorv32.h"
-#include "neorv32_spi.h"
+#include "neorv32_sdi.h"
 
 
 /**********************************************************************//**
- * Check if SPI unit was synthesized.
+ * Check if SDI unit was synthesized.
  *
- * @return 0 if SPI was not synthesized, 1 if SPI is available.
+ * @return 0 if SDI was not synthesized, 1 if SPI is available.
  **************************************************************************/
-int neorv32_spi_available(void) {
+int neorv32_sdi_available(void) {
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SPI)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SDI)) {
     return 1;
   }
   else {
@@ -61,156 +61,115 @@ int neorv32_spi_available(void) {
 
 
 /**********************************************************************//**
- * Enable and configure SPI controller. The SPI control register bits are listed in #NEORV32_SPI_CTRL_enum.
+ * Reset, enable and configure SDI controller.
+ * The SDI control register bits are listed in #NEORV32_SDI_CTRL_enum.
  *
- * @param[in] prsc Clock prescaler select (0..7).  See #NEORV32_CLOCK_PRSC_enum.
- * @prama[in] cdiv Clock divider (0..15).
- * @param[in] clk_phase Clock phase (0=sample on rising edge, 1=sample on falling edge).
- * @param[in] clk_polarity Clock polarity (when idle).
- * @param[in] data_size Data transfer size (0: 8-bit, 1: 16-bit, 2: 24-bit, 3: 32-bit).
- * @param[in] irq_config Interrupt configuration (0,1: PHY transfer done, 2: TX FIFO becomes less than half full, 3: TX FIFO becomes empty).
+ * @param[in] irq_mask Interrupt configuration mask (CTRL's irq_* bits).
  **************************************************************************/
-void neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, int data_size, int irq_config) {
+void neorv32_sdi_setup(uint32_t irq_mask) {
 
-  NEORV32_SPI->CTRL = 0; // reset
+  NEORV32_SDI->CTRL = 0; // reset
 
   uint32_t tmp = 0;
-  tmp |= (uint32_t)(1            & 0x01) << SPI_CTRL_EN;
-  tmp |= (uint32_t)(clk_phase    & 0x01) << SPI_CTRL_CPHA;
-  tmp |= (uint32_t)(clk_polarity & 0x01) << SPI_CTRL_CPOL;
-  tmp |= (uint32_t)(data_size    & 0x03) << SPI_CTRL_SIZE0;
-  tmp |= (uint32_t)(prsc         & 0x07) << SPI_CTRL_PRSC0;
-  tmp |= (uint32_t)(cdiv         & 0x0f) << SPI_CTRL_CDIV0;
-  tmp |= (uint32_t)(irq_config   & 0x03) << SPI_CTRL_IRQ0;
+  tmp |= (uint32_t)(1 & 0x01) << SDI_CTRL_EN;
+  tmp |= (uint32_t)(irq_mask & (0x0f << SDI_CTRL_IRQ_RX_AVAIL));
 
-  NEORV32_SPI->CTRL = tmp;
+  NEORV32_SDI->CTRL = tmp;
 }
 
 
 /**********************************************************************//**
- * Get configured clock speed in Hz.
- *
- * @return Actual configured SPI clock speed in Hz.
+ * Clear SDI receive FIFO.
  **************************************************************************/
-uint32_t neorv32_spi_get_clock_speed(void) {
+void neorv32_sdi_rx_clear(void) {
 
-  const uint32_t PRSC_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
-
-  uint32_t ctrl = NEORV32_SPI->CTRL;
-  uint32_t prsc_sel = (ctrl >> SPI_CTRL_PRSC0) & 0x7;
-  uint32_t clock_div = (ctrl >> SPI_CTRL_CDIV0) & 0xf;
-
-  uint32_t tmp = 2 * PRSC_LUT[prsc_sel] * clock_div;
-  return NEORV32_SYSINFO->CLK / tmp;
+  NEORV32_SDI->CTRL |= (uint32_t)(1 << SDI_CTRL_CLR_RX);
 }
 
 
 /**********************************************************************//**
- * Disable SPI controller.
+ * Disable SDI controller.
  **************************************************************************/
-void neorv32_spi_disable(void) {
+void neorv32_sdi_disable(void) {
 
-  NEORV32_SPI->CTRL &= ~((uint32_t)(1 << SPI_CTRL_EN));
+  NEORV32_SDI->CTRL &= ~((uint32_t)(1 << SDI_CTRL_EN));
 }
 
 
 /**********************************************************************//**
- * Enable SPI controller.
+ * Enable SDI controller.
  **************************************************************************/
-void neorv32_spi_enable(void) {
+void neorv32_sdi_enable(void) {
 
-  NEORV32_SPI->CTRL |= ((uint32_t)(1 << SPI_CTRL_EN));
+  NEORV32_SDI->CTRL |= ((uint32_t)(1 << SDI_CTRL_EN));
 }
 
 
 /**********************************************************************//**
- * Get SPI FIFO depth.
+ * Get SDI FIFO depth.
  *
  * @return FIFO depth (number of entries), zero if no FIFO implemented
  **************************************************************************/
-int neorv32_spi_get_fifo_depth(void) {
+int neorv32_sdi_get_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_SPI->CTRL >> SPI_CTRL_FIFO_LSB) & 0x0f;
+  uint32_t tmp = (NEORV32_SDI->CTRL >> SDI_CTRL_FIFO_LSB) & 0x0f;
   return (int)(1 << tmp);
 }
 
 
 /**********************************************************************//**
- * Activate single SPI chip select signal.
+ * Push data to SDI output FIFO.
  *
- * @note The SPI chip select output lines are LOW when activated.
- *
- * @param cs Chip select line to activate (0..7).
+ * @param[in] data Byte to push into TX FIFO.
+ * @return -1 if TX FIFO is full.
  **************************************************************************/
-void neorv32_spi_cs_en(int cs) {
+int neorv32_sdi_put(uint8_t data) {
 
-  uint32_t tmp = NEORV32_SPI->CTRL;
-  tmp &= ~(0xf << SPI_CTRL_CS_SEL0); // clear old configuration
-  tmp |= (1 << SPI_CTRL_CS_EN) | ((cs & 7) << SPI_CTRL_CS_SEL0); // set new configuration
-  NEORV32_SPI->CTRL = tmp;
-}
-
-
-/**********************************************************************//**
- * Deactivate currently active SPI chip select signal.
- *
- * @note The SPI chip select output lines are HIGH when deactivated.
- **************************************************************************/
-void neorv32_spi_cs_dis(void) {
-  NEORV32_SPI->CTRL &= ~(1 << SPI_CTRL_CS_EN);
-}
-
-
-/**********************************************************************//**
- * Initiate SPI transfer.
- *
- * @note This function is blocking.
- *
- * @param tx_data Transmit data (8/16/24/32-bit, LSB-aligned).
- * @return Receive data (8/16/24/32-bit, LSB-aligned).
- **************************************************************************/
-uint32_t neorv32_spi_trans(uint32_t tx_data) {
-
-  NEORV32_SPI->DATA = tx_data; // trigger transfer
-  while((NEORV32_SPI->CTRL & (1<<SPI_CTRL_BUSY)) != 0); // wait for current transfer to finish
-
-  return NEORV32_SPI->DATA;
-}
-
-
-/**********************************************************************//**
- * Initiate SPI TX transfer (non-blocking).
- *
- * @param tx_data Transmit data (8/16/24/32-bit, LSB-aligned).
- **************************************************************************/
-void neorv32_spi_put_nonblocking(uint32_t tx_data) {
-
-  NEORV32_SPI->DATA = tx_data; // trigger transfer
-}
-
-
-/**********************************************************************//**
- * Get SPI RX data (non-blocking).
- *
- * @return Receive data (8/16/24/32-bit, LSB-aligned).
- **************************************************************************/
-uint32_t neorv32_spi_get_nonblocking(void) {
-
-  return NEORV32_SPI->DATA;
-}
-
-
-/**********************************************************************//**
- * Check if SPI transceiver is busy.
- *
- * @return 0 if idle, 1 if busy
- **************************************************************************/
-int neorv32_spi_busy(void) {
-
-  if ((NEORV32_SPI->CTRL & (1<<SPI_CTRL_BUSY)) != 0) {
-    return 1;
+  if (NEORV32_SDI->CTRL & (1 << SDI_CTRL_TX_FULL)) {
+    return -1;
   }
   else {
+    NEORV32_SDI->DATA = (uint32_t)data;
     return 0;
   }
+}
+
+
+/**********************************************************************//**
+ * Push data to SDI output FIFO (ignoring TX FIFO status).
+ *
+ * @param[in] data Byte to push into TX FIFO.
+ **************************************************************************/
+void neorv32_sdi_put_nonblocking(uint8_t data) {
+
+  NEORV32_SDI->DATA = (uint32_t)data;
+}
+
+
+/**********************************************************************//**
+ * Get data from SDI input FIFO.
+ *
+ * @param[in,out] Pointer fro data byte read from RX FIFO.
+ * @return -1 if RX FIFO is empty.
+ **************************************************************************/
+int neorv32_sdi_get(uint8_t* data) {
+
+  if (NEORV32_SDI->CTRL & (1 << SDI_CTRL_RX_AVAIL)) {
+    *data = (uint8_t)NEORV32_SDI->DATA;
+    return 0;
+  }
+  else {
+    return -1;
+  }
+}
+
+
+/**********************************************************************//**
+ * Get data from SDI input FIFO (ignoring RX FIFO status).
+ *
+ * @param[in] data Byte read from RX FIFO.
+ **************************************************************************/
+uint8_t neorv32_sdi_get_nonblocking(void) {
+
+  return (uint8_t)NEORV32_SDI->DATA;
 }

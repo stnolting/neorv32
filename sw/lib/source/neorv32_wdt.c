@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_wdt_available(void) {
 
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_WDT)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_WDT)) {
     return 1;
   }
   else {
@@ -73,7 +73,7 @@ int neorv32_wdt_available(void) {
  **************************************************************************/
 void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en) {
 
-  NEORV32_WDT.CTRL = 0; // reset and disable
+  NEORV32_WDT->CTRL = 0; // reset and disable
 
   uint32_t enable_int   = ((uint32_t)(1))                    << WDT_CTRL_EN;
   uint32_t timeout_int  = ((uint32_t)(timeout  & 0xffffffU)) << WDT_CTRL_TIMEOUT_LSB;
@@ -81,11 +81,11 @@ void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en) {
   uint32_t sleep_en_int = ((uint32_t)(sleep_en & 0x1U))      << WDT_CTRL_SEN;
 
   // update WDT control register
-  NEORV32_WDT.CTRL = enable_int | timeout_int | debug_en_int | sleep_en_int;
+  NEORV32_WDT->CTRL = enable_int | timeout_int | debug_en_int | sleep_en_int;
 
   // lock configuration?
   if (lock) {
-    NEORV32_WDT.CTRL |= 1 << WDT_CTRL_LOCK;
+    NEORV32_WDT->CTRL |= 1 << WDT_CTRL_LOCK;
   }
 }
 
@@ -99,10 +99,10 @@ int neorv32_wdt_disable(void) {
 
   const uint32_t en_mask_c =  (uint32_t)(1 << WDT_CTRL_EN);
 
-  NEORV32_WDT.CTRL &= en_mask_c; // try to disable
+  NEORV32_WDT->CTRL &= en_mask_c; // try to disable
 
   // check if WDT is really off
-  if (NEORV32_WDT.CTRL & en_mask_c) {
+  if (NEORV32_WDT->CTRL & en_mask_c) {
     return -1; // still active
   }
   else {
@@ -116,7 +116,7 @@ int neorv32_wdt_disable(void) {
  **************************************************************************/
 void neorv32_wdt_feed(void) {
 
-  NEORV32_WDT.CTRL |= (uint32_t)(1 << WDT_CTRL_RESET);
+  NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_RESET);
 }
 
 
@@ -127,7 +127,7 @@ void neorv32_wdt_feed(void) {
  **************************************************************************/
 int neorv32_wdt_get_cause(void) {
 
-  if (NEORV32_WDT.CTRL & (1 << WDT_CTRL_RCAUSE)) { // reset caused by watchdog
+  if (NEORV32_WDT->CTRL & (1 << WDT_CTRL_RCAUSE)) { // reset caused by watchdog
     return 1;
   }
   else { // reset caused by system (external or OCD)

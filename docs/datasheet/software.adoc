@@ -94,6 +94,7 @@ footnote:[This driver file only represents a stub, since the real CFS drivers ar
 | `neorv32_onewire.c` | `neorv32_onewire.h`    | HW driver functions for the **ONEWIRE**
 | `neorv32_pwm.c`     | `neorv32_pwm.h`        | HW driver functions for the **PWM**
 | `neorv32_rte.c`     | `neorv32_rte.h`        | NEORV32 **runtime environment** and helper functions
+| `neorv32_sdi.c`     | `neorv32_sdi.h`        | HW driver functions for the **SDI**
 | `neorv32_spi.c`     | `neorv32_spi.h`        | HW driver functions for the **SPI**
 | `neorv32_trng.c`    | `neorv32_trng.h`       | HW driver functions for the **TRNG**
 | `neorv32_twi.c`     | `neorv32_twi.h`        | HW driver functions for the **TWI**
@@ -491,7 +492,7 @@ The `crt0.S` start-up performs the following operations:
 . Call all _constructors_ (if there are any).
 . Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
 . If `main` returns:
-** Tnterrupts are disabled by clearing <<_mie>>.
+** Interrupts are disabled by clearing <<_mie>>.
 ** `mains`'s return value is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
 ** Call all _destructors_ (if there are any).
 ** An optional <<_after_main_handler>> is called (if defined at all).

@@ -86,7 +86,7 @@ include::rationale.adoc[]
 
 * highly-configurable full-scale microcontroller-like processor system
 * based on the NEORV32 CPU
-* optional standard serial interfaces (UART, TWI, SPI, 1-Wire)
+* optional standard serial interfaces (UART, TWI, SPI (host and device), 1-Wire)
 * optional timers and counters (watchdog, system timer)
 * optional general purpose IO and PWM; a native NeoPixel(c)-compatible smart LED interface
 * optional embedded memories / caches for data, instructions and bootloader
@@ -210,7 +210,8 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_neoled.vhd              - NeoPixel (TM) compatible smart LED interface
 ├neorv32_onewire.vhd             - One-Wire serial interface controller
 ├neorv32_pwm.vhd                 - Pulse-width modulation controller
-├neorv32_spi.vhd                 - Serial peripheral interface controller
+├neorv32_sdi.vhd                 - Serial data interface controller (SPI device)
+├neorv32_spi.vhd                 - Serial peripheral interface controller (SPI host)
 ├neorv32_sysinfo.vhd             - System configuration information memory
 ├neorv32_trng.vhd                - True random number generator
 ├neorv32_twi.vhd                 - Two wire serial interface controller
@@ -319,6 +320,7 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 | ONEWIRE       | 1-wire interface                                               | 107 |  77 |        0 |    0
 | PWM           | Pulse_width modulation controller (8 channels)                 | 128 | 117 |        0 |    0
 | SPI           | Serial peripheral interface                                    | 114 |  94 |        0 |    0
+| SDI           | Serial data interface                                          |  72 |  66 |        0 |    0
 | **SYSINFO**   | System configuration information memory                        |  13 |  11 |        0 |    0
 | TRNG          | True random number generator                                   |  89 |  79 |        0 |    0
 | TWI           | Two-wire interface                                             |  77 |  43 |        0 |    0

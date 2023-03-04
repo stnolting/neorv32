@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32 - General Purpose Timer (GPTMR) Demo Program >>                                    #
+// # << NEORV32: neorv32_sdi.h - Serial Data Interface Controller (SDI) HW Driver >>               #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -34,88 +34,25 @@
 
 
 /**********************************************************************//**
- * @file demo_gptmr/main.c
- * @author Stephan Nolting
- * @brief Simple GPTMR usage example.
- **************************************************************************/
-
-#include <neorv32.h>
-
-
-/**********************************************************************//**
- * @name User configuration
- **************************************************************************/
-/**@{*/
-/** UART BAUD rate */
-#define BAUD_RATE 19200
-/**@}*/
-
-
-// Prototypes
-void gptmr_firq_handler(void);
-
-
-/**********************************************************************//**
- * This program blinks an LED at GPIO.output(0) at 1Hz using the general purpose timer interrupt.
+ * @file neorv32_sdi.h
+ * @brief Serial data interface controller (SPPI) HW driver header file.
  *
- * @note This program requires the GPTMR unit to be synthesized (and UART0 and GPIO).
- *
- * @return Should not return;
+ * @note These functions should only be used if the SDI unit was synthesized (IO_SDI_EN = true).
  **************************************************************************/
-int main() {
-  
-  // setup NEORV32 runtime environment (for trap handling)
-  neorv32_rte_setup();
 
-  // setup UART at default baud rate, no parity bits, no HW flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+#ifndef neorv32_sdi_h
+#define neorv32_sdi_h
 
+// prototypes
+int     neorv32_sdi_available(void);
+void    neorv32_sdi_setup(uint32_t irq_mask);
+void    neorv32_sdi_rx_clear(void);
+void    neorv32_sdi_disable(void);
+void    neorv32_sdi_enable(void);
+int     neorv32_sdi_get_fifo_depth(void);
+int     neorv32_sdi_put(uint8_t data);
+void    neorv32_sdi_put_nonblocking(uint8_t data);
+int     neorv32_sdi_get(uint8_t* data);
+uint8_t neorv32_sdi_get_nonblocking(void);
 
-  // check if GPTMR unit is implemented at all
-  if (neorv32_gptmr_available() == 0) {
-    neorv32_uart0_puts("ERROR! General purpose timer not implemented!\n");
-    return 1;
-  }
-
-  // Intro
-  neorv32_uart0_puts("General purpose timer (GPTMR) demo Program.\n"
-                     "Toggles GPIO.output(0) at 1Hz using the GPTMR interrupt.\n\n");
-
-
-  // clear GPIO output port
-  neorv32_gpio_port_set(0);
-
-
-  // install GPTMR interrupt handler
-  neorv32_rte_handler_install(GPTMR_RTE_ID, gptmr_firq_handler);
-
-  // configure timer for 1Hz ticks in continuous mode (with clock divisor = 8)
-  neorv32_gptmr_setup(CLK_PRSC_8, 1, NEORV32_SYSINFO->CLK / (8 * 2));
-
-  // enable interrupt
-  neorv32_cpu_csr_clr(CSR_MIP, 1 << GPTMR_FIRQ_PENDING);  // make sure there is no GPTMR IRQ pending already
-  neorv32_cpu_csr_set(CSR_MIE, 1 << GPTMR_FIRQ_ENABLE);   // enable GPTMR FIRQ channel
-  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
-
-
-  // go to sleep mode and wait for interrupt
-  while(1) {
-    neorv32_cpu_sleep();
-  }
-
-  return 0;
-}
-
-
-/**********************************************************************//**
- * GPTMR FIRQ handler.
- *
- * @warning This function has to be of type "void xyz(void)" and must not use any interrupt attributes!
- **************************************************************************/
-void gptmr_firq_handler(void) {
-
-  neorv32_cpu_csr_write(CSR_MIP, ~(1<<GPTMR_FIRQ_PENDING)); // clear/ack pending FIRQ
-
-  neorv32_uart0_putc('.'); // send tick symbol via UART0
-  neorv32_gpio_pin_toggle(0); // toggle output port bit 0
-}
+#endif // neorv32_sdi_h

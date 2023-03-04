@@ -127,20 +127,20 @@ explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 **Register Map**
 
 .TWI register map (`struct NEORV32_TWI`)
-[cols="<2,<2,<4,^1,<7"]
+[cols="<2,<1,<4,^1,<7"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xffffffb0` .10+<| `NEORV32_TWI.CTRL` <|`0`     _TWI_CTRL_EN_                       ^| r/w <| TWI enable, reset if cleared
-                                              <|`1`     _TWI_CTRL_START_                    ^| -/w <| generate START condition, auto-clears
-                                              <|`2`     _TWI_CTRL_STOP_                     ^| -/w <| generate STOP condition, auto-clears
-                                              <|`3`     _TWI_CTRL_MACK_                     ^| r/w <| generate controller-ACK for each transmission ("MACK")
-                                              <|`4`     _TWI_CTRL_CSEN_                     ^| r/w <| allow clock stretching when set
-                                              <|`7:5`   _TWI_CTRL_PRSC2_ : _TWI_CTRL_PRSC0_ ^| r/w <| 3-bit clock prescaler select
-                                              <|`11:8`  _TWI_CTRL_CDIV3_ : _TWI_CTRL_CDIV0_ ^| r/w <| 4-bit clock divider
-                                              <|`28:12` -                                   ^| r/- <| _reserved_, read as zero
-                                              <|`29`    _TWI_CTRL_CLAIMED_                  ^| r/- <| set if the TWI bus is claimed by any controller
-                                              <|`30`    _TWI_CTRL_ACK_                      ^| r/- <| ACK received when set, NACK received when cleared
-                                              <|`31`    _TWI_CTRL_BUSY_                     ^| r/- <| transfer/START/STOP in progress when set
-| `0xffffffb4` | `NEORV32_TWI.DATA` |`7:0` _TWI_DATA_MSB_ : _TWI_DATA_LSB_ | r/w | receive/transmit data
+.10+<| `0xffffffb0` .10+<| `CTRL` <|`0`     _TWI_CTRL_EN_                       ^| r/w <| TWI enable, reset if cleared
+                                  <|`1`     _TWI_CTRL_START_                    ^| -/w <| generate START condition, auto-clears
+                                  <|`2`     _TWI_CTRL_STOP_                     ^| -/w <| generate STOP condition, auto-clears
+                                  <|`3`     _TWI_CTRL_MACK_                     ^| r/w <| generate controller-ACK for each transmission ("MACK")
+                                  <|`4`     _TWI_CTRL_CSEN_                     ^| r/w <| allow clock stretching when set
+                                  <|`7:5`   _TWI_CTRL_PRSC2_ : _TWI_CTRL_PRSC0_ ^| r/w <| 3-bit clock prescaler select
+                                  <|`11:8`  _TWI_CTRL_CDIV3_ : _TWI_CTRL_CDIV0_ ^| r/w <| 4-bit clock divider
+                                  <|`28:12` -                                   ^| r/- <| _reserved_, read as zero
+                                  <|`29`    _TWI_CTRL_CLAIMED_                  ^| r/- <| set if the TWI bus is claimed by any controller
+                                  <|`30`    _TWI_CTRL_ACK_                      ^| r/- <| ACK received when set, NACK received when cleared
+                                  <|`31`    _TWI_CTRL_BUSY_                     ^| r/- <| transfer/START/STOP in progress when set
+| `0xffffffb4` | `DATA` |`7:0` _TWI_DATA_MSB_ : _TWI_DATA_LSB_ | r/w | receive/transmit data
 |=======================

@@ -104,7 +104,7 @@ int main() {
                        "Type 'help' to see the help menu.\n\n");
 
   // disable and reset SPI module
-  NEORV32_SPI.CTRL = 0;
+  NEORV32_SPI->CTRL = 0;
   spi_configured = 0; // SPI not configured yet
   spi_size = 0;
 
@@ -267,7 +267,7 @@ void spi_setup(void) {
   neorv32_uart0_scan(terminal_buffer, 2, 1);
   clk_div = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
-  uint32_t clock = NEORV32_SYSINFO.CLK / (2 * PRSC_LUT[spi_prsc] * (1 + clk_div));
+  uint32_t clock = NEORV32_SYSINFO->CLK / (2 * PRSC_LUT[spi_prsc] * (1 + clk_div));
   neorv32_uart0_printf("\n+ New SPI clock speed = %u Hz\n", clock);
 
   // ---- SPI clock mode ----

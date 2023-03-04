@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_pwm.c - Pulse Width Modulation Controller (PWM) HW Driver >>              #
+// # << NEORV32 - Serial Data Interface Demo Program >>                                            #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -34,129 +34,168 @@
 
 
 /**********************************************************************//**
- * @file neorv32_pwm.c
- * @brief Pulse-Width Modulation Controller (PWM) HW driver source file.
- *
- * @note These functions should only be used if the PWM unit was synthesized (IO_PWM_EN = true).
+ * @file demo_sdi/main.c
+ * @author Stephan Nolting
+ * @brief SDI test program (direct access to the SDI module).
  **************************************************************************/
 
-#include "neorv32.h"
-#include "neorv32_pwm.h"
+#include <neorv32.h>
+#include <string.h>
 
 
 /**********************************************************************//**
- * Check if PWM unit was synthesized.
- *
- * @return 0 if PWM was not synthesized, 1 if PWM is available.
+ * @name User configuration
  **************************************************************************/
-int neorv32_pwm_available(void) {
+/**@{*/
+/** UART BAUD rate */
+#define BAUD_RATE 19200
+/**@}*/
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_PWM)) {
+// Prototypes
+void sdi_put(void);
+void sdi_get(void);
+uint32_t hexstr_to_uint(char *buffer, uint8_t length);
+
+
+/**********************************************************************//**
+ * This program provides an interactive console for the SDI module.
+ *
+ * @note This program requires UART0 and the SDI to be synthesized.
+ *
+ * @return Irrelevant.
+ **************************************************************************/
+int main() {
+
+  char buffer[8];
+  int length = 0;
+
+  // capture all exceptions and give debug info via UART
+  neorv32_rte_setup();
+
+  // setup UART0 at default baud rate, no parity bits, no HW flow control
+  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+
+  // check if UART0 unit is implemented at all
+  if (neorv32_uart0_available() == 0) {
     return 1;
   }
+
+  // intro
+  neorv32_uart0_printf("\n<<< SDI Test Program >>>\n\n");
+
+  // check if SDI unit is implemented at all
+  if (neorv32_sdi_available() == 0) {
+    neorv32_uart0_printf("ERROR! No SDI unit implemented.");
+    return 1;
+  }
+
+  // info
+  neorv32_uart0_printf("This program allows direct access to the SDI module.\n"
+                       "Type 'help' to see the help menu.\n\n");
+
+  // setup SDI module
+  neorv32_sdi_setup(0); // no interrupts
+
+  // Main menu
+  for (;;) {
+    neorv32_uart0_printf("SDI_TEST:> ");
+    length = neorv32_uart0_scan(buffer, 15, 1);
+    neorv32_uart0_printf("\n");
+
+    if (!length) { // nothing to be done
+      continue;
+    }
+
+    // decode input and execute command
+    if (!strcmp(buffer, "help")) {
+      neorv32_uart0_printf("Available commands:\n"
+                          " help - show this text\n"
+                          " put  - write byte to TX buffer\n"
+                          " get  - read byte from RX buffer\n"
+                          " clr  - clear RX buffer\n");
+    }
+    else if (!strcmp(buffer, "put")) {
+      sdi_put();
+    }
+    else if (!strcmp(buffer, "get")) {
+      sdi_get();
+    }
+    else if (!strcmp(buffer, "clr")) {
+      neorv32_sdi_rx_clear();
+    }
+    else {
+      neorv32_uart0_printf("Invalid command. Type 'help' to see all commands.\n");
+    }
+  }
+
+  return 0;
+}
+
+
+/**********************************************************************//**
+ * Write data to SDI TX buffer.
+ **************************************************************************/
+void sdi_put(void) {
+
+  char terminal_buffer[3];
+
+  neorv32_uart0_printf("Enter TX data (2 hex chars): 0x");
+  neorv32_uart0_scan(terminal_buffer, sizeof(terminal_buffer), 1);
+  uint32_t tx_data = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+
+  neorv32_uart0_printf("\nWriting 0x%x to SDI TX buffer... ", tx_data);
+
+  if (neorv32_sdi_put((uint8_t)tx_data)) {
+    neorv32_uart0_printf("FAILED! TX buffer is full.\n");
+  }
   else {
-    return 0;
+    neorv32_uart0_printf("ok\n");
   }
 }
 
 
 /**********************************************************************//**
- * Enable and configure pulse width modulation controller.
- * The PWM control register bits are listed in #NEORV32_PWM_CTRL_enum.
+ * Read data from SDI RX buffer.
+ **************************************************************************/
+void sdi_get(void) {
+
+  uint8_t rx_data;
+
+  if (neorv32_sdi_get(&rx_data)) {
+    neorv32_uart0_printf("No RX data available (RX buffer is empty).\n");
+  }
+  else {
+    neorv32_uart0_printf("Read data: 0x%x\n", (uint32_t)rx_data);
+  }
+}
+
+
+/**********************************************************************//**
+ * Helper function to convert N hex chars string into uint32_T
  *
- * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
+ * @param[in,out] buffer Pointer to array of chars to convert into number.
+ * @param[in,out] length Length of the conversion string.
+ * @return Converted number.
  **************************************************************************/
-void neorv32_pwm_setup(int prsc) {
+uint32_t hexstr_to_uint(char *buffer, uint8_t length) {
 
-  NEORV32_PWM->CTRL = 0; // reset
+  uint32_t res = 0, d = 0;
+  char c = 0;
 
-  uint32_t ct_enable = 1;
-  ct_enable = ct_enable << PWM_CTRL_EN;
+  while (length--) {
+    c = *buffer++;
 
-  uint32_t ct_prsc = (uint32_t)(prsc & 0x07);
-  ct_prsc = ct_prsc << PWM_CTRL_PRSC0;
+    if ((c >= '0') && (c <= '9'))
+      d = (uint32_t)(c - '0');
+    else if ((c >= 'a') && (c <= 'f'))
+      d = (uint32_t)((c - 'a') + 10);
+    else if ((c >= 'A') && (c <= 'F'))
+      d = (uint32_t)((c - 'A') + 10);
+    else
+      d = 0;
 
-  NEORV32_PWM->CTRL = ct_enable | ct_prsc;
-}
-
-
-/**********************************************************************//**
- * Disable pulse width modulation controller.
- **************************************************************************/
-void neorv32_pwm_disable(void) {
-
-  NEORV32_PWM->CTRL &= ~((uint32_t)(1 << PWM_CTRL_EN));
-}
-
-
-/**********************************************************************//**
- * Enable pulse width modulation controller.
- **************************************************************************/
-void neorv32_pwm_enable(void) {
-
-  NEORV32_PWM->CTRL |= ((uint32_t)(1 << PWM_CTRL_EN));
-}
-
-
-/**********************************************************************//**
- * Get number of implemented channels.
- * @warning This function will override all duty cycle configuration registers.
- *
- * @return Number of implemented channels.
- **************************************************************************/
-int neorv32_pmw_get_num_channels(void) {
-
-  neorv32_pwm_disable();
-
-  int i = 0;
-  uint32_t cnt = 0;
-
-  for (i=0; i<12; i++) {
-    neorv32_pwm_set(i, 1);
-    cnt += neorv32_pwm_get(i);
+    res = res + (d << (length*4));
   }
 
-  return (int)cnt;
-}
-
-
-/**********************************************************************//**
- * Set duty cycle for channel.
- *
- * @param[in] channel Channel select (0..11).
- * @param[in] dc Duty cycle (8-bit, LSB-aligned).
- **************************************************************************/
-void neorv32_pwm_set(int channel, uint8_t dc) {
-
-  if (channel > 11) {
-    return; // out-of-range
-  }
-
-  const uint32_t dc_mask = 0xff;
-  uint32_t dc_new  = (uint32_t)dc;
-
-  uint32_t tmp = NEORV32_PWM->DC[channel/4];
-
-  tmp &= ~(dc_mask << ((channel % 4) * 8)); // clear previous duty cycle
-  tmp |=   dc_new  << ((channel % 4) * 8);  // set new duty cycle
-
-  NEORV32_PWM->DC[channel/4] = tmp;
-}
-
-
-/**********************************************************************//**
- * Get duty cycle from channel.
- *
- * @param[in] channel Channel select (0..11).
- * @return Duty cycle (8-bit, LSB-aligned) of channel 'channel'.
- **************************************************************************/
-uint8_t neorv32_pwm_get(int channel) {
-
-  if (channel > 11) {
-    return 0; // out of range
-  }
-
-  uint32_t rd = NEORV32_PWM->DC[channel/4] >> (((channel % 4) * 8));
-
-  return (uint8_t)rd;
+  return res;
 }

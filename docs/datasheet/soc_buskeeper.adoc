@@ -49,11 +49,11 @@ the CPU's PMP logic).
 **Register Map**
 
 .BUSKEEPER register map (`struct NEORV32_BUSKEEPER`)
-[cols="<2,<2,<4,^1,<4"]
+[cols="<3,<2,<4,^1,<4"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.2+<| `0xffffff78` .2+<| `NEORV32_BUSKEEPER.CTRL` <|`0`  _BUSKEEPER_ERR_TYPE_ ^| r/- <| Bus error type, valid if _BUSKEEPER_ERR_FLAG_
-                                                  <|`31` _BUSKEEPER_ERR_FLAG_ ^| r/c <| Sticky error flag, clears after read or write access
+.2+<| `0xffffff78` .2+<| `CTRL` <|`0`  _BUSKEEPER_ERR_TYPE_ ^| r/- <| Bus error type, valid if _BUSKEEPER_ERR_FLAG_
+                                <|`31` _BUSKEEPER_ERR_FLAG_ ^| r/c <| Sticky error flag, clears after read or write access
 | `0xffffff7c` | - | _reserved_ | r/c | _reserved_ (mirrored access to `CTRL`)
 |=======================

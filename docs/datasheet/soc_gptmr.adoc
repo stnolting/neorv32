@@ -46,22 +46,22 @@ writing zero to it.
 
 **Timer Interrupt**
 
-The timer interrupt is triggered when the timer is enabled and `COUNT` matches `THRES`. The interrupt
-remains pending until explicitly cleared by writing zero to the according <<_mip>> CSR bit.
+The GPTMR interrupt is triggered when the timer is enabled and `COUNT` matches `THRES`. The interrupt
+remains pending inside the CPU until it explicitly cleared by writing zero to the according <<_mip>> CSR bit.
 
 
 **Register Map**
 
 .GPTMR register map (`struct NEORV32_GPTMR`)
-[cols="<2,<2,<4,^1,<7"]
+[cols="<4,<2,<4,^1,<7"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.5+<| `0xffffff60` .5+<| `NEORV32_GPTMR.CTRL` <|`0` _GPTMR_CTRL_EN_    ^| r/w <| Timer enable flag
-                                              <|`1` _GPTMR_CTRL_PRSC0_ ^| r/w .3+| 3-bit clock prescaler select
-                                              <|`2` _GPTMR_CTRL_PRSC1_ ^| r/w 
-                                              <|`3` _GPTMR_CTRL_PRSC2_ ^| r/w 
-                                              <|`4` _GPTMR_CTRL_MODE_  ^| r/w <| Counter mode: `0`=single-shot, `1`=continuous
-| `0xffffff64` | `NEORV32_GPTMR.THRES` |`31:0` | r/w | Threshold value register
-| `0xffffff68` | `NEORV32_GPTMR.COUNT` |`31:0` | r/w | Counter register
+.5+<| `0xffffff60` .5+<| `CTRL` <|`0` _GPTMR_CTRL_EN_    ^| r/w <| Timer enable flag
+                                <|`1` _GPTMR_CTRL_PRSC0_ ^| r/w .3+| 3-bit clock prescaler select
+                                <|`2` _GPTMR_CTRL_PRSC1_ ^| r/w 
+                                <|`3` _GPTMR_CTRL_PRSC2_ ^| r/w 
+                                <|`4` _GPTMR_CTRL_MODE_  ^| r/w <| Counter mode: `0`=single-shot, `1`=continuous
+| `0xffffff64` | `THRES` |`31:0` | r/w | Threshold value register
+| `0xffffff68` | `COUNT` |`31:0` | r/w | Counter register
 |=======================
