@@ -50,6 +50,7 @@
 
 // prototypes for common used UART functions, applicable to UART0 and UART1
 int neorv32_uart_available(volatile neorv32_uart_t *UARTx);
+void neorv32_uart_setup(volatile neorv32_uart_t *UARTx, uint32_t baudrate, uint8_t parity, uint8_t flow_con);
 void neorv32_uart_enable(volatile neorv32_uart_t *UARTx);
 void neorv32_uart_disable(volatile neorv32_uart_t *UARTx);
 void neorv32_uart_putc(volatile neorv32_uart_t *UARTx, char c);
@@ -61,12 +62,5 @@ char neorv32_uart_char_received_get(volatile neorv32_uart_t *UARTx);
 void neorv32_uart_puts(volatile neorv32_uart_t *UARTx, const char *s);
 void neorv32_uart_printf(volatile neorv32_uart_t *UARTx, const char *format, ...);
 int neorv32_uart_scan(volatile neorv32_uart_t *UARTx, char *buffer, int max_size, int echo);
-
-// prototypes for UART0 (primary UART)
-void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
-
-// prototypes for UART1 (secondary UART)
-void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
-
 
 #endif // neorv32_uart_h

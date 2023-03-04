@@ -84,160 +84,13 @@ int getchar(void) {
 
 
 // #################################################################################################
-// Dedicated UART Functions
-// #################################################################################################
-
-
-/**********************************************************************//**
- * Enable and configure primary UART (UART0).
- *
- * @note The 'UART0_SIM_MODE' compiler flag will configure UART0 for simulation mode: all UART0 TX data will be redirected to simulation output. Use this for simulations only!
- * @note To enable simulation mode add <USER_FLAGS+=-DUART0_SIM_MODE> when compiling.
- *
- * @warning The baud rate is computed using INTEGER operations (truncation errors might occur).
- *
- * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
- * @param[in] parity Parity configuration (00=off, 10=even, 11=odd), see #NEORV32_UART_PARITY_enum.
- * @param[in] flow_con Hardware flow control configuration (00=off, 01=RTS, 10=CTS, 11=RTS/CTS), see #NEORV32_UART_FLOW_CONTROL_enum.
- **************************************************************************/
-void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
-
-  NEORV32_UART0.CTRL = 0; // reset
-
-  uint32_t clock = NEORV32_SYSINFO.CLK;
-  uint16_t i = 0; // BAUD rate divisor
-  uint8_t p = 0; // initial prsc = CLK/2
-
-  // raw clock prescaler
-#ifndef make_bootloader
-  // use div instructions
-  i = (uint16_t)(clock / (2*baudrate));
-#else
-  // division via repeated subtraction (minimal size, only for bootloader)
-  while (clock >= 2*baudrate) {
-    clock -= 2*baudrate;
-    i++;
-  }
-#endif
-
-  // find baud prescaler (12-bit wide))
-  while (i >= 0x0fff) {
-    if ((p == 2) || (p == 4))
-      i >>= 3;
-    else
-      i >>= 1;
-    p++;
-  }
-
-  uint32_t clk_prsc = (uint32_t)p;
-  clk_prsc = clk_prsc << UART_CTRL_PRSC0;
-
-  uint32_t baud_prsc = (uint32_t)i;
-  baud_prsc = baud_prsc - 1;
-  baud_prsc = baud_prsc << UART_CTRL_BAUD00;
-
-  uint32_t uart_en = 1;
-  uart_en = uart_en << UART_CTRL_EN;
-
-  uint32_t parity_config = (uint32_t)(parity & 3);
-  parity_config = parity_config << UART_CTRL_PMODE0;
-
-  uint32_t flow_control = (uint32_t)(flow_con & 3);
-  flow_control = flow_control << UART_CTRL_RTS_EN;
-
-  /* Enable UART0 for SIM mode. */
-  /* USE THIS ONLY FOR SIMULATION! */
-#ifdef UART_SIM_MODE
-  #warning <UART_SIM_MODE> is obsolete (but still supported for compatibility). Please consider using the new flag <UART0_SIM_MODE>.
-#endif
-#if defined UART0_SIM_MODE || defined UART_SIM_MODE
-  #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only!
-  uint32_t sim_mode = 1 << UART_CTRL_SIM_MODE;
-#else
-  uint32_t sim_mode = 0;
-#endif
-
-  NEORV32_UART0.CTRL = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode | flow_control;
-}
-
-
-/**********************************************************************//**
- * Enable and configure secondary UART (UART1).
- *
- * @note The 'UART1_SIM_MODE' compiler flag will configure UART1 for simulation mode: all UART1 TX data will be redirected to simulation output. Use this for simulations only!
- * @note To enable simulation mode add <USER_FLAGS+=-DUART1_SIM_MODE> when compiling.
- *
- * @warning The baud rate is computed using INTEGER operations (truncation errors might occur).
- *
- * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
- * @param[in] parity Parity configuration (00=off, 10=even, 11=odd), see #NEORV32_UART_PARITY_enum.
- * @param[in] flow_con Hardware flow control configuration (00=off, 01=RTS, 10=CTS, 11=RTS/CTS), see #NEORV32_UART_FLOW_CONTROL_enum.
- **************************************************************************/
-void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
-
-  NEORV32_UART1.CTRL = 0; // reset
-
-  uint32_t clock = NEORV32_SYSINFO.CLK;
-  uint16_t i = 0; // BAUD rate divisor
-  uint8_t p = 0; // initial prsc = CLK/2
-
-  // raw clock prescaler
-#ifndef make_bootloader
-  // use div instructions
-  i = (uint16_t)(clock / (2*baudrate));
-#else
-  // division via repeated subtraction (minimal size, only for bootloader)
-  while (clock >= 2*baudrate) {
-    clock -= 2*baudrate;
-    i++;
-  }
-#endif
-
-  // find baud prescaler (12-bit wide))
-  while (i >= 0x0fff) {
-    if ((p == 2) || (p == 4))
-      i >>= 3;
-    else
-      i >>= 1;
-    p++;
-  }
-
-  uint32_t clk_prsc = (uint32_t)p;
-  clk_prsc = clk_prsc << UART_CTRL_PRSC0;
-
-  uint32_t baud_prsc = (uint32_t)i;
-  baud_prsc = baud_prsc - 1;
-  baud_prsc = baud_prsc << UART_CTRL_BAUD00;
-
-  uint32_t uart_en = 1;
-  uart_en = uart_en << UART_CTRL_EN;
-
-  uint32_t parity_config = (uint32_t)(parity & 3);
-  parity_config = parity_config << UART_CTRL_PMODE0;
-
-  uint32_t flow_control = (uint32_t)(flow_con & 3);
-  flow_control = flow_control << UART_CTRL_RTS_EN;
-
-  /* Enable UART1 for SIM mode. */
-  /* USE THIS ONLY FOR SIMULATION! */
-#ifdef UART1_SIM_MODE
-  #warning UART1_SIM_MODE (secondary UART) enabled! Sending all UART1.TX data to text.io simulation output instead of real UART1 transmitter. Use this for simulations only!
-  uint32_t sim_mode = 1 << UART_CTRL_SIM_MODE;
-#else
-  uint32_t sim_mode = 0;
-#endif
-
-  NEORV32_UART1.CTRL = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode | flow_control;
-}
-
-
-// #################################################################################################
-// Common used UART, assigned to UART0/1 in neorv32_uart.h
+// Common used UART, assigned to UART0/1 in legacy.h
 // #################################################################################################
 
 /**********************************************************************//**
  * Check if UART0/1 unit was synthesized.
  *
+ * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
  * @return 0 if UART0/1 was not synthesized, 1 if UART0/1 is available.
  **************************************************************************/
 int neorv32_uart_available (volatile neorv32_uart_t *UARTx) {
@@ -251,6 +104,94 @@ int neorv32_uart_available (volatile neorv32_uart_t *UARTx) {
     available = 1;
   }
   return(available);
+}
+
+
+/**********************************************************************//**
+ * Enable and configure primary UART (UART0).
+ *
+ * @note The 'UART0_SIM_MODE' compiler flag will configure UART0 for simulation mode. All UART0 TX data will be redirected to simulation output. Use this for simulations only!
+ * @note The 'UART1_SIM_MODE' compiler flag will configure UART1 for simulation mode. All UART1 TX data will be redirected to simulation output. Use this for simulations only!
+ * @note To enable simulation mode add <USER_FLAGS+=-DUART0_SIM_MODE> when compiling.
+ * @note To enable simulation mode add <USER_FLAGS+=-DUART1_SIM_MODE> when compiling.
+ *
+ * @warning The baud rate is computed using INTEGER operations (truncation errors might occur).
+ *
+ * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
+ * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
+ * @param[in] parity Parity configuration (00=off, 10=even, 11=odd), see #NEORV32_UART_PARITY_enum.
+ * @param[in] flow_con Hardware flow control configuration (00=off, 01=RTS, 10=CTS, 11=RTS/CTS), see #NEORV32_UART_FLOW_CONTROL_enum.
+ **************************************************************************/
+void neorv32_uart_setup(volatile neorv32_uart_t *UARTx, uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
+
+  uint32_t clock = NEORV32_SYSINFO.CLK; // get system clock
+  uint16_t i = 0;         // BAUD rate divisor
+  uint8_t p = 0;          // initial prsc = CLK/2
+  uint32_t sim_mode = 0;  // redirect output to stdio
+
+  // Sim mode requested?
+  /* Enable UART0/1 for SIM mode. */
+  /* USE THIS ONLY FOR SIMULATION! */
+#ifdef UART_SIM_MODE
+  #warning <UART_SIM_MODE> is obsolete (but still supported for compatibility). Please consider using the new flag <UART0_SIM_MODE>.
+#endif
+
+#ifdef UART0_SIM_MODE
+#warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only!
+  if ((uint32_t(&self) == NEORV32_UART0_BASE) then {
+    sim_mode = 1 << UART_CTRL_SIM_MODE;
+  }
+#endif
+
+#ifdef UART1_SIM_MODE
+#warning UART1_SIM_MODE (secondary UART) enabled! Sending all UART1.TX data to text.io simulation output instead of real UART1 transmitter. Use this for simulations only!
+  if ((uint32_t(&self) == NEORV32_UART1_BASE) then {
+    sim_mode = 1 << UART_CTRL_SIM_MODE;
+  }
+#endif
+
+  // reset
+  UARTx->CTRL = 0;
+
+  // raw clock prescaler
+#ifndef make_bootloader
+  // use div instructions
+  i = (uint16_t)(clock / (2*baudrate));
+#else
+  // division via repeated subtraction (minimal size, only for bootloader)
+  while (clock >= 2*baudrate) {
+    clock -= 2*baudrate;
+    i++;
+  }
+#endif
+
+  // find baud prescaler (12-bit wide))
+  while (i >= 0x0fff) {
+    if ((p == 2) || (p == 4))
+      i >>= 3;
+    else
+      i >>= 1;
+    p++;
+  }
+
+  uint32_t clk_prsc = (uint32_t)p;
+  clk_prsc = clk_prsc << UART_CTRL_PRSC0;
+
+  uint32_t baud_prsc = (uint32_t)i;
+  baud_prsc = baud_prsc - 1;
+  baud_prsc = baud_prsc << UART_CTRL_BAUD00;
+
+  uint32_t uart_en = 1;
+  uart_en = uart_en << UART_CTRL_EN;
+
+  uint32_t parity_config = (uint32_t)(parity & 3);
+  parity_config = parity_config << UART_CTRL_PMODE0;
+
+  uint32_t flow_control = (uint32_t)(flow_con & 3);
+  flow_control = flow_control << UART_CTRL_RTS_EN;
+
+
+  UARTx->CTRL = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode | flow_control;
 }
 
 
