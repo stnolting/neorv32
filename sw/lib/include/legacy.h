@@ -51,6 +51,7 @@
  * @name UART0: Backward compatibility Wrapper, #neorv32_uart_h
  **************************************************************************/
 /**@{*/
+#define neorv32_uart0_available()                   neorv32_uart_available(&NEORV32_UART0)
 #define neorv32_uart0_disable()                     neorv32_uart_disable(&NEORV32_UART0)
 #define neorv32_uart0_enable()                      neorv32_uart_enable(&NEORV32_UART0)
 #define neorv32_uart0_putc(c)                       neorv32_uart_putc(&NEORV32_UART0, c)
@@ -68,6 +69,7 @@
  * @name UART1: Backward compatibility Wrapper, #neorv32_uart_h
  **************************************************************************/
 /**@{*/
+#define neorv32_uart1_available()                   neorv32_uart_available(&NEORV32_UART1)
 #define neorv32_uart1_disable()                     neorv32_uart_disable(&NEORV32_UART1)
 #define neorv32_uart1_enable()                      neorv32_uart_enable(&NEORV32_UART1)
 #define neorv32_uart1_putc(c)                       neorv32_uart_putc(&NEORV32_UART1, c)

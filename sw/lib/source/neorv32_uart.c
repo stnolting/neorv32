@@ -87,37 +87,6 @@ int getchar(void) {
 // Dedicated UART Functions
 // #################################################################################################
 
-/**********************************************************************//**
- * Check if UART0 unit was synthesized.
- *
- * @return 0 if UART0 was not synthesized, 1 if UART0 is available.
- **************************************************************************/
-int neorv32_uart0_available(void) {
-
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_UART0)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
-}
-
-
-/**********************************************************************//**
- * Check if UART1 unit was synthesized.
- *
- * @return 0 if UART1 was not synthesized, 1 if UART1 is available.
- **************************************************************************/
-int neorv32_uart1_available(void) {
-
-  if (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_UART1)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
-}
-
 
 /**********************************************************************//**
  * Enable and configure primary UART (UART0).
@@ -265,6 +234,25 @@ void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 // #################################################################################################
 // Common used UART, assigned to UART0/1 in neorv32_uart.h
 // #################################################################################################
+
+/**********************************************************************//**
+ * Check if UART0/1 unit was synthesized.
+ *
+ * @return 0 if UART0/1 was not synthesized, 1 if UART0/1 is available.
+ **************************************************************************/
+int neorv32_uart_available (volatile neorv32_uart_t *UARTx) {
+
+  int available = 0;
+
+  if ( ((int)UARTx == NEORV32_UART0_BASE) && (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_UART0)) ) {
+    available = 1;
+  }
+  if ( ((int)UARTx == NEORV32_UART1_BASE) && (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_UART1)) ) {
+    available = 1;
+  }
+  return(available);
+}
+
 
 /**********************************************************************//**
  * Enable UART

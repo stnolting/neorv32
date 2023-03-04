@@ -49,6 +49,7 @@
 #include <stdarg.h>
 
 // prototypes for common used UART functions, applicable to UART0 and UART1
+int neorv32_uart_available(volatile neorv32_uart_t *UARTx);
 void neorv32_uart_enable(volatile neorv32_uart_t *UARTx);
 void neorv32_uart_disable(volatile neorv32_uart_t *UARTx);
 void neorv32_uart_putc(volatile neorv32_uart_t *UARTx, char c);
@@ -62,11 +63,9 @@ void neorv32_uart_printf(volatile neorv32_uart_t *UARTx, const char *format, ...
 int neorv32_uart_scan(volatile neorv32_uart_t *UARTx, char *buffer, int max_size, int echo);
 
 // prototypes for UART0 (primary UART)
-int  neorv32_uart0_available(void);
 void neorv32_uart0_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
 
 // prototypes for UART1 (secondary UART)
-int  neorv32_uart1_available(void);
 void neorv32_uart1_setup(uint32_t baudrate, uint8_t parity, uint8_t flow_con);
 
 
