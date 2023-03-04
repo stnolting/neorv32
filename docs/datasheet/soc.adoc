@@ -22,7 +22,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ internal bootloader (<<_bootloader_rom_bootrom,**BOOTROM**>>) with UART console & SPI flash boot option
 * _optional_ machine system timer (<<_machine_system_timer_mtime,**MTIME**>>), RISC-V-compatible
 * _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>, <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,**UART1**>>) with optional hardware flow control (RTS/CTS) and optional RX/TX FIFOs
-* _optional_ 8/16/24/32-bit serial peripheral interface host controller (<<_serial_peripheral_interface_controller_spi,**SPI**>>) with 8 dedicated CS lines
+* _optional_ serial peripheral interface host controller (<<_serial_peripheral_interface_controller_spi,**SPI**>>) with 8 dedicated CS lines
 * _optional_ 8-bit serial data device interface (<<_serial_data_interface_controller_spi,**SDI**>>)
 * _optional_ two wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
 * _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 64xOut, 64xIn
@@ -855,8 +855,8 @@ GPIO controller is not implemented at all.
 [cols="4,4,2"]
 [frame="all",grid="none"]
 |======
-| **IO_SPI_FIFO** | _natural_ | 0
-3+| Depth of the <<_serial_peripheral_interface_controller_spi>> FIFO. Has to be zero or a power of two.
+| **IO_SPI_FIFO** | _natural_ | 1
+3+| Depth of the <<_serial_peripheral_interface_controller_spi>> FIFO. Has to be a power of two, min 1.
 Maximum value is 32768.
 |======
 

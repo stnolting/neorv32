@@ -119,7 +119,7 @@ entity neorv32_top is
     IO_UART1_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
     IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
-    IO_SPI_FIFO                  : natural := 0;      -- SPI RTX fifo depth, has to be zero or a power of two
+    IO_SPI_FIFO                  : natural := 1;      -- SPI RTX fifo depth, has to be a power of two, min 1
     IO_SDI_EN                    : boolean := false;  -- implement serial data interface (SDI)?
     IO_SDI_FIFO                  : natural := 0;      -- SDI RTX fifo depth, has to be zero or a power of two
     IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
@@ -1254,8 +1254,8 @@ begin
       uart_rts_o  => uart1_rts_o,                -- UART.RX ready to receive ("RTR"), low-active, optional
       uart_cts_i  => uart1_cts_i,                -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
-      irq_rxd_o   => uart1_rxd_irq,              -- uart data received interrupt
-      irq_txd_o   => uart1_txd_irq               -- uart transmission done interrupt
+      irq_rxd_o   => uart1_rxd_irq,              -- uart rx interrupt
+      irq_txd_o   => uart1_txd_irq               -- uart tx interrupt
     );
     resp_bus(RESP_UART1).err <= '0'; -- no access error possible
   end generate;
@@ -1278,7 +1278,7 @@ begin
   if (IO_SPI_EN = true) generate
     neorv32_spi_inst: neorv32_spi
     generic map (
-      IO_SPI_FIFO => IO_SPI_FIFO -- SPI RTX fifo depth, has to be zero or a power of two
+      IO_SPI_FIFO => IO_SPI_FIFO -- SPI RTX fifo depth, has to be a power of two, min 1
     )
     port map (
       -- host access --

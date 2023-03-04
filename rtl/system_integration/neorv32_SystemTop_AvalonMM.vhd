@@ -109,7 +109,7 @@ entity neorv32_top_avalonmm is
     IO_UART1_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
     IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
-    IO_SPI_FIFO                  : natural := 0;      -- SPI RTX fifo depth, has to be zero or a power of two
+    IO_SPI_FIFO                  : natural := 1;      -- SPI RTX fifo depth, has to be a power of two, min 1
     IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    : boolean := false;  -- implement watch dog timer (WDT)?
