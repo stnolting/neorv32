@@ -97,10 +97,10 @@ int neorv32_uart_available (volatile neorv32_uart_t *UARTx) {
 
   int available = 0;
 
-  if ( ((int)UARTx == NEORV32_UART0_BASE) && (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_UART0)) ) {
+  if ( ((int)UARTx == NEORV32_UART0_BASE) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART0)) ) {
     available = 1;
   }
-  if ( ((int)UARTx == NEORV32_UART1_BASE) && (NEORV32_SYSINFO.SOC & (1 << SYSINFO_SOC_IO_UART1)) ) {
+  if ( ((int)UARTx == NEORV32_UART1_BASE) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1)) ) {
     available = 1;
   }
   return(available);
@@ -124,7 +124,7 @@ int neorv32_uart_available (volatile neorv32_uart_t *UARTx) {
  **************************************************************************/
 void neorv32_uart_setup(volatile neorv32_uart_t *UARTx, uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
 
-  uint32_t clock = NEORV32_SYSINFO.CLK; // get system clock
+  uint32_t clock = NEORV32_SYSINFO->CLK;  // get system clock
   uint16_t i = 0;         // BAUD rate divisor
   uint8_t p = 0;          // initial prsc = CLK/2
   uint32_t sim_mode = 0;  // redirect output to stdio
