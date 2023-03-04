@@ -101,7 +101,7 @@ entity neorv32_SystemTop_axi4lite is
     IO_UART1_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
     IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
-    IO_SPI_FIFO                  : natural := 0;      -- SPI RTX fifo depth, has to be zero or a power of two
+    IO_SPI_FIFO                  : natural := 1;      -- SPI RTX fifo depth, has to be a power of two, min 1
     IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
@@ -348,7 +348,7 @@ begin
     IO_UART1_RX_FIFO             => IO_UART1_RX_FIFO,   -- RX fifo depth, has to be a power of two, min 1
     IO_UART1_TX_FIFO             => IO_UART1_TX_FIFO,   -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    => IO_SPI_EN,          -- implement serial peripheral interface (SPI)?
-    IO_SPI_FIFO                  => IO_SPI_FIFO,        -- SPI RTX fifo depth, has to be zero or a power of two
+    IO_SPI_FIFO                  => IO_SPI_FIFO,        -- SPI RTX fifo depth, has to be a power of two, min 1
     IO_TWI_EN                    => IO_TWI_EN,          -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                => IO_PWM_NUM_CH,      -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    => IO_WDT_EN,          -- implement watch dog timer (WDT)?

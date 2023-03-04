@@ -1067,32 +1067,34 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** SPI control register bits */
 enum NEORV32_SPI_CTRL_enum {
-  SPI_CTRL_EN        =  0, /**< SPI control register(0)  (r/w): SPI unit enable */
-  SPI_CTRL_CPHA      =  1, /**< SPI control register(1)  (r/w): Clock phase */
-  SPI_CTRL_CPOL      =  2, /**< SPI control register(2)  (r/w): Clock polarity */
-  SPI_CTRL_SIZE0     =  3, /**< SPI control register(3)  (r/w): Transfer data size lsb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
-  SPI_CTRL_SIZE1     =  4, /**< SPI control register(4)  (r/w): Transfer data size msb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
-  SPI_CTRL_CS_SEL0   =  5, /**< SPI control register(5)  (r/w): Direct chip select bit 1 */
-  SPI_CTRL_CS_SEL1   =  6, /**< SPI control register(6)  (r/w): Direct chip select bit 2 */
-  SPI_CTRL_CS_SEL2   =  7, /**< SPI control register(7)  (r/w): Direct chip select bit 2 */
-  SPI_CTRL_CS_EN     =  8, /**< SPI control register(8)  (r/w): Chip select enable (selected CS line output is low when set) */
-  SPI_CTRL_PRSC0     =  9, /**< SPI control register(9)  (r/w): Clock prescaler select bit 0 */
-  SPI_CTRL_PRSC1     = 10, /**< SPI control register(10) (r/w): Clock prescaler select bit 1 */
-  SPI_CTRL_PRSC2     = 11, /**< SPI control register(11) (r/w): Clock prescaler select bit 2 */
-  SPI_CTRL_CDIV0     = 12, /**< SPI control register(12) (r/w): Clock divider bit 0 */
-  SPI_CTRL_CDIV1     = 13, /**< SPI control register(13) (r/w): Clock divider bit 1 */
-  SPI_CTRL_CDIV2     = 14, /**< SPI control register(14) (r/w): Clock divider bit 2 */
-  SPI_CTRL_CDIV3     = 15, /**< SPI control register(15) (r/w): Clock divider bit 3 */
-  SPI_CTRL_IRQ0      = 16, /**< SPI control register(16) (r/w): Interrupt configuration lsb (0-: PHY going idle) */
-  SPI_CTRL_IRQ1      = 17, /**< SPI control register(17) (r/w): Interrupt configuration lsb (10: TX fifo less than half full, 11: TX fifo empty) */
+  SPI_CTRL_EN           =  0, /**< SPI control register(0)  (r/w): SPI unit enable */
+  SPI_CTRL_CPHA         =  1, /**< SPI control register(1)  (r/w): Clock phase */
+  SPI_CTRL_CPOL         =  2, /**< SPI control register(2)  (r/w): Clock polarity */
+  SPI_CTRL_CS_SEL0      =  3, /**< SPI control register(3)  (r/w): Direct chip select bit 1 */
+  SPI_CTRL_CS_SEL1      =  4, /**< SPI control register(4)  (r/w): Direct chip select bit 2 */
+  SPI_CTRL_CS_SEL2      =  5, /**< SPI control register(5)  (r/w): Direct chip select bit 2 */
+  SPI_CTRL_CS_EN        =  6, /**< SPI control register(6)  (r/w): Chip select enable (selected CS line output is low when set) */
+  SPI_CTRL_PRSC0        =  7, /**< SPI control register(7)  (r/w): Clock prescaler select bit 0 */
+  SPI_CTRL_PRSC1        =  8, /**< SPI control register(8)  (r/w): Clock prescaler select bit 1 */
+  SPI_CTRL_PRSC2        =  9, /**< SPI control register(9)  (r/w): Clock prescaler select bit 2 */
+  SPI_CTRL_CDIV0        = 10, /**< SPI control register(10) (r/w): Clock divider bit 0 */
+  SPI_CTRL_CDIV1        = 11, /**< SPI control register(11) (r/w): Clock divider bit 1 */
+  SPI_CTRL_CDIV2        = 12, /**< SPI control register(12) (r/w): Clock divider bit 2 */
+  SPI_CTRL_CDIV3        = 13, /**< SPI control register(13) (r/w): Clock divider bit 3 */
 
-  SPI_CTRL_FIFO_LSB  = 23, /**< SPI control register(23) (r/-): log2(FIFO size), lsb */
-  SPI_CTRL_FIFO_MSB  = 26, /**< SPI control register(26) (r/-): log2(FIFO size), msb */
-  SPI_CTRL_RX_AVAIL  = 27, /**< SPI control register(27) (r/-): RX FIFO data available (RX FIFO not empty) */
-  SPI_CTRL_TX_EMPTY  = 28, /**< SPI control register(28) (r/-): TX FIFO empty */
-  SPI_CTRL_TX_HALF   = 29, /**< SPI control register(29) (r/-): TX FIFO at least half full */
-  SPI_CTRL_TX_FULL   = 30, /**< SPI control register(30) (r/-): TX FIFO full */
-  SPI_CTRL_BUSY      = 31  /**< SPI control register(31) (r/-): SPI busy flag */
+  SPI_CTRL_RX_AVAIL     = 16, /**< SPI control register(16) (r/-): RX FIFO data available (RX FIFO not empty) */
+  SPI_CTRL_TX_EMPTY     = 17, /**< SPI control register(17) (r/-): TX FIFO empty */
+  SPI_CTRL_TX_NHALF     = 18, /**< SPI control register(18) (r/-): TX FIFO not at least half full */
+  SPI_CTRL_TX_FULL      = 19, /**< SPI control register(19) (r/-): TX FIFO full */
+
+  SPI_CTRL_IRQ_RX_AVAIL = 20, /**< SPI control register(20) (r/w): Fire IRQ if RX FIFO data available (RX FIFO not empty) */
+  SPI_CTRL_IRQ_TX_EMPTY = 21, /**< SPI control register(21) (r/w): Fire IRQ if TX FIFO empty */
+  SPI_CTRL_IRQ_TX_HALF  = 22, /**< SPI control register(22) (r/w): Fire IRQ if TX FIFO not at least half full */
+
+  SPI_CTRL_FIFO_LSB     = 23, /**< SPI control register(23) (r/-): log2(FIFO size), lsb */
+  SPI_CTRL_FIFO_MSB     = 26, /**< SPI control register(26) (r/-): log2(FIFO size), msb */
+
+  SPI_CTRL_BUSY         = 31  /**< SPI control register(31) (r/-): SPI busy flag */
 };
 /**@}*/
 

@@ -70,6 +70,32 @@ static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data);
 
 
 /**********************************************************************//**
+ * Enable specific interrupt channel.
+ * @note This functions also tries to clear the pending flag of the interrupt.
+ *
+ * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
+ **************************************************************************/
+void neorv32_cpu_irq_enable(int irq_sel) {
+
+  neorv32_cpu_csr_clr(CSR_MIP, 1 << (irq_sel & 0x1f)); // clear pending
+  neorv32_cpu_csr_set(CSR_MIE, 1 << (irq_sel & 0x1f)); // enable
+}
+
+
+/**********************************************************************//**
+ * Disable specific interrupt channel.
+ * @note This functions also tries to clear the pending flag of the interrupt.
+ *
+ * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
+ **************************************************************************/
+void neorv32_cpu_irq_disable(int irq_sel) {
+
+  neorv32_cpu_csr_clr(CSR_MIE, 1 << (irq_sel & 0x1f)); // disable
+  neorv32_cpu_csr_clr(CSR_MIP, 1 << (irq_sel & 0x1f)); // clear pending
+}
+
+
+/**********************************************************************//**
  * Get cycle counter from cycle[h].
  *
  * @return Current cycle counter (64 bit).

@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080105"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080106"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1028,7 +1028,7 @@ package neorv32_package is
       IO_UART1_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
       IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
       IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
-      IO_SPI_FIFO                  : natural := 0;      -- SPI RTX fifo depth, has to be zero or a power of two
+      IO_SPI_FIFO                  : natural := 1;      -- SPI RTX fifo depth, has to be a power of two, min 1
       IO_SDI_EN                    : boolean := false;  -- implement serial data interface (SDI)?
       IO_SDI_FIFO                  : natural := 0;      -- SDI RTX fifo depth, has to be zero or a power of two
       IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
@@ -1775,7 +1775,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_spi
     generic (
-      IO_SPI_FIFO : natural -- SPI RTX fifo depth, has to be zero or a power of two
+      IO_SPI_FIFO : natural -- SPI RTX fifo depth, has to be power of two, min 1
     );
     port (
       -- host access --

@@ -68,77 +68,30 @@ void neorv32_spi_init(t_neorv32_spi *self) {
  **************************************************************************/
 void neorv32_spi_isr(t_neorv32_spi *self) {
 
-  volatile uint32_t uint32Buf;  // help variable
-  uint32_t          uint32Lim;  // loop limit
-
-
-  neorv32_cpu_csr_write(CSR_MIP, ~(1<<SPI_FIRQ_PENDING)); // ack/clear FIRQ
+  uint32_t  uint32Lim;  // loop limit
 
   if ( 0 == self->uint32Total ) { // leave if accidentally called ISR
     return;
   }
 
-  switch (self->uint8SzElem) {
-    case 1:   // uint8_t
-      // read data from SPI from last transfer
-      for ( ; self->uint32Read<self->uint32Write; (self->uint32Read)++ ) {
-        ((uint8_t *) self->ptrSpiBuf)[self->uint32Read] = (uint8_t) (NEORV32_SPI->DATA & 0xff);  // capture from last transfer
-      }
-      if ( self->uint32Read == self->uint32Total ) {  // transfer done, no new data
-        neorv32_spi_cs_dis(); // deselect slave
-        self->uint32Total = 0;
-        self->uint8IsBusy = 0;
-        break;
-      }
-      // write next packet
-      uint32Lim = min(self->uint32Write+self->uint16Fifo, self->uint32Total);
-      for ( ; self->uint32Write<uint32Lim; (self->uint32Write)++ ) {
-        uint32Buf = 0;
-        uint32Buf |= ((uint8_t *) self->ptrSpiBuf)[self->uint32Write];
-        NEORV32_SPI->DATA = uint32Buf; // next transfer
-      }
-      break;
-    case 2:   // uint16_t
-      // read data from SPI from last transfer
-      for ( ; self->uint32Read<self->uint32Write; (self->uint32Read)++ ) {
-        ((uint16_t *) self->ptrSpiBuf)[self->uint32Read] = (uint16_t) (NEORV32_SPI->DATA & 0xffff);  // capture from last transfer
-      }
-      if ( self->uint32Read == self->uint32Total ) {  // transfer done, no new data
-        neorv32_spi_cs_dis(); // deselect slave
-        self->uint32Total = 0;
-        self->uint8IsBusy = 0;
-        break;
-      }
-      // write next packet
-      uint32Lim = min(self->uint32Write+self->uint16Fifo, self->uint32Total);
-      for ( ; self->uint32Write<uint32Lim; (self->uint32Write)++ ) {
-        uint32Buf = 0;
-        uint32Buf |= ((uint16_t *) self->ptrSpiBuf)[self->uint32Write];
-        NEORV32_SPI->DATA = uint32Buf; // next transfer
-      }
-      break;
-    case 4:   // uint32_t
-      // read data from SPI from last transfer
-      for ( ; self->uint32Read<self->uint32Write; (self->uint32Read)++ ) {
-        ((uint32_t *) self->ptrSpiBuf)[self->uint32Read] = NEORV32_SPI->DATA;  // capture from last transfer
-      }
-      if ( self->uint32Read == self->uint32Total ) {  // transfer done, no new data
-        neorv32_spi_cs_dis(); // deselect slave
-        self->uint32Total = 0;
-        self->uint8IsBusy = 0;
-        break;
-      }
-      // write next packet
-      uint32Lim = min(self->uint32Write+self->uint16Fifo, self->uint32Total);
-      for ( ; self->uint32Write<uint32Lim; (self->uint32Write)++ ) {
-        uint32Buf = 0;
-        uint32Buf |= ((uint32_t *) self->ptrSpiBuf)[self->uint32Write];
-        NEORV32_SPI->DATA = uint32Buf; // next transfer
-      }
-      break;
-    default:  // unknown
-      return;
+  // read data from SPI from last transfer
+  for ( ; self->uint32Read<self->uint32Write; (self->uint32Read)++ ) {
+    (self->ptrSpiBuf)[self->uint32Read] = (uint8_t) (NEORV32_SPI->DATA & 0xff);  // capture from last transfer
   }
+  if ( self->uint32Read == self->uint32Total ) {  // transfer done, no new data
+    neorv32_spi_cs_dis(); // deselect slave
+    self->uint32Total = 0;
+    self->uint8IsBusy = 0;
+    neorv32_cpu_csr_clr(CSR_MIP, 1 << SPI_FIRQ_PENDING); // ack/clear pending FIRQ
+    return;
+  }
+
+  // write next packet
+  uint32Lim = min(self->uint32Write+self->uint16Fifo, self->uint32Total);
+  for ( ; self->uint32Write<uint32Lim; (self->uint32Write)++ ) {
+    NEORV32_SPI->DATA = (uint32_t) (self->ptrSpiBuf)[self->uint32Write]; // next transfer
+  }
+  neorv32_cpu_csr_clr(CSR_MIP, 1 << SPI_FIRQ_PENDING); // ack/clear pending FIRQ
   return;
 }
 
@@ -147,49 +100,31 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
  * Starts ISR driven read/write SPI transfer.
  *
  * @param[in,out] *self SPI driver common data handle. See #t_neorv32_spi.
- * @param[in,out] *spi write/read data buffer for SPI. Before transmission contents the write data and after the read data.
  * @param[in] csn Used chip select index for transfer.
- * @param[in] num_elem Number of elements to transfer.
- * @param[in] data_byte Number of data bytes per element in *spi.
+ * @param[in,out] *spi write/read data buffer for SPI. Before transmission contents the write data and after the read data.
+ * @param[in] len number of bytes to transfer.
  * @return int status of function.
  * @retval 0 new transfer started.
  * @retval 1 transfer active, refused request.
  * @retval 2 unsupported data size, only 1/2/4 allowed.
  **************************************************************************/
-int neorv32_spi_rw(t_neorv32_spi *self, void *spi, uint8_t csn, uint32_t num_elem, uint8_t data_byte) {
-
-  volatile uint32_t uint32Buf;  // help variable
+int neorv32_spi_rw(t_neorv32_spi *self, uint8_t csn, void *spi, uint32_t len) {
 
   if ( 0 != self->uint8IsBusy ) {
     return 1; // transfer active, no new request
   }
 
-  self->uint32Total = num_elem;
+  self->uint32Total = len;
   self->uint32Write = 0;  // write element count
   self->uint32Read = 0;   // read element count
-  self->ptrSpiBuf = spi;
-  self->uint8SzElem = data_byte;
+  self->ptrSpiBuf = (uint8_t*) spi; // spi is byte orientated
   self->uint8Csn = csn;
   self->uint8IsBusy = 1;  // mark as busy
 
   neorv32_spi_cs_en(self->uint8Csn);  // select SPI channel
 
-  uint32Buf = 0;
-  switch (self->uint8SzElem) {  // start first transfer, rest is handled by ISR; can only sent one element, otherwise clash with ISR
-    case 1:   // uint8_t
-      uint32Buf |= ((uint8_t *) self->ptrSpiBuf)[0];
-      break;
-    case 2:   // uint16_t
-      uint32Buf |= ((uint16_t *) self->ptrSpiBuf)[0];
-      break;
-    case 4:   // uint32_t
-      uint32Buf = ((uint32_t *) self->ptrSpiBuf)[0];
-      break;
-    default:
-      return 2; // unsupported byte size
-    }
-    (self->uint32Write)++;
-    NEORV32_SPI->DATA = uint32Buf; // next transfer
+  (self->uint32Write)++;
+  NEORV32_SPI->DATA = (uint32_t) (self->ptrSpiBuf)[0];  // sent first element
 
   return 0; // successful end
 }

@@ -826,64 +826,69 @@
               <description>Clock polarity</description>
             </field>
             <field>
-              <name>SPI_CTRL_SIZE</name>
-              <bitRange>[4:3]</bitRange>
-              <description>Data transfer size</description>
-            </field>
-            <field>
               <name>SPI_CTRL_CS_SEL</name>
-              <bitRange>[7:5]</bitRange>
+              <bitRange>[5:3]</bitRange>
               <description>CS select</description>
             </field>
             <field>
               <name>SPI_CTRL_CS_EN</name>
-              <bitRange>[8:8]</bitRange>
+              <bitRange>[6:6]</bitRange>
               <description>Enable selected CS line</description>
             </field>
             <field>
               <name>SPI_CTRL_PRSC</name>
-              <bitRange>[11:9]</bitRange>
+              <bitRange>[9:7]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
               <name>SPI_CTRL_CDIV</name>
-              <bitRange>[15:12]</bitRange>
+              <bitRange>[13:10]</bitRange>
               <description>SPI clock divider</description>
             </field>
             <field>
-              <name>SPI_CTRL_IRQ</name>
-              <bitRange>[17:16]</bitRange>
-              <description>Interrupt configuration</description>
+              <name>SPI_CTRL_RX_AVAIL</name>
+              <bitRange>[16:16]</bitRange>
+              <access>read-only</access>
+              <description>RX FIFO data available (RX FIFO not empty)</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_TX_EMPTY</name>
+              <bitRange>[17:17]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO is empty</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_TX_NHALF</name>
+              <bitRange>[18:18]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO not at least half full</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_TX_FULL</name>
+              <bitRange>[19:19]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO is full</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_IRQ_RX_AVAIL</name>
+              <bitRange>[20:20]</bitRange>
+              <description>Fire interrupt if RX FIFO is not empty</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_IRQ_TX_EMPTY</name>
+              <bitRange>[21:21]</bitRange>
+              <description>Fire interrupt if TX FIFO is empty</description>
+            </field>
+            <field>
+              <name>SPI_CTRL_IRQ_TX_NHALF</name>
+              <bitRange>[22:22]</bitRange>
+              <description>Fire interrupt if TX FIFO is not at least half full</description>
             </field>
             <field>
               <name>SPI_CTRL_FIFO</name>
               <bitRange>[26:23]</bitRange>
               <access>read-only</access>
               <description>log2(FIFO size)</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_RX_AVAIL</name>
-              <bitRange>[27:27]</bitRange>
-              <access>read-only</access>
-              <description>RX FIFO data available (RX FIFO not empty)</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_TX_EMPTY</name>
-              <bitRange>[28:28]</bitRange>
-              <access>read-only</access>
-              <description>TX FIFO is empty</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_TX_HALF</name>
-              <bitRange>[29:29]</bitRange>
-              <access>read-only</access>
-              <description>TX FIFO is at least half full</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_TX_FULL</name>
-              <bitRange>[30:30]</bitRange>
-              <access>read-only</access>
-              <description>TX FIFO is full</description>
             </field>
             <field>
               <name>SPI_CTRL_BUSY</name>

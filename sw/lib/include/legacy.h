@@ -36,7 +36,8 @@
 /**********************************************************************//**
  * @file legacy.h
  * @brief Wrappers and functions for backwards compatibility.
- * @warning Do not use these functions for new designs as they are not supported and might get removed in the future.
+ * @warning Do not use these functions for new designs as they are no longer
+ * supported and might get removed in the future.
  **************************************************************************/
 
 #ifndef neorv32_legacy_h
@@ -107,33 +108,6 @@ inline void __attribute__((deprecated("Use 'neorv32_uart0_puts()' instead."))) n
 
 
 // ================================================================================================
-// NEORV32 Runtime Environment (RTE)
-// ================================================================================================
-
-/**********************************************************************//**
- * Install trap handler function to NEORV32 runtime environment.
- * @warning This function is deprecated!
- * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
- * @param[in] handler The actual handler function for the specified trap (function MUST be of type "void function(void);").
- * @return 0 if success, 1 if error (invalid id or targeted trap not supported).
- **************************************************************************/
-inline int __attribute__((deprecated("Use 'neorv32_rte_handler_install()' instead."))) neorv32_rte_exception_install(uint8_t id, void (*handler)(void)) {
-  return neorv32_rte_handler_install(id, handler);
-}
-
-/**********************************************************************//**
- * Uninstall trap handler function from NEORV32 runtime environment, which was
- * previously installed via neorv32_rte_exception_install(uint8_t id, void (*handler)(void)).
- * @warning This function is deprecated!
- * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
- * @return 0 if success, 1 if error (invalid id or targeted trap not supported).
- **************************************************************************/
-inline int __attribute__((deprecated("Use 'neorv32_rte_handler_uninstall()' instead."))) neorv32_rte_exception_uninstall(uint8_t id) {
-  return neorv32_rte_handler_uninstall(id);
-}
-
-
-// ================================================================================================
 // Custom Functions Unit (CFU)
 // ================================================================================================
 
@@ -179,7 +153,6 @@ inline uint64_t __attribute__((deprecated("Use 'neorv32_mtime_get_time()' instea
  * @note Interrupts are always enabled when the CPU is in user-mode.
  **************************************************************************/
 inline void __attribute__ ((always_inline, deprecated("Use 'neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE)' instead."))) neorv32_cpu_eint(void) {
-
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 }
 
@@ -188,30 +161,8 @@ inline void __attribute__ ((always_inline, deprecated("Use 'neorv32_cpu_csr_set(
  * @note Interrupts are always enabled when the CPU is in user-mode.
  **************************************************************************/
 inline void __attribute__ ((always_inline, deprecated("Use 'neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE)' instead."))) neorv32_cpu_dint(void) {
-
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 }
 
-/**********************************************************************//**
- * Enable specific interrupt source.
- * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
- * @return 0 if success, 1 if error (invalid irq_sel).
- **************************************************************************/
-inline int __attribute__((deprecated("Use 'neorv32_cpu_csr_set(CSR_MSTATUS, 1 << channel)' instead."))) neorv32_cpu_irq_enable(uint8_t irq_sel) {
-
-  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << irq_sel);
-  return 0;
-}
-
-/**********************************************************************//**
- * Disable specific interrupt source.
- * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
- * @return 0 if success, 1 if error (invalid irq_sel).
- **************************************************************************/
-inline int __attribute__((deprecated("Use 'neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << channel)' instead."))) neorv32_cpu_irq_disable(uint8_t irq_sel) {
-
-  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << irq_sel);
-  return 0;
-}
 
 #endif // neorv32_legacy_h

@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 04.03.2023 | 1.8.1.6 | :warning: rework and update **SPI** module; [#530](https://github.com/stnolting/neorv32/pull/530) |
 | 02.03.2023 | 1.8.1.5 | minor general purpose timer (GPTMR) code edits; [#529](https://github.com/stnolting/neorv32/pull/529) |
 | 02.03.2023 | 1.8.1.4 | :bug: fix timeout bug in **FPU** (conversion and add/sub instructions); [#528](https://github.com/stnolting/neorv32/pull/528) |
 | 25.02.2023 | 1.8.1.3 | :sparkles: add new processor module: **Serial Data Interface (SDI)** - a SPI _device-class_ interface; [#505](https://github.com/stnolting/neorv32/pull/505) |

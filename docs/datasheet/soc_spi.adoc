@@ -13,18 +13,18 @@
 |                          | `spi_dat_i` | 1-bit serial data input
 |                          | `spi_csn_o` | 8-bit dedicated chip select output (low-active)
 | Configuration generics:  | _IO_SPI_EN_   | implement SPI controller when _true_
-|                          | _IO_SPI_FIFO_ | data FIFO size, has to be zero or a power of two
+|                          | _IO_SPI_FIFO_ | FIFO depth, has to be a power of two, min 1
 | CPU interrupts:          | fast IRQ channel 6 | configurable SPI interrupt (see <<_processor_interrupts>>)
 |=======================
 
 
 **Overview**
 
-SPI is a synchronous serial transmission interface for fast on-board communications.
-The NEORV32 SPI transceiver module supports 8-, 16-, 24- and 32-bit wide transmissions, all 4 standard clock modes
-and 8 dedicated chip select signals via the top entity's `spi_csn_o` signal, which are
-directly controlled by the SPI module (no additional GPIOs required). An optional receive/transmit FIFO can be
-implemented via the _IO_SPI_FIFO_ generic to support block-based transmissions without CPU interaction.
+SPI is a common synchronous serial transmission interface for fast on-board communications.
+The NEORV32 SPI transceiver module operates on 8-bit base, supports all 4 standard clock modes
+and provides up to 8 dedicated chip select signals via the top entity's `spi_csn_o` signal.
+An receive/transmit FIFO can be configured via the _IO_SPI_FIFO_ generic to support block-based
+transmissions without CPU interaction.
 
 .Host-Mode Only
 [NOTE]
@@ -33,49 +33,33 @@ and not by an external SPI module. If you are looking for a _device-mode_ serial
 initiated by an external host) check out the <<_serial_data_interface_sdi>> module..
 
 The SPI module provides a single control register `CTRL` to configure the module and to check it's status
-and a single data register `DATA` for receiving/transmitting data. If the data FIFO is implemented, this register
-is used to interface the FIFO.
+and a single data register `DATA` for receiving/transmitting data.
 
 
 **Theory of Operation**
 
 The SPI module is enabled by setting the _SPI_CTRL_EN_ bit in the `CTRL` control register. No transfer can be initiated
-and no interrupt request will be triggered if this bit is cleared. Clearing this bit will reset the module (also clearing
-the FIFO if implemented) and will also terminate any transfer being in process.
+and no interrupt request will be triggered if this bit is cleared. Clearing this bit will reset the module, clear
+the FIFO and terminate any transfer being in process.
 
-The data quantity to be transferred within a single data transmission is defined via the _SPI_CTRL_SIZEx_ bits.
-The SPI module supports 8-bit (`00`), 16-bit (`01`), 24-bit (`10`) and 32-bit (`11`) transfers.
+The data quantity to be transferred within a single data transmission is fixed to 8 bits. However, the
+total transmission length is left to the user: after asserting chip-select an arbitrary amount of transmission
+can be made before de-asserting chip-select again.
 
-A transmission is started when writing data to the `DATA` register. The data must be LSB-aligned. So if
-the SPI transceiver is configured for less than 32-bit transfer data quantity, the transmit data must be placed
-into the lowest 8/16/24 bits of `DATA`. Vice versa, the received data is also always LSB-aligned. Application
-software should only process the amount of bits that was configured using _SPI_CTRL_SIZEx_ when
-reading `DATA`.
-
-The SPI operation is completed as soon as the _SPI_CTRL_BUSY_ flag clears. If a FIFO size greater than zero is configured,
-the busy flag clears when the current serial engine operation is completed and there is no data left in the send buffer.
-
-.MSB-first Only
-[NOTE]
-The NEORV32 SPI module only support MSB-first mode. Data can be reversed before writing `DATA` (for TX) / after
-reading `DATA` (for RX) to implement LSB-first transmissions. Note that in both cases data in `DATA` still
-needs to be LSB-aligned.
-
-.Arbitrary Transmission Length
-[TIP]
-The total transmission length, which can be an arbitrary number of individual data transfers, is left to the user:
-after asserting chip-select an arbitrary amount of transmission with arbitrary data quantity (_SPI_CTRL_SIZEx_) can
-be made before de-asserting chip-select again.
+A transmission is started when writing data to the transmitter FIFO via the `DATA` register. Note that data always
+transferred MSB-first. The SPI operation is completed as soon as the _SPI_CTRL_BUSY_ flag clears. Received data can
+be retrieved by reading the RX FIFO also via the `DATA` register. The control register's SPI_CTRL_RX_AVAIL_,
+_SPI_CTRL_TX_EMPTY_, _SPI_CTRL_TX_NHALF_ and _SPI_CTRL_TX_FULL_ flags provide information regarding the FIFO levels.
 
 The SPI controller features 8 dedicated chip-select lines. These lines are controlled via the control register's
 _SPI_CTRL_CS_SELx_ and _SPI_CTRL_CS_EN_ bits. The 3-bit _SPI_CTRL_CSx_ bits are used to select one out of the eight
-dedicated chip select line. As soon as _SPI_CTRL_CS_EN_ is _set_ the selected chip select line is activated (driven _low_).
+dedicated chip select lines. As soon as _SPI_CTRL_CS_EN_ is _set_ the selected chip select line is activated (driven _low_).
 Note that disabling the SPI module via the _SPI_CTRL_EN_ bit will also deactivate any currently activated chip select line.
 
 
 **SPI Clock Configuration**
 
-The SPI module supports all _standard SPI clock modes_ (0, 1, 2, 3), which are configured via the two control register bits
+The SPI module supports all standard SPI clock modes (0, 1, 2, 3), which are configured via the two control register bits
 _SPI_CTRL_CPHA_ and _SPI_CTRL_CPOL_. The _SPI_CTRL_CPHA_ bit defines the _clock phase_ and the _SPI_CTRL_CPOL_
 bit defines the _clock polarity_.
 
@@ -91,10 +75,10 @@ image::SPI_timing_diagram2.wikimedia.png[]
 | _SPI_CTRL_CPHA_ |    `0` |    `1` |    `0` |    `1` 
 |=======================
 
-The SPI clock frequency (`spi_clk_o`) is programmed by the 3-bit _SPI_CTRL_PRSCx_ clock prescaler for a coarse selection
-and a 4-bit clock divider _SPI_CTRL_CDIVx_ for a fine selection.
+The SPI clock frequency (`spi_clk_o`) is programmed by the 3-bit _SPI_CTRL_PRSCx_ clock prescaler for a coarse clock selection
+and a 4-bit clock divider _SPI_CTRL_CDIVx_ for a fine clock configuration.
 
-The following pre-scalers (_SPI_CTRL_PRSCx_) are available:
+The following clock prescalers (_SPI_CTRL_PRSCx_) are available:
 
 .SPI prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
@@ -110,64 +94,45 @@ from the processor's main clock f~main~ according to the following equation:
 _**f~SPI~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler` * (1 + _SPI_CTRL_CDIVx_))
 
 Hence, the maximum SPI clock is f~main~ / 4 and the lowest SPI clock is f~main~ / 131072. The SPI clock is always
-symmetric having a duty cycle of exactly 50%.
-
-
-**SPI FIFO**
-
-An optional FIFO buffer can be implemented by setting the _IO_SPI_FIFO_ generic to a value greater than zero.
-Implementing a data FIFO allows (more) CPU-independent operation of the SPI module.
-
-Internally, two FIFOs are implemented: one for TX data and one for RX data. However, these two FIFOs are transparent for
-the software and operate as a single, unified "ring buffer". The status signals of the TX FIFO ("empty", "at least half full",
-"full") are exposed as read-only signals via the SPI control register. In contrast, the RX FIFO only provides a "data available"
-flag (= RX FIFO not empty) also exposed via the SPI control register.
-
-.Double-Buffering
-[TIP]
-Application programs can implement "double buffering" when using the "FIFO less than half full" interrupt configuration
-option (see below).
+symmetric having a duty cycle of 50%.
 
 
 **SPI Interrupt**
 
-The SPI module provides a single interrupt that can be used to signal certain transmission states to the CPU.
-The actual interrupt condition is configured by the two _SPI_CTRL_IRQx_ bits in the SPI module's control register:
+The SPI module provides a set of programmable interrupt conditions based on the level of the RX/TX FIFO. The different
+interrupt sources are enabled by setting the according control register's _SPI_CTRL_IRQ_ bits. All enabled interrupt
+conditions are logically OR-ed so any enabled interrupt source will trigger the module's interrupt signal.
 
-* `00`, `01` : trigger interrupt when SPI serial engine _completes_ current transmission
-* `10` : trigger interrupt when TX FIFO _becomes_ less than half full; this mode is not available if _IO_SPI_FIFO_ is zero
-* `11` : trigger interrupt when TX FIFO _becomes_ empty; this mode is not available if _IO_SPI_FIFO_ is zero
-
-Once the SPI CPU is triggered it has to be explicitly cleared again by writing zero to the according
-<<_mip>> CSR bit inside the SPI trap handler.
-
-[IMPORTANT]
-If no FIFO is implemented (_IO_SPI_FIFO_ = 0) the _SPI_CTRL_IRQx_ are hardwired to `00` statically configuring
-"SPI serial engine _completes_ current transmission" as interrupt condition.
+Once the SPI interrupt has fired it remains pending until the actual cause of the interrupt is resolved; for
+example if just the _SPI_CTRL_IRQ_RX_AVAIL_ bit is set, the interrupt will keep firing until the RX FIFO is empty again.
+Furthermore, an active SPI interrupt has to be explicitly cleared again by writing zero to the according
+<<_mip>> CSR bit.
 
 
 **Register Map**
 
 .SPI register map (`struct NEORV32_SPI`)
-[cols="<2,<2,<4,^1,<7"]
+[cols="<2,<1,<4,^1,<7"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.16+<| `0xffffffa8` .16+<| `NEORV32_SPI.CTRL` <|`0`     _SPI_CTRL_EN_                             ^| r/w <| SPI module enable
-                                              <|`1`     _SPI_CTRL_CPHA_                           ^| r/w <| clock phase (`0`=sample RX on rising edge & update TX on falling edge; `1`=sample RX on falling edge & update TX on rising edge)
-                                              <|`2`     _SPI_CTRL_CPOL_                           ^| r/w <| clock polarity
-                                              <|`4:3`   _SPI_CTRL_SIZE1_ : _SPI_CTRL_SIZE0_       ^| r/w <| transfer size (`00`=8-bit, `01`=16-bit, `10`=24-bit, `11`=32-bit)
-                                              <|`7:5`   _SPI_CTRL_CS_SEL2_ : _SPI_CTRL_CS_SEL0_   ^| r/w <| Direct chip-select 0..7
-                                              <|`8`     _SPI_CTRL_CS_EN_                          ^| r/w <| Direct chip-select enable; setting `spi_csn_o(x)` low when set
-                                              <|`11:9`  _SPI_CTRL_PRSC2_ : _SPI_CTRL_PRSC0_       ^| r/w <| 3-bit clock prescaler select
-                                              <|`15:12` _SPI_CTRL_CDIV2_ : _SPI_CTRL_CDIV0_       ^| r/w <| 4-bit clock divider
-                                              <|`17:16` _SPI_CTRL_IRQ1_ : _SPI_CTRL_IRQ0_         ^| r/w <| interrupt configuration (`0-` = SPI serial engine becomes idle, `10` = TX FIFO _become_ less than half full, `11` = TX FIFO _becomes_ empty)
-                                              <|`22:18` _reserved_                                ^| r/- <| reserved, read as zero
-                                              <|`26:23` _SPI_CTRL_FIFO_MSB_ : _SPI_CTRL_FIFO_LSB_ ^| r/- <| FIFO depth; log2(_IO_SPI_FIFO_)
-                                              <|`27`   _SPI_CTRL_RX_AVAIL_                        ^| r/- <| RX FIFO data available (RX FIFO not empty); zero if FIFO not implemented
-                                              <|`28`   _SPI_CTRL_TX_EMPTY_                        ^| r/- <| TX FIFO empty; zero if FIFO not implemented
-                                              <|`29`   _SPI_CTRL_TX_HALF_                         ^| r/- <| TX FIFO at least half full; zero if FIFO not implemented
-                                              <|`30`   _SPI_CTRL_TX_FULL_                         ^| r/- <| TX FIFO full; zero if FIFO not implemented
-                                              <|`31`   _SPI_CTRL_BUSY_                            ^| r/- <| SPI module busy when set (serial engine operation in progress and TX FIFO not empty yet)
-| `0xffffffac` | `NEORV32_SPI.DATA` |`31:0` | r/w | receive/transmit data (FIFO), LSB-aligned
+.16+<| `0xffffffa8` .18+<| `CTRL` <|`0`     _SPI_CTRL_EN_                             ^| r/w <| SPI module enable
+                                  <|`1`     _SPI_CTRL_CPHA_                           ^| r/w <| clock phase
+                                  <|`2`     _SPI_CTRL_CPOL_                           ^| r/w <| clock polarity
+                                  <|`5:3`   _SPI_CTRL_CS_SEL2_ : _SPI_CTRL_CS_SEL0_   ^| r/w <| Direct chip-select 0..7
+                                  <|`6`     _SPI_CTRL_CS_EN_                          ^| r/w <| Direct chip-select enable: setting `spi_csn_o(SPI_CTRL_CS_SEL)` low when set
+                                  <|`9:7`   _SPI_CTRL_PRSC2_ : _SPI_CTRL_PRSC0_       ^| r/w <| 3-bit clock prescaler select
+                                  <|`13:10` _SPI_CTRL_CDIV2_ : _SPI_CTRL_CDIV0_       ^| r/w <| 4-bit clock divider
+                                  <|`15:14`    _reserved_                             ^| r/- <| reserved, read as zero
+                                  <|`16`   _SPI_CTRL_RX_AVAIL_                        ^| r/- <| RX FIFO data available (RX FIFO not empty)
+                                  <|`17`   _SPI_CTRL_TX_EMPTY_                        ^| r/- <| TX FIFO empty
+                                  <|`18`   _SPI_CTRL_TX_NHALF_                        ^| r/- <| TX FIFO _not_ at least half full
+                                  <|`19`   _SPI_CTRL_TX_FULL_                         ^| r/- <| TX FIFO full
+                                  <|`20`   _SPI_CTRL_IRQ_RX_AVAIL_                    ^| r/w <| Trigger IRQ if RX FIFO not empty
+                                  <|`21`   _SPI_CTRL_IRQ_TX_EMPTY_                    ^| r/w <| Trigger IRQ if TX FIFO empty
+                                  <|`22`   _SPI_CTRL_IRQ_TX_NHALF_                    ^| r/w <| Trigger IRQ if TX FIFO _not_ at least half full
+                                  <|`26:23` _SPI_CTRL_FIFO_MSB_ : _SPI_CTRL_FIFO_LSB_ ^| r/- <| FIFO depth; log2(_IO_SPI_FIFO_)
+                                  <|`30:27` _reserved_                                ^| r/- <| reserved, read as zero
+                                  <|`31`   _SPI_CTRL_BUSY_                            ^| r/- <| SPI module busy when set (serial engine operation in progress and TX FIFO not empty yet)
+| `0xffffffac` | `DATA` |`7:0` | r/w | receive/transmit data (FIFO)
 |=======================
