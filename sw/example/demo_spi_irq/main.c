@@ -113,7 +113,7 @@ int main()
   neorv32_spi_init(&g_neorv32_spi);
     // Configure
   neorv32_spi_disable();
-    // neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, int data_size, int irq_config)
+    // neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, uint32_t irq_mask)
   neorv32_spi_setup(0, 0, 0, 0, 1<<SPI_CTRL_IRQ_TX_EMPTY);  // spi mode 0, IRQ: 0-: PHY going idle, 10: TX fifo less than half full, 11: TX fifo empty
   neorv32_spi_enable();
 
@@ -123,7 +123,8 @@ int main()
   uint8MemBuf[1] = 0x0;
   uint8MemBuf[2] = 0x0;
   uint8MemBuf[3] = 0x0;
-  neorv32_spi_rw(&g_neorv32_spi, uint8MemBuf, 0, sizeof(uint8MemBuf)/sizeof(uint8MemBuf[0]), sizeof(uint8MemBuf[0])); // send/receive data
+    // int neorv32_spi_rw(t_neorv32_spi *self, uint8_t csn, void *spi, uint32_t len)
+  neorv32_spi_rw(&g_neorv32_spi, 0, uint8MemBuf, sizeof(uint8MemBuf));  // send/receive data
 
   // Wait for complete, free for other jobs
   while ( neorv32_spi_rw_busy(&g_neorv32_spi) ) {
