@@ -164,19 +164,19 @@ according <<_mip>> CSR FIRQ bit.
 **Register Map**
 
 .ONEWIRE register map (`struct NEORV32_ONEWIRE`)
-[cols="<2,<2,<4,^1,<7"]
+[cols="<4,<2,<6,^2,<6"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xffffff70` .10+<| `NEORV32_ONEWIRE.CTRL` <|`0`     _ONEWIRE_CTRL_EN_                               ^| r/w <| ONEWIRE enable, reset if cleared
-                                                  <|`2:1`   _ONEWIRE_CTRL_PRSC1_   : _ONEWIRE_CTRL_PRSC0_   ^| r/w <| 2-bit clock prescaler select
-                                                  <|`10:3`  _ONEWIRE_CTRL_CLKDIV7_ : _ONEWIRE_CTRL_CLKDIV0_ ^| r/w <| 8-bit clock divider value
-                                                  <|`11`    _ONEWIRE_CTRL_TRIG_RST_                         ^| -/w <| trigger reset pulse, auto-clears
-                                                  <|`12`    _ONEWIRE_CTRL_TRIG_BIT_                         ^| -/w <| trigger single bit transmission, auto-clears
-                                                  <|`13`    _ONEWIRE_CTRL_TRIG_BYTE_                        ^| -/w <| trigger full-byte transmission, auto-clears
-                                                  <|`28:14` -                                               ^| r/- <| _reserved_, read as zero
-                                                  <|`29`    _ONEWIRE_CTRL_SENSE_                            ^| r/- <| current state of the bus line
-                                                  <|`30`    _ONEWIRE_CTRL_PRESENCE_                         ^| r/- <| device presence detected after reset pulse
-                                                  <|`31`    _ONEWIRE_CTRL_BUSY_                             ^| r/- <| operation in progress when set
-| `0xffffff74` | `NEORV32_ONEWIRE.DATA` |`7:0` _ONEWIRE_DATA_MSB_ : _ONEWIRE_DATA_LSB_ | r/w | receive/transmit data (8-bit)
+.10+<| `0xffffff70` .10+<| `CTRL` <|`0`     _ONEWIRE_CTRL_EN_                               ^| r/w <| ONEWIRE enable, reset if cleared
+                                  <|`2:1`   _ONEWIRE_CTRL_PRSC1_   : _ONEWIRE_CTRL_PRSC0_   ^| r/w <| 2-bit clock prescaler select
+                                  <|`10:3`  _ONEWIRE_CTRL_CLKDIV7_ : _ONEWIRE_CTRL_CLKDIV0_ ^| r/w <| 8-bit clock divider value
+                                  <|`11`    _ONEWIRE_CTRL_TRIG_RST_                         ^| -/w <| trigger reset pulse, auto-clears
+                                  <|`12`    _ONEWIRE_CTRL_TRIG_BIT_                         ^| -/w <| trigger single bit transmission, auto-clears
+                                  <|`13`    _ONEWIRE_CTRL_TRIG_BYTE_                        ^| -/w <| trigger full-byte transmission, auto-clears
+                                  <|`28:14` -                                               ^| r/- <| _reserved_, read as zero
+                                  <|`29`    _ONEWIRE_CTRL_SENSE_                            ^| r/- <| current state of the bus line
+                                  <|`30`    _ONEWIRE_CTRL_PRESENCE_                         ^| r/- <| device presence detected after reset pulse
+                                  <|`31`    _ONEWIRE_CTRL_BUSY_                             ^| r/- <| operation in progress when set
+| `0xffffff74` | `DATA` |`7:0` _ONEWIRE_DATA_MSB_ : _ONEWIRE_DATA_LSB_ | r/w | receive/transmit data (8-bit)
 |=======================

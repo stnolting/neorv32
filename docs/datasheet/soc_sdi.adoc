@@ -60,38 +60,38 @@ clock domain to simplify timing behavior. However, the clock synchronization req
 
 **SDI Interrupt**
 
-The SDI module provides a set of interrupt conditions based on the level of the RX & TX FIFOs. The different
-interrupt sources are enabled by the setting the control register's _SDI_CTRL_IRQ_ bits. All enabled interrupter
+The SDI module provides a set of programmable interrupt conditions based on the level of the RX & TX FIFOs. The different
+interrupt sources are enabled by setting the according control register's _SDI_CTRL_IRQ_ bits. All enabled interrupt
 conditions are logically OR-ed so any enabled interrupt source will trigger the module's interrupt signal.
 
 Once the SDI interrupt has fired it will remain active until the actual cause of the interrupt is resolved; for
 example if just the _SDI_CTRL_IRQ_RX_AVAIL_ bit is set, the interrupt will keep firing until the RX FIFO is empty again.
 Furthermore, an active SDI interrupt has to be explicitly cleared again by writing zero to the according
-<<_mip>> CSR bit inside the SPI trap handler.
+<<_mip>> CSR bit.
 
 
 **Register Map**
 
 .SDI register map (`struct NEORV32_SDI`)
-[cols="<2,<2,<4,^1,<7"]
+[cols="<2,<1,<4,^1,<7"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.16+<| `0xfffffff0` .16+<| `NEORV32_SDI.CTRL` <|`0`     _SDI_CTRL_EN_                             ^| r/w <| SDI module enable
-                                              <|`1`     _SDI_CTRL_CLR_RX_                         ^| -/w <| clear RX FIFO when set, bit auto-clears
-                                              <|`3:2`   _reserved_                                ^| r/- <| reserved, read as zero
-                                              <|`7:4`   _SDI_CTRL_FIFO_MSB_ : _SDI_CTRL_FIFO_LSB_ ^| r/- <| FIFO depth; log2(_IO_SDI_FIFO_)
-                                              <|`14:8`  _reserved_                                ^| r/- <| reserved, read as zero
-                                              <|`15`    _SDI_CTRL_IRQ_RX_AVAIL_                   ^| r/w <| fire interrupt if RX FIFO is not empty
-                                              <|`16`    _SDI_CTRL_IRQ_RX_HALF_                    ^| r/w <| fire interrupt if RX FIFO is at least half full
-                                              <|`17`    _SDI_CTRL_IRQ_RX_FULL_                    ^| r/w <| fire interrupt if if RX FIFO is full
-                                              <|`18`    _SDI_CTRL_IRQ_TX_EMPTY_                   ^| r/w <| fire interrupt if TX FIFO is empty
-                                              <|`22:19` _reserved_                                ^| r/- <| reserved, read as zero
-                                              <|`23`    _SDI_CTRL_RX_AVAIL_                       ^| r/- <| RX FIFO data available (RX FIFO not empty)
-                                              <|`24`    _SDI_CTRL_RX_HALF_                        ^| r/- <| RX FIFO at least half full
-                                              <|`25`    _SDI_CTRL_RX_FULL_                        ^| r/- <| RX FIFO full
-                                              <|`26`    _SDI_CTRL_TX_EMPTY_                       ^| r/- <| TX FIFO empty
-                                              <|`27`    _SDI_CTRL_TX_FULL_                        ^| r/- <| TX FIFO full
-                                              <|`31:28` _reserved_                                ^| r/- <| reserved, read as zero
-| `0xfffffff4` | `NEORV32_SDI.DATA` |`7:0` | r/w | receive/transmit data (FIFO)
+.16+<| `0xfffffff0` .16+<| `CTRL` <|`0`     _SDI_CTRL_EN_                             ^| r/w <| SDI module enable
+                                  <|`1`     _SDI_CTRL_CLR_RX_                         ^| -/w <| clear RX FIFO when set, bit auto-clears
+                                  <|`3:2`   _reserved_                                ^| r/- <| reserved, read as zero
+                                  <|`7:4`   _SDI_CTRL_FIFO_MSB_ : _SDI_CTRL_FIFO_LSB_ ^| r/- <| FIFO depth; log2(_IO_SDI_FIFO_)
+                                  <|`14:8`  _reserved_                                ^| r/- <| reserved, read as zero
+                                  <|`15`    _SDI_CTRL_IRQ_RX_AVAIL_                   ^| r/w <| fire interrupt if RX FIFO is not empty
+                                  <|`16`    _SDI_CTRL_IRQ_RX_HALF_                    ^| r/w <| fire interrupt if RX FIFO is at least half full
+                                  <|`17`    _SDI_CTRL_IRQ_RX_FULL_                    ^| r/w <| fire interrupt if if RX FIFO is full
+                                  <|`18`    _SDI_CTRL_IRQ_TX_EMPTY_                   ^| r/w <| fire interrupt if TX FIFO is empty
+                                  <|`22:19` _reserved_                                ^| r/- <| reserved, read as zero
+                                  <|`23`    _SDI_CTRL_RX_AVAIL_                       ^| r/- <| RX FIFO data available (RX FIFO not empty)
+                                  <|`24`    _SDI_CTRL_RX_HALF_                        ^| r/- <| RX FIFO at least half full
+                                  <|`25`    _SDI_CTRL_RX_FULL_                        ^| r/- <| RX FIFO full
+                                  <|`26`    _SDI_CTRL_TX_EMPTY_                       ^| r/- <| TX FIFO empty
+                                  <|`27`    _SDI_CTRL_TX_FULL_                        ^| r/- <| TX FIFO full
+                                  <|`31:28` _reserved_                                ^| r/- <| reserved, read as zero
+| `0xfffffff4` | `DATA` |`7:0` | r/w | receive/transmit data (FIFO)
 |=======================

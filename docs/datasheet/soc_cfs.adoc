@@ -57,8 +57,8 @@ register map table below). Note that all interface registers are declared as 32-
 [source,c]
 ----
 // C-code CFS usage example
-NEORV32_CFS.REG[0] = (uint32_t)some_data_array(i); // write to CFS register 0
-int temp = (int)NEORV32_CFS.REG[20]; // read from CFS register 20
+NEORV32_CFS->REG[0] = (uint32_t)some_data_array(i); // write to CFS register 0
+int temp = (int)NEORV32_CFS->REG[20]; // read from CFS register 20
 ----
 
 [TIP]
@@ -96,13 +96,13 @@ _IO_CFS_OUT_SIZE_ configuration generic (default = 32-bit). If the custom functi
 **Register Map**
 
 .CFS register map (`struct NEORV32_CFS`)
-[cols="^4,<5,^2,^3,<14"]
+[cols="^4,<2,^2,^2,<6"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Function
-| `0xfffffe00` | `NEORV32_CFS.REG[0]`  |`31:0` | (r)/(w) | custom CFS register 0
-| `0xfffffe04` | `NEORV32_CFS.REG[1]`  |`31:0` | (r)/(w) | custom CFS register 1
-| ...          | ...                   |`31:0` | (r)/(w) | ...
-| `0xfffffef8` | `NEORV32_CFS.REG[62]` |`31:0` | (r)/(w) | custom CFS register 62
-| `0xfffffefc` | `NEORV32_CFS.REG[63]` |`31:0` | (r)/(w) | custom CFS register 63
+| `0xfffffe00` | `REG[0]`  |`31:0` | (r)/(w) | custom CFS register 0
+| `0xfffffe04` | `REG[1]`  |`31:0` | (r)/(w) | custom CFS register 1
+| ...          | ...       |`31:0` | (r)/(w) | ...
+| `0xfffffef8` | `REG[62]` |`31:0` | (r)/(w) | custom CFS register 62
+| `0xfffffefc` | `REG[63]` |`31:0` | (r)/(w) | custom CFS register 63
 |=======================

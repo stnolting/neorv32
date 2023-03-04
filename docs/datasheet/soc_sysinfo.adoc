@@ -29,18 +29,18 @@ will signal a "DEVICE ERROR" in this case.
 **Register Map**
 
 .SYSINFO register map (`struct NEORV32_SYSINFO`)
-[cols="<2,<4,<7"]
+[cols="<2,<2,<6"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Function
-| `0xffffffe0` | `NEORV32_SYSINFO.CLK`         | clock speed in Hz (via top's <<_clock_frequency>> generic)
-| `0xffffffe4` | `NEORV32_SYSINFO.CUSTOM_ID    | custom user-defined ID (via top's <<_custom_id>> generic)
-| `0xffffffe8` | `NEORV32_SYSINFO.SOC`         | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
-| `0xffffffec` | `NEORV32_SYSINFO.CACHE`       | cache configuration information (see <<_sysinfo_cache_configuration>>)
-| `0xfffffff0` | `NEORV32_SYSINFO.ISPACE_BASE` | instruction address space base (via package's `ispace_base_c` constant)
-| `0xfffffff4` | `NEORV32_SYSINFO.IMEM_SIZE`   | internal IMEM size in bytes (via top's <<_mem_int_imem_size>> generic)
-| `0xfffffff8` | `NEORV32_SYSINFO.DSPACE_BASE` | data address space base (via package's `sdspace_base_c` constant)
-| `0xfffffffc` | `NEORV32_SYSINFO.DMEM_SIZE`   | internal DMEM size in bytes (via top's <<_mem_int_dmem_size>> generic)
+| `0xffffffe0` | `CLK`         | clock speed in Hz (via top's <<_clock_frequency>> generic)
+| `0xffffffe4` | `CUSTOM_ID    | custom user-defined ID (via top's <<_custom_id>> generic)
+| `0xffffffe8` | `SOC`         | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
+| `0xffffffec` | `CACHE`       | cache configuration information (see <<_sysinfo_cache_configuration>>)
+| `0xfffffff0` | `ISPACE_BASE` | instruction address space base (via package's `ispace_base_c` constant)
+| `0xfffffff4` | `IMEM_SIZE`   | internal IMEM size in bytes (via top's <<_mem_int_imem_size>> generic)
+| `0xfffffff8` | `DSPACE_BASE` | data address space base (via package's `sdspace_base_c` constant)
+| `0xfffffffc` | `DMEM_SIZE`   | internal DMEM size in bytes (via top's <<_mem_int_dmem_size>> generic)
 |=======================
 
 
