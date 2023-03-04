@@ -88,14 +88,13 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant ctrl_cdiv2_c        : natural := 12; -- r/w: clock divider bit 2
   constant ctrl_cdiv3_c        : natural := 13; -- r/w: clock divider bit 3
   --
-  constant ctrl_rx_avail_c     : natural := 15; -- r/-: rx fifo data available (fifo not empty)
-  constant ctrl_tx_empty_c     : natural := 16; -- r/-: tx fifo empty
-  constant ctrl_tx_nhalf_c     : natural := 17; -- r/-: tx fifo not at least half full
-  constant ctrl_tx_full_c      : natural := 18; -- r/-: tx fifo full
-  constant ctrl_irq_rx_avail_c : natural := 19; -- r/w: fire irq if rx fifo data available (fifo not empty)
-  constant ctrl_irq_tx_empty_c : natural := 20; -- r/w: fire irq if tx fifo empty
-  constant ctrl_irq_tx_nhalf_c : natural := 21; -- r/w: fire irq if tx fifo not at least half full
-  --
+  constant ctrl_rx_avail_c     : natural := 16; -- r/-: rx fifo data available (fifo not empty)
+  constant ctrl_tx_empty_c     : natural := 17; -- r/-: tx fifo empty
+  constant ctrl_tx_nhalf_c     : natural := 18; -- r/-: tx fifo not at least half full
+  constant ctrl_tx_full_c      : natural := 19; -- r/-: tx fifo full
+  constant ctrl_irq_rx_avail_c : natural := 20; -- r/w: fire irq if rx fifo data available (fifo not empty)
+  constant ctrl_irq_tx_empty_c : natural := 21; -- r/w: fire irq if tx fifo empty
+  constant ctrl_irq_tx_nhalf_c : natural := 22; -- r/w: fire irq if tx fifo not at least half full
   constant ctrl_fifo_size0_c   : natural := 23; -- r/-: log2(fifo size), bit 0 (lsb)
   constant ctrl_fifo_size1_c   : natural := 24; -- r/-: log2(fifo size), bit 1
   constant ctrl_fifo_size2_c   : natural := 25; -- r/-: log2(fifo size), bit 2

@@ -116,22 +116,21 @@ Furthermore, an active SPI interrupt has to be explicitly cleared again by writi
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.16+<| `0xffffffa8` .19+<| `CTRL` <|`0`     _SPI_CTRL_EN_                             ^| r/w <| SPI module enable
+.16+<| `0xffffffa8` .18+<| `CTRL` <|`0`     _SPI_CTRL_EN_                             ^| r/w <| SPI module enable
                                   <|`1`     _SPI_CTRL_CPHA_                           ^| r/w <| clock phase
                                   <|`2`     _SPI_CTRL_CPOL_                           ^| r/w <| clock polarity
                                   <|`5:3`   _SPI_CTRL_CS_SEL2_ : _SPI_CTRL_CS_SEL0_   ^| r/w <| Direct chip-select 0..7
                                   <|`6`     _SPI_CTRL_CS_EN_                          ^| r/w <| Direct chip-select enable: setting `spi_csn_o(SPI_CTRL_CS_SEL)` low when set
                                   <|`9:7`   _SPI_CTRL_PRSC2_ : _SPI_CTRL_PRSC0_       ^| r/w <| 3-bit clock prescaler select
                                   <|`13:10` _SPI_CTRL_CDIV2_ : _SPI_CTRL_CDIV0_       ^| r/w <| 4-bit clock divider
-                                  <|`14`    _reserved_                                ^| r/- <| reserved, read as zero
-                                  <|`15`   _SPI_CTRL_RX_AVAIL_                        ^| r/- <| RX FIFO data available (RX FIFO not empty)
-                                  <|`16`   _SPI_CTRL_TX_EMPTY_                        ^| r/- <| TX FIFO empty
-                                  <|`17`   _SPI_CTRL_TX_NHALF_                        ^| r/- <| TX FIFO _not_ at least half full
-                                  <|`18`   _SPI_CTRL_TX_FULL_                         ^| r/- <| TX FIFO full
-                                  <|`19`   _SPI_CTRL_IRQ_RX_AVAIL_                    ^| r/w <| Trigger IRQ if RX FIFO not empty
-                                  <|`20`   _SPI_CTRL_IRQ_TX_EMPTY_                    ^| r/w <| Trigger IRQ if TX FIFO empty
-                                  <|`21`   _SPI_CTRL_IRQ_TX_NHALF_                    ^| r/w <| Trigger IRQ if TX FIFO _not_ at least half full
-                                  <|`22`   _reserved_                                 ^| r/- <| reserved, read as zero
+                                  <|`15:14`    _reserved_                             ^| r/- <| reserved, read as zero
+                                  <|`16`   _SPI_CTRL_RX_AVAIL_                        ^| r/- <| RX FIFO data available (RX FIFO not empty)
+                                  <|`17`   _SPI_CTRL_TX_EMPTY_                        ^| r/- <| TX FIFO empty
+                                  <|`18`   _SPI_CTRL_TX_NHALF_                        ^| r/- <| TX FIFO _not_ at least half full
+                                  <|`19`   _SPI_CTRL_TX_FULL_                         ^| r/- <| TX FIFO full
+                                  <|`20`   _SPI_CTRL_IRQ_RX_AVAIL_                    ^| r/w <| Trigger IRQ if RX FIFO not empty
+                                  <|`21`   _SPI_CTRL_IRQ_TX_EMPTY_                    ^| r/w <| Trigger IRQ if TX FIFO empty
+                                  <|`22`   _SPI_CTRL_IRQ_TX_NHALF_                    ^| r/w <| Trigger IRQ if TX FIFO _not_ at least half full
                                   <|`26:23` _SPI_CTRL_FIFO_MSB_ : _SPI_CTRL_FIFO_LSB_ ^| r/- <| FIFO depth; log2(_IO_SPI_FIFO_)
                                   <|`30:27` _reserved_                                ^| r/- <| reserved, read as zero
                                   <|`31`   _SPI_CTRL_BUSY_                            ^| r/- <| SPI module busy when set (serial engine operation in progress and TX FIFO not empty yet)

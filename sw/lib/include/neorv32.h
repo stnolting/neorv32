@@ -1082,14 +1082,14 @@ enum NEORV32_SPI_CTRL_enum {
   SPI_CTRL_CDIV2        = 12, /**< SPI control register(12) (r/w): Clock divider bit 2 */
   SPI_CTRL_CDIV3        = 13, /**< SPI control register(13) (r/w): Clock divider bit 3 */
 
-  SPI_CTRL_RX_AVAIL     = 15, /**< SPI control register(15) (r/-): RX FIFO data available (RX FIFO not empty) */
-  SPI_CTRL_TX_EMPTY     = 16, /**< SPI control register(16) (r/-): TX FIFO empty */
-  SPI_CTRL_TX_NHALF     = 17, /**< SPI control register(17) (r/-): TX FIFO not at least half full */
-  SPI_CTRL_TX_FULL      = 18, /**< SPI control register(18) (r/-): TX FIFO full */
+  SPI_CTRL_RX_AVAIL     = 16, /**< SPI control register(16) (r/-): RX FIFO data available (RX FIFO not empty) */
+  SPI_CTRL_TX_EMPTY     = 17, /**< SPI control register(17) (r/-): TX FIFO empty */
+  SPI_CTRL_TX_NHALF     = 18, /**< SPI control register(18) (r/-): TX FIFO not at least half full */
+  SPI_CTRL_TX_FULL      = 19, /**< SPI control register(19) (r/-): TX FIFO full */
 
-  SPI_CTRL_IRQ_RX_AVAIL = 19, /**< SPI control register(19) (r/w): Fire IRQ if RX FIFO data available (RX FIFO not empty) */
-  SPI_CTRL_IRQ_TX_EMPTY = 20, /**< SPI control register(20) (r/w): Fire IRQ if TX FIFO empty */
-  SPI_CTRL_IRQ_TX_HALF  = 21, /**< SPI control register(21) (r/w): Fire IRQ if TX FIFO not at least half full */
+  SPI_CTRL_IRQ_RX_AVAIL = 20, /**< SPI control register(20) (r/w): Fire IRQ if RX FIFO data available (RX FIFO not empty) */
+  SPI_CTRL_IRQ_TX_EMPTY = 21, /**< SPI control register(21) (r/w): Fire IRQ if TX FIFO empty */
+  SPI_CTRL_IRQ_TX_HALF  = 22, /**< SPI control register(22) (r/w): Fire IRQ if TX FIFO not at least half full */
 
   SPI_CTRL_FIFO_LSB     = 23, /**< SPI control register(23) (r/-): log2(FIFO size), lsb */
   SPI_CTRL_FIFO_MSB     = 26, /**< SPI control register(26) (r/-): log2(FIFO size), msb */

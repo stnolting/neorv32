@@ -847,41 +847,41 @@
             </field>
             <field>
               <name>SPI_CTRL_RX_AVAIL</name>
-              <bitRange>[15:15]</bitRange>
+              <bitRange>[16:16]</bitRange>
               <access>read-only</access>
               <description>RX FIFO data available (RX FIFO not empty)</description>
             </field>
             <field>
               <name>SPI_CTRL_TX_EMPTY</name>
-              <bitRange>[16:16]</bitRange>
+              <bitRange>[17:17]</bitRange>
               <access>read-only</access>
               <description>TX FIFO is empty</description>
             </field>
             <field>
               <name>SPI_CTRL_TX_NHALF</name>
-              <bitRange>[17:17]</bitRange>
+              <bitRange>[18:18]</bitRange>
               <access>read-only</access>
               <description>TX FIFO not at least half full</description>
             </field>
             <field>
               <name>SPI_CTRL_TX_FULL</name>
-              <bitRange>[18:18]</bitRange>
+              <bitRange>[19:19]</bitRange>
               <access>read-only</access>
               <description>TX FIFO is full</description>
             </field>
             <field>
               <name>SPI_CTRL_IRQ_RX_AVAIL</name>
-              <bitRange>[19:19]</bitRange>
+              <bitRange>[20:20]</bitRange>
               <description>Fire interrupt if RX FIFO is not empty</description>
             </field>
             <field>
               <name>SPI_CTRL_IRQ_TX_EMPTY</name>
-              <bitRange>[20:20]</bitRange>
+              <bitRange>[21:21]</bitRange>
               <description>Fire interrupt if TX FIFO is empty</description>
             </field>
             <field>
               <name>SPI_CTRL_IRQ_TX_NHALF</name>
-              <bitRange>[21:21]</bitRange>
+              <bitRange>[22:22]</bitRange>
               <description>Fire interrupt if TX FIFO is not at least half full</description>
             </field>
             <field>
