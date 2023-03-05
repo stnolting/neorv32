@@ -37,9 +37,7 @@
  * @file neorv32_uart.c
  * @brief Universal asynchronous receiver/transmitter (UART0/UART1) HW driver source file.
  *
- * @warning UART0 (primary UART) is used as default user console interface for all NEORV32 software framework/library functions.
- *
- * @note These functions should only be used if the UART0/UART1 unit was synthesized (IO_UART0_EN = true / IO_UART1_EN = true).
+ * @note These functions should only be used if the UART0/UART1 unit was synthesized.
  **************************************************************************/
 
 #include "neorv32.h"
@@ -47,50 +45,16 @@
 #include <string.h>
 #include <stdarg.h>
 
-/// \cond
 // Private functions
 static void __neorv32_uart_itoa(uint32_t x, char *res) __attribute__((unused)); // GCC: do not output a warning when this variable is unused
 static void __neorv32_uart_tohex(uint32_t x, char *res) __attribute__((unused)); // GCC: do not output a warning when this variable is unused
 static void __neorv32_uart_touppercase(uint32_t len, char *ptr) __attribute__((unused)); // GCC: do not output a warning when this variable is unused
-/// \endcond
-
-
-// #################################################################################################
-// Override default STDIO functions
-// #################################################################################################
-
-/**********************************************************************//**
- * Send char via UART0
- *
- * @param[in] Char to be send.
- * @return Char that has been sent.
- **************************************************************************/
-int putchar(int ch) {
-
-  neorv32_uart0_putc((char)ch);
-  return ch;
-}
 
 
 /**********************************************************************//**
- * Read char from UART0.
+ * Check if UART unit was synthesized.
  *
- * @return Read char.
- **************************************************************************/
-int getchar(void) {
-
-  return (int)neorv32_uart0_getc();
-}
-
-
-// #################################################################################################
-// Common used UART, assigned to UART0/1 in legacy.h
-// #################################################################################################
-
-/**********************************************************************//**
- * Check if UART0/1 unit was synthesized.
- *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] Hardware handle to UART register, #neorv32_uart_t.
  * @return 0 if UART0/1 was not synthesized, 1 if UART0/1 is available.
  **************************************************************************/
 int neorv32_uart_available (neorv32_uart_t *UARTx) {
@@ -108,97 +72,68 @@ int neorv32_uart_available (neorv32_uart_t *UARTx) {
 
 
 /**********************************************************************//**
- * Enable and configure primary UART (UART0).
+ * Reset, configure and enable UART.
  *
- * @note The 'UART0_SIM_MODE' compiler flag will configure UART0 for simulation mode. All UART0 TX data will be redirected to simulation output. Use this for simulations only!
- * @note The 'UART1_SIM_MODE' compiler flag will configure UART1 for simulation mode. All UART1 TX data will be redirected to simulation output. Use this for simulations only!
- * @note To enable simulation mode add <USER_FLAGS+=-DUART0_SIM_MODE> when compiling.
- * @note To enable simulation mode add <USER_FLAGS+=-DUART1_SIM_MODE> when compiling.
- *
- * @warning The baud rate is computed using INTEGER operations (truncation errors might occur).
- *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
- * @param[in] baudrate Targeted BAUD rate (e.g. 9600).
- * @param[in] parity Parity configuration (00=off, 10=even, 11=odd), see #NEORV32_UART_PARITY_enum.
- * @param[in] flow_con Hardware flow control configuration (00=off, 01=RTS, 10=CTS, 11=RTS/CTS), see #NEORV32_UART_FLOW_CONTROL_enum.
+ * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in] baudrate Targeted BAUD rate (e.g. 19200).
+ * @param[in] irq_mask Interrupt configuration mask (CTRL's irq_* bits).
  **************************************************************************/
-void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint8_t parity, uint8_t flow_con) {
+void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_mask) {
 
-  uint32_t clock = NEORV32_SYSINFO->CLK;  // get system clock
-  uint16_t i = 0;         // BAUD rate divisor
-  uint8_t p = 0;          // initial prsc = CLK/2
-  uint32_t sim_mode = 0;  // redirect output to stdio
+  uint32_t prsc_sel = 0;
+  uint32_t baud_div = 0;
 
-  // Sim mode requested?
-  /* Enable UART0/1 for SIM mode. */
-  /* USE THIS ONLY FOR SIMULATION! */
-#ifdef UART_SIM_MODE
-  #warning <UART_SIM_MODE> is obsolete (but still supported for compatibility). Please consider using the new flag <UART0_SIM_MODE>.
+  // reset
+  UARTx->CTRL = 0;
+
+  // raw clock prescaler
+  uint32_t clock = NEORV32_SYSINFO->CLK; // system clock in Hz
+#ifndef make_bootloader // use div instructions
+  baud_div = clock / (2*baudrate);
+#else // division via repeated subtraction (minimal size, only for bootloader)
+  while (clock >= 2*baudrate) {
+    clock -= 2*baudrate;
+    baud_div++;
+  }
 #endif
+
+  // find baud prescaler (10-bit wide))
+  while (baud_div >= 0x3ffU) {
+    if ((prsc_sel == 2) || (prsc_sel == 4))
+      baud_div >>= 3;
+    else
+      baud_div >>= 1;
+    prsc_sel++;
+  }
+
+  uint32_t tmp = 0;
+  tmp |= (uint32_t)(1              & 1U)     << UART_CTRL_EN;
+  tmp |= (uint32_t)(prsc_sel       & 3U)     << UART_CTRL_PRSC0;
+  tmp |= (uint32_t)((baud_div - 1) & 0x3ffU) << UART_CTRL_BAUD0;
+  tmp |= (uint32_t)(irq_mask & (0x1fU << UART_CTRL_IRQ_RX_NEMPTY));
 
 #ifdef UART0_SIM_MODE
 #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only!
   if (((uint32_t)UARTx) == NEORV32_UART0_BASE) {
-    sim_mode = 1 << UART_CTRL_SIM_MODE;
+    tmp |= 1U << UART_CTRL_SIM_MODE;
   }
 #endif
 
 #ifdef UART1_SIM_MODE
 #warning UART1_SIM_MODE (secondary UART) enabled! Sending all UART1.TX data to text.io simulation output instead of real UART1 transmitter. Use this for simulations only!
   if (((uint32_t)UARTx) == NEORV32_UART1_BASE) {
-    sim_mode = 1 << UART_CTRL_SIM_MODE;
+    tmp |= 1U << UART_CTRL_SIM_MODE;
   }
 #endif
 
-  // reset
-  UARTx->CTRL = 0;
-
-  // raw clock prescaler
-#ifndef make_bootloader
-  // use div instructions
-  i = (uint16_t)(clock / (2*baudrate));
-#else
-  // division via repeated subtraction (minimal size, only for bootloader)
-  while (clock >= 2*baudrate) {
-    clock -= 2*baudrate;
-    i++;
-  }
-#endif
-
-  // find baud prescaler (12-bit wide))
-  while (i >= 0x0fff) {
-    if ((p == 2) || (p == 4))
-      i >>= 3;
-    else
-      i >>= 1;
-    p++;
-  }
-
-  uint32_t clk_prsc = (uint32_t)p;
-  clk_prsc = clk_prsc << UART_CTRL_PRSC0;
-
-  uint32_t baud_prsc = (uint32_t)i;
-  baud_prsc = baud_prsc - 1;
-  baud_prsc = baud_prsc << UART_CTRL_BAUD00;
-
-  uint32_t uart_en = 1;
-  uart_en = uart_en << UART_CTRL_EN;
-
-  uint32_t parity_config = (uint32_t)(parity & 3);
-  parity_config = parity_config << UART_CTRL_PMODE0;
-
-  uint32_t flow_control = (uint32_t)(flow_con & 3);
-  flow_control = flow_control << UART_CTRL_RTS_EN;
-
-
-  UARTx->CTRL = clk_prsc | baud_prsc | uart_en | parity_config | sim_mode | flow_control;
+  UARTx->CTRL = tmp;
 }
 
 
 /**********************************************************************//**
- * Enable UART
+ * Enable UART.
  *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
  **************************************************************************/
 void neorv32_uart_enable(neorv32_uart_t *UARTx) {
 
@@ -207,9 +142,9 @@ void neorv32_uart_enable(neorv32_uart_t *UARTx) {
 
 
 /**********************************************************************//**
- * Disable UART
+ * Disable UART.
  *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
  **************************************************************************/
 void neorv32_uart_disable(neorv32_uart_t *UARTx) {
 
@@ -218,103 +153,51 @@ void neorv32_uart_disable(neorv32_uart_t *UARTx) {
 
 
 /**********************************************************************//**
- * Send single char via UART
+ * Send single char via UART.
  *
- * @note This function is blocking.
- *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
  * @param[in] c Char to be send.
  **************************************************************************/
 void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {
 
   // wait for previous transfer to finish
-  while ((UARTx->CTRL & (1<<UART_CTRL_TX_FULL)) != 0); // wait for space in TX FIFO
-  UARTx->DATA = ((uint32_t)c) << UART_DATA_LSB;
+  while ((UARTx->CTRL & (1<<UART_CTRL_TX_FULL))); // wait for free space in TX FIFO
+  UARTx->DATA = (uint32_t)c;
 }
 
 
 /**********************************************************************//**
  * Check if UART TX is busy (transmitter busy or data left in TX buffer).
  *
- * @note This function is blocking.
- *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
  * @return 0 if idle, 1 if busy
  **************************************************************************/
 int neorv32_uart_tx_busy(neorv32_uart_t *UARTx) {
 
-  uint32_t ctrl = UARTx->CTRL;
-
-  if (((ctrl & (1<<UART_CTRL_TX_BUSY)) != 0) ||  // TX engine busy
-      ((ctrl & (1<<UART_CTRL_TX_EMPTY)) == 0)) { // TX buffer not empty
+  if (UARTx->CTRL & (1 << UART_CTRL_TX_BUSY)) {  // TX engine busy
     return 1;
   }
-  return 0;
+  else {
+    return 0;
+  }
 }
 
 
 /**********************************************************************//**
  * Get char from UART.
  *
- * @note This function is blocking and does not check for UART frame/parity errors.
+ * @note This function is blocking.
  *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
  * @return Received char.
  **************************************************************************/
 char neorv32_uart_getc(neorv32_uart_t *UARTx) {
 
-  uint32_t d = 0;
   while (1) {
-    d = UARTx->DATA;
-    if ((d & (1<<UART_DATA_AVAIL)) != 0) { // char received?
-      return (char)d;
+    if (UARTx->CTRL & (1<<UART_CTRL_RX_NEMPTY)) { // data available?
+      return (char)UARTx->DATA;
     }
   }
-}
-
-
-/**********************************************************************//**
- * Get char from UART (and check errors).
- *
- * @note This function is non-blocking and checks for frame and parity errors.
- *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
- * @param[in,out] data Received char.
- * @return Status code:
- *  0 = char received without errors
- * -1 = nothing received
- * -2 = char received with frame error
- * -3 = char received with parity error
- * -4 = char received with overrun error.
- **************************************************************************/
-int neorv32_uart_getc_safe(neorv32_uart_t *UARTx, char *data) {
-
-  uint32_t uart_rx = UARTx->DATA;
-
-  // get received byte (if there is any)
-  *data = (char)uart_rx;
-
-  // check if no data available at all
-  if ((uart_rx & (1<<UART_DATA_AVAIL)) == 0) {
-   return -1;
-  }
-
-  // check for frame error
-  if (uart_rx & (1<<UART_DATA_FERR)) {
-    return -2;
-  }
-
-  // check for parity error
-  if (uart_rx & (1<<UART_DATA_PERR)) {
-    return -3;
-  }
-
-  // check for overrun error
-  if (uart_rx & (1<<UART_DATA_OVERR)) {
-    return -4;
-  }
-
-  return 0; // all fine
 }
 
 
@@ -324,16 +207,16 @@ int neorv32_uart_getc_safe(neorv32_uart_t *UARTx, char *data) {
  * @note This function is non-blocking.
  * @note Use neorv32_uart_char_received_get(void) to get the char.
  *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
- * @return =!0 when a char has been received.
+ * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @return 1 when a char has been received, 0 otherwise.
  **************************************************************************/
 int neorv32_uart_char_received(neorv32_uart_t *UARTx) {
 
-  if (UARTx->CTRL & (1<<UART_CTRL_RX_EMPTY)) {
-    return 0;
+  if (UARTx->CTRL & (1<<UART_CTRL_RX_NEMPTY)) {
+    return 1;
   }
   else {
-    return 1;
+    return 0;
   }
 }
 
@@ -344,7 +227,7 @@ int neorv32_uart_char_received(neorv32_uart_t *UARTx) {
  * @note This function is non-blocking.
  * @note Should only be used in combination with neorv32_uart_char_received(void).
  *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
  * @return Received char.
  **************************************************************************/
 char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) {
@@ -358,7 +241,7 @@ char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) {
  *
  * @note This function is blocking.
  *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
  * @param[in] s Pointer to string.
  **************************************************************************/
 void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
@@ -378,7 +261,7 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
  *
  * @note This function is blocking.
  *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
  * @param[in] format Pointer to format string.
  *
  * <TABLE>
@@ -457,7 +340,7 @@ void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {
  *
  * @note This function is blocking.
  *
- * @param[in,out] hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
  * @param[in,out] buffer Pointer to array of chars to store string.
  * @param[in] max_size Maximum number of chars to sample.
  * @param[in] echo Echo UART input when 1.
@@ -494,10 +377,6 @@ int neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ech
   return length;
 }
 
-
-// #################################################################################################
-// Shared functions
-// #################################################################################################
 
 /**********************************************************************//**
  * Private function for 'neorv32_printf' to convert into decimal.
@@ -577,4 +456,32 @@ static void __neorv32_uart_touppercase(uint32_t len, char *ptr) {
     ptr++;
     len--;
   }
+}
+
+
+// ================================================================================================
+// ================================================================================================
+
+
+/**********************************************************************//**
+ * STDIO: Send char via UART0
+ *
+ * @param[in] Char to be send.
+ * @return Char that has been sent.
+ **************************************************************************/
+int putchar(int ch) {
+
+  neorv32_uart_putc(NEORV32_UART0, (char)ch);
+  return ch;
+}
+
+
+/**********************************************************************//**
+ * STDIO: Read char from UART0.
+ *
+ * @return Read char.
+ **************************************************************************/
+int getchar(void) {
+
+  return (int)neorv32_uart_getc(NEORV32_UART0);
 }

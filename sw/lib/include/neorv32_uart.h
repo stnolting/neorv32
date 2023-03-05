@@ -36,10 +36,6 @@
 /**********************************************************************//**
  * @file neorv32_uart.h
  * @brief Universal asynchronous receiver/transmitter (UART0/UART1) HW driver header file
- *
- * @warning UART0 (primary UART) is used as default user console interface for all NEORV32 software framework/library functions.
- *
- * @note These functions should only be used if the UART0/UART1 unit was synthesized (IO_UART0_EN = true / IO_UART1_EN = true).
  **************************************************************************/
 
 #ifndef neorv32_uart_h
@@ -50,13 +46,12 @@
 
 // prototypes for common used UART functions, applicable to UART0 and UART1
 int  neorv32_uart_available(neorv32_uart_t *UARTx);
-void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint8_t parity, uint8_t flow_con);
+void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_mask);
 void neorv32_uart_enable(neorv32_uart_t *UARTx);
 void neorv32_uart_disable(neorv32_uart_t *UARTx);
 void neorv32_uart_putc(neorv32_uart_t *UARTx, char c);
 int  neorv32_uart_tx_busy(neorv32_uart_t *UARTx);
 char neorv32_uart_getc(neorv32_uart_t *UARTx);
-int  neorv32_uart_getc_safe(neorv32_uart_t *UARTx, char *data);
 int  neorv32_uart_char_received(neorv32_uart_t *UARTx);
 char neorv32_uart_char_received_get(neorv32_uart_t *UARTx);
 void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s);
