@@ -299,8 +299,8 @@ int main(void) {
 #endif
 
 #if (UART_EN != 0)
-  // setup UART0 (primary UART, no parity bit, no hardware flow control)
-  neorv32_uart0_setup(UART_BAUD, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART0
+  neorv32_uart0_setup(UART_BAUD, 0);
 #endif
 
   // Configure machine system timer interrupt
