@@ -102,9 +102,9 @@ int main (void)
 
 
   { /* *****  NEORV32-SPECIFIC ***** */
+    neorv32_rte_setup();
     neorv32_cpu_csr_write(CSR_MIE, 0); // no interrupt, thanks
-    neorv32_rte_setup(); // capture all exceptions and give debug information, ho hw flow control
-    neorv32_uart0_setup(19200, PARITY_NONE, FLOW_CONTROL_NONE);
+    neorv32_uart0_setup(19200, 0);
     // check available hardware extensions and compare with compiler flags
     neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 

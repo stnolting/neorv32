@@ -260,8 +260,8 @@ void SystemIrqHandler( uint32_t mcause )
 #include <neorv32.h>
 int main() {
 
-  // init UART at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
   neorv32_uart0_puts("ERROR! FreeRTOS has not been compiled. Use >>make USER_FLAGS+=-DRUN_FREERTOS_DEMO clean_all exe<< to compile it.\n");
   return 1;
 }
