@@ -54,7 +54,7 @@ static void __neorv32_uart_touppercase(uint32_t len, char *ptr) __attribute__((u
 /**********************************************************************//**
  * Check if UART unit was synthesized.
  *
- * @param[in,out] Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] Hardware handle to UART register struct, #neorv32_uart_t.
  * @return 0 if UART0/1 was not synthesized, 1 if UART0/1 is available.
  **************************************************************************/
 int neorv32_uart_available (neorv32_uart_t *UARTx) {
@@ -74,7 +74,7 @@ int neorv32_uart_available (neorv32_uart_t *UARTx) {
 /**********************************************************************//**
  * Reset, configure and enable UART.
  *
- * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] baudrate Targeted BAUD rate (e.g. 19200).
  * @param[in] irq_mask Interrupt configuration mask (CTRL's irq_* bits).
  **************************************************************************/
@@ -133,7 +133,7 @@ void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_m
 /**********************************************************************//**
  * Enable UART.
  *
- * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  **************************************************************************/
 void neorv32_uart_enable(neorv32_uart_t *UARTx) {
 
@@ -144,7 +144,7 @@ void neorv32_uart_enable(neorv32_uart_t *UARTx) {
 /**********************************************************************//**
  * Disable UART.
  *
- * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  **************************************************************************/
 void neorv32_uart_disable(neorv32_uart_t *UARTx) {
 
@@ -155,7 +155,7 @@ void neorv32_uart_disable(neorv32_uart_t *UARTx) {
 /**********************************************************************//**
  * Send single char via UART.
  *
- * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] c Char to be send.
  **************************************************************************/
 void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {
@@ -169,7 +169,7 @@ void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {
 /**********************************************************************//**
  * Check if UART TX is busy (transmitter busy or data left in TX buffer).
  *
- * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @return 0 if idle, 1 if busy
  **************************************************************************/
 int neorv32_uart_tx_busy(neorv32_uart_t *UARTx) {
@@ -188,7 +188,7 @@ int neorv32_uart_tx_busy(neorv32_uart_t *UARTx) {
  *
  * @note This function is blocking.
  *
- * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @return Received char.
  **************************************************************************/
 char neorv32_uart_getc(neorv32_uart_t *UARTx) {
@@ -207,7 +207,7 @@ char neorv32_uart_getc(neorv32_uart_t *UARTx) {
  * @note This function is non-blocking.
  * @note Use neorv32_uart_char_received_get(void) to get the char.
  *
- * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @return 1 when a char has been received, 0 otherwise.
  **************************************************************************/
 int neorv32_uart_char_received(neorv32_uart_t *UARTx) {
@@ -227,7 +227,7 @@ int neorv32_uart_char_received(neorv32_uart_t *UARTx) {
  * @note This function is non-blocking.
  * @note Should only be used in combination with neorv32_uart_char_received(void).
  *
- * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @return Received char.
  **************************************************************************/
 char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) {
@@ -241,7 +241,7 @@ char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) {
  *
  * @note This function is blocking.
  *
- * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] s Pointer to string.
  **************************************************************************/
 void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
@@ -261,7 +261,7 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
  *
  * @note This function is blocking.
  *
- * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] format Pointer to format string.
  *
  * <TABLE>
@@ -340,7 +340,7 @@ void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {
  *
  * @note This function is blocking.
  *
- * @param[in,out] UARTx Hardware handle to UART register, #neorv32_uart_t.
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in,out] buffer Pointer to array of chars to store string.
  * @param[in] max_size Maximum number of chars to sample.
  * @param[in] echo Echo UART input when 1.
