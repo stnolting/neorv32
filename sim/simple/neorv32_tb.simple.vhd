@@ -103,9 +103,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
 
   -- uart --
   signal uart0_txd : std_ulogic; -- local loop-back
-  signal uart0_cts : std_ulogic; -- local loop-back
   signal uart1_txd : std_ulogic; -- local loop-back
-  signal uart1_cts : std_ulogic; -- local loop-back
 
   -- gpio --
   signal gpio : std_ulogic_vector(63 downto 0);
@@ -280,13 +278,9 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    => uart0_txd,       -- UART0 send data
     uart0_rxd_i    => uart0_txd,       -- UART0 receive data
-    uart0_rts_o    => uart0_cts,       -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i    => uart0_cts,       -- hw flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    => uart1_txd,       -- UART1 send data
     uart1_rxd_i    => uart1_txd,       -- UART1 receive data
-    uart1_rts_o    => uart1_cts,       -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i    => uart1_cts,       -- hw flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      => spi_clk,         -- SPI serial clock
     spi_dat_o      => spi_do,          -- controller data out, peripheral data in
