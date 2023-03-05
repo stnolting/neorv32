@@ -114,7 +114,7 @@
         <register><name>REG62</name><description>Application-defined</description><addressOffset>0xF8</addressOffset></register>
         <register><name>REG63</name><description>Application-defined</description><addressOffset>0xFC</addressOffset></register>
       </registers>
-    </peripheral
+    </peripheral>
 
     <!-- SDI -->
     <peripheral>
