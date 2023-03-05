@@ -133,7 +133,8 @@ int main() {
 
   // setup UARTs at default baud rate, no interrupts
   neorv32_uart0_setup(BAUD_RATE, 0);
-  NEORV32_UART1->CTRL = NEORV32_UART0->CTRL; // copy configuration to initialize UART1
+  NEORV32_UART1->CTRL = 0;
+  NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
 
 #ifdef SUPPRESS_OPTIONAL_UART_PRINT
   neorv32_uart0_disable(); // do not generate any UART0 output
@@ -985,6 +986,7 @@ int main() {
   neorv32_cpu_irq_enable(UART0_RX_FIRQ_ENABLE);
 
   neorv32_uart0_putc(0);
+  while(neorv32_uart0_tx_busy());
 
   // sleep until interrupt
   neorv32_cpu_sleep();
@@ -1020,6 +1022,7 @@ int main() {
   NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
   neorv32_uart0_putc(0);
+  while(neorv32_uart0_tx_busy());
 
   // UART0 TX interrupt enable
   neorv32_cpu_irq_enable(UART0_TX_FIRQ_ENABLE);
@@ -1058,6 +1061,7 @@ int main() {
   neorv32_cpu_irq_enable(UART1_RX_FIRQ_ENABLE);
 
   neorv32_uart1_putc(0);
+  while(neorv32_uart1_tx_busy());
 
   // sleep until interrupt
   neorv32_cpu_sleep();
@@ -1090,6 +1094,7 @@ int main() {
   NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
   neorv32_uart1_putc(0);
+  while(neorv32_uart1_tx_busy());
 
   // UART0 TX interrupt enable
   neorv32_cpu_irq_enable(UART1_TX_FIRQ_ENABLE);
