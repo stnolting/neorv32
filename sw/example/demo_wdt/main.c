@@ -75,8 +75,8 @@ int main() {
   // setup NEORV32 runtime environment for capturing all traps
   neorv32_rte_setup();
 
-  // setup UART0 at default baud rate, no parity bits, ho HW flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
   // check if WDT is implemented at all
   if (neorv32_wdt_available() == 0) {

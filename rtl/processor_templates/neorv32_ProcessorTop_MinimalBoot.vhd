@@ -96,8 +96,6 @@ entity neorv32_ProcessorTop_MinimalBoot is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart_txd_o : out std_ulogic; -- UART0 send data
     uart_rxd_i : in  std_ulogic := '0'; -- UART0 receive data
-    uart_rts_o : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart_cts_i : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o      : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0)
@@ -189,8 +187,6 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart_txd_o,                   -- UART0 send data
     uart0_rxd_i => uart_rxd_i,                   -- UART0 receive data
-    uart0_rts_o => uart_rts_o,                   -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i => uart_cts_i,                   -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o       => con_pwm_o                     -- pwm channels

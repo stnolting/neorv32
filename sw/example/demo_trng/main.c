@@ -76,9 +76,8 @@ int main(void) {
   // this is not required, but keeps us safe
   neorv32_rte_setup();
 
-
-  // init UART at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch

@@ -178,14 +178,10 @@ entity neorv32_top is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic; -- UART0 send data
     uart0_rxd_i    : in  std_ulogic := 'U'; -- UART0 receive data
-    uart0_rts_o    : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic; -- UART1 send data
     uart1_rxd_i    : in  std_ulogic := 'U'; -- UART1 receive data
-    uart1_rts_o    : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      : out std_ulogic; -- SPI serial clock
@@ -346,21 +342,21 @@ architecture neorv32_top_rtl of neorv32_top is
   signal resp_bus : resp_bus_t := (others => resp_bus_entry_terminate_c);
 
   -- IRQs --
-  signal fast_irq      : std_ulogic_vector(15 downto 0);
-  signal mtime_irq     : std_ulogic;
-  signal wdt_irq       : std_ulogic;
-  signal uart0_rxd_irq : std_ulogic;
-  signal uart0_txd_irq : std_ulogic;
-  signal uart1_rxd_irq : std_ulogic;
-  signal uart1_txd_irq : std_ulogic;
-  signal spi_irq       : std_ulogic;
-  signal sdi_irq       : std_ulogic;
-  signal twi_irq       : std_ulogic;
-  signal cfs_irq       : std_ulogic;
-  signal neoled_irq    : std_ulogic;
-  signal xirq_irq      : std_ulogic;
-  signal gptmr_irq     : std_ulogic;
-  signal onewire_irq   : std_ulogic;
+  signal fast_irq     : std_ulogic_vector(15 downto 0);
+  signal mtime_irq    : std_ulogic;
+  signal wdt_irq      : std_ulogic;
+  signal uart0_rx_irq : std_ulogic;
+  signal uart0_tx_irq : std_ulogic;
+  signal uart1_rx_irq : std_ulogic;
+  signal uart1_tx_irq : std_ulogic;
+  signal spi_irq      : std_ulogic;
+  signal sdi_irq      : std_ulogic;
+  signal twi_irq      : std_ulogic;
+  signal cfs_irq      : std_ulogic;
+  signal neoled_irq   : std_ulogic;
+  signal xirq_irq     : std_ulogic;
+  signal gptmr_irq    : std_ulogic;
+  signal onewire_irq  : std_ulogic;
 
   -- tri-state drivers --
   signal twi_sda_i, twi_sda_o : std_ulogic;
@@ -604,22 +600,22 @@ begin
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 
   -- fast interrupt requests (FIRQs) - triggers are SINGLE-SHOT --
-  fast_irq(00) <= wdt_irq;       -- HIGHEST PRIORITY - watchdog
-  fast_irq(01) <= cfs_irq;       -- custom functions subsystem
-  fast_irq(02) <= uart0_rxd_irq; -- primary UART (UART0) RX
-  fast_irq(03) <= uart0_txd_irq; -- primary UART (UART0) TX
-  fast_irq(04) <= uart1_rxd_irq; -- secondary UART (UART1) RX
-  fast_irq(05) <= uart1_txd_irq; -- secondary UART (UART1) TX
-  fast_irq(06) <= spi_irq;       -- SPI interrupt
-  fast_irq(07) <= twi_irq;       -- TWI transfer done
-  fast_irq(08) <= xirq_irq;      -- external interrupt controller
-  fast_irq(09) <= neoled_irq;    -- NEOLED buffer IRQ
-  fast_irq(10) <= '0';           -- reserved
-  fast_irq(11) <= sdi_irq;       -- SDI interrupt
-  fast_irq(12) <= gptmr_irq;     -- general purpose timer match
-  fast_irq(13) <= onewire_irq;   -- ONEWIRE operation done
-  fast_irq(14) <= '0';           -- reserved
-  fast_irq(15) <= '0';           -- LOWEST PRIORITY - reserved
+  fast_irq(00) <= wdt_irq;      -- HIGHEST PRIORITY - watchdog
+  fast_irq(01) <= cfs_irq;      -- custom functions subsystem
+  fast_irq(02) <= uart0_rx_irq; -- primary UART (UART0) RX
+  fast_irq(03) <= uart0_tx_irq; -- primary UART (UART0) TX
+  fast_irq(04) <= uart1_rx_irq; -- secondary UART (UART1) RX
+  fast_irq(05) <= uart1_tx_irq; -- secondary UART (UART1) TX
+  fast_irq(06) <= spi_irq;      -- SPI interrupt
+  fast_irq(07) <= twi_irq;      -- TWI transfer done
+  fast_irq(08) <= xirq_irq;     -- external interrupt controller
+  fast_irq(09) <= neoled_irq;   -- NEOLED buffer IRQ
+  fast_irq(10) <= '0';          -- reserved
+  fast_irq(11) <= sdi_irq;      -- SDI interrupt
+  fast_irq(12) <= gptmr_irq;    -- general purpose timer match
+  fast_irq(13) <= onewire_irq;  -- ONEWIRE operation done
+  fast_irq(14) <= '0';          -- reserved
+  fast_irq(15) <= '0';          -- LOWEST PRIORITY - reserved
 
 
   -- CPU Instruction Cache ------------------------------------------------------------------
@@ -1202,12 +1198,9 @@ begin
       -- com lines --
       uart_txd_o  => uart0_txd_o,
       uart_rxd_i  => uart0_rxd_i,
-      -- hardware flow control --
-      uart_rts_o  => uart0_rts_o,                -- UART.RX ready to receive ("RTR"), low-active, optional
-      uart_cts_i  => uart0_cts_i,                -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
-      irq_rxd_o   => uart0_rxd_irq,              -- uart data received interrupt
-      irq_txd_o   => uart0_txd_irq               -- uart transmission done interrupt
+      irq_rx_o    => uart0_rx_irq,               -- rx interrupt
+      irq_tx_o    => uart0_tx_irq                -- tx interrupt
     );
     resp_bus(RESP_UART0).err <= '0'; -- no access error possible
   end generate;
@@ -1216,11 +1209,10 @@ begin
   if (IO_UART0_EN = false) generate
     resp_bus(RESP_UART0) <= resp_bus_entry_terminate_c;
     --
-    uart0_txd_o   <= '0';
-    uart0_rts_o   <= '0';
-    uart0_cg_en   <= '0';
-    uart0_rxd_irq <= '0';
-    uart0_txd_irq <= '0';
+    uart0_txd_o  <= '0';
+    uart0_cg_en  <= '0';
+    uart0_rx_irq <= '0';
+    uart0_tx_irq <= '0';
   end generate;
 
 
@@ -1250,12 +1242,9 @@ begin
       -- com lines --
       uart_txd_o  => uart1_txd_o,
       uart_rxd_i  => uart1_rxd_i,
-      -- hardware flow control --
-      uart_rts_o  => uart1_rts_o,                -- UART.RX ready to receive ("RTR"), low-active, optional
-      uart_cts_i  => uart1_cts_i,                -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
-      irq_rxd_o   => uart1_rxd_irq,              -- uart rx interrupt
-      irq_txd_o   => uart1_txd_irq               -- uart tx interrupt
+      irq_rx_o    => uart1_rx_irq,               -- rx interrupt
+      irq_tx_o    => uart1_tx_irq                -- tx interrupt
     );
     resp_bus(RESP_UART1).err <= '0'; -- no access error possible
   end generate;
@@ -1264,11 +1253,10 @@ begin
   if (IO_UART1_EN = false) generate
     resp_bus(RESP_UART1) <= resp_bus_entry_terminate_c;
     --
-    uart1_txd_o   <= '0';
-    uart1_rts_o   <= '0';
-    uart1_cg_en   <= '0';
-    uart1_rxd_irq <= '0';
-    uart1_txd_irq <= '0';
+    uart1_txd_o  <= '0';
+    uart1_cg_en  <= '0';
+    uart1_rx_irq <= '0';
+    uart1_tx_irq <= '0';
   end generate;
 
 

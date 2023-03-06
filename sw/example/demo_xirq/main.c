@@ -70,8 +70,8 @@ int main() {
   // this will take care of handling all CPU traps (interrupts and exceptions)
   neorv32_rte_setup();
 
-  // setup UART0 at default baud rate, no parity bits, no HW flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
   // check if XIRQ unit is implemented at all
   if (neorv32_xirq_available() == 0) {

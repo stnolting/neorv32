@@ -101,8 +101,6 @@ entity neorv32_ProcessorTop_UP5KDemo is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart_txd_o  : out std_ulogic; -- UART0 send data
     uart_rxd_i  : in  std_ulogic := '0'; -- UART0 receive data
-    uart_rts_o  : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart_cts_i  : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- SPI to on-board flash --
     flash_sck_o : out std_ulogic;
@@ -231,8 +229,6 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart_txd_o,                   -- UART0 send data
     uart0_rxd_i => uart_rxd_i,                   -- UART0 receive data
-    uart0_rts_o => uart_rts_o,                   -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i => uart_cts_i,                   -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o   => con_spi_sck,                  -- SPI serial clock

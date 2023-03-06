@@ -112,9 +112,8 @@ int main() {
   float_conv_t opb;
 //  float_conv_t opb;
 
-
-  // init primary UART
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
   // capture all exceptions and give debug info via UART
   neorv32_rte_setup();

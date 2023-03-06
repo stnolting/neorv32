@@ -21,7 +21,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ processor-internal data and instruction memories (<<_data_memory_dmem,**DMEM**>>/<<_instruction_memory_imem,**IMEM**>>) + cache (<<_processor_internal_instruction_cache_icache,**iCACHE**>>)
 * _optional_ internal bootloader (<<_bootloader_rom_bootrom,**BOOTROM**>>) with UART console & SPI flash boot option
 * _optional_ machine system timer (<<_machine_system_timer_mtime,**MTIME**>>), RISC-V-compatible
-* _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>, <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,**UART1**>>) with optional hardware flow control (RTS/CTS) and optional RX/TX FIFOs
+* _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>, <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,**UART1**>>)
 * _optional_ serial peripheral interface host controller (<<_serial_peripheral_interface_controller_spi,**SPI**>>) with 8 dedicated CS lines
 * _optional_ 8-bit serial data device interface (<<_serial_data_interface_controller_spi,**SDI**>>)
 * _optional_ two wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
@@ -103,13 +103,9 @@ bits/channels are hardwired to zero.
 4+^| **Primary Universal Asynchronous Receiver/Transmitter (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>>)**
 | `uart0_txd_o`    |    1 |   out | serial transmitter
 | `uart0_rxd_i`    |    1 |    in | serial receiver
-| `uart0_rts_o`    |    1 |   out | RX ready to receive new char
-| `uart0_cts_i`    |    1 |    in | TX allowed to start sending
 4+^| **Primary Universal Asynchronous Receiver/Transmitter (<<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>>)**
 | `uart1_txd_o`    |    1 |   out | serial transmitter
 | `uart1_rxd_i`    |    1 |    in | serial receiver
-| `uart1_rts_o`    |    1 |   out | RX ready to receive new char
-| `uart1_cts_i`    |    1 |    in | TX allowed to start sending
 4+^| **Serial Peripheral Interface Controller (<<_serial_peripheral_interface_controller_spi,SPI>>)**
 | `spi_clk_o`      |    1 |   out | controller clock line
 | `spi_dat_o`      |    1 |   out | serial data output
@@ -790,7 +786,7 @@ GPIO controller is not implemented at all.
 [frame="all",grid="none"]
 |======
 | **IO_UART0_RX_FIFO** | _natural_ | 1
-3+| UART0 receiver FIFO depth, has to be a power of two, minimum value is 1 (implementing simple double-buffering).
+3+| UART0 receiver FIFO depth, has to be a power of two, minimum value is 1.
 |======
 
 
@@ -801,7 +797,7 @@ GPIO controller is not implemented at all.
 [frame="all",grid="none"]
 |======
 | **IO_UART0_TX_FIFO** | _natural_ | 1
-3+| UART0 transmitter FIFO depth, has to be a power of two, minimum value is 1 (implementing simple double-buffering).
+3+| UART0 transmitter FIFO depth, has to be a power of two, minimum value is 1.
 |======
 
 
@@ -823,7 +819,7 @@ GPIO controller is not implemented at all.
 [frame="all",grid="none"]
 |======
 | **IO_UART1_RX_FIFO** | _natural_ | 1
-3+| UART1 receiver FIFO depth, has to be a power of two, minimum value is 1 (implementing simple double-buffering).
+3+| UART1 receiver FIFO depth, has to be a power of two, minimum value is 1.
 |======
 
 
@@ -834,7 +830,7 @@ GPIO controller is not implemented at all.
 [frame="all",grid="none"]
 |======
 | **IO_UART1_TX_FIFO** | _natural_ | 1
-3+| UART1 transmitter FIFO depth, has to be a power of two, minimum value is 1 (implementing simple double-buffering).
+3+| UART1 transmitter FIFO depth, has to be a power of two, minimum value is 1.
 |======
 
 
@@ -1183,10 +1179,10 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | Channel | Source | Description
 | 0       | <<_watchdog_timer_wdt,WDT>> | watchdog timeout interrupt
 | 1       | <<_custom_functions_subsystem_cfs,CFS>> | custom functions subsystem (CFS) interrupt (user-defined)
-| 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 data received interrupt (RX complete)
-| 3       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 sending done interrupt (TX complete)
-| 4       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 data received interrupt (RX complete)
-| 5       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 sending done interrupt (TX complete)
+| 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | Configurable UART0 RX interrupt
+| 3       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | Configurable UART0 TX interrupt
+| 4       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | Configurable UART1 RX interrupt
+| 5       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | Configurable UART1 TX interrupt
 | 6       | <<_serial_peripheral_interface_controller_spi,SPI>> | Configurable SPI interrupt
 | 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI transmission done interrupt
 | 8       | <<_external_interrupt_controller_xirq,XIRQ>> | External interrupt controller interrupt

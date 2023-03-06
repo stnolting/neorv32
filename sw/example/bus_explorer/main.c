@@ -90,11 +90,8 @@ int main() {
   // disable all interrupt sources
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
-  // init UART at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
-
-  // check available hardware extensions and compare with compiler flags
-  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
   // intro
   neorv32_uart0_printf("\n<<< NEORV32 Bus Explorer >>>\n\n");

@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -75,11 +75,11 @@ void onewire_firq_handler(void);
  **************************************************************************/
 int main() {
 
-  // setup UART0 at default baud rate, no parity bits, no HW flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
-
   // capture all exceptions and give debug info via UART0
   neorv32_rte_setup();
+
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
   // check if ONEWIRE is implemented at all
   if (!neorv32_onewire_available()) {

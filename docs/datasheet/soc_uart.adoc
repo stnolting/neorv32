@@ -8,10 +8,8 @@
 | Hardware source file(s): | neorv32_uart.vhd | 
 | Software driver file(s): | neorv32_uart.c |
 |                          | neorv32_uart.h |
-| Top entity port:         | `uart0_txd_o` | serial transmitter output UART0
-|                          | `uart0_rxd_i` | serial receiver input UART0
-|                          | `uart0_rts_o` | flow control: RX ready to receive
-|                          | `uart0_cts_i` | flow control: TX allowed to send
+| Top entity port:         | `uart0_txd_o` | serial transmitter output
+|                          | `uart0_rxd_i` | serial receiver input
 | Configuration generics:  | _IO_UART0_EN_   | implement UART0 when _true_
 |                          | _UART0_RX_FIFO_ | RX FIFO depth (power of 2, min 1)
 |                          | _UART0_TX_FIFO_ | TX FIFO depth (power of 2, min 1)
@@ -19,32 +17,28 @@
 |                          | fast IRQ channel 3 | TX interrupt (see <<_processor_interrupts>>)
 |=======================
 
-The UART is a standard serial interface mainly used to establish a communication channel between a host computer
-computer/user and an application running on the embedded processor.
 
-The NEORV32 UARTs feature independent transmitter and receiver with a fixed frame configuration of 8 data bits,
-an optional parity bit (even or odd) and a fixed stop bit. The actual transmission rate - the Baudrate - is
-programmable via software. Optional FIFOs with custom sizes can be configured for the transmitter and receiver
-independently.
+**Overview**
 
-The UART features two memory-mapped registers `CTRL` and `DATA`, which are used for configuration, status
-check and data transfer.
+The NEORV32 UART provides a standard serial interface with independent transmitter and receiver channel, each
+quipped with a configurable FIFO. The transmission frame is fixed to **8N1**: 8 data bits, no parity bit, 1 stop
+bit. The actual transmission rate (Baud rate) is programmable via software. The module features two memory-mapped
+registers: `CTRL` and `DATA`. These are used for configuration, status check and data transfer.
 
-.Standard Console(s)
+.Standard Console
 [NOTE]
-Please note that _all_ default example programs and software libraries of the NEORV32 software
-framework (including the bootloader and the runtime environment) use the primary UART
-(_UART0_) as default user console interface. Furthermore, UART0 is used to implement all the standard
-input, output and error consoles (`STDIN`, `STDOUT` and `STDERR`).
+All default example programs and software libraries of the NEORV32 software framework (including the bootloader
+and the runtime environment) use the primary UART (_UART0_) as default user console interface. Furthermore, UART0
+is used to implement the "standard consoles" (`STDIN`, `STDOUT` and `STDERR`).
 
 
 **Theory of Operation**
 
 UART0 is enabled by setting the _UART_CTRL_EN_ bit in the UART0 control register `CTRL`. The Baud rate
-is configured via a 12-bit _UART_CTRL_BAUDxx_ baud prescaler (`baud_prsc`) and a 3-bit _UART_CTRL_PRSCx_
-clock prescaler (`clock_prescaler`) that scales the processor's primary clock (_f~main~_).
+is configured via a 10-bit _UART_CTRL_BAUDx_ baud divisor (`baud_div`) and a 3-bit _UART_CTRL_PRSCx_
+clock prescaler (`clock_prescaler`).
 
-.UART0 prescaler configuration
+.UART0 clock configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
@@ -52,110 +46,40 @@ clock prescaler (`clock_prescaler`) that scales the processor's primary clock (_
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-_**Baud rate**_ = (_f~main~[Hz]_ / `clock_prescaler`) / (`baud_prsc` + 1)
+_**Baud rate**_ = (_f~main~[Hz]_ / `clock_prescaler`) / (`baud_div` + 1)
 
-A new transmission is started by writing the data byte to be send to the lowest byte of the `DATA` register. The
-transfer is completed when the _UART_CTRL_TX_BUSY_ control register flag returns to zero. A new received byte
-is available when the _UART_DATA_AVAIL_ flag of the `DATA` register is set. A "frame error" in a received byte
-(invalid stop bit) is indicated via the _UART_DATA_FERR_ flag in the `DATA` register. The flag is cleared by
-reading the `DATA` register.
+The control register's _UART_CTRL_RX_ and _UART_CTRL_TX_ flags provide information about the RX and TX FIFO fill level.
+Disabling the module via the _UART_CTRL_EN_ bit will also clear these FIFOs.
 
-[TIP]
-A transmission (RX or TX) can be terminated at any time by disabling the UART module
-by clearing the _UART_CTRL_EN_ control register bit.
-
-
-**RX and TX FIFOs**
-
-UART0 provides optional FIFO buffers for the transmitter and the receiver. The _UART0_RX_FIFO_ generic defines
-the depth of the RX FIFO (for receiving data) while the _UART0_TX_FIFO_ defines the depth of the TX FIFO
-(for sending data). Both generics have to be a power of two with a minimal allowed value of 1. This minimal
-value will implement simple "double-buffering" instead of full-featured FIFOs.
-Both FIFOs are cleared whenever UART0 is disabled (clearing _UART_CTRL_EN_ in `CTRL`).
-
-The state of both FIFO (_empty_, _at lest half-full_, _full_) is available via the _UART_CTRL_?X_EMPTY_,
- _UART_CTRL_?X_HALF_ and _UART_CTRL_*X_FULL_ flags in the `CTRL` register.
-
-If the RX FIFO is already full and new data is received by the receiver unit, the _UART_DATA_OVERR_ flag
-in the `DATA` register is set indicating an "overrun". This flag is cleared by reading the `DATA` register.
-
-[NOTE]
-In contrast to other FIFO-equipped peripherals, software **cannot** determine the UART's FIFO size configuration
-by reading specific control register bits (simply because there are no bits left in the control register).
-
-
-**Hardware Flow Control - RTS/CTS**
-
-UART0 supports optional hardware flow control using the standard CTS (clear to send) and/or RTS (ready to send
-/ ready to receive "RTR") signals. Both hardware control flow mechanisms can be enabled individually.
-
-* If **RTS hardware flow control** is enabled by setting the _UART_CTRL_RTS_EN_ control register flag, the UART
-will drive the `uart0_rts_o` signal low if the UART RX FIFO is less than half full. As long as this signal is low,
-the connected device can send new data. `uart0_rts_o` is always low if the UART is disabled.
-
-[WARNING]
-If the _UART0_RX_FIFO_ configuration generic is set to it's minimum (=1), the RTS signal already goes low
-when a single character has been received by the UART that has not yet been read by the software.
-
-* If **CTS hardware flow control** is enabled by setting the _UART_CTRL_CTS_EN_ control register flag, the UART's
-transmitter will not start sending a new data until the `uart0_cts_i` signal goes low. During this time, the UART busy flag
-_UART_CTRL_TX_BUSY_ remains set. If `uart0_cts_i` is asserted, no new data transmission will be started by the UART.
-The state of the `uart0_cts_i` signal has no effect on a transmission being already in progress. Application software can check
-the current state of the `uart0_cts_o` input signal via the _UART_CTRL_CTS_ control register flag.
-
-
-**Parity Modes**
-
-An optional parity bit can be added to the data stream if the _UART_CTRL_PMODE1_ flag is set.
-When _UART_CTRL_PMODE0_ is zero, the UART operates in "even parity" mode. If this flag is set, the UART operates in "odd parity" mode.
-Parity errors in received data are indicated via the _UART_DATA_PERR_ flag in the `DATA` register. This flag is updated with each new
-received character and is cleared by reading the `DATA` register.
+A new TX transmission is started by writing the data byte to be send to the lowest byte of the `DATA` register. The
+transfer is completed when the _UART_CTRL_TX_BUSY_ control register flag returns to zero. Rx data is available when
+the _UART_CTRL_IRQ_RX_NEMPTY_ flag becomes set. The _UART_CTRL_RX_OVER_ will be set if the RX FIFO overflows. This flag
+is cleared by reading the `DATA` register or by disabling the module.
 
 
 **UART Interrupts**
 
-UART0 features two independent interrupt for signaling certain RX and TX conditions. The behavior of these conditions differs
-based on the configured FIFO sizes. If the according FIFO size is greater than 1, the _UART_CTRL_RX_IRQ_ and _UART_CTRL_TX_IRQ_
-`CTRL` flags allow a more fine-grained IRQ configuration. An interrupt can only become pending if the according interrupt
-condition is fulfilled and the UART is enabled at all.
+The UART module provides independent interrupt channels for RX and TX. These interrupts are triggered by certain RX and TX
+FIFO levels. The actual configuration is programmed via the _UART_CTRL_IRQ_RX_ bits for the RX interrupt channel and via
+the _UART_CTRL_IRQ_TX_ bits for the TX interrupt channel. Note that all enabled events are logically OR-ed - so the according
+interrupt will start firing if any of the enabled conditions is true.
 
-* If _UART0_RX_FIFO_ is exactly 1, the RX interrupt goes pending when data _becomes_ available in the RX FIFO
-(-> _UART_CTRL_RX_EMPTY_ clears). _UART_CTRL_RX_IRQ_ is hardwired to `0` in this case.
-* If _UART0_TX_FIFO_ is exactly 1, the TX interrupt goes pending when at least one entry in the TX FIFO _becomes_ free
-(-> _UART_CTRL_TX_FULL_ clears). _UART_CTRL_TX_IRQ_ is hardwired to `0` in this case.
-
-* If _UART0_RX_FIFO_ is greater than 1: If _UART_CTRL_RX_IRQ_ is `0` the RX interrupt goes pending when data _becomes_
-available in the RX FIFO (-> _UART_CTRL_RX_EMPTY_ clears). If _UART_CTRL_RX_IRQ_ is `1` the RX interrupt becomes pending
-the RX FIFO _becomes_ at least half-full (-> _UART_CTRL_RX_HALF_ sets).
-* If _UART0_TX_FIFO_ is greater than 1: If _UART_CTRL_TX_IRQ_ is `0` the TX interrupt goes pending when at least one entry
-in the TX FIFO _becomes_ free (-> _UART_CTRL_TX_FULL_ clears). If _UART_CTRL_TX_IRQ_ is `1` the TX interrupt goes pending
-when the RX FIFO _becomes_ less than half-full (-> _UART_CTRL_TX_HALF_ clears).
-
-Once the RX or TX interrupt has become pending, it has to be explicitly cleared again by
-writing zero to the according <<_mip>> CSR bit.
+Once an UART interrupt has fired it remains pending until the actual cause of the interrupt is resolved; for
+example if just the UART_CTRL_IRQ_RX_NEMPTY bit is set, the RX interrupt will keep firing until the RX FIFO is empty again.
+Furthermore, a pending UART interrupt has to be explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 
 
 **Simulation Mode**
 
-The default UART0 operation will transmit any data written to the `DATA` register via the serial TX line at
-the defined baud rate via the physical link. To accelerate UART0 output during simulation
-(and also to dump large amounts of data) the UART0 features a _simulation mode_.
+The UART provides a _simulation-only_ mode to dump console data as well as raw data directly to a file. When the simulation
+mode is enabled (by setting the _UART_CTRL_SIM_MODE_ bit) there will be **no** physical transaction on the `uart0_txd_o` signal.
+Instead, all data written to the `DATA` register is immediately dumped to a file.
 
-Simulation mode is enabled by setting the _UART_CTRL_SIM_MODE_ bit in the UART0's control register
-`CTRL`. Any other UART0 configuration bits are irrelevant for this mode but UART0 has to be enabled via the
-_UART_CTRL_EN_ bit. There will be no physical UART0 transmissions via `uart0_txd_o` at all when
-simulation mode is enabled. Furthermore, no interrupts (RX & TX) will be triggered.
+. Data written to `DATA[7:0]` will be dumped as ASCII chars to a file named `neorv32.uart0.sim_mode.text.out`. Additionally,
+the ASCII data is printed to the simulator console.
+. Data written to `DATA[31:0]` will be dumped as 8-chars ASCII hexadecimal value to a file named `neorv32.uart0.sim_mode.data.out`.
 
-When the simulation mode is enabled any data written to `DATA[7:0]` is
-directly output as ASCII char to the simulator console. Additionally, all chars are also stored to a text file
-`neorv32.uart0.sim_mode.text.out` in the simulation home folder.
-
-Furthermore, the whole 32-bit word written to `DATA[31:0]` is stored as plain 8-char hexadecimal value to a
-second text file `neorv32.uart0.sim_mode.data.out` also located in the simulation home folder.
-
-[TIP]
-More information regarding the simulation-mode of the UART0 can be found in the User Guide
-section https://stnolting.github.io/neorv32/ug/#_simulating_the_processor[Simulating the Processor].
+Both file are created in the simulation's home folder.
 
 
 **Register Map**
@@ -165,33 +89,27 @@ section https://stnolting.github.io/neorv32/ug/#_simulating_the_processor[Simula
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.21+<| `0xffffffa0` .21+<| `CTRL` <|`11:0` _UART_CTRL_BAUDxx_ ^| r/w <| 12-bit Baud value configuration value
-                                  <|`12` _UART_CTRL_SIM_MODE_ ^| r/w <| enable **simulation mode**
-                                  <|`13` _UART_CTRL_RX_EMPTY_ ^| r/- <| RX FIFO is empty
-                                  <|`14` _UART_CTRL_RX_HALF_  ^| r/- <| RX FIFO is at least half-full
-                                  <|`15` _UART_CTRL_RX_FULL_  ^| r/- <| RX FIFO is full
-                                  <|`16` _UART_CTRL_TX_EMPTY_ ^| r/- <| TX FIFO is empty
-                                  <|`17` _UART_CTRL_TX_HALF_  ^| r/- <| TX FIFO is at least half-full
-                                  <|`18` _UART_CTRL_TX_FULL_  ^| r/- <| TX FIFO is full
-                                  <|`19` -                    ^| r/- <| _reserved_, read as zero
-                                  <|`20` _UART_CTRL_RTS_EN_   ^| r/w <| enable RTS hardware flow control
-                                  <|`21` _UART_CTRL_CTS_EN_   ^| r/w <| enable CTS hardware flow control
-                                  <|`22` _UART_CTRL_PMODE0_   ^| r/w .2+<| parity bit enable and configuration (`00`/`01`= no parity; `10`=even parity; `11`=odd parity)
-                                  <|`23` _UART_CTRL_PMODE1_   ^| r/w 
-                                  <|`24` _UART_CTRL_PRSC0_    ^| r/w .3+<| 3-bit Baud rate clock prescaler select
-                                  <|`25` _UART_CTRL_PRSC1_    ^| r/w 
-                                  <|`26` _UART_CTRL_PRSC2_    ^| r/w 
-                                  <|`27` _UART_CTRL_CTS_      ^| r/- <| current state of UART's CTS input signal
-                                  <|`28` _UART_CTRL_EN_       ^| r/w <| UART enable
-                                  <|`29` _UART_CTRL_RX_IRQ_   ^| r/w <| RX IRQ mode: `1`=FIFO at least half-full; `0`=FIFO not empty
-                                  <|`30` _UART_CTRL_TX_IRQ_   ^| r/w <| TX IRQ mode: `1`=FIFO less than half-full; `0`=FIFO not full
-                                  <|`31` _UART_CTRL_TX_BUSY_  ^| r/- <| transmitter busy flag
-.6+<| `0xffffffa4` .6+<| `DATA` <|`7:0` _UART_DATA_MSB_ : _UART_DATA_LSB_ ^| r/w <| receive/transmit data (8-bit)
-                                <|`31:0` -                ^| -/w <| **simulation data output**
-                                <|`28` _UART_DATA_PERR_   ^| r/- <| RX parity error
-                                <|`29` _UART_DATA_FERR_   ^| r/- <| RX data frame error (stop bit not set)
-                                <|`30` _UART_DATA_OVERR_  ^| r/- <| RX data overrun
-                                <|`31` _UART_DATA_AVAIL_  ^| r/- <| RX data available when set
+.18+<| `0xffffffa0` .18+<| `CTRL` <|`0`    _UART_CTRL_EN_                        ^| r/w <| UART enable
+                                  <|`1`    _UART_CTRL_SIM_MODE_                  ^| r/w <| enable **simulation mode**
+                                  <|`4:2`  _UART_CTRL_PRSC2_ : _UART_CTRL_PRSC0_ ^| r/w <| Baud rate clock prescaler select
+                                  <|`14:5` _UART_CTRL_BAUD9_ : _UART_CTRL_BAUD0_ ^| r/w <| 12-bit Baud value configuration value
+                                  <|`15`   -                                     ^| r/- <| _reserved_, read as zero
+                                  <|`16`   _UART_CTRL_RX_NEMPTY_                 ^| r/- <| RX FIFO not empty
+                                  <|`17`   _UART_CTRL_RX_HALF_                   ^| r/- <| RX FIFO at least half-full
+                                  <|`18`   _UART_CTRL_RX_FULL_                   ^| r/- <| RX FIFO full
+                                  <|`19`   _UART_CTRL_TX_EMPTY_                  ^| r/- <| TX FIFO empty
+                                  <|`20`   _UART_CTRL_TX_NHALF_                  ^| r/- <| TX FIFO not at least half-full
+                                  <|`21`   _UART_CTRL_TX_FULL_                   ^| r/- <| TX FIFO full
+                                  <|`22`   _UART_CTRL_IRQ_RX_NEMPTY_             ^| r/w <| fire IRQ if RX FIFO not empty
+                                  <|`23`   _UART_CTRL_IRQ_RX_HALF_               ^| r/w <| fire IRQ if RX FIFO at least half-full
+                                  <|`24`   _UART_CTRL_IRQ_RX_FULL_               ^| r/w <| fire IRQ if RX FIFO full
+                                  <|`25`   _UART_CTRL_IRQ_TX_EMPTY_              ^| r/w <| fire IRQ if TX FIFO empty
+                                  <|`26`   _UART_CTRL_IRQ_TX_NHALF_              ^| r/w <| fire IRQ if TX not at least half full
+                                  <|`30`   _UART_CTRL_RX_OVER_                   ^| r/- <| RX FIFO overflow
+                                  <|`31`   _UART_CTRL_TX_BUSY_                   ^| r/- <| TX busy or TX FIFO not empty
+.3+<| `0xffffffa4` .3+<| `DATA` <|`7:0`  ^| r/w <| receive/transmit data
+                                <|`31:8` ^| r/- <| _reserved_, read as zero
+                                <|`31:0` ^| -/w <| **simulation data output**
 |=======================
 
 
@@ -207,10 +125,8 @@ section https://stnolting.github.io/neorv32/ug/#_simulating_the_processor[Simula
 | Hardware source file(s): | neorv32_uart.vhd | 
 | Software driver file(s): | neorv32_uart.c |
 |                          | neorv32_uart.h |
-| Top entity port:         | `uart1_txd_o` | serial transmitter output UART1
-|                          | `uart1_rxd_i` | serial receiver input UART1
-|                          | `uart1_rts_o` | flow control: RX ready to receive
-|                          | `uart1_cts_i` | flow control: TX allowed to send
+| Top entity port:         | `uart1_txd_o` | serial transmitter output
+|                          | `uart1_rxd_i` | serial receiver input
 | Configuration generics:  | _IO_UART1_EN_   | implement UART1 when _true_
 |                          | _UART1_RX_FIFO_ | RX FIFO depth (power of 2, min 1)
 |                          | _UART1_TX_FIFO_ | TX FIFO depth (power of 2, min 1)
@@ -219,19 +135,19 @@ section https://stnolting.github.io/neorv32/ug/#_simulating_the_processor[Simula
 |=======================
 
 
-**Theory of Operation**
+**Overview**
 
-The secondary UART (UART1) is functional identical to the primary UART (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>).
-Obviously, UART1 has different addresses for the control register (`CTRL`) and the data register (`DATA`) - see the register map below.
-The register's bits/flags use the same bit positions and naming as for the primary UART. The RX and TX interrupts of UART1 are
-mapped to different CPU fast interrupt (FIRQ) channels.
+The secondary UART (UART1) is functionally identical to the primary UART
+(<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>). Obviously, UART1 uses different addresses for the
+control register (`CTRL`) and the data register (`DATA`). The register's bits/flags use the same bit positions and naming
+as for the primary UART. The RX and TX interrupts of UART1 are mapped to different CPU fast interrupt (FIRQ) channels.
 
 
 **Simulation Mode**
 
-The secondary UART (UART1) provides the same simulation options as the primary UART. However,
-output data is written to UART1-specific files: `neorv32.uart1.sim_mode.text.out` is used to store
-plain ASCII text and `neorv32.uart1.sim_mode.data.out` is used to store full 32-bit hexadecimal
+The secondary UART (UART1) provides the same simulation options as the primary UART (UART0). However, output data is
+written to UART1-specific files: `neorv32.uart1.sim_mode.text.out` is used to dump plain ASCII text. This data is also
+printed to the simulator console. `neorv32.uart1.sim_mode.data.out` is used to dump full 32-bit hexadecimal ASCII-chars
 data words.
 
 
