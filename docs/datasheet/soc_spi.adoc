@@ -116,7 +116,7 @@ Furthermore, an active SPI interrupt has to be explicitly cleared again by writi
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.16+<| `0xffffffa8` .18+<| `CTRL` <|`0`     _SPI_CTRL_EN_                             ^| r/w <| SPI module enable
+.18+<| `0xffffffa8` .18+<| `CTRL` <|`0`     _SPI_CTRL_EN_                             ^| r/w <| SPI module enable
                                   <|`1`     _SPI_CTRL_CPHA_                           ^| r/w <| clock phase
                                   <|`2`     _SPI_CTRL_CPOL_                           ^| r/w <| clock polarity
                                   <|`5:3`   _SPI_CTRL_CS_SEL2_ : _SPI_CTRL_CS_SEL0_   ^| r/w <| Direct chip-select 0..7
