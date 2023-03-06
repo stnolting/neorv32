@@ -144,15 +144,6 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant ctrl_rx_over_c       : natural := 30; -- r/-: RX FIFO overflow
   constant ctrl_tx_busy_c       : natural := 31; -- r/-: UART transmitter is busy and TX FIFO not empty
 
-  -- data register flags --
-  constant data_lsb_c      : natural :=  0; -- r/-: received char LSB
-  constant data_msb_c      : natural :=  7; -- r/-: received char MSB
-  -- ...
-  constant data_rx_perr_c  : natural := 28; -- r/-: RX parity error
-  constant data_rx_ferr_c  : natural := 29; -- r/-: RX frame error
-  constant data_rx_overr_c : natural := 30; -- r/-: RX data overrun
-  constant data_rx_avail_c : natural := 31; -- r/-: RX data available
-
   -- access control --
   signal acc_en  : std_ulogic; -- module access enable
   signal addr    : std_ulogic_vector(31 downto 0); -- access address
