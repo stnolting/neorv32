@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 07.03.2023 | 1.8.1.8 | update smart LED controller **NEOLED**; [#536](https://github.com/stnolting/neorv32/pull/536) |
 | 05.03.2023 | 1.8.1.7 | :warning: rework and update **UART0 & UART1**; [#533](https://github.com/stnolting/neorv32/pull/533) |
 | 04.03.2023 | 1.8.1.6 | :warning: rework and update **SPI** module; [#530](https://github.com/stnolting/neorv32/pull/530) |
 | 02.03.2023 | 1.8.1.5 | minor general purpose timer (GPTMR) code edits; [#529](https://github.com/stnolting/neorv32/pull/529) |
