@@ -1230,15 +1230,15 @@ int main() {
   // enable fast interrupt
   neorv32_cpu_irq_enable(NEOLED_FIRQ_ENABLE);
 
-  // configure NEOLED
-  neorv32_neoled_setup(CLK_PRSC_2, 0, 0, 0);
+  // configure NEOLED, IRQ if FIFO  empty
+  neorv32_neoled_setup(CLK_PRSC_4, 0, 0, 0, 0);
 
   // send dummy data
   neorv32_neoled_write_nonblocking(0);
+  neorv32_neoled_write_nonblocking(0);
 
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile ("nop");
-  asm volatile ("nop");
+  // sleep until interrupt
+  neorv32_cpu_sleep();
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
