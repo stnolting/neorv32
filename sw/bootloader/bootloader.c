@@ -324,9 +324,9 @@ int main(void) {
   PRINT_XNUM(NEORV32_SYSINFO->CUSTOM_ID);
   PRINT_TEXT("\nCLK:  ");
   PRINT_XNUM(NEORV32_SYSINFO->CLK);
-  PRINT_TEXT("\nISA:  ");
+  PRINT_TEXT("\nMISA: ");
   PRINT_XNUM(neorv32_cpu_csr_read(CSR_MISA));
-  PRINT_TEXT(" + ");
+  PRINT_TEXT("\nXISA: ");
   PRINT_XNUM(neorv32_cpu_csr_read(CSR_MXISA));
   PRINT_TEXT("\nSOC:  ");
   PRINT_XNUM(NEORV32_SYSINFO->SOC);

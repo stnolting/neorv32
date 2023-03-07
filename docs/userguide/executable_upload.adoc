@@ -49,23 +49,26 @@ automatic boot sequence and to start the actual bootloader user interface consol
 ----
 << NEORV32 Bootloader >>
 
-BLDV: Feb 16 2022
-HWV:  0x01060709
+BLDV: Mar  7 2023
+HWV:  0x01080107
+CID:  0x00000000
 CLK:  0x05f5e100
-ISA:  0x40901107 + 0xc000068b
-SOC:  0x7b7f402f
+MISA: 0x40901106
+XISA: 0xc0000fab
+SOC:  0xffff402f
 IMEM: 0x00008000 bytes @0x00000000
-DMEM: 0x00004000 bytes @0x80000000
+DMEM: 0x00002000 bytes @0x80000000
 
 Autoboot in 8s. Press any key to abort.
 Aborted.
 
-Available commands:
+Available CMDs:
  h: Help
  r: Restart
  u: Upload
  s: Store to flash
  l: Load from flash
+ x: Boot from flash (XIP)
  e: Execute
 CMD:>
 ----
