@@ -134,7 +134,7 @@ SOC:  0xffff402f
 IMEM: 0x00008000 bytes @0x00000000
 DMEM: 0x00002000 bytes @0x80000000
 
-Autoboot in 8s. Press any key to abort.
+Autoboot in 8s. Press any key to abort. <1>
 Aborted.
 
 Available CMDs:
