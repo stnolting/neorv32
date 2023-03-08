@@ -43,6 +43,23 @@
 #ifndef neorv32_gpio_h
 #define neorv32_gpio_h
 
+/**********************************************************************//**
+ * @name IO Device: General Purpose Input/Output Port Unit (GPIO)
+ **************************************************************************/
+/**@{*/
+/** GPIO module prototype */
+typedef volatile struct __attribute__((packed,aligned(4))) {
+  const uint32_t INPUT_LO;  /**< offset 0:  parallel input port lower 32-bit, read-only */
+  const uint32_t INPUT_HI;  /**< offset 4:  parallel input port upper 32-bit, read-only */
+  uint32_t       OUTPUT_LO; /**< offset 8:  parallel output port lower 32-bit */
+  uint32_t       OUTPUT_HI; /**< offset 12: parallel output port upper 32-bit */
+} neorv32_gpio_t;
+
+/** GPIO module hardware access (#neorv32_gpio_t) */
+#define NEORV32_GPIO ((neorv32_gpio_t*) (NEORV32_GPIO_BASE))
+/**@}*/
+
+
 // prototypes
 int      neorv32_gpio_available(void);
 void     neorv32_gpio_pin_set(int pin);
