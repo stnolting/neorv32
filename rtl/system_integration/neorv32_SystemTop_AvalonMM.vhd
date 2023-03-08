@@ -163,10 +163,14 @@ entity neorv32_top_avalonmm is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic; -- UART0 send data
     uart0_rxd_i    : in  std_ulogic := 'U'; -- UART0 receive data
+    uart0_rts_o    : out std_ulogic; -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic; -- UART1 send data
     uart1_rxd_i    : in  std_ulogic := 'U'; -- UART1 receive data
+    uart1_rts_o    : out std_ulogic; -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      : out std_ulogic; -- SPI serial clock
@@ -349,10 +353,14 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart0_txd_o,
     uart0_rxd_i => uart0_rxd_i,
+    uart0_rts_o => uart0_rts_o,
+    uart0_cts_i => uart0_cts_i,
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o => uart1_txd_o,
     uart1_rxd_i => uart1_rxd_i,
+    uart1_rts_o => uart1_rts_o,
+    uart1_cts_i => uart1_cts_i,
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o => spi_clk_o,

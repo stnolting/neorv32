@@ -178,10 +178,14 @@ entity neorv32_top is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic; -- UART0 send data
     uart0_rxd_i    : in  std_ulogic := 'U'; -- UART0 receive data
+    uart0_rts_o    : out std_ulogic; -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic; -- UART1 send data
     uart1_rxd_i    : in  std_ulogic := 'U'; -- UART1 receive data
+    uart1_rts_o    : out std_ulogic; -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      : out std_ulogic; -- SPI serial clock
@@ -1198,6 +1202,9 @@ begin
       -- com lines --
       uart_txd_o  => uart0_txd_o,
       uart_rxd_i  => uart0_rxd_i,
+      -- hardware flow control --
+      uart_rts_o  => uart0_rts_o,                -- UART.RX ready to receive ("RTR"), low-active, optional
+      uart_cts_i  => uart0_cts_i,                -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
       irq_rx_o    => uart0_rx_irq,               -- rx interrupt
       irq_tx_o    => uart0_tx_irq                -- tx interrupt
@@ -1210,6 +1217,7 @@ begin
     resp_bus(RESP_UART0) <= resp_bus_entry_terminate_c;
     --
     uart0_txd_o  <= '0';
+    uart0_rts_o  <= '1';
     uart0_cg_en  <= '0';
     uart0_rx_irq <= '0';
     uart0_tx_irq <= '0';
@@ -1242,6 +1250,9 @@ begin
       -- com lines --
       uart_txd_o  => uart1_txd_o,
       uart_rxd_i  => uart1_rxd_i,
+      -- hardware flow control --
+      uart_rts_o  => uart1_rts_o,                -- UART.RX ready to receive ("RTR"), low-active, optional
+      uart_cts_i  => uart1_cts_i,                -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
       irq_rx_o    => uart1_rx_irq,               -- rx interrupt
       irq_tx_o    => uart1_tx_irq                -- tx interrupt
@@ -1254,6 +1265,7 @@ begin
     resp_bus(RESP_UART1) <= resp_bus_entry_terminate_c;
     --
     uart1_txd_o  <= '0';
+    uart1_rts_o  <= '1';
     uart1_cg_en  <= '0';
     uart1_rx_irq <= '0';
     uart1_tx_irq <= '0';
