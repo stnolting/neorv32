@@ -53,19 +53,26 @@ Disabling the module via the _UART_CTRL_EN_ bit will also clear these FIFOs.
 
 A new TX transmission is started by writing the data byte to be send to the lowest byte of the `DATA` register. The
 transfer is completed when the _UART_CTRL_TX_BUSY_ control register flag returns to zero. Rx data is available when
-the _UART_CTRL_IRQ_RX_NEMPTY_ flag becomes set. The _UART_CTRL_RX_OVER_ will be set if the RX FIFO overflows. This flag
+the _UART_CTRL_RX_NEMPTY_ flag becomes set. The _UART_CTRL_RX_OVER_ will be set if the RX FIFO overflows. This flag
 is cleared by reading the `DATA` register or by disabling the module.
 
 
 **UART Interrupts**
 
 The UART module provides independent interrupt channels for RX and TX. These interrupts are triggered by certain RX and TX
-FIFO levels. The actual configuration is programmed via the _UART_CTRL_IRQ_RX_ bits for the RX interrupt channel and via
-the _UART_CTRL_IRQ_TX_ bits for the TX interrupt channel. Note that all enabled events are logically OR-ed - so the according
-interrupt will start firing if any of the enabled conditions is true.
+FIFO levels. The actual configuration is programmed independently for the RX and TX interrupt channel via the control register's
+_UART_CTRL_IRQ_RX_ and _UART_CTRL_IRQ_TX_ bits:
+
+. **RX IRQ** The RX interrupt can be triggered by three different RX FIFO level states: If _UART_CTRL_IRQ_RX_NEMPTY_ is set the
+interrupt fires if the RX FIFO is _not_ empty (e.g. when incoming data is available). If _UART_CTRL_IRQ_RX_HALF_ is set the RX IRQ
+fires if the RX FIFO is at least half-full. If _UART_CTRL_IRQ_RX_FULL_ the interrupt fires if the RX FIFO is full. Note that all
+these programmable conditions are logically OR-ed (interrupt fires if any enabled conditions is true).
+. **TX IRQ** The TX interrupt can be triggered by two different TX FIFO level states: If _UART_CTRL_IRQ_TX_EMPTY_ is set the
+interrupt fires if the TX FIFO is empty. If _UART_CTRL_IRQ_TX_NHALF_ is set the interrupt fires if the TX FIFO is _not_ at least
+half full. Note that all these programmable conditions are logically OR-ed (interrupt fires if any enabled conditions is true).
 
 Once an UART interrupt has fired it remains pending until the actual cause of the interrupt is resolved; for
-example if just the UART_CTRL_IRQ_RX_NEMPTY bit is set, the RX interrupt will keep firing until the RX FIFO is empty again.
+example if just the _UART_CTRL_IRQ_RX_NEMPTY_ bit is set, the RX interrupt will keep firing until the RX FIFO is empty again.
 Furthermore, a pending UART interrupt has to be explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 
 
