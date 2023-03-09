@@ -183,10 +183,13 @@ entity neorv32_SystemTop_axi4lite is
     spi_dat_i     : in  std_logic := '0'; -- controller data in, peripheral data out
     spi_csn_o     : out std_logic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io    : inout std_logic; -- twi serial data line
-    twi_scl_io    : inout std_logic; -- twi serial clock line
+    twi_sda_i     : in  std_ulogic := 'H'; -- serial data line sense input
+    twi_sda_o     : out std_ulogic; -- serial data line output (pull low only)
+    twi_scl_i     : in  std_ulogic := 'H'; -- serial clock line sense input
+    twi_scl_o     : out std_ulogic; -- serial clock line output (pull low only)
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_io     : inout std_logic; -- 1-wire bus
+    onewire_i     : in  std_ulogic := 'H'; -- 1-wire bus sense input
+    onewire_o     : out std_ulogic; -- 1-wire bus output (pull low only)
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o         : out std_logic_vector(11 downto 0);  -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
@@ -248,6 +251,14 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   signal cfs_out_o_int   : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
   --
   signal neoled_o_int    : std_ulogic;
+  --
+  signal twi_sda_i_int   : std_ulogic;
+  signal twi_sda_o_int   : std_ulogic;
+  signal twi_scl_i_int   : std_ulogic;
+  signal twi_scl_o_int   : std_ulogic;
+  --
+  signal onewire_i_int   : std_ulogic;
+  signal onewire_o_int   : std_ulogic;
   --
   signal xirq_i_int      : std_ulogic_vector(31 downto 0);
   --
@@ -412,10 +423,13 @@ begin
     spi_dat_i   => spi_dat_i_int,   -- controller data in, peripheral data out
     spi_csn_o   => spi_csn_o_int,   -- SPI CS
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io  => twi_sda_io,      -- twi serial data line
-    twi_scl_io  => twi_scl_io,      -- twi serial clock line
+    twi_sda_i   => twi_sda_i_int,   -- serial data line sense input
+    twi_sda_o   => twi_sda_o_int,   -- serial data line output (pull low only)
+    twi_scl_i   => twi_scl_i_int,   -- serial clock line sense input
+    twi_scl_o   => twi_scl_o_int,   -- serial clock line output (pull low only)
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_io  => onewire_io,      -- 1-wire bus
+    onewire_i   => onewire_i_int,   -- 1-wire bus sense input
+    onewire_o   => onewire_o_int,   -- 1-wire bus output (pull low only)
     -- PWM available if IO_PWM_NUM_CH > 0) --
     pwm_o       => pwm_o_int,       -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
@@ -466,6 +480,14 @@ begin
   cfs_out_o       <= std_logic_vector(cfs_out_o_int);
 
   neoled_o        <= std_logic(neoled_o_int);
+
+  twi_sda_i_int   <= std_ulogic(twi_sda_i);
+  twi_sda_o       <= std_logic(twi_sda_o_int);
+  twi_scl_i_int   <= std_ulogic(twi_scl_i);
+  twi_scl_o       <= std_logic(twi_scl_o_int);
+
+  onewire_i_int   <= std_ulogic(onewire_i);
+  onewire_o       <= std_logic(onewire_o_int);
 
   xirq_i_int      <= std_ulogic_vector(xirq_i);
 

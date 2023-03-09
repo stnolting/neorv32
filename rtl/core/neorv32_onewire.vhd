@@ -12,7 +12,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -260,7 +260,7 @@ begin
   begin
     if rising_edge(clk_i) then
       -- input synchronizer --
-      serial.wire_in <= serial.wire_in(0) & onewire_i; -- synchronize to prevent metastability
+      serial.wire_in <= serial.wire_in(0) & to_stdulogic(to_bit(onewire_i)); -- "to_bit" to avoid hardware-vs-simulation mismatch
 
       -- bus control --
       if (serial.busy = '0') or (serial.wire_hi = '1') then -- disabled/idle or active tristate request
