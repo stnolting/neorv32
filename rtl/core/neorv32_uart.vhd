@@ -87,6 +87,9 @@ entity neorv32_uart is
     -- com lines --
     uart_txd_o  : out std_ulogic;
     uart_rxd_i  : in  std_ulogic;
+    -- hardware flow control --
+    uart_rts_o  : out std_ulogic; -- UART.RX ready to receive ("RTR"), low-active, optional
+    uart_cts_i  : in  std_ulogic; -- UART.TX allowed to transmit, low-active, optional
     -- interrupts --
     irq_rx_o    : out std_ulogic; -- rx interrupt
     irq_tx_o    : out std_ulogic  -- tx interrupt
@@ -115,19 +118,20 @@ architecture neorv32_uart_rtl of neorv32_uart is
   -- control register bits --
   constant ctrl_en_c            : natural :=  0; -- r/w: UART enable
   constant ctrl_sim_en_c        : natural :=  1; -- r/w: simulation-mode enable
-  constant ctrl_prsc0_c         : natural :=  2; -- r/w: baud prescaler bit 0
-  constant ctrl_prsc1_c         : natural :=  3; -- r/w: baud prescaler bit 1
-  constant ctrl_prsc2_c         : natural :=  4; -- r/w: baud prescaler bit 2
-  constant ctrl_baud0_c         : natural :=  5; -- r/w: baud divisor bit 0
-  constant ctrl_baud1_c         : natural :=  6; -- r/w: baud divisor bit 1
-  constant ctrl_baud2_c         : natural :=  7; -- r/w: baud divisor bit 2
-  constant ctrl_baud3_c         : natural :=  8; -- r/w: baud divisor bit 3
-  constant ctrl_baud4_c         : natural :=  9; -- r/w: baud divisor bit 4
-  constant ctrl_baud5_c         : natural := 10; -- r/w: baud divisor bit 5
-  constant ctrl_baud6_c         : natural := 11; -- r/w: baud divisor bit 6
-  constant ctrl_baud7_c         : natural := 12; -- r/w: baud divisor bit 7
-  constant ctrl_baud8_c         : natural := 13; -- r/w: baud divisor bit 8
-  constant ctrl_baud9_c         : natural := 14; -- r/w: baud divisor bit 9
+  constant ctrl_hwfc_en_c       : natural :=  2; -- r/w: enable RTS/CTS hardware flow-control
+  constant ctrl_prsc0_c         : natural :=  3; -- r/w: baud prescaler bit 0
+  constant ctrl_prsc1_c         : natural :=  4; -- r/w: baud prescaler bit 1
+  constant ctrl_prsc2_c         : natural :=  5; -- r/w: baud prescaler bit 2
+  constant ctrl_baud0_c         : natural :=  6; -- r/w: baud divisor bit 0
+  constant ctrl_baud1_c         : natural :=  7; -- r/w: baud divisor bit 1
+  constant ctrl_baud2_c         : natural :=  8; -- r/w: baud divisor bit 2
+  constant ctrl_baud3_c         : natural :=  9; -- r/w: baud divisor bit 3
+  constant ctrl_baud4_c         : natural := 10; -- r/w: baud divisor bit 4
+  constant ctrl_baud5_c         : natural := 11; -- r/w: baud divisor bit 5
+  constant ctrl_baud6_c         : natural := 12; -- r/w: baud divisor bit 6
+  constant ctrl_baud7_c         : natural := 13; -- r/w: baud divisor bit 7
+  constant ctrl_baud8_c         : natural := 14; -- r/w: baud divisor bit 8
+  constant ctrl_baud9_c         : natural := 15; -- r/w: baud divisor bit 9
   --
   constant ctrl_rx_nempty_c     : natural := 16; -- r/-: RX FIFO not empty
   constant ctrl_rx_half_c       : natural := 17; -- r/-: RX FIFO at least half-full
@@ -158,6 +162,7 @@ architecture neorv32_uart_rtl of neorv32_uart is
   type ctrl_t is record
     enable        : std_ulogic;
     sim_mode      : std_ulogic;
+    hwfc_en       : std_ulogic;
     prsc          : std_ulogic_vector(2 downto 0);
     baud          : std_ulogic_vector(9 downto 0);
     irq_rx_nempty : std_ulogic;
@@ -170,12 +175,13 @@ architecture neorv32_uart_rtl of neorv32_uart is
 
   -- UART transmitter --
   type tx_engine_t is record
-    state   : std_ulogic_vector(2 downto 0);
-    sreg    : std_ulogic_vector(8 downto 0);
-    bitcnt  : std_ulogic_vector(3 downto 0);
-    baudcnt : std_ulogic_vector(9 downto 0);
-    done    : std_ulogic;
-    busy    : std_ulogic;
+    state    : std_ulogic_vector(2 downto 0);
+    sreg     : std_ulogic_vector(8 downto 0);
+    bitcnt   : std_ulogic_vector(3 downto 0);
+    baudcnt  : std_ulogic_vector(9 downto 0);
+    done     : std_ulogic;
+    busy     : std_ulogic;
+    cts_sync : std_ulogic_vector(1 downto 0);
   end record;
   signal tx_engine : tx_engine_t;
 
@@ -229,6 +235,7 @@ begin
     if (rstn_i = '0') then
       ctrl.enable        <= '0';
       ctrl.sim_mode      <= '0';
+      ctrl.hwfc_en       <= '0';
       ctrl.prsc          <= (others => '0');
       ctrl.baud          <= (others => '0');
       ctrl.irq_rx_nempty <= '0';
@@ -241,6 +248,7 @@ begin
         if (addr = uart_id_ctrl_addr_c) then -- control register
           ctrl.enable        <= data_i(ctrl_en_c);
           ctrl.sim_mode      <= data_i(ctrl_sim_en_c);
+          ctrl.hwfc_en       <= data_i(ctrl_hwfc_en_c);
           ctrl.prsc          <= data_i(ctrl_prsc2_c downto ctrl_prsc0_c);
           ctrl.baud          <= data_i(ctrl_baud9_c downto ctrl_baud0_c);
           --
@@ -265,6 +273,7 @@ begin
         if (addr = uart_id_ctrl_addr_c) then -- control register
           data_o(ctrl_en_c)                        <= ctrl.enable;
           data_o(ctrl_sim_en_c)                    <= ctrl.sim_mode;
+          data_o(ctrl_hwfc_en_c)                   <= ctrl.hwfc_en;
           data_o(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
           data_o(ctrl_baud9_c downto ctrl_baud0_c) <= ctrl.baud;
           --
@@ -386,6 +395,9 @@ begin
   process(clk_i)
   begin
     if rising_edge(clk_i) then
+      -- synchronize clear-to-send --
+      tx_engine.cts_sync <= tx_engine.cts_sync(0) & uart_cts_i;
+
       -- defaults --
       tx_engine.done <= '0';
 
@@ -401,10 +413,12 @@ begin
             tx_engine.state(1 downto 0) <= "01";
           end if;
 
-        when "101" => -- PREPARE: get data from buffer
+        when "101" => -- PREPARE: get data from buffer, check if we are allowed to start sending
         -- ------------------------------------------------------------
-          tx_engine.sreg              <= tx_fifo.rdata & '0'; -- data & start-bit
-          tx_engine.state(1 downto 0) <= "11";
+          tx_engine.sreg <= tx_fifo.rdata & '0'; -- data & start-bit
+          if (tx_engine.cts_sync(1) = '0') or (ctrl.hwfc_en = '0') then -- allowed to send OR flow-control disabled
+            tx_engine.state(1 downto 0) <= "11";
+          end if;
 
         when "111" => -- SEND: transmit data
         -- ------------------------------------------------------------
@@ -485,12 +499,34 @@ begin
           rx_engine.state(0) <= '0';
 
       end case;
+    end if;
+  end process;
 
-      -- overrun flag --
+  -- RX overrun flag --
+  process(clk_i)
+  begin
+    if rising_edge(clk_i) then
       if ((rden = '1') and (addr = uart_id_rtx_addr_c)) or (ctrl.enable = '0') then -- clear when reading data register
         rx_engine.over <= '0';
       elsif (rx_fifo.we = '1') and (rx_fifo.free = '0') then -- writing to full FIFO
         rx_engine.over <= '1';
+      end if;
+    end if;
+  end process;
+
+  -- HW flow-control: ready to receive? --
+  process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if (ctrl.hwfc_en = '1') then
+        if (ctrl.enable = '0') or -- UART disabled
+           (rx_fifo.half = '1') then -- RX FIFO at least half-full: no "safe space" left in RX FIFO 
+          uart_rts_o <= '1'; -- NOT allowed to send
+        else
+          uart_rts_o <= '0'; -- ready to receive
+        end if;
+      else
+        uart_rts_o <= '0'; -- always ready to receive when HW flow-control is disabled
       end if;
     end if;
   end process;

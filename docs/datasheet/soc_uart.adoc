@@ -10,6 +10,8 @@
 |                          | neorv32_uart.h |
 | Top entity port:         | `uart0_txd_o` | serial transmitter output
 |                          | `uart0_rxd_i` | serial receiver input
+|                          | `uart0_rts_o` | flow control: RX ready to receive, low-active
+|                          | `uart0_cts_i` | flow control: RX ready to receive, low-active
 | Configuration generics:  | _IO_UART0_EN_   | implement UART0 when _true_
 |                          | _UART0_RX_FIFO_ | RX FIFO depth (power of 2, min 1)
 |                          | _UART0_TX_FIFO_ | TX FIFO depth (power of 2, min 1)
@@ -76,6 +78,26 @@ example if just the _UART_CTRL_IRQ_RX_NEMPTY_ bit is set, the RX interrupt will 
 Furthermore, a pending UART interrupt has to be explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 
 
+**RTS/CTS Hardware Flow Control**
+
+The NEORV32 UART supports optional hardware flow control using the standard CTS `uart0_cts_i` ("clear to send") and RTS
+`uart0_rts_o` ("ready to send" / "ready to receive (RTR)") signals. Both signals are low-active.
+Hardware flow control is enabled by setting the _UART_CTRL_HWFC_EN_ bit in the modules control register `CTRL`.
+
+When hardware flow control is enabled:
+
+. The UART's transmitter will not start a new transmission until the `uart0_cts_i` signal goes low.
+During this time, the UART busy flag _UART_CTRL_TX_BUSY_ remains set.
+. The UART will set `uart0_rts_o` signal low if the RX FIFO is **less than half full** (to have a wide safety margin).
+As long as this signal is low, the connected device can send new data. `uart0_rts_o` is always low if the hardware flow-control
+is disabled. Disabling the UART (setting _UART_CTRL_EN_ low) while having hardware flow-control enabled, will set `uart0_rts_o`
+high to signal that the UARt is not capable of receiving new data.
+
+[NOTE]
+Note that RTS and CTS signaling can only be activated together. If the RTS handshake is not required the signal can be left
+unconnected. If the CTS handshake is not required it has to be tied to zero.
+
+
 **Simulation Mode**
 
 The UART provides a _simulation-only_ mode to dump console data as well as raw data directly to a file. When the simulation
@@ -98,9 +120,9 @@ Both file are created in the simulation's home folder.
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
 .18+<| `0xffffffa0` .18+<| `CTRL` <|`0`    _UART_CTRL_EN_                        ^| r/w <| UART enable
                                   <|`1`    _UART_CTRL_SIM_MODE_                  ^| r/w <| enable **simulation mode**
-                                  <|`4:2`  _UART_CTRL_PRSC2_ : _UART_CTRL_PRSC0_ ^| r/w <| Baud rate clock prescaler select
-                                  <|`14:5` _UART_CTRL_BAUD9_ : _UART_CTRL_BAUD0_ ^| r/w <| 12-bit Baud value configuration value
-                                  <|`15`   -                                     ^| r/- <| _reserved_, read as zero
+                                  <|`2`    _UART_CTRL_HWFC_EN_                   ^| r/w <| enable RTS/CTS hardware flow-control
+                                  <|`5:3`  _UART_CTRL_PRSC2_ : _UART_CTRL_PRSC0_ ^| r/w <| Baud rate clock prescaler select
+                                  <|`15:6` _UART_CTRL_BAUD9_ : _UART_CTRL_BAUD0_ ^| r/w <| 12-bit Baud value configuration value
                                   <|`16`   _UART_CTRL_RX_NEMPTY_                 ^| r/- <| RX FIFO not empty
                                   <|`17`   _UART_CTRL_RX_HALF_                   ^| r/- <| RX FIFO at least half-full
                                   <|`18`   _UART_CTRL_RX_FULL_                   ^| r/- <| RX FIFO full
@@ -134,6 +156,8 @@ Both file are created in the simulation's home folder.
 |                          | neorv32_uart.h |
 | Top entity port:         | `uart1_txd_o` | serial transmitter output
 |                          | `uart1_rxd_i` | serial receiver input
+|                          | `uart1_rts_o` | flow control: RX ready to receive, low-active
+|                          | `uart1_cts_i` | flow control: RX ready to receive, low-active
 | Configuration generics:  | _IO_UART1_EN_   | implement UART1 when _true_
 |                          | _UART1_RX_FIFO_ | RX FIFO depth (power of 2, min 1)
 |                          | _UART1_TX_FIFO_ | TX FIFO depth (power of 2, min 1)

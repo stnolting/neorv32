@@ -49,6 +49,8 @@ int  neorv32_uart_available(neorv32_uart_t *UARTx);
 void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_mask);
 void neorv32_uart_enable(neorv32_uart_t *UARTx);
 void neorv32_uart_disable(neorv32_uart_t *UARTx);
+void neorv32_uart_rtscts_enable(neorv32_uart_t *UARTx);
+void neorv32_uart_rtscts_disable(neorv32_uart_t *UARTx);
 void neorv32_uart_putc(neorv32_uart_t *UARTx, char c);
 int  neorv32_uart_tx_busy(neorv32_uart_t *UARTx);
 char neorv32_uart_getc(neorv32_uart_t *UARTx);

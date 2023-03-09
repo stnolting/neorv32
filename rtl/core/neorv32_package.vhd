@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080108"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080109"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -1081,9 +1081,13 @@ package neorv32_package is
       -- primary UART0 (available if IO_UART0_EN = true) --
       uart0_txd_o    : out std_ulogic; -- UART0 send data
       uart0_rxd_i    : in  std_ulogic := 'U'; -- UART0 receive data
+      uart0_rts_o    : out std_ulogic; -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+      uart0_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
       -- secondary UART1 (available if IO_UART1_EN = true) --
       uart1_txd_o    : out std_ulogic; -- UART1 send data
       uart1_rxd_i    : in  std_ulogic := 'U'; -- UART1 receive data
+      uart1_rts_o    : out std_ulogic; -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+      uart1_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
       -- SPI (available if IO_SPI_EN = true) --
       spi_clk_o      : out std_ulogic; -- SPI serial clock
       spi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
@@ -1758,6 +1762,9 @@ package neorv32_package is
       -- com lines --
       uart_txd_o  : out std_ulogic;
       uart_rxd_i  : in  std_ulogic;
+      -- hardware flow control --
+      uart_rts_o  : out std_ulogic; -- UART.RX ready to receive ("RTR"), low-active, optional
+      uart_cts_i  : in  std_ulogic; -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
       irq_rx_o    : out std_ulogic; -- rx interrupt
       irq_tx_o    : out std_ulogic  -- tx interrupt
