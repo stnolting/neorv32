@@ -48,8 +48,7 @@ image::neorv32_processor.png[align=center]
 === Processor Top Entity - Signals
 
 The following table shows all interface signals of the processor top entity (`rtl/core/neorv32_top.vhd`).
-The type of all signals is `std_ulogic` or `std_ulogic_vector` (or arrays of those) - the bi-directional signals are of type
-`std_logic`.
+All signals are of type `std_ulogic` or `std_ulogic_vector`, respectively.
 
 .Default Values of Inputs
 [NOTE]
@@ -64,6 +63,10 @@ of PWM channels). The according input/output signals have a fixed sized regardle
 amount of channels. If less than the maximum number of channels is configured, only the LSB-aligned channels are used:
 in case of an _input port_ the remaining bits/channels are left unconnected; in case of an _output port_ the remaining
 bits/channels are hardwired to zero.
+
+.Tri-State Interfaces
+[NOTE]
+Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in the designs top module.
 
 [cols="<3,^2,^2,<11"]
 [options="header",grid="rows"]
@@ -122,10 +125,13 @@ bits/channels are hardwired to zero.
 | `sdi_dat_i`      |    1 |    in | serial data input
 | `sdi_csn_i`      |    1 |    in | chip select (low-active)
 4+^| **Two-Wire Interface Controller (<<_two_wire_serial_interface_controller_twi,TWI>>)**
-| `twi_sda_io`     |    1 | inout | serial data line
-| `twi_scl_io`     |    1 | inout | serial clock line
+| `twi_sda_i`      |    1 |    in | serial data line sense input
+| `twi_sda_o`      |    1 |   out | serial data line output (pull low only)
+| `twi_scl_i`      |    1 |    in | serial clock line sense input
+| `twi_scl_o`      |    1 |   out | serial clock line output (pull low only)
 4+^| **1-Wire Interface Controller (<<_one_wire_serial_interface_controller_twi,ONEWIRE>>)**
-| `onewire_io`     |    1 | inout | serial data line
+| `onewire_i`      |    1 |    in | 1-wire bus sense input
+| `onewire_o`      |    1 |   out | 1-wire bus output (pull low only)
 4+^| **Pulse-Width Modulation Channels (<<_pulse_width_modulation_controller_pwm,PWM>>)**
 | `pwm_o`          |   12 |   out | pulse-width modulated channels
 4+^| **Custom Functions Subsystem (<<_custom_functions_subsystem_cfs,CFS>>)**
