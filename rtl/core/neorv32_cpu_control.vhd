@@ -433,12 +433,11 @@ begin
             fetch_engine.pmp_err   <= '0';
             if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
               fetch_engine.state <= IF_RESTART;
-            elsif -- > this is something like a simple branch prediction (predict "always taken"):
-                  -- > do not trigger new instruction fetch when a branch instruction is being executed (wait for branch destination);
-                  -- > the two LSB should be "11" for rv32, so we do not need to check them here
-                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_branch_c(6 downto 2)) or -- might be taken
-                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_jal_c(6 downto 2)) or    -- will be taken
-                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_jalr_c(6 downto 2)) then -- will be taken
+            -- do not trigger new instruction fetch when a branch instruction is being executed (wait for branch destination)
+            elsif ((execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_branch_c(6 downto 2)) and
+                   (execute_engine.i_reg(31) = '1')) or -- predict: taken if branching backwards
+                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_jal_c(6 downto 2)) or    -- always taken
+                  (execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_jalr_c(6 downto 2)) then -- always taken
               fetch_engine.state <= IF_WAIT;
             else -- request next instruction word
               fetch_engine.state <= IF_REQUEST;
@@ -483,10 +482,6 @@ begin
                         ((fetch_engine.unaligned = '0') or (CPU_EXTENSION_RISCV_C = false)) else '0';
   ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
 
-
--- ****************************************************************************************************************************
--- Instruction Prefetch Buffer
--- ****************************************************************************************************************************
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------

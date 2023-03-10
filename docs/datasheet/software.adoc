@@ -420,7 +420,7 @@ https://stnolting.github.io/neorv32/ug/#_freertos_support[FreeRTOS Support]
 for more information.
 
 Newlib provides stubs for common "system calls" (like file handling and standard input/output) that are used by other
-C libraries like `stdio`. These stubs are available in `sw/source/syscalls.c` and were adapted for the NEORV32 processor.
+C libraries like `stdio`. These stubs are available in `sw/source/source/syscalls.c` and were adapted for the NEORV32 processor.
 
 .Standard Console(s)
 [NOTE]
@@ -430,7 +430,7 @@ is used to implement all the standard input, output and error consoles (`STDIN`,
 .Constructors and Destructors
 [NOTE]
 Constructors and destructors for plain C code or for C++ applications are supported by the software framework.
-See `sw/example/hellp_cpp` for a minimal example.
+See `sw/example/hello_cpp` for a minimal example.
 
 .Newlib Test/Demo Program
 [TIP]

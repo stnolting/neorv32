@@ -69,8 +69,9 @@ int main() {
 
   // use UART0 if implemented
   if (neorv32_uart0_available()) {
-    // setup UART at default baud rate, no parity bits, no HW flow control
-    neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+
+    // setup UART at default baud rate, no interrupts
+    neorv32_uart0_setup(BAUD_RATE, 0);
 
     // say hello
     neorv32_uart0_printf("<<< PWM demo program >>>\n");

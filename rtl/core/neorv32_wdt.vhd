@@ -7,7 +7,7 @@
 -- # increments at 1/4096 of the processor's main clock.                                           #
 -- #                                                                                               #
 -- # Access to the control register can be permanently inhibited by setting the lock bit. This bit #
--- # can only be cleared by a system reset.                                                        #
+-- # can only be cleared by a hardware reset.                                                      #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -85,8 +85,8 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   constant ctrl_reset_c       : natural :=  4; -- -/w: reset WDT if set ("feed" watchdog)
   constant ctrl_rcause_c      : natural :=  5; -- r/-: cause of last system reset: 0=external reset, 1=watchdog timeout
   --
-  constant ctrl_timeout_lsb_c : natural :=  8; -- -/w: access password LSB
-  constant ctrl_timeout_msb_c : natural := 31; -- -/w: access password MSB
+  constant ctrl_timeout_lsb_c : natural :=  8; -- r/w: timeout value LSB
+  constant ctrl_timeout_msb_c : natural := 31; -- r/w: timeout value MSB
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -120,16 +120,15 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
 
 begin
 
-  -- Access Control -------------------------------------------------------------------------
+  -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = wdt_base_c(hi_abb_c downto lo_abb_c)) else '0';
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
-
-  -- Write Access ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  write_access: process(rstn_int_i, clk_i)
+  -- write access --
+  process(rstn_int_i, clk_i)
   begin
     if (rstn_int_i = '0') then
       ctrl.enable  <= '0'; -- disable WDT after reset
@@ -151,16 +150,10 @@ begin
         end if;
       end if;
     end if;
-  end process write_access;
+  end process;
 
-  -- clock generator --
-  clkgen_en_o <= ctrl.enable; -- enable clock generator
-  prsc_tick   <= clkgen_i(clk_div4096_c); -- clock enable tick
-
-
-  -- Read Access ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  read_access: process(clk_i)
+  -- read access --
+  process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= rden or wren;
@@ -174,12 +167,22 @@ begin
         data_o(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c) <= ctrl.timeout;
       end if;
     end if;
-  end process read_access;
+  end process;
+
+  -- reset cause indicator --
+  process(rstn_ext_i, clk_i)
+  begin
+    if (rstn_ext_i = '0') then
+      ctrl.rcause <= '0';
+    elsif rising_edge(clk_i) then
+      ctrl.rcause <= ctrl.rcause or (not hw_rstn); -- sticky-set on WDT timeout/force
+    end if;
+  end process;
 
 
   -- Timeout Counter ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  wdt_counter: process(clk_i)
+  process(clk_i)
   begin
     if rising_edge(clk_i) then
       cnt_inc_ff  <= cnt_inc;
@@ -190,7 +193,11 @@ begin
         cnt <= std_ulogic_vector(unsigned(cnt) + 1);
       end if;
     end if;
-  end process wdt_counter;
+  end process;
+
+  -- clock generator --
+  clkgen_en_o <= ctrl.enable; -- enable clock generator
+  prsc_tick   <= clkgen_i(clk_div4096_c); -- clock enable tick
 
   -- valid counter increment? --
   cnt_inc <= '1' when (prsc_tick = '1') and (cnt_started = '1') and -- clock tick and started
@@ -202,9 +209,10 @@ begin
   timeout_rst <= '1' when (cnt_started = '1') and (cnt = ctrl.timeout(23 downto 0)) else '0'; -- full timeout value
 
 
-  -- Interrupt Generator --------------------------------------------------------------------
+  -- Event Generators -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_generator: process(clk_i)
+  -- interrupt --
+  process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_gen_buf <= timeout_irq;
@@ -215,12 +223,10 @@ begin
         irq_o <= '0';
       end if;
     end if;
-  end process irq_generator;
+  end process;
 
-
-  -- Reset Generator ------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  reset_generator: process(rstn_int_i, clk_i)
+  -- hardware reset --
+  process(rstn_int_i, clk_i)
   begin
     if (rstn_int_i = '0') then
       hw_rstn <= '1';
@@ -231,22 +237,10 @@ begin
         hw_rstn <= '1';
       end if;
     end if;
-  end process reset_generator;
+  end process;
 
   -- system wide reset --
   rstn_o <= hw_rstn;
-
-
-  -- Reset Cause Indicator ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  reset_cause: process(rstn_ext_i, clk_i)
-  begin
-    if (rstn_ext_i = '0') then
-      ctrl.rcause <= '0';
-    elsif rising_edge(clk_i) then
-      ctrl.rcause <= ctrl.rcause or (not hw_rstn); -- sticky-set on WDT timeout/force
-    end if;
-  end process reset_cause;
 
 
 end neorv32_wdt_rtl;

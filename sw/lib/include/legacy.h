@@ -36,7 +36,8 @@
 /**********************************************************************//**
  * @file legacy.h
  * @brief Wrappers and functions for backwards compatibility.
- * @warning Do not use these functions for new designs as they are not supported and might get removed in the future.
+ * @warning Do not use these functions for new designs as they are no longer
+ * supported and might get removed in the future.
  **************************************************************************/
 
 #ifndef neorv32_legacy_h
@@ -46,6 +47,46 @@
 // ================================================================================================
 // UART0 & UART1
 // ================================================================================================
+
+/**********************************************************************//**
+ * @name UART0: Backward compatibility Wrapper, #neorv32_uart_h
+ **************************************************************************/
+/**@{*/
+#define neorv32_uart0_available()                  neorv32_uart_available(NEORV32_UART0)
+#define neorv32_uart0_setup(baudrate, irq_mask)    neorv32_uart_setup(NEORV32_UART0, baudrate, irq_mask)
+#define neorv32_uart0_disable()                    neorv32_uart_disable(NEORV32_UART0)
+#define neorv32_uart0_enable()                     neorv32_uart_enable(NEORV32_UART0)
+#define neorv32_uart0_rtscts_disable()             neorv32_uart_rtscts_disable(NEORV32_UART0)
+#define neorv32_uart0_rtscts_enable()              neorv32_uart_rtscts_enable(NEORV32_UART0)
+#define neorv32_uart0_putc(c)                      neorv32_uart_putc(NEORV32_UART0, c)
+#define neorv32_uart0_tx_busy()                    neorv32_uart_tx_busy(NEORV32_UART0)
+#define neorv32_uart0_getc()                       neorv32_uart_getc(NEORV32_UART0)
+#define neorv32_uart0_char_received()              neorv32_uart_char_received(NEORV32_UART0)
+#define neorv32_uart0_char_received_get()          neorv32_uart_char_received_get(NEORV32_UART0)
+#define neorv32_uart0_puts(s)                      neorv32_uart_puts(NEORV32_UART0, s)
+#define neorv32_uart0_printf(...)                  neorv32_uart_printf(NEORV32_UART0, __VA_ARGS__)
+#define neorv32_uart0_scan(buffer, max_size, echo) neorv32_uart_scan(NEORV32_UART0, buffer, max_size, echo)
+/**@}*/
+
+/**********************************************************************//**
+ * @name UART1: Backward compatibility Wrapper, #neorv32_uart_h
+ **************************************************************************/
+/**@{*/
+#define neorv32_uart1_available()                  neorv32_uart_available(NEORV32_UART1)
+#define neorv32_uart1_setup(baudrate, irq_mask)    neorv32_uart_setup(NEORV32_UART1, baudrate, irq_mask)
+#define neorv32_uart1_disable()                    neorv32_uart_disable(NEORV32_UART1)
+#define neorv32_uart1_enable()                     neorv32_uart_enable(NEORV32_UART1)
+#define neorv32_uart1_rtscts_disable()             neorv32_uart_rtscts_disable(NEORV32_UART1)
+#define neorv32_uart1_rtscts_enable()              neorv32_uart_rtscts_enable(NEORV32_UART1)
+#define neorv32_uart1_putc(c)                      neorv32_uart_putc(NEORV32_UART1, c)
+#define neorv32_uart1_tx_busy()                    neorv32_uart_tx_busy(NEORV32_UART1)
+#define neorv32_uart1_getc()                       neorv32_uart_getc(NEORV32_UART1)
+#define neorv32_uart1_char_received()              neorv32_uart_char_received(NEORV32_UART1)
+#define neorv32_uart1_char_received_get()          neorv32_uart_char_received_get(NEORV32_UART1)
+#define neorv32_uart1_puts(s)                      neorv32_uart_puts(NEORV32_UART1, s)
+#define neorv32_uart1_printf(...)                  neorv32_uart_printf(NEORV32_UART1, __VA_ARGS__)
+#define neorv32_uart1_scan(buffer, max_size, echo) neorv32_uart_scan(NEORV32_UART1, buffer, max_size, echo)
+/**@}*/
 
 /**********************************************************************//**
  * Print string (zero-terminated) via UART0. Print full line break "\r\n" for every '\n'.
@@ -65,33 +106,6 @@ inline void __attribute__((deprecated("Use 'neorv32_uart0_puts()' instead."))) n
  **************************************************************************/
 inline void __attribute__((deprecated("Use 'neorv32_uart0_puts()' instead."))) neorv32_uart1_print(const char *s) {
   neorv32_uart1_puts(s);
-}
-
-
-// ================================================================================================
-// NEORV32 Runtime Environment (RTE)
-// ================================================================================================
-
-/**********************************************************************//**
- * Install trap handler function to NEORV32 runtime environment.
- * @warning This function is deprecated!
- * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
- * @param[in] handler The actual handler function for the specified trap (function MUST be of type "void function(void);").
- * @return 0 if success, 1 if error (invalid id or targeted trap not supported).
- **************************************************************************/
-inline int __attribute__((deprecated("Use 'neorv32_rte_handler_install()' instead."))) neorv32_rte_exception_install(uint8_t id, void (*handler)(void)) {
-  return neorv32_rte_handler_install(id, handler);
-}
-
-/**********************************************************************//**
- * Uninstall trap handler function from NEORV32 runtime environment, which was
- * previously installed via neorv32_rte_exception_install(uint8_t id, void (*handler)(void)).
- * @warning This function is deprecated!
- * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
- * @return 0 if success, 1 if error (invalid id or targeted trap not supported).
- **************************************************************************/
-inline int __attribute__((deprecated("Use 'neorv32_rte_handler_uninstall()' instead."))) neorv32_rte_exception_uninstall(uint8_t id) {
-  return neorv32_rte_handler_uninstall(id);
 }
 
 
@@ -141,7 +155,6 @@ inline uint64_t __attribute__((deprecated("Use 'neorv32_mtime_get_time()' instea
  * @note Interrupts are always enabled when the CPU is in user-mode.
  **************************************************************************/
 inline void __attribute__ ((always_inline, deprecated("Use 'neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE)' instead."))) neorv32_cpu_eint(void) {
-
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 }
 
@@ -150,30 +163,8 @@ inline void __attribute__ ((always_inline, deprecated("Use 'neorv32_cpu_csr_set(
  * @note Interrupts are always enabled when the CPU is in user-mode.
  **************************************************************************/
 inline void __attribute__ ((always_inline, deprecated("Use 'neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE)' instead."))) neorv32_cpu_dint(void) {
-
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 }
 
-/**********************************************************************//**
- * Enable specific interrupt source.
- * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
- * @return 0 if success, 1 if error (invalid irq_sel).
- **************************************************************************/
-inline int __attribute__((deprecated("Use 'neorv32_cpu_csr_set(CSR_MSTATUS, 1 << channel)' instead."))) neorv32_cpu_irq_enable(uint8_t irq_sel) {
-
-  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << irq_sel);
-  return 0;
-}
-
-/**********************************************************************//**
- * Disable specific interrupt source.
- * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
- * @return 0 if success, 1 if error (invalid irq_sel).
- **************************************************************************/
-inline int __attribute__((deprecated("Use 'neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << channel)' instead."))) neorv32_cpu_irq_disable(uint8_t irq_sel) {
-
-  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << irq_sel);
-  return 0;
-}
 
 #endif // neorv32_legacy_h

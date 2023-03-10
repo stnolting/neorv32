@@ -65,24 +65,24 @@ _**f~PWM~**_ = _f~main~[Hz]_ / (2^8^ * `clock_prescaler`)
 **Register Map**
 
 .PWM register map (`struct neorv32_pwm_t`)
-[cols="<4,<4,<6,^2,<8"]
+[cols="<4,<2,<6,^2,<8"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.4+<| `0xffffff50` .4+<| `NEORV32_PWM.CTRL`  <|`0` _PWM_CTRL_EN_    ^| r/w | PWM enable
-                                             <|`1` _PWM_CTRL_PRSC0_ ^| r/w .3+<| 3-bit clock prescaler select
-                                             <|`2` _PWM_CTRL_PRSC1_ ^| r/w
-                                             <|`3` _PWM_CTRL_PRSC2_ ^| r/w
-.4+<| `0xffffff54` .4+<| `NEORV32_PWM.DC[0]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 0
-                                             <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 1
-                                             <|`23:16` ^| r/w <| 8-bit duty cycle for channel 2
-                                             <|`31:24` ^| r/w <| 8-bit duty cycle for channel 3
-.4+<| `0xffffff58` .4+<| `NEORV32_PWM.DC[1]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 4
-                                             <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 5
-                                             <|`23:16` ^| r/w <| 8-bit duty cycle for channel 6
-                                             <|`31:24` ^| r/w <| 8-bit duty cycle for channel 7
-.4+<| `0xffffff5c` .4+<| `NEORV32_PWM.DC[2]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 8
-                                             <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 9
-                                             <|`23:16` ^| r/w <| 8-bit duty cycle for channel 10
-                                             <|`31:24` ^| r/w <| 8-bit duty cycle for channel 11
+.4+<| `0xffffff50` .4+<| `CTRL`  <|`0` _PWM_CTRL_EN_    ^| r/w | PWM enable
+                                 <|`1` _PWM_CTRL_PRSC0_ ^| r/w .3+<| 3-bit clock prescaler select
+                                 <|`2` _PWM_CTRL_PRSC1_ ^| r/w
+                                 <|`3` _PWM_CTRL_PRSC2_ ^| r/w
+.4+<| `0xffffff54` .4+<| `DC[0]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 0
+                                 <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 1
+                                 <|`23:16` ^| r/w <| 8-bit duty cycle for channel 2
+                                 <|`31:24` ^| r/w <| 8-bit duty cycle for channel 3
+.4+<| `0xffffff58` .4+<| `DC[1]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 4
+                                 <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 5
+                                 <|`23:16` ^| r/w <| 8-bit duty cycle for channel 6
+                                 <|`31:24` ^| r/w <| 8-bit duty cycle for channel 7
+.4+<| `0xffffff5c` .4+<| `DC[2]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 8
+                                 <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 9
+                                 <|`23:16` ^| r/w <| 8-bit duty cycle for channel 10
+                                 <|`31:24` ^| r/w <| 8-bit duty cycle for channel 11
 |=======================

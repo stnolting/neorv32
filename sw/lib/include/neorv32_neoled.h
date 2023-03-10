@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -45,8 +45,8 @@
 
 // prototypes
 int      neorv32_neoled_available(void);
-void     neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one);
-void     neorv32_neoled_setup_ws2812(void);
+void     neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one, int irq_mode);
+void     neorv32_neoled_setup_ws2812(int irq_mode);
 void     neorv32_neoled_set_mode(uint32_t mode);
 void     neorv32_neoled_strobe_blocking(void);
 void     neorv32_neoled_strobe_nonblocking(void);

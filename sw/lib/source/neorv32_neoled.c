@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -62,34 +62,26 @@ int neorv32_neoled_available(void) {
 
 /**********************************************************************//**
  * Enable and configure NEOLED controller. The NEOLED control register bits are listed in #NEORV32_NEOLED_CTRL_enum.
- * This function performs a "raw" configuration (just configuraing the according control register bit).
+ * This function performs a "raw" configuration (just configuring the according control register bit).
  *
  * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
  * @param[in] t_total Number of pre-scaled clock ticks for total bit period (0..31).
  * @param[in] t_high_zero Number of pre-scaled clock ticks to generate high-time for sending a '0' (0..31).
  * @param[in] t_high_one Number of pre-scaled clock ticks to generate high-time for sending a '1' (0..31).
+ * @param[in] irq_mode Interrupt condition (1=IRQ if FIFO is empty, 1=IRQ if FIFO is less than half-full).
  **************************************************************************/
-void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one) {
+void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one, int irq_mode) {
 
   NEORV32_NEOLED->CTRL = 0; // reset
 
-  // module enable
-  uint32_t ct_enable = 1 << NEOLED_CTRL_EN;
-
-  // clock pre-scaler
-  uint32_t ct_prsc = (prsc & 0x7) << NEOLED_CTRL_PRSC0;
-
-  // serial data output: total period length for one bit
-  uint32_t ct_t_total = (t_total & 0x1f) << NEOLED_CTRL_T_TOT_0;
-
-  // serial data output: high-time for sending a '0'
-  uint32_t ct_t_zero = (t_high_zero & 0x1f) << NEOLED_CTRL_T_ZERO_H_0;
-
-  // serial data output: high-time for sending a '1'
-  uint32_t ct_t_one = (t_high_one & 0x1f) << NEOLED_CTRL_T_ONE_H_0;
-
-  // set new configuration
-  NEORV32_NEOLED->CTRL = ct_enable | ct_prsc | ct_t_total | ct_t_zero | ct_t_one;
+  uint32_t tmp = 0;
+  tmp |= (uint32_t)((1           & 0x01U) << NEOLED_CTRL_EN);         // module enable
+  tmp |= (uint32_t)((prsc        & 0x07U) << NEOLED_CTRL_PRSC0);      // clock pre-scaler
+  tmp |= (uint32_t)((t_total     & 0x1fU) << NEOLED_CTRL_T_TOT_0);    // serial data output: total period length for one bit
+  tmp |= (uint32_t)((t_high_zero & 0x1fU) << NEOLED_CTRL_T_ZERO_H_0); // serial data output: high-time for sending a '0'
+  tmp |= (uint32_t)((t_high_one  & 0x1fU) << NEOLED_CTRL_T_ONE_H_0);  // serial data output: high-time for sending a '1'
+  tmp |= (uint32_t)((irq_mode    & 0x01U) << NEOLED_CTRL_EN);         // interrupt mode
+  NEORV32_NEOLED->CTRL = tmp;
 }
 
 
@@ -99,8 +91,10 @@ void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero,
  *
  * @note WS2812 timing: T_period = 1.2us, T_high_zero = 0.4us, T_high_one = 0.8us. Change the constants if required.
  * @note This function uses the SYSINFO_CLK value (from the SYSINFO HW module) to do the timing computations.
+ *
+ * @param[in] irq_mode Interrupt condition (1=IRQ if FIFO is empty, 1=IRQ if FIFO is less than half-full).
  **************************************************************************/
-void neorv32_neoled_setup_ws2812(void) {
+void neorv32_neoled_setup_ws2812(int irq_mode) {
 
   // WS2812 timing
   const uint32_t T_TOTAL_C  = 1200; // ns
@@ -150,7 +144,7 @@ void neorv32_neoled_setup_ws2812(void) {
   }
 
   // set raw configuration
-  neorv32_neoled_setup(clk_prsc_sel, t_total, t_high_zero, t_high_one);
+  neorv32_neoled_setup(clk_prsc_sel, t_total, t_high_zero, t_high_one, irq_mode);
 }
 
 

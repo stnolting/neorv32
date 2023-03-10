@@ -8,7 +8,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -380,10 +380,10 @@ begin
 
   -- Tri-State Driver Interface -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  twi_sda_o <= io_con.sda_out; -- NOTE: signal lines can only be actively driven low
-  twi_scl_o <= io_con.scl_out;
-  io_con.sda_in <= twi_sda_i;
-  io_con.scl_in <= twi_scl_i;
+  twi_sda_o     <= io_con.sda_out; -- NOTE: signal lines can only be actively driven low
+  twi_scl_o     <= io_con.scl_out;
+  io_con.sda_in <= to_stdulogic(to_bit(twi_sda_i)); -- "to_bit" to avoid hardware-vs-simulation mismatch
+  io_con.scl_in <= to_stdulogic(to_bit(twi_scl_i)); -- "to_bit" to avoid hardware-vs-simulation mismatch
 
 
 end neorv32_twi_rtl;

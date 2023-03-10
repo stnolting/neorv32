@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -44,16 +44,16 @@
 #define neorv32_spi_h
 
 // prototypes
-int      neorv32_spi_available(void);
-void     neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, int data_size, int irq_config);
-void     neorv32_spi_disable(void);
-void     neorv32_spi_enable(void);
-int      neorv32_spi_get_fifo_depth(void);
-void     neorv32_spi_cs_en(int cs);
-void     neorv32_spi_cs_dis(void);
-uint32_t neorv32_spi_trans(uint32_t tx_data);
-void     neorv32_spi_put_nonblocking(uint32_t tx_data);
-uint32_t neorv32_spi_get_nonblocking(void);
-int      neorv32_spi_busy(void);
+int     neorv32_spi_available(void);
+void    neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, uint32_t irq_mask);
+void    neorv32_spi_disable(void);
+void    neorv32_spi_enable(void);
+int     neorv32_spi_get_fifo_depth(void);
+void    neorv32_spi_cs_en(int cs);
+void    neorv32_spi_cs_dis(void);
+uint8_t neorv32_spi_trans(uint8_t tx_data);
+void    neorv32_spi_put_nonblocking(uint8_t tx_data);
+uint8_t neorv32_spi_get_nonblocking(void);
+int     neorv32_spi_busy(void);
 
 #endif // neorv32_spi_h

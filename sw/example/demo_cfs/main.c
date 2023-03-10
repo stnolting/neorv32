@@ -70,13 +70,12 @@ int main() {
 
   uint32_t i, tmp;
 
-
-  // init UART0 at default baud rate, no parity bits, no HW flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
-
   // capture all exceptions and give debug info via UART0
   // this is not required, but keeps us safe
   neorv32_rte_setup();
+
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
 
   // check if CFS is implemented at all

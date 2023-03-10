@@ -235,25 +235,25 @@ volatile uint32_t getting_exe;
 /**********************************************************************//**
  * Function prototypes
  **************************************************************************/
-void __attribute__((__interrupt__)) bootloader_trap_handler(void);
-void print_help(void);
-void start_app(int boot_xip);
-void get_exe(int src);
-void save_exe(void);
+void     __attribute__((__interrupt__)) bootloader_trap_handler(void);
+void     print_help(void);
+void     start_app(int boot_xip);
+void     get_exe(int src);
+void     save_exe(void);
 uint32_t get_exe_word(int src, uint32_t addr);
-void system_error(uint8_t err_code);
-void print_hex_word(uint32_t num);
+void     system_error(uint8_t err_code);
+void     print_hex_word(uint32_t num);
 
 // SPI flash driver functions
-int spi_flash_check(void);
+int     spi_flash_check(void);
 uint8_t spi_flash_read_byte(uint32_t addr);
-void spi_flash_write_byte(uint32_t addr, uint8_t wdata);
-void spi_flash_write_word(uint32_t addr, uint32_t wdata);
-void spi_flash_erase_sector(uint32_t addr);
-void spi_flash_write_enable(void);
-void spi_flash_write_disable(void);
-uint32_t spi_flash_read_status(void);
-void spi_flash_write_addr(uint32_t addr);
+void    spi_flash_write_byte(uint32_t addr, uint8_t wdata);
+void    spi_flash_write_word(uint32_t addr, uint32_t wdata);
+void    spi_flash_erase_sector(uint32_t addr);
+void    spi_flash_write_enable(void);
+void    spi_flash_write_disable(void);
+uint8_t spi_flash_read_status(void);
+void    spi_flash_write_addr(uint32_t addr);
 
 
 /**********************************************************************//**
@@ -276,9 +276,9 @@ int main(void) {
   neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&bootloader_trap_handler));
 
 #if (SPI_EN != 0)
-  // setup SPI for 8-bit, clock-mode 0
+  // setup SPI for clock-mode 0
   if (neorv32_spi_available()) {
-    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0, 0, 0);
+    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0, 0);
   }
 #endif
 
@@ -299,8 +299,8 @@ int main(void) {
 #endif
 
 #if (UART_EN != 0)
-  // setup UART0 (primary UART, no parity bit, no hardware flow control)
-  neorv32_uart0_setup(UART_BAUD, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART0
+  neorv32_uart0_setup(UART_BAUD, 0);
 #endif
 
   // Configure machine system timer interrupt
@@ -324,9 +324,9 @@ int main(void) {
   PRINT_XNUM(NEORV32_SYSINFO->CUSTOM_ID);
   PRINT_TEXT("\nCLK:  ");
   PRINT_XNUM(NEORV32_SYSINFO->CLK);
-  PRINT_TEXT("\nISA:  ");
+  PRINT_TEXT("\nMISA: ");
   PRINT_XNUM(neorv32_cpu_csr_read(CSR_MISA));
-  PRINT_TEXT(" + ");
+  PRINT_TEXT("\nXISA: ");
   PRINT_XNUM(neorv32_cpu_csr_read(CSR_MXISA));
   PRINT_TEXT("\nSOC:  ");
   PRINT_XNUM(NEORV32_SYSINFO->SOC);
@@ -337,6 +337,7 @@ int main(void) {
   PRINT_XNUM(NEORV32_SYSINFO->DMEM_SIZE);
   PRINT_TEXT(" bytes @");
   PRINT_XNUM(NEORV32_SYSINFO->DSPACE_BASE);
+  PRINT_TEXT("\n");
 
 
   // ------------------------------------------------
@@ -346,7 +347,7 @@ int main(void) {
 #if (AUTO_BOOT_TIMEOUT != 0)
   if (neorv32_mtime_available()) {
 
-    PRINT_TEXT("\n\nAutoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
+    PRINT_TEXT("\nAutoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
     uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO->CLK);
 
     while(1){
@@ -780,7 +781,7 @@ uint8_t spi_flash_read_byte(uint32_t addr) {
 
   neorv32_spi_trans(SPI_FLASH_CMD_READ);
   spi_flash_write_addr(addr);
-  uint8_t rdata = (uint8_t)neorv32_spi_trans(0);
+  uint8_t rdata = neorv32_spi_trans(0);
 
   neorv32_spi_cs_dis();
 
@@ -901,13 +902,13 @@ void spi_flash_write_disable(void) {
  *
  * @return SPI flash status register (32-bit zero-extended).
  **************************************************************************/
-uint32_t spi_flash_read_status(void) {
+uint8_t spi_flash_read_status(void) {
 
 #if (SPI_EN != 0)
   neorv32_spi_cs_en(SPI_FLASH_CS);
 
   neorv32_spi_trans(SPI_FLASH_CMD_READ_STATUS);
-  uint32_t res = neorv32_spi_trans(0);
+  uint8_t res = neorv32_spi_trans(0);
 
   neorv32_spi_cs_dis();
 

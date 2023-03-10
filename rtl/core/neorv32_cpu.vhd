@@ -158,7 +158,8 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- say hello --
-  assert false report "The NEORV32 RISC-V Processor - github.com/stnolting/neorv32" severity note;
+  assert false report
+    "The NEORV32 RISC-V Processor (Version 0x" & to_hstring32_f(hw_version_c) & ") - github.com/stnolting/neorv32" severity note;
 
   -- CPU ISA configuration --
   assert false report

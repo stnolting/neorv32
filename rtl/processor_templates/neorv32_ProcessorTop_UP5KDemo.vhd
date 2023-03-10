@@ -101,8 +101,6 @@ entity neorv32_ProcessorTop_UP5KDemo is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart_txd_o  : out std_ulogic; -- UART0 send data
     uart_rxd_i  : in  std_ulogic := '0'; -- UART0 receive data
-    uart_rts_o  : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart_cts_i  : in  std_ulogic := '0'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- SPI to on-board flash --
     flash_sck_o : out std_ulogic;
@@ -128,13 +126,17 @@ end entity;
 architecture neorv32_ProcessorTop_UP5KDemo_rtl of neorv32_ProcessorTop_UP5KDemo is
 
   -- internal IO connection --
-  signal con_gpio_o   : std_ulogic_vector(63 downto 0);
-  signal con_gpio_i   : std_ulogic_vector(63 downto 0);
-  signal con_pwm_o    : std_ulogic_vector(11 downto 0);
-  signal con_spi_sck  : std_ulogic;
-  signal con_spi_sdi  : std_ulogic;
-  signal con_spi_sdo  : std_ulogic;
-  signal con_spi_csn  : std_ulogic_vector(07 downto 0);
+  signal con_gpio_o    : std_ulogic_vector(63 downto 0);
+  signal con_gpio_i    : std_ulogic_vector(63 downto 0);
+  signal con_pwm_o     : std_ulogic_vector(11 downto 0);
+  signal con_spi_sck   : std_ulogic;
+  signal con_spi_sdi   : std_ulogic;
+  signal con_spi_sdo   : std_ulogic;
+  signal con_spi_csn   : std_ulogic_vector(07 downto 0);
+  signal con_twi_sda_i : std_ulogic;
+  signal con_twi_sda_o : std_ulogic;
+  signal con_twi_scl_i : std_ulogic;
+  signal con_twi_scl_o : std_ulogic;
 
 begin
 
@@ -160,6 +162,12 @@ begin
 
   -- PWM --
   pwm_o <= con_pwm_o(IO_PWM_NUM_CH-1 downto 0);
+
+  -- TWI tri-state driver --
+  twi_sda_io    <= '0' when (con_twi_sda_o = '0') else 'Z'; -- module can only pull the line low actively
+  twi_scl_io    <= '0' when (con_twi_scl_o = '0') else 'Z';
+  con_twi_sda_i <= std_ulogic(twi_sda_io);
+  con_twi_scl_i <= std_ulogic(twi_scl_io);
 
 
   -- The core of the problem ----------------------------------------------------------------
@@ -231,21 +239,16 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart_txd_o,                   -- UART0 send data
     uart0_rxd_i => uart_rxd_i,                   -- UART0 receive data
-    uart0_rts_o => uart_rts_o,                   -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i => uart_cts_i,                   -- hw flow control: UART0.TX allowed to transmit, low-active, optional
-
-    -- SPI (available if IO_SPI_EN = true) --
-    spi_clk_o   => con_spi_sck,                  -- SPI serial clock
-    spi_dat_o   => con_spi_sdo,                  -- controller data out, peripheral data in
-    spi_dat_i   => con_spi_sdi,                  -- controller data in, peripheral data out
-    spi_csn_o   => con_spi_csn,                  -- SPI CS
 
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io  => twi_sda_io,                   -- twi serial data line
-    twi_scl_io  => twi_scl_io,                   -- twi serial clock line
+    twi_sda_i      => con_twi_sda_i,             -- serial data line sense input
+    twi_sda_o      => con_twi_sda_o,             -- serial data line output (pull low only)
+    twi_scl_i      => con_twi_scl_i,             -- serial clock line sense input
+    twi_scl_o      => con_twi_scl_o,             -- serial clock line output (pull low only)
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o       => con_pwm_o                     -- pwm channels
   );
+
 
 end architecture;

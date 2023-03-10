@@ -65,8 +65,8 @@ int main() {
 
   neorv32_rte_setup();
 
-  // setup UART at default baud rate, no parity bits, no HW flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
   // intro
   neorv32_uart0_printf("\n<< RISC-V Trigger Module Example >>\n\n");

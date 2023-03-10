@@ -102,19 +102,19 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal clk_gen, rst_gen : std_ulogic := '0';
 
   -- uart --
-  signal uart0_txd : std_ulogic; -- local loop-back
-  signal uart0_cts : std_ulogic; -- local loop-back
-  signal uart1_txd : std_ulogic; -- local loop-back
-  signal uart1_cts : std_ulogic; -- local loop-back
+  signal uart0_txd, uart1_txd : std_ulogic;
+  signal uart0_cts, uart1_cts : std_ulogic;
 
   -- gpio --
   signal gpio : std_ulogic_vector(63 downto 0);
 
   -- twi --
   signal twi_scl, twi_sda : std_logic;
+  signal twi_scl_i, twi_scl_o, twi_sda_i, twi_sda_o : std_ulogic;
 
   -- 1-wire --
-  signal one_wire : std_logic;
+  signal onewire : std_logic;
+  signal onewire_i, onewire_o : std_ulogic;
 
   -- spi & sdi --
   signal spi_csn: std_ulogic_vector(7 downto 0);
@@ -328,13 +328,13 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    => uart0_txd,       -- UART0 send data
     uart0_rxd_i    => uart0_txd,       -- UART0 receive data
-    uart0_rts_o    => uart0_cts,       -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i    => uart0_cts,       -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_rts_o    => uart1_cts,       -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i    => uart0_cts,       -- HW flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    => uart1_txd,       -- UART1 send data
     uart1_rxd_i    => uart1_txd,       -- UART1 receive data
-    uart1_rts_o    => uart1_cts,       -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i    => uart1_cts,       -- hw flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_rts_o    => uart0_cts,       -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i    => uart1_cts,       -- HW flow control: UART0.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      => spi_clk,         -- SPI serial clock
     spi_dat_o      => spi_do,          -- controller data out, peripheral data in
@@ -346,10 +346,13 @@ begin
     sdi_dat_i      => sdi_di,          -- controller data in, peripheral data out
     sdi_csn_i      => sdi_csn,         -- chip-select
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io     => twi_sda,         -- twi serial data line
-    twi_scl_io     => twi_scl,         -- twi serial clock line
+    twi_sda_i      => twi_sda_i,       -- serial data line sense input
+    twi_sda_o      => twi_sda_o,       -- serial data line output (pull low only)
+    twi_scl_i      => twi_scl_i,       -- serial clock line sense input
+    twi_scl_o      => twi_scl_o,       -- serial clock line output (pull low only)
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_io     => one_wire,        -- 1-wire bus
+    onewire_i      => onewire_i,       -- 1-wire bus sense input
+    onewire_o      => onewire_o,       -- 1-wire bus output (pull low only)
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          => open,            -- pwm channels
     -- Custom Functions Subsystem IO --
@@ -365,12 +368,22 @@ begin
     mext_irq_i     => mei_ring         -- machine external interrupt
   );
 
+  -- TWI tri-state driver --
+  twi_sda   <= '0' when (twi_sda_o = '0') else 'Z'; -- module can only pull the line low actively
+  twi_scl   <= '0' when (twi_scl_o = '0') else 'Z';
+  twi_sda_i <= std_ulogic(twi_sda);
+  twi_scl_i <= std_ulogic(twi_scl);
+
+  -- 1-Wire tri-state driver --
+  onewire   <= '0' when (onewire_o = '0') else 'Z'; -- module can only pull the line low actively
+  onewire_i <= std_ulogic(onewire);
+
   -- TWI termination (pull-ups) --
   twi_scl <= 'H';
   twi_sda <= 'H';
 
   -- 1-Wire termination (pull-up) --
-  one_wire <= 'H';
+  onewire <= 'H';
 
   -- SPI/SDI echo --
   sdi_clk <= spi_clk;

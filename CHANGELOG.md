@@ -31,6 +31,15 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 10.02.2023 | 1.8.2.1 | rtl code edits, clean-ups and minor optimizations (improve branch prediction); [#545](https://github.com/stnolting/neorv32/pull/545) |
+| 10.03.2023 | [**:rocket:1.8.2**](https://github.com/stnolting/neorv32/releases/tag/v1.8.2) | **New release** |
+| 09.03.2023 | 1.8.1.10 | :warning: move tri-state drivers (ONEWIRE and TWI) out of the core; [#543](https://github.com/stnolting/neorv32/pull/543) |
+| 08.03.2023 | 1.8.1.9 | reintegrate **UART** RTS/CTS hardware flow-control; [#541](https://github.com/stnolting/neorv32/pull/541) |
+| 07.03.2023 | 1.8.1.8 | update smart LED controller **NEOLED**; [#536](https://github.com/stnolting/neorv32/pull/536) |
+| 05.03.2023 | 1.8.1.7 | :warning: rework and update **UART0 & UART1**; [#533](https://github.com/stnolting/neorv32/pull/533) |
+| 04.03.2023 | 1.8.1.6 | :warning: rework and update **SPI** module; [#530](https://github.com/stnolting/neorv32/pull/530) |
+| 02.03.2023 | 1.8.1.5 | minor general purpose timer (GPTMR) code edits; [#529](https://github.com/stnolting/neorv32/pull/529) |
+| 02.03.2023 | 1.8.1.4 | :bug: fix timeout bug in **FPU** (conversion and add/sub instructions); [#528](https://github.com/stnolting/neorv32/pull/528) |
 | 25.02.2023 | 1.8.1.3 | :sparkles: add new processor module: **Serial Data Interface (SDI)** - a SPI _device-class_ interface; [#505](https://github.com/stnolting/neorv32/pull/505) |
 | 24.02.2023 | 1.8.1.2 | :warning: rename top interface signals of **XIP** and **SIP** modules; [#504](https://github.com/stnolting/neorv32/pull/504) |
 | 23.02.2023 | 1.8.1.1 | CFS: add another 32 interface register (now having 64 memory-mapped registers for custom usage); [#503](https://github.com/stnolting/neorv32/pull/503) |

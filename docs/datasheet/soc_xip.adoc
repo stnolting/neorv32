@@ -198,28 +198,28 @@ By using the XIP burst mode flash read accesses can be accelerated by up to 50%.
 **Register Map**
 
 .XIP Register Map (`struct NEORV32_XIP`)
-[cols="<2,<2,<4,^1,<7"]
+[cols="<2,<1,<4,^1,<7"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.17+<| `0xffffff40` .17+<| `NEORV32_XIP.CTRL` <|`0`  _XIP_CTRL_EN_    ^| r/w <| XIP module enable
-                                              <|`1`  _XIP_CTRL_PRSC0_ ^| r/w .3+| 3-bit SPI clock prescaler select
-                                              <|`2`  _XIP_CTRL_PRSC1_ ^| r/w
-                                              <|`3`  _XIP_CTRL_PRSC2_ ^| r/w
-                                              <|`4`  _XIP_CTRL_CPOL_  ^| r/w <| SPI clock polarity
-                                              <|`5`  _XIP_CTRL_CPHA_  ^| r/w <| SPI clock phase
-                                              <|`9:6`  _XIP_CTRL_SPI_NBYTES_MSB_ : _XIP_CTRL_SPI_NBYTES_LSB_ ^| r/w <| Number of bytes in SPI transaction (1..9)
-                                              <|`10` _XIP_CTRL_XIP_EN_ ^| r/w <| XIP mode enable
-                                              <|`12:11` _XIP_CTRL_XIP_ABYTES_MSB_ : _XIP_CTRL_XIP_ABYTES_LSB_ ^| r/w <| Number of address bytes for XIP flash (minus 1)
-                                              <|`20:13` _XIP_CTRL_RD_CMD_MSB_ : _XIP_CTRL_RD_CMD_LSB_ ^| r/w <| Flash read command
-                                              <|`24:21` _XIP_CTRL_XIP_PAGE_MSB_ : _XIP_CTRL_XIP_PAGE_LSB_ ^| r/w <| XIP memory page
-                                              <|`25` _XIP_CTRL_SPI_CSEN_  ^| r/w <| Allow SPI chip-select to be actually asserted when set
-                                              <|`26` _XIP_CTRL_HIGHSPEED_ ^| r/w <| enable SPI high-speed mode (ignoring _XIP_CTRL_PRSC_)
-                                              <|`27` _XIP_CTRL_BURST_EN_  ^| r/w <| Enable XIP burst mode
-                                              <|`29:28`                   ^| r/- <| _reserved_, read as zero
-                                              <|`30` _XIP_CTRL_PHY_BUSY_  ^| r/- <| SPI PHY busy when set
-                                              <|`31` _XIP_CTRL_XIP_BUSY_  ^| r/- <| XIP access in progress when set
-| `0xffffff44` | _reserved_            |`31:0` | r/- | _reserved_, read as zero
-| `0xffffff48` | `NEORV32_XIP.DATA_LO` |`31:0` | r/w | Direct SPI access - data register low
-| `0xffffff4C` | `NEORV32_XIP.DATA_HI` |`31:0` | -/w | Direct SPI access - data register high; write access triggers SPI transfer
+.17+<| `0xffffff40` .17+<| `CTRL` <|`0`  _XIP_CTRL_EN_    ^| r/w <| XIP module enable
+                                  <|`1`  _XIP_CTRL_PRSC0_ ^| r/w .3+| 3-bit SPI clock prescaler select
+                                  <|`2`  _XIP_CTRL_PRSC1_ ^| r/w
+                                  <|`3`  _XIP_CTRL_PRSC2_ ^| r/w
+                                  <|`4`  _XIP_CTRL_CPOL_  ^| r/w <| SPI clock polarity
+                                  <|`5`  _XIP_CTRL_CPHA_  ^| r/w <| SPI clock phase
+                                  <|`9:6`  _XIP_CTRL_SPI_NBYTES_MSB_ : _XIP_CTRL_SPI_NBYTES_LSB_ ^| r/w <| Number of bytes in SPI transaction (1..9)
+                                  <|`10` _XIP_CTRL_XIP_EN_ ^| r/w <| XIP mode enable
+                                  <|`12:11` _XIP_CTRL_XIP_ABYTES_MSB_ : _XIP_CTRL_XIP_ABYTES_LSB_ ^| r/w <| Number of address bytes for XIP flash (minus 1)
+                                  <|`20:13` _XIP_CTRL_RD_CMD_MSB_ : _XIP_CTRL_RD_CMD_LSB_ ^| r/w <| Flash read command
+                                  <|`24:21` _XIP_CTRL_XIP_PAGE_MSB_ : _XIP_CTRL_XIP_PAGE_LSB_ ^| r/w <| XIP memory page
+                                  <|`25` _XIP_CTRL_SPI_CSEN_  ^| r/w <| Allow SPI chip-select to be actually asserted when set
+                                  <|`26` _XIP_CTRL_HIGHSPEED_ ^| r/w <| enable SPI high-speed mode (ignoring _XIP_CTRL_PRSC_)
+                                  <|`27` _XIP_CTRL_BURST_EN_  ^| r/w <| Enable XIP burst mode
+                                  <|`29:28`                   ^| r/- <| _reserved_, read as zero
+                                  <|`30` _XIP_CTRL_PHY_BUSY_  ^| r/- <| SPI PHY busy when set
+                                  <|`31` _XIP_CTRL_XIP_BUSY_  ^| r/- <| XIP access in progress when set
+| `0xffffff44` | _reserved_ |`31:0` | r/- | _reserved_, read as zero
+| `0xffffff48` | `DATA_LO`  |`31:0` | r/w | Direct SPI access - data register low
+| `0xffffff4C` | `DATA_HI`  |`31:0` | -/w | Direct SPI access - data register high; write access triggers SPI transfer
 |=======================

@@ -119,7 +119,7 @@ entity neorv32_top is
     IO_UART1_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
     IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
-    IO_SPI_FIFO                  : natural := 0;      -- SPI RTX fifo depth, has to be zero or a power of two
+    IO_SPI_FIFO                  : natural := 1;      -- SPI RTX fifo depth, has to be a power of two, min 1
     IO_SDI_EN                    : boolean := false;  -- implement serial data interface (SDI)?
     IO_SDI_FIFO                  : natural := 0;      -- SDI RTX fifo depth, has to be zero or a power of two
     IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
@@ -132,7 +132,7 @@ entity neorv32_top is
     IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
     IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
+    IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED FIFO depth, has to be a power of two, min 1
     IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
     IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
     IO_ONEWIRE_EN                : boolean := false   -- implement 1-wire interface (ONEWIRE)?
@@ -178,14 +178,14 @@ entity neorv32_top is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic; -- UART0 send data
     uart0_rxd_i    : in  std_ulogic := 'U'; -- UART0 receive data
-    uart0_rts_o    : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_rts_o    : out std_ulogic; -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic; -- UART1 send data
     uart1_rxd_i    : in  std_ulogic := 'U'; -- UART1 receive data
-    uart1_rts_o    : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_rts_o    : out std_ulogic; -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      : out std_ulogic; -- SPI serial clock
@@ -200,11 +200,14 @@ entity neorv32_top is
     sdi_csn_i      : in  std_ulogic := 'H'; -- chip-select
 
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io     : inout std_logic; -- twi serial data line
-    twi_scl_io     : inout std_logic; -- twi serial clock line
+    twi_sda_i      : in  std_ulogic := 'H'; -- serial data line sense input
+    twi_sda_o      : out std_ulogic; -- serial data line output (pull low only)
+    twi_scl_i      : in  std_ulogic := 'H'; -- serial clock line sense input
+    twi_scl_o      : out std_ulogic; -- serial clock line output (pull low only)
 
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_io     : inout std_logic; -- 1-wire bus
+    onewire_i      : in  std_ulogic := 'H'; -- 1-wire bus sense input
+    onewire_o      : out std_ulogic; -- 1-wire bus output (pull low only)
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          : out std_ulogic_vector(11 downto 0); -- pwm channels
@@ -346,26 +349,21 @@ architecture neorv32_top_rtl of neorv32_top is
   signal resp_bus : resp_bus_t := (others => resp_bus_entry_terminate_c);
 
   -- IRQs --
-  signal fast_irq      : std_ulogic_vector(15 downto 0);
-  signal mtime_irq     : std_ulogic;
-  signal wdt_irq       : std_ulogic;
-  signal uart0_rxd_irq : std_ulogic;
-  signal uart0_txd_irq : std_ulogic;
-  signal uart1_rxd_irq : std_ulogic;
-  signal uart1_txd_irq : std_ulogic;
-  signal spi_irq       : std_ulogic;
-  signal sdi_irq       : std_ulogic;
-  signal twi_irq       : std_ulogic;
-  signal cfs_irq       : std_ulogic;
-  signal neoled_irq    : std_ulogic;
-  signal xirq_irq      : std_ulogic;
-  signal gptmr_irq     : std_ulogic;
-  signal onewire_irq   : std_ulogic;
-
-  -- tri-state drivers --
-  signal twi_sda_i, twi_sda_o : std_ulogic;
-  signal twi_scl_i, twi_scl_o : std_ulogic;
-  signal onewire_i, onewire_o : std_ulogic;
+  signal fast_irq     : std_ulogic_vector(15 downto 0);
+  signal mtime_irq    : std_ulogic;
+  signal wdt_irq      : std_ulogic;
+  signal uart0_rx_irq : std_ulogic;
+  signal uart0_tx_irq : std_ulogic;
+  signal uart1_rx_irq : std_ulogic;
+  signal uart1_tx_irq : std_ulogic;
+  signal spi_irq      : std_ulogic;
+  signal sdi_irq      : std_ulogic;
+  signal twi_irq      : std_ulogic;
+  signal cfs_irq      : std_ulogic;
+  signal neoled_irq   : std_ulogic;
+  signal xirq_irq     : std_ulogic;
+  signal gptmr_irq    : std_ulogic;
+  signal onewire_irq  : std_ulogic;
 
   -- misc --
   signal ext_timeout : std_ulogic;
@@ -604,22 +602,22 @@ begin
   fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
 
   -- fast interrupt requests (FIRQs) - triggers are SINGLE-SHOT --
-  fast_irq(00) <= wdt_irq;       -- HIGHEST PRIORITY - watchdog
-  fast_irq(01) <= cfs_irq;       -- custom functions subsystem
-  fast_irq(02) <= uart0_rxd_irq; -- primary UART (UART0) RX
-  fast_irq(03) <= uart0_txd_irq; -- primary UART (UART0) TX
-  fast_irq(04) <= uart1_rxd_irq; -- secondary UART (UART1) RX
-  fast_irq(05) <= uart1_txd_irq; -- secondary UART (UART1) TX
-  fast_irq(06) <= spi_irq;       -- SPI interrupt
-  fast_irq(07) <= twi_irq;       -- TWI transfer done
-  fast_irq(08) <= xirq_irq;      -- external interrupt controller
-  fast_irq(09) <= neoled_irq;    -- NEOLED buffer IRQ
-  fast_irq(10) <= '0';           -- reserved
-  fast_irq(11) <= sdi_irq;       -- SDI interrupt
-  fast_irq(12) <= gptmr_irq;     -- general purpose timer match
-  fast_irq(13) <= onewire_irq;   -- ONEWIRE operation done
-  fast_irq(14) <= '0';           -- reserved
-  fast_irq(15) <= '0';           -- LOWEST PRIORITY - reserved
+  fast_irq(00) <= wdt_irq;      -- HIGHEST PRIORITY - watchdog
+  fast_irq(01) <= cfs_irq;      -- custom functions subsystem
+  fast_irq(02) <= uart0_rx_irq; -- primary UART (UART0) RX
+  fast_irq(03) <= uart0_tx_irq; -- primary UART (UART0) TX
+  fast_irq(04) <= uart1_rx_irq; -- secondary UART (UART1) RX
+  fast_irq(05) <= uart1_tx_irq; -- secondary UART (UART1) TX
+  fast_irq(06) <= spi_irq;      -- SPI interrupt
+  fast_irq(07) <= twi_irq;      -- TWI transfer done
+  fast_irq(08) <= xirq_irq;     -- external interrupt controller
+  fast_irq(09) <= neoled_irq;   -- NEOLED buffer IRQ
+  fast_irq(10) <= '0';          -- reserved
+  fast_irq(11) <= sdi_irq;      -- SDI interrupt
+  fast_irq(12) <= gptmr_irq;    -- general purpose timer match
+  fast_irq(13) <= onewire_irq;  -- ONEWIRE operation done
+  fast_irq(14) <= '0';          -- reserved
+  fast_irq(15) <= '0';          -- LOWEST PRIORITY - reserved
 
 
   -- CPU Instruction Cache ------------------------------------------------------------------
@@ -1206,8 +1204,8 @@ begin
       uart_rts_o  => uart0_rts_o,                -- UART.RX ready to receive ("RTR"), low-active, optional
       uart_cts_i  => uart0_cts_i,                -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
-      irq_rxd_o   => uart0_rxd_irq,              -- uart data received interrupt
-      irq_txd_o   => uart0_txd_irq               -- uart transmission done interrupt
+      irq_rx_o    => uart0_rx_irq,               -- rx interrupt
+      irq_tx_o    => uart0_tx_irq                -- tx interrupt
     );
     resp_bus(RESP_UART0).err <= '0'; -- no access error possible
   end generate;
@@ -1216,11 +1214,11 @@ begin
   if (IO_UART0_EN = false) generate
     resp_bus(RESP_UART0) <= resp_bus_entry_terminate_c;
     --
-    uart0_txd_o   <= '0';
-    uart0_rts_o   <= '0';
-    uart0_cg_en   <= '0';
-    uart0_rxd_irq <= '0';
-    uart0_txd_irq <= '0';
+    uart0_txd_o  <= '0';
+    uart0_rts_o  <= '1';
+    uart0_cg_en  <= '0';
+    uart0_rx_irq <= '0';
+    uart0_tx_irq <= '0';
   end generate;
 
 
@@ -1254,8 +1252,8 @@ begin
       uart_rts_o  => uart1_rts_o,                -- UART.RX ready to receive ("RTR"), low-active, optional
       uart_cts_i  => uart1_cts_i,                -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
-      irq_rxd_o   => uart1_rxd_irq,              -- uart data received interrupt
-      irq_txd_o   => uart1_txd_irq               -- uart transmission done interrupt
+      irq_rx_o    => uart1_rx_irq,               -- rx interrupt
+      irq_tx_o    => uart1_tx_irq                -- tx interrupt
     );
     resp_bus(RESP_UART1).err <= '0'; -- no access error possible
   end generate;
@@ -1264,11 +1262,11 @@ begin
   if (IO_UART1_EN = false) generate
     resp_bus(RESP_UART1) <= resp_bus_entry_terminate_c;
     --
-    uart1_txd_o   <= '0';
-    uart1_rts_o   <= '0';
-    uart1_cg_en   <= '0';
-    uart1_rxd_irq <= '0';
-    uart1_txd_irq <= '0';
+    uart1_txd_o  <= '0';
+    uart1_rts_o  <= '1';
+    uart1_cg_en  <= '0';
+    uart1_rx_irq <= '0';
+    uart1_tx_irq <= '0';
   end generate;
 
 
@@ -1278,7 +1276,7 @@ begin
   if (IO_SPI_EN = true) generate
     neorv32_spi_inst: neorv32_spi
     generic map (
-      IO_SPI_FIFO => IO_SPI_FIFO -- SPI RTX fifo depth, has to be zero or a power of two
+      IO_SPI_FIFO => IO_SPI_FIFO -- SPI RTX fifo depth, has to be a power of two, min 1
     )
     port map (
       -- host access --
@@ -1343,22 +1341,16 @@ begin
       irq_o       => twi_irq                   -- transfer done IRQ
     );
     resp_bus(RESP_TWI).err <= '0'; -- no access error possible
-
-    -- tri-state drivers --
-    twi_sda_io <= '0' when (twi_sda_o = '0') else 'Z'; -- module can only pull the line low actively
-    twi_scl_io <= '0' when (twi_scl_o = '0') else 'Z';
-    twi_sda_i  <= to_stdulogic(to_bit(twi_sda_io)); -- "to_bit" to avoid hardware-vs-simulation mismatch
-    twi_scl_i  <= to_stdulogic(to_bit(twi_scl_io));
   end generate;
 
   neorv32_twi_inst_false:
   if (IO_TWI_EN = false) generate
     resp_bus(RESP_TWI) <= resp_bus_entry_terminate_c;
     --
-    twi_sda_io <= 'Z';
-    twi_scl_io <= 'Z';
-    twi_cg_en  <= '0';
-    twi_irq    <= '0';
+    twi_sda_o <= '1';
+    twi_scl_o <= '1';
+    twi_cg_en <= '0';
+    twi_irq   <= '0';
   end generate;
 
 
@@ -1432,7 +1424,7 @@ begin
   if (IO_NEOLED_EN = true) generate
     neorv32_neoled_inst: neorv32_neoled
     generic map (
-      FIFO_DEPTH => IO_NEOLED_TX_FIFO -- TX FIFO depth (1..32k, power of two)
+      FIFO_DEPTH => IO_NEOLED_TX_FIFO -- NEOLED FIFO depth, has to be a power of two, min 1
     )
     port map (
       -- host access --
@@ -1559,17 +1551,13 @@ begin
       irq_o       => onewire_irq                   -- transfer done IRQ
     );
     resp_bus(RESP_ONEWIRE).err <= '0'; -- no access error possible
-
-    -- tri-state driver --
-    onewire_io <= '0' when (onewire_o = '0') else 'Z'; -- module can only pull the line low actively
-    onewire_i  <= to_stdulogic(to_bit(onewire_io)); -- "to_bit" to avoid hardware-vs-simulation mismatch
   end generate;
 
   neorv32_onewire_inst_false:
   if (IO_ONEWIRE_EN = false) generate
     resp_bus(RESP_ONEWIRE) <= resp_bus_entry_terminate_c;
     --
-    onewire_io    <= 'Z';
+    onewire_o     <= '1';
     onewire_cg_en <= '0';
     onewire_irq   <= '0';
   end generate;

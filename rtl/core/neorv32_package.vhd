@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080103"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080201"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -240,7 +240,7 @@ package neorv32_package is
 --constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff20"; -- base address
 --constant reserved_size_c      : natural := 8*4; -- module's address space size in bytes
 
-  -- Execute In Place Module (XIP) --
+  -- Execute In-Place Module (XIP) --
   constant xip_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff40"; -- base address
   constant xip_size_c           : natural := 4*4; -- module's address space size in bytes
   constant xip_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"ffffff40";
@@ -1028,7 +1028,7 @@ package neorv32_package is
       IO_UART1_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
       IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
       IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
-      IO_SPI_FIFO                  : natural := 0;      -- SPI RTX fifo depth, has to be zero or a power of two
+      IO_SPI_FIFO                  : natural := 1;      -- SPI RTX fifo depth, has to be a power of two, min 1
       IO_SDI_EN                    : boolean := false;  -- implement serial data interface (SDI)?
       IO_SDI_FIFO                  : natural := 0;      -- SDI RTX fifo depth, has to be zero or a power of two
       IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
@@ -1041,7 +1041,7 @@ package neorv32_package is
       IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
       IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
       IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-      IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
+      IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED FIFO depth, has to be a power of two, min 1
       IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
       IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
       IO_ONEWIRE_EN                : boolean := false   -- implement 1-wire interface (ONEWIRE)?
@@ -1081,13 +1081,13 @@ package neorv32_package is
       -- primary UART0 (available if IO_UART0_EN = true) --
       uart0_txd_o    : out std_ulogic; -- UART0 send data
       uart0_rxd_i    : in  std_ulogic := 'U'; -- UART0 receive data
-      uart0_rts_o    : out std_ulogic; -- hw flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-      uart0_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART0.TX allowed to transmit, low-active, optional
+      uart0_rts_o    : out std_ulogic; -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+      uart0_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
       -- secondary UART1 (available if IO_UART1_EN = true) --
       uart1_txd_o    : out std_ulogic; -- UART1 send data
       uart1_rxd_i    : in  std_ulogic := 'U'; -- UART1 receive data
-      uart1_rts_o    : out std_ulogic; -- hw flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-      uart1_cts_i    : in  std_ulogic := 'L'; -- hw flow control: UART1.TX allowed to transmit, low-active, optional
+      uart1_rts_o    : out std_ulogic; -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+      uart1_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
       -- SPI (available if IO_SPI_EN = true) --
       spi_clk_o      : out std_ulogic; -- SPI serial clock
       spi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
@@ -1099,10 +1099,13 @@ package neorv32_package is
       sdi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
       sdi_csn_i      : in  std_ulogic := 'H'; -- chip-select
       -- TWI (available if IO_TWI_EN = true) --
-      twi_sda_io     : inout std_logic; -- twi serial data line
-      twi_scl_io     : inout std_logic; -- twi serial clock line
+      twi_sda_i      : in  std_ulogic := 'H'; -- serial data line sense input
+      twi_sda_o      : out std_ulogic; -- serial data line output (pull low only)
+      twi_scl_i      : in  std_ulogic := 'H'; -- serial clock line sense input
+      twi_scl_o      : out std_ulogic; -- serial clock line output (pull low only)
       -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-      onewire_io     : inout std_logic; -- 1-wire bus
+      onewire_i      : in  std_ulogic := 'H'; -- 1-wire bus sense input
+      onewire_o      : out std_ulogic; -- 1-wire bus output (pull low only)
       -- PWM (available if IO_PWM_NUM_CH > 0) --
       pwm_o          : out std_ulogic_vector(11 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
@@ -1766,8 +1769,8 @@ package neorv32_package is
       uart_rts_o  : out std_ulogic; -- UART.RX ready to receive ("RTR"), low-active, optional
       uart_cts_i  : in  std_ulogic; -- UART.TX allowed to transmit, low-active, optional
       -- interrupts --
-      irq_rxd_o   : out std_ulogic; -- uart data received interrupt
-      irq_txd_o   : out std_ulogic  -- uart transmission done interrupt
+      irq_rx_o    : out std_ulogic; -- rx interrupt
+      irq_tx_o    : out std_ulogic  -- tx interrupt
     );
   end component;
 
@@ -1775,7 +1778,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_spi
     generic (
-      IO_SPI_FIFO : natural -- SPI RTX fifo depth, has to be zero or a power of two
+      IO_SPI_FIFO : natural -- SPI RTX fifo depth, has to be power of two, min 1
     );
     port (
       -- host access --
@@ -1955,7 +1958,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_neoled
     generic (
-      FIFO_DEPTH : natural -- TX FIFO depth (1..32k, power of two)
+      FIFO_DEPTH : natural -- NEOLED FIFO depth, has to be a power of two, min 1
     );
     port (
       -- host access --

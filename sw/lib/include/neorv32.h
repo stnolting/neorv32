@@ -968,83 +968,57 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
  **************************************************************************/
 /**@{*/
 /** UART module prototype */
-typedef struct __attribute__((packed,aligned(4))) {
+typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;  /**< offset 0: control register (#NEORV32_UART_CTRL_enum) */
-  uint32_t DATA;  /**< offset 4: data register (#NEORV32_UART_DATA_enum) */
+  uint32_t DATA;  /**< offset 4: data register */
 } neorv32_uart_t;
 
 /** UART0 module base address */
 #define NEORV32_UART0_BASE (0xFFFFFFA0U)
 
 /** UART0 module hardware access (#neorv32_uart_t) */
-#define NEORV32_UART0 (*((volatile neorv32_uart_t*) (NEORV32_UART0_BASE)))
+#define NEORV32_UART0 ((neorv32_uart_t*) (NEORV32_UART0_BASE))
 
 /** UART1 module base address */
 #define NEORV32_UART1_BASE (0xFFFFFFD0U)
 
 /** UART1 module hardware access (#neorv32_uart_t) */
-#define NEORV32_UART1 (*((volatile neorv32_uart_t*) (NEORV32_UART1_BASE)))
+#define NEORV32_UART1 ((neorv32_uart_t*) (NEORV32_UART1_BASE))
 
-/** UART0/UART1 control register bits */
+/** UART control register bits */
 enum NEORV32_UART_CTRL_enum {
-  UART_CTRL_BAUD00   =  0, /**< UART control register(0)  (r/w): BAUD rate config value lsb (12-bit, bit 0) */
-  UART_CTRL_BAUD01   =  1, /**< UART control register(1)  (r/w): BAUD rate config value (12-bit, bit 1) */
-  UART_CTRL_BAUD02   =  2, /**< UART control register(2)  (r/w): BAUD rate config value (12-bit, bit 2) */
-  UART_CTRL_BAUD03   =  3, /**< UART control register(3)  (r/w): BAUD rate config value (12-bit, bit 3) */
-  UART_CTRL_BAUD04   =  4, /**< UART control register(4)  (r/w): BAUD rate config value (12-bit, bit 4) */
-  UART_CTRL_BAUD05   =  5, /**< UART control register(5)  (r/w): BAUD rate config value (12-bit, bit 4) */
-  UART_CTRL_BAUD06   =  6, /**< UART control register(6)  (r/w): BAUD rate config value (12-bit, bit 5) */
-  UART_CTRL_BAUD07   =  7, /**< UART control register(7)  (r/w): BAUD rate config value (12-bit, bit 6) */
-  UART_CTRL_BAUD08   =  8, /**< UART control register(8)  (r/w): BAUD rate config value (12-bit, bit 7) */
-  UART_CTRL_BAUD09   =  9, /**< UART control register(9)  (r/w): BAUD rate config value (12-bit, bit 8) */
-  UART_CTRL_BAUD10   = 10, /**< UART control register(10) (r/w): BAUD rate config value (12-bit, bit 9) */
-  UART_CTRL_BAUD11   = 11, /**< UART control register(11) (r/w): BAUD rate config value msb (12-bit, bit 0) */
-  UART_CTRL_SIM_MODE = 12, /**< UART control register(12) (r/w): Simulation output override enable, for use in simulation only */
-  UART_CTRL_RX_EMPTY = 13, /**< UART control register(13) (r/-): RX FIFO is empty */
-  UART_CTRL_RX_HALF  = 14, /**< UART control register(14) (r/-): RX FIFO is at least half-full */
-  UART_CTRL_RX_FULL  = 15, /**< UART control register(15) (r/-): RX FIFO is full */
-  UART_CTRL_TX_EMPTY = 16, /**< UART control register(16) (r/-): TX FIFO is empty */
-  UART_CTRL_TX_HALF  = 17, /**< UART control register(17) (r/-): TX FIFO is at least half-full */
-  UART_CTRL_TX_FULL  = 18, /**< UART control register(18) (r/-): TX FIFO is full */
+  UART_CTRL_EN            =  0, /**< UART control register(0)  (r/w): UART global enable */
+  UART_CTRL_SIM_MODE      =  1, /**< UART control register(1)  (r/w): Simulation output override enable */
+  UART_CTRL_HWFC_EN       =  2, /**< UART control register(2)  (r/w): Enable RTS/CTS hardware flow-control */
+  UART_CTRL_PRSC0         =  3, /**< UART control register(3)  (r/w): clock prescaler select bit 0 */
+  UART_CTRL_PRSC1         =  4, /**< UART control register(4)  (r/w): clock prescaler select bit 1 */
+  UART_CTRL_PRSC2         =  5, /**< UART control register(5)  (r/w): clock prescaler select bit 2 */
+  UART_CTRL_BAUD0         =  6, /**< UART control register(6)  (r/w): BAUD rate divisor, bit 0 */
+  UART_CTRL_BAUD1         =  7, /**< UART control register(7)  (r/w): BAUD rate divisor, bit 1 */
+  UART_CTRL_BAUD2         =  8, /**< UART control register(8)  (r/w): BAUD rate divisor, bit 2 */
+  UART_CTRL_BAUD3         =  9, /**< UART control register(9)  (r/w): BAUD rate divisor, bit 3 */
+  UART_CTRL_BAUD4         = 10, /**< UART control register(10) (r/w): BAUD rate divisor, bit 4 */
+  UART_CTRL_BAUD5         = 11, /**< UART control register(11) (r/w): BAUD rate divisor, bit 5 */
+  UART_CTRL_BAUD6         = 12, /**< UART control register(12) (r/w): BAUD rate divisor, bit 6 */
+  UART_CTRL_BAUD7         = 13, /**< UART control register(13) (r/w): BAUD rate divisor, bit 7 */
+  UART_CTRL_BAUD8         = 14, /**< UART control register(14) (r/w): BAUD rate divisor, bit 8 */
+  UART_CTRL_BAUD9         = 15, /**< UART control register(15) (r/w): BAUD rate divisor, bit 9 */
 
-  UART_CTRL_RTS_EN   = 20, /**< UART control register(20) (r/w): Enable hardware flow control: Assert RTS output if UART.RX is ready to receive */
-  UART_CTRL_CTS_EN   = 21, /**< UART control register(21) (r/w): Enable hardware flow control: UART.TX starts sending only if CTS input is asserted */
-  UART_CTRL_PMODE0   = 22, /**< UART control register(22) (r/w): Parity configuration (0=even; 1=odd) */
-  UART_CTRL_PMODE1   = 23, /**< UART control register(23) (r/w): Parity bit enabled when set */
-  UART_CTRL_PRSC0    = 24, /**< UART control register(24) (r/w): BAUD rate clock prescaler select bit 0 */
-  UART_CTRL_PRSC1    = 25, /**< UART control register(25) (r/w): BAUD rate clock prescaler select bit 1 */
-  UART_CTRL_PRSC2    = 26, /**< UART control register(26) (r/w): BAUD rate clock prescaler select bit 2 */
-  UART_CTRL_CTS      = 27, /**< UART control register(27) (r/-): current state of CTS input */
-  UART_CTRL_EN       = 28, /**< UART control register(28) (r/w): UART global enable */
-  UART_CTRL_RX_IRQ   = 29, /**< UART control register(29) (r/w): RX IRQ mode: 1=FIFO at least half-full; 0=FIFO not empty */
-  UART_CTRL_TX_IRQ   = 30, /**< UART control register(30) (r/w): TX IRQ mode: 1=FIFO less than half-full; 0=FIFO not full */
-  UART_CTRL_TX_BUSY  = 31  /**< UART control register(31) (r/-): Transmitter is busy when set */
-};
+  UART_CTRL_RX_NEMPTY     = 16, /**< UART control register(16) (r/-): RX FIFO not empty */
+  UART_CTRL_RX_HALF       = 17, /**< UART control register(17) (r/-): RX FIFO at least half-full */
+  UART_CTRL_RX_FULL       = 18, /**< UART control register(18) (r/-): RX FIFO full */
+  UART_CTRL_TX_EMPTY      = 19, /**< UART control register(19) (r/-): TX FIFO empty */
+  UART_CTRL_TX_NHALF      = 20, /**< UART control register(20) (r/-): TX FIFO not at least half-full */
+  UART_CTRL_TX_FULL       = 21, /**< UART control register(21) (r/-): TX FIFO full */
 
-/** UART0/UART1 parity configuration */
-enum NEORV32_UART_PARITY_enum {
-  PARITY_NONE = 0b00, /**< 0b00: No parity bit at all */
-  PARITY_EVEN = 0b10, /**< 0b10: Even parity */
-  PARITY_ODD  = 0b11  /**< 0b11: Odd parity */
-};
+  UART_CTRL_IRQ_RX_NEMPTY = 22, /**< UART control register(22) (r/w): Fire IRQ if RX FIFO not empty */
+  UART_CTRL_IRQ_RX_HALF   = 23, /**< UART control register(23) (r/w): Fire IRQ if RX FIFO at least half-full */
+  UART_CTRL_IRQ_RX_FULL   = 24, /**< UART control register(24) (r/w): Fire IRQ if RX FIFO full */
+  UART_CTRL_IRQ_TX_EMPTY  = 25, /**< UART control register(25) (r/w): Fire IRQ if TX FIFO empty */
+  UART_CTRL_IRQ_TX_NHALF  = 26, /**< UART control register(26) (r/w): Fire IRQ if TX FIFO not at least half-full */
 
-/** UART0/UART1 hardware flow control configuration */
-enum NEORV32_UART_FLOW_CONTROL_enum {
-  FLOW_CONTROL_NONE   = 0b00, /**< 0b00: No hardware flow control */
-  FLOW_CONTROL_RTS    = 0b01, /**< 0b01: Assert RTS output if UART.RX is ready to receive */
-  FLOW_CONTROL_CTS    = 0b10, /**< 0b10: UART.TX starts sending only if CTS input is asserted */
-  FLOW_CONTROL_RTSCTS = 0b11  /**< 0b11: Assert RTS output if UART.RX is ready to receive & UART.TX starts sending only if CTS input is asserted */
-};
-
-/** UART0/UART1 receive/transmit data register bits */
-enum NEORV32_UART_DATA_enum {
-  UART_DATA_LSB   =  0, /**< UART receive/transmit data register(0)  (r/w): Receive/transmit data LSB (bit 0) */
-  UART_DATA_MSB   =  7, /**< UART receive/transmit data register(7)  (r/w): Receive/transmit data MSB (bit 7) */
-
-  UART_DATA_PERR  = 28, /**< UART receive/transmit data register(18) (r/-): RX parity error detected when set */
-  UART_DATA_FERR  = 29, /**< UART receive/transmit data register(29) (r/-): RX frame error (no valid stop bit) detected when set */
-  UART_DATA_OVERR = 30, /**< UART receive/transmit data register(30) (r/-): RX data overrun when set */
-  UART_DATA_AVAIL = 31  /**< UART receive/transmit data register(31) (r/-): RX data available when set */
+  UART_CTRL_RX_OVER       = 30, /**< UART control register(30) (r/-): RX FIFO overflow */
+  UART_CTRL_TX_BUSY       = 31  /**< UART control register(31) (r/-): Transmitter busy or TX FIFO not empty */
 };
 /**@}*/
 
@@ -1067,32 +1041,34 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** SPI control register bits */
 enum NEORV32_SPI_CTRL_enum {
-  SPI_CTRL_EN        =  0, /**< SPI control register(0)  (r/w): SPI unit enable */
-  SPI_CTRL_CPHA      =  1, /**< SPI control register(1)  (r/w): Clock phase */
-  SPI_CTRL_CPOL      =  2, /**< SPI control register(2)  (r/w): Clock polarity */
-  SPI_CTRL_SIZE0     =  3, /**< SPI control register(3)  (r/w): Transfer data size lsb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
-  SPI_CTRL_SIZE1     =  4, /**< SPI control register(4)  (r/w): Transfer data size msb (00: 8-bit, 01: 16-bit, 10: 24-bit, 11: 32-bit) */
-  SPI_CTRL_CS_SEL0   =  5, /**< SPI control register(5)  (r/w): Direct chip select bit 1 */
-  SPI_CTRL_CS_SEL1   =  6, /**< SPI control register(6)  (r/w): Direct chip select bit 2 */
-  SPI_CTRL_CS_SEL2   =  7, /**< SPI control register(7)  (r/w): Direct chip select bit 2 */
-  SPI_CTRL_CS_EN     =  8, /**< SPI control register(8)  (r/w): Chip select enable (selected CS line output is low when set) */
-  SPI_CTRL_PRSC0     =  9, /**< SPI control register(9)  (r/w): Clock prescaler select bit 0 */
-  SPI_CTRL_PRSC1     = 10, /**< SPI control register(10) (r/w): Clock prescaler select bit 1 */
-  SPI_CTRL_PRSC2     = 11, /**< SPI control register(11) (r/w): Clock prescaler select bit 2 */
-  SPI_CTRL_CDIV0     = 12, /**< SPI control register(12) (r/w): Clock divider bit 0 */
-  SPI_CTRL_CDIV1     = 13, /**< SPI control register(13) (r/w): Clock divider bit 1 */
-  SPI_CTRL_CDIV2     = 14, /**< SPI control register(14) (r/w): Clock divider bit 2 */
-  SPI_CTRL_CDIV3     = 15, /**< SPI control register(15) (r/w): Clock divider bit 3 */
-  SPI_CTRL_IRQ0      = 16, /**< SPI control register(16) (r/w): Interrupt configuration lsb (0-: PHY going idle) */
-  SPI_CTRL_IRQ1      = 17, /**< SPI control register(17) (r/w): Interrupt configuration lsb (10: TX fifo less than half full, 11: TX fifo empty) */
+  SPI_CTRL_EN           =  0, /**< SPI control register(0)  (r/w): SPI unit enable */
+  SPI_CTRL_CPHA         =  1, /**< SPI control register(1)  (r/w): Clock phase */
+  SPI_CTRL_CPOL         =  2, /**< SPI control register(2)  (r/w): Clock polarity */
+  SPI_CTRL_CS_SEL0      =  3, /**< SPI control register(3)  (r/w): Direct chip select bit 1 */
+  SPI_CTRL_CS_SEL1      =  4, /**< SPI control register(4)  (r/w): Direct chip select bit 2 */
+  SPI_CTRL_CS_SEL2      =  5, /**< SPI control register(5)  (r/w): Direct chip select bit 2 */
+  SPI_CTRL_CS_EN        =  6, /**< SPI control register(6)  (r/w): Chip select enable (selected CS line output is low when set) */
+  SPI_CTRL_PRSC0        =  7, /**< SPI control register(7)  (r/w): Clock prescaler select bit 0 */
+  SPI_CTRL_PRSC1        =  8, /**< SPI control register(8)  (r/w): Clock prescaler select bit 1 */
+  SPI_CTRL_PRSC2        =  9, /**< SPI control register(9)  (r/w): Clock prescaler select bit 2 */
+  SPI_CTRL_CDIV0        = 10, /**< SPI control register(10) (r/w): Clock divider bit 0 */
+  SPI_CTRL_CDIV1        = 11, /**< SPI control register(11) (r/w): Clock divider bit 1 */
+  SPI_CTRL_CDIV2        = 12, /**< SPI control register(12) (r/w): Clock divider bit 2 */
+  SPI_CTRL_CDIV3        = 13, /**< SPI control register(13) (r/w): Clock divider bit 3 */
 
-  SPI_CTRL_FIFO_LSB  = 23, /**< SPI control register(23) (r/-): log2(FIFO size), lsb */
-  SPI_CTRL_FIFO_MSB  = 26, /**< SPI control register(26) (r/-): log2(FIFO size), msb */
-  SPI_CTRL_RX_AVAIL  = 27, /**< SPI control register(27) (r/-): RX FIFO data available (RX FIFO not empty) */
-  SPI_CTRL_TX_EMPTY  = 28, /**< SPI control register(28) (r/-): TX FIFO empty */
-  SPI_CTRL_TX_HALF   = 29, /**< SPI control register(29) (r/-): TX FIFO at least half full */
-  SPI_CTRL_TX_FULL   = 30, /**< SPI control register(30) (r/-): TX FIFO full */
-  SPI_CTRL_BUSY      = 31  /**< SPI control register(31) (r/-): SPI busy flag */
+  SPI_CTRL_RX_AVAIL     = 16, /**< SPI control register(16) (r/-): RX FIFO data available (RX FIFO not empty) */
+  SPI_CTRL_TX_EMPTY     = 17, /**< SPI control register(17) (r/-): TX FIFO empty */
+  SPI_CTRL_TX_NHALF     = 18, /**< SPI control register(18) (r/-): TX FIFO not at least half full */
+  SPI_CTRL_TX_FULL      = 19, /**< SPI control register(19) (r/-): TX FIFO full */
+
+  SPI_CTRL_IRQ_RX_AVAIL = 20, /**< SPI control register(20) (r/w): Fire IRQ if RX FIFO data available (RX FIFO not empty) */
+  SPI_CTRL_IRQ_TX_EMPTY = 21, /**< SPI control register(21) (r/w): Fire IRQ if TX FIFO empty */
+  SPI_CTRL_IRQ_TX_HALF  = 22, /**< SPI control register(22) (r/w): Fire IRQ if TX FIFO not at least half full */
+
+  SPI_CTRL_FIFO_LSB     = 23, /**< SPI control register(23) (r/-): log2(FIFO size), lsb */
+  SPI_CTRL_FIFO_MSB     = 26, /**< SPI control register(26) (r/-): log2(FIFO size), msb */
+
+  SPI_CTRL_BUSY         = 31  /**< SPI control register(31) (r/-): SPI busy flag */
 };
 /**@}*/
 
@@ -1243,31 +1219,31 @@ enum NEORV32_NEOLED_CTRL_enum {
   NEOLED_CTRL_PRSC0      =  3, /**< NEOLED control register(3) (r/w): Clock prescaler select bit 0 (pulse-clock speed select) */
   NEOLED_CTRL_PRSC1      =  4, /**< NEOLED control register(4) (r/w): Clock prescaler select bit 1 (pulse-clock speed select) */
   NEOLED_CTRL_PRSC2      =  5, /**< NEOLED control register(5) (r/w): Clock prescaler select bit 2 (pulse-clock speed select) */
-  //
+
   NEOLED_CTRL_BUFS_0     =  6, /**< NEOLED control register(6) (r/-): log2(tx buffer size) bit 0 */
   NEOLED_CTRL_BUFS_1     =  7, /**< NEOLED control register(7) (r/-): log2(tx buffer size) bit 1 */
   NEOLED_CTRL_BUFS_2     =  8, /**< NEOLED control register(8) (r/-): log2(tx buffer size) bit 2 */
   NEOLED_CTRL_BUFS_3     =  9, /**< NEOLED control register(9) (r/-): log2(tx buffer size) bit 3 */
-  //
+
   NEOLED_CTRL_T_TOT_0    = 10, /**< NEOLED control register(10) (r/w): pulse-clock ticks per total period bit 0 */
   NEOLED_CTRL_T_TOT_1    = 11, /**< NEOLED control register(11) (r/w): pulse-clock ticks per total period bit 1 */
   NEOLED_CTRL_T_TOT_2    = 12, /**< NEOLED control register(12) (r/w): pulse-clock ticks per total period bit 2 */
   NEOLED_CTRL_T_TOT_3    = 13, /**< NEOLED control register(13) (r/w): pulse-clock ticks per total period bit 3 */
   NEOLED_CTRL_T_TOT_4    = 14, /**< NEOLED control register(14) (r/w): pulse-clock ticks per total period bit 4 */
-  //
+
   NEOLED_CTRL_T_ZERO_H_0 = 15, /**< NEOLED control register(15) (r/w): pulse-clock ticks per ZERO high-time bit 0 */
   NEOLED_CTRL_T_ZERO_H_1 = 16, /**< NEOLED control register(16) (r/w): pulse-clock ticks per ZERO high-time bit 1 */
   NEOLED_CTRL_T_ZERO_H_2 = 17, /**< NEOLED control register(17) (r/w): pulse-clock ticks per ZERO high-time bit 2 */
   NEOLED_CTRL_T_ZERO_H_3 = 18, /**< NEOLED control register(18) (r/w): pulse-clock ticks per ZERO high-time bit 3 */
   NEOLED_CTRL_T_ZERO_H_4 = 19, /**< NEOLED control register(19) (r/w): pulse-clock ticks per ZERO high-time bit 4 */
-  //
+
   NEOLED_CTRL_T_ONE_H_0  = 20, /**< NEOLED control register(20) (r/w): pulse-clock ticks per ONE high-time bit 0 */
   NEOLED_CTRL_T_ONE_H_1  = 21, /**< NEOLED control register(21) (r/w): pulse-clock ticks per ONE high-time bit 1 */
   NEOLED_CTRL_T_ONE_H_2  = 22, /**< NEOLED control register(22) (r/w): pulse-clock ticks per ONE high-time bit 2 */
   NEOLED_CTRL_T_ONE_H_3  = 23, /**< NEOLED control register(23) (r/w): pulse-clock ticks per ONE high-time bit 3 */
   NEOLED_CTRL_T_ONE_H_4  = 24, /**< NEOLED control register(24) (r/w): pulse-clock ticks per ONE high-time bit 4 */
-  //
-  NEOLED_CTRL_IRQ_CONF   = 27, /**< NEOLED control register(27) (r/w): TX FIFO interrupt: 0=IRQ if FIFO is less than half-full, 1=IRQ if FIFO is empty */
+
+  NEOLED_CTRL_IRQ_CONF   = 27, /**< NEOLED control register(27) (r/w): TX FIFO interrupt: 1=IRQ if FIFO is empty, 1=IRQ if FIFO is less than half-full */
   NEOLED_CTRL_TX_EMPTY   = 28, /**< NEOLED control register(28) (r/-): TX FIFO is empty */
   NEOLED_CTRL_TX_HALF    = 29, /**< NEOLED control register(29) (r/-): TX FIFO is at least half-full */
   NEOLED_CTRL_TX_FULL    = 30, /**< NEOLED control register(30) (r/-): TX FIFO is full */

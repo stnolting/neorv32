@@ -38,9 +38,9 @@ can **NOT** be acknowledged by writing zero to the according <<_mip>> CSR bit. +
 [cols="<3,<3,^1,^1,<6"]
 [options="header",grid="all"]
 |=======================
-| Address      | Name [C]      | Bits | R/W | Function
-| `0xffffff90` | `NEORV32_MTIME.TIME_LO`    | 31:0 | r/w | machine system time, low word
-| `0xffffff94` | `NEORV32_MTIME.TIME_HI`    | 31:0 | r/w | machine system time, high word
-| `0xffffff98` | `NEORV32_MTIME.TIMECMP_LO` | 31:0 | r/w | time compare, low word
-| `0xffffff9c` | `NEORV32_MTIME.TIMECMP_HI` | 31:0 | r/w | time compare, high word
+| Address      | Name [C]     | Bits | R/W | Function
+| `0xffffff90` | `TIME_LO`    | 31:0 | r/w | machine system time, low word
+| `0xffffff94` | `TIME_HI`    | 31:0 | r/w | machine system time, high word
+| `0xffffff98` | `TIMECMP_LO` | 31:0 | r/w | time compare, low word
+| `0xffffff9c` | `TIMECMP_HI` | 31:0 | r/w | time compare, high word
 |=======================

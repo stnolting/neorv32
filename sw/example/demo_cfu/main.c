@@ -82,12 +82,11 @@ int main() {
 
   uint32_t i, rs1, rs2, rs3, rs4;
 
-
   // initialize NEORV32 run-time environment
   neorv32_rte_setup();
 
-  // setup UART0 at default baud rate, no parity bits, no HW flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
   // check if UART0 is implemented
   if (neorv32_uart0_available() == 0) {

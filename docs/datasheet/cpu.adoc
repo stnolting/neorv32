@@ -189,7 +189,7 @@ side attacks (like Spectre and Meltdown).
 
 .Branch Prediction
 [NOTE]
-The front-end implements a very simple branch prediction (predict = always taken) that **stops** fetching further instruction while
+The front-end implements a very simple branch prediction that **stops** fetching further instruction while
 a branch/jump/call operation is in progress.
 
 

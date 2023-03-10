@@ -41,8 +41,9 @@ Writing all-zero to the _WDT_CTRL_TIMEOUT_ bits will immediately trigger a syste
 
 .Watchdog Interrupt
 [NOTE]
-A watchdog interrupt occurs when the watchdog is enabled and the internal counter reaches half of the programmed
-timeout value. A triggered interrupt has to be explicitly cleared by writing zero to the according <<_mip>> CSR bit.
+A watchdog interrupt occurs when the watchdog is enabled and the internal counter reaches _exactly_ half of the programmed
+timeout value. Hence, the interrupt only fires once. Howeer, a triggered WDT interrupt has to be explicitly cleared by
+writing zero to the according <<_mip>> CSR bit.
 
 .Watchdog Operation during Debugging
 [IMPORTANT]
@@ -78,16 +79,16 @@ the last system reset was caused by the watchdog itself.
 **Register Map**
 
 .WDT register map (`struct NEORV32_WDT`)
-[cols="<2,<2,<4,^1,^1,^2,<4"]
+[cols="<2,<1,<4,^1,^1,^2,<4"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Reset value | Writable if locked | Function
-.8+<| `0xffffffbc` .8+<| `NEORV32_WDT.CTRL` <|`0` _WDT_CTRL_EN_     ^| r/w ^| `0` ^| no  <| watchdog enable
-                                            <|`1  _WDT_CTRL_LOCK_   ^| r/w ^| `0` ^| no  <| lock configuration when set, clears only on system reset, can only be set if enable bit is set already
-                                            <|`2` _WDT_CTRL_DBEN_   ^| r/w ^| `0` ^| no  <| set to allow WDT to continue operation even when CPU is in debug mode
-                                            <|`3` _WDT_CTRL_SEN_    ^| r/w ^| `0` ^| no  <| set to allow WDT to continue operation even when CPU is in sleep mode
-                                            <|`4` _WDT_CTRL_RESET_  ^| -/w ^| -   ^| yes <| reset watchdog when set, auto-clears
-                                            <|`5` _WDT_CTRL_RCAUSE_ ^| r/- ^| `0` ^| -   <| cause of last system reset: `0`=caused by external reset signal, `1`=caused by watchdog
-                                            <|`7:6` -               ^| r/- ^| -   ^| -   <| _reserved_, reads as zero
-                                            <|`31:8` _WDT_CTRL_TIMEOUT_MSB_ : _WDT_CTRL_TIMEOUT_LSB_ ^| r/w ^| 0 ^| no <| 24-bit watchdog timeout value
+.8+<| `0xffffffbc` .8+<| `CTRL` <|`0` _WDT_CTRL_EN_     ^| r/w ^| `0` ^| no  <| watchdog enable
+                                <|`1  _WDT_CTRL_LOCK_   ^| r/w ^| `0` ^| no  <| lock configuration when set, clears only on system reset, can only be set if enable bit is set already
+                                <|`2` _WDT_CTRL_DBEN_   ^| r/w ^| `0` ^| no  <| set to allow WDT to continue operation even when CPU is in debug mode
+                                <|`3` _WDT_CTRL_SEN_    ^| r/w ^| `0` ^| no  <| set to allow WDT to continue operation even when CPU is in sleep mode
+                                <|`4` _WDT_CTRL_RESET_  ^| -/w ^| -   ^| yes <| reset watchdog when set, auto-clears
+                                <|`5` _WDT_CTRL_RCAUSE_ ^| r/- ^| `0` ^| -   <| cause of last system reset: `0`=caused by external reset signal, `1`=caused by watchdog
+                                <|`7:6` -               ^| r/- ^| -   ^| -   <| _reserved_, reads as zero
+                                <|`31:8` _WDT_CTRL_TIMEOUT_MSB_ : _WDT_CTRL_TIMEOUT_LSB_ ^| r/w ^| 0 ^| no <| 24-bit watchdog timeout value
 |=======================

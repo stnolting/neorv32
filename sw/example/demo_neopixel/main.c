@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -73,9 +73,8 @@ int main() {
   // this is not required, but keeps us safe
   neorv32_rte_setup();
 
-
-  // setup UART0 at default baud rate, no parity bits, no hw flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
 
   // check if NEOLED unit is implemented at all, abort if not
@@ -86,7 +85,7 @@ int main() {
 
 
   // illustrate setup
-  neorv32_uart0_printf("<<< NEORV32 NeoPixel (WS2812) hardware interface (NEOLED) demo >>>\n"
+  neorv32_uart0_printf("<<< NEORV32 NeoPixel (WS2812) Controller (NEOLED) Demo Program >>>\n"
                        "(TM) 'NeoPixel' is a trademark of Adafruit Industries.\n\n"
                        "This demo uses the following LED setup:\n"
                        "NEORV32.neoled_o -> %u RGB-LEDs (24-bit)\n\n", (uint32_t)NUM_LEDS_24BIT);
@@ -94,8 +93,7 @@ int main() {
 
   // use the "neorv32_neoled_setup_ws2812()" setup function here instead the raw "neorv32_neoled_setup()"
   // neorv32_neoled_setup_ws2812() will configure all timing parameters according to the WS2812 specs. for the current processor clock speed
-  neorv32_neoled_setup_ws2812();
-  neorv32_neoled_enable(); // enable module
+  neorv32_neoled_setup_ws2812(0); // interrupt configuration = fire IRQ if TX FIFO is empty (not used here)
   neorv32_neoled_set_mode(0); // mode = 0 = 24-bit
 
 

@@ -75,12 +75,12 @@ XIRQ_TRIGGER_POLARITY => x"ffffffff";
 **Register Map**
 
 .XIRQ register map (`struct NEORV32_XIRQ`)
-[cols="^4,<5,^2,^2,<14"]
+[cols="^4,<2,^2,^2,<14"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Function
-| `0xffffff80` | `NEORV32_XIRQ.IER` | `31:0` | r/w | Interrupt enable register (one bit per channel, LSB-aligned)
-| `0xffffff84` | `NEORV32_XIRQ.IPR` | `31:0` | r/w | Interrupt pending register (one bit per channel, LSB-aligned); writing 0 to a bit clears according pending interrupt
-| `0xffffff88` | `NEORV32_XIRQ.SCR` |  `4:0` | r/w | Channel id (0..31) of firing IRQ (prioritized!); writing _any_ value will acknowledge the current interrupt
-| `0xffffff8c` | -                  | `31:0` | r/- | _reserved_, read as zero
+| `0xffffff80` | `IER` | `31:0` | r/w | Interrupt enable register (one bit per channel, LSB-aligned)
+| `0xffffff84` | `IPR` | `31:0` | r/w | Interrupt pending register (one bit per channel, LSB-aligned); writing 0 to a bit clears according pending interrupt
+| `0xffffff88` | `SCR` |  `4:0` | r/w | Channel id (0..31) of firing IRQ (prioritized!); writing _any_ value will acknowledge the current interrupt
+| `0xffffff8c` | -     | `31:0` | r/- | _reserved_, read as zero
 |=======================

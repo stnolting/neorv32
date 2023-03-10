@@ -131,9 +131,10 @@ int main() {
   // disable machine-mode interrupts
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
-  // setup UARTs at default baud rate, no parity bits, no HW flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
-  NEORV32_UART1.CTRL = NEORV32_UART0.CTRL; // copy configuration to initialize UART1
+  // setup UARTs at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
+  NEORV32_UART1->CTRL = 0;
+  NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
 
 #ifdef SUPPRESS_OPTIONAL_UART_PRINT
   neorv32_uart0_disable(); // do not generate any UART0 output
@@ -937,7 +938,7 @@ int main() {
   cnt_test++;
 
   // enable fast interrupt
-  neorv32_cpu_csr_write(CSR_MIE, 1 << WDT_FIRQ_ENABLE);
+  neorv32_cpu_irq_enable(WDT_FIRQ_ENABLE);
 
   // configure WDT:
   // timeout = 1*4096 cycles, no lock, disable in debug mode, enable in sleep mode
@@ -971,33 +972,29 @@ int main() {
   PRINT_STANDARD("[%i] FIRQ2 (UART0.RX) ", cnt_test);
   cnt_test++;
 
-  // wait for UART0 to finish transmitting
+  // wait for UART to finish transmitting
   while(neorv32_uart0_tx_busy());
 
-  // backup current UART0 configuration
-  tmp_a = NEORV32_UART0.CTRL;
-
-  // make sure UART is enabled
-  NEORV32_UART0.CTRL |= (1 << UART_CTRL_EN);
+  // backup current UART configuration
+  tmp_a = NEORV32_UART0->CTRL;
+  // enable IRQ if RX FIFO not empty
+  neorv32_uart0_setup(BAUD_RATE, 1 << UART_CTRL_IRQ_RX_NEMPTY);
   // make sure sim mode is disabled
-  NEORV32_UART0.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+  NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
   // enable fast interrupt
-  neorv32_cpu_csr_write(CSR_MIE, 1 << UART0_RX_FIRQ_ENABLE);
+  neorv32_cpu_irq_enable(UART0_RX_FIRQ_ENABLE);
 
-  // trigger UART0 RX IRQ
   neorv32_uart0_putc(0);
-  // wait for UART0 to finish transmitting
   while(neorv32_uart0_tx_busy());
 
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile ("nop");
-  asm volatile ("nop");
+  // sleep until interrupt
+  neorv32_cpu_sleep();
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // restore original configuration
-  NEORV32_UART0.CTRL = tmp_a;
+  NEORV32_UART0->CTRL = tmp_a;
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == UART0_RX_TRAP_CODE) {
     test_ok();
@@ -1014,33 +1011,29 @@ int main() {
   PRINT_STANDARD("[%i] FIRQ3 (UART0.TX) ", cnt_test);
   cnt_test++;
 
-  // wait for UART0 to finish transmitting
-  while(neorv32_uart0_tx_busy());
-
-  // backup current UART0 configuration
-  tmp_a = NEORV32_UART0.CTRL;
-
-  // make sure UART is enabled
-  NEORV32_UART0.CTRL |= (1 << UART_CTRL_EN);
-  // make sure sim mode is disabled
-  NEORV32_UART0.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
-
-  // UART0 TX interrupt enable
-  neorv32_cpu_csr_write(CSR_MIE, 1 << UART0_TX_FIRQ_ENABLE);
-
-  // trigger UART0 TX IRQ
-  neorv32_uart0_putc(0);
   // wait for UART to finish transmitting
   while(neorv32_uart0_tx_busy());
 
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile ("nop");
-  asm volatile ("nop");
+  // backup current UART configuration
+  tmp_a = NEORV32_UART0->CTRL;
+  // enable IRQ if TX FIFO empty
+  neorv32_uart0_setup(BAUD_RATE, 1 << UART_CTRL_IRQ_TX_EMPTY);
+  // make sure sim mode is disabled
+  NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+
+  neorv32_uart0_putc(0);
+  while(neorv32_uart0_tx_busy());
+
+  // UART0 TX interrupt enable
+  neorv32_cpu_irq_enable(UART0_TX_FIRQ_ENABLE);
+
+  // sleep until interrupt
+  neorv32_cpu_sleep();
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // restore original configuration
-  NEORV32_UART0.CTRL = tmp_a;
+  NEORV32_UART0->CTRL = tmp_a;
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == UART0_TX_TRAP_CODE) {
     test_ok();
@@ -1058,29 +1051,25 @@ int main() {
   cnt_test++;
 
   // backup current UART1 configuration
-  tmp_a = NEORV32_UART1.CTRL;
-
-  // make sure UART is enabled
-  NEORV32_UART1.CTRL |= (1 << UART_CTRL_EN);
+  tmp_a = NEORV32_UART1->CTRL;
+  // enable IRQ if RX FIFO not empty
+  neorv32_uart1_setup(BAUD_RATE, 1 << UART_CTRL_IRQ_RX_NEMPTY);
   // make sure sim mode is disabled
-  NEORV32_UART1.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+  NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
   // UART1 RX interrupt enable
-  neorv32_cpu_csr_write(CSR_MIE, 1 << UART1_RX_FIRQ_ENABLE);
+  neorv32_cpu_irq_enable(UART1_RX_FIRQ_ENABLE);
 
-  // trigger UART1 RX IRQ
   neorv32_uart1_putc(0);
-  // wait for UART1 to finish transmitting
   while(neorv32_uart1_tx_busy());
 
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile ("nop");
-  asm volatile ("nop");
+  // sleep until interrupt
+  neorv32_cpu_sleep();
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // restore original configuration
-  NEORV32_UART1.CTRL = tmp_a;
+  NEORV32_UART1->CTRL = tmp_a;
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == UART1_RX_TRAP_CODE) {
     test_ok();
@@ -1098,29 +1087,25 @@ int main() {
   cnt_test++;
 
   // backup current UART1 configuration
-  tmp_a = NEORV32_UART1.CTRL;
-
-  // make sure UART is enabled
-  NEORV32_UART1.CTRL |= (1 << UART_CTRL_EN);
+  tmp_a = NEORV32_UART1->CTRL;
+  // enable IRQ if TX FIFO empty
+  neorv32_uart1_setup(BAUD_RATE, 1 << UART_CTRL_IRQ_TX_EMPTY);
   // make sure sim mode is disabled
-  NEORV32_UART1.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+  NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
-  // UART1 RX interrupt enable
-  neorv32_cpu_csr_write(CSR_MIE, 1 << UART1_TX_FIRQ_ENABLE);
-
-  // trigger UART1 TX IRQ
   neorv32_uart1_putc(0);
-  // wait for UART1 to finish transmitting
   while(neorv32_uart1_tx_busy());
 
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile ("nop");
-  asm volatile ("nop");
+  // UART0 TX interrupt enable
+  neorv32_cpu_irq_enable(UART1_TX_FIRQ_ENABLE);
+
+  // sleep until interrupt
+  neorv32_cpu_sleep();
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // restore original configuration
-  NEORV32_UART1.CTRL = tmp_a;
+  NEORV32_UART1->CTRL = tmp_a;
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == UART1_TX_TRAP_CODE) {
     test_ok();
@@ -1138,10 +1123,10 @@ int main() {
   cnt_test++;
 
   // configure SPI
-  neorv32_spi_setup(CLK_PRSC_2, 0, 0, 0, 0, 0); // IRQ when SPI PHY becomes idle
+  neorv32_spi_setup(CLK_PRSC_8, 0, 0, 0, 1<<SPI_CTRL_IRQ_RX_AVAIL); // IRQ when RX FIFO is not empty
 
   // enable fast interrupt
-  neorv32_cpu_csr_write(CSR_MIE, 1 << SPI_FIRQ_ENABLE);
+  neorv32_cpu_irq_enable(SPI_FIRQ_ENABLE);
 
   // trigger SPI IRQ
   neorv32_spi_trans(0); // blocking
@@ -1174,7 +1159,7 @@ int main() {
   neorv32_twi_setup(CLK_PRSC_2, 0, 0);
 
   // enable TWI FIRQ
-  neorv32_cpu_csr_write(CSR_MIE, 1 << TWI_FIRQ_ENABLE);
+  neorv32_cpu_irq_enable(TWI_FIRQ_ENABLE);
 
   // trigger TWI IRQ
   neorv32_twi_start_trans(0xA5);
@@ -1211,7 +1196,7 @@ int main() {
   xirq_err_cnt += neorv32_xirq_install(1, xirq_trap_handler1); // install XIRQ IRQ handler channel 1
 
   // enable XIRQ FIRQ
-  neorv32_cpu_csr_write(CSR_MIE, 1 << XIRQ_FIRQ_ENABLE);
+  neorv32_cpu_irq_enable(XIRQ_FIRQ_ENABLE);
 
   // trigger XIRQ channel 1 and 0
   neorv32_gpio_port_set(3);
@@ -1243,17 +1228,17 @@ int main() {
   cnt_test++;
 
   // enable fast interrupt
-  neorv32_cpu_csr_write(CSR_MIE, 1 << NEOLED_FIRQ_ENABLE);
+  neorv32_cpu_irq_enable(NEOLED_FIRQ_ENABLE);
 
-  // configure NEOLED
-  neorv32_neoled_setup(CLK_PRSC_2, 0, 0, 0);
+  // configure NEOLED, IRQ if FIFO  empty
+  neorv32_neoled_setup(CLK_PRSC_4, 0, 0, 0, 0);
 
   // send dummy data
   neorv32_neoled_write_nonblocking(0);
+  neorv32_neoled_write_nonblocking(0);
 
-  // wait some time for the IRQ to arrive the CPU
-  asm volatile ("nop");
-  asm volatile ("nop");
+  // sleep until interrupt
+  neorv32_cpu_sleep();
 
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1283,10 +1268,10 @@ int main() {
 
   // configure and enable SDI + SPI
   neorv32_sdi_setup(1 << SDI_CTRL_IRQ_RX_AVAIL);
-  neorv32_spi_setup(CLK_PRSC_4, 0, 0, 0, 0, 0); // IRQ when SPI PHY becomes idle
+  neorv32_spi_setup(CLK_PRSC_4, 0, 0, 0, 0);
 
   // enable fast interrupt
-  neorv32_cpu_csr_write(CSR_MIE, 1 << SDI_FIRQ_ENABLE);
+  neorv32_cpu_irq_enable(SDI_FIRQ_ENABLE);
 
   // write test data to SDI
   neorv32_sdi_rx_clear();
@@ -1325,7 +1310,7 @@ int main() {
   cnt_test++;
 
   // enable GPTMR FIRQ
-  neorv32_cpu_csr_write(CSR_MIE, 1 << GPTMR_FIRQ_ENABLE);
+  neorv32_cpu_irq_enable(GPTMR_FIRQ_ENABLE);
 
   // configure timer IRQ for one-shot mode after CLK_PRSC_2*2=4 clock cycles
   neorv32_gptmr_setup(CLK_PRSC_2, 0, 2);
@@ -1356,7 +1341,7 @@ int main() {
   cnt_test++;
 
   // enable ONEWIRE FIRQ
-  neorv32_cpu_csr_write(CSR_MIE, 1 << ONEWIRE_FIRQ_ENABLE);
+  neorv32_cpu_irq_enable(ONEWIRE_FIRQ_ENABLE);
 
   // configure interface for minimal timing
   neorv32_onewire_setup(200); // t_base = 200ns
@@ -1423,7 +1408,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test unallowed WFI ("sleep") instruction (executed in user mode)
+  // Test un-allowed WFI ("sleep") instruction (executed in user mode)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] WFI (not allowed in u-mode) ", cnt_test);
@@ -1732,9 +1717,9 @@ void test_fail(void) {
 void __neorv32_crt0_after_main(int32_t return_code) {
 
   // make sure sim mode is disabled and UARTs are actually enabled
-  NEORV32_UART0.CTRL |=  (1 << UART_CTRL_EN);
-  NEORV32_UART0.CTRL &= ~(1 << UART_CTRL_SIM_MODE);
-  NEORV32_UART1.CTRL = NEORV32_UART0.CTRL;
+  NEORV32_UART0->CTRL |=  (1 << UART_CTRL_EN);
+  NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+  NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
 
   // minimal result report
   PRINT_CRITICAL("%u/%u\n", (uint32_t)return_code, (uint32_t)cnt_test);

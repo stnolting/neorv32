@@ -88,13 +88,14 @@ following intro screen shows up:
 ----
 << NEORV32 Bootloader >>
 
-BLDV: Jul 11 2022
-HWV:  0x01070307
+BLDV: Mar  7 2023
+HWV:  0x01080107
 CID:  0x00000000
 CLK:  0x05f5e100
-ISA:  0x40901104 + 0xc0000783
-SOC:  0x7c5f400f
-IMEM: 0x00004000 bytes @0x00000000
+MISA: 0x40901106
+XISA: 0xc0000fab
+SOC:  0xffff402f
+IMEM: 0x00008000 bytes @0x00000000
 DMEM: 0x00002000 bytes @0x80000000
 
 Autoboot in 8s. Press any key to abort.
@@ -109,7 +110,8 @@ The start-up screen gives some brief information about the bootloader and severa
 | `HWV`  | Processor hardware version (the <<_mimpid>> CSR); in BCD format; example: `0x01040606` = v1.4.6.6).
 | `CID`  | Custom user-defined ID (via the `CUSTOM_ID` register from <<_system_configuration_information_memory_sysinfo>>; defined by the <<_custom_id>> generic).
 | `CLK`  | Processor clock speed in Hz (via the `CLK` register from <<_system_configuration_information_memory_sysinfo>>; defined by the <<_clock_frequency>> generic).
-| `ISA`  | CPU extensions (<<_misa>> CSR + <<_mxisa>> CSR).
+| `MISA` | RISC-V CPU extensions (<<_misa>> CSR).
+| `XISA` | NEORV32-specific CPU extensions (<<_mxisa>> CSR).
 | `SOC`  | Processor configuration (via the `SOC` register from the <<_system_configuration_information_memory_sysinfo>>; mainly defined by the `IO_*` and `MEM_*` configuration generics).
 | `IMEM` | IMEM memory base address and size in byte (via the `IMEM_SIZE` and `ISPACE_BASE` registers from the <<_system_configuration_information_memory_sysinfo>>; defined by the <<_mem_int_imem_size>> generic).
 | `DMEM` | DMEM memory base address and size in byte (via the `DMEM_SIZE` and `DSPACE_BASE` registers from the <<_system_configuration_information_memory_sysinfo>>; defined by the <<_mem_int_dmem_size>> generic).
@@ -122,18 +124,20 @@ you press any key within the 8 seconds, the actual bootloader user console start
 ----
 << NEORV32 Bootloader >>
 
-BLDV: Jul 11 2022
-HWV:  0x01070307
+BLDV: Mar  7 2023
+HWV:  0x01080107
+CID:  0x00000000
 CLK:  0x05f5e100
-ISA:  0x40901104 + 0xc0000783
-SOC:  0x7c5f400f
-IMEM: 0x00004000 bytes @0x00000000
+MISA: 0x40901106
+XISA: 0xc0000fab
+SOC:  0xffff402f
+IMEM: 0x00008000 bytes @0x00000000
 DMEM: 0x00002000 bytes @0x80000000
 
-Autoboot in 8s. Press any key to abort.
-Aborted. <1>
+Autoboot in 8s. Press any key to abort. <1>
+Aborted.
 
-Available commands:
+Available CMDs:
  h: Help
  r: Restart
  u: Upload

@@ -70,13 +70,13 @@ setting the _TRNG_CTRL_FIFO_CLR_ flag. Note that this flag is write-only and aut
 **Register Map**
 
 .TRNG register map (`struct NEORV32_TRNG`)
-[cols="<2,<2,<4,^1,<7"]
+[cols="<2,<1,<4,^1,<7"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.5+<| `0xffffffb8` .5+<| `NEORV32_TRNG.CTRL` <|`7:0` _TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_MSB_ ^| r/- <| 8-bit random data
-                                             <|`28` _TRNG_CTRL_FIFO_CLR_                         ^| -/w <| flush random data FIFO when set (auto clears)
-                                             <|`29` _TRNG_CTRL_SIM_MODE_                         ^| r/- <| simulation mode (PRNG!)
-                                             <|`30` _TRNG_CTRL_EN_                               ^| r/w <| TRNG enable
-                                             <|`31` _TRNG_CTRL_VALID_                            ^| r/- <| random data is valid when set
+.5+<| `0xffffffb8` .5+<| `CTRL` <|`7:0` _TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_MSB_ ^| r/- <| 8-bit random data
+                                <|`28` _TRNG_CTRL_FIFO_CLR_                         ^| -/w <| flush random data FIFO when set (auto clears)
+                                <|`29` _TRNG_CTRL_SIM_MODE_                         ^| r/- <| simulation mode (PRNG!)
+                                <|`30` _TRNG_CTRL_EN_                               ^| r/w <| TRNG enable
+                                <|`31` _TRNG_CTRL_VALID_                            ^| r/- <| random data is valid when set
 |=======================

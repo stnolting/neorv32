@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -54,7 +54,6 @@
 
 // Global variables
 uint32_t spi_configured;
-uint32_t spi_size; // data quantity in bytes
 
 // Prototypes
 void spi_cs(uint32_t type);
@@ -76,13 +75,12 @@ int main() {
   char buffer[8];
   int length = 0;
 
-
   // capture all exceptions and give debug info via UART
   // this is not required, but keeps us safe
   neorv32_rte_setup();
 
-  // setup UART0 at default baud rate, no parity bits, no hw flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
 
   // check if UART0 unit is implemented at all
@@ -104,9 +102,8 @@ int main() {
                        "Type 'help' to see the help menu.\n\n");
 
   // disable and reset SPI module
-  NEORV32_SPI->CTRL = 0;
+  neorv32_spi_disable();
   spi_configured = 0; // SPI not configured yet
-  spi_size = 0;
 
 
   // Main menu
@@ -122,7 +119,7 @@ int main() {
     if (!strcmp(buffer, "help")) {
       neorv32_uart0_printf("Available commands:\n"
                           " help  - show this text\n"
-                          " setup - configure SPI module (clock speed, clock mode, data size)\n"
+                          " setup - configure SPI module\n"
                           " en    - enable single chip-select line (set low)\n"
                           " dis   - disable all chip-select lines (set high)\n"
                           " trans - SPI data transmission (write & read to/from SPI)\n"
@@ -190,50 +187,24 @@ void spi_cs(uint32_t type) {
  **************************************************************************/
 void spi_trans(void) {
 
-  char terminal_buffer[9];
+  char terminal_buffer[4];
 
   if (spi_configured == 0) {
     neorv32_uart0_printf("SPI module not configured yet! Use 'setup' to configure SPI module.\n");
     return;
   }
 
-  neorv32_uart0_printf("Enter TX data (%u hex chars): 0x", spi_size*2);
-  neorv32_uart0_scan(terminal_buffer, spi_size*2+1, 1);
+  neorv32_uart0_printf("Enter TX data (2 hex chars): 0x");
+  neorv32_uart0_scan(terminal_buffer, 2+1, 1);
   uint32_t tx_data = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
   uint32_t rx_data = neorv32_spi_trans(tx_data);
 
-  if (spi_size == 1) {
-    neorv32_uart0_printf("\nTX data: 0x");
-    aux_print_hex_byte((uint8_t)(tx_data));
-    neorv32_uart0_printf("\nRX data: 0x");
-    aux_print_hex_byte((uint8_t)(rx_data));
-    neorv32_uart0_printf("\n");
-  }
-  else if (spi_size == 2) {
-    neorv32_uart0_printf("\nTX data: 0x");
-    aux_print_hex_byte((uint8_t)(tx_data >> 8));
-    aux_print_hex_byte((uint8_t)(tx_data));
-    neorv32_uart0_printf("\nRX data: 0x");
-    aux_print_hex_byte((uint8_t)(rx_data >> 8));
-    aux_print_hex_byte((uint8_t)(rx_data));
-    neorv32_uart0_printf("\n");
-  }
-  else if (spi_size == 3) {
-    neorv32_uart0_printf("\nTX data: 0x");
-    aux_print_hex_byte((uint8_t)(tx_data >> 16));
-    aux_print_hex_byte((uint8_t)(tx_data >> 8));
-    aux_print_hex_byte((uint8_t)(tx_data));
-    neorv32_uart0_printf("\nRX data: 0x");
-    aux_print_hex_byte((uint8_t)(rx_data >> 16));
-    aux_print_hex_byte((uint8_t)(rx_data >> 8));
-    aux_print_hex_byte((uint8_t)(rx_data));
-    neorv32_uart0_printf("\n");
-  }
-  else {
-    neorv32_uart0_printf("\nTX data: 0x%x\n", tx_data);
-    neorv32_uart0_printf("RX data: 0x%x\n", rx_data);
-  }
+  neorv32_uart0_printf("\nTX data: 0x");
+  aux_print_hex_byte(tx_data);
+  neorv32_uart0_printf("\nRX data: 0x");
+  aux_print_hex_byte(rx_data);
+  neorv32_uart0_printf("\n");
 }
 
 
@@ -245,7 +216,7 @@ void spi_setup(void) {
   const uint32_t PRSC_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
 
   char terminal_buffer[9];
-  uint8_t spi_prsc, clk_div, clk_phase, clk_pol, data_size;
+  uint8_t spi_prsc, clk_div, clk_phase, clk_pol;
   uint32_t tmp;
 
   // ---- SPI clock ----
@@ -285,27 +256,10 @@ void spi_setup(void) {
       break;
     }
   }
-  neorv32_uart0_printf("\n+ New SPI clock mode = %u\n", tmp);
+  neorv32_uart0_printf("\n+ New SPI clock mode = %u\n\n", tmp);
 
-  // ---- SPI transfer data quantity ----
-
-  while (1) {
-    neorv32_uart0_printf("Select SPI data transfer size in bytes (1,2,3,4): ");
-    neorv32_uart0_scan(terminal_buffer, 2, 1);
-    tmp = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
-    if ( (tmp < 1) || (tmp > 4)) {
-      neorv32_uart0_printf("\nInvalid selection!\n");
-    }
-    else {
-      data_size = (uint8_t)(tmp - 1);
-      break;
-    }
-  }
-  neorv32_uart0_printf("\n+ New SPI data size = %u byte(s)\n\n", tmp);
-
-  neorv32_spi_setup(spi_prsc, clk_div, clk_phase, clk_pol, data_size, 0);
+  neorv32_spi_setup(spi_prsc, clk_div, clk_phase, clk_pol, 0);
   spi_configured = 1; // SPI is configured now
-  spi_size = tmp;
 }
 
 
