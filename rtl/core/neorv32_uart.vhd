@@ -383,9 +383,9 @@ begin
   begin
     if rising_edge(clk_i) then
       irq_rx_o <= ctrl.enable and (
-                  (ctrl.irq_rx_nempty and rx_fifo.avail) or       -- fire IRQ if RX FIFO not empty
-                  (ctrl.irq_rx_half   and rx_fifo.half)  or       -- fire IRQ if RX FIFO at least half full
-                  (ctrl.irq_rx_full   and (not rx_fifo.free)));   -- fire IRQ if RX FIFO full
+                  (ctrl.irq_rx_nempty and rx_fifo.avail) or     -- fire IRQ if RX FIFO not empty
+                  (ctrl.irq_rx_half   and rx_fifo.half)  or     -- fire IRQ if RX FIFO at least half full
+                  (ctrl.irq_rx_full   and (not rx_fifo.free))); -- fire IRQ if RX FIFO full
     end if;
   end process;
 
@@ -520,7 +520,7 @@ begin
     if rising_edge(clk_i) then
       if (ctrl.hwfc_en = '1') then
         if (ctrl.enable = '0') or -- UART disabled
-           (rx_fifo.half = '1') then -- RX FIFO at least half-full: no "safe space" left in RX FIFO 
+           (rx_fifo.half = '1') then -- RX FIFO at least half-full: no "safe space" left in RX FIFO
           uart_rts_o <= '1'; -- NOT allowed to send
         else
           uart_rts_o <= '0'; -- ready to receive

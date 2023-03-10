@@ -1,9 +1,9 @@
 -- #################################################################################################
--- # << NEORV32 - Processor-internal data memory (DMEM) >>                                         #
+-- # << NEORV32 - Processor-Internal Data Memory (DMEM) - Entity-Only >>                           #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
