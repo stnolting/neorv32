@@ -110,9 +110,11 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
 
   -- twi --
   signal twi_scl, twi_sda : std_logic;
+  signal twi_scl_i, twi_scl_o, twi_sda_i, twi_sda_o : std_ulogic;
 
   -- 1-wire --
-  signal one_wire : std_logic;
+  signal onewire : std_logic;
+  signal onewire_i, onewire_o : std_ulogic;
 
   -- spi & sdi --
   signal spi_csn: std_ulogic_vector(7 downto 0);
@@ -296,10 +298,13 @@ begin
     sdi_dat_i      => sdi_di,          -- controller data in, peripheral data out
     sdi_csn_i      => sdi_csn,         -- chip-select
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io     => twi_sda,         -- twi serial data line
-    twi_scl_io     => twi_scl,         -- twi serial clock line
+    twi_sda_i      => twi_sda_i,       -- serial data line sense input
+    twi_sda_o      => twi_sda_o,       -- serial data line output (pull low only)
+    twi_scl_i      => twi_scl_i,       -- serial clock line sense input
+    twi_scl_o      => twi_scl_o,       -- serial clock line output (pull low only)
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_io     => one_wire,        -- 1-wire bus
+    onewire_i      => onewire_i,       -- 1-wire bus sense input
+    onewire_o      => onewire_o,       -- 1-wire bus output (pull low only)
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          => open,            -- pwm channels
     -- Custom Functions Subsystem IO --
@@ -315,12 +320,22 @@ begin
     mext_irq_i     => mei_ring         -- machine external interrupt
   );
 
+  -- TWI tri-state driver --
+  twi_sda   <= '0' when (twi_sda_o = '0') else 'Z'; -- module can only pull the line low actively
+  twi_scl   <= '0' when (twi_scl_o = '0') else 'Z';
+  twi_sda_i <= std_ulogic(twi_sda);
+  twi_scl_i <= std_ulogic(twi_scl);
+
+  -- 1-Wire tri-state driver --
+  onewire   <= '0' when (onewire_o = '0') else 'Z'; -- module can only pull the line low actively
+  onewire_i <= std_ulogic(onewire);
+
   -- TWI termination (pull-ups) --
   twi_scl <= 'H';
   twi_sda <= 'H';
 
   -- 1-Wire termination (pull-up) --
-  one_wire <= 'H';
+  onewire <= 'H';
 
   -- SPI/SDI echo --
   sdi_clk <= spi_clk;
