@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -91,10 +91,10 @@ end neorv32_busswitch;
 architecture neorv32_busswitch_rtl of neorv32_busswitch is
 
   -- access requests --
-  signal ca_rd_req_buf,  ca_wr_req_buf   : std_ulogic;
-  signal cb_rd_req_buf,  cb_wr_req_buf   : std_ulogic;
-  signal ca_req_current, ca_req_buffered : std_ulogic;
-  signal cb_req_current, cb_req_buffered : std_ulogic;
+  signal ca_rd_req_buf,  ca_wr_req_buf  : std_ulogic;
+  signal cb_rd_req_buf,  cb_wr_req_buf  : std_ulogic;
+  signal ca_req_current, ca_req_pending : std_ulogic;
+  signal cb_req_current, cb_req_pending : std_ulogic;
 
   -- internal bus lines --
   signal ca_bus_ack, cb_bus_ack : std_ulogic;
@@ -125,14 +125,13 @@ begin
       cb_rd_req_buf <= '0';
       cb_wr_req_buf <= '0';
     elsif rising_edge(clk_i) then
-      -- arbiter --
       arbiter.state <= arbiter.state_nxt;
-      -- controller A requests --
+      -- port A requests --
       ca_rd_req_buf <= (ca_rd_req_buf or ca_bus_re_i) and (not (ca_bus_err or ca_bus_ack));
-      ca_wr_req_buf <= (ca_wr_req_buf or ca_bus_we_i) and (not (ca_bus_err or ca_bus_ack)) and (not bool_to_ulogic_f(PORT_CA_READ_ONLY));
-      -- controller B requests --
+      ca_wr_req_buf <= (ca_wr_req_buf or ca_bus_we_i) and (not (ca_bus_err or ca_bus_ack)) and bool_to_ulogic_f(PORT_CA_READ_ONLY = false);
+      -- port B requests --
       cb_rd_req_buf <= (cb_rd_req_buf or cb_bus_re_i) and (not (cb_bus_err or cb_bus_ack));
-      cb_wr_req_buf <= (cb_wr_req_buf or cb_bus_we_i) and (not (cb_bus_err or cb_bus_ack)) and (not bool_to_ulogic_f(PORT_CB_READ_ONLY));
+      cb_wr_req_buf <= (cb_wr_req_buf or cb_bus_we_i) and (not (cb_bus_err or cb_bus_ack)) and bool_to_ulogic_f(PORT_CB_READ_ONLY = false);
     end if;
   end process arbiter_sync;
 
@@ -140,14 +139,12 @@ begin
   ca_req_current <= (ca_bus_re_i or ca_bus_we_i) when (PORT_CA_READ_ONLY = false) else ca_bus_re_i;
   cb_req_current <= (cb_bus_re_i or cb_bus_we_i) when (PORT_CB_READ_ONLY = false) else cb_bus_re_i;
 
-  -- any buffered requests? --
-  ca_req_buffered <= (ca_rd_req_buf or ca_wr_req_buf) when (PORT_CA_READ_ONLY = false) else ca_rd_req_buf;
-  cb_req_buffered <= (cb_rd_req_buf or cb_wr_req_buf) when (PORT_CB_READ_ONLY = false) else cb_rd_req_buf;
+  -- any pending requests? --
+  ca_req_pending <= (ca_rd_req_buf or ca_wr_req_buf) when (PORT_CA_READ_ONLY = false) else ca_rd_req_buf;
+  cb_req_pending <= (cb_rd_req_buf or cb_wr_req_buf) when (PORT_CB_READ_ONLY = false) else cb_rd_req_buf;
 
-
-  -- Bus Arbiter ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  arbiter_comb: process(arbiter, ca_req_current, cb_req_current, ca_req_buffered, cb_req_buffered,
+  -- FSM --
+  arbiter_comb: process(arbiter, ca_req_current, cb_req_current, ca_req_pending, cb_req_pending,
                         ca_rd_req_buf, ca_wr_req_buf, cb_rd_req_buf, cb_wr_req_buf, p_bus_ack_i, p_bus_err_i)
   begin
     -- arbiter defaults --
@@ -161,28 +158,28 @@ begin
 
       when IDLE => -- port A or B access
       -- ------------------------------------------------------------
-        if (ca_req_current = '1') then -- current request from controller A?
-          arbiter.bus_sel   <= '0'; -- access from port A
+        if (ca_req_current = '1') then -- current request from port A?
+          arbiter.bus_sel   <= '0';
           arbiter.state_nxt <= A_BUSY;
-        elsif (ca_req_buffered = '1') then -- buffered request from controller A?
-          arbiter.bus_sel   <= '0'; -- access from port A
+        elsif (ca_req_pending = '1') then -- pending request from port A?
+          arbiter.bus_sel   <= '0';
           arbiter.state_nxt <= A_RETIRE;
-        elsif (cb_req_current = '1') then -- buffered request from controller B?
-          arbiter.bus_sel   <= '1'; -- access from port B
+        elsif (cb_req_current = '1') then -- pending request from port B?
+          arbiter.bus_sel   <= '1';
           arbiter.state_nxt <= B_BUSY;
-        elsif (cb_req_buffered = '1') then -- current request from controller B?
-          arbiter.bus_sel   <= '1'; -- access from port B
+        elsif (cb_req_pending = '1') then -- current request from port B?
+          arbiter.bus_sel   <= '1';
           arbiter.state_nxt <= B_RETIRE;
         end if;
 
       when A_BUSY => -- port A pending access
       -- ------------------------------------------------------------
         arbiter.bus_sel <= '0'; -- access from port A
-        if (p_bus_err_i = '1') or (p_bus_ack_i = '1') then -- termination
+        if (p_bus_err_i = '1') or (p_bus_ack_i = '1') then
           arbiter.state_nxt <= IDLE;
         end if;
 
-      when A_RETIRE => -- port A trigger buffered access
+      when A_RETIRE => -- retire port A pending access
       -- ------------------------------------------------------------
         arbiter.bus_sel   <= '0'; -- access from port A
         arbiter.we_trig   <= ca_wr_req_buf;
@@ -192,15 +189,15 @@ begin
       when B_BUSY => -- port B pending access
       -- ------------------------------------------------------------
         arbiter.bus_sel <= '1'; -- access from port B
-        if (p_bus_err_i = '1') or (p_bus_ack_i = '1') then -- termination
-          if (ca_req_buffered = '1') or (ca_req_current = '1') then -- any request from A?
+        if (p_bus_err_i = '1') or (p_bus_ack_i = '1') then
+          if (ca_req_pending = '1') or (ca_req_current = '1') then -- any request from A?
             arbiter.state_nxt <= A_RETIRE;
           else
             arbiter.state_nxt <= IDLE;
           end if;
         end if;
 
-      when B_RETIRE => -- port B trigger buffered access
+      when B_RETIRE => -- retire port B pending access
       -- ------------------------------------------------------------
         arbiter.bus_sel   <= '1'; -- access from port B
         arbiter.we_trig   <= cb_wr_req_buf;
@@ -230,7 +227,9 @@ begin
   p_bus_cached_o <= ca_bus_cached_i when (arbiter.bus_sel = '0') else cb_bus_cached_i;
   p_bus_priv_o   <= ca_bus_priv_i   when (arbiter.bus_sel = '0') else cb_bus_priv_i;
 
-  p_bus_we       <= ca_bus_we_i when (arbiter.bus_sel = '0') else cb_bus_we_i;
+  p_bus_we       <= cb_bus_we_i when (PORT_CA_READ_ONLY = true) else 
+                    ca_bus_we_i when (PORT_CB_READ_ONLY = true) else
+                    ca_bus_we_i when (arbiter.bus_sel = '0')    else cb_bus_we_i;
   p_bus_re       <= ca_bus_re_i when (arbiter.bus_sel = '0') else cb_bus_re_i;
   p_bus_we_o     <= p_bus_we or arbiter.we_trig;
   p_bus_re_o     <= p_bus_re or arbiter.re_trig;

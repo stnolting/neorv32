@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -108,20 +108,19 @@ begin
 
   -- Sanity Check --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (max_proc_int_response_time_c < 2) report "NEORV32 PROCESSOR CONFIG ERROR! " &
-  "Processor-internal bus timeout <max_proc_int_response_time_c> has to >= 2." severity error;
+  assert not (max_proc_int_response_time_c < 2)
+    report "NEORV32 PROCESSOR CONFIG ERROR! Processor-internal bus timeout <max_proc_int_response_time_c> has to >= 2." severity error;
 
 
-  -- Access Control -------------------------------------------------------------------------
+  -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = buskeeper_base_c(hi_abb_c downto lo_abb_c)) else '0';
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
-
-  -- Write Access ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  write_access: process(rstn_i, clk_i)
+  -- write access --
+  process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       err_flag <= '0';
@@ -134,12 +133,10 @@ begin
         err_flag <= '0';
       end if;
     end if;
-  end process write_access;
+  end process;
 
-
-  -- Read Access ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  read_access: process(clk_i)
+  -- read access --
+  process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= wren or rden; -- bus handshake
@@ -149,10 +146,10 @@ begin
         data_o(ctrl_err_flag_c) <= err_flag;
       end if;
     end if;
-  end process read_access;
+  end process;
 
 
-  -- Keeper ---------------------------------------------------------------------------------
+  -- Monitor --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   keeper_control: process(rstn_i, clk_i)
   begin
@@ -166,14 +163,14 @@ begin
       -- defaults --
       control.bus_err <= '0';
 
-      -- access monitor: IDLE --
+      -- IDLE --
       if (control.pending = '0') then
         control.timeout <= std_ulogic_vector(to_unsigned(max_proc_int_response_time_c-1, cnt_width_c));
         control.ignore  <= '0';
         if (bus_rden_i = '1') or (bus_wren_i = '1') then
           control.pending <= '1';
         end if;
-      -- access monitor: PENDING --
+      -- PENDING --
       else
         -- countdown timer --
         if (control.expired = '0') then
