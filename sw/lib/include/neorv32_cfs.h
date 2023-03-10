@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_cfs.h - Custom Functions Subsystem (CFS)) HW Driver (stub) >>             #
+// # << NEORV32: neorv32_cfs.h - Custom Functions Subsystem (CFS) HW Driver (stub) >>              #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -35,7 +35,7 @@
 
 /**********************************************************************//**
  * @file neorv32_cfs.h
- * @brief Custom Functions Subsystem (CFS)) HW driver header file.
+ * @brief Custom Functions Subsystem (CFS) HW driver header file.
  *
  * @warning There are no "real" CFS driver functions available here, because these functions are defined by the actual hardware.
  * @warning The CFS designer has to provide the actual driver functions.
@@ -45,6 +45,20 @@
 
 #ifndef neorv32_cfs_h
 #define neorv32_cfs_h
+
+/**********************************************************************//**
+ * @name IO Device: Custom Functions Subsystem (CFS)
+ **************************************************************************/
+/**@{*/
+/** CFS module prototype */
+typedef volatile struct __attribute__((packed,aligned(4))) {
+  uint32_t REG[64]; /**< offset 4*0..4*63: CFS register 0..63, user-defined */
+} neorv32_cfs_t;
+
+/** CFS module hardware access (#neorv32_cfs_t) */
+#define NEORV32_CFS ((neorv32_cfs_t*) (NEORV32_CFS_BASE))
+/**@}*/
+
 
 // prototypes
 int neorv32_cfs_available(void);

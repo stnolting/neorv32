@@ -41,6 +41,23 @@
 #ifndef neorv32_xirq_h
 #define neorv32_xirq_h
 
+/**********************************************************************//**
+ * @name IO Device: External Interrupt Controller (XIRQ)
+ **************************************************************************/
+/**@{*/
+/** XIRQ module prototype */
+typedef volatile struct __attribute__((packed,aligned(4))) {
+  uint32_t       IER;      /**< offset 0:  IRQ input enable register */
+  uint32_t       IPR;      /**< offset 4:  pending IRQ register /ack/clear */
+  uint32_t       SCR;      /**< offset 8:  interrupt source register */
+  const uint32_t reserved; /**< offset 12: reserved */
+} neorv32_xirq_t;
+
+/** XIRQ module hardware access (#neorv32_xirq_t) */
+#define NEORV32_XIRQ ((neorv32_xirq_t*) (NEORV32_XIRQ_BASE))
+/**@}*/
+
+
 // prototypes
 int  neorv32_xirq_available(void);
 int  neorv32_xirq_setup(void);

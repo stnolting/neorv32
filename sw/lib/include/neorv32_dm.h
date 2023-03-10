@@ -1,9 +1,9 @@
 // #################################################################################################
-// # << NEORV32: neorv32_pwm.h - Pulse Width Modulation Controller (PWM) HW Driver >>              #
+// # << NEORV32: neorv32_dm.h - On-Chip Debugger HW Driver (Header) >>                             #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -34,45 +34,31 @@
 
 
 /**********************************************************************//**
- * @file neorv32_pwm.h
- * @brief Pulse-Width Modulation Controller (PWM) HW driver header file.
- *
- * @note These functions should only be used if the PWM unit was synthesized (IO_PWM_EN = true).
+ * @file neorv32_dm.h
+ * @brief On-Chip Debugger (should NOT be used by application software at all!)
  **************************************************************************/
 
-#ifndef neorv32_pwm_h
-#define neorv32_pwm_h
+#ifndef neorv32_dm_h
+#define neorv32_dm_h
 
-/**********************************************************************//**
- * @name IO Device: Pulse Width Modulation Controller (PWM)
- **************************************************************************/
+// #################################################################################################
+// On-Chip Debugger (should NOT be used by application software at all!)
+// #################################################################################################
 /**@{*/
-/** PWM module prototype */
+/** on-chip debugger - debug module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_PWM_CTRL_enum) */
-  uint32_t DC[3]; /**< offset 4..12: duty cycle register 0..2 */
-} neorv32_pwm_t;
+  const uint32_t CODE[16];      /**< offset 0: park loop code ROM (r/-) */
+  const uint32_t PBUF[4];       /**< offset 64: program buffer (r/-) */
+  const uint32_t reserved1[12]; /**< reserved */
+  uint32_t       DATA;          /**< offset 128: data exchange register (r/w) */
+  const uint32_t reserved2[15]; /**< reserved */
+  uint32_t       SREG;          /**< offset 192: control and status register (r/w) */
+  const uint32_t reserved3[15]; /**< reserved */
+} neorv32_dm_t;
 
-/** PWM module hardware access (#neorv32_pwm_t) */
-#define NEORV32_PWM ((neorv32_pwm_t*) (NEORV32_PWM_BASE))
-
-/** PWM control register bits */
-enum NEORV32_PWM_CTRL_enum {
-  PWM_CTRL_EN    =  0, /**< PWM control register(0) (r/w): PWM controller enable */
-  PWM_CTRL_PRSC0 =  1, /**< PWM control register(1) (r/w): Clock prescaler select bit 0 */
-  PWM_CTRL_PRSC1 =  2, /**< PWM control register(2) (r/w): Clock prescaler select bit 1 */
-  PWM_CTRL_PRSC2 =  3  /**< PWM control register(3) (r/w): Clock prescaler select bit 2 */
-};
+/** on-chip debugger debug module hardware access (#neorv32_dm_t) */
+#define NEORV32_DM ((neorv32_dm_t*) (NEORV32_DM_BASE))
 /**@}*/
 
 
-// prototypes
-int     neorv32_pwm_available(void);
-void    neorv32_pwm_setup(int prsc);
-void    neorv32_pwm_disable(void);
-void    neorv32_pwm_enable(void);
-int     neorv32_pmw_get_num_channels(void);
-void    neorv32_pwm_set(int channel, uint8_t dc);
-uint8_t neorv32_pwm_get(int channel);
-
-#endif // neorv32_pwm_h
+#endif // neorv32_dm_h
