@@ -643,13 +643,18 @@
               <description>Simulation output override enable, for use in simulation only</description>
             </field>
             <field>
+              <name>UART_CTRL_HWFC_EN</name>
+              <bitRange>[2:2]</bitRange>
+              <description>Enable RTS/CTS hardware flow-control</description>
+            </field>
+            <field>
               <name>UART_CTRL_PRSC</name>
-              <bitRange>[4:2]</bitRange>
+              <bitRange>[5:3]</bitRange>
               <description>CLock prescaler select</description>
             </field>
             <field>
               <name>UART_CTRL_BAUD</name>
-              <bitRange>[14:5]</bitRange>
+              <bitRange>[15:6]</bitRange>
               <description>BAUD rate divisor</description>
             </field>
             <field>

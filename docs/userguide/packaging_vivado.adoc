@@ -22,10 +22,6 @@ according to your needs).
 .Example AXI SoC using Xilinx Vivado
 image::neorv32_axi_soc.png[]
 
-.TWI Tri-State Drivers
-[IMPORTANT]
-Set the synthesis option "global" when generating the block design to maintain the internal TWI tri-state drivers.
-
 .True Random Number Generator
 [IMPORTANT]
 The NEORV32 TRNG peripheral is enabled by default in the `neorv32_top_axi4lite` AXI wrapper. Otherwise, Vivado

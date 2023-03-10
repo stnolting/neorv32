@@ -8,7 +8,8 @@
 | Hardware source file(s): | neorv32_onewire.vhd | 
 | Software driver file(s): | neorv32_onewire.c |
 |                          | neorv32_onewire.h |
-| Top entity port:         | `onewire_io` | 1-bit bi-directional serial data
+| Top entity port:         | `onewire_i` | 1-bit 1-wire bus sense input
+|                          | `onewire_o` | 1-bit 1-wire bus output (pull low only)
 | Configuration generics:  | _IO_ONEWIRE_EN_ | implement ONEWIRE interface controller when _true_
 | CPU interrupts:          | fast IRQ channel 13 | operation done interrupt (see <<_processor_interrupts>>)
 |=======================
@@ -30,6 +31,20 @@ should be added to the `onewire_io` bus line.
 [TIP]
 For more information regarding the 1-Wire bus and the device access mechanism
 see the Application Notes provided by Maxim Integrated.
+
+
+**Tri-State Drivers**
+
+The ONEWIRE module requires a tri-state driver for the 1-wire bus line, which has to be implemented
+in the top module of the setup. A generic VHDL example is given below (`onewire` is the actual 1-wire
+bus signal, which is of type `std_logic`).
+
+.ONEWIRE VHDL tri-state driver example
+[source,VHDL]
+----
+onewire   <= '0' when (onewire_o = '0') else 'Z';
+onewire_i <= std_ulogic(onewire);
+----
 
 
 **Theory of Operation**

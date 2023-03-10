@@ -153,6 +153,28 @@ void neorv32_uart_disable(neorv32_uart_t *UARTx) {
 
 
 /**********************************************************************//**
+ * Enable RTS/CTS hardware flow-control.
+ *
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
+ **************************************************************************/
+void neorv32_uart_rtscts_enable(neorv32_uart_t *UARTx) {
+
+  UARTx->CTRL |= ((uint32_t)(1 << UART_CTRL_HWFC_EN));
+}
+
+
+/**********************************************************************//**
+ * Disable RTS/CTS hardware flow-control.
+ *
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
+ **************************************************************************/
+void neorv32_uart_rtscts_disable(neorv32_uart_t *UARTx) {
+
+  UARTx->CTRL &= ~((uint32_t)(1 << UART_CTRL_HWFC_EN));
+}
+
+
+/**********************************************************************//**
  * Send single char via UART.
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.

@@ -163,10 +163,14 @@ entity neorv32_top_avalonmm is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic; -- UART0 send data
     uart0_rxd_i    : in  std_ulogic := 'U'; -- UART0 receive data
+    uart0_rts_o    : out std_ulogic; -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic; -- UART1 send data
     uart1_rxd_i    : in  std_ulogic := 'U'; -- UART1 receive data
+    uart1_rts_o    : out std_ulogic; -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      : out std_ulogic; -- SPI serial clock
@@ -175,11 +179,14 @@ entity neorv32_top_avalonmm is
     spi_csn_o      : out std_ulogic_vector(07 downto 0); -- chip-select
 
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io     : inout std_logic := 'U'; -- twi serial data line
-    twi_scl_io     : inout std_logic := 'U'; -- twi serial clock line
+    twi_sda_i      : in  std_ulogic := 'H'; -- serial data line sense input
+    twi_sda_o      : out std_ulogic; -- serial data line output (pull low only)
+    twi_scl_i      : in  std_ulogic := 'H'; -- serial clock line sense input
+    twi_scl_o      : out std_ulogic; -- serial clock line output (pull low only)
 
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_io     : inout std_logic; -- 1-wire bus
+    onewire_i      : in  std_ulogic := 'H'; -- 1-wire bus sense input
+    onewire_o      : out std_ulogic; -- 1-wire bus output (pull low only)
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          : out std_ulogic_vector(11 downto 0); -- pwm channels
@@ -349,10 +356,14 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart0_txd_o,
     uart0_rxd_i => uart0_rxd_i,
+    uart0_rts_o => uart0_rts_o,
+    uart0_cts_i => uart0_cts_i,
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o => uart1_txd_o,
     uart1_rxd_i => uart1_rxd_i,
+    uart1_rts_o => uart1_rts_o,
+    uart1_cts_i => uart1_cts_i,
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o => spi_clk_o,
@@ -361,11 +372,14 @@ begin
     spi_csn_o => spi_csn_o,
 
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_io => twi_sda_io,
-    twi_scl_io => twi_scl_io,
+    twi_sda_i => twi_sda_i,
+    twi_sda_o => twi_sda_o,
+    twi_scl_i => twi_scl_i,
+    twi_scl_o => twi_scl_o,
 
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_io => onewire_io,
+    onewire_i => onewire_i,
+    onewire_o => onewire_o,
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o => pwm_o,

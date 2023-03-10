@@ -989,19 +989,20 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 enum NEORV32_UART_CTRL_enum {
   UART_CTRL_EN            =  0, /**< UART control register(0)  (r/w): UART global enable */
   UART_CTRL_SIM_MODE      =  1, /**< UART control register(1)  (r/w): Simulation output override enable */
-  UART_CTRL_PRSC0         =  2, /**< UART control register(2)  (r/w): clock prescaler select bit 0 */
-  UART_CTRL_PRSC1         =  3, /**< UART control register(3)  (r/w): clock prescaler select bit 1 */
-  UART_CTRL_PRSC2         =  4, /**< UART control register(4)  (r/w): clock prescaler select bit 2 */
-  UART_CTRL_BAUD0         =  5, /**< UART control register(5)  (r/w): BAUD rate divisor, bit 0 */
-  UART_CTRL_BAUD1         =  6, /**< UART control register(6)  (r/w): BAUD rate divisor, bit 1 */
-  UART_CTRL_BAUD2         =  7, /**< UART control register(7)  (r/w): BAUD rate divisor, bit 2 */
-  UART_CTRL_BAUD3         =  8, /**< UART control register(8)  (r/w): BAUD rate divisor, bit 3 */
-  UART_CTRL_BAUD4         =  9, /**< UART control register(9)  (r/w): BAUD rate divisor, bit 4 */
-  UART_CTRL_BAUD5         = 10, /**< UART control register(10) (r/w): BAUD rate divisor, bit 5 */
-  UART_CTRL_BAUD6         = 11, /**< UART control register(11) (r/w): BAUD rate divisor, bit 6 */
-  UART_CTRL_BAUD7         = 12, /**< UART control register(12) (r/w): BAUD rate divisor, bit 7 */
-  UART_CTRL_BAUD8         = 13, /**< UART control register(13) (r/w): BAUD rate divisor, bit 8 */
-  UART_CTRL_BAUD9         = 14, /**< UART control register(14) (r/w): BAUD rate divisor, bit 9 */
+  UART_CTRL_HWFC_EN       =  2, /**< UART control register(2)  (r/w): Enable RTS/CTS hardware flow-control */
+  UART_CTRL_PRSC0         =  3, /**< UART control register(3)  (r/w): clock prescaler select bit 0 */
+  UART_CTRL_PRSC1         =  4, /**< UART control register(4)  (r/w): clock prescaler select bit 1 */
+  UART_CTRL_PRSC2         =  5, /**< UART control register(5)  (r/w): clock prescaler select bit 2 */
+  UART_CTRL_BAUD0         =  6, /**< UART control register(6)  (r/w): BAUD rate divisor, bit 0 */
+  UART_CTRL_BAUD1         =  7, /**< UART control register(7)  (r/w): BAUD rate divisor, bit 1 */
+  UART_CTRL_BAUD2         =  8, /**< UART control register(8)  (r/w): BAUD rate divisor, bit 2 */
+  UART_CTRL_BAUD3         =  9, /**< UART control register(9)  (r/w): BAUD rate divisor, bit 3 */
+  UART_CTRL_BAUD4         = 10, /**< UART control register(10) (r/w): BAUD rate divisor, bit 4 */
+  UART_CTRL_BAUD5         = 11, /**< UART control register(11) (r/w): BAUD rate divisor, bit 5 */
+  UART_CTRL_BAUD6         = 12, /**< UART control register(12) (r/w): BAUD rate divisor, bit 6 */
+  UART_CTRL_BAUD7         = 13, /**< UART control register(13) (r/w): BAUD rate divisor, bit 7 */
+  UART_CTRL_BAUD8         = 14, /**< UART control register(14) (r/w): BAUD rate divisor, bit 8 */
+  UART_CTRL_BAUD9         = 15, /**< UART control register(15) (r/w): BAUD rate divisor, bit 9 */
 
   UART_CTRL_RX_NEMPTY     = 16, /**< UART control register(16) (r/-): RX FIFO not empty */
   UART_CTRL_RX_HALF       = 17, /**< UART control register(17) (r/-): RX FIFO at least half-full */

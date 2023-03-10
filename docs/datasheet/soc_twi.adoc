@@ -8,8 +8,10 @@
 | Hardware source file(s): | neorv32_twi.vhd | 
 | Software driver file(s): | neorv32_twi.c |
 |                          | neorv32_twi.h |
-| Top entity port:         | `twi_sda_io` | 1-bit bi-directional serial data
-|                          | `twi_scl_io` | 1-bit bi-directional serial clock
+| Top entity port:         | `twi_sda_i` | 1-bit serial data line sense input
+|                          | `twi_sda_o` | 1-bit serial data line output (pull low only)
+|                          | `twi_scl_i` | 1-bit serial clock line sense input
+|                          | `twi_scl_o` | 1-bit serial clock line output (pull low only)
 | Configuration generics:  | _IO_TWI_EN_ | implement TWI controller when _true_
 | CPU interrupts:          | fast IRQ channel 7 | transmission done interrupt (see <<_processor_interrupts>>)
 |=======================
@@ -18,8 +20,8 @@
 **Theory of Operation**
 
 The two wire interface - also called "I²C" - is a quite famous interface for connecting several on-board
-components. Since this interface only needs two signals (the serial data line `twi_sda_io` and the serial
-clock line `twi_scl_io`) for an arbitrarily number of devices it allows easy interconnections of
+components. Since this interface only needs two signals (the serial data line SDA and the serial
+clock line SCL) for an arbitrarily number of devices it allows easy interconnections of
 several peripheral nodes.
 
 The NEORV32 TWI implements a **TWI controller**. Currently, **no multi-controller
@@ -28,6 +30,22 @@ support** is available. Furthermore, the NEORV32 TWI unit cannot operate in peri
 [IMPORTANT]
 The serial clock (SCL) and the serial data (SDA) lines can only be actively driven low by the
 controller. Hence, external pull-up resistors are required for these lines.
+
+
+**Tri-State Drivers**
+
+The TWI module requires two tri-state drivers for the SDA and SCL lines, which have to be implemented
+in the top module of the setup. A generic VHDL example is given below (`sda` and `scl` are the actual TWI
+bus signal, which are of type `std_logic`).
+
+.TWI VHDL tri-state driver example
+[source,VHDL]
+----
+sda       <= '0' when (twi_sda_o = '0') else 'Z';
+scl       <= '0' when (twi_scl_o = '0') else 'Z';
+twi_sda_i <= std_ulogic(sda);
+twi_scl_i <= std_ulogic(scl);
+----
 
 
 **TWI Clock Speed**
