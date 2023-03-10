@@ -76,7 +76,7 @@ begin
 
   -- Compressed Instruction Decoder ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  decompressor: process(ci_instr16_i)
+  process(ci_instr16_i)
     variable imm20_v : std_ulogic_vector(20 downto 0);
     variable imm12_v : std_ulogic_vector(12 downto 0);
   begin
@@ -419,7 +419,7 @@ begin
         end case;
 
     end case;
-  end process decompressor;
+  end process;
 
 
 end neorv32_cpu_decompressor_rtl;
