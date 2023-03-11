@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -43,11 +43,33 @@
 #ifndef neorv32_mtime_h
 #define neorv32_mtime_h
 
-// prototypes
+/**********************************************************************//**
+ * @name IO Device: Machine System Timer (MTIME)
+ **************************************************************************/
+/**@{*/
+/** MTIME module prototype */
+typedef volatile struct __attribute__((packed,aligned(4))) {
+  uint32_t TIME_LO;    /**< offset 0:  time register low word */
+  uint32_t TIME_HI;    /**< offset 4:  time register high word */
+  uint32_t TIMECMP_LO; /**< offset 8:  compare register low word */
+  uint32_t TIMECMP_HI; /**< offset 12: compare register high word */
+} neorv32_mtime_t;
+
+/** MTIME module hardware access (#neorv32_mtime_t) */
+#define NEORV32_MTIME ((neorv32_mtime_t*) (NEORV32_MTIME_BASE))
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 int      neorv32_mtime_available(void);
 void     neorv32_mtime_set_time(uint64_t time);
 uint64_t neorv32_mtime_get_time(void);
 void     neorv32_mtime_set_timecmp(uint64_t timecmp);
 uint64_t neorv32_mtime_get_timecmp(void);
+/**@}*/
+
 
 #endif // neorv32_mtime_h

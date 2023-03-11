@@ -82,26 +82,28 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 |=======================
 | C source file | C header file | Description
 | -                   | `neorv32.h`            | main NEORV32 definitions and library file
-| `neorv32_cfs.c`     | `neorv32_cfs.h`        | HW driver (stubs) functions for the custom functions subsystem
-footnote:[This driver file only represents a stub, since the real CFS drivers are defined by the actual CFS implementation.]
-| `neorv32_cpu.c`     | `neorv32_cpu.h`        | HW driver functions for the NEORV32 **CPU**
-| `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | HW driver functions for the NEORV32 **CFU** (custom instructions)
-| `neorv32_gpio.c`    | `neorv32_gpio.h`       | HW driver functions for the **GPIO**
-| `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | HW driver functions for the **GPTRM**
+| -                   | `neorv32_buskeeper`    | HW driver functions for the bus keeper
+| `neorv32_cfs.c`     | `neorv32_cfs.h`        | HW driver (stubs) functions for custom functions subsystem
+| `neorv32_cpu.c`     | `neorv32_cpu.h`        | HW driver functions for the CPU core
+| `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | HW driver functions for the custom instructions unit
+| -                   | `neorv32_dm`           | HW driver functions for the debug module
+| `neorv32_gpio.c`    | `neorv32_gpio.h`       | HW driver functions for the general purpose IOs
+| `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | HW driver functions for the general purpose timer
 | -                   | `neorv32_intrinsics.h` | macros for intrinsics & custom instructions
-| `neorv32_mtime.c`   | `neorv32_mtime.h`      | HW driver functions for the **MTIME**
-| `neorv32_neoled.c`  | `neorv32_neoled.h`     | HW driver functions for the **NEOLED**
-| `neorv32_onewire.c` | `neorv32_onewire.h`    | HW driver functions for the **ONEWIRE**
-| `neorv32_pwm.c`     | `neorv32_pwm.h`        | HW driver functions for the **PWM**
-| `neorv32_rte.c`     | `neorv32_rte.h`        | NEORV32 **runtime environment** and helper functions
-| `neorv32_sdi.c`     | `neorv32_sdi.h`        | HW driver functions for the **SDI**
-| `neorv32_spi.c`     | `neorv32_spi.h`        | HW driver functions for the **SPI**
-| `neorv32_trng.c`    | `neorv32_trng.h`       | HW driver functions for the **TRNG**
-| `neorv32_twi.c`     | `neorv32_twi.h`        | HW driver functions for the **TWI**
-| `neorv32_uart.c`    | `neorv32_uart.h`       | HW driver functions for the **UART0** and **UART1**
-| `neorv32_wdt.c`     | `neorv32_wdt.h`        | HW driver functions for the **WDT**
-| `neorv32_xip.c`     | `neorv32_xip.h`        | HW driver functions for the **XIP**
-| `neorv32_xirq.c`    | `neorv32_xirq.h`       | HW driver functions for the **XIRQ**
+| `neorv32_mtime.c`   | `neorv32_mtime.h`      | HW driver functions for the machine timer
+| `neorv32_neoled.c`  | `neorv32_neoled.h`     | HW driver functions for the smart LED interface
+| `neorv32_onewire.c` | `neorv32_onewire.h`    | HW driver functions for the 1-wire interface
+| `neorv32_pwm.c`     | `neorv32_pwm.h`        | HW driver functions for the pulse-width modulation controller
+| `neorv32_rte.c`     | `neorv32_rte.h`        | NEORV32 runtime environment and helper functions
+| `neorv32_sdi.c`     | `neorv32_sdi.h`        | HW driver functions for the serial data interface
+| `neorv32_spi.c`     | `neorv32_spi.h`        | HW driver functions for the serial peripheral interface
+| -                   | `neorv32_sysinfo.h`    | HW driver functions for the system information memory
+| `neorv32_trng.c`    | `neorv32_trng.h`       | HW driver functions for the true random number generator
+| `neorv32_twi.c`     | `neorv32_twi.h`        | HW driver functions for the two-wire interface
+| `neorv32_uart.c`    | `neorv32_uart.h`       | HW driver functions for the UART0 and UART1
+| `neorv32_wdt.c`     | `neorv32_wdt.h`        | HW driver functions for the watchdog timer
+| `neorv32_xip.c`     | `neorv32_xip.h`        | HW driver functions for the execute in-place module
+| `neorv32_xirq.c`    | `neorv32_xirq.h`       | HW driver functions for the external interrupts controller
 | `syscalls.c`        | -                      | newlib "system calls"
 | -                   | `legacy.h`             | backwards compatibility wrappers and functions (do not use for new designs)
 |=======================

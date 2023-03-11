@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -41,7 +41,27 @@
 #ifndef neorv32_xirq_h
 #define neorv32_xirq_h
 
-// prototypes
+/**********************************************************************//**
+ * @name IO Device: External Interrupt Controller (XIRQ)
+ **************************************************************************/
+/**@{*/
+/** XIRQ module prototype */
+typedef volatile struct __attribute__((packed,aligned(4))) {
+  uint32_t       IER;      /**< offset 0:  IRQ input enable register */
+  uint32_t       IPR;      /**< offset 4:  pending IRQ register /ack/clear */
+  uint32_t       SCR;      /**< offset 8:  interrupt source register */
+  const uint32_t reserved; /**< offset 12: reserved */
+} neorv32_xirq_t;
+
+/** XIRQ module hardware access (#neorv32_xirq_t) */
+#define NEORV32_XIRQ ((neorv32_xirq_t*) (NEORV32_XIRQ_BASE))
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 int  neorv32_xirq_available(void);
 int  neorv32_xirq_setup(void);
 void neorv32_xirq_global_enable(void);
@@ -52,6 +72,7 @@ void neorv32_xirq_channel_enable(uint8_t ch);
 void neorv32_xirq_channel_disable(uint8_t ch);
 int  neorv32_xirq_install(uint8_t ch, void (*handler)(void));
 int  neorv32_xirq_uninstall(uint8_t ch);
+/**@}*/
 
 
 #endif // neorv32_xirq_h
