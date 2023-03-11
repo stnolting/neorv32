@@ -105,20 +105,20 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not ((XIRQ_NUM_CH < 0) or (XIRQ_NUM_CH > 32)) report "NEORV32 PROCESSOR CONFIG ERROR: Number of XIRQ inputs <XIRQ_NUM_CH> has to be 0..32." severity error;
+  assert not ((XIRQ_NUM_CH < 0) or (XIRQ_NUM_CH > 32))
+    report "NEORV32 PROCESSOR CONFIG ERROR: Number of XIRQ inputs <XIRQ_NUM_CH> has to be 0..32." severity error;
 
 
-  -- Access Control -------------------------------------------------------------------------
+  -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = xirq_base_c(hi_abb_c downto lo_abb_c)) else '0';
   addr   <= xirq_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
-
-  -- Write Access ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  write_access: process(rstn_i, clk_i)
+  -- write access --
+  process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       clr_pending <= (others => '0'); -- clear all pending interrupts
@@ -134,12 +134,10 @@ begin
         end if;
       end if;
     end if;
-  end process write_access;
+  end process;
 
-
-  -- Read Access ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  read_access: process(clk_i)
+  -- read access --
+  process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= rden or wren; -- bus handshake
@@ -148,25 +146,25 @@ begin
         case addr is
           when xirq_enable_addr_c  => data_o(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
           when xirq_pending_addr_c => data_o(XIRQ_NUM_CH-1 downto 0) <= irq_buf; -- pending IRQs
-          when xirq_source_addr_c  => data_o(4 downto 0) <= irq_src; -- source IRQ
-          when others => NULL;
+          when others              => data_o(4 downto 0) <= irq_src; -- source IRQ
         end case;
       end if;
     end if;
-  end process read_access;
+  end process;
 
 
   -- IRQ Trigger --------------------------------------------------------------
   -- -----------------------------------------------------------------------------
-  irq_trigger: process(clk_i)
+  process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_sync  <= xirq_i(XIRQ_NUM_CH-1 downto 0);
       irq_sync2 <= irq_sync;
     end if;
-  end process irq_trigger;
+  end process;
 
-  irq_trigger_comb: process(irq_sync, irq_sync2)
+  -- trigger select --
+  process(irq_sync, irq_sync2)
     variable sel_v : std_ulogic_vector(1 downto 0);
   begin
     for i in 0 to XIRQ_NUM_CH-1 loop
@@ -179,25 +177,20 @@ begin
         when others => irq_trig(i) <= '0';
       end case;
     end loop;
-  end process irq_trigger_comb;
+  end process;
 
 
   -- IRQ Buffer ---------------------------------------------------------------
   -- -----------------------------------------------------------------------------
-  irq_buffer: process(clk_i)
+  process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_buf <= (irq_buf or (irq_trig and irq_enable)) and clr_pending;
     end if;
-  end process irq_buffer;
+  end process;
 
-  -- anyone firing? --
-  irq_fire <= '1' when (or_reduce_f(irq_buf) = '1') else '0';
-
-
-  -- IRQ Priority Encoder -----------------------------------------------------
-  -- -----------------------------------------------------------------------------
-  irq_priority: process(irq_buf)
+  -- priority encoder --
+  process(irq_buf)
   begin
     irq_src_nxt <= (others => '0');
     if (XIRQ_NUM_CH > 1) then
@@ -208,32 +201,33 @@ begin
         end if;
       end loop;
     end if;
-  end process irq_priority;
+  end process;
+
+  -- anyone firing? --
+  irq_fire <= '1' when (or_reduce_f(irq_buf) = '1') else '0';
 
 
   -- IRQ Arbiter --------------------------------------------------------------
   -- -----------------------------------------------------------------------------
-  irq_arbiter: process(rstn_i, clk_i)
+  process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       cpu_irq_o <= '0';
       irq_run   <= '0';
       irq_src   <= (others => '0');
     elsif rising_edge(clk_i) then
-      cpu_irq_o <= '0';
+      cpu_irq_o <= '0'; -- default; trigger only once
       if (irq_run = '0') then -- no active IRQ
+        irq_src <= irq_src_nxt; -- get IRQ source that has highest priority
         if (irq_fire = '1') then
           cpu_irq_o <= '1';
           irq_run   <= '1';
-          irq_src   <= irq_src_nxt; -- get IRQ source that has highest priority
         end if;
-      else -- active IRQ, wait for CPU to acknowledge
-        if (wren = '1') and (addr = xirq_source_addr_c) then -- write *any* value to acknowledge
-          irq_run <= '0';
-        end if;
+      elsif (wren = '1') and (addr = xirq_source_addr_c) then -- write access to acknowledge
+        irq_run <= '0';
       end if;
     end if;
-  end process irq_arbiter;
+  end process;
 
 
 end neorv32_xirq_rtl;
