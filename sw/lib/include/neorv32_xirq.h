@@ -59,7 +59,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 
 /**********************************************************************//**
- * @name Prototype
+ * @name Prototypes
  **************************************************************************/
 /**@{*/
 int  neorv32_xirq_available(void);
