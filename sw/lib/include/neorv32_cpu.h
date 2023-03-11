@@ -41,7 +41,11 @@
 #ifndef neorv32_cpu_h
 #define neorv32_cpu_h
 
-// prototypes
+
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 void     neorv32_cpu_irq_enable(int irq_sel);
 void     neorv32_cpu_irq_disable(int irq_sel);
 uint64_t neorv32_cpu_get_cycle(void);
@@ -56,6 +60,7 @@ int      neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint8_t
 uint32_t neorv32_cpu_hpm_get_num_counters(void);
 uint32_t neorv32_cpu_hpm_get_size(void);
 void     neorv32_cpu_goto_user_mode(void);
+/**@}*/
 
 
 /**********************************************************************//**

@@ -86,14 +86,16 @@ enum NEORV32_ONEWIRE_DATA_enum {
 /**@}*/
 
 
-// prototypes - setup/management
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 int     neorv32_onewire_available(void);
 int     neorv32_onewire_setup(uint32_t t_base);
 void    neorv32_onewire_enable(void);
 void    neorv32_onewire_disable(void);
 int     neorv32_onewire_sense(void);
 
-// prototypes - non-blocking access
 int     neorv32_onewire_busy(void);
 void    neorv32_onewire_reset(void);
 int     neorv32_onewire_reset_get_presence(void);
@@ -104,11 +106,12 @@ void    neorv32_onewire_read_byte(void);
 uint8_t neorv32_onewire_read_byte_get(void);
 void    neorv32_onewire_write_byte(uint8_t byte);
 
-// prototypes - blocking access
 int     neorv32_onewire_reset_blocking(void);
 uint8_t neorv32_onewire_read_bit_blocking(void);
 void    neorv32_onewire_write_bit_blocking(uint8_t bit);
 uint8_t neorv32_onewire_read_byte_blocking(void);
 void    neorv32_onewire_write_byte_blocking(uint8_t byte);
+/**@}*/
+
 
 #endif // neorv32_onewire_h

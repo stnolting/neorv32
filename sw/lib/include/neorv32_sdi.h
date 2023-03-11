@@ -78,7 +78,10 @@ enum NEORV32_SDI_CTRL_enum {
 /**@}*/
 
 
-// prototypes
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 int     neorv32_sdi_available(void);
 void    neorv32_sdi_setup(uint32_t irq_mask);
 void    neorv32_sdi_rx_clear(void);
@@ -89,5 +92,7 @@ int     neorv32_sdi_put(uint8_t data);
 void    neorv32_sdi_put_nonblocking(uint8_t data);
 int     neorv32_sdi_get(uint8_t* data);
 uint8_t neorv32_sdi_get_nonblocking(void);
+/**@}*/
+
 
 #endif // neorv32_sdi_h

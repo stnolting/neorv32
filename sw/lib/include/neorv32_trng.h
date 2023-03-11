@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -68,12 +68,17 @@ enum NEORV32_TRNG_CTRL_enum {
 /**@}*/
 
 
-// prototypes
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 int  neorv32_trng_available(void);
 void neorv32_trng_enable(void);
 void neorv32_trng_disable(void);
 void neorv32_trng_fifo_clear(void);
 int  neorv32_trng_get(uint8_t *data);
 int  neorv32_trng_check_sim_mode(void);
+/**@}*/
+
 
 #endif // neorv32_trng_h

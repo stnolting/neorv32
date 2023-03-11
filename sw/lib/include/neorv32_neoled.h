@@ -97,7 +97,10 @@ enum NEORV32_NEOLED_CTRL_enum {
 /**@}*/
 
 
-// prototypes
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 int      neorv32_neoled_available(void);
 void     neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one, int irq_mode);
 void     neorv32_neoled_setup_ws2812(int irq_mode);
@@ -108,6 +111,7 @@ void     neorv32_neoled_enable(void);
 void     neorv32_neoled_disable(void);
 void     neorv32_neoled_write_blocking(uint32_t data);
 uint32_t neorv32_neoled_get_buffer_size(void);
+/**@}*/
 
 
 /**********************************************************************//**

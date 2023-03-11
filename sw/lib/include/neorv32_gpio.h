@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -60,7 +60,10 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /**@}*/
 
 
-// prototypes
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 int      neorv32_gpio_available(void);
 void     neorv32_gpio_pin_set(int pin);
 void     neorv32_gpio_pin_clr(int pin);
@@ -69,5 +72,7 @@ uint32_t neorv32_gpio_pin_get(int pin);
 
 void     neorv32_gpio_port_set(uint64_t d);
 uint64_t neorv32_gpio_port_get(void);
+/**@}*/
+
 
 #endif // neorv32_gpio_h

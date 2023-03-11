@@ -70,11 +70,16 @@ enum NEORV32_WDT_CTRL_enum {
 /**@}*/
 
 
-// prototypes
+/**********************************************************************//**
+ * @name Prototype
+ **************************************************************************/
+/**@{*/
 int  neorv32_wdt_available(void);
 void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en);
 int  neorv32_wdt_disable(void);
 void neorv32_wdt_feed(void);
 int  neorv32_wdt_get_cause(void);
+/**@}*/
+
 
 #endif // neorv32_wdt_h

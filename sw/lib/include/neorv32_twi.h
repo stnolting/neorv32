@@ -84,7 +84,10 @@ enum NEORV32_TWI_DATA_enum {
 /**@}*/
 
 
-// prototypes
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 int     neorv32_twi_available(void);
 void    neorv32_twi_setup(int prsc, int cdiv, int csen);
 void    neorv32_twi_disable(void);
@@ -98,5 +101,7 @@ uint8_t neorv32_twi_get_data(void);
 void    neorv32_twi_generate_stop(void);
 void    neorv32_twi_generate_start(void);
 int     neorv32_twi_bus_claimed(void);
+/**@}*/
+
 
 #endif // neorv32_twi_h

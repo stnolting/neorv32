@@ -98,7 +98,10 @@ enum NEORV32_UART_CTRL_enum {
 /**@}*/
 
 
-// prototypes for common used UART functions, applicable to UART0 and UART1
+/**********************************************************************//**
+ * @name Prototype
+ **************************************************************************/
+/**@{*/
 int  neorv32_uart_available(neorv32_uart_t *UARTx);
 void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_mask);
 void neorv32_uart_enable(neorv32_uart_t *UARTx);
@@ -113,5 +116,7 @@ char neorv32_uart_char_received_get(neorv32_uart_t *UARTx);
 void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s);
 void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...);
 int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int echo);
+/**@}*/
+
 
 #endif // neorv32_uart_h

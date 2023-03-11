@@ -90,7 +90,10 @@ enum NEORV32_SPI_CTRL_enum {
 /**@}*/
 
 
-// prototypes
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 int     neorv32_spi_available(void);
 void    neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, uint32_t irq_mask);
 void    neorv32_spi_disable(void);
@@ -102,5 +105,6 @@ uint8_t neorv32_spi_trans(uint8_t tx_data);
 void    neorv32_spi_put_nonblocking(uint8_t tx_data);
 uint8_t neorv32_spi_get_nonblocking(void);
 int     neorv32_spi_busy(void);
+/**@}*/
 
 #endif // neorv32_spi_h

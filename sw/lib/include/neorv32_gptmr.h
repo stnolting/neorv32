@@ -69,11 +69,16 @@ enum NEORV32_GPTMR_CTRL_enum {
 /**@}*/
 
 
-// prototypes
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 int  neorv32_gptmr_available(void);
 void neorv32_gptmr_setup(int prsc, int mode, uint32_t threshold);
 void neorv32_gptmr_disable(void);
 void neorv32_gptmr_enable(void);
 void neorv32_gptmr_restart(void);
+/**@}*/
+
 
 #endif // neorv32_gptmr_h

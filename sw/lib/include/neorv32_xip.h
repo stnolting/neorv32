@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -85,7 +85,10 @@ enum NEORV32_XIP_CTRL_enum {
 /**@}*/
 
 
-// prototypes
+/**********************************************************************//**
+ * @name Prototype
+ **************************************************************************/
+/**@{*/
 int  neorv32_xip_available(void);
 int  neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd);
 int  neorv32_xip_start(uint8_t abytes, uint32_t page_base);
@@ -94,5 +97,7 @@ void neorv32_xip_highspeed_disable(void);
 void neorv32_xip_burst_mode_enable(void);
 void neorv32_xip_burst_mode_disable(void);
 int  neorv32_xip_spi_trans(uint8_t nbytes, uint64_t *rtx_data);
+/**@}*/
+
 
 #endif // neorv32_xip_h
