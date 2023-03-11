@@ -42,7 +42,8 @@
  * @brief "Intrinsic" library for the NEORV32 Zicond ISA extension.
  * Also provides emulation functions for all intrinsics (functionality re-built in pure software).
  *
- * @warning This library is just a temporary fall-back until the B extension is supported by the upstream RISC-V GCC port.
+ * @warning This library is just a temporary fall-back until the B extension is supported by the
+ * upstream RISC-V GCC port.
  **************************************************************************/
  
 #ifndef zicond_intrinsics_h
@@ -55,7 +56,7 @@
 
 
 /**********************************************************************//**
- * Intrinsic: Conditional zero if condition is equal to zero [intrinsic].
+ * Intrinsic: Conditional zero if condition is zero [intrinsic].
  *
  * @param[in] rs1 Source operand.
  * @param[in] rs2 Condition operand.
@@ -86,7 +87,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_czero_nez(uint32
 
 
 /**********************************************************************//**
- * Intrinsic: Conditional zero if condition is equal to zero [emulation].
+ * Intrinsic: Conditional zero if condition is zero [emulation].
  *
  * @param[in] rs1 Source operand.
  * @param[in] rs2 Condition operand.

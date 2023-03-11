@@ -51,7 +51,7 @@
 /** UART BAUD rate */
 #define BAUD_RATE      (19200)
 //** Number of test cases for each instruction */
-#define NUM_TEST_CASES (100000)
+#define NUM_TEST_CASES (1000000)
 //** Silent mode (only show actual errors when != 0) */
 #define SILENT_MODE    (1)
 
@@ -79,13 +79,13 @@ int main() {
   // capture all exceptions and give debug info via UART
   neorv32_rte_setup();
 
-  // setup UART0 at default baud rate, no parity bits, no HW flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART0 at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
   // intro
   neorv32_uart0_printf("<<< NEORV32 Conditional Operations ISA Extension ('Zicond') Test >>>\n\n");
 
-  // check if B extension is implemented at all
+  // check if Zicond extension is implemented at all
   if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZICOND)) == 0) {
     neorv32_uart0_printf("Error! Zicond ISA extension not implemented!\n");
     return 1;
@@ -102,7 +102,7 @@ int main() {
   err_cnt = 0;
   for (i=0;i<num_tests; i++) {
     opa = xorshift32();
-    opb = xorshift32() & 1;
+    opb = xorshift32() & 1U;
     res_sw = riscv_emulate_czero_eqz(opa, opb);
     res_hw = riscv_intrinsic_czero_eqz(opa, opb);
     err_cnt += check_result(i, opa, opb, res_sw, res_hw);
@@ -115,7 +115,7 @@ int main() {
   err_cnt = 0;
   for (i=0;i<num_tests; i++) {
     opa = xorshift32();
-    opb = xorshift32() & 1;
+    opb = xorshift32() & 1U;
     res_sw = riscv_emulate_czero_nez(opa, opb);
     res_hw = riscv_intrinsic_czero_nez(opa, opb);
     err_cnt += check_result(i, opa, opb, res_sw, res_hw);
@@ -158,12 +158,12 @@ uint32_t xorshift32(void) {
 uint32_t check_result(uint32_t num, uint32_t opa, uint32_t opb, uint32_t ref, uint32_t res) {
 
 #if (SILENT_MODE == 0)
-  neorv32_uart0_printf("%u: opa = 0x%x, opb = 0x%x : ref[SW] = 0x%x vs. res[HW] = 0x%x ", num, opa, opb, ref, res);
+  neorv32_uart0_printf("%u: op = 0x%x, cond = %u : ref[SW] = 0x%x vs. res[HW] = 0x%x ", num, opa, opb, ref, res);
 #endif
 
   if (ref != res) {
 #if (SILENT_MODE != 0)
-    neorv32_uart0_printf("%u: opa = 0x%x, opb = 0x%x : ref[SW] = 0x%x vs. res[HW] = 0x%x ", num, opa, opb, ref, res);
+    neorv32_uart0_printf("%u: op = 0x%x, cond = %u : ref[SW] = 0x%x vs. res[HW] = 0x%x ", num, opa, opb, ref, res);
 #endif
     neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
     return 1;
