@@ -852,21 +852,21 @@ discover ISA sub-extensions and CPU configuration options.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 31    | _CSR_MXISA_FASTSHIFT_ | r/- | fast shifts available when set (via top's <<_fast_shift_en>> generic)
-| 30    | _CSR_MXISA_FASTMUL_   | r/- | fast multiplication available when set (via top's <<_fast_mul_en>> generic)
-| 31:21 | -                     | r/- | _reserved_, read as zero
-| 20    | _CSR_MXISA_IS_SIM_    | r/- | set if CPU is being **simulated** (⚠️ not guaranteed)
-| 19:11 | -                     | r/- | _reserved_, read as zero
-| 11    | _CSR_MXISA_SDTRIG_    | r/- | `Sdtrig` extension (trigger module) available when set (via top's <<_cpu_extension_riscv_sdtrig>> generic)
-| 10    | _CSR_MXISA_SDEXT_     | r/- | `Sdext` extension (debug mode) available when set (via top's <<_cpu_extension_riscv_sdext>> generic)
-|  9    | _CSR_MXISA_ZIHPM_     | r/- | `Zihpm` (hardware performance monitors) extension available when set (via top's <<_cpu_extension_riscv_zihpm>> generic)
-|  8    | _CSR_MXISA_PMP_       | r/- | `PMP` (physical memory protection) extension available when set (via top's <<_pmp_num_regions>> generic)
-|  7    | _CSR_MXISA_ZICNTR_    | r/- | `Zicntr` extension (`I` sub-extension) available when set - `[m]cycle` and `[m]instret` CSRs available when set (via top's <<_cpu_extension_riscv_zicntr>> generic)
-|  6    | -                     | r/- | _reserved_, read as zero
-|  5    | _CSR_MXISA_ZFINX_     | r/- | `Zfinx` extension (`F` sub-/alternative-extension: FPU using `x` registers) available when set (via top's <<_cpu_extension_riscv_zfinx>> generic)
-|  4    | -                     | r/- | _reserved_, read as zero
-|  3    | _CSR_MXISA_ZXCFU_     | r/- | `Zxcfu` extension (custom functions unit for custom RISC-V instructions) available when set (via top's <<_cpu_extension_riscv_zxcfu>> generic)
-|  2    | _CSR_MXISA_ZMMUL_     | r/- | `Zmmul` extension (`M` sub-extension) available when set (via top's <<_cpu_extension_riscv_zmmul>> generic)
-|  1    | _CSR_MXISA_ZIFENCEI_  | r/- | `Zifencei` extension (`I` sub-extension) available when set (via top's <<_cpu_extension_riscv_zifencei>> generic)
 |  0    | _CSR_MXISA_ZICSR_     | r/- | `Zicsr` extension (`I` sub-extension) available when set (via top's <<_cpu_extension_riscv_zicsr>> generic)
+|  1    | _CSR_MXISA_ZIFENCEI_  | r/- | `Zifencei` extension (`I` sub-extension) available when set (via top's <<_cpu_extension_riscv_zifencei>> generic)
+|  2    | _CSR_MXISA_ZMMUL_     | r/- | `Zmmul` extension (`M` sub-extension) available when set (via top's <<_cpu_extension_riscv_zmmul>> generic)
+|  3    | _CSR_MXISA_ZXCFU_     | r/- | `Zxcfu` extension (custom functions unit for custom RISC-V instructions) available when set (via top's <<_cpu_extension_riscv_zxcfu>> generic)
+|  4    | _CSR_MXISA_ZICOND_    | r/- | `Zicond` extension (conditional operations) available when set (via top's <<_cpu_extension_riscv_zicond>> generic)
+|  5    | _CSR_MXISA_ZFINX_     | r/- | `Zfinx` extension (`F` sub-/alternative-extension: FPU using `x` registers) available when set (via top's <<_cpu_extension_riscv_zfinx>> generic)
+|  6    | -                     | r/- | _reserved_, read as zero
+|  7    | _CSR_MXISA_ZICNTR_    | r/- | `Zicntr` extension (`I` sub-extension) available when set - `[m]cycle` and `[m]instret` CSRs available when set (via top's <<_cpu_extension_riscv_zicntr>> generic)
+|  8    | _CSR_MXISA_PMP_       | r/- | `PMP` (physical memory protection) extension available when set (via top's <<_pmp_num_regions>> generic)
+|  9    | _CSR_MXISA_ZIHPM_     | r/- | `Zihpm` (hardware performance monitors) extension available when set (via top's <<_cpu_extension_riscv_zihpm>> generic)
+| 10    | _CSR_MXISA_SDEXT_     | r/- | `Sdext` extension (debug mode) available when set (via top's <<_cpu_extension_riscv_sdext>> generic)
+| 11    | _CSR_MXISA_SDTRIG_    | r/- | `Sdtrig` extension (trigger module) available when set (via top's <<_cpu_extension_riscv_sdtrig>> generic)
+| 19:12 | -                     | r/- | _reserved_, read as zero
+| 20    | _CSR_MXISA_IS_SIM_    | r/- | set if CPU is being **simulated** (⚠️ not guaranteed)
+| 31:21 | -                     | r/- | _reserved_, read as zero
+| 30    | _CSR_MXISA_FASTMUL_   | r/- | fast multiplication available when set (via top's <<_fast_mul_en>> generic)
+| 31    | _CSR_MXISA_FASTSHIFT_ | r/- | fast shifts available when set (via top's <<_fast_shift_en>> generic)
 |=======================
