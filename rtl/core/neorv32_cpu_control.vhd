@@ -70,6 +70,7 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
+    CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement conditional operations extension?
     CPU_EXTENSION_RISCV_Sdext    : boolean; -- implement external debug mode extension?
     CPU_EXTENSION_RISCV_Sdtrig   : boolean; -- implement trigger module extension?
     -- Tuning Options --
@@ -178,13 +179,14 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction decoding helper logic --
   type decode_aux_t is record
-    is_f_op  : std_ulogic;
-    is_m_mul : std_ulogic;
-    is_m_div : std_ulogic;
-    is_b_imm : std_ulogic;
-    is_b_reg : std_ulogic;
-    rs1_zero : std_ulogic;
-    rd_zero  : std_ulogic;
+    is_f_op   : std_ulogic;
+    is_m_mul  : std_ulogic;
+    is_m_div  : std_ulogic;
+    is_b_imm  : std_ulogic;
+    is_b_reg  : std_ulogic;
+    is_zicond : std_ulogic;
+    rs1_zero  : std_ulogic;
+    rd_zero   : std_ulogic;
   end record;
   signal decode_aux : decode_aux_t;
 
@@ -788,13 +790,14 @@ begin
   decode_helper: process(execute_engine)
   begin
     -- defaults --
-    decode_aux.is_f_op  <= '0';
-    decode_aux.is_m_mul <= '0';
-    decode_aux.is_m_div <= '0';
-    decode_aux.is_b_imm <= '0';
-    decode_aux.is_b_reg <= '0';
-    decode_aux.rs1_zero <= '0';
-    decode_aux.rd_zero  <= '0';
+    decode_aux.is_f_op   <= '0';
+    decode_aux.is_m_mul  <= '0';
+    decode_aux.is_m_div  <= '0';
+    decode_aux.is_b_imm  <= '0';
+    decode_aux.is_b_reg  <= '0';
+    decode_aux.is_zicond <= '0';
+    decode_aux.rs1_zero  <= '0';
+    decode_aux.rd_zero   <= '0';
 
     -- is BITMANIP instruction? --
     -- pretty complex as we have to check the already-crowded ALU/ALUI instruction space --
@@ -866,6 +869,12 @@ begin
       if (CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_funct3_msb_c) = '1') then
         decode_aux.is_m_div <= '1';
       end if;
+    end if;
+
+    -- conditional operations (Zicond) --
+    if (CPU_EXTENSION_RISCV_Zicond = true) and (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000111") and
+       (execute_engine.i_reg(instr_funct3_msb_c) = '1') and (execute_engine.i_reg(instr_funct3_lsb_c) = '1') then
+      decode_aux.is_zicond <= '1';
     end if;
 
     -- register/uimm5 checks --
@@ -1008,25 +1017,30 @@ begin
                 ctrl_nxt.alu_op <= alu_op_and_c;
             end case;
 
-            -- co-processor MULDIV operation (multi-cycle) --
+            -- EXT: co-processor MULDIV operation (multi-cycle) --
             if ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and
                 ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
                ((CPU_EXTENSION_RISCV_Zmmul = true) and (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and
                 (decode_aux.is_m_mul = '1')) then -- MUL
               ctrl_nxt.alu_cp_trig(cp_sel_muldiv_c) <= '1'; -- trigger MULDIV CP
               execute_engine.state_nxt              <= ALU_WAIT;
-            -- co-processor BIT-MANIPULATION operation (multi-cycle) --
+            -- EXT: co-processor BIT-MANIPULATION operation (multi-cycle) --
             elsif (CPU_EXTENSION_RISCV_B = true) and
                   (((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_b_reg = '1')) or -- register operation
                    ((execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
               ctrl_nxt.alu_cp_trig(cp_sel_bitmanip_c) <= '1'; -- trigger BITMANIP CP
               execute_engine.state_nxt                <= ALU_WAIT;
-            -- co-processor SHIFT operation (multi-cycle) --
+            -- EXT: co-processor CONDITIONAL operations (multi-cycle) --
+            elsif (CPU_EXTENSION_RISCV_Zicond = true) and (decode_aux.is_zicond = '1') and
+                  (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_alu_c(5)) then
+              ctrl_nxt.alu_cp_trig(cp_sel_cond_c) <= '1'; -- trigger COND CP
+              execute_engine.state_nxt            <= ALU_WAIT;
+            -- BASE: co-processor SHIFT operation (multi-cycle) --
             elsif (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or
                   (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) then
               ctrl_nxt.alu_cp_trig(cp_sel_shifter_c) <= '1'; -- trigger SHIFTER CP
               execute_engine.state_nxt               <= ALU_WAIT;
-            -- ALU CORE operation (single-cycle) --
+            -- BASE: ALU CORE operation (single-cycle) --
             else
               ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back
               execute_engine.state_nxt <= DISPATCH;
@@ -1375,7 +1389,8 @@ begin
               (execute_engine.i_reg(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000"))) or -- valid base ALU instruction?
            (((CPU_EXTENSION_RISCV_M = true) or (CPU_EXTENSION_RISCV_Zmmul = true)) and (decode_aux.is_m_mul = '1')) or -- valid MUL instruction?
            ((CPU_EXTENSION_RISCV_M = true) and (decode_aux.is_m_div = '1')) or -- valid DIV instruction?
-           ((CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_b_reg = '1')) then -- valid BITMANIP register instruction?
+           ((CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_b_reg = '1')) or -- valid BITMANIP register instruction?
+           ((CPU_EXTENSION_RISCV_Zicond = true) and (decode_aux.is_zicond = '1')) then -- valid CONDITIONAL instruction?
           illegal_cmd <= '0';
         else
           illegal_cmd <= '1';
@@ -2347,7 +2362,7 @@ begin
             csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei: instruction stream sync.
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul: mul/div
             csr.rdata(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);    -- Zxcfu: custom RISC-V instructions
---          csr.rdata(04) <= '0'; -- reserved
+            csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicond);   -- Zicond: conditional operations
             csr.rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx: FPU using x registers, "F-alternative"
 --          csr.rdata(06) <= '0'; -- reserved
             csr.rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr);   -- Zicntr: base instructions, cycle and time CSRs
