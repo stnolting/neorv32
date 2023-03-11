@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32: neorv32_trng.h - True Random Number Generator (TRNG) HW Driver >>                 #
+// # << NEORV32: neorv32_dm.h - On-Chip Debugger HW Driver (Header) >>                             #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -34,51 +34,31 @@
 
 
 /**********************************************************************//**
- * @file neorv32_trng.h
- * @brief True Random Number Generator (TRNG) HW driver header file.
- *
- * @note These functions should only be used if the TRNG unit was synthesized (IO_TRNG_EN = true).
+ * @file neorv32_dm.h
+ * @brief On-Chip Debugger (should NOT be used by application software at all!)
  **************************************************************************/
 
-#ifndef neorv32_trng_h
-#define neorv32_trng_h
+#ifndef neorv32_dm_h
+#define neorv32_dm_h
 
 /**********************************************************************//**
- * @name IO Device: True Random Number Generator (TRNG)
+ * @name IO Device: On-Chip Debugger (should NOT be used by application software at all!)
  **************************************************************************/
 /**@{*/
-/** TRNG module prototype */
+/** on-chip debugger - debug module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_TRNG_CTRL_enum) */
-} neorv32_trng_t;
+  const uint32_t CODE[16];      /**< offset 0: park loop code ROM (r/-) */
+  const uint32_t PBUF[4];       /**< offset 64: program buffer (r/-) */
+  const uint32_t reserved1[12]; /**< reserved */
+  uint32_t       DATA;          /**< offset 128: data exchange register (r/w) */
+  const uint32_t reserved2[15]; /**< reserved */
+  uint32_t       SREG;          /**< offset 192: control and status register (r/w) */
+  const uint32_t reserved3[15]; /**< reserved */
+} neorv32_dm_t;
 
-/** TRNG module hardware access (#neorv32_trng_t) */
-#define NEORV32_TRNG ((neorv32_trng_t*) (NEORV32_TRNG_BASE))
-
-/** TRNG control/data register bits */
-enum NEORV32_TRNG_CTRL_enum {
-  TRNG_CTRL_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data byte LSB */
-  TRNG_CTRL_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data byte MSB */
-
-  TRNG_CTRL_FIFO_CLR = 28, /**< TRNG data/control register(28) (-/w): Clear data FIFO (auto clears) */
-  TRNG_CTRL_SIM_MODE = 29, /**< TRNG data/control register(29) (r/-): PRNG mode (simulation mode) */
-  TRNG_CTRL_EN       = 30, /**< TRNG data/control register(30) (r/w): TRNG enable */
-  TRNG_CTRL_VALID    = 31  /**< TRNG data/control register(31) (r/-): Random data output valid */
-};
+/** on-chip debugger debug module hardware access (#neorv32_dm_t) */
+#define NEORV32_DM ((neorv32_dm_t*) (NEORV32_DM_BASE))
 /**@}*/
 
 
-/**********************************************************************//**
- * @name Prototypes
- **************************************************************************/
-/**@{*/
-int  neorv32_trng_available(void);
-void neorv32_trng_enable(void);
-void neorv32_trng_disable(void);
-void neorv32_trng_fifo_clear(void);
-int  neorv32_trng_get(uint8_t *data);
-int  neorv32_trng_check_sim_mode(void);
-/**@}*/
-
-
-#endif // neorv32_trng_h
+#endif // neorv32_dm_h

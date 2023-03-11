@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2021, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -43,7 +43,27 @@
 #ifndef neorv32_gpio_h
 #define neorv32_gpio_h
 
-// prototypes
+/**********************************************************************//**
+ * @name IO Device: General Purpose Input/Output Port Unit (GPIO)
+ **************************************************************************/
+/**@{*/
+/** GPIO module prototype */
+typedef volatile struct __attribute__((packed,aligned(4))) {
+  const uint32_t INPUT_LO;  /**< offset 0:  parallel input port lower 32-bit, read-only */
+  const uint32_t INPUT_HI;  /**< offset 4:  parallel input port upper 32-bit, read-only */
+  uint32_t       OUTPUT_LO; /**< offset 8:  parallel output port lower 32-bit */
+  uint32_t       OUTPUT_HI; /**< offset 12: parallel output port upper 32-bit */
+} neorv32_gpio_t;
+
+/** GPIO module hardware access (#neorv32_gpio_t) */
+#define NEORV32_GPIO ((neorv32_gpio_t*) (NEORV32_GPIO_BASE))
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 int      neorv32_gpio_available(void);
 void     neorv32_gpio_pin_set(int pin);
 void     neorv32_gpio_pin_clr(int pin);
@@ -52,5 +72,7 @@ uint32_t neorv32_gpio_pin_get(int pin);
 
 void     neorv32_gpio_port_set(uint64_t d);
 uint64_t neorv32_gpio_port_get(void);
+/**@}*/
+
 
 #endif // neorv32_gpio_h
