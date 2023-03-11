@@ -710,7 +710,6 @@ enum NEORV32_CLOCK_PRSC_enum {
 // cpu core
 #include "neorv32_cpu.h"
 #include "neorv32_cpu_cfu.h"
-#include "neorv32_dm.h"
 
 // neorv32 runtime environment
 #include "neorv32_rte.h"
