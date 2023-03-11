@@ -168,21 +168,22 @@ begin
     -- General --
     CLOCK_FREQUENCY              => f_clock_c,     -- clock frequency of clk_i in Hz
     HW_THREAD_ID                 => 0,             -- hardware thread id (hartid) (32-bit)
-    CUSTOM_ID                    => x"12345678",  -- custom user-defined ID
+    CUSTOM_ID                    => x"12345678",   -- custom user-defined ID
     INT_BOOTLOADER_EN            => false,         -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          => true,          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,  -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,  -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,  -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,  -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,  -- implement user mode extension?
+    CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B, -- implement bit-manipulation extension?
+    CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C, -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M, -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U, -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    => true,          -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,     -- implement CSR system?
+    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr, -- implement CSR system?
     CPU_EXTENSION_RISCV_Zicntr   => true,          -- implement base counters?
+    CPU_EXTENSION_RISCV_Zicond   => true,          -- implement conditional operations extension?
     CPU_EXTENSION_RISCV_Zihpm    => true,          -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei,  -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    => false,         -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu    => true,          -- implement custom (instr.) functions unit?
     -- Extension Options --
