@@ -76,7 +76,7 @@ include::rationale.adoc[]
 
 * 32-bit `rv32i` RISC-V CPU
 * fully RISC-V ISA compatible - checked by the https://github.com/stnolting/neorv32-riscof[official RISCOF architecture tests]
-* base ISA + privileged ISA (optional) + several ISA extensions (optional)
+* base ISA + privileged ISA + several optional standard and custom ISA extensions
 * option to add custom RISC-V instructions as custom ISA extension
 * rich set of customization options (ISA extensions, design goal: performance / area (/ energy), ...)
 * aims to support <<_full_virtualization>> capabilities to increase execution safety
@@ -184,7 +184,8 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_cpu.vhd                 - NEORV32 CPU top entity
 │├neorv32_cpu_alu.vhd            - Arithmetic/logic unit
 ││├neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
-││├neorv32_cpu_cp_cfu.vhd        - Custom functions (instruction) co-processor (Zxcfu ext.)
+││├neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
+││├neorv32_cpu_cp_cond.vhd       - Conditional operations co-processor (Zicond ext.)
 ││├neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
 ││├neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M ext.)
 ││└neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
@@ -261,8 +262,6 @@ just _exemplary_. If not otherwise mentioned all implementations use the default
 [options="header",grid="rows"]
 |=======================
 | CPU ISA Configuration                             | LEs  | FFs  | MEM bits | DSPs | _f~max~_
-| `rv32e`                                           |  720 |  360 |      512 |    0 | 130 MHz
-| `rv32i`                                           |  724 |  364 |     1024 |    0 | 130 MHz
 | `rv32i_Zicsr`                                     | 1223 |  607 |     1024 |    0 | 130 MHz
 | `rv32i_Zicsr_Zicntr`                              | 1578 |  773 |     1024 |    0 | 130 MHz
 | `rv32im_Zicsr_Zicntr`                             | 2087 |  983 |     1024 |    0 | 130 MHz

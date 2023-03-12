@@ -355,17 +355,20 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_ZICNTR)) {
     neorv32_uart0_printf("Zicntr ");
   }
-  if (tmp & (1<<CSR_MXISA_ZIHPM)) {
-    neorv32_uart0_printf("Zihpm ");
+  if (tmp & (1<<CSR_MXISA_ZICOND)) {
+    neorv32_uart0_printf("Zicond ");
   }
   if (tmp & (1<<CSR_MXISA_ZIFENCEI)) {
     neorv32_uart0_printf("Zifencei ");
   }
-  if (tmp & (1<<CSR_MXISA_ZMMUL)) {
-    neorv32_uart0_printf("Zmmul ");
-  }
   if (tmp & (1<<CSR_MXISA_ZFINX)) {
     neorv32_uart0_printf("Zfinx ");
+  }
+  if (tmp & (1<<CSR_MXISA_ZIHPM)) {
+    neorv32_uart0_printf("Zihpm ");
+  }
+  if (tmp & (1<<CSR_MXISA_ZMMUL)) {
+    neorv32_uart0_printf("Zmmul ");
   }
   if (tmp & (1<<CSR_MXISA_ZXCFU)) {
     neorv32_uart0_printf("Zxcfu ");

@@ -27,6 +27,7 @@ image::neorv32_cpu_block.png[width=600,align=center]
 ** `Zfinx` - single-precision floating-point unit
 ** `Zicsr` - control and status register access (privileged architecture)
 ** `Zicntr` - CPU base counters
+** `Zicond` - conditionaloperations
 ** `Zihpm` - hardware performance monitors
 ** `Zifencei` - instruction stream synchronization
 ** `Zmmul` - integer multiplication hardware
@@ -681,7 +682,22 @@ generic is _true_. It allows manual synchronization of the instruction stream vi
 The `fence.i` instruction resets the CPU's front-end (instruction fetch) and flushes the prefetch buffer.
 This allows a clean re-fetch of modified instructions from memory. Also, the top's `i_bus_fencei_o` signal is set
 high for one cycle to inform the memory system (like the i-cache to perform a flush/reload.
-Any additional flags within the `fence.i` instruction word are ignore by the hardware.
+Any additional flags within the `fence.i` instruction word are ignored by the hardware.
+
+
+==== **`Zicond`** Conditional Operations Extension
+
+The `Ziconds` ISa extension implements conditional operations ("move or set-tot-zero"). When enabled, to additional
+instructions are supported:
+
+* `czero.eqz` `czero.nez`
+
+Software can utilize the custom instructions by using _intrinsics_, which are basically inline assembly functions that
+behave like regular C functions but that evaluate to a single custom instruction word (not calling overhead at all).
+
+[WARNING]
+The `Zicond` extension is not ratified nor frozen yet. An intrinsic library is provided to utilize the `Zicond`
+conditional operations from C-language code (see `sw/example/zicond_test`).
 
 
 ==== **`Zxcfu`** Custom Instructions Extension (CFU)
@@ -810,21 +826,16 @@ configurations are presented in <<_cpu_performance>>.
 | Floating-point - conversion | `Zfinx` | `fcvt.w.s` `fcvt.wu.s` | 47
 | Floating-point - conversion | `Zfinx` | `fcvt.s.w` `fcvt.s.wu` | 48
 | Bit-manipulation - arithmetic/logic    | `B(Zbb)` | `min[u]` `max[u]` `sext.b` `sext.h` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 4
-| Bit-manipulation - shifts              | `B(Zbb)` | `clz` `ctz` | 4 + 1..32; FAST_SHIFT: 4
+| Bit-manipulation - shifts              | `B(Zbb)` | `clz` `ctz` | 4 + _shift_amount_; FAST_SHIFT: 4
 | Bit-manipulation - shifts              | `B(Zbb)` | `cpop` | 36; FAST_SHIFT: 4
 | Bit-manipulation - shifts              | `B(Zbb)` | `rol` `ror[i]` | 4 + _shift_amount_; FAST_SHIFT: 4
 | Bit-manipulation - shifted-add         | `B(Zba)` | `sh1add` `sh2add` `sh3add` | 4
 | Bit-manipulation - single-bit          | `B(Zbs)` | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 4
 | Bit-manipulation - carry-less multiply | `B(Zbc)` | `clmul` `clmulh` `clmulr` | 36
-| Custom instructions (CFU) | `Zxcfu` | - | _custom_ (min. 4)
-| | | | 
-| _Illegal instructions_    | `Zicsr` | - | 2
+| Conditional operations    | `Zicond` | `czero.eqz` `czero.nez` | 3
+| Custom instructions (CFU) | `Zxcfu` | user-defined | user-defined
+| _Illegal instructions_ | - | - | 2
 |=======================
-
-[NOTE]
-The presented values of the *floating-point execution cycles* are average values - obtained from
-4096 instruction executions using pseudo-random input values. The execution time for emulating the
-instructions (using pure-software libraries) is ~17..140 times higher.
 
 
 <<<

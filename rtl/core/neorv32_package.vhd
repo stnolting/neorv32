@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080201"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080202"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -825,7 +825,7 @@ package neorv32_package is
   constant cp_sel_bitmanip_c : natural := 2; -- CP2: bit manipulation ('B' extensions)
   constant cp_sel_fpu_c      : natural := 3; -- CP3: floating-point unit ('Zfinx' extension)
   constant cp_sel_cfu_c      : natural := 4; -- CP4: custom instructions CFU ('Zxcfu' extension)
---constant cp_sel_???_c      : natural := 5; -- CP5: reserved
+  constant cp_sel_cond_c     : natural := 5; -- CP5: conditional operations ('Zicond' extension)
 
   -- ALU Function Codes [DO NOT CHANGE ENCODING!] -------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -982,6 +982,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
       CPU_EXTENSION_RISCV_Zicntr   : boolean := true;   -- implement base counters?
+      CPU_EXTENSION_RISCV_Zicond   : boolean := false;  -- implement conditional operations extension?
       CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean := false;  -- implement multiply-only M sub-extension?
@@ -1140,6 +1141,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
       CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
+      CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement conditional operations extension?
       CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
@@ -1212,6 +1214,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
       CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
       CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
+      CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement conditional operations extension?
       CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
@@ -1306,16 +1309,17 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_alu
     generic (
-      XLEN                      : natural; -- data path width
+      XLEN                       : natural; -- data path width
       -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_B     : boolean; -- implement bit-manipulation extension?
-      CPU_EXTENSION_RISCV_M     : boolean; -- implement mul/div extension?
-      CPU_EXTENSION_RISCV_Zmmul : boolean; -- implement multiply-only M sub-extension?
-      CPU_EXTENSION_RISCV_Zfinx : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-      CPU_EXTENSION_RISCV_Zxcfu : boolean; -- implement custom (instr.) functions unit?
+      CPU_EXTENSION_RISCV_B      : boolean; -- implement bit-manipulation extension?
+      CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
+      CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
+      CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
+      CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
+      CPU_EXTENSION_RISCV_Zicond : boolean; -- implement conditional operations extension?
       -- Extension Options --
-      FAST_MUL_EN               : boolean; -- use DSPs for M extension's multiplier
-      FAST_SHIFT_EN             : boolean  -- use barrel shifter for shift operations
+      FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
+      FAST_SHIFT_EN              : boolean  -- use barrel shifter for shift operations
     );
     port (
       -- global control --
@@ -1430,6 +1434,26 @@ package neorv32_package is
       res_o    : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
       fflags_o : out std_ulogic_vector(4 downto 0); -- exception flags
       valid_o  : out std_ulogic -- data output valid
+    );
+  end component;
+
+  -- Component: CPU Co-Processor for Conditional Operations ('Zicond' extension) ------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_cpu_cp_cond
+    generic (
+      XLEN : natural -- data path width
+    );
+    port (
+      -- global control --
+      clk_i   : in  std_ulogic; -- global clock, rising edge
+      ctrl_i  : in  ctrl_bus_t; -- main control bus
+      start_i : in  std_ulogic; -- trigger operation
+      -- data input --
+      rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
+      rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+      -- result and status --
+      res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
+      valid_o : out std_ulogic -- data output valid
     );
   end component;
 
