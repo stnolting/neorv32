@@ -366,6 +366,17 @@ See section <<_zicntr_cpu_base_counters>> for more information.
 
 
 :sectnums!:
+===== _CPU_EXTENSION_RISCV_Zicond_
+
+[cols="4,4,2"]
+[frame="all",grid="none"]
+|======
+| **CPU_EXTENSION_RISCV_Zicond** | _boolean_ | false
+3+| Implement the <<_zicond_conditional_operations_extension>> ISA extension when true.
+|======
+
+
+:sectnums!:
 ===== _CPU_EXTENSION_RISCV_Zihpm_
 
 [cols="4,4,2"]
