@@ -115,8 +115,9 @@ see the [_open-source architecture ID list_](https://github.com/riscv/riscv-isa-
 [[`M`](https://stnolting.github.io/neorv32/#_m_integer_multiplication_and_division)]
 [[`U`](https://stnolting.github.io/neorv32/#_u_less_privileged_user_mode)]
 [[`X`](https://stnolting.github.io/neorv32/#_x_neorv32_specific_custom_extensions)]
+[[`Zico`](https://stnolting.github.io/neorv32/#_zicntr_cpu_base_counters)]
 [[`Zicsr`](https://stnolting.github.io/neorv32/#_zicsr_control_and_status_register_access_privileged_architecture)]
-[[`Zicntr`](https://stnolting.github.io/neorv32/#_zicntr_cpu_base_counters)]
+[[`Zicond`](https://stnolting.github.io/neorv32/#_zicond_conditional_operations_extension)]
 [[`Zihpm`](https://stnolting.github.io/neorv32/#_zihpm_hardware_performance_monitors)]
 [[`Zifencei`](https://stnolting.github.io/neorv32/#_zifencei_instruction_stream_synchronization)]
 [[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_single_precision_floating_point_operations)]
@@ -133,7 +134,7 @@ and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/
 * 16 fast interrupt request channels as NEORV32-specific extension
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as `Zxcfu` ISA extension)
 for _custom RISC-V instructions_ (R3-type, R4-type and R5-type);
-* _intrinsic_ libraries for the `Zxcfu` and `Zfinx` ISA extensions
+* _intrinsic_ libraries for the `Zicond`, `Zfinx` and `Zxcfu` ISA extensions
 
 **Memories**
 
