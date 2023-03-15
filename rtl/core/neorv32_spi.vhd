@@ -103,11 +103,10 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant ctrl_busy_c         : natural := 31; -- r/-: spi phy busy or tx fifo not empty yet
 
   -- access control --
-  signal acc_en  : std_ulogic; -- module access enable
-  signal addr    : std_ulogic_vector(31 downto 0); -- access address
-  signal wren    : std_ulogic; -- word write enable
-  signal rden    : std_ulogic; -- read enable
-  signal rden_ff : std_ulogic;
+  signal acc_en : std_ulogic; -- module access enable
+  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal wren   : std_ulogic; -- word write enable
+  signal rden   : std_ulogic; -- read enable
 
   -- control register --
   type ctrl_t is record
@@ -132,7 +131,6 @@ architecture neorv32_spi_rtl of neorv32_spi is
   type rtx_engine_t is record
     state    : std_ulogic_vector(2 downto 0);
     busy     : std_ulogic;
-    start    : std_ulogic;
     sreg     : std_ulogic_vector(7 downto 0);
     bitcnt   : std_ulogic_vector(3 downto 0);
     sdi_sync : std_ulogic;
@@ -208,10 +206,9 @@ begin
   process(clk_i)
   begin
     if rising_edge(clk_i) then
-      rden_ff <= rden; -- delay read access by one cycle due to sync FIFO read access (FIXME?)
-      ack_o   <= rden_ff or wren; -- bus access acknowledge
-      data_o  <= (others => '0');
-      if (rden_ff = '1') then
+      ack_o  <= wren or rden; -- bus access acknowledge
+      data_o <= (others => '0');
+      if (rden = '1') then
         if (addr = spi_ctrl_addr_c) then -- control register
           data_o(ctrl_en_c)                            <= ctrl.enable;
           data_o(ctrl_cpha_c)                          <= ctrl.cpha;
@@ -259,8 +256,7 @@ begin
     FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,           -- size of data elements in fifo
     FIFO_RSYNC => true,        -- sync read
-    FIFO_SAFE  => true,        -- safe access
-    FIFO_GATE  => false        -- no output gate required
+    FIFO_SAFE  => true         -- safe access
   )
   port map (
     -- control --
@@ -281,7 +277,7 @@ begin
   tx_fifo.clear <= not ctrl.enable;
   tx_fifo.we    <= '1' when (wren = '1') and (addr = spi_rtx_addr_c) else '0';
   tx_fifo.wdata <= data_i(7 downto 0);
-  tx_fifo.re    <= '1' when (rtx_engine.state = "100") and (tx_fifo.avail = '1') and (rtx_engine.start = '0') else '0';
+  tx_fifo.re    <= '1' when (rtx_engine.state = "100") else '0';
 
 
   -- RX FIFO --
@@ -290,8 +286,7 @@ begin
     FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,           -- size of data elements in fifo
     FIFO_RSYNC => true,        -- sync read
-    FIFO_SAFE  => true,        -- safe access
-    FIFO_GATE  => false        -- no output gate required
+    FIFO_SAFE  => true         -- safe access
   )
   port map (
     -- control --
@@ -333,8 +328,7 @@ begin
   begin
     if rising_edge(clk_i) then
       -- defaults --
-      rtx_engine.done  <= '0';
-      rtx_engine.start <= tx_fifo.re; -- delay start trigger by one cycle due to sync FIFO read access
+      rtx_engine.done <= '0';
 
       -- serial engine --
       rtx_engine.state(2) <= ctrl.enable;
@@ -345,7 +339,7 @@ begin
           spi_clk_o         <= ctrl.cpol;
           rtx_engine.bitcnt <= (others => '0');
           rtx_engine.sreg   <= tx_fifo.rdata;
-          if (rtx_engine.start = '1') then -- trigger new transmission
+          if (tx_fifo.avail = '1') then -- trigger new transmission
             rtx_engine.state(1 downto 0) <= "01";
           end if;
 

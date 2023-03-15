@@ -149,11 +149,10 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant ctrl_tx_busy_c       : natural := 31; -- r/-: UART transmitter is busy and TX FIFO not empty
 
   -- access control --
-  signal acc_en  : std_ulogic; -- module access enable
-  signal addr    : std_ulogic_vector(31 downto 0); -- access address
-  signal wren    : std_ulogic; -- word write enable
-  signal rden    : std_ulogic; -- read enable
-  signal rden_ff : std_ulogic;
+  signal acc_en : std_ulogic; -- module access enable
+  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal wren   : std_ulogic; -- word write enable
+  signal rden   : std_ulogic; -- read enable
 
   -- clock generator --
   signal uart_clk : std_ulogic;
@@ -266,10 +265,9 @@ begin
   process(clk_i)
   begin
     if rising_edge(clk_i) then
-      rden_ff <= rden; -- delay read access by one cycle due to synchronous FIFO read access
-      ack_o   <= wren or rden_ff; -- bus access acknowledge
-      data_o  <= (others => '0');
-      if (rden_ff = '1') then
+      ack_o  <= wren or rden; -- bus access acknowledge
+      data_o <= (others => '0');
+      if (rden = '1') then
         if (addr = uart_id_ctrl_addr_c) then -- control register
           data_o(ctrl_en_c)                        <= ctrl.enable;
           data_o(ctrl_sim_en_c)                    <= ctrl.sim_mode;
@@ -313,8 +311,7 @@ begin
     FIFO_DEPTH => UART_TX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,            -- size of data elements in fifo (32-bit only for simulation)
     FIFO_RSYNC => true,         -- sync read
-    FIFO_SAFE  => true,         -- safe access
-    FIFO_GATE  => false         -- no output gate required
+    FIFO_SAFE  => true          -- safe access
   )
   port map (
     -- control --
@@ -335,7 +332,7 @@ begin
   tx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
   tx_fifo.wdata <= data_i(7 downto 0);
   tx_fifo.we    <= '1' when (wren = '1') and (addr = uart_id_rtx_addr_c) else '0';
-  tx_fifo.re    <= '1' when (tx_engine.state = "100") and (tx_fifo.avail = '1') else '0';
+  tx_fifo.re    <= '1' when (tx_engine.state = "100") else '0';
 
   -- TX interrupt generator --
   process(clk_i)
@@ -354,8 +351,7 @@ begin
     FIFO_DEPTH => UART_RX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,            -- size of data elements in fifo
     FIFO_RSYNC => true,         -- sync read
-    FIFO_SAFE  => true,         -- safe access
-    FIFO_GATE  => false         -- no output gate required
+    FIFO_SAFE  => true          -- safe access
   )
   port map (
     -- control --
@@ -392,7 +388,7 @@ begin
 
   -- Transmit Engine ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  process(clk_i)
+  transmitter: process(clk_i)
   begin
     if rising_edge(clk_i) then
       -- synchronize clear-to-send --
@@ -409,13 +405,13 @@ begin
         -- ------------------------------------------------------------
           tx_engine.baudcnt <= ctrl.baud;
           tx_engine.bitcnt  <= "1011"; -- 1 start-bit + 8 data-bits + 1 stop-bit + 1 pause-bit
+          tx_engine.sreg    <= tx_fifo.rdata & '0'; -- data & start-bit
           if (tx_fifo.avail = '1') then
             tx_engine.state(1 downto 0) <= "01";
           end if;
 
-        when "101" => -- PREPARE: get data from buffer, check if we are allowed to start sending
+        when "101" => -- WAIT: check if we are allowed to start sending
         -- ------------------------------------------------------------
-          tx_engine.sreg <= tx_fifo.rdata & '0'; -- data & start-bit
           if (tx_engine.cts_sync(1) = '0') or (ctrl.hwfc_en = '0') then -- allowed to send OR flow-control disabled
             tx_engine.state(1 downto 0) <= "11";
           end if;
@@ -442,7 +438,7 @@ begin
 
       end case;
     end if;
-  end process;
+  end process transmitter;
 
   -- transmitter busy --
   tx_engine.busy <= '0' when (tx_engine.state(1 downto 0) = "00") else '1';
@@ -453,7 +449,7 @@ begin
 
   -- Receive Engine -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  process(clk_i)
+  receiver: process(clk_i)
   begin
     if rising_edge(clk_i) then
       -- input synchronizer --
@@ -500,7 +496,7 @@ begin
 
       end case;
     end if;
-  end process;
+  end process receiver;
 
   -- RX overrun flag --
   process(clk_i)
