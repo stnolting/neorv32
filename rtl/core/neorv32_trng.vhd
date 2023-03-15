@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # This processor module instantiates the "neoTRNG" true random number generator. An optional    #
 -- # "random pool" FIFO can be configured using the TRNG_FIFO generic.                             #
--- # See the neoTRNG's documentation for more information: https://github.com/stnolting/neoTRNG    #
+-- # See the neoTRNG documentation for more information: https://github.com/stnolting/neoTRNG      #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -133,16 +133,16 @@ begin
   assert not (sim_mode_c = true) report "NEORV32 PROCESSOR CONFIG WARNING: TRNG uses SIMULATION mode!" severity warning;
 
 
-  -- Access Control -------------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+
+  -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = trng_base_c(hi_abb_c downto lo_abb_c)) else '0';
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
-
-  -- Write Access ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  write_access: process(rstn_i, clk_i)
+  -- write access --
+  process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       enable   <= '0';
@@ -154,25 +154,24 @@ begin
         fifo_clr <= data_i(ctrl_fifo_clr_c);
       end if;
     end if;
-  end process write_access;
+  end process;
 
-
-  -- Read Access ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  read_access: process(clk_i)
+  -- read access --
+  process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= wren or rden; -- host bus acknowledge
       data_o <= (others => '0');
       if (rden = '1') then
-        data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
-        --
+        if (fifo.avail = '1') then -- make sure data byte is zero if no valid data available to prevent it is read twice
+          data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
+        end if;
         data_o(ctrl_sim_mode_c) <= bool_to_ulogic_f(sim_mode_c);
         data_o(ctrl_en_c)       <= enable;
         data_o(ctrl_valid_c)    <= fifo.avail;
       end if;
     end if;
-  end process read_access;
+  end process;
 
 
   -- neoTRNG True Random Number Generator ---------------------------------------------------
@@ -201,9 +200,8 @@ begin
   generic map (
     FIFO_DEPTH => IO_TRNG_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,            -- size of data elements in fifo
-    FIFO_RSYNC => false,        -- async read
-    FIFO_SAFE  => true,         -- safe access
-    FIFO_GATE  => true          -- make sure the same RND data byte cannot be read twice
+    FIFO_RSYNC => true,         -- sync read
+    FIFO_SAFE  => true          -- safe access
   )
   port map (
     -- control --
@@ -221,11 +219,8 @@ begin
     avail_o => fifo.avail  -- data available when set
   );
 
-  -- fifo reset --
   fifo.clear <= '1' when (enable = '0') or (fifo_clr = '1') else '0';
-
-  -- read access --
-  fifo.re <= '1' when (rden = '1') else '0';
+  fifo.re    <= '1' when (rden = '1') else '0';
 
 
 end neorv32_trng_rtl;
