@@ -8,15 +8,15 @@
 | Hardware source file(s): | neorv32_mtime.vhd | 
 | Software driver file(s): | neorv32_mtime.c |
 |                          | neorv32_mtime.h |
-| Top entity port:         | `mtime_irq_i` | RISC-V machine timer IRQ if internal MTIME is **not** implemented
-| Configuration generics:  | _IO_MTIME_EN_ | implement MTIME when _true_
+| Top entity port:         | `mtime_irq_i` | RISC-V machine timer IRQ if internal one is **not** implemented
+| Configuration generics:  | `IO_MTIME_EN` | implement machine timer when `true`
 | CPU interrupts:          | `MTI` | machine timer interrupt (see <<_processor_interrupts>>)
 |=======================
 
 The MTIME module implements a memory-mapped MTIME machine system timer that is compatible to the RISC-V
 privileged specifications. The 64-bit system time is accessed via the  memory-mapped `TIME_LO` and
 `TIME_HI`registers. A 64-bit time compare register, which is accessible via the memory-mapped `TIMECMP_LO`
-and `TIMECMP_HI` registers, can be used to configure the CPU's MTI (machine timer interrupt). The interrupt
+and `TIMECMP_HI` registers, can be used to configure the CPU's `MTI` (machine timer interrupt). The interrupt
 is triggered whenever `TIME` (high & low part) is greater than or equal to `TIMECMP` (high & low part).
 The interrupt remains active (=pending) until `TIME` becomes less `TIMECMP` again (either by modifying
 `TIME` or `TIMECMP`).
@@ -27,9 +27,9 @@ After a hardware reset the `TIME` and `TIMECMP` register are reset to all-zero.
 
 .External MTIME Interrupt
 [IMPORTANT]
+If the internal MTIME module is disabled (`IO_MTIME_EN` = `false`) the machine timer interrupt becomes available as external signal.
 The `mtime_irq_i` signal is level-triggered and high-active. Once set the signal has to stay high until
-the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register). All RISC-V standard interrupts
-can **NOT** be acknowledged by writing zero to the according <<_mip>> CSR bit. +
+the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register).
 
 
 **Register Map**

@@ -2,37 +2,34 @@
 === Bootloader
 
 [NOTE]
-This section refers to the **default** bootloader from the repository. The bootloader can be customized
-to target application-specific scenarios using pre-defined options (see User Guide section
-https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader[Customizing the Internal Bootloader]
-) or it can be completely rewritten/replaced for custom purpose.
+This section refers to the **default** NEORV32 bootloader.
 
-The NEORV32 bootloader (source code `sw/bootloader/bootloader.c`) provides an optional build-in firmware that
+The NEORV32 bootloader (`sw/bootloader/bootloader.c`) provides an optional built-in firmware that
 allows to upload new application executables at _any time_ without the need to re-synthesize the FPGA's bitstream.
 A UART connection is used to provide a simple text-based user interface that allows to upload executables.
 
 Furthermore, the bootloader provides options to store an executable to a processor-external SPI flash.
 An "auto boot" feature can optionally fetch this executable right after reset if there is no user interaction
-via UART. This allows to build processor setups with _non-volatile application storage_, which can still be updated at any time. 
+via UART. This allows to build processor setups with _non-volatile application storage_ while maintaining the option
+to update the application software at any timer.
 
 
 :sectnums:
 ==== Bootloader SoC/CPU Requirements
 
-The bootloader relies on certain CPU and SoC extensions and modules to be enabled to allow full functionality.
+The bootloader requires certain CPU and SoC extensions and modules to be enabled in order to operate correctly.
 
-[cols="<3,<12"]
+[cols="^2,<8"]
 [grid="none"]
 |=======================
-| **REQUIRED**  | The bootloader is implemented only if the <<_int_bootloader_en>> is _true_ (default). This will automatically select the CPU's <<_indirect_boot>> boot configuration.
-| **REQUIRED**  | The bootloader requires the privileged architecture CPU extension (<<_zicsr_control_and_status_register_access_privileged_architecture>>) to be enabled.
-| **REQUIRED**  | At least 512 bytes of data memory (processor-internal DMEM or processor-external DMEM) are required for the bootloader's stack.
-| _RECOMMENDED_ | For user interaction via UART (like uploading executables) the primary UART (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>) has to be implemented.
-Without UART0 the auto-boot via SPI is still supported but the bootloader should be customized (see User Guide).
+| **REQUIRED**  | The bootloader is implemented only if the `INT_BOOTLOADER_EN` top generic is `true`. This will automatically select the CPU's <<_indirect_boot>> boot configuration.
+| **REQUIRED**  | The bootloader requires the privileged architecture CPU extension (<<_zicsr_isa_extension>>) to be enabled.
+| **REQUIRED**  | At least 512 bytes of data memory (processor-internal DMEM or processor-external DMEM) are required for the bootloader's stack and global variables.
+| _RECOMMENDED_ | For user interaction via the <<_bootloader_console>> (like uploading executables) the primary UART (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>) is required.
 | _RECOMMENDED_ | The default bootloader uses bit 0 of the <<_general_purpose_input_and_output_port_gpio>> output port to drive a high-active "heart beat" status LED.
-| _RECOMMENDED_ | The <<_machine_system_timer_mtime>> is used to control blinking of the status LED and also to automatically trigger the auto-boot sequence.
-| OPTIONAL      | The SPI controller (<<_serial_peripheral_interface_controller_spi>>) is needed to store/load executable from external flash (for the auto boot feature).
-| OPTIONAL      | The XIP controller (<<_execute_in_place_module_xip>>) is needed to execute code directly from a pre-programmed SPI flash.
+| _RECOMMENDED_ | The <<_machine_system_timer_mtime>> is used to control blinking of the status LED and also to automatically trigger the <<_auto_boot_sequence>>.
+| OPTIONAL      | The SPI controller (<<_serial_peripheral_interface_controller_spi>>) is needed to store/load executable from external flash using the <<_auto_boot_sequence>>.
+| OPTIONAL      | The XIP controller (<<_execute_in_place_module_xip>>) is needed to boot/execute code directly from a pre-programmed SPI flash.
 |=======================
 
 
@@ -53,17 +50,16 @@ The SPI flash has to support single-byte read and write operations, 24-bit addre
 .Custom Configuration
 [TIP]
 Most properties (like chip select line, flash address width, SPI clock frequency, ...) of the default bootloader can be reconfigured
-without the need to change the source code. Custom configuration can be made using command line switches when recompiling the bootloader.
-See the User Guide https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader for more information.
+without the need to change the source code. Custom configuration can be made using command line switches (defines) when recompiling
+the bootloader. See the User Guide https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader for more information.
 
 
 :sectnums:
 ==== Bootloader Console
 
-To interact with the bootloader, connect the primary UART (UART0) signals (`uart0_txd_o` and
-`uart0_rxd_o`) of the processor's top entity via a serial port (-adapter) to your computer (hardware flow control is
-not used so the according interface signals can be ignored.), configure your
-terminal program using the following settings and perform a reset of the processor.
+To interact with the bootloader, connect the primary UART (UART0) signals (`uart0_txd_o` and `uart0_rxd_o`) of the processor's top
+entity via a serial port (-adapter) to your computer (hardware flow control is not used so the according interface signals can be
+ignored), configure your terminal program using the following settings and perform a reset of the processor.
 
 Terminal console settings (`19200-8-N-1`):
 
@@ -74,8 +70,9 @@ Terminal console settings (`19200-8-N-1`):
 * newline on `\r\n` (carriage return, newline)
 * no transfer protocol / control flow protocol - just raw bytes
 
+.Terminal Program
 [IMPORTANT]
-_Any_ terminal program that can connect to a serial port should work. However, make sure the program
+Any terminal program that can connect to a serial port should work. However, make sure the program
 can transfer data in _raw_ byte mode without any protocol overhead (e.g. XMODEM). Some terminal programs struggle with
 transmitting files larger than 4kB (see https://github.com/stnolting/neorv32/pull/215). Try a different terminal program
 if uploading of a binary does not work.
@@ -108,13 +105,13 @@ The start-up screen gives some brief information about the bootloader and severa
 |=======================
 | `BLDV` | Bootloader version (built date).
 | `HWV`  | Processor hardware version (the <<_mimpid>> CSR); in BCD format; example: `0x01040606` = v1.4.6.6).
-| `CID`  | Custom user-defined ID (via the `CUSTOM_ID` register from <<_system_configuration_information_memory_sysinfo>>; defined by the <<_custom_id>> generic).
-| `CLK`  | Processor clock speed in Hz (via the `CLK` register from <<_system_configuration_information_memory_sysinfo>>; defined by the <<_clock_frequency>> generic).
+| `CID`  | Custom user-defined ID (via the `CUSTOM_ID` register from <<_system_configuration_information_memory_sysinfo>>.
+| `CLK`  | Processor clock speed in Hz (via the `CLK` register from <<_system_configuration_information_memory_sysinfo>>.
 | `MISA` | RISC-V CPU extensions (<<_misa>> CSR).
 | `XISA` | NEORV32-specific CPU extensions (<<_mxisa>> CSR).
-| `SOC`  | Processor configuration (via the `SOC` register from the <<_system_configuration_information_memory_sysinfo>>; mainly defined by the `IO_*` and `MEM_*` configuration generics).
-| `IMEM` | IMEM memory base address and size in byte (via the `IMEM_SIZE` and `ISPACE_BASE` registers from the <<_system_configuration_information_memory_sysinfo>>; defined by the <<_mem_int_imem_size>> generic).
-| `DMEM` | DMEM memory base address and size in byte (via the `DMEM_SIZE` and `DSPACE_BASE` registers from the <<_system_configuration_information_memory_sysinfo>>; defined by the <<_mem_int_dmem_size>> generic).
+| `SOC`  | Processor configuration (via the `SOC` register from the <<_system_configuration_information_memory_sysinfo>>.
+| `IMEM` | IMEM memory base address and size in byte (via the `IMEM_SIZE` and `ISPACE_BASE` registers from the <<_system_configuration_information_memory_sysinfo>>.
+| `DMEM` | DMEM memory base address and size in byte (via the `DMEM_SIZE` and `DSPACE_BASE` registers from the <<_system_configuration_information_memory_sysinfo>>.
 |=======================
 
 Now you have 8 seconds to press _any_ key. Otherwise, the bootloader starts the <<_auto_boot_sequence>>. When
@@ -177,7 +174,7 @@ section https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootlo
 .SPI Flash Programming
 [TIP]
 For detailed information on using an SPI flash for application storage see User Guide section
-https://stnolting.github.io/neorv32/ug/#_programming_an_external_spi_flash_via_the_bootloader[Programming an External SPI Flash via the Bootloader].
+https://stnolting.github.io/neorv32/ug/#_programming_an_external_spi_flash_via_the_bootloader[Programming an ExternalSPI Flash via the Bootloader].
 
 
 :sectnums:

@@ -9,8 +9,8 @@
 | Software driver file(s): | neorv32_neoled.c |
 |                          | neorv32_neoled.h |
 | Top entity port:         | `neoled_o` | 1-bit serial data output
-| Configuration generics:  | _IO_NEOLED_EN_      | implement NEOLED when _true_
-|                          | _IO_NEOLED_TX_FIFO_ | TX FIFO depth, has to be a power of 2, min 1
+| Configuration generics:  | `IO_NEOLED_EN`      | implement NEOLED controller when `true`
+|                          | `IO_NEOLED_TX_FIFO` | TX FIFO depth, has to be a power of 2, min 1
 | CPU interrupts:          | fast IRQ channel 9  | configurable NEOLED data FIFO interrupt (see <<_processor_interrupts>>)
 |=======================
 
@@ -19,17 +19,13 @@
 
 The NEOLED module provides a dedicated interface for "smart RGB LEDs" like WS2812, WS2811 or any other compatible
 LEDs. These LEDs provide a single-wire interface that uses an asynchronous serial protocol for transmitting color
-data. Basically, data is transferred via LED-internal shift registers, which allows to cascade an unlimited
-number of smart LEDs. The protocol provides a RESET command to strobe the transmitted data into the
-LED PWM driver registers after data has shifted throughout all LEDs in a chain.
-
-Using the NEOLED module allows CPU-independent operation of an arbitrary number of smart LEDs. A configurable data
+data.  Using the NEOLED module allows CPU-independent operation of an arbitrary number of smart LEDs. A configurable data
 buffer (FIFO) allows to utilize block transfer operation without requiring the CPU.
 
 [NOTE]
 The NEOLED interface is compatible to the "Adafruit Industries NeoPixel(TM)" products, which feature
-WS2812 (or older WS2811) smart LEDs (see link:https://learn.adafruit.com/adafruit-neopixel-uberguide).
-Other LEDs might be compatible as well when adjusting the controller's programmable timing configuration.
+WS2812 (or older WS2811) smart LEDs. Other LEDs might be compatible as well when adjusting the controller's programmable
+timing configuration.
 
 The interface provides a single 1-bit output `neoled_o` to drive an arbitrary number of cascaded LEDs. Since the
 NEOLED module provides 24-bit and 32-bit operating modes, a mixed setup with RGB LEDs (24-bit color)
@@ -40,8 +36,8 @@ and RGBW LEDs (32-bit color including a dedicated white LED chip) is possible.
 
 The NEOLED modules provides two accessible interface registers: the control register `CTRL` and the write-only
 TX data register `DATA`. The NEOLED module is globally enabled via the control register's
-_NEOLED_CTRL_EN_ bit. Clearing this bit will terminate any current operation, clear the TX buffer, reset the module
-and set the `neoled_o` output to zero. The precise timing (implementing the **WS2812** protocol) and transmission
+`NEOLED_CTRL_EN` bit. Clearing this bit will terminate any current operation, clear the TX buffer, reset the module
+and set the `neoled_o` output to zero. The precise timing (e.g. implementing the **WS2812** protocol) and transmission
 mode are fully programmable via the `CTRL` register to provide maximum flexibility.
 
 
@@ -52,9 +48,9 @@ four chips providing RGB color plus a dedicated white LED chip (= RGBW). Since t
 LED chip is defined via an 8-bit value the RGB LEDs require a frame of 24-bit per module and the RGBW
 LEDs require a frame of 32-bit per module.
 
-The data transfer quantity of the NEOLED module can be programmed via the _NEOLED_MODE_EN_ control
+The data transfer quantity of the NEOLED module can be programmed via the `NEOLED_MODE_EN` control
 register bit. If this bit is cleared, the NEOLED interface operates in 24-bit mode and will transmit bits `23:0` of
-the data written to `DATA` to the LEDs. If _NEOLED_MODE_EN_ is set, the NEOLED interface operates in 32-bit
+the data written to `DATA` to the LEDs. If `NEOLED_MODE_EN` is set, the NEOLED interface operates in 32-bit
 mode and will transmit bits `31:0` of the data written to `DATA` to the LEDs.
 
 The mode bit can be reconfigured before writing a new data word to `DATA` in order to support an arbitrary setup/mixture
@@ -86,10 +82,11 @@ image::neopixel.png[align=center]
 
 **Timing Configuration**
 
-The basic carrier frequency (800kHz for the WS2812 LEDs) is configured via a 3-bit main clock prescaler (_NEOLED_CTRL_PRSCx_, see table below)
-that scales the main processor clock f~main~ and a 5-bit cycle multiplier _NEOLED_CTRL_T_TOT_x_.
+The basic carrier frequency (800kHz for the WS2812 LEDs) is configured via a 3-bit main clock prescaler
+(`NEOLED_CTRL_PRSC*`, see table below) that scales the main processor clock f~main~ and a 5-bit cycle
+multiplier `NEOLED_CTRL_T_TOT_*`.
 
-.NEOLED prescaler configuration
+.NEOLED Prescaler Configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
@@ -98,7 +95,7 @@ that scales the main processor clock f~main~ and a 5-bit cycle multiplier _NEOLE
 |=======================
 
 The duty-cycles (or more precisely: the high- and low-times for sending either a '1' bit or a '0' bit) are
-defined via the 5-bit _NEOLED_CTRL_T_ONE_H_x_ and _NEOLED_CTRL_T_ZERO_H_x_ values, respectively. These programmable
+defined via the 5-bit `NEOLED_CTRL_T_ONE_H_*` and `NEOLED_CTRL_T_ZERO_H_*` values, respectively. These programmable
 timing constants allow to adapt the interface for a wide variety of smart LED protocol (for example WS2812 vs.
 WS2811).
 
@@ -108,7 +105,7 @@ WS2811).
 Generate the base clock f~TX~ for the NEOLED TX engine:
 
 * processor clock f~main~ = 100 MHz
-* _NEOLED_CTRL_PRSCx_ = `0b001` = f~main~ / 4
+* `NEOLED_CTRL_PRSCx` = `0b001` = f~main~ / 4
 
 _**f~TX~**_ = _f~main~[Hz]_ / `clock_prescaler` = 100MHz / 4 = 25MHz
 
@@ -116,15 +113,15 @@ _**T~TX~**_ = 1 / _**f~TX~**_ = 40ns
 
 Generate carrier period (T~carrier~) and *high-times* (duty cycle) for sending `0` (T~0H~) and `1` (T~1H~) bits:
 
-* _NEOLED_CTRL_T_TOT_ = `0b11110` (= decimal 30)
-* _NEOLED_CTRL_T_ZERO_H_ = `0b01010` (= decimal 10)
-* _NEOLED_CTRL_T_ONE_H_ = `0b10100` (= decimal 20)
+* `NEOLED_CTRL_T_TOT` = `0b11110` (= decimal 30)
+* `NEOLED_CTRL_T_ZERO_H` = `0b01010` (= decimal 10)
+* `NEOLED_CTRL_T_ONE_H` = `0b10100` (= decimal 20)
 
-_**T~carrier~**_ = _**T~TX~**_ * _NEOLED_CTRL_T_TOT_ = 40ns * 30 = 1.4µs
+_**T~carrier~**_ = _**T~TX~**_ * `NEOLED_CTRL_T_TOT` = 40ns * 30 = 1.4µs
 
-_**T~0H~**_ = _**T~TX~**_ * _NEOLED_CTRL_T_ZERO_H_ = 40ns * 10 = 0.4µs
+_**T~0H~**_ = _**T~TX~**_ * `NEOLED_CTRL_T_ZERO_H` = 40ns * 10 = 0.4µs
 
-_**T~1H~**_ = _**T~TX~**_ * _NEOLED_CTRL_T_ONE_H_ = 40ns * 20 = 0.8µs
+_**T~1H~**_ = _**T~TX~**_ * `NEOLED_CTRL_T_ONE_H` = 40ns * 20 = 0.8µs
 
 [TIP]
 The NEOLED SW driver library (`neorv32_neoled.h`) provides a simplified configuration
@@ -135,21 +132,21 @@ clock frequency.
 **TX Data FIFO**
 
 The interface features a configurable  TX data buffer (a FIFO) to allow more CPU-independent operation. The buffer
-depth is configured via the _IO_NEOLED_TX_FIFO_ top generic (default = 1 entry). The FIFO size configuration can be
-read via the _NEOLED_CTRL_BUFS_x_ control register bits, which result log2(_IO_NEOLED_TX_FIFO_).
+depth is configured via the `IO_NEOLED_TX_FIFO` top generic (default = 1 entry). The FIFO size configuration can be
+read via the `NEOLED_CTRL_BUFS_x` control register bits, which result log2(_IO_NEOLED_TX_FIFO_).
 
 When writing data to the `DATA` register the data is automatically written to the TX buffer. Whenever
 data is available in the buffer the serial transmission engine will take and transmit it to the LEDs.
-The data transfer size (_NEOLED_MODE_EN_) can be modified at any time since this control register bit is also buffered
+The data transfer size (`NEOLED_MODE_EN`) can be modified at any time since this control register bit is also buffered
 in the FIFO. This allows an arbitrary mix of RGB and RGBW LEDs in the chain.
 
-Software can check the FIFO fill level via the control register's _NEOLED_CTRL_TX_EMPTY_, _NEOLED_CTRL_TX_HALF_
-and _NEOLED_CTRL_TX_FULL_ flags. The _NEOLED_CTRL_TX_BUSY_ flags provides additional information if the the serial
+Software can check the FIFO fill level via the control register's `NEOLED_CTRL_TX_EMPTY`, `NEOLED_CTRL_TX_HALF`
+and `NEOLED_CTRL_TX_FULL` flags. The `NEOLED_CTRL_TX_BUSY` flags provides additional information if the the serial
 transmit engine is still busy sending data.
 
 [WARNING]
-Please note that the timing configurations (_NEOLED_CTRL_PRSCx_, _NEOLED_CTRL_T_TOT_x_,
-_NEOLED_CTRL_T_ONE_H_x_ and _NEOLED_CTRL_T_ZERO_H_x_) are **NOT** stored to the buffer. Changing
+Please note that the timing configurations (`NEOLED_CTRL_PRSCx`, `NEOLED_CTRL_T_TOT_x`,
+`NEOLED_CTRL_T_ONE_H_x` and `NEOLED_CTRL_T_ZERO_H_x`) are **NOT** stored to the buffer. Changing
 these value while the buffer is not empty or the TX engine is still busy will cause data corruption.
 
 
@@ -160,11 +157,11 @@ registers when the data line is low for 50μs ("RESET" command, see table above)
 using busy-wait for at least 50μs. Obviously, this concept wastes a lot of processing power.
 
 To circumvent this, the NEOLED module provides an option to automatically issue an idle time for creating the RESET
-command. If the _NEOLED_CTRL_STROBE_ control register bit is set, _all_ data written to the data FIFO (via `DATA`,
+command. If the `NEOLED_CTRL_STROBE` control register bit is set, _all_ data written to the data FIFO (via `DATA`,
 the actually written data is irrelevant) will trigger an idle phase (`neoled_o` = zero) of 127 periods (= _**T~carrier~**_).
 This idle time will cause the LEDs to strobe the color data into the PWM driver registers.
 
-Since the _NEOLED_CTRL_STROBE_ flag is also buffered in the TX buffer, the RESET command is treated just as another
+Since the `NEOLED_CTRL_STROBE` flag is also buffered in the TX buffer, the RESET command is treated just as another
 data word being written to the TX buffer making busy wait concepts obsolete and allowing maximum refresh rates.
 
 
@@ -172,11 +169,11 @@ data word being written to the TX buffer making busy wait concepts obsolete and 
 
 The NEOLED modules features a single interrupt that triggers based on the current TX buffer fill level.
 The interrupt can only become pending if the NEOLED module is enabled. The specific interrupt condition
-is configured via the _NEOLED_CTRL_IRQ_CONF_ bit in the unit's control register.
+is configured via the `NEOLED_CTRL_IRQ_CONF` bit in the unit's control register.
 
-If _NEOLED_CTRL_IRQ_CONF_ is set, the module's interrupt is generated whenever the TX FIFO is less than half-full.
-In this case software can write up to _IO_NEOLED_TX_FIFO_/2 new data words to `DATA` without checking the FIFO
-status flags. If _NEOLED_CTRL_IRQ_CONF_ is cleared, an interrupt is generated when the TX FIFO is empty.
+If `NEOLED_CTRL_IRQ_CONF` is set, the module's interrupt is generated whenever the TX FIFO is less than half-full.
+In this case software can write up to `IO_NEOLED_TX_FIFO`/2 new data words to `DATA` without checking the FIFO
+status flags. If `NEOLED_CTRL_IRQ_CONF` is cleared, an interrupt is generated when the TX FIFO is empty.
 
 One the NEOLED interrupt has been triggered and became pending, it has to explicitly cleared again by
 writing zero to according <<_mip>> CSR bit.
@@ -189,18 +186,18 @@ writing zero to according <<_mip>> CSR bit.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.13+<| `0xffffffd8` .13+<| `CTRL` <|`0`     _NEOLED_CTRL_EN_                                    ^| r/w <| NEOLED enable
-                                  <|`1`     _NEOLED_CTRL_MODE_                                  ^| r/w <| data transfer size; `0`=24-bit; `1`=32-bit
-                                  <|`2`     _NEOLED_CTRL_STROBE_                                ^| r/w <| `0`=send normal color data; `1`=send RESET command on data write access
-                                  <|`5:3`   _NEOLED_CTRL_PRSC2_ : _NEOLED_CTRL_PRSC0_           ^| r/w <| 3-bit clock prescaler, bit 0
-                                  <|`9:6`   _NEOLED_CTRL_BUFS3_ : _NEOLED_CTRL_BUFS0_           ^| r/- <| 4-bit log2(_IO_NEOLED_TX_FIFO_)
-                                  <|`14:10` _NEOLED_CTRL_T_TOT_4_ : _NEOLED_CTRL_T_TOT_0_       ^| r/w <| 5-bit pulse clock ticks per total single-bit period (T~total~)
-                                  <|`19:15` _NEOLED_CTRL_T_ZERO_H_4_ : _NEOLED_CTRL_T_ZERO_H_0_ ^| r/w <| 5-bit pulse clock ticks per high-time for sending a zero-bit (T~0H~)
-                                  <|`24:20` _NEOLED_CTRL_T_ONE_H_4_ : _NEOLED_CTRL_T_ONE_H_0_   ^| r/w <| 5-bit pulse clock ticks per high-time for sending a one-bit (T~1H~)
-                                  <|`27`    _NEOLED_CTRL_IRQ_CONF_                              ^| r/w <| TX FIFO interrupt configuration: `0`=IRQ if FIFO is empty, `1`=IRQ if FIFO is less than half-full
-                                  <|`28`    _NEOLED_CTRL_TX_EMPTY_                              ^| r/- <| TX FIFO is empty
-                                  <|`29`    _NEOLED_CTRL_TX_HALF_                               ^| r/- <| TX FIFO is _at least_ half full
-                                  <|`30`    _NEOLED_CTRL_TX_FULL_                               ^| r/- <| TX FIFO is full
-                                  <|`31`    _NEOLED_CTRL_TX_BUSY_                               ^| r/- <| TX serial engine is busy when set
+.13+<| `0xffffffd8` .13+<| `CTRL` <|`0`     `NEOLED_CTRL_EN`                                  ^| r/w <| NEOLED enable
+                                  <|`1`     `NEOLED_CTRL_MODE`                                ^| r/w <| data transfer size; `0`=24-bit; `1`=32-bit
+                                  <|`2`     `NEOLED_CTRL_STROBE`                              ^| r/w <| `0`=send normal color data; `1`=send RESET command on data write access
+                                  <|`5:3`   `NEOLED_CTRL_PRSC2 : NEOLED_CTRL_PRSC0`           ^| r/w <| 3-bit clock prescaler, bit 0
+                                  <|`9:6`   `NEOLED_CTRL_BUFS3 : NEOLED_CTRL_BUFS0`           ^| r/- <| 4-bit log2(_IO_NEOLED_TX_FIFO_)
+                                  <|`14:10` `NEOLED_CTRL_T_TOT_4 : NEOLED_CTRL_T_TOT_0`       ^| r/w <| 5-bit pulse clock ticks per total single-bit period (T~total~)
+                                  <|`19:15` `NEOLED_CTRL_T_ZERO_H_4 : NEOLED_CTRL_T_ZERO_H_0` ^| r/w <| 5-bit pulse clock ticks per high-time for sending a zero-bit (T~0H~)
+                                  <|`24:20` `NEOLED_CTRL_T_ONE_H_4 : NEOLED_CTRL_T_ONE_H_0`   ^| r/w <| 5-bit pulse clock ticks per high-time for sending a one-bit (T~1H~)
+                                  <|`27`    `NEOLED_CTRL_IRQ_CONF`                            ^| r/w <| TX FIFO interrupt configuration: `0`=IRQ if FIFO is empty, `1`=IRQ if FIFO is less than half-full
+                                  <|`28`    `NEOLED_CTRL_TX_EMPTY`                            ^| r/- <| TX FIFO is empty
+                                  <|`29`    `NEOLED_CTRL_TX_HALF`                             ^| r/- <| TX FIFO is _at least_ half full
+                                  <|`30`    `NEOLED_CTRL_TX_FULL`                             ^| r/- <| TX FIFO is full
+                                  <|`31`    `NEOLED_CTRL_TX_BUSY`                             ^| r/- <| TX serial engine is busy when set
 | `0xffffffdc` | `DATA` <|`31:0` / `23:0` ^| -/w <| TX data (32- or 24-bit, depending on _NEOLED_CTRL_MODE_ bit)
 |=======================

@@ -12,8 +12,8 @@
 |                          | `sdi_dat_o` | 1-bit serial data output
 |                          | `sdi_dat_i` | 1-bit serial data input
 |                          | `sdi_csn_i` | 1-bit chip-select input (low-active)
-| Configuration generics:  | _IO_SDI_EN_   | implement SDI controller when _true_
-|                          | _IO_SDI_FIFO_ | data FIFO size, has to be at least 1 or a power of two
+| Configuration generics:  | `IO_SDI_EN`   | implement SDI controller when `true`
+|                          | `IO_SDI_FIFO` | data FIFO size, has to a power of two, min 1
 | CPU interrupts:          | fast IRQ channel 11 | configurable SDI interrupt (see <<_processor_interrupts>>)
 |=======================
 
@@ -29,7 +29,7 @@ transmissions without CPU interaction.
 [NOTE]
 The NEORV32 SDI module only supports _device mode_. Transmission are initiated by an external host and not by the
 the processor itself. If you are looking for a _host-mode_ serial peripheral interface (transactions
-initiated by the NEORV32) check out the <<_serial_peripheral_interface_spi>> module.
+initiated by the NEORV32) check out the <<_serial_peripheral_interface_controller_spi>>.
 
 The SDI module provides a single control register `CTRL` to configure the module and to check it's status
 and a single data register `DATA` for receiving/transmitting data.
@@ -37,17 +37,22 @@ and a single data register `DATA` for receiving/transmitting data.
 
 **Theory of Operation**
 
-The SDI module is enabled by setting the _SDI_CTRL_EN_ bit in the `CTRL` control register. Clearing this bit
+The SDI module is enabled by setting the `SDI_CTRL_EN` bit in the `CTRL` control register. Clearing this bit
 resets the entire module including the RX and TX FIFOs.
 
 The SDI operates on byte-level only. Data written to the `DATA` register will be pushed to the TX FIFO. Received
 data can be retrieved by reading the RX FIFO via the `DATA` register. The current state of these FIFOs is available
-via the control register's _SDI_CTRL_RX_*_ and _SDI_CTRL_TX_*_ flags. The RX FIFO can be manually cleared at any time
-by setting the _SDI_CTRL_CLR_RX_ bit.
+via the control register's `SDI_CTRL_RX_*` and `SDI_CTRL_TX_*` flags. The RX FIFO can be manually cleared at any time
+by setting the `SDI_CTRL_CLR_RX` bit.
 
 .MSB-first Only
 [NOTE]
 The NEORV32 SDI module only supports MSB-first mode.
+
+.Transmission Abort
+[NOTE]
+If the external SPI controller aborts an transmission (by setting the chip-select signal high again) _before_
+8 data bits have been transferred, no data is written to the RX FIFO.
 
 
 **SDI Clocking**
@@ -61,11 +66,11 @@ clock domain to simplify timing behavior. However, the clock synchronization req
 **SDI Interrupt**
 
 The SDI module provides a set of programmable interrupt conditions based on the level of the RX & TX FIFOs. The different
-interrupt sources are enabled by setting the according control register's _SDI_CTRL_IRQ_ bits. All enabled interrupt
+interrupt sources are enabled by setting the according control register's `SDI_CTRL_IRQ` bits. All enabled interrupt
 conditions are logically OR-ed so any enabled interrupt source will trigger the module's interrupt signal.
 
 Once the SDI interrupt has fired it will remain active until the actual cause of the interrupt is resolved; for
-example if just the _SDI_CTRL_IRQ_RX_AVAIL_ bit is set, the interrupt will keep firing until the RX FIFO is empty again.
+example if just the `SDI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep firing until the RX FIFO is empty again.
 Furthermore, an active SDI interrupt has to be explicitly cleared again by writing zero to the according
 <<_mip>> CSR bit.
 
@@ -77,21 +82,21 @@ Furthermore, an active SDI interrupt has to be explicitly cleared again by writi
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.16+<| `0xfffffff0` .16+<| `CTRL` <|`0`     _SDI_CTRL_EN_                             ^| r/w <| SDI module enable
-                                  <|`1`     _SDI_CTRL_CLR_RX_                         ^| -/w <| clear RX FIFO when set, bit auto-clears
-                                  <|`3:2`   _reserved_                                ^| r/- <| reserved, read as zero
-                                  <|`7:4`   _SDI_CTRL_FIFO_MSB_ : _SDI_CTRL_FIFO_LSB_ ^| r/- <| FIFO depth; log2(_IO_SDI_FIFO_)
-                                  <|`14:8`  _reserved_                                ^| r/- <| reserved, read as zero
-                                  <|`15`    _SDI_CTRL_IRQ_RX_AVAIL_                   ^| r/w <| fire interrupt if RX FIFO is not empty
-                                  <|`16`    _SDI_CTRL_IRQ_RX_HALF_                    ^| r/w <| fire interrupt if RX FIFO is at least half full
-                                  <|`17`    _SDI_CTRL_IRQ_RX_FULL_                    ^| r/w <| fire interrupt if if RX FIFO is full
-                                  <|`18`    _SDI_CTRL_IRQ_TX_EMPTY_                   ^| r/w <| fire interrupt if TX FIFO is empty
-                                  <|`22:19` _reserved_                                ^| r/- <| reserved, read as zero
-                                  <|`23`    _SDI_CTRL_RX_AVAIL_                       ^| r/- <| RX FIFO data available (RX FIFO not empty)
-                                  <|`24`    _SDI_CTRL_RX_HALF_                        ^| r/- <| RX FIFO at least half full
-                                  <|`25`    _SDI_CTRL_RX_FULL_                        ^| r/- <| RX FIFO full
-                                  <|`26`    _SDI_CTRL_TX_EMPTY_                       ^| r/- <| TX FIFO empty
-                                  <|`27`    _SDI_CTRL_TX_FULL_                        ^| r/- <| TX FIFO full
-                                  <|`31:28` _reserved_                                ^| r/- <| reserved, read as zero
+.16+<| `0xfffffff0` .16+<| `CTRL` <|`0`     `SDI_CTRL_EN`                           ^| r/w <| SDI module enable
+                                  <|`1`     `SDI_CTRL_CLR_RX`                       ^| -/w <| clear RX FIFO when set, bit auto-clears
+                                  <|`3:2`   _reserved_                              ^| r/- <| reserved, read as zero
+                                  <|`7:4`   `SDI_CTRL_FIFO_MSB : SDI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(_IO_SDI_FIFO_)
+                                  <|`14:8`  _reserved_                              ^| r/- <| reserved, read as zero
+                                  <|`15`    `SDI_CTRL_IRQ_RX_AVAIL`                 ^| r/w <| fire interrupt if RX FIFO is not empty
+                                  <|`16`    `SDI_CTRL_IRQ_RX_HALF`                  ^| r/w <| fire interrupt if RX FIFO is at least half full
+                                  <|`17`    `SDI_CTRL_IRQ_RX_FULL`                  ^| r/w <| fire interrupt if if RX FIFO is full
+                                  <|`18`    `SDI_CTRL_IRQ_TX_EMPTY`                 ^| r/w <| fire interrupt if TX FIFO is empty
+                                  <|`22:19` _reserved_                              ^| r/- <| reserved, read as zero
+                                  <|`23`    `SDI_CTRL_RX_AVAIL`                     ^| r/- <| RX FIFO data available (RX FIFO not empty)
+                                  <|`24`    `SDI_CTRL_RX_HALF`                      ^| r/- <| RX FIFO at least half full
+                                  <|`25`    `SDI_CTRL_RX_FULL`                      ^| r/- <| RX FIFO full
+                                  <|`26`    `SDI_CTRL_TX_EMPTY`                     ^| r/- <| TX FIFO empty
+                                  <|`27`    `SDI_CTRL_TX_FULL`                      ^| r/- <| TX FIFO full
+                                  <|`31:28` _reserved_                              ^| r/- <| reserved, read as zero
 | `0xfffffff4` | `DATA` |`7:0` | r/w | receive/transmit data (FIFO)
 |=======================
