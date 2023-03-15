@@ -2,7 +2,7 @@
 -- # << NEORV32 - Serial Data Interface (SDI) >>                                                   #
 -- # ********************************************************************************************* #
 -- # Byte-oriented serial data interface using the SPI protocol. This device acts as *device* (not #
--- # as a host). Hence, all data transfers are driven/clocked by an external SPI host controller.  # 
+-- # as a host). Hence, all data transfers are driven/clocked by an external SPI host controller.  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -229,8 +229,7 @@ begin
     FIFO_DEPTH => RTX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,        -- size of data elements in fifo (32-bit only for simulation)
     FIFO_RSYNC => false,    -- async read
-    FIFO_SAFE  => true,     -- safe access
-    FIFO_GATE  => true      -- output zero if no data available
+    FIFO_SAFE  => true      -- safe access
   )
   port map (
     -- control --
@@ -262,8 +261,7 @@ begin
     FIFO_DEPTH => RTX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,        -- size of data elements in fifo (32-bit only for simulation)
     FIFO_RSYNC => false,    -- async read
-    FIFO_SAFE  => true,     -- safe access
-    FIFO_GATE  => false     -- no output gate required
+    FIFO_SAFE  => true      -- safe access
   )
   port map (
     -- control --
@@ -321,8 +319,12 @@ begin
 
         when "100" => -- enabled but idle, waiting for new transmission trigger
         -- ------------------------------------------------------------
-          serial.sreg <= tx_fifo.rdata;
-          serial.cnt  <= (others => '0');
+          serial.cnt <= (others => '0');
+          if (tx_fifo.avail = '0') then -- output zero if no RX data available
+            serial.sreg <= (others => '0');
+          else
+            serial.sreg <= tx_fifo.rdata;
+          end if;
           if (sync.csn = '0') then -- start new transmission on falling edge of chip-select
             serial.start             <= '1';
             serial.state(1 downto 0) <= "10";
