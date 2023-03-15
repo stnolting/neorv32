@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080202"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080203"; -- NEORV32 version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -2199,8 +2199,7 @@ package neorv32_package is
       FIFO_DEPTH : natural; -- number of fifo entries; has to be a power of two; min 1
       FIFO_WIDTH : natural; -- size of data elements in fifo
       FIFO_RSYNC : boolean; -- false = async read; true = sync read
-      FIFO_SAFE  : boolean; -- true = allow read/write only if entry available
-      FIFO_GATE  : boolean  -- true = use output gate (set to zero if no valid data available)
+      FIFO_SAFE  : boolean  -- true = allow read/write only if entry available
     );
     port (
       -- control --
