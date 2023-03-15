@@ -369,7 +369,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- illegal instruction check --
   signal illegal_cmd : std_ulogic;
-  signal illegal_reg : std_ulogic; -- illegal register (>x15) - E-extension
 
   -- CSR access/privilege and r/w check --
   signal csr_reg_valid  : std_ulogic; -- valid CSR access (implemented at all)
@@ -494,8 +493,7 @@ begin
       FIFO_DEPTH => CPU_IPB_ENTRIES,     -- number of fifo entries; has to be a power of two; min 1
       FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in fifo
       FIFO_RSYNC => false,               -- we NEED to read data asynchronously
-      FIFO_SAFE  => false,               -- no safe access required (ensured by FIFO-external control)
-      FIFO_GATE  => false                -- no output gate required
+      FIFO_SAFE  => false                -- no safe access required (ensured by FIFO-external control)
     )
     port map (
       -- control --
@@ -1334,7 +1332,6 @@ begin
   begin
     -- defaults --
     illegal_cmd <= '0';
-    illegal_reg <= '0';
 
     -- check instruction word encoding and side effects --
     case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
@@ -1342,7 +1339,6 @@ begin
       when opcode_lui_c | opcode_auipc_c | opcode_jal_c => -- LUI, UIPC, JAL (only check actual OPCODE)
       -- ------------------------------------------------------------
         illegal_cmd <= '0';
-        illegal_reg <= execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
       when opcode_jalr_c => -- check JALR.funct3
       -- ------------------------------------------------------------
@@ -1350,7 +1346,6 @@ begin
           when "000"  => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
-        illegal_reg <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
       when opcode_branch_c => -- check BRANCH.funct3
       -- ------------------------------------------------------------
@@ -1358,7 +1353,6 @@ begin
           when funct3_beq_c | funct3_bne_c | funct3_blt_c | funct3_bge_c | funct3_bltu_c | funct3_bgeu_c => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
-        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c); -- illegal 'E' register?
 
       when opcode_load_c => -- check LOAD.funct3
       -- ------------------------------------------------------------
@@ -1366,7 +1360,6 @@ begin
           when funct3_lb_c | funct3_lh_c | funct3_lw_c | funct3_lbu_c | funct3_lhu_c => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
-        illegal_reg <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
       when opcode_store_c => -- check STORE.funct3
       -- ------------------------------------------------------------
@@ -1374,7 +1367,6 @@ begin
           when funct3_sb_c | funct3_sh_c | funct3_sw_c => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
-        illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c); -- illegal 'E' register?
 
       when opcode_alu_c => -- check ALU.funct3 & ALU.funct7
       -- ------------------------------------------------------------
@@ -1395,7 +1387,6 @@ begin
         else
           illegal_cmd <= '1';
         end if;
-        illegal_reg <= execute_engine.i_reg(instr_rd_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rs2_msb_c); -- illegal 'E' register?
 
       when opcode_alui_c => -- check ALU.funct3 & ALU.funct7
       -- ------------------------------------------------------------
@@ -1414,7 +1405,6 @@ begin
         else
           illegal_cmd <= '1';
         end if;
-        illegal_reg <= execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
 
       when opcode_fence_c => -- check FENCE.funct3, ignore all remaining bit-fields
       -- ------------------------------------------------------------
@@ -1444,27 +1434,14 @@ begin
         else
           illegal_cmd <= '0';
         end if;
-        -- illegal E-CPU register? --
-        if (execute_engine.i_reg(instr_funct3_msb_c) = '0') then -- reg-reg CSR (or ENV where rd=rs1=zero)
-          illegal_reg <= execute_engine.i_reg(instr_rd_msb_c) or execute_engine.i_reg(instr_rs1_msb_c);
-        else -- reg-imm CSR
-          illegal_reg <= execute_engine.i_reg(instr_rd_msb_c);
-        end if;
 
       when opcode_fop_c => -- floating point operations - single/dual operands
       -- ------------------------------------------------------------
-        if (CPU_EXTENSION_RISCV_Zfinx = true) and (decode_aux.is_f_op = '1') then -- is supported floating-point instruction
-          illegal_cmd <= '0';
-          illegal_reg <= execute_engine.i_reg(instr_rs2_msb_c) or execute_engine.i_reg(instr_rs1_msb_c) or execute_engine.i_reg(instr_rd_msb_c); -- illegal 'E' register?
-        else
-          illegal_cmd <= '1';
-          illegal_reg <= '0';
-        end if;
+        illegal_cmd <= (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu)) or (not decode_aux.is_f_op);
 
       when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => -- custom instructions (CFU)
       -- ------------------------------------------------------------
         illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- CFU extension implemented?
-        illegal_reg <= '0'; -- custom instruction do not trap if a register above x15 is used when E ISA extension is enabled
 
       when others => -- undefined/illegal opcode
       -- ------------------------------------------------------------
@@ -1477,9 +1454,8 @@ begin
   -- Illegal Operation Check ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- check in EXECUTE state: any illegal instruction processing condition? --
-  trap_ctrl.instr_il <= (illegal_cmd or alu_exc_i or -- illegal instruction or ALU processing exception
-                         (bool_to_ulogic_f(CPU_EXTENSION_RISCV_E) and illegal_reg) or -- illegal register access in E extension
-                         (bool_to_ulogic_f(CPU_EXTENSION_RISCV_C) and execute_engine.is_ici)) -- illegal compressed instruction
+  trap_ctrl.instr_il <= illegal_cmd or alu_exc_i or -- illegal instruction or ALU processing exception
+                        (bool_to_ulogic_f(CPU_EXTENSION_RISCV_C) and execute_engine.is_ici) -- illegal compressed instruction
                         when ((execute_engine.state = EXECUTE) or (execute_engine.state = ALU_WAIT)) else '0'; -- evaluate in execution stages only
 
 
@@ -1635,41 +1611,41 @@ begin
   begin
     if rising_edge(clk_i) then
       -- standard RISC-V exceptions --
-      if    (trap_ctrl.exc_buf(exc_ialign_c)    = '1') then trap_ctrl.cause <= trap_ima_c;  -- instruction address misaligned
-      elsif (trap_ctrl.exc_buf(exc_iaccess_c)   = '1') then trap_ctrl.cause <= trap_iba_c;  -- instruction access fault
-      elsif (trap_ctrl.exc_buf(exc_iillegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c;  -- illegal instruction
-      elsif (trap_ctrl.exc_buf(exc_envcall_c)   = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & csr.privilege & csr.privilege; -- environment call (U/M)
-      elsif (trap_ctrl.exc_buf(exc_break_c)     = '1') then trap_ctrl.cause <= trap_brk_c;  -- breakpoint
-      elsif (trap_ctrl.exc_buf(exc_salign_c)    = '1') then trap_ctrl.cause <= trap_sma_c;  -- store address misaligned
-      elsif (trap_ctrl.exc_buf(exc_lalign_c)    = '1') then trap_ctrl.cause <= trap_lma_c;  -- load address misaligned
-      elsif (trap_ctrl.exc_buf(exc_saccess_c)   = '1') then trap_ctrl.cause <= trap_sbe_c;  -- store access fault
-      elsif (trap_ctrl.exc_buf(exc_laccess_c)   = '1') then trap_ctrl.cause <= trap_lbe_c;  -- load access fault
+      if    (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c;  -- instruction address misaligned
+      elsif (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iba_c;  -- instruction access fault
+      elsif (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then trap_ctrl.cause <= trap_iil_c;  -- illegal instruction
+      elsif (trap_ctrl.exc_buf(exc_envcall_c)  = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & csr.privilege & csr.privilege; -- environment call (U/M)
+      elsif (trap_ctrl.exc_buf(exc_break_c)    = '1') then trap_ctrl.cause <= trap_brk_c;  -- breakpoint
+      elsif (trap_ctrl.exc_buf(exc_salign_c)   = '1') then trap_ctrl.cause <= trap_sma_c;  -- store address misaligned
+      elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c;  -- load address misaligned
+      elsif (trap_ctrl.exc_buf(exc_saccess_c)  = '1') then trap_ctrl.cause <= trap_sbe_c;  -- store access fault
+      elsif (trap_ctrl.exc_buf(exc_laccess_c)  = '1') then trap_ctrl.cause <= trap_lbe_c;  -- load access fault
       -- debug mode exceptions and interrupts --
       elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request (async)
       elsif (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') then trap_ctrl.cause <= trap_db_trig_c;  -- hardware trigger (sync)
       elsif (trap_ctrl.exc_buf(exc_db_break_c) = '1') then trap_ctrl.cause <= trap_db_break_c; -- break instruction (sync)
       elsif (trap_ctrl.irq_buf(irq_db_step_c)  = '1') then trap_ctrl.cause <= trap_db_step_c;  -- single stepping (async)
       -- NEORV32-specific fast interrupts --
-      elsif (trap_ctrl.irq_buf(irq_firq_0_c)  = '1') then trap_ctrl.cause <= trap_firq0_c;  -- fast interrupt channel 0
-      elsif (trap_ctrl.irq_buf(irq_firq_1_c)  = '1') then trap_ctrl.cause <= trap_firq1_c;  -- fast interrupt channel 1
-      elsif (trap_ctrl.irq_buf(irq_firq_2_c)  = '1') then trap_ctrl.cause <= trap_firq2_c;  -- fast interrupt channel 2
-      elsif (trap_ctrl.irq_buf(irq_firq_3_c)  = '1') then trap_ctrl.cause <= trap_firq3_c;  -- fast interrupt channel 3
-      elsif (trap_ctrl.irq_buf(irq_firq_4_c)  = '1') then trap_ctrl.cause <= trap_firq4_c;  -- fast interrupt channel 4
-      elsif (trap_ctrl.irq_buf(irq_firq_5_c)  = '1') then trap_ctrl.cause <= trap_firq5_c;  -- fast interrupt channel 5
-      elsif (trap_ctrl.irq_buf(irq_firq_6_c)  = '1') then trap_ctrl.cause <= trap_firq6_c;  -- fast interrupt channel 6
-      elsif (trap_ctrl.irq_buf(irq_firq_7_c)  = '1') then trap_ctrl.cause <= trap_firq7_c;  -- fast interrupt channel 7
-      elsif (trap_ctrl.irq_buf(irq_firq_8_c)  = '1') then trap_ctrl.cause <= trap_firq8_c;  -- fast interrupt channel 8
-      elsif (trap_ctrl.irq_buf(irq_firq_9_c)  = '1') then trap_ctrl.cause <= trap_firq9_c;  -- fast interrupt channel 9
-      elsif (trap_ctrl.irq_buf(irq_firq_10_c) = '1') then trap_ctrl.cause <= trap_firq10_c; -- fast interrupt channel 10
-      elsif (trap_ctrl.irq_buf(irq_firq_11_c) = '1') then trap_ctrl.cause <= trap_firq11_c; -- fast interrupt channel 11
-      elsif (trap_ctrl.irq_buf(irq_firq_12_c) = '1') then trap_ctrl.cause <= trap_firq12_c; -- fast interrupt channel 12
-      elsif (trap_ctrl.irq_buf(irq_firq_13_c) = '1') then trap_ctrl.cause <= trap_firq13_c; -- fast interrupt channel 13
-      elsif (trap_ctrl.irq_buf(irq_firq_14_c) = '1') then trap_ctrl.cause <= trap_firq14_c; -- fast interrupt channel 14
-      elsif (trap_ctrl.irq_buf(irq_firq_15_c) = '1') then trap_ctrl.cause <= trap_firq15_c; -- fast interrupt channel 15
+      elsif (trap_ctrl.irq_buf(irq_firq_0_c)   = '1') then trap_ctrl.cause <= trap_firq0_c;  -- fast interrupt channel 0
+      elsif (trap_ctrl.irq_buf(irq_firq_1_c)   = '1') then trap_ctrl.cause <= trap_firq1_c;  -- fast interrupt channel 1
+      elsif (trap_ctrl.irq_buf(irq_firq_2_c)   = '1') then trap_ctrl.cause <= trap_firq2_c;  -- fast interrupt channel 2
+      elsif (trap_ctrl.irq_buf(irq_firq_3_c)   = '1') then trap_ctrl.cause <= trap_firq3_c;  -- fast interrupt channel 3
+      elsif (trap_ctrl.irq_buf(irq_firq_4_c)   = '1') then trap_ctrl.cause <= trap_firq4_c;  -- fast interrupt channel 4
+      elsif (trap_ctrl.irq_buf(irq_firq_5_c)   = '1') then trap_ctrl.cause <= trap_firq5_c;  -- fast interrupt channel 5
+      elsif (trap_ctrl.irq_buf(irq_firq_6_c)   = '1') then trap_ctrl.cause <= trap_firq6_c;  -- fast interrupt channel 6
+      elsif (trap_ctrl.irq_buf(irq_firq_7_c)   = '1') then trap_ctrl.cause <= trap_firq7_c;  -- fast interrupt channel 7
+      elsif (trap_ctrl.irq_buf(irq_firq_8_c)   = '1') then trap_ctrl.cause <= trap_firq8_c;  -- fast interrupt channel 8
+      elsif (trap_ctrl.irq_buf(irq_firq_9_c)   = '1') then trap_ctrl.cause <= trap_firq9_c;  -- fast interrupt channel 9
+      elsif (trap_ctrl.irq_buf(irq_firq_10_c)  = '1') then trap_ctrl.cause <= trap_firq10_c; -- fast interrupt channel 10
+      elsif (trap_ctrl.irq_buf(irq_firq_11_c)  = '1') then trap_ctrl.cause <= trap_firq11_c; -- fast interrupt channel 11
+      elsif (trap_ctrl.irq_buf(irq_firq_12_c)  = '1') then trap_ctrl.cause <= trap_firq12_c; -- fast interrupt channel 12
+      elsif (trap_ctrl.irq_buf(irq_firq_13_c)  = '1') then trap_ctrl.cause <= trap_firq13_c; -- fast interrupt channel 13
+      elsif (trap_ctrl.irq_buf(irq_firq_14_c)  = '1') then trap_ctrl.cause <= trap_firq14_c; -- fast interrupt channel 14
+      elsif (trap_ctrl.irq_buf(irq_firq_15_c)  = '1') then trap_ctrl.cause <= trap_firq15_c; -- fast interrupt channel 15
       -- standard RISC-V interrupts --
-      elsif (trap_ctrl.irq_buf(irq_mei_irq_c) = '1') then trap_ctrl.cause <= trap_mei_c; -- machine external interrupt (MEI)
-      elsif (trap_ctrl.irq_buf(irq_msi_irq_c) = '1') then trap_ctrl.cause <= trap_msi_c; -- machine SW interrupt (MSI)
-      elsif (trap_ctrl.irq_buf(irq_mti_irq_c) = '1') then trap_ctrl.cause <= trap_mti_c; -- machine timer interrupt (MTI)
+      elsif (trap_ctrl.irq_buf(irq_mei_irq_c)  = '1') then trap_ctrl.cause <= trap_mei_c; -- machine external interrupt (MEI)
+      elsif (trap_ctrl.irq_buf(irq_msi_irq_c)  = '1') then trap_ctrl.cause <= trap_msi_c; -- machine SW interrupt (MSI)
+      elsif (trap_ctrl.irq_buf(irq_mti_irq_c)  = '1') then trap_ctrl.cause <= trap_mti_c; -- machine timer interrupt (MTI)
       else trap_ctrl.cause <= trap_mti_c; end if; -- don't care
     end if;
   end process trap_encoder;
