@@ -151,45 +151,45 @@ entity neorv32_SystemTop_axi4lite is
     -- ------------------------------------------------------------
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
     -- ------------------------------------------------------------
-    jtag_trst_i   : in  std_logic := '0'; -- low-active TAP reset (optional)
-    jtag_tck_i    : in  std_logic := '0'; -- serial clock
-    jtag_tdi_i    : in  std_logic := '0'; -- serial data input
-    jtag_tdo_o    : out std_logic;        -- serial data output
-    jtag_tms_i    : in  std_logic := '0'; -- mode select
+    jtag_trst_i   : in  std_logic; -- low-active TAP reset (optional)
+    jtag_tck_i    : in  std_logic; -- serial clock
+    jtag_tdi_i    : in  std_logic; -- serial data input
+    jtag_tdo_o    : out std_logic; -- serial data output
+    jtag_tms_i    : in  std_logic; -- mode select
     -- ------------------------------------------------------------
     -- Processor IO --
     -- ------------------------------------------------------------
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o     : out std_logic; -- chip-select, low-active
     xip_clk_o     : out std_logic; -- serial clock
-    xip_dat_i     : in  std_logic := '0'; -- device data input
+    xip_dat_i     : in  std_logic; -- device data input
     xip_dat_o     : out std_logic; -- controller data output
     -- GPIO (available if IO_GPIO_EN = true) --
     gpio_o        : out std_logic_vector(63 downto 0); -- parallel output
-    gpio_i        : in  std_logic_vector(63 downto 0) := (others => '0'); -- parallel input
+    gpio_i        : in  std_logic_vector(63 downto 0); -- parallel input
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o   : out std_logic; -- UART0 send data
-    uart0_rxd_i   : in  std_logic := '0'; -- UART0 receive data
+    uart0_rxd_i   : in  std_logic; -- UART0 receive data
     uart0_rts_o   : out std_logic; -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i   : in  std_logic := 'L'; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_cts_i   : in  std_logic; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o   : out std_logic; -- UART1 send data
-    uart1_rxd_i   : in  std_logic := '0'; -- UART1 receive data
+    uart1_rxd_i   : in  std_logic; -- UART1 receive data
     uart1_rts_o   : out std_logic; -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i   : in  std_logic := 'L'; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_cts_i   : in  std_logic; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o     : out std_logic; -- SPI serial clock
     spi_dat_o     : out std_logic; -- controller data out, peripheral data in
-    spi_dat_i     : in  std_logic := '0'; -- controller data in, peripheral data out
+    spi_dat_i     : in  std_logic; -- controller data in, peripheral data out
     spi_csn_o     : out std_logic_vector(07 downto 0); -- SPI CS
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_i     : in  std_ulogic := 'H'; -- serial data line sense input
-    twi_sda_o     : out std_ulogic; -- serial data line output (pull low only)
-    twi_scl_i     : in  std_ulogic := 'H'; -- serial clock line sense input
-    twi_scl_o     : out std_ulogic; -- serial clock line output (pull low only)
+    twi_sda_i     : in  std_logic; -- serial data line sense input
+    twi_sda_o     : out std_logic; -- serial data line output (pull low only)
+    twi_scl_i     : in  std_logic; -- serial clock line sense input
+    twi_scl_o     : out std_logic; -- serial clock line output (pull low only)
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_i     : in  std_ulogic := 'H'; -- 1-wire bus sense input
-    onewire_o     : out std_ulogic; -- 1-wire bus output (pull low only)
+    onewire_i     : in  std_logic; -- 1-wire bus sense input
+    onewire_o     : out std_logic; -- 1-wire bus output (pull low only)
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o         : out std_logic_vector(11 downto 0);  -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
@@ -198,10 +198,10 @@ entity neorv32_SystemTop_axi4lite is
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o      : out std_logic; -- async serial data line
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i        : in  std_logic_vector(31 downto 0) := (others => '0'); -- IRQ channels
+    xirq_i        : in  std_logic_vector(31 downto 0); -- IRQ channels
     -- CPU Interrupts --
-    msw_irq_i     : in  std_logic := '0'; -- machine software interrupt
-    mext_irq_i    : in  std_logic := '0'  -- machine external interrupt
+    msw_irq_i     : in  std_logic; -- machine software interrupt
+    mext_irq_i    : in  std_logic  -- machine external interrupt
   );
 end entity;
 
