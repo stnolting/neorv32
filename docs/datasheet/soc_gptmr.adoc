@@ -9,7 +9,7 @@
 | Software driver file(s): | neorv32_gptmr.c |
 |                          | neorv32_gptmr.h |
 | Top entity port:         | none | 
-| Configuration generics:  | _IO_GPTMR_EN_ | implement general purpose timer when _true_
+| Configuration generics:  | `IO_GPTMR_EN`       | implement general purpose timer when `true`
 | CPU interrupts:          | fast IRQ channel 12 | timer interrupt (see <<_processor_interrupts>>)
 |=======================
 
@@ -17,13 +17,13 @@
 **Theory of Operation**
 
 The general purpose timer module provides a simple yet universal 32-bit timer. The timer is implemented if
-_IO_GPTMR_EN_ top generic is set _true_. It provides a 32-bit counter register (`COUNT`) and a 32-bit threshold
+`IO_GPTMR_EN` top generic is set `true`. It provides a 32-bit counter register (`COUNT`) and a 32-bit threshold
 register (`THRES`). An interrupt is generated whenever the value of the counter registers matches the one from
 threshold register.
 
-The timer is enabled by setting the _GPTMR_CTRL_EN_ bit in the device's control register `CTRL`. The `COUNT`
+The timer is enabled by setting the `GPTMR_CTRL_EN` bit in the device's control register `CTRL`. The `COUNT`
 register will start incrementing at a programmable rate, which scales the main processor clock. The
-pre-scaler value is configured via the three _GPTMR_CTRL_PRSCx_ control register bits:
+pre-scaler value is configured via the three `GPTMR_CTRL_PRSCx` control register bits:
 
 .GPTMR prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
@@ -33,10 +33,10 @@ pre-scaler value is configured via the three _GPTMR_CTRL_PRSCx_ control register
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-The timer provides two operation modes that are configured by the _GPTMR_CTRL_MODE_ control register bit:
-if _GPTMR_CTRL_MODE_ is cleared (`0`) the timer operates in _single-shot mode_. As soon as `COUNT` matches
-`THRES` an interrupt request is generated and the timer stops operation (i.e. it stops incrementing). If
-_GPTMR_CTRL_MODE_ is set (`1`) the timer operates in _continuous mode_. When `COUNT` matches `THRES` an interrupt
+The timer provides two operation modes that are configured via the `GPTMR_CTRL_MODE` control register bit:
+.If `GPTMR_CTRL_MODE` is cleared (`0`) the timer operates in _single-shot mode_. As soon as `COUNT` matches
+`THRES` an interrupt request is generated and the timer stops operation (i.e. it stops incrementing)
+.If `GPTMR_CTRL_MODE` is set (`1`) the timer operates in _continuous mode_. When `COUNT` matches `THRES` an interrupt
 request is generated and `COUNT` is automatically reset to all-zero before continuing to increment.
 
 [NOTE]
@@ -57,11 +57,10 @@ remains pending inside the CPU until it explicitly cleared by writing zero to th
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.5+<| `0xffffff60` .5+<| `CTRL` <|`0` _GPTMR_CTRL_EN_    ^| r/w <| Timer enable flag
-                                <|`1` _GPTMR_CTRL_PRSC0_ ^| r/w .3+| 3-bit clock prescaler select
-                                <|`2` _GPTMR_CTRL_PRSC1_ ^| r/w 
-                                <|`3` _GPTMR_CTRL_PRSC2_ ^| r/w 
-                                <|`4` _GPTMR_CTRL_MODE_  ^| r/w <| Counter mode: `0`=single-shot, `1`=continuous
+.4+<| `0xffffff60` .4+<| `CTRL` <|`0`    `GPTMR_CTRL_EN`                       ^| r/w <| Timer enable flag
+                                <|`3:1`  `GPTMR_CTRL_PRSC2 : GPTMR_CTRL_PRSC0` ^| r/w <| 3-bit clock prescaler select
+                                <|`4`    `GPTMR_CTRL_MODE`                     ^| r/w <| Counter mode: `0`=single-shot, `1`=continuous
+                                <|`31:5` -                                     ^| r/- <| _reserved_, read as zero
 | `0xffffff64` | `THRES` |`31:0` | r/w | Threshold value register
 | `0xffffff68` | `COUNT` |`31:0` | r/w | Counter register
 |=======================

@@ -6,45 +6,34 @@
 [frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_icache.vhd | 
-| Software driver file(s): | none             | _implicitly used_
-| Top entity port:         | none             | 
-| Configuration generics:  | _ICACHE_EN_ | implement processor-internal instruction cache when _true_
-|                          | _ICACHE_NUM_BLOCKS_ | number of cache blocks (pages/lines)
-|                          | _ICACHE_BLOCK_SIZE_ | size of a cache block in bytes
-|                          | _ICACHE_ASSOCIATIVITY_ | associativity / number of sets
-| CPU interrupts:          | none             | 
+| Software driver file(s): | none               | _implicitly used_
+| Top entity port:         | none               | 
+| Configuration generics:  | `ICACHE_EN`            | implement processor-internal instruction cache when `true`
+|                          | `ICACHE_NUM_BLOCKS`    | number of cache blocks (pages/lines)
+|                          | `ICACHE_BLOCK_SIZE`    | size of a cache block in bytes
+|                          | `ICACHE_ASSOCIATIVITY` | associativity / number of sets
+| CPU interrupts:          | none | 
 |=======================
 
-The processor features an optional cache for instructions to improve performance when using memories with high
+The processor features an optional instruction cache to improve performance when using memories with high
 access latencies. The cache is directly connected to the CPU's instruction fetch interface and provides
 full-transparent buffering of instruction fetch accesses to the entire address space.
 
-The cache is implemented if the _ICACHE_EN_ generic is true. The size of the cache memory is defined via
-_ICACHE_BLOCK_SIZE_ (the size of a single cache block/page/line in bytes; has to be a power of two and >=
-4 bytes), _ICACHE_NUM_BLOCKS_ (the total amount of cache blocks; has to be a power of two and >= 1) and
-the actual cache associativity _ICACHE_ASSOCIATIVITY_ (number of sets; 1 = direct-mapped, 2 = 2-way set-associative,
-has to be a power of two and >= 1). If the cache associativity (_ICACHE_ASSOCIATIVITY_) is greater than one
-the LRU replacement policy (least recently used) is used.
+The cache is implemented if the `ICACHE_EN` generic is `true`. The size of the cache memory is defined via
+`ICACHE_BLOCK_SIZE` (the size of a single cache block/page/line in bytes; has to be a power of two and greater than or
+equal to 4 bytes), `ICACHE_NUM_BLOCKS` (the total amount of cache blocks; has to be a power of two and greater than or
+equal to 1) and the actual cache associativity `ICACHE_ASSOCIATIVITY` (number of sets; 1 = direct-mapped, 2 = 2-way set-associative).
+If the cache associativity is greater than one the LRU replacement policy (least recently used) is used.
 
-.Cache Memory HDL
-[NOTE]
-The default `neorv32_icache.vhd` HDL source file provides a _generic_ memory design that infers embedded
-memory. You might need to replace/modify the source file in order to use platform-specific features
-(like advanced memory resources) or to improve technology mapping and/or timing. Also, keep the features
-of the targeted FPGA's memory resources (block RAM) in mind when configuring
-the cache size/layout to maximize and optimize resource utilization.
 
 .Caching Internal Memories
 [NOTE]
 The instruction cache is intended to accelerate instruction fetches from _processor-external_ memories
 (via the external bus interface or via the XIP module).
-Since all processor-internal memories provide an access latency of one cycle (by default), caching
-internal memories does not bring a relevant performance gain. However, it will slightly reduce traffic on the
-processor-internal bus.
 
 .Manual Cache Clear/Reload
 [NOTE]
-By executing the `ifence.i` instruction (`Zifencei` CPU extension) the cache is cleared and a reload from
+By executing the `fence.i` instruction (<<_zifencei_isa_extension>>) the cache is cleared and a reload from
 main memory is triggered. This also allows to implement self-modifying code.
 
 .Retrieve Cache Configuration from Software
@@ -54,7 +43,7 @@ Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_c
 
 **Bus Access Fault Handling**
 
-The cache always loads a complete cache block (_ICACHE_BLOCK_SIZE_ bytes; aligned to the block size) every time a
+The cache always loads a complete cache block (aligned to the block size) every time a
 cache miss is detected. Each cached word from this block provides a single status bit that indicates if the
 according bus access was successful or caused a bus error. Hence, the whole cache block remains valid even
 if certain addresses inside caused a bus error. If the CPU accesses any of the faulty cache words, an

@@ -6,44 +6,23 @@
 [frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_boot_rom.vhd | 
-| Software driver file(s): | none             | _implicitly used_
-| Top entity port:         | none             | 
-| Configuration generics:  | _INT_BOOTLOADER_EN_ | implement processor-internal bootloader when _true_
-| CPU interrupts:          | none             | 
+| Software driver file(s): | none                 | 
+| Top entity port:         | none                 | 
+| Configuration generics:  | `INT_BOOTLOADER_EN`  | implement processor-internal bootloader when `true`
+| CPU interrupts:          | none                 | 
 |=======================
 
+This boot ROM module provides a read-only memory that contain the executable image of the default NEORV32
+<<_bootloader>>. If the internal bootloader is enabled via the `INT_BOOTLOADER_EN` generic the CPU's boot address
+is automatically set to the beginning of the bootloader ROM. See section <<_boot_configuration>> for more
+information regarding the processor's different boot scenarios.
+
+.Address Configuration
 [NOTE]
-The default `neorv32_boot_rom.vhd` HDL source file provides a _generic_ memory design that infers embedded
-memory for _larger_ memory configurations. You might need to replace/modify the source file in order to use
-platform-specific features (like advanced memory resources) or to improve technology mapping and/or timing.
-
-This HDL modules provides a read-only memory that contain the executable code image of the bootloader.
-If the <<_int_bootloader_en>> generic is _true_ this module will be implemented and the CPU boot address
-is modified to directly execute the code from the bootloader ROM after reset.
-
-The bootloader ROM is located at address `0xFFFF0000` and can occupy a address space of up to 32kB. The base
-address as well as the maximum address space size are fixed and cannot (should not!) be modified as this
-might address collision with other processor modules.
-
-The bootloader memory is _read-only_ and is automatically initialized with the bootloader executable image
-`rtl/core/neorv32_bootloader_image.vhd` during synthesis. The actual _physical_ size of the ROM is also
-determined via synthesis and expanded to the next power of two. For example, if the bootloader code requires
-10kB of storage, a ROM with 16kB will be generated. The maximum size must not exceed 32kB.
-
-.Access Latency
-[NOTE]
-By default, the bootloader ROM has a fixed access latency of one clock cycle (like all other processor-internal
-modules). However, custom versions of this module may also have higher access latency. See section <<_bus_interface>>
-for more information.
+The bootloader ROM is located at address `0xFFFF0000` and can occupy an address space of up to 32kB. The base
+address as well as the maximum address space size are fixed and cannot be modified as this might cause address
+collision with other processor modules.
 
 .Read-Only Access
 [NOTE]
 Any write access to the BOOTROM will raise a _store access fault_ exception.
-
-.Bootloader - Software
-[TIP]
-See section <<_bootloader>> for more information regarding the actual bootloader software/executable itself.
-
-.Boot Configuration
-[TIP]
-See section <<_boot_configuration>> for more information regarding the processor's different boot scenarios.

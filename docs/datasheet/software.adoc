@@ -1,8 +1,8 @@
 :sectnums:
 == Software Framework
 
-To make actual use of the NEORV32 processor, the project comes with a complete software ecosystem. This
-ecosystem is based on the RISC-V port of the GCC GNU Compiler Collection and consists of the following elementary parts:
+The NEORV32 project comes with a complete software ecosystem called the "software framework", which
+is based on the C-language RISC-V GCC port and consists of the following parts:
 
 * <<_compiler_toolchain>>
 * <<_core_libraries>>
@@ -18,7 +18,7 @@ ecosystem is based on the RISC-V port of the GCC GNU Compiler Collection and con
 A summarizing list of the most important elements of the software framework and their according
 files and folders is shown below:
 
-[cols="<6,<4"]
+[cols="<5,<5"]
 [grid="none"]
 |=======================
 | Application start-up code               | `sw/common/crt0.S`
@@ -26,7 +26,7 @@ files and folders is shown below:
 | Core hardware driver libraries ("HAL")  | `sw/lib/include/` & `sw/lib/source/`
 | Central application makefile            | `sw/common/common.mk`
 | Tool for generating NEORV32 executables | `sw/image_gen/`
-| Default bootloader                      | `sw/bootloader/bootloader.c`
+| Default bootloader                      | `sw/bootloader`
 | Example programs                        | `sw/example`
 |=======================
 
@@ -46,7 +46,7 @@ and peripheral/IO modules, can be found in `sw/example`.
 :sectnums:
 === Compiler Toolchain
 
-The toolchain for this project is based on the free RISC-V GCC-port. You can find the compiler sources and
+The toolchain for this project is based on the free and open  RISC-V GCC-port. You can find the compiler sources and
 build instructions on the official RISC-V GNU toolchain GitHub page: https://github.com/riscv/riscv-gnutoolchain.
 
 The NEORV32 implements a 32-bit RISC-V architecture and uses a 32-bit integer and soft-float ABI by default.
@@ -56,11 +56,11 @@ Make sure the toolchain / toolchain build is configured accordingly.
 * `MABI=ilp32`
 * `RISCV_PREFIX=riscv32-unknown-elf-`
 
-These default configurations can be override at any times using <<_application_makefile>> variables.
+These default configurations can be overridden at any times using <<_application_makefile>> variables.
 
 [TIP]
-More information regarding the toolchain (building from scratch or downloading the prebuilt ones)
-can be found in the user guides' section https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup[Software Toolchain Setup].
+More information regarding the toolchain (building from scratch or downloading prebuilt ones) can be found in the
+user guide section https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup[Software Toolchain Setup].
 
 
 <<<
@@ -77,10 +77,11 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 #include <neorv32.h> // NEORV32 HAL, core and runtime libraries
 ----
 
-[cols="<3,<4,<8"]
+.NEORV32 HAL File List
+[cols="<3,<3,<6"]
 [options="header",grid="rows"]
 |=======================
-| C source file | C header file | Description
+| C source file       | C header file          | Description
 | -                   | `neorv32.h`            | main NEORV32 definitions and library file
 | -                   | `neorv32_buskeeper`    | HW driver functions for the bus keeper
 | `neorv32_cfs.c`     | `neorv32_cfs.h`        | HW driver (stubs) functions for custom functions subsystem
@@ -94,7 +95,7 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 | `neorv32_neoled.c`  | `neorv32_neoled.h`     | HW driver functions for the smart LED interface
 | `neorv32_onewire.c` | `neorv32_onewire.h`    | HW driver functions for the 1-wire interface
 | `neorv32_pwm.c`     | `neorv32_pwm.h`        | HW driver functions for the pulse-width modulation controller
-| `neorv32_rte.c`     | `neorv32_rte.h`        | NEORV32 runtime environment and helper functions
+| `neorv32_rte.c`     | `neorv32_rte.h`        | <<_neorv32_runtime_environment>>
 | `neorv32_sdi.c`     | `neorv32_sdi.h`        | HW driver functions for the serial data interface
 | `neorv32_spi.c`     | `neorv32_spi.h`        | HW driver functions for the serial peripheral interface
 | -                   | `neorv32_sysinfo.h`    | HW driver functions for the system information memory
@@ -123,8 +124,8 @@ A CMSIS-SVD-compatible **System View Description (SVD)** file including all peri
 :sectnums:
 === Application Makefile
 
-Application compilation is based on a single, centralized **GNU makefile** (`sw/common/common.mk`). Each project in the
-`sw/example` folder provides a makefile that just includes this central makefile.
+Application compilation is based on a single, centralized GNU makefile (`sw/common/common.mk`). Each project in the
+`sw/example` folder provides a makefile that just _includes_ this central makefile.
 
 [TIP]
 When creating a new project, copy an existing project folder or at least the makefile to the new project folder.
@@ -133,18 +134,12 @@ dependencies can be manually configured via makefile variables if the new projec
 
 [NOTE]
 Before the makefile can be used to compile applications, the RISC-V GCC toolchain needs to be installed and
-the compiler's `bin` folder has to be added to the system's `PATH` variable. More information can be found in
-https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup[User Guide: Software Toolchain Setup].
+the compiler's `bin` folder has to be added to the system's `PATH` environment variable. More information can be
+found in https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup[User Guide: Software Toolchain Setup].
 
-The makefile is invoked by simply executing `make` in the console. For example:
-
-[source,bash]
-----
-neorv32/sw/example/demo_blink_led$ make
-----
 
 :sectnums:
-==== Targets
+==== Makefile Targets
 
 Just executing `make` (or executing `make help`) will show the help menu listing all available targets.
 
@@ -174,6 +169,7 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
 
 === Variables ===
  USER_FLAGS   - Custom toolchain flags [append only], default ""
+ USER_LIBS    - Custom libraries [append only], default ""
  EFFORT       - Optimization level, default "-Os"
  MARCH        - Machine architecture, default "rv32i_zicsr"
  MABI         - Machine binary interface, default "ilp32"
@@ -185,16 +181,15 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
 
 
 :sectnums:
-==== Configuration
+==== Makefile Configuration
 
 The compilation flow is configured via variables right at the beginning of the central
 makefile (`sw/common/common.mk`):
 
+.Customizing Makefile Variables
 [TIP]
 The makefile configuration variables can be overridden or extended directly when invoking the makefile. For
 example `$ make MARCH=rv32ic_zicsr clean_all exe` overrides the default `MARCH` variable definitions.
-Permanent modifications/definitions can be made in the project-local makefile
-(e.g., `sw/example/demo_blink_led/makefile`).
 
 .Default Makefile Configuration
 [source,makefile]
@@ -218,28 +213,27 @@ MARCH ?= rv32i_zicsr
 MABI  ?= ilp32
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
+# User libraries (will be included by linker)
+USER_LIBS ?=
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
 # *****************************************************************************
 ----
 
 .Variables Description
-[cols="<3,<10"]
+[cols="<2,<8"]
 [grid="none"]
 |=======================
-| `APP_SRC`      | The source files of the application (`*.c`, `*.cpp`, `*.S` and `*.s` files are allowed;
-files of these types in the project folder are automatically added via wild cards). Additional files can be added separated by white spaces
+| `APP_SRC`      | The source files of the application (`*.c`, `*.cpp`, `*.S` and `*.s` files are allowed; files of these types in the project folder are automatically added via wild cards). Additional files can be added separated by white spaces
 | `APP_INC`      | Include file folders; separated by white spaces; must be defined with `-I` prefix
 | `ASM_INC`      | Include file folders that are used only for the assembly source files (`*.S`/`*.s`).
 | `EFFORT`       | Optimization level, optimize for size (`-Os`) is default; legal values: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Ofast`, ...
 | `RISCV_PREFIX` | The toolchain prefix to be used; follows the triplet naming convention `[architecture]-[host_system]-[output]-...`
-| `MARCH`        | The targeted RISC-V architecture/ISA; enable compiler support of optional CPU extension by adding the according extension
-name (e.g. `rv32im_zicsr` for `M` CPU extension; see https://stnolting.github.io/neorv32/ug/#_enabling_risc_v_cpu_extensions[User Guide: Enabling RISC-V CPU Extensions]
-for more information
+| `MARCH`        | The targeted RISC-V architecture/ISA
 | `MABI`         | Application binary interface (default: 32-bit integer ABI `ilp32`)
 | `USER_FLAGS`   | Additional flags that will be forwarded to the compiler tools
-| `NEORV32_HOME` | Relative or absolute path to the NEORV32 project home folder; adapt this if the makefile/project is not in the project's
-default `sw/example` folder
+| `USER_LIBS`    | Additional libraries to include during linking (`*.a`)
+| `NEORV32_HOME` | Relative or absolute path to the NEORV32 project home folder; adapt this if the makefile/project is not in the project's default `sw/example` folder
 |=======================
 
 :sectnums:
@@ -266,12 +260,11 @@ The following default compiler flags are used for compiling an application. Thes
 ==== Custom (Compiler) Flags
 
 Custom flags can be _appended_ to the `USER_FLAGS` variable. This allows to customize the entire software framework while
-calling `make` without the need to change the makefile(s) or the linker script.
+calling `make` without the need to change the makefile(s) or the linker script. The following example will add debug symbols
+to the executable (`-g`) and will also re-define the linker script's `__neorv32_heap_size` variable setting the maximal heap
+size to 4096 bytes (see sections <<_linker_script>> and <<_ram_layout>>):
 
-The following example will add debug symbols to the executable (`-g`) and will also define the linker script's
-`__neorv32_heap_size` setting the maximal heap size to 4096 bytes:
-
-.Example: using the `USER_FLAGS` variable for customization
+.Using the `USER_FLAGS` Variable for Customization
 [source,bash]
 ----
 $ make USER_FLAGS+="-g -Wl,--__neorv32_heap_size,__heap_size=4096" clean_all exe
@@ -283,8 +276,8 @@ $ make USER_FLAGS+="-g -Wl,--__neorv32_heap_size,__heap_size=4096" clean_all exe
 :sectnums:
 === Executable Image Format
 
-In order to generate an executable for th processors all source files have to be compiled, linked
-and packed into a _final executable_.
+In order to generate an executable for the processors all source files have to be compiled, linked
+and packed into a final executable.
 
 :sectnums:
 ==== Linker Script
@@ -326,8 +319,7 @@ __neorv32_rom_base = DEFINED(__neorv32_rom_base) ? __neorv32_rom_base : 0x000000
 __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x80000000; /* = VHDL package's "dspace_base_c" */
 ----
 
-Only the region **sizes** should be modified by the user. The base addresses are defined by the processor's hardware (see section
-<<_address_space>>) and should not be altered at all. The size (and base) configuration can be edited by the user - either by explicitly
+The region size and base address configuration can be edited by the user - either by explicitly
 changing the default values in the linker script or by overriding them when invoking `make`:
  
 .Overriding default rom size configuration (setting 4096 bytes)
@@ -337,18 +329,19 @@ $ make USER_FLAGS+="-Wl,--defsym,__neorv32_rom_size=4096" clean_all exe
 ----
 
 [IMPORTANT]
-`neorv32_rom_base` (= `ORIGIN` of the `ram` section) has to be always identical to the processor's `dspace_base_c` hardware configuration.
-Also, `neorv32_ram_base` (= `ORIGIN` of the `rom` section) has to be always identical to the processor's `ispace_base_c` hardware configuration.
+`neorv32_rom_base` (= `ORIGIN` of the `ram` section) has to be always identical to the processor's `dspace_base_c` hardware
+configuration. Also, `neorv32_ram_base` (= `ORIGIN` of the `rom` section) has to be always identical to the processor's
+`ispace_base_c` hardware configuration.
 
 [NOTE]
-The default configuration for the `rom` section assumes a maximum of 2GB _logical_ memory address space. This size does not have
-to reflect the _actual_ physical size of the instruction memory (internal IMEM and/or processor-external memory). It just provides a maximum
-limit. When uploading a new executable via the bootloader, the bootloader itself checks if sufficient _physical_ instruction memory is available.
-If a new executable is embedded right into the internal-IMEM the synthesis tool will check, if the configured instruction memory size
-is sufficient (e.g., via the <<_mem_int_imem_size>> generic).
+The default configuration for the `rom` section assumes a maximum of 2GB _logical_ memory address space. This size does not
+have to reflect the _actual_ physical size of the entire instruction memory. It just provides a maximum limit. When uploading
+a new executable via the bootloader, the bootloader itself checks if sufficient _physical_ instruction memory is available.
+If a new executable is embedded right into the internal-IMEM the synthesis tool will check, if the configured instruction memory
+size is sufficient.
 
-The linker maps all the regions from the compiled object files into five final sections: `.text`, `.rodata`, `.data`, `.bss` and `.heap`.
-These regions contain everything required for the application to run:
+The linker maps all the regions from the compiled object files into five final sections: `.text`,
+`.rodata`, `.data`, `.bss` and `.heap`:
 
 .Linker script - memory regions
 [cols="<1,<9"]
@@ -368,7 +361,7 @@ sections are extracted and concatenated into a single file `main.bin`.
 
 .Section Alignment
 [NOTE]
-The default NEORV32 linker script aligns _all_ regions so they start and end on a 32-bit (word) boundary. The default
+The default NEORV32 linker script aligns _all_ regions so they start and end on a 32-bit (word) boundaries. The default
 NEORV32 start-up code (crt0) makes use of this alignment by using word-level memory instructions to initialize the `.data`
 section and to clear the `.bss` section (faster!).
 
@@ -411,8 +404,7 @@ using dynamic memory allocation.
 :sectnums:
 ==== C Standard Library
 
-The NEORV32 is a processor for _embedded_ applications, which is not capable of running desktop OSs like Linux
-(at least not without emulation). Hence, the default software framework relies on **newlib** as default C standard library.
+The default software framework relies on **newlib** as default C standard library.
 
 .RTOS Support
 [NOTE]
@@ -424,9 +416,9 @@ for more information.
 Newlib provides stubs for common "system calls" (like file handling and standard input/output) that are used by other
 C libraries like `stdio`. These stubs are available in `sw/source/source/syscalls.c` and were adapted for the NEORV32 processor.
 
-.Standard Console(s)
+.Standard Consoles
 [NOTE]
-<<_primary_universal_asynchronous_receiver_and_transmitter_uart0, UART0>>
+The <<_primary_universal_asynchronous_receiver_and_transmitter_uart0, UART0>>
 is used to implement all the standard input, output and error consoles (`STDIN`, `STDOUT` and `STDERR`).
 
 .Constructors and Destructors
@@ -446,7 +438,7 @@ is available in `sw/example/demo_newlib`
 The `main.bin` file is packed by the NEORV32 image generator (`sw/image_gen`) to generate the final executable file.
 The image generator can generate several types of executables selected by a flag when calling the generator:
 
-[cols="<1,<9"]
+[cols="<2,<8"]
 [grid="none"]
 |=======================
 | `-app_bin` | Generates an executable binary file `neorv32_exe.bin` (including header) for UART uploading via the bootloader.
@@ -456,8 +448,8 @@ The image generator can generate several types of executables selected by a flag
 | `-bld_img` | Generates an executable VHDL memory initialization image (no header) for the processor-internal BOOT ROM. This option generates the `rtl/core/neorv32_bootloader_image.vhd` file.
 |=======================
 
-All these options are managed by the makefile. The "normal application2 compilation flow will generate the `neorv32_exe.bin`
-executable for uploading via UART to the default NEORV32 bootloader.
+All these options are managed by the makefile. The normal application compilation flow will generate the `neorv32_exe.bin`
+executable designated for uploading via the default NEORV32 bootloader.
 
 .Image Generator Compilation
 [NOTE]
@@ -465,12 +457,12 @@ The sources of the image generator are automatically compiled when invoking the 
 
 .Executable Header
 [NOTE]
-The image generator add a small header to the `neorv32_exe.bin` executable, which consists of three 32-bit words located right at the
-beginning of the file. The first word of the executable is the signature word and is always `0x4788cafe`. Based on this word the bootloader
-can identify a valid image file. The next word represents the size in bytes of the actual program
-image in bytes. A simple "complement" checksum of the actual program image is given by the third word. This
-provides a simple protection against data transmission or storage errors. **Note that this executable format cannot be used for _direct_
-execution (e.g. via XIP or direct memory access).**
+The image generator add a small header to the `neorv32_exe.bin` executable, which consists of three 32-bit words located right
+at the beginning of the file. The first word of the executable is the signature word and is always `0x4788cafe`. Based on this
+word the bootloader can identify a valid image file. The next word represents the size in bytes of the actual program image in
+bytes. A simple "complement" checksum of the actual program image is given by the third word. This provides a simple protection
+against data transmission or storage errors. **Note that this executable format cannot be used for _direct_ execution (e.g. via
+XIP or direct memory access).**
 
 
 :sectnums:

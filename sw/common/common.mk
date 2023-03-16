@@ -86,7 +86,7 @@ CORE_SRC  = $(wildcard $(NEORV32_SRC_PATH)/*.c)
 CORE_SRC += $(NEORV32_COM_PATH)/crt0.S
 
 # Linker script
-LD_SCRIPT = $(NEORV32_COM_PATH)/neorv32.ld
+LD_SCRIPT ?= $(NEORV32_COM_PATH)/neorv32.ld
 
 # Main output files
 APP_EXE  = neorv32_exe.bin
@@ -126,8 +126,10 @@ IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 
 # Compiler & linker flags
 CC_OPTS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
-CC_OPTS += -Wl,--gc-sections -lm -lc -lgcc -lc -g
+CC_OPTS += -g -Wl,--gc-sections
 CC_OPTS += $(USER_FLAGS)
+LD_LIBS =  -lm -lc -lgcc
+LD_LIBS += $(USER_LIBS)
 
 
 # -----------------------------------------------------------------------------
@@ -184,7 +186,7 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 
 # Link object files and show memory utilization
 $(APP_ELF): $(OBJ)
-	@$(CC) $(CC_OPTS) -T $(LD_SCRIPT) $(OBJ) -o $@ -lm
+	@$(CC) $(CC_OPTS) -T $(LD_SCRIPT) $(OBJ) $(LD_LIBS) -o $@
 	@echo "Memory utilization:"
 	@$(SIZE) $(APP_ELF)
 
@@ -342,6 +344,9 @@ info:
 	@echo "---------------- Info: Flags ----------------"
 	@echo "USER_FLAGS: $(USER_FLAGS)"
 	@echo "CC_OPTS:    $(CC_OPTS)"
+	@echo "---------------- Info: Libraries ----------------"
+	@echo "USER_LIBS: $(USER_LIBS)"
+	@echo "LD_LIBS:   $(LD_LIBS)"
 	@echo "---------------- Info: Host Native GCC Flags ----------------"
 	@echo "CC_X86:     $(CC_X86)"
 
@@ -374,6 +379,7 @@ help:
 	@echo ""
 	@echo "=== Variables ==="
 	@echo " USER_FLAGS   - Custom toolchain flags [append only]: \"$(USER_FLAGS)\""
+	@echo " USER_LIBS    - Custom libraries [append only]: \"$(USER_LIBS)\""
 	@echo " EFFORT       - Optimization level: \"$(EFFORT)\""
 	@echo " MARCH        - Machine architecture: \"$(MARCH)\""
 	@echo " MABI         - Machine binary interface: \"$(MABI)\""

@@ -10,25 +10,21 @@
 |                          | neorv32_cfs.h |
 | Top entity port:         | `cfs_in_i`  | custom input conduit
 |                          | `cfs_out_o` | custom output conduit
-| Configuration generics:  | _IO_CFS_EN_ | implement CFS when _true_
-|                          | _IO_CFS_CONFIG_    | custom generic conduit
-|                          | _IO_CFS_IN_SIZE_   | size of `cfs_in_i`
-|                          | _IO_CFS_OUT_SIZE_  | size of `cfs_out_o`
+| Configuration generics:  | `IO_CFS_EN`        | implement CFS when `true`
+|                          | `IO_CFS_CONFIG`    | custom generic conduit
+|                          | `IO_CFS_IN_SIZE`   | size of `cfs_in_i`
+|                          | `IO_CFS_OUT_SIZE`  | size of `cfs_out_o`
 | CPU interrupts:          | fast IRQ channel 1 | CFS interrupt (see <<_processor_interrupts>>)
 |=======================
 
 
 **Theory of Operation**
 
-The custom functions subsystem is meant for implementing custom and application-specific logic.
-The CFS provides up to 64 32-bit memory-mapped read/write
-registers (`REG`, see register map below) that can be accessed by the CPU via normal load/store operations.
-The actual functionality of these register has to be defined by the hardware designer. Furthermore, the CFS
-provides two IO conduits to implement custom on-chip or off-chip interfaces.
-
-In contrast to connecting custom hardware accelerators via external memory interfaces (like SPI or the processor's
-external bus interface), the CFS provide a convenient, low-latency and tightly-coupled extension and
-customization option.
+The custom functions subsystem is meant for implementing custom tightly-coupled co-processors or interfaces.
+IT provides up to 64 32-bit memory-mapped read/write registers (`REG`, see register map below) that can be
+accessed by the CPU via normal load/store operations. The actual functionality of these register has to be
+defined by the hardware designer. Furthermore, the CFS provides two IO conduits to implement custom on-chip
+or off-chip interfaces.
 
 Just like any other externally-connected IP, logic implemented within the custom functions subsystem can operate
 _independently_ of the CPU providing true parallel processing capabilities. Potential use cases might include
@@ -38,7 +34,7 @@ or real-time data transport (I2S).
 
 [TIP]
 If you like to implement _custom instructions_ that are executed right within the CPU's ALU
-see the <<_zxcfu_custom_instructions_extension_cfu>> and the according <<_custom_functions_unit_cfu>>.
+see the <<_zxcfu_isa_extension>> and the according <<_custom_functions_unit_cfu>>.
 
 [TIP]
 Take a look at the template CFS VHDL source file (`rtl/core/neorv32_cfs.vhd`). The file is highly
@@ -51,7 +47,7 @@ The CFS can also be used to _replicate_ existing NEORV32 modules - for example t
 **CFS Software Access**
 
 The CFS memory-mapped registers can be accessed by software using the provided C-language aliases (see
-register map table below). Note that all interface registers are declared as 32-bit words of type `uint32_t`.
+register map table below). Note that all interface registers are defined as 32-bit words of type `uint32_t`.
 
 .CFS Software Access Example
 [source,c]
@@ -60,9 +56,6 @@ register map table below). Note that all interface registers are declared as 32-
 NEORV32_CFS->REG[0] = (uint32_t)some_data_array(i); // write to CFS register 0
 int temp = (int)NEORV32_CFS->REG[20]; // read from CFS register 20
 ----
-
-[TIP]
-A very simple example program that uses the _default_ CFS hardware module can be found in `sw/example/cfs_demo`.
 
 
 **CFS Interrupt**
@@ -74,7 +67,7 @@ writing zero to the according <<_mip>> CSR bit. See section <<_processor_interru
 
 **CFS Configuration Generic**
 
-By default, the CFS provides a single 32-bit `std_(u)logic_vector` configuration generic _IO_CFS_CONFIG_
+By default, the CFS provides a single 32-bit `std_ulogic_vector` configuration generic `IO_CFS_CONFIG`
 that is available in the processor's top entity. This generic can be used to pass custom configuration options
 from the top entity directly down to the CFS. The actual definition of the generic and it's usage inside the
 CFS is left to the hardware designer.
@@ -87,10 +80,10 @@ These signals are directly propagated to the processor's top entity. These condu
 application-specific interfaces like memory or peripheral connections. The actual use case of these signals
 has to be defined by the hardware designer.
 
-The size of the input signal conduit `cfs_in_i` is defined via the top's _IO_CFS_IN_SIZE_ configuration
+The size of the input signal conduit `cfs_in_i` is defined via the top's `IO_CFS_IN_SIZE` configuration
 generic (default = 32-bit). The size of the output signal conduit `cfs_out_o` is defined via the top's
-_IO_CFS_OUT_SIZE_ configuration generic (default = 32-bit). If the custom function subsystem is not implemented
-(_IO_CFS_EN_ = false) the `cfs_out_o` signal is tied to all-zero.
+`IO_CFS_OUT_SIZE` configuration generic (default = 32-bit). If the custom function subsystem is not implemented
+(`IO_CFS_EN` = false) the `cfs_out_o` signal is tied to all-zero.
 
 
 **Register Map**
