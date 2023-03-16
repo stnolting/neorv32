@@ -1,4 +1,4 @@
-:author: Stephan Nolting (M.Sc.)
+:author: by Stephan Nolting (M.Sc.)
 :keywords: neorv32, risc-v, riscv, rv32, fpga, soft-core, vhdl, microcontroller, cpu, soc, processor, gcc, openocd, gdb
 :description: A size-optimized, customizable and highly extensible MCU-class 32-bit RISC-V soft-core CPU and microcontroller-like SoC written in platform-independent VHDL.
 :revnumber: v1.8.2
@@ -7,6 +7,6 @@
 :stem:
 :reproducible:
 :listing-caption: Listing
-:toclevels: 4
+:toclevels: 3
 :title-logo-image: neorv32_logo_riscv.png[pdfwidth=6.25in,align=center]
 :favicon: img/icon.png

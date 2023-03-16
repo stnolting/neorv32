@@ -6,31 +6,38 @@
 [frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_xirq.vhd |
-| Software driver file(s): | neorv32_xirq.c |
-|                          | neorv32_xirq.h |
-| Top entity port:         | `xirq_i` | IRQ input (32-bit, fixed)
-| Configuration generics:  | _XIRQ_NUM_CH_           | Number of IRQs to implement (0..32)
-|                          | _XIRQ_TRIGGER_TYPE_     | IRQ trigger type configuration
-|                          | _XIRQ_TRIGGER_POLARITY_ | IRQ trigger polarity configuration
-| CPU interrupts:          | fast IRQ channel 8 | XIRQ (see <<_processor_interrupts>>)
+| Software driver file(s): | neorv32_xirq.c   |
+|                          | neorv32_xirq.h   |
+| Top entity port:         | `xirq_i`                | External interrupts input (32-bit)
+| Configuration generics:  | `XIRQ_NUM_CH`           | Number of external IRQ channels to implement (0..32)
+|                          | `XIRQ_TRIGGER_TYPE`     | IRQ trigger type configuration
+|                          | `XIRQ_TRIGGER_POLARITY` | IRQ trigger polarity configuration
+| CPU interrupts:          | fast IRQ channel 8      | XIRQ (see <<_processor_interrupts>>)
 |=======================
 
-The eXternal interrupt controller provides a simple mechanism to implement up to 32 processor-external interrupt
+
+**Overview**
+
+The external interrupt controller provides a simple mechanism to implement up to 32 processor-external interrupt
 request signals. The external IRQ requests are prioritized, queued and signaled to the CPU via a
-single _CPU fast interrupt request_.
+_single_ CPU fast interrupt request.
 
 
 **Theory of Operation**
 
-The XIRQ provides up to 32 interrupt _channels_ (configured via the _XIRQ_NUM_CH_ generic). Each bit in the `xirq_i`
-input signal vector represents one interrupt channel. If less than 32 channels are configure, only the LSB-aligned channels
-are used while the remaining bits are left unconnected. An interrupt channel is enabled by setting the according bit in the
-interrupt enable register `IER`.
+The XIRQ provides up to 32 interrupt channels (configured via the `XIRQ_NUM_CH` generic). Each bit in the `xirq_i`
+input signal vector represents one interrupt channel. If less than 32 channels are configured, only the LSB-aligned channels
+are used while the remaining bits are left unconnected.
 
-If the configured trigger (see below) of an enabled channel fires, the request is stored into an internal buffer.
-This buffer is available via the interrupt pending register `IPR`. A `1` in this register indicates that the
-corresponding interrupt channel has fired but has not yet been serviced (so it is pending). An interrupt channel can
-become pending if the according `IER` bit is set. Pending IRQs can be cleared by writing `0` to the according `IPR`
+The actual interrupt trigger (low-level, high-level, rising-edge, falling-edge) can be configured independently for each channel
+using the `XIRQ_TRIGGER_TYPE` and `XIRQ_TRIGGER_POLARITY` generics. `XIRQ_TRIGGER_TYPE` is used to define the general trigger type.
+This can be either _level-triggered_ (`0`) or _edge-triggered_ (`1`). `XIRQ_TRIGGER_POLARITY` is used to configure the polarity of
+the selected trigger: a `0` defines low-level or falling-edge and a `1` defines high-level or rising-edge trigger polarity.
+
+Each channel can be independently enabled or disabled via the `IER` register. If the configured trigger (see below) of an
+enabled channel fires, the request is stored into an internal buffer. This buffer is available via the interrupt pending register `IPR`.
+A `1` in this register indicates that the corresponding interrupt channel has fired but has not yet been serviced (so it is pending).
+An interrupt channel can become pending if the according `IER` bit is set. Pending IRQs can be cleared by writing `0` to the according `IPR`
 bit. As soon as there is a least one pending interrupt in the buffer, an interrupt request is send to the CPU.
 
 [NOTE]
@@ -39,7 +46,7 @@ A disabled interrupt channel can still be pending if it has been triggered befor
 The CPU can determine active external interrupt request either by checking the bits in the `IPR` register, which show all
 pending interrupt channels, or by reading the interrupt source register `SCR`.
 This register provides a 5-bit wide ID (0..31) that shows the interrupt request with _highest priority_.
-Interrupt channel `xirq_i(0)` has highest priority and `xirq_i(_XIRQ_NUM_CH_-1)` has lowest priority.
+Interrupt channel `xirq_i(0)` has highest priority and `xirq_i(XIRQ_NUM_CH-1)` has lowest priority.
 This priority assignment is fixed and cannot be altered by software.
 The CPU can use the ID from `SCR` to service IRQ according to their priority. To acknowledge the according
 interrupt the CPU can write `1 << SCR` to `IPR`.
@@ -51,25 +58,6 @@ value to the interrupt source register `SRC`.
 [NOTE]
 An interrupt handler should clear the interrupt pending bit that caused the interrupt first before
 acknowledging the interrupt by writing the `SCR` register.
-
-
-**IRQ Trigger Configuration**
-
-The controller does not provide a configuration option to define the IRQ triggers _during runtime_. Instead, two
-generics are provided to configure the trigger of each interrupt channel before synthesis: the _XIRQ_TRIGGER_TYPE_
-and _XIRQ_TRIGGER_POLARITY_ generic. Both generics are 32 bit wide representing one bit per interrupt channel. If
-less than 32 interrupt channels are implemented the remaining configuration bits are ignored.
-
-_XIRQ_TRIGGER_TYPE_ is used to define the general trigger type. This can be either _level-triggered_ (`0`) or
-_edge-triggered_ (`1`). _XIRQ_TRIGGER_POLARITY_ is used to configure the polarity of the trigger: a `0` defines
-low-level or falling-edge and a `1` defines high-level or rising-edge.
-
-.Example trigger configuration: channel 0 for rising-edge, IRQ channels 1 to 31 for high-level
-[source, vhdl]
-----
-XIRQ_TRIGGER_TYPE     => x"00000001";  
-XIRQ_TRIGGER_POLARITY => x"ffffffff";  
-----
 
 
 **Register Map**

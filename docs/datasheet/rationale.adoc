@@ -1,7 +1,7 @@
 :sectnums:
 === Rationale
 
-:sectnums!:
+[discrete]
 ==== Why did you make this?
 
 Processor and CPU architecture designs are fascinating things: they are the magic frontier where software meets hardware.
@@ -17,13 +17,13 @@ This project aims to provide a _simple to understand_ and _easy to use_ yet _pow
 that targets FPGA and RISC-V beginners as well as advanced users.
 
 
-:sectnums!:
+[discrete]
 ==== Why a _soft-core_ processor?
 
 As a matter of fact soft-core processors _cannot_ compete with discrete (like FPGA hard-macro) processors in terms
-of performance, energy efficiency and size. But they do fill a niche in FPGA design space: for example, soft-core processors
-allow to implement the _control flow part_ of certain applications (e.g. communication protocol handling) using
-software like plain C. This provides high flexibility as software can be easily changed, re-compiled and
+of performance, energy efficiency and size. But they do fill a niche in FPGA design space: for example, soft-core
+processors allow to implement the _control flow part_ of certain applications (e.g. communication protocol handling)
+using software like plain C. This provides high flexibility as software can be easily changed, re-compiled and
 re-uploaded again.
 
 Furthermore, the concept of flexibility applies to all aspects of a soft-core processor. The user can add
@@ -31,7 +31,7 @@ _exactly_ the features that are required by the application: additional memories
 co-processors and even user-defined instructions.
 
 
-:sectnums!:
+[discrete]
 ==== Why RISC-V?
 
 image::riscv_logo.png[width=250,align=left]
@@ -56,7 +56,7 @@ Finally, I really like the RISC-V ISA itself. It aims to be a clean, orthogonal 
 resembles with the basic concepts of _RISC_: simple yet effective.
 
 
-:sectnums!:
+[discrete]
 ==== Yet another RISC-V core? What makes it special?
 
 The NEORV32 is not based on another RISC-V core. It was build entirely from ground up (just following the official
@@ -74,7 +74,7 @@ and even memory accesses that are checked for address space holes and determinis
 devices. Precise exceptions allow a defined and fully-synchronized state of the CPU at every time an in every situation.
 
 
-:sectnums!:
+[discrete]
 ==== A multi-cycle architecture?!?!
 
 Most mainstream CPUs out there are pipelined architectures to increase throughput. In contrast, most CPUs used for
@@ -83,29 +83,26 @@ multi-cycle architectures?
 
 In terms of energy, throughput, area and maximal clock frequency multi-cycle architectures are somewhere in between
 single-cycle and fully-pipelined designs: they provide higher throughput and clock speed when compared to their
-single-cycle counterparts while having less hardware complexity (= area) then a fully-pipelined designs. I decided to use the
-multi-cycle approach because of the following reasons:
+single-cycle counterparts while having less hardware complexity (= area) then a fully-pipelined designs. I decided to
+use the multi-cycle approach because of the following reasons:
 
 * Multi-cycle architecture are quite small! There is no need for pipeline hazard detection and resolution logic
-(e.g. forwarding). Furthermore, you can "re-use" parts of the core to do several tasks (e.g. the ALU is used for the actual data
-processing, but also for address generation, branch condition check and branch target computation).
+(e.g. forwarding). Furthermore, you can "re-use" parts of the core to do several tasks (e.g. the ALU is used for the
+actual data processing, but also for address generation, branch condition check and branch target computation).
 * Single-cycle architectures require memories that can be read asynchronously - a thing that is not feasible to implement
-in real world applications (i.e. FPGA block RAM is entirely synchronous). Furthermore, such design usually have a very (very!!!)
+in real world applications (i.e. FPGA block RAM is entirely synchronous). Furthermore, such design usually have a very
 long critical path tremendously reducing maximal operating frequency.
 * Pipelined designs increase performance by having several instruction "in fly" at the same time. But this also means
 there is some kind of "out-of-order" behavior: if an instruction at the end of the pipeline causes an exception
 all the instructions in earlier stages have to be invalidated. Potential architecture state changes have to be made _undone_
 requiring additional (exception-handling) logic. In a multi-cycle architecture this situation cannot occur because only a
 single instruction is "in fly" at a time.
-* Having only a single instruction in fly does not only reduce hardware costs, it also simplifies simulation/verification/debugging,
-state preservation/restoring during exceptions and extensibility (no need to care about pipeline hazards) - but of course at the
-cost of reduced throughput.
+* Having only a single instruction in fly does not only reduce hardware costs, it also simplifies
+simulation/verification/debugging, state preservation/restoring during exceptions and extensibility (no need to care
+about pipeline hazards) - but of course at the cost of reduced throughput.
 
-To counteract the loss of performance implied by a _pure_ multi-cycle architecture, the NEORV32 CPU uses a _mixed_ approach: instruction fetch
-(front-end) and instruction execution (back-end) are de-coupled to operate independently of each other. Data is interchanged via a queue
-building a simple 2-stage pipeline. Each "pipeline" stage in terms is implemented as multi-cycle architecture to simplify
-the hardware and to provide _precise_ state control (e.g. during exceptions).
-
-.CPU Architecture Details
-[TIP]
-Want to know more? Check out the description in the CPU's <<_architecture>> section.
+To counteract the loss of performance implied by a _pure_ multi-cycle architecture, the NEORV32 CPU uses a _mixed_
+approach: instruction fetch (front-end) and instruction execution (back-end) are de-coupled to operate independently
+of each other. Data is interchanged via a queue building a simple 2-stage pipeline. Each "pipeline" stage in terms is
+implemented as multi-cycle architecture to simplify the hardware and to provide _precise_ state control (e.g. during
+exceptions).
