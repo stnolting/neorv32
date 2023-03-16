@@ -166,6 +166,7 @@ enum SPI_FLASH_CMD_enum {
   SPI_FLASH_CMD_WRITE_DISABLE = 0x04, /**< Disallow write access */
   SPI_FLASH_CMD_READ_STATUS   = 0x05, /**< Get status register */
   SPI_FLASH_CMD_WRITE_ENABLE  = 0x06, /**< Allow write access */
+  SPI_FLASH_CMD_WAKE          = 0xAB, /**< Wake up from sleep mode */
   SPI_FLASH_CMD_SECTOR_ERASE  = 0xD8  /**< Erase complete sector */
 };
 
@@ -245,6 +246,7 @@ void     system_error(uint8_t err_code);
 void     print_hex_word(uint32_t num);
 
 // SPI flash driver functions
+void    spi_flash_wakeup(void);
 int     spi_flash_check(void);
 uint8_t spi_flash_read_byte(uint32_t addr);
 void    spi_flash_write_byte(uint32_t addr, uint8_t wdata);
@@ -741,6 +743,18 @@ void print_hex_word(uint32_t num) {
 // -------------------------------------------------------------------------------------
 
 /**********************************************************************//**
+ * Wake up flash from deep sleep state
+ **************************************************************************/
+void spi_flash_wakeup(void) {
+
+#if (SPI_EN != 0)
+  neorv32_spi_cs_en(SPI_FLASH_CS);
+  neorv32_spi_trans(SPI_FLASH_CMD_WAKE);
+  neorv32_spi_cs_dis();
+#endif
+}
+
+/**********************************************************************//**
  * Check if SPI and flash are available/working by making sure the WEL
  * flag of the flash status register can be set and cleared again.
  *
@@ -749,6 +763,8 @@ void print_hex_word(uint32_t num) {
 int spi_flash_check(void) {
 
 #if (SPI_EN != 0)
+  // The flash may have been set to sleep prior to reaching this point. Make sure it's alive
+  spi_flash_wakeup();
 
   // set WEL
   spi_flash_write_enable();
