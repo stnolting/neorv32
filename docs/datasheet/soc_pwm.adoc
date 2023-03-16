@@ -9,35 +9,33 @@
 | Software driver file(s): | neorv32_pwm.c |
 |                          | neorv32_pwm.h |
 | Top entity port:         | `pwm_o` | PWM output channels (12-bit)
-| Configuration generics:  | _IO_PWM_NUM_CH_ | number of PWM channels to implement (0..12)
+| Configuration generics:  | `IO_PWM_NUM_CH` | number of PWM channels to implement (0..12)
 | CPU interrupts:          | none | 
 |=======================
 
-The PWM controller implements a pulse-width modulation controller with up to 12 independent channels and an
-8-bit resolution per channel. The actual number of implemented channels is defined by the _IO_PWM_NUM_CH_ generic.
+
+**Overview**
+**Overview**
+
+The PWM module implements a pulse-width modulation controller with up to 12 independent channels providing
+8-bit resolution per channel. The actual number of implemented channels is defined by the `IO_PWM_NUM_CH` generic.
 Setting this generic to zero will completely remove the PWM controller from the design.
 
 [NOTE]
 The `pwm_o` has a static size of 12-bit. If less than 12 PWM channels are configured, only the LSB-aligned channel
 bits are used while the remaining bits are hardwired to zero.
 
-The PWM controller is based on an 8-bit base counter with a programmable threshold comparators for each channel
-that defines the actual duty cycle. The controller can be used to drive fancy RGB-LEDs with 24-
-bit true color, to dim LCD back-lights or even for "analog" control. An external integrator (RC low-pass filter)
-can be used to smooth the generated "analog" signals.
-
 
 **Theory of Operation**
 
-The PWM controller is activated by setting the _PWM_CTRL_EN_ bit in the module's control register `CTRL`. When this
-bit is cleared, the unit is reset and all PWM output channels are set to zero.
-The 8-bit duty cycle for each channel, which represents the channel's "intensity", is defined via an 8-bit value. The module
-provides up to 3 duty cycle registers `DC[0]` to `DC[2]` (depending on the number of implemented channels).
-Each register contains the duty cycle configuration for 4 consecutive channels. For example, the duty cycle of channel 0
-is defined via bits 7:0 in `DC[0]`. The duty cycle of channel 2 is defined via bits 15:0 in `DC[0]` and so on.
+The PWM controller is activated by setting the `PWM_CTRL_EN` bit in the module's control register `CTRL`. When this
+bit is cleared, the unit is reset and all PWM output channels are set to zero. The module
+provides three duty cycle registers `DC[0]` to `DC[2]`. Each register contains the duty cycle configuration for four
+consecutive channels. For example, the duty cycle of channel 0 is defined via bits 7:0 in `DC[0]`. The duty cycle of
+channel 2 is defined via bits 15:0 in `DC[0]` and so on.
 
 [NOTE]
-Regardless of the configuration of _IO_PWM_NUM_CH_ all module registers can be accessed without raising an exception.
+Regardless of the configuration of `IO_PWM_NUM_CH` all module registers can be accessed without raising an exception.
 Software can discover the number of available channels by writing 0xff to all duty cycle configuration bytes and
 reading those values back. The duty-cycle of channels that were not implemented always reads as zero.
 
@@ -46,8 +44,8 @@ Based on the configured duty cycle the according intensity of the channel can be
 _**Intensity~x~**_ = `DC[y](i*8+7 downto i*8)` / (2^8^)
 
 The base frequency of the generated PWM signals is defined by the PWM core clock. This clock is derived
-from the main processor clock and divided by a prescaler via the 3-bit PWM_CTRL_PRSCx in the unit's control
-register. The following pre-scalers are available:
+from the main processor clock and divided by a prescaler via the 3-bit `PWM_CTRL_PRSCx` in the unit's control
+register.
 
 .PWM prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
@@ -69,10 +67,9 @@ _**f~PWM~**_ = _f~main~[Hz]_ / (2^8^ * `clock_prescaler`)
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.4+<| `0xffffff50` .4+<| `CTRL`  <|`0` _PWM_CTRL_EN_    ^| r/w | PWM enable
-                                 <|`1` _PWM_CTRL_PRSC0_ ^| r/w .3+<| 3-bit clock prescaler select
-                                 <|`2` _PWM_CTRL_PRSC1_ ^| r/w
-                                 <|`3` _PWM_CTRL_PRSC2_ ^| r/w
+.3+<| `0xffffff50` .3+<| `CTRL`  <|`0`    `PWM_CTRL_EN`                     ^| r/w <| PWM enable
+                                 <|`3:1`  `PWM_CTRL_PRSC2 : PWM_CTRL_PRSC0` ^| r/w <| 3-bit clock prescaler select
+                                 <|`31:4` -                                 ^| r/- <| _reserved_, read as zero
 .4+<| `0xffffff54` .4+<| `DC[0]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 0
                                  <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 1
                                  <|`23:16` ^| r/w <| 8-bit duty cycle for channel 2

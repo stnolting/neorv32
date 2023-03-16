@@ -10,16 +10,18 @@
 |                          | neorv32_gpio.h |
 | Top entity port:         | `gpio_o` | 64-bit parallel output port
 |                          | `gpio_i` | 64-bit parallel input port
-| Configuration generics:  | _IO_GPIO_NUM_ | number of input/output pairs (0..64)
+| Configuration generics:  | `IO_GPIO_NUM` | number of input/output pairs to implement (0..64)
 | CPU interrupts:          | none |
 |=======================
 
-The general purpose parallel IO unit provides a simple parallel input and output port. These ports can be used chip-externally
-(for example to drive status LEDs, connect buttons, etc.) or chip-internally to provide control signals for other IP modules.
-The actual number of input/output pairs is defined by the _IO_GPIO_NUM_ generic. When set to zero, the GPIO module is excluded
-from synthesis and the output port `gpio_o` is tied to all-zero. If _IO_GPIO_NUM_ is less than the maximum value of 64
-only the LSB-aligned bits in `gpio_o` and `gpio_i` are actually connected while the remaining bits are unconnected or tied
-to zero, respectively.
+The general purpose parallel IO unit provides a simple parallel input and output port. These ports can be used
+chip-externally (for example to drive status LEDs, connect buttons, etc.) or chip-internally to provide control
+signals for other IP modules.
+
+The actual number of input/output pairs is defined by the `IO_GPIO_NUM` generic. When set to zero, the GPIO module
+is excluded from synthesis and the output port `gpio_o` is tied to all-zero. If `IO_GPIO_NUM` is less than the
+maximum value of 64, only the LSB-aligned bits in `gpio_o` and `gpio_i` are actually connected while the remaining
+bits are tied to zero or are left unconnected, respectively.
 
 .Access Atomicity
 [NOTE]

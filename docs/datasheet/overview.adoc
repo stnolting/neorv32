@@ -1,9 +1,9 @@
 :sectnums:
 == Overview
 
-The NEORV32footnote:[Pronounced "neo-R-V-thirty-two" or "neo-risc-five-thirty-two" in its long form.] is an open-source
-RISC-V compatible processor system that is intended as *ready-to-go* auxiliary processor within a larger SoC
-designs or as stand-alone custom / customizable microcontroller.
+The NEORV32 RISC-V Processor is an open-source RISC-V compatible processor system that is intended as
+*ready-to-go* auxiliary processor within a larger SoC designs or as stand-alone custom / customizable
+microcontroller.
 
 The system is highly configurable and provides optional common peripherals like embedded memories,
 timers, serial interfaces, general purpose IO ports and an external bus interface to connect custom IP like
@@ -63,24 +63,24 @@ include::rationale.adoc[]
 
 * all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
 * completely described in behavioral, platform-independent VHDL - no vendor- or technology-specific primitives, attributes, macros, libraries, etc. are used at all
-* all-Verilog "version" https://github.com/stnolting/neorv32-verilog[available] (auto-generated netlist)
+* all-Verilog "version" available (auto-generated netlist)
 * extensive configuration options for adapting the processor to the requirements of the application
-* highly https://stnolting.github.io/neorv32/ug/#_comparative_summary[extensible hardware] - on CPU, SoC and system level
+* highly extensible hardware - on CPU, SoC and system level
 * aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
-* FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the register file)
+* FPGA friendly (e.g. all internal memories can be mapped to block RAM - including the register file)
 * optimized for high clock frequencies to ease timing closure and integration
 * from zero to _"hello world!"_ - completely open source and documented
 * easy to use even for FPGA/RISC-V starters – intended to _work out of the box_
 
 **NEORV32 CPU (the core)**
 
-* 32-bit `rv32i` RISC-V CPU
-* fully RISC-V ISA compatible - checked by the https://github.com/stnolting/neorv32-riscof[official RISCOF architecture tests]
+* 32-bit RISC-V CPU
+* fully compatible to the RISC-V ISA specs. - checked by the https://github.com/stnolting/neorv32-riscof[official RISCOF architecture tests]
 * base ISA + privileged ISA + several optional standard and custom ISA extensions
-* option to add custom RISC-V instructions as custom ISA extension
-* rich set of customization options (ISA extensions, design goal: performance / area (/ energy), ...)
-* aims to support <<_full_virtualization>> capabilities to increase execution safety
-* official https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md[RISC-V open source architecture ID]: decimal **19**; hexadecimal `0x00000013`
+* option to add user-defined RISC-V instructions as custom ISA extension
+* rich set of customization options (ISA extensions, design goal: performance / area / energy, tuning options, ...)
+* <<_full_virtualization>> capabilities to increase execution safety
+* official RISC-V open source architecture ID
 
 **NEORV32 Processor (the SoC)**
 
@@ -90,8 +90,8 @@ include::rationale.adoc[]
 * optional timers and counters (watchdog, system timer)
 * optional general purpose IO and PWM; a native NeoPixel(c)-compatible smart LED interface
 * optional embedded memories / caches for data, instructions and bootloader
-* optional external memory interface (Wishbone / AXI4-Lite) and stream link interface (AXI4-Stream) for custom connectivity
-* optional execute_in_place (XIP) module to execute code _directly_ form external SPI flash
+* optional external memory interface for custom connectivity
+* optional execute in-place (XIP) module to execute code directly form an external SPI flash
 * on-chip debugger compatible with OpenOCD and gdb including hardware trigger module
 
 **Software framework**
@@ -103,17 +103,14 @@ include::rationale.adoc[]
 * doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
 * FreeRTOS port + demos available
 
-[TIP]
-For more in-depth details regarding the feature provided by he hardware see the according sections:
-<<_neorv32_central_processing_unit_cpu>> and <<_neorv32_processor_soc>>.
 
 **Extensibility and Customization**
 
-The NEORV32 processor was designed to ease customization and extensibility and provides several options for adding
+The NEORV32 processor is designed to ease customization and extensibility and provides several options for adding
 application-specific custom hardware modules and accelerators. The three most common options for adding custom
 on-chip modules are listed below.
 
-* <<_processor_external_memory_interface_wishbone_axi4_lite>> for processor-external modules
+* <<_processor_external_memory_interface_wishbone>> to attach processor-external IP modules
 * <<_custom_functions_subsystem_cfs>> for tightly-coupled processor-internal co-processors
 * <<_custom_functions_unit_cfu>> for custom RISC-V instructions
 
@@ -169,11 +166,11 @@ neorv32                - Project home folder
 === VHDL File Hierarchy
 
 All necessary VHDL hardware description files are located in the project's `rtl/core` folder. The top entity
-of the entire processor including all the required configuration generics is **`neorv32_top.vhd`**.
+of the entire processor including all the required configuration generics is `neorv32_top.vhd`.
 
+.NEORV32 VHDL Library
 [IMPORTANT]
-All core VHDL files from the list below have to be assigned to a new design library named **`neorv32`**. Additional
-files, like alternative top entities, can be assigned to any library.
+All core VHDL files from the list below have to be assigned to a new design library named `neorv32`.
 
 ...................................
 neorv32_top.vhd                  - NEORV32 Processor top entity
@@ -230,7 +227,7 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 The processor-internal instruction and data memories (IMEM and DMEM) are split into two design files each:
 a plain entity definition (`neorv32_*mem.entity.vhd`) and the actual architecture definition
 (`mem/neorv32_*mem.default.vhd`). The `*.default.vhd` architecture definitions from `rtl/core/mem` provide a _generic_ and
-_platform independent_ memory design that (should) infers embedded memory blocks. You can replace/modify the architecture
+_platform independent_ memory design (inferring embedded memory blocks). You can replace/modify the architecture
 source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
 and/or timing.
 
@@ -240,12 +237,10 @@ and/or timing.
 :sectnums:
 === FPGA Implementation Results
 
-This section shows _exemplary_ FPGA implementation results for the NEORV32 CPU and NEORV32 Processor modules.
-Note that certain configuration options might also have an impact on other configuration options. Furthermore,
-this report cannot cover all possible option combinations. Hence, the presented implementation results are
-just _exemplary_. If not otherwise mentioned all implementations use the default generic configurations.
+[NOTE]
+This section shows **exemplary** FPGA implementation results for the NEORV32 CPU and NEORV32 Processor modules.
 
-:sectnums:
+[discrete]
 ==== CPU
 
 [cols="<2,<8"]
@@ -273,19 +268,14 @@ just _exemplary_. If not otherwise mentioned all implementations use the default
 | `rv32imcbu_Zicsr_Zicntr_Zifencei_Zfinx_DebugMode` | 4825 | 2018 |     1024 |    7 | 123 MHz
 |=======================
 
-[NOTE]
-The table above does not show _all_ CPU ISA extensions. More sophisticated and application-specific
-options like PMP and HMP are not included in this overview.
-
 .Goal-Driven Optimization
 [TIP]
-The CPU provides further options to reduce the area footprint (for example by constraining the CPU-internal
-counter sizes) or to increase performance (for example by using a barrel-shifter; at cost of extra hardware).
+The CPU provides further options to reduce the area footprint or to increase performance.
 See section <<_processor_top_entity_generics>> for more information. Also, take a look at the User Guide section
 https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration[Application-Specific Processor Configuration].
 
 
-:sectnums:
+[discrete]
 ==== Processor - Modules
 
 [cols="<2,<8"]
@@ -330,13 +320,9 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 | XIRQ          | External interrupt controller (32 channels)                    | 245 | 200 |        0 |    0
 |=======================
 
-[NOTE]
-Note that not all IOs were actually connected to FPGA pins (for example some GPIO inputs and outputs)
-when generating these reports.
 
-
-:sectnums:
-==== Processor - Exemplary Setups
+[discrete]
+==== Processor - Exemplary Setup
 
 [cols="<2,<8"]
 [grid="topbot"]
@@ -356,7 +342,7 @@ when generating these reports.
 | 2488  | 1807 |     7 |    4 | 150 MHz
 |=======================
 
-.Exemplary Setups
+.Exemplary Processor Setups
 [TIP]
 Check out the `neorv32-setups` repository (on GitHub: https://github.com/stnolting/neorv32-setups),
 which provides several demo setups and community projects for various FPGA boards and toolchains.
@@ -368,16 +354,12 @@ which provides several demo setups and community projects for various FPGA board
 === CPU Performance
 
 The performance of the NEORV32 was tested and evaluated using the https://www.eembc.org/coremark/[Core Mark CPU benchmark].
-This benchmark focuses on testing the capabilities of the CPU core itself rather than the performance of the whole
-system. The according sources can be found in the `sw/example/coremark` folder.
+The according sources can be found in the `sw/example/coremark` folder.
+The resulting CoreMark score is defined as CoreMark iterations per second per MHz.
 
-.Dhrystone
+.Dhrystone Benchmark
 [TIP]
 A very simple port of the Dhrystone benchmark is also available in `sw/example/dhrystone`.
-
-The resulting CoreMark score is defined as CoreMark iterations per second.
-The execution time is determined via the RISC-V `[m]cycle[h]` CSRs. The relative CoreMark score is
-defined as CoreMark score divided by the CPU's clock frequency in MHz.
 
 .Configuration
 [cols="<2,<8"]
@@ -400,13 +382,7 @@ defined as CoreMark score divided by the CPU's clock frequency in MHz.
 | _performance_ (`rv32imc_Zicsr` + perf. options) |          95.23 | **0.9523**    | **3.54**
 |=======================
 
-[NOTE]
-The "_performance_" CPU configuration uses the <<_fast_mul_en>> and <<_fast_shift_en>> options.
-
 The NEORV32 CPU is based on a multi-cycle architecture. Each instruction is executed in a sequence of
-several consecutive micro operations.
-The average CPI (cycles per instruction) depends on the instruction mix of a specific applications and also on
-the available CPU extensions. The average CPI is computed by dividing the total number of required clock cycles
-(only the timed core to avoid distortion due to IO wait cycles) by the number of executed instructions
-(`[m]instret[h]` CSRs). More information regarding the execution time of each implemented instruction can be found in
-chapter <<_instruction_timing>>.
+several consecutive micro operations. The average CPI (cycles per instruction) depends on the instruction
+mix of a specific applications and also on the available CPU extensions. More information regarding the execution
+time of each implemented instruction can be found in section <<_instruction_sets_and_extensions>>.

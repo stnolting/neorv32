@@ -12,18 +12,17 @@
 |                          | `xip_clk_o` | 1-bit serial clock output
 |                          | `xip_dat_i` | 1-bit serial data input
 |                          | `xip_dat_o` | 1-bit serial data output
-| Configuration generics:  | _IO_XIP_EN_ | implement XIP module when _true_
+| Configuration generics:  | `IO_XIP_EN` | implement XIP module when `true`
 | CPU interrupts:          | none | 
 |=======================
 
 
 **Overview**
 
-The execute in place (XIP) module is probably one of the more complicated modules of the NEORV32. The module
-allows to execute code (and read constant data) directly from a SPI flash memory. Hence, it uses the standard
-serial peripheral interface (SPI) as transfer protocol under the hood.
+The execute in-place (XIP) module allows to execute code (and read constant data) directly from a SPI flash memory.
+Hence, it uses the standard serial peripheral interface (SPI) as transfer protocol under the hood.
 
-The XIP flash is not mapped to a specific region of the processor's address space. Instead, the XIP module
+The XIP flash is not mapped to a specific region of the processor's address space. Instead, it
 provides a programmable mapping scheme to allow a flexible user-defined mapping of the flash to _any section_
 of the address space.
 
@@ -34,26 +33,13 @@ Note that this interface is read-only. Any write access will raise a bus error e
 The second interface is mapped to the processor's IO space and allows data accesses to the XIP module's
 configuration registers.
 
-.Example Program
-[TIP]
-An example program for the XIP module is available in `sw/example/demo_xip`.
-
-.Compiling a Program for XIP Execution
-[NOTE]
-If you want to compile a program that shall be executed using the XIP module, the default NEORV32 linker script
-(`sw/common/neorv32.ld`) has to be modified: the `ORIGIN` attribute of the `rom` section needs to be adapted to
-the XIP page base address and the flash base address. For example if the XIP page is set to `0x20000000` and the
-executable is placed in the flash as offset `0x00400000` the `ORIGIN` attribute has to be set to the sum of both
-address offsets (`0x20000000 + 0x00400000 = 0x20400000` -> `rom  (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x20400000`).
-See sections <<_linker_script>>, <<_application_makefile>> and <<_executable_image_generator>> for more information.
-
 
 **SPI Protocol**
 
 The XIP module accesses external flash using the standard SPI protocol. The module always sends data MSB-first and
-provides all of the standard four clock modes (0..3), which are configured via the _XIP_CTRL_CPOL_ (clock polarity)
-and _XIP_CTRL_CPHA_ (clock phase) control register bits, respectively. The clock speed of the interface (`xip_clk_o`)
-is defined by a three-bit clock pre-scaler configured using the _XIP_CTRL_PRSCx_ bits:
+provides all of the standard four clock modes (0..3), which are configured via the `XIP_CTRL_CPOL` (clock polarity)
+and `XIP_CTRL_CPHA` (clock phase) control register bits, respectively. The clock speed of the interface (`xip_clk_o`)
+is defined by a three-bit clock pre-scaler configured using the `XIP_CTRL_PRSCx` bits:
 
 .XIP prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
@@ -63,7 +49,7 @@ is defined by a three-bit clock pre-scaler configured using the _XIP_CTRL_PRSCx_
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-Based on the _XIP_CTRL_PRSCx_ configuration the actual XIP SPI clock frequency f~XIP~ is derived from the processor's
+Based on the clock configuration the actual XIP SPI clock frequency f~XIP~ is derived from the processor's
 main clock f~main~ and is determined by:
 
 _**f~XIP~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler`)
@@ -72,36 +58,36 @@ Hence, the maximum XIP clock speed is f~main~ / 4.
 
 .High-Speed SPI mode
 [TIP]
-The module provides a "high-speed" SPI mode. In this mode the clock prescaler configuration (_XIP_CTRL_PRSCx_) is ignored
+The module provides a "high-speed" SPI mode. In this mode the clock prescaler configuration (`XIP_CTRL_PRSCx`) is ignored
 and the SPI clock operates at f~main~ / 2 (half of the processor's main clock). High speed SPI mode is enabled by setting
-the control register's _XIP_CTRL_HIGHSPEED_ bit.
+the control register's `XIP_CTRL_HIGHSPEED` bit.
 
-The flash's "read command", which initiates a read access, is defined by the _XIP_CTRL_RD_CMD_ control register bits.
+The flash's "read command", which initiates a read access, is defined by the `XIP_CTRL_RD_CMD` control register bits.
 For most SPI flash memories this is `0x03` for normal SPI mode.
 
 
 **Direct SPI Access**
 
 The XIP module allows to initiate _direct_ SPI transactions. This feature can be used to configure the attached SPI
-flash or to perform direct read and write accesses to the flash memory. Two data registers `NEORV32_XIP.DATA_LO` and
-`NEORV32_XIP.DATA_HI` are provided to send up to 64-bit of SPI data. The `NEORV32_XIP.DATA_HI` register is write-only,
-so a total of 32-bit receive data is provided. Note that the module handles the chip-select
+flash or to perform direct read and write accesses to the flash memory. Two data registers `DATA_LO` and
+`DATA_HI` are provided to send up to 64-bit of SPI data. The `DATA_HI` register is write-only,
+so a total of just 32-bits of receive data is provided. Note that the module handles the chip-select
 line (`xip_csn_o`) by itself so it is not possible to construct larger consecutive transfers.
 
-The actual data transmission size in bytes is defined by the control register's _XIP_CTRL_SPI_NBYTES_ bits.
+The actual data transmission size in bytes is defined by the control register's `XIP_CTRL_SPI_NBYTES` bits.
 Any configuration from 1 byte to 8 bytes is valid. Other value will result in unpredictable behavior.
 
 Since data is always transferred MSB-first, the data in `DATA_HI:DATA_LO` also has to be MSB-aligned. Receive data is
-available in `DATA_LO` only - `DATA_HI` is write-only. Writing to `DATA_HI` triggers the actual SPI transmission.
-The _XIP_CTRL_PHY_BUSY_ control register flag indicates a transmission being in progress.
+available in `DATA_LO` only since `DATA_HI` is write-only. Writing to `DATA_HI` triggers the actual SPI transmission.
+The `XIP_CTRL_PHY_BUSY` control register flag indicates a transmission being in progress.
 
 The chip-select line of the XIP module (`xip_csn_o`) will only become asserted (enabled, pulled low) if the
-_XIP_CTRL_SPI_CSEN_ control register bit is set. If this bit is cleared, `xip_csn_o` is always disabled
+`XIP_CTRL_SPI_CSEN` control register bit is set. If this bit is cleared, `xip_csn_o` is always disabled
 (pulled high).
 
 [NOTE]
-Direct SPI mode is only possible when the module is enabled (setting _XIP_CTRL_EN_) but **before** the actual
-XIP mode is enabled via _XIP_CTRL_XIP_EN_.
+Direct SPI mode is only possible when the module is enabled (setting `XIP_CTRL_EN`) but **before** the actual
+XIP mode is enabled via `XIP_CTRL_XIP_EN`.
 
 [TIP]
 When the XIP mode is not enabled, the XIP module can also be used as additional general purpose SPI controller
@@ -113,28 +99,16 @@ with a transfer size of up to 64 bits per transmission.
 The address mapping of the XIP flash is not fixed by design. It can be mapped to _any section_ within the processor's
 address space. A _section_ refers to one out of 16 naturally aligned 256MB wide memory segments. This segment
 is defined by the four most significant bits of the address (`31:28`) and the XIP's segment is programmed by the
-four _XIP_CTRL_XIP_PAGE_ bits in the unit's control register. All accesses within this page will be mapped to the XIP flash.
+four `XIP_CTRL_XIP_PAGE` bits in the unit's control register. All accesses within this page will be mapped to the XIP flash.
 
 [NOTE]
 Care must be taken when programming the page mapping to prevent access collisions with other modules (like internal memories
 or modules attached to the external memory interface).
 
-Example: to map the XIP flash to the address space starting at `0x20000000` write a "2" (`0b0010`) to the _XIP_CTRL_XIP_PAGE_
-control register bits. Any access within `0x20000000 .. 0x2fffffff` will be forwarded to the XIP flash.
-Note that the SPI access address might wrap around.
-
-.Using the FPGA Bitstream Flash also for XIP
-[TIP]
-You can also use the FPGA's bitstream SPI flash for storing XIP programs. To prevent overriding the bitstream,
-a certain offset needs to be added to the executable (which might require linker script modifications).
-To execute the program stored in the SPI flash simply jump to the according base address. For example
-if the executable starts at flash offset `0x8000` and the XIP flash is mapped to the base address `0x20000000`
-then add the offset to the base address and use that as jump/call destination (=`0x20008000`).
-
 
 **Using the XIP Mode**
 
-The XIP module is globally enabled by setting the _XIP_CTRL_EN_ bit in the device's `CTRL` control register.
+The XIP module is globally enabled by setting the `XIP_CTRL_EN` bit in the device's `CTRL` control register.
 Clearing this bit will reset the whole module and will also terminate any pending SPI transfer.
 
 Since there is a wide variety of SPI flash components with different sizes, the XIP module allows to specify
@@ -145,11 +119,11 @@ address bytes (**minus one**). For example for a SPI flash with 24-bit addresses
 
 The transparent XIP accesses are transformed into SPI transmissions with the following format (starting with the MSB):
 
-* 8-bit command: configured by the _XIP_CTRL_RD_CMD_ control register bits ("SPI read command")
-* 8 to 32 bits address: defined by the _XIP_CTRL_XIP_ABYTES_ control register bits ("number of address bytes")
+* 8-bit command: configured by the `XIP_CTRL_RD_CMD` control register bits ("SPI read command")
+* 8 to 32 bits address: defined by the `XIP_CTRL_XIP_ABYTES` control register bits ("number of address bytes")
 * 32-bit data: sending zeros and receiving the according flash word (32-bit)
 
-Hence, the maximum XIP transmission size is 72-bit, which has to be configured via the _XIP_CTRL_SPI_NBYTES_
+Hence, the maximum XIP transmission size is 72-bit, which has to be configured via the `XIP_CTRL_SPI_NBYTES`
 control register bits. Note that the 72-bit transmission size is only available in XIP mode. The transmission
 size of the direct SPI accesses is limited to 64-bit.
 
@@ -166,8 +140,8 @@ The XIP mode requires the 4-byte data words in the flash to be ordered in **litt
 
 After the SPI properties (including the amount of address bytes **and** the total amount of SPI transfer bytes)
 and XIP address mapping are configured, the actual XIP mode can be enabled by setting
-the control register's _XIP_CTRL_XIP_EN_ bit. This will enable the "transparent SPI access port" of the module and thus,
-the _transparent_ conversion of access requests into proper SPI flash transmissions. Make sure _XIP_CTRL_SPI_CSEN_
+the control register's `XIP_CTRL_XIP_EN` bit. This will enable the "transparent SPI access port" of the module and thus,
+the _transparent_ conversion of access requests into proper SPI flash transmissions. Make sure `XIP_CTRL_SPI_CSEN`
 is also set so the module can actually select/enable the attached SPI flash.
 No more direct SPI accesses via `DATA_HI:DATA_LO` are possible when the XIP mode is enabled. However, the
 XIP mode can be disabled at any time.
@@ -190,7 +164,7 @@ data bytes. Obviously, this introduces a certain transmission overhead. To reduc
 the flash's _incrmental read_ function, which will return consecutive bytes when continuing to send clock cycles after a read command.
 Hence, the XIP module provides an optional "burst mode" to accelerate consecutive read accesses.
 
-The XIP burst mode is enabled by setting the _XIP_CTRL_BURST_EN_ bit in the module's control register. The burst mode only affects
+The XIP burst mode is enabled by setting the `XIP_CTRL_BURST_EN` bit in the module's control register. The burst mode only affects
 the actual XIP mode and _not_ the direct SPI mode. Hence, it should be enabled right before enabling XIP mode only.
 By using the XIP burst mode flash read accesses can be accelerated by up to 50%.
 
@@ -202,23 +176,21 @@ By using the XIP burst mode flash read accesses can be accelerated by up to 50%.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.17+<| `0xffffff40` .17+<| `CTRL` <|`0`  _XIP_CTRL_EN_    ^| r/w <| XIP module enable
-                                  <|`1`  _XIP_CTRL_PRSC0_ ^| r/w .3+| 3-bit SPI clock prescaler select
-                                  <|`2`  _XIP_CTRL_PRSC1_ ^| r/w
-                                  <|`3`  _XIP_CTRL_PRSC2_ ^| r/w
-                                  <|`4`  _XIP_CTRL_CPOL_  ^| r/w <| SPI clock polarity
-                                  <|`5`  _XIP_CTRL_CPHA_  ^| r/w <| SPI clock phase
-                                  <|`9:6`  _XIP_CTRL_SPI_NBYTES_MSB_ : _XIP_CTRL_SPI_NBYTES_LSB_ ^| r/w <| Number of bytes in SPI transaction (1..9)
-                                  <|`10` _XIP_CTRL_XIP_EN_ ^| r/w <| XIP mode enable
-                                  <|`12:11` _XIP_CTRL_XIP_ABYTES_MSB_ : _XIP_CTRL_XIP_ABYTES_LSB_ ^| r/w <| Number of address bytes for XIP flash (minus 1)
-                                  <|`20:13` _XIP_CTRL_RD_CMD_MSB_ : _XIP_CTRL_RD_CMD_LSB_ ^| r/w <| Flash read command
-                                  <|`24:21` _XIP_CTRL_XIP_PAGE_MSB_ : _XIP_CTRL_XIP_PAGE_LSB_ ^| r/w <| XIP memory page
-                                  <|`25` _XIP_CTRL_SPI_CSEN_  ^| r/w <| Allow SPI chip-select to be actually asserted when set
-                                  <|`26` _XIP_CTRL_HIGHSPEED_ ^| r/w <| enable SPI high-speed mode (ignoring _XIP_CTRL_PRSC_)
-                                  <|`27` _XIP_CTRL_BURST_EN_  ^| r/w <| Enable XIP burst mode
-                                  <|`29:28`                   ^| r/- <| _reserved_, read as zero
-                                  <|`30` _XIP_CTRL_PHY_BUSY_  ^| r/- <| SPI PHY busy when set
-                                  <|`31` _XIP_CTRL_XIP_BUSY_  ^| r/- <| XIP access in progress when set
+.15+<| `0xffffff40` .15+<| `CTRL` <|`0`     `XIP_CTRL_EN`                                       ^| r/w <| XIP module enable
+                                  <|`3:1`   `XIP_CTRL_PRSC2 : XIP_CTRL_PRSC0`                   ^| r/w <| 3-bit SPI clock prescaler select
+                                  <|`4`     `XIP_CTRL_CPOL`                                     ^| r/w <| SPI clock polarity
+                                  <|`5`     `XIP_CTRL_CPHA`                                     ^| r/w <| SPI clock phase
+                                  <|`9:6`   `XIP_CTRL_SPI_NBYTES_MSB : XIP_CTRL_SPI_NBYTES_LSB` ^| r/w <| Number of bytes in SPI transaction (1..9)
+                                  <|`10`    `XIP_CTRL_XIP_EN`                                   ^| r/w <| XIP mode enable
+                                  <|`12:11` `XIP_CTRL_XIP_ABYTES_MSB : XIP_CTRL_XIP_ABYTES_LSB` ^| r/w <| Number of address bytes for XIP flash (minus 1)
+                                  <|`20:13` `XIP_CTRL_RD_CMD_MSB : XIP_CTRL_RD_CMD_LSB`         ^| r/w <| Flash read command
+                                  <|`24:21` `XIP_CTRL_XIP_PAGE_MSB : XIP_CTRL_XIP_PAGE_LSB`     ^| r/w <| XIP memory page
+                                  <|`25`    `XIP_CTRL_SPI_CSEN`                                 ^| r/w <| Allow SPI chip-select to be actually asserted when set
+                                  <|`26`    `XIP_CTRL_HIGHSPEED`                                ^| r/w <| enable SPI high-speed mode (ignoring _XIP_CTRL_PRSC_)
+                                  <|`27`    `XIP_CTRL_BURST_EN`                                 ^| r/w <| Enable XIP burst mode
+                                  <|`29:28` -                                                   ^| r/- <| _reserved_, read as zero
+                                  <|`30`   `XIP_CTRL_PHY_BUSY`                                  ^| r/- <| SPI PHY busy when set
+                                  <|`31`   `XIP_CTRL_XIP_BUSY`                                  ^| r/- <| XIP access in progress when set
 | `0xffffff44` | _reserved_ |`31:0` | r/- | _reserved_, read as zero
 | `0xffffff48` | `DATA_LO`  |`31:0` | r/w | Direct SPI access - data register low
 | `0xffffff4C` | `DATA_HI`  |`31:0` | -/w | Direct SPI access - data register high; write access triggers SPI transfer
