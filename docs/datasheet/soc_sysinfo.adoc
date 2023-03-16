@@ -12,10 +12,11 @@
 | CPU interrupts:          | none | 
 |=======================
 
-**Theory of Operation**
 
-The SYSINFO allows the application software to determine the setting of most of the processor's top entity
-generics that are related to processor/SoC configuration. All registers of this unit are read-only.
+**Overview**
+
+The SYSINFO allows the application software to determine the setting of most of the <<_processor_top_entity_generics>>
+that are related to processor/SoC configuration. All registers of this unit are read-only.
 
 This device is always implemented - regardless of the actual hardware configuration. The bootloader as well
 as the NEORV32 software runtime environment require information from this device (like memory layout
@@ -33,14 +34,14 @@ will signal a "DEVICE ERROR" in this case.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Function
-| `0xffffffe0` | `CLK`         | clock speed in Hz (via top's <<_clock_frequency>> generic)
-| `0xffffffe4` | `CUSTOM_ID    | custom user-defined ID (via top's <<_custom_id>> generic)
-| `0xffffffe8` | `SOC`         | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
+| `0xffffffe0` | `CLK`         | clock speed in Hz (via top's `CLOCK_FREQUENCY` generic)
+| `0xffffffe4` | `CUSTOM_ID    | custom user-defined ID (via top's `CUSTOM_ID` generic)
+| `0xffffffe8` | `SOC`         | specific SoC configuration (see `sysinfo_soc_configuration>>)
 | `0xffffffec` | `CACHE`       | cache configuration information (see <<_sysinfo_cache_configuration>>)
 | `0xfffffff0` | `ISPACE_BASE` | instruction address space base (via package's `ispace_base_c` constant)
-| `0xfffffff4` | `IMEM_SIZE`   | internal IMEM size in bytes (via top's <<_mem_int_imem_size>> generic)
+| `0xfffffff4` | `IMEM_SIZE`   | internal IMEM size in bytes (via top's `MEM_INT_IMEM_SIZE` generic)
 | `0xfffffff8` | `DSPACE_BASE` | data address space base (via package's `sdspace_base_c` constant)
-| `0xfffffffc` | `DMEM_SIZE`   | internal DMEM size in bytes (via top's <<_mem_int_dmem_size>> generic)
+| `0xfffffffc` | `DMEM_SIZE`   | internal DMEM size in bytes (via top's `MEM_INT_DMEM_SIZE` generic)
 |=======================
 
 
@@ -51,32 +52,32 @@ will signal a "DEVICE ERROR" in this case.
 [options="header",grid="all"]
 |=======================
 | Bit | Name [C] | Function
-| `0`    | _SYSINFO_SOC_BOOTLOADER_       | set if the processor-internal bootloader is implemented (via top's <<_int_bootloader_en>> generic)
-| `1`    | _SYSINFO_SOC_MEM_EXT_          | set if the external Wishbone bus interface is implemented (via top's <<_mem_ext_en>> generic)
-| `2`    | _SYSINFO_SOC_MEM_INT_IMEM_     | set if the processor-internal DMEM implemented (via top's <<_mem_int_dmem_en>> generic)
-| `3`    | _SYSINFO_SOC_MEM_INT_DMEM_     | set if the processor-internal IMEM is implemented (via top's <<_mem_int_imem_en>> generic)
-| `4`    | _SYSINFO_SOC_MEM_EXT_ENDIAN_   | set if external bus interface uses BIG-endian byte-order (via top's <<_mem_ext_big_endian>> generic)
-| `5`    | _SYSINFO_SOC_ICACHE_           | set if processor-internal instruction cache is implemented (via top's <<_icache_en>> generic)
-| `12:6` | -                              | _reserved_, read as zero
-| `13`   | _SYSINFO_SOC_IS_SIM_           | set if processor is being **simulated** (⚠️ not guaranteed)
-| `14`   | _SYSINFO_SOC_OCD_              | set if on-chip debugger implemented (via top's <<_on_chip_debugger_en>> generic)
-| `15`   | -                              | _reserved_, read as zero
-| `16`   | _SYSINFO_SOC_IO_GPIO_          | set if the GPIO is implemented (via top's <<_io_gpio_en>> generic)
-| `17`   | _SYSINFO_SOC_IO_MTIME_         | set if the MTIME is implemented (via top's <<_io_mtime_en>> generic)
-| `18`   | _SYSINFO_SOC_IO_UART0_         | set if the primary UART0 is implemented (via top's <<_io_uart0_en>> generic)
-| `19`   | _SYSINFO_SOC_IO_SPI_           | set if the SPI is implemented (via top's <<_io_spi_en>> generic)
-| `20`   | _SYSINFO_SOC_IO_TWI_           | set if the TWI is implemented (via top's <<_io_twi_en>> generic)
-| `21`   | _SYSINFO_SOC_IO_PWM_           | set if the PWM is implemented (via top's <<_io_pwm_num_ch>> generic)
-| `22`   | _SYSINFO_SOC_IO_WDT_           | set if the WDT is implemented (via top's <<_io_wdt_en>> generic)
-| `23`   | _SYSINFO_SOC_IO_CFS_           | set if the custom functions subsystem is implemented (via top's <<_io_cfs_en>> generic)
-| `24`   | _SYSINFO_SOC_IO_TRNG_          | set if the TRNG is implemented (via top's _IO_TRNG_EN_ generic)
-| `25`   | _SYSINFO_SOC_IO_SDI_           | set if the SDI is implemented (via top's <<_io_sdi_en>> generic)
-| `26`   | _SYSINFO_SOC_IO_UART1_         | set if the secondary UART1 is implemented (via top's <<_io_uart1_en>> generic)
-| `27`   | _SYSINFO_SOC_IO_NEOLED_        | set if the NEOLED is implemented (via top's <<_io_neoled_en>> generic)
-| `28`   | _SYSINFO_SOC_IO_XIRQ_          | set if the XIRQ is implemented (via top's <<_xirq_num_ch>> generic)
-| `29`   | _SYSINFO_SOC_IO_GPTMR_         | set if the GPTMR is implemented (via top's <<_io_gptmr_en>> generic)
-| `30`   | _SYSINFO_SOC_IO_XIP_           | set if the XIP module is implemented (via top's <<_io_xip_en>> generic)
-| `31`   | _SYSINFO_SOC_IO_ONEWIRE_       | set if the ONEWIRE interface is implemented (via top's <<_io_onewire_en>> generic)
+| `0`    | `SYSINFO_SOC_BOOTLOADER`     | set if the processor-internal bootloader is implemented (via top's `INT_BOOTLOADER_EN` generic)
+| `1`    | `SYSINFO_SOC_MEM_EXT`        | set if the external Wishbone bus interface is implemented (via top's `MEM_EXT_EN` generic)
+| `2`    | `SYSINFO_SOC_MEM_INT_IMEM`   | set if the processor-internal DMEM implemented (via top's `MEM_INT_DMEM_EN` generic)
+| `3`    | `SYSINFO_SOC_MEM_INT_DMEM`   | set if the processor-internal IMEM is implemented (via top's `MEM_INT_IMEM_EN` generic)
+| `4`    | `SYSINFO_SOC_MEM_EXT_ENDIAN` | set if external bus interface uses BIG-endian byte-order (via top's `MEM_EXT_BIG_ENDIAN` generic)
+| `5`    | `SYSINFO_SOC_ICACHE`         | set if processor-internal instruction cache is implemented (via top's `ICACHE_EN` generic)
+| `12:6` | -                            | _reserved_, read as zero
+| `13`   | `SYSINFO_SOC_IS_SIM`         | set if processor is being **simulated** (⚠️ not guaranteed)
+| `14`   | `SYSINFO_SOC_OCD`            | set if on-chip debugger implemented (via top's `ON_CHIP_DEBUGGER_EN` generic)
+| `15`   | -                            | _reserved_, read as zero
+| `16`   | `SYSINFO_SOC_IO_GPIO`        | set if the GPIO is implemented (via top's `IO_GPIO_EN` generic)
+| `17`   | `SYSINFO_SOC_IO_MTIME`       | set if the MTIME is implemented (via top's `IO_MTIME_EN` generic)
+| `18`   | `SYSINFO_SOC_IO_UART0`       | set if the primary UART0 is implemented (via top's `IO_UART0_EN` generic)
+| `19`   | `SYSINFO_SOC_IO_SPI`         | set if the SPI is implemented (via top's `IO_SPI_EN` generic)
+| `20`   | `SYSINFO_SOC_IO_TWI`         | set if the TWI is implemented (via top's `IO_TWI_EN` generic)
+| `21`   | `SYSINFO_SOC_IO_PWM`         | set if the PWM is implemented (via top's `IO_PWM_NUM_CH` generic)
+| `22`   | `SYSINFO_SOC_IO_WDT`         | set if the WDT is implemented (via top's `IO_WDT_EN` generic)
+| `23`   | `SYSINFO_SOC_IO_CFS`         | set if the custom functions subsystem is implemented (via top's `IO_CFS_EN` generic)
+| `24`   | `SYSINFO_SOC_IO_TRNG`        | set if the TRNG is implemented (via top's `IO_TRNG_EN` generic)
+| `25`   | `SYSINFO_SOC_IO_SDI`         | set if the SDI is implemented (via top's `IO_SDI_EN` generic)
+| `26`   | `SYSINFO_SOC_IO_UART1`       | set if the secondary UART1 is implemented (via top's `IO_UART1_EN` generic)
+| `27`   | `SYSINFO_SOC_IO_NEOLED`      | set if the NEOLED is implemented (via top's `IO_NEOLED_EN` generic)
+| `28`   | `SYSINFO_SOC_IO_XIRQ`        | set if the XIRQ is implemented (via top's `XIRQ_NUM_CH` generic)
+| `29`   | `SYSINFO_SOC_IO_GPTMR`       | set if the GPTMR is implemented (via top's `IO_GPTMR_EN` generic)
+| `30`   | `SYSINFO_SOC_IO_XIP`         | set if the XIP module is implemented (via top's `IO_XIP_EN` generic)
+| `31`   | `SYSINFO_SOC_IO_ONEWIRE`     | set if the ONEWIRE interface is implemented (via top's `IO_ONEWIRE_EN` generic)
 |=======================
 
 
@@ -90,9 +91,9 @@ Bit fields in this register are set to all-zero if the according cache is not im
 [options="header",grid="all"]
 |=======================
 | Bit      | Name [C] | Function
-| `3:0`    | _SYSINFO_CACHE_IC_BLOCK_SIZE_3_ : _SYSINFO_CACHE_IC_BLOCK_SIZE_0_       | _log2_(i-cache block size in bytes), via top's <<_icache_block_size>> generic
-| `7:4`    | _SYSINFO_CACHE_IC_NUM_BLOCKS_3_ : _SYSINFO_CACHE_IC_NUM_BLOCKS_0_       | _log2_(i-cache number of cache blocks), via top's <<_icache_num_blocks>> generic
-| `11:9`   | _SYSINFO_CACHE_IC_ASSOCIATIVITY_3_ : _SYSINFO_CACHE_IC_ASSOCIATIVITY_0_ | _log2_(i-cache associativity), via top's <<_icache_associativity>> generic
-| `15:12`  | _SYSINFO_CACHE_IC_REPLACEMENT_3_ : _SYSINFO_CACHE_IC_REPLACEMENT_0_     | i-cache replacement policy (`0001` = LRU if associativity > 0)
-| `32:16`  | -                                                                       | zero, reserved for d-cache
+| `3:0`    | `SYSINFO_CACHE_IC_BLOCK_SIZE_3 : SYSINFO_CACHE_IC_BLOCK_SIZE_0`       | _log2_(i-cache block size in bytes), via top's `ICACHE_BLOCK_SIZE` generic
+| `7:4`    | `SYSINFO_CACHE_IC_NUM_BLOCKS_3 : SYSINFO_CACHE_IC_NUM_BLOCKS_0`       | _log2_(i-cache number of cache blocks), via top's `ICACHE_NUM_BLOCKS` generic
+| `11:9`   | `SYSINFO_CACHE_IC_ASSOCIATIVITY_3 : SYSINFO_CACHE_IC_ASSOCIATIVITY_0` | _log2_(i-cache associativity), via top's `ICACHE_ASSOCIATIVITY` generic
+| `15:12`  | `SYSINFO_CACHE_IC_REPLACEMENT_3 : SYSINFO_CACHE_IC_REPLACEMENT_0`     | i-cache replacement policy (`0001` = LRU if associativity > 0)
+| `32:16`  | -                                                                     | zero, reserved for d-cache
 |=======================

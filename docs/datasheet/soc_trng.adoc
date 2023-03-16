@@ -9,13 +9,13 @@
 | Software driver file(s): | neorv32_trng.c |
 |                          | neorv32_trng.h |
 | Top entity port:         | none | 
-| Configuration generics:  | _IO_TRNG_EN_   | implement TRNG when _true_
-|                          | _IO_TRNG_FIFO_ | data FIFO depth, min 1, has to be a power of two
+| Configuration generics:  | `IO_TRNG_EN`   | implement TRNG when `true`
+|                          | `IO_TRNG_FIFO` | data FIFO depth, min 1, has to be a power of two
 | CPU interrupts:          | none | 
 |=======================
 
 
-**Theory of Operation**
+**Overview**
 
 The NEORV32 true random number generator provides _physically_ true random numbers.
 Instead of using a pseudo RNG like a LFSR, the TRNG uses a simple, straight-forward ring
@@ -23,48 +23,38 @@ oscillator concept as physical entropy source. Hence, voltage, thermal and also 
 fluctuations are used to provide a true physical entropy source.
 
 The TRNG features a platform independent architecture without FPGA-specific primitives, macros or
-attributes so it can be synthesized for _any_ FPGA. Ir is based on the **neoTRNG V2**, which is a "spin-off project" of the
+attributes so it can be synthesized for _any_ FPGA. It is based on the **neoTRNG V2**, which is a "spin-off project" of the
 NEORV32 processor. More detailed information about the neoTRNG, its architecture and a
 detailed evaluation of the random number quality can be found it the neoTRNG repository: https://github.com/stnolting/neoTRNG
 
 .Inferring Latches
 [NOTE]
-The synthesis tool might emit a warning like _"inferring latches for ... neorv32_trng ..."_. This is no problem
+The synthesis tool might emit a warning like "inferring latches for ... neorv32_trng ...". This is no problem
 as this is what we actually want: the TRNG is based on latches, which implement the inverters of the ring oscillators.
 
 .Simulation
 [IMPORTANT]
 When simulating the processor the NEORV32 TRNG is automatically set to "simulation mode". In this mode, the physical entropy
 sources (= the ring oscillators) are replaced by a simple **pseudo RNG (LFSR)** providing weak pseudo-random data only.
-The _TRNG_CTRL_SIM_MODE_ flag of the control register is set if simulation mode is active.
+The `TRNG_CTRL_SIM_MODE` flag of the control register is set if simulation mode is active.
 
 
-**Using the TRNG**
+**Theory of Operation**
 
-The TRNG features a single control register `CTRL` for control, status check and data access. When the _TRNG_CTRL_EN_
-bit is set, the TRNG is enabled and starts operation.
+The TRNG features a single control register `CTRL` for control, status check and data access. When the `TRNG_CTRL_EN`
+bit is set, the TRNG is enabled and starts operation. As soon as the `TRNG_CTRL_VALID` bit is set a new random data byte
+is available and can be obtained from the lowest 8 bits of the `CTRL` register. If this bit is cleared, there is no
+valid data available and the lowest 8 bit of the `CTRL` register are set to all-zero.
 
-.TRNG Reset
-[NOTE]
-The TRNG core does not provide a dedicated reset. In order to ensure correct operations, the TRNG should be
-disabled (=reset) by clearing the _TRNG_CTRL_EN_ and waiting some 1000s clock cycles before re-enabling it.
-
-As soon as the _TRNG_CTRL_VALID_ bit is set a new random data byte is available and can be obtained from the lowest 8 bits
-of the `CTRL` register (_TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_LSB_). If this bit is cleared, there is no valid data available
-and the lowest 8 bit of the `CTRL` register are set to all-zero.
-
-.Read Access Security
-[NOTE]
-The random data byte (_TRNG_CTRL_DATA_) in the control register is automatically cleared after each read access
-to prevent software from reading the _same_ random data byte more than once.
-
-An optional random data FIFO can be configured using the <<_io_trng_fifo>> generic. This FIFO automatically samples
+An internal entropy FIFO can be configured using the `IO_TRNG_FIFO` generic. This FIFO automatically samples
 new random data from the TRNG to provide some kind of _random data pool_ for applications, which require a large number
-of RND data in a short time. The minimal and default value for <<_io_trng_fifo>> is 1 (implementing a register rather
-than a real FIFO); the generic has to be a power of two.
+of RND data in a short time. The random data FIFO can be cleared at any time either by disabling the TRNG or by
+setting the `TRNG_CTRL_FIFO_CLR` flag.
 
-The random data FIFO can be cleared at any time either by disabling the TRNG via the _TRNG_CTRL_EN_ flag or by
-setting the _TRNG_CTRL_FIFO_CLR_ flag. Note that this flag is write-only and auto clears after being set. 
+.Data Gating
+[NOTE]
+The TRNG data bits `TRNG_CTRL_DATA_MSB : TRNG_CTRL_DATA_MSB` are set to zero if `TRNG_CTRL_VALID` is low.
+This prevents a random byte being read twice.
 
 
 **Register Map**
@@ -74,9 +64,9 @@ setting the _TRNG_CTRL_FIFO_CLR_ flag. Note that this flag is write-only and aut
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.5+<| `0xffffffb8` .5+<| `CTRL` <|`7:0` _TRNG_CTRL_DATA_MSB_ : _TRNG_CTRL_DATA_MSB_ ^| r/- <| 8-bit random data
-                                <|`28` _TRNG_CTRL_FIFO_CLR_                         ^| -/w <| flush random data FIFO when set (auto clears)
-                                <|`29` _TRNG_CTRL_SIM_MODE_                         ^| r/- <| simulation mode (PRNG!)
-                                <|`30` _TRNG_CTRL_EN_                               ^| r/w <| TRNG enable
-                                <|`31` _TRNG_CTRL_VALID_                            ^| r/- <| random data is valid when set
+.5+<| `0xffffffb8` .5+<| `CTRL` <|`7:0` `TRNG_CTRL_DATA_MSB : TRNG_CTRL_DATA_MSB` ^| r/- <| 8-bit random data
+                                <|`28`  `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set (auto-clears)
+                                <|`29`  `TRNG_CTRL_SIM_MODE`                      ^| r/- <| simulation mode (PRNG!)
+                                <|`30`  `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
+                                <|`31`  `TRNG_CTRL_VALID`                         ^| r/- <| random data is valid when set
 |=======================

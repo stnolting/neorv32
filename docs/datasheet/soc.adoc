@@ -53,8 +53,6 @@ All signals are of type `std_ulogic` or `std_ulogic_vector`, respectively.
 .Default Values of Inputs
 [NOTE]
 All input signals provide default values in case they are not explicitly assigned during instantiation.
-For control signals the value `L` (weak pull-down) is used. For serial and parallel data signals
-the value `U` (unknown) is used.
 
 .Configurable Amount of Channels
 [NOTE]
@@ -68,83 +66,85 @@ bits/channels are hardwired to zero.
 [NOTE]
 Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in the designs top module.
 
-[cols="<3,^2,^2,<11"]
+
+.NEORV32 Processor Signal List
+[cols="<2,^1,^1,<8"]
 [options="header",grid="rows"]
 |=======================
-| Name | Width | Direction | Function
+| Name | Width | Direction | Description
 4+^| **Global Control (<<_processor_clocking>> and <<_processor_reset>>)**
-| `clk_i`          |   1 |     in | global clock line, all registers triggering on rising edge
-| `rstn_i`         |   1 |     in | global reset, asynchronous, **low-active**
+| `clk_i`       |  1 |  in | global clock line, all registers triggering on rising edge
+| `rstn_i`      |  1 |  in | global reset, asynchronous, **low-active**
 4+^| **JTAG Access Port for <<_on_chip_debugger_ocd>>**
-| `jtag_trst_i`    |   1 |     in | TAP reset, low-active (optional footnote:[Pull high if not used.])
-| `jtag_tck_i`     |   1 |     in | serial clock
-| `jtag_tdi_i`     |   1 |     in | serial data input
-| `jtag_tdo_o`     |   1 |    out | serial data output footnote:[If the on-chip debugger is not implemented (<<_on_chip_debugger_en>> = false) `jtag_tdi_i` is directly forwarded to `jtag_tdo_o` to maintain the JTAG chain.]
-| `jtag_tms_i`     |   1 |     in | mode select
-4+^| **External Bus Interface (<<_processor_external_memory_interface_wishbone_axi4_lite,WISHBONE>>)**
-| `wb_tag_o`       |   3 |    out | tag (access type identifier)
-| `wb_adr_o`       |  32 |    out | destination address
-| `wb_dat_i`       |  32 |     in | write data
-| `wb_dat_o`       |  32 |    out | read data
-| `wb_we_o`        |   1 |    out | write enable ('0' = read transfer)
-| `wb_sel_o`       |   4 |    out | byte enable
-| `wb_stb_o`       |   1 |    out | strobe
-| `wb_cyc_o`       |   1 |    out | valid cycle
-| `wb_lock_o`      |   1 |    out | exclusive access request
-| `wb_ack_i`       |   1 |     in | transfer acknowledge
-| `wb_err_i`       |   1 |     in | transfer error
+| `jtag_trst_i` |  1 |  in | TAP reset, low-active (optional)
+| `jtag_tck_i`  |  1 |  in | serial clock
+| `jtag_tdi_i`  |  1 |  in | serial data input
+| `jtag_tdo_o`  |  1 | out | serial data output
+| `jtag_tms_i`  |  1 |  in | mode select
+4+^| **<<_processor_external_memory_interface_wishbone>>**
+| `wb_tag_o`    |  3 | out | tag (access type identifier)
+| `wb_adr_o`    | 32 | out | destination address
+| `wb_dat_i`    | 32 |  in | write data
+| `wb_dat_o`    | 32 | out | read data
+| `wb_we_o`     |  1 | out | write enable ('0' = read transfer)
+| `wb_sel_o`    |  4 | out | byte enable
+| `wb_stb_o`    |  1 | out | strobe
+| `wb_cyc_o`    |  1 | out | valid cycle
+| `wb_lock_o`   |  1 | out | exclusive access request
+| `wb_ack_i`    |  1 |  in | transfer acknowledge
+| `wb_err_i`    |  1 |  in | transfer error
 4+^| **Advanced Memory Control Signals**
-| `fence_o`        |    1 |   out | indicates an executed _fence_ instruction
-| `fencei_o`       |    1 |   out | indicates an executed _fencei_ instruction
-4+^| **Execute In Place Interface (<<_execute_in_place_module_xip,**XIP**>>)**
-| `xip_csn_o`      |    1 |   out | chi select, low-active
-| `xip_clk_o`      |    1 |   out | serial clock
-| `xip_dat_i`      |    1 |    in | serial data input
-| `xip_dat_o`      |    1 |   out | serial data output
-4+^| **General Purpose Inputs & Outputs (<<_general_purpose_input_and_output_port_gpio,GPIO>>)**
-| `gpio_o`         |   64 |   out | general purpose parallel output
-| `gpio_i`         |   64 |    in | general purpose parallel input
-4+^| **Primary Universal Asynchronous Receiver/Transmitter (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>>)**
-| `uart0_txd_o`    |    1 |   out | serial transmitter
-| `uart0_rxd_i`    |    1 |    in | serial receiver
-| `uart0_rts_o`    |    1 |   out | RX ready to receive new char
-| `uart0_cts_i`    |    1 |    in | TX allowed to start sending
-4+^| **Primary Universal Asynchronous Receiver/Transmitter (<<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>>)**
-| `uart1_txd_o`    |    1 |   out | serial transmitter
-| `uart1_rxd_i`    |    1 |    in | serial receiver
-| `uart1_rts_o`    |    1 |   out | RX ready to receive new char
-| `uart1_cts_i`    |    1 |    in | TX allowed to start sending
-4+^| **Serial Peripheral Interface Controller (<<_serial_peripheral_interface_controller_spi,SPI>>)**
-| `spi_clk_o`      |    1 |   out | controller clock line
-| `spi_dat_o`      |    1 |   out | serial data output
-| `spi_dat_i`      |    1 |    in | serial data input
-| `spi_csn_o`      |    8 |   out |  select (low-active)
-4+^| **Serial Data Interface Controller (<<_serial_data_interface_controller_spi,SDI>>)**
-| `sdi_clk_i`      |    1 |    in | controller clock line
-| `sdi_dat_o`      |    1 |   out | serial data output
-| `sdi_dat_i`      |    1 |    in | serial data input
-| `sdi_csn_i`      |    1 |    in | chip select (low-active)
-4+^| **Two-Wire Interface Controller (<<_two_wire_serial_interface_controller_twi,TWI>>)**
-| `twi_sda_i`      |    1 |    in | serial data line sense input
-| `twi_sda_o`      |    1 |   out | serial data line output (pull low only)
-| `twi_scl_i`      |    1 |    in | serial clock line sense input
-| `twi_scl_o`      |    1 |   out | serial clock line output (pull low only)
-4+^| **1-Wire Interface Controller (<<_one_wire_serial_interface_controller_twi,ONEWIRE>>)**
-| `onewire_i`      |    1 |    in | 1-wire bus sense input
-| `onewire_o`      |    1 |   out | 1-wire bus output (pull low only)
-4+^| **Pulse-Width Modulation Channels (<<_pulse_width_modulation_controller_pwm,PWM>>)**
-| `pwm_o`          |   12 |   out | pulse-width modulated channels
-4+^| **Custom Functions Subsystem (<<_custom_functions_subsystem_cfs,CFS>>)**
-| `cfs_in_i`       |   32 |    in | custom CFS input signal conduit
-| `cfs_out_o`      |   32 |   out | custom CFS output signal conduit
-4+^| **Smart LED Interface - NeoPixel(TM) compatible (<<_smart_led_interface_neoled,NEOLED>>)**
-| `neoled_o`       |    1 |   out | asynchronous serial data output
-4+^| **External Interrupts (<<_processor_interrupts, XIRQ>>)**
-| `xirq_i`         |   32 |    in | external interrupt requests
-4+^| **RISC-V Machine-Level <<_processor_interrupts, CPU Interrupts>>**
-| `mtime_irq_i`    |    1 |    in | machine timer interrupt (RISC-V), high-level-active
-| `msw_irq_i`      |    1 |    in | machine software interrupt (RISC-V), high-level-active
-| `mext_irq_i`     |    1 |    in | machine external interrupt (RISC-V), high-level-active
+| `fence_o`     |  1 | out | indicates an executed _fence_ instruction
+| `fencei_o`    |  1 | out | indicates an executed _fencei_ instruction
+4+^| **<<_execute_in_place_module_xip>>**
+| `xip_csn_o`   |  1 | out | chi select, low-active
+| `xip_clk_o`   |  1 | out | serial clock
+| `xip_dat_i`   |  1 |  in | serial data input
+| `xip_dat_o`   |  1 | out | serial data output
+4+^| **<<_general_purpose_input_and_output_port_gpio>>**
+| `gpio_o`      | 64 | out | general purpose parallel output
+| `gpio_i`      | 64 |  in | general purpose parallel input
+4+^| **<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>**
+| `uart0_txd_o` |  1 | out | serial transmitter
+| `uart0_rxd_i` |  1 |  in | serial receiver
+| `uart0_rts_o` |  1 | out | RX ready to receive new char
+| `uart0_cts_i` |  1 |  in | TX allowed to start sending
+4+^| **<<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>**
+| `uart1_txd_o` |  1 | out | serial transmitter
+| `uart1_rxd_i` |  1 |  in | serial receiver
+| `uart1_rts_o` |  1 | out | RX ready to receive new char
+| `uart1_cts_i` |  1 |  in | TX allowed to start sending
+4+^| **<<_serial_peripheral_interface_controller_spi>>**
+| `spi_clk_o`   |  1 | out | controller clock line
+| `spi_dat_o`   |  1 | out | serial data output
+| `spi_dat_i`   |  1 |  in | serial data input
+| `spi_csn_o`   |  8 | out |  select (low-active)
+4+^| **<<_serial_data_interface_controller_sdi>>**
+| `sdi_clk_i`   |  1 |  in | controller clock line
+| `sdi_dat_o`   |  1 | out | serial data output
+| `sdi_dat_i`   |  1 |  in | serial data input
+| `sdi_csn_i`   |  1 |  in | chip select (low-active)
+4+^| **<<_two_wire_serial_interface_controller_twi>>**
+| `twi_sda_i`   |  1 |  in | serial data line sense input
+| `twi_sda_o`   |  1 | out | serial data line output (pull low only)
+| `twi_scl_i`   |  1 |  in | serial clock line sense input
+| `twi_scl_o`   |  1 | out | serial clock line output (pull low only)
+4+^| **<<_one_wire_serial_interface_controller_onewire>>**
+| `onewire_i`   |  1 |  in | 1-wire bus sense input
+| `onewire_o`   |  1 | out | 1-wire bus output (pull low only)
+4+^| **<<_pulse_width_modulation_controller_pwm>>**
+| `pwm_o`       | 12 | out | pulse-width modulated channels
+4+^| **<<_custom_functions_subsystem_cfs>>**
+| `cfs_in_i`    | 32 |  in | custom CFS input signal conduit
+| `cfs_out_o`   | 32 | out | custom CFS output signal conduit
+4+^| **<<_smart_led_interface_neoled>>**
+| `neoled_o`    |  1 | out | asynchronous serial data output
+4+^| **<<_external_interrupt_controller_xirq>>**
+| `xirq_i`      | 32 |  in | external interrupt requests
+4+^| **RISC-V Machine-Mode <<_processor_interrupts>>**
+| `mtime_irq_i` |  1 |  in | machine timer interrupt (RISC-V), high-level-active
+| `msw_irq_i`   |  1 |  in | machine software interrupt (RISC-V), high-level-active
+| `mext_irq_i`  |  1 |  in | machine external interrupt (RISC-V), high-level-active
 |=======================
 
 
@@ -155,908 +155,119 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 
 This section lists all configuration generics of the NEORV32 processor top entity (`rtl/neorv32_top.vhd`).
 
+.Customization
 [TIP]
 The NEORV32 generics allow to configure the system according to your needs. The generics are
 used to control implementation of certain CPU extensions and peripheral modules and even allow to
-optimize the system for certain design goals like minimal area or maximum performance. +
- +
-More information can be found in the user guide section
-https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration[Application-Specific Processor Configuration].
+optimize the system for certain design goals like minimal area or maximum performance.
 
+.Software Discovery of Configuration
 [TIP]
-Software can determine the actual CPU and processor configuration via the <<_misa>> and <<_mxisa>> CSRs (CPU) 
-and the <<_system_configuration_information_memory_sysinfo, SYSINFO>> memory-mapped registers (processor).
+Software can determine the actual CPU configuration via the <<_misa>> and <<_mxisa>> CSRs. The Soc/Processor
+and can be determined via the <<_system_configuration_information_memory_sysinfo, SYSINFO>> memory-mapped registers.
 
+.Excluded Modules and Extensions
 [NOTE]
-If optional modules (like CPU extensions or peripheral devices) are *not enabled* the according circuitry
-**will not be synthesized at all**. Hence, the disabled modules do not increase area and power requirements
-and do not impact the timing.
+If optional modules (like CPU extensions or peripheral devices) are not enabled the according hardware
+will not be synthesized at all. Hence, the disabled modules do not increase area and power requirements
+and do not impact timing.
 
+.Configuration Check
 [NOTE]
 Not all configuration combinations are valid. The processor RTL code provides sanity checks to inform the user
-during synthesis/simulation if an invalid combination has been detected.
-
-[TIP]
-Run a quick simulation using the provided simulation/GHDL scripts (https://stnolting.github.io/neorv32/ug/#_hello_world)
-to verify the configuration of the processor generics is valid.
-
-**Generic Description**
-
-The description of each generic uses the following scheme:
-
-.Generic description
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| _Generic name_ | _type_ | _default value_
-3+| Short description and link(s) for further information.
-|======
-
-<<<
-// ####################################################################################################################
-:sectnums:
-==== General
-
-:sectnums!:
-===== _CLOCK_FREQUENCY_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CLOCK_FREQUENCY** | _natural_ | _none_
-3+| The clock frequency of the processor's `clk_i` input port in Hertz (Hz). Software can retrieve this value from the
-<<_system_configuration_information_memory_sysinfo>> module to make clock-specific configurations (like timer values,
-interface timing).
-|======
-
-
-:sectnums!:
-===== _INT_BOOTLOADER_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **INT_BOOTLOADER_EN** | _boolean_ | false
-3+| Implement the processor-internal <<_bootloader_rom_bootrom>>, pre-initialized with the default <<_bootloader>> image when true
-This will also change the CPU's boot address. See section <<_boot_configuration>> for more information.
-|======
-
-
-:sectnums!:
-===== _HW_THREAD_ID_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **HW_THREAD_ID** | _natural_ | 0
-3+| The hart ID of the CPU. Software can retrieve this value from the <<_mhartid>> CSR.
-|======
-
-
-:sectnums!:
-===== _CUSTOM_ID_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CUSTOM_ID** | _std_ulogic_vector(31 downto 0)_ | 0x00000000
-3+| User-defined identifier to identify a certain setup or to pass user-defined flags.
-Software can retrieve this value from the <<_system_configuration_information_memory_sysinfo>> module.
-|======
-
-
-:sectnums!:
-===== _ON_CHIP_DEBUGGER_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **ON_CHIP_DEBUGGER_EN** | _boolean_ | false
-3+| Implement the on-chip debugger (OCD) and the CPU debug mode when true. This generic is directly passed
-to the CPU's <<_cpu_extension_riscv_sdext>> and <<_cpu_extension_riscv_sdtrig>> generics.
-See section <<_on_chip_debugger_ocd>> for more information.
-|======
-
-
-// ####################################################################################################################
-:sectnums:
-==== RISC-V CPU Extensions
-
-.Discovering ISA Extensions
-[TIP]
-The configuration of the RISC-V ISA extensions (like `M`) can be determined via the <<_misa>> CSR. The configuration of
-ISA _sub-extensions_ (like `Zicsr`) and _tuning options_ can be determined via the NEORV32-specific <<_mxisa>> CSR.
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_B_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_B** | _boolean_ | false
-3+| Implement the `B` bit-manipulation ISA extension when true.
-See section <<_b_bit_manipulation_operations>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_C_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_C** | _boolean_ | false
-3+| Implement the `C` compressed instructions ISA extension when true.
-See section <<_c_compressed_instructions>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_E_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_E** | _boolean_ | false
-3+| Implement the `E` embedded CPU ISA extension when true.
-See section <<_e_embedded_cpu>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_M_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_M** | _boolean_ | false
-3+| Implement the `M` hardware accelerators for integer multiplication and division ISA extension when true.
-Multiplication can also be mapped to DSP slices via the <<_fast_mul_en>> generic.
-See section <<_m_integer_multiplication_and_division>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_U_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_U** | _boolean_ | false
-3+| Implement the less-privileged `U` user mode ISA extension when true.
-See section <<_u_less_privileged_user_mode>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_Zfinx_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_Zfinx** | _boolean_ | false
-3+| Implement the `Zfinx` 32-bit single-precision floating-point ISA extension (using integer registers) when true.
-See section <<_zfinx_single_precision_floating_point_operations>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_Zicsr_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_Zicsr** | _boolean_ | true
-3+| Implement the `Zicsr` control and status register (CSR) access ISA extension when true.
-See section <<_zicsr_control_and_status_register_access_privileged_architecture>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_Zicntr_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_Zicntr** | _boolean_ | true
-3+| Implement the `Zicntr` basic CPU <<_machine_counter_and_timer_csrs>> ISA extension when true.
-See section <<_zicntr_cpu_base_counters>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_Zicond_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_Zicond** | _boolean_ | false
-3+| Implement the <<_zicond_conditional_operations_extension>> ISA extension when true.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_Zihpm_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_Zihpm** | _boolean_ | false
-3+| Implement the `Zihpm` hardware performance monitor ISA extension when true.
-See section <<_zihpm_hardware_performance_monitors>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_Zifencei_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_Zifencei** | _boolean_ | false
-3+| Implement the `Zifencei` instruction fetch synchronization instruction ISA extension when true.
-See section <<_zifencei_instruction_stream_synchronization>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_Zmmul_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_Zmmul** | _boolean_ | false
-3+| Implement the `Zmmul` integer multiplication-only ISA extension when true. This is a sub-extension of the `M` ISA extension.
-See section <<_zmmul_integer_multiplication>> for more information.
-|======
-
-
-:sectnums!:
-===== _CPU_EXTENSION_RISCV_Zxcfu_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_EXTENSION_RISCV_Zxcfu** | _boolean_ | false
-3+| Implement the NEORV32-specific `Zxcfu` "custom RISC-V" ISA extension when true.
-See section <<_zxcfu_custom_instructions_extension_cfu>> for more information.
-|======
-
-
-// ####################################################################################################################
-:sectnums:
-==== Tuning Options
-
-:sectnums!:
-===== _FAST_MUL_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **FAST_MUL_EN** | _boolean_ | false
-3+| If this generic is enabled, the multiplier of the `M` extension is implemented using DSPs blocks instead of an
-iterative bit-serial approach. Performance will be increased and LUT utilization will be reduced at the cost of DSP slice
-utilization. This generic is only relevant when a hardware multiplier CPU extension is
-enabled (<<_cpu_extension_riscv_m>> or <<_cpu_extension_riscv_zmmul>> is _true_). Note that the multipliers of the
-<<_zfinx_single_precision_floating_point_operations>> extension are always mapped to DSP block (if available).
-The state of this generic can be retrieved by software via the <<_mxisa>> CSR.
-|======
-
-
-:sectnums!:
-===== _FAST_SHIFT_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **FAST_SHIFT_EN** | _boolean_ | false
-3+| If this generic is enabled, the shifter unit of the CPU's ALU is implemented as fast barrel shifter (requiring
-more hardware resources but completing within two clock cycles). If disabled, the CPU uses a serial shifter
-that only performs a single bit shift per cycle (requiring less hardware resources, but requires up to 32 clock
-cycles). Note that this option also implements barrel shifters for _all_ shift-related operations of the
-<<_b_bit_manipulation_operations>> extension.
-The state of this generic can be retrieved by software via the <<_mxisa>> CSR.
-|======
-
-
-:sectnums!:
-===== _CPU_IPB_ENTRIES_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **CPU_IPB_ENTRIES** | _natural_ | 1
-3+| This generic configures the number of entries in the CPU's instruction prefetch buffer.
-The value has to be a power of two and has to be greater than or equal to one (>= 1). The
-IPB can help improving memory access latency. Furthermore, long linear code sequences will
-benefit from an increased IPB size.
-|======
-
-[WARNING]
-If the compressed ISA extension `_CPU_EXTENSION_RISCV_C_` (<<_cpu_extension_riscv_c>>) is enabled and the IPB depth
-is set to 1, this configuration is internally overridden and the IPB will be implemented with **2** entries. This is required
-for handling unaligned 32-bit instructions.
-
-
-// ####################################################################################################################
-:sectnums:
-==== Physical Memory Protection (PMP)
-
-:sectnums!:
-===== _PMP_NUM_REGIONS_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **PMP_NUM_REGIONS** | _natural_ | 0
-3+| Total number of implemented PMP regions (0..16). If this generics is zero no physical memory
-protection logic will be implemented at all. See section <<_pmp_physical_memory_protection>> for more information.
-|======
-
-
-:sectnums!:
-===== _PMP_MIN_GRANULARITY_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **PMP_MIN_GRANULARITY** | _natural_ | 4
-3+| Minimal region granularity in bytes. Has to be a power of two and has to be at least 4 bytes. A larger granularity
-will reduce hardware utilization and impact on critical path but will also reduce the minimal region size.
-See section <<_pmp_physical_memory_protection>> for more information.
-|======
-
-
-// ####################################################################################################################
-:sectnums:
-==== Hardware Performance Monitors (HPM)
-
-:sectnums!:
-===== _HPM_NUM_CNTS_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **HPM_NUM_CNTS** | _natural_ | 0
-3+| Total number of implemented hardware performance monitor counters (0..29). If this generics is zero, no
-hardware performance monitor logic will be implemented at all. Only relevant if <<_cpu_extension_riscv_zihpm>> is enabled.
-See section <<_zihpm_hardware_performance_monitors>> for more information.
-|======
-
-
-:sectnums!:
-===== _HPM_CNT_WIDTH_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **HPM_CNT_WIDTH** | _natural_ | 40
-3+| This generic defines the total LSB-aligned size of each HPM counter. The maximum value is 64, the minimal is 0.
-If the size is less than 64-bit, the unused MSB-aligned counter bits are hardwired to zero. Only relevant if
-<<_cpu_extension_riscv_zihpm>> is enabled. See section <<_zihpm_hardware_performance_monitors>> for more information.
-|======
-
-
-// ####################################################################################################################
-:sectnums:
-==== Internal Instruction Memory
-
-:sectnums!:
-===== _MEM_INT_IMEM_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **MEM_INT_IMEM_EN** | _boolean_ | false
-3+| Implement processor-internal <<_instruction_memory_imem>> when true.
-See sections <<_address_space>> for more information.
-|======
-
-
-:sectnums!:
-===== _MEM_INT_IMEM_SIZE_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **MEM_INT_IMEM_SIZE** | _natural_ | 16*1024
-3+| Size in bytes of the processor internal instruction memory (IMEM).
-Has no effect when <<_mem_int_imem_en>> is false.
-|======
-
-
-// ####################################################################################################################
-:sectnums:
-==== Internal Data Memory
-
-:sectnums!:
-===== _MEM_INT_DMEM_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **MEM_INT_DMEM_EN** | _boolean_ | false
-3+| Implement processor-internal <<_data_memory_dmem>> when true.
-See sections <<_address_space>> for more information.
-|======
-
-
-:sectnums!:
-===== _MEM_INT_DMEM_SIZE_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **MEM_INT_DMEM_SIZE** | _natural_ | 8*1024
-3+| Size in bytes of the processor-internal data memory (DMEM).
-Has no effect when <<_mem_int_dmem_en>> is false.
-|======
-
-
-// ####################################################################################################################
-:sectnums:
-==== Internal Cache Memory
-
-:sectnums!:
-===== _ICACHE_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **ICACHE_EN** | _boolean_ | false
-3+| Implement <<_processor_internal_instruction_cache_icache>> when true.
-|======
-
-
-:sectnums!:
-===== _ICACHE_NUM_BLOCKS_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **ICACHE_NUM_BLOCKS** | _natural_ | 4
-3+| Number of blocks (cache "pages" or "lines") in the instruction cache. Has to be a power of two. Has no
-effect when <<_icache_en>> is false.
-Software can retrieve this value from the <<_system_configuration_information_memory_sysinfo>> module.
-|======
-
-
-:sectnums!:
-===== _ICACHE_BLOCK_SIZE_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **ICACHE_BLOCK_SIZE** | _natural_ | 64
-3+| Size in bytes of each block in the instruction cache. Has to be a power of two. Has no effect when
-<<_icache_en>> is false.
-Software can retrieve this value from the <<_system_configuration_information_memory_sysinfo>> module.
-|======
-
-
-:sectnums!:
-===== _ICACHE_ASSOCIATIVITY_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **ICACHE_ASSOCIATIVITY** | _natural_ | 1
-3+| Associativity (= number of sets) of the instruction cache. Has to be a power of two. Allowed configurations:
-`1` = 1 set, direct mapped; `2` = 2-way set-associative. Has no effect when <<_icache_en>> is false.
-Software can retrieve this value from the <<_system_configuration_information_memory_sysinfo>> module.
-|======
-
-
-// ####################################################################################################################
-:sectnums:
-==== External Memory Interface
-
-:sectnums!:
-===== _MEM_EXT_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **MEM_EXT_EN** | _boolean_ | false
-3+| Implement <<_processor_external_memory_interface_wishbone_axi4_lite>> when true.
-|======
-
-
-:sectnums!:
-===== _MEM_EXT_TIMEOUT_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **MEM_EXT_TIMEOUT** | _natural_ | 255
-3+| Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.
-If set to zero, there will be no auto-timeout and no bus fault exception (might permanently stall system!).
-|======
-
-
-:sectnums!:
-===== _MEM_EXT_PIPE_MODE_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **MEM_EXT_PIPE_MODE** | _boolean_ | false
-3+| Use _standard_ ("classic") Wishbone protocol for external bus when false.
-Use _pipelined_ Wishbone protocol when true.
-|======
-
-
-:sectnums!:
-===== _MEM_EXT_BIG_ENDIAN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **MEM_EXT_BIG_ENDIAN** | _boolean_ | false
-3+| Use BIG endian interface for external bus when true. Use little endian interface when false.
-|======
-
-
-:sectnums!:
-===== _MEM_EXT_ASYNC_RX_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **MEM_EXT_ASYNC_RX** | _boolen_ | false
-3+| By default, _MEM_EXT_ASYNC_RX_ = _false_ implements a registered read-back path (RX) for incoming data in the bus interface
-in order to shorten the critical path. By setting _MEM_EXT_ASYNC_RX_ = _true_ an _asynchronous_ ("direct") read-back path is
-implemented reducing access latency by one cycle but eventually increasing the critical path.
-|======
-
-
-:sectnums!:
-===== _MEM_EXT_ASYNC_TX_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **MEM_EXT_ASYNC_TX** | _boolen_ | false
-3+| By default, _MEM_EXT_ASYNC_TX_ = _false_ implements register for all outgoing (TX) signals
-in order to shorten the critical path. By setting _MEM_EXT_ASYNC_TX_ = _true_ an _asynchronous_ ("direct") path is
-implemented reducing access latency by one cycle but eventually increasing the critical path.
-|======
-
-
-// ####################################################################################################################
-:sectnums:
-==== External Interrupt Controller
-
-:sectnums!:
-===== _XIRQ_NUM_CH_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **XIRQ_NUM_CH** | _natural_ | 0
-3+| Number of channels of the <<_external_interrupt_controller_xirq>>. Valid values are 0..32.
-|======
-
-
-:sectnums!:
-===== _XIRQ_TRIGGER_TYPE_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **XIRQ_TRIGGER_TYPE** | _std_ulogic_vector(31 downto 0)_ | 0xFFFFFFFF
-3+| Interrupt trigger type configuration (one bit for each IRQ channel): `0` = level-triggered, '1' = edge triggered.
-<<_xirq_trigger_polarity>> generic is used to specify the actual level (high/low) or edge (falling/rising).
-|======
-
-
-:sectnums!:
-===== _XIRQ_TRIGGER_POLARITY_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **XIRQ_TRIGGER_POLARITY** | _std_ulogic_vector(31 downto 0)_ | 0xFFFFFFFF
-3+| Interrupt trigger polarity configuration (one bit for each IRQ channel): `0` = low-level/falling-edge,
-'1' = high-level/rising-edge. <<_xirq_trigger_type>> generic is used to specify the actual type (level or edge).
-|======
-
-
-// ####################################################################################################################
-:sectnums:
-==== Processor Peripheral/IO Modules
-
-:sectnums!:
-===== _IO_GPIO_NUM_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_GPIO_NUM** | _natural_ | 0
-3+| Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>. If set to zero,
-GPIO controller is not implemented at all.
-|======
-
-
-:sectnums!:
-===== _IO_MTIME_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_MTIME_EN** | _boolean_ | false
-3+| Implement <<_machine_system_timer_mtime>> module when true.
-|======
-
-
-:sectnums!:
-===== _IO_UART0_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_UART0_EN** | _boolean_ | false
-3+| Implement <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>> module when true.
-|======
-
-
-:sectnums!:
-===== _IO_UART0_RX_FIFO_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_UART0_RX_FIFO** | _natural_ | 1
-3+| UART0 receiver FIFO depth, has to be a power of two, minimum value is 1.
-|======
-
-
-:sectnums!:
-===== _IO_UART0_TX_FIFO_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_UART0_TX_FIFO** | _natural_ | 1
-3+| UART0 transmitter FIFO depth, has to be a power of two, minimum value is 1.
-|======
-
-
-:sectnums!:
-===== _IO_UART1_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_UART1_EN** | _boolean_ | false
-3+| Implement <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>> module when true.
-|======
-
-
-:sectnums!:
-===== _IO_UART1_RX_FIFO_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_UART1_RX_FIFO** | _natural_ | 1
-3+| UART1 receiver FIFO depth, has to be a power of two, minimum value is 1.
-|======
-
-
-:sectnums!:
-===== _IO_UART1_TX_FIFO_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_UART1_TX_FIFO** | _natural_ | 1
-3+| UART1 transmitter FIFO depth, has to be a power of two, minimum value is 1.
-|======
-
-
-:sectnums!:
-===== _IO_SPI_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_SPI_EN** | _boolean_ | false
-3+| Implement <<_serial_peripheral_interface_controller_spi>> module when true (SPI host).
-|======
-
-
-:sectnums!:
-===== _IO_SPI_FIFO_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_SPI_FIFO** | _natural_ | 1
-3+| Depth of the <<_serial_peripheral_interface_controller_spi>> FIFO. Has to be a power of two, min 1.
-Maximum value is 32768.
-|======
-
-
-:sectnums!:
-===== _IO_SDI_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_SDI_EN** | _boolean_ | false
-3+| Implement <<_serial_data_interface_controller_sdi>> module when true (SPI device).
-|======
-
-
-:sectnums!:
-===== _IO_SDI_FIFO_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_SDI_FIFO** | _natural_ | 1
-3+| Depth of the <<_serial_data_interface_controller_sdi>> FIFO. Has to be at least 1 or a power of two.
-Maximum value is 32768.
-|======
-
-
-:sectnums!:
-===== _IO_TWI_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_TWI_EN** | _boolean_ | false
-3+| Implement <<_two_wire_serial_interface_controller_twi>> module when true.
-|======
-
-
-:sectnums!:
-===== _IO_PWM_NUM_CH_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_PWM_NUM_CH** | _natural_ | 0
-3+| Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..12)
-The PWM controller is _not_ implemented if zero.
-|======
-
-
-:sectnums!:
-===== _IO_WDT_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_WDT_EN** | _boolean_ | false
-3+| Implement <<_watchdog_timer_wdt>> module when true,
-|======
-
-
-:sectnums!:
-===== _IO_TRNG_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_TRNG_EN** | _boolean_ | false
-3+| Implement <<_true_random_number_generator_trng>> module when true.
-|======
-
-
-:sectnums!:
-===== _IO_TRNG_FIFO_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_TRNG_FIFO** | _natural_ | 1
-3+| Defines the depth of the TRNG data FIFO. Minimal value is 1;, has to be a power of two.
-|======
-
-
-:sectnums!:
-===== _IO_CFS_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_CFS_EN** | _boolean_ | false
-3+| Implement <<_custom_functions_subsystem_cfs>> module when true.
-|======
-
-
-:sectnums!:
-===== _IO_CFS_CONFIG_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_CFS_CONFIG** | _std_ulogic_vector(31 downto 0)_ | 0x"00000000"
-3+| This is a "conduit" generic that can be used to pass user-defined <<_custom_functions_subsystem_cfs>> implementation flags to the custom
-functions subsystem entity.
-|======
-
-
-:sectnums!:
-===== _IO_CFS_IN_SIZE_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_CFS_IN_SIZE** | _positive_ | 32
-3+| Defines the size of the <<_custom_functions_subsystem_cfs>> input signal conduit (`cfs_in_i`).
-|======
-
-
-:sectnums!:
-===== _IO_CFS_OUT_SIZE_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_CFS_OUT_SIZE** | _positive_ | 32
-3+| Defines the size of the <<_custom_functions_subsystem_cfs>> output signal conduit (`cfs_out_o`).
-|======
-
-
-:sectnums!:
-===== _IO_NEOLED_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_NEOLED_EN** | _boolean_ | false
-3+| Implement <<_smart_led_interface_neoled>> module (WS2812 / NeoPixel(TM)-compatible) when true.
-|======
-
-
-:sectnums!:
-===== _IO_NEOLED_TX_FIFO_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_NEOLED_TX_FIFO** | _natural_ | 1
-3+| TX FIFO depth of the the <<_smart_led_interface_neoled>> module. Minimal value is 1, maximal value is 32k, has to be a power of two.
-|======
-
-
-:sectnums!:
-===== _IO_GPTMR_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_GPTMR_EN** | _boolean_ | false
-3+| Implement <<_general_purpose_timer_gptmr>> module when true.
-|======
-
-
-:sectnums!:
-===== _IO_XIP_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_XIP_EN** | _boolean_ | false
-3+| Implement the <<_execute_in_place_module_xip>> module when true.
-|======
-
-
-:sectnums!:
-===== _IO_ONEWIRE_EN_
-
-[cols="4,4,2"]
-[frame="all",grid="none"]
-|======
-| **IO_ONE_EN** | _boolean_ | false
-3+| Implement the <<_one_wire_serial_interface_controller_onewire>> module when true.
-|======
-
+during synthesis/simulation if an invalid combination has been detected. It is recommended to run a quick simulation
+using the provided simulation/GHDL scripts to verify the configuration of the processor generics.
+
+.Table Abbreviations
+[NOTE]
+The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
+
+
+.NEORV32 Processor Generic List
+[cols="<3,^2,^2,<8"]
+[options="header",grid="rows"]
+|=======================
+| Name | Type | Default | Description
+4+^| **General**
+| `CLOCK_FREQUENCY`       | natural   | -          | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
+| `INT_BOOTLOADER_EN`     | boolean   | false      | Implement the processor-internal <<_bootloader_rom_bootrom>>, pre-initialized with the default <<_bootloader>> image.
+| `HW_THREAD_ID`          | natural   | 0          | The hart ID of the CPU.
+| `CUSTOM_ID`             | suv(31:0) | 0x00000000 | User-defined identifier to identify a certain setup or to pass user-defined flags to software.
+| `ON_CHIP_DEBUGGER_EN`   | boolean   | false      | Implement the on-chip debugger <<_on_chip_debugger_ocd>> and the CPU debug mode.
+4+^| **CPU <<_instruction_sets_and_extensions>>**
+| `CPU_EXTENSION_RISCV_B`        | boolean | false | Enable <<_b_isa_extension>> (bit-manipulation).
+| `CPU_EXTENSION_RISCV_C`        | boolean | false | Enable <<_c_isa_extension>> (compressed instructions).
+| `CPU_EXTENSION_RISCV_E`        | boolean | false | Enable <<_e_isa_extension>> (reduced register file size).
+| `CPU_EXTENSION_RISCV_M`        | boolean | false | Enable <<_m_isa_extension>> (hardware-based integer multiplication and division).
+| `CPU_EXTENSION_RISCV_U`        | boolean | false | Enable <<_u_isa_extension>> (less-privileged user mode).
+| `CPU_EXTENSION_RISCV_Zfinx`    | boolean | false | Enable <<_zfinx_isa_extension>> (single-precision floating-point unit).
+| `CPU_EXTENSION_RISCV_Zicsr`    | boolean | true  | Enable <<_zicsr_isa_extension>> (control and status register access).
+| `CPU_EXTENSION_RISCV_Zicntr`   | boolean | true  | Enable <<_zicntr_isa_extension>> (CPU base counters).
+| `CPU_EXTENSION_RISCV_Zicond`   | boolean | false | Enable <<_zicond_isa_extension>> (conditional operations).
+| `CPU_EXTENSION_RISCV_Zihpm`    | boolean | false | Enable <<_zihpm_isa_extension>> (hardware performance monitors).
+| `CPU_EXTENSION_RISCV_Zifencei` | boolean | false | Enable <<_zifencei_isa_extension>> (instruction stream synchronization).
+| `CPU_EXTENSION_RISCV_Zmmul`    | boolean | false | Enable <<_zmmul_isa_extension>> (hardware-based integer multiplication).
+| `CPU_EXTENSION_RISCV_Zxcfu`    | boolean | false | Enable NEORV32-specific <<_zxcfu_isa_extension>> (custom RISC-V instructions).
+4+^| **CPU Tuning Options**
+| `FAST_MUL_EN`           | boolean   | false      | Implement fast (but large) full-parallel multipliers (trying to infer DSP blocks).
+| `FAST_SHIFT_EN`         | boolean   | false      | Implement fast (bur large) pull-parallel barrel shifters.
+| `CPU_IPB_ENTRIES`       | natural   | 1          | Number of entries in the CPU's instruction prefetch buffer.
+4+^| **Physical Memory Protection (<<_pmp_isa_extension>>)**
+| `PMP_NUM_REGIONS`       | natural   | 0          | Number of implemented PMP regions (0..16).
+| `PMP_MIN_GRANULARITY`   | natural   | 4          | Minimal region granularity in bytes. Has to be a power of two, min 4.
+4+^| **Hardware Performance Monitors (<<_zihpm_isa_extension>>)**
+| `HPM_NUM_CNTS`          | natural   | 0          | Number of implemented hardware performance monitor counters (0..29).
+| `HPM_CNT_WIDTH`         | natural   | 40         | Total LSB-aligned size of each HPM counter. Min 0, max 64.
+4+^| **Internal <<_instruction_memory_imem>>**
+| `MEM_INT_IMEM_EN`       | boolean   | false      | Implement the processor-internal instruction memory.
+| `MEM_INT_IMEM_SIZE`     | natural   | 16*1024    | Size in bytes of the processor internal instruction memory.
+4+^| **Internal <<_data_memory_dmem>>**
+| `MEM_INT_DMEM_EN`       | boolean   | false      | Implement the processor-internal data memory.
+| `MEM_INT_DMEM_SIZE`     | natural   | 8*1024     | Size in bytes of the processor-internal data memory.
+4+^| **<<_processor_internal_instruction_cache_icache>>**
+| `ICACHE_EN`             | boolean   | false      | Implement the instruction cache.
+| `ICACHE_NUM_BLOCKS`     | natural   | 4          | Number of blocks ("pages" or "lines") Has to be a power of two.
+| `ICACHE_BLOCK_SIZE`     | natural   | 64         | Size in bytes of each block. Has to be a power of two.
+| `ICACHE_ASSOCIATIVITY`  | natural   | 1          | Associativity (number of sets). Allowed configurations: `1` = 1 set, direct mapped; `2` = 2-way set-associative.
+4+^| **<<_processor_external_memory_interface_wishbone>>**
+| `MEM_EXT_EN`            | boolean   | false      | Implement the external bus interface.
+| `MEM_EXT_TIMEOUT`       | natural   | 255        | Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.
+| `MEM_EXT_PIPE_MODE`     | boolean   | false      | Use _standard_ ("classic") Wishbone protocol when false. Use _pipelined_ Wishbone protocol when true.
+| `MEM_EXT_BIG_ENDIAN`    | boolean   | false      | Use BIG endian data order interface for external bus.
+| `MEM_EXT_ASYNC_RX`      | boolean   | false      | Disable input registers when true.
+| `MEM_EXT_ASYNC_TX`      | boolean   | false      | Disable output registers when true.
+4+^| **<<_external_interrupt_controller_xirq>>**
+| `XIRQ_NUM_CH`           | natural   | 0          | Number of channels of the external interrupt controller. Valid values are 0..32.
+| `XIRQ_TRIGGER_TYPE`     | suv(31:0) | 0xFFFFFFFF | Trigger type (one bit per channel): `0` = level-triggered, '1' = edge triggered.
+| `XIRQ_TRIGGER_POLARITY` | suv(31:0) | 0xFFFFFFFF | Trigger polarity (one bit per channel): `0` = low-level/falling-edge, '1' = high-level/rising-edge.
+4+^| **Peripheral/IO Modules**
+| `IO_GPIO_NUM`           | natural   | 0          | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>.
+| `IO_MTIME_EN`           | boolean   | false      | Implement the <<_machine_system_timer_mtime>>.
+| `IO_UART0_EN`           | boolean   | false      | Implement the <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>.
+| `IO_UART0_RX_FIFO`      | natural   | 1          | UART0 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_UART0_TX_FIFO`      | natural   | 1          | UART0 TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_UART1_EN`           | boolean   | false      | Implement the <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>.
+| `IO_UART1_RX_FIFO`      | natural   | 1          | UART1 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_UART1_TX_FIFO`      | natural   | 1          | UART1 TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_SPI_EN`             | boolean   | false      | Implement the <<_serial_peripheral_interface_controller_spi>>.
+| `IO_SPI_FIFO`           | natural   | 1          | Depth of the <<_serial_peripheral_interface_controller_spi>> FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_SDI_EN`             | boolean   | false      | Implement the <<_serial_data_interface_controller_sdi>>.
+| `IO_SDI_FIFO`           | natural   | 1          | Depth of the <<_serial_data_interface_controller_sdi>> FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_TWI_EN`             | boolean   | false      | Implement the <<_two_wire_serial_interface_controller_twi>>.
+| `IO_PWM_NUM_CH`         | natural   | 0          | Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..12).
+| `IO_WDT_EN`             | boolean   | false      | Implement the <<_watchdog_timer_wdt>>.
+| `IO_TRNG_EN`            | boolean   | false      | Implement the <<_true_random_number_generator_trng>>.
+| `IO_TRNG_FIFO`          | natural   | 1          | Depth of the TRNG data FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_CFS_EN`             | boolean   | false      | Implement the <<_custom_functions_subsystem_cfs>>.
+| `IO_CFS_CONFIG`         | suv(31:0) | 0x00000000 | "Conduit" generic to pass user-defined flags to the <<_custom_functions_subsystem_cfs>>.
+| `IO_CFS_IN_SIZE`        | positive  | 32         | Size of the <<_custom_functions_subsystem_cfs>> input signal conduit (`cfs_in_i`).
+| `IO_CFS_OUT_SIZE`       | positive  | 32         | Size of the <<_custom_functions_subsystem_cfs>> output signal conduit (`cfs_out_o`).
+| `IO_NEOLED_EN`          | boolean   | false      | Implement the <<_smart_led_interface_neoled>>.
+| `IO_NEOLED_TX_FIFO`     | natural   | 1          | TX FIFO depth of the the <<_smart_led_interface_neoled>>. Has to be a power of two, min 1, max 32768.
+| `IO_GPTMR_EN`           | boolean   | false      | Implement the <<_general_purpose_timer_gptmr>>.
+| `IO_XIP_EN`             | boolean   | false      | Implement the <<_execute_in_place_module_xip>>.
+| `IO_ONE_EN`             | boolean   | false      | Implement the <<_one_wire_serial_interface_controller_onewire>>.
+|=======================
 
 
 <<<
@@ -1064,19 +275,18 @@ functions subsystem entity.
 :sectnums:
 === Processor Clocking
 
-The processor is implemented as fully-synchronous logic design using a _single clock domain_ that is driven by the top's
-`clk_i` signal. This clock signal is used by all internal registers and memories, which trigger on the rising edge of
+The processor is implemented as fully-synchronous logic design using a single clock domain that is driven entirely by the
+top's `clk_i` signal. This clock signal is used by all internal registers and memories, which trigger on the rising edge of
 this clock signal. External "clocks" like the OCD's JTAG clock or the TWI's serial clock are synchronized into the
 processor's clock domain before being further processed.
 
 [NOTE]
-The registers of the <<_processor_reset>> system trigger on a falling clock edge.
+Only the registers of the <<_processor_reset>> system trigger on a _falling_ clock edge.
 
 Many processor modules like the UARTs or the timers require a programmable time base for operations. In order to simplify
 the hardware, the processor implements a global "clock generator" that provides _clock enables_ for certain frequencies.
-These clock enable signals are synchronous to the system's main clock and will be high for only a single cycle of this main
-clock. Hence, processor modules can use these signals for sub-main-clock operations while still having a single clock domain
-only. 
+These clock enable signals are synchronous to the system's main clock and will be high for only a single cycle. Hence,
+processor modules can use these enables for sub-main-clock operations while still having a single clock domain only.
 
 In total, 8 sub-main-clock signals are available. All processor modules, which feature a time-based configuration, provide a
 programmable three-bit prescaler select in their according control register to select one of the 8 available clocks. The
@@ -1093,7 +303,7 @@ processor main clock from the top entity's `clk_i` signal.
 The software framework provides pre-defined aliases for the prescaler select bits:
 
 .Prescaler Aliases from `neorv32.h`
-[source]
+[source,c]
 --------------------------
 enum NEORV32_CLOCK_PRSC_enum {
   CLK_PRSC_2    = 0, /**< CPU_CLK (from clk_i top signal) / 2 */
@@ -1109,7 +319,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 
 [TIP]
 If no peripheral modules requires a clock signal from the internal generator (all available modules disabled by clearing the
-_enable_ bit in the according module's control register), it is automatically deactivated to reduce dynamic power consumption.
+enable bit in the according module's control register), it is automatically deactivated to reduce dynamic power consumption.
 
 
 
@@ -1121,27 +331,24 @@ _enable_ bit in the according module's control register), it is automatically de
 .Processor Reset Signal
 [IMPORTANT]
 Always make sure to connect the processor's reset signal `rstn_i` to a valid reset source (a button, the "locked"
-signal of a PLL, a dedicated reset controller, etc.). **Do not assign a static value / connect a static signal to it!**
+signal of a PLL, a dedicated reset controller, etc.).
 
-The processor-wide reset can be triggered at any of the following sources:
+The processor-wide reset can be triggered by any of the following sources:
 
 * the asynchronous low-active `rstn_i` top entity input signal
 * the <<_on_chip_debugger_ocd>>
 * the <<_watchdog_timer_wdt>>
 
-If any of these sources trigger a reset, the internal reset will be triggered for at least clock cycles resetting
-the CPU, the <<_processor_clocking>> system and the IO/peripheral devices. The internal reset is asserted
-_aysynchronoulsy_ if triggered by the external `rstn_i` signal. For internal sources, the global reset is asserted
-_synchronously_. If the reset cause gets inactive the internal reset is de-asserted _synchronously_ at a falling
-clock edge.
+If any of these sources trigger a reset, the internal reset will be triggered for at least 4 clock cycles ensuring
+a valid reset of the entire processor. The internal global reset is asserted _aysynchronoulsy_ if triggered by the external
+`rstn_i` signal. For internal reset sources, the global reset is asserted _synchronously_. If the reset cause gets inactive
+the internal reset is de-asserted _synchronously_ at a falling clock edge.
 
-Internally, all processor registers that actually do provide a hardware reset use an **asynchronous reset**. Using a
-synchronous reset might increase logic utilization (and might increase the critical path) for FPGAs that do not provide a
-"native" synchronous reset for their flip flops. Furthermore, an asynchronous reset ensures that the
-entire processor logic is reset to a defined state even if the main clock is not yet operational.
+Internally, all processor registers that actually do provide a hardware reset use an **asynchronous reset**. An asynchronous
+reset ensures that the entire processor logic is reset to a defined state even if the main clock is not yet operational.
 
 In order to reduce routing constraints (and by this the actual hardware requirements), some _uncritical registers_
-of the NEORV32 CPU as well as many registers of the entire NEORV32 Processor **do not use a dedicated hardware reset**.
+of the NEORV32 CPU as well as many registers of the entire NEORV32 Processor do not use a dedicated hardware reset.
 For example there are several pipeline registers and "buffer" registers that do not require a defined
 initial state to ensure correct operation.
 
@@ -1167,35 +374,35 @@ software interrupt" and "machine external interrupt". Their usage is defined by 
 specifications. However, bare-metal system can also repurpose these interrupts. See CPU section
 <<_traps_exceptions_and_interrupts>> for more information.
 
-[cols="<3,^2,<11"]
+[cols="<4,<10"]
 [options="header",grid="rows"]
 |=======================
-| Top signal | Width | Description
-| `mtime_irq_i` | 1 | Machine timer interrupt from _processor-external_ MTIME unit (_MTI_). This IRQ is only available if the processor-internal MTIME unit is not used (<<_io_mtime_en>> = false).
-| `msw_irq_i`   | 1 | Machine software interrupt (_MSI_). This interrupt is used for inter-processor interrupts in multi-core systems. However, it can also be used for any custom purpose.
-| `mext_irq_i`  | 1 | Machine external interrupt (_MEI_). This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
+| Top signal | Description
+| `mtime_irq_i` | Machine timer interrupt from _processor-external_ MTIME unit (`MTI`). This IRQ is only available if the processor-internal <<_machine_system_timer_mtime>> unit is not implemented.
+| `msw_irq_i`   | Machine software interrupt (`MSI`). This interrupt is used for inter-processor interrupts in multi-core systems. However, it can also be used for any custom purpose.
+| `mext_irq_i`  | Machine external interrupt (`MEI`). This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
 |=======================
 
 .Trigger Type
 [IMPORTANT]
-The RISC-V standard interrupts are **level-triggered and high-active**. Once set the signal has to stay high until
+The RISC-V standard interrupts are **level-triggered and high-active**. Once set, the signal has to remain high until
 the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register). The RISC-V standard interrupts
-can **NOT** be acknowledged by writing zero to the according <<_mip>> CSR bit.
+**CANNOT** be acknowledged/cleared by writing zero to the according <<_mip>> CSR bit.
 
 
 :sectnums:
 ==== NEORV32-Specific Fast Interrupt Requests
 
-As part of the NEORV32-specific CPU extensions, the CPU core features 16 fast interrupt request signals
-(`FIRQ0` - `FIRQ15`) with dedicated bits in the <<_mip>> and <<_mie>> CSRs and custom <<_mcause>> trap codes.
+As part of the NEORV32-specific CPU extensions, the processor core features 16 fast interrupt request signals
+(`FIRQ0` - `FIRQ15`) providing dedicated bits in the <<_mip>> and <<_mie>> CSRs and custom <<_mcause>> trap codes.
 The FIRQ signals are reserved for _processor-internal_ modules only (for example for the communication
 interfaces to signal "available incoming data" or "ready to send new data").
 
-The mapping of the 16 FIRQ channels and the according processor-internal modules is shown in the following
+The mapping of the 16 FIRQ channels to the according processor-internal modules is shown in the following
 table (the channel number also corresponds to the according FIRQ priority: 0 = highest, 15 = lowest):
 
 .NEORV32 Fast Interrupt Request (FIRQ) Mapping
-[cols="^1,<2,<7"]
+[cols="^2,<8,<7"]
 [options="header",grid="rows"]
 |=======================
 | Channel | Source | Description
@@ -1209,41 +416,18 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI transmission done interrupt
 | 8       | <<_external_interrupt_controller_xirq,XIRQ>> | External interrupt controller interrupt
 | 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED TX buffer interrupt
-| 10      | - | _reserved_, will never fire
+| 10      | - | _reserved_
 | 11      | <<_serial_data_interface_controller_sdi,SDI>> | Configurable SDI interrupt
 | 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
 | 13      | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire operation done interrupt
-| 14      | - | _reserved_, will never fire
-| 15      | - | _reserved_, will never fire
+| 14      | - | _reserved_
+| 15      | - | _reserved_
 |=======================
 
 .Trigger Type
 [IMPORTANT]
-The fast interrupt request channels become pending after being triggering by **a rising edge**. A pending FIRQ has to
-be explicitly cleared by writing zero to the according <<_mip>> CSR bit.
-
-
-:sectnums:
-==== Platform External Interrupts
-
-The processor provides an optional interrupt controller for up to 32 user-defined external interrupts
-(see section <<_external_interrupt_controller_xirq>>). These external IRQs are mapped to a _single_ CPU
-fast interrupt request so a software handler is required to differentiate / prioritize these interrupts.
-
-[cols="<3,^2,<11"]
-[options="header",grid="rows"]
-|=======================
-| Top signal | Width | Description
-| `xirq_i` | up to 32 | External platform interrupts (user-defined).
-|=======================
-
-.Trigger Type
-[IMPORTANT]
-The trigger for these interrupt can be defined via generics. See section
-<<_external_interrupt_controller_xirq>> for more information. Depending on the trigger type, users can
-implement custom acknowledge mechanisms. All _external interrupts_ are mapped to a single processor-internal
-_fast interrupt request_ (see below).
-
+The fast interrupt request channels become pending after being triggering by one-cycle-high signal.
+A pending FIRQ has to be explicitly cleared by writing zero to the according <<_mip>> CSR bit.
 
 
 <<<
@@ -1251,27 +435,19 @@ _fast interrupt request_ (see below).
 :sectnums:
 === Address Space
 
-As a 32-bit architecture the NEORV32 provides a 4GB physical address space. By default, this address space is
-divided into five main regions with each region having a specific function:
+As a 32-bit architecture the NEORV32 can access a 4GB physical address space. By default, this address space is
+divided into five main regions:
 
-1. **Instruction address space**: memory address space for instructions (=code) and constants.
-A configurable section of this address space can used by the _instruction memory_ (<<_instruction_memory_imem>>).
-2. **Data address space**: memory address space for application runtime data (heap, stack, etc.).
-A configurable section of this address space can be used by the _data memory_ (<<_data_memory_dmem>>).
-3. **Bootloader address space**: a _fixed_ section of this address space is used by the
-internal _bootloader memory_ (BOOTLDROM).
-4. **On-Chip Debugger address space**: this _fixed_ section is entirely used by the processor's <<_on_chip_debugger_ocd>>.
-5. **IO/peripheral address space**: also a _fixed_ section used for the processor-internal memory-mapped IO/peripheral devices (e.g., UART).
+1. **Instruction address space** for instructions (=code) and constants. A configurable section of this address space can used by the instruction memory (<<_instruction_memory_imem>>).
+2. **Data address space** for application runtime data (heap, stack, etc.). A configurable section of this address space can be used by the data memory (<<_data_memory_dmem>>).
+3. **Bootloader address space** for the internal bootloader memory <<_bootloader_rom_bootrom>>.
+4. **On-Chip Debugger address space** for the processor's <<_on_chip_debugger_ocd>>.
+5. **IO/peripheral address space**: for the processor-internal memory-mapped <<_processor_internal_modules>>.
 
-.NEORV32 processor - address space (default configuration)
+.NEORV32 Processor Address Space (Default Configuration)
 image::address_space.png[900]
 
-.Region Overlap
-[NOTE]
-By default, there is no overlap between the different regions. However, the NEORV32 is a modified Harvard Architecture (same address space
-for instructions and data) so the instruction and data address spaces may also overlap. See section <<_address_space_layout>>.
-
-.RAM Layout - Usage of the Data Address Space
+.RAM Layout
 [TIP]
 The actual usage of the data address space by the software/executables (stack, heap, ...) is
 illustrated in section <<_ram_layout>>.
@@ -1280,11 +456,9 @@ illustrated in section <<_ram_layout>>.
 :sectnums:
 ==== Physical Memory Attributes (PMAs)
 
-Each default region of the NEORV32 address space provides specific physical memory attributes that define the allowed access types
-to each of these regions. These "access permission" are enforced by the hardware and cannot be changed. If an access violates the
-PMA's permissions an exception is raised. The access permissions can be further constrained using the CPU's <<_pmp_physical_memory_protection>>.
-
-The following access types are checked by the hardware (if an access type is present in a region's PMA the access is permitted):
+Each default region of the NEORV32 address space provides specific physical memory attributes that define the allowed access types.
+The according access permission are enforced by the hardware and cannot be changed. If an access violates the PMA's permissions an
+exception is raised. The access permissions can be further constrained using the CPU's <<_pmp_isa_extension>>.
 
 * `r` - data read access
 * `w` - data write access
@@ -1293,7 +467,7 @@ The following access types are checked by the hardware (if an access type is pre
 [cols="<1,^4,^2,<7"]
 [options="header",grid="rows"]
 |=======================
-| # | Region Description | PMAs | Note
+| # | Region Description             | PMAs    | Note
 | 1 | Instruction address space      | `r(w)x` | Write accesses to the the internal <<_instruction_memory_imem>> can be disabled.
 | 2 | Data address space             | `rwx`   | Code can also be executed from data memory.
 | 3 | Bootloader address space       | `r-x`   | Read-only memory.
@@ -1307,10 +481,9 @@ The following access types are checked by the hardware (if an access type is pre
 
 The CPU can access all of the 32-bit address space from the instruction fetch interface (**I**) and also from the
 data access interface (**D**). These two CPU interfaces are multiplexed by a simple bus switch
-(`rtl/core/neorv32_busswitch.vhd`) into a _single_ processor-internal bus. All processor-internal
-memories, peripherals and also the external memory interface are connected to this bus. Hence, both CPU
-interfaces (instruction fetch & data access) have access to the same (_identical!_) address space making the
-setup a **modified von-Neumann architecture**.
+(`rtl/core/neorv32_busswitch.vhd`) into a single processor-internal bus. All processor-internal memories, peripherals
+and also the external memory interface are connected to this bus. Hence, both CPU interfaces (instruction fetch & data access)
+have access to the same (identical!) address space making the processor a **modified von-Neumann architecture**.
 
 .Processor-internal bus architecture
 image::neorv32_bus.png[1300]
@@ -1319,8 +492,7 @@ image::neorv32_bus.png[1300]
 The internal processor bus might appear as bottleneck. In order to reduce traffic jam on this bus
 (when instruction fetch and data interface access the bus at the same time) the instruction fetch of
 the CPU is equipped with a prefetch buffer. Instruction fetches can be further buffered using the i-cache.
-Furthermore, data accesses (loads and stores) have higher priority than instruction fetch
-accesses.
+Furthermore, data accesses (loads and stores) have higher priority than instruction fetch accesses.
 
 [TIP]
 See sections <<_architecture>> and <<_bus_interface>> for more information regarding the CPU bus accesses.
@@ -1342,132 +514,95 @@ constant ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000";
 constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000";
 ----
 
-The default configuration assumes the _instruction memory address space_ starting at address _0x00000000_
-and the _data memory address space_ starting at _0x80000000_. Both values can be modified for a specific
-setup and the address space may overlap or can be completely identical. Make sure that both base addresses
-are _aligned_ to a 4-byte boundary.
-
-[NOTE]
-The base address of the internal bootloader (at _0xFFFF0000_) and the internal IO region (at _0xFFFFFE00_) for
-peripheral devices are also defined in the package and are fixed. These address regions cannot not be used for other
-applications - even if the bootloader or all IO devices are not implemented - without modifying the core's
-hardware sources.
+The default configuration assumes the _instruction memory address space_ starting at address `0x00000000`
+and the _data memory address space_ starting at `0x80000000`. Both values can be modified for a specific
+setup and the address space may also overlap or can even be identical.
 
 
 :sectnums:
 ==== Memory Configuration
 
-The NEORV32 Processor was designed to provide maximum flexibility for the memory configuration.
+The NEORV32 Processor was designed to provide maximum flexibility for the actual memory configuration.
 The processor can populate the _instruction address space_ and/or the _data address space_ with **internal memories**
-for instructions (IMEM) and data (DMEM). Processor **external memories** can be used as an _alternative_ or even _in combination_ with
-the internal ones. The figure below show some exemplary memory configurations.
+for instructions (IMEM) and data (DMEM). Processor **external memories** can be used as an alternative or even in
+combination with the internal ones. The figure below show some exemplary memory configurations.
 
-.Exemplary memory configurations
+.Exemplary Memory Configurations
 image::neorv32_memory_configurations.png[800]
+
+[NOTE]
+Any access to "address holes" (addresses that do not belong to a specific module) will raise a bus exception fault
+due to the missing access acknowledge.
+
 
 :sectnums!:
 ===== Internal Memories
 
-The processor-internal memories (<<_instruction_memory_imem>> and <<_data_memory_dmem>>) are enabled (=implemented)
-via the <<_mem_int_imem_en>> and <<_mem_int_dmem_en>> generics. Their sizes are configures via the according
-<<_mem_int_imem_size>> and <<_mem_int_dmem_size>> generics.
+If the processor-internal <<_instruction_memory_imem>> is implemented, it is located right at the base address of the instruction
+address space (default `ispace_base_c` = _0x00000000_). Vice versa, the processor-internal <<_data_memory_dmem>> is
+located right at the beginning of the data address space (default `dspace_base_c` = _0x80000000_) when implemented.
 
-If the processor-internal IMEM is implemented, it is located right at the base address of the instruction
-address space (default `ispace_base_c` = _0x00000000_). Vice versa, the processor-internal data memory is
-located right at the beginning of the data address space (default `dspace_base_c` = _0x80000000_) when
-implemented.
-
-[NOTE]
-If the IMEM (internal or external) is less than the (default) maximum size (2GB), there is
-a "dead address space" between it and the DMEM. This provides an additional safety feature
-since data corrupting scenarios like stack overflow cannot directly corrupt the content of the IMEM:
-any access to the "dead address space" in between will raise an exception that can be caught
-by the runtime environment.
 
 :sectnums!:
 ===== External Memories
 
-If external memories (or further IP modules) shall be connected via the _processor's external bus interface_,
-the interface has to be enabled via <<_mem_ext_en>> generic (=_true_). More information regarding this interface can be
-found in section <<_processor_external_memory_interface_wishbone_axi4_lite>>.
+Any CPU access (data or instructions), which does **not** fulfill at least one of the following conditions, is forwarded
+via the <<_processor_external_memory_interface_wishbone>> to external components:
 
-Any CPU access (data or instructions), which does not fulfill _at least one_ of the following conditions, is forwarded
-via the processor's bus interface to external components:
-
-* access to the processor-internal IMEM and processor-internal IMEM is implemented
-* access to the processor-internal DMEM and processor-internal DMEM is implemented
-* access to the bootloader ROM and beyond -> addresses >= _BOOTROM_BASE_ (default 0xFFFF0000) will never be forwarded to the external memory interface
+* access to the processor-internal <<_instruction_memory_imem>> and processor-internal IMEM is implemented
+* access to the processor-internal <<_data_memory_dmem>> and processor-internal DMEM is implemented
+* access to the processor-internal bootloader ROM and beyond
 
 [NOTE]
-If the Execute In Place module (XIP) is implemented accesses map to this module are not forwarded to the
-external memory interface. See section <<_execute_in_place_module_xip>> for more information.
-
-If no (or not all) processor-internal memories are implemented, the according base addresses are mapped to external memories.
-For example, if the processor-internal IMEM is not implemented (<<_mem_int_imem_en>> = _false_), the processor will forward
-any access to the instruction address space (starting at `ispace_base_c`) via the external bus interface to the external
-memory system.
+If the <<_execute_in_place_module_xip>> is implemented accesses mapped to this module are not forwarded to the
+external memory interface.
 
 [NOTE]
-If the external interface is deactivated, any access exceeding the internal memory address space (instruction, data, bootloader) or
-the internal peripheral address space will trigger a bus access fault exception.
+If the <<_processor_external_memory_interface_wishbone>> is not implemented, any access exceeding the internal
+memory address space will raise a bus access fault exception.
 
 
 :sectnums:
 ==== Boot Configuration
 
-Due to the flexible memory configuration concept, the NEORV32 Processor provides several different boot concepts.
-The figure below shows the exemplary concepts for the two most common boot scenarios.
+Due to the flexible memory configuration, the NEORV32 Processor provides several different boot scenarios.
+The following section illustrates the two most common boot scenarios.
 
-.NEORV32 boot configurations
+.NEORV32 Boot Configurations
 image::neorv32_boot_configurations.png[800]
 
-[NOTE]
-The configuration of internal or external data memory (DMEM; <<_mem_int_dmem_en>> = _true_ / _false_) is not
-relevant for the boot configuration itself. Hence, it is not further illustrated here.
-
 There are two general boot scenarios: _Indirect Boot_ (1a and 1b) and _Direct Boot_ (2a and 2b) configured via the
-<<_int_bootloader_en>> generic. If this generic is set **true** the _indirect_ boot scenario is used. This is also the
-default boot configuration of the processor. If <<_int_bootloader_en>> is set **false** the _direct_ boot scenario is used.
-
-[NOTE]
-Please note that the provided boot scenarios are just exemplary setups that (should) fit most common requirements.
-Much more sophisticated boot scenarios are possible by combining internal and external memories. For example, the default
-internal bootloader could be used as first-level bootloader that loads (from extern SPI flash) a second-level bootloader
-that is placed and execute in internal IMEM. This second-level bootloader could then fetch the actual application and
-store it to external _data_ memory and transfers CPU control to that.
+`INT_BOOTLOADER_EN` generic. If this generic is `true` the _indirect boot scenario_ is used. This is also the
+default boot configuration of the processor. If `INT_BOOTLOADER_EN` is `*false` the _direct boot scenario_ is used.
 
 :sectnums!:
 ===== Indirect Boot
 
-The _indirect_ boot scenarios **1a** and **1b** use the processor-internal <<_bootloader>>. This boot setup is enabled
-by setting the <<_int_bootloader_en>> generic to _true_, which will implement the processor-internal <<_bootloader_rom_bootrom>>.
-This read-only memory is pre-initialized during synthesis with the default bootloader firmware.
-The bootloader provides several options to upload an executable (via UART or from external SPI flash) and copies it to
-the beginning of the _instruction address space_ so the CPU can execute it.
+The indirect_boot scenarios **1a** and **1b** are based on the processor-internal <<_bootloader>>. This boot setup is enabled
+by setting the `INT_BOOTLOADER_EN` generic to `true`, which will implement the processor-internal <<_bootloader_rom_bootrom>>.
+This read-only memory is pre-initialized during synthesis with the default bootloader firmware. The bootloader provides several
+options to upload an executable copying it to the beginning of the _instruction address space_ so the CPU can execute it.
 
-Boot scenario **1a** uses the processor-internal IMEM
-(<<_mem_int_imem_en>> = _true_). This scenario implements the internal <<_instruction_memory_imem>> as non-initialized
-RAM so the bootloader can copy the actual executable to it.
+Boot scenario **1a** uses the processor-internal IMEM. This scenario implements the internal <<_instruction_memory_imem>>
+as non-initialized RAM so the bootloader can copy the actual executable to it.
 
-Boot scenario **1b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_) that is connected via the processor's
-bus interface. In this scenario the internal <<_instruction_memory_imem>> is not implemented at all and the bootloader will
-copy the executable to the processor-external memory. Hence, the external memory has to be implemented as RAM.
+Boot scenario **1b** uses a processor-external IMEM that is connected via the processor's bus interface. In this scenario
+the internal <<_instruction_memory_imem>> is not implemented at all and the bootloader will copy the executable to the
+processor-external memory. Hence, the external memory has to be implemented as RAM.
 
 :sectnums!:
 ===== Direct Boot
 
-The _direct_ boot scenarios **2a** and **2b** do not use the processor-internal bootloader since the <<_int_bootloader_en>>
-generic is set _false_. In this configuration the <<_bootloader_rom_bootrom>> is not implemented at all and the CPU will
+The direct boot scenarios **2a** and **2b** do not use the processor-internal bootloader since the `INT_BOOTLOADER_EN`
+generic is set `false`. In this configuration the <<_bootloader_rom_bootrom>> is not implemented at all and the CPU will
 directly begin executing code from the beginning of the instruction address space after reset. An application-specific
-"pre-initialization" mechanism is required in order to provide an executable _in_ memory.
+"pre-initialization" mechanism is required in order to provide an executable inside the memory.
 
-Boot scenario **2a** uses the processor-internal IMEM (<<_mem_int_imem_en>> = _true_) that is implemented as _read-only memory_
-in this scenario. It is pre-initialized (by the bitstream) with the actual application executable during synthesis.
+Boot scenario **2a** uses the processor-internal IMEM implemented as _read-only memory_ in this scenario.
+It is pre-initialized (by the bitstream) with the actual application executable during synthesis.
 
-In contrast, boot scenario **2b** uses a processor-external IMEM (<<_mem_int_imem_en>> = _false_). In this scenario the
-system designer is responsible for providing an initialized external memory that contains the actual application to be executed.
-If the external memory is not already initialized after reset, a simple ROM containing a "polling loop" can be implemented that is
-exited as soon as the application logic has finished initializing the memory with the actual application code.
+In contrast, boot scenario **2b** uses a processor-external IMEM. In this scenario the system designer is responsible for
+providing an initialized external memory that contains the actual application to be executed.
 
 
 <<<
@@ -1475,102 +610,38 @@ exited as soon as the application logic has finished initializing the memory wit
 :sectnums:
 === Processor-Internal Modules
 
-Basically, the NEORV32 processor is a SoC consisting of the NEORV32 CPU, peripheral/IO devices, embedded
-memories, an external memory interface and a bus infrastructure to interconnect all units. Additionally, the
-system implements an internal reset generator (-> <<_processor_reset>>) and a global clock system (-> <<_processor_clocking>>).
-
-
-**Peripheral / IO Devices**
+The NEORV32 processor is a SoC (system-on-chip) consisting of the NEORV32 CPU, peripheral/IO devices, embedded
+memories, an external memory interface and a bus infrastructure to interconnect all modules.
 
 The processor-internal peripheral/IO devices are located at the end of the 32-bit address space at base
-address _0xFFFFFE00_. A region of 512 bytes is reserved for this devices. Hence, all peripheral/IO devices are
-accessed using a memory-mapped scheme. A special linker script as well as the NEORV32 core software
-library abstract the specific memory layout for the user.
+address `0xFFFFFE00`. A region of 512 bytes is reserved for these devices. Hence, all peripheral/IO devices are
+accessed using a memory-mapped scheme.
 
 .Module Address Space Mapping
 [IMPORTANT]
-The base address of each component/module has to be aligned to the
-total size of the module's occupied address space! The occupied address space
-has to be a power of two (minimum 4 bytes)! Address spaces must not overlap!
+The base address of each component/module has to be aligned to the total size of the module's occupied address space.
+The occupied address space has to be a power of two (minimum 4 bytes). Addresses of peripheral modules must not overlap.
 
 .Full-Word Write Accesses Only
 [IMPORTANT]
-All peripheral/IO devices can only be written in full-word mode (i.e. 32-bit). Byte or half-word
-(8/16-bit) writes will trigger a store access fault exception. Read accesses are not size constrained.
-Processor-internal memories as well as modules connected to the external memory interface can still
-be written with a byte-wide granularity.
+All peripheral/IO devices can only be written in full-word mode (i.e. 32-bit). Byte or half-word (8/16-bit) write accesses
+will raise a store access fault exception. Read accesses are not size constrained. Processor-internal memories as well as
+modules connected to the external memory interface can be written with arbitrary granularity.
 
 .Unimplemented Modules / "Address Holes"
 [NOTE]
 When accessing an IO device that hast not been implemented (disabled via the according generic)
-or when accessing an address that is _unused_, a load or store access fault exception is raise.
+or when accessing an address that is actually unused, a load or store access fault exception is raised.
 
-.Module Reset
+.Module Interrupts
 [NOTE]
-All processor-internal modules provide a dedicated hardware reset, which is triggered by the <<_processor_reset>>
-system. When active, the system-wide reset will reset all module's _control registers_ to all-zero. Note that this
-hardware reset does not _directly_ reset the remaining module's logic - the internal logic is reset _synchronously_ when the
-enable bit in the according unit's control register is cleared. Software can trigger a module reset
-by clearing the enable bit of the module's control register. See section <<_processor_reset>> for more information.
-
-.Access Latency of Processor-Internal Modules
-[NOTE]
-By default all processor internal modules (memories and peripherals) have a fixed access latency of one clock cycle.
-However, a custom version of any module may also have higher access latency. See section <<_bus_interface>>
-for more information.
-
-.Software Access
-[TIP]
-Use the provided <<_core_libraries>> to interact with the peripheral devices. This
-prevents incompatibilities with future versions, since the hardware driver functions handle all the
-register and register bit accesses.
+Most peripheral/IO devices provide some kind of interrupt (for example to signal available incoming data). These
+interrupts are entirely mapped to the CPU's <<_custom_fast_interrupt_request_lines>>.
+See section <<_processor_interrupts>> for more information.
 
 .CMSIS System Description View (SVD)
 [TIP]
 A CMSIS-SVD-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
-
-
-**Interrupts of Processor-Internal Modules**
-
-Most peripheral/IO devices provide some kind of interrupt (for example to signal available incoming data). These
-interrupts are entirely mapped to the CPU's <<_custom_fast_interrupt_request_lines>>. Note that all these
-interrupt lines are high-active and are permanently triggered until the IRQ-causing condition is resolved.
-See section <<_processor_interrupts>> for more information.
-
-
-**Nomenclature for Peripheral / IO Devices Listing**
-
-Each peripheral device chapter features a register map showing accessible control and data registers of the
-according device including the implemented control and status bits. C-language code can directly interact with these
-registers via pre-defined `struct`. Each IO/peripheral module provides a unique `struct`. All accessible
-interface registers of this module are defined as members of this `struct`. The pre-defined `struct` are defined int the
-main processor core library include file `sw/lib/include/neorv32.h`.
-
-The naming scheme of these low-level hardware access structs is `NEORV32_<module_name>.<register_name>`.
-
-.Low-level hardware access example in C using the pre-defined `struct`
-[source,c]
-----
-// Read from SYSINFO "CLK" register
-uint32_t temp = NEORV32_SYSINFO.CLK;
-----
-
-The registers and/or register bits, which can be accessed directly using plain C-code, are marked with a "[C]".
-Not all registers or register bits can be arbitrarily read/written. The following read/write access types are
-available:
-
-* `r/w` registers / bits can be read and written
-* `r/-` registers / bits are read-only; any write access to them has no effect
-* `-/w` these registers / bits are write-only; they auto-clear in the next cycle and are always read as zero
-
-[NOTE]
-Bits / registers that are not listed in the register map tables are not (yet) implemented. These registers
-/ bits are always read as zero. A write access to them has no effect, but user programs should only
-write zero to them to keep compatible with future extension.
-
-[NOTE]
-When writing to read-only registers, the access is nevertheless acknowledged, but no actual data is
-written. When reading data from a write-only register the result is undefined.
 
 
 include::soc_imem.adoc[]

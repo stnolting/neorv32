@@ -10,7 +10,7 @@
 |                          | neorv32_onewire.h |
 | Top entity port:         | `onewire_i` | 1-bit 1-wire bus sense input
 |                          | `onewire_o` | 1-bit 1-wire bus output (pull low only)
-| Configuration generics:  | _IO_ONEWIRE_EN_ | implement ONEWIRE interface controller when _true_
+| Configuration generics:  | `IO_ONEWIRE_EN`     | implement ONEWIRE interface controller when `true`
 | CPU interrupts:          | fast IRQ channel 13 | operation done interrupt (see <<_processor_interrupts>>)
 |=======================
 
@@ -20,30 +20,25 @@
 The NEORV32 ONEWIRE module implements a single-wire interface controller that is compatible to the
 _Dallas/Maxim 1-Wire_ protocol, which is an asynchronous half-duplex bus requiring only a single signal wire
 connected to `onewire_io` (plus ground).
-The 1-Wire protocol allows an (nearly) arbitrary number of devices but only a single controller that initiates all transfers.
 
-The bus is based on a single tristate signal. The controller and all the devices can only pull-down the bus actively.
+The bus is based on a single open-drain signal. The controller and all the devices can only pull-down the bus actively.
 Hence, an external pull-up resistor is required. Recommended values are between 1kΩ and 4kΩ depending on the bus
 characteristics (wire length, number of devices, etc.). Furthermore, a series resistor (~100Ω) at the controller side
 is recommended to control the slew rate and to reduce signal reflections. Also, additional external ESD protection clamp diodes
-should be added to the `onewire_io` bus line.
-
-[TIP]
-For more information regarding the 1-Wire bus and the device access mechanism
-see the Application Notes provided by Maxim Integrated.
+should be added to the bus line.
 
 
 **Tri-State Drivers**
 
-The ONEWIRE module requires a tri-state driver for the 1-wire bus line, which has to be implemented
+The ONEWIRE module requires a tri-state driver (actually, open-drain) for the 1-wire bus line, which has to be implemented
 in the top module of the setup. A generic VHDL example is given below (`onewire` is the actual 1-wire
 bus signal, which is of type `std_logic`).
 
 .ONEWIRE VHDL tri-state driver example
 [source,VHDL]
 ----
-onewire   <= '0' when (onewire_o = '0') else 'Z';
-onewire_i <= std_ulogic(onewire);
+onewire   <= '0' when (onewire_o = '0') else 'Z'; -- drive
+onewire_i <= std_ulogic(onewire); -- sense
 ----
 
 
@@ -53,18 +48,18 @@ The ONEWIRE controller provides two interface registers: `CTRL` and `DATA.` The 
 is used to configure the module, to trigger bus transactions and to monitor the current state of the module.
 The `DATA` register is used to read/write data from/to the bus.
 
-The module is enabled by setting the _ONEWIRE_CTRL_EN_ bit in the control register. If this bit is cleared, the
-module is automatically reset and the bus is brought to high-impedance (tristate) state.
-The basic timing configuration is programmed via the clock prescaler bits _ONEWIRE_CTRL_PRSCx_ and the
-clock divider bits _ONEWIRE_CTRL_CLKDIVx_ (see next section).
+The module is enabled by setting the `ONEWIRE_CTRL_EN` bit in the control register. If this bit is cleared, the
+module is automatically reset and the bus is brought to high-level (due to the external pull-up resistor).
+The basic timing configuration is programmed via the clock prescaler bits `ONEWIRE_CTRL_PRSCx` and the
+clock divider bits `ONEWIRE_CTRL_CLKDIVx` (see next section).
 
 The controller can execute three basic bus operations, which are triggered by setting one out of three specific
 control register bits (the bits auto-clear):
 
 [start=1]
-. generate reset pulse and check for device presence; triggered when setting _ONEWIRE_CTRL_TRIG_RST_
-. transfer a single-bit (read-while-write); triggered when setting _ONEWIRE_CTRL_TRIG_BIT_
-. transfer a full-byte (read-while-write); triggered when setting _ONEWIRE_CTRL_TRIG_BYTE_
+. generate reset pulse and check for device presence; triggered when setting `ONEWIRE_CTRL_TRIG_RST`
+. transfer a single-bit (read-while-write); triggered when setting `ONEWIRE_CTRL_TRIG_BIT`
+. transfer a full-byte (read-while-write); triggered when setting `ONEWIRE_CTRL_TRIG_BYTE`
 
 [IMPORTANT]
 Only one trigger bit may be set at once, otherwise undefined behavior might occur.
@@ -72,7 +67,7 @@ Only one trigger bit may be set at once, otherwise undefined behavior might occu
 When a single-bit operation has been triggered, the data previously written to `DATA[0]` will be send to the bus
 and `DATA[7]` will be sampled from the bus. Accordingly, a full-byte transmission will send the previously
 byte written to `DATA[7:0]` to the bus and will update `DATA[7:0]` with the data read from the bus (LSB-first).
-The triggered operation has completed when the module's busy flag _ONEWIRE_CTRL_BUSY_ has cleared again.
+The triggered operation has completed when the module's busy flag `ONEWIRE_CTRL_BUSY` has cleared again.
 
 .Read from Bus
 [NOTE]
@@ -80,19 +75,17 @@ In order to read a single bit from the bus `DATA[0]` has to set to `1` before tr
 operation to allow the accessed device to pull-down the bus. Accordingly, `DATA` has to be set to `0xFF` before
 triggering the byte transmission operation when the controller shall read a byte from the bus.
 
-The _ONEWIRE_CTRL_PRESENCE_ bit gets set if at least one device has send a "presence" signal right after the
+The `ONEWIRE_CTRL_PRESENCE` bit gets set if at least one device has send a "presence" signal right after the
 reset pulse. 
 
 
 **Bus Timing**
 
-The control register provides a 2-bit clock prescaler select (_ONEWIRE_CTRL_PRSCx_) and a 8-bit clock divider
-(_ONEWIRE_CTRL_CLKDIVx_) for timing configuration. Both are used to define the elementary **base time T~base~**.
+The control register provides a 2-bit clock prescaler select (`ONEWIRE_CTRL_PRSCx`) and a 8-bit clock divider
+(`ONEWIRE_CTRL_CLKDIVx`) for timing configuration. Both are used to define the elementary **base time T~base~**.
 All bus operations are timed using _multiples_ of this elementary base time.
 
-The following clock prescalers are available:
-
-.ONEWIRE clock prescaler configurations
+.ONEWIRE Clock Prescaler Configurations
 [cols="<4,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
@@ -100,7 +93,7 @@ The following clock prescalers are available:
 | Resulting `clock_prescaler` |      2 |      4 |      8 |     64
 |=======================
 
-Together with the clock divider value (_ONEWIRE_CTRL_PRSCx_ bits = `clock_divider`) the base time is defined by the
+Together with the clock divider value (`ONEWIRE_CTRL_PRSCx` bits = `clock_divider`) the base time is defined by the
 following formula:
 
 _**T~base~**_ = (1 / _f~main~[Hz]_) * `clock_prescaler` * (`clock_divider` + 1)
@@ -183,15 +176,15 @@ according <<_mip>> CSR FIRQ bit.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xffffff70` .10+<| `CTRL` <|`0`     _ONEWIRE_CTRL_EN_                               ^| r/w <| ONEWIRE enable, reset if cleared
-                                  <|`2:1`   _ONEWIRE_CTRL_PRSC1_   : _ONEWIRE_CTRL_PRSC0_   ^| r/w <| 2-bit clock prescaler select
-                                  <|`10:3`  _ONEWIRE_CTRL_CLKDIV7_ : _ONEWIRE_CTRL_CLKDIV0_ ^| r/w <| 8-bit clock divider value
-                                  <|`11`    _ONEWIRE_CTRL_TRIG_RST_                         ^| -/w <| trigger reset pulse, auto-clears
-                                  <|`12`    _ONEWIRE_CTRL_TRIG_BIT_                         ^| -/w <| trigger single bit transmission, auto-clears
-                                  <|`13`    _ONEWIRE_CTRL_TRIG_BYTE_                        ^| -/w <| trigger full-byte transmission, auto-clears
-                                  <|`28:14` -                                               ^| r/- <| _reserved_, read as zero
-                                  <|`29`    _ONEWIRE_CTRL_SENSE_                            ^| r/- <| current state of the bus line
-                                  <|`30`    _ONEWIRE_CTRL_PRESENCE_                         ^| r/- <| device presence detected after reset pulse
-                                  <|`31`    _ONEWIRE_CTRL_BUSY_                             ^| r/- <| operation in progress when set
-| `0xffffff74` | `DATA` |`7:0` _ONEWIRE_DATA_MSB_ : _ONEWIRE_DATA_LSB_ | r/w | receive/transmit data (8-bit)
+.10+<| `0xffffff70` .10+<| `CTRL` <|`0`     `ONEWIRE_CTRL_EN`                             ^| r/w <| ONEWIRE enable, reset if cleared
+                                  <|`2:1`   `ONEWIRE_CTRL_PRSC1 : ONEWIRE_CTRL_PRSC0`     ^| r/w <| 2-bit clock prescaler select
+                                  <|`10:3`  `ONEWIRE_CTRL_CLKDIV7 : ONEWIRE_CTRL_CLKDIV0` ^| r/w <| 8-bit clock divider value
+                                  <|`11`    `ONEWIRE_CTRL_TRIG_RST`                       ^| -/w <| trigger reset pulse, auto-clears
+                                  <|`12`    `ONEWIRE_CTRL_TRIG_BIT`                       ^| -/w <| trigger single bit transmission, auto-clears
+                                  <|`13`    `ONEWIRE_CTRL_TRIG_BYTE`                      ^| -/w <| trigger full-byte transmission, auto-clears
+                                  <|`28:14` -                                             ^| r/- <| _reserved_, read as zero
+                                  <|`29`    `ONEWIRE_CTRL_SENSE`                          ^| r/- <| current state of the bus line
+                                  <|`30`    `ONEWIRE_CTRL_PRESENCE`                       ^| r/- <| device presence detected after reset pulse
+                                  <|`31`    `ONEWIRE_CTRL_BUSY`                           ^| r/- <| operation in progress when set
+| `0xffffff74` | `DATA` |`7:0` `ONEWIRE_DATA_MSB : ONEWIRE_DATA_LSB` | r/w | receive/transmit data (8-bit)
 |=======================
