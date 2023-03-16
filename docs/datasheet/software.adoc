@@ -169,6 +169,7 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
 
 === Variables ===
  USER_FLAGS   - Custom toolchain flags [append only], default ""
+ USER_LIBS    - Custom libraries [append only], default ""
  EFFORT       - Optimization level, default "-Os"
  MARCH        - Machine architecture, default "rv32i_zicsr"
  MABI         - Machine binary interface, default "ilp32"
@@ -212,6 +213,8 @@ MARCH ?= rv32i_zicsr
 MABI  ?= ilp32
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
+# User libraries (will be included by linker)
+USER_LIBS ?=
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
 # *****************************************************************************
@@ -229,6 +232,7 @@ NEORV32_HOME ?= ../../..
 | `MARCH`        | The targeted RISC-V architecture/ISA
 | `MABI`         | Application binary interface (default: 32-bit integer ABI `ilp32`)
 | `USER_FLAGS`   | Additional flags that will be forwarded to the compiler tools
+| `USER_LIBS`    | Additional libraries to include during linking (`*.a`)
 | `NEORV32_HOME` | Relative or absolute path to the NEORV32 project home folder; adapt this if the makefile/project is not in the project's default `sw/example` folder
 |=======================
 
