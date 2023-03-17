@@ -17,6 +17,10 @@ This boot ROM module provides a read-only memory that contain the executable ima
 is automatically set to the beginning of the bootloader ROM. See section <<_boot_configuration>> for more
 information regarding the processor's different boot scenarios.
 
+.Bootloader Image
+[IMPORTANT]
+
+
 .Address Configuration
 [NOTE]
 The bootloader ROM is located at address `0xFFFF0000` and can occupy an address space of up to 32kB. The base
