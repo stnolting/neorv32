@@ -459,10 +459,16 @@ code (see `sw/example/floating_point_test`).
 
 ==== `Zicntr` ISA Extension
 
-The `Zicntr` ISA extension adds the basic cycle <<_cycleh>>, <<_mcycleh>> and instruction-retired
-<<_instreth>>, <<_minstreth>> counters. This extensions is stated as _mandatory_ by the RISC-V spec.
-However, area-constrained setups may remove support for these counters. Section <<_machine_counter_and_timer_csrs>>
-shows a list of all `Zicntr`-related CSRs.
+The `Zicntr` ISA extension adds the basic <<_cycleh>>, <<_mcycleh>>, <<_timeh>> and <<_instreth>>, <<_minstreth>>
+counter CSRs. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Zicntr`-related CSRs.
+
+[NOTE]
+Note that the <<_timeh>> CSRs are implemented as just another user-level shadow copy of the machine-mode cycle
+counters <<_mcycleh>> (just like <<_cycleh>>).
+
+[NOTE]
+This extensions is stated as _mandatory_ by the RISC-V spec. However, area-constrained setups may remove
+support for these counters. 
 
 
 ==== `Zicond` ISA Extension

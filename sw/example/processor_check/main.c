@@ -125,7 +125,7 @@ uint32_t pmp_num_regions;
  **************************************************************************/
 int main() {
 
-  uint32_t tmp_a, tmp_b;
+  uint32_t tmp_a, tmp_b, tmp_c;
   uint8_t id;
 
   // disable machine-mode interrupts
@@ -313,58 +313,41 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test standard RISC-V performance counter [m]cycle[h]
+  // Test standard RISC-V counters 
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] cycle counter ", cnt_test);
+  PRINT_STANDARD("[%i] Zicntr counters ", cnt_test);
 
-  cnt_test++;
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZICNTR)) {
+    cnt_test++;
 
-  // make sure counter is enabled
-  asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_CY));
+    // make sure counters are enabled
+    neorv32_cpu_csr_clr(CSR_MCOUNTINHIBIT, (1<<CSR_MCOUNTINHIBIT_CY) | (1<<CSR_MCOUNTINHIBIT_IR));
 
-  // prepare overflow
-  neorv32_cpu_set_mcycle(0x00000000FFFFFFFFULL);
+    // prepare overflow
+    neorv32_cpu_set_mcycle(0x00000000FFFFFFFFULL);
+    neorv32_cpu_set_minstret(0x00000000FFFFFFFFULL);
 
-  asm volatile ("nop"); // counter LOW should overflow here
+    asm volatile ("nop");
 
-  // get current cycle counter HIGH
-  tmp_a = neorv32_cpu_csr_read(CSR_MCYCLEH);
+    // get current counter HIGH words
+    asm volatile ("rdcycleh   %[rd]" : [rd] "=r" (tmp_a) : );
+    asm volatile ("rdtimeh    %[rd]" : [rd] "=r" (tmp_b) : );
+    asm volatile ("rdinstreth %[rd]" : [rd] "=r" (tmp_c) : );
 
-  // make sure cycle counter high has incremented and there was no exception during access
-  if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) {
-    test_ok();
+    // make sure cycle counter high has incremented and there was no exception during access
+    if ((tmp_a == 1) && // cycle overflow
+        (tmp_a == tmp_b) && // cycle = time
+        (tmp_c == 1) && // instret overflow
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
   }
   else {
-    test_fail();
-  }
-
-
-  // ----------------------------------------------------------
-  // Test standard RISC-V performance counter [m]instret[h]
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] instret counter ", cnt_test);
-
-  cnt_test++;
-
-  // make sure counter is enabled
-  asm volatile ("csrci %[addr], %[imm]" : : [addr] "i" (CSR_MCOUNTINHIBIT), [imm] "i" (1<<CSR_MCOUNTINHIBIT_IR));
-
-  // prepare overflow
-  neorv32_cpu_set_minstret(0x00000000FFFFFFFFULL);
-
-  asm volatile ("nop"); // counter LOW should overflow here
-
-  // get instruction counter HIGH
-  tmp_a = neorv32_cpu_csr_read(CSR_INSTRETH);
-
-  // make sure instruction counter high has incremented and there was no exception during access
-  if ((tmp_a == 1) && (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) {
-    test_ok();
-  }
-  else {
-    test_fail();
+    PRINT_STANDARD("[skipped, n.a.]\n");
   }
 
 
