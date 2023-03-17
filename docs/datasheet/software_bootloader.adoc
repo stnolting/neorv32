@@ -45,6 +45,7 @@ The SPI flash has to support single-byte read and write operations, 24-bit addre
 * `0x04`: Write disable (for volatile status register)
 * `0x05`: Read (first) status register
 * `0x06`: Write enable (for volatile status register)
+* `0xAB`: Wake-up from sleep mode (optional)
 * `0xD8`: Block erase (64kB)
 
 .Custom Configuration
@@ -166,6 +167,11 @@ manually restarted via the `r` command.
 The bootloader allows to execute an application right from flash using the <<_execute_in_place_module_xip>> module.
 This requires a pre-programmed flash. The bootloader's "store" option can **not** be used to program an XIP image.
 
+.SPI Flash Power Down Mode
+[NOTE]
+The bootloader will issue a "wake-up" command prior to using the SPI flash to ensure it is not
+in sleep mode / power-down mode (see https://github.com/stnolting/neorv32/pull/552).
+
 .Default Configuration
 [TIP]
 More information regarding the default SPI, GPIO, XIP, etc. configuration can be found in the User Guide
@@ -174,7 +180,7 @@ section https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootlo
 .SPI Flash Programming
 [TIP]
 For detailed information on using an SPI flash for application storage see User Guide section
-https://stnolting.github.io/neorv32/ug/#_programming_an_external_spi_flash_via_the_bootloader[Programming an ExternalSPI Flash via the Bootloader].
+https://stnolting.github.io/neorv32/ug/#_programming_an_external_spi_flash_via_the_bootloader[Programming an External SPI Flash via the Bootloader].
 
 
 :sectnums:
