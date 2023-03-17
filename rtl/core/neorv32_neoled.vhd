@@ -182,6 +182,7 @@ begin
 
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+
   -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = neoled_base_c(hi_abb_c downto lo_abb_c)) else '0';
   addr   <= neoled_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
@@ -189,7 +190,7 @@ begin
   rden   <= acc_en and rden_i;
 
   -- write access --
-  process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl.enable   <= '0';
@@ -212,10 +213,10 @@ begin
         ctrl.t1_high  <= data_i(ctrl_t_1h_4_c  downto ctrl_t_1h_0_c);
       end if;
     end if;
-  end process;
+  end process write_access;
 
   -- read access --
-  process(clk_i)
+  read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= wren or rden; -- access acknowledge
@@ -237,7 +238,7 @@ begin
         data_o(ctrl_tx_busy_c)                       <= serial.busy;
       end if;
     end if;
-  end process;
+  end process read_access;
 
   -- enable external clock generator --
   clkgen_en_o <= ctrl.enable;
@@ -274,14 +275,14 @@ begin
   tx_fifo.clear <= not ctrl.enable;
 
   -- IRQ generator --
-  process(clk_i)
+  irq_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
                ((not ctrl.irq_conf) and (not tx_fifo.avail)) or -- fire IRQ if FIFO is empty
                ((    ctrl.irq_conf) and (not tx_fifo.half)));   -- fire IRQ if FIFO is less than half full
     end if;
-  end process;
+  end process irq_generator;
 
 
   -- Serial TX Engine -----------------------------------------------------------------------

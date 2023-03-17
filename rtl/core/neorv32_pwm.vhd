@@ -104,16 +104,16 @@ begin
   assert not (NUM_CHANNELS > 12) report "NEORV32 PROCESSOR CONFIG ERROR! <PWM controller> invalid number of channels (0..12)!" severity error;
 
 
-  -- Access Control -------------------------------------------------------------------------
+  -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+
+  -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = pwm_base_c(hi_abb_c downto lo_abb_c)) else '0';
   addr   <= pwm_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   rden   <= acc_en and rden_i;
   wren   <= acc_en and wren_i;
 
-
-  -- Write Access ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- write access --
   write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -152,13 +152,7 @@ begin
     end if;
   end process write_access;
 
-  -- PWM clock select --
-  clkgen_en_o <= enable; -- enable clock generator
-  prsc_tick   <= clkgen_i(to_integer(unsigned(prsc)));
-
-
-  -- Read access ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- read access --
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
@@ -208,6 +202,10 @@ begin
       end loop;
     end if;
   end process pwm_core;
+
+  -- PWM clock select --
+  clkgen_en_o <= enable; -- enable clock generator
+  prsc_tick   <= clkgen_i(to_integer(unsigned(prsc)));
 
 
 end neorv32_pwm_rtl;

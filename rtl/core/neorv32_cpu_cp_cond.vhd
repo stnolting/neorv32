@@ -68,7 +68,7 @@ begin
   assert (false) report "NEORV32 PROCESSOR CONFIG WARNING: The RISC-V 'Zicond' ISA extension is neither ratified nor frozen (yet)." severity warning;
 
   -- Conditional output --
-  process(clk_i)
+  conditional_output: process(clk_i)
   begin
     if rising_edge(clk_i) then
       if (start_i = '1') and (condition = '1') then
@@ -77,7 +77,7 @@ begin
         res_o <= zero_c;
       end if;
     end if;
-  end process;
+  end process conditional_output;
 
   -- condition check --
   rs2_zero  <= '1' when (rs2_i = zero_c) else '0';

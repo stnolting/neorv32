@@ -171,7 +171,7 @@ begin
   rden   <= acc_en and rden_i;
 
   -- write access --
-  process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl.enable       <= '0';
@@ -200,10 +200,10 @@ begin
         end if;
       end if;
     end if;
-  end process;
+  end process write_access;
 
   -- read access --
-  process(clk_i)
+  read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= wren or rden; -- bus access acknowledge
@@ -234,17 +234,16 @@ begin
         end if;
       end if;
     end if;
-  end process;
-
+  end process read_access;
 
   -- direct chip-select (low-active) --
-  process(ctrl)
+  chip_select: process(ctrl)
   begin
     spi_csn_o <= (others => '1'); -- default: all disabled
     if (ctrl.cs_en = '1') and (ctrl.enable = '1') then
       spi_csn_o(to_integer(unsigned(ctrl.cs_sel))) <= '0';
     end if;
-  end process;
+  end process chip_select;
 
 
   -- Data FIFO ("Ring Buffer") --------------------------------------------------------------
@@ -311,7 +310,7 @@ begin
 
 
   -- IRQ generator --
-  process(clk_i)
+  irq_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
@@ -319,12 +318,12 @@ begin
                (ctrl.irq_tx_empty and (not tx_fifo.avail)) or -- IRQ if TX FIFO is empty
                (ctrl.irq_tx_nhalf and (not tx_fifo.half)));   -- IRQ if TX buffer is not half full
     end if;
-  end process;
+  end process irq_generator;
 
 
   -- SPI Transceiver ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  process(clk_i)
+  transceiver: process(clk_i)
   begin
     if rising_edge(clk_i) then
       -- defaults --
@@ -383,7 +382,7 @@ begin
 
       end case;
     end if;
-  end process;
+  end process transceiver;
 
   -- PHY busy flag --
   rtx_engine.busy <= '0' when (rtx_engine.state(1 downto 0) = "00") else '1';
@@ -393,7 +392,7 @@ begin
 
 
   -- clock generator --
-  process(clk_i)
+  clock_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
       if (ctrl.enable = '0') then -- reset/disabled
@@ -411,7 +410,7 @@ begin
         end if;
       end if;
     end if;
-  end process;
+  end process clock_generator;
 
   -- clock generator enable --
   clkgen_en_o <= ctrl.enable;

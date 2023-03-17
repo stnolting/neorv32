@@ -164,8 +164,8 @@ begin
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
-  -- write --
-  process(rstn_i, clk_i)
+  -- write access --
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl.enable       <= '0';
@@ -188,10 +188,10 @@ begin
         end if;
       end if;
     end if;
-  end process;
+  end process write_access;
 
-  -- read --
-  process(clk_i)
+  -- read access --
+  read_aceess: process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= rden or wren; -- bus access acknowledge
@@ -217,7 +217,7 @@ begin
         end if;
       end if;
     end if;
-  end process;
+  end process read_aceess;
 
 
   -- Data FIFO ("Ring Buffer") --------------------------------------------------------------
@@ -290,14 +290,14 @@ begin
 
   -- Input Synchronizer ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  process(clk_i)
+  synchronizer: process(clk_i)
   begin
     if rising_edge(clk_i) then
       sync.sck_ff <= sync.sck_ff(1 downto 0) & sdi_clk_i;
       sync.csn_ff <= sync.csn_ff(0) & sdi_csn_i;
       sync.sdi_ff <= sync.sdi_ff(0) & sdi_dat_i;
     end if;
-  end process;
+  end process synchronizer;
 
   sync.sck <= sync.sck_ff(1) xor sync.sck_ff(2); -- edge detect
   sync.csn <= sync.csn_ff(1);
@@ -306,7 +306,7 @@ begin
 
   -- Serial Engine --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  process(clk_i)
+  serial_engine: process(clk_i)
   begin
     if rising_edge(clk_i) then
       -- defaults --
@@ -360,7 +360,7 @@ begin
 
       end case;
     end if;
-  end process;
+  end process serial_engine;
 
   -- serial data output --
   sdi_dat_o <= serial.sreg(serial.sreg'left);
@@ -368,7 +368,7 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  process(clk_i)
+  irq_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
@@ -377,7 +377,7 @@ begin
                (ctrl.irq_rx_full  and (not rx_fifo.free)) or -- RX FIFO full
                (ctrl.irq_tx_empty and (not tx_fifo.avail))); -- TX FIFO empty
     end if;
-  end process;
+  end process irq_generator;
 
 
 end neorv32_sdi_rtl;

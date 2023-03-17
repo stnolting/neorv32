@@ -114,13 +114,14 @@ begin
 
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+
   -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = buskeeper_base_c(hi_abb_c downto lo_abb_c)) else '0';
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
   -- write access --
-  process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       err_flag <= '0';
@@ -133,10 +134,10 @@ begin
         err_flag <= '0';
       end if;
     end if;
-  end process;
+  end process write_access;
 
   -- read access --
-  process(clk_i)
+  read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= wren or rden; -- bus handshake
@@ -146,7 +147,7 @@ begin
         data_o(ctrl_err_flag_c) <= err_flag;
       end if;
     end if;
-  end process;
+  end process read_access;
 
 
   -- Monitor --------------------------------------------------------------------------------

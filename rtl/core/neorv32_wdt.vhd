@@ -128,7 +128,7 @@ begin
   rden   <= acc_en and rden_i;
 
   -- write access --
-  process(rstn_int_i, clk_i)
+  write_access: process(rstn_int_i, clk_i)
   begin
     if (rstn_int_i = '0') then
       ctrl.enable  <= '0'; -- disable WDT after reset
@@ -150,10 +150,10 @@ begin
         end if;
       end if;
     end if;
-  end process;
+  end process write_access;
 
   -- read access --
-  process(clk_i)
+  read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= rden or wren;
@@ -167,22 +167,22 @@ begin
         data_o(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c) <= ctrl.timeout;
       end if;
     end if;
-  end process;
+  end process read_access;
 
   -- reset cause indicator --
-  process(rstn_ext_i, clk_i)
+  reset_cause: process(rstn_ext_i, clk_i)
   begin
     if (rstn_ext_i = '0') then
       ctrl.rcause <= '0';
     elsif rising_edge(clk_i) then
       ctrl.rcause <= ctrl.rcause or (not hw_rstn); -- sticky-set on WDT timeout/force
     end if;
-  end process;
+  end process reset_cause;
 
 
   -- Timeout Counter ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  process(clk_i)
+  wdt_counter: process(clk_i)
   begin
     if rising_edge(clk_i) then
       cnt_inc_ff  <= cnt_inc;
@@ -193,7 +193,7 @@ begin
         cnt <= std_ulogic_vector(unsigned(cnt) + 1);
       end if;
     end if;
-  end process;
+  end process wdt_counter;
 
   -- clock generator --
   clkgen_en_o <= ctrl.enable; -- enable clock generator
@@ -212,7 +212,7 @@ begin
   -- Event Generators -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- interrupt --
-  process(clk_i)
+  irq_trigger: process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_gen_buf <= timeout_irq;
@@ -223,10 +223,10 @@ begin
         irq_o <= '0';
       end if;
     end if;
-  end process;
+  end process irq_trigger;
 
   -- hardware reset --
-  process(rstn_int_i, clk_i)
+  rst_trigger: process(rstn_int_i, clk_i)
   begin
     if (rstn_int_i = '0') then
       hw_rstn <= '1';
@@ -237,7 +237,7 @@ begin
         hw_rstn <= '1';
       end if;
     end if;
-  end process;
+  end process rst_trigger;
 
   -- system wide reset --
   rstn_o <= hw_rstn;

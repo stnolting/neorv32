@@ -142,7 +142,7 @@ begin
   rden   <= acc_en and rden_i;
 
   -- write access --
-  process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       enable   <= '0';
@@ -154,10 +154,10 @@ begin
         fifo_clr <= data_i(ctrl_fifo_clr_c);
       end if;
     end if;
-  end process;
+  end process write_access;
 
   -- read access --
-  process(clk_i)
+  read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= wren or rden; -- host bus acknowledge
@@ -171,7 +171,7 @@ begin
         data_o(ctrl_valid_c)    <= fifo.avail;
       end if;
     end if;
-  end process;
+  end process read_access;
 
 
   -- neoTRNG True Random Number Generator ---------------------------------------------------
