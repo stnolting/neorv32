@@ -146,9 +146,9 @@ enum NEORV32_CSR_enum {
   CSR_DSCRATCH0      = 0x7b2, /**< 0x7b2 - dscratch0 (-/-): Debug scratch register */
 
   /* machine counters and timers */
-  CSR_MCYCLE         = 0xb00, /**< 0xb00 - mcycle   (r/w): Machine cycle counter low word */
-  CSR_MINSTRET       = 0xb02, /**< 0xb02 - minstret (r/w): Machine instructions-retired counter low word */
-
+  CSR_MCYCLE         = 0xb00, /**< 0xb00 - mcycle        (r/w): Machine cycle counter low word */
+//CSR_MTIME          = 0xb01, /**< 0xb01 - mtime         (r/w): MAchine time counter low word */
+  CSR_MINSTRET       = 0xb02, /**< 0xb02 - minstret      (r/w): Machine instructions-retired counter low word */
   CSR_MHPMCOUNTER3   = 0xb03, /**< 0xb03 - mhpmcounter3  (r/w): Machine hardware performance monitor 3  counter low word */
   CSR_MHPMCOUNTER4   = 0xb04, /**< 0xb04 - mhpmcounter4  (r/w): Machine hardware performance monitor 4  counter low word */
   CSR_MHPMCOUNTER5   = 0xb05, /**< 0xb05 - mhpmcounter5  (r/w): Machine hardware performance monitor 5  counter low word */
@@ -179,9 +179,9 @@ enum NEORV32_CSR_enum {
   CSR_MHPMCOUNTER30  = 0xb1e, /**< 0xb1e - mhpmcounter30 (r/w): Machine hardware performance monitor 30 counter low word */
   CSR_MHPMCOUNTER31  = 0xb1f, /**< 0xb1f - mhpmcounter31 (r/w): Machine hardware performance monitor 31 counter low word */
 
-  CSR_MCYCLEH        = 0xb80, /**< 0xb80 - mcycleh   (r/w): Machine cycle counter high word */
-  CSR_MINSTRETH      = 0xb82, /**< 0xb82 - minstreth (r/w): Machine instructions-retired counter high word */
-
+  CSR_MCYCLEH        = 0xb80, /**< 0xb80 - mcycleh        (r/w): Machine cycle counter high word */
+//CSR_MTIMEH         = 0xb81, /**< 0xb81 - mtimeh         (r/w): Machine time counter high word */
+  CSR_MINSTRETH      = 0xb82, /**< 0xb82 - minstreth      (r/w): Machine instructions-retired counter high word */
   CSR_MHPMCOUNTER3H  = 0xb83, /**< 0xb83 - mhpmcounter3h  (r/w): Machine hardware performance monitor 3  counter high word */
   CSR_MHPMCOUNTER4H  = 0xb84, /**< 0xb84 - mhpmcounter4h  (r/w): Machine hardware performance monitor 4  counter high word */
   CSR_MHPMCOUNTER5H  = 0xb85, /**< 0xb85 - mhpmcounter5h  (r/w): Machine hardware performance monitor 5  counter high word */
@@ -213,9 +213,9 @@ enum NEORV32_CSR_enum {
   CSR_MHPMCOUNTER31H = 0xb9f, /**< 0xb9f - mhpmcounter31h (r/w): Machine hardware performance monitor 31 counter high word */
 
   /* user counters and timers */
-  CSR_CYCLE          = 0xc00, /**< 0xc00 - cycle   (r/-): Cycle counter low word (from MCYCLE) */
-  CSR_INSTRET        = 0xc02, /**< 0xc02 - instret (r/-): Instructions-retired counter low word (from MINSTRET) */
-
+  CSR_CYCLE          = 0xc00, /**< 0xc00 - cycle        (r/-): Cycle counter low word (from MCYCLE) */
+  CSR_TIME           = 0xc01, /**< 0xc01 - time         (r/-): Time counter low word */
+  CSR_INSTRET        = 0xc02, /**< 0xc02 - instret      (r/-): Instructions-retired counter low word (from MINSTRET) */
   CSR_HPMCOUNTER3    = 0xc03, /**< 0xc03 - hpmcounter3  (r/-): User hardware performance monitor 3  counter low word */
   CSR_HPMCOUNTER4    = 0xc04, /**< 0xc04 - hpmcounter4  (r/-): User hardware performance monitor 4  counter low word */
   CSR_HPMCOUNTER5    = 0xc05, /**< 0xc05 - hpmcounter5  (r/-): User hardware performance monitor 5  counter low word */
@@ -246,9 +246,9 @@ enum NEORV32_CSR_enum {
   CSR_HPMCOUNTER30   = 0xc1e, /**< 0xc1e - hpmcounter30 (r/-): User hardware performance monitor 30 counter low word */
   CSR_HPMCOUNTER31   = 0xc1f, /**< 0xc1f - hpmcounter31 (r/-): User hardware performance monitor 31 counter low word */
 
-  CSR_CYCLEH         = 0xc80, /**< 0xc80 - cycleh   (r/-): Cycle counter high word (from MCYCLEH) */
-  CSR_INSTRETH       = 0xc82, /**< 0xc82 - instreth (r/-): Instructions-retired counter high word (from MINSTRETH) */
-
+  CSR_CYCLEH         = 0xc80, /**< 0xc80 - cycleh        (r/-): Cycle counter high word (from MCYCLEH) */
+  CSR_TIMEH          = 0xc81, /**< 0xc81 - timeh         (r/-): Time counter high word */
+  CSR_INSTRETH       = 0xc82, /**< 0xc82 - instreth      (r/-): Instructions-retired counter high word (from MINSTRETH) */
   CSR_HPMCOUNTER3H   = 0xc83, /**< 0xc83 - hpmcounter3h  (r/-): User hardware performance monitor 3  counter high word */
   CSR_HPMCOUNTER4H   = 0xc84, /**< 0xc84 - hpmcounter4h  (r/-): User hardware performance monitor 4  counter high word */
   CSR_HPMCOUNTER5H   = 0xc85, /**< 0xc85 - hpmcounter5h  (r/-): User hardware performance monitor 5  counter high word */
