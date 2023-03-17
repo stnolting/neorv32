@@ -118,7 +118,7 @@ begin
   rden   <= acc_en and rden_i;
 
   -- write access --
-  process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       clr_pending <= (others => '0'); -- clear all pending interrupts
@@ -134,10 +134,10 @@ begin
         end if;
       end if;
     end if;
-  end process;
+  end process write_access;
 
   -- read access --
-  process(clk_i)
+  read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= rden or wren; -- bus handshake
@@ -150,21 +150,21 @@ begin
         end case;
       end if;
     end if;
-  end process;
+  end process read_access;
 
 
   -- IRQ Trigger --------------------------------------------------------------
   -- -----------------------------------------------------------------------------
-  process(clk_i)
+  synchronizer: process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_sync  <= xirq_i(XIRQ_NUM_CH-1 downto 0);
       irq_sync2 <= irq_sync;
     end if;
-  end process;
+  end process synchronizer;
 
-  -- trigger select --
-  process(irq_sync, irq_sync2)
+  -- trigger type select --
+  irq_trigger: process(irq_sync, irq_sync2)
     variable sel_v : std_ulogic_vector(1 downto 0);
   begin
     for i in 0 to XIRQ_NUM_CH-1 loop
@@ -177,20 +177,20 @@ begin
         when others => irq_trig(i) <= '0';
       end case;
     end loop;
-  end process;
+  end process irq_trigger;
 
 
   -- IRQ Buffer ---------------------------------------------------------------
   -- -----------------------------------------------------------------------------
-  process(clk_i)
+  irq_buffer: process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_buf <= (irq_buf or (irq_trig and irq_enable)) and clr_pending;
     end if;
-  end process;
+  end process irq_buffer;
 
-  -- priority encoder --
-  process(irq_buf)
+  -- encode current IRQ's priority --
+  priority_encoder: process(irq_buf)
   begin
     irq_src_nxt <= (others => '0');
     if (XIRQ_NUM_CH > 1) then
@@ -201,7 +201,7 @@ begin
         end if;
       end loop;
     end if;
-  end process;
+  end process priority_encoder;
 
   -- anyone firing? --
   irq_fire <= '1' when (or_reduce_f(irq_buf) = '1') else '0';
@@ -209,7 +209,7 @@ begin
 
   -- IRQ Arbiter --------------------------------------------------------------
   -- -----------------------------------------------------------------------------
-  process(rstn_i, clk_i)
+  irq_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       cpu_irq_o <= '0';
@@ -227,7 +227,7 @@ begin
         irq_run <= '0';
       end if;
     end if;
-  end process;
+  end process irq_arbiter;
 
 
 end neorv32_xirq_rtl;

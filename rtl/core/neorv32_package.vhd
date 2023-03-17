@@ -65,7 +65,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080203"; -- NEORV32 version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080204"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -600,6 +600,7 @@ package neorv32_package is
   -- machine counters/timers --
   constant csr_class_mcnt_c     : std_ulogic_vector(03 downto 0) := x"b"; -- machine-mode counters
   constant csr_mcycle_c         : std_ulogic_vector(11 downto 0) := x"b00";
+  constant csr_mtime_c          : std_ulogic_vector(11 downto 0) := x"b01"; -- dummy register
   constant csr_minstret_c       : std_ulogic_vector(11 downto 0) := x"b02";
   constant csr_mhpmcounter3_c   : std_ulogic_vector(11 downto 0) := x"b03";
   constant csr_mhpmcounter4_c   : std_ulogic_vector(11 downto 0) := x"b04";
@@ -632,6 +633,7 @@ package neorv32_package is
   constant csr_mhpmcounter31_c  : std_ulogic_vector(11 downto 0) := x"b1f";
   --
   constant csr_mcycleh_c        : std_ulogic_vector(11 downto 0) := x"b80";
+  constant csr_mtimeh_c         : std_ulogic_vector(11 downto 0) := x"b81"; -- dummy register
   constant csr_minstreth_c      : std_ulogic_vector(11 downto 0) := x"b82";
   constant csr_mhpmcounter3h_c  : std_ulogic_vector(11 downto 0) := x"b83";
   constant csr_mhpmcounter4h_c  : std_ulogic_vector(11 downto 0) := x"b84";
@@ -666,6 +668,7 @@ package neorv32_package is
   -- user counters/timers --
   constant csr_class_ucnt_c     : std_ulogic_vector(03 downto 0) := x"c"; -- user-mode counters
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
+  constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
   constant csr_instret_c        : std_ulogic_vector(11 downto 0) := x"c02";
   constant csr_hpmcounter3_c    : std_ulogic_vector(11 downto 0) := x"c03";
   constant csr_hpmcounter4_c    : std_ulogic_vector(11 downto 0) := x"c04";
@@ -698,6 +701,7 @@ package neorv32_package is
   constant csr_hpmcounter31_c   : std_ulogic_vector(11 downto 0) := x"c1f";
   --
   constant csr_cycleh_c         : std_ulogic_vector(11 downto 0) := x"c80";
+  constant csr_timeh_c          : std_ulogic_vector(11 downto 0) := x"c81";
   constant csr_instreth_c       : std_ulogic_vector(11 downto 0) := x"c82";
   constant csr_hpmcounter3h_c   : std_ulogic_vector(11 downto 0) := x"c83";
   constant csr_hpmcounter4h_c   : std_ulogic_vector(11 downto 0) := x"c84";

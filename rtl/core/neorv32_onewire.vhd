@@ -151,16 +151,16 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
 
 begin
 
-  -- Access Control -------------------------------------------------------------------------
+  -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+
+  -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = onewire_base_c(hi_abb_c downto lo_abb_c)) else '0';
   addr   <= onewire_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
-
-  -- Write Access ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- write access --
   write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -199,9 +199,7 @@ begin
     end if;
   end process write_access;
 
-
-  -- Read Access ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- read access --
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then

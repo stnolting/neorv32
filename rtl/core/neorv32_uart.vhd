@@ -229,7 +229,7 @@ begin
   rden   <= acc_en and rden_i;
 
   -- write access --
-  process(rstn_i, clk_i)
+  write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl.enable        <= '0';
@@ -259,10 +259,10 @@ begin
         end if;
       end if;
     end if;
-  end process;
+  end process write_access;
 
   -- read access --
-  process(clk_i)
+  read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
       ack_o  <= wren or rden; -- bus access acknowledge
@@ -295,7 +295,7 @@ begin
         end if;
       end if;
     end if;
-  end process;
+  end process read_access;
 
   -- UART clock enable --
   clkgen_en_o <= ctrl.enable;
@@ -335,14 +335,14 @@ begin
   tx_fifo.re    <= '1' when (tx_engine.state = "100") else '0';
 
   -- TX interrupt generator --
-  process(clk_i)
+  tx_irq_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_tx_o <= ctrl.enable and (
                   (ctrl.irq_tx_empty and (not tx_fifo.avail)) or -- fire IRQ if TX FIFO empty
                   (ctrl.irq_tx_nhalf and (not tx_fifo.half)));   -- fire IRQ if TX FIFO not at least half full
     end if;
-  end process;
+  end process tx_irq_generator;
 
 
   -- RX FIFO --
@@ -375,7 +375,7 @@ begin
   rx_fifo.re    <= '1' when (rden = '1') and (addr = uart_id_rtx_addr_c) else '0';
 
   -- RX interrupt generator --
-  process(clk_i)
+  rx_irq_generator: process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_rx_o <= ctrl.enable and (
@@ -383,7 +383,7 @@ begin
                   (ctrl.irq_rx_half   and rx_fifo.half)  or     -- fire IRQ if RX FIFO at least half full
                   (ctrl.irq_rx_full   and (not rx_fifo.free))); -- fire IRQ if RX FIFO full
     end if;
-  end process;
+  end process rx_irq_generator;
 
 
   -- Transmit Engine ------------------------------------------------------------------------
@@ -499,7 +499,7 @@ begin
   end process receiver;
 
   -- RX overrun flag --
-  process(clk_i)
+  fifo_overrun: process(clk_i)
   begin
     if rising_edge(clk_i) then
       if ((rden = '1') and (addr = uart_id_rtx_addr_c)) or (ctrl.enable = '0') then -- clear when reading data register
@@ -508,10 +508,10 @@ begin
         rx_engine.over <= '1';
       end if;
     end if;
-  end process;
+  end process fifo_overrun;
 
   -- HW flow-control: ready to receive? --
-  process(clk_i)
+  rtr_control: process(clk_i)
   begin
     if rising_edge(clk_i) then
       if (ctrl.hwfc_en = '1') then
@@ -525,7 +525,7 @@ begin
         uart_rts_o <= '0'; -- always ready to receive when HW flow-control is disabled
       end if;
     end if;
-  end process;
+  end process rtr_control;
 
 
   -- SIMULATION Transmitter -----------------------------------------------------------------
