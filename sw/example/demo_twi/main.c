@@ -68,7 +68,7 @@ int bus_claimed;
 /**********************************************************************//**
  * This program provides an interactive console to communicate with TWI devices.
  *
- * @note This program requires the UART and the PWM to be synthesized.
+ * @note This program requires the UART to be synthesized.
  *
  * @return 0 if execution was successful
  **************************************************************************/
