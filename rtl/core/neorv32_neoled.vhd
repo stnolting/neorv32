@@ -154,10 +154,9 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
   signal tx_fifo : tx_fifo_t;
 
   -- serial transmission engine --
-  type serial_state_t is (S_IDLE, S_INIT, S_GETBIT, S_PULSE, S_STROBE);
   type serial_t is record
     -- state control --
-    state      : serial_state_t;
+    state      : std_ulogic_vector(2 downto 0);
     mode       : std_ulogic;
     done       : std_ulogic;
     busy       : std_ulogic;
@@ -170,7 +169,6 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
     pulse_cnt  : std_ulogic_vector(4 downto 0);
     t_high     : std_ulogic_vector(4 downto 0);
     strobe_cnt : std_ulogic_vector(6 downto 0);
-    tx_out     : std_ulogic;
   end record;
   signal serial : serial_t;
 
@@ -252,8 +250,7 @@ begin
     FIFO_DEPTH => FIFO_DEPTH, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 32+2,       -- size of data elements in fifo
     FIFO_RSYNC => true,       -- sync read
-    FIFO_SAFE  => true,       -- safe access
-    FIFO_GATE  => false       -- no output gate required
+    FIFO_SAFE  => true        -- safe access
   )
   port map (
     -- control --
@@ -271,7 +268,7 @@ begin
     avail_o => tx_fifo.avail  -- data available when set
   );
 
-  tx_fifo.re    <= '1' when (serial.state = S_IDLE) else '0';
+  tx_fifo.re    <= '1' when (serial.state = "100") else '0';
   tx_fifo.we    <= '1' when (wren = '1') and (addr = neoled_data_addr_c) else '0';
   tx_fifo.wdata <= ctrl.strobe & ctrl.mode & data_i;
   tx_fifo.clear <= not ctrl.enable;
@@ -299,99 +296,88 @@ begin
       serial.done <= '0';
 
       -- FSM --
-      if (ctrl.enable = '0') then -- disabled
-        serial.tx_out <= '0';
-        serial.state  <= S_IDLE;
-      else
-        case serial.state is
+      serial.state(2) <= ctrl.enable;
+      case serial.state is
 
-          when S_IDLE => -- waiting for new TX data
-          -- ------------------------------------------------------------
-            serial.tx_out     <= '0';
-            serial.pulse_cnt  <= (others => '0');
-            serial.strobe_cnt <= (others => '0');
-            if (tx_fifo.avail = '1') then
-              serial.state <= S_INIT;
-            end if;
-
-          when S_INIT => -- initialize TX shift engine
-          -- ------------------------------------------------------------
-            if (tx_fifo.rdata(32) = '0') then -- mode = "RGB"
-              serial.mode    <= '0';
-              serial.bit_cnt <= "011000"; -- total number of bits to send: 3x8=24
-            else -- mode = "RGBW"
-              serial.mode    <= '1';
-              serial.bit_cnt <= "100000"; -- total number of bits to send: 4x8=32
-            end if;
-            --
+        when "100" => -- IDLE: waiting for new TX data, prepare transmission
+        -- ------------------------------------------------------------
+          neoled_o          <= '0';
+          serial.pulse_cnt  <= (others => '0');
+          serial.strobe_cnt <= (others => '0');
+          serial.sreg       <= tx_fifo.rdata(31 downto 0);
+          if (tx_fifo.rdata(32) = '0') then -- "RGB" mode
+            serial.mode    <= '0';
+            serial.bit_cnt <= "011000"; -- total number of bits to send: 3x8=24
+          else -- "RGBW" mode
+            serial.mode    <= '1';
+            serial.bit_cnt <= "100000"; -- total number of bits to send: 4x8=32
+          end if;
+          if (tx_fifo.avail = '1') then
             if (tx_fifo.rdata(33) = '0') then -- send data
-              serial.sreg  <= tx_fifo.rdata(31 downto 00);
-              serial.state <= S_GETBIT;
+              serial.state(1 downto 0) <= "01";
             else -- send RESET command
-              serial.state <= S_STROBE;
+              serial.state(1 downto 0) <= "11";
             end if;
+          end if;
 
-          when S_GETBIT => -- get next TX bit
-          -- ------------------------------------------------------------
-            serial.sreg      <= serial.sreg(serial.sreg'left-1 downto 0) & '0'; -- shift left by one position (MSB-first)
-            serial.bit_cnt   <= std_ulogic_vector(unsigned(serial.bit_cnt) - 1);
-            serial.pulse_cnt <= (others => '0');
-            if (serial.next_bit = '0') then -- send zero-bit
-              serial.t_high <= ctrl.t0_high;
-            else -- send one-bit
-              serial.t_high <= ctrl.t1_high;
-            end if;
-            if (serial.bit_cnt = "000000") then -- all done?
-              serial.tx_out <= '0';
-              serial.done   <= '1'; -- done sending data
-              serial.state  <= S_IDLE;
-            else -- send current data MSB
-              serial.tx_out <= '1';
-              serial.state  <= S_PULSE; -- transmit single pulse
-            end if;
+        when "101" => -- GETBIT: get next TX bit
+        -- ------------------------------------------------------------
+          serial.sreg      <= serial.sreg(serial.sreg'left-1 downto 0) & '0'; -- shift left by one position (MSB-first)
+          serial.bit_cnt   <= std_ulogic_vector(unsigned(serial.bit_cnt) - 1);
+          serial.pulse_cnt <= (others => '0');
+          if (serial.next_bit = '0') then -- send zero-bit
+            serial.t_high <= ctrl.t0_high;
+          else -- send one-bit
+            serial.t_high <= ctrl.t1_high;
+          end if;
+          if (serial.bit_cnt = "000000") then -- all done?
+            neoled_o                 <= '0';
+            serial.done              <= '1'; -- done sending data
+            serial.state(1 downto 0) <= "00";
+          else -- send current data MSB
+            neoled_o                 <= '1';
+            serial.state(1 downto 0) <= "10"; -- transmit single pulse
+          end if;
 
-          when S_PULSE => -- send pulse with specific duty cycle
-          -- ------------------------------------------------------------
-            -- total pulse length = ctrl.t_total
-            -- pulse high time    = serial.t_high
-            if (serial.pulse_clk = '1') then
+        when "110" => -- PULSE: send pulse with specific duty cycle
+        -- ------------------------------------------------------------
+          -- total pulse length = ctrl.t_total
+          -- pulse high time    = serial.t_high
+          if (serial.pulse_clk = '1') then
+            serial.pulse_cnt <= std_ulogic_vector(unsigned(serial.pulse_cnt) + 1);
+            -- T_high reached? --
+            if (serial.pulse_cnt = serial.t_high) then
+              neoled_o <= '0';
+            end if;
+            -- T_total reached? --
+            if (serial.pulse_cnt = ctrl.t_total) then
+              serial.state(1 downto 0) <= "01"; -- get next bit to send
+            end if;
+          end if;
+
+        when "111" => -- STROBE: strobe LED data ("RESET" command)
+        -- ------------------------------------------------------------
+          -- wait for 127 * ctrl.t_total to ensure RESET
+          if (serial.pulse_clk = '1') then
+            -- T_total reached? --
+            if (serial.pulse_cnt = ctrl.t_total) then
+              serial.pulse_cnt  <= (others => '0');
+              serial.strobe_cnt <= std_ulogic_vector(unsigned(serial.strobe_cnt) + 1);
+            else
               serial.pulse_cnt <= std_ulogic_vector(unsigned(serial.pulse_cnt) + 1);
-              -- T_high reached? --
-              if (serial.pulse_cnt = serial.t_high) then
-                serial.tx_out <= '0';
-              end if;
-              -- T_total reached? --
-              if (serial.pulse_cnt = ctrl.t_total) then
-                serial.state <= S_GETBIT; -- get next bit to send
-              end if;
             end if;
+          end if;
+          -- number of LOW periods reached for RESET? --
+          if (and_reduce_f(serial.strobe_cnt) = '1') then
+            serial.done              <= '1'; -- done sending RESET
+            serial.state(1 downto 0) <= "00";
+          end if;
 
-          when S_STROBE => -- strobe LED data ("RESET" command)
-          -- ------------------------------------------------------------
-            -- wait for 127 * ctrl.t_total to _ensure_ RESET
-            if (serial.pulse_clk = '1') then
-              -- T_total reached? --
-              if (serial.pulse_cnt = ctrl.t_total) then
-                serial.pulse_cnt  <= (others => '0');
-                serial.strobe_cnt <= std_ulogic_vector(unsigned(serial.strobe_cnt) + 1);
-              else
-                serial.pulse_cnt <= std_ulogic_vector(unsigned(serial.pulse_cnt) + 1);
-              end if;
-            end if;
-            -- number of LOW periods reached for RESET? --
-            if (and_reduce_f(serial.strobe_cnt) = '1') then
-              serial.done  <= '1'; -- done sending RESET
-              serial.state <= S_IDLE;
-            end if;
+        when others => -- "0--": disabled
+        -- ------------------------------------------------------------
+          serial.state(1 downto 0) <= "00";
 
-          when others => -- undefined
-          -- ------------------------------------------------------------
-            serial.state <= S_IDLE;
-
-        end case;
-      end if;
-      -- serial data tx_out --
-      neoled_o <= serial.tx_out and ctrl.enable;
+      end case;
     end if;
   end process serial_engine;
 
@@ -399,7 +385,7 @@ begin
   serial.next_bit <= serial.sreg(23) when (serial.mode = '0') else serial.sreg(31);
 
   -- TX engine status --
-  serial.busy <= '0' when (serial.state = S_IDLE) else '1';
+  serial.busy <= '0' when (serial.state(1 downto 0) = "00") else '1';
 
 
 end neorv32_neoled_rtl;
