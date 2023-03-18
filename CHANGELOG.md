@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 18.03.2023 | 1.8.2.6 | add new generic `JEDEC_ID` (official JEDEC identifier; used for the `mvendorid`); further generics cleanups; [#557](https://github.com/stnolting/neorv32/pull/557)
 | 17.03.2023 | 1.8.2.5 | add RISC-V `time[h]` CSRs (part of the `Zicntr` ISA extension); [#556](https://github.com/stnolting/neorv32/pull/556) |
 | 17.03.2023 | 1.8.2.4 | re-add VHDL process names; [#555](https://github.com/stnolting/neorv32/pull/555) |
 | 15.03.2023 | 1.8.2.3 | rtl reworks, cleanups and optimizations; [#550](https://github.com/stnolting/neorv32/pull/550) |
