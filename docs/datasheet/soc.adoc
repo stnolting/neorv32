@@ -191,8 +191,9 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 4+^| **General**
 | `CLOCK_FREQUENCY`       | natural   | -          | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
 | `INT_BOOTLOADER_EN`     | boolean   | false      | Implement the processor-internal <<_bootloader_rom_bootrom>>, pre-initialized with the default <<_bootloader>> image.
-| `HW_THREAD_ID`          | natural   | 0          | The hart ID of the CPU.
-| `CUSTOM_ID`             | suv(31:0) | 0x00000000 | User-defined identifier to identify a certain setup or to pass user-defined flags to software.
+| `HART_ID`               | suv(31:0) | 0x00000000 | The hart thread ID of the CPU (passed to <<_mhartid>> CSRs).
+| `VENDOR_ID`             | suv(31:0) | 0x00000000 | JEDEC ID (passed to <<_mvendorid>> CSRs).
+| `CUSTOM_ID`             | suv(31:0) | 0x00000000 | User-defined identifier to identify a certain setup or to pass user-defined flags to software (via the <<_system_configuration_information_memory_sysinfo>>).
 | `ON_CHIP_DEBUGGER_EN`   | boolean   | false      | Implement the on-chip debugger <<_on_chip_debugger_ocd>> and the CPU debug mode.
 4+^| **CPU <<_instruction_sets_and_extensions>>**
 | `CPU_EXTENSION_RISCV_B`        | boolean | false | Enable <<_b_isa_extension>> (bit-manipulation).
@@ -260,8 +261,8 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 | `IO_TRNG_FIFO`          | natural   | 1          | Depth of the TRNG data FIFO. Has to be a power of two, min 1, max 32768.
 | `IO_CFS_EN`             | boolean   | false      | Implement the <<_custom_functions_subsystem_cfs>>.
 | `IO_CFS_CONFIG`         | suv(31:0) | 0x00000000 | "Conduit" generic to pass user-defined flags to the <<_custom_functions_subsystem_cfs>>.
-| `IO_CFS_IN_SIZE`        | positive  | 32         | Size of the <<_custom_functions_subsystem_cfs>> input signal conduit (`cfs_in_i`).
-| `IO_CFS_OUT_SIZE`       | positive  | 32         | Size of the <<_custom_functions_subsystem_cfs>> output signal conduit (`cfs_out_o`).
+| `IO_CFS_IN_SIZE`        | natural   | 32         | Size of the <<_custom_functions_subsystem_cfs>> input signal conduit (`cfs_in_i`).
+| `IO_CFS_OUT_SIZE`       | natural   | 32         | Size of the <<_custom_functions_subsystem_cfs>> output signal conduit (`cfs_out_o`).
 | `IO_NEOLED_EN`          | boolean   | false      | Implement the <<_smart_led_interface_neoled>>.
 | `IO_NEOLED_TX_FIFO`     | natural   | 1          | TX FIFO depth of the the <<_smart_led_interface_neoled>>. Has to be a power of two, min 1, max 32768.
 | `IO_GPTMR_EN`           | boolean   | false      | Implement the <<_general_purpose_timer_gptmr>>.
