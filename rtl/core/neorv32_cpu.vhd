@@ -42,7 +42,8 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
+    HART_ID                      : std_ulogic_vector(31 downto 0); -- hardware thread ID
+    VENDOR_ID                    : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
     CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
     CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
@@ -260,7 +261,8 @@ begin
   generic map (
     -- General --
     XLEN                         => XLEN,                         -- data path width
-    HW_THREAD_ID                 => HW_THREAD_ID,                 -- hardware thread id
+    HART_ID                      => HART_ID,                      -- hardware thread ID
+    VENDOR_ID                    => VENDOR_ID,                    -- vendor's JEDEC ID
     CPU_BOOT_ADDR                => CPU_BOOT_ADDR,                -- cpu boot address
     CPU_DEBUG_PARK_ADDR          => CPU_DEBUG_PARK_ADDR,          -- cpu debug mode parking loop entry address
     CPU_DEBUG_EXC_ADDR           => CPU_DEBUG_EXC_ADDR,           -- cpu debug mode exception entry address

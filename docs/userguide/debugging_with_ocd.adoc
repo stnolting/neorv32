@@ -74,7 +74,7 @@ libusb1 09e75e98b4d9ea7909e8837b7a3f00dda4589dc3
 For bug reports, read
         http://openocd.org/doc/doxygen/bugs.html
 Info : clock speed 1000 kHz
-Info : JTAG tap: neorv32.cpu tap/device found: 0x0cafe001 (mfg: 0x000 (<invalid>), part: 0xcafe, ver: 0x0)
+Info : JTAG tap: neorv32.cpu tap/device found: 0x00000000 (mfg: 0x000 (<invalid>), part: 0x0000, ver: 0x0)
 Info : datacount=1 progbufsize=2
 Info : Disabling abstract command reads from CSRs.
 Info : Examined RISC-V core; found 1 harts

@@ -58,14 +58,9 @@ package neorv32_package is
   -- log2 of co-processor timeout cycles --
   constant cp_timeout_c : natural := 7; -- default = 7 (= 128 cycles)
 
-  -- JTAG tap - identifier --
-  constant jtag_tap_idcode_version_c : std_ulogic_vector(03 downto 0) := x"0"; -- version
-  constant jtag_tap_idcode_partid_c  : std_ulogic_vector(15 downto 0) := x"cafe"; -- part number
-  constant jtag_tap_idcode_manid_c   : std_ulogic_vector(10 downto 0) := "00000000000"; -- manufacturer id
-
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080205"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080206"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -972,7 +967,8 @@ package neorv32_package is
     generic (
       -- General --
       CLOCK_FREQUENCY              : natural;           -- clock frequency of clk_i in Hz
-      HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
+      HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
+      VENDOR_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
       CUSTOM_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user-defined ID
       INT_BOOTLOADER_EN            : boolean := false;  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
       -- On-Chip Debugger (OCD) --
@@ -1043,8 +1039,8 @@ package neorv32_package is
       IO_TRNG_FIFO                 : natural := 1;      -- TRNG fifo depth, has to be a power of two, min 1
       IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
       IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
-      IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
-      IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
+      IO_CFS_IN_SIZE               : natural := 32;     -- size of CFS input conduit in bits
+      IO_CFS_OUT_SIZE              : natural := 32;     -- size of CFS output conduit in bits
       IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
       IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED FIFO depth, has to be a power of two, min 1
       IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
@@ -1132,7 +1128,8 @@ package neorv32_package is
   component neorv32_cpu
     generic (
       -- General --
-      HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
+      HART_ID                      : std_ulogic_vector(31 downto 0); -- hardware thread ID
+      VENDOR_ID                    : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
       CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
       CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
@@ -1205,7 +1202,8 @@ package neorv32_package is
     generic (
       -- General --
       XLEN                         : natural; -- data path width
-      HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
+      HART_ID                      : std_ulogic_vector(31 downto 0); -- hardware thread ID
+      VENDOR_ID                    : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
       CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
       CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
@@ -1956,8 +1954,8 @@ package neorv32_package is
   component neorv32_cfs
     generic (
       CFS_CONFIG   : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
-      CFS_IN_SIZE  : positive; -- size of CFS input conduit in bits
-      CFS_OUT_SIZE : positive  -- size of CFS output conduit in bits
+      CFS_IN_SIZE  : natural; -- size of CFS input conduit in bits
+      CFS_OUT_SIZE : natural  -- size of CFS output conduit in bits
     );
     port (
       -- host access --

@@ -48,7 +48,8 @@ entity neorv32_top is
   generic (
     -- General --
     CLOCK_FREQUENCY              : natural;           -- clock frequency of clk_i in Hz
-    HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
+    HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
+    VENDOR_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
     CUSTOM_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user-defined ID
     INT_BOOTLOADER_EN            : boolean := false;  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
@@ -130,8 +131,8 @@ entity neorv32_top is
     IO_TRNG_FIFO                 : natural := 1;      -- TRNG fifo depth, has to be a power of two, min 1
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
     IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
-    IO_CFS_IN_SIZE               : positive := 32;    -- size of CFS input conduit in bits
-    IO_CFS_OUT_SIZE              : positive := 32;    -- size of CFS output conduit in bits
+    IO_CFS_IN_SIZE               : natural := 32;     -- size of CFS input conduit in bits
+    IO_CFS_OUT_SIZE              : natural := 32;     -- size of CFS output conduit in bits
     IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED FIFO depth, has to be a power of two, min 1
     IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
@@ -408,7 +409,6 @@ begin
     "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-internal IMEM)." severity note;
   assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report
     "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-external memory)." severity note;
-  --
   assert not ((MEM_EXT_EN = false) and (MEM_INT_DMEM_EN = false)) report
     "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal IMEM." severity error;
   assert not ((MEM_EXT_EN = false) and (MEM_INT_IMEM_EN = false) and (INT_BOOTLOADER_EN = false)) report
@@ -429,7 +429,6 @@ begin
     "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address has to be aligned to IMEM size." severity error;
   assert not ((dspace_base_c(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) /= dmem_align_check_c) and (MEM_INT_DMEM_EN = true)) report
     "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address has to be aligned to DMEM size." severity error;
-  --
   assert not (ispace_base_c /= x"00000000") report
     "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for INSTRUCTION ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
   assert not (dspace_base_c /= x"80000000") report
@@ -441,13 +440,12 @@ begin
 
   -- instruction cache --
   assert not ((ICACHE_EN = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report
-    "NEORV32 CPU CONFIG WARNING! The <CPU_EXTENSION_RISCV_Zifencei> is required to perform i-cache memory sync operations." severity warning;
+    "NEORV32 CPU CONFIG WARNING! <CPU_EXTENSION_RISCV_Zifencei> ISA extension is required to perform i-cache memory sync operations." severity warning;
 
 
 -- ****************************************************************************************************************************
 -- Clock and Reset System
 -- ****************************************************************************************************************************
-
 
   -- Reset Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -521,13 +519,13 @@ begin
 -- CPU Core Complex
 -- ****************************************************************************************************************************
 
-
   -- CPU Core -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_inst: neorv32_cpu
   generic map (
     -- General --
-    HW_THREAD_ID                 => HW_THREAD_ID,                 -- hardware thread id
+    HART_ID                      => HART_ID,                      -- hardware thread ID
+    VENDOR_ID                    => VENDOR_ID,                    -- vendor's JEDEC ID
     CPU_BOOT_ADDR                => cpu_boot_addr_c,              -- cpu boot address
     CPU_DEBUG_PARK_ADDR          => dm_park_entry_c,              -- cpu debug mode parking loop entry address
     CPU_DEBUG_EXC_ADDR           => dm_exc_entry_c,               -- cpu debug mode exception entry address
@@ -593,15 +591,15 @@ begin
     db_halt_req_i => dci_halt_req
   );
 
-  -- misc --
-  cpu_i.src    <= '1'; -- initialized but unused
-  cpu_d.src    <= '0'; -- initialized but unused
-  cpu_i.cached <= '0'; -- initialized but unused
-  cpu_d.cached <= '0'; -- no data cache available yet
+  -- initialized but unused --
+  cpu_i.src    <= '1';
+  cpu_d.src    <= '0';
+  cpu_i.cached <= '0';
+  cpu_d.cached <= '0';
 
   -- advanced memory control --
   fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
-  fencei_o <= cpu_i.fence; -- indicates an executed FENCEI operation
+  fencei_o <= cpu_i.fence; -- indicates an executed FENCE.I operation
 
   -- fast interrupt requests (FIRQs) - triggers are SINGLE-SHOT --
   fast_irq(00) <= wdt_irq;      -- HIGHEST PRIORITY - watchdog
@@ -775,7 +773,6 @@ begin
 -- ****************************************************************************************************************************
 -- Memory System
 -- ****************************************************************************************************************************
-
 
   -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -985,7 +982,6 @@ begin
 -- ****************************************************************************************************************************
 -- IO/Peripheral Modules
 -- ****************************************************************************************************************************
-
 
   -- IO Access? -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1665,9 +1661,9 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_debug_dtm_inst: neorv32_debug_dtm
     generic map (
-      IDCODE_VERSION => jtag_tap_idcode_version_c, -- version
-      IDCODE_PARTID  => jtag_tap_idcode_partid_c,  -- part number
-      IDCODE_MANID   => jtag_tap_idcode_manid_c    -- manufacturer id
+      IDCODE_VERSION => (others => '0'), -- version
+      IDCODE_PARTID  => (others => '0'), -- part number
+      IDCODE_MANID   => (others => '0')  -- manufacturer id
     )
     port map (
       -- global control --

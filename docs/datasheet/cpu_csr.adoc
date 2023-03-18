@@ -82,7 +82,7 @@ should always read back a CSR after writing to check if the targeted bits can ac
 | 0xF11   | <<_mvendorid>>                      | `CSR_MVENDORID`      | r/- | Machine vendor ID
 | 0xF12   | <<_marchid>>                        | `CSR_MARCHID`        | r/- | Machine architecture ID
 | 0xF13   | <<_mimpid>>                         | `CSR_MIMPID`         | r/- | Machine implementation ID / version
-| 0xF14   | <<_mhartid>>                        | `CSR_MHARTID`        | r/- | Machine thread ID
+| 0xF14   | <<_mhartid>>                        | `CSR_MHARTID`        | r/- | Machine hardware thread ID
 | 0xF15   | <<_mconfigptr>>                     | `CSR_MCONFIGPTR`     | r/- | Machine configuration pointer register
 5+^| **<<_neorv32_specific_csrs>>**
 | 0xFC0   | <<_mxisa>>                          | `CSR_MXISA`          | r/- | NEORV32-specific "extended" machine CPU ISA and extensions
@@ -785,9 +785,9 @@ counter CSRs are read-only. Any write access will raise an illegal instruction e
 |=======================
 | Name        | Machine vendor ID
 | Address     | `0xf11`
-| Reset value | `0x00000000`
+| Reset value | `DEFINED`
 | ISA         | `Zicsr`
-| Description | The features of this CSR are not implemented yet. The register is read-only and always returns zero.
+| Description | Vendor ID (JEDEC identifier), assigned via the `VENDOR_ID` top generic (<<_processor_top_entity_generics>>).
 |=======================
 
 
@@ -835,7 +835,7 @@ NEORV32 as BCD-coded number (example: `mimpid` = _0x01020312_ â†’ 01.02.03.12 â†
 | Reset value | `DEFINED`
 | ISA         | `Zicsr`
 | Description | The `mhartid` CSR is read-only and provides the core's hart ID,
-which is assigned via the `HW_THREAD_ID` top generic.
+which is assigned via the `HW_THREAD_ID` top generic (<<_processor_top_entity_generics>>).
 |=======================
 
 

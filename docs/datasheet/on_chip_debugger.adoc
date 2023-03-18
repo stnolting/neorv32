@@ -107,7 +107,7 @@ register. The following table shows the available data registers and their addre
 [options="header",grid="rows"]
 |=======================
 | Address (via `IR`) | Name     | Size [bits] | Description
-| `00001`            | `IDCODE` | 32          | identifier, default: `0x0CAFE001` (configurable via package's `jtag_tap_idcode_*` constants)
+| `00001`            | `IDCODE` | 32          | identifier, hardwired to `0x00000001`
 | `10000`            | `DTMCS`  | 32          | debug transport module control and status register
 | `10001`            | `DMI`    | 40          | debug module interface (_dmi_); 6-bit address, 32-bit read/write data, 2-bit operation (`00` = NOP; `10` = write; `01` = read)
 | others             | `BYPASS` | 1           | default JTAG bypass register
