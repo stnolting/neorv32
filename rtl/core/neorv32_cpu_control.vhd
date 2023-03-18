@@ -53,7 +53,8 @@ entity neorv32_cpu_control is
   generic (
     -- General --
     XLEN                         : natural; -- data path width
-    HW_THREAD_ID                 : natural; -- hardware thread id (32-bit)
+    HART_ID                      : std_ulogic_vector(31 downto 0); -- hardware thread ID
+    VENDOR_ID                    : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
     CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
     CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
@@ -138,7 +139,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   constant hpm_cnt_hi_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0));
 
   -- instruction fetch engine --
-  type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING, IF_WAIT); -- better use one-hot encoding
+  type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING, IF_WAIT);
   type fetch_engine_t is record
     state      : fetch_engine_state_t;
     state_prev : fetch_engine_state_t;
@@ -2310,10 +2311,10 @@ begin
 
           -- machine information registers --
           -- --------------------------------------------------------------------
---        when csr_mvendorid_c  => csr.rdata <= (others => '0'); -- vendor ID, implemented but always zero
+          when csr_mvendorid_c  => csr.rdata <= VENDOR_ID; -- vendor'S JEDEC ID
           when csr_marchid_c    => csr.rdata(4 downto 0) <= "10011"; -- architecture ID - official RISC-V open-source arch ID
           when csr_mimpid_c     => csr.rdata <= hw_version_c; -- implementation ID -- NEORV32 hardware version
-          when csr_mhartid_c    => csr.rdata <= std_ulogic_vector(to_unsigned(HW_THREAD_ID, 32)); -- hardware thread ID
+          when csr_mhartid_c    => csr.rdata <= HART_ID; -- hardware thread ID
 --        when csr_mconfigptr_c => csr.rdata <= (others => '0'); -- machine configuration pointer register, implemented but always zero
 
           -- debug mode CSRs --
@@ -2338,14 +2339,14 @@ begin
           -- machine extended ISA extensions information --
           when csr_mxisa_c =>
             -- extended ISA (sub-)extensions --
-            csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr: privileged architecture (!!!)
+            csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicsr);    -- Zicsr: CSR access
             csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei: instruction stream sync.
             csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul: mul/div
             csr.rdata(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);    -- Zxcfu: custom RISC-V instructions
             csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicond);   -- Zicond: conditional operations
-            csr.rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx: FPU using x registers, "F-alternative"
+            csr.rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx: FPU using x registers
 --          csr.rdata(06) <= '0'; -- reserved
-            csr.rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr);   -- Zicntr: base instructions, cycle and time CSRs
+            csr.rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr);   -- Zicntr: base counters
             csr.rdata(08) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP: physical memory protection (Zspmp)
             csr.rdata(09) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm);    -- Zihpm: hardware performance monitors
             csr.rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdext);    -- Sdext: RISC-V (external) debug mode
