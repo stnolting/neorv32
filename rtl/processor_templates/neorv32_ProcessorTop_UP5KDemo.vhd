@@ -177,7 +177,7 @@ begin
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
     INT_BOOTLOADER_EN            => true,             -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-    HW_THREAD_ID                 => HW_THREAD_ID,     -- hardware thread id (32-bit)
+    HART_ID                      => HW_THREAD_ID,     -- hardware thread id (32-bit)
 
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          => ON_CHIP_DEBUGGER_EN,  -- implement on-chip debugger?
