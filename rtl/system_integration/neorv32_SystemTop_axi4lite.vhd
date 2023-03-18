@@ -49,8 +49,9 @@ entity neorv32_SystemTop_axi4lite is
     -- ------------------------------------------------------------
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-    HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
-    CUSTOM_ID                    : std_logic_vector(31 downto 0) := x"00000000"; -- custom user-defined ID
+    HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
+    VENDOR_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
+    CUSTOM_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user-defined ID
     INT_BOOTLOADER_EN            : boolean := true;   -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
@@ -299,8 +300,9 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,    -- clock frequency of clk_i in Hz
-    HW_THREAD_ID                 => HW_THREAD_ID,       -- hardware thread id (hartid)
-    CUSTOM_ID                    => CUSTOM_ID_INT,      -- custom user-defined ID
+    HART_ID                      => HART_ID,            -- hardware thread ID
+    VENDOR_ID                    => VENDOR_ID,          -- vendor's JEDEC ID
+    CUSTOM_ID                    => CUSTOM_ID,          -- custom user-defined ID
     INT_BOOTLOADER_EN            => INT_BOOTLOADER_EN,  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          => ON_CHIP_DEBUGGER_EN,          -- implement on-chip debugger
