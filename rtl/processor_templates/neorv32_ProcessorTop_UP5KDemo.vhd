@@ -41,7 +41,7 @@ library neorv32;
 entity neorv32_ProcessorTop_UP5KDemo is
   generic (
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
-    HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit)
+    HW_THREAD_ID                 : natural := 0;      -- hardware thread id (32-bit) - unused
 
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger?
@@ -177,7 +177,6 @@ begin
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,  -- clock frequency of clk_i in Hz
     INT_BOOTLOADER_EN            => true,             -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-    HART_ID                      => HW_THREAD_ID,     -- hardware thread id (32-bit)
 
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          => ON_CHIP_DEBUGGER_EN,  -- implement on-chip debugger?
