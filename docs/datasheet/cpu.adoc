@@ -21,15 +21,17 @@ RISC-V _User_ and _Privileged Architecture_ specifications.
 :sectnums:
 === RISC-V Compatibility
 
-.RISCOF
-[NOTE]
 The NEORV32 CPU passes the tests of the **official RISCOF RISC-V Architecture Test Framework**. This framework is used to check
 RISC-V implementations for compatibility to the official RISC-V user/privileged ISA specifications. The NEORV32 port of this
 test framework is available in a separate repository at GitHub: https://github.com/stnolting/neorv32-riscof
 
+.Unsupported ISA Extensions
+[TIP]
+Executing instructions or accessing CSRs from yet unsupported ISA extensions will raise an illegal
+instruction exception (-> <<_full_virtualization>>).
 
-:sectnums:
-==== RISC-V Incompatibility Issues and Limitations
+
+**Incompatibility Issues and Limitations**
 
 .Physical Memory Protection (PMP)
 [IMPORTANT]
