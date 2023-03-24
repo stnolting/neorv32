@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 24.03.2023 | 1.8.2.7 | :sparkles: add full support of `mcounteren` CSR; cleanup counter and PMP CSRs; i-cache optimization; [#559](https://github.com/stnolting/neorv32/pull/559) |
 | 18.03.2023 | 1.8.2.6 | add new generic `JEDEC_ID` (official JEDEC identifier; used for `mvendorid` CSR); further generics cleanups; [#557](https://github.com/stnolting/neorv32/pull/557)
 | 17.03.2023 | 1.8.2.5 | add RISC-V `time[h]` CSRs (part of the `Zicntr` ISA extension); [#556](https://github.com/stnolting/neorv32/pull/556) |
 | 17.03.2023 | 1.8.2.4 | re-add VHDL process names; [#555](https://github.com/stnolting/neorv32/pull/555) |
