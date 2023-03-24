@@ -34,7 +34,7 @@ instruction exception (-> <<_full_virtualization>>).
 **Incompatibility Issues and Limitations**
 
 .Physical Memory Protection (PMP)
-[IMPORTANT]
+[WARNING]
 The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only implements the **TOR**
 (top of region) mode and only up to 16 PMP regions.
 

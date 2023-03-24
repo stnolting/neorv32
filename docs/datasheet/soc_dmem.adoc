@@ -17,13 +17,8 @@
 Implementation of the processor-internal data memory is enabled via the processor's `MEM_INT_DMEM_EN`
 generic. The size in bytes is defined via the `MEM_INT_DMEM_SIZE` generic. If the DMEM is implemented,
 the memory is mapped into the data memory space and located right at the beginning of the data memory
-space (default `dspace_base_c` = 0x80000000). The DMEM is always implemented as true RAM.
-
-.Access Latency
-[NOTE]
-By default, the DMEM has a fixed access latency of one clock cycle (like all other processor-internal
-modules). However, custom versions of this module may also have higher access latency. See section
-<<_bus_interface>> for more information.
+space (default `dspace_base_c` = 0x80000000), see <<_address_space>>. The DMEM is always implemented
+as true RAM.
 
 .VHDL Source File
 [NOTE]
@@ -35,4 +30,4 @@ and/or timing.
 
 .Execute from RAM
 [TIP]
-The CPU is capable of executing code also from DMEM.
+The CPU is capable of executing code also from arbitrary data memory.
