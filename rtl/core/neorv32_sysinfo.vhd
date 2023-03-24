@@ -138,8 +138,9 @@ begin
   sysinfo(2)(03) <= bool_to_ulogic_f(MEM_INT_DMEM_EN and (MEM_INT_DMEM_SIZE > 0)); -- processor-internal data memory implemented?
   sysinfo(2)(04) <= bool_to_ulogic_f(MEM_EXT_BIG_ENDIAN);  -- is external memory bus interface using BIG-endian byte-order?
   sysinfo(2)(05) <= bool_to_ulogic_f(ICACHE_EN);           -- processor-internal instruction cache implemented?
+  sysinfo(2)(06) <= '0';                                   -- processor-internal data cache implemented?
   --
-  sysinfo(2)(12 downto 06) <= (others => '0'); -- reserved
+  sysinfo(2)(12 downto 07) <= (others => '0'); -- reserved
   -- Misc --
   sysinfo(2)(13) <= bool_to_ulogic_f(is_simulation_c);     -- is this a simulation?
   sysinfo(2)(14) <= bool_to_ulogic_f(ON_CHIP_DEBUGGER_EN); -- on-chip debugger implemented?
