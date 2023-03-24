@@ -66,8 +66,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- User Configuration ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- general --
-  constant ext_imem_c              : boolean := false; -- false: use and boot from proc-internal IMEM, true: use and boot from external (initialized) simulated IMEM (ext. mem A)
-  constant ext_dmem_c              : boolean := false; -- false: use proc-internal DMEM, true: use external simulated DMEM (ext. mem B)
+  constant ext_imem_c              : boolean := true; -- false: use and boot from proc-internal IMEM, true: use and boot from external (initialized) simulated IMEM (ext. mem A)
+  constant ext_dmem_c              : boolean := true; -- false: use proc-internal DMEM, true: use external simulated DMEM (ext. mem B)
   constant imem_size_c             : natural := 16*1024; -- size in bytes of processor-internal IMEM / external mem A
   constant dmem_size_c             : natural := 8*1024; -- size in bytes of processor-internal DMEM / external mem B
   constant f_clock_c               : natural := 100000000; -- main clock in Hz
@@ -180,7 +180,7 @@ begin
     if ci_mode then
       -- No need to send the full expectation in one big chunk
       check_uart(net, uart1_rx_handle, nul & nul);
-      check_uart(net, uart1_rx_handle, "0/46" & cr & lf);
+      check_uart(net, uart1_rx_handle, "0/47" & cr & lf);
     end if;
 
     -- Wait until all expected data has been received
