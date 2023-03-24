@@ -140,7 +140,6 @@ begin
     fifo.match <= '1' when (fifo.r_pnt(0) = fifo.w_pnt(0)) else '0';
     fifo.full  <= not fifo.match;
     fifo.empty <= fifo.match;
-    level_diff <= (others => '0'); -- unused
     fifo.half  <= fifo.full;
   end generate;
 
