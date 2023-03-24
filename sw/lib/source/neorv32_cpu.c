@@ -142,8 +142,6 @@ void neorv32_cpu_set_mcycle(uint64_t value) {
   neorv32_cpu_csr_write(CSR_MCYCLE,  0);
   neorv32_cpu_csr_write(CSR_MCYCLEH, cycles.uint32[1]);
   neorv32_cpu_csr_write(CSR_MCYCLE,  cycles.uint32[0]);
-
-  asm volatile("nop"); // delay due to CPU-internal cycle write buffer
 }
 
 
@@ -194,8 +192,6 @@ void neorv32_cpu_set_minstret(uint64_t value) {
   neorv32_cpu_csr_write(CSR_MINSTRET,  0);
   neorv32_cpu_csr_write(CSR_MINSTRETH, cycles.uint32[1]);
   neorv32_cpu_csr_write(CSR_MINSTRET,  cycles.uint32[0]);
-
-  asm volatile("nop"); // delay due to CPU-internal instret write buffer
 }
 
 

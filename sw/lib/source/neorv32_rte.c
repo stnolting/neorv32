@@ -396,7 +396,7 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("%u region(s), %u bytes minimal granularity, OFF/TOR mode only", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
   }
   else {
-    neorv32_uart0_printf("not implemented");
+    neorv32_uart0_printf("none");
   }
 
   // check hardware performance monitors
@@ -406,7 +406,7 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("%u counter(s), %u bit(s) wide", hpm_num, neorv32_cpu_hpm_get_size());
   }
   else {
-    neorv32_uart0_printf("not implemented");
+    neorv32_uart0_printf("none");
   }
 
 
@@ -423,29 +423,18 @@ void neorv32_rte_print_hw_config(void) {
 
   neorv32_uart0_printf("Instr. base address: 0x%x\n", NEORV32_SYSINFO->ISPACE_BASE);
 
-  // IMEM
+  // internal IMEM
   neorv32_uart0_printf("Internal IMEM:       ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_IMEM)) {
-    neorv32_uart0_printf("yes, %u bytes\n", NEORV32_SYSINFO->IMEM_SIZE);
+    neorv32_uart0_printf("%u bytes\n", NEORV32_SYSINFO->IMEM_SIZE);
   }
   else {
-    neorv32_uart0_printf("no\n");
+    neorv32_uart0_printf("none\n");
   }
 
-  // DMEM
-  neorv32_uart0_printf("Data base address:   0x%x\n", NEORV32_SYSINFO->DSPACE_BASE);
-  neorv32_uart0_printf("Internal DMEM:       ");
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) {
-    neorv32_uart0_printf("yes, %u bytes\n", NEORV32_SYSINFO->DMEM_SIZE);
-  }
-  else {
-    neorv32_uart0_printf("no\n");
-  }
-
-  // i-cache
+  // internal i-cache
   neorv32_uart0_printf("Internal i-cache:    ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_ICACHE)) {
-    neorv32_uart0_printf("yes, ");
 
     uint32_t ic_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_IC_BLOCK_SIZE_0) & 0x0F;
     if (ic_block_size) {
@@ -478,9 +467,24 @@ void neorv32_rte_print_hw_config(void) {
     }
   }
   else {
-    neorv32_uart0_printf("no\n");
+    neorv32_uart0_printf("none\n");
   }
 
+  // internal DMEM
+  neorv32_uart0_printf("Data base address:   0x%x\n", NEORV32_SYSINFO->DSPACE_BASE);
+  neorv32_uart0_printf("Internal DMEM:       ");
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) {
+    neorv32_uart0_printf("%u bytes\n", NEORV32_SYSINFO->DMEM_SIZE);
+  }
+  else {
+    neorv32_uart0_printf("none\n");
+  }
+
+  // internal d-cache
+  neorv32_uart0_printf("Internal d-cache:    ");
+  neorv32_uart0_printf("none\n"); // work-in-progress
+
+  // external bus interface
   neorv32_uart0_printf("Ext. bus interface:  ");
   __neorv32_rte_print_true_false(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_EXT));
   neorv32_uart0_printf("Ext. bus endianness: ");
@@ -516,7 +520,6 @@ void neorv32_rte_print_hw_config(void) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment: Private function to print yes or no.
- * @note This function is used by neorv32_rte_print_hw_config(void) only.
  *
  * @param[in] state Print 'yes' when !=0, print 'no' when 0
  **************************************************************************/
@@ -533,7 +536,6 @@ static void __neorv32_rte_print_true_false(int state) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment: Private function to print [x] or [ ].
- * @note This function is used by neorv32_rte_print_hw_config(void) only.
  *
  * @param[in] state Print '[x]' when !=0, print '[ ]' when 0
  **************************************************************************/
