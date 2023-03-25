@@ -98,6 +98,11 @@ entity neorv32_top is
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
+    -- Internal Data Cache (dCACHE) --
+    DCACHE_EN                    : boolean := false;  -- implement data cache
+    DCACHE_NUM_BLOCKS            : natural := 4;      -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE            : natural := 64;     -- d-cache: block size in bytes (min 4), has to be a power of 2
+
     -- External memory interface (WISHBONE) --
     MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
@@ -236,10 +241,6 @@ architecture neorv32_top_rtl of neorv32_top is
   -- CPU boot configuration --
   constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(INT_BOOTLOADER_EN, boot_rom_base_c, ispace_base_c);
 
-  -- alignment check for internal memories --
-  constant imem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) := (others => '0');
-  constant dmem_align_check_c : std_ulogic_vector(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) := (others => '0');
-
   -- reset generator --
   signal rstn_ext_sreg : std_ulogic_vector(3 downto 0);
   signal rstn_int_sreg : std_ulogic_vector(3 downto 0);
@@ -302,7 +303,7 @@ architecture neorv32_top_rtl of neorv32_top is
     cached : std_ulogic; -- cached transfer
     priv   : std_ulogic; -- set when in privileged machine mode
   end record;
-  signal cpu_d, p_bus : bus_d_interface_t;
+  signal cpu_d, d_cache, p_bus : bus_d_interface_t;
 
   -- bus access error (from BUSKEEPER) --
   signal bus_error : std_ulogic;
@@ -379,25 +380,33 @@ begin
   -- Processor IO/Peripherals Configuration -------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-  "NEORV32 PROCESSOR CONFIG NOTE: Peripherals = " &
-  cond_sel_string_f(boolean(IO_GPIO_NUM > 0), "GPIO ", "") &
-  cond_sel_string_f(IO_MTIME_EN, "MTIME ", "") &
-  cond_sel_string_f(IO_UART0_EN, "UART0 ", "") &
-  cond_sel_string_f(IO_UART1_EN, "UART1 ", "") &
-  cond_sel_string_f(IO_SPI_EN, "SPI ", "") &
-  cond_sel_string_f(IO_SDI_EN, "SDI ", "") &
-  cond_sel_string_f(IO_TWI_EN, "TWI ", "") &
-  cond_sel_string_f(boolean(IO_PWM_NUM_CH > 0), "PWM ", "") &
-  cond_sel_string_f(IO_WDT_EN, "WDT ", "") &
-  cond_sel_string_f(IO_TRNG_EN, "TRNG ", "") &
-  cond_sel_string_f(IO_CFS_EN, "CFS ", "") &
-  cond_sel_string_f(IO_NEOLED_EN, "NEOLED ", "") &
-  cond_sel_string_f(boolean(XIRQ_NUM_CH > 0), "XIRQ ", "") &
-  cond_sel_string_f(IO_GPTMR_EN, "GPTMR ", "") &
-  cond_sel_string_f(IO_XIP_EN, "XIP ", "") &
-  cond_sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ", "") &
-  ""
-  severity note;
+    "NEORV32 PROCESSOR CONFIGURATION: " &
+    cond_sel_string_f(MEM_INT_IMEM_EN, "IMEM ", "") &
+    cond_sel_string_f(MEM_INT_DMEM_EN, "DMEM ", "") &
+    cond_sel_string_f(INT_BOOTLOADER_EN, "BOOTROM ", "") &
+    cond_sel_string_f(ICACHE_EN, "I-CACHE ", "") &
+    cond_sel_string_f(DCACHE_EN, "D-CACHE ", "") &
+    cond_sel_string_f(MEM_EXT_EN, "WISHBONE ", "") &
+    cond_sel_string_f(ON_CHIP_DEBUGGER_EN, "OCD ", "") &
+    "- " &
+    cond_sel_string_f(boolean(IO_GPIO_NUM > 0), "GPIO ", "") &
+    cond_sel_string_f(IO_MTIME_EN, "MTIME ", "") &
+    cond_sel_string_f(IO_UART0_EN, "UART0 ", "") &
+    cond_sel_string_f(IO_UART1_EN, "UART1 ", "") &
+    cond_sel_string_f(IO_SPI_EN, "SPI ", "") &
+    cond_sel_string_f(IO_SDI_EN, "SDI ", "") &
+    cond_sel_string_f(IO_TWI_EN, "TWI ", "") &
+    cond_sel_string_f(boolean(IO_PWM_NUM_CH > 0), "PWM ", "") &
+    cond_sel_string_f(IO_WDT_EN, "WDT ", "") &
+    cond_sel_string_f(IO_TRNG_EN, "TRNG ", "") &
+    cond_sel_string_f(IO_CFS_EN, "CFS ", "") &
+    cond_sel_string_f(IO_NEOLED_EN, "NEOLED ", "") &
+    cond_sel_string_f(boolean(XIRQ_NUM_CH > 0), "XIRQ ", "") &
+    cond_sel_string_f(IO_GPTMR_EN, "GPTMR ", "") &
+    cond_sel_string_f(IO_XIP_EN, "XIP ", "") &
+    cond_sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ", "") &
+    ""
+    severity note;
 
 
   -- Sanity Checks --------------------------------------------------------------------------
@@ -409,26 +418,8 @@ begin
     "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-internal IMEM)." severity note;
   assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report
     "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-external memory)." severity note;
-  assert not ((MEM_EXT_EN = false) and (MEM_INT_DMEM_EN = false)) report
-    "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch data without external memory interface and internal IMEM." severity error;
-  assert not ((MEM_EXT_EN = false) and (MEM_INT_IMEM_EN = false) and (INT_BOOTLOADER_EN = false)) report
-    "NEORV32 PROCESSOR CONFIG ERROR! Core cannot fetch instructions without external memory interface, internal IMEM and bootloader." severity error;
-
-  -- memory size --
-  assert not ((MEM_INT_DMEM_EN = true) and (is_power_of_two_f(MEM_INT_IMEM_SIZE) = false)) report
-    "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_IMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
-  assert not ((MEM_INT_IMEM_EN = true) and (is_power_of_two_f(MEM_INT_DMEM_SIZE) = false)) report
-    "NEORV32 PROCESSOR CONFIG WARNING! MEM_INT_DMEM_SIZE should be a power of 2 to allow optimal hardware mapping." severity warning;
 
   -- memory layout --
-  assert not (ispace_base_c(1 downto 0) /= "00") report
-    "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address must be 32-bit-aligned." severity error;
-  assert not (dspace_base_c(1 downto 0) /= "00") report
-    "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address must be 32-bit-aligned." severity error;
-  assert not ((ispace_base_c(index_size_f(MEM_INT_IMEM_SIZE)-1 downto 0) /= imem_align_check_c) and (MEM_INT_IMEM_EN = true)) report
-    "NEORV32 PROCESSOR CONFIG ERROR! Instruction memory space base address has to be aligned to IMEM size." severity error;
-  assert not ((dspace_base_c(index_size_f(MEM_INT_DMEM_SIZE)-1 downto 0) /= dmem_align_check_c) and (MEM_INT_DMEM_EN = true)) report
-    "NEORV32 PROCESSOR CONFIG ERROR! Data memory space base address has to be aligned to DMEM size." severity error;
   assert not (ispace_base_c /= x"00000000") report
     "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for INSTRUCTION ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
   assert not (dspace_base_c /= x"80000000") report
@@ -438,7 +429,7 @@ begin
   assert not (ON_CHIP_DEBUGGER_EN = true) report
     "NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD)." severity note;
 
-  -- instruction cache --
+  -- caches --
   assert not ((ICACHE_EN = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report
     "NEORV32 CPU CONFIG WARNING! <CPU_EXTENSION_RISCV_Zifencei> ISA extension is required to perform i-cache memory sync operations." severity warning;
 
@@ -650,23 +641,77 @@ begin
       bus_ack_i    => i_cache.ack,    -- bus transfer acknowledge
       bus_err_i    => i_cache.err     -- bus transfer error
     );
-    i_cache.priv <= cpu_i.priv;
   end generate;
 
   neorv32_icache_inst_false:
   if (ICACHE_EN = false) generate
+    i_cache.cached <= '0'; -- single transfer (uncached)
     i_cache.addr   <= cpu_i.addr;
     cpu_i.rdata    <= i_cache.rdata;
     i_cache.re     <= cpu_i.re;
     cpu_i.ack      <= i_cache.ack;
     cpu_i.err      <= i_cache.err;
-    i_cache.cached <= '0'; -- single transfer (uncached)
-    i_cache.priv   <= cpu_i.priv;
   end generate;
 
-  -- yet unused --
-  i_cache.fence <= '0';
-  i_cache.src   <= '0';
+  i_cache.priv  <= cpu_i.priv;
+  i_cache.fence <= '0'; -- not used
+  i_cache.src   <= '0'; -- not used
+
+
+  -- CPU Data Cache -------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_dcache_inst_true:
+  if (DCACHE_EN = true) generate
+    neorv32_dcache_inst: neorv32_dcache
+    generic map (
+      DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS, -- number of blocks (min 1), has to be a power of 2
+      DCACHE_BLOCK_SIZE => DCACHE_BLOCK_SIZE, -- block size in bytes (min 4), has to be a power of 2
+      DCACHE_UC_PBEGIN  => "1111"             -- begin of uncached address space (page number)
+    )
+    port map (
+      -- global control --
+      clk_i        => clk_i,          -- global clock, rising edge
+      rstn_i       => rstn_int,       -- global reset, low-active, async
+      clear_i      => cpu_d.fence,    -- cache clear
+      miss_o       => open,           -- cache miss
+      -- host controller interface --
+      host_addr_i  => cpu_d.addr,     -- bus access address
+      host_rdata_o => cpu_d.rdata,    -- bus read data
+      host_wdata_i => cpu_d.wdata,    -- bus write data
+      host_ben_i   => cpu_d.ben,      -- byte enable
+      host_we_i    => cpu_d.we,       -- write enable
+      host_re_i    => cpu_d.re,       -- read enable
+      host_ack_o   => cpu_d.ack,      -- bus transfer acknowledge
+      host_err_o   => cpu_d.err,      -- bus transfer error
+      -- peripheral bus interface --
+      bus_cached_o => d_cache.cached, -- set if cached (!) access in progress
+      bus_addr_o   => d_cache.addr,   -- bus access address
+      bus_rdata_i  => d_cache.rdata,  -- bus read data
+      bus_wdata_o  => d_cache.wdata,  -- bus write data
+      bus_ben_o    => d_cache.ben,    -- byte enable
+      bus_we_o     => d_cache.we,     -- write enable
+      bus_re_o     => d_cache.re,     -- read enable
+      bus_ack_i    => d_cache.ack,    -- bus transfer acknowledge
+      bus_err_i    => d_cache.err     -- bus transfer error
+    );
+  end generate;
+
+  neorv32_dcache_inst_false:
+  if (DCACHE_EN = false) generate
+    d_cache.cached <= '0'; -- single transfer (uncached)
+    d_cache.addr   <= cpu_d.addr;
+    cpu_d.rdata    <= d_cache.rdata;
+    d_cache.wdata  <= cpu_d.wdata;
+    d_cache.ben    <= cpu_d.ben;
+    d_cache.we     <= cpu_d.we;
+    d_cache.re     <= cpu_d.re;
+    cpu_d.ack      <= d_cache.ack;
+    cpu_d.err      <= d_cache.err;
+  end generate;
+
+  d_cache.priv  <= cpu_d.priv;
+  d_cache.fence <= '0'; -- not used
+  d_cache.src   <= '0'; -- not used
 
 
   -- CPU Bus Switch -------------------------------------------------------------------------
@@ -681,16 +726,16 @@ begin
     clk_i           => clk_i,          -- global clock, rising edge
     rstn_i          => rstn_int,       -- global reset, low-active, async
     -- controller interface a --
-    ca_bus_priv_i   => cpu_d.priv,     -- current privilege level
-    ca_bus_cached_i => cpu_d.cached,   -- set if cached transfer
-    ca_bus_addr_i   => cpu_d.addr,     -- bus access address
-    ca_bus_rdata_o  => cpu_d.rdata,    -- bus read data
-    ca_bus_wdata_i  => cpu_d.wdata,    -- bus write data
-    ca_bus_ben_i    => cpu_d.ben,      -- byte enable
-    ca_bus_we_i     => cpu_d.we,       -- write enable
-    ca_bus_re_i     => cpu_d.re,       -- read enable
-    ca_bus_ack_o    => cpu_d.ack,      -- bus transfer acknowledge
-    ca_bus_err_o    => cpu_d.err,      -- bus transfer error
+    ca_bus_priv_i   => d_cache.priv,   -- current privilege level
+    ca_bus_cached_i => d_cache.cached, -- set if cached transfer
+    ca_bus_addr_i   => d_cache.addr,   -- bus access address
+    ca_bus_rdata_o  => d_cache.rdata,  -- bus read data
+    ca_bus_wdata_i  => d_cache.wdata,  -- bus write data
+    ca_bus_ben_i    => d_cache.ben,    -- byte enable
+    ca_bus_we_i     => d_cache.we,     -- write enable
+    ca_bus_re_i     => d_cache.re,     -- read enable
+    ca_bus_ack_o    => d_cache.ack,    -- bus transfer acknowledge
+    ca_bus_err_o    => d_cache.err,    -- bus transfer error
     -- controller interface b --
     cb_bus_priv_i   => i_cache.priv,   -- current privilege level
     cb_bus_cached_i => i_cache.cached, -- set if cached transfer
@@ -1577,11 +1622,15 @@ begin
     -- Internal Data memory --
     MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,      -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE    => MEM_INT_DMEM_SIZE,    -- size of processor-internal data memory in bytes
-    -- Internal Cache memory --
+    -- Instruction cache --
     ICACHE_EN            => ICACHE_EN,            -- implement instruction cache
     ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS,    -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE    => ICACHE_BLOCK_SIZE,    -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY, -- i-cache: associativity (min 1), has to be a power 2
+    -- Data cache --
+    DCACHE_EN            => DCACHE_EN,            -- implement data cache
+    DCACHE_NUM_BLOCKS    => DCACHE_NUM_BLOCKS,    -- d-cache: number of blocks (min 2), has to be a power of 2
+    DCACHE_BLOCK_SIZE    => DCACHE_BLOCK_SIZE,    -- d-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
     MEM_EXT_EN           => MEM_EXT_EN,           -- implement external memory bus interface?
     MEM_EXT_BIG_ENDIAN   => MEM_EXT_BIG_ENDIAN,   -- byte order: true=big-endian, false=little-endian
