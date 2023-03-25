@@ -135,9 +135,9 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     icache_nb    : natural_t;
     icache_bs    : natural_t;
     icache_as    : natural_t;
-    icache_en    : bool_t;
-    icache_nb    : natural_t;
-    icache_bs    : natural_t;
+    dcache_en    : bool_t;
+    dcache_nb    : natural_t;
+    dcache_bs    : natural_t;
     mtime        : bool_t;
   end record;
 
