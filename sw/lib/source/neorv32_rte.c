@@ -83,6 +83,8 @@ void neorv32_rte_setup(void) {
   }
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtype-limits"
 
 /**********************************************************************//**
  * Install trap handler function to NEORV32 runtime environment.
@@ -118,6 +120,8 @@ int neorv32_rte_handler_uninstall(uint8_t id) {
   }
   return 1;
 }
+
+#pragma GCC diagnostic pop
 
 
 /**********************************************************************//**
