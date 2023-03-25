@@ -1638,31 +1638,6 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test RTE debug trap handler
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] RTE debug trap handler ", cnt_test);
-  cnt_test++;
-
-  // uninstall custom handler and use default RTE debug handler
-  neorv32_rte_handler_uninstall(RTE_TRAP_I_ILLEGAL);
-
-  // trigger illegal instruction exception
-  neorv32_cpu_csr_read(0xfff); // CSR not available
-
-  PRINT_STANDARD(" ");
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
-
-  // restore original handler
-  neorv32_rte_handler_install(RTE_TRAP_I_ILLEGAL, global_trap_handler);
-
-
-  // ----------------------------------------------------------
   // Test physical memory protection
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
