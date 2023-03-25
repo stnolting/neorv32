@@ -154,6 +154,9 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     icache_nb    => ( 0,       0,       8,       8     ), -- number of cache blocks (lines), power of two
     icache_bs    => ( 0,       0,       64,      256   ), -- size of cache clock (lines) in bytes, power of two
     icache_as    => ( 1,       1,       1,       2     ), -- associativity (1 or 2)
+    dcache_en    => ( false,   false,   true,    true  ), -- instruction data enabled
+    dcache_nb    => ( 0,       0,       8,       8     ), -- number of cache blocks (lines), power of two
+    dcache_bs    => ( 0,       0,       64,      256   ), -- size of cache clock (lines) in bytes, power of two
     mtime        => ( false,   true,    true,    true  )  -- RISC-V machine system timers
   );
 
@@ -193,6 +196,10 @@ begin
     ICACHE_NUM_BLOCKS            => configs_c.icache_nb(CONFIG),    -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            => configs_c.icache_bs(CONFIG),    -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         => configs_c.icache_as(CONFIG),    -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
+    -- Internal Data Cache (dCACHE) --
+    DCACHE_EN                    => configs_c.dcache_en(CONFIG),    -- implement data cache
+    DCACHE_NUM_BLOCKS            => configs_c.dcache_nb(CONFIG),    -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE            => configs_c.dcache_bs(CONFIG),    -- d-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface (WISHBONE) --
     MEM_EXT_EN                   => true,                           -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              => wb_timeout_c,                   -- cycles after a pending bus access auto-terminates (0 = disabled)

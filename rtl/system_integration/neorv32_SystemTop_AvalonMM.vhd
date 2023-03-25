@@ -95,6 +95,11 @@ entity neorv32_top_avalonmm is
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
+    -- Internal Data Cache (dCACHE) --
+    DCACHE_EN                    : boolean := false;  -- implement data cache
+    DCACHE_NUM_BLOCKS            : natural := 4;      -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE            : natural := 64;     -- d-cache: block size in bytes (min 4), has to be a power of 2
+
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  : natural := 0;      -- number of external IRQ channels (0..32)
     XIRQ_TRIGGER_TYPE            : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger type: 0=level, 1=edge
@@ -276,6 +281,11 @@ begin
     ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
     ICACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE,
     ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY,
+
+    -- Internal Data Cache (dCACHE) --
+    DCACHE_EN => DCACHE_EN,
+    DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
+    DCACHE_BLOCK_SIZE => DCACHE_BLOCK_SIZE,
 
     -- External memory interface (WISHBONE) --
     MEM_EXT_EN => true,
