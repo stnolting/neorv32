@@ -312,10 +312,13 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Data fence    | `fence`                                                                   | 5
 |=======================
 
+.`fence` Instruction
 [NOTE]
-Internally, the `fence` instruction does not perform any operation inside the CPU. It only sets the
+CPU-internally, the `fence` instruction does not perform any operation inside the CPU. It only sets the
 top's `d_bus_fence_o` signal high for one cycle to inform the memory system a `fence` instruction has been
-executed. Any flags within the `fence` instruction word are ignore by the hardware.
+executed. Any flags within the `fence` instruction word are ignore by the hardware. However, the `d_bus_fence_o`
+signal is connected to the <<_processor_internal_data_cache_dcache>>. Hence, executing the `fence` instruction
+will clear/flush the data cache and resynchronize it with main memory.
 
 
 ==== `B` ISA Extension
@@ -407,7 +410,7 @@ RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 The `Zifencei` CPU extension allows manual synchronization of the instruction stream.
 The `fence.i` instruction resets the CPU's front-end (instruction fetch) and flushes the prefetch buffer.
 This allows a clean re-fetch of modified instructions from memory. Also, the top's `i_bus_fencei_o` signal is set
-high for one cycle to inform the memory system (like the i-cache to perform a flush/reload.
+high for one cycle to inform the memory system (like the <<_processor_internal_instruction_cache_icache>> to perform a flush/reload.
 Any additional flags within the `fence.i` instruction word are ignored by the hardware.
 
 .Instructions and Timing
