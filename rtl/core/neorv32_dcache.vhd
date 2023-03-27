@@ -97,7 +97,6 @@ architecture neorv32_dcache_rtl of neorv32_dcache is
     host_rdata_o : out std_ulogic_vector(31 downto 0); -- read data
     host_rstat_o : out std_ulogic; -- access status
     -- ctrl cache access --
-    ctrl_en_i    : in  std_ulogic; -- control interface enable
     ctrl_addr_i  : in  std_ulogic_vector(31 downto 0); -- access address
     ctrl_we_i    : in  std_ulogic; -- write enable (full-word)
     ctrl_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
@@ -111,7 +110,6 @@ architecture neorv32_dcache_rtl of neorv32_dcache is
   type cache_if_t is record
     host_rdata : std_ulogic_vector(31 downto 0); -- host read data
     host_rstat : std_ulogic; -- access error
-    ctrl_en    : std_ulogic; -- enable cache control interface
     ctrl_addr  : std_ulogic_vector(31 downto 0); -- access address
     ctrl_we    : std_ulogic; -- write enable
     ctrl_ben   : std_ulogic_vector(03 downto 0); -- byte-enable
@@ -124,8 +122,8 @@ architecture neorv32_dcache_rtl of neorv32_dcache is
   signal cache : cache_if_t;
 
   -- control engine --
-  type ctrl_engine_state_t is (S_IDLE, S_CHECK, S_DOWNLOAD_REQ, S_DOWNLOAD_WAIT, S_DIRECT_WAIT,
-                               S_RESYNC, S_RESYNC_READ, S_RESYNC_WRITE, S_CLEAR);
+  type ctrl_engine_state_t is (S_IDLE, S_CHECK, S_DOWNLOAD_REQ, S_DOWNLOAD_WAIT, S_DIRECT_REQ,
+                               S_DIRECT_WAIT, S_RESYNC, S_RESYNC_READ, S_RESYNC_WRITE, S_CLEAR);
   type ctrl_t is record
     state         : ctrl_engine_state_t; -- current state
     state_nxt     : ctrl_engine_state_t; -- next state
@@ -192,7 +190,6 @@ begin
 
     -- cache defaults --
     cache.clear        <= '0';
-    cache.ctrl_en      <= '0';
     cache.ctrl_addr    <= ctrl.addr_reg;
     cache.ctrl_we      <= '0';
     cache.ctrl_ben     <= "1111";
@@ -220,9 +217,7 @@ begin
           ctrl.state_nxt <= S_CLEAR;
         elsif (host_re_i = '1') or (ctrl.re_buf = '1') or (host_we_i = '1') or (ctrl.we_buf = '1') then
           if (unsigned(host_addr_i(31 downto 28)) >= unsigned(DCACHE_UC_PBEGIN)) then -- uncached access -> direct access
-            bus_re_o       <= host_re_i;
-            bus_we_o       <= host_we_i;
-            ctrl.state_nxt <= S_DIRECT_WAIT;
+            ctrl.state_nxt <= S_DIRECT_REQ;
           else -- cached access
             ctrl.state_nxt <= S_CHECK;
           end if;
@@ -230,12 +225,12 @@ begin
 
       when S_CHECK => -- check if cache hit
       -- ------------------------------------------------------------
+        -- calculate block base address (in case we need to download it) --
+        ctrl.addr_reg_nxt <= host_addr_i;
+        ctrl.addr_reg_nxt((cache_offset_size_c+2)-1 downto 2) <= (others => '0'); -- block-aligned
+        ctrl.addr_reg_nxt(1 downto 0) <= "00"; -- word-aligned
+        --
         if (ctrl.re_buf = '1') then -- read access
-          -- calculate block base address - in case we need to download it --
-          ctrl.addr_reg_nxt <= host_addr_i;
-          ctrl.addr_reg_nxt((cache_offset_size_c+2)-1 downto 2) <= (others => '0'); -- block-aligned
-          ctrl.addr_reg_nxt(1 downto 0) <= "00"; -- word-aligned
-          --
           if (cache.hit = '1') then -- HIT -> done
             ctrl.re_buf_nxt <= '0';
             ctrl.we_buf_nxt <= '0';
@@ -244,7 +239,7 @@ begin
             else
               host_ack_o <= '1';
             end if;
-            ctrl.state_nxt  <= S_IDLE;
+            ctrl.state_nxt <= S_IDLE;
           else -- cache MISS -> download block
             ctrl.state_nxt <= S_DOWNLOAD_REQ;
           end if;
@@ -252,7 +247,6 @@ begin
           if (cache.hit = '1') then -- data word in cache -> also write to cache
             ctrl.state_nxt <= S_RESYNC_WRITE;
           else -- just write-through
-            bus_re_o       <= ctrl.re_buf;
             bus_we_o       <= ctrl.we_buf;
             ctrl.state_nxt <= S_DIRECT_WAIT;
           end if;
@@ -262,14 +256,12 @@ begin
       when S_DOWNLOAD_REQ => -- download new cache block: request new word
       -- ------------------------------------------------------------
         bus_addr_o     <= ctrl.addr_reg;
---      cache.ctrl_en  <= '1'; -- cache update operation
         bus_re_o       <= '1'; -- request new read transfer
         ctrl.state_nxt <= S_DOWNLOAD_WAIT;
 
       when S_DOWNLOAD_WAIT => -- download new cache block: wait for bus response
       -- ------------------------------------------------------------
-        bus_addr_o    <= ctrl.addr_reg;
-        cache.ctrl_en <= '1'; -- cache update operation
+        bus_addr_o <= ctrl.addr_reg;
         if (bus_ack_i = '1') or (bus_err_i = '1') then -- ACK or ERROR -> write to cache and get next word (store ERROR flag in cache)
           cache.ctrl_we     <= '1'; -- write to cache
           ctrl.addr_reg_nxt <= std_ulogic_vector(unsigned(ctrl.addr_reg) + 4);
@@ -280,6 +272,12 @@ begin
           end if;
         end if;
 
+
+      when S_DIRECT_REQ => -- direct uncached access: request access
+      -- ------------------------------------------------------------
+        bus_re_o       <= ctrl.re_buf;
+        bus_we_o       <= ctrl.we_buf;
+        ctrl.state_nxt <= S_DIRECT_WAIT;
 
       when S_DIRECT_WAIT => -- direct uncached access: wait for bus response
       -- ------------------------------------------------------------
@@ -297,34 +295,21 @@ begin
 
       when S_RESYNC => -- re-sync host/cache access
       -- ------------------------------------------------------------
-        ctrl.addr_reg_nxt <= host_addr_i; -- reload host address
         if (ctrl.we_buf = '1') then -- write access
           ctrl.state_nxt <= S_RESYNC_WRITE;
         else -- read access
-          ctrl.state_nxt <= S_CHECK;--S_RESYNC_READ;
+          ctrl.state_nxt <= S_CHECK; -- should HIT now
         end if;
 
       when S_RESYNC_WRITE => -- finalize cached write access
       -- ------------------------------------------------------------
         bus_we_o         <= '1'; -- trigger bus write access
-        cache.ctrl_en    <= '1'; -- cache update operation
         cache.ctrl_we    <= '1'; -- write to cache
         cache.ctrl_ben   <= host_ben_i;
         cache.ctrl_addr  <= host_addr_i;
         cache.ctrl_wdata <= host_wdata_i;
         cache.ctrl_wstat <= '0'; -- no error possible here
         ctrl.state_nxt   <= S_DIRECT_WAIT;
-
-      -- when S_RESYNC_READ => -- finalize cached read access
-      -- -- ------------------------------------------------------------
-        -- ctrl.re_buf_nxt <= '0';
-        -- ctrl.we_buf_nxt <= '0';
-        -- if (cache.host_rstat = '1') then -- erroneous read access?
-          -- host_err_o <= '1';
-        -- else
-          -- host_ack_o <= '1';
-        -- end if;
-        -- ctrl.state_nxt <= S_IDLE;
 
 
       when S_CLEAR => -- invalidate all cache entries
@@ -364,7 +349,6 @@ begin
     host_rdata_o => cache.host_rdata,
     host_rstat_o => cache.host_rstat,
     -- ctrl cache access --
-    ctrl_en_i    => cache.ctrl_en,
     ctrl_addr_i  => cache.ctrl_addr,
     ctrl_we_i    => cache.ctrl_we,
     ctrl_ben_i   => cache.ctrl_ben,
@@ -436,7 +420,6 @@ entity neorv32_dcache_memory is
     host_rdata_o : out std_ulogic_vector(31 downto 0); -- read data
     host_rstat_o : out std_ulogic; -- access status
     -- ctrl cache access --
-    ctrl_en_i    : in  std_ulogic; -- control interface enable
     ctrl_addr_i  : in  std_ulogic_vector(31 downto 0); -- access address
     ctrl_we_i    : in  std_ulogic; -- write enable
     ctrl_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
@@ -506,7 +489,7 @@ begin
       -- write access --
       if (clear_i = '1') then -- invalidate entire cache
         valid_flag <= (others => '0');
-      elsif (ctrl_en_i = '1') and (ctrl_we_i = '1') then -- control write access: make current block valid
+      elsif (ctrl_we_i = '1') then -- control write access: make current block valid
         valid_flag(to_integer(unsigned(cache_index))) <= '1';
       end if;
       -- sync read access --
@@ -520,7 +503,7 @@ begin
   tag_memory: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (ctrl_en_i = '1') and (ctrl_we_i = '1') then -- write access
+      if (ctrl_we_i = '1') then -- write access
         tag_mem(to_integer(unsigned(cache_index))) <= ctrl_acc_addr.tag;
       else -- read access
         tag <= tag_mem(to_integer(unsigned(cache_index)));
@@ -538,19 +521,19 @@ begin
   begin
     if rising_edge(clk_i) then
       -- write access --
-      if (ctrl_en_i = '1') and (ctrl_we_i = '1') and (ctrl_ben_i(0) = '1') then
+      if (ctrl_we_i = '1') and (ctrl_ben_i(0) = '1') then
         cache_data_memory_b0(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i(07 downto 00);
       end if;
-      if (ctrl_en_i = '1') and (ctrl_we_i = '1') and (ctrl_ben_i(1) = '1') then
+      if (ctrl_we_i = '1') and (ctrl_ben_i(1) = '1') then
         cache_data_memory_b1(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i(15 downto 08);
       end if;
-      if (ctrl_en_i = '1') and (ctrl_we_i = '1') and (ctrl_ben_i(2) = '1') then
+      if (ctrl_we_i = '1') and (ctrl_ben_i(2) = '1') then
         cache_data_memory_b2(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i(23 downto 16);
       end if;
-      if (ctrl_en_i = '1') and (ctrl_we_i = '1') and (ctrl_ben_i(3) = '1') then
+      if (ctrl_we_i = '1') and (ctrl_ben_i(3) = '1') then
         cache_data_memory_b3(to_integer(unsigned(cache_addr))) <= ctrl_wdata_i(31 downto 24);
       end if;
-      if (ctrl_en_i = '1') and (ctrl_we_i = '1') then
+      if (ctrl_we_i = '1') then
         cache_err_memory(to_integer(unsigned(cache_addr))) <= ctrl_wstat_i;
       end if;
       -- read access --
@@ -571,8 +554,8 @@ begin
   cache_addr <= cache_index & cache_offset;
 
   -- cache access select --
-  cache_index  <= host_acc_addr.index  when (ctrl_en_i = '0') else ctrl_acc_addr.index;
-  cache_offset <= host_acc_addr.offset when (ctrl_en_i = '0') else ctrl_acc_addr.offset;
+  cache_index  <= host_acc_addr.index  when (ctrl_we_i = '0') else ctrl_acc_addr.index;
+  cache_offset <= host_acc_addr.offset when (ctrl_we_i = '0') else ctrl_acc_addr.offset;
 
 
 end neorv32_dcache_memory_rtl;
