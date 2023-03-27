@@ -214,6 +214,45 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Test performance counter: setup as many events and counters as possible
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] HPM setup ", cnt_test);
+
+  num_hpm_cnts_global = neorv32_cpu_hpm_get_num_counters();
+
+  if (num_hpm_cnts_global != 0) {
+    cnt_test++;
+
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_CIR);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_WAIT_IF);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_II);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_WAIT_MC);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_LOAD);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_STORE);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_WAIT_LS);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_JUMP);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_BRANCH);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT12, 1 << HPMCNT_EVENT_TBRANCH);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT13, 1 << HPMCNT_EVENT_TRAP);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT14, 1 << HPMCNT_EVENT_ILLEGAL);
+
+    // make sure there was no exception
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[skipped, n.a.]\n");
+  }
+
+  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable all counters
+
+
+  // ----------------------------------------------------------
   // Setup PMP for tests
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
@@ -272,45 +311,6 @@ int main() {
   }
   else {
     test_fail();
-  }
-
-
-  // ----------------------------------------------------------
-  // Test performance counter: setup as many events and counters as possible
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Setup HPM events ", cnt_test);
-
-  num_hpm_cnts_global = neorv32_cpu_hpm_get_num_counters();
-
-  if (num_hpm_cnts_global != 0) {
-    cnt_test++;
-
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_CIR);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_WAIT_IF);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_II);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_WAIT_MC);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_LOAD);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_STORE);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_WAIT_LS);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_JUMP);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_BRANCH);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT12, 1 << HPMCNT_EVENT_TBRANCH);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT13, 1 << HPMCNT_EVENT_TRAP);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT14, 1 << HPMCNT_EVENT_ILLEGAL);
-
-    neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable all counters
-
-    // make sure there was no exception
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
   }
 
 
@@ -518,7 +518,7 @@ int main() {
   // Write-access to read-only CSR
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Read-only CSR write ", cnt_test);
+  PRINT_STANDARD("[%i] Read-only CSR ", cnt_test);
 
   cnt_test++;
 
@@ -536,7 +536,7 @@ int main() {
   // No "real" CSR write access (because rs1 = r0)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Read-only CSR 'no-write' (rs1=x0) access ", cnt_test);
+  PRINT_STANDARD("[%i] Read-only CSR 'no-write' ", cnt_test);
 
   cnt_test++;
 
@@ -646,7 +646,7 @@ int main() {
   // Illegal compressed instruction
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] CI_ILL (illegal compr. instr.) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] CI_ILL (illegal C instr.) EXC ", cnt_test);
 
   // skip if C-mode is not implemented
   if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C))) {
@@ -1762,7 +1762,7 @@ int main() {
   // HPM reports
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all HPM counters
-  PRINT_STANDARD("\n\n--<< HPM.low (%u) >>--\n", num_hpm_cnts_global);
+  PRINT_STANDARD("\n\n<< HPM counters >>\n");
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIHPM)) {
     PRINT_STANDARD("#00 Instr.:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET));
     // HPM #01 does not exist
