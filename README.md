@@ -140,7 +140,8 @@ for _custom RISC-V instructions_ (R3-type, R4-type and R5-type);
 
 * processor-internal data and instruction memories ([DMEM](https://stnolting.github.io/neorv32/#_data_memory_dmem) /
 [IMEM](https://stnolting.github.io/neorv32/#_instruction_memory_imem)) &
-cache ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruction_cache_icache))
+caches ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruction_cache_icache) and
+[dCACHE](https://stnolting.github.io/neorv32/#_processor_internal_data_cache_dcache))
 * pre-installed bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with serial user interface;
 allows booting application code via UART or from external SPI flash
 

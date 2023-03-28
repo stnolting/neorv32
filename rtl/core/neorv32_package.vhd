@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080207"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080208"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -144,7 +144,7 @@ package neorv32_package is
   constant dm_exc_entry_c       : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(dm_code_base_c) + 0); -- entry point for exceptions
   constant dm_park_entry_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(dm_code_base_c) + 8); -- normal entry point
 
-  -- IO: Peripheral Devices ("IO") Area --
+  -- IO: Internal Peripheral Devices ("IO") Area --
   -- Control register(s) (including the device-enable flag) should be located at the base address of each device
   constant io_base_c            : std_ulogic_vector(31 downto 0) := x"fffffe00";
   constant io_size_c            : natural := 512; -- IO address space size in bytes, fixed!
@@ -1008,6 +1008,10 @@ package neorv32_package is
       ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
       ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
       ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
+      -- Internal Data Cache (dCACHE) --
+      DCACHE_EN                    : boolean := false;  -- implement data cache
+      DCACHE_NUM_BLOCKS            : natural := 4;      -- d-cache: number of blocks (min 1), has to be a power of 2
+      DCACHE_BLOCK_SIZE            : natural := 64;     -- d-cache: block size in bytes (min 4), has to be a power of 2
       -- External memory interface (WISHBONE) --
       MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
       MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
@@ -1575,6 +1579,42 @@ package neorv32_package is
       bus_cached_o : out std_ulogic; -- set if cached (!) access in progress
       bus_addr_o   : out std_ulogic_vector(31 downto 0); -- bus access address
       bus_rdata_i  : in  std_ulogic_vector(31 downto 0); -- bus read data
+      bus_re_o     : out std_ulogic; -- read enable
+      bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+      bus_err_i    : in  std_ulogic  -- bus transfer error
+    );
+  end component;
+
+  -- Component: CPU Data Cache --------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_dcache
+    generic (
+      DCACHE_NUM_BLOCKS : natural; -- number of blocks (min 1), has to be a power of 2
+      DCACHE_BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
+      DCACHE_UC_PBEGIN  : std_ulogic_vector(3 downto 0) -- begin of uncached address space (page number)
+    );
+    port (
+      -- global control --
+      clk_i        : in  std_ulogic; -- global clock, rising edge
+      rstn_i       : in  std_ulogic; -- global reset, low-active, async
+      clear_i      : in  std_ulogic; -- cache clear
+      miss_o       : out std_ulogic; -- cache miss
+      -- host controller interface --
+      host_addr_i  : in  std_ulogic_vector(31 downto 0); -- bus access address
+      host_rdata_o : out std_ulogic_vector(31 downto 0); -- bus read data
+      host_wdata_i : in  std_ulogic_vector(31 downto 0); -- bus write data
+      host_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
+      host_we_i    : in  std_ulogic; -- write enable
+      host_re_i    : in  std_ulogic; -- read enable
+      host_ack_o   : out std_ulogic; -- bus transfer acknowledge
+      host_err_o   : out std_ulogic; -- bus transfer error
+      -- peripheral bus interface --
+      bus_cached_o : out std_ulogic; -- set if cached (!) access in progress
+      bus_addr_o   : out std_ulogic_vector(31 downto 0); -- bus access address
+      bus_rdata_i  : in  std_ulogic_vector(31 downto 0); -- bus read data
+      bus_wdata_o  : out std_ulogic_vector(31 downto 0); -- bus write data
+      bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+      bus_we_o     : out std_ulogic; -- write enable
       bus_re_o     : out std_ulogic; -- read enable
       bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
       bus_err_i    : in  std_ulogic  -- bus transfer error
@@ -2154,11 +2194,15 @@ package neorv32_package is
       -- Internal Data memory --
       MEM_INT_DMEM_EN      : boolean; -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE    : natural; -- size of processor-internal data memory in bytes
-      -- Internal Cache memory --
+      -- Instruction cache --
       ICACHE_EN            : boolean; -- implement instruction cache
       ICACHE_NUM_BLOCKS    : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
       ICACHE_BLOCK_SIZE    : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
       ICACHE_ASSOCIATIVITY : natural; -- i-cache: associativity (min 1), has to be a power 2
+      -- Data cache --
+      DCACHE_EN            : boolean; -- implement data cache
+      DCACHE_NUM_BLOCKS    : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
+      DCACHE_BLOCK_SIZE    : natural; -- d-cache: block size in bytes (min 4), has to be a power of 2
       -- External memory interface --
       MEM_EXT_EN           : boolean; -- implement external memory bus interface?
       MEM_EXT_BIG_ENDIAN   : boolean; -- byte order: true=big-endian, false=little-endian
