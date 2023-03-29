@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 29.03.2023 | 1.8.2.9 | :warning: remove `CPU_EXTENSION_RISCV_Zicsr` generic - `Zicsr` ISA extension is always enabled; optimize bus switch; VHDL code cleanups; [#562](https://github.com/stnolting/neorv32/pull/562) |
 | 25.03.2023 | 1.8.2.8 | :test_tube: add configurable data cache (**dCACHE**); [#560](https://github.com/stnolting/neorv32/pull/560) |
 | 24.03.2023 | 1.8.2.7 | :sparkles: add full support of `mcounteren` CSR; cleanup counter and PMP CSRs; i-cache optimization; [#559](https://github.com/stnolting/neorv32/pull/559) |
 | 18.03.2023 | 1.8.2.6 | add new generic `JEDEC_ID` (official JEDEC identifier; used for `mvendorid` CSR); further generics cleanups; [#557](https://github.com/stnolting/neorv32/pull/557)
