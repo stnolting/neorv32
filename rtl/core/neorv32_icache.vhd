@@ -53,7 +53,6 @@ entity neorv32_icache is
     clk_i        : in  std_ulogic; -- global clock, rising edge
     rstn_i       : in  std_ulogic; -- global reset, low-active, async
     clear_i      : in  std_ulogic; -- cache clear
-    miss_o       : out std_ulogic; -- cache miss
     -- host controller interface --
     host_addr_i  : in  std_ulogic_vector(31 downto 0); -- bus access address
     host_rdata_o : out std_ulogic_vector(31 downto 0); -- bus read data
@@ -262,9 +261,6 @@ begin
 
   -- cached access? --
   bus_cached_o <= '1' when (ctrl.state = S_DOWNLOAD_REQ) or (ctrl.state = S_DOWNLOAD_GET) else '0';
-
-  -- miss access? --
-  miss_o <= '1' when (ctrl.state = S_CHECK) and (cache.hit = '0') else '0';
 
 
   -- Cache Memory ---------------------------------------------------------------------------
