@@ -203,7 +203,6 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 | `CPU_EXTENSION_RISCV_M`        | boolean | false | Enable <<_m_isa_extension>> (hardware-based integer multiplication and division).
 | `CPU_EXTENSION_RISCV_U`        | boolean | false | Enable <<_u_isa_extension>> (less-privileged user mode).
 | `CPU_EXTENSION_RISCV_Zfinx`    | boolean | false | Enable <<_zfinx_isa_extension>> (single-precision floating-point unit).
-| `CPU_EXTENSION_RISCV_Zicsr`    | boolean | true  | Enable <<_zicsr_isa_extension>> (control and status register access).
 | `CPU_EXTENSION_RISCV_Zicntr`   | boolean | true  | Enable <<_zicntr_isa_extension>> (CPU base counters).
 | `CPU_EXTENSION_RISCV_Zicond`   | boolean | false | Enable <<_zicond_isa_extension>> (conditional operations).
 | `CPU_EXTENSION_RISCV_Zihpm`    | boolean | false | Enable <<_zihpm_isa_extension>> (hardware performance monitors).

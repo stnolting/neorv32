@@ -76,7 +76,7 @@ caused by speculative execution (like Spectre or Meltdown).
 :sectnums:
 ==== CPU Register File
 
-The data register file contains the general purpose "`x`" architecture registers. For `rv32i` ISA there are 32 32-bit registers
+The data register file contains the general purpose "`x`" architecture registers. For the `rv32i` ISA there are 32 32-bit registers
 and for the `rv32e` ISA there are 16 32-bit registers. Register zero (`x0`/`zero`) always read as zero and any write access to it
 is discarded.
 
@@ -162,7 +162,7 @@ includes the <<_control_and_status_registers_csrs>> as well as the trap controll
 === Sleep Mode
 
 The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing dynamic
-power consumption. Sleep mode in entered by executing the `wfi` instruction from the <<_zicsr_isa_extension>>.
+power consumption. Sleep mode in entered by executing the `wfi` instruction.
 When the CPU is in sleep mode, all CPU-internal operations are stopped (execution, instruction fetch, ...).
 However, this does not affect the operation of any peripheral/IO modules like interfaces and timers. Furthermore,
 the CPU will continue to buffer/enqueue incoming interrupt requests. The CPU will leave sleep mode as soon as
@@ -496,7 +496,8 @@ conditional operations from C-language code (see `sw/example/zicond_test`).
 ==== `Zicsr` ISA Extension
 
 This ISA extensions provides instructions for accessing the <<_control_and_status_registers_csrs>> as well as further
-privileged-architecture extensions. This extension is mandatory and cannot be disabled.
+privileged-architecture extensions. This extension is mandatory and cannot be disabled. Hence, there is no generic
+for enabling/disabling this ISa extension.
 
 [NOTE]
 If `rd=x0` for the `csrrw[i]` instructions there will be no actual read access to the according CSR.
