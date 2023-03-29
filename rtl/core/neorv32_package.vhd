@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080208"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080209"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -980,7 +980,6 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
-      CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
       CPU_EXTENSION_RISCV_Zicntr   : boolean := true;   -- implement base counters?
       CPU_EXTENSION_RISCV_Zicond   : boolean := false;  -- implement conditional operations extension?
       CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
@@ -1144,7 +1143,6 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-      CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
       CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
       CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement conditional operations extension?
       CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
@@ -1218,7 +1216,6 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-      CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
       CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
       CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement conditional operations extension?
       CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
@@ -1568,7 +1565,6 @@ package neorv32_package is
       clk_i        : in  std_ulogic; -- global clock, rising edge
       rstn_i       : in  std_ulogic; -- global reset, low-active, async
       clear_i      : in  std_ulogic; -- cache clear
-      miss_o       : out std_ulogic; -- cache miss
       -- host controller interface --
       host_addr_i  : in  std_ulogic_vector(31 downto 0); -- bus access address
       host_rdata_o : out std_ulogic_vector(31 downto 0); -- bus read data
@@ -1598,7 +1594,6 @@ package neorv32_package is
       clk_i        : in  std_ulogic; -- global clock, rising edge
       rstn_i       : in  std_ulogic; -- global reset, low-active, async
       clear_i      : in  std_ulogic; -- cache clear
-      miss_o       : out std_ulogic; -- cache miss
       -- host controller interface --
       host_addr_i  : in  std_ulogic_vector(31 downto 0); -- bus access address
       host_rdata_o : out std_ulogic_vector(31 downto 0); -- bus read data

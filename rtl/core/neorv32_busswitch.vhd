@@ -156,7 +156,7 @@ begin
     -- state machine --
     case arbiter.state is
 
-      when IDLE => -- port A or B access
+      when IDLE => -- wait for requests
       -- ------------------------------------------------------------
         if (ca_req_current = '1') then -- current request from port A?
           arbiter.bus_sel   <= '0';
@@ -176,7 +176,11 @@ begin
       -- ------------------------------------------------------------
         arbiter.bus_sel <= '0'; -- access from port A
         if (p_bus_err_i = '1') or (p_bus_ack_i = '1') then
-          arbiter.state_nxt <= IDLE;
+          if (cb_req_pending = '1') or (cb_req_current = '1') then -- any request from B?
+            arbiter.state_nxt <= B_RETIRE;
+          else
+            arbiter.state_nxt <= IDLE;
+          end if;
         end if;
 
       when A_RETIRE => -- retire port A pending access

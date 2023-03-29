@@ -63,7 +63,6 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
-    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zicntr   : boolean := true;   -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond   : boolean := false;  -- implement conditional operations extension?
     CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
@@ -527,7 +526,6 @@ begin
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zicntr   => CPU_EXTENSION_RISCV_Zicntr,   -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond   => CPU_EXTENSION_RISCV_Zicond,   -- implement conditional operations extension?
     CPU_EXTENSION_RISCV_Zihpm    => CPU_EXTENSION_RISCV_Zihpm,    -- implement hardware performance monitors?
@@ -626,7 +624,6 @@ begin
       clk_i        => clk_i,          -- global clock, rising edge
       rstn_i       => rstn_int,       -- global reset, low-active, async
       clear_i      => cpu_i.fence,    -- cache clear
-      miss_o       => open,           -- cache miss
       -- host controller interface --
       host_addr_i  => cpu_i.addr,     -- bus access address
       host_rdata_o => cpu_i.rdata,    -- bus read data
@@ -673,7 +670,6 @@ begin
       clk_i        => clk_i,          -- global clock, rising edge
       rstn_i       => rstn_int,       -- global reset, low-active, async
       clear_i      => cpu_d.fence,    -- cache clear
-      miss_o       => open,           -- cache miss
       -- host controller interface --
       host_addr_i  => cpu_d.addr,     -- bus access address
       host_rdata_o => cpu_d.rdata,    -- bus read data

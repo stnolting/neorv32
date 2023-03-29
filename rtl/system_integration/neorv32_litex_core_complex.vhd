@@ -180,7 +180,6 @@ begin
     CPU_EXTENSION_RISCV_C        => configs_c.riscv_c(CONFIG),      -- implement compressed extension?
     CPU_EXTENSION_RISCV_M        => configs_c.riscv_m(CONFIG),      -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        => configs_c.riscv_u(CONFIG),      -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zicsr    => true,                           -- implement CSR system?
     CPU_EXTENSION_RISCV_Zicntr   => configs_c.riscv_zicntr(CONFIG), -- implement base counters?
     CPU_EXTENSION_RISCV_Zihpm    => configs_c.riscv_zihpm(CONFIG),  -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei => true,                           -- implement instruction stream sync.?
