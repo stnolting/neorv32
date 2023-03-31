@@ -274,8 +274,6 @@ endif
 	@$(OBJCOPY) -V
 	@echo "---------------- Check: $(SIZE) ----------------"
 	@$(SIZE) -V
-	@echo "---------------- Check: $(GDB) ----------------"
-	@$(GDB) -v
 	@echo "---------------- Check: NEORV32 image_gen ----------------"
 	@$(IMAGE_GEN) -help
 	@echo "---------------- Check: Native GCC ----------------"
