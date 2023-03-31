@@ -61,6 +61,11 @@
   #define UART_BAUD 19200
 #endif
 
+/** Set to 1 to enable UART HW handshaking */
+#ifndef UART_HW_HANDSHAKE_EN
+  #define UART_HW_HANDSHAKE_EN 0
+#endif
+
 /* -------- Status LED -------- */
 
 /** Set to 0 to disable bootloader status LED (heart beat) at GPIO.gpio_o(STATUS_LED_PIN) */
@@ -303,6 +308,9 @@ int main(void) {
 #if (UART_EN != 0)
   // setup UART0
   neorv32_uart0_setup(UART_BAUD, 0);
+#if (UART_HW_HANDSHAKE_EN != 0)
+  neorv32_uart0_rtscts_enable();
+#endif
 #endif
 
   // Configure machine system timer interrupt
