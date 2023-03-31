@@ -117,6 +117,7 @@ CC      = $(RISCV_PREFIX)gcc
 OBJDUMP = $(RISCV_PREFIX)objdump
 OBJCOPY = $(RISCV_PREFIX)objcopy
 SIZE    = $(RISCV_PREFIX)size
+GDB     = $(RISCV_PREFIX)gdb
 
 # Host native compiler
 CC_X86 = gcc -Wall -O -g
@@ -273,6 +274,8 @@ endif
 	@$(OBJCOPY) -V
 	@echo "---------------- Check: $(SIZE) ----------------"
 	@$(SIZE) -V
+	@echo "---------------- Check: $(GDB) ----------------"
+	@$(GDB) -v
 	@echo "---------------- Check: NEORV32 image_gen ----------------"
 	@$(IMAGE_GEN) -help
 	@echo "---------------- Check: Native GCC ----------------"
@@ -297,10 +300,17 @@ elf_info: $(APP_ELF)
 
 
 # -----------------------------------------------------------------------------
+# Run GDB
+# -----------------------------------------------------------------------------
+gdb: 
+	@$(GDB)
+
+
+# -----------------------------------------------------------------------------
 # Clean up
 # -----------------------------------------------------------------------------
 clean:
-	@rm -f *.elf *.o *.bin *.out *.asm *.vhd *.hex
+	@rm -f *.elf *.o *.bin *.out *.asm *.vhd *.hex .gdb_history
 
 clean_all: clean
 	@rm -f $(OBJ) $(IMAGE_GEN)
@@ -334,6 +344,7 @@ info:
 	@echo "OBJDUMP:    $(OBJDUMP)"
 	@echo "OBJCOPY:    $(OBJCOPY)"
 	@echo "SIZE:       $(SIZE)"
+	@echo "DEBUGGER:   $(GDB)"
 	@echo "---------------- Info: Compiler Configuration ----------------"
 	@$(CC) -v
 	@echo "---------------- Info: Compiler Libraries ----------------"
@@ -362,6 +373,7 @@ help:
 	@echo " help       - show this text"
 	@echo " check      - check toolchain"
 	@echo " info       - show makefile/toolchain configuration"
+	@echo " gdb        - run GNU debugger"
 	@echo " asm        - compile and generate <$(APP_ASM)> assembly listing file for manual debugging"
 	@echo " elf        - compile and generate <$(APP_ELF)> ELF file"
 	@echo " exe        - compile and generate <$(APP_EXE)> executable for upload via default bootloader (binary file, with header)"
