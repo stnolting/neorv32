@@ -1,7 +1,13 @@
 :sectnums:
 == NEORV32 Central Processing Unit (CPU)
 
-image::neorv32_cpu_block.png[width=600,align=center]
+The NEORV32 CPU is an area-optimized RISC-V core implementing the `rv32iZicsr` base ISA and supporting
+several optional ISA extensions. The CPU's micro architecture is based on a von-Neumann machine build
+upon a mixture of multi-cycle and pipelined execution schemes.
+
+[NOTE]
+This chapter assumes that the reader is familiar with the official
+RISC-V _User_ and _Privileged Architecture_ specifications.
 
 **Section Structure**
 
@@ -11,10 +17,6 @@ image::neorv32_cpu_block.png[width=600,align=center]
 * <<_control_and_status_registers_csrs>>
 * <<_traps_exceptions_and_interrupts>>
 * <<_bus_interface>>
-
-[NOTE]
-This chapter assumes that the reader is familiar with the official
-RISC-V _User_ and _Privileged Architecture_ specifications.
 
 
 // ####################################################################################################################
