@@ -468,7 +468,7 @@ enum NEORV32_HPMCNT_EVENT_enum {
 
 
 /**********************************************************************//**
- * CPU <b>pmpcfg</b> PMP configuration attributes (CSR entry 0)
+ * CPU <b>pmpcfg</b> PMP configuration attributes
  **************************************************************************/
 enum NEORV32_PMPCFG_ATTRIBUTES_enum {
   PMPCFG_R     = 0, /**< CPU pmpcfg attribute (0): Read */
@@ -483,8 +483,10 @@ enum NEORV32_PMPCFG_ATTRIBUTES_enum {
  * PMP modes
  **************************************************************************/
 enum NEORV32_PMP_MODES_enum {
-  PMP_OFF = 0, /**< '00': entry disabled */
-  PMP_TOR = 1  /**< '01': TOR mode (top of region) */
+  PMP_OFF   = 0, /**< '00': entry disabled */
+  PMP_TOR   = 1, /**< '01': TOR mode (top of region) */
+  PMP_NA4   = 2, /**< '10': Naturally-aligned power of two region (4 bytes) */
+  PMP_NAPOT = 3  /**< '11': Naturally-aligned power of two region (greater than 4 bytes )*/
 };
 
 
