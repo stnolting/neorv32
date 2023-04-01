@@ -35,11 +35,6 @@ instruction exception (-> <<_full_virtualization>>).
 
 **Incompatibility Issues and Limitations**
 
-.Physical Memory Protection (PMP)
-[WARNING]
-The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only implements the **TOR**
-(top of region) mode and only up to 16 PMP regions.
-
 .No Hardware Support of Misaligned Memory Accesses
 [IMPORTANT]
 The CPU does not support resolving unaligned memory access by the hardware (this is not a
@@ -561,13 +556,13 @@ to the RISC-V Privileged Architecture Specifications. In general, the PMP can **
 which by default has none, and can **revoke permissions from M-mode**, which by default has full permissions.
 The PMP is configured via the <<_machine_physical_memory_protection_csrs>>.
 
-[IMPORTANT]
-The NEORV32 PMP only supports **TOR** (top of region) mode, which basically is a "base-and-bound" concept, and only
-up to 16 PMP regions.
-
 .PMP Rules when in Debug Mode
 [NOTE]
 When in debug-mode all PMP rules are ignored making the debugger have maximum access rights.
+
+[IMPORTANT]
+Instruction fetches are also triggered when denied by a certain PMP rule. However, the fetched instruction(s)
+will not be executed and will not change CPU core state to preserve memory access protection. 
 
 
 ==== `Sdext` ISA Extension

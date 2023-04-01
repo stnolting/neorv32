@@ -393,7 +393,7 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\nPhys. Mem. Prot.:  ");
   uint32_t pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
   if (pmp_num_regions != 0)  {
-    neorv32_uart0_printf("%u region(s), %u bytes min. granularity", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
+    neorv32_uart0_printf("%u region(s), %u bytes granularity", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
   }
   else {
     neorv32_uart0_printf("none");

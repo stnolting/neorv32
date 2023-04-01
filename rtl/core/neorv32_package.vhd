@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080300"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080301"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -2615,7 +2615,7 @@ package body neorv32_package is
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t is
     variable mem_v : mem32_t(0 to depth-1);
   begin
-    mem_v := (others => (others => '0')); -- make sure remaining memory entries are set to zero
+    mem_v := (others => (others => '0')); -- [IMPORTANT] make sure remaining memory entries are set to zero
     if (init'length > depth) then
       return mem_v;
     end if;
