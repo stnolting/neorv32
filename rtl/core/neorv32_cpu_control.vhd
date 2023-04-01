@@ -313,7 +313,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- physical memory protection CSRs --
   type pmp_cfg_t     is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
-  type pmp_addr_t    is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+  type pmp_addr_t    is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(XLEN-1 downto 0);
   type pmp_cfg_rd_t  is array (0 to 03) of std_ulogic_vector(XLEN-1 downto 0);
   type pmp_addr_rd_t is array (0 to 15) of std_ulogic_vector(XLEN-1 downto 0);
   type pmp_t is record
@@ -2005,13 +2005,13 @@ begin
   -- write enable decoder --
   pmp_we: process(csr)
   begin
-    pmp.we_cfg  <= (others => '0');
-    pmp.we_addr <= (others => '0');
     -- Configuration registers --
+    pmp.we_cfg <= (others => '0');
     if (csr.addr(11 downto 2) = csr_class_pmpcfg_c) and (csr.we = '1') then
       pmp.we_cfg(to_integer(unsigned(csr.addr(1 downto 0)))) <= '1';
     end if;
     -- Address registers --
+    pmp.we_addr <= (others => '0');
     if (csr.addr(11 downto 4) = csr_class_pmpaddr_c) and (csr.we = '1') then
       pmp.we_addr(to_integer(unsigned(csr.addr(3 downto 0)))) <= '1';
     end if;
@@ -2026,43 +2026,55 @@ begin
         pmp.cfg(i)  <= (others => '0');
         pmp.addr(i) <= (others => '0');
       elsif rising_edge(clk_i) then
-        -- configuration register --
+        -- configuration --
         if (pmp.we_cfg(i/4) = '1') and (pmp.cfg(i)(7) = '0') then -- unlocked write access
-          pmp.cfg(i)(0) <= csr.wdata((i mod 4)*8+0); -- R - read
-          pmp.cfg(i)(1) <= csr.wdata((i mod 4)*8+1); -- W - write
-          pmp.cfg(i)(2) <= csr.wdata((i mod 4)*8+2); -- X - execute
-          pmp.cfg(i)(3) <= csr.wdata((i mod 4)*8+3); -- A_L - mode low [TOR-mode only!]
-          pmp.cfg(i)(4) <= '0'; -- A_H - mode high [TOR-mode only!]
-          pmp.cfg(i)(5) <= '0'; -- reserved
-          pmp.cfg(i)(6) <= '0'; -- reserved
-          pmp.cfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked / also enforce in machine-mode)
+          pmp.cfg(i)(2 downto 0) <= csr.wdata((i mod 4)*8+2 downto (i mod 4)*8+0); -- X (execute), W (write), R (read)
+          if (PMP_MIN_GRANULARITY > 4) and (csr.wdata((i mod 4)*8+4 downto (i mod 4)*8+3) = pmp_mode_na4_c) then
+            pmp.cfg(i)(4 downto 3) <= pmp_mode_off_c; -- NA4 not available, fall back to OFF
+          else
+            pmp.cfg(i)(4 downto 3) <= csr.wdata((i mod 4)*8+4 downto (i mod 4)*8+3); -- A (mode)
+          end if;
+          pmp.cfg(i)(6 downto 5) <= "00"; -- reserved
+          pmp.cfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked)
         end if;
-        -- address register --
+        -- address --
         if (pmp.we_addr(i) = '1') and (pmp.cfg(i)(7) = '0') then -- unlocked write access
           if (i < PMP_NUM_REGIONS-1) then
-            if (pmp.cfg(i+1)(7) = '0') or (pmp.cfg(i+1)(3) = '0') then -- cfg(i+1) not "LOCKED TOR" [TOR-mode only!]
-              pmp.addr(i) <= csr.wdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+            if (pmp.cfg(i+1)(7) = '0') or (pmp.cfg(i+1)(4 downto 3) /= pmp_mode_tor_c) then -- cfg(i+1) not "LOCKED TOR"
+              pmp.addr(i) <= "00" & csr.wdata(XLEN-3 downto 0);
             end if;
           else -- very last entry
-            pmp.addr(i) <= csr.wdata(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+            pmp.addr(i) <= "00" & csr.wdata(XLEN-3 downto 0);
           end if;
         end if;
       end if;
     end process pmp_reg;
   end generate;
 
-  -- PMP output to bus unit and read-back --
+  -- PMP output to bus unit and CSR read-back --
   pmp_connect: process(pmp)
   begin
-    pmp_addr_o  <= (others => (others => '0'));
     pmp_ctrl_o  <= (others => (others => '0'));
-    pmp_addr_rd <= (others => (others => '0'));
+    pmp_addr_o  <= (others => (others => '0'));
     pmp_cfg_rd  <= (others => (others => '0'));
+    pmp_addr_rd <= (others => (others => '0'));
     for i in 0 to PMP_NUM_REGIONS-1 loop
-      pmp_addr_o(i)(XLEN-1 downto index_size_f(PMP_MIN_GRANULARITY)) <= pmp.addr(i);
       pmp_ctrl_o(i) <= pmp.cfg(i);
-      pmp_addr_rd(i)(XLEN-3 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= pmp.addr(i);
+      pmp_addr_o(i) <= pmp.addr(i) & "00"; -- word aligned address
       pmp_cfg_rd(i/4)(8*(i mod 4)+7 downto 8*(i mod 4)+0) <= pmp.cfg(i);
+      pmp_addr_rd(i)(XLEN-1 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= pmp.addr(i)(XLEN-1 downto index_size_f(PMP_MIN_GRANULARITY)-2);
+      if (PMP_MIN_GRANULARITY = 8) then -- bit [G-1] reads as zero in TOR or OFF mode
+        if (pmp.cfg(i)(4) = '0') then -- TOR/OFF
+          pmp_addr_rd(i)(index_size_f(PMP_MIN_GRANULARITY)-1) <= '0';
+        end if;
+      elsif (PMP_MIN_GRANULARITY > 8) then
+        -- in NAPOT mode, bits [G-2:0] must read as one
+        pmp_addr_rd(i)(index_size_f(PMP_MIN_GRANULARITY)-2 downto 0) <= (others => '1');
+        -- in TOR or OFF mode, bits [G-1:0] must read as zero
+        if (pmp.cfg(i)(4) = '0') then -- TOR/OFF
+          pmp_addr_rd(i)(index_size_f(PMP_MIN_GRANULARITY)-1 downto 0) <= (others => '0');
+        end if;
+      end if;
     end loop;
   end process pmp_connect;
 
@@ -2093,7 +2105,7 @@ begin
     end process hpmevent_reg;
   end generate;
 
-  -- HPM event read-back --
+  -- HPM event CSR read-back --
   hpm_event_connect: process(hpmevent)
   begin
     hpmevent_rd <= (others => (others => '0'));
@@ -2398,17 +2410,13 @@ begin
   begin
     cnt.we_lo <= (others => '0');
     cnt.we_hi <= (others => '0');
-    -- NOTE: no need to check bits 6:5 of the CSR address here as they're always zero (checked by illegal CSR logic)
+    -- no need to check bits 6:5 of the address as they're always zero (checked by illegal CSR logic)
     if (csr.we = '1') and (csr.addr(11 downto 8) = csr_class_mcnt_c) then
-      for i in 0 to 31 loop
-        if (csr.addr(4 downto 0) = std_ulogic_vector(to_unsigned(i, 5))) then
-          if (csr.addr(7) = '0') then -- low word
-            cnt.we_lo(i) <= '1';
-          else -- high word
-            cnt.we_hi(i) <= '1';
-          end if;
-        end if;
-      end loop;
+      if (csr.addr(7) = '0') then -- low word
+        cnt.we_lo(to_integer(unsigned(csr.addr(4 downto 0)))) <= '1';
+      else -- high word
+        cnt.we_hi(to_integer(unsigned(csr.addr(4 downto 0)))) <= '1';
+      end if;
     end if;
   end process cnt_we;
 
@@ -2439,12 +2447,12 @@ begin
       end if;
     end process cnt_regs;
 
-    -- increment --
+    -- low-word increment --
     cnt.nxt(i) <= std_ulogic_vector(unsigned('0' & cnt.lo(i)) + 1) when (cnt.inc(i) = '1') else
                   std_ulogic_vector(unsigned('0' & cnt.lo(i)) + 0);
   end generate;
 
-  -- counter read-back --
+  -- counter CSR read-back --
   cnt_connect: process(cnt)
   begin
     cnt_lo_rd <= (others => (others => '0'));
