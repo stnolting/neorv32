@@ -108,7 +108,7 @@ uint32_t xirq_trap_handler_ack = 0;
 volatile uint32_t store_access_addr[2];
 
 /// Variable to test PMP
-volatile uint32_t pmp_access_addr;
+volatile uint32_t __attribute__((aligned(4))) pmp_access;
 
 /// Number of implemented PMP regions
 uint32_t pmp_num_regions;
@@ -260,23 +260,19 @@ int main() {
 
   // check if PMP is already locked
   tmp_a = neorv32_cpu_csr_read(CSR_PMPCFG0);
-  if ((tmp_a & ((1 << PMPCFG_L) << 0*8)) ||
-      (tmp_a & ((1 << PMPCFG_L) << 1*8)) ||
-      (tmp_a & ((1 << PMPCFG_L) << 2*8)) ||
-      (tmp_a & ((1 << PMPCFG_L) << 3*8))) {
+  tmp_b = ((1 << PMPCFG_L) << 0) | ((1 << PMPCFG_L) << 8) | ((1 << PMPCFG_L) << 16);
+
+  if ((tmp_a & tmp_b)) {
     PRINT_CRITICAL("\nERROR! PMP locked!\n");
     return 1;
   }
 
-  if (pmp_num_regions >= 4) { // sufficient regions for tests
+  if (pmp_num_regions >= 3) { // sufficient regions for tests
     cnt_test++;
 
-    // full access for M & U mode
-    // use entries 2 & 3 so we can use entries 0 & 1 later on for higher-prioritized configurations
-    tmp_a  = neorv32_cpu_pmp_configure_region(0, 0x00000000, (PMP_OFF << PMPCFG_A_LSB));
-    tmp_a  = neorv32_cpu_pmp_configure_region(1, 0x00000000, (PMP_OFF << PMPCFG_A_LSB));
-    tmp_a  = neorv32_cpu_pmp_configure_region(2, 0x00000000, (PMP_OFF << PMPCFG_A_LSB));
-    tmp_a += neorv32_cpu_pmp_configure_region(3, 0xFFFFFFFF, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_L)  | (1 << PMPCFG_R) | (1 << PMPCFG_W) | (1 << PMPCFG_X));
+    // execute permission for u-mode
+    // use entry 2 so we can use entries 0 & 1 later on for higher-prioritized configurations
+    tmp_a = neorv32_cpu_pmp_configure_region(2, -1, (PMP_NAPOT << PMPCFG_A_LSB) | (1 << PMPCFG_X));
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) && (tmp_a == 0)) {
       test_ok();
@@ -284,10 +280,6 @@ int main() {
     else {
       test_fail();
     }
-  }
-  else if ((pmp_num_regions > 0) && (pmp_num_regions < 4)) {
-    PRINT_CRITICAL("\nERROR! Insufficient PMP regions!\n");
-    return 1;
   }
 
 
@@ -1619,8 +1611,6 @@ int main() {
     neorv32_cpu_goto_user_mode();
     {
       // access to misa not allowed for user-level programs
-      tmp_a = neorv32_cpu_csr_read(CSR_MISA);
-      
       asm volatile ("addi %[rd], zero, 234 \n" // this value must not change
                     "csrr %[rd], misa " : [rd] "=r" (tmp_a) : ); // has to fail
     }
@@ -1641,29 +1631,28 @@ int main() {
   // Test physical memory protection
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] PMP:\n", cnt_test);
 
   // check if PMP is implemented
-  if (pmp_num_regions >= 4)  {
+  if (pmp_num_regions >= 3)  {
 
-    // Create PMP protected region
+    pmp_access = 0xcafe1234; // initialize
+
+
+    // General memory access from user mode - has to
+    // fail as u-mode has no permissions by default
     // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+    PRINT_STANDARD("[%i] PMP: U-mode read (denied) ", cnt_test);
     cnt_test++;
 
-    pmp_access_addr = 0xcafe1234; // initialize
-    tmp_a = (uint32_t)(&pmp_access_addr); // base address of protected region
+    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    neorv32_cpu_goto_user_mode();
+    {
+      asm volatile ("addi %[rd], zero, 0 \n"
+                    "lw   %[rd], 0(%[rs])" : [rd] "=r" (tmp_a) : [rs] "r" ((uint32_t)(&pmp_access)) );
+    }
 
-    // configure new region (with highest priority)
-    int pmp_res = 0;
-    // base
-    PRINT_STANDARD(" Setup PMP(0) OFF [-,-,-,-] @ 0x%x\n", tmp_a);
-    pmp_res += neorv32_cpu_pmp_configure_region(0, tmp_a, 0);
-    // bound
-    PRINT_STANDARD(" Setup PMP(1) TOR [!L,!X,!W,R] @ 0x%x ", tmp_a+4);
-    pmp_res += neorv32_cpu_pmp_configure_region(1, tmp_a+4, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_R)); // read-only
-
-    if ((pmp_res == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) {
+    if ((tmp_a == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS)) {
       test_ok();
     }
     else {
@@ -1671,16 +1660,39 @@ int main() {
     }
 
 
-    // ------ LOAD from U-mode: should succeed ------
+    // Create PMP protected region
+    // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-    PRINT_STANDARD("[%i] PMP: U-mode read (SUCCEED) ", cnt_test);
+    PRINT_STANDARD("[%i] PMP: setup ", cnt_test);
+    cnt_test++;
+
+    tmp_a = (uint32_t)(&pmp_access); // base address of protected region
+
+    // configure new region (with highest priority)
+    PRINT_STANDARD("[0] OFF @ 0x%x, ", tmp_a); // base
+    tmp_b = neorv32_cpu_pmp_configure_region(0, tmp_a >> 2, 0);
+    PRINT_STANDARD("[1] TOR (!L,!X,!W,R) @ 0x%x ", tmp_a+4); // bound
+    tmp_b += neorv32_cpu_pmp_configure_region(1, (tmp_a+4) >> 2, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_R)); // read-only
+
+    if ((tmp_b == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+
+    // LOAD from U-mode: should succeed
+    // ---------------------------------------------
+    neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+    PRINT_STANDARD("[%i] PMP: U-mode read (granted) ", cnt_test);
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      tmp_b = 0;
-      tmp_b = neorv32_cpu_load_unsigned_word((uint32_t)(&pmp_access_addr));
+      asm volatile ("addi %[rd], zero, 0 \n"
+                    "lw   %[rd], 0(%[rs])" : [rd] "=r" (tmp_b) : [rs] "r" ((uint32_t)(&pmp_access)) );
     }
 
     asm volatile ("ecall"); // switch back to machine mode
@@ -1692,19 +1704,20 @@ int main() {
     }
 
 
-    // ------ STORE from U-mode: should fail ------
+    // STORE from U-mode: should fail
+    // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-    PRINT_STANDARD("[%i] PMP: U-mode write (FAIL) ", cnt_test);
+    PRINT_STANDARD("[%i] PMP: U-mode write (denied) ", cnt_test);
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     neorv32_cpu_goto_user_mode();
     {
-      neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access_addr), 0); // store access -> should fail
+      neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access), 0); // store access -> should fail
     }
 
     asm volatile ("ecall"); // switch back to machine mode
-    if (pmp_access_addr == 0xcafe1234) {
+    if (pmp_access == 0xcafe1234) {
       test_ok();
     }
     else {
@@ -1712,20 +1725,21 @@ int main() {
     }
 
 
-    // ------ STORE from M mode using U mode permissions: should fail ------
+    // STORE from M mode using U mode permissions: should fail
+    // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-    PRINT_STANDARD("[%i] PMP: M-mode (U-mode permissions) write (FAIL) ", cnt_test);
+    PRINT_STANDARD("[%i] PMP: M-mode (U-mode permissions) write (denied) ", cnt_test);
     cnt_test++;
 
     // make M-mode load/store accesses use U-mode rights
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MPRV); // set MPRV: M uses U permissions for load/stores
     neorv32_cpu_csr_clr(CSR_MSTATUS, 3 << CSR_MSTATUS_MPP_L); // clear MPP: use U as effective privilege mode
 
-    neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access_addr), 0); // store access -> should fail
+    neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access), 0); // store access -> should fail
 
     neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MPRV);
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && (pmp_access_addr == 0xcafe1234)) {
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && (pmp_access == 0xcafe1234)) {
       test_ok();
     }
     else {
@@ -1733,19 +1747,18 @@ int main() {
     }
 
 
-    // ------ STORE from M mode with LOCKED: should fail ------
+    // STORE from M mode with LOCKED: should fail
+    // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-    PRINT_STANDARD("[%i] PMP: M-mode (LOCKED) write (FAIL) ", cnt_test);
+    PRINT_STANDARD("[%i] PMP: M-mode LOCKED write (denied) ", cnt_test);
     cnt_test++;
 
     // set lock bit
-    tmp_a = neorv32_cpu_csr_read(CSR_PMPCFG0);
-    tmp_a |= (1 << PMPCFG_L) << 8; // set lock bit in entry 1
-    neorv32_cpu_csr_write(CSR_PMPCFG0, tmp_a);
+    neorv32_cpu_csr_set(CSR_PMPCFG0, (1 << PMPCFG_L) << 8); // set lock bit in entry 1
 
-    neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access_addr), 0); // store access -> should fail
+    neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access), 0); // store access -> should fail
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && (pmp_access_addr == 0xcafe1234)) {
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && (pmp_access == 0xcafe1234)) {
       test_ok();
     }
     else {
@@ -1754,6 +1767,7 @@ int main() {
 
   }
   else {
+    PRINT_STANDARD("[%i] PMP tests: ", cnt_test);
     PRINT_STANDARD("[skipped, n.a.]\n");
   }
 
