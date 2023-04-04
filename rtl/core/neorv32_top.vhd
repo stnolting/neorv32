@@ -766,19 +766,19 @@ begin
     variable ack_v   : std_ulogic;
     variable err_v   : std_ulogic;
   begin
+    -- OR all response signals: only the module that has actually
+    -- been accessed is allowed to *set* its bus output signals
     rdata_v := (others => '0');
     ack_v   := '0';
     err_v   := '0';
-    -- OR all response signals: only the module that has actually
-    -- been accessed is allowed to *set* its bus output signals
     for i in resp_bus'range loop
       rdata_v := rdata_v or resp_bus(i).rdata; -- read data
       ack_v   := ack_v   or resp_bus(i).ack;   -- acknowledge
       err_v   := err_v   or resp_bus(i).err;   -- error
     end loop; -- i
-    p_bus.rdata <= rdata_v; -- processor bus: CPU transfer data input
-    p_bus.ack   <= ack_v;   -- processor bus: CPU transfer ACK input
-    p_bus.err   <= err_v;   -- processor bus: CPU transfer data bus error input
+    p_bus.rdata <= rdata_v;
+    p_bus.ack   <= ack_v;
+    p_bus.err   <= err_v;
   end process;
 
 
