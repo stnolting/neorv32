@@ -43,7 +43,6 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_alu is
   generic (
-    XLEN                       : natural; -- data path width
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_B      : boolean; -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
@@ -216,7 +215,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_shifter_inst: neorv32_cpu_cp_shifter
   generic map (
-    XLEN          => XLEN,         -- data path width
     FAST_SHIFT_EN => FAST_SHIFT_EN -- use barrel shifter for shift operations
   )
   port map (
@@ -240,7 +238,6 @@ begin
   if (CPU_EXTENSION_RISCV_M = true) or (CPU_EXTENSION_RISCV_Zmmul = true) generate
     neorv32_cpu_cp_muldiv_inst: neorv32_cpu_cp_muldiv
     generic map (
-      XLEN        => XLEN,                 -- data path width
       FAST_MUL_EN => FAST_MUL_EN,          -- use DSPs for faster multiplication
       DIVISION_EN => CPU_EXTENSION_RISCV_M -- implement divider hardware
     )
@@ -272,7 +269,6 @@ begin
   if (CPU_EXTENSION_RISCV_B = true) generate
     neorv32_cpu_cp_bitmanip_inst: neorv32_cpu_cp_bitmanip
     generic map (
-      XLEN          => XLEN,         -- data path width
       FAST_SHIFT_EN => FAST_SHIFT_EN -- use barrel shifter for shift operations
     )
     port map (
@@ -304,9 +300,6 @@ begin
   neorv32_cpu_cp_fpu_inst_true:
   if (CPU_EXTENSION_RISCV_Zfinx = true) generate
     neorv32_cpu_cp_fpu_inst: neorv32_cpu_cp_fpu
-    generic map (
-      XLEN => XLEN -- data path width
-    )
     port map (
       -- global control --
       clk_i    => clk_i,        -- global clock, rising edge
@@ -338,9 +331,6 @@ begin
   neorv32_cpu_cp_cfu_inst_true:
   if (CPU_EXTENSION_RISCV_Zxcfu = true) generate
     neorv32_cpu_cp_cfu_inst: neorv32_cpu_cp_cfu
-    generic map (
-      XLEN => XLEN -- data path width
-    )
     port map (
       -- global control --
       clk_i   => clk_i,        -- global clock, rising edge
@@ -370,9 +360,6 @@ begin
   neorv32_cpu_cp_cond_inst_true:
   if (CPU_EXTENSION_RISCV_Zicond = true) generate
     neorv32_cpu_cp_cond_inst: neorv32_cpu_cp_cond
-    generic map (
-      XLEN => XLEN -- data path width
-    )
     port map (
       -- global control --
       clk_i   => clk_i,        -- global clock, rising edge

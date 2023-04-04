@@ -45,7 +45,6 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_muldiv is
   generic (
-    XLEN        : natural; -- data path width
     FAST_MUL_EN : boolean; -- use DSPs for faster multiplication
     DIVISION_EN : boolean  -- implement divider hardware
   );
