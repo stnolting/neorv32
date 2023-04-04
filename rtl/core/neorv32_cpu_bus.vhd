@@ -43,7 +43,6 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_bus is
   generic (
-    XLEN                : natural; -- data path width
     PMP_NUM_REGIONS     : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   );
@@ -152,12 +151,7 @@ begin
           when "00"   => misaligned <= '0'; -- byte
           when "01"   => misaligned <= addr_i(0); -- half-word
           when "10"   => misaligned <= addr_i(1) or addr_i(0); -- word
-          when others => -- double-word
-            if (XLEN = 32) then -- RV32
-              misaligned <= '0';
-            else -- RV64
-              misaligned <= addr_i(2) or addr_i(1) or addr_i(0);
-            end if;
+          when others => misaligned <= '0'; -- undefined
         end case;
       end if;
     end if;
@@ -170,209 +164,71 @@ begin
 
   -- Write Data: Byte Enable and Alignment --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_do_reg_rv32:
-  if (XLEN = 32) generate
-    mem_do_reg: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        if (ctrl_i.bus_mo_we = '1') then
-          d_bus_ben_o <= (others => '0'); -- default
-          case ctrl_i.ir_funct3(1 downto 0) is -- data size
-
-            when "00" => -- byte
-              for i in 0 to (XLEN/8)-1 loop
-                d_bus_wdata_o(i*8+7 downto i*8) <= wdata_i(7 downto 0);
-              end loop;
-              d_bus_ben_o(to_integer(unsigned(addr_i(1 downto 0)))) <= '1';
-
-            when "01" => -- half-word
-              for i in 0 to (XLEN/16)-1 loop
-                d_bus_wdata_o(i*16+15 downto i*16) <= wdata_i(15 downto 0);
-              end loop;
-              if (addr_i(1) = '0') then
-                d_bus_ben_o <= "0011"; -- low half-word
-              else
-                d_bus_ben_o <= "1100"; -- high half-word
-              end if;
-
-            when others => -- word
-              for i in 0 to (XLEN/32)-1 loop
-                d_bus_wdata_o(i*32+31 downto i*32) <= wdata_i(31 downto 0);
-              end loop;
-              d_bus_ben_o <= (others => '1'); -- full word
-
-          end case;
-        end if;
+  mem_do_reg: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if (ctrl_i.bus_mo_we = '1') then
+        d_bus_ben_o <= (others => '0'); -- default
+        case ctrl_i.ir_funct3(1 downto 0) is
+          when "00" => -- byte
+            for i in 0 to (XLEN/8)-1 loop
+              d_bus_wdata_o(i*8+7 downto i*8) <= wdata_i(7 downto 0);
+            end loop;
+            d_bus_ben_o(to_integer(unsigned(addr_i(1 downto 0)))) <= '1';
+          when "01" => -- half-word
+            for i in 0 to (XLEN/16)-1 loop
+              d_bus_wdata_o(i*16+15 downto i*16) <= wdata_i(15 downto 0);
+            end loop;
+            if (addr_i(1) = '0') then
+              d_bus_ben_o <= "0011"; -- low half-word
+            else
+              d_bus_ben_o <= "1100"; -- high half-word
+            end if;
+          when others => -- word
+            for i in 0 to (XLEN/32)-1 loop
+              d_bus_wdata_o(i*32+31 downto i*32) <= wdata_i(31 downto 0);
+            end loop;
+            d_bus_ben_o <= (others => '1'); -- full word
+        end case;
       end if;
-    end process mem_do_reg;
-  end generate; -- /mem_do_reg_rv32
-
-  mem_do_reg_rv64:
-  if (XLEN = 64) generate
-    mem_do_reg: process(clk_i)
-      variable tmp_v : std_ulogic_vector(1 downto 0);
-    begin
-      if rising_edge(clk_i) then
-        if (ctrl_i.bus_mo_we = '1') then
-          d_bus_ben_o <= (others => '0'); -- default
-          case ctrl_i.ir_funct3(1 downto 0) is -- data size
-
-            when "00" => -- byte
-              for i in 0 to (XLEN/8)-1 loop
-                d_bus_wdata_o(i*8+7 downto i*8) <= wdata_i(7 downto 0);
-              end loop;
-              d_bus_ben_o(to_integer(unsigned(addr_i(2 downto 0)))) <= '1';
-
-            when "01" => -- half-word
-              for i in 0 to (XLEN/16)-1 loop
-                d_bus_wdata_o(i*16+15 downto i*16) <= wdata_i(15 downto 0);
-              end loop;
-              tmp_v := addr_i(1 downto 0);
-              case tmp_v is
-                when "00"   => d_bus_ben_o <= "00000011"; -- half-word 0
-                when "01"   => d_bus_ben_o <= "00001100"; -- half-word 1
-                when "10"   => d_bus_ben_o <= "00110000"; -- half-word 2
-                when others => d_bus_ben_o <= "11000000"; -- half-word 3
-              end case;
-
-            when "10" => -- word
-              for i in 0 to (XLEN/32)-1 loop
-                d_bus_wdata_o(i*32+31 downto i*32) <= wdata_i(31 downto 0);
-              end loop;
-              if (addr_i(2) = '0') then
-                d_bus_ben_o <= "00001111"; -- word 0
-              else
-                d_bus_ben_o <= "11110000"; -- word 1
-              end if;
-
-            when others => -- double-word
-              for i in 0 to (XLEN/64)-1 loop
-                d_bus_wdata_o(i*64+63 downto i*64) <= wdata_i(63 downto 0);
-              end loop;
-              d_bus_ben_o <= (others => '1'); -- full double-word
-
-          end case;
-        end if;
-      end if;
-    end process mem_do_reg;
-  end generate; -- /mem_do_reg_rv64
+    end if;
+  end process mem_do_reg;
 
 
   -- Read Data: Alignment and Sign-Extension ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_di_reg_rv32:
-  if (XLEN = 32) generate
-    mem_di_reg: process(clk_i)
-      variable tmp_v : std_ulogic_vector(1 downto 0);
-    begin
-      if rising_edge(clk_i) then
-        case ctrl_i.ir_funct3(1 downto 0) is
-
-          when "00" => -- byte
-            tmp_v := mar(1 downto 0);
-            case tmp_v is
-              when "00" => -- byte 0
-                rdata_o(7 downto 0) <= d_bus_rdata_i(07 downto 00);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(07))); -- sign extension
-              when "01" => -- byte 1
-                rdata_o(7 downto 0) <= d_bus_rdata_i(15 downto 08);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
-              when "10" => -- byte 2
-                rdata_o(7 downto 0) <= d_bus_rdata_i(23 downto 16);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(23))); -- sign extension
-              when others => -- byte 3
-                rdata_o(7 downto 0) <= d_bus_rdata_i(31 downto 24);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
-            end case;
-
-          when "01" => -- half-word
-            if (mar(1) = '0') then
-              rdata_o(15 downto 0) <= d_bus_rdata_i(15 downto 00); -- low half-word
-              rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
-            else
-              rdata_o(15 downto 0) <= d_bus_rdata_i(31 downto 16); -- high half-word
-              rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
-            end if;
-
-          when others => -- word
-            rdata_o(XLEN-1 downto 0) <= d_bus_rdata_i(XLEN-1 downto 0); -- full word
-
-        end case;
-      end if;
-    end process mem_di_reg;
-  end generate; -- /mem_di_reg_rv32
-
-  mem_di_reg_rv64:
-  if (XLEN = 64) generate
-    mem_di_reg: process(clk_i)
-      variable tmp3_v : std_ulogic_vector(2 downto 0);
-      variable tmp2_v : std_ulogic_vector(1 downto 0);
-    begin
-      if rising_edge(clk_i) then
-        case ctrl_i.ir_funct3(1 downto 0) is
-
-          when "00" => -- byte
-            tmp3_v := mar(2 downto 0);
-            case tmp3_v is
-              when "000" => -- byte 0
-                rdata_o(7 downto 0) <= d_bus_rdata_i(07 downto 00);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(07))); -- sign extension
-              when "001" => -- byte 1
-                rdata_o(7 downto 0) <= d_bus_rdata_i(15 downto 08);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
-              when "010" => -- byte 2
-                rdata_o(7 downto 0) <= d_bus_rdata_i(23 downto 16);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(23))); -- sign extension
-              when "011" => -- byte 3
-                rdata_o(7 downto 0) <= d_bus_rdata_i(31 downto 24);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
-              when "100" => -- byte 4
-                rdata_o(7 downto 0) <= d_bus_rdata_i(39 downto 32);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(39))); -- sign extension
-              when "101" => -- byte 5
-                rdata_o(7 downto 0) <= d_bus_rdata_i(47 downto 40);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(47))); -- sign extension
-              when "110" => -- byte 6
-                rdata_o(7 downto 0) <= d_bus_rdata_i(55 downto 48);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(55))); -- sign extension
-              when others => -- byte 7
-                rdata_o(7 downto 0) <= d_bus_rdata_i(63 downto 56);
-                rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(63))); -- sign extension
-            end case;
-
-          when "01" => -- half-word
-            tmp2_v := mar(1 downto 0);
-            case tmp2_v is
-              when "00" => -- half word 0
-                rdata_o(15 downto 0) <= d_bus_rdata_i(15 downto 00); -- low half-word
-                rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
-              when "01" => -- half word 1
-                rdata_o(15 downto 0) <= d_bus_rdata_i(31 downto 16); -- low half-word
-                rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
-              when "10" => -- half word 2
-                rdata_o(15 downto 0) <= d_bus_rdata_i(47 downto 32); -- low half-word
-                rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(47))); -- sign extension
-              when others => -- half word 3
-                rdata_o(15 downto 0) <= d_bus_rdata_i(63 downto 48); -- low half-word
-                rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(63))); -- sign extension
-            end case;
-
-          when "10" => -- word
-            if (mar(2) = '0') then
-              rdata_o(31 downto 0) <= d_bus_rdata_i(31 downto 00); -- low word
-              rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
-            else
-              rdata_o(31 downto 0) <= d_bus_rdata_i(63 downto 32); -- high word
-              rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(63))); -- sign extension
-            end if;
-
-          when others => -- double-word
-            rdata_o(XLEN-1 downto 0) <= d_bus_rdata_i(XLEN-1 downto 0); -- full double word
-
-        end case;
-      end if;
-    end process mem_di_reg;
-  end generate; -- /mem_di_reg_rv64
+  mem_di_reg: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      case ctrl_i.ir_funct3(1 downto 0) is
+        when "00" => -- byte
+          case mar(1 downto 0) is
+            when "00" => -- byte 0
+              rdata_o(7 downto 0) <= d_bus_rdata_i(07 downto 00);
+              rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(07))); -- sign extension
+            when "01" => -- byte 1
+              rdata_o(7 downto 0) <= d_bus_rdata_i(15 downto 08);
+              rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
+            when "10" => -- byte 2
+              rdata_o(7 downto 0) <= d_bus_rdata_i(23 downto 16);
+              rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(23))); -- sign extension
+            when others => -- byte 3
+              rdata_o(7 downto 0) <= d_bus_rdata_i(31 downto 24);
+              rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
+          end case;
+        when "01" => -- half-word
+          if (mar(1) = '0') then
+            rdata_o(15 downto 0) <= d_bus_rdata_i(15 downto 00); -- low half-word
+            rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
+          else
+            rdata_o(15 downto 0) <= d_bus_rdata_i(31 downto 16); -- high half-word
+            rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
+          end if;
+        when others => -- word
+          rdata_o(XLEN-1 downto 0) <= d_bus_rdata_i(XLEN-1 downto 0); -- full word
+      end case;
+    end if;
+  end process mem_di_reg;
 
   -- sign extension --
   data_sign <= not ctrl_i.ir_funct3(2); -- NOT unsigned LOAD (LBU, LHU)
@@ -479,10 +335,10 @@ begin
   end generate;
 
 
-  -- check mode --
-  pmp_check_mode_gen:
+  -- check region matching according to configured mode --
+  pmp_check_match_gen:
   for r in 0 to PMP_NUM_REGIONS-1 generate
-    pmp_check_mode: process(pmp_ctrl_i, pmp)
+    pmp_check_match: process(pmp_ctrl_i, pmp)
     begin
       case pmp_ctrl_i(r)(pmp_cfg_ah_c downto pmp_cfg_al_c) is
         when pmp_mode_off_c => -- entry disabled
@@ -500,13 +356,13 @@ begin
           pmp.i_match(r) <= pmp.i_cmp_mm(r);
           pmp.d_match(r) <= pmp.d_cmp_mm(r);
         end case;
-    end process pmp_check_mode;
+    end process pmp_check_match;
   end generate;
 
 
-  -- check permission --
+  -- generate permission bits --
   -- M mode: always allow if lock bit not set, otherwise check permission
-  pmp_check_permission:
+  pmp_permission_gen:
   for r in 0 to PMP_NUM_REGIONS-1 generate
     pmp.perm_ex(r) <= pmp_ctrl_i(r)(pmp_cfg_x_c) or (not pmp_ctrl_i(r)(pmp_cfg_l_c)) when (ctrl_i.cpu_priv = priv_mode_m_c) else pmp_ctrl_i(r)(pmp_cfg_x_c);
     pmp.perm_rd(r) <= pmp_ctrl_i(r)(pmp_cfg_r_c) or (not pmp_ctrl_i(r)(pmp_cfg_l_c)) when (ctrl_i.bus_priv = priv_mode_m_c) else pmp_ctrl_i(r)(pmp_cfg_r_c);
@@ -519,7 +375,7 @@ begin
   pmp.fail_ex(PMP_NUM_REGIONS) <= '1' when (ctrl_i.cpu_priv /= priv_mode_m_c) else '0';
   pmp.fail_rd(PMP_NUM_REGIONS) <= '1' when (ctrl_i.bus_priv /= priv_mode_m_c) else '0';
   pmp.fail_wr(PMP_NUM_REGIONS) <= '1' when (ctrl_i.bus_priv /= priv_mode_m_c) else '0';
-  -- This is a *structural* description of a prioritization logic implemented as a multiplexer chain. --
+  -- this is a *structural* description of a prioritization logic implemented as a multiplexer chain --
   pmp_chech_fault:
   for r in PMP_NUM_REGIONS-1 downto 0 generate -- start with lowest priority
     pmp.fail_ex(r) <= not pmp.perm_ex(r) when (pmp.i_match(r) = '1') else pmp.fail_ex(r+1);
