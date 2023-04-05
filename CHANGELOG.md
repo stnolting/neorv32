@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 05.04.2023 | 1.8.3.2 | `time` CSR struggles (again) and logic optimization; [#569](https://github.com/stnolting/neorv32/pull/569) |
 | 01.04.2023 | 1.8.3.1 | :sparkles: add full `NA4` and `NAPOT` support to the (now) RISC-V-compatible **physical memory protection (PMP)**; [#566](https://github.com/stnolting/neorv32/pull/566) |
 | 31.03.2023 | [**:rocket:1.8.3**](https://github.com/stnolting/neorv32/releases/tag/v1.8.3) | **New release** |
 | 29.03.2023 | 1.8.2.9 | :warning: remove `CPU_EXTENSION_RISCV_Zicsr` generic - `Zicsr` ISA extension is always enabled; optimize bus switch; VHDL code cleanups; [#562](https://github.com/stnolting/neorv32/pull/562) |
