@@ -35,6 +35,12 @@ instruction exception (-> <<_full_virtualization>>).
 
 **Incompatibility Issues and Limitations**
 
+.`time[h]` CSRs (Wall Clock Time)
+[IMPORTANT]
+The NEORV32 does not implement the user-mode `time[h]` registers. Any access to these registers will trap.
+It is recommended that the trap handler software provides a means of accessing the platform-defined <<_machine_system_timer_mtime>>.
+
+
 .No Hardware Support of Misaligned Memory Accesses
 [IMPORTANT]
 The CPU does not support resolving unaligned memory access by the hardware (this is not a
@@ -461,12 +467,12 @@ code (see `sw/example/floating_point_test`).
 
 ==== `Zicntr` ISA Extension
 
-The `Zicntr` ISA extension adds the basic <<_cycleh>>, <<_mcycleh>>, <<_timeh>> and <<_instreth>>, <<_minstreth>>
+The `Zicntr` ISA extension adds the basic <<_cycleh>>, <<_mcycleh>>, <<_instreth>> and <<_minstreth>>
 counter CSRs. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Zicntr`-related CSRs.
 
 [NOTE]
-Note that the <<_timeh>> CSRs are implemented as just another user-level shadow copy of the machine-mode cycle
-counters <<_mcycleh>> (just like <<_cycleh>>).
+The user-mode `time[h]` CSRs are **not implemented**. Any access will trap allowing the trap handler to
+retrieve system time from the <<_machine_system_timer_mtime>>.
 
 [NOTE]
 This extensions is stated as _mandatory_ by the RISC-V spec. However, area-constrained setups may remove
@@ -713,20 +719,20 @@ show the values written to the according CSRs when a trap is triggered:
 [options="header",grid="rows"]
 |=======================
 | Trap ID [C] | Triggered when ...
-| _TRAP_CODE_I_MISALIGNED_ | fetching a 32-bit instruction word that is not 32-bit-aligned (see note below)
-| _TRAP_CODE_I_ACCESS_     | bus timeout or bus access error during instruction word fetch
-| _TRAP_CODE_I_ILLEGAL_    | trying to execute an invalid instruction word (malformed or not supported) or on a privilege violation
-| _TRAP_CODE_MENV_CALL_    | executing `ecall` instruction in machine-mode
-| _TRAP_CODE_UENV_CALL_    | executing `ecall` instruction in user-mode
-| _TRAP_CODE_BREAKPOINT_   | executing `ebreak` instruction or if <<_trigger_module>> fires
-| _TRAP_CODE_S_MISALIGNED_ | storing data to an address that is not naturally aligned to the data size (byte, half, word)
-| _TRAP_CODE_L_MISALIGNED_ | loading data from an address that is not naturally aligned to the data size  (byte, half, word)
-| _TRAP_CODE_S_ACCESS_     | bus timeout or bus access error during load data operation
-| _TRAP_CODE_L_ACCESS_     | bus timeout or bus access error during store data operation
-| _TRAP_CODE_FIRQ_0_ ... _TRAP_CODE_FIRQ_15_| caused by interrupt-condition of processor-internal modules, see <<_neorv32_specific_fast_interrupt_requests>>
-| _TRAP_CODE_MEI_          | machine external interrupt (via dedicated top-entity signal)
-| _TRAP_CODE_MSI_          | machine software interrupt (via dedicated top-entity signal)
-| _TRAP_CODE_MTI_          | machine timer interrupt (internal machine timer or via dedicated top-entity signal)
+| `TRAP_CODE_I_MISALIGNED` | fetching a 32-bit instruction word that is not 32-bit-aligned (see note below)
+| `TRAP_CODE_I_ACCESS`     | bus timeout or bus access error during instruction word fetch
+| `TRAP_CODE_I_ILLEGAL`    | trying to execute an invalid instruction word (malformed or not supported) or on a privilege violation
+| `TRAP_CODE_MENV_CALL`    | executing `ecall` instruction in machine-mode
+| `TRAP_CODE_UENV_CALL`    | executing `ecall` instruction in user-mode
+| `TRAP_CODE_BREAKPOINT`   | executing `ebreak` instruction or if <<_trigger_module>> fires
+| `TRAP_CODE_S_MISALIGNED` | storing data to an address that is not naturally aligned to the data size (byte, half, word)
+| `TRAP_CODE_L_MISALIGNED` | loading data from an address that is not naturally aligned to the data size  (byte, half, word)
+| `TRAP_CODE_S_ACCESS`     | bus timeout or bus access error during load data operation
+| `TRAP_CODE_L_ACCESS`     | bus timeout or bus access error during store data operation
+| `TRAP_CODE_FIRQ_0` ... `TRAP_CODE_FIRQ_15` | caused by interrupt-condition of processor-internal modules, see <<_neorv32_specific_fast_interrupt_requests>>
+| `TRAP_CODE_MEI`          | machine external interrupt (via dedicated top-entity signal)
+| `TRAP_CODE_MSI`          | machine software interrupt (via dedicated top-entity signal)
+| `TRAP_CODE_MTI`          | machine timer interrupt (internal machine timer or via dedicated top-entity signal)
 |=======================
 
 .Resumable Exceptions
