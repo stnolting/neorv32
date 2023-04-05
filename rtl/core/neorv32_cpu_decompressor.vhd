@@ -72,44 +72,48 @@ architecture neorv32_cpu_decompressor_rtl of neorv32_cpu_decompressor is
   constant ci_funct3_lsb_c : natural := 13;
   constant ci_funct3_msb_c : natural := 15;
 
+  -- immediates --
+  signal imm20 : std_ulogic_vector(20 downto 0);
+  signal imm12 : std_ulogic_vector(12 downto 0);
+
 begin
+
+  -- Large Immediates -----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+
+  -- 22-bit sign-extended immediate for J/JAL --
+  imm20(00) <= '0';
+  imm20(01) <= ci_instr16_i(3);
+  imm20(02) <= ci_instr16_i(4);
+  imm20(03) <= ci_instr16_i(5);
+  imm20(04) <= ci_instr16_i(11);
+  imm20(05) <= ci_instr16_i(2);
+  imm20(06) <= ci_instr16_i(7);
+  imm20(07) <= ci_instr16_i(6);
+  imm20(08) <= ci_instr16_i(9);
+  imm20(09) <= ci_instr16_i(10);
+  imm20(10) <= ci_instr16_i(8);
+  imm20(20 downto 11) <= (others => ci_instr16_i(12)); -- sign extension
+  
+  -- 12-bit sign-extended immediate for branches --
+  imm12(00) <= '0';
+  imm12(01) <= ci_instr16_i(3);
+  imm12(02) <= ci_instr16_i(4);
+  imm12(03) <= ci_instr16_i(10);
+  imm12(04) <= ci_instr16_i(11);
+  imm12(05) <= ci_instr16_i(2);
+  imm12(06) <= ci_instr16_i(5);
+  imm12(07) <= ci_instr16_i(6);
+  imm12(12 downto 08) <= (others => ci_instr16_i(12)); -- sign extension
+
 
   -- Compressed Instruction Decoder ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  decompressor: process(ci_instr16_i)
-    variable imm20_v : std_ulogic_vector(20 downto 0);
-    variable imm12_v : std_ulogic_vector(12 downto 0);
+  decompressor: process(ci_instr16_i, imm20, imm12)
   begin
     -- defaults --
     ci_illegal_o <= '0';
     ci_instr32_o <= (others => '0');
-
-    -- helper: 22-bit sign-extended immediate for J/JAL --
-    imm20_v := (others => ci_instr16_i(12)); -- sign extension
-    imm20_v(00):= '0';
-    imm20_v(01):= ci_instr16_i(3);
-    imm20_v(02):= ci_instr16_i(4);
-    imm20_v(03):= ci_instr16_i(5);
-    imm20_v(04):= ci_instr16_i(11);
-    imm20_v(05):= ci_instr16_i(2);
-    imm20_v(06):= ci_instr16_i(7);
-    imm20_v(07):= ci_instr16_i(6);
-    imm20_v(08):= ci_instr16_i(9);
-    imm20_v(09):= ci_instr16_i(10);
-    imm20_v(10):= ci_instr16_i(8);
-    imm20_v(11):= ci_instr16_i(12);
-
-    -- helper: 12-bit sign-extended immediate for branches --
-    imm12_v := (others => ci_instr16_i(12)); -- sign extension
-    imm12_v(00):= '0';
-    imm12_v(01):= ci_instr16_i(3);
-    imm12_v(02):= ci_instr16_i(4);
-    imm12_v(03):= ci_instr16_i(10);
-    imm12_v(04):= ci_instr16_i(11);
-    imm12_v(05):= ci_instr16_i(2);
-    imm12_v(06):= ci_instr16_i(5);
-    imm12_v(07):= ci_instr16_i(6);
-    imm12_v(08):= ci_instr16_i(12);
 
     -- actual decoder --
     case ci_instr16_i(ci_opcode_msb_c downto ci_opcode_lsb_c) is
@@ -189,10 +193,10 @@ begin
               ci_instr32_o(instr_rd_msb_c downto instr_rd_lsb_c) <= "00001"; -- save return address to link register
             end if;
             ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_jal_c;
-            ci_instr32_o(19 downto 12)                                 <= imm20_v(19 downto 12);
-            ci_instr32_o(20)                                           <= imm20_v(11);
-            ci_instr32_o(30 downto 21)                                 <= imm20_v(10 downto 01);
-            ci_instr32_o(31)                                           <= imm20_v(20);
+            ci_instr32_o(19 downto 12)                                 <= imm20(19 downto 12);
+            ci_instr32_o(20)                                           <= imm20(11);
+            ci_instr32_o(30 downto 21)                                 <= imm20(10 downto 01);
+            ci_instr32_o(31)                                           <= imm20(20);
 
           when "110" | "111" => -- C.BEQ, C.BNEZ
           -- ----------------------------------------------------------------------------------------------------------
@@ -204,10 +208,10 @@ begin
             ci_instr32_o(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_branch_c;
             ci_instr32_o(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c);
             ci_instr32_o(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= "00000"; -- x0
-            ci_instr32_o(07)                                           <= imm12_v(11);
-            ci_instr32_o(11 downto 08)                                 <= imm12_v(04 downto 01);
-            ci_instr32_o(30 downto 25)                                 <= imm12_v(10 downto 05);
-            ci_instr32_o(31)                                           <= imm12_v(12);
+            ci_instr32_o(07)                                           <= imm12(11);
+            ci_instr32_o(11 downto 08)                                 <= imm12(04 downto 01);
+            ci_instr32_o(30 downto 25)                                 <= imm12(10 downto 05);
+            ci_instr32_o(31)                                           <= imm12(12);
 
           when "010" => -- C.LI
           -- ----------------------------------------------------------------------------------------------------------

@@ -52,7 +52,6 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    XLEN                         : natural; -- data path width
     HART_ID                      : std_ulogic_vector(31 downto 0); -- hardware thread ID
     VENDOR_ID                    : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
@@ -199,15 +198,12 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     state_nxt    : execute_engine_state_t;
     state_prev   : execute_engine_state_t;
     state_prev2  : execute_engine_state_t;
-    --
     i_reg        : std_ulogic_vector(31 downto 0);
     i_reg_nxt    : std_ulogic_vector(31 downto 0);
-    --
     is_ci        : std_ulogic; -- current instruction is de-compressed instruction
     is_ci_nxt    : std_ulogic;
     is_ici       : std_ulogic; -- current instruction is illegal de-compressed instruction
     is_ici_nxt   : std_ulogic;
-    --
     branch_taken : std_ulogic; -- branch condition fulfilled
     pc           : std_ulogic_vector(XLEN-1 downto 0); -- actual PC, corresponding to current executed instruction
     pc_mux_sel   : std_ulogic; -- source select for PC update
@@ -215,7 +211,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     next_pc      : std_ulogic_vector(XLEN-1 downto 0); -- next PC, corresponding to next instruction to be executed
     next_pc_inc  : std_ulogic_vector(XLEN-1 downto 0); -- increment to get next PC
     pc_last      : std_ulogic_vector(XLEN-1 downto 0); -- PC of last executed instruction
-    --
     sleep        : std_ulogic; -- CPU in sleep mode
     sleep_nxt    : std_ulogic;
     branched     : std_ulogic; -- instruction fetch was reset
@@ -403,6 +398,9 @@ begin
         fetch_engine.restart <= fetch_engine.restart or fetch_engine.reset;
       end if;
 
+      -- register PMP fault --
+      fetch_engine.pmp_err <= i_pmp_fault_i;
+
       -- fsm --
       case fetch_engine.state is
 
@@ -414,7 +412,6 @@ begin
 
         when IF_REQUEST => -- request new 32-bit-aligned instruction word
         -- ------------------------------------------------------------
-          fetch_engine.pmp_err <= i_pmp_fault_i;
           if (ipb.free = "11") then -- wait for free IPB space
             fetch_engine.state <= IF_PENDING;
           end if;
@@ -424,7 +421,6 @@ begin
           if (fetch_engine.resp = '1') then -- wait for bus response
             fetch_engine.pc        <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4);
             fetch_engine.unaligned <= '0';
-            fetch_engine.pmp_err   <= '0';
             if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
               fetch_engine.state <= IF_RESTART;
             -- do not trigger new instruction fetch when a branch instruction is being executed (wait for branch destination)
@@ -659,7 +655,7 @@ begin
       execute_engine.state       <= BRANCHED; -- reset is a branch from "somewhere"
       execute_engine.state_prev  <= BRANCHED;
       execute_engine.state_prev2 <= BRANCHED;
-      execute_engine.branched    <= '1'; -- reset is a branch from "somewhere"
+      execute_engine.branched    <= '0';
       execute_engine.i_reg       <= (others => '0');
       execute_engine.is_ci       <= '0';
       execute_engine.is_ici      <= '0';
@@ -932,8 +928,6 @@ begin
         if (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- instruction available?
           -- update IR *only* if we have a new instruction word available as this register must not contain non-defined values --
           execute_engine.i_reg_nxt <= issue_engine.data(31 downto 0); -- <has to stay here>
-          -- clear branch flipflop --
-          execute_engine.branched_nxt <= '0';
           -- instruction fetch exceptions --
           trap_ctrl.instr_ma <= issue_engine.data(33) and (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_C)); -- misaligned instruction fetch (if C disabled)
           trap_ctrl.instr_be <= issue_engine.data(34); -- bus access fault during instruction fetch
@@ -976,6 +970,10 @@ begin
       when EXECUTE => -- Decode and execute instruction (control has to be here for exactly 1 cycle in any case!)
       -- [NOTE] register file is read in this stage; due to the sync read, data will be available in the _next_ state
       -- ------------------------------------------------------------
+        -- clear branch flipflop --
+        execute_engine.branched_nxt <= '0';
+
+        -- decode instruction class --
         case execute_engine.i_reg(instr_opcode_msb_c downto instr_opcode_lsb_c) is
 
           when opcode_alu_c | opcode_alui_c => -- register/immediate ALU operation
@@ -1260,8 +1258,8 @@ begin
         csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm); -- valid if Zihpm implemented
 
       -- counter and timer CSRs --
-      when csr_cycle_c  | csr_mcycle_c  | csr_time_c  | csr_instret_c  | csr_minstret_c  |
-           csr_cycleh_c | csr_mcycleh_c | csr_timeh_c | csr_instreth_c | csr_minstreth_c =>
+      when csr_cycle_c  | csr_mcycle_c  | csr_instret_c  | csr_minstret_c  |
+           csr_cycleh_c | csr_mcycleh_c | csr_instreth_c | csr_minstreth_c =>
         csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr); -- valid if Zicntr implemented
 
       -- debug-mode CSRs --
@@ -1480,17 +1478,17 @@ begin
       trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_start_ack);
 
       -- illegal instruction & environment call --
-      trap_ctrl.exc_buf(exc_envcall_c)  <= (trap_ctrl.exc_buf(exc_envcall_c)  or trap_ctrl.env_call) and (not trap_ctrl.env_start_ack);
+      trap_ctrl.exc_buf(exc_ecall_c)    <= (trap_ctrl.exc_buf(exc_ecall_c)    or trap_ctrl.env_call) and (not trap_ctrl.env_start_ack);
       trap_ctrl.exc_buf(exc_iillegal_c) <= (trap_ctrl.exc_buf(exc_iillegal_c) or trap_ctrl.instr_il) and (not trap_ctrl.env_start_ack);
 
       -- break point --
       if (CPU_EXTENSION_RISCV_Sdext = true) then
-        trap_ctrl.exc_buf(exc_break_c) <= (not trap_ctrl.env_start_ack) and (trap_ctrl.exc_buf(exc_break_c) or
+        trap_ctrl.exc_buf(exc_ebreak_c) <= (not trap_ctrl.env_start_ack) and (trap_ctrl.exc_buf(exc_ebreak_c) or
           (hw_trigger_fire and (not csr.tdata1_action)) or -- trigger module fires and enter-debug is disabled
           (trap_ctrl.break_point and (    csr.privilege) and (not csr.dcsr_ebreakm) and (not debug_ctrl.running)) or -- enter M-mode handler on ebreak in M-mode
           (trap_ctrl.break_point and (not csr.privilege) and (not csr.dcsr_ebreaku) and (not debug_ctrl.running))); -- enter M-mode handler on ebreak in U-mode
       else
-        trap_ctrl.exc_buf(exc_break_c) <= (trap_ctrl.exc_buf(exc_break_c) or trap_ctrl.break_point or hw_trigger_fire) and (not trap_ctrl.env_start_ack);
+        trap_ctrl.exc_buf(exc_ebreak_c) <= (trap_ctrl.exc_buf(exc_ebreak_c) or trap_ctrl.break_point or hw_trigger_fire) and (not trap_ctrl.env_start_ack);
       end if;
 
       -- debug-mode entry --
@@ -1604,8 +1602,8 @@ begin
       if    (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c;  -- instruction address misaligned
       elsif (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iba_c;  -- instruction access fault
       elsif (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then trap_ctrl.cause <= trap_iil_c;  -- illegal instruction
-      elsif (trap_ctrl.exc_buf(exc_envcall_c)  = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & csr.privilege & csr.privilege; -- environment call (U/M)
-      elsif (trap_ctrl.exc_buf(exc_break_c)    = '1') then trap_ctrl.cause <= trap_brk_c;  -- breakpoint
+      elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & csr.privilege & csr.privilege; -- environment call (U/M)
+      elsif (trap_ctrl.exc_buf(exc_ebreak_c)   = '1') then trap_ctrl.cause <= trap_brk_c;  -- breakpoint
       elsif (trap_ctrl.exc_buf(exc_salign_c)   = '1') then trap_ctrl.cause <= trap_sma_c;  -- store address misaligned
       elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c;  -- load address misaligned
       elsif (trap_ctrl.exc_buf(exc_saccess_c)  = '1') then trap_ctrl.cause <= trap_sbe_c;  -- store access fault
@@ -1944,8 +1942,8 @@ begin
       -- ********************************************************************************
 
       -- hardwired bits --
-      csr.mcounteren(1)    <= '0'; -- [m]time[h], unused/reserved
-      csr.mcountinhibit(1) <= '0'; -- [m]time[h], unused/reserved
+      csr.mcounteren(1)    <= '0'; -- time[h] not implemented
+      csr.mcountinhibit(1) <= '0'; -- time[h] not implemented
 
       -- no FPU --
       if (CPU_EXTENSION_RISCV_Zfinx = false) then
@@ -2176,7 +2174,6 @@ begin
         when csr_mcounteren_c => -- machine counter enable register
           if (CPU_EXTENSION_RISCV_U = true) then
             csr.rdata(0) <= csr.mcounteren(0); -- allow user-level access to cycle[h]
-            csr.rdata(1) <= csr.mcounteren(1); -- allow user-level access to time[h]
             csr.rdata(2) <= csr.mcounteren(2); -- allow user-level access to instret[h]
             if (CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 0) then -- any HPMs implemented?
               csr.rdata((HPM_NUM_CNTS+3)-1 downto 3) <= csr.mcounteren((HPM_NUM_CNTS+3)-1 downto 3); -- allow user-level access to all available hpmcounter*[h] CSRs
@@ -2268,7 +2265,6 @@ begin
         -- --------------------------------------------------------------------
         -- low word --
         when csr_mcycle_c        | csr_cycle_c        => if (CPU_EXTENSION_RISCV_Zicntr) then csr.rdata <= cnt_lo_rd(00); end if;
-        when csr_mtime_c         | csr_time_c         => if (CPU_EXTENSION_RISCV_Zicntr) then csr.rdata <= cnt_lo_rd(01); end if;
         when csr_minstret_c      | csr_instret_c      => if (CPU_EXTENSION_RISCV_Zicntr) then csr.rdata <= cnt_lo_rd(02); end if;
         when csr_mhpmcounter3_c  | csr_hpmcounter3_c  => if (CPU_EXTENSION_RISCV_Zihpm) and (HPM_NUM_CNTS > 00) then csr.rdata <= cnt_lo_rd(03); end if;
         when csr_mhpmcounter4_c  | csr_hpmcounter4_c  => if (CPU_EXTENSION_RISCV_Zihpm) and (HPM_NUM_CNTS > 01) then csr.rdata <= cnt_lo_rd(04); end if;
@@ -2302,7 +2298,6 @@ begin
 
         -- high word --
         when csr_mcycleh_c        | csr_cycleh_c        => if (CPU_EXTENSION_RISCV_Zicntr) then csr.rdata <= cnt_hi_rd(00); end if;
-        when csr_mtimeh_c         | csr_timeh_c         => if (CPU_EXTENSION_RISCV_Zicntr) then csr.rdata <= cnt_hi_rd(01); end if;
         when csr_minstreth_c      | csr_instreth_c      => if (CPU_EXTENSION_RISCV_Zicntr) then csr.rdata <= cnt_hi_rd(02); end if;
         when csr_mhpmcounter3h_c  | csr_hpmcounter3h_c  => if (CPU_EXTENSION_RISCV_Zihpm) and (HPM_NUM_CNTS > 00) then csr.rdata <= cnt_hi_rd(03); end if;
         when csr_mhpmcounter4h_c  | csr_hpmcounter4h_c  => if (CPU_EXTENSION_RISCV_Zihpm) and (HPM_NUM_CNTS > 01) then csr.rdata <= cnt_hi_rd(04); end if;
@@ -2461,8 +2456,6 @@ begin
     if (CPU_EXTENSION_RISCV_Zicntr = true) then
       cnt_lo_rd(0) <= cnt.lo(0); -- cycle
       cnt_hi_rd(0) <= cnt.hi(0); -- cycleh
-      cnt_lo_rd(1) <= cnt.lo(0); -- time == cycle [!!!]
-      cnt_hi_rd(1) <= cnt.hi(0); -- timeh == cycleh [!!!]
       cnt_lo_rd(2) <= cnt.lo(2); -- instret
       cnt_hi_rd(2) <= cnt.hi(2); -- instreth
     end if;
@@ -2482,28 +2475,27 @@ begin
 
   -- Counter Increment Control (Trigger Events) ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  event_connect: process(clk_i)
+  counter_event: process(clk_i)
   begin
     -- increment if any enabled event fires, do not increment if CPU is in debug mode or if counter is inhibited
     if rising_edge(clk_i) then
-      cnt.inc <= (others => '0');
-      -- basic counters --
+      cnt.inc <= (others => '0'); -- default
+      -- base counters --
       cnt.inc(0) <= cnt_event(hpmcnt_event_cy_c) and (not csr.mcountinhibit(0)) and (not debug_ctrl.running); -- cycle
-      cnt.inc(1) <= cnt_event(hpmcnt_event_tm_c) and (not csr.mcountinhibit(1)) and (not debug_ctrl.running); -- time
       cnt.inc(2) <= cnt_event(hpmcnt_event_ir_c) and (not csr.mcountinhibit(2)) and (not debug_ctrl.running); -- instret
       -- hpm counters --
       for i in 0 to HPM_NUM_CNTS-1 loop
         cnt.inc(3+i) <= or_reduce_f(cnt_event and hpmevent.cfg(i)) and (not csr.mcountinhibit(3+i)) and (not debug_ctrl.running);
       end loop;
     end if;
-  end process event_connect;
+  end process counter_event;
 
-  -- RISC-V-specific basic counter events --
-  cnt_event(hpmcnt_event_cy_c)      <= '1' when (execute_engine.sleep = '0') else '0'; -- active cycle
-  cnt_event(hpmcnt_event_tm_c)      <= '0'; -- time (unused/reserved)
-  cnt_event(hpmcnt_event_ir_c)      <= '1' when (execute_engine.state = EXECUTE) else '0'; -- any executed instruction
+  -- RISC-V-specific basic counter events (for HPM and base counters) --
+  cnt_event(hpmcnt_event_cy_c) <= '1' when (execute_engine.sleep = '0') else '0'; -- active cycle
+  cnt_event(hpmcnt_event_tm_c) <= '0'; -- time (unused/reserved)
+  cnt_event(hpmcnt_event_ir_c) <= '1' when (execute_engine.state = EXECUTE) else '0'; -- retired instruction
 
-  -- NEORV32-specific counter events --
+  -- NEORV32-specific counter events (for HPM counters only) --
   cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)    and (execute_engine.is_ci      = '1')        else '0'; -- executed compressed instruction
   cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = IF_PENDING) and (fetch_engine.state_prev   = IF_PENDING) else '0'; -- instruction fetch memory wait cycle
   cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)   and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle

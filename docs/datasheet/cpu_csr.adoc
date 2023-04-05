@@ -69,10 +69,8 @@ Any illegal read access to a CSR will return zero in the operation's destination
 | 0xB80   | <<_mcycleh, `mcycleh`>>             | `CSR_MCYCLEH`        | MRW | Machine cycle counter high word
 | 0xB82   | <<_minstreth, `minstreth`>>         | `CSR_MINSTRETH`      | MRW | Machine instruction-retired counter high word
 | 0xC00   | <<_cycleh, `cycle`>>                | `CSR_CYCLE`          | URO | Cycle counter low word
-| 0xC01   | <<_timeh, `time`>>                  | `CSR_TIME`           | URO | Time counter low word
 | 0xC02   | <<_instreth, `instret`>>            | `CSR_INSTRET`        | URO | Instruction-retired counter low word
 | 0xC80   | <<_cycleh, `cycleh`>>               | `CSR_CYCLEH`         | URO | Cycle counter high word
-| 0xC81   | <<_timeh, `timeh`>>                 | `CSR_TIMEH`          | URO | Time counter high word
 | 0xC82   | <<_instreth, `instreth`>>           | `CSR_INSTRETH`       | URO | Instruction-retired counter high word
 5+^| **<<_hardware_performance_monitors_hpm_csrs>>**
 | 0x323 .. 0x33F | <<_mhpmevent, `mhpmevent3`>> .. <<_mhpmevent, `mhpmevent31`>>             | `CSR_MHPMEVENT3` .. `CSR_MHPMEVENT31`       | MRW | Machine performance-monitoring event select for counter 3..31
@@ -259,7 +257,7 @@ bit for the higher-privilege mode." - RISC-V ISA Spec.
 
 [NOTE]
 The NEORV32 `misa` CSR is read-only. Hence, active CPU extensions are entirely defined by pre-synthesis configurations
-and cannot be switch on/off during runtime. For compatibility reasons any write access to this CSR is simply ignored and
+and cannot be switched on/off during runtime. For compatibility reasons any write access to this CSR is simply ignored and
 will _not_ cause an illegal instruction exception.
 
 .`misa` CSR bits
@@ -352,10 +350,10 @@ This CSR is also available if U mode is disabled, but the register is hardwired 
 [options="header",grid="rows"]
 |=======================
 | Bit  | R/W | Function
-| 0    | r/w | **CY** User-level code is allowed to read <<_cycleh>> CSRs when set
-| 1    | r/w | **TM** User-level code is allowed to read <<_timeh>> CSRs when set
-| 2    | r/w | **IR** User-level code is allowed to read <<_instreth>> CSRs when set
-| 31:3 | r/w | **HPM** user-level code is allowed to read <<_hpmcounterh>> CSRs when set
+| 0    | r/w | **CY**: User-level code is allowed to read <<_cycleh>> CSRs when set
+| 1    | r/- | **TM**: Hardwired to zero as `time[h]` CSRs are not implemented
+| 2    | r/w | **IR**: User-level code is allowed to read <<_instreth>> CSRs when set
+| 31:3 | r/w | **HPM**: user-level code is allowed to read <<_hpmcounterh>> CSRs when set
 |=======================
 
 
@@ -561,9 +559,10 @@ address masks. Make sure to wait for this time before completing the PMP region 
 :sectnums:
 ==== (Machine) Counter and Timer CSRs
 
-.Counter Size
-[NOTE]
-When implemented (by enabling the `Zicntr` ISA extension) the standard CPU counters are always 64-bit wide (low-word + high-word).
+.`time[h]` CSRs (Wall Clock Time)
+[IMPORTANT]
+The NEORV32 does not implement the user-mode `time[h]` registers. Any access to these registers will trap.
+It is recommended that the trap handler software provides a means of accessing the platform-defined <<_machine_system_timer_mtime>>.
 
 .Instruction Retired Counter Increment
 [NOTE]
@@ -583,22 +582,6 @@ if this instruction is actually going to retire or if it causes an exception.
 | ISA         | `Zicsr` + `Zicntr`
 | Description | The `cycle[h]` CSRs are user-mode shadow copies of the according <<_mcycleh>> CSRs. The user-level
 counter are read-only. Any write access will raise an illegal instruction exception.
-|=======================
-
-
-{empty} +
-[discrete]
-===== **`time[h]`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | Time counter
-| Address     | `0xc01` (`time`), `0xc81` (`timeh`)
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` + `Zicntr`
-| Description | The `time[h]` CSRs are a shadow copy of the <<_cycleh>> cycle counter CSRs. These CSRs
-are read-only. Any write access will raise an illegal instruction exception.
 |=======================
 
 
@@ -766,7 +749,7 @@ counter CSRs are read-only. Any write access will raise an illegal instruction e
 |=======================
 | Bit  | Name [C] | R/W | Event
 | 0    | `CSR_MCOUNTINHIBIT_IR` | r/w | **IR**: Set to `1` to halt `[m]instret[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
-| 1    | -                      | r/- | _reserved_, read as zero
+| 1    | -                      | r/- | **TM**: Hardwired to zero as `time[h]` CSRs are not implemented
 | 2    | `CSR_MCOUNTINHIBIT_CY` | r/w | **CY**: Set to `1` to halt `[m]cycle[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
 | 3:31 | `CSR_MCOUNTINHIBIT_HPM3` : `CSR_MCOUNTINHIBIT_HPM31` | r/w | **HPMx**: Set to `1` to halt `[m]hpmcount*[h]`; hardwired to zero if `Zihpm` ISA extension is disabled
 |=======================

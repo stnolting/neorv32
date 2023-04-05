@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Main VHDL package file >>                                                        #
+-- # << NEORV32 - Main VHDL Package File (CPU and SoC) >>                                          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -58,9 +58,12 @@ package neorv32_package is
   -- log2 of co-processor timeout cycles --
   constant cp_timeout_c : natural := 7; -- default = 7 (= 128 cycles)
 
+  -- native data path width --
+  constant XLEN : natural := 32; -- do not change!
+
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080301"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080302"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -895,8 +898,8 @@ package neorv32_package is
   constant exc_iaccess_c  : natural :=  0; -- instruction access fault
   constant exc_iillegal_c : natural :=  1; -- illegal instruction
   constant exc_ialign_c   : natural :=  2; -- instruction address misaligned
-  constant exc_envcall_c  : natural :=  3; -- environment call
-  constant exc_break_c    : natural :=  4; -- breakpoint
+  constant exc_ecall_c   : natural :=  3; -- environment call
+  constant exc_ebreak_c   : natural :=  4; -- breakpoint
   constant exc_salign_c   : natural :=  5; -- store address misaligned
   constant exc_lalign_c   : natural :=  6; -- load address misaligned
   constant exc_saccess_c  : natural :=  7; -- store access fault
@@ -1203,7 +1206,6 @@ package neorv32_package is
   component neorv32_cpu_control
     generic (
       -- General --
-      XLEN                         : natural; -- data path width
       HART_ID                      : std_ulogic_vector(31 downto 0); -- hardware thread ID
       VENDOR_ID                    : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
@@ -1286,10 +1288,9 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_regfile
     generic (
-      XLEN                  : natural; -- data path width
-      CPU_EXTENSION_RISCV_E : boolean; -- implement embedded RF extension?
-      RS3_EN                : boolean; -- enable 3rd read port
-      RS4_EN                : boolean  -- enable 4th read port
+      RVE    : boolean; -- implement embedded RF extension?
+      RS3_EN : boolean; -- enable 3rd read port
+      RS4_EN : boolean  -- enable 4th read port
     );
     port (
       -- global control --
@@ -1312,7 +1313,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_alu
     generic (
-      XLEN                       : natural; -- data path width
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_B      : boolean; -- implement bit-manipulation extension?
       CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
@@ -1351,7 +1351,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_shifter
     generic (
-      XLEN          : natural; -- data path width
       FAST_SHIFT_EN : boolean  -- use barrel shifter for shift operations
     );
     port (
@@ -1373,7 +1372,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_muldiv
     generic (
-      XLEN        : natural; -- data path width
       FAST_MUL_EN : boolean; -- use DSPs for faster multiplication
       DIVISION_EN : boolean  -- implement divider hardware
     );
@@ -1396,7 +1394,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_bitmanip is
     generic (
-      XLEN          : natural; -- data path width
       FAST_SHIFT_EN : boolean  -- use barrel shifter for shift operations
     );
     port (
@@ -1419,9 +1416,6 @@ package neorv32_package is
   -- Component: CPU Co-Processor 32-bit FPU ('Zfinx' extension) -----------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_fpu
-    generic (
-      XLEN : natural -- data path width
-    );
     port (
       -- global control --
       clk_i    : in  std_ulogic; -- global clock, rising edge
@@ -1443,9 +1437,6 @@ package neorv32_package is
   -- Component: CPU Co-Processor for Conditional Operations ('Zicond' extension) ------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_cond
-    generic (
-      XLEN : natural -- data path width
-    );
     port (
       -- global control --
       clk_i   : in  std_ulogic; -- global clock, rising edge
@@ -1463,9 +1454,6 @@ package neorv32_package is
   -- Component: CPU Co-Processor Custom (Instr.) Functions Unit ('Zxcfu' extension) ---------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_cfu
-    generic (
-      XLEN : natural -- data path width
-    );
     port (
       -- global control --
       clk_i   : in  std_ulogic; -- global clock, rising edge
@@ -1487,7 +1475,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_bus
     generic (
-      XLEN                : natural; -- data path width
       PMP_NUM_REGIONS     : natural; -- number of regions (0..16)
       PMP_MIN_GRANULARITY : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     );

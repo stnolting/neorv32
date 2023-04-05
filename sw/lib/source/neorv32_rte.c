@@ -123,7 +123,7 @@ int neorv32_rte_handler_uninstall(uint8_t id) {
 /**********************************************************************//**
  * This is the [private!] core of the NEORV32 RTE.
  *
- * @warning When using the the RTE, this function is the ONLY function that uses the 'interrupt' attribute!
+ * @warning When using the RTE this function is the ONLY function that uses the 'interrupt' attribute!
  **************************************************************************/
 static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32_rte_core(void) {
 
@@ -170,8 +170,8 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32
   (*handler_pnt)();
 
   // compute return address
-  // WARNING: some traps might NOT be resumable! (e.g. instruction access fault)
-  if (((int32_t)rte_mcause) >= 0) { // modify pc only if not interrupt (MSB cleared)
+  if ((((int32_t)rte_mcause) >= 0) && // modify pc only if not interrupt (MSB cleared)
+     (rte_mcause != TRAP_CODE_I_ACCESS)) { // do not try to load the instruction as this is the reason we are here already
 
     uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
 
