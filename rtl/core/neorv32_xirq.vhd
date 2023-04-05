@@ -10,7 +10,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -82,8 +82,8 @@ architecture neorv32_xirq_rtl of neorv32_xirq is
   signal rden   : std_ulogic; -- read enable
 
   -- control registers --
-  signal irq_enable  : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0); -- r/w: interrupt enable
-  signal clr_pending : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0); -- r/w: clear pending IRQs
+  signal irq_enable  : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0); -- r/w: channel enable
+  signal clr_pending : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0); -- r/w: pending IRQs
   signal irq_src     : std_ulogic_vector(4 downto 0); -- r/w: source IRQ, ACK on any write
 
   -- interrupt trigger --
@@ -93,6 +93,7 @@ architecture neorv32_xirq_rtl of neorv32_xirq is
 
   -- interrupt buffer --
   signal irq_buf  : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
+  signal irq_raw  : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
   signal irq_fire : std_ulogic;
 
   -- interrupt source --
@@ -105,7 +106,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not ((XIRQ_NUM_CH < 0) or (XIRQ_NUM_CH > 32))
+  assert (XIRQ_NUM_CH <= 32)
     report "NEORV32 PROCESSOR CONFIG ERROR: Number of XIRQ inputs <XIRQ_NUM_CH> has to be 0..32." severity error;
 
 
@@ -121,7 +122,7 @@ begin
   write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      clr_pending <= (others => '0'); -- clear all pending interrupts
+      clr_pending <= (others => '0'); -- clear all pending interrupts on reset
       irq_enable  <= (others => '0');
     elsif rising_edge(clk_i) then
       clr_pending <= (others => '1');
@@ -146,7 +147,7 @@ begin
         case addr is
           when xirq_enable_addr_c  => data_o(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
           when xirq_pending_addr_c => data_o(XIRQ_NUM_CH-1 downto 0) <= irq_buf; -- pending IRQs
-          when others              => data_o(4 downto 0) <= irq_src; -- source IRQ
+          when others              => data_o(4 downto 0)             <= irq_src; -- IRQ source
         end case;
       end if;
     end if;
@@ -164,10 +165,11 @@ begin
   end process synchronizer;
 
   -- trigger type select --
-  irq_trigger: process(irq_sync, irq_sync2)
-    variable sel_v : std_ulogic_vector(1 downto 0);
-  begin
-    for i in 0 to XIRQ_NUM_CH-1 loop
+  irq_trigger_gen:
+  for i in 0 to XIRQ_NUM_CH-1 generate
+    irq_trigger: process(irq_sync, irq_sync2)
+      variable sel_v : std_ulogic_vector(1 downto 0);
+    begin
       sel_v := XIRQ_TRIGGER_TYPE(i) & XIRQ_TRIGGER_POLARITY(i);
       case sel_v is
         when "00"   => irq_trig(i) <= not irq_sync(i); -- low-level
@@ -176,8 +178,8 @@ begin
         when "11"   => irq_trig(i) <= irq_sync(i) and (not irq_sync2(i)); -- rising-edge
         when others => irq_trig(i) <= '0';
       end case;
-    end loop;
-  end process irq_trigger;
+    end process irq_trigger;
+  end generate;
 
 
   -- IRQ Buffer ---------------------------------------------------------------
@@ -185,17 +187,20 @@ begin
   irq_buffer: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      irq_buf <= (irq_buf or (irq_trig and irq_enable)) and clr_pending;
+      irq_buf <= (irq_buf and clr_pending) or irq_trig;
     end if;
   end process irq_buffer;
 
+  -- filter enabled channels --
+  irq_raw <= irq_buf and irq_enable;
+
   -- encode current IRQ's priority --
-  priority_encoder: process(irq_buf)
+  priority_encoder: process(irq_raw)
   begin
     irq_src_nxt <= (others => '0');
     if (XIRQ_NUM_CH > 1) then
       for i in 0 to XIRQ_NUM_CH-1 loop
-        if (irq_buf(i) = '1') then
+        if (irq_raw(i) = '1') then
           irq_src_nxt(index_size_f(XIRQ_NUM_CH)-1 downto 0) <= std_ulogic_vector(to_unsigned(i, index_size_f(XIRQ_NUM_CH)));
           exit;
         end if;
@@ -204,7 +209,7 @@ begin
   end process priority_encoder;
 
   -- anyone firing? --
-  irq_fire <= '1' when (or_reduce_f(irq_buf) = '1') else '0';
+  irq_fire <= '1' when (or_reduce_f(irq_raw) = '1') else '0';
 
 
   -- IRQ Arbiter --------------------------------------------------------------
@@ -216,14 +221,14 @@ begin
       irq_run   <= '0';
       irq_src   <= (others => '0');
     elsif rising_edge(clk_i) then
-      cpu_irq_o <= '0'; -- default; trigger only once
+      cpu_irq_o <= '0';
       if (irq_run = '0') then -- no active IRQ
         irq_src <= irq_src_nxt; -- get IRQ source that has highest priority
         if (irq_fire = '1') then
           cpu_irq_o <= '1';
           irq_run   <= '1';
         end if;
-      elsif (wren = '1') and (addr = xirq_source_addr_c) then -- write access to acknowledge
+      elsif (wren = '1') and (addr = xirq_source_addr_c) then -- acknowledge on write access
         irq_run <= '0';
       end if;
     end if;
