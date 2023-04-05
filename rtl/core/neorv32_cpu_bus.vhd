@@ -123,12 +123,9 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
     perm_ex  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
     perm_rd  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
     perm_wr  : std_ulogic_vector(PMP_NUM_REGIONS-1 downto 0);
-    fail_ex  : std_ulogic_vector(PMP_NUM_REGIONS downto 0);
-    fail_rd  : std_ulogic_vector(PMP_NUM_REGIONS downto 0);
-    fail_wr  : std_ulogic_vector(PMP_NUM_REGIONS downto 0);
-    if_fault : std_ulogic;
-    ld_fault : std_ulogic;
-    st_fault : std_ulogic;
+    fail_ex  : std_ulogic_vector(PMP_NUM_REGIONS   downto 0);
+    fail_rd  : std_ulogic_vector(PMP_NUM_REGIONS   downto 0);
+    fail_wr  : std_ulogic_vector(PMP_NUM_REGIONS   downto 0);
   end record;
   signal pmp_mask : pmp_mask_t;
   signal pmp      : pmp_t;
@@ -382,15 +379,12 @@ begin
     pmp.fail_rd(r) <= not pmp.perm_rd(r) when (pmp.d_match(r) = '1') else pmp.fail_rd(r+1);
     pmp.fail_wr(r) <= not pmp.perm_wr(r) when (pmp.d_match(r) = '1') else pmp.fail_wr(r+1);
   end generate;
-  pmp.if_fault <= pmp.fail_ex(0);
-  pmp.ld_fault <= pmp.fail_rd(0);
-  pmp.st_fault <= pmp.fail_wr(0);
 
 
-  -- final PMP access fault signals (ignored when in debug mode) --
-  if_pmp_fault <= '1' when (pmp.if_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i.cpu_debug = '0') else '0';
-  ld_pmp_fault <= '1' when (pmp.ld_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i.cpu_debug = '0') else '0';
-  st_pmp_fault <= '1' when (pmp.st_fault = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i.cpu_debug = '0') else '0';
+  -- final PMP access fault signals (ignore PMP rules when in debug mode) --
+  if_pmp_fault <= '1' when (pmp.fail_ex(0) = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i.cpu_debug = '0') else '0';
+  ld_pmp_fault <= '1' when (pmp.fail_rd(0) = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i.cpu_debug = '0') else '0';
+  st_pmp_fault <= '1' when (pmp.fail_wr(0) = '1') and (PMP_NUM_REGIONS > 0) and (ctrl_i.cpu_debug = '0') else '0';
 
   -- instruction fetch PMP fault --
   i_pmp_fault_o <= if_pmp_fault;
