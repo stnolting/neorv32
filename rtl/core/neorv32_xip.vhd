@@ -550,7 +550,6 @@ begin
           -- ------------------------------------------------------------
             spi_csn_o   <= not ctrl.csen; -- keep CS active
             ctrl.bitcnt <= "0100000"; -- 4 bytes = 32-bit read data
- --         ctrl.sreg   <= (others => '0'); -- do we need this???
             if (op_final_i = '1') then -- terminate pending flash access
               ctrl.state  <= S_IDLE;
             elsif (op_start_i = '1') then -- resume flash access
