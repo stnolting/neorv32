@@ -669,23 +669,23 @@ cycle even if more than one trigger event is observed.
 [cols="^1,^3,^1,<9"]
 [options="header",grid="rows"]
 |=======================
-| Bit   | Name [C]               | R/W | Event
+| Bit   | Name [C]               | R/W | Event Description
 | 0     | `HPMCNT_EVENT_CY`      | r/w | active clock cycle (CPU not in sleep mode)
 | 1     | -                      | r/- | _not implemented, always read as zero_
 | 2     | `HPMCNT_EVENT_IR`      | r/w | retired instruction (compressed or uncompressed)
 | 3     | `HPMCNT_EVENT_CIR`     | r/w | retired compressed instruction
-| 4     | `HPMCNT_EVENT_WAIT_IF` | r/w | instruction fetch memory wait cycle: if more than 1 cycle memory latency, cache miss or high bus traffic
-| 5     | `HPMCNT_EVENT_WAIT_II` | r/w | instruction issue pipeline wait cycle: if more than 1 cycle latency, pipelines flush (like taken branches) / cache miss or high bus traffic
+| 4     | `HPMCNT_EVENT_WAIT_IF` | r/w | instruction fetch memory wait cycle
+| 5     | `HPMCNT_EVENT_WAIT_II` | r/w | instruction issue pipeline wait cycle
 | 6     | `HPMCNT_EVENT_WAIT_MC` | r/w | multi-cycle ALU operation wait cycle (like iterative shift operation)
 | 7     | `HPMCNT_EVENT_LOAD`    | r/w | memory data load operation
 | 8     | `HPMCNT_EVENT_STORE`   | r/w | memory data store operation
-| 9     | `HPMCNT_EVENT_WAIT_LS` | r/w | load/store memory wait cycle: if more than 1 cycle memory latency or high bus traffic
+| 9     | `HPMCNT_EVENT_WAIT_LS` | r/w | load/store memory wait cycle
 | 10    | `HPMCNT_EVENT_JUMP`    | r/w | unconditional jump
 | 11    | `HPMCNT_EVENT_BRANCH`  | r/w | conditional branch (_taken_ or _not taken_)
 | 12    | `HPMCNT_EVENT_TBRANCH` | r/w | _taken_ conditional branch
 | 13    | `HPMCNT_EVENT_TRAP`    | r/w | entered trap (synchronous exception or interrupt)
 | 14    | `HPMCNT_EVENT_ILLEGAL` | r/w | illegal instruction exception
-| 31:15 | -                      | r/- | _reserved_, writes are ignored, read as zero
+| 31:15 | -                      | r/- | _reserved_, read as zero
 |=======================
 
 
