@@ -1326,8 +1326,6 @@ int main() {
       test_fail();
     }
 
-    NEORV32_XIRQ->IER = 0;
-    NEORV32_XIRQ->IPR = -1;
   }
   else {
     PRINT_STANDARD("[skipped, n.a.]\n");
