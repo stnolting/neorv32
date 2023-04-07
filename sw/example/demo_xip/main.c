@@ -1,5 +1,5 @@
 // #################################################################################################
-// # << NEORV32 - Demo for the Execute In Place (XIP) Module >>                                    #
+// # << NEORV32 - Demo for the Execute In-Place (XIP) Module >>                                    #
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file demo_xip/main.c
  * @author Stephan Nolting
- * @brief Demo for the the execute in place (XIP) module.
+ * @brief Interactive console program to upload and execute a XIP program.
  **************************************************************************/
 
 #include <neorv32.h>
@@ -56,6 +56,8 @@
 #define FLASH_ABYTES 3
 /** XIP SPI clock prescaler select */
 #define XIP_CLK_PRSC CLK_PRSC_128
+/** Executable RAM buffer size in bytes */
+#define BUFFER_SIZE (7*1024)
 /**@}*/
 
 
@@ -70,293 +72,31 @@ enum SPI_FLASH_CMD {
   SPI_FLASH_CMD_SECTOR_ERASE  = 0xD8  /**< Erase complete sector */
 };
 
+/**********************************************************************//**
+ * Valid executable identification signature
+ **************************************************************************/
+#define EXE_SIGNATURE 0x4788CAFE
+
 
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
-int erase_sector_xip_flash(uint32_t base_addr);
-int program_xip_flash(uint32_t *src, uint32_t base_addr, uint32_t size);
+int xip_flash_erase_sector(uint32_t base_addr);
+int xip_flash_program(uint32_t *src, uint32_t base_addr, uint32_t size);
+int uart_get_executable(uint32_t *dst, uint32_t *size);
+uint32_t uart_get_word(void);
 
 
 /**********************************************************************//**
- * @name Simple demo program to be stored to the XIP flash.
- * @note This is a the "raw HEX version" from the rv32i-only "sw/example/demo_blink_led" demo program (using "make clean_all hex").
- * This program has been compiled using a modified linker script:
- * rom ORIGIN = XIP base page + flash base address (= XIP_PAGE_BASE_ADDR + FLASH_BASE)
+ * @name RAM storage for executable
  **************************************************************************/
-const uint32_t xip_program[] = {
-  0x30005073,
-  0x3fc02117,
-  0xff810113,
-  0x3fc00197,
-  0x7f418193,
-  0x00000517,
-  0x15050513,
-  0x30551073,
-  0x34151073,
-  0x000023b7,
-  0x80038393,
-  0x30039073,
-  0x30401073,
-  0x34401073,
-  0x32001073,
-  0x30601073,
-  0xb0001073,
-  0xb8001073,
-  0xb0201073,
-  0xb8201073,
-  0x00000093,
-  0x00000213,
-  0x00000293,
-  0x00000313,
-  0x00000813,
-  0x00000893,
-  0x00000913,
-  0x00000993,
-  0x00000a13,
-  0x00000a93,
-  0x00000b13,
-  0x00000b93,
-  0x00000c13,
-  0x00000c93,
-  0x00000d13,
-  0x00000d93,
-  0x00000e13,
-  0x00000e93,
-  0x00000f13,
-  0x00000f93,
-  0x00000597,
-  0x37c58593,
-  0x3fc00617,
-  0xf5860613,
-  0x3fc00697,
-  0xf5068693,
-  0x00c58e63,
-  0x00d65c63,
-  0x0005a703,
-  0x00e62023,
-  0x00458593,
-  0x00460613,
-  0xfedff06f,
-  0x3fc00717,
-  0xf2c70713,
-  0x3fc00797,
-  0xf2478793,
-  0x00f75863,
-  0x00072023,
-  0x00470713,
-  0xff5ff06f,
-  0x00000417,
-  0x32840413,
-  0x00000497,
-  0x32048493,
-  0x00945a63,
-  0x0009a083,
-  0x000080e7,
-  0x00440413,
-  0xff1ff06f,
-  0x00000513,
-  0x00000593,
-  0x090000ef,
-  0x30047073,
-  0x34051073,
-  0x00000997,
-  0x2f098993,
-  0x00000a17,
-  0x2e8a0a13,
-  0x0149da63,
-  0x0009a303,
-  0x000300e7,
-  0x00498993,
-  0xff1ff06f,
-  0x00000093,
-  0x00008463,
-  0x000080e7,
-  0x10500073,
-  0x0000006f,
-  0xff810113,
-  0x00812023,
-  0x00912223,
-  0x34202473,
-  0x02044663,
-  0x34102473,
-  0x00041483,
-  0x0034f493,
-  0x00240413,
-  0x34141073,
-  0x00300413,
-  0x00941863,
-  0x34102473,
-  0x00240413,
-  0x34141073,
-  0x00012403,
-  0x00412483,
-  0x00810113,
-  0x30200073,
-  0xff010113,
-  0x00000513,
-  0x00000593,
-  0x00112623,
-  0x00812423,
-  0x0e0000ef,
-  0x00000513,
-  0x00150413,
-  0x00000593,
-  0x0ff57513,
-  0x0cc000ef,
-  0x10000513,
-  0x020000ef,
-  0x00040513,
-  0xfe5ff06f,
-  0xf9402583,
-  0xf9002503,
-  0xf9402783,
-  0xfef59ae3,
-  0x00008067,
-  0xfe010113,
-  0x00a12623,
-  0xfe002503,
-  0x3e800593,
-  0x00112e23,
-  0x00812c23,
-  0x00912a23,
-  0x154000ef,
-  0x00c12603,
-  0x00000693,
-  0x00000593,
-  0x0ac000ef,
-  0xfe802783,
-  0x00020737,
-  0x00050413,
-  0x00e7f7b3,
-  0x00058493,
-  0x02078e63,
-  0xfa5ff0ef,
-  0x00850433,
-  0x00a43533,
-  0x009584b3,
-  0x009504b3,
-  0xf91ff0ef,
-  0xfe95eee3,
-  0x00b49463,
-  0xfe856ae3,
-  0x01c12083,
-  0x01812403,
-  0x01412483,
-  0x02010113,
-  0x00008067,
-  0x01c59493,
-  0x00455513,
-  0x00a4e533,
-  0x00050a63,
-  0x00050863,
-  0xfff50513,
-  0x00000013,
-  0xff1ff06f,
-  0xfcdff06f,
-  0xfc000793,
-  0x00a7a423,
-  0x00b7a623,
-  0x00008067,
-  0x00050613,
-  0x00000513,
-  0x0015f693,
-  0x00068463,
-  0x00c50533,
-  0x0015d593,
-  0x00161613,
-  0xfe0596e3,
-  0x00008067,
-  0x00050313,
-  0xff010113,
-  0x00060513,
-  0x00068893,
-  0x00112623,
-  0x00030613,
-  0x00050693,
-  0x00000713,
-  0x00000793,
-  0x00000813,
-  0x0016fe13,
-  0x00171e93,
-  0x000e0c63,
-  0x01060e33,
-  0x010e3833,
-  0x00e787b3,
-  0x00f807b3,
-  0x000e0813,
-  0x01f65713,
-  0x0016d693,
-  0x00eee733,
-  0x00161613,
-  0xfc0698e3,
-  0x00058663,
-  0xf7dff0ef,
-  0x00a787b3,
-  0x00088a63,
-  0x00030513,
-  0x00088593,
-  0xf69ff0ef,
-  0x00f507b3,
-  0x00c12083,
-  0x00080513,
-  0x00078593,
-  0x01010113,
-  0x00008067,
-  0x06054063,
-  0x0605c663,
-  0x00058613,
-  0x00050593,
-  0xfff00513,
-  0x02060c63,
-  0x00100693,
-  0x00b67a63,
-  0x00c05863,
-  0x00161613,
-  0x00169693,
-  0xfeb66ae3,
-  0x00000513,
-  0x00c5e663,
-  0x40c585b3,
-  0x00d56533,
-  0x0016d693,
-  0x00165613,
-  0xfe0696e3,
-  0x00008067,
-  0x00008293,
-  0xfb5ff0ef,
-  0x00058513,
-  0x00028067,
-  0x40a00533,
-  0x00b04863,
-  0x40b005b3,
-  0xf9dff06f,
-  0x40b005b3,
-  0x00008293,
-  0xf91ff0ef,
-  0x40a00533,
-  0x00028067,
-  0x00008293,
-  0x0005ca63,
-  0x00054c63,
-  0xf79ff0ef,
-  0x00058513,
-  0x00028067,
-  0x40b005b3,
-  0xfe0558e3,
-  0x40a00533,
-  0xf61ff0ef,
-  0x40b00533,
-  0x00028067
-};
+uint32_t ram_buffer[BUFFER_SIZE/4];
 
 
 /**********************************************************************//**
- * Main function: configure the XIP module, program a small program to the attached flash
- * and run that program **from there**. The program shows an incrementing counter at the lowest
- * 8-bits of the GPIO output port. This demo is meant for a SPI flash/EEPROM with 16-bit addresses.
+ * Main function
  *
- * @note This program requires the XIP module, UART0 and the GPIO module.
+ * @note This program requires the XIP module and UART0.
  *
  * @return 0 if execution was successful
  **************************************************************************/
@@ -376,7 +116,9 @@ int main() {
   }
 
 
-  // intro
+  // ----------------------------------------------------------
+  // Intro and setup
+  // ----------------------------------------------------------
   neorv32_uart0_printf("<< XIP Demo Program >>\n\n");
 
   // configuration note
@@ -403,31 +145,68 @@ int main() {
     return 1;
   }
 
-  // NOTE: Many flash devices support a higher clock frequency when doing only read operations.
-  // This feature can be used to accelerate instruction fetch when enabling the XIP mode.
+
+  // ----------------------------------------------------------
+  // Get executable for flash
+  // ----------------------------------------------------------
+  neorv32_uart0_printf("Compile a program for the XIP flash: \n"
+                       "\n"
+                       " Navigate to any example program folder (like 'neorv32/sw/example/hello_word').\n"
+                       " Compile the program but relocate the instruction to the beginning of the Flash:\n"
+                       " make MARCH=rv32i USER_FLAGS+=\"-Wl,--defsym,__neorv32_rom_base=0x%x\" clean_all exe\n\n",
+                       (uint32_t)FLASH_BASE);
+
+  neorv32_uart0_printf("Press any key when you are ready.\n\n");
+  neorv32_uart0_getc(); // wait for any key
+
+  neorv32_uart0_printf("Now send the generated neorv32_exe.bin file in raw byte mode...\n");
+
+  uint32_t exe_size = 0;
+  int rc = uart_get_executable(&ram_buffer[0], &exe_size);
+
+  // upload ok?
+  if (rc) {
+    neorv32_uart0_printf("[ERROR] Upload failed with error code %d!\n", rc);
+    return -1;
+  }
+
+  // image size in range?
+  if (exe_size > BUFFER_SIZE) {
+    neorv32_uart0_printf("[ERROR] Executable size out of range (%u bytes, maximum = %u bytes)!\n", exe_size, BUFFER_SIZE);
+    return -1;
+  }
+  else {
+    neorv32_uart0_printf("Executable upload successful (%u bytes).\n\n", exe_size);
+  }
 
 
-  // use a helper function to store a small example program to the XIP flash
+  // ----------------------------------------------------------
+  // Program flash
+  // ----------------------------------------------------------
+
   // NOTE: this (direct SPI access via the XIP module) has to be done before the actual XIP mode is enabled!
   neorv32_uart0_printf("Erasing XIP flash (base = 0x%x)...\n", (uint32_t)FLASH_BASE);
-  if (erase_sector_xip_flash(FLASH_BASE)) {
+  if (xip_flash_erase_sector(FLASH_BASE)) {
     neorv32_uart0_printf("Error! XIP flash sector erase error!\n");
     return 1;
   }
 
-  neorv32_uart0_printf("Programming XIP flash (%u bytes)...\n", (uint32_t)sizeof(xip_program));
-  if (program_xip_flash((uint32_t*)&xip_program, FLASH_BASE, (uint32_t)sizeof(xip_program))) {
+  neorv32_uart0_printf("Programming XIP flash (%u bytes)...\n", exe_size);
+  if (xip_flash_program((uint32_t*)&ram_buffer[0], FLASH_BASE, exe_size)) {
     neorv32_uart0_printf("Error! XIP flash programming error!\n");
     return 1;
   }
 
+
+  // ----------------------------------------------------------
+  // Prepare XIP execution
+  // ----------------------------------------------------------
 
   // Most SPI flash memories support "incremental read" operations - the read command and the start address
   // is only transferred once and after that consecutive data is sampled with each new transferred byte.
   // This can be sued by the XIP burst mode, which accelerates data fetch by up to 50%.
   neorv32_uart0_printf("Enabling XIP burst mode...\n");
   neorv32_xip_burst_mode_enable(); // this has to be called right before starting the XIP mode by neorv32_xip_start()
-
 
   // configure and enable the actual XIP mode
   // * configure FLASH_ABYTES address bytes send to the SPI flash for addressing
@@ -439,7 +218,6 @@ int main() {
     return 1;
   }
 
-
   // since the flash is now mapped to the processor's address space we can dump its content by using normal memory accesses
   neorv32_uart0_printf("\nRead-back XIP flash content (first 10 words) via memory-mapped access...\n");
   uint32_t flash_base_addr = XIP_PAGE_BASE_ADDR + FLASH_BASE;
@@ -449,15 +227,18 @@ int main() {
     neorv32_uart0_printf("[0x%x] 0x%x\n", flash_base_addr + 4*i, xip_mem[i]);
   }
 
-
   // the flash is READ-ONLY in XIP mode - any write access to the XIP-mapped memory page will raise
   // a store bus exception / device error (captured by the NEORV32 runtime environment)
   neorv32_uart0_printf("\nTest write access to XIP memory (will raise an exception)...\n");
   *xip_mem = 0; // try to write to the flash using XIP
 
 
+  // ----------------------------------------------------------
+  // Run program from flash
+  // ----------------------------------------------------------
+
   // finally, jump to the XIP flash's base address we have configured to start execution **from there**
-  neorv32_uart0_printf("\nStarting Execute-In-Place program (@ 0x%x)...\n", (uint32_t)(XIP_PAGE_BASE_ADDR + FLASH_BASE));
+  neorv32_uart0_printf("\nStarting Execute In-Place program (@0x%x)...\n", (uint32_t)(XIP_PAGE_BASE_ADDR + FLASH_BASE));
   asm volatile ("call %[dest]" : : [dest] "i" (XIP_PAGE_BASE_ADDR + FLASH_BASE));
 
 
@@ -467,12 +248,17 @@ int main() {
 }
 
 
+// ============================================================================================================
+// Helper functions
+// ============================================================================================================
+
+
 /**********************************************************************//**
  * Erase sector starting at base address.
  *
  * @param[in] base_addr Base address of sector to erase.
  **************************************************************************/
-int erase_sector_xip_flash(uint32_t base_addr) {
+int xip_flash_erase_sector(uint32_t base_addr) {
 
   int error = 0;
   uint32_t tmp = 0;
@@ -514,7 +300,7 @@ int erase_sector_xip_flash(uint32_t base_addr) {
 
 
 /**********************************************************************//**
- * Helper function to program the XIP flash via the direct SPI feature of the XIP module.
+ * Helper function to program the XIP flash via the direct SPI access feature of the XIP module.
  *
  * @warning This function can only be used BEFORE the XIP-mode is activated!
  * @note This function is blocking and performs individual writes for each byte (little-endian byte order!).
@@ -524,7 +310,7 @@ int erase_sector_xip_flash(uint32_t base_addr) {
  * @param[in] size Image size in bytes.
  * @return Returns 0 if write was successful.
  **************************************************************************/
-int program_xip_flash(uint32_t *src, uint32_t base_addr, uint32_t size) {
+int xip_flash_program(uint32_t *src, uint32_t base_addr, uint32_t size) {
 
   int error = 0;
   uint32_t data_byte = 0;
@@ -584,4 +370,64 @@ int program_xip_flash(uint32_t *src, uint32_t base_addr, uint32_t size) {
   }
 
   return error;
+}
+
+
+/**********************************************************************//**
+ * Get NEORV32 executable via UART.
+ *
+ * @param[in] dst Pointer to uin32_t data array where the executable will be stored.
+ * @param[out] length Pointer to a uin32_t to store the executable size in bytes.
+ * @return Returns 0 on success.
+ **************************************************************************/
+int uart_get_executable(uint32_t *dst, uint32_t *length) {
+
+  // check if valid image
+  uint32_t signature = uart_get_word();
+  if (signature != EXE_SIGNATURE) {
+    return -1;
+  }
+
+  // image size and checksum
+  uint32_t size  = uart_get_word(); // size in bytes
+  uint32_t check = uart_get_word(); // complement sum checksum
+
+  *length = size;
+
+  // transfer program data
+  uint32_t checksum = 0;
+  uint32_t d = 0, i = 0;
+  while (i < (size/4)) { // in words
+    d = uart_get_word();
+    checksum += d;
+    dst[i++] = d;
+  }
+
+  // error during transfer?
+  if ((checksum + check) != 0) {
+    return -2;
+  }
+
+  return 0;
+}
+
+
+/**********************************************************************//**
+ * Get 32-bit word from UART.
+ *
+ * @return 32-bit data word.
+ **************************************************************************/
+uint32_t uart_get_word(void) {
+
+  union {
+    uint32_t uint32;
+    uint8_t  uint8[sizeof(uint32_t)];
+  } data;
+
+  uint32_t i;
+  for (i=0; i<4; i++) {
+    data.uint8[i] = (uint8_t)neorv32_uart0_getc();
+  }
+
+  return data.uint32;
 }
