@@ -63,7 +63,7 @@ package neorv32_package is
 
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080303"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080304"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -500,12 +500,10 @@ package neorv32_package is
   constant csr_zero_c           : std_ulogic_vector(11 downto 0) := x"000"; -- always returns zero, only relevant for hardware access
   -- <<< standard read/write CSRs >>> --
   -- user floating-point CSRs --
-  constant csr_class_float_c    : std_ulogic_vector(09 downto 0) := x"00" & "00"; -- floating point
   constant csr_fflags_c         : std_ulogic_vector(11 downto 0) := x"001";
   constant csr_frm_c            : std_ulogic_vector(11 downto 0) := x"002";
   constant csr_fcsr_c           : std_ulogic_vector(11 downto 0) := x"003";
   -- machine trap setup --
-  constant csr_class_setup_c    : std_ulogic_vector(08 downto 0) := x"30" & '0'; -- trap setup
   constant csr_mstatus_c        : std_ulogic_vector(11 downto 0) := x"300";
   constant csr_misa_c           : std_ulogic_vector(11 downto 0) := x"301";
   constant csr_mie_c            : std_ulogic_vector(11 downto 0) := x"304";
@@ -514,7 +512,6 @@ package neorv32_package is
   --
   constant csr_mstatush_c       : std_ulogic_vector(11 downto 0) := x"310";
   -- machine configuration --
-  constant csr_class_envcfg_c   : std_ulogic_vector(06 downto 0) := x"3" & "000"; -- environment configuration
   constant csr_menvcfg_c        : std_ulogic_vector(11 downto 0) := x"30a";
   constant csr_menvcfgh_c       : std_ulogic_vector(11 downto 0) := x"31a";
   -- machine counter setup --
@@ -550,20 +547,17 @@ package neorv32_package is
   constant csr_mhpmevent30_c    : std_ulogic_vector(11 downto 0) := x"33e";
   constant csr_mhpmevent31_c    : std_ulogic_vector(11 downto 0) := x"33f";
   -- machine trap handling --
-  constant csr_class_trap_c     : std_ulogic_vector(07 downto 0) := x"34"; -- machine trap handling
   constant csr_mscratch_c       : std_ulogic_vector(11 downto 0) := x"340";
   constant csr_mepc_c           : std_ulogic_vector(11 downto 0) := x"341";
   constant csr_mcause_c         : std_ulogic_vector(11 downto 0) := x"342";
   constant csr_mtval_c          : std_ulogic_vector(11 downto 0) := x"343";
   constant csr_mip_c            : std_ulogic_vector(11 downto 0) := x"344";
   -- physical memory protection - configuration --
-  constant csr_class_pmpcfg_c   : std_ulogic_vector(09 downto 0) := x"3a" & "00"; -- pmp configuration
   constant csr_pmpcfg0_c        : std_ulogic_vector(11 downto 0) := x"3a0";
   constant csr_pmpcfg1_c        : std_ulogic_vector(11 downto 0) := x"3a1";
   constant csr_pmpcfg2_c        : std_ulogic_vector(11 downto 0) := x"3a2";
   constant csr_pmpcfg3_c        : std_ulogic_vector(11 downto 0) := x"3a3";
   -- physical memory protection - address --
-  constant csr_class_pmpaddr_c  : std_ulogic_vector(07 downto 0) := x"3b"; -- pmp address
   constant csr_pmpaddr0_c       : std_ulogic_vector(11 downto 0) := x"3b0";
   constant csr_pmpaddr1_c       : std_ulogic_vector(11 downto 0) := x"3b1";
   constant csr_pmpaddr2_c       : std_ulogic_vector(11 downto 0) := x"3b2";
@@ -581,7 +575,6 @@ package neorv32_package is
   constant csr_pmpaddr14_c      : std_ulogic_vector(11 downto 0) := x"3be";
   constant csr_pmpaddr15_c      : std_ulogic_vector(11 downto 0) := x"3bf";
   -- trigger module registers --
-  constant csr_class_trigger_c  : std_ulogic_vector(07 downto 0) := x"7a"; -- trigger registers
   constant csr_tselect_c        : std_ulogic_vector(11 downto 0) := x"7a0";
   constant csr_tdata1_c         : std_ulogic_vector(11 downto 0) := x"7a1";
   constant csr_tdata2_c         : std_ulogic_vector(11 downto 0) := x"7a2";
@@ -591,12 +584,10 @@ package neorv32_package is
   constant csr_mcontext_c       : std_ulogic_vector(11 downto 0) := x"7a8";
   constant csr_scontext_c       : std_ulogic_vector(11 downto 0) := x"7aa";
   -- debug mode registers --
-  constant csr_class_debug_c    : std_ulogic_vector(09 downto 0) := x"7b" & "00"; -- debug registers
   constant csr_dcsr_c           : std_ulogic_vector(11 downto 0) := x"7b0";
   constant csr_dpc_c            : std_ulogic_vector(11 downto 0) := x"7b1";
   constant csr_dscratch0_c      : std_ulogic_vector(11 downto 0) := x"7b2";
   -- machine counters/timers --
-  constant csr_class_mcnt_c     : std_ulogic_vector(03 downto 0) := x"b"; -- machine-mode counters
   constant csr_mcycle_c         : std_ulogic_vector(11 downto 0) := x"b00";
   constant csr_mtime_c          : std_ulogic_vector(11 downto 0) := x"b01"; -- dummy address
   constant csr_minstret_c       : std_ulogic_vector(11 downto 0) := x"b02";
@@ -664,7 +655,6 @@ package neorv32_package is
   constant csr_mhpmcounter31h_c : std_ulogic_vector(11 downto 0) := x"b9f";
   -- <<< standard read-only CSRs >>> --
   -- user counters/timers --
-  constant csr_class_ucnt_c     : std_ulogic_vector(03 downto 0) := x"c"; -- user-mode counters
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
   constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
   constant csr_instret_c        : std_ulogic_vector(11 downto 0) := x"c02";
@@ -849,11 +839,11 @@ package neorv32_package is
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- MSB:   1 = async exception (IRQ), 0 = sync exception (e.g. ebreak)
+  -- MSB:   1 = interrupt, 0 = sync. exception
   -- MSB-1: 1 = entry to debug mode, 0 = normal trapping
   -- RISC-V compliant synchronous exceptions --
   constant trap_ima_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0:  instruction misaligned
-  constant trap_iba_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 1:  instruction access fault
+  constant trap_ibe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 1:  instruction access fault
   constant trap_iil_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00010"; -- 2:  illegal instruction
   constant trap_brk_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00011"; -- 3:  breakpoint
   constant trap_lma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00100"; -- 4:  load address misaligned
