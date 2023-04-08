@@ -148,8 +148,8 @@ static void prvSetupHardware( void )
   // clear GPIO.out port
   neorv32_gpio_port_set(0);
 
-  // init UART at default baud rate, no parity bits, ho hw flow control
-  neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+  // setup UART at default baud rate, no interrupts (yet)
+  neorv32_uart0_setup(BAUD_RATE, 0);
 
   // check clock tick configuration
   if (NEORV32_SYSINFO->CLK != (uint32_t)configCPU_CLOCK_HZ) {

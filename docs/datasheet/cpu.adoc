@@ -1,7 +1,13 @@
 :sectnums:
 == NEORV32 Central Processing Unit (CPU)
 
-image::neorv32_cpu_block.png[width=600,align=center]
+The NEORV32 CPU is an area-optimized RISC-V core implementing the `rv32iZicsr` base ISA and supporting
+several optional ISA extensions. The CPU's micro architecture is based on a von-Neumann machine build
+upon a mixture of multi-cycle and pipelined execution schemes.
+
+[NOTE]
+This chapter assumes that the reader is familiar with the official
+RISC-V _User_ and _Privileged Architecture_ specifications.
 
 **Section Structure**
 
@@ -11,10 +17,6 @@ image::neorv32_cpu_block.png[width=600,align=center]
 * <<_control_and_status_registers_csrs>>
 * <<_traps_exceptions_and_interrupts>>
 * <<_bus_interface>>
-
-[NOTE]
-This chapter assumes that the reader is familiar with the official
-RISC-V _User_ and _Privileged Architecture_ specifications.
 
 
 // ####################################################################################################################
@@ -33,10 +35,11 @@ instruction exception (-> <<_full_virtualization>>).
 
 **Incompatibility Issues and Limitations**
 
-.Physical Memory Protection (PMP)
-[WARNING]
-The RISC-V-compatible NEORV32 <<_machine_physical_memory_protection_csrs>> only implements the **TOR**
-(top of region) mode and only up to 16 PMP regions.
+.`time[h]` CSRs (Wall Clock Time)
+[IMPORTANT]
+The NEORV32 does not implement the user-mode `time[h]` registers. Any access to these registers will trap.
+It is recommended that the trap handler software provides a means of accessing the platform-defined <<_machine_system_timer_mtime>>.
+
 
 .No Hardware Support of Misaligned Memory Accesses
 [IMPORTANT]
@@ -76,7 +79,7 @@ caused by speculative execution (like Spectre or Meltdown).
 :sectnums:
 ==== CPU Register File
 
-The data register file contains the general purpose "`x`" architecture registers. For `rv32i` ISA there are 32 32-bit registers
+The data register file contains the general purpose "`x`" architecture registers. For the `rv32i` ISA there are 32 32-bit registers
 and for the `rv32e` ISA there are 16 32-bit registers. Register zero (`x0`/`zero`) always read as zero and any write access to it
 is discarded.
 
@@ -162,7 +165,7 @@ includes the <<_control_and_status_registers_csrs>> as well as the trap controll
 === Sleep Mode
 
 The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing dynamic
-power consumption. Sleep mode in entered by executing the `wfi` instruction from the <<_zicsr_isa_extension>>.
+power consumption. Sleep mode in entered by executing the `wfi` instruction.
 When the CPU is in sleep mode, all CPU-internal operations are stopped (execution, instruction fetch, ...).
 However, this does not affect the operation of any peripheral/IO modules like interfaces and timers. Furthermore,
 the CPU will continue to buffer/enqueue incoming interrupt requests. The CPU will leave sleep mode as soon as
@@ -312,10 +315,13 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Data fence    | `fence`                                                                   | 5
 |=======================
 
+.`fence` Instruction
 [NOTE]
-Internally, the `fence` instruction does not perform any operation inside the CPU. It only sets the
+CPU-internally, the `fence` instruction does not perform any operation inside the CPU. It only sets the
 top's `d_bus_fence_o` signal high for one cycle to inform the memory system a `fence` instruction has been
-executed. Any flags within the `fence` instruction word are ignore by the hardware.
+executed. Any flags within the `fence` instruction word are ignore by the hardware. However, the `d_bus_fence_o`
+signal is connected to the <<_processor_internal_data_cache_dcache>>. Hence, executing the `fence` instruction
+will clear/flush the data cache and resynchronize it with main memory.
 
 
 ==== `B` ISA Extension
@@ -407,7 +413,7 @@ RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 The `Zifencei` CPU extension allows manual synchronization of the instruction stream.
 The `fence.i` instruction resets the CPU's front-end (instruction fetch) and flushes the prefetch buffer.
 This allows a clean re-fetch of modified instructions from memory. Also, the top's `i_bus_fencei_o` signal is set
-high for one cycle to inform the memory system (like the i-cache to perform a flush/reload.
+high for one cycle to inform the memory system (like the <<_processor_internal_instruction_cache_icache>> to perform a flush/reload.
 Any additional flags within the `fence.i` instruction word are ignored by the hardware.
 
 .Instructions and Timing
@@ -461,12 +467,12 @@ code (see `sw/example/floating_point_test`).
 
 ==== `Zicntr` ISA Extension
 
-The `Zicntr` ISA extension adds the basic <<_cycleh>>, <<_mcycleh>>, <<_timeh>> and <<_instreth>>, <<_minstreth>>
+The `Zicntr` ISA extension adds the basic <<_cycleh>>, <<_mcycleh>>, <<_instreth>> and <<_minstreth>>
 counter CSRs. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Zicntr`-related CSRs.
 
 [NOTE]
-Note that the <<_timeh>> CSRs are implemented as just another user-level shadow copy of the machine-mode cycle
-counters <<_mcycleh>> (just like <<_cycleh>>).
+The user-mode `time[h]` CSRs are **not implemented**. Any access will trap allowing the trap handler to
+retrieve system time from the <<_machine_system_timer_mtime>>.
 
 [NOTE]
 This extensions is stated as _mandatory_ by the RISC-V spec. However, area-constrained setups may remove
@@ -493,7 +499,8 @@ conditional operations from C-language code (see `sw/example/zicond_test`).
 ==== `Zicsr` ISA Extension
 
 This ISA extensions provides instructions for accessing the <<_control_and_status_registers_csrs>> as well as further
-privileged-architecture extensions. This extension is mandatory and cannot be disabled.
+privileged-architecture extensions. This extension is mandatory and cannot be disabled. Hence, there is no generic
+for enabling/disabling this ISa extension.
 
 [NOTE]
 If `rd=x0` for the `csrrw[i]` instructions there will be no actual read access to the according CSR.
@@ -555,13 +562,13 @@ to the RISC-V Privileged Architecture Specifications. In general, the PMP can **
 which by default has none, and can **revoke permissions from M-mode**, which by default has full permissions.
 The PMP is configured via the <<_machine_physical_memory_protection_csrs>>.
 
-[IMPORTANT]
-The NEORV32 PMP only supports **TOR** (top of region) mode, which basically is a "base-and-bound" concept, and only
-up to 16 PMP regions.
-
 .PMP Rules when in Debug Mode
 [NOTE]
 When in debug-mode all PMP rules are ignored making the debugger have maximum access rights.
+
+[IMPORTANT]
+Instruction fetches are also triggered when denied by a certain PMP rule. However, the fetched instruction(s)
+will not be executed and will not change CPU core state to preserve memory access protection. 
 
 
 ==== `Sdext` ISA Extension
@@ -712,20 +719,20 @@ show the values written to the according CSRs when a trap is triggered:
 [options="header",grid="rows"]
 |=======================
 | Trap ID [C] | Triggered when ...
-| _TRAP_CODE_I_MISALIGNED_ | fetching a 32-bit instruction word that is not 32-bit-aligned (see note below)
-| _TRAP_CODE_I_ACCESS_     | bus timeout or bus access error during instruction word fetch
-| _TRAP_CODE_I_ILLEGAL_    | trying to execute an invalid instruction word (malformed or not supported) or on a privilege violation
-| _TRAP_CODE_MENV_CALL_    | executing `ecall` instruction in machine-mode
-| _TRAP_CODE_UENV_CALL_    | executing `ecall` instruction in user-mode
-| _TRAP_CODE_BREAKPOINT_   | executing `ebreak` instruction or if <<_trigger_module>> fires
-| _TRAP_CODE_S_MISALIGNED_ | storing data to an address that is not naturally aligned to the data size (byte, half, word)
-| _TRAP_CODE_L_MISALIGNED_ | loading data from an address that is not naturally aligned to the data size  (byte, half, word)
-| _TRAP_CODE_S_ACCESS_     | bus timeout or bus access error during load data operation
-| _TRAP_CODE_L_ACCESS_     | bus timeout or bus access error during store data operation
-| _TRAP_CODE_FIRQ_0_ ... _TRAP_CODE_FIRQ_15_| caused by interrupt-condition of processor-internal modules, see <<_neorv32_specific_fast_interrupt_requests>>
-| _TRAP_CODE_MEI_          | machine external interrupt (via dedicated top-entity signal)
-| _TRAP_CODE_MSI_          | machine software interrupt (via dedicated top-entity signal)
-| _TRAP_CODE_MTI_          | machine timer interrupt (internal machine timer or via dedicated top-entity signal)
+| `TRAP_CODE_I_MISALIGNED` | fetching a 32-bit instruction word that is not 32-bit-aligned (see note below)
+| `TRAP_CODE_I_ACCESS`     | bus timeout or bus access error during instruction word fetch
+| `TRAP_CODE_I_ILLEGAL`    | trying to execute an invalid instruction word (malformed or not supported) or on a privilege violation
+| `TRAP_CODE_MENV_CALL`    | executing `ecall` instruction in machine-mode
+| `TRAP_CODE_UENV_CALL`    | executing `ecall` instruction in user-mode
+| `TRAP_CODE_BREAKPOINT`   | executing `ebreak` instruction or if <<_trigger_module>> fires
+| `TRAP_CODE_S_MISALIGNED` | storing data to an address that is not naturally aligned to the data size (byte, half, word)
+| `TRAP_CODE_L_MISALIGNED` | loading data from an address that is not naturally aligned to the data size  (byte, half, word)
+| `TRAP_CODE_S_ACCESS`     | bus timeout or bus access error during load data operation
+| `TRAP_CODE_L_ACCESS`     | bus timeout or bus access error during store data operation
+| `TRAP_CODE_FIRQ_0` ... `TRAP_CODE_FIRQ_15` | caused by interrupt-condition of processor-internal modules, see <<_neorv32_specific_fast_interrupt_requests>>
+| `TRAP_CODE_MEI`          | machine external interrupt (via dedicated top-entity signal)
+| `TRAP_CODE_MSI`          | machine software interrupt (via dedicated top-entity signal)
+| `TRAP_CODE_MTI`          | machine timer interrupt (internal machine timer or via dedicated top-entity signal)
 |=======================
 
 .Resumable Exceptions

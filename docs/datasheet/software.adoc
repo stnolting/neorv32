@@ -154,6 +154,7 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
  help       - show this text
  check      - check toolchain
  info       - show makefile/toolchain configuration
+ gdb        - run GNU debugger
  asm        - compile and generate <main.asm> assembly listing file for manual debugging
  elf        - compile and generate <main.elf> ELF file
  bin        - compile and generate <neorv32_raw_exe.bin> RAW executable file (binary file, no header)

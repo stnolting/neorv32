@@ -310,4 +310,31 @@ asm(".set RISCV_OPCODE_CUSTOM3 , 0b1111011");
 })
 
 
+/**********************************************************************//**
+ * @name S-type instruction format, RISC-V-standard
+ **************************************************************************/
+#define CUSTOM_INSTR_S_TYPE(imm12, rs2, rs1, funct3, opcode) \
+({                                                           \
+    asm volatile (                                           \
+      ""                                                     \
+      :                                                      \
+      : [input_i] "r" (rs1),                                 \
+        [input_j] "r" (rs2)                                  \
+    );                                                       \
+    asm volatile (                                           \
+      ".word (                                               \
+        ((((" #imm12 ") >> 5)  & 0x7f) << 25) |              \
+        ((( regnum_%1 )        & 0x1f) << 20) |              \
+        ((( regnum_%0 )        & 0x1f) << 15) |              \
+        (((" #funct3 ")        & 0x07) << 12) |              \
+        (((" #imm12 ")         & 0x1f) <<  7) |              \
+        (((" #opcode ")        & 0x7f) <<  0)                \
+      );"                                                    \
+      :                                                      \
+      : "r" (rs1),                                           \
+        "r" (rs2)                                            \
+    );                                                       \
+})
+
+
 #endif // neorv32_intrinsics_h

@@ -54,7 +54,6 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
     CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement conditional operations extension?
     CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
@@ -112,11 +111,6 @@ end neorv32_cpu;
 
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
-  -- RV64: WORK IN PROGRESS -----------------------------------------------------------------------
-  -- not available as CPU generic as rv64 ISA extension is not (fully) supported yet!
-  constant XLEN : natural := 32; -- data path width
-  -- ----------------------------------------------------------------------------------------------
-
   -- local constants: additional register file read ports --
   constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port (rs3)
   constant regfile_rs4_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu; -- 4th register file read port (rs4)
@@ -136,17 +130,17 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal alu_add     : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0); -- comparator result
   signal mem_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- memory read data
-  signal cp_done     : std_ulogic; -- ALU co-prefetch operation done
+  signal cp_done     : std_ulogic; -- ALU co-processor operation done
   signal alu_exc     : std_ulogic; -- ALU exception
   signal bus_d_wait  : std_ulogic; -- wait for current bus data access
   signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
-  signal mar         : std_ulogic_vector(XLEN-1 downto 0); -- current memory address register
+  signal mar         : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
   signal ma_load     : std_ulogic; -- misaligned load data address
   signal ma_store    : std_ulogic; -- misaligned store data address
   signal be_load     : std_ulogic; -- bus error on load data access
   signal be_store    : std_ulogic; -- bus error on store data access
   signal fetch_pc    : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
-  signal curr_pc     : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for current executed instruction)
+  signal curr_pc     : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
   signal next_pc     : std_ulogic_vector(XLEN-1 downto 0); -- next pc (for next executed instruction)
   signal fpu_flags   : std_ulogic_vector(4 downto 0); -- FPU exception flags
   signal i_pmp_fault : std_ulogic; -- instruction fetch PMP fault
@@ -171,7 +165,7 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_C,        "C", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_B,        "B", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_U,        "U", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicsr,    "_Zicsr", "") &
+    cond_sel_string_f(true,                         "_Zicsr", "") & -- always enabled
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr,   "_Zicntr", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zicond,   "_Zicond", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zifencei, "_Zifencei", "") &
@@ -190,23 +184,11 @@ begin
   assert not (is_simulation_c = false) report
     "NEORV32 CPU NOTE: Assuming this is real hardware." severity note;
 
-  -- native data width check (work in progress!) --
-  assert not (XLEN /= 32) report
-    "NEORV32 CPU CONFIG ERROR! <XLEN> native data path width has to be 32 (bit)." severity error;
-
   -- CPU boot address --
   assert not (CPU_BOOT_ADDR(1 downto 0) /= "00") report
     "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
   assert false report
     "NEORV32 CPU CONFIG NOTE: Boot from address 0x" & to_hstring32_f(CPU_BOOT_ADDR) & "." severity note;
-
-  -- CSR system --
-  assert not (CPU_EXTENSION_RISCV_Zicsr = false) report
-    "NEORV32 CPU CONFIG WARNING! No exception/interrupt/trap/privileged features available when <CPU_EXTENSION_RISCV_Zicsr> = false." severity warning;
-
-  -- U-extension requires Zicsr extension --
-  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_U = true)) report
-    "NEORV32 CPU CONFIG ERROR! User mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
   -- Instruction prefetch buffer --
   assert not (is_power_of_two_f(CPU_IPB_ENTRIES) = false) report
@@ -215,44 +197,26 @@ begin
     "NEORV32 CPU CONFIG WARNING! Overriding <CPU_IPB_ENTRIES> configuration (setting =2) because C ISA extension is enabled." severity warning;
 
   -- PMP --
-  assert not (PMP_NUM_REGIONS > 0) report
-    "NEORV32 CPU CONFIG NOTE: Implementing " & positive'image(PMP_NUM_REGIONS) & " PMP regions." severity note;
   assert not (PMP_NUM_REGIONS > 16) report
     "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out of valid range (0..16)." severity error;
   assert not ((is_power_of_two_f(PMP_MIN_GRANULARITY) = false) and (PMP_NUM_REGIONS > 0)) report
     "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be a power of two." severity error;
-  assert not (PMP_MIN_GRANULARITY < 4) report
+  assert not ((PMP_MIN_GRANULARITY < 4) and (PMP_NUM_REGIONS > 0)) report
     "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be >= 4 bytes." severity error;
-  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (PMP_NUM_REGIONS > 0)) report
-    "NEORV32 CPU CONFIG ERROR! Physical memory protection (PMP) requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
   -- HPM counters --
-  assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 0)) report
-    "NEORV32 CPU CONFIG NOTE: Implementing " & positive'image(HPM_NUM_CNTS) & " HPM counters." severity note;
   assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 29)) report
     "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..29)." severity error;
   assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and ((HPM_CNT_WIDTH < 0) or (HPM_CNT_WIDTH > 64))) report
     "NEORV32 CPU CONFIG ERROR! HPM counter width <HPM_CNT_WIDTH> has to be 0..64 bit." severity error;
-  assert not ((CPU_EXTENSION_RISCV_Zicsr = false) and (CPU_EXTENSION_RISCV_Zihpm = true)) report
-    "NEORV32 CPU CONFIG ERROR! Hardware performance monitors extension <CPU_EXTENSION_RISCV_Zihpm> requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
 
-  -- Mul-extension(s) --
+  -- Mul extension(s) --
   assert not ((CPU_EXTENSION_RISCV_Zmmul = true) and (CPU_EXTENSION_RISCV_M = true)) report
     "NEORV32 CPU CONFIG ERROR! <M> and <Zmmul> extensions cannot co-exist!" severity error;
 
   -- Debug mode --
-  assert not ((CPU_EXTENSION_RISCV_Sdext = true) and (CPU_EXTENSION_RISCV_Zicsr = false)) report
-    "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zicsr> extension to be enabled." severity error;
   assert not ((CPU_EXTENSION_RISCV_Sdext = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report
     "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zifencei> extension to be enabled." severity error;
-
-  -- fast multiplication option --
-  assert not (FAST_MUL_EN = true) report
-    "NEORV32 CPU CONFIG NOTE: <FAST_MUL_EN> enabled. Trying to infer DSP blocks for multiplications." severity note;
-
-  -- fast shift option --
-  assert not (FAST_SHIFT_EN = true) report
-    "NEORV32 CPU CONFIG NOTE: <FAST_SHIFT_EN> enabled. Implementing full-parallel logic / barrel shifters." severity note;
 
 
   -- Control Unit ---------------------------------------------------------------------------
@@ -260,7 +224,6 @@ begin
   neorv32_cpu_control_inst: neorv32_cpu_control
   generic map (
     -- General --
-    XLEN                         => XLEN,                         -- data path width
     HART_ID                      => HART_ID,                      -- hardware thread ID
     VENDOR_ID                    => VENDOR_ID,                    -- vendor's JEDEC ID
     CPU_BOOT_ADDR                => CPU_BOOT_ADDR,                -- cpu boot address
@@ -273,7 +236,6 @@ begin
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr,    -- implement CSR system?
     CPU_EXTENSION_RISCV_Zicntr   => CPU_EXTENSION_RISCV_Zicntr,   -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond   => CPU_EXTENSION_RISCV_Zicond,   -- implement conditional operations extension?
     CPU_EXTENSION_RISCV_Zihpm    => CPU_EXTENSION_RISCV_Zihpm,    -- implement hardware performance monitors?
@@ -353,10 +315,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_regfile_inst: neorv32_cpu_regfile
   generic map (
-    XLEN                  => XLEN,                  -- data path width
-    CPU_EXTENSION_RISCV_E => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension?
-    RS3_EN                => regfile_rs3_en_c,      -- enable 3rd read port
-    RS4_EN                => regfile_rs4_en_c       -- enable 4th read port
+    RVE    => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension?
+    RS3_EN => regfile_rs3_en_c,      -- enable 3rd read port
+    RS4_EN => regfile_rs4_en_c       -- enable 4th read port
   )
   port map (
     -- global control --
@@ -379,7 +340,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_inst: neorv32_cpu_alu
   generic map (
-    XLEN                       => XLEN,                       -- data path width
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_B      => CPU_EXTENSION_RISCV_B,      -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,      -- implement mul/div extension?
@@ -418,7 +378,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_bus_inst: neorv32_cpu_bus
   generic map (
-    XLEN                => XLEN,               -- data path width
     PMP_NUM_REGIONS     => PMP_NUM_REGIONS,    -- number of regions (0..16)
     PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   )

@@ -22,6 +22,7 @@ minimal base + privileged ISA `rv32i_zicsr` only to ensure it can work independe
 4+^| Serial console interface
 | `UART_EN`   | `1` | `0`, `1` | Set to `0` to disable UART0 (no serial console at all)
 | `UART_BAUD` | `19200` | _any_ | Baud rate of UART0
+| `UART_HW_HANDSHAKE_EN`   | `0` | `0`, `1` | Set to `1` to enable UART0 hardware flow control
 4+^| Status LED
 | `STATUS_LED_EN`  | `1` | `0`, `1`     | Enable bootloader status led ("heart beat") at `GPIO` output port pin #`STATUS_LED_PIN` when `1`
 | `STATUS_LED_PIN` | `0` | `0` ... `31` | `GPIO` output pin used for the high-active status LED

@@ -50,7 +50,6 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_bitmanip is
   generic (
-    XLEN          : natural; -- data path width
     FAST_SHIFT_EN : boolean  -- use barrel shifter for shift operations
   );
   port (
@@ -135,6 +134,7 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   type shifter_t is record
     start   : std_ulogic;
     run     : std_ulogic;
+    nxt     : std_ulogic;
     bcnt    : std_ulogic_vector(index_size_f(XLEN) downto 0); -- bit counter
     cnt     : std_ulogic_vector(index_size_f(XLEN) downto 0); -- iteration counter
     cnt_max : std_ulogic_vector(index_size_f(XLEN) downto 0);
@@ -306,7 +306,6 @@ begin
   if (FAST_SHIFT_EN = false) generate
 
     shifter_unit: process(clk_i)
-      variable new_bit_v : std_ulogic;
     begin
       if rising_edge(clk_i) then
         if (shifter.start = '1') then -- trigger new shift
@@ -326,8 +325,7 @@ begin
           end if;
           shifter.bcnt <= (others => '0');
         elsif (shifter.run = '1') then -- right shifts only
-          new_bit_v := ((cmd_buf(op_ror_c) or cmd_buf(op_rol_c)) and shifter.sreg(0)) or (cmd_buf(op_clz_c) or cmd_buf(op_ctz_c));
-          shifter.sreg <= new_bit_v & shifter.sreg(shifter.sreg'left downto 1); -- ro[r/l]/lsr(for counting)
+          shifter.sreg <= shifter.nxt & shifter.sreg(shifter.sreg'left downto 1); -- ro[r/l]/lsr(for counting)
           shifter.cnt  <= std_ulogic_vector(unsigned(shifter.cnt) + 1); -- iteration counter
           if (shifter.sreg(0) = '1') then
             shifter.bcnt <= std_ulogic_vector(unsigned(shifter.bcnt) + 1); -- bit counter
@@ -335,6 +333,9 @@ begin
         end if;
       end if;
     end process shifter_unit;
+
+    -- new bit --
+    shifter.nxt <= ((cmd_buf(op_ror_c) or cmd_buf(op_rol_c)) and shifter.sreg(0)) or (cmd_buf(op_clz_c) or cmd_buf(op_ctz_c));
 
     -- run control --
     shifter_unit_ctrl: process(cmd_buf, shifter)

@@ -44,7 +44,6 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_shifter is
   generic (
-    XLEN          : natural; -- data path width
     FAST_SHIFT_EN : boolean  -- implement fast but large barrel shifter
   );
   port (

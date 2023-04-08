@@ -127,7 +127,7 @@ int neorv32_rte_handler_uninstall(uint8_t id) {
 /**********************************************************************//**
  * This is the [private!] core of the NEORV32 RTE.
  *
- * @warning When using the the RTE, this function is the ONLY function that uses the 'interrupt' attribute!
+ * @warning When using the RTE this function is the ONLY function that uses the 'interrupt' attribute!
  **************************************************************************/
 static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32_rte_core(void) {
 
@@ -174,8 +174,8 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32
   (*handler_pnt)();
 
   // compute return address
-  // WARNING: some traps might NOT be resumable! (e.g. instruction access fault)
-  if (((int32_t)rte_mcause) >= 0) { // modify pc only if not interrupt (MSB cleared)
+  if ((((int32_t)rte_mcause) >= 0) && // modify pc only if not interrupt (MSB cleared)
+     (rte_mcause != TRAP_CODE_I_ACCESS)) { // do not try to load the instruction as this is the reason we are here already
 
     uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
 
@@ -306,7 +306,7 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\n\n<< NEORV32 Processor Configuration >>\n");
 
   // CPU configuration
-  neorv32_uart0_printf("\n====== Core ======\n");
+  neorv32_uart0_printf("\n== Core ==\n");
 
   // general
   neorv32_uart0_printf("Is simulation:     "); __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM));
@@ -397,7 +397,7 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\nPhys. Mem. Prot.:  ");
   uint32_t pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
   if (pmp_num_regions != 0)  {
-    neorv32_uart0_printf("%u region(s), %u bytes minimal granularity, OFF/TOR mode only", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
+    neorv32_uart0_printf("%u region(s), %u bytes granularity", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
   }
   else {
     neorv32_uart0_printf("none");
@@ -415,7 +415,7 @@ void neorv32_rte_print_hw_config(void) {
 
 
   // Memory configuration
-  neorv32_uart0_printf("\n\n====== Memory ======\n");
+  neorv32_uart0_printf("\n\n== Memory ==\n");
 
   neorv32_uart0_printf("Boot configuration:  Boot ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {
@@ -441,20 +441,10 @@ void neorv32_rte_print_hw_config(void) {
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_ICACHE)) {
 
     uint32_t ic_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_IC_BLOCK_SIZE_0) & 0x0F;
-    if (ic_block_size) {
-      ic_block_size = 1 << ic_block_size;
-    }
-    else {
-      ic_block_size = 0;
-    }
+    ic_block_size = 1 << ic_block_size;
 
     uint32_t ic_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_IC_NUM_BLOCKS_0) & 0x0F;
-    if (ic_num_blocks) {
-      ic_num_blocks = 1 << ic_num_blocks;
-    }
-    else {
-      ic_num_blocks = 0;
-    }
+    ic_num_blocks = 1 << ic_num_blocks;
 
     uint32_t ic_associativity = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_IC_ASSOCIATIVITY_0) & 0x0F;
     ic_associativity = 1 << ic_associativity;
@@ -464,7 +454,7 @@ void neorv32_rte_print_hw_config(void) {
       neorv32_uart0_printf(" (direct-mapped)\n");
     }
     else if (((NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_IC_REPLACEMENT_0) & 0x0F) == 1) {
-      neorv32_uart0_printf(" (LRU replacement policy)\n");
+      neorv32_uart0_printf(" (LRU)\n");
     }
     else {
       neorv32_uart0_printf("\n");
@@ -486,7 +476,19 @@ void neorv32_rte_print_hw_config(void) {
 
   // internal d-cache
   neorv32_uart0_printf("Internal d-cache:    ");
-  neorv32_uart0_printf("none\n"); // work-in-progress
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_DCACHE)) {
+
+    uint32_t dc_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_DC_BLOCK_SIZE_0) & 0x0F;
+    dc_block_size = 1 << dc_block_size;
+
+    uint32_t dc_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_DC_NUM_BLOCKS_0) & 0x0F;
+    dc_num_blocks = 1 << dc_num_blocks;
+
+    neorv32_uart0_printf("%u bytes, %u block(s), %u bytes per block, direct-mapped, write-through\n", dc_num_blocks*dc_block_size, dc_num_blocks, dc_block_size);
+  }
+  else {
+    neorv32_uart0_printf("none\n");
+  }
 
   // external bus interface
   neorv32_uart0_printf("Ext. bus interface:  ");
@@ -500,7 +502,7 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // peripherals
-  neorv32_uart0_printf("\n====== Peripherals ======\n");
+  neorv32_uart0_printf("\n== Peripherals ==\n");
 
   tmp = NEORV32_SYSINFO->SOC;
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_GPIO));    neorv32_uart0_printf(" GPIO\n");

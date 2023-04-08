@@ -58,7 +58,8 @@ will signal a "DEVICE ERROR" in this case.
 | `3`    | `SYSINFO_SOC_MEM_INT_DMEM`   | set if the processor-internal IMEM is implemented (via top's `MEM_INT_IMEM_EN` generic)
 | `4`    | `SYSINFO_SOC_MEM_EXT_ENDIAN` | set if external bus interface uses BIG-endian byte-order (via top's `MEM_EXT_BIG_ENDIAN` generic)
 | `5`    | `SYSINFO_SOC_ICACHE`         | set if processor-internal instruction cache is implemented (via top's `ICACHE_EN` generic)
-| `12:6` | -                            | _reserved_, read as zero
+| `6`    | `SYSINFO_SOC_DCACHE`         | set if processor-internal data cache is implemented (via top's `DCACHE_EN` generic)
+| `12:7` | -                            | _reserved_, read as zero
 | `13`   | `SYSINFO_SOC_IS_SIM`         | set if processor is being **simulated** (⚠️ not guaranteed)
 | `14`   | `SYSINFO_SOC_OCD`            | set if on-chip debugger implemented (via top's `ON_CHIP_DEBUGGER_EN` generic)
 | `15`   | -                            | _reserved_, read as zero
@@ -90,10 +91,13 @@ Bit fields in this register are set to all-zero if the according cache is not im
 [cols="^1,<10,<11"]
 [options="header",grid="all"]
 |=======================
-| Bit      | Name [C] | Function
-| `3:0`    | `SYSINFO_CACHE_IC_BLOCK_SIZE_3 : SYSINFO_CACHE_IC_BLOCK_SIZE_0`       | _log2_(i-cache block size in bytes), via top's `ICACHE_BLOCK_SIZE` generic
-| `7:4`    | `SYSINFO_CACHE_IC_NUM_BLOCKS_3 : SYSINFO_CACHE_IC_NUM_BLOCKS_0`       | _log2_(i-cache number of cache blocks), via top's `ICACHE_NUM_BLOCKS` generic
-| `11:9`   | `SYSINFO_CACHE_IC_ASSOCIATIVITY_3 : SYSINFO_CACHE_IC_ASSOCIATIVITY_0` | _log2_(i-cache associativity), via top's `ICACHE_ASSOCIATIVITY` generic
-| `15:12`  | `SYSINFO_CACHE_IC_REPLACEMENT_3 : SYSINFO_CACHE_IC_REPLACEMENT_0`     | i-cache replacement policy (`0001` = LRU if associativity > 0)
-| `32:16`  | -                                                                     | zero, reserved for d-cache
+| Bit     | Name [C] | Function
+| `3:0`   | `SYSINFO_CACHE_IC_BLOCK_SIZE_3 : SYSINFO_CACHE_IC_BLOCK_SIZE_0`       | _log2_(i-cache block size in bytes), via top's `ICACHE_BLOCK_SIZE` generic
+| `7:4`   | `SYSINFO_CACHE_IC_NUM_BLOCKS_3 : SYSINFO_CACHE_IC_NUM_BLOCKS_0`       | _log2_(i-cache number of cache blocks), via top's `ICACHE_NUM_BLOCKS` generic
+| `11:9`  | `SYSINFO_CACHE_IC_ASSOCIATIVITY_3 : SYSINFO_CACHE_IC_ASSOCIATIVITY_0` | _log2_(i-cache associativity), via top's `ICACHE_ASSOCIATIVITY` generic
+| `15:12` | `SYSINFO_CACHE_IC_REPLACEMENT_3 : SYSINFO_CACHE_IC_REPLACEMENT_0`     | i-cache replacement policy (`0001` = LRU if associativity > 0)
+| `19:16` | `SYSINFO_CACHE_DC_BLOCK_SIZE_3 : SYSINFO_CACHE_DC_BLOCK_SIZE_0`       | _log2_(d-cache block size in bytes), via top's `DCACHE_BLOCK_SIZE` generic
+| `23:20` | `SYSINFO_CACHE_DC_NUM_BLOCKS_3 : SYSINFO_CACHE_DC_NUM_BLOCKS_0`       | _log2_(d-cache number of cache blocks), via top's `DCACHE_NUM_BLOCKS` generic
+| `27:24` | `SYSINFO_CACHE_DC_ASSOCIATIVITY_3 : SYSINFO_CACHE_DC_ASSOCIATIVITY_0` | always zero
+| `31:28` | `SYSINFO_CACHE_DC_REPLACEMENT_3 : SYSINFO_CACHE_DC_REPLACEMENT_0`     | always zero
 |=======================

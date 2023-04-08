@@ -47,9 +47,9 @@
 /**@{*/
 /** XIRQ module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t       IER;      /**< offset 0:  IRQ input enable register */
-  uint32_t       IPR;      /**< offset 4:  pending IRQ register /ack/clear */
-  uint32_t       SCR;      /**< offset 8:  interrupt source register */
+  uint32_t       EIE;      /**< offset 0:  external interrupt enable register */
+  uint32_t       EIP;      /**< offset 4:  external interrupt pending register */
+  uint32_t       ESC;      /**< offset 8:  external interrupt source register */
   const uint32_t reserved; /**< offset 12: reserved */
 } neorv32_xirq_t;
 
@@ -67,11 +67,11 @@ int  neorv32_xirq_setup(void);
 void neorv32_xirq_global_enable(void);
 void neorv32_xirq_global_disable(void);
 int  neorv32_xirq_get_num(void);
-void neorv32_xirq_clear_pending(uint8_t ch);
-void neorv32_xirq_channel_enable(uint8_t ch);
-void neorv32_xirq_channel_disable(uint8_t ch);
-int  neorv32_xirq_install(uint8_t ch, void (*handler)(void));
-int  neorv32_xirq_uninstall(uint8_t ch);
+void neorv32_xirq_clear_pending(int channel);
+void neorv32_xirq_channel_enable(int channel);
+void neorv32_xirq_channel_disable(int channel);
+int  neorv32_xirq_install(int channel, void (*handler)(void));
+int  neorv32_xirq_uninstall(int channel);
 /**@}*/
 
 

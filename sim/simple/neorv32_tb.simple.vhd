@@ -53,7 +53,6 @@ entity neorv32_tb_simple is
     CPU_EXTENSION_RISCV_E        : boolean := false;
     CPU_EXTENSION_RISCV_M        : boolean := true;
     CPU_EXTENSION_RISCV_U        : boolean := true;
-    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;
     CPU_EXTENSION_RISCV_Zifencei : boolean := true;
     EXT_IMEM_C                   : boolean := false;   -- false: use and boot from proc-internal IMEM, true: use and boot from external (initialized) simulated IMEM (ext. mem A)
     MEM_INT_IMEM_SIZE            : natural := 16*1024  -- size in bytes of processor-internal IMEM / external mem A
@@ -180,7 +179,6 @@ begin
     CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M, -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U, -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    => true,          -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zicsr    => CPU_EXTENSION_RISCV_Zicsr, -- implement CSR system?
     CPU_EXTENSION_RISCV_Zicntr   => true,          -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond   => true,          -- implement conditional operations extension?
     CPU_EXTENSION_RISCV_Zihpm    => true,          -- implement hardware performance monitors?
@@ -208,6 +206,10 @@ begin
     ICACHE_NUM_BLOCKS            => 8,             -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE            => icache_block_size_c, -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         => 2,             -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
+    -- Internal Data Cache (dCACHE) --
+    DCACHE_EN                    => true,          -- implement data cache
+    DCACHE_NUM_BLOCKS            => 8,             -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE            => 64,            -- d-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface --
     MEM_EXT_EN                   => true,          -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)

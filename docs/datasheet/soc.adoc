@@ -18,7 +18,8 @@ image::neorv32_processor.png[align=center]
 
 **Key Features**
 
-* _optional_ processor-internal data and instruction memories (<<_data_memory_dmem,**DMEM**>>/<<_instruction_memory_imem,**IMEM**>>) + cache (<<_processor_internal_instruction_cache_icache,**iCACHE**>>)
+* _optional_ processor-internal data and instruction memories (<<_data_memory_dmem,**DMEM**>>/<<_instruction_memory_imem,**IMEM**>>)
+* _optional_ caches (<<_processor_internal_instruction_cache_icache,**iCACHE**>>/<<_processor_internal_data_cache_dcache,**dCACHE**>>)
 * _optional_ internal bootloader (<<_bootloader_rom_bootrom,**BOOTROM**>>) with UART console & SPI flash boot option
 * _optional_ machine system timer (<<_machine_system_timer_mtime,**MTIME**>>), RISC-V-compatible
 * _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>,
@@ -202,7 +203,6 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 | `CPU_EXTENSION_RISCV_M`        | boolean | false | Enable <<_m_isa_extension>> (hardware-based integer multiplication and division).
 | `CPU_EXTENSION_RISCV_U`        | boolean | false | Enable <<_u_isa_extension>> (less-privileged user mode).
 | `CPU_EXTENSION_RISCV_Zfinx`    | boolean | false | Enable <<_zfinx_isa_extension>> (single-precision floating-point unit).
-| `CPU_EXTENSION_RISCV_Zicsr`    | boolean | true  | Enable <<_zicsr_isa_extension>> (control and status register access).
 | `CPU_EXTENSION_RISCV_Zicntr`   | boolean | true  | Enable <<_zicntr_isa_extension>> (CPU base counters).
 | `CPU_EXTENSION_RISCV_Zicond`   | boolean | false | Enable <<_zicond_isa_extension>> (conditional operations).
 | `CPU_EXTENSION_RISCV_Zihpm`    | boolean | false | Enable <<_zihpm_isa_extension>> (hardware performance monitors).
@@ -230,6 +230,10 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 | `ICACHE_NUM_BLOCKS`     | natural   | 4          | Number of blocks ("pages" or "lines") Has to be a power of two.
 | `ICACHE_BLOCK_SIZE`     | natural   | 64         | Size in bytes of each block. Has to be a power of two.
 | `ICACHE_ASSOCIATIVITY`  | natural   | 1          | Associativity (number of sets). Allowed configurations: `1` = 1 set, direct mapped; `2` = 2-way set-associative.
+4+^| **<<_processor_internal_data_cache_dcache>>**
+| `DCACHE_EN`             | boolean   | false      | Implement the data cache.
+| `DCACHE_NUM_BLOCKS`     | natural   | 4          | Number of blocks ("pages" or "lines") Has to be a power of two.
+| `DCACHE_BLOCK_SIZE`     | natural   | 64         | Size in bytes of each block. Has to be a power of two.
 4+^| **<<_processor_external_memory_interface_wishbone>>**
 | `MEM_EXT_EN`            | boolean   | false      | Implement the external bus interface.
 | `MEM_EXT_TIMEOUT`       | natural   | 255        | Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.
@@ -492,7 +496,7 @@ image::neorv32_bus.png[1300]
 [NOTE]
 The internal processor bus might appear as bottleneck. In order to reduce traffic jam on this bus
 (when instruction fetch and data interface access the bus at the same time) the instruction fetch of
-the CPU is equipped with a prefetch buffer. Instruction fetches can be further buffered using the i-cache.
+the CPU is equipped with a prefetch buffer. Memory accesses can be further buffered using the caches.
 Furthermore, data accesses (loads and stores) have higher priority than instruction fetch accesses.
 
 [TIP]
@@ -652,6 +656,8 @@ include::soc_dmem.adoc[]
 include::soc_bootrom.adoc[]
 
 include::soc_icache.adoc[]
+
+include::soc_dcache.adoc[]
 
 include::soc_wishbone.adoc[]
 

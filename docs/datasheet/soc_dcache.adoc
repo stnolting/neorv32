@@ -1,0 +1,51 @@
+<<<
+:sectnums:
+==== Processor-Internal Data Cache (dCACHE)
+
+[cols="<3,<3,<4"]
+[frame="topbot",grid="none"]
+|=======================
+| Hardware source file(s): | neorv32_dcache.vhd  | 
+| Software driver file(s): | none                | _implicitly used_
+| Top entity port:         | none                | 
+| Configuration generics:  | `DCACHE_EN`         | implement processor-internal data cache when `true`
+|                          | `DCACHE_NUM_BLOCKS` | number of cache blocks (pages/lines)
+|                          | `DCACHE_BLOCK_SIZE` | size of a cache block in bytes
+| CPU interrupts:          | none | 
+|=======================
+
+The processor features an optional data cache to improve performance when using memories with high
+access latencies. The cache is directly connected to the CPU's data access interface and provides
+full-transparent buffering.
+
+The cache is implemented if the `DCACHE_EN` generic is `true`. The size of the cache memory is defined via the
+`DCACHE_BLOCK_SIZE` (the size of a single cache block/page/line in bytes; has to be a power of two and greater than or
+equal to 4 bytes) and `DCACHE_NUM_BLOCKS` (the total amount of cache blocks; has to be a power of two and greater than or
+equal to 1) generics. The data cache provides only a single set, hence it is direct-mapped.
+
+The data cache provides direct accesses (= uncached) to memory in order to access memory-mapped IO (like the
+processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
+will not be cached at all. This also allows to attach custom IO modules via the processor's external memory interface
+when they are mapped to upper-most 256 MB address page (see section <<_address_space>>).
+
+.Caching Internal Memories
+[NOTE]
+The data cache is intended to accelerate data access to **processor-external** memories
+(via the external bus interface or via the XIP module).
+
+.Manual Cache Clear/Reload
+[NOTE]
+By executing the `fence` instruction (<<_i_isa_extension>>) the cache is cleared and a reload from
+main memory is triggered.
+
+.Retrieve Cache Configuration from Software
+[TIP]
+Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_configuration>> register.
+
+.Bus Access Fault Handling
+[NOTE]
+The cache always loads a complete cache block (aligned to the block size) every time a
+cache miss is detected. Each cached word from this block provides a single status bit that indicates if the
+according bus access was successful or caused a bus error. Hence, the whole cache block remains valid even
+if certain addresses inside caused a bus error. If the CPU accesses any of the faulty cache words, a
+data bus error exception is raised.

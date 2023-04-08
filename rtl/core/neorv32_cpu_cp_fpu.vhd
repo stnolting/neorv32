@@ -56,9 +56,6 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_fpu is
-  generic (
-    XLEN : natural -- data path width
-  );
   port (
     -- global control --
     clk_i    : in  std_ulogic; -- global clock, rising edge

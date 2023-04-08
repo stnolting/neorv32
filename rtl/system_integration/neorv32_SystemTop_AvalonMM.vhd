@@ -61,7 +61,6 @@ entity neorv32_top_avalonmm is
     CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
-    CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
     CPU_EXTENSION_RISCV_Zicntr   : boolean := true;   -- implement base counters?
     CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
@@ -94,6 +93,11 @@ entity neorv32_top_avalonmm is
     ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
+
+    -- Internal Data Cache (dCACHE) --
+    DCACHE_EN                    : boolean := false;  -- implement data cache
+    DCACHE_NUM_BLOCKS            : natural := 4;      -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE            : natural := 64;     -- d-cache: block size in bytes (min 4), has to be a power of 2
 
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  : natural := 0;      -- number of external IRQ channels (0..32)
@@ -243,7 +247,6 @@ begin
     CPU_EXTENSION_RISCV_M => CPU_EXTENSION_RISCV_M,
     CPU_EXTENSION_RISCV_U => CPU_EXTENSION_RISCV_U,
     CPU_EXTENSION_RISCV_Zfinx => CPU_EXTENSION_RISCV_Zfinx,
-    CPU_EXTENSION_RISCV_Zicsr => CPU_EXTENSION_RISCV_Zicsr,
     CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr,
     CPU_EXTENSION_RISCV_Zihpm => CPU_EXTENSION_RISCV_Zihpm,
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei,
@@ -276,6 +279,11 @@ begin
     ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
     ICACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE,
     ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY,
+
+    -- Internal Data Cache (dCACHE) --
+    DCACHE_EN => DCACHE_EN,
+    DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
+    DCACHE_BLOCK_SIZE => DCACHE_BLOCK_SIZE,
 
     -- External memory interface (WISHBONE) --
     MEM_EXT_EN => true,

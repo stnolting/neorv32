@@ -63,13 +63,6 @@
 
 
 /**********************************************************************//**
- * >Private< helper functions.
- **************************************************************************/
-static uint32_t __neorv32_cpu_pmp_cfg_read(uint32_t index);
-static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data);
-
-
-/**********************************************************************//**
  * Enable specific interrupt channel.
  * @note This functions also tries to clear the pending flag of the interrupt.
  *
@@ -296,10 +289,10 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 
   // try setting R bit in all PMPCFG CSRs
   const uint32_t mask = 0x01010101;
-  __neorv32_cpu_pmp_cfg_write(0, mask);
-  __neorv32_cpu_pmp_cfg_write(1, mask);
-  __neorv32_cpu_pmp_cfg_write(2, mask);
-  __neorv32_cpu_pmp_cfg_write(3, mask);
+  neorv32_cpu_csr_write(CSR_PMPCFG0, mask);
+  neorv32_cpu_csr_write(CSR_PMPCFG1, mask);
+  neorv32_cpu_csr_write(CSR_PMPCFG2, mask);
+  neorv32_cpu_csr_write(CSR_PMPCFG3, mask);
 
   // sum up all written ones (only available PMPCFG* CSRs/entries will return =! 0)
   union {
@@ -308,10 +301,10 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
   } cnt;
 
   cnt.uint32 = 0;
-  cnt.uint32 += __neorv32_cpu_pmp_cfg_read(0) & mask;
-  cnt.uint32 += __neorv32_cpu_pmp_cfg_read(1) & mask;
-  cnt.uint32 += __neorv32_cpu_pmp_cfg_read(2) & mask;
-  cnt.uint32 += __neorv32_cpu_pmp_cfg_read(3) & mask;
+  cnt.uint32 += neorv32_cpu_csr_read(CSR_PMPCFG0) & mask;
+  cnt.uint32 += neorv32_cpu_csr_read(CSR_PMPCFG1) & mask;
+  cnt.uint32 += neorv32_cpu_csr_read(CSR_PMPCFG2) & mask;
+  cnt.uint32 += neorv32_cpu_csr_read(CSR_PMPCFG3) & mask;
 
   // sum up bytes
   uint32_t num_regions = 0;
@@ -339,7 +332,7 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
     return 0;
   }
 
-  neorv32_cpu_csr_write(CSR_PMPCFG0, neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xffffff00); // disable entry 0
+  neorv32_cpu_csr_write(CSR_PMPCFG0, 0);
   neorv32_cpu_csr_write(CSR_PMPADDR0, -1); // try to set all bits
   uint32_t tmp = neorv32_cpu_csr_read(CSR_PMPADDR0);
 
@@ -348,7 +341,7 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
     return 0;
   }
 
-  // count trailing zeros
+  // find first trailing 1
   uint32_t i = 2;
   while(1) {
     if (tmp & 1) {
@@ -365,110 +358,64 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
 /**********************************************************************//**
  * Physical memory protection (PMP): Configure region.
  *
- * @warning Only TOR mode is supported.
- *
  * @note This function requires the PMP CPU extension.
- * @note Only use available PMP regions. Check before via neorv32_cpu_pmp_get_regions(void).
+ *
+ * @warning This function expects a WORD address!
  *
  * @param[in] index Region number (index, 0..PMP_NUM_REGIONS-1).
- * @param[in] base Region base address.
+ * @param[in] addr Region address (word address!).
  * @param[in] config Region configuration byte (see #NEORV32_PMPCFG_ATTRIBUTES_enum).
  * @return Returns 0 on success, !=0 on failure.
  **************************************************************************/
-int neorv32_cpu_pmp_configure_region(uint32_t index, uint32_t base, uint8_t config) {
+int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
 
   if ((index > 15) || ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_PMP)) == 0)) {
-    return 1;
+    return -1;
   }
 
-  // set base address
-  base = base >> 2;
+  // set address
   switch(index & 0xf) {
-    case 0:  neorv32_cpu_csr_write(CSR_PMPADDR0,  base); break;
-    case 1:  neorv32_cpu_csr_write(CSR_PMPADDR1,  base); break;
-    case 2:  neorv32_cpu_csr_write(CSR_PMPADDR2,  base); break;
-    case 3:  neorv32_cpu_csr_write(CSR_PMPADDR3,  base); break;
-    case 4:  neorv32_cpu_csr_write(CSR_PMPADDR4,  base); break;
-    case 5:  neorv32_cpu_csr_write(CSR_PMPADDR5,  base); break;
-    case 6:  neorv32_cpu_csr_write(CSR_PMPADDR6,  base); break;
-    case 7:  neorv32_cpu_csr_write(CSR_PMPADDR7,  base); break;
-    case 8:  neorv32_cpu_csr_write(CSR_PMPADDR8,  base); break;
-    case 9:  neorv32_cpu_csr_write(CSR_PMPADDR9,  base); break;
-    case 10: neorv32_cpu_csr_write(CSR_PMPADDR10, base); break;
-    case 11: neorv32_cpu_csr_write(CSR_PMPADDR11, base); break;
-    case 12: neorv32_cpu_csr_write(CSR_PMPADDR12, base); break;
-    case 13: neorv32_cpu_csr_write(CSR_PMPADDR13, base); break;
-    case 14: neorv32_cpu_csr_write(CSR_PMPADDR14, base); break;
-    case 15: neorv32_cpu_csr_write(CSR_PMPADDR15, base); break;
+    case 0:  neorv32_cpu_csr_write(CSR_PMPADDR0,  addr); break;
+    case 1:  neorv32_cpu_csr_write(CSR_PMPADDR1,  addr); break;
+    case 2:  neorv32_cpu_csr_write(CSR_PMPADDR2,  addr); break;
+    case 3:  neorv32_cpu_csr_write(CSR_PMPADDR3,  addr); break;
+    case 4:  neorv32_cpu_csr_write(CSR_PMPADDR4,  addr); break;
+    case 5:  neorv32_cpu_csr_write(CSR_PMPADDR5,  addr); break;
+    case 6:  neorv32_cpu_csr_write(CSR_PMPADDR6,  addr); break;
+    case 7:  neorv32_cpu_csr_write(CSR_PMPADDR7,  addr); break;
+    case 8:  neorv32_cpu_csr_write(CSR_PMPADDR8,  addr); break;
+    case 9:  neorv32_cpu_csr_write(CSR_PMPADDR9,  addr); break;
+    case 10: neorv32_cpu_csr_write(CSR_PMPADDR10, addr); break;
+    case 11: neorv32_cpu_csr_write(CSR_PMPADDR11, addr); break;
+    case 12: neorv32_cpu_csr_write(CSR_PMPADDR12, addr); break;
+    case 13: neorv32_cpu_csr_write(CSR_PMPADDR13, addr); break;
+    case 14: neorv32_cpu_csr_write(CSR_PMPADDR14, addr); break;
+    case 15: neorv32_cpu_csr_write(CSR_PMPADDR15, addr); break;
     default: break;
   }
 
-  // pmpcfg register index
-  uint32_t pmpcfg_index = index >> 4; // 4 entries per pmpcfg csr
-
-  // get current configuration
-  uint32_t tmp = __neorv32_cpu_pmp_cfg_read(pmpcfg_index);
-
-  // clear old configuration
-  uint32_t config_mask = (((uint32_t)0xFF) << ((index%4)*8));
-  tmp = tmp & (~config_mask);
+  // wait for hardware to compute address masks
+  int i;
+  for (i=0; i<16; i++) {
+    asm volatile ("nop");
+  }
 
   // set configuration
-  uint32_t config_new = ((uint32_t)config) << ((index%4)*8);
-  tmp = tmp | config_new;
-  __neorv32_cpu_pmp_cfg_write(pmpcfg_index, tmp);
+  uint32_t clr_mask = 0xff;
+  uint32_t set_mask = (uint32_t)config;
 
-  // flush instruction and data queues and caches
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIFENCEI)) {
-    asm volatile ("fence.i");
-  }
-  asm volatile ("fence");
+  clr_mask <<= 8*(index & 3);
+  set_mask <<= 8*(index & 3);
 
-  // check if update was successful
-  if ((__neorv32_cpu_pmp_cfg_read(pmpcfg_index) & config_mask) == config_new) {
-    return 0;
-  } else {
-    return 2;
-  }
-}
-
-
-/**********************************************************************//**
- * Internal helper function: Read PMP configuration register 0..15.
- *
- * @param[in] index PMP CFG configuration register ID (0..15).
- * @return PMP CFG read data.
- **************************************************************************/
-static uint32_t __neorv32_cpu_pmp_cfg_read(uint32_t index) {
-
-  uint32_t tmp = 0;
-  switch (index & 3) {
-    case 0: tmp = neorv32_cpu_csr_read(CSR_PMPCFG0); break;
-    case 1: tmp = neorv32_cpu_csr_read(CSR_PMPCFG1); break;
-    case 2: tmp = neorv32_cpu_csr_read(CSR_PMPCFG2); break;
-    case 3: tmp = neorv32_cpu_csr_read(CSR_PMPCFG3); break;
+  switch ((index >> 2) & 3) {
+    case 0: neorv32_cpu_csr_clr(CSR_PMPCFG0, clr_mask); neorv32_cpu_csr_set(CSR_PMPCFG0, set_mask); break;
+    case 1: neorv32_cpu_csr_clr(CSR_PMPCFG1, clr_mask); neorv32_cpu_csr_set(CSR_PMPCFG1, set_mask); break;
+    case 2: neorv32_cpu_csr_clr(CSR_PMPCFG2, clr_mask); neorv32_cpu_csr_set(CSR_PMPCFG2, set_mask); break;
+    case 3: neorv32_cpu_csr_clr(CSR_PMPCFG3, clr_mask); neorv32_cpu_csr_set(CSR_PMPCFG3, set_mask); break;
     default: break;
   }
 
-  return tmp;
-}
-
-
-/**********************************************************************//**
- * Internal helper function: Write PMP configuration register 0..3.
- *
- * @param[in] index PMP CFG configuration register ID (0..4).
- * @param[in] data PMP CFG write data.
- **************************************************************************/
-static void __neorv32_cpu_pmp_cfg_write(uint32_t index, uint32_t data) {
-
-  switch (index & 3) {
-    case 0: neorv32_cpu_csr_write(CSR_PMPCFG0, data); break;
-    case 1: neorv32_cpu_csr_write(CSR_PMPCFG1, data); break;
-    case 2: neorv32_cpu_csr_write(CSR_PMPCFG2, data); break;
-    case 3: neorv32_cpu_csr_write(CSR_PMPCFG3, data); break;
-    default: break;
-  }
+  return 0;
 }
 
 
@@ -484,16 +431,15 @@ uint32_t neorv32_cpu_hpm_get_num_counters(void) {
     return 0;
   }
 
+  // backup
   uint32_t mcountinhibit_tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
 
   // try to set all HPM bits
-  uint32_t tmp = mcountinhibit_tmp;
-  tmp |= 0xfffffff8U;
-  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp);
+  neorv32_cpu_csr_set(CSR_MCOUNTINHIBIT, 0xfffffff8U);
 
   // count actually set bits
   uint32_t cnt = 0;
-  tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT) >> 3; // remove IR, TM and CY
+  uint32_t tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT) >> 3; // remove IR, TM and CY
   while (tmp) {
     cnt++;
     tmp >>= 1;
@@ -523,9 +469,7 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
   }
 
   // inhibit auto-update of HPM counter3
-  tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
-  tmp |= 1 << CSR_MCOUNTINHIBIT_HPM3;
-  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, tmp);
+  neorv32_cpu_csr_set(CSR_MCOUNTINHIBIT, 1 << CSR_MCOUNTINHIBIT_HPM3);
 
   // try to set all 64 counter bits
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER3, -1);

@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Main VHDL package file >>                                                        #
+-- # << NEORV32 - Main VHDL Package File (CPU and SoC) >>                                          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -58,9 +58,12 @@ package neorv32_package is
   -- log2 of co-processor timeout cycles --
   constant cp_timeout_c : natural := 7; -- default = 7 (= 128 cycles)
 
+  -- native data path width --
+  constant XLEN : natural := 32; -- do not change!
+
   -- Architecture Constants (do not modify!) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080207"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080304"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
 
   -- Check if we're inside the Matrix -------------------------------------------------------
@@ -144,7 +147,7 @@ package neorv32_package is
   constant dm_exc_entry_c       : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(dm_code_base_c) + 0); -- entry point for exceptions
   constant dm_park_entry_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(dm_code_base_c) + 8); -- normal entry point
 
-  -- IO: Peripheral Devices ("IO") Area --
+  -- IO: Internal Peripheral Devices ("IO") Area --
   -- Control register(s) (including the device-enable flag) should be located at the base address of each device
   constant io_base_c            : std_ulogic_vector(31 downto 0) := x"fffffe00";
   constant io_size_c            : natural := 512; -- IO address space size in bytes, fixed!
@@ -497,12 +500,10 @@ package neorv32_package is
   constant csr_zero_c           : std_ulogic_vector(11 downto 0) := x"000"; -- always returns zero, only relevant for hardware access
   -- <<< standard read/write CSRs >>> --
   -- user floating-point CSRs --
-  constant csr_class_float_c    : std_ulogic_vector(09 downto 0) := x"00" & "00"; -- floating point
   constant csr_fflags_c         : std_ulogic_vector(11 downto 0) := x"001";
   constant csr_frm_c            : std_ulogic_vector(11 downto 0) := x"002";
   constant csr_fcsr_c           : std_ulogic_vector(11 downto 0) := x"003";
   -- machine trap setup --
-  constant csr_class_setup_c    : std_ulogic_vector(08 downto 0) := x"30" & '0'; -- trap setup
   constant csr_mstatus_c        : std_ulogic_vector(11 downto 0) := x"300";
   constant csr_misa_c           : std_ulogic_vector(11 downto 0) := x"301";
   constant csr_mie_c            : std_ulogic_vector(11 downto 0) := x"304";
@@ -511,7 +512,6 @@ package neorv32_package is
   --
   constant csr_mstatush_c       : std_ulogic_vector(11 downto 0) := x"310";
   -- machine configuration --
-  constant csr_class_envcfg_c   : std_ulogic_vector(06 downto 0) := x"3" & "000"; -- environment configuration
   constant csr_menvcfg_c        : std_ulogic_vector(11 downto 0) := x"30a";
   constant csr_menvcfgh_c       : std_ulogic_vector(11 downto 0) := x"31a";
   -- machine counter setup --
@@ -547,20 +547,17 @@ package neorv32_package is
   constant csr_mhpmevent30_c    : std_ulogic_vector(11 downto 0) := x"33e";
   constant csr_mhpmevent31_c    : std_ulogic_vector(11 downto 0) := x"33f";
   -- machine trap handling --
-  constant csr_class_trap_c     : std_ulogic_vector(07 downto 0) := x"34"; -- machine trap handling
   constant csr_mscratch_c       : std_ulogic_vector(11 downto 0) := x"340";
   constant csr_mepc_c           : std_ulogic_vector(11 downto 0) := x"341";
   constant csr_mcause_c         : std_ulogic_vector(11 downto 0) := x"342";
   constant csr_mtval_c          : std_ulogic_vector(11 downto 0) := x"343";
   constant csr_mip_c            : std_ulogic_vector(11 downto 0) := x"344";
   -- physical memory protection - configuration --
-  constant csr_class_pmpcfg_c   : std_ulogic_vector(09 downto 0) := x"3a" & "00"; -- pmp configuration
   constant csr_pmpcfg0_c        : std_ulogic_vector(11 downto 0) := x"3a0";
   constant csr_pmpcfg1_c        : std_ulogic_vector(11 downto 0) := x"3a1";
   constant csr_pmpcfg2_c        : std_ulogic_vector(11 downto 0) := x"3a2";
   constant csr_pmpcfg3_c        : std_ulogic_vector(11 downto 0) := x"3a3";
   -- physical memory protection - address --
-  constant csr_class_pmpaddr_c  : std_ulogic_vector(07 downto 0) := x"3b"; -- pmp address
   constant csr_pmpaddr0_c       : std_ulogic_vector(11 downto 0) := x"3b0";
   constant csr_pmpaddr1_c       : std_ulogic_vector(11 downto 0) := x"3b1";
   constant csr_pmpaddr2_c       : std_ulogic_vector(11 downto 0) := x"3b2";
@@ -578,7 +575,6 @@ package neorv32_package is
   constant csr_pmpaddr14_c      : std_ulogic_vector(11 downto 0) := x"3be";
   constant csr_pmpaddr15_c      : std_ulogic_vector(11 downto 0) := x"3bf";
   -- trigger module registers --
-  constant csr_class_trigger_c  : std_ulogic_vector(07 downto 0) := x"7a"; -- trigger registers
   constant csr_tselect_c        : std_ulogic_vector(11 downto 0) := x"7a0";
   constant csr_tdata1_c         : std_ulogic_vector(11 downto 0) := x"7a1";
   constant csr_tdata2_c         : std_ulogic_vector(11 downto 0) := x"7a2";
@@ -588,12 +584,10 @@ package neorv32_package is
   constant csr_mcontext_c       : std_ulogic_vector(11 downto 0) := x"7a8";
   constant csr_scontext_c       : std_ulogic_vector(11 downto 0) := x"7aa";
   -- debug mode registers --
-  constant csr_class_debug_c    : std_ulogic_vector(09 downto 0) := x"7b" & "00"; -- debug registers
   constant csr_dcsr_c           : std_ulogic_vector(11 downto 0) := x"7b0";
   constant csr_dpc_c            : std_ulogic_vector(11 downto 0) := x"7b1";
   constant csr_dscratch0_c      : std_ulogic_vector(11 downto 0) := x"7b2";
   -- machine counters/timers --
-  constant csr_class_mcnt_c     : std_ulogic_vector(03 downto 0) := x"b"; -- machine-mode counters
   constant csr_mcycle_c         : std_ulogic_vector(11 downto 0) := x"b00";
   constant csr_mtime_c          : std_ulogic_vector(11 downto 0) := x"b01"; -- dummy address
   constant csr_minstret_c       : std_ulogic_vector(11 downto 0) := x"b02";
@@ -661,7 +655,6 @@ package neorv32_package is
   constant csr_mhpmcounter31h_c : std_ulogic_vector(11 downto 0) := x"b9f";
   -- <<< standard read-only CSRs >>> --
   -- user counters/timers --
-  constant csr_class_ucnt_c     : std_ulogic_vector(03 downto 0) := x"c"; -- user-mode counters
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
   constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
   constant csr_instret_c        : std_ulogic_vector(11 downto 0) := x"c02";
@@ -846,11 +839,11 @@ package neorv32_package is
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- MSB:   1 = async exception (IRQ), 0 = sync exception (e.g. ebreak)
+  -- MSB:   1 = interrupt, 0 = sync. exception
   -- MSB-1: 1 = entry to debug mode, 0 = normal trapping
   -- RISC-V compliant synchronous exceptions --
   constant trap_ima_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0:  instruction misaligned
-  constant trap_iba_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 1:  instruction access fault
+  constant trap_ibe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 1:  instruction access fault
   constant trap_iil_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00010"; -- 2:  illegal instruction
   constant trap_brk_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00011"; -- 3:  breakpoint
   constant trap_lma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00100"; -- 4:  load address misaligned
@@ -895,8 +888,8 @@ package neorv32_package is
   constant exc_iaccess_c  : natural :=  0; -- instruction access fault
   constant exc_iillegal_c : natural :=  1; -- illegal instruction
   constant exc_ialign_c   : natural :=  2; -- instruction address misaligned
-  constant exc_envcall_c  : natural :=  3; -- environment call
-  constant exc_break_c    : natural :=  4; -- breakpoint
+  constant exc_ecall_c   : natural :=  3; -- environment call
+  constant exc_ebreak_c   : natural :=  4; -- breakpoint
   constant exc_salign_c   : natural :=  5; -- store address misaligned
   constant exc_lalign_c   : natural :=  6; -- load address misaligned
   constant exc_saccess_c  : natural :=  7; -- store access fault
@@ -980,7 +973,6 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_M        : boolean := false;  -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
-      CPU_EXTENSION_RISCV_Zicsr    : boolean := true;   -- implement CSR system?
       CPU_EXTENSION_RISCV_Zicntr   : boolean := true;   -- implement base counters?
       CPU_EXTENSION_RISCV_Zicond   : boolean := false;  -- implement conditional operations extension?
       CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
@@ -1008,6 +1000,10 @@ package neorv32_package is
       ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
       ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
       ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
+      -- Internal Data Cache (dCACHE) --
+      DCACHE_EN                    : boolean := false;  -- implement data cache
+      DCACHE_NUM_BLOCKS            : natural := 4;      -- d-cache: number of blocks (min 1), has to be a power of 2
+      DCACHE_BLOCK_SIZE            : natural := 64;     -- d-cache: block size in bytes (min 4), has to be a power of 2
       -- External memory interface (WISHBONE) --
       MEM_EXT_EN                   : boolean := false;  -- implement external memory bus interface?
       MEM_EXT_TIMEOUT              : natural := 255;    -- cycles after a pending bus access auto-terminates (0 = disabled)
@@ -1140,7 +1136,6 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-      CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
       CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
       CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement conditional operations extension?
       CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
@@ -1201,7 +1196,6 @@ package neorv32_package is
   component neorv32_cpu_control
     generic (
       -- General --
-      XLEN                         : natural; -- data path width
       HART_ID                      : std_ulogic_vector(31 downto 0); -- hardware thread ID
       VENDOR_ID                    : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
       CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
@@ -1214,7 +1208,6 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
       CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-      CPU_EXTENSION_RISCV_Zicsr    : boolean; -- implement CSR system?
       CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
       CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement conditional operations extension?
       CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
@@ -1285,10 +1278,9 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_regfile
     generic (
-      XLEN                  : natural; -- data path width
-      CPU_EXTENSION_RISCV_E : boolean; -- implement embedded RF extension?
-      RS3_EN                : boolean; -- enable 3rd read port
-      RS4_EN                : boolean  -- enable 4th read port
+      RVE    : boolean; -- implement embedded RF extension?
+      RS3_EN : boolean; -- enable 3rd read port
+      RS4_EN : boolean  -- enable 4th read port
     );
     port (
       -- global control --
@@ -1311,7 +1303,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_alu
     generic (
-      XLEN                       : natural; -- data path width
       -- RISC-V CPU Extensions --
       CPU_EXTENSION_RISCV_B      : boolean; -- implement bit-manipulation extension?
       CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
@@ -1350,7 +1341,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_shifter
     generic (
-      XLEN          : natural; -- data path width
       FAST_SHIFT_EN : boolean  -- use barrel shifter for shift operations
     );
     port (
@@ -1372,7 +1362,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_muldiv
     generic (
-      XLEN        : natural; -- data path width
       FAST_MUL_EN : boolean; -- use DSPs for faster multiplication
       DIVISION_EN : boolean  -- implement divider hardware
     );
@@ -1395,7 +1384,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_bitmanip is
     generic (
-      XLEN          : natural; -- data path width
       FAST_SHIFT_EN : boolean  -- use barrel shifter for shift operations
     );
     port (
@@ -1418,9 +1406,6 @@ package neorv32_package is
   -- Component: CPU Co-Processor 32-bit FPU ('Zfinx' extension) -----------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_fpu
-    generic (
-      XLEN : natural -- data path width
-    );
     port (
       -- global control --
       clk_i    : in  std_ulogic; -- global clock, rising edge
@@ -1442,9 +1427,6 @@ package neorv32_package is
   -- Component: CPU Co-Processor for Conditional Operations ('Zicond' extension) ------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_cond
-    generic (
-      XLEN : natural -- data path width
-    );
     port (
       -- global control --
       clk_i   : in  std_ulogic; -- global clock, rising edge
@@ -1462,9 +1444,6 @@ package neorv32_package is
   -- Component: CPU Co-Processor Custom (Instr.) Functions Unit ('Zxcfu' extension) ---------
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_cp_cfu
-    generic (
-      XLEN : natural -- data path width
-    );
     port (
       -- global control --
       clk_i   : in  std_ulogic; -- global clock, rising edge
@@ -1486,7 +1465,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cpu_bus
     generic (
-      XLEN                : natural; -- data path width
       PMP_NUM_REGIONS     : natural; -- number of regions (0..16)
       PMP_MIN_GRANULARITY : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     );
@@ -1564,7 +1542,6 @@ package neorv32_package is
       clk_i        : in  std_ulogic; -- global clock, rising edge
       rstn_i       : in  std_ulogic; -- global reset, low-active, async
       clear_i      : in  std_ulogic; -- cache clear
-      miss_o       : out std_ulogic; -- cache miss
       -- host controller interface --
       host_addr_i  : in  std_ulogic_vector(31 downto 0); -- bus access address
       host_rdata_o : out std_ulogic_vector(31 downto 0); -- bus read data
@@ -1575,6 +1552,41 @@ package neorv32_package is
       bus_cached_o : out std_ulogic; -- set if cached (!) access in progress
       bus_addr_o   : out std_ulogic_vector(31 downto 0); -- bus access address
       bus_rdata_i  : in  std_ulogic_vector(31 downto 0); -- bus read data
+      bus_re_o     : out std_ulogic; -- read enable
+      bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
+      bus_err_i    : in  std_ulogic  -- bus transfer error
+    );
+  end component;
+
+  -- Component: CPU Data Cache --------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_dcache
+    generic (
+      DCACHE_NUM_BLOCKS : natural; -- number of blocks (min 1), has to be a power of 2
+      DCACHE_BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
+      DCACHE_UC_PBEGIN  : std_ulogic_vector(3 downto 0) -- begin of uncached address space (page number)
+    );
+    port (
+      -- global control --
+      clk_i        : in  std_ulogic; -- global clock, rising edge
+      rstn_i       : in  std_ulogic; -- global reset, low-active, async
+      clear_i      : in  std_ulogic; -- cache clear
+      -- host controller interface --
+      host_addr_i  : in  std_ulogic_vector(31 downto 0); -- bus access address
+      host_rdata_o : out std_ulogic_vector(31 downto 0); -- bus read data
+      host_wdata_i : in  std_ulogic_vector(31 downto 0); -- bus write data
+      host_ben_i   : in  std_ulogic_vector(03 downto 0); -- byte enable
+      host_we_i    : in  std_ulogic; -- write enable
+      host_re_i    : in  std_ulogic; -- read enable
+      host_ack_o   : out std_ulogic; -- bus transfer acknowledge
+      host_err_o   : out std_ulogic; -- bus transfer error
+      -- peripheral bus interface --
+      bus_cached_o : out std_ulogic; -- set if cached (!) access in progress
+      bus_addr_o   : out std_ulogic_vector(31 downto 0); -- bus access address
+      bus_rdata_i  : in  std_ulogic_vector(31 downto 0); -- bus read data
+      bus_wdata_o  : out std_ulogic_vector(31 downto 0); -- bus write data
+      bus_ben_o    : out std_ulogic_vector(03 downto 0); -- byte enable
+      bus_we_o     : out std_ulogic; -- write enable
       bus_re_o     : out std_ulogic; -- read enable
       bus_ack_i    : in  std_ulogic; -- bus transfer acknowledge
       bus_err_i    : in  std_ulogic  -- bus transfer error
@@ -2154,11 +2166,15 @@ package neorv32_package is
       -- Internal Data memory --
       MEM_INT_DMEM_EN      : boolean; -- implement processor-internal data memory
       MEM_INT_DMEM_SIZE    : natural; -- size of processor-internal data memory in bytes
-      -- Internal Cache memory --
+      -- Instruction cache --
       ICACHE_EN            : boolean; -- implement instruction cache
       ICACHE_NUM_BLOCKS    : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
       ICACHE_BLOCK_SIZE    : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
       ICACHE_ASSOCIATIVITY : natural; -- i-cache: associativity (min 1), has to be a power 2
+      -- Data cache --
+      DCACHE_EN            : boolean; -- implement data cache
+      DCACHE_NUM_BLOCKS    : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
+      DCACHE_BLOCK_SIZE    : natural; -- d-cache: block size in bytes (min 4), has to be a power of 2
       -- External memory interface --
       MEM_EXT_EN           : boolean; -- implement external memory bus interface?
       MEM_EXT_BIG_ENDIAN   : boolean; -- byte order: true=big-endian, false=little-endian
@@ -2576,7 +2592,7 @@ package body neorv32_package is
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t is
     variable mem_v : mem32_t(0 to depth-1);
   begin
-    mem_v := (others => (others => '0')); -- make sure remaining memory entries are set to zero
+    mem_v := (others => (others => '0')); -- [IMPORTANT] make sure remaining memory entries are set to zero
     if (init'length > depth) then
       return mem_v;
     end if;

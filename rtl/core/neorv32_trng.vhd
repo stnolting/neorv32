@@ -637,7 +637,8 @@ architecture neoTRNG_cell_rtl of neoTRNG_cell is
   signal feedback      : std_ulogic; -- cell feedback/output
   signal enable_sreg_s : std_ulogic_vector(NUM_INV_S-1 downto 0); -- enable shift register for short chain
   signal enable_sreg_l : std_ulogic_vector(NUM_INV_L-1 downto 0); -- enable shift register for long chain
-  signal lfsr          : std_ulogic_vector(15 downto 0); -- LFSR - for simulation only!!!
+  signal lfsr          : std_ulogic_vector(9 downto 0); -- LFSR - for simulation only!!!
+  signal lfsr_bit      : std_ulogic;
 
 begin
 
@@ -701,13 +702,14 @@ begin
         lfsr <= (others => '0');
       elsif rising_edge(clk_i) then
         if (enable_sreg_l(enable_sreg_l'left) = '0') then
-          lfsr <= std_ulogic_vector(to_unsigned(NUM_INV_S, 16));
+          lfsr <= std_ulogic_vector(to_unsigned(NUM_INV_S, lfsr'length));
         else
-          lfsr <= lfsr(lfsr'left-1 downto 0) & (lfsr(15) xnor lfsr(14) xnor lfsr(13) xnor lfsr(2));
+          lfsr <= lfsr(lfsr'left-1 downto 0) & lfsr_bit;
         end if;
       end if;
     end process sim_lfsr;
 
+    lfsr_bit <= not (lfsr(9) xor lfsr(6));
     feedback <= lfsr(lfsr'left);
     data_o   <= feedback;
   end generate;

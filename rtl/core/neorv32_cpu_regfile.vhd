@@ -53,10 +53,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_regfile is
   generic (
-    XLEN                  : natural; -- data path width
-    CPU_EXTENSION_RISCV_E : boolean; -- implement embedded RF extension?
-    RS3_EN                : boolean; -- enable 3rd read port
-    RS4_EN                : boolean  -- enable 4th read port
+    RVE    : boolean; -- implement embedded RF extension?
+    RS3_EN : boolean; -- enable 3rd read port
+    RS4_EN : boolean  -- enable 4th read port
   );
   port (
     -- global control --
@@ -126,7 +125,7 @@ begin
   -- RV32I Register File with 32 Entries ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   reg_file_rv32i:
-  if (CPU_EXTENSION_RISCV_E = false) generate
+  if (RVE = false) generate
     rf_access: process(clk_i)
     begin
       if rising_edge(clk_i) then -- sync read and write
@@ -157,7 +156,7 @@ begin
   -- RV32E Register File with 16 Entries ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   reg_file_rv32e:
-  if (CPU_EXTENSION_RISCV_E = true) generate
+  if (RVE = true) generate
     rf_access: process(clk_i)
     begin
       if rising_edge(clk_i) then -- sync read and write

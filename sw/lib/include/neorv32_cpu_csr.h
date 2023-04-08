@@ -147,7 +147,7 @@ enum NEORV32_CSR_enum {
 
   /* machine counters and timers */
   CSR_MCYCLE         = 0xb00, /**< 0xb00 - mcycle:        Machine cycle counter low word */
-//CSR_MTIME          = 0xb01, /**< 0xb01 - mtime:         Machine time counter low word */
+  //
   CSR_MINSTRET       = 0xb02, /**< 0xb02 - minstret:      Machine instructions-retired counter low word */
   CSR_MHPMCOUNTER3   = 0xb03, /**< 0xb03 - mhpmcounter3:  Machine hardware performance monitor 3  counter low word */
   CSR_MHPMCOUNTER4   = 0xb04, /**< 0xb04 - mhpmcounter4:  Machine hardware performance monitor 4  counter low word */
@@ -180,7 +180,7 @@ enum NEORV32_CSR_enum {
   CSR_MHPMCOUNTER31  = 0xb1f, /**< 0xb1f - mhpmcounter31: Machine hardware performance monitor 31 counter low word */
 
   CSR_MCYCLEH        = 0xb80, /**< 0xb80 - mcycleh:        Machine cycle counter high word */
-//CSR_MTIMEH         = 0xb81, /**< 0xb81 - mtimeh:         Machine time counter high word */
+  //
   CSR_MINSTRETH      = 0xb82, /**< 0xb82 - minstreth:      Machine instructions-retired counter high word */
   CSR_MHPMCOUNTER3H  = 0xb83, /**< 0xb83 - mhpmcounter3 :  Machine hardware performance monitor 3  counter high word */
   CSR_MHPMCOUNTER4H  = 0xb84, /**< 0xb84 - mhpmcounter4h:  Machine hardware performance monitor 4  counter high word */
@@ -214,7 +214,7 @@ enum NEORV32_CSR_enum {
 
   /* user counters and timers */
   CSR_CYCLE          = 0xc00, /**< 0xc00 - cycle:        Cycle counter low word (from MCYCLE) */
-  CSR_TIME           = 0xc01, /**< 0xc01 - time:         Time counter low word */
+  //
   CSR_INSTRET        = 0xc02, /**< 0xc02 - instret:      Instructions-retired counter low word (from MINSTRET) */
   CSR_HPMCOUNTER3    = 0xc03, /**< 0xc03 - hpmcounter3:  User hardware performance monitor 3  counter low word */
   CSR_HPMCOUNTER4    = 0xc04, /**< 0xc04 - hpmcounter4:  User hardware performance monitor 4  counter low word */
@@ -247,7 +247,7 @@ enum NEORV32_CSR_enum {
   CSR_HPMCOUNTER31   = 0xc1f, /**< 0xc1f - hpmcounter31: User hardware performance monitor 31 counter low word */
 
   CSR_CYCLEH         = 0xc80, /**< 0xc80 - cycleh:        Cycle counter high word (from MCYCLEH) */
-  CSR_TIMEH          = 0xc81, /**< 0xc81 - timeh:         Time counter high word */
+  //
   CSR_INSTRETH       = 0xc82, /**< 0xc82 - instreth:      Instructions-retired counter high word (from MINSTRETH) */
   CSR_HPMCOUNTER3H   = 0xc83, /**< 0xc83 - hpmcounter3h:  User hardware performance monitor 3  counter high word */
   CSR_HPMCOUNTER4H   = 0xc84, /**< 0xc84 - hpmcounter4h:  User hardware performance monitor 4  counter high word */
@@ -468,7 +468,7 @@ enum NEORV32_HPMCNT_EVENT_enum {
 
 
 /**********************************************************************//**
- * CPU <b>pmpcfg</b> PMP configuration attributes (CSR entry 0)
+ * CPU <b>pmpcfg</b> PMP configuration attributes
  **************************************************************************/
 enum NEORV32_PMPCFG_ATTRIBUTES_enum {
   PMPCFG_R     = 0, /**< CPU pmpcfg attribute (0): Read */
@@ -483,8 +483,10 @@ enum NEORV32_PMPCFG_ATTRIBUTES_enum {
  * PMP modes
  **************************************************************************/
 enum NEORV32_PMP_MODES_enum {
-  PMP_OFF = 0, /**< '00': entry disabled */
-  PMP_TOR = 1  /**< '01': TOR mode (top of region) */
+  PMP_OFF   = 0, /**< '00': entry disabled */
+  PMP_TOR   = 1, /**< '01': TOR mode (top of region) */
+  PMP_NA4   = 2, /**< '10': Naturally-aligned power of two region (4 bytes) */
+  PMP_NAPOT = 3  /**< '11': Naturally-aligned power of two region (greater than 4 bytes )*/
 };
 
 
