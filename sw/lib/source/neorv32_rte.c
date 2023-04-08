@@ -83,8 +83,6 @@ void neorv32_rte_setup(void) {
   }
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wtype-limits"
 
 /**********************************************************************//**
  * Install trap handler function to NEORV32 runtime environment.
@@ -93,10 +91,10 @@ void neorv32_rte_setup(void) {
  * @param[in] handler The actual handler function for the specified trap (function MUST be of type "void function(void);").
  * @return 0 if success, 1 if error (invalid id or targeted trap not supported).
  **************************************************************************/
-int neorv32_rte_handler_install(uint8_t id, void (*handler)(void)) {
+int neorv32_rte_handler_install(enum NEORV32_RTE_TRAP_enum id, void (*handler)(void)) {
 
   // id valid?
-  if ((id >= RTE_TRAP_I_MISALIGNED) && (id <= RTE_TRAP_FIRQ_15)) {
+  if (id <= RTE_TRAP_FIRQ_15) {
     __neorv32_rte_vector_lut[id] = (uint32_t)handler; // install handler
     return 0;
   }
@@ -111,17 +109,15 @@ int neorv32_rte_handler_install(uint8_t id, void (*handler)(void)) {
  * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
  * @return 0 if success, 1 if error (invalid id or targeted trap not supported).
  **************************************************************************/
-int neorv32_rte_handler_uninstall(uint8_t id) {
+int neorv32_rte_handler_uninstall(enum NEORV32_RTE_TRAP_enum id) {
 
   // id valid?
-  if ((id >= RTE_TRAP_I_MISALIGNED) && (id <= RTE_TRAP_FIRQ_15)) {
+  if (id <= RTE_TRAP_FIRQ_15) {
     __neorv32_rte_vector_lut[id] = (uint32_t)(&__neorv32_rte_debug_handler); // use dummy handler in case the trap is accidentally triggered
     return 0;
   }
   return 1;
 }
-
-#pragma GCC diagnostic pop
 
 
 /**********************************************************************//**
