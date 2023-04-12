@@ -48,6 +48,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cfs is
   generic (
+    BASE_ADDR : std_ulogic_vector(31 downto 0); -- module base address
     CFS_CONFIG   : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
     CFS_IN_SIZE  : natural; -- size of CFS input conduit in bits
     CFS_OUT_SIZE : natural  -- size of CFS output conduit in bits
@@ -99,8 +100,8 @@ begin
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- This logic is required to handle the CPU accesses - DO NOT MODIFY!
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = cfs_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= cfs_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i; -- only full-word write accesses are supported
   rden   <= acc_en and rden_i; -- read accesses always return a full 32-bit word
 

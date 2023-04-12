@@ -44,6 +44,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_sysinfo is
   generic (
+    BASE_ADDR : std_ulogic_vector(31 downto 0); -- module base address
     -- General --
     CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
     CUSTOM_ID            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user-defined ID
@@ -121,7 +122,7 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = sysinfo_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
   rden   <= acc_en and rden_i; -- read access
   wren   <= acc_en and wren_i; -- write access
   addr   <= addr_i(index_size_f(sysinfo_size_c)-1 downto 2);

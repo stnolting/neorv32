@@ -45,6 +45,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_trng is
   generic (
+    BASE_ADDR : std_ulogic_vector(31 downto 0); -- module base address
     IO_TRNG_FIFO : natural := 1 -- RND fifo depth, has to be a power of two, min 1
   );
   port (
@@ -137,7 +138,7 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access control --
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = trng_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 

@@ -56,6 +56,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_debug_dm is
+  generic (
+    BASE_ADDR : std_ulogic_vector(31 downto 0) -- module base address
+  );
   port (
     -- global control --
     clk_i             : in  std_ulogic; -- global clock line
@@ -685,7 +688,7 @@ begin
 
   -- Access Control ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (cpu_addr_i(hi_abb_c downto lo_abb_c) = dm_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  acc_en <= '1' when (cpu_addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
   maddr  <= cpu_addr_i(lo_abb_c-1 downto lo_abb_c-2); -- (sub-)module select address
   rden   <= acc_en and cpu_debug_i and cpu_rden_i; -- allow access only when in debug mode
   wren   <= acc_en and cpu_debug_i and cpu_wren_i; -- allow access only when in debug mode

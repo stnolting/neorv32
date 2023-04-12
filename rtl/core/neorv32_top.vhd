@@ -1320,7 +1320,7 @@ begin
   if (IO_UART0_EN = true) generate
     neorv32_uart0_inst: neorv32_uart
     generic map (
-      UART_PRIMARY => true,             -- true = primary UART (UART0), false = secondary UART (UART1)
+      BASE_ADDR    => uart0_base_c,     -- uart0_base_c = primary UART (UART0), uart1_base_c = secondary UART (UART1)
       UART_RX_FIFO => IO_UART0_RX_FIFO, -- RX fifo depth, has to be a power of two, min 1
       UART_TX_FIFO => IO_UART0_TX_FIFO  -- TX fifo depth, has to be a power of two, min 1
     )
@@ -1368,7 +1368,7 @@ begin
   if (IO_UART1_EN = true) generate
     neorv32_uart1_inst: neorv32_uart
     generic map (
-      UART_PRIMARY => false,            -- true = primary UART (UART0), false = secondary UART (UART1)
+      BASE_ADDR    => uart1_base_c,     -- uart0_base_c = primary UART (UART0), uart1_base_c = secondary UART (UART1)
       UART_RX_FIFO => IO_UART1_RX_FIFO, -- RX fifo depth, has to be a power of two, min 1
       UART_TX_FIFO => IO_UART1_TX_FIFO  -- TX fifo depth, has to be a power of two, min 1
     )

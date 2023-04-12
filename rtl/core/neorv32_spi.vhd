@@ -41,6 +41,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_spi is
   generic (
+    BASE_ADDR : std_ulogic_vector(31 downto 0); -- module base address
     IO_SPI_FIFO : natural -- SPI RTX fifo depth, has to be a power of two, min 1
   );
   port (
@@ -165,8 +166,8 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access control --
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = spi_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= spi_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 

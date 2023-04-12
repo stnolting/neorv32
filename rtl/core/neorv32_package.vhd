@@ -1563,6 +1563,9 @@ package neorv32_package is
   -- Component: Bus Keeper ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_bus_keeper is
+    generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := buskeeper_base_c
+    );
     port (
       -- host access --
       clk_i      : in  std_ulogic; -- global clock line
@@ -1772,6 +1775,9 @@ package neorv32_package is
   -- Component: Machine System Timer (mtime) ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_mtime
+    generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := mtime_base_c
+    );
     port (
       -- host access --
       clk_i  : in  std_ulogic; -- global clock line
@@ -1791,6 +1797,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_gpio
     generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := gpio_base_c;
       GPIO_NUM : natural -- number of GPIO input/output pairs (0..64)
     );
     port (
@@ -1812,6 +1819,9 @@ package neorv32_package is
   -- Component: Watchdog Timer (WDT) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_wdt
+    generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := wdt_base_c
+    );
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
@@ -1839,7 +1849,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_uart
     generic (
-      UART_PRIMARY : boolean; -- true = primary UART (UART0), false = secondary UART (UART1)
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := uart0_base_c;
       UART_RX_FIFO : natural; -- RX fifo depth, has to be a power of two, min 1
       UART_TX_FIFO : natural  -- TX fifo depth, has to be a power of two, min 1
     );
@@ -1872,6 +1882,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_spi
     generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := spi_base_c;
       IO_SPI_FIFO : natural -- SPI RTX fifo depth, has to be power of two, min 1
     );
     port (
@@ -1900,6 +1911,9 @@ package neorv32_package is
   -- Component: Two-Wire Interface (TWI) ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_twi
+    generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := twi_base_c
+    );
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
@@ -1927,6 +1941,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_pwm
     generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := pwm_base_c;
       NUM_CHANNELS : natural -- number of PWM channels (0..12)
     );
     port (
@@ -1951,6 +1966,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_trng
     generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := trng_base_c;
       IO_TRNG_FIFO : natural := 1 -- RND fifo depth, has to be a power of two, min 1
     );
     port (
@@ -2021,6 +2037,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_cfs
     generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := cfs_base_c;
       CFS_CONFIG   : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
       CFS_IN_SIZE  : natural; -- size of CFS input conduit in bits
       CFS_OUT_SIZE : natural  -- size of CFS output conduit in bits
@@ -2052,6 +2069,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_neoled
     generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := neoled_base_c;
       FIFO_DEPTH : natural -- NEOLED FIFO depth, has to be a power of two, min 1
     );
     port (
@@ -2078,6 +2096,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_xirq
     generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := xirq_base_c;
       XIRQ_NUM_CH           : natural; -- number of external IRQ channels (0..32)
       XIRQ_TRIGGER_TYPE     : std_ulogic_vector(31 downto 0); -- trigger type: 0=level, 1=edge
       XIRQ_TRIGGER_POLARITY : std_ulogic_vector(31 downto 0)  -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
@@ -2102,6 +2121,9 @@ package neorv32_package is
   -- Component: General Purpose Timer (GPTMR) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_gptmr
+    generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := gptmr_base_c
+    );
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
@@ -2123,6 +2145,9 @@ package neorv32_package is
   -- Component: Execute In Place Module (XIP) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_xip
+    generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := xip_base_c
+    );
     port (
       -- globals --
       clk_i       : in  std_ulogic; -- global clock line
@@ -2159,6 +2184,9 @@ package neorv32_package is
   -- Component: 1-Wire Interface Controller (ONEWIRE) ---------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_onewire
+    generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := onewire_base_c
+    );
     port (
       -- host access --
       clk_i       : in  std_ulogic; -- global clock line
@@ -2184,6 +2212,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_sdi
     generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := sdi_base_c;
       RTX_FIFO : natural -- RTX fifo depth, has to be a power of two, min 1
     );
     port (
@@ -2241,6 +2270,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
     generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := sysinfo_base_c;
       -- General --
       CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
       CUSTOM_ID            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user-defined ID
@@ -2327,6 +2357,9 @@ package neorv32_package is
   -- Component: On-Chip Debugger - Debug Module (DM) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_debug_dm
+    generic (
+      BASE_ADDR : std_ulogic_vector(31 downto 0) := dm_base_c
+    );
     port (
       -- global control --
       clk_i             : in  std_ulogic; -- global clock line

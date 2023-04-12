@@ -67,7 +67,7 @@ use std.textio.all;
 
 entity neorv32_uart is
   generic (
-    UART_PRIMARY : boolean; -- true = primary UART (UART0), false = secondary UART (UART1)
+    BASE_ADDR : std_ulogic_vector(31 downto 0); -- module base address
     UART_RX_FIFO : natural; -- RX fifo depth, has to be a power of two, min 1
     UART_TX_FIFO : natural  -- TX fifo depth, has to be a power of two, min 1
   );
@@ -97,12 +97,12 @@ entity neorv32_uart is
 end neorv32_uart;
 
 architecture neorv32_uart_rtl of neorv32_uart is
-
+  constant uart_primary_c      : boolean := BASE_ADDR = uart0_base_c;
   -- interface configuration for UART0 / UART1 --
-  constant uart_id_base_c      : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_base_c,      uart1_base_c);
-  constant uart_id_size_c      : natural                        := cond_sel_natural_f(        UART_PRIMARY, uart0_size_c,      uart1_size_c);
-  constant uart_id_ctrl_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_ctrl_addr_c, uart1_ctrl_addr_c);
-  constant uart_id_rtx_addr_c  : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(UART_PRIMARY, uart0_rtx_addr_c,  uart1_rtx_addr_c);
+  constant uart_id_base_c      : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(uart_primary_c, uart0_base_c,      uart1_base_c);
+  constant uart_id_size_c      : natural                        := cond_sel_natural_f(        uart_primary_c, uart0_size_c,      uart1_size_c);
+  constant uart_id_ctrl_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(uart_primary_c, uart0_ctrl_addr_c, uart1_ctrl_addr_c);
+  constant uart_id_rtx_addr_c  : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(uart_primary_c, uart0_rtx_addr_c,  uart1_rtx_addr_c);
 
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
@@ -112,8 +112,8 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant sim_screen_output_en_c : boolean := true; -- output lowest byte as char to simulator console when enabled
   constant sim_text_output_en_c   : boolean := true; -- output lowest byte as char to text file when enabled
   constant sim_data_output_en_c   : boolean := true; -- dump 32-bit TX word to file when enabled
-  constant sim_uart_text_file_c   : string  := cond_sel_string_f(UART_PRIMARY, "neorv32.uart0.sim_mode.text.out", "neorv32.uart1.sim_mode.text.out");
-  constant sim_uart_data_file_c   : string  := cond_sel_string_f(UART_PRIMARY, "neorv32.uart0.sim_mode.data.out", "neorv32.uart1.sim_mode.data.out");
+  constant sim_uart_text_file_c   : string  := cond_sel_string_f(uart_primary_c, "neorv32.uart0.sim_mode.text.out", "neorv32.uart1.sim_mode.text.out");
+  constant sim_uart_data_file_c   : string  := cond_sel_string_f(uart_primary_c, "neorv32.uart0.sim_mode.data.out", "neorv32.uart1.sim_mode.data.out");
 
   -- control register bits --
   constant ctrl_en_c            : natural :=  0; -- r/w: UART enable
@@ -222,9 +222,9 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert not (is_power_of_two_f(UART_RX_FIFO) = false)
-    report "NEORV32 PROCESSOR CONFIG ERROR: UART" & cond_sel_string_f(UART_PRIMARY, "0", "1") & " FIFO depth has to be a power of two." severity error;
+    report "NEORV32 PROCESSOR CONFIG ERROR: UART" & cond_sel_string_f(uart_primary_c, "0", "1") & " FIFO depth has to be a power of two." severity error;
   assert not (is_power_of_two_f(UART_TX_FIFO) = false)
-    report "NEORV32 PROCESSOR CONFIG ERROR: UART" & cond_sel_string_f(UART_PRIMARY, "0", "1") & " FIFO depth has to be a power of two." severity error;
+    report "NEORV32 PROCESSOR CONFIG ERROR: UART" & cond_sel_string_f(uart_primary_c, "0", "1") & " FIFO depth has to be a power of two." severity error;
 
 
   -- Host Access ----------------------------------------------------------------------------
