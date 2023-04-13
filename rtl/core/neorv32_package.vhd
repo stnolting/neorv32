@@ -58,13 +58,11 @@ package neorv32_package is
   -- log2 of co-processor timeout cycles --
   constant cp_timeout_c : natural := 7; -- default = 7 (= 128 cycles)
 
-  -- native data path width --
-  constant XLEN : natural := 32; -- do not change!
-
-  -- Architecture Constants (do not modify!) ------------------------------------------------
+  -- Architecture Constants --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080304"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080305"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
+  constant XLEN         : natural := 32; -- native data path width, do not change!
 
   -- Check if we're inside the Matrix -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -888,7 +886,7 @@ package neorv32_package is
   constant exc_iaccess_c  : natural :=  0; -- instruction access fault
   constant exc_iillegal_c : natural :=  1; -- illegal instruction
   constant exc_ialign_c   : natural :=  2; -- instruction address misaligned
-  constant exc_ecall_c   : natural :=  3; -- environment call
+  constant exc_ecall_c    : natural :=  3; -- environment call
   constant exc_ebreak_c   : natural :=  4; -- breakpoint
   constant exc_salign_c   : natural :=  5; -- store address misaligned
   constant exc_lalign_c   : natural :=  6; -- load address misaligned
