@@ -70,14 +70,8 @@ int neorv32_xip_available(void) {
  * @param[in] cpol SPI clock polarity (0/1).
  * @param[in] cpha SPI clock phase(0/1).
  * @param[in] rd_cmd SPI flash read byte command.
- * @return 0 if configuration is OK, -1 if configuration error.
  **************************************************************************/
-int neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) {
-
-  // configuration check
-  if ((prsc > 7) || (cpol > 1) || (cpha > 1)) {
-    return -1;
-  }
+void neorv32_xip_setup(int prsc, int cpol, int cpha, uint8_t rd_cmd) {
 
   // reset and disable module
   NEORV32_XIP->CTRL = 0;
@@ -104,8 +98,6 @@ int neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) 
   while (NEORV32_XIP->CTRL & (1 << XIP_CTRL_PHY_BUSY)); // direct SPI mode -> check PHY status
 
   NEORV32_XIP->CTRL |= 1 << XIP_CTRL_SPI_CSEN; // finally enable automatic SPI chip-select
-
-  return 0;
 }
 
 
@@ -116,7 +108,7 @@ int neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd) 
  * @param[in] page_base XIP memory page base address (top 4 address bits, 0..15).
  * @return 0 if XIP configuration is OK, -1 if configuration error.
  **************************************************************************/
-int neorv32_xip_start(uint8_t abytes, uint32_t page_base) {
+int neorv32_xip_start(int abytes, uint32_t page_base) {
 
   if ((abytes < 1) || (abytes > 4)) {
     return -1;
@@ -200,11 +192,7 @@ void neorv32_xip_burst_mode_disable(void) {
  * @param[in,out] rtx_data Pointer to 64-bit TX/RX data (MSB-aligned for sending, LSB-aligned for receiving (only 32-bit)).
  * @return 0 if valid transfer, 1 if transfer configuration error.
  **************************************************************************/
-int neorv32_xip_spi_trans(uint8_t nbytes, uint64_t *rtx_data) {
-
-  if ((nbytes == 0) || (nbytes > 8)) {
-    return 1;
-  }
+void neorv32_xip_spi_trans(int nbytes, uint64_t *rtx_data) {
 
   // configure number of bytes to transfer
   uint32_t ctrl = NEORV32_XIP->CTRL;
@@ -227,6 +215,4 @@ int neorv32_xip_spi_trans(uint8_t nbytes, uint64_t *rtx_data) {
   data.uint32[0] = NEORV32_XIP->DATA_LO; // RX data is always 32-bit and LSB-aligned
   data.uint32[1] = 0;
   *rtx_data = data.uint64;
-
-  return 0;
 }

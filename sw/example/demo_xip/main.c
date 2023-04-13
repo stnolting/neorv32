@@ -81,8 +81,8 @@ enum SPI_FLASH_CMD {
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
-int xip_flash_erase_sector(uint32_t base_addr);
-int xip_flash_program(uint32_t *src, uint32_t base_addr, uint32_t size);
+void xip_flash_erase_sector(uint32_t base_addr);
+void xip_flash_program(uint32_t *src, uint32_t base_addr, uint32_t size);
 int uart_get_executable(uint32_t *dst, uint32_t *size);
 uint32_t uart_get_word(void);
 
@@ -140,10 +140,7 @@ int main() {
   // * clock mode 0 (cpol = 0, cpha = 0)
   // * flash read command = SPI_FLASH_CMD_READ
   // -> this function will also send 64 dummy clock cycles via the XIP's SPI port (with CS disabled)
-  if (neorv32_xip_setup(XIP_CLK_PRSC, 0, 0, SPI_FLASH_CMD_READ)) {
-    neorv32_uart0_printf("Error! XIP module setup error!\n");
-    return 1;
-  }
+  neorv32_xip_setup(XIP_CLK_PRSC, 0, 0, SPI_FLASH_CMD_READ);
 
 
   // ----------------------------------------------------------
@@ -186,16 +183,10 @@ int main() {
 
   // NOTE: this (direct SPI access via the XIP module) has to be done before the actual XIP mode is enabled!
   neorv32_uart0_printf("Erasing XIP flash (base = 0x%x)...\n", (uint32_t)FLASH_BASE);
-  if (xip_flash_erase_sector(FLASH_BASE)) {
-    neorv32_uart0_printf("Error! XIP flash sector erase error!\n");
-    return 1;
-  }
+  xip_flash_erase_sector(FLASH_BASE);
 
   neorv32_uart0_printf("Programming XIP flash (%u bytes)...\n", exe_size);
-  if (xip_flash_program((uint32_t*)&ram_buffer[0], FLASH_BASE, exe_size)) {
-    neorv32_uart0_printf("Error! XIP flash programming error!\n");
-    return 1;
-  }
+  xip_flash_program((uint32_t*)&ram_buffer[0], FLASH_BASE, exe_size);
 
 
   // ----------------------------------------------------------
@@ -258,9 +249,8 @@ int main() {
  *
  * @param[in] base_addr Base address of sector to erase.
  **************************************************************************/
-int xip_flash_erase_sector(uint32_t base_addr) {
+void xip_flash_erase_sector(uint32_t base_addr) {
 
-  int error = 0;
   uint32_t tmp = 0;
 
   union {
@@ -272,7 +262,7 @@ int xip_flash_erase_sector(uint32_t base_addr) {
   // 1 byte command
   data.uint32[0] = 0;
   data.uint32[1] = SPI_FLASH_CMD_WRITE_ENABLE << 24; // command: set write-enable latch
-  error += neorv32_xip_spi_trans(1, &data.uint64);
+  neorv32_xip_spi_trans(1, &data.uint64);
 
   // execute sector erase command
   // 1 byte command, FLASH_ABYTES bytes address
@@ -282,20 +272,18 @@ int xip_flash_erase_sector(uint32_t base_addr) {
   if (FLASH_ABYTES == 3) { tmp |= (base_addr & 0x00FFFFFF) <<  0; } // address
   data.uint32[0] = 0;
   data.uint32[1] = tmp;
-  error += neorv32_xip_spi_trans(1 + FLASH_ABYTES, &data.uint64);
+  neorv32_xip_spi_trans(1 + FLASH_ABYTES, &data.uint64);
 
   // check status register: WIP bit has to clear
   while(1) {
     tmp = SPI_FLASH_CMD_READ_STATUS << 24; // read status register command
     data.uint32[0] = 0;
     data.uint32[1] = tmp;
-    error += neorv32_xip_spi_trans(2, &data.uint64);
+    neorv32_xip_spi_trans(2, &data.uint64);
     if ((data.uint32[0] & 0x01) == 0) { // WIP bit cleared?
       break;
     }
   }
-
-  return error;
 }
 
 
@@ -310,9 +298,8 @@ int xip_flash_erase_sector(uint32_t base_addr) {
  * @param[in] size Image size in bytes.
  * @return Returns 0 if write was successful.
  **************************************************************************/
-int xip_flash_program(uint32_t *src, uint32_t base_addr, uint32_t size) {
+void xip_flash_program(uint32_t *src, uint32_t base_addr, uint32_t size) {
 
-  int error = 0;
   uint32_t data_byte = 0;
   uint32_t cnt = 0;
   uint32_t flash_addr = base_addr;
@@ -334,7 +321,7 @@ int xip_flash_program(uint32_t *src, uint32_t base_addr, uint32_t size) {
     // 1 byte command
     data.uint32[0] = 0;
     data.uint32[1] = SPI_FLASH_CMD_WRITE_ENABLE << 24; // command: set write-enable latch
-    error += neorv32_xip_spi_trans(1, &data.uint64);
+    neorv32_xip_spi_trans(1, &data.uint64);
 
     // write byte
     // 1 byte command, FLASH_ABYTES bytes address, 1 byte data
@@ -348,7 +335,7 @@ int xip_flash_program(uint32_t *src, uint32_t base_addr, uint32_t size) {
     if (FLASH_ABYTES == 2) { data.uint32[1] |= data_byte <<  0; } // data byte
     if (FLASH_ABYTES == 3) { data.uint32[0] = data_byte << 24; } // data byte
 
-    error += neorv32_xip_spi_trans(2 + FLASH_ABYTES, &data.uint64);
+    neorv32_xip_spi_trans(2 + FLASH_ABYTES, &data.uint64);
     flash_addr++;
 
     // check status register: WIP bit has to clear
@@ -356,7 +343,7 @@ int xip_flash_program(uint32_t *src, uint32_t base_addr, uint32_t size) {
       tmp = SPI_FLASH_CMD_READ_STATUS << 24; // read status register command
       data.uint32[0] = 0;
       data.uint32[1] = tmp;
-      error += neorv32_xip_spi_trans(2, &data.uint64);
+      neorv32_xip_spi_trans(2, &data.uint64);
       if ((data.uint32[0] & 0x01) == 0) { // WIP bit cleared?
         break;
       }
@@ -364,12 +351,10 @@ int xip_flash_program(uint32_t *src, uint32_t base_addr, uint32_t size) {
 
     // done?
     cnt++;
-    if ((cnt == size) || (error != 0)) {
+    if (cnt == size) {
       break;
     }
   }
-
-  return error;
 }
 
 
