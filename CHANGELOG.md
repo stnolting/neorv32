@@ -31,6 +31,7 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 14.04.2023 | 1.8.3.6 | [UARTs] software can now retrieve the configured RX/TX FIFO sizes from the `DATA` register; [#581](https://github.com/stnolting/neorv32/pull/581) |
 | 13.04.2023 | 1.8.3.5 | :bug: fixed bug in FPU control logic (introduced in some earlier clean-up commit); minor code edits and optimizations; [#578](https://github.com/stnolting/neorv32/pull/578) |
 | 07.04.2023 | 1.8.3.4 | rtl edits and cleanups; [#571](https://github.com/stnolting/neorv32/pull/571) |
 | 05.04.2023 | 1.8.3.3 | update **external interrupt controller (XIRQ)**; [#570](https://github.com/stnolting/neorv32/pull/570) |
