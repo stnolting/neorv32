@@ -58,9 +58,9 @@ package neorv32_package is
   -- log2 of co-processor timeout cycles --
   constant cp_timeout_c : natural := 7; -- default = 7 (= 128 cycles)
 
-  -- Architecture Constants --------------------------------------------------------------
+  -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080305"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080306"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 

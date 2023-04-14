@@ -53,6 +53,8 @@
  **************************************************************************/
 /**@{*/
 #define neorv32_uart0_available()                  neorv32_uart_available(NEORV32_UART0)
+#define neorv32_uart0_get_rx_fifo_depth()          neorv32_uart_get_rx_fifo_depth(NEORV32_UART0)
+#define neorv32_uart0_get_tx_fifo_depth()          neorv32_uart_get_tx_fifo_depth(NEORV32_UART0)
 #define neorv32_uart0_setup(baudrate, irq_mask)    neorv32_uart_setup(NEORV32_UART0, baudrate, irq_mask)
 #define neorv32_uart0_disable()                    neorv32_uart_disable(NEORV32_UART0)
 #define neorv32_uart0_enable()                     neorv32_uart_enable(NEORV32_UART0)
@@ -73,6 +75,8 @@
  **************************************************************************/
 /**@{*/
 #define neorv32_uart1_available()                  neorv32_uart_available(NEORV32_UART1)
+#define neorv32_uart1_get_rx_fifo_depth()          neorv32_uart_get_rx_fifo_depth(NEORV32_UART1)
+#define neorv32_uart1_get_tx_fifo_depth()          neorv32_uart_get_tx_fifo_depth(NEORV32_UART1)
 #define neorv32_uart1_setup(baudrate, irq_mask)    neorv32_uart_setup(NEORV32_UART1, baudrate, irq_mask)
 #define neorv32_uart1_disable()                    neorv32_uart_disable(NEORV32_UART1)
 #define neorv32_uart1_enable()                     neorv32_uart_enable(NEORV32_UART1)

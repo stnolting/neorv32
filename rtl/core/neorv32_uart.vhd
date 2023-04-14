@@ -148,6 +148,14 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant ctrl_rx_over_c       : natural := 30; -- r/-: RX FIFO overflow
   constant ctrl_tx_busy_c       : natural := 31; -- r/-: UART transmitter is busy and TX FIFO not empty
 
+  -- data register bits --
+  constant data_rtx_lsb_c        : natural :=  0; -- r/w: RX/TX data LSB
+  constant data_rtx_msb_c        : natural :=  7; -- r/w: RX/TX data MSB
+  constant data_rx_fifo_size_lsb : natural :=  8; -- r/-: log2(RX fifo size) LSB
+  constant data_rx_fifo_size_msb : natural := 11; -- r/-: log2(RX fifo size) MSB
+  constant data_tx_fifo_size_lsb : natural := 12; -- r/-: log2(TX fifo size) LSB
+  constant data_tx_fifo_size_msb : natural := 15; -- r/-: log2(TX fifo size) MSB
+
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
   signal addr   : std_ulogic_vector(31 downto 0); -- access address
@@ -291,7 +299,9 @@ begin
           data_o(ctrl_rx_over_c)                   <= rx_engine.over;
           data_o(ctrl_tx_busy_c)                   <= tx_engine.busy or tx_fifo.avail;
         else -- data register
-          data_o(7 downto 0) <= rx_fifo.rdata;
+          data_o(data_rtx_msb_c        downto data_rtx_lsb_c)        <= rx_fifo.rdata;
+          data_o(data_rx_fifo_size_msb downto data_rx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_RX_FIFO), 4));
+          data_o(data_tx_fifo_size_msb downto data_tx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_TX_FIFO), 4));
         end if;
       end if;
     end if;
@@ -330,7 +340,7 @@ begin
   );
 
   tx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
-  tx_fifo.wdata <= data_i(7 downto 0);
+  tx_fifo.wdata <= data_i(data_rtx_msb_c downto data_rtx_lsb_c);
   tx_fifo.we    <= '1' when (wren = '1') and (addr = uart_id_rtx_addr_c) else '0';
   tx_fifo.re    <= '1' when (tx_engine.state = "100") else '0';
 

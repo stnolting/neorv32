@@ -77,6 +77,10 @@ Once an UART interrupt has fired it remains pending until the actual cause of th
 example if just the `UART_CTRL_IRQ_RX_NEMPTY` bit is set, the RX interrupt will keep firing until the RX FIFO is empty again.
 Furthermore, a pending UART interrupt has to be explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 
+.RX/TX FIFO Size
+[TIP]
+Software can retrieve the configured sizes of the RX and TX FIFO via the according `UART_DATA_RX_FIFO_SIZE` and
+`UART_DATA_TX_FIFO_SIZE` bits from the `DATA` register.
 
 **RTS/CTS Hardware Flow Control**
 
@@ -137,9 +141,11 @@ Both file are created in the simulation's home folder.
                                   <|`29:27` -                                   ^| r/- <| _reserved_ read as zero
                                   <|`30`    `UART_CTRL_RX_OVER`                 ^| r/- <| RX FIFO overflow
                                   <|`31`    `UART_CTRL_TX_BUSY`                 ^| r/- <| TX busy or TX FIFO not empty
-.3+<| `0xffffffa4` .3+<| `DATA` <|`7:0`  ^| r/w <| receive/transmit data
-                                <|`31:8` ^| r/- <| _reserved_, read as zero
-                                <|`31:0` ^| -/w <| **simulation data output**
+.5+<| `0xffffffa4` .3+<| `DATA` <|`7:0`   `UART_DATA_RTX_MSB : UART_DATA_RTX_LSB`                   ^| r/w <| receive/transmit data
+                                <|`11:8`  `UART_DATA_RX_FIFO_SIZE_MSB : UART_DATA_RX_FIFO_SIZE_LSB` ^| r/- <| log2(RX FIFO size)
+                                <|`15:12` `UART_DATA_TX_FIFO_SIZE_MSB : UART_DATA_TX_FIFO_SIZE_LSB` ^| r/- <| log2(RX FIFO size)
+                                <|`31:16` ^| r/- <| _reserved_, read as zero
+                                <|`31:0`  ^| -/w <| **simulation data output**
 |=======================
 
 

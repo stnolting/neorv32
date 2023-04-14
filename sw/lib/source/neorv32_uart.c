@@ -131,6 +131,34 @@ void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_m
 
 
 /**********************************************************************//**
+ * Get UART RX FIFO depth.
+ *
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
+ *
+ * @return FIFO depth (number of entries)
+ **************************************************************************/
+int neorv32_uart_get_rx_fifo_depth(neorv32_uart_t *UARTx) {
+
+  uint32_t tmp = (UARTx->DATA >> UART_DATA_RX_FIFO_SIZE_LSB) & 0x0f;
+  return (int)(1 << tmp);
+}
+
+
+/**********************************************************************//**
+ * Get UART TX FIFO depth.
+ *
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
+ *
+ * @return FIFO depth (number of entries)
+ **************************************************************************/
+int neorv32_uart_get_tx_fifo_depth(neorv32_uart_t *UARTx) {
+
+  uint32_t tmp = (UARTx->DATA >> UART_DATA_TX_FIFO_SIZE_LSB) & 0x0f;
+  return (int)(1 << tmp);
+}
+
+
+/**********************************************************************//**
  * Enable UART.
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
@@ -184,7 +212,7 @@ void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {
 
   // wait for previous transfer to finish
   while ((UARTx->CTRL & (1<<UART_CTRL_TX_FULL))); // wait for free space in TX FIFO
-  UARTx->DATA = (uint32_t)c;
+  UARTx->DATA = (uint32_t)c << UART_DATA_RTX_LSB;
 }
 
 
@@ -217,7 +245,7 @@ char neorv32_uart_getc(neorv32_uart_t *UARTx) {
 
   while (1) {
     if (UARTx->CTRL & (1<<UART_CTRL_RX_NEMPTY)) { // data available?
-      return (char)UARTx->DATA;
+      return (char)(UARTx->DATA >> UART_DATA_RTX_LSB);
     }
   }
 }
@@ -254,7 +282,7 @@ int neorv32_uart_char_received(neorv32_uart_t *UARTx) {
  **************************************************************************/
 char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) {
 
-  return (char)(UARTx->DATA);
+  return (char)(UARTx->DATA >> UART_DATA_RTX_LSB);
 }
 
 
