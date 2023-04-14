@@ -90,13 +90,13 @@ enum NEORV32_XIP_CTRL_enum {
  **************************************************************************/
 /**@{*/
 int  neorv32_xip_available(void);
-int  neorv32_xip_setup(uint8_t prsc, uint8_t cpol, uint8_t cpha, uint8_t rd_cmd);
-int  neorv32_xip_start(uint8_t abytes, uint32_t page_base);
+void neorv32_xip_setup(int prsc, int cpol, int cpha, uint8_t rd_cmd);
+int  neorv32_xip_start(int abytes, uint32_t page_base);
 void neorv32_xip_highspeed_enable(void);
 void neorv32_xip_highspeed_disable(void);
 void neorv32_xip_burst_mode_enable(void);
 void neorv32_xip_burst_mode_disable(void);
-int  neorv32_xip_spi_trans(uint8_t nbytes, uint64_t *rtx_data);
+void neorv32_xip_spi_trans(int nbytes, uint64_t *rtx_data);
 /**@}*/
 
 
