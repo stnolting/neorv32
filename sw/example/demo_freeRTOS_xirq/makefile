@@ -24,7 +24,6 @@ USER_FLAGS ?=
 # -----------------------------------------------------------------------------
 # FreeRTOS
 # -----------------------------------------------------------------------------
-ifneq (,$(findstring RUN_FREERTOS_DEMO,$(USER_FLAGS)))
 # FreeRTOS home folder (adapt this!)
 FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOS
 
@@ -60,37 +59,8 @@ APP_INC += -I chip_specific_extensions/neorv32
 ASM_INC += -I chip_specific_extensions/neorv32
 
 # Demo application
-APP_SRC += blinky_demo/main_blinky.c
-APP_SRC += full_demo/main_full.c
-APP_SRC += full_demo/RegTest.s
-endif
+APP_SRC += demo/main_demo.c
 
-# -----------------
-# FreeRTOS-Plus-CLI
-# -----------------
-ifneq (,$(findstring FREERTOS_PLUS_CLI,$(USER_FLAGS)))
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-CLI/FreeRTOS_CLI.c
-
-APP_INC += -I $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-CLI
-endif
-
-# -----------------
-# FreeRTOS-Plus-TCP
-# -----------------
-ifneq (,$(findstring FREERTOS_PLUS_TCP,$(USER_FLAGS)))
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/FreeRTOS_ARP.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/FreeRTOS_DHCP.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/FreeRTOS_DNS.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/FreeRTOS_IP.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/FreeRTOS_Sockets.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/FreeRTOS_Stream_Buffer.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/FreeRTOS_TCP_IP.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/FreeRTOS_TCP_WIN.c
-APP_SRC += $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/FreeRTOS_UDP_IP.c
-
-APP_INC += -I $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/include
-APP_INC += -I $(FREERTOS_HOME)/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/portable/Compiler/GCC
-endif
 
 
 # Modify this variable to fit your NEORV32 setup (neorv32 home folder)

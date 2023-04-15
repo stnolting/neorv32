@@ -51,7 +51,6 @@
 /* UART hardware constants. */
 #define BAUD_RATE 19200
 
-
 #include <stdint.h>
 
 /* FreeRTOS kernel includes. */
@@ -69,6 +68,7 @@ or 0 to run the more comprehensive test and demo application. */
 
 /*-----------------------------------------------------------*/
 
+extern void main_demo( void );
 
 extern void freertos_risc_v_trap_handler( void );
 
@@ -97,8 +97,7 @@ int main( void )
   /* say hi */
   neorv32_uart0_printf("FreeRTOS %s with XIRQ on NEORV32 Demo\n\n", tskKERNEL_VERSION_NUMBER);
 
-
-  main_blinky();
+  main_demo();
 
 }
 
@@ -107,11 +106,17 @@ int main( void )
 /* Handle NEORV32-specific interrupts */
 void freertos_risc_v_application_interrupt_handler(void) {
 
+
+  // acknowledge XIRQ (FRIST!)
+  NEORV32_XIRQ->EIP = 0; // clear pending interrupt
+  uint32_t irq_channel = NEORV32_XIRQ->ESC; // store the channel before clearing it. 
+  NEORV32_XIRQ->ESC = 0; // acknowledge XIRQ interrupt
+
   // acknowledge/clear ALL pending interrupt sources here - adapt this for your setup
   neorv32_cpu_csr_write(CSR_MIP, 0);
 
   // debug output - Use the value from the mcause CSR to call interrupt-specific handlers
-  neorv32_uart0_printf("\n<NEORV32-IRQ> mcause = 0x%x </NEORV32-IRQ>\n", neorv32_cpu_csr_read(CSR_MCAUSE));
+  neorv32_uart0_printf("\n<NEORV32-IRQ> mcause = 0x%x,  Channel = %d </NEORV32-IRQ>\n", neorv32_cpu_csr_read(CSR_MCAUSE), irq_channel);
 }
 
 /* Handle NEORV32-specific exceptions */
@@ -128,8 +133,19 @@ static void prvSetupHardware( void )
   // install the freeRTOS trap handler
   neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)&freertos_risc_v_trap_handler);
 
+  // enable XIRQ channels 0, 1 and 2
+  NEORV32_XIRQ->EIP = 0; // clear all pending IRQs
+  NEORV32_XIRQ->ESC = 0; // acknowledge (clear) XIRQ interrupt
+  NEORV32_XIRQ->EIE = 0x00000007UL; // enable channels 0, 1 and 2
+
+  // Enable the FIRQ interrupt in the MSTATUS CSR
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << XIRQ_FIRQ_ENABLE);
+
   // clear GPIO.out port
   neorv32_gpio_port_set(0);
+
+  // enable xirq interrupts globally. 
+  neorv32_xirq_global_enable();
 
   // setup UART at default baud rate, no interrupts (yet)
   neorv32_uart0_setup(BAUD_RATE, 0);
@@ -142,6 +158,7 @@ static void prvSetupHardware( void )
 
   // check available hardware ISA extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
+  
 
   // enable and configure further NEORV32-specific modules if required
   // ...

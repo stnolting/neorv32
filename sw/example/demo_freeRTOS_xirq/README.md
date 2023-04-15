@@ -1,7 +1,6 @@
   # FreeRTOS Demo for the NEORV32 Processor
 
-This example shows how to run [FreeRTOS](https://www.freertos.org/) on the NEORV32 processor. It features the default
-"blinky_demo" and the more sophisticated "full_demo" demo applications. See the comments in `main.c` and the according
+This example shows how to run [FreeRTOS](https://www.freertos.org/) on the NEORV32 processor while using xirq's. See the comments in `main.c` and the according
 source files for more information.
 
 The chip-specific extensions folder (`chip_specific_extensions/neorv32`) should be in `$(FREERTOS_HOME)/Source/portable/GCC/RISC-V/chip_specific_extensions`,
@@ -15,7 +14,6 @@ but is placed in this source directory for simplicity.
 * Hardware
   * DMEM/IMEM requirements depend on the actual application (for example: 16kB DMEM and 16kB IMEM for "blinky_demo")
   * peripherals: MTIME (machine timer), UART0, GPIO
-  * CPU ISA extensions: `Zicsr`
 
 * Software
   * NEORV32 software framework
@@ -37,7 +35,7 @@ Open the makefile from this example folder and configure the `FREERTOS_HOME` var
 
 Compile the NEORV32 executable. Do not forget the `RUN_FREERTOS_DEMO` switch.
 
-    $ make USER_FLAGS+=-DRUN_FREERTOS_DEMO clean_all exe
+    $ make clean_all exe
 
 Note: The *.c sources and the FreeRTOS-specific part of the makefile have (include) guards that test if `RUN_FREERTOS_DEMO` is defined.
 This has no practical usage for the user - it is just a work-around for the NEORV32 CI environment.
@@ -52,23 +50,15 @@ Booting...
 
 FreeRTOS V10.4.4+ on NEORV32 Demo
 
-Blink
-Blink
-Blink
-Blink
+Hello
+<NEORV32-IRQ> mcause = 0x80000018,  Channel = 0 </NEORV32-IRQ>
+Hello
+<NEORV32-IRQ> mcause = 0x80000018,  Channel = 1 </NEORV32-IRQ>
+<NEORV32-IRQ> mcause = 0x80000018,  Channel = 2 </NEORV32-IRQ>
+<NEORV32-IRQ> mcause = 0x80000018,  Channel = 2 </NEORV32-IRQ>
+Hello
+Hello
 ```
-
-## FreeRTOS Plus
-
-To automatically add source and include files from FreeRTOS plus extensions add one (or more) of the following arguments when invoking `make`:
-
-* FreeRTOS-Plus-CLI: `USER_FLAGS+=-FREERTOS_PLUS_CLI`
-* FreeRTOS-Plus-TCP: `USER_FLAGS+=-FREERTOS_PLUS_TCP`
-
-Example:
-
-    $ make USER_FLAGS+=-DRUN_FREERTOS_DEMO USER_FLAGS+=-FREERTOS_PLUS_TCP clean_all exe
-
 
 ## NEORV32-Specific Interrupts and Exceptions
 
@@ -78,11 +68,16 @@ The `main.c` file provides two "trampolines" for NEORV32-specific interrupts/exc
 /* Handle NEORV32-specific interrupts */
 void freertos_risc_v_application_interrupt_handler(void) {
 
-  // acknowledge/clear ALL pending interrupt sources
+  // acknowledge XIRQ (FRIST!)
+  NEORV32_XIRQ->EIP = 0; // clear pending interrupt
+  uint32_t irq_channel = NEORV32_XIRQ->ESC; // store the channel before clearing it. 
+  NEORV32_XIRQ->ESC = 0; // acknowledge XIRQ interrupt
+
+  // acknowledge/clear ALL pending interrupt sources here - adapt this for your setup
   neorv32_cpu_csr_write(CSR_MIP, 0);
 
-  // debug output
-  neorv32_uart0_printf("\n<NEORV32-IRQ> mcause = 0x%x </NEORV32-IRQ>\n", neorv32_cpu_csr_read(CSR_MCAUSE));
+  // debug output - Use the value from the mcause CSR to call interrupt-specific handlers
+  neorv32_uart0_printf("\n<NEORV32-IRQ> mcause = 0x%x,  Channel = %d </NEORV32-IRQ>\n", neorv32_cpu_csr_read(CSR_MCAUSE), irq_channel);
 }
 
 /* Handle NEORV32-specific exceptions */
