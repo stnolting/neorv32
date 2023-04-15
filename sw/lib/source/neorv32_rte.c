@@ -52,7 +52,6 @@ static void __neorv32_rte_debug_handler(void);
 static void __neorv32_rte_print_true_false(int state);
 static void __neorv32_rte_print_checkbox(int state);
 static void __neorv32_rte_print_hex_word(uint32_t num);
-static void __neorv32_rte_print_hex_half(uint16_t num);
 
 
 /**********************************************************************//**
@@ -175,8 +174,8 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32
 
     uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
 
-    // get low half word of faulting instruction
-    uint32_t rte_trap_inst = (uint32_t)neorv32_cpu_load_unsigned_half(rte_mepc);
+    // get opcode of faulting instruction
+    uint32_t rte_trap_inst = (uint32_t)neorv32_cpu_load_unsigned_byte(rte_mepc);
 
     rte_mepc += 4; // default: faulting instruction is uncompressed
     if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) { // C extension implemented?
@@ -203,6 +202,14 @@ static void __neorv32_rte_debug_handler(void) {
 
   // intro
   neorv32_uart0_puts("<RTE> ");
+
+  // privilege level of the CPU when the trap occured
+  if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3 << CSR_MSTATUS_MPP_L)) {
+    neorv32_uart0_puts("[M] "); // machine-mode
+  }
+  else {
+    neorv32_uart0_puts("[U] "); // user-mode
+  }
 
   // cause
   uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
@@ -236,7 +243,7 @@ static void __neorv32_rte_debug_handler(void) {
     case TRAP_CODE_FIRQ_13:
     case TRAP_CODE_FIRQ_14:
     case TRAP_CODE_FIRQ_15:      neorv32_uart0_puts("Fast IRQ "); __neorv32_rte_print_hex_word(trap_cause & 0xf); break;
-    default:                     neorv32_uart0_puts("Unknown trap cause: "); __neorv32_rte_print_hex_word(trap_cause); break;
+    default:                     neorv32_uart0_puts("UNKNOWN trap cause "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
   // check if FIRQ
@@ -264,21 +271,16 @@ static void __neorv32_rte_debug_handler(void) {
   uint32_t mepc = neorv32_cpu_csr_read(CSR_MEPC);
   __neorv32_rte_print_hex_word(mepc);
 
-  // additional info
-  if (trap_cause == TRAP_CODE_I_ILLEGAL) { // illegal instruction
-    neorv32_uart0_puts(", INST=");
-    uint32_t instr_lo = (uint32_t)neorv32_cpu_load_unsigned_half(mepc);
-    uint32_t instr_hi = (uint32_t)neorv32_cpu_load_unsigned_half(mepc + 2);
-    if ((instr_lo & 3) != 3) { // is compressed instruction
-      __neorv32_rte_print_hex_half(instr_lo);
+  // additional info (trap value)
+  neorv32_uart0_puts(", MTVAL=");
+  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
+
+  // halt if fatal exception
+  if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_I_MISALIGNED)) {
+    neorv32_uart0_puts(" [FATAL EXCEPTION] Halting CPU. </RTE>\n");
+    while(1) {
+      asm volatile ("wfi");
     }
-    else {
-      __neorv32_rte_print_hex_word(((uint32_t)instr_hi << 16) | (uint32_t)instr_lo);
-    }
-  }
-  else if ((trap_cause & 0x80000000U) == 0) { // not an interrupt
-    neorv32_uart0_puts(", ADDR=");
-    __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
   }
 
   // outro
@@ -564,31 +566,12 @@ void __neorv32_rte_print_hex_word(uint32_t num) {
 
   static const char hex_symbols[16] = "0123456789ABCDEF";
 
-  neorv32_uart0_puts("0x");
+  neorv32_uart0_putc('0');
+  neorv32_uart0_putc('x');
 
   int i;
   for (i=0; i<8; i++) {
     uint32_t index = (num >> (28 - 4*i)) & 0xF;
-    neorv32_uart0_putc(hex_symbols[index]);
-  }
-}
-
-
-/**********************************************************************//**
- * NEORV32 runtime environment: Private function to print 16-bit number
- * as 4-digit hexadecimal value (with "0x" suffix).
- *
- * @param[in] num Number to print as hexadecimal.
- **************************************************************************/
-void __neorv32_rte_print_hex_half(uint16_t num) {
-
-  static const char hex_symbols[16] = "0123456789ABCDEF";
-
-  neorv32_uart0_puts("0x");
-
-  int i;
-  for (i=0; i<4; i++) {
-    uint32_t index = (num >> (12 - 4*i)) & 0xF;
     neorv32_uart0_putc(hex_symbols[index]);
   }
 }

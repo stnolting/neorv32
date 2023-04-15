@@ -141,20 +141,23 @@ try to resume normal program execution. Some exemplary RTE outputs are shown bel
 [WARNING]
 In most cases the RTE can successfully continue operation - for example if it catches an **interrupt** request
 that is not handled by the actual application program. However, if the RTE catches an un-handled **trap** like
-a bus access fault exception continuing execution will most likely fail making the CPU crash.
+a bus access fault exception continuing execution will most likely fail making the CPU crash. Some exceptions
+cannot be resolved by the default debug trap handlers and will halt the CPU (see example below).
 
 .RTE Default Trap Handler Output Examples
 [source]
 ----
-<RTE> Illegal instruction @ PC=0x000002d6, INST=0x000000FF </RTE> <1>
-<RTE> Illegal instruction @ PC=0x00000302, INST=0x0000 </RTE> <2>
-<RTE> Load address misaligned @ PC=0x00000440, ADDR=0x80000101 </RTE> <3>
-<RTE> Fast IRQ 0x00000003 @ PC=0x00000820 </RTE> <4>
+<RTE> [M] Illegal instruction @ PC=0x000002d6, MTVAL=0x000000FF </RTE> <1>
+<RTE> [U] Illegal instruction @ PC=0x00000302, MTVAL=0x00000000 </RTE> <2>
+<RTE> [U] Load address misaligned @ PC=0x00000440, MTVAL=0x80000101 </RTE> <3>
+<RTE> [M] Fast IRQ 0x00000003 @ PC=0x00000820, MTVAL=0x00000000 </RTE> <4>
+<RTE> [M] Instruction access fault @ PC=0x90000000, MTVAL=0x00000000 [FATAL EXCEPTION] Halting CPU. </RTE>\n <5>
 ----
-<1> Illegal 32-bit instruction at address `0x000002d6`.
-<2> Illegal 16-bit instruction at address `0x00000302`.
-<3> Misaligned load access at address `0x00000440` (trying to load a full 32-bit word from address `0x80000101`).
-<4> Fast interrupt request from channel 3 before executing instruction at address `0x00000820`.
+<1> Illegal 32-bit instruction `0x000000FF` at address `0x000002d6` while the CPU was in machine-mode (`[M]`).
+<2> Illegal 16-bit instruction `0x0000` (zero-extended) at address `0x00000302` while the CPU was in user-mode (`[U]`).
+<3> Misaligned load access at address `0x00000440` (trying to load a full 32-bit word from address `0x80000101`) while the CPU was in machine-mode.
+<4> Fast interrupt request from channel 3 before executing instruction at address `0x00000820` while the CPU was in machine-mode.
+<5> Instruction bus access fault at address `0x90000000` - this is fatal for the default debug trap handler while the CPU was in machine-mode.
 
 The specific message right at the beginning of the debug trap handler message corresponds to the trap code
 obtained from the <<_mcause>> CSR (see <<_neorv32_trap_listing>>). A full list of all messages and the according
@@ -209,7 +212,7 @@ For bus access faults the RTE default trap handlers also outputs the error code 
 ----
 
 The additional message encapsulated in `[ ]` shows the actual cause of the bus access fault.
-Three different messages are possible here:
+Several different message identifiers are possible here:
 
 * `[TIMEOUT_ERR]`: The accessed memory-mapped module did not respond within the valid access time window.
 In Most cases this is caused by accessing a module that has not been implemented or when accessing
