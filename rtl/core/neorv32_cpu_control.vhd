@@ -152,7 +152,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal fetch_engine : fetch_engine_t;
 
   -- instruction prefetch buffer (FIFO) interface --
-  type ipb_data_t is array (0 to 1) of std_ulogic_vector((2+16)-1 downto 0); -- status (bus_error, align_error) + 16-bit instruction
+  type ipb_data_t is array (0 to 1) of std_ulogic_vector((2+16)-1 downto 0); -- status (bus_error, align_error) & 16-bit instruction
   type ipb_t is record
     wdata : ipb_data_t;
     we    : std_ulogic_vector(1 downto 0); -- trigger write
@@ -171,7 +171,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     ci_i16    : std_ulogic_vector(15 downto 0);
     ci_i32    : std_ulogic_vector(31 downto 0);
     ci_ill    : std_ulogic;
-    data      : std_ulogic_vector((4+32)-1 downto 0); -- 4-bit status + 32-bit instruction
+    data      : std_ulogic_vector((4+32)-1 downto 0); -- 4-bit status & 32-bit instruction
     valid     : std_ulogic_vector(1 downto 0); -- data word is valid when != 0
   end record;
   signal issue_engine : issue_engine_t;
@@ -225,7 +225,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     irq_pnd       : std_ulogic_vector(irq_width_c-1 downto 0); -- pending interrupt
     irq_buf       : std_ulogic_vector(irq_width_c-1 downto 0); -- asynchronous exception/interrupt buffer (one bit per interrupt source)
     irq_fire      : std_ulogic; -- set if there is a valid source in the interrupt buffer
-    cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR + debug-mode entry identifier
+    cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR & debug-mode entry identifier
     epc           : std_ulogic_vector(XLEN-1 downto 0); -- exception program counter
     --
     env_start     : std_ulogic; -- start trap handler env
@@ -694,7 +694,7 @@ begin
         if (execute_engine.pc_mux_sel = '0') then
           execute_engine.pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0'; -- normal (linear) increment OR trap enter/exit
         else
-          execute_engine.pc <= alu_add_i(XLEN-1 downto 1) & '0'; -- jump/taken_branch
+          execute_engine.pc <= alu_add_i(XLEN-1 downto 1) & '0'; -- jump/taken-branch
         end if;
       end if;
 
@@ -995,9 +995,9 @@ begin
             ctrl_nxt.alu_opa_mux <= '1'; -- ALU.OPA = PC (for AUIPC only)
             ctrl_nxt.alu_opb_mux <= '1'; -- use IMM as ALU.OPB
             if (execute_engine.i_reg(instr_opcode_lsb_c+5) = opcode_lui_c(5)) then -- LUI
-              ctrl_nxt.alu_op <= alu_op_movb_c; -- actual ALU operation = MOVB
+              ctrl_nxt.alu_op <= alu_op_movb_c; -- pass immediate
             else -- AUIPC
-              ctrl_nxt.alu_op <= alu_op_add_c; -- actual ALU operation = ADD
+              ctrl_nxt.alu_op <= alu_op_add_c; -- add PC and immediate
             end if;
             ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back
             execute_engine.state_nxt <= DISPATCH;
@@ -1052,15 +1052,10 @@ begin
             end if;
 
 
-          when opcode_system_c => -- environment operation / CSR access
+          when others => -- opcode_system_c - environment/CSR operation / ILLEGAL opcode
           -- ------------------------------------------------------------
             csr.re_nxt               <= '1';
-            execute_engine.state_nxt <= SYSTEM;
-
-
-          when others => -- illegal opcode
-          -- ------------------------------------------------------------
-            execute_engine.state_nxt <= DISPATCH;
+            execute_engine.state_nxt <= SYSTEM; -- no state change if illegal opcode
 
         end case; -- /EXECUTE
 
@@ -1129,12 +1124,13 @@ begin
         end if;
 
 
-      when SYSTEM => -- system environment operation
+      when others => -- SYSTEM - system environment operation; no state change if illegal instruction
       -- ------------------------------------------------------------
-        ctrl_nxt.rf_mux <= rf_mux_csr_c; -- only relevant for CSR access
+        execute_engine.state_nxt <= DISPATCH; -- default
+        ctrl_nxt.rf_mux          <= rf_mux_csr_c; -- CSR read data
+        --
         if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and -- ENVIRONMENT
            (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- and NOT already identified as illegal instruction
-          execute_engine.state_nxt <= DISPATCH; -- default
           case execute_engine.i_reg(instr_funct12_msb_c downto instr_funct12_lsb_c) is
             when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ecall
             when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- ebreak
@@ -1143,7 +1139,6 @@ begin
             when others           => execute_engine.sleep_nxt <= '1'; -- "funct12_wfi_c" - wfi/sleep
           end case;
         else -- CSR ACCESS - no CSR will be altered if illegal instruction
-          execute_engine.state_nxt <= DISPATCH;
           if (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
              (execute_engine.i_reg(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
              (decode_aux.rs1_zero = '0') then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
@@ -1151,11 +1146,6 @@ begin
           end if;
           ctrl_nxt.rf_wb_en <= '1'; -- valid RF write-back
         end if;
-
-
-      when others => -- undefined
-      -- ------------------------------------------------------------
-        execute_engine.state_nxt <= DISPATCH;
 
     end case;
   end process execute_engine_fsm_comb;
@@ -1423,7 +1413,7 @@ begin
 
       when opcode_fop_c => -- floating point operations - single/dual operands
       -- ------------------------------------------------------------
-        illegal_cmd <= (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu)) or (not decode_aux.is_f_op);
+        illegal_cmd <= (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx)) or (not decode_aux.is_f_op);
 
       when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => -- custom instructions (CFU)
       -- ------------------------------------------------------------
@@ -1725,7 +1715,7 @@ begin
               csr.frm <= csr.wdata(2 downto 0);
             end if;
 
-          when csr_fcsr_c => -- floating-point control/status (frm + fflags)
+          when csr_fcsr_c => -- floating-point control/status (frm & fflags)
             if (CPU_EXTENSION_RISCV_Zfinx = true) then
               csr.frm    <= csr.wdata(7 downto 5);
               csr.fflags <= csr.wdata(4 downto 0);
@@ -1854,7 +1844,7 @@ begin
           -- --------------------------------------------------------------------
           if (CPU_EXTENSION_RISCV_Sdext = false) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.running = '0')) then
             -- trap cause ID --
-            csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- type + identifier
+            csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- type & identifier
             -- trap PC --
             csr.mepc <= trap_ctrl.epc;
             -- trap value --
@@ -1979,7 +1969,7 @@ begin
   csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_Sdext = true) and (debug_ctrl.running = '1') else csr.privilege;
 
 
-  -- Physical Memory Protection CSRs --------------------------------------------------------
+  -- Physical Memory Protection (PMP) CSRs --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- write enable decoder --
   pmp_we: process(csr)
@@ -2058,7 +2048,7 @@ begin
   end process pmp_connect;
 
 
-  -- HPM Counter Event Configuration CSRs ---------------------------------------------------
+  -- Hardware Performance Monitors (HMP) Counter Event Configuration CSRs -------------------
   -- -------------------------------------------------------------------------------------------
   -- write enable decoder --
   hpmevent_we: process(csr)
@@ -2117,7 +2107,7 @@ begin
         when csr_frm_c => -- floating-point (FPU) rounding mode
           if (CPU_EXTENSION_RISCV_Zfinx) then csr.rdata(2 downto 0) <= csr.frm; end if;
 
-        when csr_fcsr_c => -- floating-point (FPU) control/status (frm + fflags)
+        when csr_fcsr_c => -- floating-point (FPU) control/status (frm & fflags)
           if (CPU_EXTENSION_RISCV_Zfinx) then csr.rdata(7 downto 0) <= csr.frm & csr.fflags; end if;
 
         -- machine trap setup --
@@ -2539,7 +2529,7 @@ begin
   -- CPU is in debug mode --
   debug_ctrl.running <= '0' when (CPU_EXTENSION_RISCV_Sdext = false) or (debug_ctrl.state = DEBUG_OFFLINE) else '1';
 
-  -- entry debug mode triggers --
+  -- debug mode entry triggers --
   debug_ctrl.trig_hw    <= hw_trigger_fire and (not debug_ctrl.running) and csr.tdata1_action and csr.tdata1_dmode; -- enter debug mode by HW trigger module request (only valid if dmode = 1)
   debug_ctrl.trig_break <= trap_ctrl.break_point and (debug_ctrl.running or -- re-enter debug mode
                            ((    csr.privilege) and csr.dcsr_ebreakm) or    -- enabled goto-debug-mode in machine mode on "ebreak"

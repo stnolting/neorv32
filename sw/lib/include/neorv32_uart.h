@@ -51,7 +51,7 @@
 /** UART module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;  /**< offset 0: control register (#NEORV32_UART_CTRL_enum) */
-  uint32_t DATA;  /**< offset 4: data register */
+  uint32_t DATA;  /**< offset 4: data register  (#NEORV32_UART_DATA_enum) */
 } neorv32_uart_t;
 
 /** UART0 module hardware access (#neorv32_uart_t) */
@@ -95,6 +95,18 @@ enum NEORV32_UART_CTRL_enum {
   UART_CTRL_RX_OVER       = 30, /**< UART control register(30) (r/-): RX FIFO overflow */
   UART_CTRL_TX_BUSY       = 31  /**< UART control register(31) (r/-): Transmitter busy or TX FIFO not empty */
 };
+
+/** UART data register bits */
+enum NEORV32_UART_DATA_enum {
+  UART_DATA_RTX_LSB          =  0, /**< UART data register(0) (r/w): UART receive/transmit data, LSB */
+  UART_DATA_RTX_MSB          =  7, /**< UART data register(7) (r/w): UART receive/transmit data, MSB */
+
+  UART_DATA_RX_FIFO_SIZE_LSB =  8, /**< UART data register(8)  (r/-): log2(RX FIFO size), LSB */
+  UART_DATA_RX_FIFO_SIZE_MSB = 11, /**< UART data register(11) (r/-): log2(RX FIFO size), MSB */
+
+  UART_DATA_TX_FIFO_SIZE_LSB = 12, /**< UART data register(12) (r/-): log2(RX FIFO size), LSB */
+  UART_DATA_TX_FIFO_SIZE_MSB = 15, /**< UART data register(15) (r/-): log2(RX FIFO size), MSB */
+};
 /**@}*/
 
 
@@ -103,6 +115,8 @@ enum NEORV32_UART_CTRL_enum {
  **************************************************************************/
 /**@{*/
 int  neorv32_uart_available(neorv32_uart_t *UARTx);
+int  neorv32_uart_get_rx_fifo_depth(neorv32_uart_t *UARTx);
+int  neorv32_uart_get_tx_fifo_depth(neorv32_uart_t *UARTx);
 void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_mask);
 void neorv32_uart_enable(neorv32_uart_t *UARTx);
 void neorv32_uart_disable(neorv32_uart_t *UARTx);

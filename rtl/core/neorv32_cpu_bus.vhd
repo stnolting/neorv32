@@ -270,7 +270,7 @@ begin
   -- wait for bus response --
   d_wait_o <= not d_bus_ack_i;
 
-  -- output data access error to controller --
+  -- output data access error to control unit --
   ma_load_o  <= '1' when (arbiter.pend = '1') and (ctrl_i.ir_opcode(5) = '0') and (misaligned  = '1') else '0';
   be_load_o  <= '1' when (arbiter.pend = '1') and (ctrl_i.ir_opcode(5) = '0') and (arbiter.err = '1') else '0';
   ma_store_o <= '1' when (arbiter.pend = '1') and (ctrl_i.ir_opcode(5) = '1') and (misaligned  = '1') else '0';
