@@ -492,7 +492,7 @@ The `crt0.S` start-up performs the following operations:
 ** `mains`'s return value is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
 ** Call all _destructors_ (if there are any).
 ** An optional <<_after_main_handler>> is called (if defined at all).
-** The CPU enters sleep mode (using the `wfi` instruction) or remains in an endless loop (if `wfi` "returns").
+** The CPU enters sleep mode (executing the `wfi` instruction) in an endless loop.
 
 .Bootloader Start-Up Code
 [NOTE]

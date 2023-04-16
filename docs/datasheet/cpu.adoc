@@ -165,17 +165,17 @@ includes the <<_control_and_status_registers_csrs>> as well as the trap controll
 === Sleep Mode
 
 The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing dynamic
-power consumption. Sleep mode in entered by executing the `wfi` instruction.
-When the CPU is in sleep mode, all CPU-internal operations are stopped (execution, instruction fetch, ...).
-However, this does not affect the operation of any peripheral/IO modules like interfaces and timers. Furthermore,
-the CPU will continue to buffer/enqueue incoming interrupt requests. The CPU will leave sleep mode as soon as
-any interrupt source becomes _pending_.
+power consumption. Sleep mode in entered by executing the `wfi` instruction. When in sleep mode, all CPU-internal
+operations are stopped (execution, instruction fetch, counter increments, ...). However, this does not affect the
+operation of any peripheral/IO modules like interfaces and timers. Furthermore, the CPU will continue to buffer/enqueue
+incoming interrupt requests. The CPU will leave sleep mode as soon as any _enabled_ interrupt source becomes _pending_.
 
 [IMPORTANT]
 If sleep mode is entered without at least one enabled interrupt source the CPU will be _permanently_ halted.
 
 [NOTE]
-The CPU automatically wakes up from sleep mode if a debug session via the on-chip debugger is started.
+The CPU automatically wakes up from sleep mode if a debug session is started via the on-chip debugger. `wfi` behaves as
+a simple `nop` when the CPU is _in_ debug-mode or during single-stepping.
 
 
 // ####################################################################################################################
@@ -671,9 +671,10 @@ cause ID of the according trap that is written to <<_mcause>> CSR.  The "ID [C]"
 core library (the runtime environment _RTE_) and can be used in plain C code. The <<_mepc>> and <<_mtval>> columns
 show the values written to the according CSRs when a trap is triggered:
 
-* **I-PC** - address of interrupted instruction (instruction has not been executed yet)
+* **I-PC** - address of interrupted instruction (instruction has _not_ been executed yet)
 * **PC** - address of instruction that caused the trap (instruction has been executed)
 * **ADR** - bad memory access address that caused the trap
+* **CMD** - the instruction word that caused the trap (zero-extended if compressed instruction)
 * **0** - zero
 
 .NEORV32 Trap Listing
@@ -682,9 +683,9 @@ show the values written to the according CSRs when a trap is triggered:
 |=======================
 | Prio. | `mcause`     | ID [C]                   | Cause                                  | `mepc`   | `mtval`
 6+^| **Exceptions** (synchronous to instruction execution)
-| 1     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned         | **PC**   | **ADR**
-| 2     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction access bus fault           | **I-PC** | **ADR**
-| 3     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                    | **PC**   | **0**
+| 1     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned         | **I-PC** | **0**
+| 2     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction access bus fault           | **I-PC** | **0**
+| 3     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                    | **PC**   | **CMD**
 | 4     | `0x0000000B` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode (`ecall`) | **PC**   | **0**
 | 5     | `0x00000008` | `TRAP_CODE_UENV_CALL`    | environment call from U-mode (`ecall`) | **PC**   | **0**
 | 6     | `0x00000003` | `TRAP_CODE_BREAKPOINT`   | software breakpoint (`ebreak`)         | **PC**   | **0**

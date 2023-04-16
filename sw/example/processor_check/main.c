@@ -271,6 +271,9 @@ int main() {
       test_fail();
     }
   }
+  else {
+    PRINT_STANDARD("[skipped, n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------
@@ -566,7 +569,7 @@ int main() {
   if (NEORV32_SYSINFO->SOC & (1<<SYSINFO_SOC_IS_SIM)) {
     cnt_test++;
 
-    // put two "ret" instructions to the beginning of the external memory module
+    // put "ret" instruction to the beginning of the external memory module
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+0, 0x00008067); // exception handler hack will try to resume execution here
 
     // jump to beginning of external memory minus 4 bytes
@@ -577,7 +580,7 @@ int main() {
     asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ACCESS) && // correct exception cause
-        (neorv32_cpu_csr_read(CSR_MTVAL) == tmp_a))  { // correct trap value (address of instruction that caused ifetch error)
+        ((neorv32_cpu_csr_read(CSR_MEPC)-4) == tmp_a))  { // correct trap value (address of instruction that caused ifetch error)
       test_ok();
     }
     else {
@@ -607,7 +610,8 @@ int main() {
 
   // make sure this has caused an illegal exception
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) && // illegal instruction exception
-      ((neorv32_cpu_csr_read(CSR_MSTATUS) & (1 << CSR_MSTATUS_MIE)) == 0)) { // MIE should still be cleared
+      ((neorv32_cpu_csr_read(CSR_MSTATUS) & (1 << CSR_MSTATUS_MIE)) == 0) && // MIE should still be cleared
+      (neorv32_cpu_csr_read(CSR_MTVAL) == 0x3020007fUL)) { // instruction word that caused the exception
     test_ok();
   }
   else {
@@ -698,28 +702,23 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] L_ACC (load access) EXC ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1<<SYSINFO_SOC_IS_SIM)) {
-    cnt_test++;
+  cnt_test++;
 
-    tmp_a = (1 << BUSKEEPER_ERR_FLAG) | (1 << BUSKEEPER_ERR_TYPE);
+  tmp_a = (1 << BUSKEEPER_ERR_FLAG) | (1 << BUSKEEPER_ERR_TYPE);
 
-    // load from unreachable aligned address
-    asm volatile ("li %[da], 0xcafe1230 \n" // initialize destination register with known value
-                  "lw %[da], 0(%[ad])     " // must not update destination register to to exception
-                  : [da] "=r" (tmp_b) : [ad] "r" (ADDR_UNREACHABLE));
+  // load from unreachable aligned address
+  asm volatile ("li %[da], 0xcafe1230 \n" // initialize destination register with known value
+                "lw %[da], 0(%[ad])     " // must not update destination register to to exception
+                : [da] "=r" (tmp_b) : [ad] "r" (ADDR_UNREACHABLE));
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) && // load bus access error exception
-        (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNREACHABLE) &&
-        (tmp_b == 0xcafe1230) && // make sure dest. reg is not updated
-        (NEORV32_BUSKEEPER->CTRL = tmp_a)) { // buskeeper: error flag + timeout error
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) && // load bus access error exception
+      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNREACHABLE) &&
+      (tmp_b == 0xcafe1230) && // make sure dest. reg is not updated
+      (NEORV32_BUSKEEPER->CTRL = tmp_a)) { // buskeeper: error flag + timeout error
+    test_ok();
   }
   else {
-    PRINT_STANDARD("[skipped]\n");
+    test_fail();
   }
 
 
@@ -756,25 +755,20 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] S_ACC (store access) EXC ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1<<SYSINFO_SOC_IS_SIM)) {
-    cnt_test++;
+  cnt_test++;
 
-    tmp_a = (1 << BUSKEEPER_ERR_FLAG) | (0 << BUSKEEPER_ERR_TYPE);
+  tmp_a = (1 << BUSKEEPER_ERR_FLAG) | (0 << BUSKEEPER_ERR_TYPE);
 
-    // store to unreachable aligned address
-    neorv32_cpu_store_unsigned_word(ADDR_READONLY, 0);
+  // store to unreachable aligned address
+  neorv32_cpu_store_unsigned_word(ADDR_READONLY, 0);
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && // store bus access error exception
-        (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_READONLY) &&
-        (NEORV32_BUSKEEPER->CTRL == tmp_a)) { // buskeeper: error flag + device error
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && // store bus access error exception
+      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_READONLY) &&
+      (NEORV32_BUSKEEPER->CTRL == tmp_a)) { // buskeeper: error flag + device error
+    test_ok();
   }
   else {
-    PRINT_STANDARD("[skipped]\n");
+    test_fail();
   }
 
 
@@ -927,7 +921,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Permanent IRQ (make sure interrupted program advances)
+  // Permanent IRQ (make sure interrupted program proceeds)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Permanent IRQ (MTIME) ", cnt_test);
@@ -940,13 +934,13 @@ int main() {
     neorv32_mtime_set_timecmp(0); // force interrupt
 
     int test_cnt = 0;
-    while(test_cnt < 2) {
+    while(test_cnt < 3) {
       test_cnt++;
     }
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if (test_cnt == 2) {
+    if (test_cnt == 3) {
       test_ok();
     }
     else {
@@ -1521,7 +1515,7 @@ int main() {
     cnt_test++;
 
     // program wake-up timer
-    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 500);
+    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 300);
 
     // enable mtime interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
@@ -1547,6 +1541,38 @@ int main() {
   }
   else {
     PRINT_STANDARD("[skipped, n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test if CPU wakes-up from WFI if m-mode interrupts are disabled globally
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] WFI (wakeup on pending MTIME) ", cnt_test);
+
+  cnt_test++;
+
+  // disable m-mode interrupts globally
+  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+
+  // program wake-up timer
+  neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 300);
+
+  // enable mtime interrupt
+  neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
+
+  // put CPU into sleep mode -the CPU has to wakeup again if any enabled interrupt source
+  // becomes pending - even if we are in m-mode and mstatus.mie is cleared
+  asm volatile ("wfi");
+
+  neorv32_cpu_csr_write(CSR_MIE, 0);
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
+    test_ok();
+  }
+  else {
+    test_fail();
   }
 
 
@@ -1885,7 +1911,7 @@ void test_ok(void) {
  **************************************************************************/
 void test_fail(void) {
 
-  PRINT_CRITICAL("%c[1m[fail(%u)]%c[0m\n", 27, cnt_test, 27);
+  PRINT_CRITICAL("%c[1m[fail(%u)]%c[0m\n", 27, cnt_test-1, 27);
   cnt_fail++;
 }
 

@@ -199,7 +199,7 @@ begin
     if (XIRQ_NUM_CH > 1) then
       for i in 0 to XIRQ_NUM_CH-1 loop
         if (irq_raw(i) = '1') then
-          irq_source_nxt <= std_ulogic_vector(to_unsigned(i, index_size_f(XIRQ_NUM_CH)));
+          irq_source_nxt <= std_ulogic_vector(to_unsigned(i, irq_source_nxt'length));
           exit;
         end if;
       end loop;
