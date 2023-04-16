@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080306"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080307"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -555,6 +555,18 @@ package neorv32_package is
   constant csr_pmpcfg1_c        : std_ulogic_vector(11 downto 0) := x"3a1";
   constant csr_pmpcfg2_c        : std_ulogic_vector(11 downto 0) := x"3a2";
   constant csr_pmpcfg3_c        : std_ulogic_vector(11 downto 0) := x"3a3";
+  constant csr_pmpcfg4_c        : std_ulogic_vector(11 downto 0) := x"3a4";
+  constant csr_pmpcfg5_c        : std_ulogic_vector(11 downto 0) := x"3a5";
+  constant csr_pmpcfg6_c        : std_ulogic_vector(11 downto 0) := x"3a6";
+  constant csr_pmpcfg7_c        : std_ulogic_vector(11 downto 0) := x"3a7";
+  constant csr_pmpcfg8_c        : std_ulogic_vector(11 downto 0) := x"3a8";
+  constant csr_pmpcfg9_c        : std_ulogic_vector(11 downto 0) := x"3a9";
+  constant csr_pmpcfg10_c       : std_ulogic_vector(11 downto 0) := x"3aa";
+  constant csr_pmpcfg11_c       : std_ulogic_vector(11 downto 0) := x"3ab";
+  constant csr_pmpcfg12_c       : std_ulogic_vector(11 downto 0) := x"3ac";
+  constant csr_pmpcfg13_c       : std_ulogic_vector(11 downto 0) := x"3ad";
+  constant csr_pmpcfg14_c       : std_ulogic_vector(11 downto 0) := x"3ae";
+  constant csr_pmpcfg15_c       : std_ulogic_vector(11 downto 0) := x"3af";
   -- physical memory protection - address --
   constant csr_pmpaddr0_c       : std_ulogic_vector(11 downto 0) := x"3b0";
   constant csr_pmpaddr1_c       : std_ulogic_vector(11 downto 0) := x"3b1";
@@ -572,6 +584,54 @@ package neorv32_package is
   constant csr_pmpaddr13_c      : std_ulogic_vector(11 downto 0) := x"3bd";
   constant csr_pmpaddr14_c      : std_ulogic_vector(11 downto 0) := x"3be";
   constant csr_pmpaddr15_c      : std_ulogic_vector(11 downto 0) := x"3bf";
+  constant csr_pmpaddr16_c      : std_ulogic_vector(11 downto 0) := x"3c0";
+  constant csr_pmpaddr17_c      : std_ulogic_vector(11 downto 0) := x"3c1";
+  constant csr_pmpaddr18_c      : std_ulogic_vector(11 downto 0) := x"3c2";
+  constant csr_pmpaddr19_c      : std_ulogic_vector(11 downto 0) := x"3c3";
+  constant csr_pmpaddr20_c      : std_ulogic_vector(11 downto 0) := x"3c4";
+  constant csr_pmpaddr21_c      : std_ulogic_vector(11 downto 0) := x"3c5";
+  constant csr_pmpaddr22_c      : std_ulogic_vector(11 downto 0) := x"3c6";
+  constant csr_pmpaddr23_c      : std_ulogic_vector(11 downto 0) := x"3c7";
+  constant csr_pmpaddr24_c      : std_ulogic_vector(11 downto 0) := x"3c8";
+  constant csr_pmpaddr25_c      : std_ulogic_vector(11 downto 0) := x"3c9";
+  constant csr_pmpaddr26_c      : std_ulogic_vector(11 downto 0) := x"3ca";
+  constant csr_pmpaddr27_c      : std_ulogic_vector(11 downto 0) := x"3cb";
+  constant csr_pmpaddr28_c      : std_ulogic_vector(11 downto 0) := x"3cc";
+  constant csr_pmpaddr29_c      : std_ulogic_vector(11 downto 0) := x"3cd";
+  constant csr_pmpaddr30_c      : std_ulogic_vector(11 downto 0) := x"3ce";
+  constant csr_pmpaddr31_c      : std_ulogic_vector(11 downto 0) := x"3cf";
+  constant csr_pmpaddr32_c      : std_ulogic_vector(11 downto 0) := x"3d0";
+  constant csr_pmpaddr33_c      : std_ulogic_vector(11 downto 0) := x"3d1";
+  constant csr_pmpaddr34_c      : std_ulogic_vector(11 downto 0) := x"3d2";
+  constant csr_pmpaddr35_c      : std_ulogic_vector(11 downto 0) := x"3d3";
+  constant csr_pmpaddr36_c      : std_ulogic_vector(11 downto 0) := x"3d4";
+  constant csr_pmpaddr37_c      : std_ulogic_vector(11 downto 0) := x"3d5";
+  constant csr_pmpaddr38_c      : std_ulogic_vector(11 downto 0) := x"3d6";
+  constant csr_pmpaddr39_c      : std_ulogic_vector(11 downto 0) := x"3d7";
+  constant csr_pmpaddr40_c      : std_ulogic_vector(11 downto 0) := x"3d8";
+  constant csr_pmpaddr41_c      : std_ulogic_vector(11 downto 0) := x"3d9";
+  constant csr_pmpaddr42_c      : std_ulogic_vector(11 downto 0) := x"3da";
+  constant csr_pmpaddr43_c      : std_ulogic_vector(11 downto 0) := x"3db";
+  constant csr_pmpaddr44_c      : std_ulogic_vector(11 downto 0) := x"3dc";
+  constant csr_pmpaddr45_c      : std_ulogic_vector(11 downto 0) := x"3dd";
+  constant csr_pmpaddr46_c      : std_ulogic_vector(11 downto 0) := x"3de";
+  constant csr_pmpaddr47_c      : std_ulogic_vector(11 downto 0) := x"3df";
+  constant csr_pmpaddr48_c      : std_ulogic_vector(11 downto 0) := x"3e0";
+  constant csr_pmpaddr49_c      : std_ulogic_vector(11 downto 0) := x"3e1";
+  constant csr_pmpaddr50_c      : std_ulogic_vector(11 downto 0) := x"3e2";
+  constant csr_pmpaddr51_c      : std_ulogic_vector(11 downto 0) := x"3e3";
+  constant csr_pmpaddr52_c      : std_ulogic_vector(11 downto 0) := x"3e4";
+  constant csr_pmpaddr53_c      : std_ulogic_vector(11 downto 0) := x"3e5";
+  constant csr_pmpaddr54_c      : std_ulogic_vector(11 downto 0) := x"3e6";
+  constant csr_pmpaddr55_c      : std_ulogic_vector(11 downto 0) := x"3e7";
+  constant csr_pmpaddr56_c      : std_ulogic_vector(11 downto 0) := x"3e8";
+  constant csr_pmpaddr57_c      : std_ulogic_vector(11 downto 0) := x"3e9";
+  constant csr_pmpaddr58_c      : std_ulogic_vector(11 downto 0) := x"3ea";
+  constant csr_pmpaddr59_c      : std_ulogic_vector(11 downto 0) := x"3eb";
+  constant csr_pmpaddr60_c      : std_ulogic_vector(11 downto 0) := x"3ec";
+  constant csr_pmpaddr61_c      : std_ulogic_vector(11 downto 0) := x"3ed";
+  constant csr_pmpaddr62_c      : std_ulogic_vector(11 downto 0) := x"3ee";
+  constant csr_pmpaddr63_c      : std_ulogic_vector(11 downto 0) := x"3ef";
   -- trigger module registers --
   constant csr_tselect_c        : std_ulogic_vector(11 downto 0) := x"7a0";
   constant csr_tdata1_c         : std_ulogic_vector(11 downto 0) := x"7a1";
@@ -841,13 +901,13 @@ package neorv32_package is
   -- MSB-1: 1 = entry to debug mode, 0 = normal trapping
   -- RISC-V compliant synchronous exceptions --
   constant trap_ima_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0:  instruction misaligned
-  constant trap_ibe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 1:  instruction access fault
+  constant trap_iaf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 1:  instruction access fault
   constant trap_iil_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00010"; -- 2:  illegal instruction
   constant trap_brk_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00011"; -- 3:  breakpoint
   constant trap_lma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00100"; -- 4:  load address misaligned
-  constant trap_lbe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00101"; -- 5:  load access fault
+  constant trap_laf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00101"; -- 5:  load access fault
   constant trap_sma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00110"; -- 6:  store address misaligned
-  constant trap_sbe_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00111"; -- 7:  store access fault
+  constant trap_saf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00111"; -- 7:  store access fault
   constant trap_env_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "010UU"; -- 8..11:  environment call from u/s/h/m
 --constant trap_ipf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01100"; -- 12: instruction page fault
 --constant trap_lpf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01101"; -- 13: load page fault
@@ -1646,11 +1706,8 @@ package neorv32_package is
       FPU_ENABLE : boolean -- floating-point instruction enabled
     );
     port (
-      -- instruction input --
-      ci_instr16_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction input
-      -- instruction output --
-      ci_illegal_o : out std_ulogic; -- is an illegal compressed instruction
-      ci_instr32_o : out std_ulogic_vector(31 downto 0)  -- 32-bit decompressed instruction
+      ci_instr16_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction
+      ci_instr32_o : out std_ulogic_vector(31 downto 0)  -- decompressed instruction
     );
   end component;
 

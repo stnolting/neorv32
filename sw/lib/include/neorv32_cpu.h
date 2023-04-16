@@ -270,14 +270,10 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int csr_id
 
 
 /**********************************************************************//**
- * Put CPU into "sleep" mode.
+ * Put CPU into sleep / power-down mode.
  *
- * @note This function executes the WFI instruction.
- * The WFI (wait for interrupt) instruction will make the CPU stall until
- * an interrupt request is detected. Interrupts have to be globally enabled
- * and at least one external source must be enabled (like the MTI machine
- * timer interrupt) to allow the CPU to wake up again. If 'Zicsr' CPU extension is disabled,
- * this will permanently stall the CPU.
+ * @note The WFI (wait for interrupt) instruction will make the CPU halt until
+ * any enabled interrupt source becomes pending.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
 
