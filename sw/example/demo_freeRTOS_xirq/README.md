@@ -35,7 +35,7 @@ Open the makefile from this example folder and configure the `FREERTOS_HOME` var
 
 Compile the NEORV32 executable. Do not forget the `RUN_FREERTOS_DEMO` switch.
 
-    $ make clean_all exe
+    $ make USER_FLAGS+=-DRUN_FREERTOS_DEMO clean_all exe
 
 Note: The *.c sources and the FreeRTOS-specific part of the makefile have (include) guards that test if `RUN_FREERTOS_DEMO` is defined.
 This has no practical usage for the user - it is just a work-around for the NEORV32 CI environment.
