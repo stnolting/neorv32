@@ -24,6 +24,7 @@ USER_FLAGS ?=
 # -----------------------------------------------------------------------------
 # FreeRTOS
 # -----------------------------------------------------------------------------
+ifneq (,$(findstring RUN_FREERTOS_DEMO,$(USER_FLAGS)))
 # FreeRTOS home folder (adapt this!)
 FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOS
 
@@ -60,6 +61,7 @@ ASM_INC += -I chip_specific_extensions/neorv32
 
 # Demo application
 APP_SRC += demo/main_demo.c
+endif
 
 
 
