@@ -51,6 +51,8 @@
 /* UART hardware constants. */
 #define BAUD_RATE 19200
 
+#ifdef RUN_FREERTOS_DEMO
+
 #include <stdint.h>
 
 /* FreeRTOS kernel includes. */
@@ -253,4 +255,17 @@ void SystemIrqHandler( uint32_t mcause )
   neorv32_uart0_printf("freeRTOS: Unknown interrupt (0x%x)\n", mcause);
 }
 
+
 // ---------- Primitive main in case this demo is not enabled (i.e. RUN_FREERTOS_DEMO is not defined) ----------
+#else
+  #warning FREERTOS DEMO HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_FREERTOS_DEMO clean_all exe<< to compile it.
+
+#include <neorv32.h>
+int main() {
+
+  // setup UART at default baud rate, no interrupts
+  neorv32_uart0_setup(BAUD_RATE, 0);
+  neorv32_uart0_puts("ERROR! FreeRTOS has not been compiled. Use >>make USER_FLAGS+=-DRUN_FREERTOS_DEMO clean_all exe<< to compile it.\n");
+  return 1;
+}
+#endif
