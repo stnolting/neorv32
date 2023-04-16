@@ -31,7 +31,7 @@ Download FreeRTOS from the [official GitHub repository](https://github.com/FreeR
 
 Open the makefile from this example folder and configure the `FREERTOS_HOME` variable to point to your FreeRTOS home folder.
 
-    FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOSv10.4.1
+    FREERTOS_HOME ?= /mnt/n/Projects/FreeRTOS
 
 Compile the NEORV32 executable. Do not forget the `RUN_FREERTOS_DEMO` switch.
 
