@@ -68,10 +68,12 @@ entity neorv32_spi is
 end neorv32_spi;
 
 architecture neorv32_spi_rtl of neorv32_spi is
-
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(spi_size_c); -- low address boundary bit
+
+  constant spi_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"0";
+  constant spi_rtx_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"4";
 
   -- control register --
   constant ctrl_en_c           : natural :=  0; -- r/w: spi enable
@@ -105,7 +107,7 @@ architecture neorv32_spi_rtl of neorv32_spi is
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal offset : std_ulogic_vector(lo_abb_c - 1 downto 0); -- access address
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
@@ -167,7 +169,7 @@ begin
 
   -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  offset <= addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
@@ -187,7 +189,7 @@ begin
       ctrl.irq_tx_nhalf <= '0';
     elsif rising_edge(clk_i) then
       if (wren = '1') then
-        if (addr = spi_ctrl_addr_c) then -- control register
+        if (offset = spi_ctrl_offset_c) then -- control register
           ctrl.enable       <= data_i(ctrl_en_c);
           ctrl.cpha         <= data_i(ctrl_cpha_c);
           ctrl.cpol         <= data_i(ctrl_cpol_c);
@@ -210,7 +212,7 @@ begin
       ack_o  <= wren or rden; -- bus access acknowledge
       data_o <= (others => '0');
       if (rden = '1') then
-        if (addr = spi_ctrl_addr_c) then -- control register
+        if (offset = spi_ctrl_offset_c) then -- control register
           data_o(ctrl_en_c)                            <= ctrl.enable;
           data_o(ctrl_cpha_c)                          <= ctrl.cpha;
           data_o(ctrl_cpol_c)                          <= ctrl.cpol;
@@ -230,7 +232,7 @@ begin
           data_o(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_SPI_FIFO), 4));
           --
           data_o(ctrl_busy_c) <= rtx_engine.busy or tx_fifo.avail;
-        else -- data register (spi_rtx_addr_c)
+        else -- data register (spi_rtx_offset_c)
           data_o(7 downto 0) <= rx_fifo.rdata;
         end if;
       end if;
@@ -275,7 +277,7 @@ begin
   );
 
   tx_fifo.clear <= not ctrl.enable;
-  tx_fifo.we    <= '1' when (wren = '1') and (addr = spi_rtx_addr_c) else '0';
+  tx_fifo.we    <= '1' when (wren = '1') and (offset = spi_rtx_offset_c) else '0';
   tx_fifo.wdata <= data_i(7 downto 0);
   tx_fifo.re    <= '1' when (rtx_engine.state = "100") else '0';
 
@@ -307,7 +309,7 @@ begin
   rx_fifo.clear <= not ctrl.enable;
   rx_fifo.wdata <= rtx_engine.sreg;
   rx_fifo.we    <= rtx_engine.done;
-  rx_fifo.re    <= '1' when (rden = '1') and (addr = spi_rtx_addr_c) else '0';
+  rx_fifo.re    <= '1' when (rden = '1') and (offset = spi_rtx_offset_c) else '0';
 
 
   -- IRQ generator --

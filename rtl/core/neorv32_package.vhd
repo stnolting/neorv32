@@ -295,8 +295,6 @@ package neorv32_package is
   -- Serial Peripheral Interface (SPI) --
   constant spi_base_c           : std_ulogic_vector(31 downto 0) := x"ffffffa8"; -- base address
   constant spi_size_c           : natural := 2*4; -- module's address space size in bytes
-  constant spi_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"ffffffa8";
-  constant spi_rtx_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffffac";
 
   -- Two Wire Interface (TWI) --
   constant twi_base_c           : std_ulogic_vector(31 downto 0) := x"ffffffb0"; -- base address
