@@ -98,15 +98,14 @@ end neorv32_uart;
 
 architecture neorv32_uart_rtl of neorv32_uart is
   constant uart_primary_c      : boolean := BASE_ADDR = uart0_base_c;
-  -- interface configuration for UART0 / UART1 --
-  constant uart_id_base_c      : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(uart_primary_c, uart0_base_c,      uart1_base_c);
-  constant uart_id_size_c      : natural                        := cond_sel_natural_f(        uart_primary_c, uart0_size_c,      uart1_size_c);
-  constant uart_id_ctrl_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(uart_primary_c, uart0_ctrl_addr_c, uart1_ctrl_addr_c);
-  constant uart_id_rtx_addr_c  : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(uart_primary_c, uart0_rtx_addr_c,  uart1_rtx_addr_c);
 
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(uart_id_size_c); -- low address boundary bit
+  constant lo_abb_c : natural := index_size_f(uart_size_c); -- low address boundary bit
+
+  -- interface configuration
+  constant uart_ctrl_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"0";
+  constant uart_rtx_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"4";
 
   -- simulation output configuration --
   constant sim_screen_output_en_c : boolean := true; -- output lowest byte as char to simulator console when enabled
@@ -158,7 +157,7 @@ architecture neorv32_uart_rtl of neorv32_uart is
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal offset : std_ulogic_vector(lo_abb_c - 1 downto 0); -- access address
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
@@ -231,8 +230,8 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access control --
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = uart_id_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= uart_id_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
+  offset <= addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
@@ -252,7 +251,7 @@ begin
       ctrl.irq_tx_nhalf  <= '0';
     elsif rising_edge(clk_i) then
       if (wren = '1') then
-        if (addr = uart_id_ctrl_addr_c) then -- control register
+        if (offset = uart_ctrl_offset_c) then -- control register
           ctrl.enable        <= data_i(ctrl_en_c);
           ctrl.sim_mode      <= data_i(ctrl_sim_en_c);
           ctrl.hwfc_en       <= data_i(ctrl_hwfc_en_c);
@@ -276,7 +275,7 @@ begin
       ack_o  <= wren or rden; -- bus access acknowledge
       data_o <= (others => '0');
       if (rden = '1') then
-        if (addr = uart_id_ctrl_addr_c) then -- control register
+        if (offset = uart_ctrl_offset_c) then -- control register
           data_o(ctrl_en_c)                        <= ctrl.enable;
           data_o(ctrl_sim_en_c)                    <= ctrl.sim_mode;
           data_o(ctrl_hwfc_en_c)                   <= ctrl.hwfc_en;
@@ -341,7 +340,7 @@ begin
 
   tx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
   tx_fifo.wdata <= data_i(data_rtx_msb_c downto data_rtx_lsb_c);
-  tx_fifo.we    <= '1' when (wren = '1') and (addr = uart_id_rtx_addr_c) else '0';
+  tx_fifo.we    <= '1' when (wren = '1') and (offset = uart_rtx_offset_c) else '0';
   tx_fifo.re    <= '1' when (tx_engine.state = "100") else '0';
 
   -- TX interrupt generator --
@@ -382,7 +381,7 @@ begin
   rx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
   rx_fifo.wdata <= rx_engine.sreg(8 downto 1);
   rx_fifo.we    <= rx_engine.done;
-  rx_fifo.re    <= '1' when (rden = '1') and (addr = uart_id_rtx_addr_c) else '0';
+  rx_fifo.re    <= '1' when (rden = '1') and (offset = uart_rtx_offset_c) else '0';
 
   -- RX interrupt generator --
   rx_irq_generator: process(clk_i)
@@ -512,7 +511,7 @@ begin
   fifo_overrun: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if ((rden = '1') and (addr = uart_id_rtx_addr_c)) or (ctrl.enable = '0') then -- clear when reading data register
+      if ((rden = '1') and (offset = uart_rtx_offset_c)) or (ctrl.enable = '0') then -- clear when reading data register
         rx_engine.over <= '0';
       elsif (rx_fifo.we = '1') and (rx_fifo.free = '0') then -- writing to full FIFO
         rx_engine.over <= '1';
@@ -552,7 +551,7 @@ begin
     begin
       if rising_edge(clk_i) then
         if (ctrl.enable = '1') and (ctrl.sim_mode = '1') and -- UART simulation mode
-           (wren = '1') and (addr = uart_id_rtx_addr_c) then
+           (wren = '1') and (offset = uart_rtx_offset_c) then
 
           -- print lowest byte as ASCII char --
           char_v := to_integer(unsigned(data_i(7 downto 0)));

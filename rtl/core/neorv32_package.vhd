@@ -288,9 +288,7 @@ package neorv32_package is
 
   -- Primary Universal Asynchronous Receiver/Transmitter (UART0) --
   constant uart0_base_c         : std_ulogic_vector(31 downto 0) := x"ffffffa0"; -- base address
-  constant uart0_size_c         : natural := 2*4; -- module's address space size in bytes
-  constant uart0_ctrl_addr_c    : std_ulogic_vector(31 downto 0) := x"ffffffa0";
-  constant uart0_rtx_addr_c     : std_ulogic_vector(31 downto 0) := x"ffffffa4";
+  constant uart_size_c          : natural := 2*4; -- module's address space size in bytes
 
   -- Serial Peripheral Interface (SPI) --
   constant spi_base_c           : std_ulogic_vector(31 downto 0) := x"ffffffa8"; -- base address
@@ -322,9 +320,6 @@ package neorv32_package is
 
   -- Secondary Universal Asynchronous Receiver/Transmitter (UART1) --
   constant uart1_base_c         : std_ulogic_vector(31 downto 0) := x"ffffffd0"; -- base address
-  constant uart1_size_c         : natural := 2*4; -- module's address space size in bytes
-  constant uart1_ctrl_addr_c    : std_ulogic_vector(31 downto 0) := x"ffffffd0";
-  constant uart1_rtx_addr_c     : std_ulogic_vector(31 downto 0) := x"ffffffd4";
 
   -- Smart LED (WS2811/WS2812) Interface (NEOLED) --
   constant neoled_base_c        : std_ulogic_vector(31 downto 0) := x"ffffffd8"; -- base address
