@@ -281,10 +281,6 @@ package neorv32_package is
   -- Machine System Timer (MTIME) --
   constant mtime_base_c         : std_ulogic_vector(31 downto 0) := x"ffffff90"; -- base address
   constant mtime_size_c         : natural := 4*4; -- module's address space size in bytes
-  constant mtime_time_lo_addr_c : std_ulogic_vector(31 downto 0) := x"ffffff90";
-  constant mtime_time_hi_addr_c : std_ulogic_vector(31 downto 0) := x"ffffff94";
-  constant mtime_cmp_lo_addr_c  : std_ulogic_vector(31 downto 0) := x"ffffff98";
-  constant mtime_cmp_hi_addr_c  : std_ulogic_vector(31 downto 0) := x"ffffff9c";
 
   -- Primary Universal Asynchronous Receiver/Transmitter (UART0) --
   constant uart0_base_c         : std_ulogic_vector(31 downto 0) := x"ffffffa0"; -- base address

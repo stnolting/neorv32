@@ -67,9 +67,15 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(mtime_size_c); -- low address boundary bit
 
+  -- interface configuration
+  constant mtime_time_lo_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"0";
+  constant mtime_time_hi_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"4";
+  constant mtime_cmp_lo_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"8";
+  constant mtime_cmp_hi_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"c";
+
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal offset : std_ulogic_vector(lo_abb_c - 1 downto 0); -- access address
   signal wren   : std_ulogic; -- module access enable
   signal rden   : std_ulogic; -- read enable
 
@@ -96,7 +102,7 @@ begin
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  offset <= addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
@@ -116,22 +122,22 @@ begin
     elsif rising_edge(clk_i) then
       -- mtimecmp --
       if (wren = '1') then
-        if (addr = mtime_cmp_lo_addr_c) then
+        if (offset = mtime_cmp_lo_offset_c) then
           mtimecmp_lo <= data_i;
         end if;
-        if (addr = mtime_cmp_hi_addr_c) then
+        if (offset = mtime_cmp_hi_offset_c) then
           mtimecmp_hi <= data_i;
         end if;
       end if;
 
       -- mtime write access buffer --
       mtime_lo_we <= '0';
-      if (wren = '1') and (addr = mtime_time_lo_addr_c) then
+      if (wren = '1') and (offset = mtime_time_lo_offset_c) then
         mtime_lo_we <= '1';
       end if;
       --
       mtime_hi_we <= '0';
-      if (wren = '1') and (addr = mtime_time_hi_addr_c) then
+      if (wren = '1') and (offset = mtime_time_hi_offset_c) then
         mtime_hi_we <= '1';
       end if;
 
@@ -164,7 +170,7 @@ begin
       ack_o  <= rden or wren; -- bus handshake
       data_o <= (others => '0'); -- default
       if (rden = '1') then
-        case addr(3 downto 2) is
+        case offset(3 downto 2) is
           when "00"   => data_o <= mtime_lo;
           when "01"   => data_o <= mtime_hi;
           when "10"   => data_o <= mtimecmp_lo;
