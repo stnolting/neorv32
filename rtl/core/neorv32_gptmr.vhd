@@ -72,6 +72,12 @@ architecture neorv32_gptmr_rtl of neorv32_gptmr is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(gptmr_size_c); -- low address boundary bit
 
+  -- interface configuration
+  constant gptmr_ctrl_offset_c    : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"0";
+  constant gptmr_thres_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"4";
+  constant gptmr_count_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"8";
+--constant gptmr_reserve_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"c";
+
   -- control register --
   constant ctrl_en_c    : natural := 0; -- r/w: timer enable
   constant ctrl_prsc0_c : natural := 1; -- r/w: clock prescaler select bit 0
@@ -83,7 +89,7 @@ architecture neorv32_gptmr_rtl of neorv32_gptmr is
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal offset : std_ulogic_vector(lo_abb_c-1 downto 0); -- access address
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
@@ -104,7 +110,7 @@ begin
 
   -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  offset <= addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
@@ -118,17 +124,17 @@ begin
     elsif rising_edge(clk_i) then
       timer.cnt_we <= '0'; -- default
       if (wren = '1') then
-        if (addr = gptmr_ctrl_addr_c) then -- control register
+        if (offset = gptmr_ctrl_offset_c) then -- control register
           ctrl(ctrl_en_c)    <= data_i(ctrl_en_c);
           ctrl(ctrl_prsc0_c) <= data_i(ctrl_prsc0_c);
           ctrl(ctrl_prsc1_c) <= data_i(ctrl_prsc1_c);
           ctrl(ctrl_prsc2_c) <= data_i(ctrl_prsc2_c);
           ctrl(ctrl_mode_c)  <= data_i(ctrl_mode_c);
         end if;
-        if (addr = gptmr_thres_addr_c) then -- threshold register
+        if (offset = gptmr_thres_offset_c) then -- threshold register
           timer.thres <= data_i;
         end if;
-        if (addr = gptmr_count_addr_c) then -- counter register
+        if (offset = gptmr_count_offset_c) then -- counter register
           timer.cnt_we <= '1';
         end if;
       end if;
@@ -142,7 +148,7 @@ begin
       ack_o  <= rden or wren; -- bus access acknowledge
       data_o <= (others => '0');
       if (rden = '1') then
-        case addr(3 downto 2) is
+        case offset(3 downto 2) is
           when "00" => -- control register
             data_o(ctrl_en_c)    <= ctrl(ctrl_en_c);
             data_o(ctrl_prsc0_c) <= ctrl(ctrl_prsc0_c);

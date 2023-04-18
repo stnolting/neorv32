@@ -255,10 +255,6 @@ package neorv32_package is
   -- General Purpose Timer (GPTMR) --
   constant gptmr_base_c         : std_ulogic_vector(31 downto 0) := x"ffffff60"; -- base address
   constant gptmr_size_c         : natural := 4*4; -- module's address space size in bytes
-  constant gptmr_ctrl_addr_c    : std_ulogic_vector(31 downto 0) := x"ffffff60";
-  constant gptmr_thres_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffff64";
-  constant gptmr_count_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffff68";
---constant gptmr_reserve_addr_c : std_ulogic_vector(31 downto 0) := x"ffffff6c";
 
   -- 1-Wire Interface Controller (ONEWIRE) --
   constant onewire_base_c       : std_ulogic_vector(31 downto 0) := x"ffffff70"; -- base address
