@@ -239,10 +239,6 @@ package neorv32_package is
   -- Execute In-Place Module (XIP) --
   constant xip_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff40"; -- base address
   constant xip_size_c           : natural := 4*4; -- module's address space size in bytes
-  constant xip_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"ffffff40";
---constant xip_reserved_addr_c  : std_ulogic_vector(31 downto 0) := x"ffffff44";
-  constant xip_data_lo_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffff48";
-  constant xip_data_hi_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffff4C";
 
   -- Pulse-Width Modulation Controller (PWM) --
   constant pwm_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff50"; -- base address

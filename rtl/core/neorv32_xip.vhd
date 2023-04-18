@@ -88,9 +88,15 @@ architecture neorv32_xip_rtl of neorv32_xip is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(xip_size_c); -- low address boundary bit
 
+  -- interface configuration
+  constant xip_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"0";
+--constant xip_reserved_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"4";
+  constant xip_data_lo_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"8";
+  constant xip_data_hi_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"c";
+
   -- CT register access control --
   signal ct_acc_en : std_ulogic; -- module access enable
-  signal ct_addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal ct_offset : std_ulogic_vector(lo_abb_c-1 downto 0); -- access address
   signal ct_wren   : std_ulogic; -- word write enable
   signal ct_rden   : std_ulogic; -- read enable
 
@@ -183,7 +189,7 @@ begin
   -- Access Control (IO/CTRL port) ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   ct_acc_en <= '1' when (ct_addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
-  ct_addr   <= BASE_ADDR(31 downto lo_abb_c) & ct_addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  ct_offset <= ct_addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   ct_wren   <= ct_acc_en and ct_wren_i;
   ct_rden   <= ct_acc_en and ct_rden_i;
 
@@ -201,7 +207,7 @@ begin
       spi_trigger <= '0';
       if (ct_wren = '1') then -- only full-word writes!
         -- control register --
-        if (ct_addr = xip_ctrl_addr_c) then
+        if (ct_offset = xip_ctrl_offset_c) then
           ctrl(ctrl_enable_c)                                <= ct_data_i(ctrl_enable_c);
           ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= ct_data_i(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
           ctrl(ctrl_spi_cpol_c)                              <= ct_data_i(ctrl_spi_cpol_c);
@@ -216,11 +222,11 @@ begin
           ctrl(ctrl_burst_en_c)                              <= ct_data_i(ctrl_burst_en_c);
         end if;
         -- SPI direct data access register lo --
-        if (ct_addr = xip_data_lo_addr_c) then
+        if (ct_offset = xip_data_lo_offset_c) then
           spi_data_lo <= ct_data_i;
         end if;
         -- SPI direct data access register hi --
-        if (ct_addr = xip_data_hi_addr_c) then
+        if (ct_offset = xip_data_hi_offset_c) then
           spi_data_hi <= ct_data_i;
           spi_trigger <= '1'; -- trigger direct SPI transaction
         end if;
@@ -243,8 +249,8 @@ begin
       ct_ack_o  <= ct_wren or ct_rden; -- access acknowledge
       ct_data_o <= (others => '0');
       if (ct_rden = '1') then
-        case ct_addr(3 downto 2) is
-          when "00" => -- 'xip_ctrl_addr_c' - control register
+        case ct_offset(3 downto 2) is
+          when "00" => -- 'xip_ctrl_offset_c' - control register
             ct_data_o(ctrl_enable_c)                                <= ctrl(ctrl_enable_c);
             ct_data_o(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
             ct_data_o(ctrl_spi_cpol_c)                              <= ctrl(ctrl_spi_cpol_c);
@@ -260,7 +266,7 @@ begin
             --
             ct_data_o(ctrl_phy_busy_c) <= phy_if.busy;
             ct_data_o(ctrl_xip_busy_c) <= arbiter.busy;
-          when "10" => -- 'xip_data_lo_addr_c' - SPI direct data access register lo
+          when "10" => -- 'xip_data_lo_offset_c' - SPI direct data access register lo
             ct_data_o <= phy_if.rdata;
           when others => -- unavailable (not implemented or write-only)
             ct_data_o <= (others => '0');
