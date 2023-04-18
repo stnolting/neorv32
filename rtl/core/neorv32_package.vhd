@@ -221,8 +221,6 @@ package neorv32_package is
   -- Serial Data Interface (SDI) --
   constant sdi_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- base address
   constant sdi_size_c           : natural := 2*4; -- module's address space size in bytes
-  constant sdi_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"ffffff00";
-  constant sdi_rtx_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffff04";
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- base address

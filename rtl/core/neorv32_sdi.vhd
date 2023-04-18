@@ -73,6 +73,10 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(sdi_size_c); -- low address boundary bit
 
+  -- interface configuration
+  constant sdi_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := 2x"0";
+  constant sdi_rtx_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 2x"4";
+
   -- control register --
   constant ctrl_en_c           : natural :=  0; -- r/w: SDI enable
   constant ctrl_clr_rx_c       : natural :=  1; -- -/w: clear RX FIFO, auto-clears
@@ -96,7 +100,7 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal offset : std_ulogic_vector(lo_abb_c-1 downto 0);-- access address
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
@@ -161,7 +165,7 @@ begin
 
   -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  offset <= addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
@@ -178,7 +182,7 @@ begin
     elsif rising_edge(clk_i) then
       ctrl.clr_rx <= '0';
       if (wren = '1') then
-        if (addr = sdi_ctrl_addr_c) then -- control register
+        if (offset = sdi_ctrl_offset_c) then -- control register
           ctrl.enable <= data_i(ctrl_en_c);
           ctrl.clr_rx <= data_i(ctrl_clr_rx_c);
           --
@@ -198,7 +202,7 @@ begin
       ack_o  <= rden or wren; -- bus access acknowledge
       data_o <= (others => '0');
       if (rden = '1') then
-        if (addr = sdi_ctrl_addr_c) then -- control register
+        if (offset = sdi_ctrl_offset_c) then -- control register
           data_o(ctrl_en_c) <= ctrl.enable;
           --
           data_o(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(RTX_FIFO), 4));
@@ -251,7 +255,7 @@ begin
   -- write access (CPU) --
   tx_fifo.clear <= not ctrl.enable;
   tx_fifo.wdata <= data_i(7 downto 0);
-  tx_fifo.we    <= '1' when (wren = '1') and (addr = sdi_rtx_addr_c) else '0';
+  tx_fifo.we    <= '1' when (wren = '1') and (offset = sdi_rtx_offset_c) else '0';
 
   -- read access (SDI) --
   tx_fifo.re <= serial.start;
@@ -286,7 +290,7 @@ begin
 
   -- read access (CPU) --
   rx_fifo.clear <= (not ctrl.enable) or ctrl.clr_rx;
-  rx_fifo.re    <= '1' when (rden = '1') and (addr = sdi_rtx_addr_c) else '0';
+  rx_fifo.re    <= '1' when (rden = '1') and (offset = sdi_rtx_offset_c) else '0';
 
 
   -- Input Synchronizer ---------------------------------------------------------------------
