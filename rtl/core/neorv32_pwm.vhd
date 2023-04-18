@@ -72,10 +72,10 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
   constant lo_abb_c : natural := index_size_f(pwm_size_c); -- low address boundary bit
 
   -- interface configuration
-  constant pwm_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"0";
-  constant pwm_dc0_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"4";
-  constant pwm_dc1_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"8";
-  constant pwm_dc2_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"c";
+  constant pwm_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(0 * 4, lo_abb_c));
+  constant pwm_dc0_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(1 * 4, lo_abb_c));
+  constant pwm_dc1_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(2 * 4, lo_abb_c));
+  constant pwm_dc2_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(3 * 4, lo_abb_c));
 
   -- Control register bits --
   constant ctrl_enable_c    : natural := 0; -- r/w: PWM enable
@@ -166,13 +166,15 @@ begin
       ack_o  <= rden or wren; -- bus handshake
       data_o <= (others => '0');
       if (rden = '1') then
-        case offset(3 downto 2) is
-          when "00"   => data_o(ctrl_enable_c) <= enable; data_o(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c) <= prsc;
-          when "01"   => data_o <= pwm_ch_rd(03) & pwm_ch_rd(02) & pwm_ch_rd(01) & pwm_ch_rd(00);
-          when "10"   => data_o <= pwm_ch_rd(07) & pwm_ch_rd(06) & pwm_ch_rd(05) & pwm_ch_rd(04);
-          when "11"   => data_o <= pwm_ch_rd(11) & pwm_ch_rd(10) & pwm_ch_rd(09) & pwm_ch_rd(08);
-          when others => data_o <= (others => '0');
-        end case;
+        if (offset = pwm_ctrl_offset_c) then
+          data_o(ctrl_enable_c) <= enable; data_o(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c) <= prsc;
+        elsif (offset = pwm_dc0_offset_c) then
+          data_o <= pwm_ch_rd(03) & pwm_ch_rd(02) & pwm_ch_rd(01) & pwm_ch_rd(00);
+        elsif (offset = pwm_dc1_offset_c) then
+          data_o <= pwm_ch_rd(07) & pwm_ch_rd(06) & pwm_ch_rd(05) & pwm_ch_rd(04);
+        elsif (offset = pwm_dc2_offset_c) then
+          data_o <= pwm_ch_rd(11) & pwm_ch_rd(10) & pwm_ch_rd(09) & pwm_ch_rd(08);
+        end if;
       end if;
     end if;
   end process read_access;
