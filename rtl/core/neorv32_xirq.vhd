@@ -76,9 +76,15 @@ architecture neorv32_xirq_rtl of neorv32_xirq is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(xirq_size_c); -- low address boundary bit
 
+  -- interface configuration
+  constant xirq_enable_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"0";
+  constant xirq_pending_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"4";
+  constant xirq_source_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"8";
+--constant xirq_reserved_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"c";
+
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal offset : std_ulogic_vector(lo_abb_c-1 downto 0); -- access address
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
@@ -113,7 +119,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  offset <= addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
@@ -126,10 +132,10 @@ begin
     elsif rising_edge(clk_i) then
       nclr_pending <= (others => '1');
       if (wren = '1') then
-        if (addr = xirq_enable_addr_c) then -- channel-enable
+        if (offset = xirq_enable_offset_c) then -- channel-enable
           irq_enable <= data_i(XIRQ_NUM_CH-1 downto 0);
         end if;
-        if (addr = xirq_pending_addr_c) then -- clear pending IRQs
+        if (offset = xirq_pending_offset_c) then -- clear pending IRQs
           nclr_pending <= data_i(XIRQ_NUM_CH-1 downto 0); -- set zero to clear pending IRQ
         end if;
       end if;
@@ -227,7 +233,7 @@ begin
           cpu_irq_o  <= '1';
           irq_active <= '1';
         end if;
-      elsif (wren = '1') and (addr = xirq_source_addr_c) then -- acknowledge on write access
+      elsif (wren = '1') and (offset = xirq_source_offset_c) then -- acknowledge on write access
         irq_active <= '0';
       end if;
     end if;
