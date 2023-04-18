@@ -73,8 +73,8 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant lo_abb_c : natural := index_size_f(spi_size_c); -- low address boundary bit
 
   -- interface configuration
-  constant spi_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"0";
-  constant spi_rtx_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"4";
+  constant spi_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(0 * 4, lo_abb_c));
+  constant spi_rtx_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(1 * 4, lo_abb_c));
 
   -- control register --
   constant ctrl_en_c           : natural :=  0; -- r/w: spi enable
