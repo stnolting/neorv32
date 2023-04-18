@@ -78,8 +78,8 @@ architecture neorv32_twi_rtl of neorv32_twi is
   constant lo_abb_c : natural := index_size_f(twi_size_c); -- low address boundary bit
 
   -- interface configuration
-  constant twi_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"0";
-  constant twi_rtx_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"4";
+  constant twi_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(0 * 4, lo_abb_c));
+  constant twi_rtx_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(1 * 4, lo_abb_c));
 
   -- control register --
   constant ctrl_en_c      : natural :=  0; -- r/w: TWI enable
