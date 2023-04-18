@@ -308,13 +308,19 @@ begin
       -- read access --
       data_o <= (others => '0'); -- the output HAS TO BE ZERO if there is no actual read access
       if (rden = '1') then -- the read access is always 32-bit wide, high for one cycle if there is an actual read access
-        case offset is -- make sure to use the internal 'offset' signal for the read/write interface
-          when cfs_reg0_offset_c => data_o <= cfs_reg_rd(0);
-          when cfs_reg1_offset_c => data_o <= cfs_reg_rd(1);
-          when cfs_reg2_offset_c => data_o <= cfs_reg_rd(2);
-          when cfs_reg3_offset_c => data_o <= cfs_reg_rd(3);
-          when others          => data_o <= (others => '0'); -- the remaining registers are not implemented and will read as zero
-        end case;
+        data_o <= (others => '0'); -- Not implemented registers will read as zero
+        if (offset = cfs_reg0_offset_c) then
+          data_o <= cfs_reg_rd(0);
+        end if;
+        if (offset = cfs_reg1_offset_c) then
+          data_o <= cfs_reg_rd(1);
+        end if;
+        if (offset = cfs_reg2_offset_c) then
+          data_o <= cfs_reg_rd(2);
+        end if;
+        if (offset = cfs_reg3_offset_c) then
+          data_o <= cfs_reg_rd(3);
+        end if;
       end if;
     end if;
   end process host_access;
