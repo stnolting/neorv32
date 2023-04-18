@@ -71,6 +71,12 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(pwm_size_c); -- low address boundary bit
 
+  -- interface configuration
+  constant pwm_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"0";
+  constant pwm_dc0_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"4";
+  constant pwm_dc1_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"8";
+  constant pwm_dc2_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"c";
+
   -- Control register bits --
   constant ctrl_enable_c    : natural := 0; -- r/w: PWM enable
   constant ctrl_prsc0_bit_c : natural := 1; -- r/w: prescaler select bit 0
@@ -79,7 +85,7 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal offset : std_ulogic_vector(lo_abb_c-1 downto 0); -- access address
   signal wren   : std_ulogic; -- write enable
   signal rden   : std_ulogic; -- read enable
 
@@ -110,7 +116,7 @@ begin
 
   -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  offset <= addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   rden   <= acc_en and rden_i;
   wren   <= acc_en and wren_i;
 
@@ -124,26 +130,26 @@ begin
     elsif rising_edge(clk_i) then
       if (wren = '1') then
         -- control register --
-        if (addr = pwm_ctrl_addr_c) then
+        if (offset = pwm_ctrl_offset_c) then
           enable <= data_i(ctrl_enable_c);
           prsc   <= data_i(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c);
         end if;
         -- duty cycle register 0 --
-        if (addr = pwm_dc0_addr_c) then
+        if (offset = pwm_dc0_offset_c) then
           pwm_ch(00) <= data_i(07 downto 00);
           pwm_ch(01) <= data_i(15 downto 08);
           pwm_ch(02) <= data_i(23 downto 16);
           pwm_ch(03) <= data_i(31 downto 24);
         end if;
         -- duty cycle register 1 --
-        if (addr = pwm_dc1_addr_c) then
+        if (offset = pwm_dc1_offset_c) then
           pwm_ch(04) <= data_i(07 downto 00);
           pwm_ch(05) <= data_i(15 downto 08);
           pwm_ch(06) <= data_i(23 downto 16);
           pwm_ch(07) <= data_i(31 downto 24);
         end if;
         -- duty cycle register 2 --
-        if (addr = pwm_dc2_addr_c) then
+        if (offset = pwm_dc2_offset_c) then
           pwm_ch(08) <= data_i(07 downto 00);
           pwm_ch(09) <= data_i(15 downto 08);
           pwm_ch(10) <= data_i(23 downto 16);
@@ -160,7 +166,7 @@ begin
       ack_o  <= rden or wren; -- bus handshake
       data_o <= (others => '0');
       if (rden = '1') then
-        case addr(3 downto 2) is
+        case offset(3 downto 2) is
           when "00"   => data_o(ctrl_enable_c) <= enable; data_o(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c) <= prsc;
           when "01"   => data_o <= pwm_ch_rd(03) & pwm_ch_rd(02) & pwm_ch_rd(01) & pwm_ch_rd(00);
           when "10"   => data_o <= pwm_ch_rd(07) & pwm_ch_rd(06) & pwm_ch_rd(05) & pwm_ch_rd(04);

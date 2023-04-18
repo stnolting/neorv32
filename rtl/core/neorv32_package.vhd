@@ -247,10 +247,6 @@ package neorv32_package is
   -- Pulse-Width Modulation Controller (PWM) --
   constant pwm_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff50"; -- base address
   constant pwm_size_c           : natural := 4*4; -- module's address space size in bytes
-  constant pwm_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"ffffff50";
-  constant pwm_dc0_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffff54";
-  constant pwm_dc1_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffff58";
-  constant pwm_dc2_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffff5c";
 
   -- General Purpose Timer (GPTMR) --
   constant gptmr_base_c         : std_ulogic_vector(31 downto 0) := x"ffffff60"; -- base address
