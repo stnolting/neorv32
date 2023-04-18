@@ -84,9 +84,75 @@ architecture neorv32_cfs_rtl of neorv32_cfs is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(cfs_size_c); -- low address boundary bit
 
+  -- interface configuration
+  constant cfs_reg0_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(0 * 4, lo_abb_c));
+  constant cfs_reg1_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(1 * 4, lo_abb_c));
+  constant cfs_reg2_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(2 * 4, lo_abb_c));
+  constant cfs_reg3_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(3 * 4, lo_abb_c));
+  constant cfs_reg4_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(4 * 4, lo_abb_c));
+  constant cfs_reg5_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(5 * 4, lo_abb_c));
+  constant cfs_reg6_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(6 * 4, lo_abb_c));
+  constant cfs_reg7_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(7 * 4, lo_abb_c));
+  constant cfs_reg8_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(8 * 4, lo_abb_c));
+  constant cfs_reg9_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(9 * 4, lo_abb_c));
+  constant cfs_reg10_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(10 * 4, lo_abb_c));
+  constant cfs_reg11_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(11 * 4, lo_abb_c));
+  constant cfs_reg12_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(12 * 4, lo_abb_c));
+  constant cfs_reg13_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(13 * 4, lo_abb_c));
+  constant cfs_reg14_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(14 * 4, lo_abb_c));
+  constant cfs_reg15_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(15 * 4, lo_abb_c));
+  constant cfs_reg16_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(16 * 4, lo_abb_c));
+  constant cfs_reg17_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(17 * 4, lo_abb_c));
+  constant cfs_reg18_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(18 * 4, lo_abb_c));
+  constant cfs_reg19_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(19 * 4, lo_abb_c));
+  constant cfs_reg20_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(20 * 4, lo_abb_c));
+  constant cfs_reg21_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(21 * 4, lo_abb_c));
+  constant cfs_reg22_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(22 * 4, lo_abb_c));
+  constant cfs_reg23_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(23 * 4, lo_abb_c));
+  constant cfs_reg24_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(24 * 4, lo_abb_c));
+  constant cfs_reg25_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(25 * 4, lo_abb_c));
+  constant cfs_reg26_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(26 * 4, lo_abb_c));
+  constant cfs_reg27_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(27 * 4, lo_abb_c));
+  constant cfs_reg28_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(28 * 4, lo_abb_c));
+  constant cfs_reg29_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(29 * 4, lo_abb_c));
+  constant cfs_reg30_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(30 * 4, lo_abb_c));
+  constant cfs_reg31_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(31 * 4, lo_abb_c));
+  constant cfs_reg32_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(32 * 4, lo_abb_c));
+  constant cfs_reg33_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(33 * 4, lo_abb_c));
+  constant cfs_reg34_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(34 * 4, lo_abb_c));
+  constant cfs_reg35_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(35 * 4, lo_abb_c));
+  constant cfs_reg36_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(36 * 4, lo_abb_c));
+  constant cfs_reg37_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(37 * 4, lo_abb_c));
+  constant cfs_reg38_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(38 * 4, lo_abb_c));
+  constant cfs_reg39_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(39 * 4, lo_abb_c));
+  constant cfs_reg40_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(40 * 4, lo_abb_c));
+  constant cfs_reg41_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(41 * 4, lo_abb_c));
+  constant cfs_reg42_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(42 * 4, lo_abb_c));
+  constant cfs_reg43_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(43 * 4, lo_abb_c));
+  constant cfs_reg44_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(44 * 4, lo_abb_c));
+  constant cfs_reg45_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(45 * 4, lo_abb_c));
+  constant cfs_reg46_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(46 * 4, lo_abb_c));
+  constant cfs_reg47_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(47 * 4, lo_abb_c));
+  constant cfs_reg48_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(48 * 4, lo_abb_c));
+  constant cfs_reg49_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(49 * 4, lo_abb_c));
+  constant cfs_reg50_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(50 * 4, lo_abb_c));
+  constant cfs_reg51_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(51 * 4, lo_abb_c));
+  constant cfs_reg52_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(52 * 4, lo_abb_c));
+  constant cfs_reg53_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(53 * 4, lo_abb_c));
+  constant cfs_reg54_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(54 * 4, lo_abb_c));
+  constant cfs_reg55_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(55 * 4, lo_abb_c));
+  constant cfs_reg56_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(56 * 4, lo_abb_c));
+  constant cfs_reg57_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(57 * 4, lo_abb_c));
+  constant cfs_reg58_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(58 * 4, lo_abb_c));
+  constant cfs_reg59_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(59 * 4, lo_abb_c));
+  constant cfs_reg60_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(60 * 4, lo_abb_c));
+  constant cfs_reg61_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(61 * 4, lo_abb_c));
+  constant cfs_reg62_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(62 * 4, lo_abb_c));
+  constant cfs_reg63_offset_c     : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(63 * 4, lo_abb_c));
+
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal offset : std_ulogic_vector(lo_abb_c-1 downto 0); -- access address
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
@@ -101,7 +167,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- This logic is required to handle the CPU accesses - DO NOT MODIFY!
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  offset <= addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i; -- only full-word write accesses are supported
   rden   <= acc_en and rden_i; -- read accesses always return a full 32-bit word
 
@@ -225,16 +291,16 @@ begin
 
       -- write access --
       if (wren = '1') then -- full-word write access, high for one cycle if there is an actual write access
-        if (addr = cfs_reg0_addr_c) then -- make sure to use the internal "addr" signal for the read/write interface
+        if (offset = cfs_reg0_offset_c) then -- make sure to use the internal "offset" signal for the read/write interface
           cfs_reg_wr(0) <= data_i; -- some physical register, for example: control register
         end if;
-        if (addr = cfs_reg1_addr_c) then
+        if (offset = cfs_reg1_offset_c) then
           cfs_reg_wr(1) <= data_i; -- some physical register, for example: data in/out fifo
         end if;
-        if (addr = cfs_reg2_addr_c) then
+        if (offset = cfs_reg2_offset_c) then
           cfs_reg_wr(2) <= data_i; -- some physical register, for example: command fifo
         end if;
-        if (addr = cfs_reg3_addr_c) then
+        if (offset = cfs_reg3_offset_c) then
           cfs_reg_wr(3) <= data_i; -- some physical register, for example: status register
         end if;
       end if;
@@ -242,11 +308,11 @@ begin
       -- read access --
       data_o <= (others => '0'); -- the output HAS TO BE ZERO if there is no actual read access
       if (rden = '1') then -- the read access is always 32-bit wide, high for one cycle if there is an actual read access
-        case addr is -- make sure to use the internal 'addr' signal for the read/write interface
-          when cfs_reg0_addr_c => data_o <= cfs_reg_rd(0);
-          when cfs_reg1_addr_c => data_o <= cfs_reg_rd(1);
-          when cfs_reg2_addr_c => data_o <= cfs_reg_rd(2);
-          when cfs_reg3_addr_c => data_o <= cfs_reg_rd(3);
+        case offset is -- make sure to use the internal 'offset' signal for the read/write interface
+          when cfs_reg0_offset_c => data_o <= cfs_reg_rd(0);
+          when cfs_reg1_offset_c => data_o <= cfs_reg_rd(1);
+          when cfs_reg2_offset_c => data_o <= cfs_reg_rd(2);
+          when cfs_reg3_offset_c => data_o <= cfs_reg_rd(3);
           when others          => data_o <= (others => '0'); -- the remaining registers are not implemented and will read as zero
         end case;
       end if;
