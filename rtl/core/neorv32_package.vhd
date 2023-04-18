@@ -263,8 +263,6 @@ package neorv32_package is
   -- 1-Wire Interface Controller (ONEWIRE) --
   constant onewire_base_c       : std_ulogic_vector(31 downto 0) := x"ffffff70"; -- base address
   constant onewire_size_c       : natural := 2*4; -- module's address space size in bytes
-  constant onewire_ctrl_addr_c  : std_ulogic_vector(31 downto 0) := x"ffffff70";
-  constant onewire_data_addr_c  : std_ulogic_vector(31 downto 0) := x"ffffff74";
 
   -- Bus Access Monitor (BUSKEEPER) --
   constant buskeeper_base_c     : std_ulogic_vector(31 downto 0) := x"ffffff78"; -- base address
@@ -273,10 +271,6 @@ package neorv32_package is
   -- External Interrupt Controller (XIRQ) --
   constant xirq_base_c          : std_ulogic_vector(31 downto 0) := x"ffffff80"; -- base address
   constant xirq_size_c          : natural := 4*4; -- module's address space size in bytes
-  constant xirq_enable_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffff80";
-  constant xirq_pending_addr_c  : std_ulogic_vector(31 downto 0) := x"ffffff84";
-  constant xirq_source_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffff88";
---constant xirq_reserved_addr_c : std_ulogic_vector(31 downto 0) := x"ffffff8c";
 
   -- Machine System Timer (MTIME) --
   constant mtime_base_c         : std_ulogic_vector(31 downto 0) := x"ffffff90"; -- base address

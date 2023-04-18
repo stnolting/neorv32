@@ -89,6 +89,10 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(twi_size_c); -- low address boundary bit
 
+  -- interface configuration
+  constant onewire_ctrl_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"0";
+  constant onewire_data_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"4";
+
   -- control register --
   constant ctrl_en_c        : natural :=  0; -- r/w: TWI enable
   constant ctrl_prsc0_c     : natural :=  1; -- r/w: prescaler select bit 0
@@ -111,7 +115,7 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal offset : std_ulogic_vector(lo_abb_c - 1 downto 0); -- access address
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
@@ -159,7 +163,7 @@ begin
 
   -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  offset <= addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
@@ -178,19 +182,19 @@ begin
       -- write access --
       if (wren = '1') then
         -- control register --
-        if (addr = onewire_ctrl_addr_c) then
+        if (offset = onewire_ctrl_offset_c) then
           ctrl.enable   <= data_i(ctrl_en_c);
           ctrl.clk_prsc <= data_i(ctrl_prsc1_c downto ctrl_prsc0_c);
           ctrl.clk_div  <= data_i(ctrl_clkdiv7_c downto ctrl_clkdiv0_c);
         end if;
         -- data register --
-        if (addr = onewire_data_addr_c) then
+        if (offset = onewire_data_offset_c) then
           tx_data <= data_i(7 downto 0);
         end if;
       end if;
 
       -- operation triggers --
-      if (wren = '1') and (addr = onewire_ctrl_addr_c) then -- set by host
+      if (wren = '1') and (offset = onewire_ctrl_offset_c) then -- set by host
         ctrl.trig_rst  <= data_i(ctrl_trig_rst_c);
         ctrl.trig_bit  <= data_i(ctrl_trig_bit_c);
         ctrl.trig_byte <= data_i(ctrl_trig_byte_c);
@@ -210,7 +214,7 @@ begin
       data_o <= (others => '0');
       if (rden = '1') then
         -- control register --
-        if (addr = onewire_ctrl_addr_c) then
+        if (offset = onewire_ctrl_offset_c) then
           data_o(ctrl_en_c)                            <= ctrl.enable;
           data_o(ctrl_prsc1_c downto ctrl_prsc0_c)     <= ctrl.clk_prsc;
           data_o(ctrl_clkdiv7_c downto ctrl_clkdiv0_c) <= ctrl.clk_div;
@@ -219,7 +223,7 @@ begin
           data_o(ctrl_presence_c)                      <= serial.presence;
           data_o(ctrl_busy_c)                          <= serial.busy;
         -- data register --
-        else -- if (addr = onewire_data_addr_c) then
+        else -- if (offset = onewire_data_offset_c) then
           data_o(7 downto 0) <= serial.sreg;
         end if;
       end if;
