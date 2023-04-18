@@ -313,10 +313,6 @@ package neorv32_package is
   -- General Purpose Input/Output Controller (GPIO) --
   constant gpio_base_c          : std_ulogic_vector(31 downto 0) := x"ffffffc0"; -- base address
   constant gpio_size_c          : natural := 4*4; -- module's address space size in bytes
-  constant gpio_in_lo_addr_c    : std_ulogic_vector(31 downto 0) := x"ffffffc0";
-  constant gpio_in_hi_addr_c    : std_ulogic_vector(31 downto 0) := x"ffffffc4";
-  constant gpio_out_lo_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffffc8";
-  constant gpio_out_hi_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffffcc";
 
   -- Secondary Universal Asynchronous Receiver/Transmitter (UART1) --
   constant uart1_base_c         : std_ulogic_vector(31 downto 0) := x"ffffffd0"; -- base address
