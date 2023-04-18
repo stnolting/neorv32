@@ -308,7 +308,6 @@ package neorv32_package is
   -- Watch Dog Timer (WDT) --
   constant wdt_base_c           : std_ulogic_vector(31 downto 0) := x"ffffffbc"; -- base address
   constant wdt_size_c           : natural := 1*4; -- module's address space size in bytes
-  constant wdt_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"ffffffbc";
 
   -- General Purpose Input/Output Controller (GPIO) --
   constant gpio_base_c          : std_ulogic_vector(31 downto 0) := x"ffffffc0"; -- base address
