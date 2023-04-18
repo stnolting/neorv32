@@ -297,8 +297,6 @@ package neorv32_package is
   -- Two Wire Interface (TWI) --
   constant twi_base_c           : std_ulogic_vector(31 downto 0) := x"ffffffb0"; -- base address
   constant twi_size_c           : natural := 2*4; -- module's address space size in bytes
-  constant twi_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"ffffffb0";
-  constant twi_rtx_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffffb4";
 
   -- True Random Number Generator (TRNG) --
   constant trng_base_c          : std_ulogic_vector(31 downto 0) := x"ffffffb8"; -- base address

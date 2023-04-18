@@ -77,6 +77,10 @@ architecture neorv32_twi_rtl of neorv32_twi is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(twi_size_c); -- low address boundary bit
 
+  -- interface configuration
+  constant twi_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"0";
+  constant twi_rtx_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"4";
+
   -- control register --
   constant ctrl_en_c      : natural :=  0; -- r/w: TWI enable
   constant ctrl_start_c   : natural :=  1; -- -/w: Generate START condition
@@ -97,7 +101,7 @@ architecture neorv32_twi_rtl of neorv32_twi is
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal offset : std_ulogic_vector(lo_abb_c - 1 downto 0); -- access address
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
@@ -151,7 +155,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  offset <= addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
@@ -166,7 +170,7 @@ begin
       ctrl.cdiv   <= (others => '0');
     elsif rising_edge(clk_i) then
       if (wren = '1') then
-        if (addr = twi_ctrl_addr_c) then
+        if (offset = twi_ctrl_offset_c) then
           ctrl.enable <= data_i(ctrl_en_c);
           ctrl.mack   <= data_i(ctrl_mack_c);
           ctrl.csen   <= data_i(ctrl_csen_c);
@@ -184,7 +188,7 @@ begin
       ack_o  <= rden or wren; -- bus handshake
       data_o <= (others => '0');
       if (rden = '1') then
-        if (addr = twi_ctrl_addr_c) then
+        if (offset = twi_ctrl_offset_c) then
           data_o(ctrl_en_c)                        <= ctrl.enable;
           data_o(ctrl_mack_c)                      <= ctrl.mack;
           data_o(ctrl_csen_c)                      <= ctrl.csen;
@@ -194,7 +198,7 @@ begin
           data_o(ctrl_claimed_c) <= arbiter.claimed;
           data_o(ctrl_ack_c)     <= not arbiter.rtx_sreg(0);
           data_o(ctrl_busy_c)    <= arbiter.busy;
-        else -- twi_rtx_addr_c =>
+        else -- twi_rtx_offset_c =>
           data_o(7 downto 0) <= arbiter.rtx_sreg(8 downto 1);
         end if;
       end if;
@@ -277,13 +281,13 @@ begin
         -- ------------------------------------------------------------
           arbiter.bitcnt <= (others => '0');
           if (wren = '1') then
-            if (addr = twi_ctrl_addr_c) then
+            if (offset = twi_ctrl_offset_c) then
               if (data_i(ctrl_start_c) = '1') then -- issue START condition
                 arbiter.state_nxt <= "01";
               elsif (data_i(ctrl_stop_c) = '1') then  -- issue STOP condition
                 arbiter.state_nxt <= "10";
               end if;
-            elsif (addr = twi_rtx_addr_c) then -- start a data transmission
+            elsif (offset = twi_rtx_offset_c) then -- start a data transmission
               -- one bit extra for ACK: issued by controller if ctrl_mack_c is set,
               -- sampled from peripheral if ctrl_mack_c is cleared
               arbiter.rtx_sreg  <= data_i(7 downto 0) & (not ctrl.mack);
