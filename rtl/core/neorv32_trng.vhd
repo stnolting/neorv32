@@ -86,6 +86,9 @@ architecture neorv32_trng_rtl of neorv32_trng is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(trng_size_c); -- low address boundary bit
 
+  -- interface configuration
+  constant trng_ctrl_offset_c : std_ulogic_vector(31 downto 0) := x"ffffffb8";
+
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
   signal wren   : std_ulogic; -- full word write enable

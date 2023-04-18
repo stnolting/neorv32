@@ -303,7 +303,6 @@ package neorv32_package is
   -- True Random Number Generator (TRNG) --
   constant trng_base_c          : std_ulogic_vector(31 downto 0) := x"ffffffb8"; -- base address
   constant trng_size_c          : natural := 1*4; -- module's address space size in bytes
-  constant trng_ctrl_addr_c     : std_ulogic_vector(31 downto 0) := x"ffffffb8";
 
   -- Watch Dog Timer (WDT) --
   constant wdt_base_c           : std_ulogic_vector(31 downto 0) := x"ffffffbc"; -- base address
