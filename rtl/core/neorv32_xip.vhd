@@ -89,10 +89,10 @@ architecture neorv32_xip_rtl of neorv32_xip is
   constant lo_abb_c : natural := index_size_f(xip_size_c); -- low address boundary bit
 
   -- interface configuration
-  constant xip_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"0";
---constant xip_reserved_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"4";
-  constant xip_data_lo_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"8";
-  constant xip_data_hi_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"c";
+  constant xip_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(0 * 4, lo_abb_c));
+--constant xip_reserved_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(1 * 4, lo_abb_c));
+  constant xip_data_lo_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(2 * 4, lo_abb_c));
+  constant xip_data_hi_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(3 * 4, lo_abb_c));
 
   -- CT register access control --
   signal ct_acc_en : std_ulogic; -- module access enable
@@ -249,28 +249,27 @@ begin
       ct_ack_o  <= ct_wren or ct_rden; -- access acknowledge
       ct_data_o <= (others => '0');
       if (ct_rden = '1') then
-        case ct_offset(3 downto 2) is
-          when "00" => -- 'xip_ctrl_offset_c' - control register
-            ct_data_o(ctrl_enable_c)                                <= ctrl(ctrl_enable_c);
-            ct_data_o(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
-            ct_data_o(ctrl_spi_cpol_c)                              <= ctrl(ctrl_spi_cpol_c);
-            ct_data_o(ctrl_spi_cpha_c)                              <= ctrl(ctrl_spi_cpha_c);
-            ct_data_o(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c) <= ctrl(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c);
-            ct_data_o(ctrl_xip_enable_c)                            <= ctrl(ctrl_xip_enable_c);
-            ct_data_o(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
-            ct_data_o(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
-            ct_data_o(ctrl_page3_c downto ctrl_page0_c)             <= ctrl(ctrl_page3_c downto ctrl_page0_c);
-            ct_data_o(ctrl_spi_csen_c)                              <= ctrl(ctrl_spi_csen_c);
-            ct_data_o(ctrl_highspeed_c)                             <= ctrl(ctrl_highspeed_c);
-            ct_data_o(ctrl_burst_en_c)                              <= ctrl(ctrl_burst_en_c);
-            --
-            ct_data_o(ctrl_phy_busy_c) <= phy_if.busy;
-            ct_data_o(ctrl_xip_busy_c) <= arbiter.busy;
-          when "10" => -- 'xip_data_lo_offset_c' - SPI direct data access register lo
-            ct_data_o <= phy_if.rdata;
-          when others => -- unavailable (not implemented or write-only)
+        if (ct_offset = xip_ctrl_offset_c) then
+          ct_data_o(ctrl_enable_c)                                <= ctrl(ctrl_enable_c);
+          ct_data_o(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
+          ct_data_o(ctrl_spi_cpol_c)                              <= ctrl(ctrl_spi_cpol_c);
+          ct_data_o(ctrl_spi_cpha_c)                              <= ctrl(ctrl_spi_cpha_c);
+          ct_data_o(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c) <= ctrl(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c);
+          ct_data_o(ctrl_xip_enable_c)                            <= ctrl(ctrl_xip_enable_c);
+          ct_data_o(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
+          ct_data_o(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
+          ct_data_o(ctrl_page3_c downto ctrl_page0_c)             <= ctrl(ctrl_page3_c downto ctrl_page0_c);
+          ct_data_o(ctrl_spi_csen_c)                              <= ctrl(ctrl_spi_csen_c);
+          ct_data_o(ctrl_highspeed_c)                             <= ctrl(ctrl_highspeed_c);
+          ct_data_o(ctrl_burst_en_c)                              <= ctrl(ctrl_burst_en_c);
+          --
+          ct_data_o(ctrl_phy_busy_c) <= phy_if.busy;
+          ct_data_o(ctrl_xip_busy_c) <= arbiter.busy;
+        elsif (ct_offset = xip_data_lo_offset_c) then
+          ct_data_o <= phy_if.rdata;
+        else -- unavailable (not implemented or write-only)
             ct_data_o <= (others => '0');
-        end case;
+        end if;
       end if;
     end if;
   end process ctrl_read_access;
