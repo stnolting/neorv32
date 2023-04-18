@@ -68,10 +68,10 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
   constant lo_abb_c : natural := index_size_f(mtime_size_c); -- low address boundary bit
 
   -- interface configuration
-  constant mtime_time_lo_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"0";
-  constant mtime_time_hi_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"4";
-  constant mtime_cmp_lo_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"8";
-  constant mtime_cmp_hi_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"c";
+  constant mtime_time_lo_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(0 * 4, lo_abb_c));
+  constant mtime_time_hi_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(1 * 4, lo_abb_c));
+  constant mtime_cmp_lo_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(2 * 4, lo_abb_c));
+  constant mtime_cmp_hi_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(3 * 4, lo_abb_c));
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -170,12 +170,15 @@ begin
       ack_o  <= rden or wren; -- bus handshake
       data_o <= (others => '0'); -- default
       if (rden = '1') then
-        case offset(3 downto 2) is
-          when "00"   => data_o <= mtime_lo;
-          when "01"   => data_o <= mtime_hi;
-          when "10"   => data_o <= mtimecmp_lo;
-          when others => data_o <= mtimecmp_hi;
-        end case;
+        if (offset = mtime_time_lo_offset_c) then
+          data_o <= mtime_lo;
+        elsif (offset = mtime_time_hi_offset_c) then
+          data_o <= mtime_hi;
+        elsif (offset = mtime_cmp_lo_offset_c) then
+          data_o <= mtimecmp_lo;
+        elsif (offset = mtime_cmp_hi_offset_c) then
+          data_o <= mtimecmp_hi;
+        end if;
       end if;
     end if;
   end process read_access;
