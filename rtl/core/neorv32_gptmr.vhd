@@ -73,10 +73,10 @@ architecture neorv32_gptmr_rtl of neorv32_gptmr is
   constant lo_abb_c : natural := index_size_f(gptmr_size_c); -- low address boundary bit
 
   -- interface configuration
-  constant gptmr_ctrl_offset_c    : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"0";
-  constant gptmr_thres_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"4";
-  constant gptmr_count_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"8";
---constant gptmr_reserve_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"c";
+  constant gptmr_ctrl_offset_c    : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(0 * 4, lo_abb_c));
+  constant gptmr_thres_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(1 * 4, lo_abb_c));
+  constant gptmr_count_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(2 * 4, lo_abb_c));
+--constant gptmr_reserve_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(3 * 4, lo_abb_c));
 
   -- control register --
   constant ctrl_en_c    : natural := 0; -- r/w: timer enable
@@ -148,18 +148,17 @@ begin
       ack_o  <= rden or wren; -- bus access acknowledge
       data_o <= (others => '0');
       if (rden = '1') then
-        case offset(3 downto 2) is
-          when "00" => -- control register
-            data_o(ctrl_en_c)    <= ctrl(ctrl_en_c);
-            data_o(ctrl_prsc0_c) <= ctrl(ctrl_prsc0_c);
-            data_o(ctrl_prsc1_c) <= ctrl(ctrl_prsc1_c);
-            data_o(ctrl_prsc2_c) <= ctrl(ctrl_prsc2_c);
-            data_o(ctrl_mode_c)  <= ctrl(ctrl_mode_c);
-          when "01" => -- threshold register
-            data_o <= timer.thres;
-          when others => -- counter register
-            data_o <= timer.count;
-        end case;
+        if offset = gptmr_ctrl_offset_c then
+          data_o(ctrl_en_c)    <= ctrl(ctrl_en_c);
+          data_o(ctrl_prsc0_c) <= ctrl(ctrl_prsc0_c);
+          data_o(ctrl_prsc1_c) <= ctrl(ctrl_prsc1_c);
+          data_o(ctrl_prsc2_c) <= ctrl(ctrl_prsc2_c);
+          data_o(ctrl_mode_c)  <= ctrl(ctrl_mode_c);
+        elsif offset = gptmr_thres_offset_c then
+          data_o <= timer.thres;
+        else
+          data_o <= timer.count;
+        end if;
       end if;
     end if;
   end process read_access;
