@@ -324,8 +324,6 @@ package neorv32_package is
   -- Smart LED (WS2811/WS2812) Interface (NEOLED) --
   constant neoled_base_c        : std_ulogic_vector(31 downto 0) := x"ffffffd8"; -- base address
   constant neoled_size_c        : natural := 2*4; -- module's address space size in bytes
-  constant neoled_ctrl_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffffd8";
-  constant neoled_data_addr_c   : std_ulogic_vector(31 downto 0) := x"ffffffdc";
 
   -- System Information Memory (SYSINFO) --
   constant sysinfo_base_c       : std_ulogic_vector(31 downto 0) := x"ffffffe0"; -- base address

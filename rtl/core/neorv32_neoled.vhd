@@ -84,9 +84,13 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(neoled_size_c); -- low address boundary bit
 
+  -- interface configuration
+  constant neoled_ctrl_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"0";
+  constant neoled_data_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"4";
+
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
+  signal offset : std_ulogic_vector(lo_abb_c - 1 downto 0); -- access address
   signal wren   : std_ulogic; -- word write enable
   signal rden   : std_ulogic; -- read enable
 
@@ -186,7 +190,7 @@ begin
 
   -- access control --
   acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BASE_ADDR(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= BASE_ADDR(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  offset <= addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and wren_i;
   rden   <= acc_en and rden_i;
 
@@ -203,7 +207,7 @@ begin
       ctrl.t0_high  <= (others => '0');
       ctrl.t1_high  <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (wren = '1') and (addr = neoled_ctrl_addr_c) then
+      if (wren = '1') and (offset = neoled_ctrl_offset_c) then
         ctrl.enable   <= data_i(ctrl_en_c);
         ctrl.mode     <= data_i(ctrl_mode_c);
         ctrl.strobe   <= data_i(ctrl_strobe_c);
@@ -222,7 +226,7 @@ begin
     if rising_edge(clk_i) then
       ack_o  <= wren or rden; -- access acknowledge
       data_o <= (others => '0');
-      if (rden = '1') then -- and (addr = neoled_ctrl_addr_c) then
+      if (rden = '1') then -- and (offset = neoled_ctrl_offset_c) then
         data_o(ctrl_en_c)                            <= ctrl.enable;
         data_o(ctrl_mode_c)                          <= ctrl.mode;
         data_o(ctrl_strobe_c)                        <= ctrl.strobe;
@@ -271,7 +275,7 @@ begin
   );
 
   tx_fifo.re    <= '1' when (serial.state = "100") else '0';
-  tx_fifo.we    <= '1' when (wren = '1') and (addr = neoled_data_addr_c) else '0';
+  tx_fifo.we    <= '1' when (wren = '1') and (offset = neoled_data_offset_c) else '0';
   tx_fifo.wdata <= ctrl.strobe & ctrl.mode & data_i;
   tx_fifo.clear <= not ctrl.enable;
 
