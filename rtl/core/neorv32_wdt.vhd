@@ -81,7 +81,7 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   constant lo_abb_c : natural := index_size_f(wdt_size_c); -- low address boundary bit
 
   -- interface configuration
-  constant wdt_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"0";
+  constant wdt_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(0 * 4, lo_abb_c));
 
   -- Control register bits --
   constant ctrl_enable_c      : natural :=  0; -- r/w: WDT enable
