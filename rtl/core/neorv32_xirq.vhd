@@ -77,10 +77,10 @@ architecture neorv32_xirq_rtl of neorv32_xirq is
   constant lo_abb_c : natural := index_size_f(xirq_size_c); -- low address boundary bit
 
   -- interface configuration
-  constant xirq_enable_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"0";
-  constant xirq_pending_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"4";
-  constant xirq_source_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"8";
---constant xirq_reserved_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := 4x"c";
+  constant xirq_enable_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(0 * 4, lo_abb_c));
+  constant xirq_pending_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(1 * 4, lo_abb_c));
+  constant xirq_source_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(2 * 4, lo_abb_c));
+--constant xirq_reserved_offset_c : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(3 * 4, lo_abb_c));
 
   -- access control --
   signal acc_en : std_ulogic; -- module access enable
@@ -149,11 +149,13 @@ begin
       ack_o  <= rden or wren; -- bus handshake
       data_o <= (others => '0');
       if (rden = '1') then
-        case addr is
-          when xirq_enable_addr_c  => data_o(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
-          when xirq_pending_addr_c => data_o(XIRQ_NUM_CH-1 downto 0) <= irq_pending; -- pending IRQs
-          when others              => data_o(4 downto 0)             <= irq_source; -- IRQ source
-        end case;
+        if (offset = xirq_enable_offset_c) then
+          data_o(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
+        elsif (offset = xirq_pending_offset_c) then
+          data_o(XIRQ_NUM_CH-1 downto 0) <= irq_pending; -- pending IRQs
+        else
+          data_o(4 downto 0) <= irq_source; -- IRQ source
+        end if;
       end if;
     end if;
   end process read_access;
