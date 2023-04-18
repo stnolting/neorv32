@@ -104,8 +104,8 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant lo_abb_c : natural := index_size_f(uart_size_c); -- low address boundary bit
 
   -- interface configuration
-  constant uart_ctrl_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"0";
-  constant uart_rtx_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := 3x"4";
+  constant uart_ctrl_offset_c  : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(0 * 4, lo_abb_c));
+  constant uart_rtx_offset_c   : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(1 * 4, lo_abb_c));
 
   -- simulation output configuration --
   constant sim_screen_output_en_c : boolean := true; -- output lowest byte as char to simulator console when enabled
