@@ -74,8 +74,8 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
   constant lo_abb_c : natural := index_size_f(sdi_size_c); -- low address boundary bit
 
   -- interface configuration
-  constant sdi_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := 2x"0";
-  constant sdi_rtx_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := 2x"4";
+  constant sdi_ctrl_offset_c      : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(0 * 4, lo_abb_c));
+  constant sdi_rtx_offset_c       : std_ulogic_vector(lo_abb_c-1 downto 0) := std_ulogic_vector(to_signed(1 * 4, lo_abb_c));
 
   -- control register --
   constant ctrl_en_c           : natural :=  0; -- r/w: SDI enable
