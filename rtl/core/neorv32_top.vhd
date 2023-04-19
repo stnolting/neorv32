@@ -273,22 +273,8 @@ architecture neorv32_top_rtl of neorv32_top is
   end record;
   signal cpu_s : cpu_status_t;
 
-  -- bus interface - instruction fetch --
-  type bus_i_interface_t is record
-    addr   : std_ulogic_vector(31 downto 0); -- bus access address
-    rdata  : std_ulogic_vector(31 downto 0); -- bus read data
-    re     : std_ulogic; -- read request
-    ack    : std_ulogic; -- bus transfer acknowledge
-    err    : std_ulogic; -- bus transfer error
-    fence  : std_ulogic; -- fence.i instruction executed
-    src    : std_ulogic; -- access source (1=instruction fetch, 0=data access)
-    cached : std_ulogic; -- cached transfer
-    priv   : std_ulogic; -- set when in privileged machine mode
-  end record;
-  signal cpu_i, i_cache : bus_i_interface_t;
-
-  -- bus interface - data access --
-  type bus_d_interface_t is record
+  -- bus interface --
+  type bus_interface_t is record
     addr   : std_ulogic_vector(31 downto 0); -- bus access address
     rdata  : std_ulogic_vector(31 downto 0); -- bus read data
     wdata  : std_ulogic_vector(31 downto 0); -- bus write data
@@ -297,12 +283,12 @@ architecture neorv32_top_rtl of neorv32_top is
     re     : std_ulogic; -- read request
     ack    : std_ulogic; -- bus transfer acknowledge
     err    : std_ulogic; -- bus transfer error
-    fence  : std_ulogic; -- fence instruction executed
     src    : std_ulogic; -- access source (1=instruction fetch, 0=data access)
     cached : std_ulogic; -- cached transfer
     priv   : std_ulogic; -- set when in privileged machine mode
   end record;
-  signal cpu_d, d_cache, p_bus : bus_d_interface_t;
+  signal cpu_i, cpu_d, i_cache, d_cache, p_bus : bus_interface_t;
+  signal d_fence, i_fence : std_ulogic;
 
   -- bus access error (from BUSKEEPER) --
   signal bus_error : std_ulogic;
@@ -557,7 +543,7 @@ begin
     i_bus_re_o    => cpu_i.re,    -- read request
     i_bus_ack_i   => cpu_i.ack,   -- bus transfer acknowledge
     i_bus_err_i   => cpu_i.err,   -- bus transfer error
-    i_bus_fence_o => cpu_i.fence, -- executed FENCEI operation
+    i_bus_fence_o => i_fence,     -- executed FENCEI operation
     i_bus_priv_o  => cpu_i.priv,  -- current effective privilege level
     -- data bus interface --
     d_bus_addr_o  => cpu_d.addr,  -- bus access address
@@ -568,7 +554,7 @@ begin
     d_bus_re_o    => cpu_d.re,    -- read request
     d_bus_ack_i   => cpu_d.ack,   -- bus transfer acknowledge
     d_bus_err_i   => cpu_d.err,   -- bus transfer error
-    d_bus_fence_o => cpu_d.fence, -- executed FENCE operation
+    d_bus_fence_o => d_fence,     -- executed FENCE operation
     d_bus_priv_o  => cpu_d.priv,  -- current effective privilege level
     -- non-maskable interrupt --
     msw_irq_i     => msw_irq_i,   -- machine software interrupt
@@ -581,14 +567,17 @@ begin
   );
 
   -- initialized but unused --
-  cpu_i.src    <= '1';
-  cpu_d.src    <= '0';
+  cpu_i.wdata  <= (others => '0');
+  cpu_i.ben    <= (others => '0');
+  cpu_i.we     <= '0'; -- read-only
+  cpu_i.src    <= '1'; -- 1 = instruction fetch
   cpu_i.cached <= '0';
+  cpu_d.src    <= '0'; -- 0 = data access
   cpu_d.cached <= '0';
 
   -- advanced memory control --
-  fence_o  <= cpu_d.fence; -- indicates an executed FENCE operation
-  fencei_o <= cpu_i.fence; -- indicates an executed FENCE.I operation
+  fence_o  <= d_fence; -- indicates an executed FENCE operation
+  fencei_o <= i_fence; -- indicates an executed FENCE.I operation
 
   -- fast interrupt requests (FIRQs) - triggers are SINGLE-SHOT --
   fast_irq(00) <= wdt_irq;      -- HIGHEST PRIORITY - watchdog
@@ -623,7 +612,7 @@ begin
       -- global control --
       clk_i        => clk_i,          -- global clock, rising edge
       rstn_i       => rstn_int,       -- global reset, low-active, async
-      clear_i      => cpu_i.fence,    -- cache clear
+      clear_i      => i_fence,        -- cache clear
       -- host controller interface --
       host_addr_i  => cpu_i.addr,     -- bus access address
       host_rdata_o => cpu_i.rdata,    -- bus read data
@@ -650,8 +639,10 @@ begin
     cpu_i.err      <= i_cache.err;
   end generate;
 
+  i_cache.wdata <= (others => '0');
+  i_cache.ben   <= (others => '0');
+  i_cache.we    <= '0';
   i_cache.priv  <= cpu_i.priv;
-  i_cache.fence <= '0'; -- not used
   i_cache.src   <= '0'; -- not used
 
 
@@ -669,7 +660,7 @@ begin
       -- global control --
       clk_i        => clk_i,          -- global clock, rising edge
       rstn_i       => rstn_int,       -- global reset, low-active, async
-      clear_i      => cpu_d.fence,    -- cache clear
+      clear_i      => d_fence,        -- cache clear
       -- host controller interface --
       host_addr_i  => cpu_d.addr,     -- bus access address
       host_rdata_o => cpu_d.rdata,    -- bus read data
@@ -705,9 +696,8 @@ begin
     cpu_d.err      <= d_cache.err;
   end generate;
 
-  d_cache.priv  <= cpu_d.priv;
-  d_cache.fence <= '0'; -- not used
-  d_cache.src   <= '0'; -- not used
+  d_cache.priv <= cpu_d.priv;
+  d_cache.src  <= '0';
 
 
   -- CPU Bus Switch -------------------------------------------------------------------------
@@ -757,17 +747,15 @@ begin
     p_bus_err_i     => bus_error       -- bus transfer error
   );
 
-  -- any fence operation? --
-  p_bus.fence <= cpu_i.fence or cpu_d.fence;
 
-  -- bus response --
+  -- Bus Response ---------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   bus_response: process(resp_bus)
     variable rdata_v : std_ulogic_vector(31 downto 0);
     variable ack_v   : std_ulogic;
     variable err_v   : std_ulogic;
   begin
-    -- OR all response signals: only the module that has actually
-    -- been accessed is allowed to *set* its bus output signals
+    -- OR all response signals: only the module that has actually been accessed may set its bus output signals
     rdata_v := (others => '0');
     ack_v   := '0';
     err_v   := '0';
@@ -807,7 +795,7 @@ begin
     bus_xip_i  => xip_access                      -- pending XIP access
   );
 
-  -- unused, BUSKEEPER issues error to **directly** the CPU --
+  -- unused, BUSKEEPER issues error **directly** to the CPU --
   resp_bus(RESP_BUSKEEPER).err <= '0';
 
 
