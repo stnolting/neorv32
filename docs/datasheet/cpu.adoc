@@ -229,14 +229,12 @@ direction as seen from the CPU.
 | `d_bus_err_i`   |  1 | in  | Bus transfer terminate from accessed peripheral
 | `d_bus_fence_o` |  1 | out | Indicates an executed `fence` instruction
 | `d_bus_priv_o`  |  1 | out | Current _effective_ CPU privilege level (`0` = user, `1` = machine)
-4+^| **Interrupts, RISC-V-compatible (<<_traps_exceptions_and_interrupts>>)**
+4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
 | `msw_irq_i`     |  1 | in  | RISC-V machine software interrupt
 | `mext_irq_i`    |  1 | in  | RISC-V machine external interrupt
 | `mtime_irq_i`   |  1 | in  | RISC-V machine timer interrupt
-4+^| **Interrupts, NEORV32-specific (<<_traps_exceptions_and_interrupts>>)**
-| `firq_i`        | 16 | in  | Fast interrupt request signals
-4+^| **Enter Debug Mode Request (<<_on_chip_debugger_ocd>>)**
-| `db_halt_req_i` |  1 | in  | Request CPU to halt and enter debug mode
+| `firq_i`        | 16 | in  | Custom fast interrupt request signals
+| `db_halt_req_i` |  1 | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>)
 |=======================
 
 .Bus Interface Protocol

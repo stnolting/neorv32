@@ -168,24 +168,22 @@ begin
         d_bus_ben_o <= (others => '0'); -- default
         case ctrl_i.ir_funct3(1 downto 0) is
           when "00" => -- byte
-            for i in 0 to (XLEN/8)-1 loop
-              d_bus_wdata_o(i*8+7 downto i*8) <= wdata_i(7 downto 0);
-            end loop;
+            d_bus_wdata_o(07 downto 00) <= wdata_i(7 downto 0);
+            d_bus_wdata_o(15 downto 08) <= wdata_i(7 downto 0);
+            d_bus_wdata_o(23 downto 16) <= wdata_i(7 downto 0);
+            d_bus_wdata_o(31 downto 24) <= wdata_i(7 downto 0);
             d_bus_ben_o(to_integer(unsigned(addr_i(1 downto 0)))) <= '1';
           when "01" => -- half-word
-            for i in 0 to (XLEN/16)-1 loop
-              d_bus_wdata_o(i*16+15 downto i*16) <= wdata_i(15 downto 0);
-            end loop;
+            d_bus_wdata_o(15 downto 00) <= wdata_i(15 downto 0);
+            d_bus_wdata_o(31 downto 16) <= wdata_i(15 downto 0);
             if (addr_i(1) = '0') then
               d_bus_ben_o <= "0011"; -- low half-word
             else
               d_bus_ben_o <= "1100"; -- high half-word
             end if;
           when others => -- word
-            for i in 0 to (XLEN/32)-1 loop
-              d_bus_wdata_o(i*32+31 downto i*32) <= wdata_i(31 downto 0);
-            end loop;
-            d_bus_ben_o <= (others => '1'); -- full word
+            d_bus_wdata_o <= wdata_i;
+            d_bus_ben_o   <= "1111";
         end case;
       end if;
     end if;
