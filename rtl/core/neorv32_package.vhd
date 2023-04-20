@@ -1238,14 +1238,12 @@ package neorv32_package is
       d_bus_err_i   : in  std_ulogic; -- bus transfer error
       d_bus_fence_o : out std_ulogic; -- executed FENCE operation
       d_bus_priv_o  : out std_ulogic; -- current effective privilege level
-      -- interrupts (risc-v compliant) --
-      msw_irq_i     : in  std_ulogic; -- machine software interrupt
-      mext_irq_i    : in  std_ulogic; -- machine external interrupt
-      mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
-      -- fast interrupts (custom) --
-      firq_i        : in  std_ulogic_vector(15 downto 0);
-      -- debug mode (halt) request --
-      db_halt_req_i : in  std_ulogic
+      -- interrupts --
+      msw_irq_i     : in  std_ulogic; -- risc-v: machine software interrupt
+      mext_irq_i    : in  std_ulogic; -- risc-v: machine external interrupt
+      mtime_irq_i   : in  std_ulogic; -- risc-v: machine timer interrupt
+      firq_i        : in  std_ulogic_vector(15 downto 0); -- custom: fast interrupts
+      db_halt_req_i : in  std_ulogic  -- risc-v: halt request (debug mode)
     );
   end component;
 
