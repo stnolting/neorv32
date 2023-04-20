@@ -248,7 +248,7 @@ static void __neorv32_rte_debug_handler(void) {
 
   // check if FIRQ
   if ((trap_cause >= TRAP_CODE_FIRQ_0) && (trap_cause <= TRAP_CODE_FIRQ_15)) {
-    neorv32_cpu_csr_clr(CSR_MIP, 1 << trap_cause & 0xf); // clear pending FIRQ
+    neorv32_cpu_csr_clr(CSR_MIP, 1 << (CSR_MIP_FIRQ0P + (trap_cause & 0xf))); // clear pending FIRQ
   }
   // check specific cause if bus access fault exception
   else if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_L_ACCESS) || (trap_cause == TRAP_CODE_S_ACCESS)) {
