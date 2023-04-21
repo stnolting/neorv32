@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080400"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080401"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -228,9 +228,9 @@ package neorv32_package is
 --constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- base address
 --constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
 
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff10"; -- base address
---constant reserved_size_c      : natural := 4*4; -- module's address space size in bytes
+  -- Direct Memory Access Controller (DMA) --
+  constant dma_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff10"; -- base address
+  constant dma_size_c           : natural := 4*4; -- module's address space size in bytes
 
   -- reserved --
 --constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff20"; -- base address
@@ -1099,7 +1099,8 @@ package neorv32_package is
       IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED FIFO depth, has to be a power of two, min 1
       IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
       IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
-      IO_ONEWIRE_EN                : boolean := false   -- implement 1-wire interface (ONEWIRE)?
+      IO_ONEWIRE_EN                : boolean := false;  -- implement 1-wire interface (ONEWIRE)?
+      IO_DMA_EN                    : boolean := false   -- implement direct memory access controller (DMA)?
     );
     port (
       -- Global control --
@@ -1663,6 +1664,7 @@ package neorv32_package is
       -- controller interface a --
       ca_bus_priv_i   : in  std_ulogic; -- current privilege level
       ca_bus_cached_i : in  std_ulogic; -- set if cached transfer
+      ca_bus_src_i    : in  std_ulogic; -- access source
       ca_bus_addr_i   : in  std_ulogic_vector(31 downto 0); -- bus access address
       ca_bus_rdata_o  : out std_ulogic_vector(31 downto 0); -- bus read data
       ca_bus_wdata_i  : in  std_ulogic_vector(31 downto 0); -- bus write data
@@ -1674,6 +1676,7 @@ package neorv32_package is
       -- controller interface b --
       cb_bus_priv_i   : in  std_ulogic; -- current privilege level
       cb_bus_cached_i : in  std_ulogic; -- set if cached transfer
+      cb_bus_src_i    : in  std_ulogic; -- access source
       cb_bus_addr_i   : in  std_ulogic_vector(31 downto 0); -- bus access address
       cb_bus_rdata_o  : out std_ulogic_vector(31 downto 0); -- bus read data
       cb_bus_wdata_i  : in  std_ulogic_vector(31 downto 0); -- bus write data
@@ -2203,6 +2206,37 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: Direct Memory Access (DMA) Controller ---------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_dma
+    port (
+      -- global control --
+      clk_i          : in  std_ulogic; -- global clock line
+      rstn_i         : in  std_ulogic; -- global reset line, low-active, async
+      -- peripheral port: configuration and status --
+      addr_i         : in  std_ulogic_vector(31 downto 0); -- address
+      rden_i         : in  std_ulogic; -- read enable
+      wren_i         : in  std_ulogic; -- write enable
+      data_i         : in  std_ulogic_vector(31 downto 0); -- data in
+      data_o         : out std_ulogic_vector(31 downto 0); -- data out
+      ack_o          : out std_ulogic; -- transfer acknowledge
+      -- host port: bus access --
+      bus_bus_priv_o : out std_ulogic; -- current privilege level
+      bus_cached_o   : out std_ulogic; -- set if cached (!) access in progress
+      bus_src_o      : out std_ulogic; -- access source
+      bus_addr_o     : out std_ulogic_vector(31 downto 0); -- bus access address
+      bus_rdata_i    : in  std_ulogic_vector(31 downto 0); -- bus read data
+      bus_wdata_o    : out std_ulogic_vector(31 downto 0); -- bus write data
+      bus_ben_o      : out std_ulogic_vector(03 downto 0); -- byte enable
+      bus_we_o       : out std_ulogic; -- write enable
+      bus_re_o       : out std_ulogic; -- read enable
+      bus_ack_i      : in  std_ulogic; -- bus transfer acknowledge
+      bus_err_i      : in  std_ulogic; -- bus transfer error
+      -- interrupt --
+      irq_o          : out std_ulogic
+    );
+  end component;
+
   -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
@@ -2249,7 +2283,8 @@ package neorv32_package is
       IO_XIRQ_NUM_CH       : natural; -- number of external interrupt (XIRQ) channels to implement
       IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?
       IO_XIP_EN            : boolean; -- implement execute in place module (XIP)?
-      IO_ONEWIRE_EN        : boolean  -- implement 1-wire interface (ONEWIRE)?
+      IO_ONEWIRE_EN        : boolean; -- implement 1-wire interface (ONEWIRE)?
+      IO_DMA_EN            : boolean  -- implement direct memory access controller (DMA)?
     );
     port (
       -- host access --
