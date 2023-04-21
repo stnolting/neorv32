@@ -33,6 +33,7 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 21.04.2023 | 1.8.3.9 | :bug: fix timeout bug in **FPU** normalizer; [#592](https://github.com/stnolting/neorv32/pull/592) |
 | 19.04.2023 | 1.8.3.8 | minor processor bus system optimizations and clean-ups; [#591](https://github.com/stnolting/neorv32/pull/591) |
 | 15.04.2023 | 1.8.3.7 | :bug: :warning: `wfi` and XIRQ bug fixes; massive RTL code cleanup and optimization of CPU control; [#586](https://github.com/stnolting/neorv32/pull/586) |
 | 14.04.2023 | 1.8.3.6 | [UARTs] software can now retrieve the configured RX/TX FIFO sizes from the `DATA` register; [#581](https://github.com/stnolting/neorv32/pull/581) |
