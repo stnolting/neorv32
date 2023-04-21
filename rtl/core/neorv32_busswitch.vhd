@@ -54,6 +54,7 @@ entity neorv32_busswitch is
     -- controller interface a --
     ca_bus_priv_i   : in  std_ulogic; -- current privilege level
     ca_bus_cached_i : in  std_ulogic; -- set if cached transfer
+    ca_bus_src_i    : in  std_ulogic; -- access source
     ca_bus_addr_i   : in  std_ulogic_vector(31 downto 0); -- bus access address
     ca_bus_rdata_o  : out std_ulogic_vector(31 downto 0); -- bus read data
     ca_bus_wdata_i  : in  std_ulogic_vector(31 downto 0); -- bus write data
@@ -65,6 +66,7 @@ entity neorv32_busswitch is
     -- controller interface b --
     cb_bus_priv_i   : in  std_ulogic; -- current privilege level
     cb_bus_cached_i : in  std_ulogic; -- set if cached transfer
+    cb_bus_src_i    : in  std_ulogic; -- access source
     cb_bus_addr_i   : in  std_ulogic_vector(31 downto 0); -- bus access address
     cb_bus_rdata_o  : out std_ulogic_vector(31 downto 0); -- bus read data
     cb_bus_wdata_i  : in  std_ulogic_vector(31 downto 0); -- bus write data
@@ -76,7 +78,7 @@ entity neorv32_busswitch is
     -- peripheral bus --
     p_bus_priv_o    : out std_ulogic; -- current privilege level
     p_bus_cached_o  : out std_ulogic; -- set if cached transfer
-    p_bus_src_o     : out std_ulogic; -- access source: 0 = A, 1 = B
+    p_bus_src_o     : out std_ulogic; -- access source
     p_bus_addr_o    : out std_ulogic_vector(31 downto 0); -- bus access address
     p_bus_rdata_i   : in  std_ulogic_vector(31 downto 0); -- bus read data
     p_bus_wdata_o   : out std_ulogic_vector(31 downto 0); -- bus write data
@@ -230,13 +232,12 @@ begin
 
   p_bus_cached_o <= ca_bus_cached_i when (arbiter.bus_sel = '0') else cb_bus_cached_i;
   p_bus_priv_o   <= ca_bus_priv_i   when (arbiter.bus_sel = '0') else cb_bus_priv_i;
+  p_bus_src_o    <= ca_bus_src_i    when (arbiter.bus_sel = '0') else cb_bus_src_i;
 
   p_bus_we       <= ca_bus_we_i when (arbiter.bus_sel = '0') else cb_bus_we_i;
   p_bus_re       <= ca_bus_re_i when (arbiter.bus_sel = '0') else cb_bus_re_i;
   p_bus_we_o     <= p_bus_we or arbiter.we_trig;
   p_bus_re_o     <= p_bus_re or arbiter.re_trig;
-
-  p_bus_src_o    <= arbiter.bus_sel;
 
   ca_bus_rdata_o <= p_bus_rdata_i;
   cb_bus_rdata_o <= p_bus_rdata_i;
