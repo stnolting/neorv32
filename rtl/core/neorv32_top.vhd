@@ -375,7 +375,7 @@ begin
     cond_sel_string_f(DCACHE_EN, "D-CACHE ", "") &
     cond_sel_string_f(MEM_EXT_EN, "WISHBONE ", "") &
     cond_sel_string_f(ON_CHIP_DEBUGGER_EN, "OCD ", "") &
-    "- " &
+    "+ " &
     cond_sel_string_f(boolean(IO_GPIO_NUM > 0), "GPIO ", "") &
     cond_sel_string_f(IO_MTIME_EN, "MTIME ", "") &
     cond_sel_string_f(IO_UART0_EN, "UART0 ", "") &
