@@ -32,19 +32,19 @@
 /* # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting # */
 /* ################################################################################################# */
 
-// debug memory address map
-.equ DBMEM_CODE_BASE, 0xfffff800 // base address of dbmem.code_rom
-.equ DBMEM_PBUF_BASE, 0xfffff840 // base address of dbmem.program_buffer
-.equ DBMEM_DBUF_BASE, 0xfffff880 // base address of dbmem.data_buffer
-.equ DBMEM_SREG_BASE, 0xfffff8C0 // base address of dbmem.status_register
+// debug module (DM) address map
+.equ DM_CODE_BASE, 0xfffff800 // base address of debug_module's code ROM (park loop)
+.equ DM_PBUF_BASE, 0xfffff840 // base address of debug_module's program buffer (PBUF)
+.equ DM_DATA_BASE, 0xfffff880 // base address of debug_module's abstract data buffer (DATA)
+.equ DM_SREG_BASE, 0xfffff8C0 // base address of debug_module's status register
 
 // status register (SREG) byte(!!!) offsets
-.equ SREG_HALTED_ACK,    ( 0 / 8) // -/w: CPU is halted in debug mode and waits in park loop
-.equ SREG_RESUME_REQ,    ( 8 / 8) // r/-: DM requests CPU to resume
-.equ SREG_RESUME_ACK,    ( 8 / 8) // -/w: CPU starts resuming
-.equ SREG_EXECUTE_REQ,   (16 / 8) // r/-: DM requests to execute program buffer
-.equ SREG_EXECUTE_ACK,   (16 / 8) // -/w: CPU starts to execute program buffer
-.equ SREG_EXCEPTION_ACK, (24 / 8) // -/w: CPU has detected an exception
+.equ SREG_HLT_ACK, ( 0 / 8) // -/w: CPU has halted in debug mode and is waiting in park loop
+.equ SREG_RES_REQ, ( 8 / 8) // r/-: DM requests to resume
+.equ SREG_RES_ACK, ( 8 / 8) // -/w: CPU starts to resume
+.equ SREG_EXE_REQ, (16 / 8) // r/-: DM requests to execute program buffer
+.equ SREG_EXE_ACK, (16 / 8) // -/w: CPU starts to execute program buffer
+.equ SREG_EXC_ACK, (24 / 8) // -/w: CPU has detected an exception while in debug-mode
 
 .file	"park_loop.S"
 .section .text
@@ -56,35 +56,35 @@
 
 __start:
 
-// BASE + 0: entry for exceptions - signal EXCEPTION to DM and restart parking loop
+// BASE + 0: exception entry - signal EXCEPTION condition to DM and restart parking loop
 entry_exception:
-  sb     zero, (DBMEM_SREG_BASE+SREG_EXCEPTION_ACK)(zero) // trigger exception acknowledge to inform DM
-  ebreak                                                  // re-enter debug mode (at normal entry point)
+  sb      zero, (DM_SREG_BASE+SREG_EXC_ACK)(zero) // trigger exception-acknowledge to inform DM
+  ebreak                                          // re-enter debug mode (at "entry_normal" entry point)
 
-// BASE + 8: entry for ebreak in debug-mode, halt request or return from single-stepped instruction
+// BASE + 8: normale entry - ebreak in debug-mode, halt request or return from single-stepped instruction
 entry_normal:
-  csrw   dscratch0, s0                                    // save s0 to dscratch0 so we have a general purpose register available
+  csrw    dscratch0, s0                           // backup s0 to dscratch0 so we have a GPR available
 
 // polling loop - waiting for requests
 park_loop:
-  sb     zero, (DBMEM_SREG_BASE+SREG_HALTED_ACK)(zero)    // ACK that CPU is halted
-  lbu    s0, (DBMEM_SREG_BASE+SREG_EXECUTE_REQ)(zero)     // request to execute program buffer?
-  bnez   s0, execute
-  lbu    s0, (DBMEM_SREG_BASE+SREG_RESUME_REQ)(zero)      // request to resume?
-  beqz   s0, park_loop
+  sb      zero, (DM_SREG_BASE+SREG_HLT_ACK)(zero) // ACK that CPU is halted
+  lbu     s0, (DM_SREG_BASE+SREG_EXE_REQ)(zero)   // request to execute program buffer?
+  bnez    s0, execute
+  lbu     s0, (DM_SREG_BASE+SREG_RES_REQ)(zero)   // request to resume?
+  beqz    s0, park_loop
 
 // resume normal operation
 resume:
-  sb     s0, (DBMEM_SREG_BASE+SREG_RESUME_ACK)(zero)      // ACK that CPU is about to resume
-  csrr   s0, dscratch0                                    // restore s0 from dscratch0
-  dret                                                    // exit debug mode
+  sb      s0, (DM_SREG_BASE+SREG_RES_ACK)(zero)   // ACK that CPU is about to resume
+  csrr    s0, dscratch0                           // restore s0 from dscratch0
+  dret                                            // exit debug mode
 
 // execute program buffer
 execute:
-  sb     zero, (DBMEM_SREG_BASE+SREG_EXECUTE_ACK)(zero)   // ACK that execution is about to start
-  csrr   s0, dscratch0                                    // restore s0 from dscratch0
-  fence.i                                                 // synchronize i-cache & prefetch with memory (program buffer)
-  jalr   zero, zero, %lo(DBMEM_PBUF_BASE)                 // jump to beginning of program buffer
+  sb      zero, (DM_SREG_BASE+SREG_EXE_ACK)(zero) // ACK that execution is about to start
+  csrr    s0, dscratch0                           // restore s0 from dscratch0
+  fence.i                                         // synchronize ifetch / i-cache & prefetch with memory (PBUF)
+  jalr    zero, zero, %lo(DM_PBUF_BASE)           // jump to beginning of program buffer (PBUF)
 
 // fill remaining ROM space with instructions that cause a debug-mode-internal exception
   ecall

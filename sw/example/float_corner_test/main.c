@@ -150,6 +150,35 @@ int main() {
   neorv32_cpu_csr_write(CSR_FFLAGS, 0); // real hardware
   feclearexcept(FE_ALL_EXCEPT); // software runtime (GCC floating-point emulation)
 
+// ----------------------------------------------------------------------------
+// Floating point add/sub Instruction Time-out test
+// ----------------------------------------------------------------------------
+
+  neorv32_uart0_printf("\n#%u: FADD.S (Floating point add)...\n", test_cnt);
+
+// Test the addition of 1.0 + (-1.0) to trigger long normalizer times
+// +1.0 e0
+// 0_011 1111 1_000 0000 0000 0000 0000 0000
+// sign 0, exp 0111_1111/0x7F, mant 0 => 1.0
+// 0x3F80_0000
+
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  opa.binary_value = 0x3F800000;
+
+// -1.0 e0
+// 1_011 1111 1_000 0000 0000 0000 0000 0000
+// sign 1, exp 0111_1111/0x7F, mant 0 => 1.0
+// 0xBF80_0000
+
+  opb.binary_value = 0xBF800000;
+  riscv_intrinsic_fadds(opa.float_value,opb.float_value);
+
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+    neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("Addition of 1.0 + (-1.0) timed out\n");
+    err_cnt_total++;
+  }
+  test_cnt++;
 
 // ----------------------------------------------------------------------------
 // Conversion Tests Instruction Time-out test

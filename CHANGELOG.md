@@ -1,21 +1,23 @@
 ## Project Change Log
 
 The most recent version of the **NEORV32** project can be found at the top of this list.
-"Stable releases" are linked and highlighted :rocket:.
-The latest release is [![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases).
+"Stable releases" are linked and highlighted :rocket:. The latest release is
+[![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases).
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases).
 
 Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org).
-The _hardware version identifier_ uses an additional custom element (`MAJOR.MINOR.PATCH.custom`) to track _individual_ changes.
-The identifier number is incremented with every core RTL modification and also by major framework modifications.
+The _version identifier_ uses an additional **custom** element (`MAJOR.MINOR.PATCH.custom`)
+to track _individual_ changes. The identifier number is incremented with every core RTL
+modification and also by major framework modifications.
 
 The version number is globally defined by the `hw_version_c` constant in the main VHDL
 [package file](https://github.com/stnolting/neorv32/blob/main/rtl/core/neorv32_package.vhd).
-The processor can determine its version by reading the `mimpid` CSR (at CSR address 0xf13).
-A 8x4-bit BCD representation is used. Leading zeros are optional. Example:
+The processor can determine this version by reading the RISC-V-compatible `mimpid` CSR.
+A 8x4-bit BCD representation is used. Examples:
 
 ```
 mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
+mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 ```
 
 
@@ -31,6 +33,9 @@ mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 21.04.2023 | [**:rocket:1.8.4**](https://github.com/stnolting/neorv32/releases/tag/v1.8.4) | **New release** |
+| 21.04.2023 | 1.8.3.9 | :bug: fix timeout bug in **FPU** normalizer; [#592](https://github.com/stnolting/neorv32/pull/592) |
+| 19.04.2023 | 1.8.3.8 | minor processor bus system optimizations and clean-ups; [#591](https://github.com/stnolting/neorv32/pull/591) |
 | 15.04.2023 | 1.8.3.7 | :bug: :warning: `wfi` and XIRQ bug fixes; massive RTL code cleanup and optimization of CPU control; [#586](https://github.com/stnolting/neorv32/pull/586) |
 | 14.04.2023 | 1.8.3.6 | [UARTs] software can now retrieve the configured RX/TX FIFO sizes from the `DATA` register; [#581](https://github.com/stnolting/neorv32/pull/581) |
 | 13.04.2023 | 1.8.3.5 | :bug: fixed bug in FPU control logic (introduced in some earlier clean-up commit); minor code edits and optimizations; [#578](https://github.com/stnolting/neorv32/pull/578) |

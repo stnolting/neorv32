@@ -1358,6 +1358,14 @@ begin
                ctrl.flags(fp_exc_of_c) or -- overflow
                ctrl.flags(fp_exc_nv_c)) = '1') then -- invalid
             ctrl.state <= S_FINALIZE;
+          -- The normalizer only checks the class of the inputs and not the result.
+          -- Check whether adder result is 0.0 which can happen if eg. 1.0 - 1.0
+          -- Set the ctrl.cnt to 0 to force the resulting exponent to be 0
+          -- Do not change sreg.lower as that is already all 0s
+          -- Do not change sign as that should be the right sign from the add/sub
+          elsif (unsigned(mantissa_i(47 downto 0)) = 0) then 
+            ctrl.cnt <= (others => '0');
+            ctrl.state <= S_FINALIZE;
           else
             ctrl.state <= S_PREPARE_SHIFT;
           end if;
