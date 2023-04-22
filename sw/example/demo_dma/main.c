@@ -119,8 +119,8 @@ int main() {
         DMA_CMD_ENDIAN;   // change Endianness
 
   // trigger DMA transfer
-  neorv32_dma_transfer((uint32_t)(&dma_src[0]), // source array base address - word-aligned!
-                       (uint32_t)(&dma_dst[0]), // destination array base address - word-aligned!
+  neorv32_dma_transfer((uint32_t)(&dma_src[0]), // source array base address - byte-aligned!
+                       (uint32_t)(&dma_dst[0]), // destination array base address - byte-aligned!
                        16,                      // number of elements to transfer: 16
                        cmd);                    // transfer type configuration
 
