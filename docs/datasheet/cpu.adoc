@@ -482,8 +482,8 @@ support for these counters.
 The `Ziconds` ISA extension implements conditional operations ("move or set-to-zero"). 
 
 [WARNING]
-The `Zicond` extension is neither ratified nor frozen yet. An intrinsic library is provided to utilize the `Zicond`
-conditional operations from C-language code (see `sw/example/zicond_test`).
+The `Zicond` extension is not ratified yet. An intrinsic library is provided to utilize the `Zicond`
+conditional operations from C-language code (see `sw/example/zicond_test`) even without compiler support.
 
 .Instructions and Timing
 [cols="<2,<4,<3"]
