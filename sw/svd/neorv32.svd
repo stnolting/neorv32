@@ -4,7 +4,7 @@
   <vendor>stnolting</vendor>
   <name>neorv32</name>
   <series>RISC-V</series>
-  <version>1.6.4</version>
+  <version>1.8.4</version>
   <description>The NEORV32 RISC-V Processor</description>
 
   <!-- CPU core -->
@@ -18,7 +18,7 @@
     <dspPresent>false</dspPresent>
     <icachePresent>true</icachePresent>
     <dcachePresent>true</dcachePresent>
-    <nvicPrioBits>0</nvicPrioBits>
+    <nvicPrioBits>4</nvicPrioBits>
     <vendorSystickConfig>false</vendorSystickConfig>
   </cpu>
 
@@ -208,6 +208,97 @@
           <name>DATA</name>
           <description>RX/TX data register (lowest 8 bit)</description>
           <addressOffset>0x04</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- DMA -->
+    <peripheral>
+      <name>DMA</name>
+      <description>Direct memory access controller</description>
+      <groupName>DMA</groupName>
+      <baseAddress>0xFFFFFF10</baseAddress>
+
+      <interrupt><name>DMA_FIRQ</name><value>10</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>DMA_CTRL_EN</name>
+              <bitRange>[0:0]</bitRange>
+              <description>DMA enable flag</description>
+            </field>
+            <field>
+              <name>DMA_CTRL_ERROR_RD</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>Error during last read access</description>
+            </field>
+            <field>
+              <name>DMA_CTRL_ERROR_WR</name>
+              <bitRange>[30:30]</bitRange>
+              <access>read-only</access>
+              <description>Error during last write access</description>
+            </field>
+            <field>
+              <name>DMA_CTRL_BUSY</name>
+              <bitRange>[31:31]</bitRange>
+              <access>read-only</access>
+              <description>DMA transfer in progress</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>SRC_BASE</name>
+          <description>Source base address; shows the last accessed read address on read access</description>
+          <addressOffset>0x04</addressOffset>
+        </register>
+        <register>
+          <name>DST_BASE</name>
+          <description>Destination base address; shows the last accessed write address on read access</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>TTYPE</name>
+          <description>Destination base address; shows the last accessed write address on read access</description>
+          <addressOffset>0x0c</addressOffset>
+          <fields>
+            <field>
+              <name>DMA_TTYPE_NUM</name>
+              <bitRange>[23:0]</bitRange>
+              <description>Number of elements to transfer</description>
+            </field>
+            <field>
+              <name>DMA_TTYPE_QSEL</name>
+              <bitRange>[28:27]</bitRange>
+              <description>Data quantity select</description>
+            </field>
+            <field>
+              <name>DMA_TTYPE_SRC_INC</name>
+              <bitRange>[29:29]</bitRange>
+              <description>Source constant (0) or incrementing (1) address</description>
+            </field>
+            <field>
+              <name>DMA_TTYPE_DST_INC</name>
+              <bitRange>[30:30]</bitRange>
+              <description>Destination constant (0) or incrementing (1) address</description>
+            </field>
+            <field>
+              <name>DMA_TTYPE_ENDIAN</name>
+              <bitRange>[31:31]</bitRange>
+              <description>Convert Endianness when set</description>
+            </field>
+          </fields>
         </register>
       </registers>
     </peripheral>
@@ -1280,6 +1371,7 @@
             <field><name>SYSINFO_SOC_ICACHE</name><bitRange>[5:5]</bitRange><description>Processor-internal instruction cache implemented</description></field>
             <field><name>SYSINFO_SOC_IS_SIM</name><bitRange>[13:13]</bitRange><description>Set if processor is being simulated</description></field>
             <field><name>SYSINFO_SOC_OCD</name><bitRange>[14:14]</bitRange><description>On-chip debugger implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[15:15]</bitRange><description>Direct memory access controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[16:16]</bitRange><description>General purpose input/output port unit implemented</description></field>
             <field><name>SYSINFO_SOC_IO_MTIME</name><bitRange>[17:17]</bitRange><description>Machine system timer implemented</description></field>
             <field><name>SYSINFO_SOC_IO_UART0</name><bitRange>[18:18]</bitRange><description>Primary universal asynchronous receiver/transmitter 0 implemented</description></field>
