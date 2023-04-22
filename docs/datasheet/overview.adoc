@@ -92,6 +92,7 @@ include::rationale.adoc[]
 * optional embedded memories and caches for data, instructions and bootloader
 * optional external memory interface for custom connectivity
 * optional execute in-place (XIP) module to execute code directly form an external SPI flash
+* optional DMA controller for CPU-independent data transfers
 * on-chip debugger compatible with OpenOCD and gdb including hardware trigger module
 
 **Software framework**
@@ -199,6 +200,7 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_dcache.vhd              - Processor-internal data cache
 ├neorv32_debug_dm.vhd            - on-chip debugger: debug module
 ├neorv32_debug_dtm.vhd           - on-chip debugger: debug transfer module
+├neorv32_dma.vhd                 - Direct memory access controller
 ├neorv32_dmem.entity.vhd         - Processor-internal data memory (entity-only!)
 ├neorv32_gpio.vhd                - General purpose input/output port unit
 ├neorv32_gptmr.vhd               - General purpose 32-bit timer
@@ -289,37 +291,37 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 | Constraints: | **no timing constraints**, "_balanced optimization_"
 |=======================
 
-.Hardware utilization by processor module (mandatory modules highlighted in **bold**)
+.Hardware utilization by processor module
 [cols="<2,<8,>1,>1,>2,>1"]
 [options="header",grid="rows"]
 |=======================
-| Module        | Description                                                    | LEs | FFs | MEM bits | DSPs
-| Boot ROM      | Bootloader ROM (4kB)                                           |   3 |   2 |    32768 |    0
-| **BUSKEEPER** | Processor-internal bus monitor                                 |  28 |  15 |        0 |    0
-| **BUSSWITCH** | Bus multiplexer for CPU instr. and data interface              |  69 |   8 |        0 |    0
-| CFS           | Custom functions subsystem footnote:[Resource utilization depends on custom design logic.] | - | - | - | -
-| DM            | On-chip debugger - debug module                                | 391 | 220 |        0 |    0
-| DTM           | On-chip debugger - debug transfer module (JTAG)                | 259 | 221 |        0 |    0
-| DMEM          | Processor-internal data memory (8kB)                           |  18 |   2 |    65536 |    0
-| GPIO          | General purpose input/output ports                             | 102 |  98 |        0 |    0
-| GPTMR         | General Purpose Timer                                          | 153 | 105 |        0 |    0
-| iCACHE        | Instruction cache (2x4 blocks, 64 bytes per block)             | 417 | 297 |     4096 |    0
-| dCACHE        | Data cache (8 blocks, 64 bytes per block)                      | 417 | 297 |     4096 |    0
-| IMEM          | Processor-internal instruction memory (16kB)                   |  12 |   2 |   131072 |    0
-| MTIME         | Machine system timer                                           | 345 | 166 |        0 |    0
-| NEOLED        | Smart LED Interface (NeoPixel/WS28128) (FIFO_depth=1)          | 227 | 184 |        0 |    0
-| ONEWIRE       | 1-wire interface                                               | 107 |  77 |        0 |    0
-| PWM           | Pulse_width modulation controller (8 channels)                 | 128 | 117 |        0 |    0
-| SPI           | Serial peripheral interface                                    | 114 |  94 |        0 |    0
-| SDI           | Serial data interface                                          |  72 |  66 |        0 |    0
-| **SYSINFO**   | System configuration information memory                        |  13 |  11 |        0 |    0
-| TRNG          | True random number generator                                   |  89 |  79 |        0 |    0
-| TWI           | Two-wire interface                                             |  77 |  43 |        0 |    0
-| UART0, UART1  | Universal asynchronous receiver/transmitter 0/1 (FIFO_depth=1) | 195 | 143 |        0 |    0
-| WDT           | Watchdog timer                                                 |  61 |  46 |        0 |    0
-| WISHBONE      | External memory interface                                      | 120 | 112 |        0 |    0
-| XIP           | Execute in place module                                        | 318 | 244 |        0 |    0
-| XIRQ          | External interrupt controller (32 channels)                    | 245 | 200 |        0 |    0
+| Module       | Description                                                    | LEs | FFs | MEM bits | DSPs
+| Boot ROM     | Bootloader ROM (4kB)                                           |   3 |   2 |    32768 |    0
+| BUSKEEPER    | Processor-internal bus monitor                                 |  28 |  15 |        0 |    0
+| CFS          | Custom functions subsystem footnote:[Resource utilization depends on custom design logic.] | - | - | - | -
+| DM           | On-chip debugger - debug module                                | 391 | 220 |        0 |    0
+| DMA          | Direct memory access controller                                | 313 | 257 |        0 |    0
+| DTM          | On-chip debugger - debug transfer module (JTAG)                | 259 | 221 |        0 |    0
+| DMEM         | Processor-internal data memory (8kB)                           |  18 |   2 |    65536 |    0
+| GPIO         | General purpose input/output ports                             | 102 |  98 |        0 |    0
+| GPTMR        | General Purpose Timer                                          | 153 | 105 |        0 |    0
+| iCACHE       | Instruction cache (2x4 blocks, 64 bytes per block)             | 417 | 294 |     4096 |    0
+| dCACHE       | Data cache (4 blocks, 64 bytes per block)                      | 308 | 167 |     2112 |    0
+| IMEM         | Processor-internal instruction memory (16kB)                   |  12 |   2 |   131072 |    0
+| MTIME        | Machine system timer                                           | 345 | 166 |        0 |    0
+| NEOLED       | Smart LED Interface (NeoPixel/WS28128) (FIFO_depth=1)          | 227 | 184 |        0 |    0
+| ONEWIRE      | 1-wire interface                                               | 107 |  77 |        0 |    0
+| PWM          | Pulse_width modulation controller (8 channels)                 | 128 | 117 |        0 |    0
+| SPI          | Serial peripheral interface                                    | 114 |  94 |        0 |    0
+| SDI          | Serial data interface                                          |  72 |  66 |        0 |    0
+| SYSINFO      | System configuration information memory                        |  13 |  11 |        0 |    0
+| TRNG         | True random number generator                                   |  89 |  79 |        0 |    0
+| TWI          | Two-wire interface                                             |  77 |  43 |        0 |    0
+| UART0, UART1 | Universal asynchronous receiver/transmitter 0/1 (FIFO_depth=1) | 195 | 143 |        0 |    0
+| WDT          | Watchdog timer                                                 |  61 |  46 |        0 |    0
+| WISHBONE     | External memory interface                                      | 120 | 112 |        0 |    0
+| XIP          | Execute in place module                                        | 318 | 244 |        0 |    0
+| XIRQ         | External interrupt controller (32 channels)                    | 245 | 200 |        0 |    0
 |=======================
 
 
