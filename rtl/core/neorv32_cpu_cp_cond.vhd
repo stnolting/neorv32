@@ -62,7 +62,7 @@ architecture neorv32_cpu_cp_cond_rtl of neorv32_cpu_cp_cond is
 begin
 
   -- Compliance notifier --
-  assert (false) report "NEORV32 PROCESSOR CONFIG WARNING: The RISC-V 'Zicond' ISA extension is neither ratified nor frozen (yet)." severity warning;
+  assert (false) report "NEORV32 PROCESSOR CONFIG WARNING: The RISC-V 'Zicond' ISA extension is not ratified yet." severity warning;
 
   -- Conditional output --
   conditional_output: process(clk_i)
