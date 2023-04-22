@@ -110,12 +110,13 @@ int main() {
   // ----------------------------------------------------------
   // example 1
   // ----------------------------------------------------------
-  neorv32_uart0_printf("\nExample 1: Byte-to-byte block transfer using busy wait\n");
+  neorv32_uart0_printf("\nExample 1: Byte-to-byte block transfer with Endianness conversion using busy wait\n");
 
   // configure transfer type
   cmd = DMA_CMD_B2B     | // read source in byte quantities, write destination in byte quantities
         DMA_CMD_SRC_INC | // auto-increment source address
-        DMA_CMD_DST_INC;  // auto-increment destination address
+        DMA_CMD_DST_INC | // auto-increment destination address
+        DMA_CMD_ENDIAN;   // change Endianness
 
   // trigger DMA transfer
   neorv32_dma_transfer((uint32_t)(&dma_src[0]), // source array base address - word-aligned!
