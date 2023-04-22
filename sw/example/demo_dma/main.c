@@ -126,7 +126,8 @@ int main() {
   // wait for transfer to complete using polling
   while (1) {
     rc = neorv32_dma_status();
-    if (rc == DMA_STATUS_IDLE) { // transfer done
+    if (rc == DMA_STATUS_IDLE) {
+      neorv32_uart0_printf("Transfer done.\n");
       break;
     }
     if ((rc == DMA_STATUS_ERR_RD) || (rc == DMA_STATUS_ERR_WR)) {
@@ -157,7 +158,8 @@ int main() {
   // wait for transfer to complete using polling
   while (1) {
     rc = neorv32_dma_status();
-    if (rc == DMA_STATUS_IDLE) { // transfer done
+    if (rc == DMA_STATUS_IDLE) {
+      neorv32_uart0_printf("Transfer done.\n");
       break;
     }
     if ((rc == DMA_STATUS_ERR_RD) || (rc == DMA_STATUS_ERR_WR)) {
