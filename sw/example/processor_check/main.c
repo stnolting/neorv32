@@ -1380,8 +1380,8 @@ int main() {
     tmp_a = DMA_CMD_B2SW | DMA_CMD_SRC_INC | DMA_CMD_DST_INC | DMA_CMD_ENDIAN;
     neorv32_dma_transfer((uint32_t)(&dma_src), (uint32_t)(&dma_dst[0]), 2, tmp_a);
 
-    // wait for transfer to complete
-    while (NEORV32_DMA->CTRL & (1 << DMA_CTRL_BUSY));
+    // wait for transfer-done interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1957,7 +1957,7 @@ void test_ok(void) {
  **************************************************************************/
 void test_fail(void) {
 
-  PRINT_CRITICAL("%c[1m[fail(%u)]%c[0m\n", 27, cnt_test, 27);
+  PRINT_CRITICAL("%c[1m[fail(%u)]%c[0m\n", 27, cnt_test-1, 27);
   cnt_fail++;
 }
 
