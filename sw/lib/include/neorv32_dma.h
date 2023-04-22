@@ -60,20 +60,18 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** DMA transfer type bits */
 enum NEORV32_DMA_TTYPE_enum {
-  DMA_TTYPE_NUM_LSB      =  0, /**< DMA transfer type register(0)  (r/w): Number of elements to transfer, LSB */
-  DMA_TTYPE_NUM_MSB      = 23, /**< DMA transfer type register(23) (r/w): Number of elements to transfer, MSB */
-  DMA_TTYPE_SRC_QSEL_LSB = 24, /**< DMA transfer type register(24) (r/w): Source data quantity select, LSB */
-  DMA_TTYPE_SRC_QSEL_MSB = 25, /**< DMA transfer type register(25) (r/w): Source data quantity select, MSB */
-  DMA_TTYPE_DST_QSEL_LSB = 26, /**< DMA transfer type register(26) (r/w): Destination data quantity select, LSB */
-  DMA_TTYPE_DST_QSEL_MSB = 27, /**< DMA transfer type register(27) (r/w): Destination data quantity select, MSB */
-  DMA_TTYPE_SRC_INC      = 28, /**< DMA transfer type register(28) (r/w): SRC constant (0) or incrementing (1) address */
-  DMA_TTYPE_DST_INC      = 29, /**< DMA transfer type register(29) (r/w): SRC constant (0) or incrementing (1) address */
-  DMA_TTYPE_SEXT         = 30, /**< DMA transfer type register(30) (r/w): Sign-extend sub-word when set */
-  DMA_TTYPE_ENDIAN       = 31  /**< DMA transfer type register(31) (r/w): Convert Endianness when set */
+  DMA_TTYPE_NUM_LSB  =  0, /**< DMA transfer type register(0)  (r/w): Number of elements to transfer, LSB */
+  DMA_TTYPE_NUM_MSB  = 23, /**< DMA transfer type register(23) (r/w): Number of elements to transfer, MSB */
+
+  DMA_TTYPE_QSEL_LSB = 27, /**< DMA transfer type register(27) (r/w): Data quantity select, LSB */
+  DMA_TTYPE_QSEL_MSB = 28, /**< DMA transfer type register(28) (r/w): Data quantity select, MSB */
+  DMA_TTYPE_SRC_INC  = 29, /**< DMA transfer type register(29) (r/w): SRC constant (0) or incrementing (1) address */
+  DMA_TTYPE_DST_INC  = 30, /**< DMA transfer type register(30) (r/w): SRC constant (0) or incrementing (1) address */
+  DMA_TTYPE_ENDIAN   = 31  /**< DMA transfer type register(31) (r/w): Convert Endianness when set */
 };
 
 /** DMA control and status register bits */
-enum NEORV32_DMA_CTRL_enum {
+enum NEORV32_DMA_QSEL_enum {
   DMA_CTRL_EN       =  0, /**< DMA control register(0) (r/w): DMA enable */
   DMA_CTRL_ERROR_RD = 29, /**< DMA control register(29) (r/-): Error during read access; SRC_BASE shows the faulting address */
   DMA_CTRL_ERROR_WR = 30, /**< DMA control register(30) (r/-): Error during write access; DST_BASE shows the faulting address */
@@ -86,22 +84,18 @@ enum NEORV32_DMA_CTRL_enum {
  * DMA transfer type commands
  **************************************************************************/
 /**@{*/
-#define DMA_CMD_SRC_BYTE (0b00 << DMA_TTYPE_SRC_QSEL_LSB)
-#define DMA_CMD_SRC_HALF (0b01 << DMA_TTYPE_SRC_QSEL_LSB)
-#define DMA_CMD_SRC_WORD (0b10 << DMA_TTYPE_SRC_QSEL_LSB)
+#define DMA_CMD_B2B  (0b00 << DMA_TTYPE_QSEL_LSB) // byte to byte
+#define DMA_CMD_B2UW (0b01 << DMA_TTYPE_QSEL_LSB) // byte to unsigned word
+#define DMA_CMD_B2SW (0b10 << DMA_TTYPE_QSEL_LSB) // byte to signed word
+#define DMA_CMD_W2W  (0b11 << DMA_TTYPE_QSEL_LSB) // word to word
 
-#define DMA_CMD_DST_BYTE (0b00 << DMA_TTYPE_DST_QSEL_LSB)
-#define DMA_CMD_DST_HALF (0b01 << DMA_TTYPE_DST_QSEL_LSB)
-#define DMA_CMD_DST_WORD (0b10 << DMA_TTYPE_DST_QSEL_LSB)
+#define DMA_CMD_SRC_CONST (0b0 << DMA_TTYPE_SRC_INC) // constant source address
+#define DMA_CMD_SRC_INC   (0b1 << DMA_TTYPE_SRC_INC) // incrementing source address
 
-#define DMA_CMD_SRC_CONST (0b0 << DMA_TTYPE_SRC_INC)
-#define DMA_CMD_SRC_INC   (0b1 << DMA_TTYPE_SRC_INC)
+#define DMA_CMD_DST_CONST (0b0 << DMA_TTYPE_DST_INC) // constant destination address
+#define DMA_CMD_DST_INC   (0b1 << DMA_TTYPE_DST_INC) // incrementing destination address
 
-#define DMA_CMD_DST_CONST (0b0 << DMA_TTYPE_DST_INC)
-#define DMA_CMD_DST_INC   (0b1 << DMA_TTYPE_DST_INC)
-
-#define DMA_CMD_SEXT   (0b1 << DMA_TTYPE_SEXT)
-#define DMA_CMD_ENDIAN (0b1 << DMA_TTYPE_ENDIAN)
+#define DMA_CMD_ENDIAN (0b1 << DMA_TTYPE_ENDIAN) // convert endianness
 /**@}*/
 
 
