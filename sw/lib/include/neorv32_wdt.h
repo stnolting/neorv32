@@ -43,6 +43,7 @@
 #ifndef neorv32_wdt_h
 #define neorv32_wdt_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: Watchdog Timer (WDT)
  **************************************************************************/
@@ -68,7 +69,7 @@ enum NEORV32_WDT_CTRL_enum {
   WDT_CTRL_TIMEOUT_MSB = 31  /**< WDT control register(31) (r/w): Timeout value, MSB */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

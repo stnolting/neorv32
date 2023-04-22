@@ -182,6 +182,9 @@ enum NEORV32_CLOCK_PRSC_enum {
 /**@}*/
 
 
+#ifdef NEORV32_SVD_HEADER
+#include "neorv32_svd.h"
+#else
 /**********************************************************************//**
  * @name Peripheral/IO Devices - IO Address Space - base addresses
  **************************************************************************/
@@ -206,7 +209,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define NEORV32_CFS_BASE       (0xFFFFFE00U) /**< Custom Functions Subsystem (CFS) */
 #define NEORV32_DM_BASE        (0xFFFFF800U) /**< On-Chip Debugger */
 /**@}*/
-
+#endif // NEORV32_STD_HEADER
 
 // ----------------------------------------------------------------------------
 // Include all system header files

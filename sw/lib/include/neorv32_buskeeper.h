@@ -41,6 +41,7 @@
 #ifndef neorv32_buskeeper_h
 #define neorv32_buskeeper_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: Bus Monitor (BUSKEEPER)
  **************************************************************************/
@@ -60,6 +61,6 @@ enum NEORV32_BUSKEEPER_CTRL_enum {
   BUSKEEPER_ERR_FLAG = 31  /**< BUSKEEPER control register(31) (r/-): Sticky error flag, clears after read or write access */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 #endif // neorv32_buskeeper_h

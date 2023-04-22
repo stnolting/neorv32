@@ -46,6 +46,7 @@
 #ifndef neorv32_cfs_h
 #define neorv32_cfs_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: Custom Functions Subsystem (CFS)
  **************************************************************************/
@@ -58,7 +59,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /** CFS module hardware access (#neorv32_cfs_t) */
 #define NEORV32_CFS ((neorv32_cfs_t*) (NEORV32_CFS_BASE))
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

@@ -43,6 +43,7 @@
 #ifndef neorv32_sdi_h
 #define neorv32_sdi_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: Serial Data Interface (SDI)
  **************************************************************************/
@@ -76,7 +77,7 @@ enum NEORV32_SDI_CTRL_enum {
   SDI_CTRL_TX_FULL      = 27  /**< SDI control register(27) (r/-): TX FIFO full */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

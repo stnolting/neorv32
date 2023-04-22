@@ -41,6 +41,7 @@
 #ifndef neorv32_sysinfo_h
 #define neorv32_sysinfo_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: System Configuration Information Memory (SYSINFO)
  **************************************************************************/
@@ -134,6 +135,6 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_CACHE_DC_REPLACEMENT_3   = 31, /**< SYSINFO_CACHE (31) (r/-): d-cache: replacement policy, bit 3 */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 #endif // neorv32_sysinfo_h

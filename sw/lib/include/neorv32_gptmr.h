@@ -43,6 +43,7 @@
 #ifndef neorv32_gptmr_h
 #define neorv32_gptmr_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: General Purpose Timer (GPTMR)
  **************************************************************************/
@@ -67,7 +68,7 @@ enum NEORV32_GPTMR_CTRL_enum {
   GPTMR_CTRL_MODE  = 4  /**< GPTIMR control register(4) (r/w): Timer mode: 0=single-shot mode, 1=continuous mode */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

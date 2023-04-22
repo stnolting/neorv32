@@ -43,6 +43,7 @@
 #ifndef neorv32_pwm_h
 #define neorv32_pwm_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: Pulse Width Modulation Controller (PWM)
  **************************************************************************/
@@ -64,7 +65,7 @@ enum NEORV32_PWM_CTRL_enum {
   PWM_CTRL_PRSC2 =  3  /**< PWM control register(3) (r/w): Clock prescaler select bit 2 */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

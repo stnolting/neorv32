@@ -41,6 +41,7 @@
 #ifndef neorv32_dm_h
 #define neorv32_dm_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: On-Chip Debugger (should NOT be used by application software at all!)
  **************************************************************************/
@@ -59,6 +60,6 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /** on-chip debugger debug module hardware access (#neorv32_dm_t) */
 #define NEORV32_DM ((neorv32_dm_t*) (NEORV32_DM_BASE))
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 #endif // neorv32_dm_h

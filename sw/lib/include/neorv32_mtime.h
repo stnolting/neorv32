@@ -43,6 +43,7 @@
 #ifndef neorv32_mtime_h
 #define neorv32_mtime_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: Machine System Timer (MTIME)
  **************************************************************************/
@@ -58,7 +59,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /** MTIME module hardware access (#neorv32_mtime_t) */
 #define NEORV32_MTIME ((neorv32_mtime_t*) (NEORV32_MTIME_BASE))
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

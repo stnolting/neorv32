@@ -41,6 +41,7 @@
 #ifndef neorv32_xirq_h
 #define neorv32_xirq_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: External Interrupt Controller (XIRQ)
  **************************************************************************/
@@ -56,7 +57,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /** XIRQ module hardware access (#neorv32_xirq_t) */
 #define NEORV32_XIRQ ((neorv32_xirq_t*) (NEORV32_XIRQ_BASE))
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes
