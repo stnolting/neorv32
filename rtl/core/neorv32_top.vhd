@@ -141,7 +141,8 @@ entity neorv32_top is
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED FIFO depth, has to be a power of two, min 1
     IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
     IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
-    IO_ONEWIRE_EN                : boolean := false   -- implement 1-wire interface (ONEWIRE)?
+    IO_ONEWIRE_EN                : boolean := false;  -- implement 1-wire interface (ONEWIRE)?
+    IO_DMA_EN                    : boolean := false   -- implement direct memory access controller (DMA)?
   );
   port (
     -- Global control --
@@ -287,7 +288,7 @@ architecture neorv32_top_rtl of neorv32_top is
     cached : std_ulogic; -- cached transfer
     priv   : std_ulogic; -- set when in privileged machine mode
   end record;
-  signal cpu_i, cpu_d, i_cache, d_cache, p_bus : bus_interface_t;
+  signal cpu_i, cpu_d, i_cache, d_cache, core_bus, dma_bus, p_bus : bus_interface_t;
   signal d_fence, i_fence : std_ulogic;
 
   -- bus access error (from BUSKEEPER) --
@@ -311,7 +312,7 @@ architecture neorv32_top_rtl of neorv32_top is
   end record;
   signal dmi : dmi_t;
 
-  -- io space access --
+  -- IO space access --
   signal io_acc  : std_ulogic;
   signal io_rden : std_ulogic;
   signal io_wren : std_ulogic;
@@ -323,14 +324,14 @@ architecture neorv32_top_rtl of neorv32_top is
     err   : std_ulogic;
   end record;
 
-  -- termination for unused/unimplemented bus endpoints --
+  -- module response bus - termination for unused bus endpoints --
   constant resp_bus_entry_terminate_c : resp_bus_entry_t := (rdata => (others => '0'), ack => '0', err => '0');
 
   -- module response bus - device ID --
   type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO,
                          RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI, RESP_TWI, RESP_PWM, RESP_WDT,
                          RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_XIRQ, RESP_GPTMR,
-                         RESP_XIP_CT, RESP_XIP_ACC, RESP_ONEWIRE, RESP_SDI);
+                         RESP_XIP_CT, RESP_XIP_ACC, RESP_ONEWIRE, RESP_SDI, RESP_DMA);
 
   -- module response bus --
   type resp_bus_t is array (resp_bus_id_t) of resp_bus_entry_t;
@@ -352,6 +353,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal xirq_irq     : std_ulogic;
   signal gptmr_irq    : std_ulogic;
   signal onewire_irq  : std_ulogic;
+  signal dma_irq      : std_ulogic;
 
   -- misc --
   signal ext_timeout : std_ulogic;
@@ -373,7 +375,7 @@ begin
     cond_sel_string_f(DCACHE_EN, "D-CACHE ", "") &
     cond_sel_string_f(MEM_EXT_EN, "WISHBONE ", "") &
     cond_sel_string_f(ON_CHIP_DEBUGGER_EN, "OCD ", "") &
-    "- " &
+    "+ " &
     cond_sel_string_f(boolean(IO_GPIO_NUM > 0), "GPIO ", "") &
     cond_sel_string_f(IO_MTIME_EN, "MTIME ", "") &
     cond_sel_string_f(IO_UART0_EN, "UART0 ", "") &
@@ -390,6 +392,7 @@ begin
     cond_sel_string_f(IO_GPTMR_EN, "GPTMR ", "") &
     cond_sel_string_f(IO_XIP_EN, "XIP ", "") &
     cond_sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ", "") &
+    cond_sel_string_f(IO_DMA_EN, "DMA ", "") &
     ""
     severity note;
 
@@ -588,7 +591,7 @@ begin
   fast_irq(07) <= twi_irq;      -- TWI transfer done
   fast_irq(08) <= xirq_irq;     -- external interrupt controller
   fast_irq(09) <= neoled_irq;   -- NEOLED buffer IRQ
-  fast_irq(10) <= '0';          -- reserved
+  fast_irq(10) <= dma_irq;      -- DMA controller
   fast_irq(11) <= sdi_irq;      -- SDI interrupt
   fast_irq(12) <= gptmr_irq;    -- general purpose timer match
   fast_irq(13) <= onewire_irq;  -- ONEWIRE operation done
@@ -641,7 +644,7 @@ begin
   i_cache.ben   <= (others => '0');
   i_cache.we    <= '0';
   i_cache.priv  <= cpu_i.priv;
-  i_cache.src   <= '0'; -- not used
+  i_cache.src   <= cpu_i.src;
 
 
   -- CPU Data Cache -------------------------------------------------------------------------
@@ -695,56 +698,168 @@ begin
   end generate;
 
   d_cache.priv <= cpu_d.priv;
-  d_cache.src  <= '0';
+  d_cache.src  <= cpu_d.src;
 
 
   -- CPU Bus Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_busswitch_inst: neorv32_busswitch
+  neorv32_core_busswitch_inst: neorv32_busswitch
   generic map (
     PORT_CA_READ_ONLY => false, -- set if controller port A is read-only
     PORT_CB_READ_ONLY => true   -- set if controller port B is read-only
   )
   port map (
     -- global control --
-    clk_i           => clk_i,          -- global clock, rising edge
-    rstn_i          => rstn_int,       -- global reset, low-active, async
+    clk_i           => clk_i,           -- global clock, rising edge
+    rstn_i          => rstn_int,        -- global reset, low-active, async
     -- controller interface a --
-    ca_bus_priv_i   => d_cache.priv,   -- current privilege level
-    ca_bus_cached_i => d_cache.cached, -- set if cached transfer
-    ca_bus_addr_i   => d_cache.addr,   -- bus access address
-    ca_bus_rdata_o  => d_cache.rdata,  -- bus read data
-    ca_bus_wdata_i  => d_cache.wdata,  -- bus write data
-    ca_bus_ben_i    => d_cache.ben,    -- byte enable
-    ca_bus_we_i     => d_cache.we,     -- write enable
-    ca_bus_re_i     => d_cache.re,     -- read enable
-    ca_bus_ack_o    => d_cache.ack,    -- bus transfer acknowledge
-    ca_bus_err_o    => d_cache.err,    -- bus transfer error
+    ca_bus_priv_i   => d_cache.priv,    -- current privilege level
+    ca_bus_cached_i => d_cache.cached,  -- set if cached transfer
+    ca_bus_src_i    => d_cache.src,     -- access source
+    ca_bus_addr_i   => d_cache.addr,    -- bus access address
+    ca_bus_rdata_o  => d_cache.rdata,   -- bus read data
+    ca_bus_wdata_i  => d_cache.wdata,   -- bus write data
+    ca_bus_ben_i    => d_cache.ben,     -- byte enable
+    ca_bus_we_i     => d_cache.we,      -- write enable
+    ca_bus_re_i     => d_cache.re,      -- read enable
+    ca_bus_ack_o    => d_cache.ack,     -- bus transfer acknowledge
+    ca_bus_err_o    => d_cache.err,     -- bus transfer error
     -- controller interface b --
-    cb_bus_priv_i   => i_cache.priv,   -- current privilege level
-    cb_bus_cached_i => i_cache.cached, -- set if cached transfer
-    cb_bus_addr_i   => i_cache.addr,   -- bus access address
-    cb_bus_rdata_o  => i_cache.rdata,  -- bus read data
-    cb_bus_wdata_i  => (others => '0'),
-    cb_bus_ben_i    => (others => '0'),
-    cb_bus_we_i     => '0',
-    cb_bus_re_i     => i_cache.re,     -- read enable
-    cb_bus_ack_o    => i_cache.ack,    -- bus transfer acknowledge
-    cb_bus_err_o    => i_cache.err,    -- bus transfer error
+    cb_bus_priv_i   => i_cache.priv,    -- current privilege level
+    cb_bus_cached_i => i_cache.cached,  -- set if cached transfer
+    cb_bus_src_i    => i_cache.src,     -- access source
+    cb_bus_addr_i   => i_cache.addr,    -- bus access address
+    cb_bus_rdata_o  => i_cache.rdata,   -- bus read data
+    cb_bus_wdata_i  => i_cache.wdata,   -- bus write data
+    cb_bus_ben_i    => i_cache.ben,     -- byte enable
+    cb_bus_we_i     => i_cache.we,      -- write enable
+    cb_bus_re_i     => i_cache.re,      -- read enable
+    cb_bus_ack_o    => i_cache.ack,     -- bus transfer acknowledge
+    cb_bus_err_o    => i_cache.err,     -- bus transfer error
     -- peripheral bus --
-    p_bus_priv_o    => p_bus.priv,     -- current privilege level
-    p_bus_cached_o  => p_bus.cached,   -- set if cached transfer
-    p_bus_src_o     => p_bus.src,      -- access source: 0 = A (data), 1 = B (instructions)
-    p_bus_addr_o    => p_bus.addr,     -- bus access address
-    p_bus_rdata_i   => p_bus.rdata,    -- bus read data
-    p_bus_wdata_o   => p_bus.wdata,    -- bus write data
-    p_bus_ben_o     => p_bus.ben,      -- byte enable
-    p_bus_we_o      => p_bus.we,       -- write enable
-    p_bus_re_o      => p_bus.re,       -- read enable
-    p_bus_ack_i     => p_bus.ack,      -- bus transfer acknowledge
-    p_bus_err_i     => bus_error       -- bus transfer error
+    p_bus_priv_o    => core_bus.priv,   -- current privilege level
+    p_bus_cached_o  => core_bus.cached, -- set if cached transfer
+    p_bus_src_o     => core_bus.src,    -- access source: 0 = A (data), 1 = B (instructions)
+    p_bus_addr_o    => core_bus.addr,   -- bus access address
+    p_bus_rdata_i   => core_bus.rdata,  -- bus read data
+    p_bus_wdata_o   => core_bus.wdata,  -- bus write data
+    p_bus_ben_o     => core_bus.ben,    -- byte enable
+    p_bus_we_o      => core_bus.we,     -- write enable
+    p_bus_re_o      => core_bus.re,     -- read enable
+    p_bus_ack_i     => core_bus.ack,    -- bus transfer acknowledge
+    p_bus_err_i     => core_bus.err     -- bus transfer error
   );
 
+
+-- ****************************************************************************************************************************
+-- Direct Memory Access Controller (DMA) Complex
+-- ****************************************************************************************************************************
+
+  -- DMA controller and according bus switch --
+  neorv32_dma_complex_true:
+  if (IO_DMA_EN = true) generate
+    -- DMA controller --
+    neorv32_dma_inst: neorv32_dma
+    port map (
+      -- global control --
+      clk_i          => clk_i,                    -- global clock line
+      rstn_i         => rstn_int,                 -- global reset line, low-active, async
+      -- peripheral port: configuration and status --
+      addr_i         => p_bus.addr,               -- address
+      rden_i         => io_rden,                  -- read enable
+      wren_i         => io_wren,                  -- write enable
+      data_i         => p_bus.wdata,              -- data in
+      data_o         => resp_bus(RESP_DMA).rdata, -- data out
+      ack_o          => resp_bus(RESP_DMA).ack,   -- transfer acknowledge
+      -- host port: bus access --
+      bus_bus_priv_o => dma_bus.priv,             -- current privilege level
+      bus_cached_o   => dma_bus.cached,           -- set if cached (!) access in progress
+      bus_src_o      => dma_bus.src,              -- access source
+      bus_addr_o     => dma_bus.addr,             -- bus access address
+      bus_rdata_i    => dma_bus.rdata,            -- bus read data
+      bus_wdata_o    => dma_bus.wdata,            -- bus write data
+      bus_ben_o      => dma_bus.ben,              -- byte enable
+      bus_we_o       => dma_bus.we,               -- write enable
+      bus_re_o       => dma_bus.re,               -- read enable
+      bus_ack_i      => dma_bus.ack,              -- bus transfer acknowledge
+      bus_err_i      => dma_bus.err,              -- bus transfer error
+      -- interrupt --
+      irq_o          => dma_irq
+    );
+    resp_bus(RESP_DMA).err <= '0'; -- no access error possible
+
+    -- bus switch --
+    neorv32_dma_busswitch_inst: neorv32_busswitch
+    generic map (
+      PORT_CA_READ_ONLY => false, -- set if controller port A is read-only
+      PORT_CB_READ_ONLY => false  -- set if controller port B is read-only
+    )
+    port map (
+      -- global control --
+      clk_i           => clk_i,           -- global clock, rising edge
+      rstn_i          => rstn_int,        -- global reset, low-active, async
+      -- controller interface a --
+      ca_bus_priv_i   => core_bus.priv,   -- current privilege level
+      ca_bus_cached_i => core_bus.cached, -- set if cached transfer
+      ca_bus_src_i    => core_bus.src,    -- access source
+      ca_bus_addr_i   => core_bus.addr,   -- bus access address
+      ca_bus_rdata_o  => core_bus.rdata,  -- bus read data
+      ca_bus_wdata_i  => core_bus.wdata,  -- bus write data
+      ca_bus_ben_i    => core_bus.ben,    -- byte enable
+      ca_bus_we_i     => core_bus.we,     -- write enable
+      ca_bus_re_i     => core_bus.re,     -- read enable
+      ca_bus_ack_o    => core_bus.ack,    -- bus transfer acknowledge
+      ca_bus_err_o    => core_bus.err,    -- bus transfer error
+      -- controller interface b --
+      cb_bus_priv_i   => dma_bus.priv,    -- current privilege level
+      cb_bus_cached_i => dma_bus.cached,  -- set if cached transfer
+      cb_bus_src_i    => dma_bus.src,     -- access source
+      cb_bus_addr_i   => dma_bus.addr,    -- bus access address
+      cb_bus_rdata_o  => dma_bus.rdata,   -- bus read data
+      cb_bus_wdata_i  => dma_bus.wdata,   -- bus write data
+      cb_bus_ben_i    => dma_bus.ben,     -- byte enable
+      cb_bus_we_i     => dma_bus.we,      -- write enable
+      cb_bus_re_i     => dma_bus.re,      -- read enable
+      cb_bus_ack_o    => dma_bus.ack,     -- bus transfer acknowledge
+      cb_bus_err_o    => dma_bus.err,     -- bus transfer error
+      -- peripheral bus --
+      p_bus_priv_o    => p_bus.priv,      -- current privilege level
+      p_bus_cached_o  => p_bus.cached,    -- set if cached transfer
+      p_bus_src_o     => p_bus.src,       -- access source: 0 = A (data), 1 = B (instructions)
+      p_bus_addr_o    => p_bus.addr,      -- bus access address
+      p_bus_rdata_i   => p_bus.rdata,     -- bus read data
+      p_bus_wdata_o   => p_bus.wdata,     -- bus write data
+      p_bus_ben_o     => p_bus.ben,       -- byte enable
+      p_bus_we_o      => p_bus.we,        -- write enable
+      p_bus_re_o      => p_bus.re,        -- read enable
+      p_bus_ack_i     => p_bus.ack,       -- bus transfer acknowledge
+      p_bus_err_i     => bus_error        -- bus transfer error
+    );
+  end generate;
+
+  -- route-through --
+  neorv32_dma_complex_false:
+  if (IO_DMA_EN = false) generate
+    resp_bus(RESP_DMA) <= resp_bus_entry_terminate_c;
+    dma_irq <= '0';
+    --
+    p_bus.priv     <= core_bus.priv;
+    p_bus.cached   <= core_bus.cached;
+    p_bus.src      <= core_bus.src;
+    p_bus.addr     <= core_bus.addr;
+    core_bus.rdata <= p_bus.rdata;
+    p_bus.wdata    <= core_bus.wdata;
+    p_bus.ben      <= core_bus.ben;
+    p_bus.we       <= core_bus.we;
+    p_bus.re       <= core_bus.re;
+    core_bus.ack   <= p_bus.ack;
+    core_bus.err   <= bus_error;
+  end generate;
+
+
+-- ****************************************************************************************************************************
+-- Bus System
+-- ****************************************************************************************************************************
 
   -- Bus Response ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1634,7 +1749,8 @@ begin
     IO_XIRQ_NUM_CH       => XIRQ_NUM_CH,          -- number of external interrupt (XIRQ) channels to implement
     IO_GPTMR_EN          => IO_GPTMR_EN,          -- implement general purpose timer (GPTMR)?
     IO_XIP_EN            => IO_XIP_EN,            -- implement execute in place module (XIP)?
-    IO_ONEWIRE_EN        => IO_ONEWIRE_EN         -- implement 1-wire interface (ONEWIRE)?
+    IO_ONEWIRE_EN        => IO_ONEWIRE_EN,        -- implement 1-wire interface (ONEWIRE)?
+    IO_DMA_EN            => IO_DMA_EN             -- implement direct memory access controller (DMA)?
   )
   port map (
     -- host access --

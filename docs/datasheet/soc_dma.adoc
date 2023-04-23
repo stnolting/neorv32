@@ -1,0 +1,107 @@
+<<<
+:sectnums:
+==== Direct Memory Access Controller (DMA)
+
+[cols="<3,<3,<4"]
+[frame="topbot",grid="none"]
+|=======================
+| Hardware source file(s): | neorv32_dma.vhd |
+| Software driver file(s): | neorv32_dma.c |
+|                          | neorv32_dma.h |
+| Top entity port:         | none |
+| Configuration generics:  | `IO_DMA_EN` | implement DMA when `true`
+| CPU interrupts:          | fast IRQ channel 10 | DMA transfer done (see <<_processor_interrupts>>)
+|=======================
+
+
+**Overview**
+
+The NEORV32 DMA provides a small-scale scatter/gather direct memory access controller that allows to transfer and
+modify data independently of the CPU. A single read/write transfer channel is implemented that is configured via
+memory-mapped registers. The DMA is connected to the central processor-internal bus system (see section
+<<_address_space>>) and can access the same address space as the CPU core. The DMA uses _interleaving mode_ accessing
+the central processor us only if the CPU does not request and bus access.
+
+The controller can handle different data quantities (e.g. read bytes and write them back as sign-extend words) and can
+also change the Endianness of data while transferring.
+
+.DMA Demo Program
+[TIP]
+A simple demo program can be found in `sw/example/demo_dma`.
+
+.Security Warning
+[WARNING]
+Transactions performed by the DMA use _machine mode_ permissions (having full access rights) and will
+also **bypass** any physical memory protection rules (<<_pmp_isa_extension>>).
+
+
+**Theory of Operation**
+
+The DMA provides four memory-mapped interface registers: A status and control register `CTRL` and three registers for
+configuring the actual DMA transfer. The base address of the source data is programmed via the `SRC_BASE` register.
+Vice versa, the base address of the destination data is programmed via the `DST_BASE`. The third configuration register
+`TTYPE` is use to configure the actual transfer type and the number of elements to transfer.
+
+The DMA is enabled by setting the `DMA_CTRL_EN` bit of the control register. Writing the `TTRIG` register will start the
+programmed DMA transfer. Once started, the DMA will read one data quantity from the source address, process it internally
+and then will write it back to the destination address. The `DMA_TTYPE_NUM` bits of the `TTYPE` register define how many
+times this process is
+repeated.
+
+Optionally, the source and/or destination addresses can be increments according to the data quantities
+automatically by setting the according `DMA_TTYPE_SRC_INC` and/or `DMA_TTYPE_DST_INC` bit.
+
+Four different transfer quantities are available, which are configured via the `DMA_TTYPE_QSEL` bits:
+
+* `00`: Read source data as byte, write destination data as byte
+* `01`: Read source data as byte, write destination data as zero-extended word
+* `10`: Read source data as byte, write destination data as sign-extended word
+* `11`: Read source data as word, write destination data as word
+
+.Address Alignment
+[IMPORTAN]
+Make sure to align the source and destination base address to the according transfer quantities. For instance,
+word-to-word transfers require that the two LSB of `SRC_BASE` and `DST_BASE` are cleared.
+
+Optionally, the DMA controller can automatically convert the Endianness of the processed data when the `DMA_TTYPE_ENDIAN`
+bit is set.
+
+The DMA uses a load-modify-write data transfer process. Data is read from the bus system, internally modified and then written
+back to the bus system. This combination is implemented as an atomic progress. Canceling the current transfer by clearing the
+`DMA_CTRL_EN` bit will stop the DMA right after the current atomic operation is completed.
+
+If the DMA controller detects a bus error during operation, it will set either the `DMA_CTRL_ERROR_RD` (error during
+last read access) or `DMA_CTRL_ERROR_WR` (error during last write access) and will terminate the current transfer.
+Software can read the `SRC_BASE` or `DST_BASE` register to retrieve the address that caused the according error.
+Alternatively, software can read back the `NUM` bits of the control register to determine the index of the element
+that caused the error. The error bits are automatically cleared when starting a new transfer.
+
+
+**DMA Interrupt**
+
+The DMA features a single CPU interrupt that is triggered when the programmed transfer has completed. This
+interrupt is also triggered if the DMA encounters a bus error during operation. An active DMA interrupt has to be
+explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
+
+
+**Register Map**
+
+.DMA Register Map (`struct NEORV32_DMA`)
+[cols="<2,<1,<4,^1,<7"]
+[options="header",grid="all"]
+|=======================
+| Address | Name [C] | Bit(s), Name [C] | R/W | Function
+.5+<| `0xffffff10` .5+<| `CTRL` <|`0`    `DMA_CTRL_EN`       ^| r/w <| DMA module enable
+                                <|`28:1` _reserved_          ^| r/- <| reserved, read as zero
+                                <|`29`   `DMA_CTRL_ERROR_RD` ^| r/- <| Error during read access, clears when starting a new transfer
+                                <|`30`   `DMA_CTRL_ERROR_WR` ^| r/- <| Error during write access, clears when starting a new transfer
+                                <|`31`   `DMA_CTRL_BUSY`     ^| r/- <| DMA transfer in progress
+| `0xffffff14` | `SRC_BASE` |`31:0` | r/w | Source base address (shows the last-accessed source address when read)
+| `0xffffff18` | `DST_BASE` |`31:0` | r/w | Destination base address (shows the last-accessed destination address when read)
+.6+<| `0xffffff1c` .6+<| `TTYPE` <|`23:0`  `DMA_TTYPE_NUM_MSB : DMA_TTYPE_NUM_LSB`   ^| r/w <| Number of elements to transfer (shows the last-transferred element index when read)
+                                 <|`26:24` _reserved_                                ^| r/- <| reserved, read as zero
+                                 <|`28:27` `DMA_TTYPE_QSEL_MSB : DMA_TTYPE_QSEL_LSB` ^| r/w <| Source data quantity select (`00` = byte, `01` = half-word, `10` = word)
+                                 <|`29`    `DMA_TTYPE_SRC_INC`                       ^| r/w <| Constant (`0`) or incrementing (`1`) source address
+                                 <|`30`    `DMA_TTYPE_DST_INC`                       ^| r/w <| Constant (`0`) or incrementing (`1`) destination address
+                                 <|`31`    `DMA_TTYPE_ENDIAN`                        ^| r/w <| Swap Endianness when set
+|=======================

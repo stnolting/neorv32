@@ -36,8 +36,9 @@ image::neorv32_processor.png[align=center]
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
 * _optional_ external interrupt controller with up to 32 channels (<<_external_interrupt_controller_xirq,**XIRQ**>>)
 * _optional_ general purpose 32-bit timer (<<_general_purpose_timer_gptmr,**GPTMR**>>)
-* _optional_ execute in place module (<<_execute_in_place_module_xip,**XIP**>>)
+* _optional_ execute in-place module (<<_execute_in_place_module_xip,**XIP**>>)
 * _optional_ 1-wire serial interface controller (<<_one_wire_serial_interface_controller_onewire,**ONEWIRE**>>), compatible to the 1-wire standard
+* _optional_ direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
 * bus keeper to monitor processor-internal bus transactions (<<_internal_bus_monitor_buskeeper,**BUSKEEPER**>>)
 * system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
@@ -271,7 +272,8 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 | `IO_NEOLED_TX_FIFO`     | natural   | 1          | TX FIFO depth of the the <<_smart_led_interface_neoled>>. Has to be a power of two, min 1, max 32768.
 | `IO_GPTMR_EN`           | boolean   | false      | Implement the <<_general_purpose_timer_gptmr>>.
 | `IO_XIP_EN`             | boolean   | false      | Implement the <<_execute_in_place_module_xip>>.
-| `IO_ONE_EN`             | boolean   | false      | Implement the <<_one_wire_serial_interface_controller_onewire>>.
+| `IO_ONEWIRE_EN`         | boolean   | false      | Implement the <<_one_wire_serial_interface_controller_onewire>>.
+| `IO_DMA_EN`             | boolean   | false      | Implement the <<_direct_memory_access_controller_dma>>.
 |=======================
 
 
@@ -421,7 +423,7 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI transmission done interrupt
 | 8       | <<_external_interrupt_controller_xirq,XIRQ>> | External interrupt controller interrupt
 | 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED TX buffer interrupt
-| 10      | - | _reserved_
+| 10      | <<_direct_memory_access_controller_dma,DMA>> | DMA transfer done interrupt
 | 11      | <<_serial_data_interface_controller_sdi,SDI>> | Configurable SDI interrupt
 | 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
 | 13      | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire operation done interrupt
@@ -493,11 +495,10 @@ have access to the same (identical!) address space making the processor a **modi
 .Processor-internal bus architecture
 image::neorv32_bus.png[1300]
 
+.DMA Access
 [NOTE]
-The internal processor bus might appear as bottleneck. In order to reduce traffic jam on this bus
-(when instruction fetch and data interface access the bus at the same time) the instruction fetch of
-the CPU is equipped with a prefetch buffer. Memory accesses can be further buffered using the caches.
-Furthermore, data accesses (loads and stores) have higher priority than instruction fetch accesses.
+The processor-internal <<direct_memory_access_controller_dma>> has access to the same (_identical_) address
+space as the CPU core.
 
 [TIP]
 See sections <<_architecture>> and <<_bus_interface>> for more information regarding the CPU bus accesses.
@@ -658,6 +659,8 @@ include::soc_bootrom.adoc[]
 include::soc_icache.adoc[]
 
 include::soc_dcache.adoc[]
+
+include::soc_dma.adoc[]
 
 include::soc_wishbone.adoc[]
 

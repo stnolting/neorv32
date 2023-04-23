@@ -180,7 +180,7 @@ begin
     if ci_mode then
       -- No need to send the full expectation in one big chunk
       check_uart(net, uart1_rx_handle, nul & nul);
-      check_uart(net, uart1_rx_handle, "0/49" & cr & lf);
+      check_uart(net, uart1_rx_handle, "0/50" & cr & lf);
     end if;
 
     -- Wait until all expected data has been received
@@ -296,7 +296,8 @@ begin
     IO_NEOLED_TX_FIFO            => 8,             -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  => true,          -- implement general purpose timer (GPTMR)?
     IO_XIP_EN                    => true,          -- implement execute in place module (XIP)?
-    IO_ONEWIRE_EN                => true           -- implement 1-wire interface (ONEWIRE)?
+    IO_ONEWIRE_EN                => true,          -- implement 1-wire interface (ONEWIRE)?
+    IO_DMA_EN                    => true           -- implement direct memory access controller (DMA)?
   )
   port map (
     -- Global control --

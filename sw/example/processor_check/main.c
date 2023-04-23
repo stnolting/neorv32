@@ -103,13 +103,12 @@ int cnt_test = 0;
 uint32_t num_hpm_cnts_global = 0;
 /// XIRQ trap handler acknowledge
 uint32_t xirq_trap_handler_ack = 0;
-
+/// DMA source & destination data
+volatile uint32_t dma_src, dma_dst[2];
 /// Variable to test store accesses
 volatile uint32_t store_access_addr[2];
-
 /// Variable to test PMP
 volatile uint32_t __attribute__((aligned(4))) pmp_access[2];
-
 /// Number of implemented PMP regions
 uint32_t pmp_num_regions;
 
@@ -163,7 +162,7 @@ int main() {
 
   // prepare (performance) counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable counter auto increment (ALL counters)
-  neorv32_cpu_csr_write(CSR_MCOUNTEREN, 7); // allow access from user-mode code to standard counters only
+  neorv32_cpu_csr_write(CSR_MCOUNTEREN, 7); // allow access from user-mode code to base counters only
 
   // set CMP of machine system timer MTIME to max to prevent an IRQ
   neorv32_mtime_set_timecmp(-1);
@@ -252,7 +251,7 @@ int main() {
   tmp_a = neorv32_cpu_csr_read(CSR_PMPCFG0);
   tmp_b = ((1 << PMPCFG_L) << 0) | ((1 << PMPCFG_L) << 8) | ((1 << PMPCFG_L) << 16);
 
-  if ((tmp_a & tmp_b)) {
+  if (tmp_a & tmp_b) {
     PRINT_CRITICAL("\nERROR! PMP locked!\n");
     return 1;
   }
@@ -280,16 +279,12 @@ int main() {
   // Test fence instructions
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FENCE(.I) ", cnt_test);
+  PRINT_STANDARD("[%i] FENCEs ", cnt_test);
 
   cnt_test++;
 
-  asm volatile ("fence"); // reload d-cache
-  asm volatile ("fence");
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZIFENCEI)) {
-    asm volatile ("fence.i"); // clear instruction prefetch buffer and clear i-cache
-    asm volatile ("fence.i");
-  }
+  asm volatile ("fence"); // flush/reload d-cache
+  asm volatile ("fence.i"); // clear instruction prefetch buffer and clear i-cache
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
     test_ok();
@@ -303,36 +298,31 @@ int main() {
   // Test standard RISC-V counters 
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Zicntr counters ", cnt_test);
+  PRINT_STANDARD("[%i] Zicntr CNTs ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZICNTR)) {
-    cnt_test++;
+  cnt_test++;
 
-    // make sure counters are enabled
-    neorv32_cpu_csr_clr(CSR_MCOUNTINHIBIT, (1<<CSR_MCOUNTINHIBIT_CY) | (1<<CSR_MCOUNTINHIBIT_IR));
+  // make sure counters are enabled
+  neorv32_cpu_csr_clr(CSR_MCOUNTINHIBIT, (1<<CSR_MCOUNTINHIBIT_CY) | (1<<CSR_MCOUNTINHIBIT_IR));
 
-    // prepare overflow
-    neorv32_cpu_set_mcycle(  0x00000000FFFFFFFFULL);
-    neorv32_cpu_set_minstret(0x00000001FFFFFFFFULL);
+  // prepare overflow
+  neorv32_cpu_set_mcycle(  0x00000000FFFFFFFFULL);
+  neorv32_cpu_set_minstret(0x00000001FFFFFFFFULL);
 
-    asm volatile ("nop");
+  asm volatile ("nop");
 
-    // get current counter HIGH words
-    asm volatile ("rdcycleh   %[rd]" : [rd] "=r" (tmp_a) : );
-    asm volatile ("rdinstreth %[rd]" : [rd] "=r" (tmp_b) : );
+  // get current counter HIGH words
+  asm volatile ("rdcycleh   %[rd]" : [rd] "=r" (tmp_a) : );
+  asm volatile ("rdinstreth %[rd]" : [rd] "=r" (tmp_b) : );
 
-    // make sure cycle counter high has incremented and there was no exception during access
-    if ((tmp_a == 1) && // cycle overflow
-        (tmp_b == 2) && // instret overflow
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
+  // make sure cycle counter high has incremented and there was no exception during access
+  if ((tmp_a == 1) && // cycle overflow
+      (tmp_b == 2) && // instret overflow
+      (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
+    test_ok();
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    test_fail();
   }
 
 
@@ -446,7 +436,7 @@ int main() {
   // (and iCache block-/word-wise error check)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Ext. memory access (@0x%x) ", cnt_test, (uint32_t)EXT_MEM_BASE);
+  PRINT_STANDARD("[%i] Ext. memory (@0x%x) ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_EXT)) {
     cnt_test++;
@@ -1346,7 +1336,7 @@ int main() {
     neorv32_neoled_write_nonblocking(0);
 
     // sleep until interrupt
-    neorv32_cpu_sleep();
+    asm volatile("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1366,9 +1356,53 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 10 (reserved)
+  // Fast interrupt channel 10 (DMA)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ10 [skipped, n.a.]\n", cnt_test);
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] FIRQ10 (DMA) ", cnt_test);
+
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_DMA)) {
+    cnt_test++;
+
+    // enable DMA and according FIRQ channel
+    neorv32_dma_enable();
+    neorv32_cpu_irq_enable(DMA_FIRQ_ENABLE);
+
+    // setup source data, clear destination data
+    dma_src = 0x7788ee11;
+    dma_dst[0] = 0;
+    dma_dst[1] = 0;
+
+    // flush/reload d-cache
+    asm volatile ("fence");
+
+    // configure and trigger DMA transfer
+    tmp_a = DMA_CMD_B2SW | DMA_CMD_SRC_INC | DMA_CMD_DST_INC | DMA_CMD_ENDIAN;
+    neorv32_dma_transfer((uint32_t)(&dma_src), (uint32_t)(&dma_dst[0]), 2, tmp_a);
+
+    // wait for transfer-done interrupt
+    asm volatile ("wfi");
+
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    // flush/reload d-cache
+    asm volatile ("fence");
+
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == DMA_TRAP_CODE) && // correct interrupt source
+        (dma_dst[0] == 0x00000077UL) && (dma_dst[1] == 0xffffff88UL) && // correct destination data
+        (neorv32_dma_status() == DMA_STATUS_IDLE)) { // DMA back in idle mode without errors
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    // disable DMA
+    neorv32_dma_disable();
+  }
+  else {
+    PRINT_STANDARD("[skipped, n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------
@@ -1500,7 +1534,8 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 14..15 (reserved)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ14..15 [skipped, n.a.]\n", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ14..15 ", cnt_test);
+  PRINT_STANDARD("[skipped, n.a.]\n");
 
 
   // ----------------------------------------------------------
@@ -1805,26 +1840,37 @@ int main() {
   // HPM reports
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all HPM counters
-  PRINT_STANDARD("\n\n<< HPM counters >>\n");
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIHPM)) {
-    PRINT_STANDARD("#00 Instr.:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET));
-    // HPM #01 does not exist
-    PRINT_STANDARD("#02 Clocks:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE));
-    PRINT_STANDARD("#03 C-instr.: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));
-    PRINT_STANDARD("#04 IF wait:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));
-    PRINT_STANDARD("#05 II wait:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));
-    PRINT_STANDARD("#06 ALU wait: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));
-    PRINT_STANDARD("#07 M loads:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));
-    PRINT_STANDARD("#08 M stores: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));
-    PRINT_STANDARD("#09 M wait:   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));
-    PRINT_STANDARD("#10 Jumps:    %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10));
-    PRINT_STANDARD("#11 Branch.:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11));
-    PRINT_STANDARD("#12 > taken:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12));
-    PRINT_STANDARD("#13 EXCs:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER13));
-    PRINT_STANDARD("#14 Illegals: %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER14));
-  }
-  else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("\n\nHPMs\n"
+                   "#00 Instr.:   %u\n"
+                   "#02 Clocks:   %u\n"
+                   "#03 C instr.: %u\n"
+                   "#04 IF wait:  %u\n"
+                   "#05 II wait:  %u\n"
+                   "#06 ALU wait: %u\n"
+                   "#07 M loads:  %u\n"
+                   "#08 M stores: %u\n"
+                   "#09 M wait:   %u\n"
+                   "#10 Jumps:    %u\n"
+                   "#11 Branch.:  %u\n"
+                   "#12 > taken:  %u\n"
+                   "#13 EXCs:     %u\n"
+                   "#14 Illegals: %u\n",
+                   (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER13),
+                   (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER14));
+
   }
 
 

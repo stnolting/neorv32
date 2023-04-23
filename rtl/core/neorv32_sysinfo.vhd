@@ -86,7 +86,8 @@ entity neorv32_sysinfo is
     IO_XIRQ_NUM_CH       : natural; -- number of external interrupt (XIRQ) channels to implement
     IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?
     IO_XIP_EN            : boolean; -- implement execute in place module (XIP)?
-    IO_ONEWIRE_EN        : boolean  -- implement 1-wire interface (ONEWIRE)?
+    IO_ONEWIRE_EN        : boolean; -- implement 1-wire interface (ONEWIRE)?
+    IO_DMA_EN            : boolean  -- implement direct memory access controller (DMA)?
   );
   port (
     -- host access --
@@ -149,8 +150,7 @@ begin
   sysinfo(2)(13) <= bool_to_ulogic_f(is_simulation_c);     -- is this a simulation?
   sysinfo(2)(14) <= bool_to_ulogic_f(ON_CHIP_DEBUGGER_EN); -- on-chip debugger implemented?
   --
-  sysinfo(2)(15) <= '0'; -- reserved
-  -- IO --
+  sysinfo(2)(15) <= bool_to_ulogic_f(IO_DMA_EN);           -- direct memory access controller (DMA) implemented?
   sysinfo(2)(16) <= bool_to_ulogic_f(IO_GPIO_NUM > 0);     -- general purpose input/output port unit (GPIO) implemented?
   sysinfo(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN);         -- machine system timer (MTIME) implemented?
   sysinfo(2)(18) <= bool_to_ulogic_f(IO_UART0_EN);         -- primary universal asynchronous receiver/transmitter (UART0) implemented?
