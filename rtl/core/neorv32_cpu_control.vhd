@@ -1043,7 +1043,7 @@ begin
 
       when BRANCH => -- update PC on taken branches and jumps
       -- ------------------------------------------------------------
-        ctrl_nxt.rf_mux           <= rf_mux_npc_c; -- return addree = next PC
+        ctrl_nxt.rf_mux           <= rf_mux_npc_c; -- return address = next PC
         execute_engine.pc_mux_sel <= '1'; -- PC <= alu.add = branch/jump destination
         execute_engine.pc_we      <= '1'; -- update PC with destination; will be overridden again in DISPATCH if branch not taken
         if (execute_engine.ir(instr_opcode_lsb_c+2) = '1') or (execute_engine.branch_taken = '1') then -- JAL/JALR or taken branch
@@ -2428,7 +2428,7 @@ begin
       -- base counters --
       cnt.inc(0) <= cnt_event(hpmcnt_event_cy_c) and (not csr.mcountinhibit(0)) and (not debug_ctrl.running); -- cycle
       cnt.inc(2) <= cnt_event(hpmcnt_event_ir_c) and (not csr.mcountinhibit(2)) and (not debug_ctrl.running); -- instret
-      -- hpm counters --
+      -- HPM counters --
       for i in 0 to HPM_NUM_CNTS-1 loop
         cnt.inc(3+i) <= or_reduce_f(cnt_event and hpmevent.cfg(i)) and (not csr.mcountinhibit(3+i)) and (not debug_ctrl.running);
       end loop;
