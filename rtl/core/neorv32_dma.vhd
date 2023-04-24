@@ -312,10 +312,9 @@ begin
   address_inc: process(config.qsel)
   begin
     case config.qsel is
-      when qsel_b2b_c  => engine.src_add <= to_unsigned(1, 32); engine.dst_add <= to_unsigned(1, 32); -- byte -> byte
-      when qsel_b2uw_c => engine.src_add <= to_unsigned(1, 32); engine.dst_add <= to_unsigned(4, 32); -- byte -> word
-      when qsel_b2sw_c => engine.src_add <= to_unsigned(1, 32); engine.dst_add <= to_unsigned(4, 32); -- byte -> word
-      when others      => engine.src_add <= to_unsigned(4, 32); engine.dst_add <= to_unsigned(4, 32); -- word -> word
+      when qsel_b2b_c => engine.src_add <= to_unsigned(1, 32); engine.dst_add <= to_unsigned(1, 32); -- byte -> byte
+      when qsel_w2w_c => engine.src_add <= to_unsigned(4, 32); engine.dst_add <= to_unsigned(4, 32); -- word -> word
+      when others     => engine.src_add <= to_unsigned(1, 32); engine.dst_add <= to_unsigned(4, 32); -- byte -> word
     end case;
   end process address_inc;
 

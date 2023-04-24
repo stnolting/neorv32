@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080401"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080402"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -384,23 +384,24 @@ package neorv32_package is
   -- RISC-V Opcodes -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- alu --
-  constant opcode_alui_c   : std_ulogic_vector(6 downto 0) := "0010011"; -- ALU operation with immediate (operation via funct3 and funct7)
-  constant opcode_alu_c    : std_ulogic_vector(6 downto 0) := "0110011"; -- ALU operation (operation via funct3 and funct7)
+  constant opcode_alui_c   : std_ulogic_vector(6 downto 0) := "0010011"; -- ALU operation with immediate
+  constant opcode_alu_c    : std_ulogic_vector(6 downto 0) := "0110011"; -- ALU operation
   constant opcode_lui_c    : std_ulogic_vector(6 downto 0) := "0110111"; -- load upper immediate
   constant opcode_auipc_c  : std_ulogic_vector(6 downto 0) := "0010111"; -- add upper immediate to PC
   -- control flow --
   constant opcode_jal_c    : std_ulogic_vector(6 downto 0) := "1101111"; -- jump and link
   constant opcode_jalr_c   : std_ulogic_vector(6 downto 0) := "1100111"; -- jump and link with register
-  constant opcode_branch_c : std_ulogic_vector(6 downto 0) := "1100011"; -- branch (condition set via funct3)
+  constant opcode_branch_c : std_ulogic_vector(6 downto 0) := "1100011"; -- branch
   -- memory access --
-  constant opcode_load_c   : std_ulogic_vector(6 downto 0) := "0000011"; -- load (data type via funct3)
-  constant opcode_store_c  : std_ulogic_vector(6 downto 0) := "0100011"; -- store (data type via funct3)
-  -- sync/system/csr --
+  constant opcode_load_c   : std_ulogic_vector(6 downto 0) := "0000011"; -- load
+  constant opcode_store_c  : std_ulogic_vector(6 downto 0) := "0100011"; -- store
+  constant opcode_amo_c    : std_ulogic_vector(6 downto 0) := "0101111"; -- atomic memory access
   constant opcode_fence_c  : std_ulogic_vector(6 downto 0) := "0001111"; -- fence / fence.i
-  constant opcode_system_c : std_ulogic_vector(6 downto 0) := "1110011"; -- system/csr access (type via funct3)
+  -- system/csr --
+  constant opcode_system_c : std_ulogic_vector(6 downto 0) := "1110011"; -- system/csr access
   -- floating point operations --
   constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single operand instruction
-  -- official *custom* RISC-V opcodes - free for custom instructions --
+  -- official custom RISC-V opcodes - free for custom instructions --
   constant opcode_cust0_c  : std_ulogic_vector(6 downto 0) := "0001011"; -- custom-0
   constant opcode_cust1_c  : std_ulogic_vector(6 downto 0) := "0101011"; -- custom-1
   constant opcode_cust2_c  : std_ulogic_vector(6 downto 0) := "1011011"; -- custom-2
@@ -419,14 +420,12 @@ package neorv32_package is
   constant funct3_lb_c     : std_ulogic_vector(2 downto 0) := "000"; -- load byte
   constant funct3_lh_c     : std_ulogic_vector(2 downto 0) := "001"; -- load half word
   constant funct3_lw_c     : std_ulogic_vector(2 downto 0) := "010"; -- load word
-  constant funct3_ld_c     : std_ulogic_vector(2 downto 0) := "011"; -- load half word (unsigned, rv64-only)
   constant funct3_lbu_c    : std_ulogic_vector(2 downto 0) := "100"; -- load byte (unsigned)
   constant funct3_lhu_c    : std_ulogic_vector(2 downto 0) := "101"; -- load half word (unsigned)
-  constant funct3_lwu_c    : std_ulogic_vector(2 downto 0) := "110"; -- load word (unsigned, rv64-only)
+  constant funct3_lwu_c    : std_ulogic_vector(2 downto 0) := "110"; -- load word (unsigned)
   constant funct3_sb_c     : std_ulogic_vector(2 downto 0) := "000"; -- store byte
   constant funct3_sh_c     : std_ulogic_vector(2 downto 0) := "001"; -- store half word
   constant funct3_sw_c     : std_ulogic_vector(2 downto 0) := "010"; -- store word
-  constant funct3_sd_c     : std_ulogic_vector(2 downto 0) := "011"; -- store double-word (rv64-only)
   -- alu --
   constant funct3_subadd_c : std_ulogic_vector(2 downto 0) := "000"; -- sub/add via funct7
   constant funct3_sll_c    : std_ulogic_vector(2 downto 0) := "001"; -- shift logical left
@@ -439,12 +438,12 @@ package neorv32_package is
   -- system/csr --
   constant funct3_env_c    : std_ulogic_vector(2 downto 0) := "000"; -- ecall, ebreak, mret, wfi, ...
   constant funct3_csrrw_c  : std_ulogic_vector(2 downto 0) := "001"; -- csr r/w
-  constant funct3_csrrs_c  : std_ulogic_vector(2 downto 0) := "010"; -- csr read & set bit
-  constant funct3_csrrc_c  : std_ulogic_vector(2 downto 0) := "011"; -- csr read & clear bit
+  constant funct3_csrrs_c  : std_ulogic_vector(2 downto 0) := "010"; -- csr read & set
+  constant funct3_csrrc_c  : std_ulogic_vector(2 downto 0) := "011"; -- csr read & clear
   constant funct3_csril_c  : std_ulogic_vector(2 downto 0) := "100"; -- undefined/illegal
   constant funct3_csrrwi_c : std_ulogic_vector(2 downto 0) := "101"; -- csr r/w immediate
-  constant funct3_csrrsi_c : std_ulogic_vector(2 downto 0) := "110"; -- csr read & set bit immediate
-  constant funct3_csrrci_c : std_ulogic_vector(2 downto 0) := "111"; -- csr read & clear bit immediate
+  constant funct3_csrrsi_c : std_ulogic_vector(2 downto 0) := "110"; -- csr read & set immediate
+  constant funct3_csrrci_c : std_ulogic_vector(2 downto 0) := "111"; -- csr read & clear immediate
   -- fence --
   constant funct3_fence_c  : std_ulogic_vector(2 downto 0) := "000"; -- fence - order IO/memory access
   constant funct3_fencei_c : std_ulogic_vector(2 downto 0) := "001"; -- fence.i - instruction stream sync

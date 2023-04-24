@@ -178,11 +178,12 @@ begin
       -- ------------------------------------------------------------
         arbiter.bus_sel <= '0'; -- access from port A
         if (p_bus_err_i = '1') or (p_bus_ack_i = '1') then
-          if (cb_req_pending = '1') or (cb_req_current = '1') then -- any request from B?
-            arbiter.state_nxt <= B_RETIRE;
-          else
+-- [COMMENT NOTE] Direct return to IDLE to further promote port A access requests.
+--        if (cb_req_pending = '1') or (cb_req_current = '1') then -- any request from B?
+--          arbiter.state_nxt <= B_RETIRE;
+--        else
             arbiter.state_nxt <= IDLE;
-          end if;
+--        end if;
         end if;
 
       when A_RETIRE => -- retire port A pending access

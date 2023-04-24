@@ -33,6 +33,7 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 24.04.2023 | 1.8.4.2 | minor rtl edits; shorten critical path of d-cache setup; [#599](https://github.com/stnolting/neorv32/pull/599) |
 | 22.04.2023 | 1.8.4.1 | :sparkles: add optional **direct memory access controller (DMA)**; [#593](https://github.com/stnolting/neorv32/pull/593) |
 | 21.04.2023 | [**:rocket:1.8.4**](https://github.com/stnolting/neorv32/releases/tag/v1.8.4) | **New release** |
 | 21.04.2023 | 1.8.3.9 | :bug: fix timeout bug in **FPU** normalizer; [#592](https://github.com/stnolting/neorv32/pull/592) |
