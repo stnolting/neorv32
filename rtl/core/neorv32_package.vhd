@@ -145,93 +145,46 @@ package neorv32_package is
   constant dm_exc_entry_c       : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(dm_code_base_c) + 0); -- entry point for exceptions
   constant dm_park_entry_c      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(dm_code_base_c) + 8); -- normal entry point
 
+  -- module response bus - device ID --
+  type module_bus_id_t is (MODULE_BUSKEEPER, MODULE_IMEM, MODULE_DMEM, MODULE_BOOTROM, MODULE_WISHBONE, MODULE_GPIO,
+                           MODULE_MTIME, MODULE_UART0, MODULE_UART1, MODULE_SPI, MODULE_TWI, MODULE_PWM, MODULE_WDT,
+                           MODULE_TRNG, MODULE_CFS, MODULE_NEOLED, MODULE_SYSINFO, MODULE_OCD, MODULE_XIRQ, MODULE_GPTMR,
+                           MODULE_XIP_CT, MODULE_XIP_ACC, MODULE_ONEWIRE, MODULE_SDI, MODULE_DMA);
+
+  type memory_region is record
+    name    : string;
+    module  : module_bus_id_t
+    base    : std_ulogic_vector(31 downto 0);
+    size    : natural;
+  end record;
+
+  type memory_map_t is array (natural range <>) of memory_region;
+  constant io_memory_map : memory_map_t := (
+    ("cfs",       MODULE_CFS,       x"fffffe00", 512),
+    ("sdi",       MODULE_SDI,       x"ffffff00", 2*4),
+    ("dma",       MODULE_DMA,       x"ffffff10", 4*4),
+    ("xip",       MODULE_XIP,       x"ffffff40", 4*4),
+    ("pwm",       MODULE_PWM,       x"ffffff50", 4*4),
+    ("gptmr",     MODULE_GPTMR,     x"ffffff60", 4*4),
+    ("onewire",   MODULE_ONEWIRE,   x"ffffff70", 2*4),
+    ("buskeeper", MODULE_BUSKEEPER, x"ffffff78", 2*4),
+    ("xirq",      MODULE_XIRQ,      x"ffffff80", 4*4),
+    ("mtime",     MODULE_MTIME,     x"ffffff90", 4*4),
+    ("uart0",     MODULE_UART0,     x"ffffffa0", 2*4),
+    ("spi",       MODULE_SPI,       x"ffffffa8", 2*4),
+    ("twi",       MODULE_TWI,       x"ffffffb0", 2*4),
+    ("trng",      MODULE_TRNG,      x"ffffffb8", 1*4),
+    ("wdt",       MODULE_WDT,       x"ffffffbc", 1*4),
+    ("gpio",      MODULE_GPIO,      x"ffffffc0", 4*4),
+    ("uart1",     MODULE_UART1,     x"ffffffd0", 2*4),
+    ("neoled",    MODULE_NEOLED,    x"ffffffd8", 2*4),
+    ("sysinfo",   MODULE_SYSINFO,   x"ffffffe0", 8*4)
+  );
+
   -- IO: Internal Peripheral Devices ("IO") Area --
   -- Control register(s) (including the device-enable flag) should be located at the base address of each device
   constant io_base_c            : std_ulogic_vector(31 downto 0) := x"fffffe00";
   constant io_size_c            : natural := 512; -- IO address space size in bytes, fixed!
-
-  -- Custom Functions Subsystem (CFS) --
-  constant cfs_base_c           : std_ulogic_vector(31 downto 0) := x"fffffe00"; -- base address
-  constant cfs_size_c           : natural := 64*4; -- module's address space in bytes
-
-  -- Serial Data Interface (SDI) --
-  constant sdi_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- base address
-  constant sdi_size_c           : natural := 2*4; -- module's address space size in bytes
-
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- base address
---constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
-
-  -- Direct Memory Access Controller (DMA) --
-  constant dma_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff10"; -- base address
-  constant dma_size_c           : natural := 4*4; -- module's address space size in bytes
-
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff20"; -- base address
---constant reserved_size_c      : natural := 8*4; -- module's address space size in bytes
-
-  -- Execute In-Place Module (XIP) --
-  constant xip_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff40"; -- base address
-  constant xip_size_c           : natural := 4*4; -- module's address space size in bytes
-
-  -- Pulse-Width Modulation Controller (PWM) --
-  constant pwm_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff50"; -- base address
-  constant pwm_size_c           : natural := 4*4; -- module's address space size in bytes
-
-  -- General Purpose Timer (GPTMR) --
-  constant gptmr_base_c         : std_ulogic_vector(31 downto 0) := x"ffffff60"; -- base address
-  constant gptmr_size_c         : natural := 4*4; -- module's address space size in bytes
-
-  -- 1-Wire Interface Controller (ONEWIRE) --
-  constant onewire_base_c       : std_ulogic_vector(31 downto 0) := x"ffffff70"; -- base address
-  constant onewire_size_c       : natural := 2*4; -- module's address space size in bytes
-
-  -- Bus Access Monitor (BUSKEEPER) --
-  constant buskeeper_base_c     : std_ulogic_vector(31 downto 0) := x"ffffff78"; -- base address
-  constant buskeeper_size_c     : natural := 2*4; -- module's address space size in bytes
-
-  -- External Interrupt Controller (XIRQ) --
-  constant xirq_base_c          : std_ulogic_vector(31 downto 0) := x"ffffff80"; -- base address
-  constant xirq_size_c          : natural := 4*4; -- module's address space size in bytes
-
-  -- Machine System Timer (MTIME) --
-  constant mtime_base_c         : std_ulogic_vector(31 downto 0) := x"ffffff90"; -- base address
-  constant mtime_size_c         : natural := 4*4; -- module's address space size in bytes
-
-  -- Primary Universal Asynchronous Receiver/Transmitter (UART0) --
-  constant uart0_base_c         : std_ulogic_vector(31 downto 0) := x"ffffffa0"; -- base address
-  constant uart_size_c          : natural := 2*4; -- module's address space size in bytes
-
-  -- Serial Peripheral Interface (SPI) --
-  constant spi_base_c           : std_ulogic_vector(31 downto 0) := x"ffffffa8"; -- base address
-  constant spi_size_c           : natural := 2*4; -- module's address space size in bytes
-
-  -- Two Wire Interface (TWI) --
-  constant twi_base_c           : std_ulogic_vector(31 downto 0) := x"ffffffb0"; -- base address
-  constant twi_size_c           : natural := 2*4; -- module's address space size in bytes
-
-  -- True Random Number Generator (TRNG) --
-  constant trng_base_c          : std_ulogic_vector(31 downto 0) := x"ffffffb8"; -- base address
-  constant trng_size_c          : natural := 1*4; -- module's address space size in bytes
-
-  -- Watch Dog Timer (WDT) --
-  constant wdt_base_c           : std_ulogic_vector(31 downto 0) := x"ffffffbc"; -- base address
-  constant wdt_size_c           : natural := 1*4; -- module's address space size in bytes
-
-  -- General Purpose Input/Output Controller (GPIO) --
-  constant gpio_base_c          : std_ulogic_vector(31 downto 0) := x"ffffffc0"; -- base address
-  constant gpio_size_c          : natural := 4*4; -- module's address space size in bytes
-
-  -- Secondary Universal Asynchronous Receiver/Transmitter (UART1) --
-  constant uart1_base_c         : std_ulogic_vector(31 downto 0) := x"ffffffd0"; -- base address
-
-  -- Smart LED (WS2811/WS2812) Interface (NEOLED) --
-  constant neoled_base_c        : std_ulogic_vector(31 downto 0) := x"ffffffd8"; -- base address
-  constant neoled_size_c        : natural := 2*4; -- module's address space size in bytes
-
-  -- System Information Memory (SYSINFO) --
-  constant sysinfo_base_c       : std_ulogic_vector(31 downto 0) := x"ffffffe0"; -- base address
-  constant sysinfo_size_c       : natural := 8*4; -- module's address space size in bytes
 
 -- ****************************************************************************************************************************
 -- SoC Definitions

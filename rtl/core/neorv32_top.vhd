@@ -312,10 +312,14 @@ architecture neorv32_top_rtl of neorv32_top is
   end record;
   signal dmi : dmi_t;
 
-  -- IO space access --
-  signal io_acc  : std_ulogic;
-  signal io_rden : std_ulogic;
-  signal io_wren : std_ulogic;
+  -- module request bus --
+  type req_bus_entry_t is record
+    rden : std_ulogic;
+    wren : std_ulogic;
+  ende record;
+
+  -- module request bus - termination for unused bus endpoints --
+  constant req_bus_entry_terminate_c : resp_bus_entry_t := (rden => '0', wren => '0');
 
   -- module response bus - entry type --
   type resp_bus_entry_t is record
@@ -327,15 +331,12 @@ architecture neorv32_top_rtl of neorv32_top is
   -- module response bus - termination for unused bus endpoints --
   constant resp_bus_entry_terminate_c : resp_bus_entry_t := (rdata => (others => '0'), ack => '0', err => '0');
 
-  -- module response bus - device ID --
-  type resp_bus_id_t is (RESP_BUSKEEPER, RESP_IMEM, RESP_DMEM, RESP_BOOTROM, RESP_WISHBONE, RESP_GPIO,
-                         RESP_MTIME, RESP_UART0, RESP_UART1, RESP_SPI, RESP_TWI, RESP_PWM, RESP_WDT,
-                         RESP_TRNG, RESP_CFS, RESP_NEOLED, RESP_SYSINFO, RESP_OCD, RESP_XIRQ, RESP_GPTMR,
-                         RESP_XIP_CT, RESP_XIP_ACC, RESP_ONEWIRE, RESP_SDI, RESP_DMA);
-
   -- module response bus --
-  type resp_bus_t is array (resp_bus_id_t) of resp_bus_entry_t;
+  type resp_bus_t is array (module_bus_id_t) of resp_bus_entry_t;
   signal resp_bus : resp_bus_t := (others => resp_bus_entry_terminate_c);
+
+  type req_bus_t is array (module_bus_id_t) of req_bus_entry_t;
+  signal req_bus : req_bus_t := (others => req_bus_entry_terminate_c);
 
   -- IRQs --
   signal fast_irq     : std_ulogic_vector(15 downto 0);
@@ -766,11 +767,11 @@ begin
       rstn_i         => rstn_int,                 -- global reset line, low-active, async
       -- peripheral port: configuration and status --
       addr_i         => p_bus.addr,               -- address
-      rden_i         => io_rden,                  -- read enable
-      wren_i         => io_wren,                  -- write enable
+      rden_i         => req_bus(MODULE_DMA).rden, -- read enable
+      wren_i         => req_bus(MODULE_DMA).wren, -- write enable
       data_i         => p_bus.wdata,              -- data in
-      data_o         => resp_bus(RESP_DMA).rdata, -- data out
-      ack_o          => resp_bus(RESP_DMA).ack,   -- transfer acknowledge
+      data_o         => resp_bus(MODULE_DMA).rdata, -- data out
+      ack_o          => resp_bus(MODULE_DMA).ack,   -- transfer acknowledge
       -- host port: bus access --
       bus_bus_priv_o => dma_bus.priv,             -- current privilege level
       bus_cached_o   => dma_bus.cached,           -- set if cached (!) access in progress
@@ -786,7 +787,7 @@ begin
       -- interrupt --
       irq_o          => dma_irq
     );
-    resp_bus(RESP_DMA).err <= '0'; -- no access error possible
+    resp_bus(MODULE_DMA).err <= '0'; -- no access error possible
 
     -- bus switch --
     neorv32_dma_busswitch_inst: neorv32_busswitch
@@ -840,7 +841,7 @@ begin
   -- route-through --
   neorv32_dma_complex_false:
   if (IO_DMA_EN = false) generate
-    resp_bus(RESP_DMA) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_DMA) <= resp_bus_entry_terminate_c;
     dma_irq <= '0';
     --
     p_bus.priv     <= core_bus.priv;
@@ -891,11 +892,11 @@ begin
     clk_i      => clk_i,                          -- global clock line
     rstn_i     => rstn_int,                       -- global reset line, low-active, use as async
     addr_i     => p_bus.addr,                     -- address
-    rden_i     => io_rden,                        -- read enable
-    wren_i     => io_wren,                        -- byte write enable
+    rden_i     => req_bus(MODULE_BUSKEEPER).rden, -- read enable
+    wren_i     => req_bus(MODULE_BUSKEEPER).wren, -- byte write enable
     data_i     => p_bus.wdata,                    -- data in
-    data_o     => resp_bus(RESP_BUSKEEPER).rdata, -- data out
-    ack_o      => resp_bus(RESP_BUSKEEPER).ack,   -- transfer acknowledge
+    data_o     => resp_bus(MODULE_BUSKEEPER).rdata, -- data out
+    ack_o      => resp_bus(MODULE_BUSKEEPER).ack,   -- transfer acknowledge
     err_o      => bus_error,                      -- transfer error
     -- bus monitoring --
     bus_addr_i => p_bus.addr,                     -- address
@@ -909,7 +910,7 @@ begin
   );
 
   -- unused, BUSKEEPER issues error **directly** to the CPU --
-  resp_bus(RESP_BUSKEEPER).err <= '0';
+  resp_bus(MODULE_BUSKEEPER).err <= '0';
 
 
 -- ****************************************************************************************************************************
@@ -933,15 +934,15 @@ begin
       ben_i  => p_bus.ben,                 -- byte write enable
       addr_i => p_bus.addr,                -- address
       data_i => p_bus.wdata,               -- data in
-      data_o => resp_bus(RESP_IMEM).rdata, -- data out
-      ack_o  => resp_bus(RESP_IMEM).ack,   -- transfer acknowledge
-      err_o  => resp_bus(RESP_IMEM).err    -- transfer error
+      data_o => resp_bus(MODULE_IMEM).rdata, -- data out
+      ack_o  => resp_bus(MODULE_IMEM).ack,   -- transfer acknowledge
+      err_o  => resp_bus(MODULE_IMEM).err    -- transfer error
     );
   end generate;
 
   neorv32_int_imem_inst_false:
   if (MEM_INT_IMEM_EN = false) or (MEM_INT_IMEM_SIZE = 0) generate
-    resp_bus(RESP_IMEM) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_IMEM) <= resp_bus_entry_terminate_c;
   end generate;
 
 
@@ -961,15 +962,15 @@ begin
       ben_i  => p_bus.ben,                 -- byte write enable
       addr_i => p_bus.addr,                -- address
       data_i => p_bus.wdata,               -- data in
-      data_o => resp_bus(RESP_DMEM).rdata, -- data out
-      ack_o  => resp_bus(RESP_DMEM).ack    -- transfer acknowledge
+      data_o => resp_bus(MODULE_DMEM).rdata, -- data out
+      ack_o  => resp_bus(MODULE_DMEM).ack    -- transfer acknowledge
     );
-    resp_bus(RESP_DMEM).err <= '0'; -- no access error possible
+    resp_bus(MODULE_DMEM).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_int_dmem_inst_false:
   if (MEM_INT_DMEM_EN = false) or (MEM_INT_DMEM_SIZE = 0) generate
-    resp_bus(RESP_DMEM) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_DMEM) <= resp_bus_entry_terminate_c;
   end generate;
 
 
@@ -986,15 +987,15 @@ begin
       rden_i => p_bus.re,                     -- read enable
       wren_i => p_bus.we,                     -- write enable
       addr_i => p_bus.addr,                   -- address
-      data_o => resp_bus(RESP_BOOTROM).rdata, -- data out
-      ack_o  => resp_bus(RESP_BOOTROM).ack,   -- transfer acknowledge
-      err_o  => resp_bus(RESP_BOOTROM).err    -- transfer error
+      data_o => resp_bus(MODULE_BOOTROM).rdata, -- data out
+      ack_o  => resp_bus(MODULE_BOOTROM).ack,   -- transfer acknowledge
+      err_o  => resp_bus(MODULE_BOOTROM).err    -- transfer error
     );
   end generate;
 
   neorv32_boot_rom_inst_false:
   if (INT_BOOTLOADER_EN = false) generate
-    resp_bus(RESP_BOOTROM) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_BOOTROM) <= resp_bus_entry_terminate_c;
   end generate;
 
 
@@ -1024,13 +1025,13 @@ begin
       -- host access --
       src_i      => p_bus.src,                     -- access type (0: data, 1:instruction)
       addr_i     => p_bus.addr,                    -- address
-      rden_i     => p_bus.re,                      -- read enable
-      wren_i     => p_bus.we,                      -- write enable
+      rden_i     => req_bus(MODULE_WISHBONE).rden, -- read enable
+      wren_i     => req_bus(MODULE_WISHBONE).wren, -- byte write enable
       ben_i      => p_bus.ben,                     -- byte write enable
       data_i     => p_bus.wdata,                   -- data in
-      data_o     => resp_bus(RESP_WISHBONE).rdata, -- data out
-      ack_o      => resp_bus(RESP_WISHBONE).ack,   -- transfer acknowledge
-      err_o      => resp_bus(RESP_WISHBONE).err,   -- transfer error
+      data_o     => resp_bus(MODULE_WISHBONE).rdata, -- data out
+      ack_o      => resp_bus(MODULE_WISHBONE).ack,   -- transfer acknowledge
+      err_o      => resp_bus(MODULE_WISHBONE).err,   -- transfer error
       tmo_o      => ext_timeout,                   -- transfer timeout
       priv_i     => p_bus.priv,                    -- current CPU privilege level
       ext_o      => ext_access,                    -- active external access
@@ -1053,7 +1054,7 @@ begin
 
   neorv32_wishbone_inst_false:
   if (MEM_EXT_EN = false) generate
-    resp_bus(RESP_WISHBONE) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_WISHBONE) <= resp_bus_entry_terminate_c;
     ext_timeout <= '0';
     ext_access  <= '0';
     --
@@ -1078,18 +1079,18 @@ begin
       rstn_i      => rstn_int,                     -- global reset line, low-active, async
       -- host access: control register access port --
       ct_addr_i   => p_bus.addr,                   -- address
-      ct_rden_i   => io_rden,                      -- read enable
-      ct_wren_i   => io_wren,                      -- write enable
+      ct_rden_i   => req_bus(MODULE_XIP_CT).rden,  -- read enable
+      ct_wren_i   => req_bus(MODULE_XIP_CT).wren,  -- byte write enable
       ct_data_i   => p_bus.wdata,                  -- data in
-      ct_data_o   => resp_bus(RESP_XIP_CT).rdata,  -- data out
-      ct_ack_o    => resp_bus(RESP_XIP_CT).ack,    -- transfer acknowledge
+      ct_data_o   => resp_bus(MODULE_XIP_CT).rdata,  -- data out
+      ct_ack_o    => resp_bus(MODULE_XIP_CT).ack,    -- transfer acknowledge
       -- host access: transparent SPI access port (read-only) --
       acc_addr_i  => p_bus.addr,                   -- address
-      acc_rden_i  => p_bus.re,                     -- read enable
-      acc_wren_i  => p_bus.we,                     -- write enable
-      acc_data_o  => resp_bus(RESP_XIP_ACC).rdata, -- data out
-      acc_ack_o   => resp_bus(RESP_XIP_ACC).ack,   -- transfer acknowledge
-      acc_err_o   => resp_bus(RESP_XIP_ACC).err,   -- transfer error
+      acc_rden_i  => req_bus(MODULE_XIP_ACC).rden,  -- read enable
+      acc_wren_i  => req_bus(MODULE_XIP_ACC).wren,  -- byte write enable
+      acc_data_o  => resp_bus(MODULE_XIP_ACC).rdata, -- data out
+      acc_ack_o   => resp_bus(MODULE_XIP_ACC).ack,   -- transfer acknowledge
+      acc_err_o   => resp_bus(MODULE_XIP_ACC).err,   -- transfer error
       -- status --
       xip_en_o    => xip_enable,                   -- XIP enable
       xip_acc_o   => xip_access,                   -- pending XIP access
@@ -1103,13 +1104,13 @@ begin
       spi_dat_i   => xip_dat_i,                    -- device data output
       spi_dat_o   => xip_dat_o                     -- controller data output
     );
-    resp_bus(RESP_XIP_CT).err <= '0'; -- no access error possible
+    resp_bus(MODULE_XIP_CT).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_xip_inst_false:
   if (IO_XIP_EN = false) generate
-    resp_bus(RESP_XIP_CT)  <= resp_bus_entry_terminate_c;
-    resp_bus(RESP_XIP_ACC) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_XIP_CT)  <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_XIP_ACC) <= resp_bus_entry_terminate_c;
     --
     xip_enable <= '0';
     xip_access <= '0';
@@ -1127,9 +1128,17 @@ begin
 
   -- IO Access? -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  io_acc  <= '1' when (p_bus.addr(31 downto index_size_f(io_size_c)) = io_base_c(31 downto index_size_f(io_size_c))) else '0';
-  io_rden <= '1' when (io_acc = '1') and (p_bus.re = '1') and (p_bus.src = '0')    else '0'; -- PMA: read access only from data interface
-  io_wren <= '1' when (io_acc = '1') and (p_bus.we = '1') and (p_bus.ben = "1111") else '0'; -- PMA: full-word write accesses only (reduces HW complexity)
+  set_io_access : process(p_bus)
+  begin
+    for module in io_memory_map'range loop
+      req_bus <= (others => req_bus_entry_terminate_c);
+      if p_bus.addr(31 downto index_size_f(module.size)) = module.base then
+        req_bus(module.module).rden <= p_bus.re;
+        req_bus(module.module).wren <= p_bus.we;
+        req_bus(module.addr) <= p_bus.addr(index_size_f(module.size) - 1 downto 2) & "00";
+      end if;
+    end loop;
+  end process set_io_access;
 
 
   -- Custom Functions Subsystem (CFS) -------------------------------------------------------
@@ -1148,12 +1157,14 @@ begin
       rstn_i      => rstn_int,                 -- global reset line, low-active, use as async
       priv_i      => p_bus.priv,               -- current CPU privilege mode
       addr_i      => p_bus.addr,               -- address
+      rden_i      => req_bus(MODULE_CFS).rden, -- read enable
+      wren_i      => req_bus(MODULE_CFS).wren, -- byte write enable
       rden_i      => io_rden,                  -- read enable
       wren_i      => io_wren,                  -- word write enable
       data_i      => p_bus.wdata,              -- data in
-      data_o      => resp_bus(RESP_CFS).rdata, -- data out
-      ack_o       => resp_bus(RESP_CFS).ack,   -- transfer acknowledge
-      err_o       => resp_bus(RESP_CFS).err,   -- access error
+      data_o      => resp_bus(MODULE_CFS).rdata, -- data out
+      ack_o       => resp_bus(MODULE_CFS).ack,   -- transfer acknowledge
+      err_o       => resp_bus(MODULE_CFS).err,   -- access error
       -- clock generator --
       clkgen_en_o => cfs_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,                  -- "clock" inputs
@@ -1167,7 +1178,7 @@ begin
 
   neorv32_cfs_inst_false:
   if (IO_CFS_EN = false) generate
-    resp_bus(RESP_CFS) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_CFS) <= resp_bus_entry_terminate_c;
     --
     cfs_cg_en <= '0';
     cfs_irq   <= '0';
@@ -1188,11 +1199,11 @@ begin
       clk_i     => clk_i,                    -- global clock line
       rstn_i    => rstn_int,                 -- global reset line, low-active, async
       addr_i    => p_bus.addr,               -- address
-      rden_i    => io_rden,                  -- read enable
-      wren_i    => io_wren,                  -- write enable
+      rden_i    => req_bus(MODULE_SDI).rden, -- read enable
+      wren_i    => req_bus(MODULE_SDI).wren, -- byte write enable
       data_i    => p_bus.wdata,              -- data in
-      data_o    => resp_bus(RESP_SDI).rdata, -- data out
-      ack_o     => resp_bus(RESP_SDI).ack,   -- transfer acknowledge
+      data_o    => resp_bus(MODULE_SDI).rdata, -- data out
+      ack_o     => resp_bus(MODULE_SDI).ack,   -- transfer acknowledge
       -- SDI receiver input --
       sdi_csn_i => sdi_csn_i,                -- low-active chip-select
       sdi_clk_i => sdi_clk_i,                -- serial clock
@@ -1201,12 +1212,12 @@ begin
       -- interrupts --
       irq_o     => sdi_irq
     );
-    resp_bus(RESP_SDI).err <= '0'; -- no access error possible
+    resp_bus(MODULE_SDI).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_sdi_inst_false:
   if (IO_SDI_EN = false) generate
-    resp_bus(RESP_SDI) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_SDI) <= resp_bus_entry_terminate_c;
     --
     sdi_dat_o <= '0';
     sdi_irq   <= '0';
@@ -1226,21 +1237,23 @@ begin
       clk_i  => clk_i,                     -- global clock line
       rstn_i => rstn_int,                  -- global reset line, low-active, async
       addr_i => p_bus.addr,                -- address
+      rden_i => req_bus(MODULE_GPIO).rden, -- read enable
+      wren_i => req_bus(MODULE_GPIO).wren, -- byte write enable
       rden_i => io_rden,                   -- read enable
       wren_i => io_wren,                   -- write enable
       data_i => p_bus.wdata,               -- data in
-      data_o => resp_bus(RESP_GPIO).rdata, -- data out
-      ack_o  => resp_bus(RESP_GPIO).ack,   -- transfer acknowledge
+      data_o => resp_bus(MODULE_GPIO).rdata, -- data out
+      ack_o  => resp_bus(MODULE_GPIO).ack,   -- transfer acknowledge
       -- parallel io --
       gpio_o => gpio_o,
       gpio_i => gpio_i
     );
-    resp_bus(RESP_GPIO).err <= '0'; -- no access error possible
+    resp_bus(MODULE_GPIO).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_gpio_inst_false:
   if (IO_GPIO_NUM = 0) generate
-    resp_bus(RESP_GPIO) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_GPIO) <= resp_bus_entry_terminate_c;
     --
     gpio_o <= (others => '0');
   end generate;
@@ -1256,12 +1269,12 @@ begin
       clk_i       => clk_i,                    -- global clock line
       rstn_ext_i  => rstn_ext,                 -- external reset line, low-active, async
       rstn_int_i  => rstn_int,                 -- internal reset line, low-active, async
-      rden_i      => io_rden,                  -- read enable
-      wren_i      => io_wren,                  -- write enable
+      rden_i => req_bus(MODULE_WDT).rden,      -- read enable
+      wren_i => req_bus(MODULE_WDT).wren,      -- byte write enable
       addr_i      => p_bus.addr,               -- address
       data_i      => p_bus.wdata,              -- data in
-      data_o      => resp_bus(RESP_WDT).rdata, -- data out
-      ack_o       => resp_bus(RESP_WDT).ack,   -- transfer acknowledge
+      data_o      => resp_bus(MODULE_WDT).rdata, -- data out
+      ack_o       => resp_bus(MODULE_WDT).ack,   -- transfer acknowledge
       -- CPU status --
       cpu_debug_i => cpu_s.debug,              -- CPU is in debug mode
       cpu_sleep_i => cpu_s.sleep,              -- CPU is in sleep mode
@@ -1272,12 +1285,12 @@ begin
       irq_o       => wdt_irq,                  -- timeout IRQ
       rstn_o      => rstn_wdt                  -- timeout reset, low_active, sync
     );
-    resp_bus(RESP_WDT).err <= '0'; -- no access error possible
+    resp_bus(MODULE_WDT).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_wdt_inst_false:
   if (IO_WDT_EN = false) generate
-    resp_bus(RESP_WDT) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_WDT) <= resp_bus_entry_terminate_c;
     --
     wdt_irq   <= '0';
     rstn_wdt  <= '1';
@@ -1295,20 +1308,20 @@ begin
       clk_i  => clk_i,                      -- global clock line
       rstn_i => rstn_int,                   -- global reset line, low-active, async
       addr_i => p_bus.addr,                 -- address
-      rden_i => io_rden,                    -- read enable
-      wren_i => io_wren,                    -- write enable
+      rden_i => req_bus(MODULE_MTIME).rden  -- read enable
+      wren_i => req_bus(MODULE_MTIME).wren, -- byte write enable
       data_i => p_bus.wdata,                -- data in
-      data_o => resp_bus(RESP_MTIME).rdata, -- data out
-      ack_o  => resp_bus(RESP_MTIME).ack,   -- transfer acknowledge
+      data_o => resp_bus(MODULE_MTIME).rdata, -- data out
+      ack_o  => resp_bus(MODULE_MTIME).ack,   -- transfer acknowledge
       -- interrupt --
       irq_o  => mtime_irq                   -- interrupt request
     );
-    resp_bus(RESP_MTIME).err <= '0'; -- no access error possible
+    resp_bus(MODULE_MTIME).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_mtime_inst_false:
   if (IO_MTIME_EN = false) generate
-    resp_bus(RESP_MTIME) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_MTIME) <= resp_bus_entry_terminate_c;
     --
     mtime_irq <= mtime_irq_i; -- use external machine timer interrupt
   end generate;
@@ -1329,11 +1342,11 @@ begin
       clk_i       => clk_i,                      -- global clock line
       rstn_i      => rstn_int,                   -- global reset line, low-active, async
       addr_i      => p_bus.addr,                 -- address
-      rden_i      => io_rden,                    -- read enable
-      wren_i      => io_wren,                    -- write enable
+      rden_i      => req_bus(MODULE_UART0).rden  -- read enable
+      wren_i      => req_bus(MODULE_UART0).wren, -- byte write enable
       data_i      => p_bus.wdata,                -- data in
-      data_o      => resp_bus(RESP_UART0).rdata, -- data out
-      ack_o       => resp_bus(RESP_UART0).ack,   -- transfer acknowledge
+      data_o      => resp_bus(MODULE_UART0).rdata, -- data out
+      ack_o       => resp_bus(MODULE_UART0).ack,   -- transfer acknowledge
       -- clock generator --
       clkgen_en_o => uart0_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
@@ -1347,12 +1360,12 @@ begin
       irq_rx_o    => uart0_rx_irq,               -- rx interrupt
       irq_tx_o    => uart0_tx_irq                -- tx interrupt
     );
-    resp_bus(RESP_UART0).err <= '0'; -- no access error possible
+    resp_bus(MODULE_UART0).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_uart0_inst_false:
   if (IO_UART0_EN = false) generate
-    resp_bus(RESP_UART0) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_UART0) <= resp_bus_entry_terminate_c;
     --
     uart0_txd_o  <= '0';
     uart0_rts_o  <= '1';
@@ -1377,11 +1390,9 @@ begin
       clk_i       => clk_i,                      -- global clock line
       rstn_i      => rstn_int,                   -- global reset line, low-active, async
       addr_i      => p_bus.addr,                 -- address
-      rden_i      => io_rden,                    -- read enable
-      wren_i      => io_wren,                    -- write enable
       data_i      => p_bus.wdata,                -- data in
-      data_o      => resp_bus(RESP_UART1).rdata, -- data out
-      ack_o       => resp_bus(RESP_UART1).ack,   -- transfer acknowledge
+      data_o      => resp_bus(MODULE_UART1).rdata, -- data out
+      ack_o       => resp_bus(MODULE_UART1).ack,   -- transfer acknowledge
       -- clock generator --
       clkgen_en_o => uart1_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
@@ -1395,12 +1406,12 @@ begin
       irq_rx_o    => uart1_rx_irq,               -- rx interrupt
       irq_tx_o    => uart1_tx_irq                -- tx interrupt
     );
-    resp_bus(RESP_UART1).err <= '0'; -- no access error possible
+    resp_bus(MODULE_UART1).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_uart1_inst_false:
   if (IO_UART1_EN = false) generate
-    resp_bus(RESP_UART1) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_UART1) <= resp_bus_entry_terminate_c;
     --
     uart1_txd_o  <= '0';
     uart1_rts_o  <= '1';
@@ -1423,11 +1434,11 @@ begin
       clk_i       => clk_i,                    -- global clock line
       rstn_i      => rstn_int,                 -- global reset line, low-active, async
       addr_i      => p_bus.addr,               -- address
-      rden_i      => io_rden,                  -- read enable
-      wren_i      => io_wren,                  -- write enable
+      rden_i      => req_bus(MODULE_SPI).rden  -- read enable
+      wren_i      => req_bus(MODULE_SPI).wren, -- byte write enable
       data_i      => p_bus.wdata,              -- data in
-      data_o      => resp_bus(RESP_SPI).rdata, -- data out
-      ack_o       => resp_bus(RESP_SPI).ack,   -- transfer acknowledge
+      data_o      => resp_bus(MODULE_SPI).rdata, -- data out
+      ack_o       => resp_bus(MODULE_SPI).ack,   -- transfer acknowledge
       -- clock generator --
       clkgen_en_o => spi_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
@@ -1439,12 +1450,12 @@ begin
       -- interrupt --
       irq_o       => spi_irq                   -- transmission done interrupt
     );
-    resp_bus(RESP_SPI).err <= '0'; -- no access error possible
+    resp_bus(MODULE_SPI).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_spi_inst_false:
   if (IO_SPI_EN = false) generate
-    resp_bus(RESP_SPI) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_SPI) <= resp_bus_entry_terminate_c;
     --
     spi_clk_o <= '0';
     spi_dat_o <= '0';
@@ -1464,11 +1475,11 @@ begin
       clk_i       => clk_i,                    -- global clock line
       rstn_i      => rstn_int,                 -- global reset line, low-active, async
       addr_i      => p_bus.addr,               -- address
-      rden_i      => io_rden,                  -- read enable
-      wren_i      => io_wren,                  -- write enable
+      rden_i      => req_bus(MODULE_TWI).rden  -- read enable
+      wren_i      => req_bus(MODULE_TWI).wren, -- byte write enable
       data_i      => p_bus.wdata,              -- data in
-      data_o      => resp_bus(RESP_TWI).rdata, -- data out
-      ack_o       => resp_bus(RESP_TWI).ack,   -- transfer acknowledge
+      data_o      => resp_bus(MODULE_TWI).rdata, -- data out
+      ack_o       => resp_bus(MODULE_TWI).ack,   -- transfer acknowledge
       -- clock generator --
       clkgen_en_o => twi_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
@@ -1480,12 +1491,12 @@ begin
       -- interrupt --
       irq_o       => twi_irq                   -- transfer done IRQ
     );
-    resp_bus(RESP_TWI).err <= '0'; -- no access error possible
+    resp_bus(MODULE_TWI).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_twi_inst_false:
   if (IO_TWI_EN = false) generate
-    resp_bus(RESP_TWI) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_TWI) <= resp_bus_entry_terminate_c;
     --
     twi_sda_o <= '1';
     twi_scl_o <= '1';
@@ -1507,23 +1518,23 @@ begin
       clk_i       => clk_i,                    -- global clock line
       rstn_i      => rstn_int,                 -- global reset line, low-active, async
       addr_i      => p_bus.addr,               -- address
-      rden_i      => io_rden,                  -- read enable
-      wren_i      => io_wren,                  -- write enable
+      rden_i      => req_bus(MODULE_PWM).rden  -- read enable
+      wren_i      => req_bus(MODULE_PWM).wren, -- byte write enable
       data_i      => p_bus.wdata,              -- data in
-      data_o      => resp_bus(RESP_PWM).rdata, -- data out
-      ack_o       => resp_bus(RESP_PWM).ack,   -- transfer acknowledge
+      data_o      => resp_bus(MODULE_PWM).rdata, -- data out
+      ack_o       => resp_bus(MODULE_PWM).ack,   -- transfer acknowledge
       -- clock generator --
       clkgen_en_o => pwm_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
       -- pwm output channels --
       pwm_o       => pwm_o
     );
-    resp_bus(RESP_PWM).err <= '0'; -- no access error possible
+    resp_bus(MODULE_PWM).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_pwm_inst_false:
   if (IO_PWM_NUM_CH = 0) generate
-    resp_bus(RESP_PWM) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_PWM) <= resp_bus_entry_terminate_c;
     --
     pwm_cg_en <= '0';
     pwm_o     <= (others => '0');
@@ -1543,18 +1554,18 @@ begin
       clk_i  => clk_i,                     -- global clock line
       rstn_i => rstn_int,                  -- global reset line, low-active, async
       addr_i => p_bus.addr,                -- address
-      rden_i => io_rden,                   -- read enable
-      wren_i => io_wren,                   -- write enable
+      rden_i => req_bus(MODULE_TRNG).rden  -- read enable
+      wren_i => req_bus(MODULE_TRNG).wren, -- byte write enable
       data_i => p_bus.wdata,               -- data in
-      data_o => resp_bus(RESP_TRNG).rdata, -- data out
-      ack_o  => resp_bus(RESP_TRNG).ack    -- transfer acknowledge
+      data_o => resp_bus(MODULE_TRNG).rdata, -- data out
+      ack_o  => resp_bus(MODULE_TRNG).ack    -- transfer acknowledge
     );
-    resp_bus(RESP_TRNG).err <= '0'; -- no access error possible
+    resp_bus(MODULE_TRNG).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_trng_inst_false:
   if (IO_TRNG_EN = false) generate
-    resp_bus(RESP_TRNG) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_TRNG) <= resp_bus_entry_terminate_c;
   end generate;
 
 
@@ -1571,11 +1582,11 @@ begin
       clk_i       => clk_i,                       -- global clock line
       rstn_i      => rstn_int,                    -- global reset line, low-active, async
       addr_i      => p_bus.addr,                  -- address
-      rden_i      => io_rden,                     -- read enable
-      wren_i      => io_wren,                     -- write enable
+      rden_i      => req_bus(MODULE_NEOLED).rden  -- read enable
+      wren_i      => req_bus(MODULE_NEOLED).wren, -- byte write enable
       data_i      => p_bus.wdata,                 -- data in
-      data_o      => resp_bus(RESP_NEOLED).rdata, -- data out
-      ack_o       => resp_bus(RESP_NEOLED).ack,   -- transfer acknowledge
+      data_o      => resp_bus(MODULE_NEOLED).rdata, -- data out
+      ack_o       => resp_bus(MODULE_NEOLED).ack,   -- transfer acknowledge
       -- clock generator --
       clkgen_en_o => neoled_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
@@ -1584,12 +1595,12 @@ begin
       -- NEOLED output --
       neoled_o    => neoled_o                     -- serial async data line
     );
-    resp_bus(RESP_NEOLED).err <= '0'; -- no access error possible
+    resp_bus(MODULE_NEOLED).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_neoled_inst_false:
   if (IO_NEOLED_EN = false) generate
-    resp_bus(RESP_NEOLED) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_NEOLED) <= resp_bus_entry_terminate_c;
     --
     neoled_cg_en <= '0';
     neoled_irq   <= '0';
@@ -1612,22 +1623,22 @@ begin
       clk_i     => clk_i,                     -- global clock line
       rstn_i    => rstn_int,                  -- global reset line, low-active, async
       addr_i    => p_bus.addr,                -- address
-      rden_i    => io_rden,                   -- read enable
-      wren_i    => io_wren,                   -- write enable
+      rden_i    => req_bus(MODULE_XIRQ).rden  -- read enable
+      wren_i    => req_bus(MODULE_XIRQ).wren, -- byte write enable
       data_i    => p_bus.wdata,               -- data in
-      data_o    => resp_bus(RESP_XIRQ).rdata, -- data out
-      ack_o     => resp_bus(RESP_XIRQ).ack,   -- transfer acknowledge
+      data_o    => resp_bus(MODULE_XIRQ).rdata, -- data out
+      ack_o     => resp_bus(MODULE_XIRQ).ack,   -- transfer acknowledge
       -- external interrupt lines --
       xirq_i    => xirq_i,
       -- CPU interrupt --
       cpu_irq_o => xirq_irq
     );
-    resp_bus(RESP_XIRQ).err <= '0'; -- no access error possible
+    resp_bus(MODULE_XIRQ).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_xirq_inst_false:
   if (XIRQ_NUM_CH = 0) generate
-    resp_bus(RESP_XIRQ) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_XIRQ) <= resp_bus_entry_terminate_c;
     --
     xirq_irq <= '0';
   end generate;
@@ -1643,23 +1654,23 @@ begin
       clk_i       => clk_i,                      -- global clock line
       rstn_i      => rstn_int,                   -- global reset line, low-active, async
       addr_i      => p_bus.addr,                 -- address
-      rden_i      => io_rden,                    -- read enable
-      wren_i      => io_wren,                    -- write enable
+      rden_i      => req_bus(MODULE_GPTMR).rden  -- read enable
+      wren_i      => req_bus(MODULE_GPTMR).wren, -- byte write enable
       data_i      => p_bus.wdata,                -- data in
-      data_o      => resp_bus(RESP_GPTMR).rdata, -- data out
-      ack_o       => resp_bus(RESP_GPTMR).ack,   -- transfer acknowledge
+      data_o      => resp_bus(MODULE_GPTMR).rdata, -- data out
+      ack_o       => resp_bus(MODULE_GPTMR).ack,   -- transfer acknowledge
       -- clock generator --
       clkgen_en_o => gptmr_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
       -- interrupt --
       irq_o       => gptmr_irq                   -- timer match interrupt
     );
-    resp_bus(RESP_GPTMR).err <= '0'; -- no access error possible
+    resp_bus(MODULE_GPTMR).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_gptmr_inst_false:
   if (IO_GPTMR_EN = false) generate
-    resp_bus(RESP_GPTMR) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_GPTMR) <= resp_bus_entry_terminate_c;
     --
     gptmr_cg_en <= '0';
     gptmr_irq   <= '0';
@@ -1676,11 +1687,11 @@ begin
       clk_i       => clk_i,                        -- global clock line
       rstn_i      => rstn_int,                     -- global reset line, low-active, async
       addr_i      => p_bus.addr,                   -- address
-      rden_i      => io_rden,                      -- read enable
-      wren_i      => io_wren,                      -- write enable
+      rden_i      => req_bus(MODULE_ONEWIRE).rden  -- read enable
+      wren_i      => req_bus(MODULE_ONEWIRE).wren, -- byte write enable
       data_i      => p_bus.wdata,                  -- data in
-      data_o      => resp_bus(RESP_ONEWIRE).rdata, -- data out
-      ack_o       => resp_bus(RESP_ONEWIRE).ack,   -- transfer acknowledge
+      data_o      => resp_bus(MODULE_ONEWIRE).rdata, -- data out
+      ack_o       => resp_bus(MODULE_ONEWIRE).ack,   -- transfer acknowledge
       -- clock generator --
       clkgen_en_o => onewire_cg_en,                -- enable clock generator
       clkgen_i    => clk_gen,
@@ -1690,12 +1701,12 @@ begin
       -- interrupt --
       irq_o       => onewire_irq                   -- transfer done IRQ
     );
-    resp_bus(RESP_ONEWIRE).err <= '0'; -- no access error possible
+    resp_bus(MODULE_ONEWIRE).err <= '0'; -- no access error possible
   end generate;
 
   neorv32_onewire_inst_false:
   if (IO_ONEWIRE_EN = false) generate
-    resp_bus(RESP_ONEWIRE) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_ONEWIRE) <= resp_bus_entry_terminate_c;
     --
     onewire_o     <= '1';
     onewire_cg_en <= '0';
@@ -1756,11 +1767,11 @@ begin
     -- host access --
     clk_i  => clk_i,                        -- global clock line
     addr_i => p_bus.addr,                   -- address
-    rden_i => io_rden,                      -- read enable
-    wren_i => io_wren,                      -- write enable
-    data_o => resp_bus(RESP_SYSINFO).rdata, -- data out
-    ack_o  => resp_bus(RESP_SYSINFO).ack,   -- transfer acknowledge
-    err_o  => resp_bus(RESP_SYSINFO).err    -- transfer error
+    rden_i => req_bus(MODULE_SYSINFO).rden  -- read enable
+    wren_i => req_bus(MODULE_SYSINFO).wren, -- byte write enable
+    data_o => resp_bus(MODULE_SYSINFO).rdata, -- data out
+    ack_o  => resp_bus(MODULE_SYSINFO).ack,   -- transfer acknowledge
+    err_o  => resp_bus(MODULE_SYSINFO).err    -- transfer error
   );
 
 
@@ -1791,17 +1802,17 @@ begin
       -- CPU bus access --
       cpu_debug_i       => cpu_s.debug,              -- CPU is in debug mode
       cpu_addr_i        => p_bus.addr,               -- address
-      cpu_rden_i        => p_bus.re,                 -- read enable
-      cpu_wren_i        => p_bus.we,                 -- write enable
+      rden_i            => req_bus(MODULE_OCD).rden  -- read enable
+      wren_i            => req_bus(MODULE_OCD).wren, -- byte write enable
       cpu_ben_i         => p_bus.ben,                -- byte write enable
       cpu_data_i        => p_bus.wdata,              -- data in
-      cpu_data_o        => resp_bus(RESP_OCD).rdata, -- data out
-      cpu_ack_o         => resp_bus(RESP_OCD).ack,   -- transfer acknowledge
+      cpu_data_o        => resp_bus(MODULE_OCD).rdata, -- data out
+      cpu_ack_o         => resp_bus(MODULE_OCD).ack,   -- transfer acknowledge
       -- CPU control --
       cpu_ndmrstn_o     => dci_ndmrstn,              -- soc reset
       cpu_halt_req_o    => dci_halt_req              -- request hart to halt (enter debug mode)
     );
-    resp_bus(RESP_OCD).err <= '0'; -- no access error possible
+    resp_bus(MODULE_OCD).err <= '0'; -- no access error possible
 
 
     -- On-Chip Debugger - Debug Transport Module (DTM) ----------------------------------------
@@ -1839,7 +1850,7 @@ begin
   neorv32_debug_ocd_inst_false:
   if (ON_CHIP_DEBUGGER_EN = false) generate
     jtag_tdo_o         <= jtag_tdi_i; -- JTAG feed-through
-    resp_bus(RESP_OCD) <= resp_bus_entry_terminate_c;
+    resp_bus(MODULE_OCD) <= resp_bus_entry_terminate_c;
     dci_ndmrstn        <= '1';
     dci_halt_req       <= '0';
   end generate;
