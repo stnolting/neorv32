@@ -236,6 +236,8 @@ portable_fini(core_portable *p)
   neorv32_uart0_printf("\nNEORV32: All reported numbers only show the integer part.\n\n");
 
   neorv32_uart0_printf("NEORV32: HPM results (low words only)\n");
+  neorv32_uart0_printf(" > Active clock cycles:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MCYCLE));
+  neorv32_uart0_printf(" > Retired instructions:         %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MINSTRET));
   if (num_hpm_cnts_global == 0) {neorv32_uart0_printf("no HPMs available\n"); }
   if (num_hpm_cnts_global > 0)  {neorv32_uart0_printf(" > Retired compr. instructions:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3)); }
   if (num_hpm_cnts_global > 1)  {neorv32_uart0_printf(" > Instr.-fetch wait cycles:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4)); }
