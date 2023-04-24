@@ -245,9 +245,8 @@ begin
         else -- write access
           if (cache.hit = '1') then -- data word in cache -> also write to cache
             ctrl.state_nxt <= S_RESYNC_WRITE;
-          else -- just write-through
-            bus_we_o       <= ctrl.we_buf;
-            ctrl.state_nxt <= S_DIRECT_WAIT;
+          else -- write-through
+            ctrl.state_nxt <= S_DIRECT_REQ;
           end if;
         end if;
 
