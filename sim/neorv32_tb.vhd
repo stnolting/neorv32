@@ -73,6 +73,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   constant f_clock_c               : natural := 100000000; -- main clock in Hz
   constant baud0_rate_c            : natural := 19200; -- simulation UART0 (primary UART) baud rate
   constant baud1_rate_c            : natural := 19200; -- simulation UART1 (secondary UART) baud rate
+  constant icache_en_c             : boolean := false; -- implement i-cache
+  constant icache_block_size_c     : natural := 64; -- i-cache block size in bytes
   -- simulated external Wishbone memory A (can be used as external IMEM) --
   constant ext_mem_a_base_addr_c   : std_ulogic_vector(31 downto 0) := x"00000000"; -- wishbone memory base address (external IMEM base)
   constant ext_mem_a_size_c        : natural := imem_size_c; -- wishbone memory size in bytes
