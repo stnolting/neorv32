@@ -331,23 +331,25 @@ begin
     if (rstn_i = '0') then
       align_buf <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (config.qsel = qsel_w2w_c) then -- word
-        align_buf <= align_end;
-      else -- byte
-        case engine.src_addr(1 downto 0) is
-          when "00" => -- byte 0
-            align_buf(07 downto 0) <= align_end(07 downto 00);
-            align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(07))); -- sign extension
-          when "01" => -- byte 1
-            align_buf(07 downto 0) <= align_end(15 downto 08);
-            align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(15))); -- sign extension
-          when "10" => -- byte 2
-            align_buf(07 downto 0) <= align_end(23 downto 16);
-            align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(23))); -- sign extension
-          when others => -- byte 3
-            align_buf(07 downto 0) <= align_end(31 downto 24);
-            align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(31))); -- sign extension
-        end case;
+      if (engine.state = S_READ) then
+        if (config.qsel = qsel_w2w_c) then -- word
+          align_buf <= align_end;
+        else -- byte
+          case engine.src_addr(1 downto 0) is
+            when "00" => -- byte 0
+              align_buf(07 downto 0) <= align_end(07 downto 00);
+              align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(07))); -- sign extension
+            when "01" => -- byte 1
+              align_buf(07 downto 0) <= align_end(15 downto 08);
+              align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(15))); -- sign extension
+            when "10" => -- byte 2
+              align_buf(07 downto 0) <= align_end(23 downto 16);
+              align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(23))); -- sign extension
+            when others => -- byte 3
+              align_buf(07 downto 0) <= align_end(31 downto 24);
+              align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(31))); -- sign extension
+          end case;
+        end if;
       end if;
     end if;
   end process src_align;
