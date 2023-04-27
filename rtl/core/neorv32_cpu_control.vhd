@@ -996,10 +996,10 @@ begin
               ctrl_nxt.bus_fencei      <= '1'; -- FENCE.I
               execute_engine.state_nxt <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC)
             else
-              execute_engine.state_nxt <= DISPATCH;
               if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then
                 ctrl_nxt.bus_fence <= '1'; -- FENCE
               end if;
+              execute_engine.state_nxt <= DISPATCH;
             end if;
 
 
@@ -1072,7 +1072,8 @@ begin
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
         if (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- not an illegal instruction
-          ctrl_nxt.bus_req <= '1'; -- trigger memory request
+          ctrl_nxt.bus_req_rd <= not execute_engine.ir(5); -- read request
+          ctrl_nxt.bus_req_wr <=     execute_engine.ir(5); -- write request
         end if;
         execute_engine.state_nxt <= MEM_WAIT;
 
@@ -1147,7 +1148,8 @@ begin
   ctrl_o.alu_cp_trig  <= ctrl.alu_cp_trig;
 
   -- bus interface --
-  ctrl_o.bus_req      <= ctrl.bus_req;
+  ctrl_o.bus_req_rd   <= ctrl.bus_req_rd;
+  ctrl_o.bus_req_wr   <= ctrl.bus_req_wr;
   ctrl_o.bus_mo_we    <= ctrl.bus_mo_we;
   ctrl_o.bus_fence    <= ctrl.bus_fence;
   ctrl_o.bus_fencei   <= ctrl.bus_fencei;
@@ -2446,9 +2448,9 @@ begin
   cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)   and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
   cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                                else '0'; -- multi-cycle alu-operation wait cycle
 
-  cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl.bus_req = '1')              and (execute_engine.ir(instr_opcode_msb_c-1) = '0') else '0'; -- load operation
-  cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl.bus_req = '1')              and (execute_engine.ir(instr_opcode_msb_c-1) = '1') else '0'; -- store operation
-  cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = MEM_WAIT) and (execute_engine.state_prev2 = MEM_WAIT)         else '0'; -- load/store memory wait cycle
+  cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl.bus_req_rd = '1')                                                       else '0'; -- load operation
+  cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl.bus_req_wr = '1')                                                       else '0'; -- store operation
+  cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = MEM_WAIT) and (execute_engine.state_prev2 = MEM_WAIT) else '0'; -- load/store memory wait cycle
 
   cnt_event(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.ir(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
   cnt_event(hpmcnt_event_branch_c)  <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.ir(instr_opcode_lsb_c+2) = '0') else '0'; -- branch (conditional, taken or not taken)

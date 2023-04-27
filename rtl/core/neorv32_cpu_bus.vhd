@@ -96,14 +96,14 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
   constant pmp_zero_c : std_ulogic_vector(XLEN-1 downto pmp_lsb_c) := (others => '0');
 
   -- misc --
-  signal data_sign  : std_ulogic; -- signed load
   signal mar        : std_ulogic_vector(XLEN-1 downto 0); -- data memory address register
   signal misaligned : std_ulogic; -- misaligned address
 
   -- bus arbiter --
   type bus_arbiter_t is record
-    pend      : std_ulogic; -- pending bus access
-    err       : std_ulogic; -- bus access error
+    pend_rd   : std_ulogic; -- pending bus read access
+    pend_wr   : std_ulogic; -- pending bus write access
+    acc_err   : std_ulogic; -- bus access error
     pmp_r_err : std_ulogic; -- pmp load fault
     pmp_w_err : std_ulogic; -- pmp store fault
   end record;
@@ -139,9 +139,12 @@ begin
 
   -- Access Address -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_adr_reg: process(clk_i)
+  mem_adr_reg: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      mar        <= (others => '0');
+      misaligned <= '0';
+    elsif rising_edge(clk_i) then
       if (ctrl_i.bus_mo_we = '1') then
         mar <= addr_i; -- memory address register
         case ctrl_i.ir_funct3(1 downto 0) is -- alignment check
@@ -161,9 +164,12 @@ begin
 
   -- Write Data: Byte Enable and Alignment --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_do_reg: process(clk_i)
+  mem_do_reg: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      d_bus_wdata_o <= (others => '0');
+      d_bus_ben_o   <= (others => '0');
+    elsif rising_edge(clk_i) then
       if (ctrl_i.bus_mo_we = '1') then
         d_bus_ben_o <= (others => '0'); -- default
         case ctrl_i.ir_funct3(1 downto 0) is
@@ -192,41 +198,42 @@ begin
 
   -- Read Data: Alignment and Sign-Extension ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_di_reg: process(clk_i)
+  mem_di_reg: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
-      case ctrl_i.ir_funct3(1 downto 0) is
-        when "00" => -- byte
-          case mar(1 downto 0) is
-            when "00" => -- byte 0
-              rdata_o(7 downto 0) <= d_bus_rdata_i(07 downto 00);
-              rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(07))); -- sign extension
-            when "01" => -- byte 1
-              rdata_o(7 downto 0) <= d_bus_rdata_i(15 downto 08);
-              rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
-            when "10" => -- byte 2
-              rdata_o(7 downto 0) <= d_bus_rdata_i(23 downto 16);
-              rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(23))); -- sign extension
-            when others => -- byte 3
-              rdata_o(7 downto 0) <= d_bus_rdata_i(31 downto 24);
-              rdata_o(XLEN-1 downto 8) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
-          end case;
-        when "01" => -- half-word
-          if (mar(1) = '0') then
-            rdata_o(15 downto 0) <= d_bus_rdata_i(15 downto 00); -- low half-word
-            rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(15))); -- sign extension
-          else
-            rdata_o(15 downto 0) <= d_bus_rdata_i(31 downto 16); -- high half-word
-            rdata_o(XLEN-1 downto 16) <= (others => (data_sign and d_bus_rdata_i(31))); -- sign extension
-          end if;
-        when others => -- word
-          rdata_o(XLEN-1 downto 0) <= d_bus_rdata_i(XLEN-1 downto 0); -- full word
-      end case;
+    if (rstn_i = '0') then
+      rdata_o <= (others => '0');
+    elsif rising_edge(clk_i) then
+      if (arbiter.pend_rd = '1') then -- update only if required (reduce dynamic power)
+        case ctrl_i.ir_funct3(1 downto 0) is
+          when "00" => -- byte
+            case mar(1 downto 0) is
+              when "00" => -- byte 0
+                rdata_o(7 downto 0) <= d_bus_rdata_i(07 downto 00);
+                rdata_o(XLEN-1 downto 8) <= (others => ((not ctrl_i.ir_funct3(2)) and d_bus_rdata_i(07))); -- sign-ext
+              when "01" => -- byte 1
+                rdata_o(7 downto 0) <= d_bus_rdata_i(15 downto 08);
+                rdata_o(XLEN-1 downto 8) <= (others => ((not ctrl_i.ir_funct3(2)) and d_bus_rdata_i(15))); -- sign-ext
+              when "10" => -- byte 2
+                rdata_o(7 downto 0) <= d_bus_rdata_i(23 downto 16);
+                rdata_o(XLEN-1 downto 8) <= (others => ((not ctrl_i.ir_funct3(2)) and d_bus_rdata_i(23))); -- sign-ext
+              when others => -- byte 3
+                rdata_o(7 downto 0) <= d_bus_rdata_i(31 downto 24);
+                rdata_o(XLEN-1 downto 8) <= (others => ((not ctrl_i.ir_funct3(2)) and d_bus_rdata_i(31))); -- sign-ext
+            end case;
+          when "01" => -- half-word
+            if (mar(1) = '0') then
+              rdata_o(15 downto 0) <= d_bus_rdata_i(15 downto 00); -- low half-word
+              rdata_o(XLEN-1 downto 16) <= (others => ((not ctrl_i.ir_funct3(2)) and d_bus_rdata_i(15))); -- sign-ext
+            else
+              rdata_o(15 downto 0) <= d_bus_rdata_i(31 downto 16); -- high half-word
+              rdata_o(XLEN-1 downto 16) <= (others => ((not ctrl_i.ir_funct3(2)) and d_bus_rdata_i(31))); -- sign-ext
+            end if;
+          when others => -- word
+            rdata_o(XLEN-1 downto 0) <= d_bus_rdata_i(XLEN-1 downto 0); -- full word
+        end case;
+      end if;
     end if;
   end process mem_di_reg;
-
-  -- sign extension --
-  data_sign <= not ctrl_i.ir_funct3(2); -- NOT unsigned LOAD (LBU, LHU)
 
 
   -- Access Arbiter -------------------------------------------------------------------------
@@ -234,30 +241,25 @@ begin
   data_access_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      arbiter.pend      <= '0';
-      arbiter.err       <= '0';
+      arbiter.pend_rd   <= '0';
+      arbiter.pend_wr   <= '0';
+      arbiter.acc_err   <= '0';
       arbiter.pmp_r_err <= '0';
       arbiter.pmp_w_err <= '0';
     elsif rising_edge(clk_i) then
       -- arbiter --
-      if (arbiter.pend = '0') then -- idle
-        if (ctrl_i.bus_req = '1') then -- start bus access
-          arbiter.pend <= '1';
-        end if;
-        arbiter.err <= '0';
-      else -- bus access in progress
-        -- accumulate bus errors --
-        if (d_bus_err_i = '1') or -- bus error
-           ((ctrl_i.ir_opcode(5) = '1') and (arbiter.pmp_w_err = '1')) or -- PMP store fault
-           ((ctrl_i.ir_opcode(5) = '0') and (arbiter.pmp_r_err = '1')) then -- PMP load fault
-          arbiter.err <= '1';
-        end if;
-        -- wait for normal termination or start of trap handling --
-        if (d_bus_ack_i = '1') or (ctrl_i.cpu_trap = '1') then
-          arbiter.pend <= '0';
-        end if;
+      if (arbiter.pend_rd = '0') and (arbiter.pend_wr = '0') then -- idle
+        arbiter.pend_rd <= ctrl_i.bus_req_rd;
+        arbiter.pend_wr <= ctrl_i.bus_req_wr;
+      elsif (d_bus_ack_i = '1') or (ctrl_i.cpu_trap = '1') then -- normal termination or start of trap handling
+        arbiter.pend_rd <= '0';
+        arbiter.pend_wr <= '0';
       end if;
-      -- PMP error --
+      -- access error buffer --
+      arbiter.acc_err <= d_bus_err_i or -- bus error
+                         (arbiter.pend_rd and arbiter.pmp_r_err) or -- PMP load fault
+                         (arbiter.pend_wr and arbiter.pmp_w_err); -- PMP store fault
+      -- PMP error buffer --
       if (ctrl_i.bus_mo_we = '1') then -- sample PMP errors only once
         arbiter.pmp_r_err <= ld_pmp_fault;
         arbiter.pmp_w_err <= st_pmp_fault;
@@ -269,14 +271,14 @@ begin
   d_wait_o <= not d_bus_ack_i;
 
   -- output data access error to control unit --
-  ma_load_o  <= '1' when (arbiter.pend = '1') and (ctrl_i.ir_opcode(5) = '0') and (misaligned  = '1') else '0';
-  be_load_o  <= '1' when (arbiter.pend = '1') and (ctrl_i.ir_opcode(5) = '0') and (arbiter.err = '1') else '0';
-  ma_store_o <= '1' when (arbiter.pend = '1') and (ctrl_i.ir_opcode(5) = '1') and (misaligned  = '1') else '0';
-  be_store_o <= '1' when (arbiter.pend = '1') and (ctrl_i.ir_opcode(5) = '1') and (arbiter.err = '1') else '0';
+  ma_load_o  <= arbiter.pend_rd and misaligned;
+  be_load_o  <= arbiter.pend_rd and arbiter.acc_err;
+  ma_store_o <= arbiter.pend_wr and misaligned;
+  be_store_o <= arbiter.pend_wr and arbiter.acc_err;
 
-  -- data bus control interface (all source signals are driven by registers) --
-  d_bus_we_o    <= ctrl_i.bus_req and (    ctrl_i.ir_opcode(5)) and (not misaligned) and (not arbiter.pmp_w_err);
-  d_bus_re_o    <= ctrl_i.bus_req and (not ctrl_i.ir_opcode(5)) and (not misaligned) and (not arbiter.pmp_r_err);
+  -- data bus control interface (all source signals are driven by registers!) --
+  d_bus_re_o    <= ctrl_i.bus_req_rd and (not misaligned) and (not arbiter.pmp_r_err);
+  d_bus_we_o    <= ctrl_i.bus_req_wr and (not misaligned) and (not arbiter.pmp_w_err);
   d_bus_fence_o <= ctrl_i.bus_fence;
   d_bus_priv_o  <= ctrl_i.bus_priv;
 
