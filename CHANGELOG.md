@@ -33,6 +33,7 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 27.04.2023 | 1.8.4.4 | minor hardware edits and switching activity optimizations of CPU bus unit; [#605](https://github.com/stnolting/neorv32/pull/605) |
 | 25.04.2023 | 1.8.4.3 | :bug: fix bug in **DMA** (corrupted write-back when there are bus wait cycles - e.g. when no caches are implemented); [#601](https://github.com/stnolting/neorv32/pull/601) |
 | 24.04.2023 | 1.8.4.2 | minor rtl edits; shorten critical path of d-cache setup; [#599](https://github.com/stnolting/neorv32/pull/599) |
 | 22.04.2023 | 1.8.4.1 | :sparkles: add optional **direct memory access controller (DMA)**; [#593](https://github.com/stnolting/neorv32/pull/593) |
