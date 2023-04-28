@@ -560,9 +560,9 @@ begin
     d_bus_fence_o => d_fence,     -- executed FENCE operation
     d_bus_priv_o  => cpu_d.priv,  -- current effective privilege level
     -- interrupts --
-    msw_irq_i     => msw_irq_i,   -- risc-v: machine software interrupt
-    mext_irq_i    => mext_irq_i,  -- risc-v: machine external interrupt
-    mtime_irq_i   => mtime_irq,   -- risc-v: machine timer interrupt
+    msi_i         => msw_irq_i,   -- risc-v: machine software interrupt
+    mei_i         => mext_irq_i,  -- risc-v: machine external interrupt
+    mti_i         => mtime_irq,   -- risc-v: machine timer interrupt
     firq_i        => fast_irq,    -- custom: fast interrupts
     db_halt_req_i => dci_halt_req -- risc-v: halt request (debug mode)
   );
