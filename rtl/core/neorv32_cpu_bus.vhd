@@ -241,12 +241,21 @@ begin
   data_access_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      arbiter.pend_rd   <= '0';
-      arbiter.pend_wr   <= '0';
-      arbiter.acc_err   <= '0';
       arbiter.pmp_r_err <= '0';
       arbiter.pmp_w_err <= '0';
+      arbiter.acc_err   <= '0';
+      arbiter.pend_rd   <= '0';
+      arbiter.pend_wr   <= '0';
     elsif rising_edge(clk_i) then
+      -- PMP error buffer --
+      if (ctrl_i.bus_mo_we = '1') then -- sample PMP errors only once
+        arbiter.pmp_r_err <= ld_pmp_fault;
+        arbiter.pmp_w_err <= st_pmp_fault;
+      end if;
+      -- access error buffer --
+      arbiter.acc_err <= d_bus_err_i or -- bus error
+                         (arbiter.pend_rd and arbiter.pmp_r_err) or -- PMP load fault
+                         (arbiter.pend_wr and arbiter.pmp_w_err); -- PMP store fault
       -- arbiter --
       if (arbiter.pend_rd = '0') and (arbiter.pend_wr = '0') then -- idle
         arbiter.pend_rd <= ctrl_i.bus_req_rd;
@@ -254,15 +263,6 @@ begin
       elsif (d_bus_ack_i = '1') or (ctrl_i.cpu_trap = '1') then -- normal termination or start of trap handling
         arbiter.pend_rd <= '0';
         arbiter.pend_wr <= '0';
-      end if;
-      -- access error buffer --
-      arbiter.acc_err <= d_bus_err_i or -- bus error
-                         (arbiter.pend_rd and arbiter.pmp_r_err) or -- PMP load fault
-                         (arbiter.pend_wr and arbiter.pmp_w_err); -- PMP store fault
-      -- PMP error buffer --
-      if (ctrl_i.bus_mo_we = '1') then -- sample PMP errors only once
-        arbiter.pmp_r_err <= ld_pmp_fault;
-        arbiter.pmp_w_err <= st_pmp_fault;
       end if;
     end if;
   end process data_access_arbiter;
