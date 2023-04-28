@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080403"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080404"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -817,7 +817,8 @@ package neorv32_package is
     alu_frm       : std_ulogic_vector(02 downto 0); -- FPU rounding mode
     alu_cp_trig   : std_ulogic_vector(05 downto 0); -- co-processor trigger (one-hot)
     -- bus interface --
-    bus_req       : std_ulogic;                     -- trigger memory request
+    bus_req_rd    : std_ulogic;                     -- trigger memory read request
+    bus_req_wr    : std_ulogic;                     -- trigger memory write request
     bus_mo_we     : std_ulogic;                     -- memory address and data output register write enable
     bus_fence     : std_ulogic;                     -- fence operation
     bus_fencei    : std_ulogic;                     -- fence.i operation
@@ -848,7 +849,8 @@ package neorv32_package is
     alu_unsigned => '0',
     alu_frm      => (others => '0'),
     alu_cp_trig  => (others => '0'),
-    bus_req      => '0',
+    bus_req_rd   => '0',
+    bus_req_wr   => '0',
     bus_mo_we    => '0',
     bus_fence    => '0',
     bus_fencei   => '0',
@@ -1239,9 +1241,9 @@ package neorv32_package is
       d_bus_fence_o : out std_ulogic; -- executed FENCE operation
       d_bus_priv_o  : out std_ulogic; -- current effective privilege level
       -- interrupts --
-      msw_irq_i     : in  std_ulogic; -- risc-v: machine software interrupt
-      mext_irq_i    : in  std_ulogic; -- risc-v: machine external interrupt
-      mtime_irq_i   : in  std_ulogic; -- risc-v: machine timer interrupt
+      msi_i         : in  std_ulogic; -- risc-v: machine software interrupt
+      mei_i         : in  std_ulogic; -- risc-v: machine external interrupt
+      mti_i         : in  std_ulogic; -- risc-v: machine timer interrupt
       firq_i        : in  std_ulogic_vector(15 downto 0); -- custom: fast interrupts
       db_halt_req_i : in  std_ulogic  -- risc-v: halt request (debug mode)
     );
@@ -1313,9 +1315,9 @@ package neorv32_package is
       -- debug mode (halt) request --
       db_halt_req_i : in  std_ulogic;
       -- interrupts (risc-v compliant) --
-      msw_irq_i     : in  std_ulogic; -- machine software interrupt
-      mext_irq_i    : in  std_ulogic; -- machine external interrupt
-      mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
+      msi_i         : in  std_ulogic; -- machine software interrupt
+      mei_i         : in  std_ulogic; -- machine external interrupt
+      mti_i         : in  std_ulogic; -- machine timer interrupt
       -- fast interrupts (custom) --
       firq_i        : in  std_ulogic_vector(15 downto 0);
       -- physical memory protection --

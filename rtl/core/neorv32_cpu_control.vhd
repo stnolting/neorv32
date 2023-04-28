@@ -113,9 +113,9 @@ entity neorv32_cpu_control is
     -- debug mode (halt) request --
     db_halt_req_i : in  std_ulogic;
     -- interrupts (risc-v compliant) --
-    msw_irq_i     : in  std_ulogic; -- machine software interrupt
-    mext_irq_i    : in  std_ulogic; -- machine external interrupt
-    mtime_irq_i   : in  std_ulogic; -- machine timer interrupt
+    msi_i         : in  std_ulogic; -- machine software interrupt
+    mei_i         : in  std_ulogic; -- machine external interrupt
+    mti_i         : in  std_ulogic; -- machine timer interrupt
     -- fast interrupts (custom) --
     firq_i        : in  std_ulogic_vector(15 downto 0);
     -- physical memory protection --
@@ -996,10 +996,10 @@ begin
               ctrl_nxt.bus_fencei      <= '1'; -- FENCE.I
               execute_engine.state_nxt <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC)
             else
-              execute_engine.state_nxt <= DISPATCH;
               if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then
                 ctrl_nxt.bus_fence <= '1'; -- FENCE
               end if;
+              execute_engine.state_nxt <= DISPATCH;
             end if;
 
 
@@ -1071,19 +1071,21 @@ begin
 
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
-        if (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- not an illegal instruction
-          ctrl_nxt.bus_req <= '1'; -- trigger memory request
+        if (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then -- abort if illegal instruction
+          execute_engine.state_nxt <= DISPATCH;
+        else
+          ctrl_nxt.bus_req_rd      <= not execute_engine.ir(5); -- read request
+          ctrl_nxt.bus_req_wr      <=     execute_engine.ir(5); -- write request
+          execute_engine.state_nxt <= MEM_WAIT;
         end if;
-        execute_engine.state_nxt <= MEM_WAIT;
 
 
       when MEM_WAIT => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
         ctrl_nxt.rf_mux <= rf_mux_mem_c; -- memory read data
         -- wait for memory response --
-        if ((trap_ctrl.exc_buf(exc_laccess_c) or trap_ctrl.exc_buf(exc_saccess_c) or -- bus access error
-             trap_ctrl.exc_buf(exc_lalign_c)  or trap_ctrl.exc_buf(exc_salign_c)  or -- alignment error
-             trap_ctrl.exc_buf(exc_iillegal_c)) = '1') then -- illegal instruction
+        if (trap_ctrl.exc_buf(exc_laccess_c) = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- bus access error
+           (trap_ctrl.exc_buf(exc_lalign_c) = '1') or (trap_ctrl.exc_buf(exc_salign_c) = '1') then -- alignment error
           execute_engine.state_nxt <= DISPATCH; -- abort!
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
           if (execute_engine.ir(instr_opcode_msb_c-1) = '0') then -- load
@@ -1147,7 +1149,8 @@ begin
   ctrl_o.alu_cp_trig  <= ctrl.alu_cp_trig;
 
   -- bus interface --
-  ctrl_o.bus_req      <= ctrl.bus_req;
+  ctrl_o.bus_req_rd   <= ctrl.bus_req_rd;
+  ctrl_o.bus_req_wr   <= ctrl.bus_req_wr;
   ctrl_o.bus_mo_we    <= ctrl.bus_mo_we;
   ctrl_o.bus_fence    <= ctrl.bus_fence;
   ctrl_o.bus_fencei   <= ctrl.bus_fencei;
@@ -1477,9 +1480,9 @@ begin
       -- ----------------------------------------------------------------------
 
       -- RISC-V machine interrupts --
-      trap_ctrl.irq_pnd(irq_msi_irq_c) <= msw_irq_i;
-      trap_ctrl.irq_pnd(irq_mei_irq_c) <= mext_irq_i;
-      trap_ctrl.irq_pnd(irq_mti_irq_c) <= mtime_irq_i;
+      trap_ctrl.irq_pnd(irq_msi_irq_c) <= msi_i;
+      trap_ctrl.irq_pnd(irq_mei_irq_c) <= mei_i;
+      trap_ctrl.irq_pnd(irq_mti_irq_c) <= mti_i;
 
       -- NEORV32-specific fast interrupts --
       for i in 0 to 15 loop
@@ -1528,11 +1531,11 @@ begin
       trap_ctrl.wakeup    <= '0';
       trap_ctrl.env_start <= '0';
     elsif rising_edge(clk_i) then
-      trap_ctrl.wakeup <= or_reduce_f(trap_ctrl.irq_buf); -- wakeup from sleep due to any pending IRQ (including debug IRQs!)
+      trap_ctrl.wakeup <= or_reduce_f(trap_ctrl.irq_buf); -- wakeup from sleep on any pending IRQ (including debug IRQs)
       if (trap_ctrl.env_start = '0') then -- no started trap handler yet
         -- trigger IRQ only in EXECUTE state to continue execution even on permanent IRQ
         if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and (execute_engine.state = EXECUTE)) then
-          trap_ctrl.env_start <= '1'; -- now execute engine can start trap handler
+          trap_ctrl.env_start <= '1'; -- now execute engine can start trap handling
         end if;
       else -- trap environment ready to start
         if (trap_ctrl.env_start_ack = '1') then -- start of trap handler acknowledged by execute engine
@@ -1545,7 +1548,7 @@ begin
   -- any exception? --
   trap_ctrl.exc_fire <= '1' when (or_reduce_f(trap_ctrl.exc_buf) = '1') else '0'; -- sync. exceptions CANNOT be masked
 
-  -- valid interrupt request? --
+  -- any interrupt? --
   trap_ctrl.irq_fire <= '1' when
     (
      (or_reduce_f(trap_ctrl.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending machine IRQ
@@ -1598,7 +1601,7 @@ begin
       elsif (trap_ctrl.irq_buf(irq_firq_15_c)  = '1') then trap_ctrl.cause <= trap_firq15_c; -- fast interrupt channel 15
       -- standard RISC-V interrupts --
       elsif (trap_ctrl.irq_buf(irq_mei_irq_c)  = '1') then trap_ctrl.cause <= trap_mei_c; -- machine external interrupt (MEI)
-      elsif (trap_ctrl.irq_buf(irq_msi_irq_c)  = '1') then trap_ctrl.cause <= trap_msi_c; -- machine SW interrupt (MSI)
+      elsif (trap_ctrl.irq_buf(irq_msi_irq_c)  = '1') then trap_ctrl.cause <= trap_msi_c; -- machine software interrupt (MSI)
       elsif (trap_ctrl.irq_buf(irq_mti_irq_c)  = '1') then trap_ctrl.cause <= trap_mti_c; -- machine timer interrupt (MTI)
       else trap_ctrl.cause <= trap_mti_c; end if; -- don't care
     end if;
@@ -2446,9 +2449,9 @@ begin
   cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)   and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
   cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                                else '0'; -- multi-cycle alu-operation wait cycle
 
-  cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl.bus_req = '1')              and (execute_engine.ir(instr_opcode_msb_c-1) = '0') else '0'; -- load operation
-  cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl.bus_req = '1')              and (execute_engine.ir(instr_opcode_msb_c-1) = '1') else '0'; -- store operation
-  cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = MEM_WAIT) and (execute_engine.state_prev2 = MEM_WAIT)         else '0'; -- load/store memory wait cycle
+  cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl.bus_req_rd = '1')                                                       else '0'; -- load operation
+  cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl.bus_req_wr = '1')                                                       else '0'; -- store operation
+  cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = MEM_WAIT) and (execute_engine.state_prev2 = MEM_WAIT) else '0'; -- load/store memory wait cycle
 
   cnt_event(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.ir(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
   cnt_event(hpmcnt_event_branch_c)  <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.ir(instr_opcode_lsb_c+2) = '0') else '0'; -- branch (conditional, taken or not taken)
