@@ -1831,8 +1831,7 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("[%i] PMP tests: ", cnt_test);
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[%i] PMP: [skipped, n.a.]\n", cnt_test);
   }
 
 
@@ -1842,20 +1841,20 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all HPM counters
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIHPM)) {
     PRINT_STANDARD("\n\nHPMs\n"
-                   "#00 Instr.:   %u\n"
-                   "#02 Clocks:   %u\n"
-                   "#03 C instr.: %u\n"
-                   "#04 IF wait:  %u\n"
-                   "#05 II wait:  %u\n"
-                   "#06 ALU wait: %u\n"
-                   "#07 M loads:  %u\n"
-                   "#08 M stores: %u\n"
-                   "#09 M wait:   %u\n"
-                   "#10 Jumps:    %u\n"
-                   "#11 Branch.:  %u\n"
-                   "#12 > taken:  %u\n"
-                   "#13 EXCs:     %u\n"
-                   "#14 Illegals: %u\n",
+                   "00 Instr.   %u\n"
+                   "02 Clocks   %u\n"
+                   "03 C instr. %u\n"
+                   "04 IF wait  %u\n"
+                   "05 II wait  %u\n"
+                   "06 ALU wait %u\n"
+                   "07 M loads  %u\n"
+                   "08 M stores %u\n"
+                   "09 M wait   %u\n"
+                   "10 Jumps    %u\n"
+                   "11 Branch.  %u\n"
+                   "12 > taken  %u\n"
+                   "13 EXCs     %u\n"
+                   "14 Illegals %u\n",
                    (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET),
                    (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE),
                    (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3),
