@@ -47,31 +47,17 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_xip is
   port (
-    -- global control --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
-    -- host access: control register access port --
-    ct_addr_i   : in  std_ulogic_vector(31 downto 0); -- address
-    ct_rden_i   : in  std_ulogic; -- read enable
-    ct_wren_i   : in  std_ulogic; -- write enable
-    ct_data_i   : in  std_ulogic_vector(31 downto 0); -- data in
-    ct_data_o   : out std_ulogic_vector(31 downto 0); -- data out
-    ct_ack_o    : out std_ulogic; -- transfer acknowledge
-    -- host access: transparent SPI access port (read-only) --
-    acc_addr_i  : in  std_ulogic_vector(31 downto 0); -- address
-    acc_rden_i  : in  std_ulogic; -- read enable
-    acc_wren_i  : in  std_ulogic; -- write enable
-    acc_data_o  : out std_ulogic_vector(31 downto 0); -- data out
-    acc_ack_o   : out std_ulogic; -- transfer acknowledge
-    acc_err_o   : out std_ulogic; -- transfer error
-    -- status --
+    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    bus_req_i   : in  bus_req_t;  -- bus request
+    bus_rsp_o   : out bus_rsp_t;  -- bus response
+    xip_req_i   : in  bus_req_t;  -- XIP request
+    xip_rsp_o   : out bus_rsp_t;  -- XIP response
     xip_en_o    : out std_ulogic; -- XIP enable
     xip_acc_o   : out std_ulogic; -- pending XIP access
-    xip_page_o  : out std_ulogic_vector(03 downto 0); -- XIP page
-    -- clock generator --
+    xip_page_o  : out std_ulogic_vector(3 downto 0); -- XIP page
     clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(07 downto 0);
-    -- SPI device interface --
+    clkgen_i    : in  std_ulogic_vector(7 downto 0);
     spi_csn_o   : out std_ulogic; -- chip-select, low-active
     spi_clk_o   : out std_ulogic; -- serial clock
     spi_dat_i   : in  std_ulogic; -- device data output
@@ -179,10 +165,10 @@ begin
 
   -- Access Control (IO/CTRL port) ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ct_acc_en <= '1' when (ct_addr_i(hi_abb_c downto lo_abb_c) = xip_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  ct_addr   <= xip_base_c(31 downto lo_abb_c) & ct_addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  ct_wren   <= ct_acc_en and ct_wren_i;
-  ct_rden   <= ct_acc_en and ct_rden_i;
+  ct_acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = xip_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  ct_addr   <= xip_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  ct_wren   <= ct_acc_en and bus_req_i.we;
+  ct_rden   <= ct_acc_en and bus_req_i.re;
 
 
   -- Control Write Access -------------------------------------------------------------------
@@ -199,26 +185,26 @@ begin
       if (ct_wren = '1') then -- only full-word writes!
         -- control register --
         if (ct_addr = xip_ctrl_addr_c) then
-          ctrl(ctrl_enable_c)                                <= ct_data_i(ctrl_enable_c);
-          ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= ct_data_i(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
-          ctrl(ctrl_spi_cpol_c)                              <= ct_data_i(ctrl_spi_cpol_c);
-          ctrl(ctrl_spi_cpha_c)                              <= ct_data_i(ctrl_spi_cpha_c);
-          ctrl(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c) <= ct_data_i(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c);
-          ctrl(ctrl_xip_enable_c)                            <= ct_data_i(ctrl_xip_enable_c);
-          ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= ct_data_i(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
-          ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= ct_data_i(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
-          ctrl(ctrl_page3_c downto ctrl_page0_c)             <= ct_data_i(ctrl_page3_c downto ctrl_page0_c);
-          ctrl(ctrl_spi_csen_c)                              <= ct_data_i(ctrl_spi_csen_c);
-          ctrl(ctrl_highspeed_c)                             <= ct_data_i(ctrl_highspeed_c);
-          ctrl(ctrl_burst_en_c)                              <= ct_data_i(ctrl_burst_en_c);
+          ctrl(ctrl_enable_c)                                <= bus_req_i.data(ctrl_enable_c);
+          ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= bus_req_i.data(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
+          ctrl(ctrl_spi_cpol_c)                              <= bus_req_i.data(ctrl_spi_cpol_c);
+          ctrl(ctrl_spi_cpha_c)                              <= bus_req_i.data(ctrl_spi_cpha_c);
+          ctrl(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c) <= bus_req_i.data(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c);
+          ctrl(ctrl_xip_enable_c)                            <= bus_req_i.data(ctrl_xip_enable_c);
+          ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= bus_req_i.data(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
+          ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= bus_req_i.data(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
+          ctrl(ctrl_page3_c downto ctrl_page0_c)             <= bus_req_i.data(ctrl_page3_c downto ctrl_page0_c);
+          ctrl(ctrl_spi_csen_c)                              <= bus_req_i.data(ctrl_spi_csen_c);
+          ctrl(ctrl_highspeed_c)                             <= bus_req_i.data(ctrl_highspeed_c);
+          ctrl(ctrl_burst_en_c)                              <= bus_req_i.data(ctrl_burst_en_c);
         end if;
         -- SPI direct data access register lo --
         if (ct_addr = xip_data_lo_addr_c) then
-          spi_data_lo <= ct_data_i;
+          spi_data_lo <= bus_req_i.data;
         end if;
         -- SPI direct data access register hi --
         if (ct_addr = xip_data_hi_addr_c) then
-          spi_data_hi <= ct_data_i;
+          spi_data_hi <= bus_req_i.data;
           spi_trigger <= '1'; -- trigger direct SPI transaction
         end if;
       end if;
@@ -237,34 +223,37 @@ begin
   ctrl_read_access : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ct_ack_o  <= ct_wren or ct_rden; -- access acknowledge
-      ct_data_o <= (others => '0');
+      bus_rsp_o.ack  <= ct_wren or ct_rden; -- access acknowledge
+      bus_rsp_o.data <= (others => '0');
       if (ct_rden = '1') then
         case ct_addr(3 downto 2) is
           when "00" => -- 'xip_ctrl_addr_c' - control register
-            ct_data_o(ctrl_enable_c)                                <= ctrl(ctrl_enable_c);
-            ct_data_o(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
-            ct_data_o(ctrl_spi_cpol_c)                              <= ctrl(ctrl_spi_cpol_c);
-            ct_data_o(ctrl_spi_cpha_c)                              <= ctrl(ctrl_spi_cpha_c);
-            ct_data_o(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c) <= ctrl(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c);
-            ct_data_o(ctrl_xip_enable_c)                            <= ctrl(ctrl_xip_enable_c);
-            ct_data_o(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
-            ct_data_o(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
-            ct_data_o(ctrl_page3_c downto ctrl_page0_c)             <= ctrl(ctrl_page3_c downto ctrl_page0_c);
-            ct_data_o(ctrl_spi_csen_c)                              <= ctrl(ctrl_spi_csen_c);
-            ct_data_o(ctrl_highspeed_c)                             <= ctrl(ctrl_highspeed_c);
-            ct_data_o(ctrl_burst_en_c)                              <= ctrl(ctrl_burst_en_c);
+            bus_rsp_o.data(ctrl_enable_c)                                <= ctrl(ctrl_enable_c);
+            bus_rsp_o.data(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
+            bus_rsp_o.data(ctrl_spi_cpol_c)                              <= ctrl(ctrl_spi_cpol_c);
+            bus_rsp_o.data(ctrl_spi_cpha_c)                              <= ctrl(ctrl_spi_cpha_c);
+            bus_rsp_o.data(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c) <= ctrl(ctrl_spi_nbytes3_c downto ctrl_spi_nbytes0_c);
+            bus_rsp_o.data(ctrl_xip_enable_c)                            <= ctrl(ctrl_xip_enable_c);
+            bus_rsp_o.data(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
+            bus_rsp_o.data(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
+            bus_rsp_o.data(ctrl_page3_c downto ctrl_page0_c)             <= ctrl(ctrl_page3_c downto ctrl_page0_c);
+            bus_rsp_o.data(ctrl_spi_csen_c)                              <= ctrl(ctrl_spi_csen_c);
+            bus_rsp_o.data(ctrl_highspeed_c)                             <= ctrl(ctrl_highspeed_c);
+            bus_rsp_o.data(ctrl_burst_en_c)                              <= ctrl(ctrl_burst_en_c);
             --
-            ct_data_o(ctrl_phy_busy_c) <= phy_if.busy;
-            ct_data_o(ctrl_xip_busy_c) <= arbiter.busy;
+            bus_rsp_o.data(ctrl_phy_busy_c) <= phy_if.busy;
+            bus_rsp_o.data(ctrl_xip_busy_c) <= arbiter.busy;
           when "10" => -- 'xip_data_lo_addr_c' - SPI direct data access register lo
-            ct_data_o <= phy_if.rdata;
+            bus_rsp_o.data <= phy_if.rdata;
           when others => -- unavailable (not implemented or write-only)
-            ct_data_o <= (others => '0');
+            bus_rsp_o.data <= (others => '0');
         end case;
       end if;
     end if;
   end process ctrl_read_access;
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
 
   -- XIP Address Computation Logic ----------------------------------------------------------
@@ -296,8 +285,8 @@ begin
         arbiter.state <= arbiter.state_nxt;
       end if;
       -- address look-ahead --
-      if (acc_rden_i = '1') and (acc_addr_i(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
-        arbiter.addr <= acc_addr_i; -- buffer address (reducing fan-out on CPU's address net)
+      if (xip_req_i.re = '1') and (xip_req_i.addr(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
+        arbiter.addr <= xip_req_i.addr; -- buffer address (reducing fan-out on CPU's address net)
       end if;
       arbiter.addr_lookahead <= std_ulogic_vector(unsigned(arbiter.addr) + 4); -- prefetch address of *next* linear access
       -- pending flash access timeout --
@@ -311,15 +300,15 @@ begin
 
 
   -- FSM - combinatorial part --
-  arbiter_comb: process(arbiter, ctrl, xip_addr, phy_if, acc_rden_i, acc_wren_i, acc_addr_i, spi_data_hi, spi_data_lo, spi_trigger)
+  arbiter_comb: process(arbiter, ctrl, xip_addr, phy_if, xip_req_i, spi_data_hi, spi_data_lo, spi_trigger)
   begin
     -- arbiter defaults --
     arbiter.state_nxt <= arbiter.state;
 
     -- bus interface defaults --
-    acc_data_o <= (others => '0');
-    acc_ack_o  <= '0';
-    acc_err_o  <= '0';
+    xip_rsp_o.data <= (others => '0');
+    xip_rsp_o.ack  <= '0';
+    xip_rsp_o.err  <= '0';
 
     -- SPI PHY interface defaults --
     phy_if.start <= '0';
@@ -338,10 +327,10 @@ begin
 
       when S_IDLE => -- wait for new bus request
       -- ------------------------------------------------------------
-        if (acc_addr_i(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
-          if (acc_rden_i = '1') then
+        if (xip_req_i.addr(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
+          if (xip_req_i.re = '1') then
             arbiter.state_nxt <= S_CHECK;
-          elsif (acc_wren_i = '1') then
+          elsif (xip_req_i.we = '1') then
             arbiter.state_nxt <= S_ERROR;
           end if;
         end if;
@@ -364,15 +353,15 @@ begin
 
       when S_BUSY => -- wait for PHY to complete operation
       -- ------------------------------------------------------------
-        acc_data_o <= bswap32_f(phy_if.rdata); -- convert incrementing byte-read to little-endian
+        xip_rsp_o.data <= bswap32_f(phy_if.rdata); -- convert incrementing byte-read to little-endian
         if (phy_if.busy = '0') then
-          acc_ack_o         <= '1';
+          xip_rsp_o.ack     <= '1';
           arbiter.state_nxt <= S_IDLE;
         end if;
 
       when S_ERROR => -- access error
       -- ------------------------------------------------------------
-        acc_err_o         <= '1';
+        xip_rsp_o.err     <= '1';
         arbiter.state_nxt <= S_IDLE;
 
       when others => -- undefined

@@ -60,6 +60,7 @@ entity neorv32_debug_dm is
     -- global control --
     clk_i             : in  std_ulogic; -- global clock line
     rstn_i            : in  std_ulogic; -- global reset line, low-active
+    cpu_debug_i       : in  std_ulogic; -- CPU is in debug mode
     -- debug module interface (DMI) --
     dmi_req_valid_i   : in  std_ulogic;
     dmi_req_ready_o   : out std_ulogic; -- DMI is allowed to make new requests when set
@@ -71,14 +72,8 @@ entity neorv32_debug_dm is
     dmi_rsp_data_o    : out std_ulogic_vector(31 downto 0);
     dmi_rsp_op_o      : out std_ulogic_vector(01 downto 0);
     -- CPU bus access --
-    cpu_debug_i       : in  std_ulogic; -- CPU is in debug mode
-    cpu_addr_i        : in  std_ulogic_vector(31 downto 0); -- address
-    cpu_rden_i        : in  std_ulogic; -- read enable
-    cpu_wren_i        : in  std_ulogic; -- write enable
-    cpu_ben_i         : in  std_ulogic_vector(03 downto 0); -- byte write enable
-    cpu_data_i        : in  std_ulogic_vector(31 downto 0); -- data in
-    cpu_data_o        : out std_ulogic_vector(31 downto 0); -- data out
-    cpu_ack_o         : out std_ulogic; -- transfer acknowledge
+    bus_req_i         : in  bus_req_t;  -- bus request
+    bus_rsp_o         : out bus_rsp_t;  -- bus response
     -- CPU control --
     cpu_ndmrstn_o     : out std_ulogic; -- soc reset
     cpu_halt_req_o    : out std_ulogic  -- request hart to halt (enter debug mode)
@@ -685,10 +680,10 @@ begin
 
   -- Access Control ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (cpu_addr_i(hi_abb_c downto lo_abb_c) = dm_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  maddr  <= cpu_addr_i(lo_abb_c-1 downto lo_abb_c-2); -- (sub-)module select address
-  rden   <= acc_en and cpu_debug_i and cpu_rden_i; -- allow access only when in debug mode
-  wren   <= acc_en and cpu_debug_i and cpu_wren_i; -- allow access only when in debug mode
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = dm_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  maddr  <= bus_req_i.addr(lo_abb_c-1 downto lo_abb_c-2); -- (sub-)module select address
+  rden   <= acc_en and cpu_debug_i and bus_req_i.re; -- allow access only when in debug mode
+  wren   <= acc_en and cpu_debug_i and bus_req_i.we; -- allow access only when in debug mode
 
 
   -- Write Access ---------------------------------------------------------------------------
@@ -706,7 +701,7 @@ begin
       if (dci.data_we = '1') then -- DM write access
         data_buf <= dci.wdata;
       elsif (maddr = "10") and (wren = '1') then -- CPU write access
-        data_buf <= cpu_data_i;
+        data_buf <= bus_req_i.data;
       end if;
       -- control and status register CPU write access --
       -- NOTE: we only check the individual BYTE ACCESSES - not the actual write data --
@@ -715,16 +710,16 @@ begin
       dci.execute_ack   <= '0';
       dci.exception_ack <= '0';
       if (maddr = "11") and (wren = '1') then
-        if (cpu_ben_i(sreg_halt_ack_c/8) = '1') then
+        if (bus_req_i.ben(sreg_halt_ack_c/8) = '1') then
           dci.halt_ack <= '1';
         end if;
-        if (cpu_ben_i(sreg_resume_ack_c/8) = '1') then
+        if (bus_req_i.ben(sreg_resume_ack_c/8) = '1') then
           dci.resume_ack <= '1';
         end if;
-        if (cpu_ben_i(sreg_execute_ack_c/8) = '1') then
+        if (bus_req_i.ben(sreg_execute_ack_c/8) = '1') then
           dci.execute_ack <= '1';
         end if;
-        if (cpu_ben_i(sreg_exception_ack_c/8) = '1') then
+        if (bus_req_i.ben(sreg_exception_ack_c/8) = '1') then
           dci.exception_ack <= '1';
         end if;
       end if;
@@ -740,23 +735,26 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      cpu_ack_o  <= rden or wren;
-      cpu_data_o <= (others => '0');
+      bus_rsp_o.ack  <= rden or wren;
+      bus_rsp_o.data <= (others => '0');
       if (rden = '1') then -- output enable
         case maddr is -- module select
           when "00" => -- code ROM
-            cpu_data_o <= code_rom_file(to_integer(unsigned(cpu_addr_i(5 downto 2))));
+            bus_rsp_o.data <= code_rom_file(to_integer(unsigned(bus_req_i.addr(5 downto 2))));
           when "01" => -- program buffer
-            cpu_data_o <= cpu_progbuf(to_integer(unsigned(cpu_addr_i(3 downto 2))));
+            bus_rsp_o.data <= cpu_progbuf(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
           when "10" => -- data buffer
-            cpu_data_o <= data_buf;
+            bus_rsp_o.data <= data_buf;
           when others => -- control and status register
-            cpu_data_o(sreg_resume_req_c)  <= dci.resume_req;
-            cpu_data_o(sreg_execute_req_c) <= dci.execute_req;
+            bus_rsp_o.data(sreg_resume_req_c)  <= dci.resume_req;
+            bus_rsp_o.data(sreg_execute_req_c) <= dci.execute_req;
         end case;
       end if;
     end if;
   end process read_access;
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
 
 end neorv32_debug_dm_rtl;

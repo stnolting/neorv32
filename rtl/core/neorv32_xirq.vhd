@@ -53,19 +53,12 @@ entity neorv32_xirq is
     XIRQ_TRIGGER_POLARITY : std_ulogic_vector(31 downto 0)  -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
   );
   port (
-    -- host access --
     clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- global reset line, low-active, async
-    addr_i    : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i    : in  std_ulogic; -- read enable
-    wren_i    : in  std_ulogic; -- write enable
-    data_i    : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o    : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o     : out std_ulogic; -- transfer acknowledge
-    -- external interrupt lines --
-    xirq_i    : in  std_ulogic_vector(31 downto 0);
-    -- CPU interrupt --
-    cpu_irq_o : out std_ulogic
+    rstn_i    : in  std_ulogic; -- global reset line, low-active
+    bus_req_i : in  bus_req_t;  -- bus request
+    bus_rsp_o : out bus_rsp_t;  -- bus response
+    xirq_i    : in  std_ulogic_vector(31 downto 0); -- external IRQ channels
+    cpu_irq_o : out std_ulogic  -- CPU interrupt
   );
 end neorv32_xirq;
 
@@ -111,10 +104,10 @@ begin
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- access control --
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = xirq_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= xirq_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and wren_i;
-  rden   <= acc_en and rden_i;
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = xirq_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= xirq_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  wren   <= acc_en and bus_req_i.we;
+  rden   <= acc_en and bus_req_i.re;
 
   -- write access --
   write_access: process(rstn_i, clk_i)
@@ -126,10 +119,10 @@ begin
       nclr_pending <= (others => '1');
       if (wren = '1') then
         if (addr = xirq_enable_addr_c) then -- channel-enable
-          irq_enable <= data_i(XIRQ_NUM_CH-1 downto 0);
+          irq_enable <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0);
         end if;
         if (addr = xirq_pending_addr_c) then -- clear pending IRQs
-          nclr_pending <= data_i(XIRQ_NUM_CH-1 downto 0); -- set zero to clear pending IRQ
+          nclr_pending <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0); -- set zero to clear pending IRQ
         end if;
       end if;
     end if;
@@ -139,17 +132,20 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= rden or wren; -- bus handshake
-      data_o <= (others => '0');
+      bus_rsp_o.ack  <= rden or wren; -- bus handshake
+      bus_rsp_o.data <= (others => '0');
       if (rden = '1') then
         case addr is
-          when xirq_enable_addr_c  => data_o(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
-          when xirq_pending_addr_c => data_o(XIRQ_NUM_CH-1 downto 0) <= irq_pending; -- pending IRQs
-          when others              => data_o(4 downto 0)             <= irq_source; -- IRQ source
+          when xirq_enable_addr_c  => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
+          when xirq_pending_addr_c => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_pending; -- pending IRQs
+          when others              => bus_rsp_o.data(4 downto 0)             <= irq_source; -- IRQ source
         end case;
       end if;
     end if;
   end process read_access;
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
 
   -- IRQ Trigger --------------------------------------------------------------

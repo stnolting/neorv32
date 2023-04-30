@@ -47,22 +47,15 @@ entity neorv32_sdi is
     RTX_FIFO : natural -- RTX fifo depth, has to be a power of two, min 1
   );
   port (
-    -- host access --
     clk_i     : in  std_ulogic; -- global clock line
     rstn_i    : in  std_ulogic; -- global reset line, low-active, async
-    addr_i    : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i    : in  std_ulogic; -- read enable
-    wren_i    : in  std_ulogic; -- write enable
-    data_i    : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o    : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o     : out std_ulogic; -- transfer acknowledge
-    -- SDI receiver input --
+    bus_req_i : in  bus_req_t;  -- bus request
+    bus_rsp_o : out bus_rsp_t;  -- bus response
     sdi_csn_i : in  std_ulogic; -- low-active chip-select
     sdi_clk_i : in  std_ulogic; -- serial clock
     sdi_dat_i : in  std_ulogic; -- serial data input
     sdi_dat_o : out std_ulogic; -- serial data output
-    -- interrupts --
-    irq_o     : out std_ulogic
+    irq_o     : out std_ulogic  -- CPU interrupt
   );
 end neorv32_sdi;
 
@@ -159,10 +152,10 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access control --
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = sdi_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= sdi_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and wren_i;
-  rden   <= acc_en and rden_i;
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = sdi_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= sdi_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  wren   <= acc_en and bus_req_i.we;
+  rden   <= acc_en and bus_req_i.re;
 
   -- write access --
   write_access: process(rstn_i, clk_i)
@@ -178,13 +171,13 @@ begin
       ctrl.clr_rx <= '0';
       if (wren = '1') then
         if (addr = sdi_ctrl_addr_c) then -- control register
-          ctrl.enable <= data_i(ctrl_en_c);
-          ctrl.clr_rx <= data_i(ctrl_clr_rx_c);
+          ctrl.enable <= bus_req_i.data(ctrl_en_c);
+          ctrl.clr_rx <= bus_req_i.data(ctrl_clr_rx_c);
           --
-          ctrl.irq_rx_avail <= data_i(ctrl_irq_rx_avail_c);
-          ctrl.irq_rx_half  <= data_i(ctrl_irq_rx_half_c);
-          ctrl.irq_rx_full  <= data_i(ctrl_irq_rx_full_c);
-          ctrl.irq_tx_empty <= data_i(ctrl_irq_tx_empty_c);
+          ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
+          ctrl.irq_rx_half  <= bus_req_i.data(ctrl_irq_rx_half_c);
+          ctrl.irq_rx_full  <= bus_req_i.data(ctrl_irq_rx_full_c);
+          ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
         end if;
       end if;
     end if;
@@ -194,30 +187,33 @@ begin
   read_aceess: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= rden or wren; -- bus access acknowledge
-      data_o <= (others => '0');
+      bus_rsp_o.ack  <= rden or wren; -- bus access acknowledge
+      bus_rsp_o.data <= (others => '0');
       if (rden = '1') then
         if (addr = sdi_ctrl_addr_c) then -- control register
-          data_o(ctrl_en_c) <= ctrl.enable;
+          bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
           --
-          data_o(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(RTX_FIFO), 4));
+          bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(RTX_FIFO), 4));
           --
-          data_o(ctrl_irq_rx_avail_c) <= ctrl.irq_rx_avail;
-          data_o(ctrl_irq_rx_half_c)  <= ctrl.irq_rx_half;
-          data_o(ctrl_irq_rx_full_c)  <= ctrl.irq_rx_full;
-          data_o(ctrl_irq_tx_empty_c) <= ctrl.irq_tx_empty;
+          bus_rsp_o.data(ctrl_irq_rx_avail_c) <= ctrl.irq_rx_avail;
+          bus_rsp_o.data(ctrl_irq_rx_half_c)  <= ctrl.irq_rx_half;
+          bus_rsp_o.data(ctrl_irq_rx_full_c)  <= ctrl.irq_rx_full;
+          bus_rsp_o.data(ctrl_irq_tx_empty_c) <= ctrl.irq_tx_empty;
           --
-          data_o(ctrl_rx_avail_c) <= rx_fifo.avail;
-          data_o(ctrl_rx_half_c)  <= rx_fifo.half;
-          data_o(ctrl_rx_full_c)  <= not rx_fifo.free;
-          data_o(ctrl_tx_empty_c) <= not tx_fifo.avail;
-          data_o(ctrl_tx_full_c)  <= not tx_fifo.free;
+          bus_rsp_o.data(ctrl_rx_avail_c) <= rx_fifo.avail;
+          bus_rsp_o.data(ctrl_rx_half_c)  <= rx_fifo.half;
+          bus_rsp_o.data(ctrl_rx_full_c)  <= not rx_fifo.free;
+          bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
+          bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
         else -- data register
-          data_o(7 downto 0) <= rx_fifo.rdata;
+          bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
         end if;
       end if;
     end if;
   end process read_aceess;
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
 
   -- Data FIFO ("Ring Buffer") --------------------------------------------------------------
@@ -249,7 +245,7 @@ begin
 
   -- write access (CPU) --
   tx_fifo.clear <= not ctrl.enable;
-  tx_fifo.wdata <= data_i(7 downto 0);
+  tx_fifo.wdata <= bus_req_i.data(7 downto 0);
   tx_fifo.we    <= '1' when (wren = '1') and (addr = sdi_rtx_addr_c) else '0';
 
   -- read access (SDI) --

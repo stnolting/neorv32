@@ -10,7 +10,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -53,25 +53,15 @@ entity neorv32_cfs is
     CFS_OUT_SIZE : natural  -- size of CFS output conduit in bits
   );
   port (
-    -- host access --
     clk_i       : in  std_ulogic; -- global clock line
     rstn_i      : in  std_ulogic; -- global reset line, low-active, use as async
-    priv_i      : in  std_ulogic; -- current CPU privilege mode
-    addr_i      : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i      : in  std_ulogic; -- read enable
-    wren_i      : in  std_ulogic; -- word write enable
-    data_i      : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o      : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o       : out std_ulogic; -- transfer acknowledge
-    err_o       : out std_ulogic; -- transfer error
-    -- clock generator --
+    bus_req_i   : in  bus_req_t;  -- bus request
+    bus_rsp_o   : out bus_rsp_t;  -- bus response
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(07 downto 0); -- "clock" inputs
-    -- interrupt --
     irq_o       : out std_ulogic; -- interrupt request
-    -- custom io (conduits) --
-    cfs_in_i    : in  std_ulogic_vector(CFS_IN_SIZE-1 downto 0);  -- custom inputs
-    cfs_out_o   : out std_ulogic_vector(CFS_OUT_SIZE-1 downto 0)  -- custom outputs
+    cfs_in_i    : in  std_ulogic_vector(CFS_IN_SIZE-1 downto 0); -- custom inputs
+    cfs_out_o   : out std_ulogic_vector(CFS_OUT_SIZE-1 downto 0) -- custom outputs
   );
 end neorv32_cfs;
 
@@ -99,10 +89,10 @@ begin
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- This logic is required to handle the CPU accesses - DO NOT MODIFY!
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = cfs_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= cfs_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and wren_i; -- only full-word write accesses are supported
-  rden   <= acc_en and rden_i; -- read accesses always return a full 32-bit word
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = cfs_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= cfs_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  wren   <= acc_en and bus_req_i.we; -- only full-word write accesses are supported
+  rden   <= acc_en and bus_req_i.re; -- read accesses always return a full 32-bit word
 
 
   -- CFS Generics ---------------------------------------------------------------------------
@@ -197,7 +187,7 @@ begin
   -- that can be handled by the application software. Note that the current privilege level should not be exposed to software to
   -- maintain full virtualization. Hence, CFS-based "privilege escalation" should trigger a bus access exception (e.g. by setting 'err_o').
 
-  err_o <= '0'; -- Tie to zero if not explicitly used.
+  bus_rsp_o.err <= '0'; -- Tie to zero if not explicitly used.
 
 
   -- Host access example: Read and write access to the interface registers + bus transfer acknowledge. This example only
@@ -214,39 +204,39 @@ begin
       cfs_reg_wr(2) <= (others => '0');
       cfs_reg_wr(3) <= (others => '0');
       --
-      ack_o  <= '0';
-      data_o <= (others => '0');
+      bus_rsp_o.ack  <= '0';
+      bus_rsp_o.data <= (others => '0');
     elsif rising_edge(clk_i) then -- synchronous interface for read and write accesses
       -- transfer/access acknowledge --
       -- default: required for the CPU to check the CFS is answering a bus read OR write request;
       -- all read and write accesses (to any cfs_reg, even if there is no according physical register implemented) will succeed.
-      ack_o <= rden or wren;
+      bus_rsp_o.ack <= rden or wren;
 
       -- write access --
       if (wren = '1') then -- full-word write access, high for one cycle if there is an actual write access
         if (addr = cfs_reg0_addr_c) then -- make sure to use the internal "addr" signal for the read/write interface
-          cfs_reg_wr(0) <= data_i; -- some physical register, for example: control register
+          cfs_reg_wr(0) <= bus_req_i.data; -- some physical register, for example: control register
         end if;
         if (addr = cfs_reg1_addr_c) then
-          cfs_reg_wr(1) <= data_i; -- some physical register, for example: data in/out fifo
+          cfs_reg_wr(1) <= bus_req_i.data; -- some physical register, for example: data in/out fifo
         end if;
         if (addr = cfs_reg2_addr_c) then
-          cfs_reg_wr(2) <= data_i; -- some physical register, for example: command fifo
+          cfs_reg_wr(2) <= bus_req_i.data; -- some physical register, for example: command fifo
         end if;
         if (addr = cfs_reg3_addr_c) then
-          cfs_reg_wr(3) <= data_i; -- some physical register, for example: status register
+          cfs_reg_wr(3) <= bus_req_i.data; -- some physical register, for example: status register
         end if;
       end if;
 
       -- read access --
-      data_o <= (others => '0'); -- the output HAS TO BE ZERO if there is no actual read access
+      bus_rsp_o.data <= (others => '0'); -- the output HAS TO BE ZERO if there is no actual read access
       if (rden = '1') then -- the read access is always 32-bit wide, high for one cycle if there is an actual read access
         case addr is -- make sure to use the internal 'addr' signal for the read/write interface
-          when cfs_reg0_addr_c => data_o <= cfs_reg_rd(0);
-          when cfs_reg1_addr_c => data_o <= cfs_reg_rd(1);
-          when cfs_reg2_addr_c => data_o <= cfs_reg_rd(2);
-          when cfs_reg3_addr_c => data_o <= cfs_reg_rd(3);
-          when others          => data_o <= (others => '0'); -- the remaining registers are not implemented and will read as zero
+          when cfs_reg0_addr_c => bus_rsp_o.data <= cfs_reg_rd(0);
+          when cfs_reg1_addr_c => bus_rsp_o.data <= cfs_reg_rd(1);
+          when cfs_reg2_addr_c => bus_rsp_o.data <= cfs_reg_rd(2);
+          when cfs_reg3_addr_c => bus_rsp_o.data <= cfs_reg_rd(3);
+          when others          => bus_rsp_o.data <= (others => '0'); -- the remaining registers are not implemented and will read as zero
         end case;
       end if;
     end if;
