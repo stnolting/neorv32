@@ -75,35 +75,24 @@ entity neorv32_cpu is
   );
   port (
     -- global control --
-    clk_i         : in  std_ulogic; -- global clock, rising edge
-    rstn_i        : in  std_ulogic; -- global reset, low-active, async
-    sleep_o       : out std_ulogic; -- cpu is in sleep mode when set
-    debug_o       : out std_ulogic; -- cpu is in debug mode when set
-    -- instruction bus interface --
-    i_bus_addr_o  : out std_ulogic_vector(31 downto 0); -- bus access address
-    i_bus_rdata_i : in  std_ulogic_vector(31 downto 0); -- bus read data
-    i_bus_re_o    : out std_ulogic; -- read request
-    i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-    i_bus_err_i   : in  std_ulogic; -- bus transfer error
-    i_bus_fence_o : out std_ulogic; -- executed FENCEI operation
-    i_bus_priv_o  : out std_ulogic; -- current effective privilege level
-    -- data bus interface --
-    d_bus_addr_o  : out std_ulogic_vector(31 downto 0); -- bus access address
-    d_bus_rdata_i : in  std_ulogic_vector(31 downto 0); -- bus read data
-    d_bus_wdata_o : out std_ulogic_vector(31 downto 0); -- bus write data
-    d_bus_ben_o   : out std_ulogic_vector(3 downto 0); -- byte enable
-    d_bus_we_o    : out std_ulogic; -- write request
-    d_bus_re_o    : out std_ulogic; -- read request
-    d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-    d_bus_err_i   : in  std_ulogic; -- bus transfer error
-    d_bus_fence_o : out std_ulogic; -- executed FENCE operation
-    d_bus_priv_o  : out std_ulogic; -- current effective privilege level
+    clk_i      : in  std_ulogic; -- global clock, rising edge
+    rstn_i     : in  std_ulogic; -- global reset, low-active, async
+    sleep_o    : out std_ulogic; -- cpu is in sleep mode when set
+    debug_o    : out std_ulogic; -- cpu is in debug mode when set
+    ifence_o   : out std_ulogic; -- instruction fence
+    dfence_o   : out std_ulogic; -- data fence
     -- interrupts --
-    msi_i         : in  std_ulogic; -- risc-v: machine software interrupt
-    mei_i         : in  std_ulogic; -- risc-v: machine external interrupt
-    mti_i         : in  std_ulogic; -- risc-v: machine timer interrupt
-    firq_i        : in  std_ulogic_vector(15 downto 0); -- custom: fast interrupts
-    db_halt_req_i : in  std_ulogic  -- risc-v: halt request (debug mode)
+    msi_i      : in  std_ulogic; -- risc-v machine software interrupt
+    mei_i      : in  std_ulogic; -- risc-v machine external interrupt
+    mti_i      : in  std_ulogic; -- risc-v machine timer interrupt
+    firq_i     : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
+    dbi_i      : in  std_ulogic; -- risc-v debug halt request interrupt
+    -- instruction bus interface --
+    ibus_req_o : out bus_req_t; -- request bus
+    ibus_rsp_i : in  bus_rsp_t; -- response bus
+    -- data bus interface --
+    dbus_req_o : out bus_req_t; -- request bus
+    dbus_rsp_i : in  bus_rsp_t  -- response bus
   );
 end neorv32_cpu;
 
@@ -255,58 +244,65 @@ begin
   )
   port map (
     -- global control --
-    clk_i         => clk_i,         -- global clock, rising edge
-    rstn_i        => rstn_i,        -- global reset, low-active, async
-    ctrl_o        => ctrl,          -- main control bus
+    clk_i         => clk_i,           -- global clock, rising edge
+    rstn_i        => rstn_i,          -- global reset, low-active, async
+    ctrl_o        => ctrl,            -- main control bus
     -- instruction fetch interface --
-    i_bus_addr_o  => fetch_pc,      -- bus access address
-    i_bus_rdata_i => i_bus_rdata_i, -- bus read data
-    i_bus_re_o    => i_bus_re_o,    -- read enable
-    i_bus_ack_i   => i_bus_ack_i,   -- bus transfer acknowledge
-    i_bus_err_i   => i_bus_err_i,   -- bus transfer error
-    i_pmp_fault_i => i_pmp_fault,   -- instruction fetch pmp fault
+    i_bus_addr_o  => fetch_pc,        -- bus access address
+    i_bus_rdata_i => ibus_rsp_i.data, -- bus read data
+    i_bus_re_o    => ibus_req_o.re,   -- read enable
+    i_bus_ack_i   => ibus_rsp_i.ack,  -- bus transfer acknowledge
+    i_bus_err_i   => ibus_rsp_i.err,  -- bus transfer error
+    i_pmp_fault_i => i_pmp_fault,     -- instruction fetch pmp fault
     -- status input --
-    alu_cp_done_i => cp_done,       -- ALU iterative operation done
-    alu_exc_i     => alu_exc,       -- ALU exception
-    bus_d_wait_i  => bus_d_wait,    -- wait for bus
+    alu_cp_done_i => cp_done,         -- ALU iterative operation done
+    alu_exc_i     => alu_exc,         -- ALU exception
+    bus_d_wait_i  => bus_d_wait,      -- wait for bus
     -- data input --
-    cmp_i         => alu_cmp,       -- comparator status
-    alu_add_i     => alu_add,       -- ALU address result
-    rs1_i         => rs1,           -- rf source 1
+    cmp_i         => alu_cmp,         -- comparator status
+    alu_add_i     => alu_add,         -- ALU address result
+    rs1_i         => rs1,             -- rf source 1
     -- data output --
-    imm_o         => imm,           -- immediate
-    curr_pc_o     => curr_pc,       -- current PC (corresponding to current instruction)
-    next_pc_o     => next_pc,       -- next PC (corresponding to next instruction)
-    csr_rdata_o   => csr_rdata,     -- CSR read data
+    imm_o         => imm,             -- immediate
+    curr_pc_o     => curr_pc,         -- current PC (corresponding to current instruction)
+    next_pc_o     => next_pc,         -- next PC (corresponding to next instruction)
+    csr_rdata_o   => csr_rdata,       -- CSR read data
     -- FPU interface --
-    fpu_flags_i   => fpu_flags,     -- exception flags
+    fpu_flags_i   => fpu_flags,       -- exception flags
     -- debug mode (halt) request --
-    db_halt_req_i => db_halt_req_i,
+    db_halt_req_i => dbi_i,
     -- interrupts (risc-v compliant) --
-    msi_i         => msi_i,         -- machine software interrupt
-    mei_i         => mei_i,         -- machine external interrupt
-    mti_i         => mti_i,         -- machine timer interrupt
+    msi_i         => msi_i,           -- machine software interrupt
+    mei_i         => mei_i,           -- machine external interrupt
+    mti_i         => mti_i,           -- machine timer interrupt
     -- fast interrupts (custom) --
-    firq_i        => firq_i,        -- fast interrupt trigger
+    firq_i        => firq_i,          -- fast interrupt trigger
     -- physical memory protection --
-    pmp_addr_o    => pmp_addr,      -- addresses
-    pmp_ctrl_o    => pmp_ctrl,      -- configs
+    pmp_addr_o    => pmp_addr,        -- addresses
+    pmp_ctrl_o    => pmp_ctrl,        -- configs
     -- bus access exceptions --
-    mar_i         => mar,           -- memory address register
-    ma_load_i     => ma_load,       -- misaligned load data address
-    ma_store_i    => ma_store,      -- misaligned store data address
-    be_load_i     => be_load,       -- bus error on load data access
-    be_store_i    => be_store       -- bus error on store data access
+    mar_i         => mar,             -- memory address register
+    ma_load_i     => ma_load,         -- misaligned load data address
+    ma_store_i    => ma_store,        -- misaligned store data address
+    be_load_i     => be_load,         -- bus error on load data access
+    be_store_i    => be_store         -- bus error on store data access
   );
 
   -- CPU state --
   sleep_o <= ctrl.cpu_sleep; -- set when CPU is sleeping (after WFI)
   debug_o <= ctrl.cpu_debug; -- set when CPU is in debug mode
 
+  -- instruction/data fence --
+  ifence_o <= ctrl.bus_fencei;
+  dfence_o <= ctrl.bus_fence;
+
   -- instruction fetch interface --
-  i_bus_addr_o  <= fetch_pc;
-  i_bus_fence_o <= ctrl.bus_fencei;
-  i_bus_priv_o  <= ctrl.cpu_priv;
+  ibus_req_o.addr <= fetch_pc;
+  ibus_req_o.priv <= ctrl.cpu_priv;
+  ibus_req_o.data <= (others => '0');
+  ibus_req_o.ben  <= (others => '0');
+  ibus_req_o.we   <= '0'; -- read-only
+  ibus_req_o.src  <= '1'; -- source = instruction fetch
 
 
   -- Register File --------------------------------------------------------------------------
@@ -381,37 +377,38 @@ begin
   )
   port map (
     -- global control --
-    clk_i         => clk_i,         -- global clock, rising edge
-    rstn_i        => rstn_i,        -- global reset, low-active, async
-    ctrl_i        => ctrl,          -- main control bus
+    clk_i         => clk_i,           -- global clock, rising edge
+    rstn_i        => rstn_i,          -- global reset, low-active, async
+    ctrl_i        => ctrl,            -- main control bus
     -- cpu instruction fetch interface --
-    fetch_pc_i    => fetch_pc,      -- PC for instruction fetch
-    i_pmp_fault_o => i_pmp_fault,   -- instruction fetch pmp fault
+    fetch_pc_i    => fetch_pc,        -- PC for instruction fetch
+    i_pmp_fault_o => i_pmp_fault,     -- instruction fetch pmp fault
     -- cpu data access interface --
-    addr_i        => alu_add,       -- ALU.add result -> access address
-    wdata_i       => rs2,           -- write data
-    rdata_o       => mem_rdata,     -- read data
-    mar_o         => mar,           -- current memory address register
-    d_wait_o      => bus_d_wait,    -- wait for access to complete
-    ma_load_o     => ma_load,       -- misaligned load data address
-    ma_store_o    => ma_store,      -- misaligned store data address
-    be_load_o     => be_load,       -- bus error on load data access
-    be_store_o    => be_store,      -- bus error on store data access
+    addr_i        => alu_add,         -- ALU.add result -> access address
+    wdata_i       => rs2,             -- write data
+    rdata_o       => mem_rdata,       -- read data
+    mar_o         => mar,             -- current memory address register
+    d_wait_o      => bus_d_wait,      -- wait for access to complete
+    ma_load_o     => ma_load,         -- misaligned load data address
+    ma_store_o    => ma_store,        -- misaligned store data address
+    be_load_o     => be_load,         -- bus error on load data access
+    be_store_o    => be_store,        -- bus error on store data access
     -- physical memory protection --
-    pmp_addr_i    => pmp_addr,      -- addresses
-    pmp_ctrl_i    => pmp_ctrl,      -- configurations
+    pmp_addr_i    => pmp_addr,        -- addresses
+    pmp_ctrl_i    => pmp_ctrl,        -- configurations
     -- data bus --
-    d_bus_addr_o  => d_bus_addr_o,  -- bus access address
-    d_bus_rdata_i => d_bus_rdata_i, -- bus read data
-    d_bus_wdata_o => d_bus_wdata_o, -- bus write data
-    d_bus_ben_o   => d_bus_ben_o,   -- byte enable
-    d_bus_we_o    => d_bus_we_o,    -- write enable
-    d_bus_re_o    => d_bus_re_o,    -- read enable
-    d_bus_ack_i   => d_bus_ack_i,   -- bus transfer acknowledge
-    d_bus_err_i   => d_bus_err_i,   -- bus transfer error
-    d_bus_fence_o => d_bus_fence_o, -- fence operation
-    d_bus_priv_o  => d_bus_priv_o   -- current effective privilege level
+    d_bus_addr_o  => dbus_req_o.addr, -- bus access address
+    d_bus_rdata_i => dbus_rsp_i.data, -- bus read data
+    d_bus_wdata_o => dbus_req_o.data, -- bus write data
+    d_bus_ben_o   => dbus_req_o.ben,  -- byte enable
+    d_bus_we_o    => dbus_req_o.we,   -- write enable
+    d_bus_re_o    => dbus_req_o.re,   -- read enable
+    d_bus_ack_i   => dbus_rsp_i.ack,  -- bus transfer acknowledge
+    d_bus_err_i   => dbus_rsp_i.err   -- bus transfer error
   );
+
+  dbus_req_o.priv <= ctrl.bus_priv;
+  dbus_req_o.src  <= '0'; -- source = data access
 
 
 end neorv32_cpu_rtl;

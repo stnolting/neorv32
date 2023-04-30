@@ -75,9 +75,7 @@ entity neorv32_cpu_bus is
     d_bus_we_o    : out std_ulogic; -- write enable
     d_bus_re_o    : out std_ulogic; -- read enable
     d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-    d_bus_err_i   : in  std_ulogic; -- bus transfer error
-    d_bus_fence_o : out std_ulogic; -- fence operation
-    d_bus_priv_o  : out std_ulogic  -- current effective privilege level
+    d_bus_err_i   : in  std_ulogic  -- bus transfer error
   );
 end neorv32_cpu_bus;
 
@@ -276,11 +274,9 @@ begin
   ma_store_o <= arbiter.pend_wr and misaligned;
   be_store_o <= arbiter.pend_wr and arbiter.acc_err;
 
-  -- data bus control interface (all source signals are driven by registers!) --
-  d_bus_re_o    <= ctrl_i.bus_req_rd and (not misaligned) and (not arbiter.pmp_r_err);
-  d_bus_we_o    <= ctrl_i.bus_req_wr and (not misaligned) and (not arbiter.pmp_w_err);
-  d_bus_fence_o <= ctrl_i.bus_fence;
-  d_bus_priv_o  <= ctrl_i.bus_priv;
+  -- access requests (all source signals are driven by registers!) --
+  d_bus_re_o <= ctrl_i.bus_req_rd and (not misaligned) and (not arbiter.pmp_r_err);
+  d_bus_we_o <= ctrl_i.bus_req_wr and (not misaligned) and (not arbiter.pmp_w_err);
 
 
   -- RISC-V Physical Memory Protection (PMP) ------------------------------------------------
