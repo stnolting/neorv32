@@ -1363,7 +1363,7 @@ begin
           -- Set the ctrl.cnt to 0 to force the resulting exponent to be 0
           -- Do not change sreg.lower as that is already all 0s
           -- Do not change sign as that should be the right sign from the add/sub
-          elsif (unsigned(mantissa_i(47 downto 0)) = 0) then 
+          elsif (unsigned(mantissa_i(47 downto 0)) = 0) then
             ctrl.cnt <= (others => '0');
             ctrl.state <= S_FINALIZE;
           else
