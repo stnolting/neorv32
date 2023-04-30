@@ -151,7 +151,7 @@ int main() {
                        " Navigate to any example program folder (like 'neorv32/sw/example/hello_word').\n"
                        " Compile the program but relocate the instruction to the beginning of the Flash:\n"
                        " make MARCH=rv32i USER_FLAGS+=\"-Wl,--defsym,__neorv32_rom_base=0x%x\" clean_all exe\n\n",
-                       (uint32_t)FLASH_BASE);
+                       (uint32_t)(XIP_PAGE_BASE_ADDR + FLASH_BASE));
 
   neorv32_uart0_printf("Press any key when you are ready.\n\n");
   neorv32_uart0_getc(); // wait for any key
@@ -213,6 +213,7 @@ int main() {
   neorv32_uart0_printf("\nRead-back XIP flash content (first 10 words) via memory-mapped access...\n");
   uint32_t flash_base_addr = XIP_PAGE_BASE_ADDR + FLASH_BASE;
   uint32_t *xip_mem = (uint32_t*)flash_base_addr;
+  asm volatile("fence");
   uint32_t i;
   for (i=0; i<10; i++) {
     neorv32_uart0_printf("[0x%x] 0x%x\n", flash_base_addr + 4*i, xip_mem[i]);
@@ -230,6 +231,7 @@ int main() {
 
   // finally, jump to the XIP flash's base address we have configured to start execution **from there**
   neorv32_uart0_printf("\nStarting Execute In-Place program (@0x%x)...\n", (uint32_t)(XIP_PAGE_BASE_ADDR + FLASH_BASE));
+  asm volatile("fence.i");
   asm volatile ("call %[dest]" : : [dest] "i" (XIP_PAGE_BASE_ADDR + FLASH_BASE));
 
 
