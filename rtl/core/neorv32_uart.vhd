@@ -72,27 +72,18 @@ entity neorv32_uart is
     UART_TX_FIFO : natural  -- TX fifo depth, has to be a power of two, min 1
   );
   port (
-    -- host access --
     clk_i       : in  std_ulogic; -- global clock line
     rstn_i      : in  std_ulogic; -- global reset line, low-active, async
-    addr_i      : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i      : in  std_ulogic; -- read enable
-    wren_i      : in  std_ulogic; -- write enable
-    data_i      : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o      : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o       : out std_ulogic; -- transfer acknowledge
-    -- clock generator --
+    bus_req_i   : in  bus_req_t;  -- bus request
+    bus_rsp_o   : out bus_rsp_t;  -- bus response
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(07 downto 0);
-    -- com lines --
-    uart_txd_o  : out std_ulogic;
-    uart_rxd_i  : in  std_ulogic;
-    -- hardware flow control --
+    uart_txd_o  : out std_ulogic; -- serial TX line
+    uart_rxd_i  : in  std_ulogic; -- serial RX line
     uart_rts_o  : out std_ulogic; -- UART.RX ready to receive ("RTR"), low-active, optional
     uart_cts_i  : in  std_ulogic; -- UART.TX allowed to transmit, low-active, optional
-    -- interrupts --
-    irq_rx_o    : out std_ulogic; -- rx interrupt
-    irq_tx_o    : out std_ulogic  -- tx interrupt
+    irq_rx_o    : out std_ulogic; -- RX interrupt
+    irq_tx_o    : out std_ulogic  -- TX interrupt
   );
 end neorv32_uart;
 
@@ -231,10 +222,10 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access control --
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = uart_id_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= uart_id_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and wren_i;
-  rden   <= acc_en and rden_i;
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = uart_id_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= uart_id_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  wren   <= acc_en and bus_req_i.we;
+  rden   <= acc_en and bus_req_i.re;
 
   -- write access --
   write_access: process(rstn_i, clk_i)
@@ -253,17 +244,17 @@ begin
     elsif rising_edge(clk_i) then
       if (wren = '1') then
         if (addr = uart_id_ctrl_addr_c) then -- control register
-          ctrl.enable        <= data_i(ctrl_en_c);
-          ctrl.sim_mode      <= data_i(ctrl_sim_en_c);
-          ctrl.hwfc_en       <= data_i(ctrl_hwfc_en_c);
-          ctrl.prsc          <= data_i(ctrl_prsc2_c downto ctrl_prsc0_c);
-          ctrl.baud          <= data_i(ctrl_baud9_c downto ctrl_baud0_c);
+          ctrl.enable        <= bus_req_i.data(ctrl_en_c);
+          ctrl.sim_mode      <= bus_req_i.data(ctrl_sim_en_c);
+          ctrl.hwfc_en       <= bus_req_i.data(ctrl_hwfc_en_c);
+          ctrl.prsc          <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
+          ctrl.baud          <= bus_req_i.data(ctrl_baud9_c downto ctrl_baud0_c);
           --
-          ctrl.irq_rx_nempty <= data_i(ctrl_irq_rx_nempty_c);
-          ctrl.irq_rx_half   <= data_i(ctrl_irq_rx_half_c);
-          ctrl.irq_rx_full   <= data_i(ctrl_irq_rx_full_c);
-          ctrl.irq_tx_empty  <= data_i(ctrl_irq_tx_empty_c);
-          ctrl.irq_tx_nhalf  <= data_i(ctrl_irq_tx_nhalf_c);
+          ctrl.irq_rx_nempty <= bus_req_i.data(ctrl_irq_rx_nempty_c);
+          ctrl.irq_rx_half   <= bus_req_i.data(ctrl_irq_rx_half_c);
+          ctrl.irq_rx_full   <= bus_req_i.data(ctrl_irq_rx_full_c);
+          ctrl.irq_tx_empty  <= bus_req_i.data(ctrl_irq_tx_empty_c);
+          ctrl.irq_tx_nhalf  <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
         end if;
       end if;
     end if;
@@ -273,39 +264,42 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= wren or rden; -- bus access acknowledge
-      data_o <= (others => '0');
+      bus_rsp_o.ack  <= wren or rden; -- bus access acknowledge
+      bus_rsp_o.data <= (others => '0');
       if (rden = '1') then
         if (addr = uart_id_ctrl_addr_c) then -- control register
-          data_o(ctrl_en_c)                        <= ctrl.enable;
-          data_o(ctrl_sim_en_c)                    <= ctrl.sim_mode;
-          data_o(ctrl_hwfc_en_c)                   <= ctrl.hwfc_en;
-          data_o(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
-          data_o(ctrl_baud9_c downto ctrl_baud0_c) <= ctrl.baud;
+          bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
+          bus_rsp_o.data(ctrl_sim_en_c)                    <= ctrl.sim_mode;
+          bus_rsp_o.data(ctrl_hwfc_en_c)                   <= ctrl.hwfc_en;
+          bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
+          bus_rsp_o.data(ctrl_baud9_c downto ctrl_baud0_c) <= ctrl.baud;
           --
-          data_o(ctrl_rx_nempty_c)                 <= rx_fifo.avail;
-          data_o(ctrl_rx_half_c)                   <= rx_fifo.half;
-          data_o(ctrl_rx_full_c)                   <= not rx_fifo.free;
-          data_o(ctrl_tx_empty_c)                  <= not tx_fifo.avail;
-          data_o(ctrl_tx_nhalf_c)                  <= not tx_fifo.half;
-          data_o(ctrl_tx_full_c)                   <= not tx_fifo.free;
+          bus_rsp_o.data(ctrl_rx_nempty_c)                 <= rx_fifo.avail;
+          bus_rsp_o.data(ctrl_rx_half_c)                   <= rx_fifo.half;
+          bus_rsp_o.data(ctrl_rx_full_c)                   <= not rx_fifo.free;
+          bus_rsp_o.data(ctrl_tx_empty_c)                  <= not tx_fifo.avail;
+          bus_rsp_o.data(ctrl_tx_nhalf_c)                  <= not tx_fifo.half;
+          bus_rsp_o.data(ctrl_tx_full_c)                   <= not tx_fifo.free;
           --
-          data_o(ctrl_irq_rx_nempty_c)             <= ctrl.irq_rx_nempty;
-          data_o(ctrl_irq_rx_half_c)               <= ctrl.irq_rx_half;
-          data_o(ctrl_irq_rx_full_c)               <= ctrl.irq_rx_full;
-          data_o(ctrl_irq_tx_empty_c)              <= ctrl.irq_tx_empty;
-          data_o(ctrl_irq_tx_nhalf_c)              <= ctrl.irq_tx_nhalf;
+          bus_rsp_o.data(ctrl_irq_rx_nempty_c)             <= ctrl.irq_rx_nempty;
+          bus_rsp_o.data(ctrl_irq_rx_half_c)               <= ctrl.irq_rx_half;
+          bus_rsp_o.data(ctrl_irq_rx_full_c)               <= ctrl.irq_rx_full;
+          bus_rsp_o.data(ctrl_irq_tx_empty_c)              <= ctrl.irq_tx_empty;
+          bus_rsp_o.data(ctrl_irq_tx_nhalf_c)              <= ctrl.irq_tx_nhalf;
           --
-          data_o(ctrl_rx_over_c)                   <= rx_engine.over;
-          data_o(ctrl_tx_busy_c)                   <= tx_engine.busy or tx_fifo.avail;
+          bus_rsp_o.data(ctrl_rx_over_c)                   <= rx_engine.over;
+          bus_rsp_o.data(ctrl_tx_busy_c)                   <= tx_engine.busy or tx_fifo.avail;
         else -- data register
-          data_o(data_rtx_msb_c        downto data_rtx_lsb_c)        <= rx_fifo.rdata;
-          data_o(data_rx_fifo_size_msb downto data_rx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_RX_FIFO), 4));
-          data_o(data_tx_fifo_size_msb downto data_tx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_TX_FIFO), 4));
+          bus_rsp_o.data(data_rtx_msb_c        downto data_rtx_lsb_c)        <= rx_fifo.rdata;
+          bus_rsp_o.data(data_rx_fifo_size_msb downto data_rx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_RX_FIFO), 4));
+          bus_rsp_o.data(data_tx_fifo_size_msb downto data_tx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_TX_FIFO), 4));
         end if;
       end if;
     end if;
   end process read_access;
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
   -- UART clock enable --
   clkgen_en_o <= ctrl.enable;
@@ -340,7 +334,7 @@ begin
   );
 
   tx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
-  tx_fifo.wdata <= data_i(data_rtx_msb_c downto data_rtx_lsb_c);
+  tx_fifo.wdata <= bus_req_i.data(data_rtx_msb_c downto data_rtx_lsb_c);
   tx_fifo.we    <= '1' when (wren = '1') and (addr = uart_id_rtx_addr_c) else '0';
   tx_fifo.re    <= '1' when (tx_engine.state = "100") else '0';
 
@@ -555,7 +549,7 @@ begin
            (wren = '1') and (addr = uart_id_rtx_addr_c) then
 
           -- print lowest byte as ASCII char --
-          char_v := to_integer(unsigned(data_i(7 downto 0)));
+          char_v := to_integer(unsigned(bus_req_i.data(7 downto 0)));
           if (char_v >= 128) then -- out of range?
             char_v := 0;
           end if;
@@ -580,7 +574,7 @@ begin
           -- dump raw data as 8 hex chars to file --
           if (sim_data_output_en_c = true) then
             for x in 7 downto 0 loop
-              write(line_data_v, to_hexchar_f(data_i(3+x*4 downto 0+x*4))); -- write in hex form
+              write(line_data_v, to_hexchar_f(bus_req_i.data(3+x*4 downto 0+x*4))); -- write in hex form
             end loop;
             writeline(file_uart_data_out, line_data_v);
           end if;

@@ -49,23 +49,15 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_wdt is
   port (
-    -- host access --
     clk_i       : in  std_ulogic; -- global clock line
     rstn_ext_i  : in  std_ulogic; -- external reset line, low-active, async
     rstn_int_i  : in  std_ulogic; -- internal reset line, low-active, async
-    addr_i      : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i      : in  std_ulogic; -- read enable
-    wren_i      : in  std_ulogic; -- write enable
-    data_i      : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o      : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o       : out std_ulogic; -- transfer acknowledge
-    -- CPU status --
+    bus_req_i   : in  bus_req_t;  -- bus request
+    bus_rsp_o   : out bus_rsp_t;  -- bus response
     cpu_debug_i : in  std_ulogic; -- CPU is in debug mode
     cpu_sleep_i : in  std_ulogic; -- CPU is in sleep mode
-    -- clock generator --
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(07 downto 0);
-    -- timeout event --
     irq_o       : out std_ulogic; -- timeout IRQ
     rstn_o      : out std_ulogic  -- timeout reset, low_active, sync
   );
@@ -123,9 +115,9 @@ begin
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- access control --
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = wdt_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  wren   <= acc_en and wren_i;
-  rden   <= acc_en and rden_i;
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = wdt_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  wren   <= acc_en and bus_req_i.we;
+  rden   <= acc_en and bus_req_i.re;
 
   -- write access --
   write_access: process(rstn_int_i, clk_i)
@@ -140,13 +132,13 @@ begin
     elsif rising_edge(clk_i) then
       ctrl.reset <= '0'; -- default
       if (wren = '1') then
-        ctrl.reset <= data_i(ctrl_reset_c);
+        ctrl.reset <= bus_req_i.data(ctrl_reset_c);
         if (ctrl.lock = '0') then -- update configuration only if not locked
-          ctrl.enable  <= data_i(ctrl_enable_c);
-          ctrl.lock    <= data_i(ctrl_lock_c) and ctrl.enable; -- lock only if already enabled
-          ctrl.dben    <= data_i(ctrl_dben_c);
-          ctrl.sen     <= data_i(ctrl_sen_c);
-          ctrl.timeout <= data_i(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c);
+          ctrl.enable  <= bus_req_i.data(ctrl_enable_c);
+          ctrl.lock    <= bus_req_i.data(ctrl_lock_c) and ctrl.enable; -- lock only if already enabled
+          ctrl.dben    <= bus_req_i.data(ctrl_dben_c);
+          ctrl.sen     <= bus_req_i.data(ctrl_sen_c);
+          ctrl.timeout <= bus_req_i.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c);
         end if;
       end if;
     end if;
@@ -156,18 +148,21 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= rden or wren;
-      data_o <= (others => '0');
+      bus_rsp_o.ack  <= rden or wren;
+      bus_rsp_o.data <= (others => '0');
       if (rden = '1') then
-        data_o(ctrl_enable_c)                                <= ctrl.enable;
-        data_o(ctrl_lock_c)                                  <= ctrl.lock;
-        data_o(ctrl_dben_c)                                  <= ctrl.dben;
-        data_o(ctrl_sen_c)                                   <= ctrl.sen;
-        data_o(ctrl_rcause_c)                                <= ctrl.rcause;
-        data_o(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c) <= ctrl.timeout;
+        bus_rsp_o.data(ctrl_enable_c)                                <= ctrl.enable;
+        bus_rsp_o.data(ctrl_lock_c)                                  <= ctrl.lock;
+        bus_rsp_o.data(ctrl_dben_c)                                  <= ctrl.dben;
+        bus_rsp_o.data(ctrl_sen_c)                                   <= ctrl.sen;
+        bus_rsp_o.data(ctrl_rcause_c)                                <= ctrl.rcause;
+        bus_rsp_o.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c) <= ctrl.timeout;
       end if;
     end if;
   end process read_access;
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
   -- reset cause indicator --
   reset_cause: process(rstn_ext_i, clk_i)

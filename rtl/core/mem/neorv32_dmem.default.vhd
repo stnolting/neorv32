@@ -79,8 +79,8 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = DMEM_BASE(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= addr_i(index_size_f(DMEM_SIZE/4)+1 downto 2); -- word aligned
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = DMEM_BASE(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= bus_req_i.addr(index_size_f(DMEM_SIZE/4)+1 downto 2); -- word aligned
 
 
   -- Memory Access --------------------------------------------------------------------------
@@ -91,23 +91,23 @@ begin
       -- this RAM style should not require "no_rw_check" attributes as the read-after-write behavior
       -- is intended to be defined implicitly via the if-WRITE-else-READ construct
       if (acc_en = '1') then -- reduce switching activity when not accessed
-        if (wren_i = '1') and (ben_i(0) = '1') then -- byte 0
-          mem_ram_b0(to_integer(unsigned(addr))) <= data_i(07 downto 00);
+        if (bus_req_i.we = '1') and (bus_req_i.ben(0) = '1') then -- byte 0
+          mem_ram_b0(to_integer(unsigned(addr))) <= bus_req_i.data(07 downto 00);
         else
           mem_ram_b0_rd <= mem_ram_b0(to_integer(unsigned(addr)));
         end if;
-        if (wren_i = '1') and (ben_i(1) = '1') then -- byte 1
-          mem_ram_b1(to_integer(unsigned(addr))) <= data_i(15 downto 08);
+        if (bus_req_i.we = '1') and (bus_req_i.ben(1) = '1') then -- byte 1
+          mem_ram_b1(to_integer(unsigned(addr))) <= bus_req_i.data(15 downto 08);
         else
           mem_ram_b1_rd <= mem_ram_b1(to_integer(unsigned(addr)));
         end if;
-        if (wren_i = '1') and (ben_i(2) = '1') then -- byte 2
-          mem_ram_b2(to_integer(unsigned(addr))) <= data_i(23 downto 16);
+        if (bus_req_i.we = '1') and (bus_req_i.ben(2) = '1') then -- byte 2
+          mem_ram_b2(to_integer(unsigned(addr))) <= bus_req_i.data(23 downto 16);
         else
           mem_ram_b2_rd <= mem_ram_b2(to_integer(unsigned(addr)));
         end if;
-        if (wren_i = '1') and (ben_i(3) = '1') then -- byte 3
-          mem_ram_b3(to_integer(unsigned(addr))) <= data_i(31 downto 24);
+        if (bus_req_i.we = '1') and (bus_req_i.ben(3) = '1') then -- byte 3
+          mem_ram_b3(to_integer(unsigned(addr))) <= bus_req_i.data(31 downto 24);
         else
           mem_ram_b3_rd <= mem_ram_b3(to_integer(unsigned(addr)));
         end if;
@@ -121,8 +121,8 @@ begin
   bus_feedback: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      rden  <= acc_en and rden_i;
-      ack_o <= acc_en and (rden_i or wren_i);
+      rden          <= acc_en and bus_req_i.re;
+      bus_rsp_o.ack <= acc_en and (bus_req_i.re or bus_req_i.we);
     end if;
   end process bus_feedback;
 
@@ -130,7 +130,10 @@ begin
   rdata <= mem_ram_b3_rd & mem_ram_b2_rd & mem_ram_b1_rd & mem_ram_b0_rd;
 
   -- output gate --
-  data_o <= rdata when (rden = '1') else (others => '0');
+  bus_rsp_o.data <= rdata when (rden = '1') else (others => '0');
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
 
 end neorv32_dmem_rtl;

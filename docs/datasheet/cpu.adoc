@@ -201,45 +201,35 @@ type of all signals is _std_ulogic_ or _std_ulogic_vector_, respectively. The "D
 direction as seen from the CPU.
 
 .NEORV32 CPU Signal List
-[cols="<2,^1,^1,<5"]
+[cols="<3,^3,^1,<5"]
 [options="header", grid="rows"]
 |=======================
-| Signal | Width | Dir | Description
+| Signal | Width/Type | Dir | Description
 4+^| **Global Signals**
-| `clk_i`         |  1 | in  | Global clock line, all registers triggering on rising edge
-| `rstn_i`        |  1 | in  | Global reset, low-active
-| `sleep_o`       |  1 | out | CPU is in sleep mode when set
-| `debug_o`       |  1 | out | CPU is in debug mode when set
-4+^| **Instruction <<_bus_interface>>**
-| `i_bus_addr_o`  | 32 | out | Access address
-| `i_bus_rdata_i` | 32 | in  | Read data
-| `i_bus_re_o`    |  1 | out | Read request (one-shot) trigger
-| `i_bus_ack_i`   |  1 | in  | Bus transfer acknowledge from accessed peripheral
-| `i_bus_err_i`   |  1 | in  | Bus transfer terminate from accessed peripheral
-| `i_bus_fence_o` |  1 | out | Indicates an executed `fence.i` instruction
-| `i_bus_priv_o`  |  1 | out | Current _effective_ CPU privilege level (`0` = user, `1` = machine)
-4+^| **Data <<_bus_interface>>**
-| `d_bus_addr_o`  | 32 | out | Access address
-| `d_bus_rdata_i` | 32 | in  | Read data
-| `d_bus_wdata_o` | 32 | out | Write data
-| `d_bus_ben_o`   |  4 | out | Byte enable
-| `d_bus_we_o`    |  1 | out | Write request (one-shot) trigger
-| `d_bus_re_o`    |  1 | out | Read request (one-shot) trigger
-| `d_bus_ack_i`   |  1 | in  | Bus transfer acknowledge from accessed peripheral
-| `d_bus_err_i`   |  1 | in  | Bus transfer terminate from accessed peripheral
-| `d_bus_fence_o` |  1 | out | Indicates an executed `fence` instruction
-| `d_bus_priv_o`  |  1 | out | Current _effective_ CPU privilege level (`0` = user, `1` = machine)
+| `clk_i`      |           1 | in  | Global clock line, all registers triggering on rising edge
+| `rstn_i`     |           1 | in  | Global reset, low-active
+| `sleep_o`    |           1 | out | CPU is in sleep mode when set
+| `debug_o`    |           1 | out | CPU is in debug mode when set
+| `ifence_o`   |           1 | out | instruction fence (`fence.i` instruction )
+| `dfence_o`   |           1 | out | data fence (`fence` instruction )
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
-| `msw_irq_i`     |  1 | in  | RISC-V machine software interrupt
-| `mext_irq_i`    |  1 | in  | RISC-V machine external interrupt
-| `mtime_irq_i`   |  1 | in  | RISC-V machine timer interrupt
-| `firq_i`        | 16 | in  | Custom fast interrupt request signals
-| `db_halt_req_i` |  1 | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>)
+| `msi_i`      |           1 | in  | RISC-V machine software interrupt
+| `mei_i`      |           1 | in  | RISC-V machine external interrupt
+| `mti_i`      |           1 | in  | RISC-V machine timer interrupt
+| `firq_i`     |          16 | in  | Custom fast interrupt request signals
+| `dbi_i`      |           1 | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>)
+4+^| **Instruction <<_bus_interface>>**
+| `ibus_req_o` | `bus_req_t` | out | Instruction fetch bus request
+| `ibus_rsp_i` | `bus_rsp_t` | in  | Instruction fetch bus response
+4+^| **Data <<_bus_interface>>**
+| `dbus_req_o` | `bus_req_t` | out | Data access (load/store) bus request
+| `dbus_rsp_i` | `bus_rsp_t` | in  | Data access (load/store) bus response
 |=======================
 
 .Bus Interface Protocol
 [TIP]
-See section <<_bus_interface>> for the instruction fetch and data access interface protocol.
+See section <<_bus_interface>> for the instruction fetch and data access interface protocol and the
+according interface types (`bus_req_t` and `bus_rsp_t`).
 
 
 <<<
@@ -752,28 +742,42 @@ instruction exception _at all_. In both cases bit 0 of the program counter (and 
 :sectnums:
 ==== Bus Interface
 
-The NEORV32 CPU provides separated instruction and data interfaces making it a **Harvard Architecture**:
+The NEORV32 CPU provides separated instruction fetch and data access interfaces making it a **Harvard Architecture**:
 the instruction fetch interface (`i_bus_*` signals) is used for fetching instructions and the data access interface
-(`d_bus_*` signals) is used to access data via load and store operations. Each of these interfaces can access an address space
-of up to 2^32^ bytes (4GB). The following table shows the signals of the data and instruction interfaces as seen from the
-CPU (`*_o` signals are driven by the CPU / outputs, `*_i` signals are read by the CPU / inputs).
+(`d_bus_*` signals) is used to access data via load and store operations. Each of these interfaces can access an address
+space of up to 2^32^ bytes (4GB).
 
-.CPU Bus Interface Signals
-[cols="<2,^1,^1,<6"]
+The bus interface uses two custom interface type: `bus_req_t` is used to propagate the bus **requests**. These signals
+are driven by the _accessing_ device (i.e. the CPU core). `bus_rsp_t` is used to return the bus **response** and is
+driven by the _accessed_ device (i.e. a processor-internal memory or IO device).
+
+.CPU Bus Interface - Request Bus (`bus_req_t`)
+[cols="^1,^1,<6"]
 [options="header",grid="rows"]
 |=======================
-| Signal            | Width | Direction | Description
-| `i/d_bus_addr_o`  | 32    | out       | access address
-| `i/d_bus_rdata_i` | 32    | in        | data input for read operations
-| `d_bus_wdata_o`   | 32    | out       | data output for write operations
-| `d_bus_ben_o`     | 4     | out       | byte enable signal for write operations
-| `d_bus_we_o`      | 1     | out       | bus write access request (one-shot)
-| `i/d_bus_re_o`    | 1     | out       | bus read access request (one-shot)
-| `i/d_bus_ack_i`   | 1     | in        | accessed peripheral indicates a successful completion of the bus transaction
-| `i/d_bus_err_i`   | 1     | in        | accessed peripheral indicates an error during the bus transaction
-| `i/d_bus_fence_o` | 1     | out       | this signal is set for one cycle when the CPU executes an instruction/data fence command
-| `i/d_bus_priv_o`  | 1     | out       | shows the effective privilege level of the bus access
+| Signal | Width | Description
+| `addr` | 32    | Access address (byte addressing)
+| `data` | 32    | Write data
+| `ben`  |  4    | Byte-enable for each byte in `data`
+| `we`   |  1    | **Write** request trigger (single-shot)
+| `re`   |  1    | **Read** request trigger (single-shot)
+| `src`  |  1    | Access source (`0` = instruction fetch, `1` = data access)
+| `priv` |  1    | Set if privileged (M-mode) access
 |=======================
+
+.CPU Bus Interface - Response Bus (`bus_rsp_t`)
+[cols="^1,^1,<6"]
+[options="header",grid="rows"]
+|=======================
+| Signal | Width | Description
+| `data` | 32    | Read data
+| `ack`  |  1    | Transfer acknowledge / success (single-shot)
+| `err`  |  1    | Transfer error / fail (single-shot)
+|=======================
+
+.SoC Bus System
+[NOTE]
+This type of bus system is also used to interconnect all the modules of the <<_neorv32_processor_soc>>.
 
 .Pipelined Transfers
 [NOTE]
@@ -787,43 +791,19 @@ unaligned memory access will raise an exception that can be used to handle unali
 
 .Signal State
 [NOTE]
-All outgoing bus interface signals (that are driven by the CPU) remain stable until the bus access is completed.
+All signals of the request bus interface (except for the read/write transfer triggers)
+remain stable until the bus access is completed.
 
 
 :sectnums:
 ===== Bus Interface Protocol
 
-A new bus request is triggered either by the `*_bus_re_o` signal (for reading data) or by the `*_bus_we_o` signal
-(for writing data). In case of a request, the according signal is high for exactly one clock cycle. The transaction is
-completed when the accessed peripheral/memory either sets the `*_bus_ack_i` signal (indicating successful completion) or the
-`*_bus_err_i` signal (indicating failed completion). These bus response signals have to be also set only for just one cycle.
-If a bus request is terminated by the `*_bus_err_i` signal the CPU will raise the according "bus access fault" exception.
-
-
-**Minimal Response Latency**
-
-The transfer can be completed within in the same cycle as it was initiated (asynchronous response) if the accessed module
-directly sets `*_bus_ack_i` or `*_bus_err_i` high for one cycle. However, in order to shorten the critical path such an
-"asynchronous" response should be avoided. The default NEORV32 processor-internal modules use a registered response with
-exactly **one cycle delay** between initiation and completion of transfers.
-
-
-**Maximal Response Latency**
-
-The processor-internal modules do not have to respond within one cycle after a bus request has been initiated.
-However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window
-is defined by the global `max_proc_int_response_time_c` constant (default = 15 cycles) defined in the processor's VHDL package file
-`rtl/neorv32_package.vhd`. It defines the maximum number of cycles after which an _unacknowledged_ (`*_bus_ack_i` or `*_bus_err_i`
-signals both not set) transfer will **time out** and will raise a bus access fault exception. The <<_internal_bus_monitor_buskeeper>>
-keeps track of all bus transactions to enforce this time window.
-
-If any bus operations times out - for example when accessing "address space holes" - the BUSKEEPER will issue a bus
-error to the CPU (via the according `*_bus_err_i` signal) that will raise the according instruction fetch or data access bus exception.
-Note that **the bus keeper does not track external accesses via the external memory bus interface**. However,
-the external memory bus interface also provides an _optional_ bus timeout (see section <<_processor_external_memory_interface_wishbone>>).
-
-
-**Exemplary Bus Accesses**
+Bus transaction are entirely triggered by the request bus. A new bus request is initiated either by the `re` signal
+(= read request) or by the `we` signal (= write request). These signals are mutually exclusive. In case of a request,
+the according signal is high for exactly one clock cycle. The transaction is completed when the accessed device returns
+a response via the response interface: `ack` is high for exactly one cycle if the transaction was completed successfully.
+`err` is high for exactly one cycle if the transaction failed to complete. These two signals are also mutually exclusive.
+If a bus request is terminated by the `err` signal the CPU will raise the according "bus access fault" exception.
 
 .Example CPU Bus Accesses
 [cols="^2,^2"]
@@ -835,24 +815,26 @@ a| image::cpu_interface_write_long.png[write,300,150]
 |=======================
 
 
-**Read and Write Accesses**
+**Maximal Response Latency**
 
-For a write access the according access address (`bus_addr_o`), the data to-be-written (`bus_wdata_o`) and the byte enable
-(`bus_ben_o`) are set when `bus_we_o` goes high. These three signals remain unchanged until the transaction is completed.
+The processor-internal modules do not have to respond within a fixed cycle amount after a bus request has been initiated.
+However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window
+is defined by the global `max_proc_int_response_time_c` constant (default = 15 cycles; the processor's VHDL package file
+`rtl/neorv32_package.vhd`). It defines the maximum number of cycles after which a non-responding bus request (i.e. no `ack`
+and no `*err` signal) will **time out** and will raise a bus access fault exception. The <<_internal_bus_monitor_buskeeper>>
+keeps track of all bus transactions to enforce this time window. If any bus operations times out - for example when
+accessing "address space holes" - the BUSKEEPER will issue a bus error to the CPU that will raise the according bus
+exception.
 
-For a read access the according access address (`bus_addr_o`) is set when `bus_re_o` goes high. The address remains unchanged
-until the transaction is completed.
-
-
-**Access Boundaries**
-
+.Access Boundaries
+[NOTE]
 The instruction interface will always access memory on word (= 32-bit) boundaries even if fetching
 compressed (16-bit) instructions. The data interface can access memory on byte (= 8-bit), half-word (= 16-
-bit) and word (= 32-bit) boundaries, but not all processor module support sub-word accesses.
+bit) and word (= 32-bit) boundaries, but not all processor module support sub-word accesses. Data access that
+are not aligned to their natural size will raise an alignment exception.
 
-
-**Memory Barriers**
-
+.Memory Barriers / Fences
+[NOTE]
 Whenever the CPU executes a `fence` instruction, the according interface signal is set high for one cycle
-(`d_bus_fence_o` for a `fence` instruction; `i_bus_fence_o` for a `fence.i` instruction). It is the task of the
+(`dfence_o` for a `fence` instruction; `ifence_o` for a `fence.i` instruction). It is the task of the
 memory system to perform the necessary operations (for example a cache flush/reload).

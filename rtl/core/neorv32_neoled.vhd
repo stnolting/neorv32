@@ -58,21 +58,13 @@ entity neorv32_neoled is
     FIFO_DEPTH : natural -- NEOLED FIFO depth, has to be a power of two, min 1
   );
   port (
-    -- host access --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
-    addr_i      : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i      : in  std_ulogic; -- read enable
-    wren_i      : in  std_ulogic; -- write enable
-    data_i      : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o      : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o       : out std_ulogic; -- transfer acknowledge
-    -- clock generator --
+    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    bus_req_i   : in  bus_req_t;  -- bus request
+    bus_rsp_o   : out bus_rsp_t;  -- bus response
     clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(07 downto 0);
-    -- interrupt --
+    clkgen_i    : in  std_ulogic_vector(7 downto 0);
     irq_o       : out std_ulogic; -- interrupt request
-    -- NEOLED output --
     neoled_o    : out std_ulogic -- serial async data line
   );
 end neorv32_neoled;
@@ -184,10 +176,10 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access control --
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = neoled_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= neoled_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and wren_i;
-  rden   <= acc_en and rden_i;
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = neoled_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= neoled_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  wren   <= acc_en and bus_req_i.we;
+  rden   <= acc_en and bus_req_i.re;
 
   -- write access --
   write_access: process(rstn_i, clk_i)
@@ -203,14 +195,14 @@ begin
       ctrl.t1_high  <= (others => '0');
     elsif rising_edge(clk_i) then
       if (wren = '1') and (addr = neoled_ctrl_addr_c) then
-        ctrl.enable   <= data_i(ctrl_en_c);
-        ctrl.mode     <= data_i(ctrl_mode_c);
-        ctrl.strobe   <= data_i(ctrl_strobe_c);
-        ctrl.clk_prsc <= data_i(ctrl_clksel2_c downto ctrl_clksel0_c);
-        ctrl.irq_conf <= data_i(ctrl_irq_conf_c);
-        ctrl.t_total  <= data_i(ctrl_t_tot_4_c downto ctrl_t_tot_0_c);
-        ctrl.t0_high  <= data_i(ctrl_t_0h_4_c  downto ctrl_t_0h_0_c);
-        ctrl.t1_high  <= data_i(ctrl_t_1h_4_c  downto ctrl_t_1h_0_c);
+        ctrl.enable   <= bus_req_i.data(ctrl_en_c);
+        ctrl.mode     <= bus_req_i.data(ctrl_mode_c);
+        ctrl.strobe   <= bus_req_i.data(ctrl_strobe_c);
+        ctrl.clk_prsc <= bus_req_i.data(ctrl_clksel2_c downto ctrl_clksel0_c);
+        ctrl.irq_conf <= bus_req_i.data(ctrl_irq_conf_c);
+        ctrl.t_total  <= bus_req_i.data(ctrl_t_tot_4_c downto ctrl_t_tot_0_c);
+        ctrl.t0_high  <= bus_req_i.data(ctrl_t_0h_4_c  downto ctrl_t_0h_0_c);
+        ctrl.t1_high  <= bus_req_i.data(ctrl_t_1h_4_c  downto ctrl_t_1h_0_c);
       end if;
     end if;
   end process write_access;
@@ -219,26 +211,29 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= wren or rden; -- access acknowledge
-      data_o <= (others => '0');
+      bus_rsp_o.ack  <= wren or rden; -- access acknowledge
+      bus_rsp_o.data <= (others => '0');
       if (rden = '1') then -- and (addr = neoled_ctrl_addr_c) then
-        data_o(ctrl_en_c)                            <= ctrl.enable;
-        data_o(ctrl_mode_c)                          <= ctrl.mode;
-        data_o(ctrl_strobe_c)                        <= ctrl.strobe;
-        data_o(ctrl_clksel2_c downto ctrl_clksel0_c) <= ctrl.clk_prsc;
-        data_o(ctrl_irq_conf_c)                      <= ctrl.irq_conf or bool_to_ulogic_f(boolean(FIFO_DEPTH = 1)); -- tie to one if FIFO_DEPTH is 1
-        data_o(ctrl_bufs_3_c  downto ctrl_bufs_0_c)  <= std_ulogic_vector(to_unsigned(index_size_f(FIFO_DEPTH), 4));
-        data_o(ctrl_t_tot_4_c downto ctrl_t_tot_0_c) <= ctrl.t_total;
-        data_o(ctrl_t_0h_4_c  downto ctrl_t_0h_0_c)  <= ctrl.t0_high;
-        data_o(ctrl_t_1h_4_c  downto ctrl_t_1h_0_c)  <= ctrl.t1_high;
+        bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
+        bus_rsp_o.data(ctrl_mode_c)                          <= ctrl.mode;
+        bus_rsp_o.data(ctrl_strobe_c)                        <= ctrl.strobe;
+        bus_rsp_o.data(ctrl_clksel2_c downto ctrl_clksel0_c) <= ctrl.clk_prsc;
+        bus_rsp_o.data(ctrl_irq_conf_c)                      <= ctrl.irq_conf or bool_to_ulogic_f(boolean(FIFO_DEPTH = 1)); -- tie to one if FIFO_DEPTH is 1
+        bus_rsp_o.data(ctrl_bufs_3_c  downto ctrl_bufs_0_c)  <= std_ulogic_vector(to_unsigned(index_size_f(FIFO_DEPTH), 4));
+        bus_rsp_o.data(ctrl_t_tot_4_c downto ctrl_t_tot_0_c) <= ctrl.t_total;
+        bus_rsp_o.data(ctrl_t_0h_4_c  downto ctrl_t_0h_0_c)  <= ctrl.t0_high;
+        bus_rsp_o.data(ctrl_t_1h_4_c  downto ctrl_t_1h_0_c)  <= ctrl.t1_high;
         --
-        data_o(ctrl_tx_empty_c)                      <= not tx_fifo.avail;
-        data_o(ctrl_tx_half_c)                       <= tx_fifo.half;
-        data_o(ctrl_tx_full_c)                       <= not tx_fifo.free;
-        data_o(ctrl_tx_busy_c)                       <= serial.busy;
+        bus_rsp_o.data(ctrl_tx_empty_c)                      <= not tx_fifo.avail;
+        bus_rsp_o.data(ctrl_tx_half_c)                       <= tx_fifo.half;
+        bus_rsp_o.data(ctrl_tx_full_c)                       <= not tx_fifo.free;
+        bus_rsp_o.data(ctrl_tx_busy_c)                       <= serial.busy;
       end if;
     end if;
   end process read_access;
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
   -- enable external clock generator --
   clkgen_en_o <= ctrl.enable;
@@ -271,7 +266,7 @@ begin
 
   tx_fifo.re    <= '1' when (serial.state = "100") else '0';
   tx_fifo.we    <= '1' when (wren = '1') and (addr = neoled_data_addr_c) else '0';
-  tx_fifo.wdata <= ctrl.strobe & ctrl.mode & data_i;
+  tx_fifo.wdata <= ctrl.strobe & ctrl.mode & bus_req_i.data;
   tx_fifo.clear <= not ctrl.enable;
 
   -- IRQ generator --

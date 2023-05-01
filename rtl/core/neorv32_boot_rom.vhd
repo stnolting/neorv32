@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -45,13 +45,9 @@ entity neorv32_boot_rom is
     BOOTROM_BASE : std_ulogic_vector(31 downto 0) -- boot ROM base address
   );
   port (
-    clk_i  : in  std_ulogic; -- global clock line
-    rden_i : in  std_ulogic; -- read enable
-    wren_i : in  std_ulogic; -- write enable
-    addr_i : in  std_ulogic_vector(31 downto 0); -- address
-    data_o : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o  : out std_ulogic; -- transfer acknowledge
-    err_o  : out std_ulogic  -- transfer error
+    clk_i     : in  std_ulogic; -- global clock line
+    bus_req_i : in  bus_req_t;  -- bus request
+    bus_rsp_o : out bus_rsp_t   -- bus response
   );
 end neorv32_boot_rom;
 
@@ -68,6 +64,7 @@ architecture neorv32_boot_rom_rtl of neorv32_boot_rom is
   -- local signals --
   signal acc_en : std_ulogic;
   signal rden   : std_ulogic;
+  signal wren   : std_ulogic;
   signal rdata  : std_ulogic_vector(31 downto 0);
   signal addr   : std_ulogic_vector(boot_rom_size_index_c-1 downto 0);
 
@@ -87,8 +84,8 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = BOOTROM_BASE(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= addr_i(boot_rom_size_index_c+1 downto 2); -- word aligned
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = BOOTROM_BASE(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= bus_req_i.addr(boot_rom_size_index_c+1 downto 2); -- word aligned
 
 
   -- Memory Access --------------------------------------------------------------------------
@@ -96,8 +93,8 @@ begin
   mem_file_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      rden  <= acc_en and rden_i;
-      err_o <= acc_en and wren_i;
+      rden <= acc_en and bus_req_i.re;
+      wren <= acc_en and bus_req_i.we;
       if (acc_en = '1') then -- reduce switching activity when not accessed
         rdata <= mem_rom(to_integer(unsigned(addr)));
       end if;
@@ -105,8 +102,9 @@ begin
   end process mem_file_access;
 
   -- output gate --
-  data_o <= rdata when (rden = '1') else (others => '0');
-  ack_o  <= rden;
+  bus_rsp_o.data <= rdata when (rden = '1') else (others => '0');
+  bus_rsp_o.ack  <= rden;
+  bus_rsp_o.err  <= wren;
 
 
 end neorv32_boot_rom_rtl;

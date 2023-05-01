@@ -90,14 +90,9 @@ entity neorv32_sysinfo is
     IO_DMA_EN            : boolean  -- implement direct memory access controller (DMA)?
   );
   port (
-    -- host access --
-    clk_i  : in  std_ulogic; -- global clock line
-    addr_i : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i : in  std_ulogic; -- read enable
-    wren_i : in  std_ulogic; -- write enable
-    data_o : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o  : out std_ulogic; -- transfer acknowledge
-    err_o  : out std_ulogic  -- transfer error
+    clk_i     : in  std_ulogic; -- global clock line
+    bus_req_i : in  bus_req_t;  -- bus request
+    bus_rsp_o : out bus_rsp_t   -- bus response
   );
 end neorv32_sysinfo;
 
@@ -121,10 +116,10 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = sysinfo_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  rden   <= acc_en and rden_i; -- read access
-  wren   <= acc_en and wren_i; -- write access
-  addr   <= addr_i(index_size_f(sysinfo_size_c)-1 downto 2);
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = sysinfo_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= bus_req_i.addr(index_size_f(sysinfo_size_c)-1 downto 2);
+  rden   <= acc_en and bus_req_i.re; -- read access
+  wren   <= acc_en and bus_req_i.we; -- write access
 
 
   -- Construct Info ROM ---------------------------------------------------------------------
@@ -197,11 +192,11 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= rden;
-      err_o  <= wren; -- read-only!
-      data_o <= (others => '0');
+      bus_rsp_o.ack  <= rden;
+      bus_rsp_o.err  <= wren; -- read-only!
+      bus_rsp_o.data <= (others => '0');
       if (rden = '1') then
-        data_o <= sysinfo(to_integer(unsigned(addr)));
+        bus_rsp_o.data <= sysinfo(to_integer(unsigned(addr)));
       end if;
     end if;
   end process read_access;

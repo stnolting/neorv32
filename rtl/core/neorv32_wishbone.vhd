@@ -68,26 +68,15 @@ entity neorv32_wishbone is
     ASYNC_TX          : boolean  -- use register buffer for TX data when false
   );
   port (
-    -- global control --
     clk_i      : in  std_ulogic; -- global clock line
     rstn_i     : in  std_ulogic; -- global reset line, low-active
-    -- host access --
-    src_i      : in  std_ulogic; -- access type (0: data, 1:instruction)
-    addr_i     : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i     : in  std_ulogic; -- read enable
-    wren_i     : in  std_ulogic; -- write enable
-    ben_i      : in  std_ulogic_vector(03 downto 0); -- byte write enable
-    data_i     : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o     : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o      : out std_ulogic; -- transfer acknowledge
-    err_o      : out std_ulogic; -- transfer error
+    bus_req_i  : in  bus_req_t;  -- bus request
+    bus_rsp_o  : out bus_rsp_t;  -- bus response
     tmo_o      : out std_ulogic; -- transfer timeout
-    priv_i     : in  std_ulogic; -- current CPU privilege level
     ext_o      : out std_ulogic; -- active external access
-    -- xip configuration --
     xip_en_i   : in  std_ulogic; -- XIP module enabled
     xip_page_i : in  std_ulogic_vector(03 downto 0); -- XIP memory page
-    -- wishbone interface --
+    --
     wb_tag_o   : out std_ulogic_vector(02 downto 0); -- request tag
     wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
     wb_dat_i   : in  std_ulogic_vector(31 downto 0); -- read data
@@ -163,12 +152,12 @@ begin
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- access to processor-internal IMEM or DMEM? --
-  int_imem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_IMEM_SIZE)) = imem_base_c(31 downto index_size_f(MEM_INT_IMEM_SIZE))) and (MEM_INT_IMEM_EN = true) else '0';
-  int_dmem_acc <= '1' when (addr_i(31 downto index_size_f(MEM_INT_DMEM_SIZE)) = dmem_base_c(31 downto index_size_f(MEM_INT_DMEM_SIZE))) and (MEM_INT_DMEM_EN = true) else '0';
+  int_imem_acc <= '1' when (bus_req_i.addr(31 downto index_size_f(MEM_INT_IMEM_SIZE)) = imem_base_c(31 downto index_size_f(MEM_INT_IMEM_SIZE))) and (MEM_INT_IMEM_EN = true) else '0';
+  int_dmem_acc <= '1' when (bus_req_i.addr(31 downto index_size_f(MEM_INT_DMEM_SIZE)) = dmem_base_c(31 downto index_size_f(MEM_INT_DMEM_SIZE))) and (MEM_INT_DMEM_EN = true) else '0';
   -- access to processor-internal BOOTROM or IO devices? --
-  int_boot_acc <= '1' when (addr_i(31 downto 16) = boot_rom_base_c(31 downto 16)) else '0'; -- hacky!
+  int_boot_acc <= '1' when (bus_req_i.addr(31 downto 16) = boot_rom_base_c(31 downto 16)) else '0'; -- hacky!
   -- XIP access? --
-  xip_acc      <= '1' when (xip_en_i = '1') and (addr_i(31 downto 28) = xip_page_i) else '0';
+  xip_acc      <= '1' when (xip_en_i = '1') and (bus_req_i.addr(31 downto 28) = xip_page_i) else '0';
   -- actual external bus access? --
   xbus_access  <= (not int_imem_acc) and (not int_dmem_acc) and (not int_boot_acc) and (not xip_acc);
 
@@ -203,12 +192,12 @@ begin
       -- state machine --
       if (ctrl.state = '0') then -- IDLE, waiting for host request
         -- ------------------------------------------------------------
-        if (xbus_access = '1') and ((wren_i or rden_i) = '1') then -- valid external request
+        if (xbus_access = '1') and ((bus_req_i.we or bus_req_i.re) = '1') then -- valid external request
           -- buffer (and gate) all outgoing signals --
-          ctrl.we    <= wren_i;
-          ctrl.adr   <= addr_i;
-          ctrl.src   <= src_i;
-          ctrl.priv  <= priv_i;
+          ctrl.we    <= bus_req_i.we;
+          ctrl.adr   <= bus_req_i.addr;
+          ctrl.src   <= bus_req_i.src;
+          ctrl.priv  <= bus_req_i.priv;
           ctrl.wdat  <= end_wdata;
           ctrl.sel   <= end_byteen;
           ctrl.state <= '1';
@@ -239,8 +228,8 @@ begin
   ext_o <= ctrl.state;
 
   -- endianness conversion --
-  end_wdata  <= bswap32_f(data_i) when (BIG_ENDIAN = true) else data_i;
-  end_byteen <= bit_rev_f(ben_i)  when (BIG_ENDIAN = true) else ben_i;
+  end_wdata  <= bswap32_f(bus_req_i.data) when (BIG_ENDIAN = true) else bus_req_i.data;
+  end_byteen <= bit_rev_f(bus_req_i.ben)  when (BIG_ENDIAN = true) else bus_req_i.ben;
 
 
   -- host access --
@@ -248,25 +237,25 @@ begin
   rdata_gated <= wb_dat_i when (ctrl.state = '1') else (others => '0'); -- CPU read data gate for "async" RX
   rdata       <= ctrl.rdat when (ASYNC_RX = false) else rdata_gated;
 
-  data_o <= rdata when (BIG_ENDIAN = false) else bswap32_f(rdata); -- endianness conversion
-  ack_o  <= ctrl.ack when (ASYNC_RX = false) else ack_gated;
-  err_o  <= ctrl.err;
-  tmo_o  <= ctrl.tmo;
+  bus_rsp_o.data <= rdata when (BIG_ENDIAN = false) else bswap32_f(rdata); -- endianness conversion
+  bus_rsp_o.ack  <= ctrl.ack when (ASYNC_RX = false) else ack_gated;
+  bus_rsp_o.err  <= ctrl.err;
+  tmo_o          <= ctrl.tmo;
 
 
   -- wishbone interface --
-  wb_tag_o(0) <= priv_i when (ASYNC_TX = true) else ctrl.priv; -- 0 = unprivileged (U-mode), 1 = privileged (M-mode)
+  wb_tag_o(0) <= bus_req_i.priv when (ASYNC_TX = true) else ctrl.priv; -- 0 = unprivileged (U-mode), 1 = privileged (M-mode)
   wb_tag_o(1) <= '0'; -- 0 = secure, 1 = non-secure
-  wb_tag_o(2) <= src_i when (ASYNC_TX = true) else ctrl.src; -- 0 = data access, 1 = instruction access
+  wb_tag_o(2) <= bus_req_i.src when (ASYNC_TX = true) else ctrl.src; -- 0 = data access, 1 = instruction access
 
-  stb_int <=  (xbus_access and (wren_i or rden_i))                when (ASYNC_TX = true) else (ctrl.state and (not ctrl.state_ff));
-  cyc_int <= ((xbus_access and (wren_i or rden_i)) or ctrl.state) when (ASYNC_TX = true) else  ctrl.state;
+  stb_int <=  (xbus_access and (bus_req_i.we or bus_req_i.re))                when (ASYNC_TX = true) else (ctrl.state and (not ctrl.state_ff));
+  cyc_int <= ((xbus_access and (bus_req_i.we or bus_req_i.re)) or ctrl.state) when (ASYNC_TX = true) else  ctrl.state;
 
-  wb_adr_o <= addr_i when (ASYNC_TX = true) else ctrl.adr;
-  wb_dat_o <= data_i when (ASYNC_TX = true) else ctrl.wdat;
-  wb_we_o  <= (wren_i or (ctrl.we and ctrl.state)) when (ASYNC_TX = true) else ctrl.we;
+  wb_adr_o <= bus_req_i.addr when (ASYNC_TX = true) else ctrl.adr;
+  wb_dat_o <= bus_req_i.data when (ASYNC_TX = true) else ctrl.wdat;
+  wb_we_o  <= (bus_req_i.we or (ctrl.we and ctrl.state)) when (ASYNC_TX = true) else ctrl.we;
   wb_sel_o <= end_byteen when (ASYNC_TX = true) else ctrl.sel;
-  wb_stb_o <= stb_int when (PIPE_MODE = true) else cyc_int;
+  wb_stb_o <= stb_int    when (PIPE_MODE = true) else cyc_int;
   wb_cyc_o <= cyc_int;
 
 

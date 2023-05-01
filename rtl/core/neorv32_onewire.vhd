@@ -50,22 +50,14 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_onewire is
   port (
-    -- host access --
     clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
-    addr_i      : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i      : in  std_ulogic; -- read enable
-    wren_i      : in  std_ulogic; -- write enable
-    data_i      : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o      : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o       : out std_ulogic; -- transfer acknowledge
-    -- clock generator --
+    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    bus_req_i   : in  bus_req_t;  -- bus request
+    bus_rsp_o   : out bus_rsp_t;  -- bus response
     clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(07 downto 0);
-    -- com lines (require external tri-state drivers) --
+    clkgen_i    : in  std_ulogic_vector(7 downto 0);
     onewire_i   : in  std_ulogic; -- 1-wire line state
     onewire_o   : out std_ulogic; -- 1-wire line pull-down
-    -- interrupt --
     irq_o       : out std_ulogic -- transfer done IRQ
   );
 end neorv32_onewire;
@@ -155,10 +147,10 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access control --
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = onewire_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= onewire_base_c(31 downto lo_abb_c) & addr_i(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and wren_i;
-  rden   <= acc_en and rden_i;
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = onewire_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  addr   <= onewire_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
+  wren   <= acc_en and bus_req_i.we;
+  rden   <= acc_en and bus_req_i.re;
 
   -- write access --
   write_access: process(rstn_i, clk_i)
@@ -176,21 +168,21 @@ begin
       if (wren = '1') then
         -- control register --
         if (addr = onewire_ctrl_addr_c) then
-          ctrl.enable   <= data_i(ctrl_en_c);
-          ctrl.clk_prsc <= data_i(ctrl_prsc1_c downto ctrl_prsc0_c);
-          ctrl.clk_div  <= data_i(ctrl_clkdiv7_c downto ctrl_clkdiv0_c);
+          ctrl.enable   <= bus_req_i.data(ctrl_en_c);
+          ctrl.clk_prsc <= bus_req_i.data(ctrl_prsc1_c downto ctrl_prsc0_c);
+          ctrl.clk_div  <= bus_req_i.data(ctrl_clkdiv7_c downto ctrl_clkdiv0_c);
         end if;
         -- data register --
         if (addr = onewire_data_addr_c) then
-          tx_data <= data_i(7 downto 0);
+          tx_data <= bus_req_i.data(7 downto 0);
         end if;
       end if;
 
       -- operation triggers --
       if (wren = '1') and (addr = onewire_ctrl_addr_c) then -- set by host
-        ctrl.trig_rst  <= data_i(ctrl_trig_rst_c);
-        ctrl.trig_bit  <= data_i(ctrl_trig_bit_c);
-        ctrl.trig_byte <= data_i(ctrl_trig_byte_c);
+        ctrl.trig_rst  <= bus_req_i.data(ctrl_trig_rst_c);
+        ctrl.trig_bit  <= bus_req_i.data(ctrl_trig_bit_c);
+        ctrl.trig_byte <= bus_req_i.data(ctrl_trig_byte_c);
       elsif (ctrl.enable = '0') or (serial.state(1) = '1') then -- cleared when disabled or when in RTX/RESET state
         ctrl.trig_rst  <= '0';
         ctrl.trig_bit  <= '0';
@@ -203,25 +195,28 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= rden or wren; -- bus handshake
-      data_o <= (others => '0');
+      bus_rsp_o.ack  <= rden or wren; -- bus handshake
+      bus_rsp_o.data <= (others => '0');
       if (rden = '1') then
         -- control register --
         if (addr = onewire_ctrl_addr_c) then
-          data_o(ctrl_en_c)                            <= ctrl.enable;
-          data_o(ctrl_prsc1_c downto ctrl_prsc0_c)     <= ctrl.clk_prsc;
-          data_o(ctrl_clkdiv7_c downto ctrl_clkdiv0_c) <= ctrl.clk_div;
+          bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
+          bus_rsp_o.data(ctrl_prsc1_c downto ctrl_prsc0_c)     <= ctrl.clk_prsc;
+          bus_rsp_o.data(ctrl_clkdiv7_c downto ctrl_clkdiv0_c) <= ctrl.clk_div;
           --
-          data_o(ctrl_sense_c)                         <= serial.wire_in(1);
-          data_o(ctrl_presence_c)                      <= serial.presence;
-          data_o(ctrl_busy_c)                          <= serial.busy;
+          bus_rsp_o.data(ctrl_sense_c)                         <= serial.wire_in(1);
+          bus_rsp_o.data(ctrl_presence_c)                      <= serial.presence;
+          bus_rsp_o.data(ctrl_busy_c)                          <= serial.busy;
         -- data register --
         else -- if (addr = onewire_data_addr_c) then
-          data_o(7 downto 0) <= serial.sreg;
+          bus_rsp_o.data(7 downto 0) <= serial.sreg;
         end if;
       end if;
     end if;
   end process read_access;
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
 
   -- Tick Generator -------------------------------------------------------------------------

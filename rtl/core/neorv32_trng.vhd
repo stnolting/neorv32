@@ -48,15 +48,10 @@ entity neorv32_trng is
     IO_TRNG_FIFO : natural := 1 -- RND fifo depth, has to be a power of two, min 1
   );
   port (
-    -- host access --
-    clk_i  : in  std_ulogic; -- global clock line
-    rstn_i : in  std_ulogic; -- global reset line, low-active, async
-    addr_i : in  std_ulogic_vector(31 downto 0); -- address
-    rden_i : in  std_ulogic; -- read enable
-    wren_i : in  std_ulogic; -- write enable
-    data_i : in  std_ulogic_vector(31 downto 0); -- data in
-    data_o : out std_ulogic_vector(31 downto 0); -- data out
-    ack_o  : out std_ulogic  -- transfer acknowledge
+    clk_i     : in  std_ulogic; -- global clock line
+    rstn_i    : in  std_ulogic; -- global reset line, low-active, async
+    bus_req_i : in  bus_req_t;  -- bus request
+    bus_rsp_o : out bus_rsp_t   -- bus response
   );
 end neorv32_trng;
 
@@ -137,9 +132,9 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access control --
-  acc_en <= '1' when (addr_i(hi_abb_c downto lo_abb_c) = trng_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  wren   <= acc_en and wren_i;
-  rden   <= acc_en and rden_i;
+  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = trng_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  wren   <= acc_en and bus_req_i.we;
+  rden   <= acc_en and bus_req_i.re;
 
   -- write access --
   write_access: process(rstn_i, clk_i)
@@ -150,8 +145,8 @@ begin
     elsif rising_edge(clk_i) then
       fifo_clr <= '0'; -- default
       if (wren = '1') then
-        enable   <= data_i(ctrl_en_c);
-        fifo_clr <= data_i(ctrl_fifo_clr_c);
+        enable   <= bus_req_i.data(ctrl_en_c);
+        fifo_clr <= bus_req_i.data(ctrl_fifo_clr_c);
       end if;
     end if;
   end process write_access;
@@ -160,18 +155,21 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      ack_o  <= wren or rden; -- host bus acknowledge
-      data_o <= (others => '0');
+      bus_rsp_o.ack  <= wren or rden; -- host bus acknowledge
+      bus_rsp_o.data <= (others => '0');
       if (rden = '1') then
         if (fifo.avail = '1') then -- make sure data byte is zero if no valid data available to prevent it is read twice
-          data_o(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
+          bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
         end if;
-        data_o(ctrl_sim_mode_c) <= bool_to_ulogic_f(sim_mode_c);
-        data_o(ctrl_en_c)       <= enable;
-        data_o(ctrl_valid_c)    <= fifo.avail;
+        bus_rsp_o.data(ctrl_sim_mode_c) <= bool_to_ulogic_f(sim_mode_c);
+        bus_rsp_o.data(ctrl_en_c)       <= enable;
+        bus_rsp_o.data(ctrl_valid_c)    <= fifo.avail;
       end if;
     end if;
   end process read_access;
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
 
   -- neoTRNG True Random Number Generator ---------------------------------------------------
