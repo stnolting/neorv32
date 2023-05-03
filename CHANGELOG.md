@@ -33,6 +33,7 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 03.05.2023 | 1.8.4.7 | :bug: fix bug in FPU (terminate FPU sub-module operations if an exception has been raised); [#609](https://github.com/stnolting/neorv32/pull/609) |
 | 02.05.2023 | 1.8.4.6 | make SDI FIFO access entirely synchronous; upgrade processor memory modules; update test setup wrappers; [#608]((https://github.com/stnolting/neorv32/pull/608) |
 | 30.04.2023 | 1.8.4.5 | rework processor-internal bus system; [#607](https://github.com/stnolting/neorv32/pull/607) |
 | 27.04.2023 | 1.8.4.4 | minor hardware edits and switching activity optimizations of CPU bus unit; [#605](https://github.com/stnolting/neorv32/pull/605) |
