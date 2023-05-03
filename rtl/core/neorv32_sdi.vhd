@@ -224,7 +224,7 @@ begin
   generic map (
     FIFO_DEPTH => RTX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,        -- size of data elements in fifo (32-bit only for simulation)
-    FIFO_RSYNC => false,    -- async read
+    FIFO_RSYNC => true,     -- sync read
     FIFO_SAFE  => true      -- safe access
   )
   port map (
@@ -256,7 +256,7 @@ begin
   generic map (
     FIFO_DEPTH => RTX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,        -- size of data elements in fifo (32-bit only for simulation)
-    FIFO_RSYNC => false,    -- async read
+    FIFO_RSYNC => true,     -- sync read
     FIFO_SAFE  => true      -- safe access
   )
   port map (

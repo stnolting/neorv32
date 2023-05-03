@@ -72,6 +72,7 @@ architecture neorv32_imem_rtl of neorv32_imem is
   -- -------------------------------------------------------------------------------------------------------------- --
   -- The memory (RAM) is built from 4 individual byte-wide memories b0..b3, since some synthesis tools have         --
   -- problems with 32-bit memories that provide dedicated byte-enable signals AND/OR with multi-dimensional arrays. --
+  -- [NOTE] Read-during-write behavior is irrelevant as read and write access are mutually exclusive.               --
   -- -------------------------------------------------------------------------------------------------------------- --
 
   -- RAM - not initialized at all --
@@ -126,7 +127,7 @@ begin
   end generate;
 
 
-  -- Implement IMEM as not-initialized RAM --------------------------------------------------
+  -- Implement IMEM as non-initialized RAM --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   imem_ram:
   if (IMEM_AS_IROM = false) generate
@@ -134,19 +135,17 @@ begin
     begin
       if rising_edge(clk_i) then
         addr_ff <= addr;
-        if (acc_en = '1') then -- reduce switching activity when not accessed
-          if (bus_req_i.we = '1') and (bus_req_i.ben(0) = '1') then -- byte 0
-            mem_ram_b0(to_integer(unsigned(addr))) <= bus_req_i.data(07 downto 00);
-          end if;
-          if (bus_req_i.we = '1') and (bus_req_i.ben(1) = '1') then -- byte 1
-            mem_ram_b1(to_integer(unsigned(addr))) <= bus_req_i.data(15 downto 08);
-          end if;
-          if (bus_req_i.we = '1') and (bus_req_i.ben(2) = '1') then -- byte 2
-            mem_ram_b2(to_integer(unsigned(addr))) <= bus_req_i.data(23 downto 16);
-          end if;
-          if (bus_req_i.we = '1') and (bus_req_i.ben(3) = '1') then -- byte 3
-            mem_ram_b3(to_integer(unsigned(addr))) <= bus_req_i.data(31 downto 24);
-          end if;
+        if (acc_en = '1') and (bus_req_i.we = '1') and (bus_req_i.ben(0) = '1') then -- byte 0
+          mem_ram_b0(to_integer(unsigned(addr))) <= bus_req_i.data(07 downto 00);
+        end if;
+        if (acc_en = '1') and (bus_req_i.we = '1') and (bus_req_i.ben(1) = '1') then -- byte 1
+          mem_ram_b1(to_integer(unsigned(addr))) <= bus_req_i.data(15 downto 08);
+        end if;
+        if (acc_en = '1') and (bus_req_i.we = '1') and (bus_req_i.ben(2) = '1') then -- byte 2
+          mem_ram_b2(to_integer(unsigned(addr))) <= bus_req_i.data(23 downto 16);
+        end if;
+        if (acc_en = '1') and (bus_req_i.we = '1') and (bus_req_i.ben(3) = '1') then -- byte 3
+          mem_ram_b3(to_integer(unsigned(addr))) <= bus_req_i.data(31 downto 24);
         end if;
       end if;
     end process mem_access;
