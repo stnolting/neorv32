@@ -88,14 +88,12 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
 
   -- float-to-integer unit --
   component neorv32_cpu_cp_fpu_f2i
-  generic (
-    XLEN       : in natural         -- data path width
-    );
   port (
     -- control --
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     start_i    : in  std_ulogic; -- trigger operation
+    abort_i    : in  std_ulogic; -- abort current operation
     rmode_i    : in  std_ulogic_vector(02 downto 0); -- rounding mode
     funct_i    : in  std_ulogic; -- 0=signed, 1=unsigned
     -- input --
@@ -117,6 +115,7 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     start_i    : in  std_ulogic; -- trigger operation
+    abort_i    : in  std_ulogic; -- abort current operation
     rmode_i    : in  std_ulogic_vector(02 downto 0); -- rounding mode
     funct_i    : in  std_ulogic; -- operating mode (0=norm&round, 1=int-to-float)
     -- input --
@@ -549,14 +548,12 @@ begin
   -- Convert: Float to [unsigned] Integer (FCVT.S.W) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_fpu_f2i_inst: neorv32_cpu_cp_fpu_f2i
-  generic map (
-    XLEN          => XLEN         -- data path width
-    )
   port map (
     -- control --
     clk_i      => clk_i,                          -- global clock, rising edge
     rstn_i     => rstn_i,                         -- global reset, low-active, async
     start_i    => fu_conv_f2i.start,              -- trigger operation
+    abort_i    => ctrl_i.cpu_trap,                -- abort current operation
     rmode_i    => fpu_operands.frm,               -- rounding mode
     funct_i    => ctrl_i.ir_funct12(0),           -- 0=signed, 1=unsigned
     -- input --
@@ -1088,6 +1085,7 @@ begin
     clk_i      => clk_i,                -- global clock, rising edge
     rstn_i     => rstn_i,               -- global reset, low-active, async
     start_i    => normalizer.start,     -- trigger operation
+    abort_i    => ctrl_i.cpu_trap,      -- abort current operation
     rmode_i    => fpu_operands.frm,     -- rounding mode
     funct_i    => normalizer.mode,      -- operation mode
     -- input --
@@ -1108,7 +1106,7 @@ begin
 -- FPU Core - Result
 -- ****************************************************************************************************************************
 
-  -- Result Output to CPU Pipeline ----------------------------------------------------------
+  -- Output Result to CPU Pipeline ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   output_gate: process(clk_i)
   begin
@@ -1199,6 +1197,7 @@ entity neorv32_cpu_cp_fpu_normalizer is
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     start_i    : in  std_ulogic; -- trigger operation
+    abort_i    : in  std_ulogic; -- abort current operation
     rmode_i    : in  std_ulogic_vector(02 downto 0); -- rounding mode
     funct_i    : in  std_ulogic; -- operating mode (0=norm&round, 1=int-to-float)
     -- input --
@@ -1430,11 +1429,11 @@ begin
           elsif (ctrl.cnt(7 downto 0) = x"FF") then -- infinity
             ctrl.flags(fp_exc_of_c) <= '1';
           end if;
-          ctrl.state  <= S_FINALIZE;
+          ctrl.state <= S_FINALIZE;
 
         when S_FINALIZE => -- result finalization
         -- ------------------------------------------------------------
-          -- generate result word (the ORDER of checks is imporatant here!) --
+          -- generate result word (the ORDER of checks is important here!) --
           if (ctrl.class(fp_class_snan_c) = '1') or (ctrl.class(fp_class_qnan_c) = '1') then -- sNaN / qNaN
             ctrl.res_sgn <= fp_single_qnan_c(31);
             ctrl.res_exp <= fp_single_qnan_c(30 downto 23);
@@ -1467,6 +1466,11 @@ begin
           ctrl.state <= S_IDLE;
 
       end case;
+
+      -- override: abort operation --
+      if (abort_i = '1') then
+        ctrl.state <= S_IDLE;
+      end if;
     end if;
   end process ctrl_engine;
 
@@ -1589,14 +1593,12 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_fpu_f2i is
-  generic (
-    XLEN                      : natural -- data path width
-    );
   port (
     -- control --
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     start_i    : in  std_ulogic; -- trigger operation
+    abort_i    : in  std_ulogic; -- abort current operation
     rmode_i    : in  std_ulogic_vector(02 downto 0); -- rounding mode
     funct_i    : in  std_ulogic; -- 0=signed, 1=unsigned
     -- input --
@@ -1786,6 +1788,11 @@ begin
           ctrl.state <= S_IDLE;
 
       end case;
+
+      -- override: abort operation --
+      if (abort_i = '1') then
+        ctrl.state <= S_IDLE;
+      end if;
     end if;
   end process ctrl_engine;
 
