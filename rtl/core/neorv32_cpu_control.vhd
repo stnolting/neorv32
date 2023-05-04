@@ -224,7 +224,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     epc           : std_ulogic_vector(XLEN-1 downto 0); -- exception program counter
     --
     env_start     : std_ulogic; -- start trap handler env
-    env_start_ack : std_ulogic; -- start of trap handler acknowledged
+    env_ack       : std_ulogic; -- start of trap handler acknowledged
     env_end       : std_ulogic; -- end trap handler env
     wakeup        : std_ulogic; -- wakeup from sleep due to an enabled pending IRQ
     --
@@ -830,7 +830,7 @@ begin
     fetch_engine.reset <= '0';
 
     -- trap environment control defaults --
-    trap_ctrl.env_start_ack <= '0';
+    trap_ctrl.env_ack       <= '0';
     trap_ctrl.env_end       <= '0';
     trap_ctrl.instr_be      <= '0';
     trap_ctrl.instr_ma      <= '0';
@@ -876,7 +876,7 @@ begin
       when TRAP_ENTER => -- Start trap environment and get trap vector
       -- ------------------------------------------------------------
         if (trap_ctrl.env_start = '1') then
-          trap_ctrl.env_start_ack  <= '1';
+          trap_ctrl.env_ack        <= '1';
           execute_engine.state_nxt <= TRAP_EXECUTE;
         end if;
 
@@ -1164,7 +1164,7 @@ begin
   -- cpu status --
   ctrl_o.cpu_priv     <= csr.privilege_eff;
   ctrl_o.cpu_sleep    <= '1' when (execute_engine.state = CPU_SLEEP) else '0';
-  ctrl_o.cpu_trap     <= trap_ctrl.env_start_ack;
+  ctrl_o.cpu_trap     <= trap_ctrl.env_ack;
   ctrl_o.cpu_debug    <= debug_ctrl.running;
 
 
@@ -1441,33 +1441,33 @@ begin
       -- ----------------------------------------------------------------------
 
       -- misaligned load/store/instruction address --
-      trap_ctrl.exc_buf(exc_lalign_c) <= (trap_ctrl.exc_buf(exc_lalign_c) or ma_load_i)          and (not trap_ctrl.env_start_ack);
-      trap_ctrl.exc_buf(exc_salign_c) <= (trap_ctrl.exc_buf(exc_salign_c) or ma_store_i)         and (not trap_ctrl.env_start_ack);
-      trap_ctrl.exc_buf(exc_ialign_c) <= (trap_ctrl.exc_buf(exc_ialign_c) or trap_ctrl.instr_ma) and (not trap_ctrl.env_start_ack);
+      trap_ctrl.exc_buf(exc_lalign_c) <= (trap_ctrl.exc_buf(exc_lalign_c) or ma_load_i)          and (not trap_ctrl.env_ack);
+      trap_ctrl.exc_buf(exc_salign_c) <= (trap_ctrl.exc_buf(exc_salign_c) or ma_store_i)         and (not trap_ctrl.env_ack);
+      trap_ctrl.exc_buf(exc_ialign_c) <= (trap_ctrl.exc_buf(exc_ialign_c) or trap_ctrl.instr_ma) and (not trap_ctrl.env_ack);
 
       -- load/store/instruction bus access fault --
-      trap_ctrl.exc_buf(exc_laccess_c) <= (trap_ctrl.exc_buf(exc_laccess_c) or be_load_i)          and (not trap_ctrl.env_start_ack);
-      trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or be_store_i)         and (not trap_ctrl.env_start_ack);
-      trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_start_ack);
+      trap_ctrl.exc_buf(exc_laccess_c) <= (trap_ctrl.exc_buf(exc_laccess_c) or be_load_i)          and (not trap_ctrl.env_ack);
+      trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or be_store_i)         and (not trap_ctrl.env_ack);
+      trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_ack);
 
       -- illegal instruction & environment call --
-      trap_ctrl.exc_buf(exc_ecall_c)    <= (trap_ctrl.exc_buf(exc_ecall_c)    or trap_ctrl.env_call) and (not trap_ctrl.env_start_ack);
-      trap_ctrl.exc_buf(exc_iillegal_c) <= (trap_ctrl.exc_buf(exc_iillegal_c) or trap_ctrl.instr_il) and (not trap_ctrl.env_start_ack);
+      trap_ctrl.exc_buf(exc_ecall_c)    <= (trap_ctrl.exc_buf(exc_ecall_c)    or trap_ctrl.env_call) and (not trap_ctrl.env_ack);
+      trap_ctrl.exc_buf(exc_iillegal_c) <= (trap_ctrl.exc_buf(exc_iillegal_c) or trap_ctrl.instr_il) and (not trap_ctrl.env_ack);
 
       -- break point --
       if (CPU_EXTENSION_RISCV_Sdext = true) then
-        trap_ctrl.exc_buf(exc_ebreak_c) <= (not trap_ctrl.env_start_ack) and (trap_ctrl.exc_buf(exc_ebreak_c) or
+        trap_ctrl.exc_buf(exc_ebreak_c) <= (not trap_ctrl.env_ack) and (trap_ctrl.exc_buf(exc_ebreak_c) or
           (hw_trigger_fire and (not csr.tdata1_action)) or -- trigger module fires and enter-debug is disabled
           (trap_ctrl.break_point and (    csr.privilege) and (not csr.dcsr_ebreakm) and (not debug_ctrl.running)) or -- enter M-mode handler on ebreak in M-mode
           (trap_ctrl.break_point and (not csr.privilege) and (not csr.dcsr_ebreaku) and (not debug_ctrl.running))); -- enter M-mode handler on ebreak in U-mode
       else
-        trap_ctrl.exc_buf(exc_ebreak_c) <= (trap_ctrl.exc_buf(exc_ebreak_c) or trap_ctrl.break_point or hw_trigger_fire) and (not trap_ctrl.env_start_ack);
+        trap_ctrl.exc_buf(exc_ebreak_c) <= (trap_ctrl.exc_buf(exc_ebreak_c) or trap_ctrl.break_point or hw_trigger_fire) and (not trap_ctrl.env_ack);
       end if;
 
       -- debug-mode entry --
       if (CPU_EXTENSION_RISCV_Sdext = true) then
-        trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_start_ack);
-        trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_start_ack);
+        trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_ack);
+        trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_ack);
       else
         trap_ctrl.exc_buf(exc_db_break_c) <= '0';
         trap_ctrl.exc_buf(exc_db_hw_c)    <= '0';
@@ -1531,14 +1531,14 @@ begin
       trap_ctrl.wakeup    <= '0';
       trap_ctrl.env_start <= '0';
     elsif rising_edge(clk_i) then
-      trap_ctrl.wakeup <= or_reduce_f(trap_ctrl.irq_buf); -- wakeup from sleep on any pending IRQ (including debug IRQs)
+      trap_ctrl.wakeup  <= or_reduce_f(trap_ctrl.irq_buf); -- wakeup from sleep on any pending IRQ (including debug IRQs)
       if (trap_ctrl.env_start = '0') then -- no started trap handler yet
         -- trigger IRQ only in EXECUTE state to continue execution even on permanent IRQ
         if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and (execute_engine.state = EXECUTE)) then
           trap_ctrl.env_start <= '1'; -- now execute engine can start trap handling
         end if;
       else -- trap environment ready to start
-        if (trap_ctrl.env_start_ack = '1') then -- start of trap handler acknowledged by execute engine
+        if (trap_ctrl.env_ack = '1') then -- start of trap handler acknowledged by execute engine
           trap_ctrl.env_start <= '0';
         end if;
       end if;
@@ -1816,7 +1816,7 @@ begin
         -- --------------------------------------------------------------------
         -- TRAP ENTER
         -- --------------------------------------------------------------------
-        if (trap_ctrl.env_start_ack = '1') then -- trap handler starting?
+        if (trap_ctrl.env_ack = '1') then -- trap handler starting?
 
           -- NORMAL trap entry: write mcause, mepc and mtval - no update when in debug-mode! --
           -- --------------------------------------------------------------------
@@ -2458,8 +2458,8 @@ begin
   cnt_event(hpmcnt_event_tbranch_c) <= '1' when (execute_engine.state = BRANCHED) and (execute_engine.state_prev = BRANCH) and
                                                                                       (execute_engine.ir(instr_opcode_lsb_c+2) = '0') else '0'; -- taken branch (conditional)
 
-  cnt_event(hpmcnt_event_trap_c)    <= '1' when (trap_ctrl.env_start_ack = '1')                                    else '0'; -- entered trap
-  cnt_event(hpmcnt_event_illegal_c) <= '1' when (trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause = trap_iil_c) else '0'; -- illegal operation
+  cnt_event(hpmcnt_event_trap_c)    <= '1' when (trap_ctrl.env_ack = '1')                                    else '0'; -- entered trap
+  cnt_event(hpmcnt_event_illegal_c) <= '1' when (trap_ctrl.env_ack = '1') and (trap_ctrl.cause = trap_iil_c) else '0'; -- illegal operation
 
 
 -- ****************************************************************************************************************************
@@ -2479,7 +2479,7 @@ begin
         case debug_ctrl.state is -- state machine
 
           when DEBUG_OFFLINE => -- waiting to start debug mode
-            if (trap_ctrl.env_start_ack = '1') and (trap_ctrl.cause(5) = '1') then -- processing trap entry into debug mode
+            if (trap_ctrl.env_ack = '1') and (trap_ctrl.cause(5) = '1') then -- processing trap entry into debug mode
               debug_ctrl.state <= DEBUG_ONLINE;
             end if;
 
