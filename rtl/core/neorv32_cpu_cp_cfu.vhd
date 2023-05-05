@@ -64,8 +64,8 @@ end neorv32_cpu_cp_cfu;
 
 architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
 
--- CFU controll - do not modify! ---------------------------
--- ------------------------------------------------------------
+  -- CFU Control - do not modify! ----------------------------
+  -- ------------------------------------------------------------
 
   type control_t is record
     busy   : std_ulogic; -- CFU is busy
@@ -83,8 +83,8 @@ architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
   constant r5typeA_c : std_ulogic_vector(1 downto 0) := "10"; -- R5-type instruction A (custom-2 opcode)
   constant r5typeB_c : std_ulogic_vector(1 downto 0) := "11"; -- R5-type instruction B (custom-3 opcode)
 
--- User Logic ----------------------------------------------
--- ------------------------------------------------------------
+  -- User Logic ----------------------------------------------
+  -- ------------------------------------------------------------
 
   -- multiply-add unit (r4-type instruction example) --
   type madd_t is record
