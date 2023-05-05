@@ -147,9 +147,8 @@ int main() {
   neorv32_uart0_printf("Test cases per instruction: %u\n", (uint32_t)NUM_TEST_CASES);
   neorv32_uart0_printf("NOTE: The NEORV32 FPU does not support subnormal numbers yet. Subnormal numbers are flushed to zero.\n\n");
 
-  // clear exception status word
-  neorv32_cpu_csr_write(CSR_FFLAGS, 0); // real hardware
-  feclearexcept(FE_ALL_EXCEPT); // software runtime (GCC floating-point emulation)
+  // clear FPU status/control word
+  neorv32_cpu_csr_write(CSR_FCSR, 0);
 
 
 // ----------------------------------------------------------------------------
