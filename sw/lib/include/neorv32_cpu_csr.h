@@ -291,6 +291,18 @@ enum NEORV32_CSR_enum {
 
 
 /**********************************************************************//**
+ * CPU <b>fflags (fcsr)</b> CSR (r/w): FPU accrued exception flags
+ **************************************************************************/
+enum NEORV32_CSR_FFLAGS_enum {
+  CSR_FFLAGS_NX = 0, /**< CPU fflags CSR (0): NX - inexact (r/w) */
+  CSR_FFLAGS_UF = 1, /**< CPU fflags CSR (1): UF - underflow (r/w) */
+  CSR_FFLAGS_OF = 2, /**< CPU fflags CSR (2): OF - overflow (r/w) */
+  CSR_FFLAGS_DZ = 3, /**< CPU fflags CSR (3): DZ - divide by zero (r/w) */
+  CSR_FFLAGS_NV = 4  /**< CPU fflags CSR (4): NV - invalid operation (r/w) */
+};
+
+
+/**********************************************************************//**
  * CPU <b>mstatus</b> CSR (r/w): Machine status
  **************************************************************************/
 enum NEORV32_CSR_MSTATUS_enum {
