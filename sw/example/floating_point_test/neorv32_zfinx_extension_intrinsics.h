@@ -53,12 +53,7 @@
 #define neorv32_zfinx_extension_intrinsics_h
 
 #define __USE_GNU
-
-#include <fenv.h>
-//#pragma STDC FENV_ACCESS ON
-
 #define _GNU_SOURCE
-
 #include <float.h>
 #include <math.h>
 
