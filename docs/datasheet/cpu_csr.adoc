@@ -457,8 +457,9 @@ maintain RISC-V compatibility.
 |=======================
 | Trap cause | `mtval` value
 | misaligned instruction fetch address or instruction fetch access fault | address of faulting instruction fetch
-| misaligned load address, load access fault, misaligned store address or store access fault | program counter (= address) of faulting instruction
+| misaligned load address, load access fault, misaligned store address or store access fault | address of faulting instruction
 | illegal instruction | instruction word that caused the exception (zero-extended if compressed instruction)
+| breakpoint exception | address of breakpoint instruction / instruction address that caused a hardware trigger
 | everything else (including all interrupts) | all-zero
 |=======================
 
