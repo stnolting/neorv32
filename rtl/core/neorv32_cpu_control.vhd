@@ -1831,6 +1831,8 @@ begin
                 csr.mtval <= mar_i; -- faulting data access address
               when trap_iil_c => -- illegal instruction
                 csr.mtval <= execute_engine.ir; -- faulting instruction word
+              when trap_brk_c => -- breakpoint instruction
+                csr.mtval <= trap_ctrl.epc(XLEN-1 downto 1) & '0'; -- address of breakpoint instruction [NOTE] redundant - might be removed again
               when others => -- everything else including all interrupts
                 csr.mtval <= (others => '0');
             end case;
