@@ -43,6 +43,7 @@
 #ifndef neorv32_neoled_h
 #define neorv32_neoled_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: Smart LED Hardware Interface (NEOLED)
  **************************************************************************/
@@ -95,7 +96,7 @@ enum NEORV32_NEOLED_CTRL_enum {
   NEOLED_CTRL_TX_BUSY    = 31  /**< NEOLED control register(31) (r/-): busy flag */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

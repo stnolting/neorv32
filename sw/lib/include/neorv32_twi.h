@@ -43,6 +43,7 @@
 #ifndef neorv32_twi_h
 #define neorv32_twi_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: Two-Wire Interface Controller (TWI)
  **************************************************************************/
@@ -82,7 +83,7 @@ enum NEORV32_TWI_DATA_enum {
   TWI_DATA_MSB = 7  /**< TWI data register(7) (r/w): Receive/transmit data (8-bit) MSB */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

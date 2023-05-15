@@ -43,6 +43,7 @@
 #ifndef neorv32_gpio_h
 #define neorv32_gpio_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: General Purpose Input/Output Port Unit (GPIO)
  **************************************************************************/
@@ -58,7 +59,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /** GPIO module hardware access (#neorv32_gpio_t) */
 #define NEORV32_GPIO ((neorv32_gpio_t*) (NEORV32_GPIO_BASE))
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

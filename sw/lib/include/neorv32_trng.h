@@ -43,6 +43,7 @@
 #ifndef neorv32_trng_h
 #define neorv32_trng_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: True Random Number Generator (TRNG)
  **************************************************************************/
@@ -66,7 +67,7 @@ enum NEORV32_TRNG_CTRL_enum {
   TRNG_CTRL_VALID    = 31  /**< TRNG data/control register(31) (r/-): Random data output valid */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

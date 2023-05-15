@@ -43,6 +43,7 @@
 #ifndef neorv32_spi_h
 #define neorv32_spi_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: Serial Peripheral Interface Controller (SPI)
  **************************************************************************/
@@ -88,7 +89,7 @@ enum NEORV32_SPI_CTRL_enum {
   SPI_CTRL_BUSY         = 31  /**< SPI control register(31) (r/-): SPI busy flag */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

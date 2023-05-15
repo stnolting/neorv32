@@ -43,6 +43,7 @@
 #ifndef neorv32_xip_h
 #define neorv32_xip_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: Execute In Place Module (XIP)
  **************************************************************************/
@@ -83,7 +84,7 @@ enum NEORV32_XIP_CTRL_enum {
   XIP_CTRL_XIP_BUSY       = 31  /**< XIP control register(31) (r/-): XIP access in progress */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes

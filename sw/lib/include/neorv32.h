@@ -189,6 +189,9 @@ enum NEORV32_CLOCK_PRSC_enum {
 /**@}*/
 
 
+#ifdef NEORV32_SVD_HEADER
+#include "neorv32_svd.h"
+#else
 /**********************************************************************//**
  * @name Peripheral/IO Devices - IO Address Space - base addresses
  **************************************************************************/
@@ -215,7 +218,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define NEORV32_NEOLED_BASE    (0xFFFFFFD8U) /**< Smart LED Hardware Interface (NEOLED) */
 #define NEORV32_SYSINFO_BASE   (0xFFFFFFE0U) /**< System Information Memory (SYSINFO) */
 /**@}*/
-
+#endif // NEORV32_STD_HEADER
 
 // ----------------------------------------------------------------------------
 // Include all system header files

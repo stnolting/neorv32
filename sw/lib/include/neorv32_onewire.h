@@ -43,6 +43,7 @@
 #ifndef neorv32_onewire_h
 #define neorv32_onewire_h
 
+#ifndef NEORV32_SVD_HEADER
 /**********************************************************************//**
  * @name IO Device: 1-Wire Interface Controller (ONEWIRE)
  **************************************************************************/
@@ -84,7 +85,7 @@ enum NEORV32_ONEWIRE_DATA_enum {
   ONEWIRE_DATA_MSB = 7  /**< ONEWIRE data register(7) (r/w): Receive/transmit data (8-bit) MSB */
 };
 /**@}*/
-
+#endif // NEORV32_SVD_HEADER
 
 /**********************************************************************//**
  * @name Prototypes
