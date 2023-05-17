@@ -70,7 +70,7 @@ int  neorv32_xirq_get_num(void);
 void neorv32_xirq_clear_pending(int channel);
 void neorv32_xirq_channel_enable(int channel);
 void neorv32_xirq_channel_disable(int channel);
-int  neorv32_xirq_install(int channel, void (*handler)(void));
+int  neorv32_xirq_install(int channel, void (*handler)(void *param), void *param);
 int  neorv32_xirq_uninstall(int channel);
 /**@}*/
 

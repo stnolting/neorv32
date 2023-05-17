@@ -45,11 +45,12 @@
 /**********************************************************************//**
  * The >private< trap vector look-up table of the XIRQ.
  **************************************************************************/
-static uint32_t __neorv32_xirq_vector_lut[32] __attribute__((unused)); // trap handler vector table
+static uint32_t __neorv32_xirq_vector_lut_func[32]  __attribute__((unused));  // trap handler vector table
+static uint32_t __neorv32_xirq_vector_lut_param[32] __attribute__((unused));  // trap handler vector table
 
 // private functions
 static void __neorv32_xirq_core(void);
-static void __neorv32_xirq_dummy_handler(void);
+static void __neorv32_xirq_dummy_handler(void *param);
 
 
 /**********************************************************************//**
@@ -84,7 +85,8 @@ int neorv32_xirq_setup(void) {
 
   int i;
   for (i=0; i<32; i++) {
-    __neorv32_xirq_vector_lut[i] = (uint32_t)(&__neorv32_xirq_dummy_handler);
+    __neorv32_xirq_vector_lut_func[i]  = (uint32_t)(&__neorv32_xirq_dummy_handler);
+    __neorv32_xirq_vector_lut_param[i] = (uint32_t)0;
   }
 
   // register XIRQ handler in NEORV32 RTE
@@ -187,11 +189,12 @@ void neorv32_xirq_channel_disable(int channel) {
  * @param[in] handler The actual handler function for the specified interrupt (function MUST be of type "void function(void);").
  * @return 0 if success, 1 if error.
  **************************************************************************/
-int neorv32_xirq_install(int channel, void (*handler)(void)) {
+int neorv32_xirq_install(int channel, void (*handler)(void *param), void *param) {
 
   // channel valid?
   if (channel < 32) {
-    __neorv32_xirq_vector_lut[channel] = (uint32_t)handler; // install handler
+    __neorv32_xirq_vector_lut_func[channel]  = (uint32_t)handler; // install handler
+    __neorv32_xirq_vector_lut_param[channel] = (uint32_t)param;   // install parameter
     uint32_t mask = 1 << channel;
     NEORV32_XIRQ->EIP = ~mask; // clear if pending
     NEORV32_XIRQ->EIE |= mask; // enable channel
@@ -213,7 +216,8 @@ int neorv32_xirq_uninstall(int channel) {
 
   // channel valid?
   if (channel < 32) {
-    __neorv32_xirq_vector_lut[channel] = (uint32_t)(&__neorv32_xirq_dummy_handler); // override using dummy handler
+    __neorv32_xirq_vector_lut_func[channel]  = (uint32_t)(&__neorv32_xirq_dummy_handler); // override using dummy handler
+    __neorv32_xirq_vector_lut_param[channel] = (uint32_t)0;                               // override using dummy handler
     uint32_t mask = 1 << channel;
     NEORV32_XIRQ->EIE &= ~mask; // disable channel
     return 0;
@@ -237,10 +241,10 @@ static void __neorv32_xirq_core(void) {
   NEORV32_XIRQ->EIP = ~(1 << src);
 
   // execute handler
-  uint32_t xirq_handler = __neorv32_xirq_vector_lut[src];
-  void (*handler_pnt)(void);
+  uint32_t xirq_handler = __neorv32_xirq_vector_lut_func[src];
+  void (*handler_pnt)(void *param);
   handler_pnt = (void*)xirq_handler;
-  (*handler_pnt)();
+  (*handler_pnt)((void*)__neorv32_xirq_vector_lut_param[src]);
 
   NEORV32_XIRQ->ESC = 0; // acknowledge the current XIRQ interrupt
 }
@@ -249,7 +253,7 @@ static void __neorv32_xirq_core(void) {
 /**********************************************************************//**
  * XIRQ dummy handler.
  **************************************************************************/
-static void __neorv32_xirq_dummy_handler(void) {
-
+static void __neorv32_xirq_dummy_handler(void *param) {
+  (void)param;
   asm volatile ("nop");
 }

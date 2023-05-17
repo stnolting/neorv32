@@ -55,7 +55,8 @@
  * XIRQ handler channel 0.
  * @warning This function has to be of type "void xyz(void)" and must not use any interrupt attributes!
  **************************************************************************/
-void xirq_handler_ch0(void) {
+void xirq_handler_ch0(void *param) {
+  (void)param;
   neorv32_uart0_printf("XIRQ interrupt from channel %i\n", 0);
 }
 
@@ -63,7 +64,8 @@ void xirq_handler_ch0(void) {
  * XIRQ handler channel 1.
  * @warning This function has to be of type "void xyz(void)" and must not use any interrupt attributes!
  **************************************************************************/
-void xirq_handler_ch1(void) {
+void xirq_handler_ch1(void *param) {
+  (void)param;
   neorv32_uart0_printf("XIRQ interrupt from channel %i\n", 1);
 }
 
@@ -71,7 +73,8 @@ void xirq_handler_ch1(void) {
  * XIRQ handler channel 2.
  * @warning This function has to be of type "void xyz(void)" and must not use any interrupt attributes!
  **************************************************************************/
-void xirq_handler_ch2(void) {
+void xirq_handler_ch2(void *param) {
+  (void)param;
   neorv32_uart0_printf("XIRQ interrupt from channel %i\n", 2);
 }
 
@@ -79,7 +82,8 @@ void xirq_handler_ch2(void) {
  * XIRQ handler channel 3.
  * @warning This function has to be of type "void xyz(void)" and must not use any interrupt attributes!
  **************************************************************************/
-void xirq_handler_ch3(void) {
+void xirq_handler_ch3(void *param) {
+  (void)param;
   neorv32_uart0_printf("XIRQ interrupt from channel %i\n", 3);
 }
 
@@ -129,10 +133,10 @@ int main() {
   // (details: these are "third-level" interrupt handlers)
   // neorv32_xirq_install() also enables the specified XIRQ channel and clears any pending interrupts
   err_cnt = 0;
-  err_cnt += neorv32_xirq_install(0, xirq_handler_ch0); // handler function for channel 0
-  err_cnt += neorv32_xirq_install(1, xirq_handler_ch1); // handler function for channel 1
-  err_cnt += neorv32_xirq_install(2, xirq_handler_ch2); // handler function for channel 2
-  err_cnt += neorv32_xirq_install(3, xirq_handler_ch3); // handler function for channel 3
+  err_cnt += neorv32_xirq_install(0, xirq_handler_ch0, NULL); // handler function for channel 0
+  err_cnt += neorv32_xirq_install(1, xirq_handler_ch1, NULL); // handler function for channel 1
+  err_cnt += neorv32_xirq_install(2, xirq_handler_ch2, NULL); // handler function for channel 2
+  err_cnt += neorv32_xirq_install(3, xirq_handler_ch3, NULL); // handler function for channel 3
 
   // check if installation went fine
   if (err_cnt) {

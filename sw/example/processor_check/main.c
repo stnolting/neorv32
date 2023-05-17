@@ -84,8 +84,8 @@
 // Prototypes
 void sim_irq_trigger(uint32_t sel);
 void global_trap_handler(void);
-void xirq_trap_handler0(void);
-void xirq_trap_handler1(void);
+void xirq_trap_handler0(void *param);
+void xirq_trap_handler1(void *param);
 void test_ok(void);
 void test_fail(void);
 
@@ -295,7 +295,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test standard RISC-V counters 
+  // Test standard RISC-V counters
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Zicntr CNTs ", cnt_test);
@@ -371,7 +371,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test mcountinhibit: inhibit counter auto-inc 
+  // Test mcountinhibit: inhibit counter auto-inc
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] mcountinhibit CSR ", cnt_test);
@@ -1286,8 +1286,8 @@ int main() {
     xirq_trap_handler_ack = 0;
 
     xirq_err_cnt += neorv32_xirq_setup(); // initialize XIRQ
-    xirq_err_cnt += neorv32_xirq_install(0, xirq_trap_handler0); // install XIRQ IRQ handler channel 0
-    xirq_err_cnt += neorv32_xirq_install(1, xirq_trap_handler1); // install XIRQ IRQ handler channel 1
+    xirq_err_cnt += neorv32_xirq_install(0, xirq_trap_handler0, NULL); // install XIRQ IRQ handler channel 0
+    xirq_err_cnt += neorv32_xirq_install(1, xirq_trap_handler1, NULL); // install XIRQ IRQ handler channel 1
 
     // enable XIRQ FIRQ
     neorv32_cpu_irq_enable(XIRQ_FIRQ_ENABLE);
@@ -1926,8 +1926,9 @@ void global_trap_handler(void) {
 /**********************************************************************//**
  * XIRQ handler channel 0.
  **************************************************************************/
-void xirq_trap_handler0(void) {
+void xirq_trap_handler0(void *param) {
 
+  (void)param;
   xirq_trap_handler_ack += 2;
 }
 
@@ -1935,8 +1936,9 @@ void xirq_trap_handler0(void) {
 /**********************************************************************//**
  * XIRQ handler channel 1.
  **************************************************************************/
-void xirq_trap_handler1(void) {
+void xirq_trap_handler1(void *param) {
 
+  (void)param;
   xirq_trap_handler_ack *= 2;
 }
 
