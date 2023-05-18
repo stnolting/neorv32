@@ -239,22 +239,32 @@
               <description>DMA enable flag</description>
             </field>
             <field>
+              <name>DMA_CTRL_ATUO</name>
+              <bitRange>[1:1]</bitRange>
+              <description>Enable automatic mode (FIRQ-triggered)</description>
+            </field>
+            <field>
               <name>DMA_CTRL_ERROR_RD</name>
-              <bitRange>[29:29]</bitRange>
+              <bitRange>[8:8]</bitRange>
               <access>read-only</access>
               <description>Error during last read access</description>
             </field>
             <field>
               <name>DMA_CTRL_ERROR_WR</name>
-              <bitRange>[30:30]</bitRange>
+              <bitRange>[9:9]</bitRange>
               <access>read-only</access>
               <description>Error during last write access</description>
             </field>
             <field>
               <name>DMA_CTRL_BUSY</name>
-              <bitRange>[31:31]</bitRange>
+              <bitRange>[10:10]</bitRange>
               <access>read-only</access>
               <description>DMA transfer in progress</description>
+            </field>
+            <field>
+              <name>DMA_CTRL_FIRQ_MASK</name>
+              <bitRange>[31:16]</bitRange>
+              <description>FIRQ trigger mask</description>
             </field>
           </fields>
         </register>

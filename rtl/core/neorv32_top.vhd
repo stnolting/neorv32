@@ -647,6 +647,7 @@ begin
       bus_rsp_o => rsp_bus(DEV_DMA),
       dma_req_o => dma_req,
       dma_rsp_i => dma_rsp,
+      firq_i    => fast_irq,
       irq_o     => dma_irq
     );
 

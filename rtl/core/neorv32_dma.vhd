@@ -50,6 +50,7 @@ entity neorv32_dma is
     bus_rsp_o : out bus_rsp_t;  -- bus response
     dma_req_o : out bus_req_t;  -- DMA request
     dma_rsp_i : in  bus_rsp_t;  -- DMA response
+    firq_i    : in  std_ulogic_vector(15 downto 0); -- CPU FIRQ channels
     irq_o     : out std_ulogic  -- transfer done interrupt
   );
 end neorv32_dma;
@@ -68,7 +69,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
   -- transfer type register bits --
   constant type_num_lo_c  : natural :=  0; -- r/w: Number of elements to transfer, LSB
   constant type_num_hi_c  : natural := 23; -- r/w: Number of elements to transfer, MSB
-
+  --
   constant type_qsel_lo_c : natural := 27; -- r/w: Data quantity select, LSB, see below
   constant type_qsel_hi_c : natural := 28; -- r/w: Data quantity select, MSB, see below
   constant type_src_inc_c : natural := 29; -- r/w: SRC constant (0) or incrementing (1) address
@@ -76,10 +77,15 @@ architecture neorv32_dma_rtl of neorv32_dma is
   constant type_endian_c  : natural := 31; -- r/w: Convert Endianness when set
 
   -- control and status register bits --
-  constant ctrl_en_c       : natural :=  0; -- r/w: DMA enable
-  constant ctrl_error_rd_c : natural := 29; -- r/-: error during read transfer
-  constant ctrl_error_wr_c : natural := 30; -- r/-: error during write transfer
-  constant ctrl_busy_c     : natural := 31; -- r/-: DMA transfer in progress
+  constant ctrl_en_c            : natural :=  0; -- r/w: DMA enable
+  constant ctrl_auto_c          : natural :=  1; -- r/w: enable FIRQ-triggered  transfer
+  --
+  constant ctrl_error_rd_c      : natural :=  8; -- r/-: error during read transfer
+  constant ctrl_error_wr_c      : natural :=  9; -- r/-: error during write transfer
+  constant ctrl_busy_c          : natural := 10; -- r/-: DMA transfer in progress
+  --
+  constant ctrl_firq_mask_lsb_c : natural := 16; -- r/w: FIRQ trigger mask LSB
+  constant ctrl_firq_mask_msb_c : natural := 31; -- r/w: FIRQ trigger mask MSB
 
   -- transfer quantities --
   constant qsel_b2b_c  : std_ulogic_vector(1 downto 0) := "00"; -- byte to byte
@@ -89,15 +95,17 @@ architecture neorv32_dma_rtl of neorv32_dma is
 
   -- configuration registers --
   type config_t is record
-    enable   : std_ulogic; -- DMA enabled when set
-    src_base : std_ulogic_vector(31 downto 0); -- source base address
-    dst_base : std_ulogic_vector(31 downto 0); -- destination base address
-    num      : std_ulogic_vector(23 downto 0); -- number of elements
-    qsel     : std_ulogic_vector(01 downto 0); -- data quantity select
-    src_inc  : std_ulogic; -- constant (0) or incrementing (1) source address
-    dst_inc  : std_ulogic; -- constant (0) or incrementing (1) destination address
-    endian   : std_ulogic; -- convert endianness when set
-    start    : std_ulogic; -- transfer start trigger
+    enable    : std_ulogic; -- DMA enabled when set
+    auto      : std_ulogic; -- FIRQ-driven auto transfer
+    firq_mask : std_ulogic_vector(15 downto 0); -- FIRQ trigger mask
+    src_base  : std_ulogic_vector(31 downto 0); -- source base address
+    dst_base  : std_ulogic_vector(31 downto 0); -- destination base address
+    num       : std_ulogic_vector(23 downto 0); -- number of elements
+    qsel      : std_ulogic_vector(01 downto 0); -- data quantity select
+    src_inc   : std_ulogic; -- constant (0) or incrementing (1) source address
+    dst_inc   : std_ulogic; -- constant (0) or incrementing (1) destination address
+    endian    : std_ulogic; -- convert endianness when set
+    start     : std_ulogic; -- transfer start trigger
   end record;
   signal config : config_t;
 
@@ -121,6 +129,12 @@ architecture neorv32_dma_rtl of neorv32_dma is
   signal align_buf : std_ulogic_vector(31 downto 0);
   signal align_end : std_ulogic_vector(31 downto 0);
 
+  -- FIRQ trigger --
+  signal firq_buf : std_ulogic_vector(15 downto 0);
+  signal match    : std_ulogic;
+  signal match_ff : std_ulogic;
+  signal atrigger : std_ulogic;
+
 begin
 
   -- Control Interface -------------------------------------------------------------------
@@ -135,20 +149,24 @@ begin
   write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      config.enable   <= '0';
-      config.src_base <= (others => '0');
-      config.dst_base <= (others => '0');
-      config.num      <= (others => '0');
-      config.qsel     <= (others => '0');
-      config.src_inc  <= '0';
-      config.dst_inc  <= '0';
-      config.endian   <= '0';
-      config.start    <= '0';
+      config.enable    <= '0';
+      config.auto      <= '0';
+      config.firq_mask <= (others => '0');
+      config.src_base  <= (others => '0');
+      config.dst_base  <= (others => '0');
+      config.num       <= (others => '0');
+      config.qsel      <= (others => '0');
+      config.src_inc   <= '0';
+      config.dst_inc   <= '0';
+      config.endian    <= '0';
+      config.start     <= '0';
     elsif rising_edge(clk_i) then
       config.start <= '0'; -- default
       if (wren = '1') then
         if (bus_req_i.addr(3 downto 2) = "00") then -- control and status register
-          config.enable <= bus_req_i.data(ctrl_en_c);
+          config.enable    <= bus_req_i.data(ctrl_en_c);
+          config.auto      <= bus_req_i.data(ctrl_auto_c);
+          config.firq_mask <= bus_req_i.data(ctrl_firq_mask_msb_c downto ctrl_firq_mask_lsb_c);
         end if;
         if (bus_req_i.addr(3 downto 2) = "01") then -- source base address
           config.src_base <= bus_req_i.data;
@@ -178,9 +196,11 @@ begin
         case bus_req_i.addr(3 downto 2) is
           when "00" => -- control and status register
             bus_rsp_o.data(ctrl_en_c)       <= config.enable;
+            bus_rsp_o.data(ctrl_auto_c)     <= config.auto;
             bus_rsp_o.data(ctrl_error_rd_c) <= engine.err_rd;
             bus_rsp_o.data(ctrl_error_wr_c) <= engine.err_wr;
             bus_rsp_o.data(ctrl_busy_c)     <= engine.busy;
+            bus_rsp_o.data(ctrl_firq_mask_msb_c downto ctrl_firq_mask_lsb_c) <= config.firq_mask;
           when "01" => -- address of last read access
             bus_rsp_o.data <= engine.src_addr;
           when "10" => -- address of last write access
@@ -198,6 +218,21 @@ begin
 
   -- no access error possible --
   bus_rsp_o.err <= '0';
+
+
+  -- Automatic Trigger ----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  automatic_trigger: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      firq_buf <= firq_i;
+      match_ff <= match;
+      atrigger <= match and (not match_ff); -- trigger on rising edge of FIRQ
+    end if;
+  end process automatic_trigger;
+
+  -- logical OR of all enabled trigger FIRQs --
+  match <= or_reduce_f(firq_buf and config.firq_mask);
 
 
   -- Bus Access Engine ----------------------------------------------------------------------
@@ -228,7 +263,9 @@ begin
           engine.src_addr <= config.src_base;
           engine.dst_addr <= config.dst_base;
           engine.num      <= config.num;
-          if (config.enable = '1') and (config.start = '1') then
+          if (config.enable = '1') and
+             (((config.auto = '0') and (config.start = '1')) or -- manual trigger
+              ((config.auto = '1') and (atrigger = '1'))) then -- automatic trigger
             engine.err_rd <= '0';
             engine.err_wr <= '0';
             dma_req_o.re  <= '1'; -- issue read request
