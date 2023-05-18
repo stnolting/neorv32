@@ -49,70 +49,70 @@
       </addressBlock>
 
       <registers>
-        <register><name>REG0</name><description>Application-defined</description><addressOffset>0x00</addressOffset></register>
-        <register><name>REG1</name><description>Application-defined</description><addressOffset>0x04</addressOffset></register>
-        <register><name>REG2</name><description>Application-defined</description><addressOffset>0x08</addressOffset></register>
-        <register><name>REG3</name><description>Application-defined</description><addressOffset>0x0C</addressOffset></register>
-        <register><name>REG4</name><description>Application-defined</description><addressOffset>0x10</addressOffset></register>
-        <register><name>REG5</name><description>Application-defined</description><addressOffset>0x14</addressOffset></register>
-        <register><name>REG6</name><description>Application-defined</description><addressOffset>0x18</addressOffset></register>
-        <register><name>REG7</name><description>Application-defined</description><addressOffset>0x1C</addressOffset></register>
-        <register><name>REG8</name><description>Application-defined</description><addressOffset>0x20</addressOffset></register>
-        <register><name>REG9</name><description>Application-defined</description><addressOffset>0x24</addressOffset></register>
-        <register><name>REG10</name><description>Application-defined</description><addressOffset>0x28</addressOffset></register>
-        <register><name>REG11</name><description>Application-defined</description><addressOffset>0x2C</addressOffset></register>
-        <register><name>REG12</name><description>Application-defined</description><addressOffset>0x30</addressOffset></register>
-        <register><name>REG13</name><description>Application-defined</description><addressOffset>0x34</addressOffset></register>
-        <register><name>REG14</name><description>Application-defined</description><addressOffset>0x38</addressOffset></register>
-        <register><name>REG15</name><description>Application-defined</description><addressOffset>0x3C</addressOffset></register>
-        <register><name>REG16</name><description>Application-defined</description><addressOffset>0x40</addressOffset></register>
-        <register><name>REG17</name><description>Application-defined</description><addressOffset>0x44</addressOffset></register>
-        <register><name>REG18</name><description>Application-defined</description><addressOffset>0x48</addressOffset></register>
-        <register><name>REG19</name><description>Application-defined</description><addressOffset>0x4C</addressOffset></register>
-        <register><name>REG20</name><description>Application-defined</description><addressOffset>0x50</addressOffset></register>
-        <register><name>REG21</name><description>Application-defined</description><addressOffset>0x54</addressOffset></register>
-        <register><name>REG22</name><description>Application-defined</description><addressOffset>0x58</addressOffset></register>
-        <register><name>REG23</name><description>Application-defined</description><addressOffset>0x5C</addressOffset></register>
-        <register><name>REG24</name><description>Application-defined</description><addressOffset>0x60</addressOffset></register>
-        <register><name>REG25</name><description>Application-defined</description><addressOffset>0x64</addressOffset></register>
-        <register><name>REG26</name><description>Application-defined</description><addressOffset>0x68</addressOffset></register>
-        <register><name>REG27</name><description>Application-defined</description><addressOffset>0x6C</addressOffset></register>
-        <register><name>REG28</name><description>Application-defined</description><addressOffset>0x70</addressOffset></register>
-        <register><name>REG29</name><description>Application-defined</description><addressOffset>0x74</addressOffset></register>
-        <register><name>REG30</name><description>Application-defined</description><addressOffset>0x78</addressOffset></register>
-        <register><name>REG31</name><description>Application-defined</description><addressOffset>0x7C</addressOffset></register>
-        <register><name>REG32</name><description>Application-defined</description><addressOffset>0x80</addressOffset></register>
-        <register><name>REG33</name><description>Application-defined</description><addressOffset>0x84</addressOffset></register>
-        <register><name>REG34</name><description>Application-defined</description><addressOffset>0x88</addressOffset></register>
-        <register><name>REG35</name><description>Application-defined</description><addressOffset>0x8C</addressOffset></register>
-        <register><name>REG36</name><description>Application-defined</description><addressOffset>0x90</addressOffset></register>
-        <register><name>REG37</name><description>Application-defined</description><addressOffset>0x94</addressOffset></register>
-        <register><name>REG38</name><description>Application-defined</description><addressOffset>0x98</addressOffset></register>
-        <register><name>REG39</name><description>Application-defined</description><addressOffset>0x9C</addressOffset></register>
-        <register><name>REG40</name><description>Application-defined</description><addressOffset>0xA0</addressOffset></register>
-        <register><name>REG41</name><description>Application-defined</description><addressOffset>0xA4</addressOffset></register>
-        <register><name>REG42</name><description>Application-defined</description><addressOffset>0xA8</addressOffset></register>
-        <register><name>REG43</name><description>Application-defined</description><addressOffset>0xAC</addressOffset></register>
-        <register><name>REG44</name><description>Application-defined</description><addressOffset>0xB0</addressOffset></register>
-        <register><name>REG45</name><description>Application-defined</description><addressOffset>0xB4</addressOffset></register>
-        <register><name>REG46</name><description>Application-defined</description><addressOffset>0xB8</addressOffset></register>
-        <register><name>REG47</name><description>Application-defined</description><addressOffset>0xBC</addressOffset></register>
-        <register><name>REG48</name><description>Application-defined</description><addressOffset>0xC0</addressOffset></register>
-        <register><name>REG49</name><description>Application-defined</description><addressOffset>0xC4</addressOffset></register>
-        <register><name>REG50</name><description>Application-defined</description><addressOffset>0xC8</addressOffset></register>
-        <register><name>REG51</name><description>Application-defined</description><addressOffset>0xCC</addressOffset></register>
-        <register><name>REG52</name><description>Application-defined</description><addressOffset>0xD0</addressOffset></register>
-        <register><name>REG53</name><description>Application-defined</description><addressOffset>0xD4</addressOffset></register>
-        <register><name>REG54</name><description>Application-defined</description><addressOffset>0xD8</addressOffset></register>
-        <register><name>REG55</name><description>Application-defined</description><addressOffset>0xDC</addressOffset></register>
-        <register><name>REG56</name><description>Application-defined</description><addressOffset>0xE0</addressOffset></register>
-        <register><name>REG57</name><description>Application-defined</description><addressOffset>0xE4</addressOffset></register>
-        <register><name>REG58</name><description>Application-defined</description><addressOffset>0xE8</addressOffset></register>
-        <register><name>REG59</name><description>Application-defined</description><addressOffset>0xEC</addressOffset></register>
-        <register><name>REG60</name><description>Application-defined</description><addressOffset>0xF0</addressOffset></register>
-        <register><name>REG61</name><description>Application-defined</description><addressOffset>0xF4</addressOffset></register>
-        <register><name>REG62</name><description>Application-defined</description><addressOffset>0xF8</addressOffset></register>
-        <register><name>REG63</name><description>Application-defined</description><addressOffset>0xFC</addressOffset></register>
+        <register><name>REG0</name><description>User-defined</description><addressOffset>0x00</addressOffset></register>
+        <register><name>REG1</name><description>User-defined</description><addressOffset>0x04</addressOffset></register>
+        <register><name>REG2</name><description>User-defined</description><addressOffset>0x08</addressOffset></register>
+        <register><name>REG3</name><description>User-defined</description><addressOffset>0x0C</addressOffset></register>
+        <register><name>REG4</name><description>User-defined</description><addressOffset>0x10</addressOffset></register>
+        <register><name>REG5</name><description>User-defined</description><addressOffset>0x14</addressOffset></register>
+        <register><name>REG6</name><description>User-defined</description><addressOffset>0x18</addressOffset></register>
+        <register><name>REG7</name><description>User-defined</description><addressOffset>0x1C</addressOffset></register>
+        <register><name>REG8</name><description>User-defined</description><addressOffset>0x20</addressOffset></register>
+        <register><name>REG9</name><description>User-defined</description><addressOffset>0x24</addressOffset></register>
+        <register><name>REG10</name><description>User-defined</description><addressOffset>0x28</addressOffset></register>
+        <register><name>REG11</name><description>User-defined</description><addressOffset>0x2C</addressOffset></register>
+        <register><name>REG12</name><description>User-defined</description><addressOffset>0x30</addressOffset></register>
+        <register><name>REG13</name><description>User-defined</description><addressOffset>0x34</addressOffset></register>
+        <register><name>REG14</name><description>User-defined</description><addressOffset>0x38</addressOffset></register>
+        <register><name>REG15</name><description>User-defined</description><addressOffset>0x3C</addressOffset></register>
+        <register><name>REG16</name><description>User-defined</description><addressOffset>0x40</addressOffset></register>
+        <register><name>REG17</name><description>User-defined</description><addressOffset>0x44</addressOffset></register>
+        <register><name>REG18</name><description>User-defined</description><addressOffset>0x48</addressOffset></register>
+        <register><name>REG19</name><description>User-defined</description><addressOffset>0x4C</addressOffset></register>
+        <register><name>REG20</name><description>User-defined</description><addressOffset>0x50</addressOffset></register>
+        <register><name>REG21</name><description>User-defined</description><addressOffset>0x54</addressOffset></register>
+        <register><name>REG22</name><description>User-defined</description><addressOffset>0x58</addressOffset></register>
+        <register><name>REG23</name><description>User-defined</description><addressOffset>0x5C</addressOffset></register>
+        <register><name>REG24</name><description>User-defined</description><addressOffset>0x60</addressOffset></register>
+        <register><name>REG25</name><description>User-defined</description><addressOffset>0x64</addressOffset></register>
+        <register><name>REG26</name><description>User-defined</description><addressOffset>0x68</addressOffset></register>
+        <register><name>REG27</name><description>User-defined</description><addressOffset>0x6C</addressOffset></register>
+        <register><name>REG28</name><description>User-defined</description><addressOffset>0x70</addressOffset></register>
+        <register><name>REG29</name><description>User-defined</description><addressOffset>0x74</addressOffset></register>
+        <register><name>REG30</name><description>User-defined</description><addressOffset>0x78</addressOffset></register>
+        <register><name>REG31</name><description>User-defined</description><addressOffset>0x7C</addressOffset></register>
+        <register><name>REG32</name><description>User-defined</description><addressOffset>0x80</addressOffset></register>
+        <register><name>REG33</name><description>User-defined</description><addressOffset>0x84</addressOffset></register>
+        <register><name>REG34</name><description>User-defined</description><addressOffset>0x88</addressOffset></register>
+        <register><name>REG35</name><description>User-defined</description><addressOffset>0x8C</addressOffset></register>
+        <register><name>REG36</name><description>User-defined</description><addressOffset>0x90</addressOffset></register>
+        <register><name>REG37</name><description>User-defined</description><addressOffset>0x94</addressOffset></register>
+        <register><name>REG38</name><description>User-defined</description><addressOffset>0x98</addressOffset></register>
+        <register><name>REG39</name><description>User-defined</description><addressOffset>0x9C</addressOffset></register>
+        <register><name>REG40</name><description>User-defined</description><addressOffset>0xA0</addressOffset></register>
+        <register><name>REG41</name><description>User-defined</description><addressOffset>0xA4</addressOffset></register>
+        <register><name>REG42</name><description>User-defined</description><addressOffset>0xA8</addressOffset></register>
+        <register><name>REG43</name><description>User-defined</description><addressOffset>0xAC</addressOffset></register>
+        <register><name>REG44</name><description>User-defined</description><addressOffset>0xB0</addressOffset></register>
+        <register><name>REG45</name><description>User-defined</description><addressOffset>0xB4</addressOffset></register>
+        <register><name>REG46</name><description>User-defined</description><addressOffset>0xB8</addressOffset></register>
+        <register><name>REG47</name><description>User-defined</description><addressOffset>0xBC</addressOffset></register>
+        <register><name>REG48</name><description>User-defined</description><addressOffset>0xC0</addressOffset></register>
+        <register><name>REG49</name><description>User-defined</description><addressOffset>0xC4</addressOffset></register>
+        <register><name>REG50</name><description>User-defined</description><addressOffset>0xC8</addressOffset></register>
+        <register><name>REG51</name><description>User-defined</description><addressOffset>0xCC</addressOffset></register>
+        <register><name>REG52</name><description>User-defined</description><addressOffset>0xD0</addressOffset></register>
+        <register><name>REG53</name><description>User-defined</description><addressOffset>0xD4</addressOffset></register>
+        <register><name>REG54</name><description>User-defined</description><addressOffset>0xD8</addressOffset></register>
+        <register><name>REG55</name><description>User-defined</description><addressOffset>0xDC</addressOffset></register>
+        <register><name>REG56</name><description>User-defined</description><addressOffset>0xE0</addressOffset></register>
+        <register><name>REG57</name><description>User-defined</description><addressOffset>0xE4</addressOffset></register>
+        <register><name>REG58</name><description>User-defined</description><addressOffset>0xE8</addressOffset></register>
+        <register><name>REG59</name><description>User-defined</description><addressOffset>0xEC</addressOffset></register>
+        <register><name>REG60</name><description>User-defined</description><addressOffset>0xF0</addressOffset></register>
+        <register><name>REG61</name><description>User-defined</description><addressOffset>0xF4</addressOffset></register>
+        <register><name>REG62</name><description>User-defined</description><addressOffset>0xF8</addressOffset></register>
+        <register><name>REG63</name><description>User-defined</description><addressOffset>0xFC</addressOffset></register>
       </registers>
     </peripheral>
 
@@ -1082,6 +1082,21 @@
               <description>Random data</description>
             </field>
             <field>
+              <name>TRNG_CTRL_IRQ_FIFO_NEMPTY</name>
+              <bitRange>[25:25]</bitRange>
+              <description>IRQ if FIFO is not empty</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_IRQ_FIFO_HALF</name>
+              <bitRange>[26:26]</bitRange>
+              <description>IRQ if FIFO is at least half full</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_IRQ_FIFO_FULL</name>
+              <bitRange>[27:27]</bitRange>
+              <description>IRQ if FIFO is full</description>
+            </field>
+            <field>
               <name>TRNG_CTRL_FIFO_CLR</name>
               <bitRange>[28:28]</bitRange>
               <description>Clear data FIFO when set (auto clears)</description>
@@ -1369,7 +1384,8 @@
             <field><name>SYSINFO_SOC_MEM_INT_DMEM</name><bitRange>[3:3]</bitRange><description>Processor-internal data memory implemented</description></field>
             <field><name>SYSINFO_SOC_MEM_EXT_ENDIAN</name><bitRange>[4:4]</bitRange><description>External bus interface uses BIG-endian byte-order</description></field>
             <field><name>SYSINFO_SOC_ICACHE</name><bitRange>[5:5]</bitRange><description>Processor-internal instruction cache implemented</description></field>
-            <field><name>SYSINFO_SOC_IS_SIM</name><bitRange>[13:13]</bitRange><description>Set if processor is being simulated</description></field>
+            <field><name>SYSINFO_SOC_DCACHE</name><bitRange>[6:6]</bitRange><description>Processor-internal data cache implemented</description></field>
+            <field><name>SYSIFNO_reserved</name><bitRange>[13:7]</bitRange><description>Reserved, read as zero</description></field>
             <field><name>SYSINFO_SOC_OCD</name><bitRange>[14:14]</bitRange><description>On-chip debugger implemented</description></field>
             <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[15:15]</bitRange><description>Direct memory access controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[16:16]</bitRange><description>General purpose input/output port unit implemented</description></field>
