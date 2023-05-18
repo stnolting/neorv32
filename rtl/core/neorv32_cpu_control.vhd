@@ -912,7 +912,7 @@ begin
             end if;
 
             -- ALU core operation --
-            case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is -- actual ALU.logic operation (re-coding)
+            case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is -- actual ALU operation (re-coding)
               when funct3_subadd_c => -- ADD(I), SUB
                 if ((execute_engine.ir(instr_opcode_msb_c-1) = '1') and (execute_engine.ir(instr_funct7_msb_c-1) = '1')) then
                   ctrl_nxt.alu_op <= alu_op_sub_c; -- SUB if not an immediate op and funct7.6 set
@@ -1531,7 +1531,7 @@ begin
       trap_ctrl.wakeup    <= '0';
       trap_ctrl.env_start <= '0';
     elsif rising_edge(clk_i) then
-      trap_ctrl.wakeup  <= or_reduce_f(trap_ctrl.irq_buf); -- wakeup from sleep on any pending IRQ (including debug IRQs)
+      trap_ctrl.wakeup <= or_reduce_f(trap_ctrl.irq_buf); -- wakeup from sleep on any (enabled!) pending IRQ (including debug IRQs)
       if (trap_ctrl.env_start = '0') then -- no started trap handler yet
         -- trigger IRQ only in EXECUTE state to continue execution even on permanent IRQ
         if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and (execute_engine.state = EXECUTE)) then

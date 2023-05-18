@@ -77,7 +77,6 @@ void neorv32_gptmr_setup(int prsc, int mode, uint32_t threshold) {
   tmp |= (uint32_t)(1    & 0x01) << GPTMR_CTRL_EN;
   tmp |= (uint32_t)(prsc & 0x07) << GPTMR_CTRL_PRSC0;
   tmp |= (uint32_t)(mode & 0x01) << GPTMR_CTRL_MODE;
-
   NEORV32_GPTMR->CTRL = tmp;
 }
 
