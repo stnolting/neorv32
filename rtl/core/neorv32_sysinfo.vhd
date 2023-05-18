@@ -140,11 +140,9 @@ begin
   sysinfo(2)(05) <= bool_to_ulogic_f(ICACHE_EN);           -- processor-internal instruction cache implemented?
   sysinfo(2)(06) <= bool_to_ulogic_f(DCACHE_EN);           -- processor-internal data cache implemented?
   --
-  sysinfo(2)(12 downto 07) <= (others => '0'); -- reserved
-  -- Misc --
-  sysinfo(2)(13) <= bool_to_ulogic_f(is_simulation_c);     -- is this a simulation?
+  sysinfo(2)(13 downto 07) <= (others => '0'); -- reserved
+  -- Peripherals --
   sysinfo(2)(14) <= bool_to_ulogic_f(ON_CHIP_DEBUGGER_EN); -- on-chip debugger implemented?
-  --
   sysinfo(2)(15) <= bool_to_ulogic_f(IO_DMA_EN);           -- direct memory access controller (DMA) implemented?
   sysinfo(2)(16) <= bool_to_ulogic_f(IO_GPIO_NUM > 0);     -- general purpose input/output port unit (GPIO) implemented?
   sysinfo(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN);         -- machine system timer (MTIME) implemented?
