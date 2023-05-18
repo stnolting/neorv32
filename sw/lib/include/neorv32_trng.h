@@ -60,6 +60,9 @@ enum NEORV32_TRNG_CTRL_enum {
   TRNG_CTRL_DATA_LSB        =  0, /**< TRNG data/control register(0)  (r/-): Random data byte LSB */
   TRNG_CTRL_DATA_MSB        =  7, /**< TRNG data/control register(7)  (r/-): Random data byte MSB */
 
+  TRNG_CTRL_FIFO_LSB        = 16, /**< TRNG data/control register(16) (r/-): log2(FIFO size), LSB */
+  TRNG_CTRL_FIFO_MSB        = 19, /**< TRNG data/control register(19) (r/-): log2(FIFO size), MSB */
+
   TRNG_CTRL_IRQ_FIFO_NEMPTY = 25, /**< TRNG data/control register(25) (r/w): IRQ if FIFO is not empty */
   TRNG_CTRL_IRQ_FIFO_HALF   = 26, /**< TRNG data/control register(26) (r/w): IRQ if FIFO is at least half-full */
   TRNG_CTRL_IRQ_FIFO_FULL   = 27, /**< TRNG data/control register(27) (r/w): IRQ if FIFO is full */
@@ -79,6 +82,7 @@ int  neorv32_trng_available(void);
 void neorv32_trng_enable(uint32_t irq_mask);
 void neorv32_trng_disable(void);
 void neorv32_trng_fifo_clear(void);
+int  neorv32_trng_get_fifo_depth(void);
 int  neorv32_trng_get(uint8_t *data);
 int  neorv32_trng_check_sim_mode(void);
 /**@}*/

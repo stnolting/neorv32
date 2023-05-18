@@ -72,6 +72,11 @@ architecture neorv32_trng_rtl of neorv32_trng is
   constant ctrl_data_lsb_c      : natural :=  0; -- r/-: Random data byte LSB
   constant ctrl_data_msb_c      : natural :=  7; -- r/-: Random data byte MSB
   --
+  constant ctrl_fifo_size0_c    : natural := 16; -- r/-: log2(FIFO size) bit 0
+  constant ctrl_fifo_size1_c    : natural := 17; -- r/-: log2(FIFO size) bit 1
+  constant ctrl_fifo_size2_c    : natural := 18; -- r/-: log2(FIFO size) bit 2
+  constant ctrl_fifo_size3_c    : natural := 19; -- r/-: log2(FIFO size) bit 3
+  --
   constant ctrl_irq_fifo_nempty : natural := 25; -- r/w: IRQ if fifo is not empty
   constant ctrl_irq_fifo_half   : natural := 26; -- r/w: IRQ if fifo is at least half-full
   constant ctrl_irq_fifo_full   : natural := 27; -- r/w: IRQ if fifo is full
@@ -132,9 +137,12 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (IO_TRNG_FIFO < 1) report "NEORV32 PROCESSOR CONFIG ERROR: TRNG FIFO size <IO_TRNG_FIFO> has to be >= 1." severity error;
-  assert not (is_power_of_two_f(IO_TRNG_FIFO) = false) report "NEORV32 PROCESSOR CONFIG ERROR: TRNG FIFO size <IO_TRNG_FIFO> has to be a power of two." severity error;
-  assert not (sim_mode_c = true) report "NEORV32 PROCESSOR CONFIG WARNING: TRNG uses SIMULATION mode!" severity warning;
+  assert not (IO_TRNG_FIFO < 1) report
+    "NEORV32 PROCESSOR CONFIG ERROR: TRNG FIFO size <IO_TRNG_FIFO> has to be >= 1." severity error;
+  assert not (is_power_of_two_f(IO_TRNG_FIFO) = false) report
+    "NEORV32 PROCESSOR CONFIG ERROR: TRNG FIFO size <IO_TRNG_FIFO> has to be a power of two." severity error;
+  assert not (sim_mode_c = true) report
+    "NEORV32 PROCESSOR CONFIG WARNING: TRNG uses SIMULATION mode!" severity warning;
 
 
   -- Write Access ---------------------------------------------------------------------------
@@ -174,6 +182,8 @@ begin
       bus_rsp_o.data <= (others => '0');
       if (rden = '1') then
         bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
+        --
+        bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_TRNG_FIFO), 4));
         --
         bus_rsp_o.data(ctrl_irq_fifo_nempty) <= irq_fifo_nempty;
         bus_rsp_o.data(ctrl_irq_fifo_half)   <= irq_fifo_half;

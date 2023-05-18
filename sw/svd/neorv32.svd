@@ -1082,6 +1082,12 @@
               <description>Random data</description>
             </field>
             <field>
+              <name>TRNG_CTRL_FIFO</name>
+              <bitRange>[19:16]</bitRange>
+              <access>read-only</access>
+              <description>Log2(FIFO size)</description>
+            </field>
+            <field>
               <name>TRNG_CTRL_IRQ_FIFO_NEMPTY</name>
               <bitRange>[25:25]</bitRange>
               <description>IRQ if FIFO is not empty</description>

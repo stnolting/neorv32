@@ -87,7 +87,7 @@ int main(void) {
 
   // check if TRNG unit is implemented at all
   if (neorv32_trng_available() == 0) {
-    neorv32_uart0_printf("No TRNG implemented.\n");
+    neorv32_uart0_printf("ERROR: no TRNG implemented!\n");
     return 1;
   }
 
@@ -98,6 +98,8 @@ int main(void) {
   }
 
   // enable TRNG
+  neorv32_uart0_printf("\nTRNG FIFO depth: %i\n", neorv32_trng_get_fifo_depth());
+  neorv32_uart0_printf("Starting TRNG...\n");
   neorv32_trng_enable(0); // no interrupts
   neorv32_cpu_delay_ms(100); // TRNG "warm up"
 
