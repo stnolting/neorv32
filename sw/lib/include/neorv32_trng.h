@@ -57,13 +57,16 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** TRNG control/data register bits */
 enum NEORV32_TRNG_CTRL_enum {
-  TRNG_CTRL_DATA_LSB =  0, /**< TRNG data/control register(0)  (r/-): Random data byte LSB */
-  TRNG_CTRL_DATA_MSB =  7, /**< TRNG data/control register(7)  (r/-): Random data byte MSB */
+  TRNG_CTRL_DATA_LSB        =  0, /**< TRNG data/control register(0)  (r/-): Random data byte LSB */
+  TRNG_CTRL_DATA_MSB        =  7, /**< TRNG data/control register(7)  (r/-): Random data byte MSB */
 
-  TRNG_CTRL_FIFO_CLR = 28, /**< TRNG data/control register(28) (-/w): Clear data FIFO (auto clears) */
-  TRNG_CTRL_SIM_MODE = 29, /**< TRNG data/control register(29) (r/-): PRNG mode (simulation mode) */
-  TRNG_CTRL_EN       = 30, /**< TRNG data/control register(30) (r/w): TRNG enable */
-  TRNG_CTRL_VALID    = 31  /**< TRNG data/control register(31) (r/-): Random data output valid */
+  TRNG_CTRL_IRQ_FIFO_NEMPTY = 25, /**< TRNG data/control register(25) (r/w): IRQ if FIFO is not empty */
+  TRNG_CTRL_IRQ_FIFO_HALF   = 26, /**< TRNG data/control register(26) (r/w): IRQ if FIFO is at least half-full */
+  TRNG_CTRL_IRQ_FIFO_FULL   = 27, /**< TRNG data/control register(27) (r/w): IRQ if FIFO is full */
+  TRNG_CTRL_FIFO_CLR        = 28, /**< TRNG data/control register(28) (-/w): Clear data FIFO (auto clears) */
+  TRNG_CTRL_SIM_MODE        = 29, /**< TRNG data/control register(29) (r/-): PRNG mode (simulation mode) */
+  TRNG_CTRL_EN              = 30, /**< TRNG data/control register(30) (r/w): TRNG enable */
+  TRNG_CTRL_VALID           = 31  /**< TRNG data/control register(31) (r/-): Random data output valid */
 };
 /**@}*/
 
@@ -73,7 +76,7 @@ enum NEORV32_TRNG_CTRL_enum {
  **************************************************************************/
 /**@{*/
 int  neorv32_trng_available(void);
-void neorv32_trng_enable(void);
+void neorv32_trng_enable(uint32_t irq_mask);
 void neorv32_trng_disable(void);
 void neorv32_trng_fifo_clear(void);
 int  neorv32_trng_get(uint8_t *data);

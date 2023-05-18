@@ -51,7 +51,8 @@ entity neorv32_trng is
     clk_i     : in  std_ulogic; -- global clock line
     rstn_i    : in  std_ulogic; -- global reset line, low-active, async
     bus_req_i : in  bus_req_t;  -- bus request
-    bus_rsp_o : out bus_rsp_t   -- bus response
+    bus_rsp_o : out bus_rsp_t;  -- bus response
+    irq_o     : out std_ulogic  -- CPU interrupt
   );
 end neorv32_trng;
 
@@ -68,13 +69,16 @@ architecture neorv32_trng_rtl of neorv32_trng is
   constant sim_mode_c : boolean := is_simulation_c;
 
   -- control register bits --
-  constant ctrl_data_lsb_c : natural :=  0; -- r/-: Random data byte LSB
-  constant ctrl_data_msb_c : natural :=  7; -- r/-: Random data byte MSB
+  constant ctrl_data_lsb_c      : natural :=  0; -- r/-: Random data byte LSB
+  constant ctrl_data_msb_c      : natural :=  7; -- r/-: Random data byte MSB
   --
-  constant ctrl_fifo_clr_c : natural := 28; -- -/w: Clear data FIFO (auto clears)
-  constant ctrl_sim_mode_c : natural := 29; -- r/-: TRNG implemented in PRNG simulation mode
-  constant ctrl_en_c       : natural := 30; -- r/w: TRNG enable
-  constant ctrl_valid_c    : natural := 31; -- r/-: Output data valid
+  constant ctrl_irq_fifo_nempty : natural := 25; -- r/w: IRQ if fifo is not empty
+  constant ctrl_irq_fifo_half   : natural := 26; -- r/w: IRQ if fifo is at least half-full
+  constant ctrl_irq_fifo_full   : natural := 27; -- r/w: IRQ if fifo is full
+  constant ctrl_fifo_clr_c      : natural := 28; -- -/w: Clear data FIFO (auto clears)
+  constant ctrl_sim_mode_c      : natural := 29; -- r/-: TRNG implemented in PRNG simulation mode
+  constant ctrl_en_c            : natural := 30; -- r/w: TRNG enable
+  constant ctrl_valid_c         : natural := 31; -- r/-: Output data valid
 
   -- IO space: module base address --
   constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
@@ -104,9 +108,12 @@ architecture neorv32_trng_rtl of neorv32_trng is
     );
   end component;
 
-  -- arbiter --
-  signal enable   : std_ulogic;
-  signal fifo_clr : std_ulogic;
+  -- control --
+  signal enable          : std_ulogic;
+  signal fifo_clr        : std_ulogic;
+  signal irq_fifo_nempty : std_ulogic;
+  signal irq_fifo_half   : std_ulogic;
+  signal irq_fifo_full   : std_ulogic;
 
   -- data FIFO --
   type fifo_t is record
@@ -116,6 +123,8 @@ architecture neorv32_trng_rtl of neorv32_trng is
     wdata : std_ulogic_vector(7 downto 0); -- write data
     rdata : std_ulogic_vector(7 downto 0); -- read data
     avail : std_ulogic; -- data available?
+    half  : std_ulogic; -- at least half full?
+    free  : std_ulogic; -- space left?
   end record;
   signal fifo : fifo_t;
 
@@ -140,13 +149,19 @@ begin
   write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      enable   <= '0';
-      fifo_clr <= '0';
+      enable          <= '0';
+      fifo_clr        <= '0';
+      irq_fifo_nempty <= '0';
+      irq_fifo_half   <= '0';
+      irq_fifo_full   <= '0';
     elsif rising_edge(clk_i) then
-      fifo_clr <= '0'; -- default
+      fifo_clr <= '0'; -- auto-clear
       if (wren = '1') then
-        enable   <= bus_req_i.data(ctrl_en_c);
-        fifo_clr <= bus_req_i.data(ctrl_fifo_clr_c);
+        enable          <= bus_req_i.data(ctrl_en_c);
+        fifo_clr        <= bus_req_i.data(ctrl_fifo_clr_c);
+        irq_fifo_nempty <= bus_req_i.data(ctrl_irq_fifo_nempty);
+        irq_fifo_half   <= bus_req_i.data(ctrl_irq_fifo_half);
+        irq_fifo_full   <= bus_req_i.data(ctrl_irq_fifo_full);
       end if;
     end if;
   end process write_access;
@@ -158,12 +173,14 @@ begin
       bus_rsp_o.ack  <= wren or rden; -- host bus acknowledge
       bus_rsp_o.data <= (others => '0');
       if (rden = '1') then
-        if (fifo.avail = '1') then -- make sure data byte is zero if no valid data available to prevent it is read twice
-          bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
-        end if;
-        bus_rsp_o.data(ctrl_sim_mode_c) <= bool_to_ulogic_f(sim_mode_c);
-        bus_rsp_o.data(ctrl_en_c)       <= enable;
-        bus_rsp_o.data(ctrl_valid_c)    <= fifo.avail;
+        bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
+        --
+        bus_rsp_o.data(ctrl_irq_fifo_nempty) <= irq_fifo_nempty;
+        bus_rsp_o.data(ctrl_irq_fifo_half)   <= irq_fifo_half;
+        bus_rsp_o.data(ctrl_irq_fifo_full)   <= irq_fifo_full;
+        bus_rsp_o.data(ctrl_sim_mode_c)      <= bool_to_ulogic_f(sim_mode_c);
+        bus_rsp_o.data(ctrl_en_c)            <= enable;
+        bus_rsp_o.data(ctrl_valid_c)         <= fifo.avail;
       end if;
     end if;
   end process read_access;
@@ -206,11 +223,11 @@ begin
     clk_i   => clk_i,      -- clock, rising edge
     rstn_i  => rstn_i,     -- async reset, low-active
     clear_i => fifo.clear, -- sync reset, high-active
-    half_o  => open,
+    half_o  => fifo.half,  -- at least half full
     -- write port --
     wdata_i => fifo.wdata, -- write data
     we_i    => fifo.we,    -- write enable
-    free_o  => open,       -- at least one entry is free when set
+    free_o  => fifo.free,  -- at least one entry is free when set
     -- read port --
     re_i    => fifo.re,    -- read enable
     rdata_o => fifo.rdata, -- read data
@@ -219,6 +236,17 @@ begin
 
   fifo.clear <= '1' when (enable = '0') or (fifo_clr = '1') else '0';
   fifo.re    <= '1' when (rden = '1') else '0';
+
+  -- FIFO-level interrupt generator --
+ irq_generator: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      irq_o <= enable and (
+               (irq_fifo_nempty and fifo.avail) or     -- IRQ if FIFO not empty
+               (irq_fifo_half   and fifo.half)  or     -- IRQ if FIFO at least half full
+               (irq_fifo_full   and (not fifo.free))); -- IRQ if FIFO full
+    end if;
+  end process irq_generator;
 
 
 end neorv32_trng_rtl;

@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080408"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080409"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -1109,14 +1109,14 @@ package neorv32_package is
       IO_UART1_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
       IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
       IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
-      IO_SPI_FIFO                  : natural := 1;      -- SPI RTX fifo depth, has to be a power of two, min 1
+      IO_SPI_FIFO                  : natural := 1;      -- RTX fifo depth, has to be a power of two, min 1
       IO_SDI_EN                    : boolean := false;  -- implement serial data interface (SDI)?
-      IO_SDI_FIFO                  : natural := 0;      -- SDI RTX fifo depth, has to be zero or a power of two
+      IO_SDI_FIFO                  : natural := 0;      -- RTX fifo depth, has to be zero or a power of two
       IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
       IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..12); 0 = disabled
       IO_WDT_EN                    : boolean := false;  -- implement watch dog timer (WDT)?
       IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
-      IO_TRNG_FIFO                 : natural := 1;      -- TRNG fifo depth, has to be a power of two, min 1
+      IO_TRNG_FIFO                 : natural := 1;      -- data fifo depth, has to be a power of two, min 1
       IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
       IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
       IO_CFS_IN_SIZE               : natural := 32;     -- size of CFS input conduit in bits
@@ -1838,7 +1838,8 @@ package neorv32_package is
       clk_i     : in  std_ulogic; -- global clock line
       rstn_i    : in  std_ulogic; -- global reset line, low-active, async
       bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t   -- bus response
+      bus_rsp_o : out bus_rsp_t;  -- bus response
+      irq_o     : out std_ulogic  -- CPU interrupt
     );
   end component;
 

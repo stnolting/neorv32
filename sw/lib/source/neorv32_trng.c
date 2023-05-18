@@ -61,29 +61,36 @@ int neorv32_trng_available(void) {
 
 
 /**********************************************************************//**
- * Reset and enable TRNG.
- * @note This will take a while.
+ * Reset, configure and enable TRNG.
+ *
+ * @param[in] irq_mask Interrupt configuration mask (CTRL's irq_* bits).
  **************************************************************************/
-void neorv32_trng_enable(void) {
+void neorv32_trng_enable(uint32_t irq_mask) {
 
   int i;
 
   NEORV32_TRNG->CTRL = 0; // reset
 
   // wait for all internal components to reset
-  for (i=0; i<512; i++) {
+  for (i=0; i<256; i++) {
     asm volatile ("nop");
   }
 
   NEORV32_TRNG->CTRL = 1 << TRNG_CTRL_EN; // activate
 
   // "warm-up"
-  for (i=0; i<512; i++) {
+  for (i=0; i<256; i++) {
     asm volatile ("nop");
   }
 
   // flush random data "pool"
   neorv32_trng_fifo_clear();
+
+  // set interrupt mask
+  const uint32_t tmp = (1 << TRNG_CTRL_IRQ_FIFO_NEMPTY) |
+                       (1 << TRNG_CTRL_IRQ_FIFO_HALF) |
+                       (1 << TRNG_CTRL_IRQ_FIFO_FULL);
+  NEORV32_TRNG->CTRL |= irq_mask & tmp;
 }
 
 

@@ -11,7 +11,7 @@
 | Top entity port:         | none | 
 | Configuration generics:  | `IO_TRNG_EN`   | implement TRNG when `true`
 |                          | `IO_TRNG_FIFO` | data FIFO depth, min 1, has to be a power of two
-| CPU interrupts:          | none | 
+| CPU interrupts:          | fast IRQ channel 15 | TRNG FIFO level interrupt (see <<_processor_interrupts>>)
 |=======================
 
 
@@ -48,13 +48,20 @@ valid data available and the lowest 8 bit of the `CTRL` register are set to all-
 
 An internal entropy FIFO can be configured using the `IO_TRNG_FIFO` generic. This FIFO automatically samples
 new random data from the TRNG to provide some kind of _random data pool_ for applications, which require a large number
-of RND data in a short time. The random data FIFO can be cleared at any time either by disabling the TRNG or by
+of random data in a short time. The random data FIFO can be cleared at any time either by disabling the TRNG or by
 setting the `TRNG_CTRL_FIFO_CLR` flag.
 
-.Data Gating
-[NOTE]
-The TRNG data bits `TRNG_CTRL_DATA_MSB : TRNG_CTRL_DATA_MSB` are set to zero if `TRNG_CTRL_VALID` is low.
-This prevents a random byte being read twice.
+
+**TRNG Interrupt**
+
+The TRNG provides a single interrupt channel that can be programmed to trigger on certain FIFO fill-level conditions.
+This feature can be used to inform the CPU that a dertain amount of entropy is available for further processing. Using
+the control register's `TRNG_CTRL_IRQ_*` bits the IRQ can be configured to trigger if the data FIFO is empty
+(TRNG_CTRL_IRQ_FIFO_NEMPTY`), if the data FIFO is at least half full (`TRNG_CTRL_IRQ_FIFO_HALF`) or if the data FIFO is
+entirely full (`TRNG_CTRL_IRQ_FIFO_NEMPTY`). Note that all enabled interrupt conditions are logically OR-ed.
+
+Once the TRNG interrupt has fired it remains pending until the actual cause of the interrupt is resolved. Furthermore,
+an active TRNG interrupt has to be explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 
 
 **Register Map**
@@ -64,9 +71,13 @@ This prevents a random byte being read twice.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.5+<| `0xffffffb8` .5+<| `CTRL` <|`7:0` `TRNG_CTRL_DATA_MSB : TRNG_CTRL_DATA_MSB` ^| r/- <| 8-bit random data
-                                <|`28`  `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set (auto-clears)
-                                <|`29`  `TRNG_CTRL_SIM_MODE`                      ^| r/- <| simulation mode (PRNG!)
-                                <|`30`  `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
-                                <|`31`  `TRNG_CTRL_VALID`                         ^| r/- <| random data is valid when set
+.9+<| `0xffffffb8` .9+<| `CTRL` <|`7:0`  `TRNG_CTRL_DATA_MSB : TRNG_CTRL_DATA_MSB` ^| r/- <| 8-bit random data
+                                <|`25:8` -                                         ^| r/- <| reserved, read as zero
+                                <|`26`   `TRNG_CTRL_IRQ_FIFO_NEMPTY`               ^| r/w <| IRQ if data FIFO is not empty
+                                <|`26`   `TRNG_CTRL_IRQ_FIFO_HALF`                 ^| r/w <| IRQ if data FIFO is at least half full
+                                <|`27`   `TRNG_CTRL_IRQ_FIFO_FULL`                 ^| r/w <| IRQ if data FIFO is full
+                                <|`28`   `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set; auto-clears
+                                <|`29`   `TRNG_CTRL_SIM_MODE`                      ^| r/- <| simulation mode (PRNG!)
+                                <|`30`   `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
+                                <|`31`   `TRNG_CTRL_VALID`                         ^| r/- <| random data is valid when set
 |=======================

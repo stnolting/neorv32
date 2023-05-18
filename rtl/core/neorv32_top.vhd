@@ -125,14 +125,14 @@ entity neorv32_top is
     IO_UART1_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
     IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    : boolean := false;  -- implement serial peripheral interface (SPI)?
-    IO_SPI_FIFO                  : natural := 1;      -- SPI RTX fifo depth, has to be a power of two, min 1
+    IO_SPI_FIFO                  : natural := 1;      -- RTX fifo depth, has to be a power of two, min 1
     IO_SDI_EN                    : boolean := false;  -- implement serial data interface (SDI)?
-    IO_SDI_FIFO                  : natural := 0;      -- SDI RTX fifo depth, has to be zero or a power of two
+    IO_SDI_FIFO                  : natural := 0;      -- RTX fifo depth, has to be zero or a power of two
     IO_TWI_EN                    : boolean := false;  -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    : boolean := false;  -- implement watch dog timer (WDT)?
     IO_TRNG_EN                   : boolean := false;  -- implement true random number generator (TRNG)?
-    IO_TRNG_FIFO                 : natural := 1;      -- TRNG fifo depth, has to be a power of two, min 1
+    IO_TRNG_FIFO                 : natural := 1;      -- data fifo depth, has to be a power of two, min 1
     IO_CFS_EN                    : boolean := false;  -- implement custom functions subsystem (CFS)?
     IO_CFS_CONFIG                : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
     IO_CFS_IN_SIZE               : natural := 32;     -- size of CFS input conduit in bits
@@ -330,6 +330,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal gptmr_irq    : std_ulogic;
   signal onewire_irq  : std_ulogic;
   signal dma_irq      : std_ulogic;
+  signal trng_irq     : std_ulogic;
 
   -- misc --
   signal io_acc      : std_ulogic;
@@ -550,7 +551,7 @@ begin
   fast_irq(12) <= gptmr_irq;
   fast_irq(13) <= onewire_irq;
   fast_irq(14) <= '0';
-  fast_irq(15) <= '0'; -- lowest priority
+  fast_irq(15) <= trng_irq; -- lowest priority
 
 
   -- CPU Instruction Cache ------------------------------------------------------------------
@@ -1215,13 +1216,15 @@ begin
       clk_i     => clk_i,
       rstn_i    => rstn_int,
       bus_req_i => io_req,
-      bus_rsp_o => rsp_bus(DEV_TRNG)
+      bus_rsp_o => rsp_bus(DEV_TRNG),
+      irq_o     => trng_irq
     );
   end generate;
 
   neorv32_trng_inst_false:
   if (IO_TRNG_EN = false) generate
     rsp_bus(DEV_TRNG) <= rsp_terminate_c;
+    trng_irq          <= '0';
   end generate;
 
 
