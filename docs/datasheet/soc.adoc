@@ -428,7 +428,7 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
 | 13      | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire operation done interrupt
 | 14      | - | _reserved_
-| 15      | - | _reserved_
+| 15      | <<_true_random_number_generator_trng,TRNG>> | TRNG FIFO level interrupt
 |=======================
 
 .Trigger Type

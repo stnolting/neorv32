@@ -556,7 +556,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] I_ACC (instr. bus access) EXC ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1<<SYSINFO_SOC_IS_SIM)) {
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
     cnt_test++;
 
     // put "ret" instruction to the beginning of the external memory module
@@ -647,7 +647,7 @@ int main() {
   PRINT_STANDARD("[%i] BREAK EXC ", cnt_test);
 
   // skip on real hardware since ebreak will make problems when running this test program via gdb
-  if (NEORV32_SYSINFO->SOC & (1<<SYSINFO_SOC_IS_SIM)) {
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
     cnt_test++;
 
     asm volatile ("ebreak");
@@ -848,7 +848,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] MSI (sim) IRQ ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IS_SIM)) {
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
     cnt_test++;
 
     // enable interrupt
@@ -882,7 +882,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] MEI (sim) IRQ ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IS_SIM)) {
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
     cnt_test++;
 
     // enable interrupt
@@ -1225,9 +1225,6 @@ int main() {
     else {
       test_fail();
     }
-
-    // disable SPI
-    neorv32_spi_disable();
   }
   else {
     PRINT_STANDARD("[skipped, n.a.]\n");
@@ -1264,9 +1261,6 @@ int main() {
     else {
       test_fail();
     }
-
-    // disable TWI
-    neorv32_twi_disable();
   }
   else {
     PRINT_STANDARD("[skipped, n.a.]\n");
@@ -1346,9 +1340,6 @@ int main() {
     else {
       test_fail();
     }
-
-    // no more NEOLED interrupts
-    neorv32_neoled_disable();
   }
   else {
     PRINT_STANDARD("[skipped, n.a.]\n");
@@ -1444,10 +1435,6 @@ int main() {
     else {
       test_fail();
     }
-
-    // disable SDI + SPI
-    neorv32_sdi_disable();
-    neorv32_spi_disable();
   }
   else {
     PRINT_STANDARD("[skipped, n.a.]\n");
@@ -1482,9 +1469,6 @@ int main() {
     else {
       test_fail();
     }
-
-    // disable GPTMR
-    neorv32_gptmr_disable();
   }
   else {
     PRINT_STANDARD("[skipped, n.a.]\n");
@@ -1522,9 +1506,6 @@ int main() {
     else {
       test_fail();
     }
-
-    // disable ONEWIRE
-    neorv32_onewire_disable();
   }
   else {
     PRINT_STANDARD("[skipped, n.a.]\n");
@@ -1534,8 +1515,41 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 14..15 (reserved)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ14..15 ", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ14 ", cnt_test);
   PRINT_STANDARD("[skipped, n.a.]\n");
+
+
+  // ----------------------------------------------------------
+  // Fast interrupt channel 15 (TRNG)
+  // ----------------------------------------------------------
+  PRINT_STANDARD("[%i] FIRQ15 (TRNG) ", cnt_test);
+
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
+    cnt_test++;
+
+    // enable TRNG FIRQ
+    neorv32_cpu_irq_enable(TRNG_FIRQ_ENABLE);
+
+    // configure interface for minimal timing
+    NEORV32_TRNG->CTRL = (1 << TRNG_CTRL_EN) |
+                         (1 << TRNG_CTRL_IRQ_FIFO_FULL); // IRQ if FIFO is full
+
+    // wait for interrupt
+    asm volatile ("wfi");
+
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    // check if IRQ
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRNG_TRAP_CODE) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[skipped, n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------

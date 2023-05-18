@@ -127,7 +127,7 @@ int main(void) {
     // check if TRNG was synthesized
     if (neorv32_trng_available()) {
       neorv32_uart0_printf("\nTRNG detected. Using TRNG for universe initialization.\n");
-      neorv32_trng_enable();
+      neorv32_trng_enable(0);
       trng_available = 1;
     }
 
@@ -226,7 +226,7 @@ void print_universe(int u){
 
   for (y=0; y<NUM_CELLS_Y; y++) {
     neorv32_uart0_putc('|');
-   
+
     for (x=0; x<NUM_CELLS_X; x++) {
       if (get_cell(u, x, y))
         neorv32_uart0_putc((char)CELL_ALIVE);

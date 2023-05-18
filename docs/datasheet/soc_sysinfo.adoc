@@ -59,8 +59,7 @@ will signal a "DEVICE ERROR" in this case.
 | `4`    | `SYSINFO_SOC_MEM_EXT_ENDIAN` | set if external bus interface uses BIG-endian byte-order (via top's `MEM_EXT_BIG_ENDIAN` generic)
 | `5`    | `SYSINFO_SOC_ICACHE`         | set if processor-internal instruction cache is implemented (via top's `ICACHE_EN` generic)
 | `6`    | `SYSINFO_SOC_DCACHE`         | set if processor-internal data cache is implemented (via top's `DCACHE_EN` generic)
-| `12:7` | -                            | _reserved_, read as zero
-| `13`   | `SYSINFO_SOC_IS_SIM`         | set if processor is being **simulated** (⚠️ not guaranteed)
+| `13:7` | -                            | _reserved_, read as zero
 | `14`   | `SYSINFO_SOC_OCD`            | set if on-chip debugger is implemented (via top's `ON_CHIP_DEBUGGER_EN` generic)
 | `15`   | `SYSINFO_SOC_IO_DMA`         | set if direct memory access controller is implemented (via top's `IO_DMA_EN` generic)
 | `16`   | `SYSINFO_SOC_IO_GPIO`        | set if the GPIO is implemented (via top's `IO_GPIO_EN` generic)

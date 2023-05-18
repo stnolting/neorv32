@@ -173,6 +173,14 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define ONEWIRE_RTE_ID         RTE_TRAP_FIRQ_13  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
 #define ONEWIRE_TRAP_CODE      TRAP_CODE_FIRQ_13 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
+
+/** @name True-Random Number Generator (TRNG) */
+/**@{*/
+#define TRNG_FIRQ_ENABLE       CSR_MIE_FIRQ15E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
+#define TRNG_FIRQ_PENDING      CSR_MIP_FIRQ15P   /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
+#define TRNG_RTE_ID            RTE_TRAP_FIRQ_15  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
+#define TRNG_TRAP_CODE         TRAP_CODE_FIRQ_15 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+/**@}*/
 /**@}*/
 
 
