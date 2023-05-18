@@ -113,6 +113,18 @@ void neorv32_trng_fifo_clear(void) {
 
 
 /**********************************************************************//**
+ * Get TRNG FIFO depth.
+ *
+ * @return TRNG FIFO size (number of entries).
+ **************************************************************************/
+int neorv32_trng_get_fifo_depth(void) {
+
+  uint32_t tmp = (NEORV32_TRNG->CTRL >> TRNG_CTRL_FIFO_LSB) & 0x0f;
+  return (int)(1 << tmp);
+}
+
+
+/**********************************************************************//**
  * Get random data byte from TRNG.
  *
  * @param[in,out] data uint8_t pointer for storing random data byte. Will be set to zero if no valid data available.
