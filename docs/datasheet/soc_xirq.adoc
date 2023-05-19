@@ -43,7 +43,7 @@ synthesis using the `XIRQ_TRIGGER_TYPE` and `XIRQ_TRIGGER_POLARITY` generics (se
 
 The interrupt controller features three interface registers: external interrupt channel enable (`EIE`), external interrupt
 channel pending (`EIP`) and external interrupt source (`ESC`). From a functional point of view, the functionality of these
-registers follow the one of the RISC-V <<_mie>>, <<_mip>> and <<_macuse>> CSRs.
+registers follow the one of the RISC-V <<_mie>>, <<_mip>> and <<_mcause>> CSRs.
 
 If the configured trigger of an interrupt channel fires (e.g. a rising edge) the according interrupt channel becomes _pending_,
 which is indicated by the according channel bit being set in the `EIP` register. This pending interrupt can be cleared at any time

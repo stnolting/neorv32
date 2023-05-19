@@ -326,7 +326,7 @@ begin
 
   -- bus output --
   dma_req_o.priv <= priv_mode_m_c;
-  dma_req_o.src  <= '0'; -- source =  data access
+  dma_req_o.src  <= '0'; -- source = data access
   dma_req_o.addr <= engine.src_addr when (engine.state = S_READ) else engine.dst_addr;
 
   -- address increment --

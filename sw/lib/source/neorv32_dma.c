@@ -102,7 +102,7 @@ void neorv32_dma_transfer(uint32_t base_src, uint32_t base_dst, uint32_t num, ui
  * @param[in] base_dst Destination base address (has to be aligned to destination data type!).
  * @param[in] num Number of elements to transfer (24-bit).
  * @param[in] config Transfer type configuration/commands.
- * @param[in] firq_mask  FIRQ trigger mask (#NEORV32_CSR_MIP_enum).
+ * @param[in] firq_mask FIRQ trigger mask (#NEORV32_CSR_MIP_enum).
  **************************************************************************/
 void neorv32_dma_transfer_auto(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config, uint32_t firq_mask) {
 
