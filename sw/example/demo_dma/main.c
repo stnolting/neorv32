@@ -90,6 +90,9 @@ int main() {
   neorv32_uart0_printf("Source test data:      %u bytes @ 0x%x\n", (uint32_t)(sizeof(dma_src)), (uint32_t)(&dma_src[0]));
   neorv32_uart0_printf("Destination test data: %u bytes @ 0x%x\n", (uint32_t)(sizeof(dma_src)), (uint32_t)(&dma_dst[0]));
 
+  // install DMA interrupt handler
+  neorv32_rte_handler_install(DMA_RTE_ID, dma_firq_handler);
+
   // enable DMA
   neorv32_dma_enable();
 
@@ -110,7 +113,7 @@ int main() {
   // ----------------------------------------------------------
   // example 1
   // ----------------------------------------------------------
-  neorv32_uart0_printf("\nExample 1: Byte-to-byte block transfer with Endianness conversion using busy wait\n");
+  neorv32_uart0_printf("\nExample 1: Manual byte-to-byte block transfer with Endianness conversion using busy wait.\n");
 
   // configure transfer type
   cmd = DMA_CMD_B2B     | // read source in byte quantities, write destination in byte quantities
@@ -118,20 +121,21 @@ int main() {
         DMA_CMD_DST_INC | // auto-increment destination address
         DMA_CMD_ENDIAN;   // change Endianness
 
-  // trigger DMA transfer
+  // trigger manual DMA transfer
   neorv32_dma_transfer((uint32_t)(&dma_src[0]), // source array base address - byte-aligned!
                        (uint32_t)(&dma_dst[0]), // destination array base address - byte-aligned!
                        16,                      // number of elements to transfer: 16
                        cmd);                    // transfer type configuration
 
   // wait for transfer to complete using polling
+  neorv32_uart0_printf("Waiting for DMA... ");
   while (1) {
     rc = neorv32_dma_status();
     if (rc == DMA_STATUS_IDLE) {
       neorv32_uart0_printf("Transfer done.\n");
       break;
     }
-    if ((rc == DMA_STATUS_ERR_RD) || (rc == DMA_STATUS_ERR_WR)) {
+    else if ((rc == DMA_STATUS_ERR_RD) || (rc == DMA_STATUS_ERR_WR)) {
       neorv32_uart0_printf("Transfer failed!\n");
       break;
     }
@@ -143,27 +147,28 @@ int main() {
   // ----------------------------------------------------------
   // example 2
   // ----------------------------------------------------------
-  neorv32_uart0_printf("\nExample 2: Word-to-word one-to-many transfer using busy wait\n");
+  neorv32_uart0_printf("\nExample 2: Manual word-to-word one-to-many transfer using busy wait.\n");
 
   // configure transfer type
   cmd = DMA_CMD_W2W       | // read source in word quantities, write destination in word quantities
         DMA_CMD_SRC_CONST | // constant source address
         DMA_CMD_DST_INC;    // auto-increment destination address
 
-  // trigger DMA transfer
+  // trigger manual DMA transfer
   neorv32_dma_transfer((uint32_t)(&dma_src[0]), // source array base address - word-aligned!
                        (uint32_t)(&dma_dst[0]), // destination array base address - word-aligned!
                        4,                       // number of elements to transfer: 4
                        cmd);                    // transfer type configuration
 
   // wait for transfer to complete using polling
+  neorv32_uart0_printf("Waiting for DMA... ");
   while (1) {
     rc = neorv32_dma_status();
     if (rc == DMA_STATUS_IDLE) {
       neorv32_uart0_printf("Transfer done.\n");
       break;
     }
-    if ((rc == DMA_STATUS_ERR_RD) || (rc == DMA_STATUS_ERR_WR)) {
+    else if ((rc == DMA_STATUS_ERR_RD) || (rc == DMA_STATUS_ERR_WR)) {
       neorv32_uart0_printf("Transfer failed!\n");
       break;
     }
@@ -175,11 +180,11 @@ int main() {
   // ----------------------------------------------------------
   // example 3
   // ----------------------------------------------------------
-  neorv32_uart0_printf("\nExample 3: Byte-to-signed-word block transfer using transfer-done interrupt\n");
+  neorv32_uart0_printf("\nExample 3: Manual byte-to-signed-word block transfer using transfer-done interrupt.\n");
 
   // configure DMA interrupt
-  neorv32_rte_handler_install(DMA_RTE_ID, dma_firq_handler); // install DMA interrupt handler
-  neorv32_cpu_irq_enable(DMA_FIRQ_ENABLE); // enable DMA interrupt source
+  neorv32_cpu_csr_clr(CSR_MIP, 1 << DMA_FIRQ_PENDING); // clear any pending DMA FIRQ
+  neorv32_cpu_csr_set(CSR_MIE, 1 << DMA_FIRQ_ENABLE); // enable DMA interrupt source
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 
   // configure transfer type
@@ -187,7 +192,7 @@ int main() {
         DMA_CMD_SRC_INC | // auto-increment source address
         DMA_CMD_DST_INC;  // auto-increment destination address
 
-  // trigger DMA transfer
+  // trigger manual DMA transfer
   neorv32_dma_transfer((uint32_t)(&dma_src[0]), // source array base address - byte-aligned!
                        (uint32_t)(&dma_dst[0]), // destination array base address - word-aligned!
                        4,                       // number of elements to transfer: 4
@@ -203,6 +208,51 @@ int main() {
   }
 
   show_arrays();
+
+
+  // ----------------------------------------------------------
+  // example 4
+  // ----------------------------------------------------------
+  neorv32_uart0_printf("\nExample 4: Automatic byte-to-byte one-to-many transfer using transfer-done interrupt.\n");
+  neorv32_uart0_printf(  "           The GPTMR FIRQ channel is used to trigger the DMA.\n");
+  if (neorv32_gptmr_available()) { // only execute if GPTMR is available
+
+    // configure DMA interrupt
+    neorv32_cpu_csr_clr(CSR_MIP, 1 << DMA_FIRQ_PENDING); // clear any pending DMA FIRQ
+    neorv32_cpu_csr_set(CSR_MIE, 1 << DMA_FIRQ_ENABLE); // enable DMA interrupt source
+    neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
+
+    // configure GPTMR
+    neorv32_gptmr_setup(CLK_PRSC_2, // GPTM clock = 1/2 main clock
+                        0,          // single-shot mode
+                        2000);      // counter to threshold for triggering IRQ
+
+    // configure transfer type
+    cmd = DMA_CMD_B2B       | // read source in byte quantities, write destination in byte quantities
+          DMA_CMD_SRC_CONST | // constant source address
+          DMA_CMD_DST_INC;    // auto-increment destination address
+
+    // configure automatic DMA transfer
+    neorv32_dma_transfer_auto((uint32_t)(&dma_src[3]),   // source array base address (data = 0xff)
+                              (uint32_t)(&dma_dst[0]),   // destination array base address
+                               16,                       // number of elements to transfer: 16
+                               cmd,                      // transfer type configuration
+                               1 << GPTMR_FIRQ_PENDING); // trigger transfer on pending GPTMR interrupt
+
+    // sleep until interrupt (from DMA)
+    neorv32_cpu_sleep();
+
+    // check DMA status
+    rc = neorv32_dma_status();
+    if ((rc == DMA_STATUS_ERR_RD) || (rc == DMA_STATUS_ERR_WR)) {
+      neorv32_uart0_printf("Transfer failed!\n");
+    }
+
+    show_arrays();
+  }
+  else {
+    neorv32_uart0_printf("Example skipped as GPTMR is not implemented.\n");
+  }
 
 
   neorv32_uart0_printf("\nProgram completed.\n");
@@ -233,6 +283,6 @@ void show_arrays(void) {
  **************************************************************************/
 void dma_firq_handler(void) {
 
-  neorv32_cpu_csr_write(CSR_MIP, ~(1<<DMA_FIRQ_PENDING)); // clear/ack pending FIRQ
-  neorv32_uart0_printf("<<DMA interrupt!>>\n");
+  neorv32_cpu_csr_clr(CSR_MIP, 1 << DMA_FIRQ_PENDING); // clear/ack pending FIRQ
+  neorv32_uart0_printf("<<DMA interrupt>>\n");
 }

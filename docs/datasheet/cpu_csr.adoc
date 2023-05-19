@@ -714,7 +714,7 @@ cycle even if more than one trigger event is observed.
 |             | `0xb83` (`mhpmcounter3h`) ... `0xb9f` (`mhpmcounter31h`)
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` + `Zihpm`
-| Description | If not halted via the <<_mcountinhibit>> CSR the <<mhpmcounter*[h]>> counter CSR increment whenever a
+| Description | If not halted via the <<_mcountinhibit>> CSR the HPM counter CSR(s) increment whenever a
 configured event from the according <<_mhpmevent>> CSR occurs. The counter registers are read/write for machine mode
 and are not accessible for lower-privileged software.
 |=======================

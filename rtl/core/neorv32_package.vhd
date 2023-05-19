@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080501"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080502"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -2021,6 +2021,7 @@ package neorv32_package is
       bus_rsp_o : out bus_rsp_t;  -- bus response
       dma_req_o : out bus_req_t;  -- DMA request
       dma_rsp_i : in  bus_rsp_t;  -- DMA response
+      firq_i    : in  std_ulogic_vector(15 downto 0); -- CPU FIRQ channels
       irq_o     : out std_ulogic  -- transfer done interrupt
     );
   end component;

@@ -79,18 +79,42 @@ void neorv32_dma_disable(void) {
 
 
 /**********************************************************************//**
- * Trigger DMA transfer.
+ * Trigger manual DMA transfer.
  *
  * @param[in] base_src Source base address (has to be aligned to source data type!).
  * @param[in] base_dst Destination base address (has to be aligned to destination data type!).
- * @param[in] num Number of elements to transfer.
- * @param[in] config Transfer type configuration.
+ * @param[in] num Number of elements to transfer (24-bit).
+ * @param[in] config Transfer type configuration/commands.
  **************************************************************************/
 void neorv32_dma_transfer(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config) {
 
+  NEORV32_DMA->CTRL &= ~((uint32_t)(1 << DMA_CTRL_AUTO)); // manual transfer trigger
   NEORV32_DMA->SRC_BASE = base_src;
   NEORV32_DMA->DST_BASE = base_dst;
   NEORV32_DMA->TTYPE    = (num & 0x00ffffffUL) | (config & 0xff000000UL); // trigger transfer
+}
+
+
+/**********************************************************************//**
+ * Configure automatic DMA transfer (triggered by CPU FIRQ).
+ *
+ * @param[in] base_src Source base address (has to be aligned to source data type!).
+ * @param[in] base_dst Destination base address (has to be aligned to destination data type!).
+ * @param[in] num Number of elements to transfer (24-bit).
+ * @param[in] config Transfer type configuration/commands.
+ * @param[in] firq_mask FIRQ trigger mask (#NEORV32_CSR_MIP_enum).
+ **************************************************************************/
+void neorv32_dma_transfer_auto(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config, uint32_t firq_mask) {
+
+  uint32_t tmp = NEORV32_DMA->CTRL;
+  tmp |= (uint32_t)(1 << DMA_CTRL_AUTO); // automatic transfer trigger
+  tmp &= 0x0000ffffUL; // clear current FIRQ mask
+  tmp |= firq_mask & 0xffff0000UL; // set new FIRQ mask
+  NEORV32_DMA->CTRL = tmp;
+
+  NEORV32_DMA->SRC_BASE = base_src;
+  NEORV32_DMA->DST_BASE = base_dst;
+  NEORV32_DMA->TTYPE    = (num & 0x00ffffffUL) | (config & 0xff000000UL);
 }
 
 

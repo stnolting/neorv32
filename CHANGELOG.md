@@ -33,6 +33,7 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 19.05.2023 | 1.8.5.2 | :sparkles: add automatic trigger mode to **DMA** (trigger transfer if a processor-internal peripheral issues an interrupt request); [#618](https://github.com/stnolting/neorv32/pull/618) |
 | 18.05.2023 | 1.8.5.1 | software can now retrieve the configured FIFO size of the **TRNG**; [#616](https://github.com/stnolting/neorv32/pull/616) |
 | 18.05.2023 | [**:rocket:1.8.5**](https://github.com/stnolting/neorv32/releases/tag/v1.8.5) | **New release** |
 | 18.05.2023 | 1.8.4.9 | remove `is_simulation` flag from SYSINFO; add programmable interrupt to **TRNG** module; [#615](https://github.com/stnolting/neorv32/pull/615) |

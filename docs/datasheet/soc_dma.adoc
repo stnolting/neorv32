@@ -18,21 +18,19 @@
 
 The NEORV32 DMA provides a small-scale scatter/gather direct memory access controller that allows to transfer and
 modify data independently of the CPU. A single read/write transfer channel is implemented that is configured via
-memory-mapped registers. The DMA is connected to the central processor-internal bus system (see section
-<<_address_space>>) and can access the same address space as the CPU core. The DMA uses _interleaving mode_ accessing
-the central processor us only if the CPU does not request and bus access.
+memory-mapped registers. a configured transfer can either be triggered manually or by a programmable CPU FIRQ interrupt
+(see <<_neorv32_specific_fast_interrupt_requests>>).
+
+The DMA is connected to the central processor-internal bus system (see section <<_address_space>>) and can access the same
+address space as the CPU core. It uses _interleaving mode_ accessing the central processor bus only if the CPU does not
+currently request and bus access.
 
 The controller can handle different data quantities (e.g. read bytes and write them back as sign-extend words) and can
 also change the Endianness of data while transferring.
 
 .DMA Demo Program
 [TIP]
-A simple demo program can be found in `sw/example/demo_dma`.
-
-.Security Warning
-[WARNING]
-Transactions performed by the DMA use _machine mode_ permissions (having full access rights) and will
-also **bypass** any physical memory protection rules (<<_pmp_isa_extension>>).
+A DMA example program can be found in `sw/example/demo_dma`.
 
 
 **Theory of Operation**
@@ -42,11 +40,31 @@ configuring the actual DMA transfer. The base address of the source data is prog
 Vice versa, the base address of the destination data is programmed via the `DST_BASE`. The third configuration register
 `TTYPE` is use to configure the actual transfer type and the number of elements to transfer.
 
-The DMA is enabled by setting the `DMA_CTRL_EN` bit of the control register. Writing the `TTRIG` register will start the
-programmed DMA transfer. Once started, the DMA will read one data quantity from the source address, process it internally
+The DMA is enabled by setting the `DMA_CTRL_EN` bit of the control register. Manual trigger mode (i.e. the DMA transfer is
+triggered by writing to the `TTYPE` register) is selected if `DMA_CTRL_AUTO` is cleared. Alternatively, the DMA transfer can
+be triggered by a processor internal FIRQ signal if `DMA_CTRL_AUTO` is set (see section below).
+
+The DMA uses a load-modify-write data transfer process. Data is read from the bus system, internally modified and then written
+back to the bus system. This combination is implemented as an atomic progress, so canceling the current transfer by clearing the
+`DMA_CTRL_EN` bit will stop the DMA right after the current load-modify-write operation.
+
+If the DMA controller detects a bus error during operation, it will set either the `DMA_CTRL_ERROR_RD` (error during
+last read access) or `DMA_CTRL_ERROR_WR` (error during last write access) and will terminate the current transfer.
+Software can read the `SRC_BASE` or `DST_BASE` register to retrieve the address that caused the according error.
+Alternatively, software can read back the `NUM` bits of the control register to determine the index of the element
+that caused the error. The error bits are automatically cleared when starting a new transfer.
+
+[WARNING]
+Transactions performed by the DMA use _machine mode_ permissions (having full access rights) and will
+also **bypass** any physical memory protection rules (<<_pmp_isa_extension>>).
+
+
+**Transfer Configuration**
+
+If the DMA is set to **manual trigger mode** (`DMA_CTRL_AUTO` = 0) writing the `TTRIG` register will start the
+programmed DMA transfer. Once started, the DMA will read one data quantity from the source address, processes it internally
 and then will write it back to the destination address. The `DMA_TTYPE_NUM` bits of the `TTYPE` register define how many
-times this process is
-repeated.
+times this process is repeated by specifying the number of elements to transfer.
 
 Optionally, the source and/or destination addresses can be increments according to the data quantities
 automatically by setting the according `DMA_TTYPE_SRC_INC` and/or `DMA_TTYPE_DST_INC` bit.
@@ -59,22 +77,30 @@ Four different transfer quantities are available, which are configured via the `
 * `11`: Read source data as word, write destination data as word
 
 .Address Alignment
-[IMPORTAN]
-Make sure to align the source and destination base address to the according transfer quantities. For instance,
+[IMPORTANT]
+Make sure to align the source and destination base addresses to the according transfer data quantities. For instance,
 word-to-word transfers require that the two LSB of `SRC_BASE` and `DST_BASE` are cleared.
 
-Optionally, the DMA controller can automatically convert the Endianness of the processed data when the `DMA_TTYPE_ENDIAN`
+Optionally, the DMA controller can automatically convert Endianness of the transferred data if the `DMA_TTYPE_ENDIAN`
 bit is set.
 
-The DMA uses a load-modify-write data transfer process. Data is read from the bus system, internally modified and then written
-back to the bus system. This combination is implemented as an atomic progress. Canceling the current transfer by clearing the
-`DMA_CTRL_EN` bit will stop the DMA right after the current atomic operation is completed.
 
-If the DMA controller detects a bus error during operation, it will set either the `DMA_CTRL_ERROR_RD` (error during
-last read access) or `DMA_CTRL_ERROR_WR` (error during last write access) and will terminate the current transfer.
-Software can read the `SRC_BASE` or `DST_BASE` register to retrieve the address that caused the according error.
-Alternatively, software can read back the `NUM` bits of the control register to determine the index of the element
-that caused the error. The error bits are automatically cleared when starting a new transfer.
+**Automatic Trigger**
+
+As an alternative to the manual trigger mode, the DMA can be configured to **automatic trigger mode** starting a pre-configured
+transfer if a specific processor-internal peripheral issues an interrupt request. The automatic trigger mode is enabled by
+setting the `CTRL` register's `DMA_CTRL_AUTO` bit. In this configuration _no_ transfer is started when writing to the DMA's
+`TTYPE` register.
+
+The actual trigger is configured via the control register `DMA_CTRL_FIRQ_MASK`. These bits reflect the state of the CPU's
+<<_mip>> CSR showing any pending fast interrupt requests (for a full list see <<_neorv32_specific_fast_interrupt_requests>>).
+The same bit definitions/locations as for the <<_mip>> and <<_mie>> CPU CSRs are used.
+If any of the enabled sources issues an interrupt the DMA will start the pre-configured transfer (note that all enabled
+sources are logically OR-ed).
+
+.FIRQ Trigger
+[NOTE]
+The DMA transfer will start if a **rising edge** is detected on _any_ of the enabled FIRQ source channels.
 
 
 **DMA Interrupt**
@@ -91,11 +117,14 @@ explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.5+<| `0xffffff10` .5+<| `CTRL` <|`0`    `DMA_CTRL_EN`       ^| r/w <| DMA module enable
-                                <|`28:1` _reserved_          ^| r/- <| reserved, read as zero
-                                <|`29`   `DMA_CTRL_ERROR_RD` ^| r/- <| Error during read access, clears when starting a new transfer
-                                <|`30`   `DMA_CTRL_ERROR_WR` ^| r/- <| Error during write access, clears when starting a new transfer
-                                <|`31`   `DMA_CTRL_BUSY`     ^| r/- <| DMA transfer in progress
+.8+<| `0xffffff10` .8+<| `CTRL` <|`0`     `DMA_CTRL_EN`                                     ^| r/w <| DMA module enable
+                                <|`1`     `DMA_CTRL_AUTO`                                   ^| r/w <| Enable automatic mode (FIRQ-triggered)
+                                <|`7:2`   _reserved_                                        ^| r/- <| reserved, read as zero
+                                <|`8`     `DMA_CTRL_ERROR_RD`                               ^| r/- <| Error during read access, clears when starting a new transfer
+                                <|`9`     `DMA_CTRL_ERROR_WR`                               ^| r/- <| Error during write access, clears when starting a new transfer
+                                <|`10`    `DMA_CTRL_BUSY`                                   ^| r/- <| DMA transfer in progress
+                                <|`15:11` _reserved_                                        ^| r/- <| reserved, read as zero
+                                <|`31:16` `DMA_CTRL_FIRQ_MASK_MSB : DMA_CTRL_FIRQ_MASK_LSB` ^| r/w <| FIRQ trigger mask (same bits as in <<_mip>>)
 | `0xffffff14` | `SRC_BASE` |`31:0` | r/w | Source base address (shows the last-accessed source address when read)
 | `0xffffff18` | `DST_BASE` |`31:0` | r/w | Destination base address (shows the last-accessed destination address when read)
 .6+<| `0xffffff1c` .6+<| `TTYPE` <|`23:0`  `DMA_TTYPE_NUM_MSB : DMA_TTYPE_NUM_LSB`   ^| r/w <| Number of elements to transfer (shows the last-transferred element index when read)
