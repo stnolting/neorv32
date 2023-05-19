@@ -128,6 +128,7 @@ int main() {
                        cmd);                    // transfer type configuration
 
   // wait for transfer to complete using polling
+  neorv32_uart0_printf("Waiting for DMA... ");
   while (1) {
     rc = neorv32_dma_status();
     if (rc == DMA_STATUS_IDLE) {
@@ -160,6 +161,7 @@ int main() {
                        cmd);                    // transfer type configuration
 
   // wait for transfer to complete using polling
+  neorv32_uart0_printf("Waiting for DMA... ");
   while (1) {
     rc = neorv32_dma_status();
     if (rc == DMA_STATUS_IDLE) {
@@ -211,7 +213,7 @@ int main() {
   // ----------------------------------------------------------
   // example 4
   // ----------------------------------------------------------
-  neorv32_uart0_printf("\nExample 4: Automatic byte-to-bet one-to-many transfer using transfer-done interrupt.\n");
+  neorv32_uart0_printf("\nExample 4: Automatic byte-to-byte one-to-many transfer using transfer-done interrupt.\n");
   neorv32_uart0_printf(  "           The GPTMR FIRQ channel is used to trigger the DMA.\n");
   if (neorv32_gptmr_available()) { // only execute if GPTMR is available
 
@@ -282,5 +284,5 @@ void show_arrays(void) {
 void dma_firq_handler(void) {
 
   neorv32_cpu_csr_clr(CSR_MIP, 1 << DMA_FIRQ_PENDING); // clear/ack pending FIRQ
-  neorv32_uart0_printf("<<DMA interrupt!>>\n");
+  neorv32_uart0_printf("<<DMA interrupt>>\n");
 }
