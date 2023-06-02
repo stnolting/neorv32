@@ -487,6 +487,12 @@ void start_app(int boot_xip) {
   // wait for UART0 to finish transmitting
   while (neorv32_uart0_tx_busy());
 
+  // memory sync
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIFENCEI)) { // Zifenci ISA extension available?
+    asm volatile ("fence.i");
+  }
+  asm volatile ("fence");
+
   // start application
   asm volatile ("jalr ra, %0" : : "r" (app_base));
 
