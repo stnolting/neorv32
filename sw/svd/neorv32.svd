@@ -1390,7 +1390,7 @@
         </register>
         <register>
           <name>SOC</name>
-          <description>SoC features</description>
+          <description>SoC configuration</description>
           <addressOffset>0x08</addressOffset>
           <access>read-only</access>
           <fields>
@@ -1401,8 +1401,7 @@
             <field><name>SYSINFO_SOC_MEM_EXT_ENDIAN</name><bitRange>[4:4]</bitRange><description>External bus interface uses BIG-endian byte-order</description></field>
             <field><name>SYSINFO_SOC_ICACHE</name><bitRange>[5:5]</bitRange><description>Processor-internal instruction cache implemented</description></field>
             <field><name>SYSINFO_SOC_DCACHE</name><bitRange>[6:6]</bitRange><description>Processor-internal data cache implemented</description></field>
-            <field><name>SYSIFNO_reserved</name><bitRange>[13:7]</bitRange><description>Reserved, read as zero</description></field>
-            <field><name>SYSINFO_SOC_OCD</name><bitRange>[14:14]</bitRange><description>On-chip debugger implemented</description></field>
+            <field><name>SYSINFO_SOC_OCD</name><bitRange>[10:10]</bitRange><description>On-chip debugger implemented</description></field>
             <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[15:15]</bitRange><description>Direct memory access controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[16:16]</bitRange><description>General purpose input/output port unit implemented</description></field>
             <field><name>SYSINFO_SOC_IO_MTIME</name><bitRange>[17:17]</bitRange><description>Machine system timer implemented</description></field>
