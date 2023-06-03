@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080504"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080505"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -186,9 +186,9 @@ package neorv32_package is
   constant sdi_ctrl_addr_c      : std_ulogic_vector(31 downto 0) := x"ffffff00";
   constant sdi_rtx_addr_c       : std_ulogic_vector(31 downto 0) := x"ffffff04";
 
-  -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- base address
---constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
+  -- Stream Link Interface (SLINK) --
+  constant slink_base_c         : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- base address
+  constant slink_size_c         : natural := 2*4; -- module's address space size in bytes
 
   -- Direct Memory Access Controller (DMA) --
   constant dma_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff10"; -- base address
@@ -1126,7 +1126,10 @@ package neorv32_package is
       IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
       IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
       IO_ONEWIRE_EN                : boolean := false;  -- implement 1-wire interface (ONEWIRE)?
-      IO_DMA_EN                    : boolean := false   -- implement direct memory access controller (DMA)?
+      IO_DMA_EN                    : boolean := false;  -- implement direct memory access controller (DMA)?
+      IO_SLINK_EN                  : boolean := false;  -- implement stream link interface (SLINK)?
+      IO_SLINK_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
+      IO_SLINK_TX_FIFO             : natural := 1       -- TX fifo depth, has to be a power of two, min 1
     );
     port (
       -- Global control --
@@ -1149,6 +1152,13 @@ package neorv32_package is
       wb_cyc_o       : out std_ulogic; -- valid cycle
       wb_ack_i       : in  std_ulogic := 'L'; -- transfer acknowledge
       wb_err_i       : in  std_ulogic := 'L'; -- transfer error
+      -- Stream Link Interface (available if IO_SLINK_EN = true) --
+      slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'U'); -- RX input data
+      slink_rx_val_i : in  std_ulogic := 'L'; -- RX valid input
+      slink_rx_rdy_o : out std_ulogic; -- RX ready to receive
+      slink_tx_dat_o : out std_ulogic_vector(31 downto 0); -- TX output data
+      slink_tx_val_o : out std_ulogic; -- TX valid output
+      slink_tx_rdy_i : in  std_ulogic := 'L'; -- TX ready to send
       -- Advanced memory control signals --
       fence_o        : out std_ulogic; -- indicates an executed FENCE operation
       fencei_o       : out std_ulogic; -- indicates an executed FENCEI operation
@@ -2026,6 +2036,31 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: Stream Link Interface (SLINK) -----------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_slink
+    generic (
+      SLINK_RX_FIFO : natural; -- RX fifo depth, has to be a power of two
+      SLINK_TX_FIFO : natural  -- TX fifo depth, has to be a power of two
+    );
+    port (
+      -- Host access --
+      clk_i            : in  std_ulogic; -- global clock line
+      rstn_i           : in  std_ulogic; -- global reset line, low-active, async
+      bus_req_i        : in  bus_req_t;  -- bus request
+      bus_rsp_o        : out bus_rsp_t;  -- bus response
+      irq_o            : out std_ulogic; -- CPU interrupt
+      -- RX stream interface --
+      slink_rx_data_i  : in  std_ulogic_vector(31 downto 0); -- input data
+      slink_rx_valid_i : in  std_ulogic; -- valid input
+      slink_rx_ready_o : out std_ulogic; -- ready to receive
+      -- TX stream interface --
+      slink_tx_data_o  : out std_ulogic_vector(31 downto 0); -- output data
+      slink_tx_valid_o : out std_ulogic; -- valid output
+      slink_tx_ready_i : in  std_ulogic  -- ready to send
+    );
+  end component;
+
   -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
@@ -2073,7 +2108,8 @@ package neorv32_package is
       IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?
       IO_XIP_EN            : boolean; -- implement execute in place module (XIP)?
       IO_ONEWIRE_EN        : boolean; -- implement 1-wire interface (ONEWIRE)?
-      IO_DMA_EN            : boolean  -- implement direct memory access controller (DMA)?
+      IO_DMA_EN            : boolean; -- implement direct memory access controller (DMA)?
+      IO_SLINK_EN          : boolean  -- implement stream link interface (SLINK)?
     );
     port (
       clk_i     : in  std_ulogic; -- global clock line

@@ -142,7 +142,10 @@ entity neorv32_top is
     IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
     IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
     IO_ONEWIRE_EN                : boolean := false;  -- implement 1-wire interface (ONEWIRE)?
-    IO_DMA_EN                    : boolean := false   -- implement direct memory access controller (DMA)?
+    IO_DMA_EN                    : boolean := false;  -- implement direct memory access controller (DMA)?
+    IO_SLINK_EN                  : boolean := false;  -- implement stream link interface (SLINK)?
+    IO_SLINK_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
+    IO_SLINK_TX_FIFO             : natural := 1       -- TX fifo depth, has to be a power of two, min 1
   );
   port (
     -- Global control --
@@ -167,6 +170,14 @@ entity neorv32_top is
     wb_cyc_o       : out std_ulogic; -- valid cycle
     wb_ack_i       : in  std_ulogic := 'L'; -- transfer acknowledge
     wb_err_i       : in  std_ulogic := 'L'; -- transfer error
+
+    -- Stream Link Interface (available if IO_SLINK_EN = true) --
+    slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'U'); -- RX input data
+    slink_rx_val_i : in  std_ulogic := 'L'; -- RX valid input
+    slink_rx_rdy_o : out std_ulogic; -- RX ready to receive
+    slink_tx_dat_o : out std_ulogic_vector(31 downto 0); -- TX output data
+    slink_tx_val_o : out std_ulogic; -- TX valid output
+    slink_tx_rdy_i : in  std_ulogic := 'L';  -- TX ready to send
 
     -- Advanced memory control signals --
     fence_o        : out std_ulogic; -- indicates an executed FENCE operation
@@ -290,8 +301,8 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- internal bus system --
   type device_ids_t is (DEV_BUSKEEPER, DEV_IMEM, DEV_DMEM, DEV_BOOTROM, DEV_WISHBONE, DEV_GPIO, DEV_MTIME, DEV_UART0,
-                       DEV_UART1, DEV_SPI, DEV_TWI, DEV_PWM, DEV_WDT, DEV_TRNG, DEV_CFS, DEV_NEOLED, DEV_SYSINFO,
-                       DEV_OCD, DEV_XIRQ, DEV_GPTMR, DEV_XIP_CT, DEV_XIP_ACC, DEV_ONEWIRE, DEV_SDI, DEV_DMA);
+                        DEV_UART1, DEV_SPI, DEV_TWI, DEV_PWM, DEV_WDT, DEV_TRNG, DEV_CFS, DEV_NEOLED, DEV_SYSINFO,
+                        DEV_OCD, DEV_XIRQ, DEV_GPTMR, DEV_XIP_CT, DEV_XIP_ACC, DEV_ONEWIRE, DEV_SDI, DEV_DMA, DEV_SLINK);
 
   -- core complex --
   signal cpu_i_req,  cpu_d_req  : bus_req_t; -- CPU core
@@ -331,6 +342,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal onewire_irq  : std_ulogic;
   signal dma_irq      : std_ulogic;
   signal trng_irq     : std_ulogic;
+  signal slink_irq    : std_ulogic;
 
   -- misc --
   signal io_acc      : std_ulogic;
@@ -371,6 +383,7 @@ begin
     cond_sel_string_f(IO_XIP_EN, "XIP ", "") &
     cond_sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ", "") &
     cond_sel_string_f(IO_DMA_EN, "DMA ", "") &
+    cond_sel_string_f(IO_SLINK_EN, "SLINK", "") &
     ""
     severity note;
 
@@ -550,7 +563,7 @@ begin
   fast_irq(11) <= sdi_irq;
   fast_irq(12) <= gptmr_irq;
   fast_irq(13) <= onewire_irq;
-  fast_irq(14) <= '0';
+  fast_irq(14) <= slink_irq;
   fast_irq(15) <= trng_irq; -- lowest priority
 
 
@@ -714,7 +727,7 @@ begin
   end process;
 
   -- central SoC bus --
-  soc_req <= main_req;
+  soc_req       <= main_req;
   main_rsp.data <= soc_rsp.data;
   main_rsp.ack  <= soc_rsp.ack;
   main_rsp.err  <= bus_error; -- global bus error (buskeeper -> core)
@@ -835,15 +848,15 @@ begin
   neorv32_wishbone_inst_false:
   if (MEM_EXT_EN = false) generate
     rsp_bus(DEV_WISHBONE) <= rsp_terminate_c;
-    ext_timeout <= '0';
-    ext_access  <= '0';
-    wb_adr_o    <= (others => '0');
-    wb_dat_o    <= (others => '0');
-    wb_we_o     <= '0';
-    wb_sel_o    <= (others => '0');
-    wb_stb_o    <= '0';
-    wb_cyc_o    <= '0';
-    wb_tag_o    <= (others => '0');
+    ext_timeout           <= '0';
+    ext_access            <= '0';
+    wb_adr_o              <= (others => '0');
+    wb_dat_o              <= (others => '0');
+    wb_we_o               <= '0';
+    wb_sel_o              <= (others => '0');
+    wb_stb_o              <= '0';
+    wb_cyc_o              <= '0';
+    wb_tag_o              <= (others => '0');
   end generate;
 
 
@@ -876,13 +889,13 @@ begin
   if (IO_XIP_EN = false) generate
     rsp_bus(DEV_XIP_CT)  <= rsp_terminate_c;
     rsp_bus(DEV_XIP_ACC) <= rsp_terminate_c;
-    xip_enable <= '0';
-    xip_access <= '0';
-    xip_page   <= (others => '0');
-    xip_cg_en  <= '0';
-    xip_csn_o  <= '1';
-    xip_clk_o  <= '0';
-    xip_dat_o  <= '0';
+    xip_enable           <= '0';
+    xip_access           <= '0';
+    xip_page             <= (others => '0');
+    xip_cg_en            <= '0';
+    xip_csn_o            <= '1';
+    xip_clk_o            <= '0';
+    xip_dat_o            <= '0';
   end generate;
 
 
@@ -929,9 +942,9 @@ begin
   neorv32_cfs_inst_false:
   if (IO_CFS_EN = false) generate
     rsp_bus(DEV_CFS) <= rsp_terminate_c;
-    cfs_cg_en <= '0';
-    cfs_irq   <= '0';
-    cfs_out_o <= (others => '0');
+    cfs_cg_en        <= '0';
+    cfs_irq          <= '0';
+    cfs_out_o        <= (others => '0');
   end generate;
 
 
@@ -959,8 +972,8 @@ begin
   neorv32_sdi_inst_false:
   if (IO_SDI_EN = false) generate
     rsp_bus(DEV_SDI) <= rsp_terminate_c;
-    sdi_dat_o <= '0';
-    sdi_irq   <= '0';
+    sdi_dat_o        <= '0';
+    sdi_irq          <= '0';
   end generate;
 
 
@@ -986,7 +999,7 @@ begin
   neorv32_gpio_inst_false:
   if (IO_GPIO_NUM = 0) generate
     rsp_bus(DEV_GPIO) <= rsp_terminate_c;
-    gpio_o <= (others => '0');
+    gpio_o            <= (others => '0');
   end generate;
 
 
@@ -1013,9 +1026,9 @@ begin
   neorv32_wdt_inst_false:
   if (IO_WDT_EN = false) generate
     rsp_bus(DEV_WDT) <= rsp_terminate_c;
-    wdt_irq   <= '0';
-    rstn_wdt  <= '1';
-    wdt_cg_en <= '0';
+    wdt_irq          <= '0';
+    rstn_wdt         <= '1';
+    wdt_cg_en        <= '0';
   end generate;
 
 
@@ -1036,7 +1049,7 @@ begin
   neorv32_mtime_inst_false:
   if (IO_MTIME_EN = false) generate
     rsp_bus(DEV_MTIME) <= rsp_terminate_c;
-    mtime_irq <= mtime_irq_i;
+    mtime_irq          <= mtime_irq_i;
   end generate;
 
 
@@ -1069,11 +1082,11 @@ begin
   neorv32_uart0_inst_false:
   if (IO_UART0_EN = false) generate
     rsp_bus(DEV_UART0) <= rsp_terminate_c;
-    uart0_txd_o  <= '0';
-    uart0_rts_o  <= '1';
-    uart0_cg_en  <= '0';
-    uart0_rx_irq <= '0';
-    uart0_tx_irq <= '0';
+    uart0_txd_o        <= '0';
+    uart0_rts_o        <= '1';
+    uart0_cg_en        <= '0';
+    uart0_rx_irq       <= '0';
+    uart0_tx_irq       <= '0';
   end generate;
 
 
@@ -1106,11 +1119,11 @@ begin
   neorv32_uart1_inst_false:
   if (IO_UART1_EN = false) generate
     rsp_bus(DEV_UART1) <= rsp_terminate_c;
-    uart1_txd_o  <= '0';
-    uart1_rts_o  <= '1';
-    uart1_cg_en  <= '0';
-    uart1_rx_irq <= '0';
-    uart1_tx_irq <= '0';
+    uart1_txd_o        <= '0';
+    uart1_rts_o        <= '1';
+    uart1_cg_en        <= '0';
+    uart1_rx_irq       <= '0';
+    uart1_tx_irq       <= '0';
   end generate;
 
 
@@ -1140,11 +1153,11 @@ begin
   neorv32_spi_inst_false:
   if (IO_SPI_EN = false) generate
     rsp_bus(DEV_SPI) <= rsp_terminate_c;
-    spi_clk_o <= '0';
-    spi_dat_o <= '0';
-    spi_csn_o <= (others => '1');
-    spi_cg_en <= '0';
-    spi_irq   <= '0';
+    spi_clk_o        <= '0';
+    spi_dat_o        <= '0';
+    spi_csn_o        <= (others => '1');
+    spi_cg_en        <= '0';
+    spi_irq          <= '0';
   end generate;
 
 
@@ -1171,10 +1184,10 @@ begin
   neorv32_twi_inst_false:
   if (IO_TWI_EN = false) generate
     rsp_bus(DEV_TWI) <= rsp_terminate_c;
-    twi_sda_o <= '1';
-    twi_scl_o <= '1';
-    twi_cg_en <= '0';
-    twi_irq   <= '0';
+    twi_sda_o        <= '1';
+    twi_scl_o        <= '1';
+    twi_cg_en        <= '0';
+    twi_irq          <= '0';
   end generate;
 
 
@@ -1200,8 +1213,8 @@ begin
   neorv32_pwm_inst_false:
   if (IO_PWM_NUM_CH = 0) generate
     rsp_bus(DEV_PWM) <= rsp_terminate_c;
-    pwm_cg_en <= '0';
-    pwm_o     <= (others => '0');
+    pwm_cg_en        <= '0';
+    pwm_o            <= (others => '0');
   end generate;
 
 
@@ -1252,9 +1265,9 @@ begin
   neorv32_neoled_inst_false:
   if (IO_NEOLED_EN = false) generate
     rsp_bus(DEV_NEOLED) <= rsp_terminate_c;
-    neoled_cg_en <= '0';
-    neoled_irq   <= '0';
-    neoled_o     <= '0';
+    neoled_cg_en        <= '0';
+    neoled_irq          <= '0';
+    neoled_o            <= '0';
   end generate;
 
 
@@ -1282,7 +1295,7 @@ begin
   neorv32_xirq_inst_false:
   if (XIRQ_NUM_CH = 0) generate
     rsp_bus(DEV_XIRQ) <= rsp_terminate_c;
-    xirq_irq <= '0';
+    xirq_irq          <= '0';
   end generate;
 
 
@@ -1305,8 +1318,8 @@ begin
   neorv32_gptmr_inst_false:
   if (IO_GPTMR_EN = false) generate
     rsp_bus(DEV_GPTMR) <= rsp_terminate_c;
-    gptmr_cg_en <= '0';
-    gptmr_irq   <= '0';
+    gptmr_cg_en        <= '0';
+    gptmr_irq          <= '0';
   end generate;
 
 
@@ -1331,9 +1344,46 @@ begin
   neorv32_onewire_inst_false:
   if (IO_ONEWIRE_EN = false) generate
     rsp_bus(DEV_ONEWIRE) <= rsp_terminate_c;
-    onewire_o     <= '1';
-    onewire_cg_en <= '0';
-    onewire_irq   <= '0';
+    onewire_o            <= '1';
+    onewire_cg_en        <= '0';
+    onewire_irq          <= '0';
+  end generate;
+
+
+  -- Stream Link Interface (SLINK) ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_slink_inst_true:
+  if (IO_SLINK_EN = true) generate
+    neorv32_slink_inst: neorv32_slink
+    generic map (
+      SLINK_RX_FIFO => IO_SLINK_RX_FIFO,
+      SLINK_TX_FIFO => IO_SLINK_TX_FIFO
+    )
+    port map (
+      -- Host access --
+      clk_i            => clk_i,
+      rstn_i           => rstn_int,
+      bus_req_i        => io_req,
+      bus_rsp_o        => rsp_bus(DEV_SLINK),
+      irq_o            => slink_irq,
+      -- RX stream interface --
+      slink_rx_data_i  => slink_rx_dat_i,
+      slink_rx_valid_i => slink_rx_val_i,
+      slink_rx_ready_o => slink_rx_rdy_o,
+      -- TX stream interface --
+      slink_tx_data_o  => slink_tx_dat_o,
+      slink_tx_valid_o => slink_tx_val_o,
+      slink_tx_ready_i => slink_tx_rdy_i
+    );
+  end generate;
+
+  neorv32_slink_inst_false:
+  if (IO_SLINK_EN = false) generate
+    rsp_bus(DEV_SLINK) <= rsp_terminate_c;
+    slink_irq          <= '0';
+    slink_rx_rdy_o     <= '0';
+    slink_tx_dat_o     <= (others => '0');
+    slink_tx_val_o     <= '0';
   end generate;
 
 
@@ -1384,7 +1434,8 @@ begin
     IO_GPTMR_EN          => IO_GPTMR_EN,
     IO_XIP_EN            => IO_XIP_EN,
     IO_ONEWIRE_EN        => IO_ONEWIRE_EN,
-    IO_DMA_EN            => IO_DMA_EN
+    IO_DMA_EN            => IO_DMA_EN,
+    IO_SLINK_EN          => IO_SLINK_EN
   )
   port map (
     clk_i     => clk_i,

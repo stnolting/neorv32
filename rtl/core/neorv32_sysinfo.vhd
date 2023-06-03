@@ -87,7 +87,8 @@ entity neorv32_sysinfo is
     IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?
     IO_XIP_EN            : boolean; -- implement execute in place module (XIP)?
     IO_ONEWIRE_EN        : boolean; -- implement 1-wire interface (ONEWIRE)?
-    IO_DMA_EN            : boolean  -- implement direct memory access controller (DMA)?
+    IO_DMA_EN            : boolean; -- implement direct memory access controller (DMA)?
+    IO_SLINK_EN          : boolean  -- implement stream link interface (SLINK)?
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -148,7 +149,7 @@ begin
   -- Peripherals --
   sysinfo(2)(12) <= '0'; -- reserved
   sysinfo(2)(13) <= '0'; -- reserved
-  sysinfo(2)(14) <= '0'; -- reserved
+  sysinfo(2)(14) <= bool_to_ulogic_f(IO_SLINK_EN);         -- stream link interface (SLINK) implemented?
   sysinfo(2)(15) <= bool_to_ulogic_f(IO_DMA_EN);           -- direct memory access controller (DMA) implemented?
   sysinfo(2)(16) <= bool_to_ulogic_f(IO_GPIO_NUM > 0);     -- general purpose input/output port unit (GPIO) implemented?
   sysinfo(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN);         -- machine system timer (MTIME) implemented?
