@@ -71,13 +71,6 @@ enum NEORV32_CLOCK_PRSC_enum {
 
 
 /**********************************************************************//**
- * Official NEORV32 RISC-V open-source architecture ID
- * https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md
- **************************************************************************/
-#define NEORV32_ARCHID 19
-
-
-/**********************************************************************//**
  * @name Fast Interrupt Requests (FIRQ) device aliases
  **************************************************************************/
 /**@{*/
@@ -173,7 +166,13 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define ONEWIRE_RTE_ID         RTE_TRAP_FIRQ_13  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
 #define ONEWIRE_TRAP_CODE      TRAP_CODE_FIRQ_13 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
-
+/** @name Stream Link Interface (SLINK) */
+/**@{*/
+#define SLINK_FIRQ_ENABLE      CSR_MIE_FIRQ14E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
+#define SLINK_FIRQ_PENDING     CSR_MIP_FIRQ14P   /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
+#define SLINK_RTE_ID           RTE_TRAP_FIRQ_14  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
+#define SLINK_TRAP_CODE        TRAP_CODE_FIRQ_14 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+/**@}*/
 /** @name True-Random Number Generator (TRNG) */
 /**@{*/
 #define TRNG_FIRQ_ENABLE       CSR_MIE_FIRQ15E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
@@ -201,10 +200,10 @@ enum NEORV32_CLOCK_PRSC_enum {
  * @name Peripheral/IO Devices - IO Address Space - base addresses
  **************************************************************************/
 /**@{*/
-#define NEORV32_DM_BASE        (0xFFFFF800U) /**< On-Chip Debugger */
-//
+#define NEORV32_DM_BASE        (0xFFFFF800U) /**< On-Chip Debugger - Debuf Module (OCD) */
 #define NEORV32_CFS_BASE       (0xFFFFFE00U) /**< Custom Functions Subsystem (CFS) */
 #define NEORV32_SDI_BASE       (0xFFFFFF00U) /**< Serial Data Interface (SDI) */
+#define NEORV32_SLINK_BASE     (0xFFFFFF08U) /**< Stream Link Interface (SLINK) */
 #define NEORV32_DMA_BASE       (0xFFFFFF10U) /**< Direct Memory Access Controller (DMA) */
 #define NEORV32_XIP_BASE       (0xFFFFFF40U) /**< Execute In Place Module (XIP) */
 #define NEORV32_PWM_BASE       (0xFFFFFF50U) /**< Pulse Width Modulation Controller (PWM) */
@@ -251,6 +250,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 #include "neorv32_onewire.h"
 #include "neorv32_pwm.h"
 #include "neorv32_sdi.h"
+#include "neorv32_slink.h"
 #include "neorv32_spi.h"
 #include "neorv32_sysinfo.h"
 #include "neorv32_trng.h"
