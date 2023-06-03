@@ -99,6 +99,7 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 | `neorv32_pwm.c`     | `neorv32_pwm.h`        | <<_pulse_width_modulation_controller_pwm>> HAL
 | `neorv32_rte.c`     | `neorv32_rte.h`        | <<_neorv32_runtime_environment>>
 | `neorv32_sdi.c`     | `neorv32_sdi.h`        | <<_serial_data_interface_controller_sdi>> HAL
+| `neorv32_slink.c`   | `neorv32_slink.h`      | <<_stream_link_interface_slink>> HAL
 | `neorv32_spi.c`     | `neorv32_spi.h`        | <<_serial_peripheral_interface_controller_spi>> HAL
 | -                   | `neorv32_sysinfo.h`    | <<_system_configuration_information_memory_sysinfo>> HAL
 | `neorv32_trng.c`    | `neorv32_trng.h`       | <<_true_random_number_generator_trng>> HAL

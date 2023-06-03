@@ -212,6 +212,7 @@ neorv32_top.vhd                  - NEORV32 Processor top entity
 ├neorv32_onewire.vhd             - One-Wire serial interface controller
 ├neorv32_pwm.vhd                 - Pulse-width modulation controller
 ├neorv32_sdi.vhd                 - Serial data interface controller (SPI device)
+├neorv32_slink.vhd               - Stream link interface
 ├neorv32_spi.vhd                 - Serial peripheral interface controller (SPI host)
 ├neorv32_sysinfo.vhd             - System configuration information memory
 ├neorv32_trng.vhd                - True random number generator
@@ -313,6 +314,7 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 | ONEWIRE      | 1-wire interface                                               | 107 |  77 |        0 |    0
 | PWM          | Pulse_width modulation controller (8 channels)                 | 128 | 117 |        0 |    0
 | SPI          | Serial peripheral interface                                    | 114 |  94 |        0 |    0
+| SLINK        | Stream link interface (RX/TX FIFO depth=32)                    | 104 |  73 |     2048 |    0
 | SDI          | Serial data interface                                          |  72 |  66 |        0 |    0
 | SYSINFO      | System configuration information memory                        |  13 |  11 |        0 |    0
 | TRNG         | True random number generator                                   |  89 |  79 |        0 |    0

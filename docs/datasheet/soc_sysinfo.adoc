@@ -61,7 +61,8 @@ will signal a "DEVICE ERROR" in this case.
 | `6`     | `SYSINFO_SOC_DCACHE`         | set if processor-internal data cache is implemented (via top's `DCACHE_EN` generic)
 | `9:7`   | -                            | _reserved_, read as zero
 | `10`    | `SYSINFO_SOC_OCD`            | set if on-chip debugger is implemented (via top's `ON_CHIP_DEBUGGER_EN` generic)
-| `14:11` | -                            | _reserved_, read as zero
+| `13:11` | -                            | _reserved_, read as zero
+| `14`    | `SYSINFO_SOC_IO_SLINK`       | set if stream link interface is implemented (via top's `IO_SLINK_EN` generic)
 | `15`    | `SYSINFO_SOC_IO_DMA`         | set if direct memory access controller is implemented (via top's `IO_DMA_EN` generic)
 | `16`    | `SYSINFO_SOC_IO_GPIO`        | set if the GPIO is implemented (via top's `IO_GPIO_EN` generic)
 | `17`    | `SYSINFO_SOC_IO_MTIME`       | set if the MTIME is implemented (via top's `IO_MTIME_EN` generic)

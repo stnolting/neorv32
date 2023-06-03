@@ -1,0 +1,100 @@
+<<<
+:sectnums:
+==== Stream Link Interface (SLINK)
+
+[cols="<3,<3,<4"]
+[frame="topbot",grid="none"]
+|=======================
+| Hardware source file(s): | neorv32_slink.vhd   |
+| Software driver file(s): | neorv32_slink.c     |
+|                          | neorv32_slink.h     |
+| Top entity port:         | `slink_rx_dat_i`    | RX data (32-bit)
+|                          | `slink_rx_val_i`    | RX data valid (1-bit)
+|                          | `slink_rx_rdy_o`    | RX ready to receive (1-bit)
+|                          | `slink_tx_dat_o`    | TX data (32-bit)
+|                          | `slink_tx_val_o`    | TX data valid (1-bit)
+|                          | `slink_tx_rdy_i`    | TX allowed to send (1-bit)
+| Configuration generics:  | `IO_SLINK_EN`       | implement SLINK when _true_
+|                          | `IO_SLINK_RX_FIFO`  | RX FIFO depth (1..32k), has to be a power of two
+|                          | `IO_SLINK_TX_FIFO`  | TX FIFO depth (1..32k), has to be a power of two
+| CPU interrupt:           | fast IRQ channel 14 | SLINK IRQ (see <<_processor_interrupts>>)
+|=======================
+
+
+**Overview**
+
+The stream link interface provides independent RX and TX channels for sending for sending and receiving
+stream data. Each channel features an internal FIFO with configurable depth to buffer stream data
+(`IO_SLINK_RX_FIFO` for the RX FIFO, `IO_SLINK_TX_FIFO` for the TX FIFO). The interface provides higher
+bandwidth and less latency than the external bus interface making it ideally suited for coupling custom
+stream processing units or streaming peripherals.
+
+.Example Program
+[TIP]
+An example program for the SLINK module is available in `sw/example/demo_slink`.
+
+
+**Interface & Protocol**
+
+The SLINK interface consists of three signals `dat`, `val` and `rdy` per channel.
+
+* `dat` contains the actual data word
+* `val` marks the current transmission cycle as valid
+* `rdy` indicates that the receiving part is ready to receive
+
+.AXI4-Stream Compatibility
+[NOTE]
+The interface names and the underlying protocol is compatible to the AXI4-Stream standard.
+
+
+**Theory of Operation**
+
+The SLINK provides two interface registers: `CTRL` and `DATA`. The control register (`CTRL`) is used to configure
+the module and to check its status. The data register (`DATA`) is sued to send data (by writing to it) or to read
+received data (by reading from it). Note that accessing the data register will actually access the internal FIFOs.
+
+The configured FIFO sizes can be retrieved by software via the `SLINK_CTRL_RX_FIFO_*` and `SLINK_CTRL_TX_FIFO_*` bits.
+
+The SLINK is globally activated by setting the control register's enable bit `SLINK_CTRL_EN`. Clearing this bit will
+reset all internal logic and will also clear both FIFOs. The FIFOs can also be cleared manually at all time by
+setting the `SLINK_CTRL_RX_CLR` and `SLINK_CTRL_TX_CLR` bits (these bits will auto-clear).
+
+[NOTE]
+Writing to the TX channel's FIFO while it is _full_ will have no effect. Reading from the RX channel's FIFO while it
+is _empty_ will also have no effect and will return the last received data word.
+
+The current status of the RX and TX FIFOs can be determined via the `SLINK_CTRL_RX_*` and `SLINK_CTRL_TX_*` flags.
+A global interrupt can be programmed based on these FIFO status flags via the control register's `SLINK_CTRL_IRQ_*`
+bits. Note that all enabled interrupt conditions are logically OR-ed. Once the SLINK's interrupt has become pending,
+it has to be explicitly cleared again by writing zero to the according <<_mip>> CSR bit(s).
+
+
+**Register Map**
+
+.SLINK register map (`struct NEORV32_SLINK`)
+[cols="^4,<5,^2,^2,<14"]
+[options="header",grid="all"]
+|=======================
+| Address | Name [C] | Bit(s) | R/W | Function
+.20+<| `0xffffff08` .20+<| `NEORV32_SLINK.CTRL` <| `0`    `SLINK_CTRL_EN`                                    ^| r/w | SLINK global enable
+                                                <| `1`    `SLINK_CTRL_RX_CLR`                                ^| -/w | Clear RX FIFO (bit auto-clears)
+                                                <| `2`    `SLINK_CTRL_TX_CLR`                                ^| -/w | Clear TX FIFO (bit auto-clears)
+                                                <| `7:3`  _reserved_                                         ^| r/- | _reserved_, read as zero
+                                                <| `8`    `SLINK_CTRL_RX_EMPTY`                              ^| r/- | RX FIFO empty
+                                                <| `9`    `SLINK_CTRL_RX_HALF`                               ^| r/- | RX FIFO at least half full
+                                                <| `10`   `SLINK_CTRL_RX_FULL`                               ^| r/- | RX FIFO full
+                                                <| `11`   `SLINK_CTRL_TX_EMPTY`                              ^| r/- | TX FIFO empty
+                                                <| `12`   `SLINK_CTRL_TX_HALF`                               ^| r/- | TX FIFO at least half full
+                                                <| `13`   `SLINK_CTRL_TX_FULL`                               ^| r/- | TX FIFO full
+                                                <| `15:14` _reserved_                                        ^| r/- | _reserved_, read as zero
+                                                <| `16`   `SLINK_CTRL_IRQ_RX_NEMPTY`                         ^| r/w | IRQ if RX FIFO not empty 
+                                                <| `17`   `SLINK_CTRL_IRQ_RX_HALF`                           ^| r/w | IRQ if RX FIFO at least half full
+                                                <| `18`   `SLINK_CTRL_IRQ_RX_FULL`                           ^| r/w | IRQ if RX FIFO full
+                                                <| `19`   `SLINK_CTRL_IRQ_TX_EMPTY`                          ^| r/w | IRQ if TX FIFO empty
+                                                <| `20`   `SLINK_CTRL_IRQ_TX_NHALF`                          ^| r/w | IRQ if TX FIFO not at least half full
+                                                <| `21`   `SLINK_CTRL_IRQ_TX_NFULL`                          ^| r/w | IRQ if TX FIFO not full
+                                                <| `23:22` _reserved_                                        ^| r/- | _reserved_, read as zero
+                                                <| `27:24` `SLINK_CTRL_RX_FIFO_MSB : SLINK_CTRL_RX_FIFO_LSB` ^| r/- | log2(RX FIFO size)
+                                                <| `31:28` `SLINK_CTRL_TX_FIFO_MSB : SLINK_CTRL_TX_FIFO_LSB` ^| r/- | log2(TX FIFO size)
+| `0xffffff0c` | `NEORV32_SLINK.DATA` | `31:0` | r/w | RX/TX data
+|=======================

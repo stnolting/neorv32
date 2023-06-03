@@ -39,6 +39,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ execute in-place module (<<_execute_in_place_module_xip,**XIP**>>)
 * _optional_ 1-wire serial interface controller (<<_one_wire_serial_interface_controller_onewire,**ONEWIRE**>>), compatible to the 1-wire standard
 * _optional_ autonomous direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
+* _optional_ stream link interface (<<_stream_link_interface_slink>>,**SLINK**), AXI4-Stream compatible
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
 * bus keeper to monitor processor-internal bus transactions (<<_internal_bus_monitor_buskeeper,**BUSKEEPER**>>)
 * system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
@@ -70,83 +71,90 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 
 
 .NEORV32 Processor Signal List
-[cols="<2,^1,^1,<8"]
+[cols="<3,^1,^1,<8"]
 [options="header",grid="rows"]
 |=======================
 | Name | Width | Direction | Description
 4+^| **Global Control (<<_processor_clocking>> and <<_processor_reset>>)**
-| `clk_i`       |  1 |  in | global clock line, all registers triggering on rising edge
-| `rstn_i`      |  1 |  in | global reset, asynchronous, **low-active**
+| `clk_i`          |  1 |  in | global clock line, all registers triggering on rising edge
+| `rstn_i`         |  1 |  in | global reset, asynchronous, **low-active**
 4+^| **JTAG Access Port for <<_on_chip_debugger_ocd>>**
-| `jtag_trst_i` |  1 |  in | TAP reset, low-active (optional)
-| `jtag_tck_i`  |  1 |  in | serial clock
-| `jtag_tdi_i`  |  1 |  in | serial data input
-| `jtag_tdo_o`  |  1 | out | serial data output
-| `jtag_tms_i`  |  1 |  in | mode select
+| `jtag_trst_i`    |  1 |  in | TAP reset, low-active (optional)
+| `jtag_tck_i`     |  1 |  in | serial clock
+| `jtag_tdi_i`     |  1 |  in | serial data input
+| `jtag_tdo_o`     |  1 | out | serial data output
+| `jtag_tms_i`     |  1 |  in | mode select
 4+^| **<<_processor_external_memory_interface_wishbone>>**
-| `wb_tag_o`    |  3 | out | tag (access type identifier)
-| `wb_adr_o`    | 32 | out | destination address
-| `wb_dat_i`    | 32 |  in | write data
-| `wb_dat_o`    | 32 | out | read data
-| `wb_we_o`     |  1 | out | write enable ('0' = read transfer)
-| `wb_sel_o`    |  4 | out | byte enable
-| `wb_stb_o`    |  1 | out | strobe
-| `wb_cyc_o`    |  1 | out | valid cycle
-| `wb_lock_o`   |  1 | out | exclusive access request
-| `wb_ack_i`    |  1 |  in | transfer acknowledge
-| `wb_err_i`    |  1 |  in | transfer error
+| `wb_tag_o`       |  3 | out | tag (access type identifier)
+| `wb_adr_o`       | 32 | out | destination address
+| `wb_dat_i`       | 32 |  in | write data
+| `wb_dat_o`       | 32 | out | read data
+| `wb_we_o`        |  1 | out | write enable ('0' = read transfer)
+| `wb_sel_o`       |  4 | out | byte enable
+| `wb_stb_o`       |  1 | out | strobe
+| `wb_cyc_o`       |  1 | out | valid cycle
+| `wb_lock_o`      |  1 | out | exclusive access request
+| `wb_ack_i`       |  1 |  in | transfer acknowledge
+| `wb_err_i`       |  1 |  in | transfer error
+4+^| **<<_stream_link_interface_slink>>**
+| `slink_rx_dat_i` | 32 |  in | RX data
+| `slink_rx_val_i` |  1 |  in | RX data valid
+| `slink_rx_rdy_o` |  1 | out | RX ready to receive
+| `slink_tx_dat_o` | 32 | out | TX data
+| `slink_tx_val_o` |  1 | out | TX data valid
+| `slink_tx_rdy_i` |  1 |  in | TX allowed to send
 4+^| **Advanced Memory Control Signals**
-| `fence_o`     |  1 | out | indicates an executed _fence_ instruction
-| `fencei_o`    |  1 | out | indicates an executed _fencei_ instruction
+| `fence_o`        |  1 | out | indicates an executed _fence_ instruction
+| `fencei_o`       |  1 | out | indicates an executed _fencei_ instruction
 4+^| **<<_execute_in_place_module_xip>>**
-| `xip_csn_o`   |  1 | out | chi select, low-active
-| `xip_clk_o`   |  1 | out | serial clock
-| `xip_dat_i`   |  1 |  in | serial data input
-| `xip_dat_o`   |  1 | out | serial data output
+| `xip_csn_o`      |  1 | out | chi select, low-active
+| `xip_clk_o`      |  1 | out | serial clock
+| `xip_dat_i`      |  1 |  in | serial data input
+| `xip_dat_o`      |  1 | out | serial data output
 4+^| **<<_general_purpose_input_and_output_port_gpio>>**
-| `gpio_o`      | 64 | out | general purpose parallel output
-| `gpio_i`      | 64 |  in | general purpose parallel input
+| `gpio_o`         | 64 | out | general purpose parallel output
+| `gpio_i`         | 64 |  in | general purpose parallel input
 4+^| **<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>**
-| `uart0_txd_o` |  1 | out | serial transmitter
-| `uart0_rxd_i` |  1 |  in | serial receiver
-| `uart0_rts_o` |  1 | out | RX ready to receive new char
-| `uart0_cts_i` |  1 |  in | TX allowed to start sending
+| `uart0_txd_o`    |  1 | out | serial transmitter
+| `uart0_rxd_i`    |  1 |  in | serial receiver
+| `uart0_rts_o`    |  1 | out | RX ready to receive new char
+| `uart0_cts_i`    |  1 |  in | TX allowed to start sending
 4+^| **<<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>**
-| `uart1_txd_o` |  1 | out | serial transmitter
-| `uart1_rxd_i` |  1 |  in | serial receiver
-| `uart1_rts_o` |  1 | out | RX ready to receive new char
-| `uart1_cts_i` |  1 |  in | TX allowed to start sending
+| `uart1_txd_o`    |  1 | out | serial transmitter
+| `uart1_rxd_i`    |  1 |  in | serial receiver
+| `uart1_rts_o`    |  1 | out | RX ready to receive new char
+| `uart1_cts_i`    |  1 |  in | TX allowed to start sending
 4+^| **<<_serial_peripheral_interface_controller_spi>>**
-| `spi_clk_o`   |  1 | out | controller clock line
-| `spi_dat_o`   |  1 | out | serial data output
-| `spi_dat_i`   |  1 |  in | serial data input
-| `spi_csn_o`   |  8 | out |  select (low-active)
+| `spi_clk_o`      |  1 | out | controller clock line
+| `spi_dat_o`      |  1 | out | serial data output
+| `spi_dat_i`      |  1 |  in | serial data input
+| `spi_csn_o`      |  8 | out |  select (low-active)
 4+^| **<<_serial_data_interface_controller_sdi>>**
-| `sdi_clk_i`   |  1 |  in | controller clock line
-| `sdi_dat_o`   |  1 | out | serial data output
-| `sdi_dat_i`   |  1 |  in | serial data input
-| `sdi_csn_i`   |  1 |  in | chip select (low-active)
+| `sdi_clk_i`      |  1 |  in | controller clock line
+| `sdi_dat_o`      |  1 | out | serial data output
+| `sdi_dat_i`      |  1 |  in | serial data input
+| `sdi_csn_i`      |  1 |  in | chip select (low-active)
 4+^| **<<_two_wire_serial_interface_controller_twi>>**
-| `twi_sda_i`   |  1 |  in | serial data line sense input
-| `twi_sda_o`   |  1 | out | serial data line output (pull low only)
-| `twi_scl_i`   |  1 |  in | serial clock line sense input
-| `twi_scl_o`   |  1 | out | serial clock line output (pull low only)
+| `twi_sda_i`      |  1 |  in | serial data line sense input
+| `twi_sda_o`      |  1 | out | serial data line output (pull low only)
+| `twi_scl_i`      |  1 |  in | serial clock line sense input
+| `twi_scl_o`      |  1 | out | serial clock line output (pull low only)
 4+^| **<<_one_wire_serial_interface_controller_onewire>>**
-| `onewire_i`   |  1 |  in | 1-wire bus sense input
-| `onewire_o`   |  1 | out | 1-wire bus output (pull low only)
+| `onewire_i`      |  1 |  in | 1-wire bus sense input
+| `onewire_o`      |  1 | out | 1-wire bus output (pull low only)
 4+^| **<<_pulse_width_modulation_controller_pwm>>**
-| `pwm_o`       | 12 | out | pulse-width modulated channels
+| `pwm_o`          | 12 | out | pulse-width modulated channels
 4+^| **<<_custom_functions_subsystem_cfs>>**
-| `cfs_in_i`    | 32 |  in | custom CFS input signal conduit
-| `cfs_out_o`   | 32 | out | custom CFS output signal conduit
+| `cfs_in_i`       | 32 |  in | custom CFS input signal conduit
+| `cfs_out_o`      | 32 | out | custom CFS output signal conduit
 4+^| **<<_smart_led_interface_neoled>>**
-| `neoled_o`    |  1 | out | asynchronous serial data output
+| `neoled_o`       |  1 | out | asynchronous serial data output
 4+^| **<<_external_interrupt_controller_xirq>>**
-| `xirq_i`      | 32 |  in | external interrupt requests
+| `xirq_i`         | 32 |  in | external interrupt requests
 4+^| **RISC-V Machine-Mode <<_processor_interrupts>>**
-| `mtime_irq_i` |  1 |  in | machine timer interrupt (RISC-V), high-level-active
-| `msw_irq_i`   |  1 |  in | machine software interrupt (RISC-V), high-level-active
-| `mext_irq_i`  |  1 |  in | machine external interrupt (RISC-V), high-level-active
+| `mtime_irq_i`    |  1 |  in | machine timer interrupt (RISC-V), high-level-active
+| `msw_irq_i`      |  1 |  in | machine software interrupt (RISC-V), high-level-active
+| `mext_irq_i`     |  1 |  in | machine external interrupt (RISC-V), high-level-active
 |=======================
 
 
@@ -274,6 +282,9 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 | `IO_XIP_EN`             | boolean   | false      | Implement the <<_execute_in_place_module_xip>>.
 | `IO_ONEWIRE_EN`         | boolean   | false      | Implement the <<_one_wire_serial_interface_controller_onewire>>.
 | `IO_DMA_EN`             | boolean   | false      | Implement the <<_direct_memory_access_controller_dma>>.
+| `IO_SLINK_EN`           | boolean   | false      | Implement the <<_stream_link_interface_slink>>.
+| `IO_SLINK_RX_FIFO`      | natural   | 1          | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_SLINK_TX_FIFO`      | natural   | 1          | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 |=======================
 
 
@@ -415,19 +426,19 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | Channel | Source | Description
 | 0       | <<_watchdog_timer_wdt,WDT>> | watchdog timeout interrupt
 | 1       | <<_custom_functions_subsystem_cfs,CFS>> | custom functions subsystem (CFS) interrupt (user-defined)
-| 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | Configurable UART0 RX interrupt
-| 3       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | Configurable UART0 TX interrupt
-| 4       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | Configurable UART1 RX interrupt
-| 5       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | Configurable UART1 TX interrupt
-| 6       | <<_serial_peripheral_interface_controller_spi,SPI>> | Configurable SPI interrupt
+| 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 RX interrupt
+| 3       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 TX interrupt
+| 4       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 RX interrupt
+| 5       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 TX interrupt
+| 6       | <<_serial_peripheral_interface_controller_spi,SPI>> | SPI interrupt
 | 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI transmission done interrupt
 | 8       | <<_external_interrupt_controller_xirq,XIRQ>> | External interrupt controller interrupt
 | 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED TX buffer interrupt
 | 10      | <<_direct_memory_access_controller_dma,DMA>> | DMA transfer done interrupt
-| 11      | <<_serial_data_interface_controller_sdi,SDI>> | Configurable SDI interrupt
+| 11      | <<_serial_data_interface_controller_sdi,SDI>> | SDI interrupt
 | 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
 | 13      | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire operation done interrupt
-| 14      | - | _reserved_
+| 14      | <<_stream_link_interface_slink,SLINK>> | SLINK FIFO level interrupt
 | 15      | <<_true_random_number_generator_trng,TRNG>> | TRNG FIFO level interrupt
 |=======================
 
@@ -663,6 +674,8 @@ include::soc_dcache.adoc[]
 include::soc_dma.adoc[]
 
 include::soc_wishbone.adoc[]
+
+include::soc_slink.adoc[]
 
 include::soc_buskeeper.adoc[]
 
