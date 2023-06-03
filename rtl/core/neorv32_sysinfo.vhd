@@ -130,8 +130,8 @@ begin
   -- SYSINFO(1): Custom user-defined ID --
   sysinfo(1) <= CUSTOM_ID;
 
-  -- SYSINFO(2): Implemented processor devices/features --
-  -- Memory --
+  -- SYSINFO(2): SoC Configuration --
+  -- Memory System --
   sysinfo(2)(00) <= bool_to_ulogic_f(INT_BOOTLOADER_EN);   -- processor-internal bootloader implemented?
   sysinfo(2)(01) <= bool_to_ulogic_f(MEM_EXT_EN);          -- external memory bus interface implemented?
   sysinfo(2)(02) <= bool_to_ulogic_f(MEM_INT_IMEM_EN and (MEM_INT_IMEM_SIZE > 0)); -- processor-internal instruction memory implemented?
@@ -139,10 +139,16 @@ begin
   sysinfo(2)(04) <= bool_to_ulogic_f(MEM_EXT_BIG_ENDIAN);  -- is external memory bus interface using BIG-endian byte-order?
   sysinfo(2)(05) <= bool_to_ulogic_f(ICACHE_EN);           -- processor-internal instruction cache implemented?
   sysinfo(2)(06) <= bool_to_ulogic_f(DCACHE_EN);           -- processor-internal data cache implemented?
-  --
-  sysinfo(2)(13 downto 07) <= (others => '0'); -- reserved
+  sysinfo(2)(07) <= '0'; -- reserved
+  sysinfo(2)(08) <= '0'; -- reserved
+  sysinfo(2)(09) <= '0'; -- reserved
+  -- On-Chip Debugger --
+  sysinfo(2)(10) <= bool_to_ulogic_f(ON_CHIP_DEBUGGER_EN); -- on-chip debugger implemented?
+  sysinfo(2)(11) <= '0'; -- reserved
   -- Peripherals --
-  sysinfo(2)(14) <= bool_to_ulogic_f(ON_CHIP_DEBUGGER_EN); -- on-chip debugger implemented?
+  sysinfo(2)(12) <= '0'; -- reserved
+  sysinfo(2)(13) <= '0'; -- reserved
+  sysinfo(2)(14) <= '0'; -- reserved
   sysinfo(2)(15) <= bool_to_ulogic_f(IO_DMA_EN);           -- direct memory access controller (DMA) implemented?
   sysinfo(2)(16) <= bool_to_ulogic_f(IO_GPIO_NUM > 0);     -- general purpose input/output port unit (GPIO) implemented?
   sysinfo(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN);         -- machine system timer (MTIME) implemented?
