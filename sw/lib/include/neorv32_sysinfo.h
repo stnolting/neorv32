@@ -72,6 +72,7 @@ enum NEORV32_SYSINFO_SOC_enum {
 
   SYSINFO_SOC_OCD            = 10, /**< SYSINFO_FEATURES (10) (r/-): On-chip debugger implemented when 1 (via ON_CHIP_DEBUGGER_EN generic) */
 
+  SYSINFO_SOC_IO_SLINK       = 14, /**< SYSINFO_FEATURES (14) (r/-): Stream link interface implemented when 1 (via IO_SLINK_EN generic) */
   SYSINFO_SOC_IO_DMA         = 15, /**< SYSINFO_FEATURES (15) (r/-): Direct memory access controller implemented when 1 (via IO_DMA_EN generic) */
   SYSINFO_SOC_IO_GPIO        = 16, /**< SYSINFO_FEATURES (16) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
   SYSINFO_SOC_IO_MTIME       = 17, /**< SYSINFO_FEATURES (17) (r/-): Machine system timer implemented when 1 (via IO_MTIME_EN generic) */

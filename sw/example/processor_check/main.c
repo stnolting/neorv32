@@ -1513,10 +1513,40 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 14..15 (reserved)
+  // Fast interrupt channel 14 (SLINK)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ14 ", cnt_test);
-  PRINT_STANDARD("[skipped, n.a.]\n");
+  PRINT_STANDARD("[%i] FIRQ14 (SLINK) ", cnt_test);
+
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
+    cnt_test++;
+
+    // enable SLINK FIRQ
+    neorv32_cpu_irq_enable(SLINK_FIRQ_ENABLE);
+
+    // configure RX data available interrupt
+    neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_NEMPTY);
+
+    // send data word
+    neorv32_slink_put(0xAABBCCDD);
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile ("nop");
+    asm volatile ("nop");
+
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    // check if IRQ
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == SLINK_TRAP_CODE) &&
+        (neorv32_slink_get() == 0xAABBCCDD)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[skipped, n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------

@@ -520,6 +520,7 @@ void neorv32_rte_print_hw_config(void) {
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_XIP));     neorv32_uart0_printf(" XIP\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_ONEWIRE)); neorv32_uart0_printf(" ONEWIRE\n");
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_DMA));     neorv32_uart0_printf(" DMA\n");
+  __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_SLINK));   neorv32_uart0_printf(" SLINK\n");
 }
 
 

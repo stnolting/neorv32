@@ -124,6 +124,11 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- irq --
   signal msi_ring, mei_ring : std_ulogic;
 
+  -- SLINK echo --
+  signal slink_dat : std_ulogic_vector(31 downto 0);
+  signal slink_val : std_ulogic;
+  signal slink_rdy : std_ulogic;
+
   -- Wishbone bus --
   type wishbone_t is record
     addr  : std_ulogic_vector(31 downto 0); -- address
@@ -180,7 +185,7 @@ begin
     if ci_mode then
       -- No need to send the full expectation in one big chunk
       check_uart(net, uart1_rx_handle, nul & nul);
-      check_uart(net, uart1_rx_handle, "0/51" & cr & lf);
+      check_uart(net, uart1_rx_handle, "0/52" & cr & lf);
     end if;
 
     -- Wait until all expected data has been received
@@ -292,7 +297,10 @@ begin
     IO_GPTMR_EN                  => true,          -- implement general purpose timer (GPTMR)?
     IO_XIP_EN                    => true,          -- implement execute in place module (XIP)?
     IO_ONEWIRE_EN                => true,          -- implement 1-wire interface (ONEWIRE)?
-    IO_DMA_EN                    => true           -- implement direct memory access controller (DMA)?
+    IO_DMA_EN                    => true,          -- implement direct memory access controller (DMA)?
+    IO_SLINK_EN                  => true,          -- implement stream link interface (SLINK)?
+    IO_SLINK_RX_FIFO             => 2,             -- RX fifo depth, has to be a power of two, min 1
+    IO_SLINK_TX_FIFO             => 2              -- TX fifo depth, has to be a power of two, min 1
   )
   port map (
     -- Global control --
@@ -315,6 +323,13 @@ begin
     wb_cyc_o       => wb_cpu.cyc,      -- valid cycle
     wb_ack_i       => wb_cpu.ack,      -- transfer acknowledge
     wb_err_i       => wb_cpu.err,      -- transfer error
+    -- Stream Link Interface (available if IO_SLINK_EN = true) --
+    slink_rx_dat_i => slink_dat,       -- RX input data
+    slink_rx_val_i => slink_val,       -- RX valid input
+    slink_rx_rdy_o => slink_rdy,       -- RX ready to receive
+    slink_tx_dat_o => slink_dat,       -- TX output data
+    slink_tx_val_o => slink_val,       -- TX valid output
+    slink_tx_rdy_i => slink_rdy,       -- TX ready to send
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
     fence_o        => open,            -- indicates an executed FENCE operation
     fencei_o       => open,            -- indicates an executed FENCEI operation
