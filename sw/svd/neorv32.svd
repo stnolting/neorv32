@@ -440,6 +440,43 @@
       </registers>
     </peripheral>
 
+    <!-- CRC -->
+    <peripheral>
+      <name>CRC</name>
+      <description>Cyclic redundancy check unit</description>
+      <groupName>CRC</groupName>
+      <baseAddress>0xFFFFFF20</baseAddress>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>MODE</name>
+          <description>CRC mode control (CRC8, CRC16, CRC32)</description>
+          <addressOffset>0x00</addressOffset>
+        </register>
+        <register>
+          <name>POLY</name>
+          <description>CRC polynomial</description>
+          <addressOffset>0x04</addressOffset>
+        </register>
+        <register>
+          <name>DATA</name>
+          <description>LSB-aligned data input (bytes)</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>SREG</name>
+          <description>CRC shift register</description>
+          <addressOffset>0x0c</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
     <!-- PWM -->
     <peripheral>
       <name>PWM</name>
@@ -1529,6 +1566,7 @@
             <field><name>SYSINFO_SOC_ICACHE</name><bitRange>[5:5]</bitRange><description>Processor-internal instruction cache implemented</description></field>
             <field><name>SYSINFO_SOC_DCACHE</name><bitRange>[6:6]</bitRange><description>Processor-internal data cache implemented</description></field>
             <field><name>SYSINFO_SOC_OCD</name><bitRange>[10:10]</bitRange><description>On-chip debugger implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_CRC</name><bitRange>[13:13]</bitRange><description>Cyclic redundancy check unit implemented</description></field>
             <field><name>SYSINFO_SOC_IO_SLINK</name><bitRange>[14:14]</bitRange><description>Stream link interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[15:15]</bitRange><description>Direct memory access controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[16:16]</bitRange><description>General purpose input/output port unit implemented</description></field>
