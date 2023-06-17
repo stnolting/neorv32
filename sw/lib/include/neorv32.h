@@ -205,6 +205,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define NEORV32_SDI_BASE       (0xFFFFFF00U) /**< Serial Data Interface (SDI) */
 #define NEORV32_SLINK_BASE     (0xFFFFFF08U) /**< Stream Link Interface (SLINK) */
 #define NEORV32_DMA_BASE       (0xFFFFFF10U) /**< Direct Memory Access Controller (DMA) */
+#define NEORV32_CRC_BASE       (0xFFFFFF20U) /**< Cyclic Redundancy Check Unit (DMA) */
 #define NEORV32_XIP_BASE       (0xFFFFFF40U) /**< Execute In Place Module (XIP) */
 #define NEORV32_PWM_BASE       (0xFFFFFF50U) /**< Pulse Width Modulation Controller (PWM) */
 #define NEORV32_GPTMR_BASE     (0xFFFFFF60U) /**< General Purpose Timer (GPTMR) */
@@ -241,6 +242,7 @@ enum NEORV32_CLOCK_PRSC_enum {
 // IO/peripheral devices
 #include "neorv32_buskeeper.h"
 #include "neorv32_cfs.h"
+#include "neorv32_crc.h"
 #include "neorv32_dm.h"
 #include "neorv32_dma.h"
 #include "neorv32_gpio.h"
