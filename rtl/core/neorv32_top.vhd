@@ -145,7 +145,8 @@ entity neorv32_top is
     IO_DMA_EN                    : boolean := false;  -- implement direct memory access controller (DMA)?
     IO_SLINK_EN                  : boolean := false;  -- implement stream link interface (SLINK)?
     IO_SLINK_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
-    IO_SLINK_TX_FIFO             : natural := 1       -- TX fifo depth, has to be a power of two, min 1
+    IO_SLINK_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
+    IO_CRC_EN                    : boolean := false   -- implement cyclic redundancy check unit (CRC)?
   );
   port (
     -- Global control --
@@ -301,8 +302,8 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- internal bus system --
   type device_ids_t is (DEV_BUSKEEPER, DEV_IMEM, DEV_DMEM, DEV_BOOTROM, DEV_WISHBONE, DEV_GPIO, DEV_MTIME, DEV_UART0,
-                        DEV_UART1, DEV_SPI, DEV_TWI, DEV_PWM, DEV_WDT, DEV_TRNG, DEV_CFS, DEV_NEOLED, DEV_SYSINFO,
-                        DEV_OCD, DEV_XIRQ, DEV_GPTMR, DEV_XIP_CT, DEV_XIP_ACC, DEV_ONEWIRE, DEV_SDI, DEV_DMA, DEV_SLINK);
+                        DEV_UART1, DEV_SPI, DEV_TWI, DEV_PWM, DEV_WDT, DEV_TRNG, DEV_CFS, DEV_NEOLED, DEV_SYSINFO, DEV_OCD,
+                        DEV_XIRQ, DEV_GPTMR, DEV_XIP_CT, DEV_XIP_ACC, DEV_ONEWIRE, DEV_SDI, DEV_DMA, DEV_SLINK, DEV_CRC);
 
   -- core complex --
   signal cpu_i_req,  cpu_d_req  : bus_req_t; -- CPU core
@@ -384,6 +385,7 @@ begin
     cond_sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ", "") &
     cond_sel_string_f(IO_DMA_EN, "DMA ", "") &
     cond_sel_string_f(IO_SLINK_EN, "SLINK", "") &
+    cond_sel_string_f(IO_CRC_EN, "CRC", "") &
     ""
     severity note;
 
@@ -1387,6 +1389,25 @@ begin
   end generate;
 
 
+  -- Cyclic Redundancy Check Unit (CRC) -----------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_crc_inst_true:
+  if (IO_CRC_EN = true) generate
+    neorv32_crc_inst: neorv32_crc
+      port map (
+      clk_i     => clk_i,
+      rstn_i    => rstn_int,
+      bus_req_i => io_req,
+      bus_rsp_o => rsp_bus(DEV_CRC)
+    );
+  end generate;
+
+  neorv32_crc_inst_false:
+  if (IO_CRC_EN = false) generate
+    rsp_bus(DEV_CRC) <= rsp_terminate_c;
+  end generate;
+
+
   -- System Configuration Information Memory (SYSINFO) --------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_sysinfo_inst: neorv32_sysinfo
@@ -1435,7 +1456,8 @@ begin
     IO_XIP_EN            => IO_XIP_EN,
     IO_ONEWIRE_EN        => IO_ONEWIRE_EN,
     IO_DMA_EN            => IO_DMA_EN,
-    IO_SLINK_EN          => IO_SLINK_EN
+    IO_SLINK_EN          => IO_SLINK_EN,
+    IO_CRC_EN            => IO_CRC_EN
   )
   port map (
     clk_i     => clk_i,
