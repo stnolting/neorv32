@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080505"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080506"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -83,9 +83,9 @@ package neorv32_package is
 -- ****************************************************************************************************************************
 
   -- Internal Instruction Memory (IMEM) and Date Memory (DMEM) --
+  --> internal data/instruction memory sizes are configured via top's generics
   constant imem_base_c          : std_ulogic_vector(31 downto 0) := ispace_base_c; -- internal instruction memory base address
   constant dmem_base_c          : std_ulogic_vector(31 downto 0) := dspace_base_c; -- internal data memory base address
-  --> internal data/instruction memory sizes are configured via top's generics
 
   -- !!! IMPORTANT: The base address of each component/module has to be aligned to the !!!
   -- !!! total size of the module's occupied address space. The occupied address space !!!
@@ -194,9 +194,13 @@ package neorv32_package is
   constant dma_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff10"; -- base address
   constant dma_size_c           : natural := 4*4; -- module's address space size in bytes
 
+  -- Cyclic Redundancy Check Unit (CRC) --
+  constant crc_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff20"; -- base address
+  constant crc_size_c           : natural := 4*4; -- module's address space size in bytes
+
   -- reserved --
---constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff20"; -- base address
---constant reserved_size_c      : natural := 8*4; -- module's address space size in bytes
+--constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff30"; -- base address
+--constant reserved_size_c      : natural := 4*4; -- module's address space size in bytes
 
   -- Execute In-Place Module (XIP) --
   constant xip_base_c           : std_ulogic_vector(31 downto 0) := x"ffffff40"; -- base address
@@ -1129,7 +1133,8 @@ package neorv32_package is
       IO_DMA_EN                    : boolean := false;  -- implement direct memory access controller (DMA)?
       IO_SLINK_EN                  : boolean := false;  -- implement stream link interface (SLINK)?
       IO_SLINK_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
-      IO_SLINK_TX_FIFO             : natural := 1       -- TX fifo depth, has to be a power of two, min 1
+      IO_SLINK_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
+      IO_CRC_EN                    : boolean := false   -- implement cyclic redundancy check unit (CRC)?
     );
     port (
       -- Global control --
@@ -2061,6 +2066,17 @@ package neorv32_package is
     );
   end component;
 
+  -- Component: Cyclic Redundancy Check Unit (CRC) ------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  component neorv32_crc
+    port (
+      clk_i     : in  std_ulogic; -- global clock line
+      rstn_i    : in  std_ulogic; -- global reset line, low-active
+      bus_req_i : in  bus_req_t;  -- bus request
+      bus_rsp_o : out bus_rsp_t   -- bus response
+    );
+  end component;
+
   -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
   -- -------------------------------------------------------------------------------------------
   component neorv32_sysinfo
@@ -2109,7 +2125,8 @@ package neorv32_package is
       IO_XIP_EN            : boolean; -- implement execute in place module (XIP)?
       IO_ONEWIRE_EN        : boolean; -- implement 1-wire interface (ONEWIRE)?
       IO_DMA_EN            : boolean; -- implement direct memory access controller (DMA)?
-      IO_SLINK_EN          : boolean  -- implement stream link interface (SLINK)?
+      IO_SLINK_EN          : boolean; -- implement stream link interface (SLINK)?
+      IO_CRC_EN            : boolean  -- implement cyclic redundancy check unit (CRC)?
     );
     port (
       clk_i     : in  std_ulogic; -- global clock line

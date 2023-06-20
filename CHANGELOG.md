@@ -33,6 +33,7 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 17.06.2023 | 1.8.5.6 | :sparkles: add new **Cyclic Redundancy Check module (CRC)**; [#632](https://github.com/stnolting/neorv32/pull/632) |
 | 03.06.2023 | 1.8.5.5 | :sparkles: re-add (simplified) **Stream Link Interface (SLINK)**; [#628](https://github.com/stnolting/neorv32/pull/628) |
 | 03.06.2023 | 1.8.5.4 | :warning: rearrange bits in **SYSINFO**; [#627](https://github.com/stnolting/neorv32/pull/627) |
 | 02.06.2023 | 1.8.5.3 | :bug: executable generation: fix address continuity between `.text` and `.rodata` segments; [#626](https://github.com/stnolting/neorv32/pull/626) |

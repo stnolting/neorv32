@@ -104,7 +104,7 @@ uint32_t num_hpm_cnts_global = 0;
 /// XIRQ trap handler acknowledge
 uint32_t xirq_trap_handler_ack = 0;
 /// DMA source & destination data
-volatile uint32_t dma_src, dma_dst[2];
+volatile uint32_t dma_src;
 /// Variable to test store accesses
 volatile uint32_t store_access_addr[2];
 /// Variable to test PMP
@@ -156,9 +156,6 @@ int main() {
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
-
-  // intro
-  PRINT_STANDARD("\n<< PROCESSOR CHECK >>\n");
 
   // prepare (performance) counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable counter auto increment (ALL counters)
@@ -1347,7 +1344,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 10 (DMA)
+  // Fast interrupt channel 10 (DMA) + CRC
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] FIRQ10 (DMA) ", cnt_test);
@@ -1359,17 +1356,15 @@ int main() {
     neorv32_dma_enable();
     neorv32_cpu_irq_enable(DMA_FIRQ_ENABLE);
 
-    // setup source data, clear destination data
+    // setup source data
     dma_src = 0x7788ee11;
-    dma_dst[0] = 0;
-    dma_dst[1] = 0;
 
-    // flush/reload d-cache
-    asm volatile ("fence");
+    // setup CRC unit
+    neorv32_crc_setup(CRC_MODE32, 0x4C11DB7, 0xFFFFFFFF);
 
     // configure and trigger DMA transfer
-    tmp_a = DMA_CMD_B2SW | DMA_CMD_SRC_INC | DMA_CMD_DST_INC | DMA_CMD_ENDIAN;
-    neorv32_dma_transfer((uint32_t)(&dma_src), (uint32_t)(&dma_dst[0]), 2, tmp_a);
+    tmp_a = DMA_CMD_B2UW | DMA_CMD_SRC_INC | DMA_CMD_DST_CONST | DMA_CMD_ENDIAN;
+    neorv32_dma_transfer((uint32_t)(&dma_src), (uint32_t)(&NEORV32_CRC->DATA), 4, tmp_a);
 
     // wait for transfer-done interrupt
     asm volatile ("wfi");
@@ -1380,7 +1375,7 @@ int main() {
     asm volatile ("fence");
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == DMA_TRAP_CODE) && // correct interrupt source
-        (dma_dst[0] == 0x00000077UL) && (dma_dst[1] == 0xffffff88UL) && // correct destination data
+        (neorv32_crc_get() == 0x31DC476E) && // correct CRC sum
         (neorv32_dma_status() == DMA_STATUS_IDLE)) { // DMA back in idle mode without errors
       test_ok();
     }

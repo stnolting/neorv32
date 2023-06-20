@@ -85,6 +85,7 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 | -                   | `neorv32.h`            | Main NEORV32 library file
 | -                   | `neorv32_buskeeper.h`  | <<_internal_bus_monitor_buskeeper>> HAL
 | `neorv32_cfs.c`     | `neorv32_cfs.h`        | <<_custom_functions_subsystem_cfs>> HAL
+| `neorv32_crc.c`     | `neorv32_crc.h`        | <<_cyclic_redundancy_check_crc>> HAL
 | `neorv32_cpu.c`     | `neorv32_cpu.h`        | <<_neorv32_central_processing_unit_cpu>> HAL
 |                     | `neorv32_cpu_csr.h`    | <<_control_and_status_registers_csrs>> definitions
 | `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | <<_custom_functions_unit_cfu>> HAL

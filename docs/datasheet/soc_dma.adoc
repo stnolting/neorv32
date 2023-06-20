@@ -76,13 +76,18 @@ Four different transfer quantities are available, which are configured via the `
 * `10`: Read source data as byte, write destination data as sign-extended word
 * `11`: Read source data as word, write destination data as word
 
+Optionally, the DMA controller can automatically convert Endianness of the transferred data if the `DMA_TTYPE_ENDIAN`
+bit is set.
+
 .Address Alignment
 [IMPORTANT]
 Make sure to align the source and destination base addresses to the according transfer data quantities. For instance,
 word-to-word transfers require that the two LSB of `SRC_BASE` and `DST_BASE` are cleared.
 
-Optionally, the DMA controller can automatically convert Endianness of the transferred data if the `DMA_TTYPE_ENDIAN`
-bit is set.
+.Writing to IO Device
+[IMPORTANT]
+When writing data to IO / peripheral devices (for example to the <<_cyclic_redundancy_check_crc>>) the destination
+data quantity has to be set to **word** (32-bit) since all IO registers can only be written in full 32-bit word mode.
 
 
 **Automatic Trigger**

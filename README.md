@@ -182,6 +182,8 @@ on the [neoTRNG](https://github.com/stnolting/neoTRNG)
 for custom tightly-coupled co-processors, accelerators or interfaces
 * direct memory access controller ([DMA](https://stnolting.github.io/neorv32/#_direct_memory_access_controller_dma)) for CPU-independent
 data transfers and conversions
+* cyclic redundancy check unit ([DMA](https://stnolting.github.io/neorv32/#_cyclic_redundancy_check_crc)) to test
+data integrity (CRC8/CRC16/CRC32)
 
 **Debugging**
 

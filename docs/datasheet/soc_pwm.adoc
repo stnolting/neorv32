@@ -55,7 +55,7 @@ register.
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-The resulting PWM base frequency is defined by:
+The resulting PWM carrier frequency is defined by:
 
 _**f~PWM~**_ = _f~main~[Hz]_ / (2^8^ * `clock_prescaler`)
 

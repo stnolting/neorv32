@@ -1,0 +1,71 @@
+<<<
+:sectnums:
+==== Cyclic Redundancy Check (CRC)
+
+[cols="<3,<3,<4"]
+[frame="topbot",grid="none"]
+|=======================
+| Hardware source file(s): | neorv32_crc.vhd |
+| Software driver file(s): | neorv32_crc.c |
+|                          | neorv32_crc.h |
+| Top entity port:         | none |
+| Configuration generics:  | `IO_CRC_EN` | implement CRC module when `true`
+| CPU interrupts:          | none |  
+|=======================
+
+
+**Overview**
+
+The cyclic redundancy check unit provides a programmable checksum computation module. The unit operates on
+single bytes and can either compute CRC8, CRC16 or CRC32 checksums based on an arbitrary polynomial and
+start value.
+
+.DMA Demo Program
+[TIP]
+A CRC example program (also using CPU-independent DMA transfers) can be found in `sw/example/crc_dma`.
+
+.CPU-Independent Operation
+[TIP]
+The CRC unit can compute a checksum for an arbitrary memory array without any CPU overhead
+by using the processor's <<_direct_memory_access_controller_dma>>.
+
+
+**Theory of Operation**
+
+The module provides four interface registers:
+
+* `MODE`: selects either CRC8-, CRC16- or CRC32-mode
+* `POLY`: programmable polynomial
+* `DATA`: data input register (single bytes only)
+* `SREG`: the CRC shift register; this register is used to define the start value and to obtain
+the final processing result
+
+The `MODE`, `POLY` and `SREG` registers need to be programmed before the actual processing can be started.
+Writing a byte to `DATA` will update the current checksum in `SREG`.
+
+.Access Latency
+[NOTE]
+Write access to the CRC module have an increased latency of 8 clock cycles. This additional latency
+ensures that the internal bit-serial processing of the current data byte has also been completed when the
+transfer is completed.
+
+.Data Size
+[NOTE]
+For CRC8-mode only bits `7:0` of `POLY` and `SREG` are relevant; for CRC16-mode only bits `15:0` are used
+and for CRC32-mode the entire 32-bit of `POLY` and `SREG` are used.
+
+
+**Register Map**
+
+.CRC Register Map (`struct NEORV32_CRC`)
+[cols="<2,<1,<4,^1,<7"]
+[options="header",grid="all"]
+|=======================
+| Address | Name [C] | Bit(s), Name [C] | R/W | Function
+.2+<| `0xffffff20` .2+<| `CTRL` <|`1:0`  ^| r/w <| CRC mode select (`00` CRC8, `01`: CRC16, `10`: CRC32)
+                                <|`31:2` ^| r/- <| _reserved_, read as zero
+| `0xffffff24` | `POLY` |`31:0` | r/w | CRC polynomial
+.2+<| `0xffffff28` .2+<| `DATA` <|`7:0`  ^| r/w <| data input (single byte)
+                                <|`31:8` ^| r/- <| _reserved_, read as zero, writes are ignored
+| `0xffffff2c` | `SREG` |`32:0` | r/w | current CRC shift register value (set start value on write)
+|=======================
