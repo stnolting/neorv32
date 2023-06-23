@@ -16,39 +16,21 @@
 
 **Theory of Operation**
 
-The Bus Keeper is a fundamental component of the processor's internal bus system that ensures correct bus operations
-while maintaining execution safety. It monitors every single bus transactions that is initiated by the CPU.
-If an accessed device responds with an error condition or do not respond at all within a specific _access time window_,
-an according bus access fault exception is raised. The following exceptions can be raised by the Bus Keeper
-(see section <<_traps_exceptions_and_interrupts>> for a list of all available bus access-related exceptions):
+The Bus Keeper is a fundamental component of the processor's internal bus system that ensures correct operations
+while maintaining execution safety. It operates transparently for the user by monitoring every single bus transactions
+that is initiated by the CPU. If an accessed device responds with an error condition or does not respond at all within
+a specific **access time window**, an according bus access fault exception is raised. The following exceptions can be
+raised by the bus keeper:
 
-* `TRAP_CODE_I_ACCESS`: error during instruction fetch bus access
-* `TRAP_CODE_S_ACCESS`: error during data store bus access
-* `TRAP_CODE_L_ACCESS`: error during data load bus access
+* `TRAP_CODE_I_ACCESS`: error / timeout during instruction fetch bus access
+* `TRAP_CODE_S_ACCESS`: error / timeout during data store bus access
+* `TRAP_CODE_L_ACCESS`: error / timeout during data load bus access
 
+.Access Time Window
+[IMPORTANT]
 The **access time window**, in which an accessed device has to respond, is defined by the `max_proc_int_response_time_c`
 constant from the processor's VHDL package file (`rtl/neorv32_package.vhd`). The default value is **15 clock cycles**.
 
-In case of a bus access fault exception application software can evaluate the Bus Keeper's control register
-`CTRL` to retrieve further details regarding the bus exception. The `BUSKEEPER_ERR_FLAG` bit indicates
-that an actual bus access fault has occurred. The bit is sticky once set and is automatically cleared when reading or
-writing the `NEORV32_BUSKEEPER.CTRL` register. The `BUSKEEPER_ERR_TYPE` bit defines the type of the bus fault:
-
-* `0` - "Device Error": The bus access exception was cause by the memory-mapped device that
-has been accessed (the device asserted it's `err_o`).
-* `1` - "Timeout Error": The bus access exception was caused by the Bus Keeper because the
-accessed memory-mapped device did not respond within the access time window. Note that this error type can also be raised
-by the optional timeout feature of the external bus interface.
-
-
-**Register Map**
-
-.BUSKEEPER register map (`struct NEORV32_BUSKEEPER`)
-[cols="<3,<2,<4,^1,<4"]
-[options="header",grid="all"]
-|=======================
-| Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.2+<| `0xffffff78` .2+<| `CTRL` <|`0`  `BUSKEEPER_ERR_TYPE` ^| r/- <| Bus error type, valid if _BUSKEEPER_ERR_FLAG_
-                                <|`31` `BUSKEEPER_ERR_FLAG` ^| r/c <| Sticky error flag, clears after read or write access
-| `0xffffff7c` | - | _reserved_ | r/c | _reserved_ (mirrored access to `CTRL`)
-|=======================
+.Register Map
+[NOTE]
+The bus keeper does not provide any memory-mapped interface registers at all.
