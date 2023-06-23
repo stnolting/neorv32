@@ -210,7 +210,6 @@ enum NEORV32_CLOCK_PRSC_enum {
 #define NEORV32_PWM_BASE       (0xFFFFFF50U) /**< Pulse Width Modulation Controller (PWM) */
 #define NEORV32_GPTMR_BASE     (0xFFFFFF60U) /**< General Purpose Timer (GPTMR) */
 #define NEORV32_ONEWIRE_BASE   (0xFFFFFF70U) /**< 1-Wire Interface Controller (ONEWIRE) */
-#define NEORV32_BUSKEEPER_BASE (0xFFFFFF78U) /**< Bus Monitor (BUSKEEPER) */
 #define NEORV32_XIRQ_BASE      (0xFFFFFF80U) /**< External Interrupt Controller (XIRQ) */
 #define NEORV32_MTIME_BASE     (0xFFFFFF90U) /**< Machine System Timer (MTIME) */
 #define NEORV32_UART0_BASE     (0xFFFFFFA0U) /**< Primary Universal Asynchronous Receiver and Transmitter (UART0) */
@@ -240,7 +239,6 @@ enum NEORV32_CLOCK_PRSC_enum {
 #include "neorv32_rte.h"
 
 // IO/peripheral devices
-#include "neorv32_buskeeper.h"
 #include "neorv32_cfs.h"
 #include "neorv32_crc.h"
 #include "neorv32_dm.h"
