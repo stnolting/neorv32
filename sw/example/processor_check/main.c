@@ -691,8 +691,6 @@ int main() {
 
   cnt_test++;
 
-  tmp_a = (1 << BUSKEEPER_ERR_FLAG) | (1 << BUSKEEPER_ERR_TYPE);
-
   // load from unreachable aligned address
   asm volatile ("li %[da], 0xcafe1230 \n" // initialize destination register with known value
                 "lw %[da], 0(%[ad])     " // must not update destination register to to exception
@@ -700,8 +698,7 @@ int main() {
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) && // load bus access error exception
       (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNREACHABLE) &&
-      (tmp_b == 0xcafe1230) && // make sure dest. reg is not updated
-      (NEORV32_BUSKEEPER->CTRL = tmp_a)) { // buskeeper: error flag + timeout error
+      (tmp_b == 0xcafe1230)) { // make sure dest. reg is not updated
     test_ok();
   }
   else {
@@ -744,14 +741,11 @@ int main() {
 
   cnt_test++;
 
-  tmp_a = (1 << BUSKEEPER_ERR_FLAG) | (0 << BUSKEEPER_ERR_TYPE);
-
   // store to unreachable aligned address
   neorv32_cpu_store_unsigned_word(ADDR_READONLY, 0);
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && // store bus access error exception
-      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_READONLY) &&
-      (NEORV32_BUSKEEPER->CTRL == tmp_a)) { // buskeeper: error flag + device error
+      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_READONLY)) {
     test_ok();
   }
   else {

@@ -72,9 +72,6 @@ void neorv32_rte_setup(void) {
   // clear all pending IRQs
   neorv32_cpu_csr_write(CSR_MIP, 0);
 
-  // clear BUSKEEPER error flags
-  NEORV32_BUSKEEPER->CTRL = 0;
-
   // install debug handler for all trap sources
   uint8_t id;
   for (id = 0; id < (sizeof(__neorv32_rte_vector_lut)/sizeof(__neorv32_rte_vector_lut[0])); id++) {
@@ -249,21 +246,6 @@ static void __neorv32_rte_debug_handler(void) {
   // check if FIRQ
   if ((trap_cause >= TRAP_CODE_FIRQ_0) && (trap_cause <= TRAP_CODE_FIRQ_15)) {
     neorv32_cpu_csr_clr(CSR_MIP, 1 << (CSR_MIP_FIRQ0P + (trap_cause & 0xf))); // clear pending FIRQ
-  }
-  // check specific cause if bus access fault exception
-  else if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_L_ACCESS) || (trap_cause == TRAP_CODE_S_ACCESS)) {
-    uint32_t bus_err = NEORV32_BUSKEEPER->CTRL;
-    if (bus_err & (1<<BUSKEEPER_ERR_FLAG)) { // exception caused by bus system?
-      if (bus_err & (1<<BUSKEEPER_ERR_TYPE)) {
-        neorv32_uart0_puts(" [TIMEOUT_ERR]");
-      }
-      else {
-        neorv32_uart0_puts(" [DEVICE_ERR]");
-      }
-    }
-    else { // exception was not caused by bus system -> has to be caused by PMP rule violation
-      neorv32_uart0_puts(" [PMP_ERR]");
-    }
   }
 
   // instruction address

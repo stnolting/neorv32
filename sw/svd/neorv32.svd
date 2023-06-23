@@ -769,40 +769,6 @@
       </registers>
     </peripheral>
 
-    <!-- BUSKEEPER -->
-    <peripheral>
-      <name>BUSKEEPER</name>
-      <description>Bus keeper</description>
-      <groupName>BUSKEEPER</groupName>
-      <baseAddress>0xFFFFFF78</baseAddress>
-
-      <addressBlock>
-        <offset>0</offset>
-        <size>0x08</size>
-        <usage>registers</usage>
-      </addressBlock>
-
-      <registers>
-        <register>
-          <name>CTRL</name>
-          <description>Control register</description>
-          <addressOffset>0x00</addressOffset>
-          <fields>
-            <field>
-              <name>BUSKEEPER_ERR_TYPE</name>
-              <bitRange>[0:0]</bitRange>
-              <access>read-only</access>
-              <description>Bus error type: 0=device error, 1=access timeout</description>
-            </field>
-            <field>
-              <name>BUSKEEPER_ERR_FLAG</name>
-              <bitRange>[31:31]</bitRange>
-              <description>Sticky error flag, clears after read or write access</description>
-            </field>
-          </fields>
-        </register>
-      </registers>
-    </peripheral>
 
     <!-- XIRQ -->
     <peripheral>

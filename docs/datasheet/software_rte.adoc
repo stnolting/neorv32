@@ -199,24 +199,3 @@ obtained from the <<_mcause>> CSR (see <<_neorv32_trap_listing>>). A full list o
 | "Fast IRQ 0x0000000f"            | `0x8000001f`
 | "Unknown trap cause"             | undefined
 |=======================
-
-===== Bus Access Faults
-
-For bus access faults the RTE default trap handlers also outputs the error code obtained from the
-<<_internal_bus_monitor_buskeeper>> to show the cause of the bus fault. One example is shown below.
-
-.RTE Default Trap Handler Output Example (Load Access Bus Fault)
-[source]
-----
-<RTE> Load access fault [TIMEOUT_ERR] @ PC=0x00000150, MTVAL=0xFFFFFF70 </RTE>
-----
-
-The additional message encapsulated in `[ ]` shows the actual cause of the bus access fault.
-Several different message identifiers are possible here:
-
-* `[TIMEOUT_ERR]`: The accessed memory-mapped module did not respond within the valid access time window.
-In Most cases this is caused by accessing a module that has not been implemented or when accessing
-"address space holes" via unused/unmapped addresses (see section <<_bus_interface_protocol>>).
-* `[DEVICE_ERR]`: The accesses memory-mapped module asserted its error signal to indicate an invalid access.
-For example this can be caused by trying to write to read-only registers.
-* `[PMP_ERR]`: This indicates an access right violation caused by the <<_pmp_isa_extension>>.
