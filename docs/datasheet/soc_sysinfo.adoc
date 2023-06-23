@@ -23,8 +23,7 @@ as the NEORV32 software runtime environment require information from this device
 and default clock speed) for correct operation.
 
 [NOTE]
-Any write access to the SYSINFO module will raise a store bus error exception. The <<_internal_bus_monitor_buskeeper>>
-will signal a "DEVICE ERROR" in this case.
+Any write access to the SYSINFO module will raise a store bus error exception.
 
 
 **Register Map**

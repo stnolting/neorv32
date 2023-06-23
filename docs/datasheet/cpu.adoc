@@ -601,7 +601,7 @@ and transfers control to the address stored in <<_mtvec>> CSR. The cause of the 
 <<_neorv32_trap_listing>>. The address that reflects the current program counter when a trap was taken is stored to
 <<_mepc>> CSR. This might be the address of the instruction that actually caused the trap or that has not been executed
 yet as it was interrupted by a trap. Additional information regarding the cause of the trap can be retrieved from the
-<<_mtval>> CSR and the processor's <<_internal_bus_monitor_buskeeper>> (for bus access exceptions).
+<<_mtval>> CSR.
 
 The traps are prioritized. If several _exceptions_ occur at once only the one with highest priority is triggered
 while all remaining exceptions are ignored and discarded. If several _interrupts_ trigger at once, the one with highest priority
