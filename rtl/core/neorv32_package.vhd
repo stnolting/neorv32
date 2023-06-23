@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080506"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080507"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -232,9 +232,9 @@ package neorv32_package is
   constant onewire_ctrl_addr_c  : std_ulogic_vector(31 downto 0) := x"ffffff70";
   constant onewire_data_addr_c  : std_ulogic_vector(31 downto 0) := x"ffffff74";
 
-  -- Bus Access Monitor (BUSKEEPER) --
-  constant buskeeper_base_c     : std_ulogic_vector(31 downto 0) := x"ffffff78"; -- base address
-  constant buskeeper_size_c     : natural := 2*4; -- module's address space size in bytes
+---- reserved --
+--constant reserved_base_c      : std_ulogic_vector(31 downto 0) := x"ffffff78"; -- base address
+--constant reserved_size_c      : natural := 2*4; -- module's address space size in bytes
 
   -- External Interrupt Controller (XIRQ) --
   constant xirq_base_c          : std_ulogic_vector(31 downto 0) := x"ffffff80"; -- base address
@@ -885,7 +885,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   constant alu_op_add_c  : std_ulogic_vector(2 downto 0) := "000"; -- result <= A + B
   constant alu_op_sub_c  : std_ulogic_vector(2 downto 0) := "001"; -- result <= A - B
-  constant alu_op_cp_c   : std_ulogic_vector(2 downto 0) := "010"; -- result <= co-processor
+  constant alu_op_cp_c   : std_ulogic_vector(2 downto 0) := "010"; -- result <= ALU co-processor
   constant alu_op_slt_c  : std_ulogic_vector(2 downto 0) := "011"; -- result <= A < B
   constant alu_op_movb_c : std_ulogic_vector(2 downto 0) := "100"; -- result <= B
   constant alu_op_xor_c  : std_ulogic_vector(2 downto 0) := "101"; -- result <= A xor B
@@ -1594,8 +1594,6 @@ package neorv32_package is
     port (
       clk_i     : in  std_ulogic; -- global clock line
       rstn_i    : in  std_ulogic; -- global reset, low-active, async
-      cpu_req_i : in  bus_req_t;  -- control request bus
-      cpu_rsp_o : out bus_rsp_t;  -- control response bus
       bus_req_i : in  bus_req_t;  -- monitor request bus
       bus_rsp_i : in  bus_rsp_t;  -- monitor response bus
       bus_err_o : out std_ulogic; -- signal bus error to CPU

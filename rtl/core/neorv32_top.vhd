@@ -301,8 +301,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dci_halt_req : std_ulogic;
 
   -- internal bus system --
-  type device_ids_t is (DEV_BUSKEEPER, DEV_IMEM, DEV_DMEM, DEV_BOOTROM, DEV_WISHBONE, DEV_GPIO, DEV_MTIME, DEV_UART0,
-                        DEV_UART1, DEV_SPI, DEV_TWI, DEV_PWM, DEV_WDT, DEV_TRNG, DEV_CFS, DEV_NEOLED, DEV_SYSINFO, DEV_OCD,
+  type device_ids_t is (DEV_IMEM, DEV_DMEM, DEV_BOOTROM, DEV_WISHBONE, DEV_GPIO, DEV_MTIME, DEV_UART0, DEV_UART1,
+                        DEV_SPI, DEV_TWI, DEV_PWM, DEV_WDT, DEV_TRNG, DEV_CFS, DEV_NEOLED, DEV_SYSINFO, DEV_OCD,
                         DEV_XIRQ, DEV_GPTMR, DEV_XIP_CT, DEV_XIP_ACC, DEV_ONEWIRE, DEV_SDI, DEV_DMA, DEV_SLINK, DEV_CRC);
 
   -- core complex --
@@ -705,8 +705,6 @@ begin
   port map (
     clk_i      => clk_i,
     rstn_i     => rstn_int,
-    cpu_req_i  => io_req,
-    cpu_rsp_o  => rsp_bus(DEV_BUSKEEPER),
     bus_req_i  => soc_req,
     bus_rsp_i  => soc_rsp,
     bus_err_o  => bus_error,
