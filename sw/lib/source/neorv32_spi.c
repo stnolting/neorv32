@@ -92,7 +92,7 @@ void neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, uint
  **************************************************************************/
 uint32_t neorv32_spi_get_clock_speed(void) {
 
-  const uint32_t PRSC_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
+  const uint16_t PRSC_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
 
   uint32_t ctrl = NEORV32_SPI->CTRL;
   uint32_t prsc_sel = (ctrl >> SPI_CTRL_PRSC0) & 0x7;

@@ -68,11 +68,11 @@ int neorv32_onewire_available(void) {
  **************************************************************************/
 int neorv32_onewire_setup(uint32_t t_base) {
 
+  const uint8_t PRSC_LUT[4] = {2, 4, 8, 64}; // subset of system clock prescalers
+
   // reset
   NEORV32_ONEWIRE->CTRL = 0;
   NEORV32_ONEWIRE->DATA = 0;
-
-  const uint32_t PRSC_LUT[4] = {2, 4, 8, 64}; // subset of system clock prescalers
 
   uint32_t t_tick;
   uint32_t clkdiv;

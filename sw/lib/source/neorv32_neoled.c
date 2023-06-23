@@ -102,7 +102,7 @@ void neorv32_neoled_setup_ws2812(int irq_mode) {
   const uint32_t T_H_ONE_C  =  800; // ns
 
   // processor clock pre-scalers
-  const uint32_t CLK_PRSC_FACTOR_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
+  const uint16_t CLK_PRSC_FACTOR_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
 
   // get base clock period in multiples of 0.5ns
   uint32_t t_clock_x500ps = (2 * 1000 * 1000 * 1000) / NEORV32_SYSINFO->CLK;
@@ -118,7 +118,7 @@ void neorv32_neoled_setup_ws2812(int irq_mode) {
 //neorv32_uart0_printf("\nNEOLED.T_clk: %u x 500ps\n", t_clock_x500ps); // DEBUG
 
   while (clk_prsc_sel < 7) {
-    clk_prsc_fac = CLK_PRSC_FACTOR_LUT[clk_prsc_sel & 7];
+    clk_prsc_fac = (uint32_t)CLK_PRSC_FACTOR_LUT[clk_prsc_sel & 7];
 
 //neorv32_uart0_printf("NEOLED.clk_prsc: %u\n", clk_prsc_fac); // DEBUG
 
