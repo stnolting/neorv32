@@ -83,7 +83,6 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 |=======================
 | C source file       | C header file          | Description
 | -                   | `neorv32.h`            | Main NEORV32 library file
-| -                   | `neorv32_buskeeper.h`  | <<_internal_bus_monitor_buskeeper>> HAL
 | `neorv32_cfs.c`     | `neorv32_cfs.h`        | <<_custom_functions_subsystem_cfs>> HAL
 | `neorv32_crc.c`     | `neorv32_crc.h`        | <<_cyclic_redundancy_check_crc>> HAL
 | `neorv32_cpu.c`     | `neorv32_cpu.h`        | <<_neorv32_central_processing_unit_cpu>> HAL
@@ -157,7 +156,7 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
  help       - show this text
  check      - check toolchain
  info       - show makefile/toolchain configuration
- gdb        - run GNU debugger
+ gdb        - run GNU debugging session
  asm        - compile and generate <main.asm> assembly listing file for manual debugging
  elf        - compile and generate <main.elf> ELF file
  bin        - compile and generate <neorv32_raw_exe.bin> RAW executable file (binary file, no header)
@@ -222,6 +221,8 @@ USER_FLAGS ?=
 USER_LIBS ?=
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
+# GDB arguments
+GDB_ARGS ?= -ex "target extended-remote localhost:3333"
 # *****************************************************************************
 ----
 
@@ -239,6 +240,7 @@ NEORV32_HOME ?= ../../..
 | `USER_FLAGS`   | Additional flags that will be forwarded to the compiler tools
 | `USER_LIBS`    | Additional libraries to include during linking (`*.a`)
 | `NEORV32_HOME` | Relative or absolute path to the NEORV32 project home folder; adapt this if the makefile/project is not in the project's default `sw/example` folder
+| `GDB_ARGS`     | Default GDB arguments when running the `gdb` target
 |=======================
 
 :sectnums:
