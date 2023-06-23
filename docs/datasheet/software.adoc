@@ -181,6 +181,7 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
  ASM_INC      - ASM include folder(s) [append only], default "-I ."
  RISCV_PREFIX - Toolchain prefix, default "riscv32-unknown-elf-"
  NEORV32_HOME - NEORV32 home folder, default "../../.."
+ GDB_ARGS     - GDB (connection) arguments: "-ex target extended-remote localhost:3333"
 ----
 
 

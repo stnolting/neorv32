@@ -416,4 +416,5 @@ help:
 	@echo " ASM_INC      - ASM include folder(s) [append only]: \"$(ASM_INC)\""
 	@echo " RISCV_PREFIX - Toolchain prefix: \"$(RISCV_PREFIX)\""
 	@echo " NEORV32_HOME - NEORV32 home folder: \"$(NEORV32_HOME)\""
+	@echo " GDB_ARGS     - GDB (connection) arguments: \"$(GDB_ARGS)\""
 	@echo ""
