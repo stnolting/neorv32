@@ -110,11 +110,9 @@ void neorv32_xip_setup(int prsc, int cpol, int cpha, uint8_t rd_cmd) {
  **************************************************************************/
 int neorv32_xip_start(int abytes, uint32_t page_base) {
 
-  if ((abytes < 1) || (abytes > 4)) {
-    return -1;
-  }
-
-  if (page_base & 0x0FFFFFFF) {
+  if ((abytes < 1) || (abytes > 4) || // invalid address bytes
+      (page_base  & 0x0FFFFFFFUL)  || // invalid granularity
+      (page_base >= 0xF0000000UL)) {  // IO/BOOTROM page
     return -1;
   }
   page_base >>= 28;

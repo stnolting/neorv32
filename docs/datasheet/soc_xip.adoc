@@ -106,9 +106,11 @@ address space. A _section_ refers to one out of 16 naturally aligned 256MB wide 
 is defined by the four most significant bits of the address (`31:28`) and the XIP's segment is programmed by the
 four `XIP_CTRL_XIP_PAGE` bits in the unit's control register. All accesses within this page will be mapped to the XIP flash.
 
-[NOTE]
+.Page Mapping
+[IMPORTANT]
 Care must be taken when programming the page mapping to prevent access collisions with other modules (like internal memories
-or modules attached to the external memory interface).
+or modules attached to the external memory interface). Do not use page `0xF` (base address `0xF000_0000`) as this will
+prevent access to the internal peripherals - including the XIP control registers themselves.
 
 
 **Using the XIP Mode**
