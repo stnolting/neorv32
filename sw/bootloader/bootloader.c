@@ -114,7 +114,7 @@
 
 /** SPI flash boot base address */
 #ifndef SPI_BOOT_BASE_ADDR
-  #define SPI_BOOT_BASE_ADDR 0x00400000
+  #define SPI_BOOT_BASE_ADDR 0x00400000UL
 #endif
 
 /* -------- XIP configuration -------- */
@@ -126,7 +126,7 @@
 
 /** XIP page base address */
 #ifndef XIP_PAGE_BASE_ADDR
-  #define XIP_PAGE_BASE_ADDR 0x40000000
+  #define XIP_PAGE_BASE_ADDR 0x40000000UL
 #endif
 /**@}*/
 
