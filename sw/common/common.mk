@@ -61,6 +61,9 @@ USER_FLAGS ?=
 NEORV32_HOME ?= ../../..
 NEORV32_LOCAL_RTL ?= $(NEORV32_HOME)/rtl
 
+# GDB arguments
+GDB_ARGS ?= -ex "target extended-remote localhost:3333"
+
 
 # -----------------------------------------------------------------------------
 # NEORV32 framework
@@ -300,8 +303,8 @@ elf_info: $(APP_ELF)
 # -----------------------------------------------------------------------------
 # Run GDB
 # -----------------------------------------------------------------------------
-gdb: 
-	@$(GDB)
+gdb:
+	@$(GDB) $(APP_ELF) $(GDB_ARGS)
 
 
 # -----------------------------------------------------------------------------
@@ -318,46 +321,62 @@ clean_all: clean
 # Show configuration
 # -----------------------------------------------------------------------------
 info:
-	@echo "---------------- Info: Project ----------------"
+	@echo "------------------------------------------------------"
+	@echo "-- Project"
+	@echo "------------------------------------------------------"
 	@echo "Project folder:        $(shell basename $(CURDIR))"
 	@echo "Source files:          $(APP_SRC)"
 	@echo "Include folder(s):     $(APP_INC)"
 	@echo "ASM include folder(s): $(ASM_INC)"
-	@echo "---------------- Info: NEORV32 ----------------"
+	@echo "------------------------------------------------------"
+	@echo "-- NEORV32"
+	@echo "------------------------------------------------------"
 	@echo "NEORV32 home folder (NEORV32_HOME): $(NEORV32_HOME)"
 	@echo "IMAGE_GEN: $(IMAGE_GEN)"
 	@echo "Core source files:"
 	@echo "$(CORE_SRC)"
 	@echo "Core include folder:"
 	@echo "$(NEORV32_INC_PATH)"
-	@echo "---------------- Info: Objects ----------------"
+	@echo "------------------------------------------------------"
+	@echo "-- Objects"
+	@echo "------------------------------------------------------"
 	@echo "Project object files:"
 	@echo "$(OBJ)"
-	@echo "---------------- Info: RISC-V CPU ----------------"
+	@echo "------------------------------------------------------"
+	@echo "-- RISC-V CPU"
+	@echo "------------------------------------------------------"
 	@echo "MARCH:      $(MARCH)"
 	@echo "MABI:       $(MABI)"
-	@echo "---------------- Info: Toolchain ----------------"
+	@echo "------------------------------------------------------"
+	@echo "-- Toolchain"
+	@echo "------------------------------------------------------"
 	@echo "Toolchain:  $(RISCV_TOLLCHAIN)"
 	@echo "CC:         $(CC)"
 	@echo "OBJDUMP:    $(OBJDUMP)"
 	@echo "OBJCOPY:    $(OBJCOPY)"
 	@echo "SIZE:       $(SIZE)"
 	@echo "DEBUGGER:   $(GDB)"
-	@echo "---------------- Info: Compiler Configuration ----------------"
-	@$(CC) -v
-	@echo "---------------- Info: Compiler Libraries ----------------"
+	@echo "------------------------------------------------------"
+	@echo "-- GDB Arguments"
+	@echo "------------------------------------------------------"
+	@echo "GDB_ARGS:   $(GDB_ARGS)"
+	@echo "------------------------------------------------------"
+	@echo "-- Libraries"
+	@echo "------------------------------------------------------"
 	@echo "LIBGCC:"
 	@$(CC) -print-libgcc-file-name
 	@echo "SEARCH-DIRS:"
 	@$(CC) -print-search-dirs
-	@echo "---------------- Info: Flags ----------------"
+	@echo "------------------------------------------------------"
+	@echo "-- Flags"
+	@echo "------------------------------------------------------"
 	@echo "USER_FLAGS: $(USER_FLAGS)"
 	@echo "CC_OPTS:    $(CC_OPTS)"
-	@echo "---------------- Info: Libraries ----------------"
+	@echo "------------------------------------------------------"
+	@echo "-- Libraries"
+	@echo "------------------------------------------------------"
 	@echo "USER_LIBS: $(USER_LIBS)"
 	@echo "LD_LIBS:   $(LD_LIBS)"
-	@echo "---------------- Info: Host Native GCC Flags ----------------"
-	@echo "CC_X86:     $(CC_X86)"
 
 
 # -----------------------------------------------------------------------------
@@ -371,7 +390,7 @@ help:
 	@echo " help       - show this text"
 	@echo " check      - check toolchain"
 	@echo " info       - show makefile/toolchain configuration"
-	@echo " gdb        - run GNU debugger"
+	@echo " gdb        - run GNU debugging session"
 	@echo " asm        - compile and generate <$(APP_ASM)> assembly listing file for manual debugging"
 	@echo " elf        - compile and generate <$(APP_ELF)> ELF file"
 	@echo " exe        - compile and generate <$(APP_EXE)> executable for upload via default bootloader (binary file, with header)"
