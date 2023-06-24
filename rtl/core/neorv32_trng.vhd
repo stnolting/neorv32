@@ -221,7 +221,7 @@ begin
 
   -- Data FIFO ("Random Pool") --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rnd_pool_fifo_inst: neorv32_fifo
+  rnd_pool_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => IO_TRNG_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,            -- size of data elements in fifo

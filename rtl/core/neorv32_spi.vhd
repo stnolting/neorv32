@@ -245,7 +245,7 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- TX FIFO --
-  tx_fifo_inst: neorv32_fifo
+  tx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,           -- size of data elements in fifo
@@ -275,7 +275,7 @@ begin
 
 
   -- RX FIFO --
-  rx_fifo_inst: neorv32_fifo
+  rx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,           -- size of data elements in fifo

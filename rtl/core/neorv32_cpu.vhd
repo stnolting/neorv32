@@ -208,7 +208,7 @@ begin
 
   -- Control Unit ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_control_inst: neorv32_cpu_control
+  neorv32_cpu_control_inst: entity neorv32.neorv32_cpu_control
   generic map (
     -- General --
     HART_ID                      => HART_ID,                      -- hardware thread ID
@@ -307,7 +307,7 @@ begin
 
   -- Register File --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_regfile_inst: neorv32_cpu_regfile
+  neorv32_cpu_regfile_inst: entity neorv32.neorv32_cpu_regfile
   generic map (
     RVE    => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension?
     RS3_EN => regfile_rs3_en_c,      -- enable 3rd read port
@@ -332,7 +332,7 @@ begin
 
   -- ALU ------------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_alu_inst: neorv32_cpu_alu
+  neorv32_cpu_alu_inst: entity neorv32.neorv32_cpu_alu
   generic map (
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_B      => CPU_EXTENSION_RISCV_B,      -- implement bit-manipulation extension?
@@ -370,7 +370,7 @@ begin
 
   -- Bus Interface (Load/Store Unit) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_bus_inst: neorv32_cpu_bus
+  neorv32_cpu_bus_inst: entity neorv32.neorv32_cpu_bus
   generic map (
     PMP_NUM_REGIONS     => PMP_NUM_REGIONS,    -- number of regions (0..16)
     PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
