@@ -221,7 +221,7 @@ begin
 
   -- RX Data FIFO ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rx_fifo_inst: neorv32_fifo
+  rx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => SLINK_RX_FIFO,
     FIFO_WIDTH => 32,
@@ -254,7 +254,7 @@ begin
 
   -- TX Data FIFO ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  tx_fifo_inst: neorv32_fifo
+  tx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => SLINK_TX_FIFO,
     FIFO_WIDTH => 32,

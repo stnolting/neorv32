@@ -220,7 +220,7 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- TX --
-  tx_fifo_inst: neorv32_fifo
+  tx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => RTX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,        -- size of data elements in fifo (32-bit only for simulation)
@@ -252,7 +252,7 @@ begin
   tx_fifo.re <= serial.start;
 
   -- RX --
-  rx_fifo_inst: neorv32_fifo
+  rx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => RTX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,        -- size of data elements in fifo (32-bit only for simulation)

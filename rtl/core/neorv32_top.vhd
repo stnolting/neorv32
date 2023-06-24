@@ -258,23 +258,14 @@ architecture neorv32_top_rtl of neorv32_top is
   signal rstn_ext, rstn_int, rstn_wdt : std_ulogic;
 
   -- clock generator --
-  signal clk_div       : std_ulogic_vector(11 downto 0);
-  signal clk_div_ff    : std_ulogic_vector(11 downto 0);
-  signal clk_gen       : std_ulogic_vector(07 downto 0);
-  signal clk_gen_en    : std_ulogic_vector(10 downto 0);
-  signal clk_gen_en_ff : std_ulogic;
+  signal clk_div, clk_div_ff       : std_ulogic_vector(11 downto 0);
+  signal clk_gen                   : std_ulogic_vector(07 downto 0);
+  signal clk_gen_en, clk_gen_en_ff : std_ulogic;
   --
-  signal wdt_cg_en     : std_ulogic;
-  signal uart0_cg_en   : std_ulogic;
-  signal uart1_cg_en   : std_ulogic;
-  signal spi_cg_en     : std_ulogic;
-  signal twi_cg_en     : std_ulogic;
-  signal pwm_cg_en     : std_ulogic;
-  signal cfs_cg_en     : std_ulogic;
-  signal neoled_cg_en  : std_ulogic;
-  signal gptmr_cg_en   : std_ulogic;
-  signal xip_cg_en     : std_ulogic;
-  signal onewire_cg_en : std_ulogic;
+  type cg_en_t is record
+    wdt, uart0, uart1, spi, twi, pwm, cfs, neoled, gptmr, xip, onewire : std_ulogic;
+  end record;
+  signal cg_en : cg_en_t;
 
   -- CPU status --
   signal cpu_debug : std_ulogic; -- cpu is in debug mode
@@ -323,27 +314,14 @@ architecture neorv32_top_rtl of neorv32_top is
   signal soc_rsp   : bus_rsp_t; -- SoC response bus
   signal io_req    : bus_req_t; -- request bus for internal IO/Peripheral devices only
   signal rsp_bus   : response_bus_t; -- global response bus
-  signal bus_error : std_ulogic; -- global bus error
+  signal bus_error : std_ulogic; -- global bus error signal
 
   -- IRQs --
-  signal fast_irq     : std_ulogic_vector(15 downto 0);
-  signal mtime_irq    : std_ulogic;
-  signal wdt_irq      : std_ulogic;
-  signal uart0_rx_irq : std_ulogic;
-  signal uart0_tx_irq : std_ulogic;
-  signal uart1_rx_irq : std_ulogic;
-  signal uart1_tx_irq : std_ulogic;
-  signal spi_irq      : std_ulogic;
-  signal sdi_irq      : std_ulogic;
-  signal twi_irq      : std_ulogic;
-  signal cfs_irq      : std_ulogic;
-  signal neoled_irq   : std_ulogic;
-  signal xirq_irq     : std_ulogic;
-  signal gptmr_irq    : std_ulogic;
-  signal onewire_irq  : std_ulogic;
-  signal dma_irq      : std_ulogic;
-  signal trng_irq     : std_ulogic;
-  signal slink_irq    : std_ulogic;
+  signal cpu_firq : std_ulogic_vector(15 downto 0);
+  type irq_t is record
+    wdt, uart0_rx, uart0_tx, uart1_rx, uart1_tx, spi, sdi, twi, cfs, neoled, xirq, gptmr, onewire, dma, trng, slink : std_ulogic;
+  end record;
+  signal firq : irq_t;
 
   -- misc --
   signal io_acc      : std_ulogic;
@@ -352,6 +330,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal xip_access  : std_ulogic;
   signal xip_enable  : std_ulogic;
   signal xip_page    : std_ulogic_vector(3 downto 0);
+  signal mtime_irq   : std_ulogic;
 
 begin
 
@@ -450,7 +429,7 @@ begin
       clk_div       <= (others => '0');
       clk_div_ff    <= (others => '0');
     elsif rising_edge(clk_i) then
-      clk_gen_en_ff <= or_reduce_f(clk_gen_en);
+      clk_gen_en_ff <= clk_gen_en;
       if (clk_gen_en_ff = '1') then
         clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
       else -- reset if disabled
@@ -471,17 +450,8 @@ begin
   clk_gen(clk_div4096_c) <= clk_div(11) and (not clk_div_ff(11)); -- CLK/4096
 
   -- fresh clocks anyone? --
-  clk_gen_en(0)  <= wdt_cg_en;
-  clk_gen_en(1)  <= uart0_cg_en;
-  clk_gen_en(2)  <= uart1_cg_en;
-  clk_gen_en(3)  <= spi_cg_en;
-  clk_gen_en(4)  <= twi_cg_en;
-  clk_gen_en(5)  <= pwm_cg_en;
-  clk_gen_en(6)  <= cfs_cg_en;
-  clk_gen_en(7)  <= neoled_cg_en;
-  clk_gen_en(8)  <= gptmr_cg_en;
-  clk_gen_en(9)  <= xip_cg_en;
-  clk_gen_en(10) <= onewire_cg_en;
+  clk_gen_en <= cg_en.wdt or cg_en.uart0  or cg_en.uart1 or cg_en.spi or cg_en.twi or cg_en.pwm or
+                cg_en.cfs or cg_en.neoled or cg_en.gptmr or cg_en.xip or cg_en.onewire;
 
 
 -- ****************************************************************************************************************************
@@ -490,7 +460,7 @@ begin
 
   -- CPU Core -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_inst: neorv32_cpu
+  neorv32_cpu_inst: entity neorv32.neorv32_cpu
   generic map (
     -- General --
     HART_ID                      => HART_ID,
@@ -536,7 +506,7 @@ begin
     msi_i      => msw_irq_i,
     mei_i      => mext_irq_i,
     mti_i      => mtime_irq,
-    firq_i     => fast_irq,
+    firq_i     => cpu_firq,
     dbi_i      => dci_halt_req,
     -- instruction bus interface --
     ibus_req_o => cpu_i_req,
@@ -551,29 +521,29 @@ begin
   fencei_o <= i_fence;
 
   -- fast interrupt requests (FIRQs) --
-  fast_irq(00) <= wdt_irq; -- highest priority
-  fast_irq(01) <= cfs_irq;
-  fast_irq(02) <= uart0_rx_irq;
-  fast_irq(03) <= uart0_tx_irq;
-  fast_irq(04) <= uart1_rx_irq;
-  fast_irq(05) <= uart1_tx_irq;
-  fast_irq(06) <= spi_irq;
-  fast_irq(07) <= twi_irq;
-  fast_irq(08) <= xirq_irq;
-  fast_irq(09) <= neoled_irq;
-  fast_irq(10) <= dma_irq;
-  fast_irq(11) <= sdi_irq;
-  fast_irq(12) <= gptmr_irq;
-  fast_irq(13) <= onewire_irq;
-  fast_irq(14) <= slink_irq;
-  fast_irq(15) <= trng_irq; -- lowest priority
+  cpu_firq(00) <= firq.wdt; -- highest priority
+  cpu_firq(01) <= firq.cfs;
+  cpu_firq(02) <= firq.uart0_rx;
+  cpu_firq(03) <= firq.uart0_tx;
+  cpu_firq(04) <= firq.uart1_rx;
+  cpu_firq(05) <= firq.uart1_tx;
+  cpu_firq(06) <= firq.spi;
+  cpu_firq(07) <= firq.twi;
+  cpu_firq(08) <= firq.xirq;
+  cpu_firq(09) <= firq.neoled;
+  cpu_firq(10) <= firq.dma;
+  cpu_firq(11) <= firq.sdi;
+  cpu_firq(12) <= firq.gptmr;
+  cpu_firq(13) <= firq.onewire;
+  cpu_firq(14) <= firq.slink;
+  cpu_firq(15) <= firq.trng; -- lowest priority
 
 
   -- CPU Instruction Cache ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_icache_inst_true:
   if (ICACHE_EN = true) generate
-    neorv32_icache_inst: neorv32_icache
+    neorv32_icache_inst: entity neorv32.neorv32_icache
     generic map (
       ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
       ICACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE,
@@ -601,7 +571,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_dcache_inst_true:
   if (DCACHE_EN = true) generate
-    neorv32_dcache_inst: neorv32_dcache
+    neorv32_dcache_inst: entity neorv32.neorv32_dcache
     generic map (
       DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
       DCACHE_BLOCK_SIZE => DCACHE_BLOCK_SIZE,
@@ -627,7 +597,7 @@ begin
 
   -- Core Complex Bus Switch ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_core_busswitch_inst: neorv32_busswitch
+  neorv32_core_busswitch_inst: entity neorv32.neorv32_busswitch
   generic map (
     PORT_A_READ_ONLY => false,
     PORT_B_READ_ONLY => true -- i-fetch is read-only
@@ -654,7 +624,7 @@ begin
 
     -- DMA Controller -------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_dma_inst: neorv32_dma
+    neorv32_dma_inst: entity neorv32.neorv32_dma
     port map (
       clk_i     => clk_i,
       rstn_i    => rstn_int,
@@ -662,13 +632,13 @@ begin
       bus_rsp_o => rsp_bus(DEV_DMA),
       dma_req_o => dma_req,
       dma_rsp_i => dma_rsp,
-      firq_i    => fast_irq,
-      irq_o     => dma_irq
+      firq_i    => cpu_firq,
+      irq_o     => firq.dma
     );
 
     -- DMA Bus Switch -------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_dma_busswitch_inst: neorv32_busswitch
+    neorv32_dma_busswitch_inst: entity neorv32.neorv32_busswitch
     generic map (
       PORT_A_READ_ONLY => false,
       PORT_B_READ_ONLY => false
@@ -691,7 +661,7 @@ begin
     rsp_bus(DEV_DMA) <= rsp_terminate_c;
     main_req <= core_req;
     core_rsp <= main_rsp;
-    dma_irq  <= '0';
+    firq.dma <= '0';
   end generate;
 
 
@@ -701,7 +671,7 @@ begin
 
   -- Bus Keeper (BUSKEEPER) -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_bus_keeper_inst: neorv32_bus_keeper
+  neorv32_bus_keeper_inst: entity neorv32.neorv32_bus_keeper
   port map (
     clk_i      => clk_i,
     rstn_i     => rstn_int,
@@ -741,7 +711,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_int_imem_inst_true:
   if (MEM_INT_IMEM_EN = true) and (MEM_INT_IMEM_SIZE > 0) generate
-    neorv32_int_imem_inst: neorv32_imem
+    neorv32_int_imem_inst: entity neorv32.neorv32_imem
     generic map (
       IMEM_BASE    => imem_base_c,
       IMEM_SIZE    => MEM_INT_IMEM_SIZE,
@@ -763,7 +733,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_int_dmem_inst_true:
   if (MEM_INT_DMEM_EN = true) and (MEM_INT_DMEM_SIZE > 0) generate
-    neorv32_int_dmem_inst: neorv32_dmem
+    neorv32_int_dmem_inst: entity neorv32.neorv32_dmem
     generic map (
       DMEM_BASE => dmem_base_c,
       DMEM_SIZE => MEM_INT_DMEM_SIZE
@@ -785,7 +755,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_boot_rom_inst_true:
   if (INT_BOOTLOADER_EN = true) generate
-    neorv32_boot_rom_inst: neorv32_boot_rom
+    neorv32_boot_rom_inst: entity neorv32.neorv32_boot_rom
     generic map (
       BOOTROM_BASE => boot_rom_base_c
     )
@@ -806,7 +776,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_wishbone_inst_true:
   if (MEM_EXT_EN = true) generate
-    neorv32_wishbone_inst: neorv32_wishbone
+    neorv32_wishbone_inst: entity neorv32.neorv32_wishbone
     generic map (
       -- Internal instruction memory --
       MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,
@@ -864,7 +834,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_xip_inst_true:
   if (IO_XIP_EN = true) generate
-    neorv32_xip_inst: neorv32_xip
+    neorv32_xip_inst: entity neorv32.neorv32_xip
     port map (
       -- global control --
       clk_i       => clk_i,
@@ -876,7 +846,7 @@ begin
       xip_en_o    => xip_enable,
       xip_acc_o   => xip_access,
       xip_page_o  => xip_page,
-      clkgen_en_o => xip_cg_en,
+      clkgen_en_o => cg_en.xip,
       clkgen_i    => clk_gen,
       spi_csn_o   => xip_csn_o,
       spi_clk_o   => xip_clk_o,
@@ -892,7 +862,7 @@ begin
     xip_enable           <= '0';
     xip_access           <= '0';
     xip_page             <= (others => '0');
-    xip_cg_en            <= '0';
+    cg_en.xip            <= '0';
     xip_csn_o            <= '1';
     xip_clk_o            <= '0';
     xip_dat_o            <= '0';
@@ -920,7 +890,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cfs_inst_true:
   if (IO_CFS_EN = true) generate
-    neorv32_cfs_inst: neorv32_cfs
+    neorv32_cfs_inst: entity neorv32.neorv32_cfs
     generic map (
       CFS_CONFIG   => IO_CFS_CONFIG,
       CFS_IN_SIZE  => IO_CFS_IN_SIZE,
@@ -931,9 +901,9 @@ begin
       rstn_i      => rstn_int,
       bus_req_i   => io_req,
       bus_rsp_o   => rsp_bus(DEV_CFS),
-      clkgen_en_o => cfs_cg_en,
+      clkgen_en_o => cg_en.cfs,
       clkgen_i    => clk_gen,
-      irq_o       => cfs_irq,
+      irq_o       => firq.cfs,
       cfs_in_i    => cfs_in_i,
       cfs_out_o   => cfs_out_o
     );
@@ -942,8 +912,8 @@ begin
   neorv32_cfs_inst_false:
   if (IO_CFS_EN = false) generate
     rsp_bus(DEV_CFS) <= rsp_terminate_c;
-    cfs_cg_en        <= '0';
-    cfs_irq          <= '0';
+    cg_en.cfs        <= '0';
+    firq.cfs         <= '0';
     cfs_out_o        <= (others => '0');
   end generate;
 
@@ -952,7 +922,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_sdi_inst_true:
   if (IO_SDI_EN = true) generate
-    neorv32_SDI_inst: neorv32_sdi
+    neorv32_SDI_inst: entity neorv32.neorv32_sdi
     generic map (
       RTX_FIFO => IO_SDI_FIFO
     )
@@ -965,7 +935,7 @@ begin
       sdi_clk_i => sdi_clk_i,
       sdi_dat_i => sdi_dat_i,
       sdi_dat_o => sdi_dat_o,
-      irq_o     => sdi_irq
+      irq_o     => firq.sdi
     );
   end generate;
 
@@ -973,7 +943,7 @@ begin
   if (IO_SDI_EN = false) generate
     rsp_bus(DEV_SDI) <= rsp_terminate_c;
     sdi_dat_o        <= '0';
-    sdi_irq          <= '0';
+    firq.sdi         <= '0';
   end generate;
 
 
@@ -981,7 +951,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_gpio_inst_true:
   if (IO_GPIO_NUM > 0) generate
-    neorv32_gpio_inst: neorv32_gpio
+    neorv32_gpio_inst: entity neorv32.neorv32_gpio
     generic map (
       GPIO_NUM => IO_GPIO_NUM
     )
@@ -1007,7 +977,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_wdt_inst_true:
   if (IO_WDT_EN = true) generate
-    neorv32_wdt_inst: neorv32_wdt
+    neorv32_wdt_inst: entity neorv32.neorv32_wdt
     port map (
       clk_i       => clk_i,
       rstn_ext_i  => rstn_ext,
@@ -1016,9 +986,9 @@ begin
       bus_rsp_o   => rsp_bus(DEV_WDT),
       cpu_debug_i => cpu_debug,
       cpu_sleep_i => cpu_sleep,
-      clkgen_en_o => wdt_cg_en,
+      clkgen_en_o => cg_en.wdt,
       clkgen_i    => clk_gen,
-      irq_o       => wdt_irq,
+      irq_o       => firq.wdt,
       rstn_o      => rstn_wdt
     );
   end generate;
@@ -1026,9 +996,9 @@ begin
   neorv32_wdt_inst_false:
   if (IO_WDT_EN = false) generate
     rsp_bus(DEV_WDT) <= rsp_terminate_c;
-    wdt_irq          <= '0';
+    firq.wdt         <= '0';
     rstn_wdt         <= '1';
-    wdt_cg_en        <= '0';
+    cg_en.wdt        <= '0';
   end generate;
 
 
@@ -1036,7 +1006,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_mtime_inst_true:
   if (IO_MTIME_EN = true) generate
-    neorv32_mtime_inst: neorv32_mtime
+    neorv32_mtime_inst: entity neorv32.neorv32_mtime
     port map (
       clk_i     => clk_i,
       rstn_i    => rstn_int,
@@ -1057,7 +1027,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_uart0_inst_true:
   if (IO_UART0_EN = true) generate
-    neorv32_uart0_inst: neorv32_uart
+    neorv32_uart0_inst: entity neorv32.neorv32_uart
     generic map (
       UART_PRIMARY => true,
       UART_RX_FIFO => IO_UART0_RX_FIFO,
@@ -1068,14 +1038,14 @@ begin
       rstn_i      => rstn_int,
       bus_req_i   => io_req,
       bus_rsp_o   => rsp_bus(DEV_UART0),
-      clkgen_en_o => uart0_cg_en,
+      clkgen_en_o => cg_en.uart0,
       clkgen_i    => clk_gen,
       uart_txd_o  => uart0_txd_o,
       uart_rxd_i  => uart0_rxd_i,
       uart_rts_o  => uart0_rts_o,
       uart_cts_i  => uart0_cts_i,
-      irq_rx_o    => uart0_rx_irq,
-      irq_tx_o    => uart0_tx_irq
+      irq_rx_o    => firq.uart0_rx,
+      irq_tx_o    => firq.uart0_tx
     );
   end generate;
 
@@ -1084,9 +1054,9 @@ begin
     rsp_bus(DEV_UART0) <= rsp_terminate_c;
     uart0_txd_o        <= '0';
     uart0_rts_o        <= '1';
-    uart0_cg_en        <= '0';
-    uart0_rx_irq       <= '0';
-    uart0_tx_irq       <= '0';
+    cg_en.uart0        <= '0';
+    firq.uart0_rx      <= '0';
+    firq.uart0_tx      <= '0';
   end generate;
 
 
@@ -1094,7 +1064,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_uart1_inst_true:
   if (IO_UART1_EN = true) generate
-    neorv32_uart1_inst: neorv32_uart
+    neorv32_uart1_inst: entity neorv32.neorv32_uart
     generic map (
       UART_PRIMARY => false,
       UART_RX_FIFO => IO_UART1_RX_FIFO,
@@ -1105,14 +1075,14 @@ begin
       rstn_i      => rstn_int,
       bus_req_i   => io_req,
       bus_rsp_o   => rsp_bus(DEV_UART1),
-      clkgen_en_o => uart1_cg_en,
+      clkgen_en_o => cg_en.uart1,
       clkgen_i    => clk_gen,
       uart_txd_o  => uart1_txd_o,
       uart_rxd_i  => uart1_rxd_i,
       uart_rts_o  => uart1_rts_o,
       uart_cts_i  => uart1_cts_i,
-      irq_rx_o    => uart1_rx_irq,
-      irq_tx_o    => uart1_tx_irq
+      irq_rx_o    => firq.uart1_rx,
+      irq_tx_o    => firq.uart1_tx
     );
   end generate;
 
@@ -1121,9 +1091,9 @@ begin
     rsp_bus(DEV_UART1) <= rsp_terminate_c;
     uart1_txd_o        <= '0';
     uart1_rts_o        <= '1';
-    uart1_cg_en        <= '0';
-    uart1_rx_irq       <= '0';
-    uart1_tx_irq       <= '0';
+    cg_en.uart1        <= '0';
+    firq.uart1_rx      <= '0';
+    firq.uart1_tx      <= '0';
   end generate;
 
 
@@ -1131,7 +1101,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_spi_inst_true:
   if (IO_SPI_EN = true) generate
-    neorv32_spi_inst: neorv32_spi
+    neorv32_spi_inst: entity neorv32.neorv32_spi
     generic map (
       IO_SPI_FIFO => IO_SPI_FIFO
     )
@@ -1140,13 +1110,13 @@ begin
       rstn_i      => rstn_int,
       bus_req_i   => io_req,
       bus_rsp_o   => rsp_bus(DEV_SPI),
-      clkgen_en_o => spi_cg_en,
+      clkgen_en_o => cg_en.spi,
       clkgen_i    => clk_gen,
       spi_clk_o   => spi_clk_o,
       spi_dat_o   => spi_dat_o,
       spi_dat_i   => spi_dat_i,
       spi_csn_o   => spi_csn_o,
-      irq_o       => spi_irq
+      irq_o       => firq.spi
     );
   end generate;
 
@@ -1156,8 +1126,8 @@ begin
     spi_clk_o        <= '0';
     spi_dat_o        <= '0';
     spi_csn_o        <= (others => '1');
-    spi_cg_en        <= '0';
-    spi_irq          <= '0';
+    cg_en.spi        <= '0';
+    firq.spi         <= '0';
   end generate;
 
 
@@ -1165,19 +1135,19 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_twi_inst_true:
   if (IO_TWI_EN = true) generate
-    neorv32_twi_inst: neorv32_twi
+    neorv32_twi_inst: entity neorv32.neorv32_twi
     port map (
       clk_i       => clk_i,
       rstn_i      => rstn_int,
       bus_req_i   => io_req,
       bus_rsp_o   => rsp_bus(DEV_TWI),
-      clkgen_en_o => twi_cg_en,
+      clkgen_en_o => cg_en.twi,
       clkgen_i    => clk_gen,
       twi_sda_i   => twi_sda_i,
       twi_sda_o   => twi_sda_o,
       twi_scl_i   => twi_scl_i,
       twi_scl_o   => twi_scl_o,
-      irq_o       => twi_irq
+      irq_o       => firq.twi
     );
   end generate;
 
@@ -1186,8 +1156,8 @@ begin
     rsp_bus(DEV_TWI) <= rsp_terminate_c;
     twi_sda_o        <= '1';
     twi_scl_o        <= '1';
-    twi_cg_en        <= '0';
-    twi_irq          <= '0';
+    cg_en.twi        <= '0';
+    firq.twi         <= '0';
   end generate;
 
 
@@ -1195,7 +1165,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_pwm_inst_true:
   if (IO_PWM_NUM_CH > 0) generate
-    neorv32_pwm_inst: neorv32_pwm
+    neorv32_pwm_inst: entity neorv32.neorv32_pwm
     generic map (
       NUM_CHANNELS => IO_PWM_NUM_CH
     )
@@ -1204,7 +1174,7 @@ begin
       rstn_i      => rstn_int,
       bus_req_i   => io_req,
       bus_rsp_o   => rsp_bus(DEV_PWM),
-      clkgen_en_o => pwm_cg_en,
+      clkgen_en_o => cg_en.pwm,
       clkgen_i    => clk_gen,
       pwm_o       => pwm_o
     );
@@ -1213,7 +1183,7 @@ begin
   neorv32_pwm_inst_false:
   if (IO_PWM_NUM_CH = 0) generate
     rsp_bus(DEV_PWM) <= rsp_terminate_c;
-    pwm_cg_en        <= '0';
+    cg_en.pwm        <= '0';
     pwm_o            <= (others => '0');
   end generate;
 
@@ -1222,7 +1192,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_trng_inst_true:
   if (IO_TRNG_EN = true) generate
-    neorv32_trng_inst: neorv32_trng
+    neorv32_trng_inst: entity neorv32.neorv32_trng
     generic map (
       IO_TRNG_FIFO => IO_TRNG_FIFO
     )
@@ -1231,14 +1201,14 @@ begin
       rstn_i    => rstn_int,
       bus_req_i => io_req,
       bus_rsp_o => rsp_bus(DEV_TRNG),
-      irq_o     => trng_irq
+      irq_o     => firq.trng
     );
   end generate;
 
   neorv32_trng_inst_false:
   if (IO_TRNG_EN = false) generate
     rsp_bus(DEV_TRNG) <= rsp_terminate_c;
-    trng_irq          <= '0';
+    firq.trng         <= '0';
   end generate;
 
 
@@ -1246,7 +1216,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_neoled_inst_true:
   if (IO_NEOLED_EN = true) generate
-    neorv32_neoled_inst: neorv32_neoled
+    neorv32_neoled_inst: entity neorv32.neorv32_neoled
     generic map (
       FIFO_DEPTH => IO_NEOLED_TX_FIFO
     )
@@ -1255,9 +1225,9 @@ begin
       rstn_i      => rstn_int,
       bus_req_i   => io_req,
       bus_rsp_o   => rsp_bus(DEV_NEOLED),
-      clkgen_en_o => neoled_cg_en,
+      clkgen_en_o => cg_en.neoled,
       clkgen_i    => clk_gen,
-      irq_o       => neoled_irq,
+      irq_o       => firq.neoled,
       neoled_o    => neoled_o
     );
   end generate;
@@ -1265,8 +1235,8 @@ begin
   neorv32_neoled_inst_false:
   if (IO_NEOLED_EN = false) generate
     rsp_bus(DEV_NEOLED) <= rsp_terminate_c;
-    neoled_cg_en        <= '0';
-    neoled_irq          <= '0';
+    cg_en.neoled        <= '0';
+    firq.neoled         <= '0';
     neoled_o            <= '0';
   end generate;
 
@@ -1275,7 +1245,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_xirq_inst_true:
   if (XIRQ_NUM_CH > 0) generate
-    neorv32_xirq_inst: neorv32_xirq
+    neorv32_xirq_inst: entity neorv32.neorv32_xirq
     generic map (
       XIRQ_NUM_CH           => XIRQ_NUM_CH,
       XIRQ_TRIGGER_TYPE     => XIRQ_TRIGGER_TYPE,
@@ -1288,14 +1258,14 @@ begin
       bus_req_i => io_req,
       bus_rsp_o => rsp_bus(DEV_XIRQ),
       xirq_i    => xirq_i,
-      cpu_irq_o => xirq_irq
+      cpu_irq_o => firq.xirq
     );
   end generate;
 
   neorv32_xirq_inst_false:
   if (XIRQ_NUM_CH = 0) generate
     rsp_bus(DEV_XIRQ) <= rsp_terminate_c;
-    xirq_irq          <= '0';
+    firq.xirq         <= '0';
   end generate;
 
 
@@ -1303,23 +1273,23 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_gptmr_inst_true:
   if (IO_GPTMR_EN = true) generate
-    neorv32_gptmr_inst: neorv32_gptmr
+    neorv32_gptmr_inst: entity neorv32.neorv32_gptmr
     port map (
       clk_i       => clk_i,
       rstn_i      => rstn_int,
       bus_req_i   => io_req,
       bus_rsp_o   => rsp_bus(DEV_GPTMR),
-      clkgen_en_o => gptmr_cg_en,
+      clkgen_en_o => cg_en.gptmr,
       clkgen_i    => clk_gen,
-      irq_o       => gptmr_irq
+      irq_o       => firq.gptmr
     );
   end generate;
 
   neorv32_gptmr_inst_false:
   if (IO_GPTMR_EN = false) generate
     rsp_bus(DEV_GPTMR) <= rsp_terminate_c;
-    gptmr_cg_en        <= '0';
-    gptmr_irq          <= '0';
+    cg_en.gptmr        <= '0';
+    firq.gptmr         <= '0';
   end generate;
 
 
@@ -1327,17 +1297,17 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_onewire_inst_true:
   if (IO_ONEWIRE_EN = true) generate
-    neorv32_onewire_inst: neorv32_onewire
+    neorv32_onewire_inst: entity neorv32.neorv32_onewire
     port map (
       clk_i       => clk_i,
       rstn_i      => rstn_int,
       bus_req_i   => io_req,
       bus_rsp_o   => rsp_bus(DEV_ONEWIRE),
-      clkgen_en_o => onewire_cg_en,
+      clkgen_en_o => cg_en.onewire,
       clkgen_i    => clk_gen,
       onewire_i   => onewire_i,
       onewire_o   => onewire_o,
-      irq_o       => onewire_irq
+      irq_o       => firq.onewire
     );
   end generate;
 
@@ -1345,8 +1315,8 @@ begin
   if (IO_ONEWIRE_EN = false) generate
     rsp_bus(DEV_ONEWIRE) <= rsp_terminate_c;
     onewire_o            <= '1';
-    onewire_cg_en        <= '0';
-    onewire_irq          <= '0';
+    cg_en.onewire        <= '0';
+    firq.onewire         <= '0';
   end generate;
 
 
@@ -1354,7 +1324,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_slink_inst_true:
   if (IO_SLINK_EN = true) generate
-    neorv32_slink_inst: neorv32_slink
+    neorv32_slink_inst: entity neorv32.neorv32_slink
     generic map (
       SLINK_RX_FIFO => IO_SLINK_RX_FIFO,
       SLINK_TX_FIFO => IO_SLINK_TX_FIFO
@@ -1365,7 +1335,7 @@ begin
       rstn_i           => rstn_int,
       bus_req_i        => io_req,
       bus_rsp_o        => rsp_bus(DEV_SLINK),
-      irq_o            => slink_irq,
+      irq_o            => firq.slink,
       -- RX stream interface --
       slink_rx_data_i  => slink_rx_dat_i,
       slink_rx_valid_i => slink_rx_val_i,
@@ -1380,7 +1350,7 @@ begin
   neorv32_slink_inst_false:
   if (IO_SLINK_EN = false) generate
     rsp_bus(DEV_SLINK) <= rsp_terminate_c;
-    slink_irq          <= '0';
+    firq.slink         <= '0';
     slink_rx_rdy_o     <= '0';
     slink_tx_dat_o     <= (others => '0');
     slink_tx_val_o     <= '0';
@@ -1391,7 +1361,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_crc_inst_true:
   if (IO_CRC_EN = true) generate
-    neorv32_crc_inst: neorv32_crc
+    neorv32_crc_inst: entity neorv32.neorv32_crc
       port map (
       clk_i     => clk_i,
       rstn_i    => rstn_int,
@@ -1408,7 +1378,7 @@ begin
 
   -- System Configuration Information Memory (SYSINFO) --------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_sysinfo_inst: neorv32_sysinfo
+  neorv32_sysinfo_inst: entity neorv32.neorv32_sysinfo
   generic map (
     -- General --
     CLOCK_FREQUENCY      => CLOCK_FREQUENCY,
@@ -1473,7 +1443,7 @@ begin
 
     -- On-Chip Debugger - Debug Transport Module (DTM) ----------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_debug_dtm_inst: neorv32_debug_dtm
+    neorv32_debug_dtm_inst: entity neorv32.neorv32_debug_dtm
     generic map (
       IDCODE_VERSION => (others => '0'),
       IDCODE_PARTID  => (others => '0'),
@@ -1503,7 +1473,7 @@ begin
 
     -- On-Chip Debugger - Debug Module (DM) ---------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_debug_dm_inst: neorv32_debug_dm
+    neorv32_debug_dm_inst: entity neorv32.neorv32_debug_dm
     port map (
       -- global control --
       clk_i             => clk_i,

@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080508"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080509"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -1039,11 +1039,9 @@ package neorv32_package is
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
 
 -- ****************************************************************************************************************************
--- Entity Definitions
+-- NEORV32 Processor Top Entity (component prototype)
 -- ****************************************************************************************************************************
 
-  -- Component: NEORV32 Processor Top Entity ------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
   component neorv32_top
     generic (
       -- General --
@@ -1219,1004 +1217,6 @@ package neorv32_package is
     );
   end component;
 
-  -- Component: CPU Top Entity --------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu
-    generic (
-      -- General --
-      HART_ID                      : std_ulogic_vector(31 downto 0); -- hardware thread ID
-      VENDOR_ID                    : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
-      CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
-      CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
-      CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
-      -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
-      CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
-      CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
-      CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
-      CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
-      CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-      CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
-      CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement conditional operations extension?
-      CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
-      CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
-      CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
-      CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
-      CPU_EXTENSION_RISCV_Sdext    : boolean; -- implement external debug mode extension?
-      CPU_EXTENSION_RISCV_Sdtrig   : boolean; -- implement trigger module extension?
-      -- Tuning Options --
-      FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
-      FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
-      CPU_IPB_ENTRIES              : natural; -- entries in instruction prefetch buffer, has to be a power of 2, min 1
-      -- Physical Memory Protection (PMP) --
-      PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
-      PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
-      -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
-      HPM_CNT_WIDTH                : natural  -- total size of HPM counters (0..64)
-    );
-    port (
-      -- global control --
-      clk_i      : in  std_ulogic; -- global clock, rising edge
-      rstn_i     : in  std_ulogic; -- global reset, low-active, async
-      sleep_o    : out std_ulogic; -- cpu is in sleep mode when set
-      debug_o    : out std_ulogic; -- cpu is in debug mode when set
-      ifence_o   : out std_ulogic; -- instruction fence
-      dfence_o   : out std_ulogic; -- data fence
-      -- interrupts --
-      msi_i      : in  std_ulogic; -- risc-v machine software interrupt
-      mei_i      : in  std_ulogic; -- risc-v machine external interrupt
-      mti_i      : in  std_ulogic; -- risc-v machine timer interrupt
-      firq_i     : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
-      dbi_i      : in  std_ulogic; -- risc-v debug halt request interrupt
-      -- instruction bus interface --
-      ibus_req_o : out bus_req_t; -- request bus
-      ibus_rsp_i : in  bus_rsp_t; -- response bus
-      -- data bus interface --
-      dbus_req_o : out bus_req_t; -- request bus
-      dbus_rsp_i : in  bus_rsp_t  -- response bus
-    );
-  end component;
-
-  -- Component: CPU Control -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_control
-    generic (
-      -- General --
-      HART_ID                      : std_ulogic_vector(31 downto 0); -- hardware thread ID
-      VENDOR_ID                    : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
-      CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
-      CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
-      CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
-      -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
-      CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
-      CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
-      CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
-      CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
-      CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-      CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
-      CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement conditional operations extension?
-      CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
-      CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
-      CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
-      CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
-      CPU_EXTENSION_RISCV_Sdext    : boolean; -- implement external debug mode extension?
-      CPU_EXTENSION_RISCV_Sdtrig   : boolean; -- implement trigger module extension?
-      -- Extension Options --
-      FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
-      FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
-      CPU_IPB_ENTRIES              : natural; -- entries is instruction prefetch buffer, has to be a power of 2, min 1
-      -- Physical memory protection (PMP) --
-      PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
-      PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
-      -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
-      HPM_CNT_WIDTH                : natural  -- total size of HPM counters (0..64)
-    );
-    port (
-      -- global control --
-      clk_i         : in  std_ulogic; -- global clock, rising edge
-      rstn_i        : in  std_ulogic; -- global reset, low-active, async
-      ctrl_o        : out ctrl_bus_t; -- main control bus
-      -- instruction fetch interface --
-      i_bus_addr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- bus access address
-      i_bus_rdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- bus read data
-      i_bus_re_o    : out std_ulogic; -- read enable
-      i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-      i_bus_err_i   : in  std_ulogic; -- bus transfer error
-      i_pmp_fault_i : in  std_ulogic; -- instruction fetch pmp fault
-      -- status input --
-      alu_cp_done_i : in  std_ulogic; -- ALU iterative operation done
-      alu_exc_i     : in  std_ulogic; -- ALU exception
-      bus_d_wait_i  : in  std_ulogic; -- wait for bus
-      -- data input --
-      cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
-      alu_add_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU address result
-      rs1_i         : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-      -- data output --
-      imm_o         : out std_ulogic_vector(XLEN-1 downto 0); -- immediate
-      curr_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
-      next_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- next PC (corresponding to next instruction)
-      csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
-      -- FPU interface --
-      fpu_flags_i   : in  std_ulogic_vector(4 downto 0); -- exception flags
-      -- debug mode (halt) request --
-      db_halt_req_i : in  std_ulogic;
-      -- interrupts (risc-v compliant) --
-      msi_i         : in  std_ulogic; -- machine software interrupt
-      mei_i         : in  std_ulogic; -- machine external interrupt
-      mti_i         : in  std_ulogic; -- machine timer interrupt
-      -- fast interrupts (custom) --
-      firq_i        : in  std_ulogic_vector(15 downto 0);
-      -- physical memory protection --
-      pmp_addr_o    : out pmp_addr_if_t; -- addresses
-      pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
-      -- bus access exceptions --
-      mar_i         : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-      ma_load_i     : in  std_ulogic; -- misaligned load data address
-      ma_store_i    : in  std_ulogic; -- misaligned store data address
-      be_load_i     : in  std_ulogic; -- bus error on load data access
-      be_store_i    : in  std_ulogic  -- bus error on store data access
-    );
-  end component;
-
-  -- Component: CPU Register File -----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_regfile
-    generic (
-      RVE    : boolean; -- implement embedded RF extension?
-      RS3_EN : boolean; -- enable 3rd read port
-      RS4_EN : boolean  -- enable 4th read port
-    );
-    port (
-      -- global control --
-      clk_i  : in  std_ulogic; -- global clock, rising edge
-      ctrl_i : in  ctrl_bus_t; -- main control bus
-      -- data input --
-      alu_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU result
-      mem_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- memory read data
-      csr_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
-      pc2_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- next PC
-      -- data output --
-      rs1_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 1
-      rs2_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 2
-      rs3_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 3
-      rs4_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- operand 4
-    );
-  end component;
-
-  -- Component: CPU ALU ---------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_alu
-    generic (
-      -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_B      : boolean; -- implement bit-manipulation extension?
-      CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
-      CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
-      CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-      CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
-      CPU_EXTENSION_RISCV_Zicond : boolean; -- implement conditional operations extension?
-      -- Extension Options --
-      FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
-      FAST_SHIFT_EN              : boolean  -- use barrel shifter for shift operations
-    );
-    port (
-      -- global control --
-      clk_i       : in  std_ulogic; -- global clock, rising edge
-      rstn_i      : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i      : in  ctrl_bus_t; -- main control bus
-      -- data input --
-      rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-      rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
-      rs3_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
-      rs4_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 4
-      pc_i        : in  std_ulogic_vector(XLEN-1 downto 0); -- current PC
-      imm_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- immediate
-      -- data output --
-      cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
-      res_o       : out std_ulogic_vector(XLEN-1 downto 0); -- ALU result
-      add_o       : out std_ulogic_vector(XLEN-1 downto 0); -- address computation result
-      fpu_flags_o : out std_ulogic_vector(4 downto 0); -- FPU exception flags
-      -- status --
-      exc_o       : out std_ulogic; -- ALU exception
-      cp_done_o   : out std_ulogic -- co-processor operation done?
-    );
-  end component;
-
-  -- Component: CPU Co-Processor SHIFTER ----------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_cp_shifter
-    generic (
-      FAST_SHIFT_EN : boolean  -- use barrel shifter for shift operations
-    );
-    port (
-      -- global control --
-      clk_i   : in  std_ulogic; -- global clock, rising edge
-      rstn_i  : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i  : in  ctrl_bus_t; -- main control bus
-      start_i : in  std_ulogic; -- trigger operation
-      -- data input --
-      rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-      shamt_i : in  std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
-      -- result and status --
-      res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-      valid_o : out std_ulogic -- data output valid
-    );
-  end component;
-
-  -- Component: CPU Co-Processor MULDIV ('M' extension) -------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_cp_muldiv
-    generic (
-      FAST_MUL_EN : boolean; -- use DSPs for faster multiplication
-      DIVISION_EN : boolean  -- implement divider hardware
-    );
-    port (
-      -- global control --
-      clk_i   : in  std_ulogic; -- global clock, rising edge
-      rstn_i  : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i  : in  ctrl_bus_t; -- main control bus
-      start_i : in  std_ulogic; -- trigger operation
-      -- data input --
-      rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-      rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
-      -- result and status --
-      res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-      valid_o : out std_ulogic -- data output valid
-    );
-  end component;
-
-  -- Component: CPU Co-Processor Bit-Manipulation Unit ('B' extension) ----------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_cp_bitmanip is
-    generic (
-      FAST_SHIFT_EN : boolean  -- use barrel shifter for shift operations
-    );
-    port (
-      -- global control --
-      clk_i   : in  std_ulogic; -- global clock, rising edge
-      rstn_i  : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i  : in  ctrl_bus_t; -- main control bus
-      start_i : in  std_ulogic; -- trigger operation
-      -- data input --
-      cmp_i   : in  std_ulogic_vector(1 downto 0); -- comparator status
-      rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-      rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
-      shamt_i : in  std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
-      -- result and status --
-      res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-      valid_o : out std_ulogic -- data output valid
-    );
-  end component;
-
-  -- Component: CPU Co-Processor 32-bit FPU ('Zfinx' extension) -----------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_cp_fpu
-    port (
-      -- global control --
-      clk_i    : in  std_ulogic; -- global clock, rising edge
-      rstn_i   : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i   : in  ctrl_bus_t; -- main control bus
-      start_i  : in  std_ulogic; -- trigger operation
-      -- data input --
-      cmp_i    : in  std_ulogic_vector(1 downto 0); -- comparator status
-      rs1_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-      rs2_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
-      rs3_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
-      -- result and status --
-      res_o    : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-      fflags_o : out std_ulogic_vector(4 downto 0); -- exception flags
-      valid_o  : out std_ulogic -- data output valid
-    );
-  end component;
-
-  -- Component: CPU Co-Processor for Conditional Operations ('Zicond' extension) ------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_cp_cond
-    port (
-      -- global control --
-      clk_i   : in  std_ulogic; -- global clock, rising edge
-      ctrl_i  : in  ctrl_bus_t; -- main control bus
-      start_i : in  std_ulogic; -- trigger operation
-      -- data input --
-      rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-      rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
-      -- result and status --
-      res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-      valid_o : out std_ulogic -- data output valid
-    );
-  end component;
-
-  -- Component: CPU Co-Processor Custom (Instr.) Functions Unit ('Zxcfu' extension) ---------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_cp_cfu
-    port (
-      -- global control --
-      clk_i   : in  std_ulogic; -- global clock, rising edge
-      rstn_i  : in  std_ulogic; -- global reset, low-active, async
-      ctrl_i  : in  ctrl_bus_t; -- main control bus
-      start_i : in  std_ulogic; -- trigger operation
-      -- data input --
-      rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-      rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
-      rs3_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
-      rs4_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 4
-      -- result and status --
-      res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-      valid_o : out std_ulogic -- data output valid
-    );
-  end component;
-
-  -- Component: CPU Bus Interface -----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_bus
-    generic (
-      PMP_NUM_REGIONS     : natural; -- number of regions (0..16)
-      PMP_MIN_GRANULARITY : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
-    );
-    port (
-      -- global control --
-      clk_i         : in  std_ulogic; -- global clock, rising edge
-      rstn_i        : in  std_ulogic := '0'; -- global reset, low-active, async
-      ctrl_i        : in  ctrl_bus_t; -- main control bus
-      -- cpu instruction fetch interface --
-      fetch_pc_i    : in  std_ulogic_vector(XLEN-1 downto 0); -- PC for instruction fetch
-      i_pmp_fault_o : out std_ulogic; -- instruction fetch pmp fault
-      -- cpu data access interface --
-      addr_i        : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU result -> access address
-      wdata_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
-      rdata_o       : out std_ulogic_vector(XLEN-1 downto 0); -- read data
-      mar_o         : out std_ulogic_vector(XLEN-1 downto 0); -- current memory address register
-      d_wait_o      : out std_ulogic; -- wait for access to complete
-      ma_load_o     : out std_ulogic; -- misaligned load data address
-      ma_store_o    : out std_ulogic; -- misaligned store data address
-      be_load_o     : out std_ulogic; -- bus error on load data access
-      be_store_o    : out std_ulogic; -- bus error on store data access
-      -- physical memory protection --
-      pmp_addr_i    : in  pmp_addr_if_t; -- addresses
-      pmp_ctrl_i    : in  pmp_ctrl_if_t; -- configs
-      -- data bus --
-      d_bus_addr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- bus access address
-      d_bus_rdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- bus read data
-      d_bus_wdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- bus write data
-      d_bus_ben_o   : out std_ulogic_vector((XLEN/8)-1 downto 0); -- byte enable
-      d_bus_we_o    : out std_ulogic; -- write enable
-      d_bus_re_o    : out std_ulogic; -- read enable
-      d_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-      d_bus_err_i   : in  std_ulogic  -- bus transfer error
-    );
-  end component;
-
-  -- Component: Bus Keeper ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_bus_keeper is
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      rstn_i    : in  std_ulogic; -- global reset, low-active, async
-      bus_req_i : in  bus_req_t;  -- monitor request bus
-      bus_rsp_i : in  bus_rsp_t;  -- monitor response bus
-      bus_err_o : out std_ulogic; -- signal bus error to CPU
-      bus_tmo_i : in  std_ulogic; -- transfer timeout (external interface)
-      bus_ext_i : in  std_ulogic; -- external bus access
-      bus_xip_i : in  std_ulogic  -- pending XIP access
-    );
-  end component;
-
-  -- Component: CPU Instruction Cache -------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_icache
-    generic (
-      ICACHE_NUM_BLOCKS : natural; -- number of blocks (min 1), has to be a power of 2
-      ICACHE_BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
-      ICACHE_NUM_SETS   : natural  -- associativity / number of sets (1=direct_mapped), has to be a power of 2
-    );
-    port (
-      clk_i     : in  std_ulogic; -- global clock, rising edge
-      rstn_i    : in  std_ulogic; -- global reset, low-active, async
-      clear_i   : in  std_ulogic; -- cache clear
-      cpu_req_i : in  bus_req_t;  -- request bus
-      cpu_rsp_o : out bus_rsp_t;  -- response bus
-      bus_req_o : out bus_req_t;  -- request bus
-      bus_rsp_i : in  bus_rsp_t   -- response bus
-    );
-  end component;
-
-  -- Component: CPU Data Cache --------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_dcache
-    generic (
-      DCACHE_NUM_BLOCKS : natural; -- number of blocks (min 1), has to be a power of 2
-      DCACHE_BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
-      DCACHE_UC_PBEGIN  : std_ulogic_vector(3 downto 0) -- begin of uncached address space (page number)
-    );
-    port (
-      clk_i     : in  std_ulogic; -- global clock, rising edge
-      rstn_i    : in  std_ulogic; -- global reset, low-active, async
-      clear_i   : in  std_ulogic; -- cache clear
-      cpu_req_i : in  bus_req_t;  -- request bus
-      cpu_rsp_o : out bus_rsp_t;  -- response bus
-      bus_req_o : out bus_req_t;  -- request bus
-      bus_rsp_i : in  bus_rsp_t   -- response bus
-    );
-  end component;
-
-  -- Component: CPU Bus Switch --------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_busswitch
-    generic (
-      PORT_A_READ_ONLY : boolean; -- set if port A is read-only
-      PORT_B_READ_ONLY : boolean  -- set if port B is read-only
-    );
-    port (
-      -- global control --
-      clk_i   : in  std_ulogic; -- global clock, rising edge
-      rstn_i  : in  std_ulogic; -- global reset, low-active, async
-      a_req_i : in  bus_req_t;  -- host port A: request bus
-      a_rsp_o : out bus_rsp_t;  -- host port A: response bus
-      b_req_i : in  bus_req_t;  -- host port B: request bus
-      b_rsp_o : out bus_rsp_t;  -- host port B: response bus
-      x_req_o : out bus_req_t;  -- device port request bus
-      x_rsp_i : in  bus_rsp_t   -- device port response bus
-    );
-  end component;
-
-  -- Component: CPU Compressed Instructions De-Compressor -----------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cpu_decompressor
-    generic (
-      FPU_ENABLE : boolean -- floating-point instruction enabled
-    );
-    port (
-      ci_instr16_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction
-      ci_instr32_o : out std_ulogic_vector(31 downto 0)  -- decompressed instruction
-    );
-  end component;
-
-  -- Component: Processor-internal instruction memory (IMEM) --------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_imem
-    generic (
-      IMEM_BASE    : std_ulogic_vector(31 downto 0); -- memory base address
-      IMEM_SIZE    : natural; -- processor-internal instruction memory size in bytes
-      IMEM_AS_IROM : boolean  -- implement IMEM as pre-initialized read-only memory?
-    );
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t   -- bus response
-    );
-  end component;
-
-  -- Component: Processor-internal data memory (DMEM) ---------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_dmem
-    generic (
-      DMEM_BASE : std_ulogic_vector(31 downto 0); -- memory base address
-      DMEM_SIZE : natural -- processor-internal instruction memory size in bytes
-    );
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t   -- bus response
-    );
-  end component;
-
-  -- Component: Processor-internal bootloader ROM (BOOTROM) ---------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_boot_rom
-    generic (
-      BOOTROM_BASE : std_ulogic_vector(31 downto 0) -- boot ROM base address
-    );
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t   -- bus response
-    );
-  end component;
-
-  -- Component: Machine System Timer (MTIME) ------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_mtime
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      rstn_i    : in  std_ulogic; -- global reset line, low-active, async
-      bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t;  -- bus response
-      irq_o     : out std_ulogic  -- interrupt request
-    );
-  end component;
-
-  -- Component: General Purpose Input/Output Port (GPIO) ------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_gpio
-    generic (
-      GPIO_NUM : natural -- number of GPIO input/output pairs (0..64)
-    );
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      rstn_i    : in  std_ulogic; -- global reset line, low-active, async
-      bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t;  -- bus response
-      gpio_o    : out std_ulogic_vector(63 downto 0); -- parallel output
-      gpio_i    : in  std_ulogic_vector(63 downto 0)  -- parallel input
-    );
-  end component;
-
-  -- Component: Watchdog Timer (WDT) --------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_wdt
-    port (
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_ext_i  : in  std_ulogic; -- external reset line, low-active, async
-      rstn_int_i  : in  std_ulogic; -- internal reset line, low-active, async
-      bus_req_i   : in  bus_req_t;  -- bus request
-      bus_rsp_o   : out bus_rsp_t;  -- bus response
-      cpu_debug_i : in  std_ulogic; -- CPU is in debug mode
-      cpu_sleep_i : in  std_ulogic; -- CPU is in sleep mode
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(7 downto 0);
-      irq_o       : out std_ulogic; -- timeout IRQ
-      rstn_o      : out std_ulogic  -- timeout reset, low_active, sync
-    );
-  end component;
-
-  -- Component: Universal Asynchronous Receiver and Transmitter (UART) ----------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_uart
-    generic (
-      UART_PRIMARY : boolean; -- true = primary UART (UART0), false = secondary UART (UART1)
-      UART_RX_FIFO : natural; -- RX fifo depth, has to be a power of two, min 1
-      UART_TX_FIFO : natural  -- TX fifo depth, has to be a power of two, min 1
-    );
-    port (
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active, async
-      bus_req_i   : in  bus_req_t;  -- bus request
-      bus_rsp_o   : out bus_rsp_t;  -- bus response
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(7 downto 0);
-      uart_txd_o  : out std_ulogic; -- serial TX line
-      uart_rxd_i  : in  std_ulogic; -- serial RX line
-      uart_rts_o  : out std_ulogic; -- UART.RX ready to receive ("RTR"), low-active, optional
-      uart_cts_i  : in  std_ulogic; -- UART.TX allowed to transmit, low-active, optional
-      irq_rx_o    : out std_ulogic; -- RX interrupt
-      irq_tx_o    : out std_ulogic  -- TX interrupt
-    );
-  end component;
-
-  -- Component: Serial Peripheral Interface (SPI) -------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_spi
-    generic (
-      IO_SPI_FIFO : natural -- SPI RTX fifo depth, has to be power of two, min 1
-    );
-    port (
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active, async
-      bus_req_i   : in  bus_req_t;  -- bus request
-      bus_rsp_o   : out bus_rsp_t;  -- bus response
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(7 downto 0);
-      spi_clk_o   : out std_ulogic; -- SPI serial clock
-      spi_dat_o   : out std_ulogic; -- controller data out, peripheral data in
-      spi_dat_i   : in  std_ulogic; -- controller data in, peripheral data out
-      spi_csn_o   : out std_ulogic_vector(7 downto 0); -- SPI CS
-      irq_o       : out std_ulogic -- transmission done interrupt
-    );
-  end component;
-
-  -- Component: Two-Wire Interface (TWI) ----------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_twi
-    port (
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active, async
-      bus_req_i   : in  bus_req_t;  -- bus request
-      bus_rsp_o   : out bus_rsp_t;  -- bus response
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(7 downto 0);
-      twi_sda_i   : in  std_ulogic; -- serial data line input
-      twi_sda_o   : out std_ulogic; -- serial data line output
-      twi_scl_i   : in  std_ulogic; -- serial clock line input
-      twi_scl_o   : out std_ulogic; -- serial clock line output
-      irq_o       : out std_ulogic -- transfer done IRQ
-    );
-  end component;
-
-  -- Component: Pulse-Width Modulation Controller (PWM) -------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_pwm
-    generic (
-      NUM_CHANNELS : natural -- number of PWM channels (0..12)
-    );
-    port (
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active, async
-      bus_req_i   : in  bus_req_t;  -- bus request
-      bus_rsp_o   : out bus_rsp_t;  -- bus response
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(07 downto 0);
-      pwm_o       : out std_ulogic_vector(11 downto 0) -- PWM output
-    );
-  end component;
-
-  -- Component: True Random Number Generator (TRNG) -----------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_trng
-    generic (
-      IO_TRNG_FIFO : natural := 1 -- RND fifo depth, has to be a power of two, min 1
-    );
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      rstn_i    : in  std_ulogic; -- global reset line, low-active, async
-      bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t;  -- bus response
-      irq_o     : out std_ulogic  -- CPU interrupt
-    );
-  end component;
-
-  -- Component: Wishbone Bus Gateway (WISHBONE) ---------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_wishbone
-    generic (
-      -- Internal instruction memory --
-      MEM_INT_IMEM_EN   : boolean; -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE : natural; -- size of processor-internal instruction memory in bytes
-      -- Internal data memory --
-      MEM_INT_DMEM_EN   : boolean; -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE : natural; -- size of processor-internal data memory in bytes
-      -- Interface Configuration --
-      BUS_TIMEOUT       : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
-      PIPE_MODE         : boolean; -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-      BIG_ENDIAN        : boolean; -- byte order: true=big-endian, false=little-endian
-      ASYNC_RX          : boolean; -- use register buffer for RX data when false
-      ASYNC_TX          : boolean  -- use register buffer for TX data when false
-    );
-    port (
-      clk_i      : in  std_ulogic; -- global clock line
-      rstn_i     : in  std_ulogic; -- global reset line, low-active
-      bus_req_i  : in  bus_req_t;  -- bus request
-      bus_rsp_o  : out bus_rsp_t;  -- bus response
-      tmo_o      : out std_ulogic; -- transfer timeout
-      ext_o      : out std_ulogic; -- active external access
-      xip_en_i   : in  std_ulogic; -- XIP module enabled
-      xip_page_i : in  std_ulogic_vector(03 downto 0); -- XIP memory page
-      --
-      wb_tag_o   : out std_ulogic_vector(02 downto 0); -- request tag
-      wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
-      wb_dat_i   : in  std_ulogic_vector(31 downto 0); -- read data
-      wb_dat_o   : out std_ulogic_vector(31 downto 0); -- write data
-      wb_we_o    : out std_ulogic; -- read/write
-      wb_sel_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-      wb_stb_o   : out std_ulogic; -- strobe
-      wb_cyc_o   : out std_ulogic; -- valid cycle
-      wb_ack_i   : in  std_ulogic; -- transfer acknowledge
-      wb_err_i   : in  std_ulogic  -- transfer error
-    );
-  end component;
-
-  -- Component: Custom Functions Subsystem (CFS) --------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_cfs
-    generic (
-      CFS_CONFIG   : std_ulogic_vector(31 downto 0); -- custom CFS configuration generic
-      CFS_IN_SIZE  : natural; -- size of CFS input conduit in bits
-      CFS_OUT_SIZE : natural  -- size of CFS output conduit in bits
-    );
-    port (
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active, use as async
-      bus_req_i   : in  bus_req_t;  -- bus request
-      bus_rsp_o   : out bus_rsp_t;  -- bus response
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(7 downto 0); -- "clock" inputs
-      irq_o       : out std_ulogic; -- interrupt request
-      cfs_in_i    : in  std_ulogic_vector(CFS_IN_SIZE-1 downto 0); -- custom inputs
-      cfs_out_o   : out std_ulogic_vector(CFS_OUT_SIZE-1 downto 0) -- custom outputs
-    );
-  end component;
-
-  -- Component: Smart LED (WS2811/WS2812) Interface (NEOLED) --------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_neoled
-    generic (
-      FIFO_DEPTH : natural -- NEOLED FIFO depth, has to be a power of two, min 1
-    );
-    port (
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active
-      bus_req_i   : in  bus_req_t;  -- bus request
-      bus_rsp_o   : out bus_rsp_t;  -- bus response
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(7 downto 0);
-      irq_o       : out std_ulogic; -- interrupt request
-      neoled_o    : out std_ulogic -- serial async data line
-    );
-  end component;
-
-  -- Component: External Interrupt Controller (XIRQ) ----------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_xirq
-    generic (
-      XIRQ_NUM_CH           : natural; -- number of external IRQ channels (0..32)
-      XIRQ_TRIGGER_TYPE     : std_ulogic_vector(31 downto 0); -- trigger type: 0=level, 1=edge
-      XIRQ_TRIGGER_POLARITY : std_ulogic_vector(31 downto 0)  -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
-    );
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      rstn_i    : in  std_ulogic; -- global reset line, low-active
-      bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t;  -- bus response
-      xirq_i    : in  std_ulogic_vector(31 downto 0); -- external IRQ channels
-      cpu_irq_o : out std_ulogic  -- CPU interrupt
-    );
-  end component;
-
-  -- Component: General Purpose Timer (GPTMR) -----------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_gptmr
-    port (
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active
-      bus_req_i   : in  bus_req_t;  -- bus request
-      bus_rsp_o   : out bus_rsp_t;  -- bus response
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(7 downto 0);
-      irq_o       : out std_ulogic -- timer match interrupt
-    );
-  end component;
-
-  -- Component: Execute In Place Module (XIP) -----------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_xip
-    port (
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active
-      bus_req_i   : in  bus_req_t;  -- bus request
-      bus_rsp_o   : out bus_rsp_t;  -- bus response
-      xip_req_i   : in  bus_req_t;  -- XIP request
-      xip_rsp_o   : out bus_rsp_t;  -- XIP response
-      xip_en_o    : out std_ulogic; -- XIP enable
-      xip_acc_o   : out std_ulogic; -- pending XIP access
-      xip_page_o  : out std_ulogic_vector(3 downto 0); -- XIP page
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(7 downto 0);
-      spi_csn_o   : out std_ulogic; -- chip-select, low-active
-      spi_clk_o   : out std_ulogic; -- serial clock
-      spi_dat_i   : in  std_ulogic; -- device data output
-      spi_dat_o   : out std_ulogic  -- controller data output
-    );
-  end component;
-
-  -- Component: 1-Wire Interface Controller (ONEWIRE) ---------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_onewire
-    port (
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active
-      bus_req_i   : in  bus_req_t;  -- bus request
-      bus_rsp_o   : out bus_rsp_t;  -- bus response
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      clkgen_i    : in  std_ulogic_vector(7 downto 0);
-      onewire_i   : in  std_ulogic; -- 1-wire line state
-      onewire_o   : out std_ulogic; -- 1-wire line pull-down
-      irq_o       : out std_ulogic -- transfer done IRQ
-    );
-  end component;
-
-  -- Component: Serial Data Interface (SDI) -------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_sdi
-    generic (
-      RTX_FIFO : natural -- RTX fifo depth, has to be a power of two, min 1
-    );
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      rstn_i    : in  std_ulogic; -- global reset line, low-active, async
-      bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t;  -- bus response
-      sdi_csn_i : in  std_ulogic; -- low-active chip-select
-      sdi_clk_i : in  std_ulogic; -- serial clock
-      sdi_dat_i : in  std_ulogic; -- serial data input
-      sdi_dat_o : out std_ulogic; -- serial data output
-      irq_o     : out std_ulogic  -- CPU interrupt
-    );
-  end component;
-
-  -- Component: Direct Memory Access (DMA) Controller ---------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_dma
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      rstn_i    : in  std_ulogic; -- global reset line, low-active, async
-      bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t;  -- bus response
-      dma_req_o : out bus_req_t;  -- DMA request
-      dma_rsp_i : in  bus_rsp_t;  -- DMA response
-      firq_i    : in  std_ulogic_vector(15 downto 0); -- CPU FIRQ channels
-      irq_o     : out std_ulogic  -- transfer done interrupt
-    );
-  end component;
-
-  -- Component: Stream Link Interface (SLINK) -----------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_slink
-    generic (
-      SLINK_RX_FIFO : natural; -- RX fifo depth, has to be a power of two
-      SLINK_TX_FIFO : natural  -- TX fifo depth, has to be a power of two
-    );
-    port (
-      -- Host access --
-      clk_i            : in  std_ulogic; -- global clock line
-      rstn_i           : in  std_ulogic; -- global reset line, low-active, async
-      bus_req_i        : in  bus_req_t;  -- bus request
-      bus_rsp_o        : out bus_rsp_t;  -- bus response
-      irq_o            : out std_ulogic; -- CPU interrupt
-      -- RX stream interface --
-      slink_rx_data_i  : in  std_ulogic_vector(31 downto 0); -- input data
-      slink_rx_valid_i : in  std_ulogic; -- valid input
-      slink_rx_ready_o : out std_ulogic; -- ready to receive
-      -- TX stream interface --
-      slink_tx_data_o  : out std_ulogic_vector(31 downto 0); -- output data
-      slink_tx_valid_o : out std_ulogic; -- valid output
-      slink_tx_ready_i : in  std_ulogic  -- ready to send
-    );
-  end component;
-
-  -- Component: Cyclic Redundancy Check Unit (CRC) ------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_crc
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      rstn_i    : in  std_ulogic; -- global reset line, low-active
-      bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t   -- bus response
-    );
-  end component;
-
-  -- Component: System Configuration Information Memory (SYSINFO) ---------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_sysinfo
-    generic (
-      -- General --
-      CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
-      CUSTOM_ID            : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user-defined ID
-      INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-      -- Physical memory protection (PMP) --
-      PMP_NUM_REGIONS      : natural; -- number of regions (0..16)
-      -- Internal Instruction memory --
-      MEM_INT_IMEM_EN      : boolean; -- implement processor-internal instruction memory
-      MEM_INT_IMEM_SIZE    : natural; -- size of processor-internal instruction memory in bytes
-      -- Internal Data memory --
-      MEM_INT_DMEM_EN      : boolean; -- implement processor-internal data memory
-      MEM_INT_DMEM_SIZE    : natural; -- size of processor-internal data memory in bytes
-      -- Instruction cache --
-      ICACHE_EN            : boolean; -- implement instruction cache
-      ICACHE_NUM_BLOCKS    : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
-      ICACHE_BLOCK_SIZE    : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
-      ICACHE_ASSOCIATIVITY : natural; -- i-cache: associativity (min 1), has to be a power 2
-      -- Data cache --
-      DCACHE_EN            : boolean; -- implement data cache
-      DCACHE_NUM_BLOCKS    : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
-      DCACHE_BLOCK_SIZE    : natural; -- d-cache: block size in bytes (min 4), has to be a power of 2
-      -- External memory interface --
-      MEM_EXT_EN           : boolean; -- implement external memory bus interface?
-      MEM_EXT_BIG_ENDIAN   : boolean; -- byte order: true=big-endian, false=little-endian
-      -- On-Chip Debugger --
-      ON_CHIP_DEBUGGER_EN  : boolean; -- implement OCD?
-      -- Processor peripherals --
-      IO_GPIO_NUM          : natural; -- number of GPIO input/output pairs (0..64)
-      IO_MTIME_EN          : boolean; -- implement machine system timer (MTIME)?
-      IO_UART0_EN          : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
-      IO_UART1_EN          : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-      IO_SPI_EN            : boolean; -- implement serial peripheral interface (SPI)?
-      IO_SDI_EN            : boolean; -- implement serial data interface (SDI)?
-      IO_TWI_EN            : boolean; -- implement two-wire interface (TWI)?
-      IO_PWM_NUM_CH        : natural; -- number of PWM channels to implement
-      IO_WDT_EN            : boolean; -- implement watch dog timer (WDT)?
-      IO_TRNG_EN           : boolean; -- implement true random number generator (TRNG)?
-      IO_CFS_EN            : boolean; -- implement custom functions subsystem (CFS)?
-      IO_NEOLED_EN         : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-      IO_XIRQ_NUM_CH       : natural; -- number of external interrupt (XIRQ) channels to implement
-      IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?
-      IO_XIP_EN            : boolean; -- implement execute in place module (XIP)?
-      IO_ONEWIRE_EN        : boolean; -- implement 1-wire interface (ONEWIRE)?
-      IO_DMA_EN            : boolean; -- implement direct memory access controller (DMA)?
-      IO_SLINK_EN          : boolean; -- implement stream link interface (SLINK)?
-      IO_CRC_EN            : boolean  -- implement cyclic redundancy check unit (CRC)?
-    );
-    port (
-      clk_i     : in  std_ulogic; -- global clock line
-      bus_req_i : in  bus_req_t;  -- bus request
-      bus_rsp_o : out bus_rsp_t   -- bus response
-    );
-  end component;
-
-  -- Component: General Purpose FIFO --------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_fifo
-    generic (
-      FIFO_DEPTH : natural; -- number of fifo entries; has to be a power of two; min 1
-      FIFO_WIDTH : natural; -- size of data elements in fifo
-      FIFO_RSYNC : boolean; -- false = async read; true = sync read
-      FIFO_SAFE  : boolean  -- true = allow read/write only if entry available
-    );
-    port (
-      -- control --
-      clk_i   : in  std_ulogic; -- clock, rising edge
-      rstn_i  : in  std_ulogic; -- async reset, low-active
-      clear_i : in  std_ulogic; -- sync reset, high-active
-      half_o  : out std_ulogic; -- FIFO is at least half full
-      -- write port --
-      wdata_i : in  std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- write data
-      we_i    : in  std_ulogic; -- write enable
-      free_o  : out std_ulogic; -- at least one entry is free when set
-      -- read port --
-      re_i    : in  std_ulogic; -- read enable
-      rdata_o : out std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- read data
-      avail_o : out std_ulogic  -- data available when set
-    );
-  end component;
-
-  -- Component: On-Chip Debugger - Debug Module (DM) ----------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_debug_dm
-    port (
-      -- global control --
-      clk_i             : in  std_ulogic; -- global clock line
-      rstn_i            : in  std_ulogic; -- global reset line, low-active
-      cpu_debug_i       : in  std_ulogic; -- CPU is in debug mode
-      -- debug module interface (DMI) --
-      dmi_req_valid_i   : in  std_ulogic;
-      dmi_req_ready_o   : out std_ulogic; -- DMI is allowed to make new requests when set
-      dmi_req_address_i : in  std_ulogic_vector(05 downto 0);
-      dmi_req_data_i    : in  std_ulogic_vector(31 downto 0);
-      dmi_req_op_i      : in  std_ulogic_vector(01 downto 0);
-      dmi_rsp_valid_o   : out std_ulogic; -- response valid when set
-      dmi_rsp_ready_i   : in  std_ulogic; -- ready to receive respond
-      dmi_rsp_data_o    : out std_ulogic_vector(31 downto 0);
-      dmi_rsp_op_o      : out std_ulogic_vector(01 downto 0);
-      -- CPU bus access --
-      bus_req_i         : in  bus_req_t;  -- bus request
-      bus_rsp_o         : out bus_rsp_t;  -- bus response
-      -- CPU control --
-      cpu_ndmrstn_o     : out std_ulogic; -- soc reset
-      cpu_halt_req_o    : out std_ulogic  -- request hart to halt (enter debug mode)
-    );
-  end component;
-
-  -- Component: On-Chip Debugger - Debug Transport Module (DTM) -----------------------------
-  -- -------------------------------------------------------------------------------------------
-  component neorv32_debug_dtm
-    generic (
-      IDCODE_VERSION : std_ulogic_vector(03 downto 0); -- version
-      IDCODE_PARTID  : std_ulogic_vector(15 downto 0); -- part number
-      IDCODE_MANID   : std_ulogic_vector(10 downto 0)  -- manufacturer id
-    );
-    port (
-      -- global control --
-      clk_i             : in  std_ulogic; -- global clock line
-      rstn_i            : in  std_ulogic; -- global reset line, low-active
-      -- jtag connection --
-      jtag_trst_i       : in  std_ulogic;
-      jtag_tck_i        : in  std_ulogic;
-      jtag_tdi_i        : in  std_ulogic;
-      jtag_tdo_o        : out std_ulogic;
-      jtag_tms_i        : in  std_ulogic;
-      -- debug module interface (DMI) --
-      dmi_req_valid_o   : out std_ulogic;
-      dmi_req_ready_i   : in  std_ulogic; -- DMI is allowed to make new requests when set
-      dmi_req_address_o : out std_ulogic_vector(05 downto 0);
-      dmi_req_data_o    : out std_ulogic_vector(31 downto 0);
-      dmi_req_op_o      : out std_ulogic_vector(01 downto 0);
-      dmi_rsp_valid_i   : in  std_ulogic; -- response valid when set
-      dmi_rsp_ready_o   : out std_ulogic; -- ready to receive response
-      dmi_rsp_data_i    : in  std_ulogic_vector(31 downto 0);
-      dmi_rsp_op_i      : in  std_ulogic_vector(01 downto 0)
-    );
-  end component;
-
 end neorv32_package;
 
 package body neorv32_package is
@@ -2225,7 +1225,7 @@ package body neorv32_package is
 -- Functions
 -- ****************************************************************************************************************************
 
-  -- Function: Minimal required number of bits to represent <input> numbers -----------------
+  -- Minimal required number of bits to represent <input> numbers ---------------------------
   -- -------------------------------------------------------------------------------------------
   function index_size_f(input : natural) return natural is
   begin
@@ -2237,7 +1237,7 @@ package body neorv32_package is
     return 0;
   end function index_size_f;
 
-  -- Function: Conditional select natural ---------------------------------------------------
+  -- Conditional select natural -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural is
   begin
@@ -2248,7 +1248,7 @@ package body neorv32_package is
     end if;
   end function cond_sel_natural_f;
 
-  -- Function: Conditional select integer ---------------------------------------------------
+  -- Conditional select integer -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function cond_sel_int_f(cond : boolean; val_t : integer; val_f : integer) return integer is
   begin
@@ -2259,7 +1259,7 @@ package body neorv32_package is
     end if;
   end function cond_sel_int_f;
 
-  -- Function: Conditional select std_ulogic_vector -----------------------------------------
+  -- Conditional select std_ulogic_vector ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function cond_sel_stdulogicvector_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector is
   begin
@@ -2270,7 +1270,7 @@ package body neorv32_package is
     end if;
   end function cond_sel_stdulogicvector_f;
 
-  -- Function: Conditional select std_ulogic ------------------------------------------------
+  -- Conditional select std_ulogic ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function cond_sel_stdulogic_f(cond : boolean; val_t : std_ulogic; val_f : std_ulogic) return std_ulogic is
   begin
@@ -2281,7 +1281,7 @@ package body neorv32_package is
     end if;
   end function cond_sel_stdulogic_f;
 
-  -- Function: Conditional select string ----------------------------------------------------
+  -- Conditional select string --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string is
   begin
@@ -2292,7 +1292,7 @@ package body neorv32_package is
     end if;
   end function cond_sel_string_f;
 
-  -- Function: Convert bool to std_ulogic ---------------------------------------------------
+  -- Convert bool to std_ulogic -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function bool_to_ulogic_f(cond : boolean) return std_ulogic is
   begin
@@ -2303,7 +1303,7 @@ package body neorv32_package is
     end if;
   end function bool_to_ulogic_f;
 
-  -- Function: Convert binary to gray -------------------------------------------------------
+  -- Convert binary to gray -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function bin_to_gray_f(input : std_ulogic_vector) return std_ulogic_vector is
     variable tmp_v : std_ulogic_vector(input'range);
@@ -2315,7 +1315,7 @@ package body neorv32_package is
     return tmp_v;
   end function bin_to_gray_f;
 
-  -- Function: Convert gray to binary -------------------------------------------------------
+  -- Convert gray to binary -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function gray_to_bin_f(input : std_ulogic_vector) return std_ulogic_vector is
     variable tmp_v : std_ulogic_vector(input'range);
@@ -2327,7 +1327,7 @@ package body neorv32_package is
     return tmp_v;
   end function gray_to_bin_f;
 
-  -- Function: OR-reduce all bits -----------------------------------------------------------
+  -- OR-reduce all bits ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function or_reduce_f(a : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
@@ -2339,7 +1339,7 @@ package body neorv32_package is
     return tmp_v;
   end function or_reduce_f;
 
-  -- Function: AND-reduce all bits ----------------------------------------------------------
+  -- AND-reduce all bits --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function and_reduce_f(a : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
@@ -2351,7 +1351,7 @@ package body neorv32_package is
     return tmp_v;
   end function and_reduce_f;
 
-  -- Function: XOR-reduce all bits ----------------------------------------------------------
+  -- XOR-reduce all bits --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function xor_reduce_f(a : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
@@ -2363,7 +1363,7 @@ package body neorv32_package is
     return tmp_v;
   end function xor_reduce_f;
 
-  -- Function: Convert std_ulogic_vector to hex char ----------------------------------------
+  -- Convert std_ulogic_vector to hex char --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character is
     variable res_v : character;
@@ -2390,7 +1390,7 @@ package body neorv32_package is
     return res_v;
   end function to_hexchar_f;
 
-  -- Function: Convert 32-bit std_ulogic_vector to hex string -------------------------------
+  -- Convert 32-bit std_ulogic_vector to hex string -----------------------------------------
   -- -------------------------------------------------------------------------------------------
   function to_hstring32_f(input : std_ulogic_vector(31 downto 0)) return string is
     variable res_v : string(1 to 8);
@@ -2405,7 +1405,7 @@ package body neorv32_package is
     return res_v;
   end function to_hstring32_f;
 
-  -- Function: Convert hex char to 4-bit std_ulogic_vector ----------------------------------
+  -- Convert hex char to 4-bit std_ulogic_vector --------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function hexchar_to_stdulogicvector_f(input : character) return std_ulogic_vector is
     variable res_v : std_ulogic_vector(3 downto 0);
@@ -2432,7 +1432,7 @@ package body neorv32_package is
     return res_v;
   end function hexchar_to_stdulogicvector_f;
 
-  -- Function: Bit reversal -----------------------------------------------------------------
+  -- Bit reversal ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector is
     variable output_v : std_ulogic_vector(input'range);
@@ -2443,7 +1443,7 @@ package body neorv32_package is
     return output_v;
   end function bit_rev_f;
 
-  -- Function: Test if input number is a power of two ---------------------------------------
+  -- Test if input number is a power of two -------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function is_power_of_two_f(input : natural) return boolean is
     variable tmp : unsigned(31 downto 0);
@@ -2462,7 +1462,7 @@ package body neorv32_package is
     end if;
   end function is_power_of_two_f;
 
-  -- Function: Swap all bytes of a 32-bit word (endianness conversion) ----------------------
+  -- Swap all bytes of a 32-bit word (endianness conversion) --------------------------------
   -- -------------------------------------------------------------------------------------------
   function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector is
     variable output_v : std_ulogic_vector(input'range);
@@ -2474,7 +1474,7 @@ package body neorv32_package is
     return output_v;
   end function bswap32_f;
 
-  -- Function: Population count (number of set bits) ----------------------------------------
+  -- Population count (number of set bits) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function popcount_f(input : std_ulogic_vector) return natural is
     variable cnt_v : natural range 0 to input'length;
@@ -2488,7 +1488,7 @@ package body neorv32_package is
     return cnt_v;
   end function popcount_f;
 
-  -- Function: Count leading zeros ----------------------------------------------------------
+  -- Count leading zeros --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function leading_zeros_f(input : std_ulogic_vector) return natural is
     variable cnt_v : natural range 0 to input'length;
@@ -2504,7 +1504,7 @@ package body neorv32_package is
     return cnt_v;
   end function leading_zeros_f;
 
-  -- Function: Initialize mem32_t array from another mem32_t array --------------------------
+  --  Initialize mem32_t array from another mem32_t array -----------------------------------
   -- -------------------------------------------------------------------------------------------
   -- impure function: returns NOT the same result every time it is evaluated with the same arguments since the source file might have changed
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t is

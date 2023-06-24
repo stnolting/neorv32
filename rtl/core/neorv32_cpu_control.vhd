@@ -472,7 +472,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   prefetch_buffer:
   for i in 0 to 1 generate -- low half-word and high half-word (+status)
-    prefetch_buffer_inst: neorv32_fifo
+    prefetch_buffer_inst: entity neorv32.neorv32_fifo
     generic map (
       FIFO_DEPTH => CPU_IPB_ENTRIES,     -- number of fifo entries; has to be a power of two; min 1
       FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in fifo
@@ -563,7 +563,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_decompressor_inst_true:
   if (CPU_EXTENSION_RISCV_C = true) generate
-    neorv32_cpu_decompressor_inst: neorv32_cpu_decompressor
+    neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
     generic map (
       FPU_ENABLE => CPU_EXTENSION_RISCV_Zfinx -- floating-point instructions enabled
     )
