@@ -34,10 +34,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ==========================
 **The NEORV32 RISC-V Processor** +
-HQ: https://github.com/stnolting/neorv32 +
-By Dipl.-Ing. (M.Sc.) Stephan Nolting +
+https://github.com/stnolting/neorv32 +
+Dipl.-Ing. (M.Sc.) Stephan Nolting +
 European Union, Germany +
-Contact: stnolting@gmail.com
+stnolting@gmail.com
 ==========================
 
 <<<
@@ -56,13 +56,13 @@ Contact: stnolting@gmail.com
 * "NeoPixel" is a trademark of Adafruit Industries.
 * Images/figures made with _Microsoft Power Point_.
 * Timing diagrams made with _WaveDrom Editor_.
-* Documentation proudly made with `asciidoctor`.
+* Documentation made with `asciidoctor`.
 * "Segger Embedded Studio" and "J-Link" are trademarks of Segger Microcontroller Systems GmbH.
 * All further/unreferenced products belong to their according copyright holders.
 
 PDF icons from https://www.flaticon.com and made by
 link:https://www.freepik.com[Freepik], link:https://www.flaticon.com/authors/good-ware[Good Ware],
-link:https://www.flaticon.com/authors/pixel-perfect[Pixel perfect], link:https://www.flaticon.com/authors/vectors-market[Vectors Market]
+link:https://www.flaticon.com/authors/pixel-perfect[Pixel perfect] and link:https://www.flaticon.com/authors/vectors-market[Vectors Market].
 
 
 :sectnums!:
@@ -93,21 +93,6 @@ This is an open-source project that is free of charge. Use this project in any w
 [NOTE]
 Please add as many https://github.com/stnolting/neorv32/graphs/contributors[contributors] as possible to the `author` field. +
 This project would not be where it is without them.
-
-If you are using the NEORV32 or parts of the project in some kind of publication, please cite it as follows:
-
-.BibTeX
-[source]
-----
-@misc{nolting22,
-  author       = {Nolting, S. and ...},
-  title        = {The NEORV32 RISC-V Processor},
-  year         = {2022},
-  publisher    = {GitHub},
-  journal      = {GitHub repository},
-  howpublished = {\url{https://github.com/stnolting/neorv32}}
-}
-----
 
 .DOI
 [TIP]
