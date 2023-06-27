@@ -221,7 +221,7 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 | `CPU_EXTENSION_RISCV_Zxcfu`    | boolean | false | Enable NEORV32-specific <<_zxcfu_isa_extension>> (custom RISC-V instructions).
 4+^| **CPU Tuning Options**
 | `FAST_MUL_EN`           | boolean   | false      | Implement fast (but large) full-parallel multipliers (trying to infer DSP blocks).
-| `FAST_SHIFT_EN`         | boolean   | false      | Implement fast (bur large) pull-parallel barrel shifters.
+| `FAST_SHIFT_EN`         | boolean   | false      | Implement fast (but large) pull-parallel barrel shifters.
 | `CPU_IPB_ENTRIES`       | natural   | 1          | Number of entries in the CPU's instruction prefetch buffer.
 4+^| **Physical Memory Protection (<<_pmp_isa_extension>>)**
 | `PMP_NUM_REGIONS`       | natural   | 0          | Number of implemented PMP regions (0..16).
