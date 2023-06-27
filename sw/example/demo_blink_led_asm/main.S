@@ -37,9 +37,9 @@
  * @file demo_blink_led_asm/main.S
  * @author Stephan Nolting
  * @brief Simple assembly-only demo program. Implements a simple counter that
- * uses the lowest 8 bits of the GPIO's output port. The machine system timer is
- * used as time base. Hence, this program requires the GPIO controller, the
- * CPU Zicsr and Zicnt ISA extensions and that machine system timer is implemented.
+ * uses the lowest 8 bits of the GPIO's output port. The CPU cycle counter is
+ * used as time base. Hence, this program requires the GPIO controller and the
+ * CPU Zicsr and Zicnt ISA extensions.
  **************************************************************************/
 .file "main.S"
 .section .text
@@ -47,7 +47,6 @@
 .global main
 
 // Memory map
-.set MTIME_TIME_LO,  0xFFFFFF90U // address of the MTIME.TIME_LO register
 .set GPIO_OUTPUT_LO, 0xFFFFFFC8U // address of the GPIO.OUTPUT_LO register
 .set SYSINFO_CKLK,   0xFFFFFFE0U // address of SYSINFO.CLK
 
@@ -68,19 +67,17 @@ loop:
 
 
 /**********************************************************************//**
- * Delay subroutine using MTIME Module (waiting for 0.25s)
+ * Delay subroutine using mcycle (waiting for 0.25s)
  **************************************************************************/
 delay:
     li   t0, SYSINFO_CKLK        // address of SYSINFO.CLK
     lw   t0, 0(t0)               // read SYSINFO.CLK (= CPU clock speed in Hz = tick per second)
     srli t0, t0, 2               // = ticks per 0.25 seconds
-    li t1, MTIME_TIME_LO         // address of MTIME.TIME_LO
-    sw zero, 0(t1)               // clear MTIME.TIME_LO Register
-    nop                          // delay due to write buffer
+    csrw mcycle, zero            //clear cycle counter (low word)
 
 delay_loop:
-    lw   t2, 0(t1)               // get current machine system timer value (low word)
-    bltu t2, t0, delay_loop      // restart loop if MTIME.TIME_LO < t0
+    csrr t1, mcycle              // get current cycle counter (low word)
+    bltu t1, t0, delay_loop      // restart loop if mcycle < t0
 
     ret                          // return to main
 
