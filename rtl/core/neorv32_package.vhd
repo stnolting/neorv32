@@ -60,7 +60,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080509"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080600"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -323,8 +323,9 @@ package neorv32_package is
   type mem32_t is array (natural range <>) of std_ulogic_vector(31 downto 0); -- memory with 32-bit entries
   type mem8_t  is array (natural range <>) of std_ulogic_vector(07 downto 0); -- memory with 8-bit entries
 
-  -- Internal Bus Interface: Request --------------------------------------------------------
+  -- Internal Bus Interface -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- bus request --
   type bus_req_t is record
     addr : std_ulogic_vector(31 downto 0); -- access address
     data : std_ulogic_vector(31 downto 0); -- write data
@@ -335,8 +336,7 @@ package neorv32_package is
     priv : std_ulogic; -- set if privileged (machine-mode) access
   end record;
 
-  -- Internal Bus Interface: Response -------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- bus response --
   type bus_rsp_t is record
     data : std_ulogic_vector(31 downto 0); -- read data
     ack  : std_ulogic; -- access acknowledge (single-shot)
@@ -349,6 +349,7 @@ package neorv32_package is
     ack  => '0',
     err  => '0'
   );
+
 
 -- ****************************************************************************************************************************
 -- RISC-V ISA Definitions
