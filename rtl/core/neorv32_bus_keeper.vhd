@@ -106,7 +106,7 @@ begin
         -- response check --
         if (bus_rsp_i.err = '1') or -- error termination by bus system
            (bus_tmo_i = '1') or -- EXTERNAL access timeout
-           ((or_reduce_f(ctrl.timeout) = '0') and (ctrl.ignore = '0')) then -- valid INTERNAL access timeout
+           ((or_reduce_f(ctrl.timeout) = '0') and (ctrl.ignore = '0')) then -- INTERNAL access timeout
           ctrl.bus_err <= '1';
           ctrl.pending <= '0';
         elsif (bus_rsp_i.ack = '1') then -- normal termination by bus system
