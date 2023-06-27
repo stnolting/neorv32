@@ -33,6 +33,7 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 27.06.2023 | [**:rocket:1.8.6**](https://github.com/stnolting/neorv32/releases/tag/v1.8.6) | **New release** |
 | 24.06.2023 | 1.8.5.9 | :test_tube: VHDL code: use entity instantiation instead of component instantiation; [#637](https://github.com/stnolting/neorv32/pull/637) |
 | 24.06.2023 | 1.8.5.8 | optimize CPU control logic; closed further invalid instruction word detection holes; [#636](https://github.com/stnolting/neorv32/pull/636) |
 | 23.06.2023 | 1.8.5.7 | :warning: remove **buskeeper's status register**; [#635](https://github.com/stnolting/neorv32/pull/635) |
