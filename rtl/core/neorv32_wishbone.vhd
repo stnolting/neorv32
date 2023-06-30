@@ -10,9 +10,6 @@
 -- # The Wishbone gateway registers all outgoing signals. These signals will remain stable (gated) #
 -- # if there is no active Wishbone access. By default, also the incoming signals are registered,  #
 -- # too. this can be disabled by setting ASYNC_RX = false.                                        #
--- #                                                                                               #
--- # Even when all processor-internal memories and IO devices are disabled, the EXTERNAL address   #
--- # space ENDS at address 0xffff0000 (begin of internal BOOTROM/OCD/IO address space).            #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -98,7 +95,7 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
   -- access control --
   signal int_imem_acc : std_ulogic;
   signal int_dmem_acc : std_ulogic;
-  signal int_boot_acc : std_ulogic;
+  signal int_btio_acc : std_ulogic;
   signal xip_acc      : std_ulogic;
   signal xbus_access  : std_ulogic;
 
@@ -144,9 +141,9 @@ begin
     cond_sel_string_f(ASYNC_TX, "ASYNC ", "registered ") & "TX"
     severity note;
 
-  -- no timeout warning --
+  -- zero timeout warning --
   assert not (BUS_TIMEOUT  = 0)
-    report "NEORV32 PROCESSOR CONFIG WARNING! Ext. Bus Interface - NO auto-timeout (can cause permanent CPU stall!)." severity warning;
+    report "NEORV32 PROCESSOR CONFIG WARNING! Ext. Bus Interface - NO auto-timeout defined; can cause permanent CPU stall!" severity warning;
 
 
   -- Access Control -------------------------------------------------------------------------
@@ -154,12 +151,12 @@ begin
   -- access to processor-internal IMEM or DMEM? --
   int_imem_acc <= '1' when (bus_req_i.addr(31 downto index_size_f(MEM_INT_IMEM_SIZE)) = imem_base_c(31 downto index_size_f(MEM_INT_IMEM_SIZE))) and (MEM_INT_IMEM_EN = true) else '0';
   int_dmem_acc <= '1' when (bus_req_i.addr(31 downto index_size_f(MEM_INT_DMEM_SIZE)) = dmem_base_c(31 downto index_size_f(MEM_INT_DMEM_SIZE))) and (MEM_INT_DMEM_EN = true) else '0';
-  -- access to processor-internal BOOTROM or IO devices? --
-  int_boot_acc <= '1' when (bus_req_i.addr(31 downto 16) = boot_rom_base_c(31 downto 16)) else '0'; -- hacky!
+  -- access to processor-internal BOOTROM or IO/peripheral devices? --
+  int_btio_acc <= '1' when (bus_req_i.addr(31 downto 16) = boot_rom_base_c(31 downto 16)) else '0';
   -- XIP access? --
   xip_acc      <= '1' when (xip_en_i = '1') and (bus_req_i.addr(31 downto 28) = xip_page_i) else '0';
   -- actual external bus access? --
-  xbus_access  <= (not int_imem_acc) and (not int_dmem_acc) and (not int_boot_acc) and (not xip_acc);
+  xbus_access  <= (not int_imem_acc) and (not int_dmem_acc) and (not int_btio_acc) and (not xip_acc);
 
 
   -- Bus Arbiter -----------------------------------------------------------------------------
@@ -241,7 +238,6 @@ begin
   bus_rsp_o.ack  <= ctrl.ack when (ASYNC_RX = false) else ack_gated;
   bus_rsp_o.err  <= ctrl.err;
   tmo_o          <= ctrl.tmo;
-
 
   -- wishbone interface --
   wb_tag_o(0) <= bus_req_i.priv when (ASYNC_TX = true) else ctrl.priv; -- 0 = unprivileged (U-mode), 1 = privileged (M-mode)
