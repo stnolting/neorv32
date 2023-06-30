@@ -298,7 +298,7 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | ALU shifts    | `sll[i]` `srl[i]` `sra[i]`                                                | 3 + 1..32; FAST_SHIFT: 4
 | Branches      | `beq` `bne` `blt` `bge` `bltu` `bgeu`                                     | taken: 6; not taken: 3
 | Jump/call     | `jal[r]`                                                                  | 6
-| Load/store    | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 4
+| Load/store    | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 5
 | System        | `ecall` `ebreak`                                                          | 3
 | Data fence    | `fence`                                                                   | 5
 | Illegal inst. | -                                                                         | 3

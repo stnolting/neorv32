@@ -29,7 +29,8 @@ used) is used.
 .Caching Internal Memories
 [NOTE]
 The instruction cache is intended to accelerate instruction fetches from **processor-external** memories
-(via the external bus interface or via the XIP module).
+(via the external bus interface or via the XIP module). The cache(s) should not be implemented
+when using only processor-internal data and instruction memories.
 
 .Manual Cache Clear/Reload
 [NOTE]
