@@ -46,7 +46,7 @@ __crt0_entry:
 
 // ************************************************************************************************
 // We need to ensure interrupts are completely disabled at start. This is required if this code
-// is part of a program uploaded by the on-chip debugger (potentionally taking control from the
+// is part of a program uploaded by the on-chip debugger (potentionally taking over control from the
 // bootloader). We setup a new stack pointer here and WE DO NOT WANT TO trap to an outdated trap
 // handler with a modified stack pointer.
 // ************************************************************************************************
