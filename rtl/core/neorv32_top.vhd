@@ -363,8 +363,8 @@ begin
     cond_sel_string_f(IO_XIP_EN, "XIP ", "") &
     cond_sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ", "") &
     cond_sel_string_f(IO_DMA_EN, "DMA ", "") &
-    cond_sel_string_f(IO_SLINK_EN, "SLINK", "") &
-    cond_sel_string_f(IO_CRC_EN, "CRC", "") &
+    cond_sel_string_f(IO_SLINK_EN, "SLINK ", "") &
+    cond_sel_string_f(IO_CRC_EN, "CRC ", "") &
     ""
     severity note;
 
