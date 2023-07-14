@@ -33,6 +33,7 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 14.07.2023 | 1.8.6.2 | minor rtl edits; [#646](https://github.com/stnolting/neorv32/pull/646) |
 | 30.06.2023 | 1.8.6.1 | minor rtl edits, cleanups and optimizations; [#641](https://github.com/stnolting/neorv32/pull/641) |
 | 27.06.2023 | [**:rocket:1.8.6**](https://github.com/stnolting/neorv32/releases/tag/v1.8.6) | **New release** |
 | 24.06.2023 | 1.8.5.9 | :test_tube: VHDL code: use entity instantiation instead of component instantiation; [#637](https://github.com/stnolting/neorv32/pull/637) |
