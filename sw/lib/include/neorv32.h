@@ -184,13 +184,13 @@ enum NEORV32_CLOCK_PRSC_enum {
 
 
 /**********************************************************************//**
- * @name Address space sections
+ * @name Main Address Space Sections
  **************************************************************************/
 /**@{*/
+/** XIP-mapped memory base address */
+#define XIP_MEM_BASE_ADDRESS    (0xE0000000U)
 /** bootloader memory base address */
 #define BOOTLOADER_BASE_ADDRESS (0xFFFF0000U)
-/** on-chip debugger complex base address */
-#define OCD_BASE_ADDRESS        (0XFFFFF800U)
 /** peripheral/IO devices memory base address */
 #define IO_BASE_ADDRESS         (0xFFFFFE00U)
 /**@}*/

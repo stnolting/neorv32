@@ -586,23 +586,18 @@
               <description>SPI flash read command</description>
             </field>
             <field>
-              <name>XIP_CTRL_XIP_PAGE</name>
-              <bitRange>[24:21]</bitRange>
-              <description>XIP memory page</description>
-            </field>
-            <field>
               <name>XIP_CTRL_SPI_CSEN</name>
-              <bitRange>[25:25]</bitRange>
+              <bitRange>[21:21]</bitRange>
               <description>SPI chip-select enable</description>
             </field>
             <field>
               <name>XIP_CTRL_HIGHSPEED</name>
-              <bitRange>[26:26]</bitRange>
+              <bitRange>[22:22]</bitRange>
               <description>SPI high-speed mode enable (ignoring XIP_CTRL_PRSC)</description>
             </field>
             <field>
               <name>XIP_CTRL_BURST_EN</name>
-              <bitRange>[27:27]</bitRange>
+              <bitRange>[23:23]</bitRange>
               <description>Enable burst mode (for XIP accesses)</description>
             </field>
             <field>
