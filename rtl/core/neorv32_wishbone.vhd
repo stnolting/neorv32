@@ -1,11 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - External Bus Interface (WISHBONE) >>                                             #
 -- # ********************************************************************************************* #
--- # All bus accesses from the CPU, which do not target the internal IO region / the internal      #
--- # bootloader / the OCD system / the internal instruction or data memories (if implemented), are #
--- # delegated via this Wishbone gateway to the external bus interface. Wishbone accesses can have #
--- # a response latency of up to BUS_TIMEOUT - 1 cycles or an infinity response time if            #
--- # BUS_TIMEOUT = 0 (not recommended!)                                                            #
+-- # Wishbone accesses can have a response latency of up to BUS_TIMEOUT - 1 cycles or an infinite  #
+-- # response time if BUS_TIMEOUT = 0 (not recommended!).                                          #
 -- #                                                                                               #
 -- # The Wishbone gateway registers all outgoing signals. These signals will remain stable (gated) #
 -- # if there is no active Wishbone access. By default, also the incoming signals are registered,  #
@@ -51,39 +48,29 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_wishbone is
   generic (
-    -- Internal instruction memory --
-    MEM_INT_IMEM_EN   : boolean; -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE : natural; -- size of processor-internal instruction memory in bytes
-    -- Internal data memory --
-    MEM_INT_DMEM_EN   : boolean; -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE : natural; -- size of processor-internal data memory in bytes
-    -- Interface Configuration --
-    BUS_TIMEOUT       : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
-    PIPE_MODE         : boolean; -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    BIG_ENDIAN        : boolean; -- byte order: true=big-endian, false=little-endian
-    ASYNC_RX          : boolean; -- use register buffer for RX data when false
-    ASYNC_TX          : boolean  -- use register buffer for TX data when false
+    -- Wishbone Interface Configuration --
+    BUS_TIMEOUT : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
+    PIPE_MODE   : boolean; -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    BIG_ENDIAN  : boolean; -- byte order: true=big-endian, false=little-endian
+    ASYNC_RX    : boolean; -- use register buffer for RX data when false
+    ASYNC_TX    : boolean  -- use register buffer for TX data when false
   );
   port (
-    clk_i      : in  std_ulogic; -- global clock line
-    rstn_i     : in  std_ulogic; -- global reset line, low-active
-    bus_req_i  : in  bus_req_t;  -- bus request
-    bus_rsp_o  : out bus_rsp_t;  -- bus response
-    tmo_o      : out std_ulogic; -- transfer timeout
-    ext_o      : out std_ulogic; -- active external access
-    xip_en_i   : in  std_ulogic; -- XIP module enabled
-    xip_page_i : in  std_ulogic_vector(03 downto 0); -- XIP memory page
+    clk_i     : in  std_ulogic; -- global clock line
+    rstn_i    : in  std_ulogic; -- global reset line, low-active
+    bus_req_i : in  bus_req_t;  -- bus request
+    bus_rsp_o : out bus_rsp_t;  -- bus response
     --
-    wb_tag_o   : out std_ulogic_vector(02 downto 0); -- request tag
-    wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i   : in  std_ulogic_vector(31 downto 0); -- read data
-    wb_dat_o   : out std_ulogic_vector(31 downto 0); -- write data
-    wb_we_o    : out std_ulogic; -- read/write
-    wb_sel_o   : out std_ulogic_vector(03 downto 0); -- byte enable
-    wb_stb_o   : out std_ulogic; -- strobe
-    wb_cyc_o   : out std_ulogic; -- valid cycle
-    wb_ack_i   : in  std_ulogic; -- transfer acknowledge
-    wb_err_i   : in  std_ulogic  -- transfer error
+    wb_tag_o  : out std_ulogic_vector(02 downto 0); -- request tag
+    wb_adr_o  : out std_ulogic_vector(31 downto 0); -- address
+    wb_dat_i  : in  std_ulogic_vector(31 downto 0); -- read data
+    wb_dat_o  : out std_ulogic_vector(31 downto 0); -- write data
+    wb_we_o   : out std_ulogic; -- read/write
+    wb_sel_o  : out std_ulogic_vector(03 downto 0); -- byte enable
+    wb_stb_o  : out std_ulogic; -- strobe
+    wb_cyc_o  : out std_ulogic; -- valid cycle
+    wb_ack_i  : in  std_ulogic; -- transfer acknowledge
+    wb_err_i  : in  std_ulogic  -- transfer error
   );
 end neorv32_wishbone;
 
@@ -91,13 +78,6 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
 
   -- timeout enable --
   constant timeout_en_c : boolean := boolean(BUS_TIMEOUT /= 0); -- timeout enabled if BUS_TIMEOUT > 0
-
-  -- access control --
-  signal int_imem_acc : std_ulogic;
-  signal int_dmem_acc : std_ulogic;
-  signal int_btio_acc : std_ulogic;
-  signal xip_acc      : std_ulogic;
-  signal xbus_access  : std_ulogic;
 
   -- bus arbiter
   type ctrl_t is record
@@ -110,7 +90,6 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
     sel      : std_ulogic_vector(03 downto 0);
     ack      : std_ulogic;
     err      : std_ulogic;
-    tmo      : std_ulogic;
     timeout  : std_ulogic_vector(index_size_f(BUS_TIMEOUT) downto 0);
     src      : std_ulogic;
     priv     : std_ulogic;
@@ -126,6 +105,7 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
 
   -- async RX gating --
   signal ack_gated   : std_ulogic;
+  signal err_gated   : std_ulogic;
   signal rdata_gated : std_ulogic_vector(31 downto 0);
 
 begin
@@ -142,21 +122,8 @@ begin
     severity note;
 
   -- zero timeout warning --
-  assert not (BUS_TIMEOUT  = 0)
-    report "NEORV32 PROCESSOR CONFIG WARNING! Ext. Bus Interface - NO auto-timeout defined; can cause permanent CPU stall!" severity warning;
-
-
-  -- Access Control -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- access to processor-internal IMEM or DMEM? --
-  int_imem_acc <= '1' when (bus_req_i.addr(31 downto index_size_f(MEM_INT_IMEM_SIZE)) = imem_base_c(31 downto index_size_f(MEM_INT_IMEM_SIZE))) and (MEM_INT_IMEM_EN = true) else '0';
-  int_dmem_acc <= '1' when (bus_req_i.addr(31 downto index_size_f(MEM_INT_DMEM_SIZE)) = dmem_base_c(31 downto index_size_f(MEM_INT_DMEM_SIZE))) and (MEM_INT_DMEM_EN = true) else '0';
-  -- access to processor-internal BOOTROM or IO/peripheral devices? --
-  int_btio_acc <= '1' when (bus_req_i.addr(31 downto 16) = boot_rom_base_c(31 downto 16)) else '0';
-  -- XIP access? --
-  xip_acc      <= '1' when (xip_en_i = '1') and (bus_req_i.addr(31 downto 28) = xip_page_i) else '0';
-  -- actual external bus access? --
-  xbus_access  <= (not int_imem_acc) and (not int_dmem_acc) and (not int_btio_acc) and (not xip_acc);
+  assert not (BUS_TIMEOUT  = 0) report
+    "NEORV32 PROCESSOR CONFIG WARNING! Ext. Bus Interface - NO auto-timeout defined; can cause permanent CPU stall!" severity warning;
 
 
   -- Bus Arbiter -----------------------------------------------------------------------------
@@ -174,7 +141,6 @@ begin
       ctrl.timeout  <= (others => '0');
       ctrl.ack      <= '0';
       ctrl.err      <= '0';
-      ctrl.tmo      <= '0';
       ctrl.src      <= '0';
       ctrl.priv     <= '0';
     elsif rising_edge(clk_i) then
@@ -183,13 +149,12 @@ begin
       ctrl.rdat     <= (others => '0'); -- required for internal output gating
       ctrl.ack      <= '0';
       ctrl.err      <= '0';
-      ctrl.tmo      <= '0';
       ctrl.timeout  <= std_ulogic_vector(to_unsigned(BUS_TIMEOUT, index_size_f(BUS_TIMEOUT)+1));
 
       -- state machine --
       if (ctrl.state = '0') then -- IDLE, waiting for host request
         -- ------------------------------------------------------------
-        if (xbus_access = '1') and ((bus_req_i.we or bus_req_i.re) = '1') then -- valid external request
+        if (bus_req_i.we = '1') or (bus_req_i.re = '1') then -- request
           -- buffer (and gate) all outgoing signals --
           ctrl.we    <= bus_req_i.we;
           ctrl.adr   <= bus_req_i.addr;
@@ -203,14 +168,11 @@ begin
       else -- BUSY, transfer in progress
         -- ------------------------------------------------------------
         ctrl.rdat <= wb_dat_i;
-        if (wb_err_i = '1') then -- abnormal bus termination
-          ctrl.err   <= '1';
-          ctrl.state <= '0';
-        elsif (timeout_en_c = true) and (or_reduce_f(ctrl.timeout) = '0') then -- enabled timeout
-          ctrl.tmo   <= '1';
-          ctrl.state <= '0';
-        elsif (wb_ack_i = '1') then -- normal bus termination
+        if (wb_ack_i = '1') then -- normal bus termination
           ctrl.ack   <= '1';
+          ctrl.state <= '0';
+        elsif (wb_err_i = '1') or ((timeout_en_c = true) and (or_reduce_f(ctrl.timeout) = '0')) then -- bus error or timeout
+          ctrl.err   <= '1';
           ctrl.state <= '0';
         end if;
         -- timeout counter --
@@ -221,31 +183,27 @@ begin
     end if;
   end process bus_arbiter;
 
-  -- active external access --
-  ext_o <= ctrl.state;
-
   -- endianness conversion --
   end_wdata  <= bswap32_f(bus_req_i.data) when (BIG_ENDIAN = true) else bus_req_i.data;
   end_byteen <= bit_rev_f(bus_req_i.ben)  when (BIG_ENDIAN = true) else bus_req_i.ben;
 
-
   -- host access --
   ack_gated   <= wb_ack_i when (ctrl.state = '1') else '0'; -- CPU ACK gate for "async" RX
+  err_gated   <= wb_err_i when (ctrl.state = '1') else '0'; -- CPU ERR gate for "async" RX
   rdata_gated <= wb_dat_i when (ctrl.state = '1') else (others => '0'); -- CPU read data gate for "async" RX
-  rdata       <= ctrl.rdat when (ASYNC_RX = false) else rdata_gated;
 
+  rdata          <= ctrl.rdat when (ASYNC_RX = false) else rdata_gated;
   bus_rsp_o.data <= rdata when (BIG_ENDIAN = false) else bswap32_f(rdata); -- endianness conversion
   bus_rsp_o.ack  <= ctrl.ack when (ASYNC_RX = false) else ack_gated;
-  bus_rsp_o.err  <= ctrl.err;
-  tmo_o          <= ctrl.tmo;
+  bus_rsp_o.err  <= ctrl.err when (ASYNC_RX = false) else err_gated;
 
   -- wishbone interface --
   wb_tag_o(0) <= bus_req_i.priv when (ASYNC_TX = true) else ctrl.priv; -- 0 = unprivileged (U-mode), 1 = privileged (M-mode)
   wb_tag_o(1) <= '0'; -- 0 = secure, 1 = non-secure
   wb_tag_o(2) <= bus_req_i.src when (ASYNC_TX = true) else ctrl.src; -- 0 = data access, 1 = instruction access
 
-  stb_int <=  (xbus_access and (bus_req_i.we or bus_req_i.re))                when (ASYNC_TX = true) else (ctrl.state and (not ctrl.state_ff));
-  cyc_int <= ((xbus_access and (bus_req_i.we or bus_req_i.re)) or ctrl.state) when (ASYNC_TX = true) else  ctrl.state;
+  stb_int <=  (bus_req_i.we or bus_req_i.re)                when (ASYNC_TX = true) else (ctrl.state and (not ctrl.state_ff));
+  cyc_int <= ((bus_req_i.we or bus_req_i.re) or ctrl.state) when (ASYNC_TX = true) else  ctrl.state;
 
   wb_adr_o <= bus_req_i.addr when (ASYNC_TX = true) else ctrl.adr;
   wb_dat_o <= bus_req_i.data when (ASYNC_TX = true) else ctrl.wdat;
