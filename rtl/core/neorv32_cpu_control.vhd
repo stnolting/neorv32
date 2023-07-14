@@ -983,11 +983,11 @@ begin
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
             if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then
-              ctrl_nxt.bus_fencei      <= '1'; -- FENCE.I
+              ctrl_nxt.bus_fencei      <= '1'; -- fence.i
               execute_engine.state_nxt <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC)
             else
               if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then
-                ctrl_nxt.bus_fence <= '1'; -- FENCE
+                ctrl_nxt.bus_fence <= '1'; -- fence
               end if;
               execute_engine.state_nxt <= DISPATCH;
             end if;
@@ -1018,10 +1018,9 @@ begin
         end case; -- /EXECUTE
 
 
-      when ALU_WAIT => -- wait for multi-cycle ALU operation (ALU co-processor) to finish
+      when ALU_WAIT => -- wait for multi-cycle ALU co-processor operation to finish/trap
       -- ------------------------------------------------------------
         ctrl_nxt.alu_op <= alu_op_cp_c;
-        -- wait for completion or abort on illegal instruction exception (the co-processor will also terminate operations)
         if (alu_cp_done_i = '1') or (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then
           ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back (won't happen in case of an illegal instruction)
           execute_engine.state_nxt <= DISPATCH;
@@ -1054,24 +1053,21 @@ begin
 
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
-        if (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then -- no request and abort if illegal instruction
-          execute_engine.state_nxt <= DISPATCH;
-        else
-          ctrl_nxt.bus_req_rd      <= not execute_engine.ir(5); -- read request
-          ctrl_nxt.bus_req_wr      <=     execute_engine.ir(5); -- write request
-          execute_engine.state_nxt <= MEM_WAIT;
+        if (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- no request if illegal instruction
+          ctrl_nxt.bus_req_rd <= not execute_engine.ir(5); -- load
+          ctrl_nxt.bus_req_wr <=     execute_engine.ir(5); -- store
         end if;
+        execute_engine.state_nxt <= MEM_WAIT;
 
       when MEM_WAIT => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
         ctrl_nxt.rf_mux <= rf_mux_mem_c; -- memory read data
-        if (trap_ctrl.exc_buf(exc_laccess_c) = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- bus access error
-           (trap_ctrl.exc_buf(exc_lalign_c) = '1') or (trap_ctrl.exc_buf(exc_salign_c) = '1') then -- alignment error
+        if (trap_ctrl.exc_buf(exc_laccess_c)  = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- bus access error
+           (trap_ctrl.exc_buf(exc_lalign_c)   = '1') or (trap_ctrl.exc_buf(exc_salign_c)  = '1') or -- alignment error
+           (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then -- illegal instruction
           execute_engine.state_nxt <= DISPATCH; -- abort!
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
-          if (execute_engine.ir(instr_opcode_msb_c-1) = '0') then -- load
-            ctrl_nxt.rf_wb_en <= '1'; -- data write-back
-          end if;
+          ctrl_nxt.rf_wb_en        <= not execute_engine.ir(instr_opcode_msb_c-1); -- data write-back for load
           execute_engine.state_nxt <= DISPATCH;
         end if;
 
