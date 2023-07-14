@@ -41,7 +41,6 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_dmem is
   generic (
-    DMEM_BASE : std_ulogic_vector(31 downto 0); -- memory base address
     DMEM_SIZE : natural -- processor-internal instruction memory size in bytes
   );
   port (

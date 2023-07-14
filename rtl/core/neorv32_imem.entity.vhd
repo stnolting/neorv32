@@ -41,7 +41,6 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_imem is
   generic (
-    IMEM_BASE    : std_ulogic_vector(31 downto 0); -- memory base address
     IMEM_SIZE    : natural; -- processor-internal instruction memory size in bytes
     IMEM_AS_IROM : boolean  -- implement IMEM as pre-initialized read-only memory?
   );
