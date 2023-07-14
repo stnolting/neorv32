@@ -53,14 +53,14 @@ package neorv32_package is
 
   -- "response time window" for processor-internal modules --
   -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception
-  constant max_proc_int_response_time_c : natural := 15; -- default = 15 (min 2)
+  constant max_proc_int_response_time_c : natural := 15; -- default = 15
 
   -- log2 of co-processor timeout cycles --
   constant cp_timeout_c : natural := 7; -- default = 7 (= 128 cycles)
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080602"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080603"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
