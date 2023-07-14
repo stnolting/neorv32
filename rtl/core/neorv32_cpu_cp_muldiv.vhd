@@ -313,7 +313,7 @@ begin
 
   -- Data Output ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  operation_result: process(ctrl, mul, div)
+  operation_result: process(ctrl, ctrl_i.ir_funct3, mul.prod, div.res)
   begin
     res_o <= (others => '0'); -- default
     if (ctrl.out_en = '1') then
