@@ -46,7 +46,8 @@ entity neorv32_icache is
   generic (
     ICACHE_NUM_BLOCKS : natural; -- number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
-    ICACHE_NUM_SETS   : natural  -- associativity / number of sets (1=direct_mapped), has to be a power of 2
+    ICACHE_NUM_SETS   : natural; -- associativity / number of sets (1=direct_mapped), has to be a power of 2
+    ICACHE_UC_PBEGIN  : std_ulogic_vector(3 downto 0) -- begin of uncached address space (page number)
   );
   port (
     clk_i     : in  std_ulogic; -- global clock, rising edge
@@ -106,7 +107,7 @@ architecture neorv32_icache_rtl of neorv32_icache is
   signal cache : cache_if_t;
 
   -- control engine --
-  type ctrl_engine_state_t is (S_IDLE, S_CLEAR, S_CHECK, S_DOWNLOAD_REQ, S_DOWNLOAD_GET, S_RESYNC);
+  type ctrl_engine_state_t is (S_IDLE, S_CLEAR, S_CHECK, S_DOWNLOAD_REQ, S_DOWNLOAD_GET, S_DIRECT_REQ, S_DIRECT_GET, S_RESYNC);
   type ctrl_t is record
     state         : ctrl_engine_state_t; -- current state
     state_nxt     : ctrl_engine_state_t; -- next state
@@ -123,7 +124,6 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- configuration --
   assert not (is_power_of_two_f(ICACHE_NUM_BLOCKS) = false) report
     "NEORV32 PROCESSOR CONFIG ERROR! i-cache number of blocks <ICACHE_NUM_BLOCKS> has to be a power of 2." severity error;
   assert not (is_power_of_two_f(ICACHE_BLOCK_SIZE) = false) report
@@ -136,6 +136,8 @@ begin
     "NEORV32 PROCESSOR CONFIG ERROR! i-cache block size <ICACHE_BLOCK_SIZE> has to be >= 4." severity error;
   assert not ((ICACHE_NUM_SETS = 0) or (ICACHE_NUM_SETS > 2)) report
     "NEORV32 PROCESSOR CONFIG ERROR! i-cache associativity <ICACHE_NUM_SETS> has to be 1 (direct-mapped) or 2 (2-way set-associative)." severity error;
+  assert false report
+    "NEORV32 PROCESSOR CONFIG NOTE: i-cache uncached memory space 0x" & to_hstring32_f(ICACHE_UC_PBEGIN & x"0000000") & "..0xffffffff." severity note;
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------
@@ -194,16 +196,20 @@ begin
 
       when S_IDLE => -- wait for host access request or cache control operation
       -- ------------------------------------------------------------
+        ctrl.addr_reg_nxt <= cpu_req_i.addr;
         if (ctrl.clear_buf = '1') then -- cache control operation?
           ctrl.state_nxt <= S_CLEAR;
-        elsif (cpu_req_i.re = '1') or (ctrl.re_buf = '1') then -- cache access
-          ctrl.state_nxt <= S_CHECK;
+        elsif (cpu_req_i.re = '1') or (ctrl.re_buf = '1') then
+          if (unsigned(cpu_req_i.addr(31 downto 28)) >= unsigned(ICACHE_UC_PBEGIN)) then
+            ctrl.state_nxt <= S_DIRECT_REQ; -- uncached access
+          else
+            ctrl.state_nxt <= S_CHECK; -- cache access
+          end if;
         end if;
 
       when S_CHECK => -- finalize host access if cache hit
       -- ------------------------------------------------------------
         -- calculate block base address - in case we need to download it --
-        ctrl.addr_reg_nxt <= cpu_req_i.addr;
         ctrl.addr_reg_nxt((cache_offset_size_c+2)-1 downto 2) <= (others => '0'); -- block-aligned
         ctrl.addr_reg_nxt(1 downto 0) <= "00"; -- word-aligned
         --
@@ -235,6 +241,23 @@ begin
             ctrl.addr_reg_nxt <= std_ulogic_vector(unsigned(ctrl.addr_reg) + 4);
             ctrl.state_nxt    <= S_DOWNLOAD_REQ;
           end if;
+        end if;
+
+      when S_DIRECT_REQ => -- direct access: request new word
+      -- ------------------------------------------------------------
+        bus_req_o.re   <= '1'; -- request new read transfer
+        ctrl.state_nxt <= S_DIRECT_GET;
+
+      when S_DIRECT_GET => -- direct access: wait for bus response
+      -- ------------------------------------------------------------
+        ctrl.re_buf_nxt <= '0';
+        cpu_rsp_o.data  <= bus_rsp_i.data;
+        if (bus_rsp_i.err = '1') then
+          cpu_rsp_o.err  <= '1';
+          ctrl.state_nxt <= S_IDLE;
+        elsif (bus_rsp_i.ack = '1') then
+          cpu_rsp_o.ack  <= '1';
+          ctrl.state_nxt <= S_IDLE;
         end if;
 
       when S_RESYNC => -- re-sync host/cache access: cache read-latency
