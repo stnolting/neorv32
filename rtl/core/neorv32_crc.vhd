@@ -54,20 +54,11 @@ end neorv32_crc;
 
 architecture neorv32_crc_rtl of neorv32_crc is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(crc_size_c); -- low address boundary bit
-
   -- interface register addresses --
   constant mode_addr_c : std_ulogic_vector(1 downto 0) := "00"; -- r/w: mode register
   constant poly_addr_c : std_ulogic_vector(1 downto 0) := "01"; -- r/w: polynomial register
   constant data_addr_c : std_ulogic_vector(1 downto 0) := "10"; -- -/w: data register
   constant sreg_addr_c : std_ulogic_vector(1 downto 0) := "11"; -- r/w: CRC shift register
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal wren   : std_ulogic; -- word write enable
-  signal rden   : std_ulogic; -- read enable
 
   -- CRC core --
   type crc_t is record
@@ -88,10 +79,6 @@ begin
 
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = crc_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
 
   -- write access --
   write_access: process(rstn_i, clk_i)
@@ -102,7 +89,7 @@ begin
       crc.data <= (others => '0');
       we_ack   <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (wren = '1') then
+      if (bus_req_i.we = '1') then
         if (bus_req_i.addr(3 downto 2) = mode_addr_c) then -- mode select
           crc.mode <= bus_req_i.data(01 downto 0);
         end if;
@@ -114,7 +101,7 @@ begin
         end if;
       end if;
       -- delayed write ACK --
-      we_ack <= we_ack(we_ack'left-1 downto 0) & wren;
+      we_ack <= we_ack(we_ack'left-1 downto 0) & bus_req_i.we;
     end if;
   end process write_access;
 
@@ -123,8 +110,8 @@ begin
   begin
     if rising_edge(clk_i) then
       bus_rsp_o.data <= (others => '0');
-      bus_rsp_o.ack  <= we_ack(we_ack'left) or rden;
-      if (rden = '1') then
+      bus_rsp_o.ack  <= we_ack(we_ack'left) or bus_req_i.re;
+      if (bus_req_i.re = '1') then
         case bus_req_i.addr(3 downto 2) is
           when mode_addr_c => bus_rsp_o.data(01 downto 0) <= crc.mode; -- mode select
           when poly_addr_c => bus_rsp_o.data(31 downto 0) <= crc.poly; -- polynomial
@@ -147,13 +134,13 @@ begin
       crc.sreg <= (others => '0');
     elsif rising_edge(clk_i) then
       -- arbitration --
-      if (wren = '1') and (bus_req_i.addr(3 downto 2) = data_addr_c) then -- writing new data
+      if (bus_req_i.we = '1') and (bus_req_i.addr(3 downto 2) = data_addr_c) then -- writing new data
         crc.cnt <= "0111"; -- start with MSB
       elsif (crc.cnt(3) = '0') then -- not done yet?
         crc.cnt <= std_ulogic_vector(unsigned(crc.cnt) - 1);
       end if;
       -- computation --
-      if (wren = '1') and (bus_req_i.addr(3 downto 2) = sreg_addr_c) then -- set start value
+      if (bus_req_i.we = '1') and (bus_req_i.addr(3 downto 2) = sreg_addr_c) then -- set start value
         crc.sreg <= bus_req_i.data;
       elsif (crc.cnt(3) = '0') then
         if (crc.msb = crc.data(to_integer(unsigned(crc.cnt(2 downto 0))))) then

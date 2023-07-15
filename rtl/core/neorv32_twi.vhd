@@ -62,10 +62,6 @@ end neorv32_twi;
 
 architecture neorv32_twi_rtl of neorv32_twi is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(twi_size_c); -- low address boundary bit
-
   -- control register --
   constant ctrl_en_c      : natural :=  0; -- r/w: TWI enable
   constant ctrl_start_c   : natural :=  1; -- -/w: Generate START condition
@@ -83,12 +79,6 @@ architecture neorv32_twi_rtl of neorv32_twi is
   constant ctrl_claimed_c : natural := 29; -- r/-: Set if bus is still claimed
   constant ctrl_ack_c     : natural := 30; -- r/-: Set if ACK received
   constant ctrl_busy_c    : natural := 31; -- r/-: Set if TWI unit is busy
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
-  signal wren   : std_ulogic; -- word write enable
-  signal rden   : std_ulogic; -- read enable
 
   -- control register --
   type ctrl_t is record
@@ -138,11 +128,6 @@ begin
 
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = twi_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= twi_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
 
   -- write access --
   write_access: process(rstn_i, clk_i)
@@ -154,8 +139,8 @@ begin
       ctrl.prsc   <= (others => '0');
       ctrl.cdiv   <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (wren = '1') then
-        if (addr = twi_ctrl_addr_c) then
+      if (bus_req_i.we = '1') then
+        if (bus_req_i.addr(2) = '0') then
           ctrl.enable <= bus_req_i.data(ctrl_en_c);
           ctrl.mack   <= bus_req_i.data(ctrl_mack_c);
           ctrl.csen   <= bus_req_i.data(ctrl_csen_c);
@@ -170,10 +155,10 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= rden or wren; -- bus handshake
+      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus handshake
       bus_rsp_o.data <= (others => '0');
-      if (rden = '1') then
-        if (addr = twi_ctrl_addr_c) then
+      if (bus_req_i.re = '1') then
+        if (bus_req_i.addr(2) = '0') then
           bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
           bus_rsp_o.data(ctrl_mack_c)                      <= ctrl.mack;
           bus_rsp_o.data(ctrl_csen_c)                      <= ctrl.csen;
@@ -183,7 +168,7 @@ begin
           bus_rsp_o.data(ctrl_claimed_c) <= arbiter.claimed;
           bus_rsp_o.data(ctrl_ack_c)     <= not arbiter.rtx_sreg(0);
           bus_rsp_o.data(ctrl_busy_c)    <= arbiter.busy;
-        else -- twi_rtx_addr_c =>
+        else
           bus_rsp_o.data(7 downto 0) <= arbiter.rtx_sreg(8 downto 1);
         end if;
       end if;
@@ -268,14 +253,14 @@ begin
         when "100" => -- IDLE: waiting for operation requests
         -- ------------------------------------------------------------
           arbiter.bitcnt <= (others => '0');
-          if (wren = '1') then
-            if (addr = twi_ctrl_addr_c) then
+          if (bus_req_i.we = '1') then
+            if (bus_req_i.addr(2) = '0') then
               if (bus_req_i.data(ctrl_start_c) = '1') then -- issue START condition
                 arbiter.state_nxt <= "01";
               elsif (bus_req_i.data(ctrl_stop_c) = '1') then  -- issue STOP condition
                 arbiter.state_nxt <= "10";
               end if;
-            elsif (addr = twi_rtx_addr_c) then -- start a data transmission
+            elsif (bus_req_i.addr(2) = '1') then -- start a data transmission
               -- one bit extra for ACK: issued by controller if ctrl_mack_c is set,
               -- sampled from peripheral if ctrl_mack_c is cleared
               arbiter.rtx_sreg  <= bus_req_i.data(7 downto 0) & (not ctrl.mack);

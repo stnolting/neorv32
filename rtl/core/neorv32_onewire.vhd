@@ -74,10 +74,6 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
   constant t_presence_end_c    : unsigned(6 downto 0) := to_unsigned(96, 7); -- t6
   -- -> see data sheet for more information about the t* timing values --
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(twi_size_c); -- low address boundary bit
-
   -- control register --
   constant ctrl_en_c        : natural :=  0; -- r/w: TWI enable
   constant ctrl_prsc0_c     : natural :=  1; -- r/w: prescaler select bit 0
@@ -97,12 +93,6 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
   constant ctrl_sense_c     : natural := 29; -- r/-: current state of the bus line
   constant ctrl_presence_c  : natural := 30; -- r/-: bus presence detected
   constant ctrl_busy_c      : natural := 31; -- r/-: set while operation in progress
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
-  signal wren   : std_ulogic; -- word write enable
-  signal rden   : std_ulogic; -- read enable
 
   -- control register --
   type ctrl_t is record
@@ -146,12 +136,6 @@ begin
   -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
-  -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = onewire_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= onewire_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
-
   -- write access --
   write_access: process(rstn_i, clk_i)
   begin
@@ -165,21 +149,21 @@ begin
       tx_data        <= (others => '0');
     elsif rising_edge(clk_i) then
       -- write access --
-      if (wren = '1') then
+      if (bus_req_i.we = '1') then
         -- control register --
-        if (addr = onewire_ctrl_addr_c) then
+        if (bus_req_i.addr(2) = '0') then
           ctrl.enable   <= bus_req_i.data(ctrl_en_c);
           ctrl.clk_prsc <= bus_req_i.data(ctrl_prsc1_c downto ctrl_prsc0_c);
           ctrl.clk_div  <= bus_req_i.data(ctrl_clkdiv7_c downto ctrl_clkdiv0_c);
         end if;
         -- data register --
-        if (addr = onewire_data_addr_c) then
+        if (bus_req_i.addr(2) = '1') then
           tx_data <= bus_req_i.data(7 downto 0);
         end if;
       end if;
 
       -- operation triggers --
-      if (wren = '1') and (addr = onewire_ctrl_addr_c) then -- set by host
+      if (bus_req_i.we = '1') and (bus_req_i.addr(2) = '0') then -- set by host
         ctrl.trig_rst  <= bus_req_i.data(ctrl_trig_rst_c);
         ctrl.trig_bit  <= bus_req_i.data(ctrl_trig_bit_c);
         ctrl.trig_byte <= bus_req_i.data(ctrl_trig_byte_c);
@@ -195,11 +179,11 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= rden or wren; -- bus handshake
+      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus handshake
       bus_rsp_o.data <= (others => '0');
-      if (rden = '1') then
+      if (bus_req_i.re = '1') then
         -- control register --
-        if (addr = onewire_ctrl_addr_c) then
+        if (bus_req_i.addr(2) = '0') then
           bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
           bus_rsp_o.data(ctrl_prsc1_c downto ctrl_prsc0_c)     <= ctrl.clk_prsc;
           bus_rsp_o.data(ctrl_clkdiv7_c downto ctrl_clkdiv0_c) <= ctrl.clk_div;
@@ -208,7 +192,7 @@ begin
           bus_rsp_o.data(ctrl_presence_c)                      <= serial.presence;
           bus_rsp_o.data(ctrl_busy_c)                          <= serial.busy;
         -- data register --
-        else -- if (addr = onewire_data_addr_c) then
+        else
           bus_rsp_o.data(7 downto 0) <= serial.sreg;
         end if;
       end if;

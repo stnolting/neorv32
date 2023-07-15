@@ -67,10 +67,6 @@ end neorv32_slink;
 
 architecture neorv32_slink_rtl of neorv32_slink is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(slink_size_c); -- low address boundary bit
-
   -- control register --
   constant ctrl_en_c            : natural :=  0; -- r/w: Global module enable
   constant ctrl_rx_clr_c        : natural :=  1; -- -/w: Clear RX FIFO, auto-clears
@@ -98,11 +94,6 @@ architecture neorv32_slink_rtl of neorv32_slink is
   constant ctrl_tx_fifo_size1_c : natural := 29; -- r/-: log2(TX fifo size), bit 1
   constant ctrl_tx_fifo_size2_c : natural := 30; -- r/-: log2(TX fifo size), bit 2
   constant ctrl_tx_fifo_size3_c : natural := 31; -- r/-: log2(TX fifo size), bit 3 (msb)
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal wren   : std_ulogic; -- word write enable
-  signal rden   : std_ulogic; -- read enable
 
   -- control register (see bit definitions above) --
   type ctrl_t is record
@@ -144,11 +135,6 @@ begin
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
-  -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = slink_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
-
   -- write access --
   write_access: process(rstn_i, clk_i)
   begin
@@ -165,7 +151,7 @@ begin
     elsif rising_edge(clk_i) then
       ctrl.rx_clr <= '0'; -- auto-clear
       ctrl.tx_clr <= '0'; -- auto-clear
-      if (wren = '1') then
+      if (bus_req_i.we = '1') then
         if (bus_req_i.addr(2) = '0') then -- control register
           ctrl.enable <= bus_req_i.data(ctrl_en_c);
           ctrl.rx_clr <= bus_req_i.data(ctrl_rx_clr_c);
@@ -186,9 +172,9 @@ begin
   read_aceess: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= rden or wren; -- bus access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (rden = '1') then
+      if (bus_req_i.re = '1') then
         if (bus_req_i.addr(2) = '0') then -- control register
           bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
           --
@@ -245,7 +231,7 @@ begin
   );
 
   rx_fifo.clear <= (not ctrl.enable) or ctrl.rx_clr;
-  rx_fifo.re    <= '1' when (rden = '1') and (bus_req_i.addr(2) = '1') else '0';
+  rx_fifo.re    <= '1' when (bus_req_i.re = '1') and (bus_req_i.addr(2) = '1') else '0';
 
   rx_fifo.we       <= slink_rx_valid_i;
   rx_fifo.wdata    <= slink_rx_data_i;
@@ -278,7 +264,7 @@ begin
   );
 
   tx_fifo.clear <= (not ctrl.enable) or ctrl.tx_clr;
-  tx_fifo.we    <= '1' when (wren = '1') and (bus_req_i.addr(2) = '1') else '0';
+  tx_fifo.we    <= '1' when (bus_req_i.we = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.wdata <= bus_req_i.data;
 
   tx_fifo.re       <= slink_tx_ready_i;

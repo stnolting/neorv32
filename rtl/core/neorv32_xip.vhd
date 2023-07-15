@@ -64,16 +64,6 @@ end neorv32_xip;
 
 architecture neorv32_xip_rtl of neorv32_xip is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(xip_size_c); -- low address boundary bit
-
-  -- CT register access control --
-  signal ct_acc_en : std_ulogic; -- module access enable
-  signal ct_addr   : std_ulogic_vector(31 downto 0); -- access address
-  signal ct_wren   : std_ulogic; -- word write enable
-  signal ct_rden   : std_ulogic; -- read enable
-
   -- control register --
   constant ctrl_enable_c      : natural :=  0; -- r/w: module enable
   constant ctrl_spi_prsc0_c   : natural :=  1; -- r/w: SPI clock prescaler select - bit 0
@@ -159,14 +149,6 @@ architecture neorv32_xip_rtl of neorv32_xip is
 
 begin
 
-  -- Access Control (IO/CTRL port) ----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  ct_acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = xip_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  ct_addr   <= xip_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  ct_wren   <= ct_acc_en and bus_req_i.we;
-  ct_rden   <= ct_acc_en and bus_req_i.re;
-
-
   -- Control Write Access -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   ctrl_write_access : process(rstn_i, clk_i)
@@ -178,9 +160,9 @@ begin
       spi_trigger <= '0';
     elsif rising_edge(clk_i) then
       spi_trigger <= '0';
-      if (ct_wren = '1') then -- only full-word writes!
+      if (bus_req_i.we = '1') then -- only full-word writes!
         -- control register --
-        if (ct_addr = xip_ctrl_addr_c) then
+        if (bus_req_i.addr(3 downto 2) = "00") then
           ctrl(ctrl_enable_c)                                <= bus_req_i.data(ctrl_enable_c);
           ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= bus_req_i.data(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
           ctrl(ctrl_spi_cpol_c)                              <= bus_req_i.data(ctrl_spi_cpol_c);
@@ -194,11 +176,11 @@ begin
           ctrl(ctrl_burst_en_c)                              <= bus_req_i.data(ctrl_burst_en_c);
         end if;
         -- SPI direct data access register lo --
-        if (ct_addr = xip_data_lo_addr_c) then
+        if (bus_req_i.addr(3 downto 2) = "10") then
           spi_data_lo <= bus_req_i.data;
         end if;
         -- SPI direct data access register hi --
-        if (ct_addr = xip_data_hi_addr_c) then
+        if (bus_req_i.addr(3 downto 2) = "11") then
           spi_data_hi <= bus_req_i.data;
           spi_trigger <= '1'; -- trigger direct SPI transaction
         end if;
@@ -212,10 +194,10 @@ begin
   ctrl_read_access : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= ct_wren or ct_rden; -- access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.we or bus_req_i.re; -- access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (ct_rden = '1') then
-        case ct_addr(3 downto 2) is
+      if (bus_req_i.re = '1') then
+        case bus_req_i.addr(3 downto 2) is
           when "00" => -- 'xip_ctrl_addr_c' - control register
             bus_rsp_o.data(ctrl_enable_c)                                <= ctrl(ctrl_enable_c);
             bus_rsp_o.data(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);

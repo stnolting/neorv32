@@ -54,16 +54,6 @@ end neorv32_mtime;
 
 architecture neorv32_mtime_rtl of neorv32_mtime is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(mtime_size_c); -- low address boundary bit
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
-  signal wren   : std_ulogic; -- module access enable
-  signal rden   : std_ulogic; -- read enable
-
   -- time write access buffer --
   signal mtime_lo_we : std_ulogic;
   signal mtime_hi_we : std_ulogic;
@@ -84,14 +74,6 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
 
 begin
 
-  -- Access Control -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = mtime_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= mtime_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
-
-
   -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   write_access: process(rstn_i, clk_i)
@@ -106,23 +88,23 @@ begin
       mtime_hi      <= (others => '0');
     elsif rising_edge(clk_i) then
       -- mtimecmp --
-      if (wren = '1') then
-        if (addr = mtime_cmp_lo_addr_c) then
+      if (bus_req_i.we = '1') then
+        if (bus_req_i.addr(3 downto 2) = "10") then
           mtimecmp_lo <= bus_req_i.data;
         end if;
-        if (addr = mtime_cmp_hi_addr_c) then
+        if (bus_req_i.addr(3 downto 2) = "11") then
           mtimecmp_hi <= bus_req_i.data;
         end if;
       end if;
 
       -- mtime write access buffer --
       mtime_lo_we <= '0';
-      if (wren = '1') and (addr = mtime_time_lo_addr_c) then
+      if (bus_req_i.we = '1') and (bus_req_i.addr(3 downto 2) = "00") then
         mtime_lo_we <= '1';
       end if;
       --
       mtime_hi_we <= '0';
-      if (wren = '1') and (addr = mtime_time_hi_addr_c) then
+      if (bus_req_i.we = '1') and (bus_req_i.addr(3 downto 2) = "01") then
         mtime_hi_we <= '1';
       end if;
 
@@ -152,10 +134,10 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= rden or wren; -- bus handshake
+      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus handshake
       bus_rsp_o.data <= (others => '0'); -- default
-      if (rden = '1') then
-        case addr(3 downto 2) is
+      if (bus_req_i.re = '1') then
+        case bus_req_i.addr(3 downto 2) is
           when "00"   => bus_rsp_o.data <= mtime_lo;
           when "01"   => bus_rsp_o.data <= mtime_hi;
           when "10"   => bus_rsp_o.data <= mtimecmp_lo;

@@ -55,16 +55,6 @@ end neorv32_gpio;
 
 architecture neorv32_gpio_rtl of neorv32_gpio is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(gpio_size_c); -- low address boundary bit
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
-  signal wren   : std_ulogic; -- word write enable
-  signal rden   : std_ulogic; -- read enable
-
   -- accessible regs --
   signal din, din_rd, dout, dout_rd : std_ulogic_vector(63 downto 0);
 
@@ -79,23 +69,17 @@ begin
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
-  -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = gpio_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= gpio_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
-
   -- write access --
   write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       dout <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (wren = '1') then
-        if (addr = gpio_out_lo_addr_c) then
+      if (bus_req_i.we = '1') then
+        if (bus_req_i.addr(3 downto 2) = "10") then
           dout(31 downto 00) <= bus_req_i.data;
         end if;
-        if (addr = gpio_out_hi_addr_c) then
+        if (bus_req_i.addr(3 downto 2) = "11") then
           dout(63 downto 32) <= bus_req_i.data;
         end if;
       end if;
@@ -107,11 +91,11 @@ begin
   begin
     if rising_edge(clk_i) then
       -- bus handshake --
-      bus_rsp_o.ack <= wren or rden;
+      bus_rsp_o.ack <= bus_req_i.we or bus_req_i.re;
       -- read data --
       bus_rsp_o.data <= (others => '0');
-      if (rden = '1') then
-        case addr(3 downto 2) is
+      if (bus_req_i.re = '1') then
+        case bus_req_i.addr(3 downto 2) is
           when "00"   => bus_rsp_o.data <= din_rd(31 downto 00);
           when "01"   => bus_rsp_o.data <= din_rd(63 downto 32);
           when "10"   => bus_rsp_o.data <= dout_rd(31 downto 00);

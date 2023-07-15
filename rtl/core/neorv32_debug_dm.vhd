@@ -56,6 +56,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_debug_dm is
+  generic (
+    CPU_BASE_ADDR : std_ulogic_vector(31 downto 0)
+  );
   port (
     -- global control --
     clk_i             : in  std_ulogic; -- global clock line
@@ -81,6 +84,14 @@ entity neorv32_debug_dm is
 end neorv32_debug_dm;
 
 architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
+
+  -- **********************************************************
+  -- DM Layout 
+  -- **********************************************************
+  constant dm_code_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"00"); -- base address of code ROM (park loop)
+  constant dm_pbuf_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"40"); -- base address of program buffer (PBUF)
+  constant dm_data_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"80"); -- base address of abstract data buffer (DATA)
+  constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"C0"); -- base address of status register (SREG)
 
   -- **********************************************************
   -- DMI Access
@@ -175,10 +186,6 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- CPU Bus Interface
   -- **********************************************************
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := 31; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(dm_size_c); -- low address boundary bit
-
   -- status and control register - bits --
   -- for write access we only care about the actual BYTE WRITE ACCESSES! --
   constant sreg_halt_ack_c      : natural :=  0; -- -/w: CPU is halted in debug mode and waits in park loop
@@ -192,25 +199,28 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- copied manually from 'sw/ocd-firmware/neorv32_debug_mem_code.vhd' --
   type code_rom_file_t is array (0 to 15) of std_ulogic_vector(31 downto 0);
   constant code_rom_file : code_rom_file_t := (
-    00 => x"8c0001a3",
+    00 => x"fc0001a3",
     01 => x"00100073",
     02 => x"7b241073",
-    03 => x"8c000023",
-    04 => x"8c204403",
+    03 => x"fc000023",
+    04 => x"fc204403",
     05 => x"00041c63",
-    06 => x"8c104403",
+    06 => x"fc104403",
     07 => x"fe0408e3",
-    08 => x"8c8000a3",
+    08 => x"fc8000a3",
     09 => x"7b202473",
     10 => x"7b200073",
-    11 => x"8c000123",
+    11 => x"fc000123",
     12 => x"7b202473",
     13 => x"0000100f",
-    14 => x"84000067",
+    14 => x"f4000067",
     15 => x"00000073"
   );
 
-  -- Debug Core Interface
+  -- access helpers --
+  signal rden, wren : std_ulogic;
+
+  -- Debug Core Interface --
   type dci_t is record
     halt_ack      : std_ulogic; -- CPU (re-)entered HALT state (single-shot)
     resume_req    : std_ulogic; -- DM wants the CPU to resume when set
@@ -224,12 +234,6 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     rdata         : std_ulogic_vector(31 downto 0); -- abstract read data
   end record;
   signal dci : dci_t;
-
-  -- global access control --
-  signal acc_en : std_ulogic;
-  signal rden   : std_ulogic;
-  signal wren   : std_ulogic;
-  signal maddr  : std_ulogic_vector(01 downto 0);
 
   -- data buffer --
   signal data_buf : std_ulogic_vector(31 downto 0);
@@ -310,7 +314,7 @@ begin
                 dm_ctrl.ldsw_progbuf(11 downto 07) <= dataaddr_c(04 downto 00); -- destination address
               else -- "write" = 1 -> write to GPR
                 dm_ctrl.ldsw_progbuf <= instr_lw_c;
-                dm_ctrl.ldsw_progbuf(31 downto 20) <= dataaddr_c; -- source address
+                dm_ctrl.ldsw_progbuf(31 downto 20) <= dataaddr_c(11 downto 00); -- source address
                 dm_ctrl.ldsw_progbuf(11 downto 07) <= dm_reg.command(4 downto 0); -- "regno" = destination register
               end if;
             else
@@ -602,7 +606,7 @@ begin
           dmi_rsp_data_o(19 downto 17) <= (others => '0');           -- reserved (r/-)
           dmi_rsp_data_o(16)           <= dataaccess_c;              -- dataaccess (r/-): 1: data registers are memory-mapped, 0: data reisters are CSR-mapped
           dmi_rsp_data_o(15 downto 12) <= datasize_c;                -- datasize (r/-): number data registers in memory/CSR space
-          dmi_rsp_data_o(11 downto 00) <= dataaddr_c;                -- dataaddr (r/-): data registers base address (memory/CSR)
+          dmi_rsp_data_o(11 downto 00) <= dataaddr_c(11 downto 0);   -- dataaddr (r/-): data registers base address (memory/CSR)
 
         -- abstract control and status --
         when addr_abstractcs_c =>
@@ -680,10 +684,8 @@ begin
 
   -- Access Control ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = dm_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  maddr  <= bus_req_i.addr(lo_abb_c-1 downto lo_abb_c-2); -- (sub-)module select address
-  rden   <= acc_en and cpu_debug_i and bus_req_i.re; -- allow access only when in debug mode
-  wren   <= acc_en and cpu_debug_i and bus_req_i.we; -- allow access only when in debug mode
+  rden <= cpu_debug_i and bus_req_i.re; -- allow access only when in debug mode
+  wren <= cpu_debug_i and bus_req_i.we; -- allow access only when in debug mode
 
 
   -- Write Access ---------------------------------------------------------------------------
@@ -700,7 +702,7 @@ begin
       -- data buffer --
       if (dci.data_we = '1') then -- DM write access
         data_buf <= dci.wdata;
-      elsif (maddr = "10") and (wren = '1') then -- CPU write access
+      elsif (bus_req_i.addr(7 downto 6) = dm_data_base_c(7 downto 6)) and (wren = '1') then -- CPU write access
         data_buf <= bus_req_i.data;
       end if;
       -- control and status register CPU write access --
@@ -709,7 +711,7 @@ begin
       dci.resume_ack    <= '0';
       dci.execute_ack   <= '0';
       dci.exception_ack <= '0';
-      if (maddr = "11") and (wren = '1') then
+      if (bus_req_i.addr(7 downto 6) = dm_sreg_base_c(7 downto 6)) and (wren = '1') then
         if (bus_req_i.ben(sreg_halt_ack_c/8) = '1') then
           dci.halt_ack <= '1';
         end if;
@@ -738,14 +740,14 @@ begin
       bus_rsp_o.ack  <= rden or wren;
       bus_rsp_o.data <= (others => '0');
       if (rden = '1') then -- output enable
-        case maddr is -- module select
-          when "00" => -- code ROM
+        case bus_req_i.addr(7 downto 6) is -- module select
+          when "00" => -- dm_code_base_c: code ROM
             bus_rsp_o.data <= code_rom_file(to_integer(unsigned(bus_req_i.addr(5 downto 2))));
-          when "01" => -- program buffer
+          when "01" => -- dm_pbuf_base_c: program buffer
             bus_rsp_o.data <= cpu_progbuf(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
-          when "10" => -- data buffer
+          when "10" => -- dm_data_base_c: data buffer
             bus_rsp_o.data <= data_buf;
-          when others => -- control and status register
+          when others => -- dm_sreg_base_c: control and status register
             bus_rsp_o.data(sreg_resume_req_c)  <= dci.resume_req;
             bus_rsp_o.data(sreg_execute_req_c) <= dci.execute_req;
         end case;
