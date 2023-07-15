@@ -69,14 +69,13 @@ __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x800000
 
 
 /* ************************************************************************************************* */
-/* If compiling the bootloader, the rom section is automatically re-mapped to the processor-internal */
+/* If compiling the bootloader, the ROM section is automatically re-mapped to the processor-internal */
 /* bootloader ROM address space.                                                                     */
 /* ************************************************************************************************* */
 MEMORY
 {
-  rom   (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : __neorv32_rom_base, LENGTH = DEFINED(make_bootloader) ? 32K : __neorv32_rom_size
-  ram  (rwx) : ORIGIN = __neorv32_ram_base, LENGTH = DEFINED(make_bootloader) ? 512 : __neorv32_ram_size
-  iodev (rw) : ORIGIN = 0xFFFFFE00, LENGTH = 512 /* this is hardware-defined and should not be modified! */
+  rom  (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFFC000 : __neorv32_rom_base, LENGTH = DEFINED(make_bootloader) ? 8K : __neorv32_rom_size
+  ram (rwx) : ORIGIN = __neorv32_ram_base, LENGTH = DEFINED(make_bootloader) ? 512 : __neorv32_ram_size
 }
 
 
@@ -301,6 +300,4 @@ SECTIONS
   PROVIDE(__crt0_copy_data_src_begin = LOADADDR(.data));
   PROVIDE(__crt0_copy_data_dst_begin = ADDR(.data));
   PROVIDE(__crt0_copy_data_dst_end   = ADDR(.data) + SIZEOF(.data));
-  PROVIDE(__crt0_io_space_begin      = ORIGIN(iodev));
-  PROVIDE(__crt0_io_space_end        = ORIGIN(iodev) + LENGTH(iodev));
 }
