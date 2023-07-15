@@ -33,10 +33,10 @@
 /* ################################################################################################# */
 
 // debug module (DM) address map
-.equ DM_CODE_BASE, 0xfffff800 // base address of debug_module's code ROM (park loop)
-.equ DM_PBUF_BASE, 0xfffff840 // base address of debug_module's program buffer (PBUF)
-.equ DM_DATA_BASE, 0xfffff880 // base address of debug_module's abstract data buffer (DATA)
-.equ DM_SREG_BASE, 0xfffff8C0 // base address of debug_module's status register
+.equ DM_CODE_BASE, 0xffffff00 // base address of debug_module's code ROM (park loop)
+.equ DM_PBUF_BASE, 0xffffff40 // base address of debug_module's program buffer (PBUF)
+.equ DM_DATA_BASE, 0xffffff80 // base address of debug_module's abstract data buffer (DATA)
+.equ DM_SREG_BASE, 0xffffffC0 // base address of debug_module's status register
 
 // status register (SREG) byte(!!!) offsets
 .equ SREG_HLT_ACK, ( 0 / 8) // -/w: CPU has halted in debug mode and is waiting in park loop
