@@ -110,9 +110,7 @@ begin
     mem_access: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        if (bus_req_i.re = '1') then
-          mem_rom_rd <= mem_rom(to_integer(unsigned(addr)));
-        end if;
+        mem_rom_rd <= mem_rom(to_integer(unsigned(addr)));
       end if;
     end process mem_access;
     -- read data --
