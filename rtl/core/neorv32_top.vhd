@@ -250,8 +250,9 @@ end neorv32_top;
 
 architecture neorv32_top_rtl of neorv32_top is
 
-  -- CPU boot configuration --
-  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(INT_BOOTLOADER_EN, boot_rom_base_c, ispace_base_c);
+  -- auto-configuration --
+  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(INT_BOOTLOADER_EN, mem_boot_base_c, mem_ispace_base_c);
+  constant io_reg_buf_en_c : boolean := ICACHE_EN or DCACHE_EN;
 
   -- reset generator --
   signal rstn_ext_sreg, rstn_int_sreg : std_ulogic_vector(3 downto 0);
@@ -288,10 +289,9 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dmi : dmi_t;
 
   -- debug core interface (DCI) --
-  signal dci_ndmrstn  : std_ulogic;
-  signal dci_halt_req : std_ulogic;
+  signal dci_ndmrstn, dci_halt_req : std_ulogic;
 
-  -- core complex --
+  -- bus: core complex --
   signal cpu_i_req,  cpu_d_req  : bus_req_t; -- CPU core
   signal cpu_i_rsp,  cpu_d_rsp  : bus_rsp_t; -- CPU core
   signal icache_req, dcache_req : bus_req_t; -- CPU caches
@@ -299,18 +299,23 @@ architecture neorv32_top_rtl of neorv32_top is
   signal core_req               : bus_req_t; -- core complex (CPU + caches)
   signal core_rsp               : bus_rsp_t; -- core complex (CPU + caches)
 
-  -- core complex + DMA --
+  -- bus: core complex + DMA --
   signal main_req, dma_req : bus_req_t; -- core complex (CPU + caches + DMA)
   signal main_rsp, dma_rsp : bus_rsp_t; -- core complex (CPU + caches + DMA)
 
-  -- main sections --
+  -- bus: main sections --
   signal imem_req, dmem_req, xip_req, boot_req, io_req, xbus_req : bus_req_t;
   signal imem_rsp, dmem_rsp, xip_rsp, boot_rsp, io_rsp, xbus_rsp : bus_rsp_t;
 
-  -- IO bus --
-  type io_devices_t is (IODEV_GPIO, IODEV_MTIME, IODEV_UART0, IODEV_UART1, IODEV_SPI, IODEV_TWI, IODEV_PWM, IODEV_WDT, IODEV_TRNG, IODEV_CFS, IODEV_NEOLED,
-                        IODEV_SYSINFO, IODEV_OCD, IODEV_XIRQ, IODEV_GPTMR, IODEV_XIP, IODEV_ONEWIRE, IODEV_SDI, IODEV_DMA, IODEV_SLINK, IODEV_CRC);
+  -- bus: IO devices --
+  type io_devices_t is (
+    IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG, IODEV_TWI,
+    IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_MTIME, IODEV_XIRQ, IODEV_ONEWIRE,
+    IODEV_GPTMR, IODEV_PWM, IODEV_XIP, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS
+  );
+  type io_req_bus_t is array (io_devices_t) of bus_req_t;
   type io_rsp_bus_t is array (io_devices_t) of bus_rsp_t;
+  signal io_dev_req : io_req_bus_t;
   signal io_dev_rsp : io_rsp_bus_t;
 
   -- IRQs --
@@ -372,9 +377,9 @@ begin
       "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-external memory)." severity note;
 
     -- memory layout --
-    assert not (ispace_base_c /= x"00000000") report
+    assert not (mem_ispace_base_c /= x"00000000") report
       "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for INSTRUCTION ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
-    assert not (dspace_base_c /= x"80000000") report
+    assert not (mem_dspace_base_c /= x"80000000") report
       "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for DATA ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
 
     -- on-chip debugger --
@@ -391,7 +396,7 @@ begin
   -- **************************************************************************************************************************
   -- Clock and Reset Generators
   -- **************************************************************************************************************************
-  generators_inst:
+  generators:
   if (true) generate
 
     -- Reset Generator ------------------------------------------------------------------------
@@ -452,7 +457,7 @@ begin
     clk_gen_en <= cg_en.wdt or cg_en.uart0  or cg_en.uart1 or cg_en.spi or cg_en.twi or cg_en.pwm or
                   cg_en.cfs or cg_en.neoled or cg_en.gptmr or cg_en.xip or cg_en.onewire;
 
-  end generate; -- /generators_inst
+  end generate; -- /generators
 
 
   -- **************************************************************************************************************************
@@ -550,7 +555,8 @@ begin
       generic map (
         ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
         ICACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE,
-        ICACHE_NUM_SETS   => ICACHE_ASSOCIATIVITY
+        ICACHE_NUM_SETS   => ICACHE_ASSOCIATIVITY,
+        ICACHE_UC_PBEGIN  => uncached_begin_c(31 downto 28)
       )
       port map (
         clk_i     => clk_i,
@@ -578,7 +584,7 @@ begin
       generic map (
         DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
         DCACHE_BLOCK_SIZE => DCACHE_BLOCK_SIZE,
-        DCACHE_UC_PBEGIN  => "1111"
+        DCACHE_UC_PBEGIN  => uncached_begin_c(31 downto 28)
       )
       port map (
         clk_i     => clk_i,
@@ -631,7 +637,7 @@ begin
     port map (
       clk_i     => clk_i,
       rstn_i    => rstn_int,
-      bus_req_i => io_req,
+      bus_req_i => io_dev_req(IODEV_DMA),
       bus_rsp_o => io_dev_rsp(IODEV_DMA),
       dma_req_o => dma_req,
       dma_rsp_i => dma_rsp,
@@ -669,34 +675,33 @@ begin
 
 
   -- **************************************************************************************************************************
-  -- Bus System - Section Gateway
+  -- Address Region Gateway
   -- **************************************************************************************************************************
-
   neorv32_gateway_inst: entity neorv32.neorv32_gateway
     generic map (
       TIMEOUT     => max_proc_int_response_time_c,
       -- IMEM port --
       IMEM_ENABLE => MEM_INT_IMEM_EN,
-      IMEM_BASE   => imem_base_c,
+      IMEM_BASE   => mem_ispace_base_c,
       IMEM_SIZE   => MEM_INT_IMEM_SIZE,
       -- DMEM port --
       DMEM_ENABLE => MEM_INT_DMEM_EN,
-      DMEM_BASE   => dmem_base_c,
+      DMEM_BASE   => mem_dspace_base_c,
       DMEM_SIZE   => MEM_INT_DMEM_SIZE,
       -- XIP port --
       XIP_ENABLE  => IO_XIP_EN,
-      XIP_BASE    => x"E0000000",
-      XIP_SIZE    => 256*1024*1024,
+      XIP_BASE    => mem_xip_base_c,
+      XIP_SIZE    => mem_xip_size_c,
       -- BOOT ROM port --
       BOOT_ENABLE => INT_BOOTLOADER_EN,
-      BOOT_BASE   => boot_rom_base_c,
-      BOOT_SIZE   => boot_rom_max_size_c,
+      BOOT_BASE   => mem_boot_base_c,
+      BOOT_SIZE   => mem_boot_size_c,
       -- IO port --
       IO_ENABLE   => true,
-      IO_REQ_REG  => false,
-      IO_RSP_REG  => false,
-      IO_BASE     => io_base_c,
-      IO_SIZE     => io_size_c,
+      IO_REQ_REG  => io_reg_buf_en_c,
+      IO_RSP_REG  => io_reg_buf_en_c,
+      IO_BASE     => mem_io_base_c,
+      IO_SIZE     => mem_io_size_c,
       -- EXT port --
       EXT_ENABLE  => MEM_EXT_EN
     )
@@ -799,7 +804,7 @@ begin
         -- global control --
         clk_i       => clk_i,
         rstn_i      => rstn_int,
-        bus_req_i   => io_req,
+        bus_req_i   => io_dev_req(IODEV_XIP),
         bus_rsp_o   => io_dev_rsp(IODEV_XIP),
         xip_req_i   => xip_req,
         xip_rsp_o   => xip_rsp,
@@ -875,19 +880,83 @@ begin
   io_system:
   if (true) generate
 
-    -- Global IO Response Bus -----------------------------------------------------------------
+    -- IO Switch ------------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    bus_response: process(io_dev_rsp)
-      variable tmp_v : bus_rsp_t;
-    begin
-      tmp_v := rsp_terminate_c;
-      for i in io_dev_rsp'range loop -- OR all response signals
-        tmp_v.data := tmp_v.data or io_dev_rsp(i).data;
-        tmp_v.ack  := tmp_v.ack  or io_dev_rsp(i).ack;
-        tmp_v.err  := tmp_v.err  or io_dev_rsp(i).err;
-      end loop;
-      io_rsp <= tmp_v;
-    end process;
+    io_switch_inst: entity neorv32.io_switch
+    generic map (
+      DEV_SIZE => iodev_size_c, -- size of a single IO device, has to be a power of two
+      -- device base addresses --
+      DEV_00_BASE => base_io_dm_c,
+      DEV_01_BASE => base_io_sysinfo_c,
+      DEV_02_BASE => base_io_neoled_c,
+      DEV_03_BASE => base_io_gpio_c,
+      DEV_04_BASE => base_io_wdt_c,
+      DEV_05_BASE => base_io_trng_c,
+      DEV_06_BASE => base_io_twi_c,
+      DEV_07_BASE => base_io_spi_c,
+      DEV_08_BASE => base_io_sdi_c,
+      DEV_09_BASE => base_io_uart1_c,
+      DEV_10_BASE => base_io_uart0_c,
+      DEV_11_BASE => base_io_mtime_c,
+      DEV_12_BASE => base_io_xirq_c,
+      DEV_13_BASE => base_io_onewire_c,
+      DEV_14_BASE => base_io_gptmr_c,
+      DEV_15_BASE => base_io_pwm_c,
+      DEV_16_BASE => base_io_xip_c,
+      DEV_17_BASE => base_io_crc_c,
+      DEV_18_BASE => base_io_dma_c,
+      DEV_19_BASE => base_io_slink_c,
+      DEV_20_BASE => base_io_cfs_c
+    )
+    port map (
+      -- host port --
+      main_req_i => io_req,
+      main_rsp_o => io_rsp,
+      -- device ports --
+      dev_req_o(00) => io_dev_req(IODEV_OCD),
+      dev_req_o(01) => io_dev_req(IODEV_SYSINFO),
+      dev_req_o(02) => io_dev_req(IODEV_NEOLED),
+      dev_req_o(03) => io_dev_req(IODEV_GPIO),
+      dev_req_o(04) => io_dev_req(IODEV_WDT),
+      dev_req_o(05) => io_dev_req(IODEV_TRNG),
+      dev_req_o(06) => io_dev_req(IODEV_TWI),
+      dev_req_o(07) => io_dev_req(IODEV_SPI),
+      dev_req_o(08) => io_dev_req(IODEV_SDI),
+      dev_req_o(09) => io_dev_req(IODEV_UART1),
+      dev_req_o(10) => io_dev_req(IODEV_UART0),
+      dev_req_o(11) => io_dev_req(IODEV_MTIME),
+      dev_req_o(12) => io_dev_req(IODEV_XIRQ),
+      dev_req_o(13) => io_dev_req(IODEV_ONEWIRE),
+      dev_req_o(14) => io_dev_req(IODEV_GPTMR),
+      dev_req_o(15) => io_dev_req(IODEV_PWM),
+      dev_req_o(16) => io_dev_req(IODEV_XIP),
+      dev_req_o(17) => io_dev_req(IODEV_CRC),
+      dev_req_o(18) => io_dev_req(IODEV_DMA),
+      dev_req_o(19) => io_dev_req(IODEV_SLINK),
+      dev_req_o(20) => io_dev_req(IODEV_CFS),
+      --
+      dev_rsp_i(00) => io_dev_rsp(IODEV_OCD),
+      dev_rsp_i(01) => io_dev_rsp(IODEV_SYSINFO),
+      dev_rsp_i(02) => io_dev_rsp(IODEV_NEOLED),
+      dev_rsp_i(03) => io_dev_rsp(IODEV_GPIO),
+      dev_rsp_i(04) => io_dev_rsp(IODEV_WDT),
+      dev_rsp_i(05) => io_dev_rsp(IODEV_TRNG),
+      dev_rsp_i(06) => io_dev_rsp(IODEV_TWI),
+      dev_rsp_i(07) => io_dev_rsp(IODEV_SPI),
+      dev_rsp_i(08) => io_dev_rsp(IODEV_SDI),
+      dev_rsp_i(09) => io_dev_rsp(IODEV_UART1),
+      dev_rsp_i(10) => io_dev_rsp(IODEV_UART0),
+      dev_rsp_i(11) => io_dev_rsp(IODEV_MTIME),
+      dev_rsp_i(12) => io_dev_rsp(IODEV_XIRQ),
+      dev_rsp_i(13) => io_dev_rsp(IODEV_ONEWIRE),
+      dev_rsp_i(14) => io_dev_rsp(IODEV_GPTMR),
+      dev_rsp_i(15) => io_dev_rsp(IODEV_PWM),
+      dev_rsp_i(16) => io_dev_rsp(IODEV_XIP),
+      dev_rsp_i(17) => io_dev_rsp(IODEV_CRC),
+      dev_rsp_i(18) => io_dev_rsp(IODEV_DMA),
+      dev_rsp_i(19) => io_dev_rsp(IODEV_SLINK),
+      dev_rsp_i(20) => io_dev_rsp(IODEV_CFS)
+    );
 
 
     -- Custom Functions Subsystem (CFS) -------------------------------------------------------
@@ -903,7 +972,7 @@ begin
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_int,
-        bus_req_i   => io_req,
+        bus_req_i   => io_dev_req(IODEV_CFS),
         bus_rsp_o   => io_dev_rsp(IODEV_CFS),
         clkgen_en_o => cg_en.cfs,
         clkgen_i    => clk_gen,
@@ -933,7 +1002,7 @@ begin
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_int,
-        bus_req_i => io_req,
+        bus_req_i => io_dev_req(IODEV_SDI),
         bus_rsp_o => io_dev_rsp(IODEV_SDI),
         sdi_csn_i => sdi_csn_i,
         sdi_clk_i => sdi_clk_i,
@@ -963,7 +1032,7 @@ begin
         -- host access --
         clk_i     => clk_i,
         rstn_i    => rstn_int,
-        bus_req_i => io_req,
+        bus_req_i => io_dev_req(IODEV_GPIO),
         bus_rsp_o => io_dev_rsp(IODEV_GPIO),
         gpio_o    => gpio_o,
         gpio_i    => gpio_i
@@ -986,7 +1055,7 @@ begin
         clk_i       => clk_i,
         rstn_ext_i  => rstn_ext,
         rstn_int_i  => rstn_int,
-        bus_req_i   => io_req,
+        bus_req_i   => io_dev_req(IODEV_WDT),
         bus_rsp_o   => io_dev_rsp(IODEV_WDT),
         cpu_debug_i => cpu_debug,
         cpu_sleep_i => cpu_sleep,
@@ -1014,7 +1083,7 @@ begin
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_int,
-        bus_req_i => io_req,
+        bus_req_i => io_dev_req(IODEV_MTIME),
         bus_rsp_o => io_dev_rsp(IODEV_MTIME),
         irq_o     => mtime_irq
       );
@@ -1040,7 +1109,7 @@ begin
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_int,
-        bus_req_i   => io_req,
+        bus_req_i   => io_dev_req(IODEV_UART0),
         bus_rsp_o   => io_dev_rsp(IODEV_UART0),
         clkgen_en_o => cg_en.uart0,
         clkgen_i    => clk_gen,
@@ -1077,7 +1146,7 @@ begin
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_int,
-        bus_req_i   => io_req,
+        bus_req_i   => io_dev_req(IODEV_UART1),
         bus_rsp_o   => io_dev_rsp(IODEV_UART1),
         clkgen_en_o => cg_en.uart1,
         clkgen_i    => clk_gen,
@@ -1112,7 +1181,7 @@ begin
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_int,
-        bus_req_i   => io_req,
+        bus_req_i   => io_dev_req(IODEV_SPI),
         bus_rsp_o   => io_dev_rsp(IODEV_SPI),
         clkgen_en_o => cg_en.spi,
         clkgen_i    => clk_gen,
@@ -1143,7 +1212,7 @@ begin
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_int,
-        bus_req_i   => io_req,
+        bus_req_i   => io_dev_req(IODEV_TWI),
         bus_rsp_o   => io_dev_rsp(IODEV_TWI),
         clkgen_en_o => cg_en.twi,
         clkgen_i    => clk_gen,
@@ -1176,7 +1245,7 @@ begin
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_int,
-        bus_req_i   => io_req,
+        bus_req_i   => io_dev_req(IODEV_PWM),
         bus_rsp_o   => io_dev_rsp(IODEV_PWM),
         clkgen_en_o => cg_en.pwm,
         clkgen_i    => clk_gen,
@@ -1203,7 +1272,7 @@ begin
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_int,
-        bus_req_i => io_req,
+        bus_req_i => io_dev_req(IODEV_TRNG),
         bus_rsp_o => io_dev_rsp(IODEV_TRNG),
         irq_o     => firq.trng
       );
@@ -1227,7 +1296,7 @@ begin
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_int,
-        bus_req_i   => io_req,
+        bus_req_i   => io_dev_req(IODEV_NEOLED),
         bus_rsp_o   => io_dev_rsp(IODEV_NEOLED),
         clkgen_en_o => cg_en.neoled,
         clkgen_i    => clk_gen,
@@ -1259,7 +1328,7 @@ begin
         -- host access --
         clk_i     => clk_i,
         rstn_i    => rstn_int,
-        bus_req_i => io_req,
+        bus_req_i => io_dev_req(IODEV_XIRQ),
         bus_rsp_o => io_dev_rsp(IODEV_XIRQ),
         xirq_i    => xirq_i,
         cpu_irq_o => firq.xirq
@@ -1281,7 +1350,7 @@ begin
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_int,
-        bus_req_i   => io_req,
+        bus_req_i   => io_dev_req(IODEV_GPTMR),
         bus_rsp_o   => io_dev_rsp(IODEV_GPTMR),
         clkgen_en_o => cg_en.gptmr,
         clkgen_i    => clk_gen,
@@ -1305,7 +1374,7 @@ begin
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_int,
-        bus_req_i   => io_req,
+        bus_req_i   => io_dev_req(IODEV_ONEWIRE),
         bus_rsp_o   => io_dev_rsp(IODEV_ONEWIRE),
         clkgen_en_o => cg_en.onewire,
         clkgen_i    => clk_gen,
@@ -1337,7 +1406,7 @@ begin
         -- Host access --
         clk_i            => clk_i,
         rstn_i           => rstn_int,
-        bus_req_i        => io_req,
+        bus_req_i        => io_dev_req(IODEV_SLINK),
         bus_rsp_o        => io_dev_rsp(IODEV_SLINK),
         irq_o            => firq.slink,
         -- RX stream interface --
@@ -1369,7 +1438,7 @@ begin
         port map (
         clk_i     => clk_i,
         rstn_i    => rstn_int,
-        bus_req_i => io_req,
+        bus_req_i => io_dev_req(IODEV_CRC),
         bus_rsp_o => io_dev_rsp(IODEV_CRC)
       );
     end generate;
@@ -1433,7 +1502,7 @@ begin
     )
     port map (
       clk_i     => clk_i,
-      bus_req_i => io_req,
+      bus_req_i => io_dev_req(IODEV_SYSINFO),
       bus_rsp_o => io_dev_rsp(IODEV_SYSINFO)
     );
 
@@ -1479,6 +1548,9 @@ begin
     -- On-Chip Debugger - Debug Module (DM) ---------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_debug_dm_inst: entity neorv32.neorv32_debug_dm
+    generic map (
+      CPU_BASE_ADDR => base_io_dm_c
+    )
     port map (
       -- global control --
       clk_i             => clk_i,
@@ -1495,7 +1567,7 @@ begin
       dmi_rsp_data_o    => dmi.rsp_data,
       dmi_rsp_op_o      => dmi.rsp_op,
       -- CPU bus access --
-      bus_req_i         => io_req,
+      bus_req_i         => io_dev_req(IODEV_OCD),
       bus_rsp_o         => io_dev_rsp(IODEV_OCD),
       -- CPU control --
       cpu_ndmrstn_o     => dci_ndmrstn,

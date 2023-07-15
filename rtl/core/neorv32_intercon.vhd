@@ -1,8 +1,8 @@
 -- #################################################################################################
--- # << NEORV32 - 2-to-1 Bus Switch >>                                                             #
+-- # << NEORV32 - Processor Bus: 2-to-1 Bus Switch >>                                              #
 -- # ********************************************************************************************* #
 -- # Allows to access a single bus ("p_bus") by two controller ports. Controller port A ("ca_bus") #
---# has priority over controller port B ("cb_bus").                                                #
+-- # has priority over controller port B ("cb_bus").                                               #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -230,7 +230,7 @@ end neorv32_busswitch_rtl;
 
 
 -- #################################################################################################
--- # << NEORV32 - Processor Interconnect >>                                                        #
+-- # << NEORV32 - Processor Bus: Section Gateway >>                                                #
 -- # ********************************************************************************************* #
 -- # Bus gateway to distribute the core's access to the processor's main memory sections:          #
 -- # -> IMEM - internal instruction memory [optional]                                              #
@@ -516,10 +516,10 @@ begin
         end if;
       else -- bus access in progress
         keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) - 1);
-        if (int_rsp.ack = '1') then -- normal access termination
-          keeper.busy <= '0';
-        elsif (int_rsp.err = '1') or ((or_reduce_f(keeper.cnt) = '0') and (keeper.halt = '0')) then -- bus error or timeout
+        if (int_rsp.err = '1') or ((or_reduce_f(keeper.cnt) = '0') and (keeper.halt = '0')) then -- bus error or timeout
           keeper.err  <= '1';
+          keeper.busy <= '0';
+        elsif (int_rsp.ack = '1') then -- normal access termination
           keeper.busy <= '0';
         end if;
       end if;
@@ -528,3 +528,155 @@ begin
 
 
 end neorv32_gateway_rtl;
+
+
+-- ############################################################################################################################
+-- ############################################################################################################################
+
+
+-- #################################################################################################
+-- # << NEORV32 - Processor Bus: IO Switch >>                                                      #
+-- # ********************************************************************************************* #
+-- # Simple address decoding switch for the processor's IO/peripheral devices.                     #
+-- # ********************************************************************************************* #
+-- # BSD 3-Clause License                                                                          #
+-- #                                                                                               #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- #                                                                                               #
+-- # Redistribution and use in source and binary forms, with or without modification, are          #
+-- # permitted provided that the following conditions are met:                                     #
+-- #                                                                                               #
+-- # 1. Redistributions of source code must retain the above copyright notice, this list of        #
+-- #    conditions and the following disclaimer.                                                   #
+-- #                                                                                               #
+-- # 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
+-- #    conditions and the following disclaimer in the documentation and/or other materials        #
+-- #    provided with the distribution.                                                            #
+-- #                                                                                               #
+-- # 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
+-- #    endorse or promote products derived from this software without specific prior written      #
+-- #    permission.                                                                                #
+-- #                                                                                               #
+-- # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
+-- # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
+-- # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
+-- # COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
+-- # EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
+-- # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
+-- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
+-- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
+-- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
+-- # ********************************************************************************************* #
+-- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+-- #################################################################################################
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+library neorv32;
+use neorv32.neorv32_package.all;
+
+entity io_switch is
+  generic (
+    DEV_SIZE : natural; -- size of a single IO device, has to be a power of two
+    -- device base addresses --
+    DEV_00_BASE : std_ulogic_vector(31 downto 0);
+    DEV_01_BASE : std_ulogic_vector(31 downto 0);
+    DEV_02_BASE : std_ulogic_vector(31 downto 0);
+    DEV_03_BASE : std_ulogic_vector(31 downto 0);
+    DEV_04_BASE : std_ulogic_vector(31 downto 0);
+    DEV_05_BASE : std_ulogic_vector(31 downto 0);
+    DEV_06_BASE : std_ulogic_vector(31 downto 0);
+    DEV_07_BASE : std_ulogic_vector(31 downto 0);
+    DEV_08_BASE : std_ulogic_vector(31 downto 0);
+    DEV_09_BASE : std_ulogic_vector(31 downto 0);
+    DEV_10_BASE : std_ulogic_vector(31 downto 0);
+    DEV_11_BASE : std_ulogic_vector(31 downto 0);
+    DEV_12_BASE : std_ulogic_vector(31 downto 0);
+    DEV_13_BASE : std_ulogic_vector(31 downto 0);
+    DEV_14_BASE : std_ulogic_vector(31 downto 0);
+    DEV_15_BASE : std_ulogic_vector(31 downto 0);
+    DEV_16_BASE : std_ulogic_vector(31 downto 0);
+    DEV_17_BASE : std_ulogic_vector(31 downto 0);
+    DEV_18_BASE : std_ulogic_vector(31 downto 0);
+    DEV_19_BASE : std_ulogic_vector(31 downto 0);
+    DEV_20_BASE : std_ulogic_vector(31 downto 0)
+  );
+  port (
+    -- host port --
+    main_req_i : in  bus_req_t; -- host request
+    main_rsp_o : out bus_rsp_t; -- host response
+    -- device ports --
+    dev_req_o  : out bus_req_array_t;
+    dev_rsp_i  : in  bus_rsp_array_t
+  );
+end io_switch;
+
+architecture io_switch_rtl of io_switch is
+
+  -- module configuration --
+  constant num_devs_physical_c : natural := 21; -- actual number of devices
+  constant num_devs_logical_c  : natural := 32; -- logical max number of devices; do not change!
+  constant lo_c : natural := index_size_f(DEV_SIZE); -- low address boundary bit
+  constant hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_logical_c)) - 1; -- high address boundary bit
+
+  signal device_sel : std_ulogic_vector(num_devs_physical_c-1 downto 0); -- device select, one-hot
+
+begin
+
+  -- Device Decoder -------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  device_sel(00) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_00_BASE(hi_c downto lo_c)) else '0';
+  device_sel(01) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_01_BASE(hi_c downto lo_c)) else '0';
+  device_sel(02) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_02_BASE(hi_c downto lo_c)) else '0';
+  device_sel(03) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_03_BASE(hi_c downto lo_c)) else '0';
+  device_sel(04) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_04_BASE(hi_c downto lo_c)) else '0';
+  device_sel(05) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_05_BASE(hi_c downto lo_c)) else '0';
+  device_sel(06) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_06_BASE(hi_c downto lo_c)) else '0';
+  device_sel(07) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_07_BASE(hi_c downto lo_c)) else '0';
+  device_sel(08) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_08_BASE(hi_c downto lo_c)) else '0';
+  device_sel(09) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_09_BASE(hi_c downto lo_c)) else '0';
+  device_sel(10) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_10_BASE(hi_c downto lo_c)) else '0';
+  device_sel(11) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_11_BASE(hi_c downto lo_c)) else '0';
+  device_sel(12) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_12_BASE(hi_c downto lo_c)) else '0';
+  device_sel(13) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_13_BASE(hi_c downto lo_c)) else '0';
+  device_sel(14) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_14_BASE(hi_c downto lo_c)) else '0';
+  device_sel(15) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_15_BASE(hi_c downto lo_c)) else '0';
+  device_sel(16) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_16_BASE(hi_c downto lo_c)) else '0';
+  device_sel(17) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_17_BASE(hi_c downto lo_c)) else '0';
+  device_sel(18) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_18_BASE(hi_c downto lo_c)) else '0';
+  device_sel(19) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_19_BASE(hi_c downto lo_c)) else '0';
+  device_sel(20) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_20_BASE(hi_c downto lo_c)) else '0';
+
+
+  -- Device Requests ------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  request_gen:
+  for i in 0 to (num_devs_physical_c-1) generate
+    dev_req_o(i).addr <= main_req_i.addr;
+    dev_req_o(i).data <= main_req_i.data;
+    dev_req_o(i).ben  <= main_req_i.ben;
+    dev_req_o(i).we   <= main_req_i.we and device_sel(i);
+    dev_req_o(i).re   <= main_req_i.re and device_sel(i);
+    dev_req_o(i).src  <= main_req_i.src;
+    dev_req_o(i).priv <= main_req_i.priv;
+  end generate;
+
+
+  -- Global Response ------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  bus_response: process(dev_rsp_i)
+    variable tmp_v : bus_rsp_t;
+  begin
+    tmp_v := rsp_terminate_c; -- start with with all-zero
+    for i in 0 to (num_devs_physical_c-1) loop -- OR all response signals
+      tmp_v.data := tmp_v.data or dev_rsp_i(i).data;
+      tmp_v.ack  := tmp_v.ack  or dev_rsp_i(i).ack;
+      tmp_v.err  := tmp_v.err  or dev_rsp_i(i).err;
+    end loop;
+    main_rsp_o <= tmp_v;
+  end process;
+
+
+end io_switch_rtl;
