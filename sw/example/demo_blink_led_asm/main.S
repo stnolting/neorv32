@@ -3,7 +3,7 @@
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
-/* # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     # */
+/* # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
 /* # permitted provided that the following conditions are met:                                     # */
@@ -47,15 +47,15 @@
 .global main
 
 // Memory map
-.set GPIO_OUTPUT_LO, 0xFFFFFFC8U // address of the GPIO.OUTPUT_LO register
-.set SYSINFO_CKLK,   0xFFFFFFE0U // address of SYSINFO.CLK
+.set GPIO_OUTPUT_LO, 0xFFFFFC00U // address of GPIO
+.set SYSINFO_CKLK,   0xFFFFFE00U // address of SYSINFO
 
 
 /**********************************************************************//**
  * Entry point = main
  **************************************************************************/
 main:
-    li a0,  GPIO_OUTPUT_LO       // address of the GPIO.OUTPUT_LO register
+    li a0,  GPIO_OUTPUT_LO+8     // address of the GPIO.OUTPUT_LO register
     li a1,  0                    // clear counter
 
 loop:
@@ -70,7 +70,7 @@ loop:
  * Delay subroutine using mcycle (waiting for 0.25s)
  **************************************************************************/
 delay:
-    li   t0, SYSINFO_CKLK        // address of SYSINFO.CLK
+    li   t0, SYSINFO_CKLK+0      // address of SYSINFO.CLK
     lw   t0, 0(t0)               // read SYSINFO.CLK (= CPU clock speed in Hz = tick per second)
     srli t0, t0, 2               // = ticks per 0.25 seconds
     csrw mcycle, zero            //clear cycle counter (low word)
