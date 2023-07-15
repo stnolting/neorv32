@@ -233,14 +233,15 @@ end neorv32_busswitch_rtl;
 -- # << NEORV32 - Processor Bus: Section Gateway >>                                                #
 -- # ********************************************************************************************* #
 -- # Bus gateway to distribute the core's access to the processor's main memory sections:          #
--- # -> IMEM - internal instruction memory [optional]                                              #
--- # -> DMEM - internal data memory [optional]                                                     #
--- # -> XIP  - memory-mapped XIP flash [optional]                                                  #
--- # -> BOOT - internal bootloader ROM [optional]                                                  #
--- # -> IO   - internal IO devices [mandatory]                                                     #
+-- # -> IMEM - internal instruction memory [optional], {rwx}                                       #
+-- # -> DMEM - internal data memory [optional], {rwx}                                              #
+-- # -> XIP  - memory-mapped XIP flash [optional], {r-x}                                           #
+-- # -> BOOT - internal bootloader ROM [optional], {r-x}                                           #
+-- # -> IO   - internal IO devices [mandatory], {rw-}                                              #
 -- # All accesses that do not match any of these sections are redirected to the "external" port.   #
 -- # The gateway-internal bus monitor ensures that all processor-internal accesses are completed   #
 -- # within a fixed time window.                                                                   #
+-- # This module also enforces the region's PMAs (physical memory attributes).                     #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -395,16 +396,16 @@ begin
     dmem_req_o.re <= main_req_i.re and port_en(port_dmem_c);
     --
     xip_req_o     <= main_req_i;
-    xip_req_o.we  <= main_req_i.we and port_en(port_xip_c);
+    xip_req_o.we  <= '0'; -- PMA: read-only
     xip_req_o.re  <= main_req_i.re and port_en(port_xip_c);
     --
     boot_req_o    <= main_req_i;
-    boot_req_o.we <= main_req_i.we and port_en(port_boot_c);
+    boot_req_o.we <= '0'; -- PMA: read-only
     boot_req_o.re <= main_req_i.re and port_en(port_boot_c);
     --
     io_req        <= main_req_i;
-    io_req.we     <= main_req_i.we and port_en(port_io_c);
-    io_req.re     <= main_req_i.re and port_en(port_io_c);
+    io_req.we     <= main_req_i.we and port_en(port_io_c) and and_reduce_f(main_req_i.ben) ; -- PMA: 32-bit writes only
+    io_req.re     <= main_req_i.re and port_en(port_io_c) and (not main_req_i.src); -- PMA: no-execute
     --
     ext_req_o     <= main_req_i;
     ext_req_o.we  <= main_req_i.we and port_en(port_ext_c);

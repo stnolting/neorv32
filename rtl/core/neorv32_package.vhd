@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080604"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080605"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -78,7 +78,7 @@ package neorv32_package is
 -- Processor Address Space Layout
 -- ****************************************************************************************************************************
 
-  -- Main Memory Sections Address Map ---
+  -- Main Address Regions ---
   constant mem_ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via generic
   constant mem_dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via generic
   constant mem_xip_base_c    : std_ulogic_vector(31 downto 0) := x"e0000000"; -- page (4MSBs) only!

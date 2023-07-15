@@ -52,11 +52,10 @@ architecture neorv32_boot_rom_rtl of neorv32_boot_rom is
 
   -- determine required ROM size in bytes (expand to next power of two) --
   constant boot_rom_size_index_c : natural := index_size_f((bootloader_init_image'length)); -- address with (32-bit entries)
-  constant boot_rom_size_c       : natural := (2**boot_rom_size_index_c)*4; -- size in bytes
+  constant boot_rom_size_c       : natural := (2**boot_rom_size_index_c)*4; -- physical size in bytes
 
   -- local signals --
   signal rden  : std_ulogic;
-  signal wren  : std_ulogic;
   signal rdata : std_ulogic_vector(31 downto 0);
 
   -- ROM - initialized with executable code --
@@ -68,7 +67,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   assert false report
     "NEORV32 PROCESSOR CONFIG NOTE: Implementing internal bootloader ROM (" & natural'image(boot_rom_size_c) & " bytes)." severity note;
-
   assert not (boot_rom_size_c > mem_boot_size_c) report
     "NEORV32 PROCESSOR CONFIG ERROR! Boot ROM size out of range! Max " & natural'image(mem_boot_size_c) & " bytes." severity error;
 
@@ -78,18 +76,15 @@ begin
   mem_file_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      rden <= bus_req_i.re;
-      wren <= bus_req_i.we;
-      if (bus_req_i.re = '1') then -- reduce switching activity when not accessed
-        rdata <= mem_rom(to_integer(unsigned(bus_req_i.addr(boot_rom_size_index_c+1 downto 2))));
-      end if;
+      rden  <= bus_req_i.re;
+      rdata <= mem_rom(to_integer(unsigned(bus_req_i.addr(boot_rom_size_index_c+1 downto 2))));
     end if;
   end process mem_file_access;
 
-  -- output gate --
-  bus_rsp_o.data <= rdata when (rden = '1') else (others => '0');
+  -- response --
+  bus_rsp_o.data <= rdata when (rden = '1') else (others => '0'); -- output gate
   bus_rsp_o.ack  <= rden;
-  bus_rsp_o.err  <= wren;
+  bus_rsp_o.err  <= '0';
 
 
 end neorv32_boot_rom_rtl;
