@@ -124,10 +124,6 @@
   #define XIP_EN 1
 #endif
 
-/** XIP page base address */
-#ifndef XIP_PAGE_BASE_ADDR
-  #define XIP_PAGE_BASE_ADDR 0x40000000UL
-#endif
 /**@}*/
 
 
@@ -294,7 +290,7 @@ int main(void) {
   if (neorv32_xip_available()) {
     neorv32_xip_setup(SPI_FLASH_CLK_PRSC, 0, 0, SPI_FLASH_CMD_READ);
     neorv32_xip_burst_mode_enable();
-    neorv32_xip_start(SPI_FLASH_ADDR_BYTES, XIP_PAGE_BASE_ADDR);
+    neorv32_xip_start(SPI_FLASH_ADDR_BYTES);
   }
 #endif
 
@@ -431,7 +427,7 @@ int main(void) {
     }
 #endif
     else if (c == '?') {
-      PRINT_TEXT("(c) by Stephan Nolting\ngithub.com/stnolting/neorv32");
+      PRINT_TEXT("github.com/stnolting/neorv32");
     }
     else { // unknown command
       PRINT_TEXT("Invalid CMD");
@@ -476,7 +472,7 @@ void start_app(int boot_xip) {
   register uint32_t app_base = NEORV32_SYSINFO->ISPACE_BASE; // default = start at beginning of IMEM
 #if (XIP_EN != 0)
   if (boot_xip) {
-    app_base = (uint32_t)(XIP_PAGE_BASE_ADDR + SPI_BOOT_BASE_ADDR); // start from XIP mapped address
+    app_base = (uint32_t)(XIP_MEM_BASE_ADDRESS + SPI_BOOT_BASE_ADDR); // start from XIP mapped address
   }
 #endif
 
@@ -486,12 +482,6 @@ void start_app(int boot_xip) {
 
   // wait for UART0 to finish transmitting
   while (neorv32_uart0_tx_busy());
-
-  // memory sync
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIFENCEI)) { // Zifenci ISA extension available?
-    asm volatile ("fence.i");
-  }
-  asm volatile ("fence");
 
   // start application
   asm volatile ("jalr ra, %0" : : "r" (app_base));
