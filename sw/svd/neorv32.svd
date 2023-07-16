@@ -38,7 +38,7 @@
       <name>CFS</name>
       <description>Custom functions subsystem</description>
       <groupName>CFS</groupName>
-      <baseAddress>0xFFFFFE00</baseAddress>
+      <baseAddress>0xFFFFEB00</baseAddress>
 
       <interrupt><name>CFS_FIRQ</name><value>1</value></interrupt>
 
@@ -121,7 +121,7 @@
       <name>SDI</name>
       <description>Serial data interface controller</description>
       <groupName>SDI</groupName>
-      <baseAddress>0xFFFFFF00</baseAddress>
+      <baseAddress>0xFFFFF700</baseAddress>
 
       <interrupt><name>SDI_FIRQ</name><value>11</value></interrupt>
 
@@ -217,7 +217,7 @@
       <name>SLINK</name>
       <description>Stream Link Interface</description>
       <groupName>SLINK</groupName>
-      <baseAddress>0xFFFFFF08</baseAddress>
+      <baseAddress>0xFFFFEC00</baseAddress>
 
       <interrupt><name>SLINK_FIRQ</name><value>14</value></interrupt>
 
@@ -344,7 +344,7 @@
       <name>DMA</name>
       <description>Direct memory access controller</description>
       <groupName>DMA</groupName>
-      <baseAddress>0xFFFFFF10</baseAddress>
+      <baseAddress>0xFFFFED00</baseAddress>
 
       <interrupt><name>DMA_FIRQ</name><value>10</value></interrupt>
 
@@ -445,7 +445,7 @@
       <name>CRC</name>
       <description>Cyclic redundancy check unit</description>
       <groupName>CRC</groupName>
-      <baseAddress>0xFFFFFF20</baseAddress>
+      <baseAddress>0xFFFFEE00</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -482,7 +482,7 @@
       <name>PWM</name>
       <description>Pulse-width modulation controller</description>
       <groupName>PWM</groupName>
-      <baseAddress>0xFFFFFF50</baseAddress>
+      <baseAddress>0xFFFFF000</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -531,7 +531,7 @@
       <name>XIP</name>
       <description>Execute In Place Module</description>
       <groupName>CIP</groupName>
-      <baseAddress>0xFFFFFF40</baseAddress>
+      <baseAddress>0xFFFFEF00</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -632,7 +632,7 @@
       <name>GPTMR</name>
       <description>General purpose timer</description>
       <groupName>GPTMR</groupName>
-      <baseAddress>0xFFFFFF60</baseAddress>
+      <baseAddress>0xFFFFF100</baseAddress>
 
       <interrupt><name>GPTMR_FIRQ</name><value>12</value></interrupt>
 
@@ -683,7 +683,7 @@
       <name>ONEWIRE</name>
       <description>1-Wire Interface Controller</description>
       <groupName>ONEWIRE</groupName>
-      <baseAddress>0xFFFFFF70</baseAddress>
+      <baseAddress>0xFFFFF200</baseAddress>
 
       <interrupt><name>ONEWIRE_FIRQ</name><value>13</value></interrupt>
 
@@ -770,7 +770,7 @@
       <name>XIRQ</name>
       <description>External interrupts controller</description>
       <groupName>XIRQ</groupName>
-      <baseAddress>0xFFFFFF80</baseAddress>
+      <baseAddress>0xFFFFF300</baseAddress>
 
       <interrupt><name>XIRQ_FIRQ</name><value>8</value></interrupt>
 
@@ -804,7 +804,7 @@
       <name>MTIME</name>
       <description>Machine timer</description>
       <groupName>MTIME</groupName>
-      <baseAddress>0xFFFFFF90</baseAddress>
+      <baseAddress>0xFFFFF400</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -841,7 +841,7 @@
       <name>UART0</name>
       <description>Primary universal asynchronous receiver and transmitter</description>
       <groupName>UART0</groupName>
-      <baseAddress>0xFFFFFFA0</baseAddress>
+      <baseAddress>0xFFFFF500</baseAddress>
 
       <interrupt><name>UART0_RX_FIRQ</name><value>2</value></interrupt>
       <interrupt><name>UART0_TX_FIRQ</name><value>3</value></interrupt>
@@ -971,7 +971,7 @@
       <name>UART1</name>
       <description>Secondary universal asynchronous receiver and transmitter</description>
       <groupName>UART1</groupName>
-      <baseAddress>0xFFFFFFD0</baseAddress>
+      <baseAddress>0xFFFFF600</baseAddress>
 
       <interrupt><name>UART1_RX_FIRQ</name><value>4</value></interrupt>
       <interrupt><name>UART1_TX_FIRQ</name><value>5</value></interrupt>
@@ -988,7 +988,7 @@
       <name>SPI</name>
       <description>Serial peripheral interface controller</description>
       <groupName>SPI</groupName>
-      <baseAddress>0xFFFFFFA8</baseAddress>
+      <baseAddress>0xFFFFF800</baseAddress>
 
       <interrupt><name>SPI_FIRQ</name><value>6</value></interrupt>
 
@@ -1105,7 +1105,7 @@
       <name>TWI</name>
       <description>Two-wire interface controller</description>
       <groupName>SPI</groupName>
-      <baseAddress>0xFFFFFFB0</baseAddress>
+      <baseAddress>0xFFFFF900</baseAddress>
 
       <interrupt><name>TWI_FIRQ</name><value>7</value></interrupt>
 
@@ -1196,7 +1196,7 @@
       <name>TRNG</name>
       <description>True random number generator</description>
       <groupName>TRNG</groupName>
-      <baseAddress>0xFFFFFFB8</baseAddress>
+      <baseAddress>0xFFFFFA00</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -1269,7 +1269,7 @@
       <name>WDT</name>
       <description>Watchdog timer</description>
       <groupName>WDT</groupName>
-      <baseAddress>0xFFFFFFBC</baseAddress>
+      <baseAddress>0xFFFFFB00</baseAddress>
 
       <interrupt><name>WDT_FIRQ</name><value>0</value></interrupt>
 
@@ -1352,7 +1352,7 @@
       <name>GPIO</name>
       <description>General purpose input/output port</description>
       <groupName>GPIO</groupName>
-      <baseAddress>0xFFFFFFc0</baseAddress>
+      <baseAddress>0xFFFFFC00</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -1391,7 +1391,7 @@
       <name>NEOLED</name>
       <description>Smart LED hardware interface</description>
       <groupName>NEOLED</groupName>
-      <baseAddress>0xFFFFFFD8</baseAddress>
+      <baseAddress>0xFFFFFD00</baseAddress>
 
       <interrupt><name>NEOLED_FIRQ</name><value>9</value></interrupt>
 
@@ -1492,7 +1492,7 @@
       <name>SYSINFO</name>
       <description>System configuration information memory</description>
       <groupName>SYSINFO</groupName>
-      <baseAddress>0xFFFFFFE0</baseAddress>
+      <baseAddress>0xFFFFFE00</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
