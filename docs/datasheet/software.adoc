@@ -293,7 +293,7 @@ and packed into a final executable.
 After all the application sources have been compiled, they need to be _linked_.
 For this purpose the makefile uses the NEORV32-specific linker script `sw/common/neorv32.ld` for
 linking all object files that were generated during compilation. In general, the linker script defines
-three memory sections: `rom`, `ram` and `iodev`.
+two final memory sections: `rom` and `ram`.
 
 .Linker script - memory sections
 [cols="<2,<8"]
@@ -302,11 +302,7 @@ three memory sections: `rom`, `ram` and `iodev`.
 | Memory section  | Description
 | `ram`           | Data memory address space (processor-internal/external DMEM)
 | `rom`           | Instruction memory address space (processor-internal/external IMEM) _or_ internal bootloader ROM
-| `iodev`         | Processor-internal memory-mapped IO/peripheral devices address space
 |=======================
-
-[NOTE]
-The `iodev` section is entirely defined by the processor hardware layout and should not be modified at all.
 
 [NOTE]
 The `rom` section is automatically re-mapped to the processor-internal <<_bootloader_rom_bootrom>> when (re-)compiling the
@@ -330,7 +326,7 @@ __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x800000
 The region size and base address configuration can be edited by the user - either by explicitly
 changing the default values in the linker script or by overriding them when invoking `make`:
  
-.Overriding default rom size configuration (setting 4096 bytes)
+.Overriding default `rom` size configuration (configuring 4096 bytes)
 [source, bash]
 ----
 $ make USER_FLAGS+="-Wl,--defsym,__neorv32_rom_size=4096" clean_all exe

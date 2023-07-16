@@ -337,9 +337,10 @@ enum NEORV32_CLOCK_PRSC_enum {
 };
 --------------------------
 
+.Power-Down Mode
 [TIP]
 If no peripheral modules requires a clock signal from the internal generator (all available modules disabled by clearing the
-enable bit in the according module's control register), it is automatically deactivated to reduce dynamic power consumption.
+enable bit in the according module's control register) the generator is automatically deactivated to reduce dynamic power consumption.
 
 
 
@@ -456,54 +457,50 @@ A pending FIRQ has to be explicitly cleared by writing zero to the according <<_
 === Address Space
 
 As a 32-bit architecture the NEORV32 can access a 4GB physical address space. By default, this address space is
-divided into five main regions:
-
-1. **Instruction address space** for instructions (=code) and constants. A configurable section of this address space can used by the instruction memory (<<_instruction_memory_imem>>).
-2. **Data address space** for application runtime data (heap, stack, etc.). A configurable section of this address space can be used by the data memory (<<_data_memory_dmem>>).
-3. **Bootloader address space** for the internal bootloader memory <<_bootloader_rom_bootrom>>.
-4. **On-Chip Debugger address space** for the processor's <<_on_chip_debugger_ocd>>.
-5. **IO/peripheral address space**: for the processor-internal memory-mapped <<_processor_internal_modules>>.
+split into six main regions. Each region provides specific _physical memory attributes_ ("PMAs") that define
+the access capabilities.
 
 .NEORV32 Processor Address Space (Default Configuration)
 image::address_space.png[900]
 
-.RAM Layout
-[TIP]
-The actual usage of the data address space by the software/executables (stack, heap, ...) is
-illustrated in section <<_ram_layout>>.
-
-
-:sectnums:
-==== Physical Memory Attributes (PMAs)
-
-Each default region of the NEORV32 address space provides specific physical memory attributes that define the allowed access types.
-The according access permission are enforced by the hardware and cannot be changed. If an access violates the PMA's permissions an
-exception is raised. The access permissions can be further constrained using the CPU's <<_pmp_isa_extension>>.
-
-* `r` - data read access
-* `w` - data write access
-* `x` - instruction fetch access ("execute")
-
 [cols="<1,^4,^2,<7"]
 [options="header",grid="rows"]
 |=======================
-| # | Region Description             | PMAs    | Note
-| 1 | Instruction address space      | `r(w)x` | Write accesses to the the internal <<_instruction_memory_imem>> can be disabled.
-| 2 | Data address space             | `rwx`   | Code can also be executed from data memory.
-| 3 | Bootloader address space       | `r-x`   | Read-only memory.
-| 4 | On-Chip Debugger address space | `---`   | Not accessible at all by "normal" software - accessible only when the CPU is in <<_cpu_debug_mode>>.
-| 5 | IO/peripheral address space    | `rw-`   | Read/write accesses only.
+| # | Region                      | PMAs  | Description
+| 1 | Instruction address space   | `rwx` | For instructions (=code) and constants. A configurable section of this address space can used by the internal <<_instruction_memory_imem>>.
+| 2 | Data address space          | `rwx` | For application runtime data (heap, stack, etc.). A configurable section of this address space can be used by the internal <<_data_memory_dmem>>). Code can also be executed from data memory.
+| 3 | Memory-mapped XIP flash     | `r-x` | Memory-mapped access to the <<_execute_in_place_module_xip>> SPI flash.
+| 4 | Bootloader address space    | `r-x` | Read-only memory for the internal <<_bootloader_rom_bootrom>> containing the default <<_bootloader>>.
+| 5 | IO/peripheral address space | `rw-` | Processor-internal peripherals / IO devices. These devices can only be written in full 32-bit (word) quantities.
+| 6 | The "void"                  | `rwx` | Unmapped address space. All accesses to this region(s) are redirected to the <<_processor_external_memory_interface_wishbone>>.
 |=======================
 
+The entire address space layout can be customized via the "Processor Address Space Layout" constants in the processor's
+main VHDL package file (`rtl/core/neorv323_package.vhd`).
 
-:sectnums:
-==== CPU Data and Instruction Access
+[source,vhdl]
+----
+  -- Main Address Regions ---
+  constant mem_ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000";
+  constant mem_dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000";
+  constant mem_xip_base_c    : std_ulogic_vector(31 downto 0) := x"e0000000";
+  constant mem_xip_size_c    : natural := 256*1024*1024;
+  constant mem_boot_base_c   : std_ulogic_vector(31 downto 0) := x"ffffc000";
+  constant mem_boot_size_c   : natural := 8*1024;
+  constant mem_io_base_c     : std_ulogic_vector(31 downto 0) := x"ffffe000";
+  constant mem_io_size_c     : natural := 8*1024;
+----
 
-The CPU can access all of the 32-bit address space from the instruction fetch interface (**I**) and also from the
-data access interface (**D**). These two CPU interfaces are multiplexed by a simple bus switch
-(`rtl/core/neorv32_busswitch.vhd`) into a single processor-internal bus. All processor-internal memories, peripherals
-and also the external memory interface are connected to this bus. Hence, both CPU interfaces (instruction fetch & data access)
-have access to the same (identical!) address space making the processor a **modified von-Neumann architecture**.
+The CPU can access all of the 32-bit address space from the instruction fetch interface and also from the
+data access interface. These two CPU interfaces are multiplexed by a simple bus switch into a single processor-internal
+bus. Optionally, this bus is further shared by another instance of the bus switch so the DMA can controller can
+also access the entire address space.
+
+Accesses via the resulting SoC bus are split by a gateway, that forwards accesses to the according main memory regions.
+This gateway also implements a bus monitor that keeps track of active bus requests. If an accessed address responds with
+an error conditions of if no response is received at all an according bus access exception is raised (see <<_bus_interface_protocol>>).
+All processor-internal peripherals / IO devices are attached to an IO switch that performs the fine-granular address
+decoding issuing accesses to the according module being accesses.
 
 .Processor-internal bus architecture
 image::neorv32_bus.png[1300]
@@ -513,72 +510,9 @@ image::neorv32_bus.png[1300]
 The processor-internal <<_direct_memory_access_controller_dma>> has access to the same (_identical_) address
 space as the CPU core.
 
+.Bus Interface
 [TIP]
-See sections <<_architecture>> and <<_bus_interface>> for more information regarding the CPU bus accesses.
-
-
-:sectnums:
-==== Address Space Layout
-
-The general address space layout consists of two main configuration constants: `ispace_base_c` defining
-the base address of the _instruction memory address space_ and `dspace_base_c` defining the base address of
-the _data memory address space_. Both constants are defined in the NEORV32 VHDL package file
-`rtl/core/neorv32_package.vhd`:
-
-[source,vhdl]
-----
--- Architecture Configuration ----------------------------------------------------
--- ----------------------------------------------------------------------------------
-constant ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000";
-constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000";
-----
-
-The default configuration assumes the _instruction memory address space_ starting at address `0x00000000`
-and the _data memory address space_ starting at `0x80000000`. Both values can be modified for a specific
-setup and the address space may also overlap or can even be identical.
-
-
-:sectnums:
-==== Memory Configuration
-
-The NEORV32 Processor was designed to provide maximum flexibility for the actual memory configuration.
-The processor can populate the _instruction address space_ and/or the _data address space_ with **internal memories**
-for instructions (IMEM) and data (DMEM). Processor **external memories** can be used as an alternative or even in
-combination with the internal ones. The figure below show some exemplary memory configurations.
-
-.Exemplary Memory Configurations
-image::neorv32_memory_configurations.png[800]
-
-[NOTE]
-Any access to "address holes" (addresses that do not belong to a specific module) will raise a bus exception fault
-due to the missing access acknowledge.
-
-
-:sectnums!:
-===== Internal Memories
-
-If the processor-internal <<_instruction_memory_imem>> is implemented, it is located right at the base address of the instruction
-address space (default `ispace_base_c` = _0x00000000_). Vice versa, the processor-internal <<_data_memory_dmem>> is
-located right at the beginning of the data address space (default `dspace_base_c` = _0x80000000_) when implemented.
-
-
-:sectnums!:
-===== External Memories
-
-Any CPU access (data or instructions), which does **not** fulfill at least one of the following conditions, is forwarded
-via the <<_processor_external_memory_interface_wishbone>> to external components:
-
-* access to the processor-internal <<_instruction_memory_imem>> and processor-internal IMEM is implemented
-* access to the processor-internal <<_data_memory_dmem>> and processor-internal DMEM is implemented
-* access to the processor-internal bootloader ROM and beyond
-
-[NOTE]
-If the <<_execute_in_place_module_xip>> is implemented accesses mapped to this module are not forwarded to the
-external memory interface.
-
-[NOTE]
-If the <<_processor_external_memory_interface_wishbone>> is not implemented, any access exceeding the internal
-memory address space will raise a bus access fault exception.
+See sections CPU <<_architecture>> and <<_bus_interface>> for more information regarding the CPU bus accesses.
 
 
 :sectnums:
@@ -632,10 +566,6 @@ providing an initialized external memory that contains the actual application to
 The NEORV32 processor is a SoC (system-on-chip) consisting of the NEORV32 CPU, peripheral/IO devices, embedded
 memories, an external memory interface and a bus infrastructure to interconnect all modules.
 
-The processor-internal peripheral/IO devices are located at the end of the 32-bit address space at base
-address `0xFFFFFE00`. A region of 512 bytes is reserved for these devices. Hence, all peripheral/IO devices are
-accessed using a memory-mapped scheme.
-
 .Module Address Space Mapping
 [IMPORTANT]
 The base address of each component/module has to be aligned to the total size of the module's occupied address space.
@@ -647,10 +577,15 @@ All peripheral/IO devices can only be written in full-word mode (i.e. 32-bit). B
 will raise a store access fault exception. Read accesses are not size constrained. Processor-internal memories as well as
 modules connected to the external memory interface can be written with arbitrary granularity.
 
-.Unimplemented Modules / "Address Holes"
+.IO Module's Address Space
+[IMPORTANT]
+Each peripheral/IO module occupies an address space of 256 bytes (64 words). Most devices do not fully utilize this address
+space and will simply _mirror_ the available interface registers across the entire 256 bytes of address space.
+
+.Unimplemented Modules / Address Holes
 [NOTE]
 When accessing an IO device that hast not been implemented (disabled via the according generic)
-or when accessing an address that is actually unused, a load or store access fault exception is raised.
+or when accessing an address that is actually unused, a load/store access fault exception is raised.
 
 .Module Interrupts
 [NOTE]
@@ -678,8 +613,6 @@ include::soc_dma.adoc[]
 include::soc_wishbone.adoc[]
 
 include::soc_slink.adoc[]
-
-include::soc_buskeeper.adoc[]
 
 include::soc_gpio.adoc[]
 

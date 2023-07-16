@@ -128,36 +128,36 @@ of the user guide.
 === Project Folder Structure
 
 ...................................
-neorv32                - Project home folder
+neorv32                  - Project home folder
 │
-├docs                  - Project documentation
-│├datasheet            - AsciiDoc sources for the NEORV32 data sheet
-│├figures              - Figures and logos
-│├icons                - Misc. symbols
-│├references           - Data sheets and RISC-V specs.
-│└userguide            - AsciiDoc sources for the NEORV32 user guide
+├-docs                   - Project documentation
+│ ├-datasheet            - AsciiDoc sources for the NEORV32 data sheet
+│ ├-figures              - Figures and logos
+│ ├-icons                - Misc. symbols
+│ ├-references           - Data sheets and RISC-V specs.
+│ └-userguide            - AsciiDoc sources for the NEORV32 user guide
 │
-├rtl                   - VHDL sources
-│├core                 - Core sources of the CPU & SoC
-││└mem                 - SoC-internal memories (default architectures)
-│├processor_templates  - Pre-configured SoC wrappers
-│├system_integration   - System wrappers for advanced connectivity
-│└test_setups          - Minimal test setup "SoCs" used in the User Guide
+├-rtl                    - VHDL sources
+│ ├-core                 - Core sources of the CPU & SoC
+│ │ └-mem                - SoC-internal memories (default architectures)
+│ ├-processor_templates  - Pre-configured SoC wrappers
+│ ├-system_integration   - System wrappers for advanced connectivity
+│ └-test_setups          - Minimal test setup "SoCs" used in the User Guide
 │
-├sim                   - Simulation files (see User Guide)
+├-sim                    - Simulation files (see User Guide)
 │
-└sw                    - Software framework
- ├bootloader           - Sources of the processor-internal bootloader
- ├common               - Linker script, crt0.S start-up code and central makefile
- ├example              - Example programs for the core and the SoC modules
- │└...
- ├lib                  - Processor core library
- │├include             - Header files (*.h)
- │└source              - Source files (*.c)
- ├image_gen            - Helper program to generate NEORV32 executables
- ├ocd_firmware         - Firmware for the on-chip debugger's "park loop"
- ├openocd              - OpenOCD configuration files
- └svd                  - Processor system view description file (CMSIS-SVD)
+└-sw                     - Software framework
+  ├-bootloader           - Sources of the processor-internal bootloader
+  ├-common               - Linker script, crt0.S start-up code and central makefile
+  ├-example              - Example programs for the core and the SoC modules
+  │ └-...
+  ├-lib                  - Processor core library
+  │ ├-include            - Header files (*.h)
+  │ └-source             - Source files (*.c)
+  ├-image_gen            - Helper program to generate NEORV32 executables
+  ├-ocd_firmware         - Firmware for the on-chip debugger's "park loop"
+  ├-openocd              - OpenOCD configuration files
+  └-svd                  - Processor system view description file (CMSIS-SVD)
 ...................................
 
 
