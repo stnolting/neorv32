@@ -383,7 +383,7 @@ begin
                                   (port_en(port_io_c)   = '0') and (EXT_ENABLE = true) else '0';
 
 
-  -- Bus Request ----------------------------------------------------------------------------
+  -- Bus Request (enforce PMAs) -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   request: process(main_req_i, port_en)
   begin
@@ -538,7 +538,7 @@ end neorv32_gateway_rtl;
 -- #################################################################################################
 -- # << NEORV32 - Processor Bus: IO Switch >>                                                      #
 -- # ********************************************************************************************* #
--- # Simple address decoding switch for the processor's IO/peripheral devices.                     #
+-- # Simple address decoding switch for the processor's internal IO/peripheral devices.            #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -617,8 +617,9 @@ end io_switch;
 architecture io_switch_rtl of io_switch is
 
   -- module configuration --
-  constant num_devs_physical_c : natural := 21; -- actual number of devices
+  constant num_devs_physical_c : natural := 21; -- actual number of devices, max num_devs_logical_c
   constant num_devs_logical_c  : natural := 32; -- logical max number of devices; do not change!
+  --
   constant lo_c : natural := index_size_f(DEV_SIZE); -- low address boundary bit
   constant hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_logical_c)) - 1; -- high address boundary bit
 
@@ -670,7 +671,7 @@ begin
   bus_response: process(dev_rsp_i)
     variable tmp_v : bus_rsp_t;
   begin
-    tmp_v := rsp_terminate_c; -- start with with all-zero
+    tmp_v := rsp_terminate_c; -- start with all-zero
     for i in 0 to (num_devs_physical_c-1) loop -- OR all response signals
       tmp_v.data := tmp_v.data or dev_rsp_i(i).data;
       tmp_v.ack  := tmp_v.ack  or dev_rsp_i(i).ack;

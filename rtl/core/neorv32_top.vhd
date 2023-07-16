@@ -323,9 +323,7 @@ architecture neorv32_top_rtl of neorv32_top is
   type irq_t is record
     wdt, uart0_rx, uart0_tx, uart1_rx, uart1_tx, spi, sdi, twi, cfs, neoled, xirq, gptmr, onewire, dma, trng, slink : std_ulogic;
   end record;
-  signal firq : irq_t;
-
-  -- misc --
+  signal firq      : irq_t;
   signal mtime_irq : std_ulogic;
 
 begin
@@ -884,7 +882,7 @@ begin
     -- -------------------------------------------------------------------------------------------
     io_switch_inst: entity neorv32.io_switch
     generic map (
-      DEV_SIZE => iodev_size_c, -- size of a single IO device, has to be a power of two
+      DEV_SIZE    => iodev_size_c, -- size of a single IO device
       -- device base addresses --
       DEV_00_BASE => base_io_dm_c,
       DEV_01_BASE => base_io_sysinfo_c,
