@@ -33,14 +33,14 @@ Any write access to the SYSINFO module will raise a store bus error exception.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Function
-| `0xffffffe0` | `CLK`         | clock speed in Hz (via top's `CLOCK_FREQUENCY` generic)
-| `0xffffffe4` | `CUSTOM_ID    | custom user-defined ID (via top's `CUSTOM_ID` generic)
-| `0xffffffe8` | `SOC`         | specific SoC configuration (see `sysinfo_soc_configuration>>)
-| `0xffffffec` | `CACHE`       | cache configuration information (see <<_sysinfo_cache_configuration>>)
-| `0xfffffff0` | `ISPACE_BASE` | instruction address space base (via package's `ispace_base_c` constant)
-| `0xfffffff4` | `IMEM_SIZE`   | internal IMEM size in bytes (via top's `MEM_INT_IMEM_SIZE` generic)
-| `0xfffffff8` | `DSPACE_BASE` | data address space base (via package's `sdspace_base_c` constant)
-| `0xfffffffc` | `DMEM_SIZE`   | internal DMEM size in bytes (via top's `MEM_INT_DMEM_SIZE` generic)
+| `0xfffffe00` | `CLK`         | clock speed in Hz (via top's `CLOCK_FREQUENCY` generic)
+| `0xfffffe04` | `CUSTOM_ID    | custom user-defined ID (via top's `CUSTOM_ID` generic)
+| `0xfffffe08` | `SOC`         | specific SoC configuration (see `sysinfo_soc_configuration>>)
+| `0xfffffe0c` | `CACHE`       | cache configuration information (see <<_sysinfo_cache_configuration>>)
+| `0xfffffe10` | `ISPACE_BASE` | instruction address space base (via package's `ispace_base_c` constant)
+| `0xfffffe14` | `IMEM_SIZE`   | internal IMEM size in bytes (via top's `MEM_INT_IMEM_SIZE` generic)
+| `0xfffffe18` | `DSPACE_BASE` | data address space base (via package's `sdspace_base_c` constant)
+| `0xfffffe1c` | `DMEM_SIZE`   | internal DMEM size in bytes (via top's `MEM_INT_DMEM_SIZE` generic)
 |=======================
 
 

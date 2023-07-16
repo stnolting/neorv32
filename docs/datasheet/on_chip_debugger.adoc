@@ -414,14 +414,14 @@ the _program buffer_, the _data buffer_ and the _status register_. The program b
 status register do not fully occupy the 64-byte-wide sections and are mirrored to fill the entire section.
 
 .DM CPU access - address map (divided into four sections)
-[cols="^2,^4,^2,<7"]
+[cols="^2,^2,<5"]
 [options="header",grid="rows"]
 |=======================
-| Base address | Name [VHDL package]              | Actual size | Description
-| `0xfffff800` | `dm_code_base_c` (= `dm_base_c`) |    64 bytes | ROM for the "park loop" code
-| `0xfffff840` | `dm_pbuf_base_c`                 |    16 bytes | Program buffer, provided by DM
-| `0xfffff880` | `dm_data_base_c`                 |     4 bytes | Data buffer (`dm.data0`)
-| `0xfffff8c0` | `dm_sreg_base_c`                 |     4 bytes | Control and status register
+| Base address | Actual size | Description
+| `0xffffff00` |    64 bytes | ROM for the "park loop" code
+| `0xffffff40` |    16 bytes | Program buffer, provided by DM
+| `0xffffff80` |     4 bytes | Data buffer (`dm.data0`)
+| `0xffffffc0` |     4 bytes | Control and status register
 |=======================
 
 .DM Register Access

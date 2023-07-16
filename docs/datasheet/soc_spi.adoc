@@ -107,7 +107,7 @@ Furthermore, an active SPI interrupt has to be explicitly cleared again by writi
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.18+<| `0xffffffa8` .18+<| `CTRL` <|`0`     `SPI_CTRL_EN`                           ^| r/w <| SPI module enable
+.18+<| `0xfffff800` .18+<| `CTRL` <|`0`     `SPI_CTRL_EN`                           ^| r/w <| SPI module enable
                                   <|`1`     `SPI_CTRL_CPHA`                         ^| r/w <| clock phase
                                   <|`2`     `SPI_CTRL_CPOL`                         ^| r/w <| clock polarity
                                   <|`5:3`   `SPI_CTRL_CS_SEL2 : SPI_CTRL_CS_SEL0`   ^| r/w <| Direct chip-select 0..7
@@ -125,5 +125,5 @@ Furthermore, an active SPI interrupt has to be explicitly cleared again by writi
                                   <|`26:23` `SPI_CTRL_FIFO_MSB : SPI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(_IO_SPI_FIFO_)
                                   <|`30:27` `reserved_                              ^| r/- <| reserved, read as zero
                                   <|`31`    `SPI_CTRL_BUSY`                         ^| r/- <| SPI module busy when set (serial engine operation in progress and TX FIFO not empty yet)
-| `0xffffffac` | `DATA` |`7:0` | r/w | receive/transmit data (FIFO)
+| `0xfffff804` | `DATA` |`7:0` | r/w | receive/transmit data (FIFO)
 |=======================

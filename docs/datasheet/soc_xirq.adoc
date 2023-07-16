@@ -71,8 +71,8 @@ In order to acknowledge an XIRQ interrupt, the interrupt handler has to...
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Description
-| `0xffffff80` | `EIE` | `31:0` | r/w | External interrupt enable register (one bit per channel, LSB-aligned)
-| `0xffffff84` | `EIP` | `31:0` | r/w | External interrupt pending register (one bit per channel, LSB-aligned); writing 0 to a bit clears the according pending interrupt
-| `0xffffff88` | `ESC` |  `4:0` | r/w | Interrupt source ID (0..31) of firing IRQ (prioritized!); writing _any_ value will acknowledge the current XIRQ interrupt
-| `0xffffff8c` | -     | `31:0` | r/- | _reserved_, read as zero
+| `0xfffff300` | `EIE` | `31:0` | r/w | External interrupt enable register (one bit per channel, LSB-aligned)
+| `0xfffff304` | `EIP` | `31:0` | r/w | External interrupt pending register (one bit per channel, LSB-aligned); writing 0 to a bit clears the according pending interrupt
+| `0xfffff308` | `ESC` |  `4:0` | r/w | Interrupt source ID (0..31) of firing IRQ (prioritized!); writing _any_ value will acknowledge the current XIRQ interrupt
+| `0xfffff30c` | -     | `31:0` | r/- | _reserved_, read as zero
 |=======================
