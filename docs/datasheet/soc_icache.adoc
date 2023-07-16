@@ -5,9 +5,9 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_icache.vhd | 
-| Software driver file(s): | none               | _implicitly used_
-| Top entity port:         | none               | 
+| Hardware source file(s): | neorv32_icache.vhd     | 
+| Software driver file(s): | none                   | _implicitly used_
+| Top entity port:         | none                   | 
 | Configuration generics:  | `ICACHE_EN`            | implement processor-internal instruction cache when `true`
 |                          | `ICACHE_NUM_BLOCKS`    | number of cache blocks (pages/lines)
 |                          | `ICACHE_BLOCK_SIZE`    | size of a cache block in bytes
@@ -25,6 +25,14 @@ equal to 4 bytes), `ICACHE_NUM_BLOCKS` (the total amount of cache blocks; has to
 equal to 1) and the actual cache associativity `ICACHE_ASSOCIATIVITY` (number of sets; 1 = direct-mapped, 2 = 2-way
 set-associative) generics. If the cache associativity is greater than one the LRU replacement policy (least recently
 used) is used.
+
+
+**Cached/Unached Accesses**
+
+The data cache provides direct accesses (= uncached) to memory in order to access memory-mapped IO (like the
+processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
+will not be cached at all (see section <<_address_space>>).
+
 
 .Caching Internal Memories
 [NOTE]

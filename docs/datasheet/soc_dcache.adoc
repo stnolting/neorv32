@@ -23,10 +23,13 @@ The cache is implemented if the `DCACHE_EN` generic is `true`. The size of the c
 equal to 4 bytes) and `DCACHE_NUM_BLOCKS` (the total amount of cache blocks; has to be a power of two and greater than or
 equal to 1) generics. The data cache provides only a single set, hence it is direct-mapped.
 
+
+**Cached/Unached Accesses**
+
 The data cache provides direct accesses (= uncached) to memory in order to access memory-mapped IO (like the
 processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
-will not be cached at all. This also allows to attach custom IO modules via the processor's external memory interface
-when they are mapped to upper-most 256 MB address page (see section <<_address_space>>).
+will not be cached at all (see section <<_address_space>>).
+
 
 .Caching Internal Memories
 [NOTE]
