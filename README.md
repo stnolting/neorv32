@@ -129,11 +129,10 @@ see the [_open-source architecture ID list_](https://github.com/riscv/riscv-isa-
 *Unprivileged ISA Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-spec.pdf))
 and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf)).
 * `machine` and `user` privilege modes
-* implements **all** standard RISC-V exceptions and interrupts (including MTI, MEI & MSI)
-* 16 fast interrupt request channels as NEORV32-specific extension
+* implements **all** standard RISC-V exceptions and interrupts + 16 fast interrupt request channels as NEORV32-specific extension
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as `Zxcfu` ISA extension)
 for _custom RISC-V instructions_ (R3-type, R4-type and R5-type);
-* _intrinsic_ libraries for the `Zicond`, `Zfinx` and `Zxcfu` ISA extensions
+* _intrinsic_ libraries for CPU extensions that are not yet supported by GCC
 
 **Memories**
 
@@ -176,13 +175,13 @@ allows booting application code via UART or from external SPI flash
 
 * **true** random number generator ([TRNG](https://stnolting.github.io/neorv32/#_true_random_number_generator_trng)) based
 on the [neoTRNG](https://github.com/stnolting/neoTRNG)
-* execute-in-place module ([XIP](https://stnolting.github.io/neorv32/#_execute_in_place_module_xip)) to execute code directly from SPI flash
+* execute-in-place module ([XIP](https://stnolting.github.io/neorv32/#_execute_in_place_module_xip)) to execute code right from a SPI flash
 * custom functions subsystem ([CFS](https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs))
 for custom tightly-coupled co-processors, accelerators or interfaces
 * direct memory access controller ([DMA](https://stnolting.github.io/neorv32/#_direct_memory_access_controller_dma)) for CPU-independent
 data transfers and conversions
 * cyclic redundancy check unit ([DMA](https://stnolting.github.io/neorv32/#_cyclic_redundancy_check_crc)) to test
-data integrity (CRC8/CRC16/CRC32)
+data integrity (CRC8/16/32)
 
 **Debugging**
 
@@ -278,7 +277,7 @@ This overview provides some *quick links* to the most important sections of the
 * **[NEORV32 Project](https://stnolting.github.io/neorv32/#_overview) - introduction**
   * [Rationale](https://stnolting.github.io/neorv32/#_rationale) - why? how come? what for?
   * [Key Features](https://stnolting.github.io/neorv32/#_project_key_features) - what makes it special
-  * [Structure](https://stnolting.github.io/neorv32/#_project_folder_structure) - folders and RTL files
+  * [Structure](https://stnolting.github.io/neorv32/#_project_folder_structure) - folders, RTL files and compile order
   * [Metrics](https://stnolting.github.io/neorv32/#_fpga_implementation_results) - FPGA implementation and performance evaluation
 
 ### :electric_plug: Hardware Overview
