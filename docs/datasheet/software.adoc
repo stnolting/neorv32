@@ -318,7 +318,7 @@ while `LENGTH` defines its size in bytes. The attributes are configured indirect
 __neorv32_rom_size = DEFINED(__neorv32_rom_size) ? __neorv32_rom_size : 2048M;
 __neorv32_ram_size = DEFINED(__neorv32_ram_size) ? __neorv32_ram_size : 8K;
 
-/* Default section base addresses - do not change this unless the hardware-defined address space layout is changed! */
+/* Default section base addresses */
 __neorv32_rom_base = DEFINED(__neorv32_rom_base) ? __neorv32_rom_base : 0x00000000; /* = VHDL package's "ispace_base_c" */
 __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x80000000; /* = VHDL package's "dspace_base_c" */
 ----
@@ -373,8 +373,8 @@ section and to clear the `.bss` section (faster!).
 :sectnums:
 ==== RAM Layout
 
-The default NEORV32 linker script uses all of the defined RAM (linker script memory section `ram`) to create four areas.
-Note that depending on the application some areas might not be existent at all.
+The default NEORV32 linker script uses all of the defined RAM (linker script memory section `ram`) to several sections.
+Note that depending on the application some sections might have zero size.
 
 .Default RAM Layout
 image::ram_layout.png[400]
