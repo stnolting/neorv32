@@ -31,25 +31,11 @@
 
 The external memory interface provides a Wishbone b4-compatible on-chip bus interface. The bus interface is
 implemented if the `MEM_EXT_EN` generic is `true`. This interface can be used to attach external memories,
-custom hardware accelerators, additional IO devices or all other kinds of IP blocks to the processor.
+custom hardware accelerators, additional IO devices or all other kinds of IP blocks.
 
 The external interface is not mapped to a specific address space. Instead, all CPU memory accesses that
-do not target a processor-internal module are delegated to the external memory interface. In summary, a CPU load/store
-access is delegated via the external bus interface if...
-
-* the access does not target the internal instruction memory IMEM (if implemented at all)
-* **and** the access does not target the internal data memory DMEM (if implemented at all)
-* **and** the access does not target the internal bootloader ROM or any of the internal modules - regardless
-if one or more of these components are actually implemented or not.
-
-.Address Space Layout
-[TIP]
-See section <<_address_space>> for more information.
-
-.Execute-in-Place Module
-[NOTE]
-If the Execute In Place module (XIP) is implemented, accesses targeting the XIP memory-mapped-region will not be forwarded to the
-external memory interface. See section <<_execute_in_place_module_xip>> for more information.
+do not target a specific processor-internal address region (accessing the "void"; see section <<_address_space>>)
+are redirected to the external memory interface.
 
 
 **Wishbone Bus Protocol**
@@ -81,7 +67,7 @@ project.
 
 **Bus Access**
 
-The NEORV32 Wishbone gateway does not support burst transfer yet, so there is always just a single transfer "in fly".
+The NEORV32 Wishbone gateway does not support burst transfers yet, so there is always just a single transfer "in fly".
 Hence, the Wishbone `STALL` signal is not implemented. An accessed Wishbone device does not have to respond immediately to a bus
 request by sending an ACK. Instead, there is a _time window_ where the device has to acknowledge the transfer. This time window
 s configured by the `MEM_EXT_TIMEOUT` generic that defines the maximum time (in clock cycles) a bus access can be pending
