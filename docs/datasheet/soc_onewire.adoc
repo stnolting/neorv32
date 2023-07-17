@@ -176,7 +176,7 @@ according <<_mip>> CSR FIRQ bit.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xffffff70` .10+<| `CTRL` <|`0`     `ONEWIRE_CTRL_EN`                             ^| r/w <| ONEWIRE enable, reset if cleared
+.10+<| `0xfffff200` .10+<| `CTRL` <|`0`     `ONEWIRE_CTRL_EN`                             ^| r/w <| ONEWIRE enable, reset if cleared
                                   <|`2:1`   `ONEWIRE_CTRL_PRSC1 : ONEWIRE_CTRL_PRSC0`     ^| r/w <| 2-bit clock prescaler select
                                   <|`10:3`  `ONEWIRE_CTRL_CLKDIV7 : ONEWIRE_CTRL_CLKDIV0` ^| r/w <| 8-bit clock divider value
                                   <|`11`    `ONEWIRE_CTRL_TRIG_RST`                       ^| -/w <| trigger reset pulse, auto-clears
@@ -186,5 +186,5 @@ according <<_mip>> CSR FIRQ bit.
                                   <|`29`    `ONEWIRE_CTRL_SENSE`                          ^| r/- <| current state of the bus line
                                   <|`30`    `ONEWIRE_CTRL_PRESENCE`                       ^| r/- <| device presence detected after reset pulse
                                   <|`31`    `ONEWIRE_CTRL_BUSY`                           ^| r/- <| operation in progress when set
-| `0xffffff74` | `DATA` |`7:0` `ONEWIRE_DATA_MSB : ONEWIRE_DATA_LSB` | r/w | receive/transmit data (8-bit)
+| `0xfffff204` | `DATA` |`7:0` `ONEWIRE_DATA_MSB : ONEWIRE_DATA_LSB` | r/w | receive/transmit data (8-bit)
 |=======================

@@ -47,18 +47,18 @@
  * @name User configuration
  **************************************************************************/
 /**@{*/
-/** UART BAUD rate */
+//** UART BAUD rate */
 #define BAUD_RATE           (19200)
 //** Reachable unaligned address */
-#define ADDR_UNALIGNED_1    (0x00000001)
+#define ADDR_UNALIGNED_1    (0x00000001UL)
 //** Reachable unaligned address */
-#define ADDR_UNALIGNED_2    (0x00000002)
+#define ADDR_UNALIGNED_2    (0x00000002UL)
 //** Unreachable word-aligned address */
-#define ADDR_UNREACHABLE    (IO_BASE_ADDRESS-4)
-//**Read-only word-aligned address */
+#define ADDR_UNREACHABLE    ((uint32_t)&NEORV32_DM->SREG)
+//** Read-only word-aligned address */
 #define ADDR_READONLY       ((uint32_t)&NEORV32_SYSINFO->CLK)
-//** external memory base address */
-#define EXT_MEM_BASE        (0xF0000000)
+//** External memory base address */
+#define EXT_MEM_BASE        (0xF0000000UL)
 /**@}*/
 
 
@@ -90,7 +90,7 @@ void test_ok(void);
 void test_fail(void);
 
 // MCAUSE value that will be NEVER set by the hardware
-const uint32_t mcause_never_c = 0x80000000U; // = reserved
+const uint32_t mcause_never_c = 0x80000000UL; // = reserved
 
 // Global variables (also test initialization of global vars here)
 /// Global counter for failing tests
@@ -232,7 +232,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable all counters
@@ -268,7 +268,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -292,7 +292,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test standard RISC-V counters 
+  // Test standard RISC-V counters
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Zicntr CNTs ", cnt_test);
@@ -363,12 +363,12 @@ int main() {
     neorv32_cpu_csr_set(CSR_MCOUNTINHIBIT, 0);
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
-  // Test mcountinhibit: inhibit counter auto-inc 
+  // Test mcountinhibit: inhibit counter auto-inc
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] mcountinhibit CSR ", cnt_test);
@@ -424,7 +424,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -459,7 +459,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -523,7 +523,7 @@ int main() {
   // Unaligned instruction address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] I_ALG (instr. align) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] Fetch align EXC ", cnt_test);
 
   // skip if C-mode is implemented
   if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) == 0) {
@@ -543,7 +543,7 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("[skipped, n.a. with C-ext]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -551,7 +551,7 @@ int main() {
   // Instruction access fault
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] I_ACC (instr. bus access) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] Fetch access EXC ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
     cnt_test++;
@@ -575,7 +575,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -583,7 +583,7 @@ int main() {
   // Illegal instruction
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] I_ILL (illegal instr.) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] Illegal instr. EXC ", cnt_test);
 
   cnt_test++;
 
@@ -613,7 +613,7 @@ int main() {
   // Illegal compressed instruction
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] CI_ILL (illegal C instr.) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] Illegal C instr. EXC ", cnt_test);
 
   // skip if C-mode is not implemented
   if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C))) {
@@ -633,7 +633,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a. with C-ext]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -657,7 +657,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -665,7 +665,7 @@ int main() {
   // Unaligned load address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] L_ALG (load align) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] Load align EXC ", cnt_test);
   cnt_test++;
 
   // load from unaligned address
@@ -687,7 +687,7 @@ int main() {
   // Load access fault
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] L_ACC (load access) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] Load access EXC ", cnt_test);
 
   cnt_test++;
 
@@ -710,7 +710,7 @@ int main() {
   // Unaligned store address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] S_ALG (store align) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] Store align EXC ", cnt_test);
   cnt_test++;
 
   // initialize test variable
@@ -737,7 +737,7 @@ int main() {
   // Store access fault
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] S_ACC (store access) EXC ", cnt_test);
+  PRINT_STANDARD("[%i] Store access EXC ", cnt_test);
 
   cnt_test++;
 
@@ -793,7 +793,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -829,7 +829,7 @@ int main() {
     neorv32_mtime_set_timecmp(-1);
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -863,7 +863,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -897,7 +897,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -929,7 +929,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -967,7 +967,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1001,7 +1001,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1009,7 +1009,7 @@ int main() {
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] FIRQ1 (CFS) ", cnt_test);
-  PRINT_STANDARD("[skipped, n.a.]\n");
+  PRINT_STANDARD("[n.a.]\n");
 
 
   // ----------------------------------------------------------
@@ -1053,7 +1053,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1098,7 +1098,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1140,7 +1140,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1182,7 +1182,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1218,7 +1218,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1254,7 +1254,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1297,7 +1297,7 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1333,7 +1333,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1381,7 +1381,7 @@ int main() {
     neorv32_dma_disable();
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1426,7 +1426,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1460,7 +1460,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1497,7 +1497,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1534,7 +1534,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1567,7 +1567,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1608,7 +1608,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1670,7 +1670,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1699,7 +1699,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[skipped, n.a.]\n");
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1864,7 +1864,8 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("[%i] PMP: [skipped, n.a.]\n", cnt_test);
+    PRINT_STANDARD("[%i] PMP: \n", cnt_test);
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1874,20 +1875,20 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all HPM counters
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIHPM)) {
     PRINT_STANDARD("\n\nHPMs\n"
-                   "00 Instr.   %u\n"
-                   "02 Clocks   %u\n"
-                   "03 C instr. %u\n"
-                   "04 IF wait  %u\n"
-                   "05 II wait  %u\n"
-                   "06 ALU wait %u\n"
-                   "07 M loads  %u\n"
-                   "08 M stores %u\n"
-                   "09 M wait   %u\n"
-                   "10 Jumps    %u\n"
-                   "11 Branch.  %u\n"
-                   "12 > taken  %u\n"
-                   "13 EXCs     %u\n"
-                   "14 Illegals %u\n",
+                   "00 Instr. %u\n"
+                   "02 Clocks %u\n"
+                   "03 Compr. %u\n"
+                   "04 IF w.  %u\n"
+                   "05 II w.  %u\n"
+                   "06 ALU w. %u\n"
+                   "07 M LD   %u\n"
+                   "08 M ST   %u\n"
+                   "09 M w.   %u\n"
+                   "10 Jump   %u\n"
+                   "11 Branch %u\n"
+                   "12 >taken %u\n"
+                   "13 EXCs   %u\n"
+                   "14 Traps  %u\n",
                    (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET),
                    (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE),
                    (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3),
@@ -1902,7 +1903,6 @@ int main() {
                    (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12),
                    (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER13),
                    (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER14));
-
   }
 
 

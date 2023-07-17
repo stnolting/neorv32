@@ -125,7 +125,7 @@ explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xffffffb0` .10+<| `CTRL` <|`0`     `TWI_CTRL_EN`                     ^| r/w <| TWI enable, reset if cleared
+.10+<| `0xfffff900` .10+<| `CTRL` <|`0`     `TWI_CTRL_EN`                     ^| r/w <| TWI enable, reset if cleared
                                   <|`1`     `TWI_CTRL_START`                  ^| -/w <| generate START condition, auto-clears
                                   <|`2`     `TWI_CTRL_STOP`                   ^| -/w <| generate STOP condition, auto-clears
                                   <|`3`     `TWI_CTRL_MACK`                   ^| r/w <| generate controller-ACK for each transmission ("MACK")
@@ -136,5 +136,5 @@ explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
                                   <|`29`    `TWI_CTRL_CLAIMED`                ^| r/- <| set if the TWI bus is claimed by any controller
                                   <|`30`    `TWI_CTRL_ACK`                    ^| r/- <| ACK received when set, NACK received when cleared
                                   <|`31`    `TWI_CTRL_BUSY`                   ^| r/- <| transfer/START/STOP in progress when set
-| `0xffffffb4` | `DATA` |`7:0` | r/w | receive/transmit data
+| `0xfffff904` | `DATA` |`7:0` | r/w | receive/transmit data
 |=======================

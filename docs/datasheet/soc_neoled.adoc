@@ -186,7 +186,7 @@ writing zero to according <<_mip>> CSR bit.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.13+<| `0xffffffd8` .13+<| `CTRL` <|`0`     `NEOLED_CTRL_EN`                                  ^| r/w <| NEOLED enable
+.13+<| `0xfffffd00` .13+<| `CTRL` <|`0`     `NEOLED_CTRL_EN`                                  ^| r/w <| NEOLED enable
                                   <|`1`     `NEOLED_CTRL_MODE`                                ^| r/w <| data transfer size; `0`=24-bit; `1`=32-bit
                                   <|`2`     `NEOLED_CTRL_STROBE`                              ^| r/w <| `0`=send normal color data; `1`=send RESET command on data write access
                                   <|`5:3`   `NEOLED_CTRL_PRSC2 : NEOLED_CTRL_PRSC0`           ^| r/w <| 3-bit clock prescaler, bit 0
@@ -199,5 +199,5 @@ writing zero to according <<_mip>> CSR bit.
                                   <|`29`    `NEOLED_CTRL_TX_HALF`                             ^| r/- <| TX FIFO is _at least_ half full
                                   <|`30`    `NEOLED_CTRL_TX_FULL`                             ^| r/- <| TX FIFO is full
                                   <|`31`    `NEOLED_CTRL_TX_BUSY`                             ^| r/- <| TX serial engine is busy when set
-| `0xffffffdc` | `DATA` <|`31:0` / `23:0` ^| -/w <| TX data (32- or 24-bit, depending on _NEOLED_CTRL_MODE_ bit)
+| `0xfffffd04` | `DATA` <|`31:0` / `23:0` ^| -/w <| TX data (32- or 24-bit, depending on _NEOLED_CTRL_MODE_ bit)
 |=======================

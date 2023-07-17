@@ -58,10 +58,6 @@ end neorv32_gptmr;
 
 architecture neorv32_gptmr_rtl of neorv32_gptmr is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(gptmr_size_c); -- low address boundary bit
-
   -- control register --
   constant ctrl_en_c    : natural := 0; -- r/w: timer enable
   constant ctrl_prsc0_c : natural := 1; -- r/w: clock prescaler select bit 0
@@ -70,12 +66,6 @@ architecture neorv32_gptmr_rtl of neorv32_gptmr is
   constant ctrl_mode_c  : natural := 4; -- r/w: mode (0=single-shot, 1=continuous)
   --
   signal ctrl : std_ulogic_vector(4 downto 0);
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
-  signal wren   : std_ulogic; -- word write enable
-  signal rden   : std_ulogic; -- read enable
 
   -- timer core --
   type timer_t is record
@@ -92,12 +82,6 @@ begin
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
-  -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = gptmr_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= gptmr_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
-
   -- write access --
   write_access: process(rstn_i, clk_i)
   begin
@@ -107,18 +91,18 @@ begin
       timer.thres  <= (others => '0');
     elsif rising_edge(clk_i) then
       timer.cnt_we <= '0'; -- default
-      if (wren = '1') then
-        if (addr = gptmr_ctrl_addr_c) then -- control register
+      if (bus_req_i.we = '1') then
+        if (bus_req_i.addr(3 downto 2) = "00") then -- control register
           ctrl(ctrl_en_c)    <= bus_req_i.data(ctrl_en_c);
           ctrl(ctrl_prsc0_c) <= bus_req_i.data(ctrl_prsc0_c);
           ctrl(ctrl_prsc1_c) <= bus_req_i.data(ctrl_prsc1_c);
           ctrl(ctrl_prsc2_c) <= bus_req_i.data(ctrl_prsc2_c);
           ctrl(ctrl_mode_c)  <= bus_req_i.data(ctrl_mode_c);
         end if;
-        if (addr = gptmr_thres_addr_c) then -- threshold register
+        if (bus_req_i.addr(3 downto 2) = "01") then -- threshold register
           timer.thres <= bus_req_i.data;
         end if;
-        if (addr = gptmr_count_addr_c) then -- counter register
+        if (bus_req_i.addr(3 downto 2) = "10") then -- counter register
           timer.cnt_we <= '1';
         end if;
       end if;
@@ -129,10 +113,10 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= rden or wren; -- bus access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (rden = '1') then
-        case addr(3 downto 2) is
+      if (bus_req_i.re = '1') then
+        case bus_req_i.addr(3 downto 2) is
           when "00" => -- control register
             bus_rsp_o.data(ctrl_en_c)    <= ctrl(ctrl_en_c);
             bus_rsp_o.data(ctrl_prsc0_c) <= ctrl(ctrl_prsc0_c);

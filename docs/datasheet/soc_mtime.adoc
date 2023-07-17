@@ -39,8 +39,8 @@ the interrupt request is explicitly acknowledged (e.g. writing to a memory-mappe
 [options="header",grid="all"]
 |=======================
 | Address      | Name [C]     | Bits | R/W | Function
-| `0xffffff90` | `TIME_LO`    | 31:0 | r/w | machine system time, low word
-| `0xffffff94` | `TIME_HI`    | 31:0 | r/w | machine system time, high word
-| `0xffffff98` | `TIMECMP_LO` | 31:0 | r/w | time compare, low word
-| `0xffffff9c` | `TIMECMP_HI` | 31:0 | r/w | time compare, high word
+| `0xfffff400` | `TIME_LO`    | 31:0 | r/w | machine system time, low word
+| `0xfffff404` | `TIME_HI`    | 31:0 | r/w | machine system time, high word
+| `0xfffff408` | `TIMECMP_LO` | 31:0 | r/w | time compare, low word
+| `0xfffff40c` | `TIMECMP_HI` | 31:0 | r/w | time compare, high word
 |=======================

@@ -19,12 +19,8 @@
 
 **Overview**
 
-The execute in-place (XIP) module allows to execute code (and read constant data) directly from a SPI flash memory.
-Hence, it uses the standard serial peripheral interface (SPI) as transfer protocol under the hood.
-
-The XIP flash is not mapped to a specific region of the processor's address space. Instead, it
-provides a programmable mapping scheme to allow a flexible user-defined mapping of the flash to _any section_
-of the address space.
+The execute in-place (XIP) module allows to execute code (and read constant data) directly from an external SPI flash memory.
+The standard serial peripheral interface (SPI) is used as transfer protocol.
 
 From the CPU side, the modules provides two different interfaces: one for transparently accessing the XIP flash and another
 one for accessing the module's control and status registers. The first interface provides a _transparent_
@@ -32,6 +28,11 @@ gateway to the SPI flash, so the CPU can directly fetch and execute instructions
 Note that this interface is read-only. Any write access will raise a bus error exception.
 The second interface is mapped to the processor's IO space and allows data accesses to the XIP module's
 configuration registers.
+
+.XIP Address Mapping
+[NOTE]
+When XIP mode is enabled the flash is mapped to fixed address space region starting at address
+`0xE0000000` (see section <<_address_space>>).
 
 .XIP Example Program
 [TIP]
@@ -99,20 +100,6 @@ When the XIP mode is not enabled, the XIP module can also be used as additional 
 with a transfer size of up to 64 bits per transmission.
 
 
-**Address Mapping**
-
-The address mapping of the XIP flash is not fixed by design. It can be mapped to _any section_ within the processor's
-address space. A _section_ refers to one out of 16 naturally aligned 256MB wide memory segments. This segment
-is defined by the four most significant bits of the address (`31:28`) and the XIP's segment is programmed by the
-four `XIP_CTRL_XIP_PAGE` bits in the unit's control register. All accesses within this page will be mapped to the XIP flash.
-
-.Page Mapping
-[IMPORTANT]
-Care must be taken when programming the page mapping to prevent access collisions with other modules (like internal memories
-or modules attached to the external memory interface). Do not use page `0xF` (base address `0xF000_0000`) as this will
-prevent access to the internal peripherals - including the XIP control registers themselves.
-
-
 **Using the XIP Mode**
 
 The XIP module is globally enabled by setting the `XIP_CTRL_EN` bit in the device's `CTRL` control register.
@@ -148,16 +135,16 @@ The XIP mode requires the 4-byte data words in the flash to be ordered in **litt
 After the SPI properties (including the amount of address bytes **and** the total amount of SPI transfer bytes)
 and XIP address mapping are configured, the actual XIP mode can be enabled by setting
 the control register's `XIP_CTRL_XIP_EN` bit. This will enable the "transparent SPI access port" of the module and thus,
-the _transparent_ conversion of access requests into proper SPI flash transmissions. Make sure `XIP_CTRL_SPI_CSEN`
-is also set so the module can actually select/enable the attached SPI flash.
+the _transparent_ conversion of access requests into proper SPI flash transmissions. Hence, any access to the processor's
+memory-mapped XIP region (`0xE0000000` to `0xEFFFFFFF`) will be converted into SPI flash accesses.
+Make sure `XIP_CTRL_SPI_CSEN` is also set so the module can actually select/enable the attached SPI flash.
 No more direct SPI accesses via `DATA_HI:DATA_LO` are possible when the XIP mode is enabled. However, the
 XIP mode can be disabled at any time.
 
 [NOTE]
-If the XIP module is disabled (_XIP_CTRL_EN_ = `0`) any accesses to the programmed XIP memory segment are ignored
-by the module and might be forwarded to the processor's external memory interface (if implemented) or will cause a bus
-exception. If the XIP module is enabled (_XIP_CTRL_EN_ = `1`) but XIP mode is not enabled yet (_XIP_CTRL_XIP_EN_ = '0')
-any access to the programmed XIP memory segment will raise a bus exception.
+If the XIP module is disabled (_XIP_CTRL_EN_ = `0`) any accesses to the memory-mapped XIP flash address region
+will raise a bus access exception. If the XIP module is enabled (_XIP_CTRL_EN_ = `1`) but XIP mode is not enabled
+yet (_XIP_CTRL_XIP_EN_ = '0') any access to the programmed XIP memory segment will also raise a bus access exception.
 
 [TIP]
 It is highly recommended to enable the <<_processor_internal_instruction_cache_icache>> to cover some
@@ -183,7 +170,7 @@ By using the XIP burst mode flash read accesses can be accelerated by up to 50%.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.15+<| `0xffffff40` .15+<| `CTRL` <|`0`     `XIP_CTRL_EN`                                       ^| r/w <| XIP module enable
+.14+<| `0xffffff40` .14+<| `CTRL` <|`0`     `XIP_CTRL_EN`                                       ^| r/w <| XIP module enable
                                   <|`3:1`   `XIP_CTRL_PRSC2 : XIP_CTRL_PRSC0`                   ^| r/w <| 3-bit SPI clock prescaler select
                                   <|`4`     `XIP_CTRL_CPOL`                                     ^| r/w <| SPI clock polarity
                                   <|`5`     `XIP_CTRL_CPHA`                                     ^| r/w <| SPI clock phase
@@ -191,10 +178,9 @@ By using the XIP burst mode flash read accesses can be accelerated by up to 50%.
                                   <|`10`    `XIP_CTRL_XIP_EN`                                   ^| r/w <| XIP mode enable
                                   <|`12:11` `XIP_CTRL_XIP_ABYTES_MSB : XIP_CTRL_XIP_ABYTES_LSB` ^| r/w <| Number of address bytes for XIP flash (minus 1)
                                   <|`20:13` `XIP_CTRL_RD_CMD_MSB : XIP_CTRL_RD_CMD_LSB`         ^| r/w <| Flash read command
-                                  <|`24:21` `XIP_CTRL_XIP_PAGE_MSB : XIP_CTRL_XIP_PAGE_LSB`     ^| r/w <| XIP memory page
-                                  <|`25`    `XIP_CTRL_SPI_CSEN`                                 ^| r/w <| Allow SPI chip-select to be actually asserted when set
-                                  <|`26`    `XIP_CTRL_HIGHSPEED`                                ^| r/w <| enable SPI high-speed mode (ignoring _XIP_CTRL_PRSC_)
-                                  <|`27`    `XIP_CTRL_BURST_EN`                                 ^| r/w <| Enable XIP burst mode
+                                  <|`21`    `XIP_CTRL_SPI_CSEN`                                 ^| r/w <| Allow SPI chip-select to be actually asserted when set
+                                  <|`22`    `XIP_CTRL_HIGHSPEED`                                ^| r/w <| enable SPI high-speed mode (ignoring _XIP_CTRL_PRSC_)
+                                  <|`23`    `XIP_CTRL_BURST_EN`                                 ^| r/w <| Enable XIP burst mode
                                   <|`29:28` -                                                   ^| r/- <| _reserved_, read as zero
                                   <|`30`   `XIP_CTRL_PHY_BUSY`                                  ^| r/- <| SPI PHY busy when set
                                   <|`31`   `XIP_CTRL_XIP_BUSY`                                  ^| r/- <| XIP access in progress when set

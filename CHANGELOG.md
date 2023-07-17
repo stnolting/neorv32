@@ -33,6 +33,9 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 16.07.2023 | 1.8.6.5 | :warning: **rework SoC bus system & memory map - part 3**: re-enforce PMAs (physical memory attributes); [#648](https://github.com/stnolting/neorv32/pull/648) |
+| 15.07.2023 | 1.8.6.4 | :warning: **rework SoC bus system & memory map - part 2**: move IO address decoding to central IO switch; add i-cache uncached accesses; [#648](https://github.com/stnolting/neorv32/pull/648) |
+| 14.07.2023 | 1.8.6.3 | :warning: **rework SoC bus system & memory map - part 1**: add central bus gateway to control core accesses to the main address regions; [#648](https://github.com/stnolting/neorv32/pull/648) |
 | 14.07.2023 | 1.8.6.2 | minor rtl edits; [#646](https://github.com/stnolting/neorv32/pull/646) |
 | 30.06.2023 | 1.8.6.1 | minor rtl edits, cleanups and optimizations; [#641](https://github.com/stnolting/neorv32/pull/641) |
 | 27.06.2023 | [**:rocket:1.8.6**](https://github.com/stnolting/neorv32/releases/tag/v1.8.6) | **New release** |

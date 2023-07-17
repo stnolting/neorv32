@@ -48,8 +48,6 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
-/** XIP page base address (32-bit) */
-#define XIP_PAGE_BASE_ADDR 0x40000000
 /** Flash base address (32-bit) */
 #define FLASH_BASE 0x00400000
 /** Flash address bytes */
@@ -124,7 +122,7 @@ int main() {
   // configuration note
   neorv32_uart0_printf("Flash base address:  0x%x\n"
                        "XIP base address:    0x%x\n"
-                       "Flash address bytes: %u\n", (uint32_t)FLASH_BASE, (uint32_t)XIP_PAGE_BASE_ADDR, (uint32_t)FLASH_ABYTES);
+                       "Flash address bytes: %u\n", (uint32_t)FLASH_BASE, (uint32_t)XIP_MEM_BASE_ADDRESS, (uint32_t)FLASH_ABYTES);
 
   neorv32_uart0_printf("XIP SPI clock speed: %u Hz\n\n", neorv32_cpu_get_clk_from_prsc(XIP_CLK_PRSC)/2);
 
@@ -151,7 +149,7 @@ int main() {
                        " Navigate to any example program folder (like 'neorv32/sw/example/hello_word').\n"
                        " Compile the program but relocate the instruction to the beginning of the Flash:\n"
                        " make MARCH=rv32i USER_FLAGS+=\"-Wl,--defsym,__neorv32_rom_base=0x%x\" clean_all exe\n\n",
-                       (uint32_t)(XIP_PAGE_BASE_ADDR + FLASH_BASE));
+                       (uint32_t)(XIP_MEM_BASE_ADDRESS + FLASH_BASE));
 
   neorv32_uart0_printf("Press any key when you are ready.\n\n");
   neorv32_uart0_getc(); // wait for any key
@@ -201,17 +199,17 @@ int main() {
 
   // configure and enable the actual XIP mode
   // * configure FLASH_ABYTES address bytes send to the SPI flash for addressing
-  // * map the XIP flash to the address space starting at XIP_PAGE_BASE_ADDR - only the 4 MSBs are relevant here
+  // * map the XIP flash to the address space starting at XIP_MEM_BASE_ADDRESS - only the 4 MSBs are relevant here
   // after calling this function the SPI flash is mapped to the processor's address space and is accessible as "normal"
   // memory-mapped read-only memory
-  if (neorv32_xip_start(FLASH_ABYTES, XIP_PAGE_BASE_ADDR)) {
+  if (neorv32_xip_start(FLASH_ABYTES)) {
     neorv32_uart0_printf("Error! XIP mode configuration error!\n");
     return 1;
   }
 
   // since the flash is now mapped to the processor's address space we can dump its content by using normal memory accesses
   neorv32_uart0_printf("\nRead-back XIP flash content (first 10 words) via memory-mapped access...\n");
-  uint32_t flash_base_addr = XIP_PAGE_BASE_ADDR + FLASH_BASE;
+  uint32_t flash_base_addr = XIP_MEM_BASE_ADDRESS + FLASH_BASE;
   uint32_t *xip_mem = (uint32_t*)flash_base_addr;
   asm volatile("fence");
   uint32_t i;
@@ -230,9 +228,9 @@ int main() {
   // ----------------------------------------------------------
 
   // finally, jump to the XIP flash's base address we have configured to start execution **from there**
-  neorv32_uart0_printf("\nStarting Execute In-Place program (@0x%x)...\n", (uint32_t)(XIP_PAGE_BASE_ADDR + FLASH_BASE));
+  neorv32_uart0_printf("\nStarting Execute In-Place program (@0x%x)...\n", (uint32_t)(XIP_MEM_BASE_ADDRESS + FLASH_BASE));
   asm volatile("fence.i");
-  asm volatile ("call %[dest]" : : [dest] "i" (XIP_PAGE_BASE_ADDR + FLASH_BASE));
+  asm volatile ("call %[dest]" : : [dest] "i" (XIP_MEM_BASE_ADDRESS + FLASH_BASE));
 
 
   // this should never be reached

@@ -53,9 +53,6 @@ entity neorv32_xip is
     bus_rsp_o   : out bus_rsp_t;  -- bus response
     xip_req_i   : in  bus_req_t;  -- XIP request
     xip_rsp_o   : out bus_rsp_t;  -- XIP response
-    xip_en_o    : out std_ulogic; -- XIP enable
-    xip_acc_o   : out std_ulogic; -- pending XIP access
-    xip_page_o  : out std_ulogic_vector(3 downto 0); -- XIP page
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(7 downto 0);
     spi_csn_o   : out std_ulogic; -- chip-select, low-active
@@ -66,16 +63,6 @@ entity neorv32_xip is
 end neorv32_xip;
 
 architecture neorv32_xip_rtl of neorv32_xip is
-
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(xip_size_c); -- low address boundary bit
-
-  -- CT register access control --
-  signal ct_acc_en : std_ulogic; -- module access enable
-  signal ct_addr   : std_ulogic_vector(31 downto 0); -- access address
-  signal ct_wren   : std_ulogic; -- word write enable
-  signal ct_rden   : std_ulogic; -- read enable
 
   -- control register --
   constant ctrl_enable_c      : natural :=  0; -- r/w: module enable
@@ -91,16 +78,14 @@ architecture neorv32_xip_rtl of neorv32_xip is
   constant ctrl_xip_abytes1_c : natural := 12; -- r/w: XIP number of address bytes (0=1,1=2,2=3,3=4) - bit 1
   constant ctrl_rd_cmd0_c     : natural := 13; -- r/w: SPI flash read command - bit 0
   constant ctrl_rd_cmd7_c     : natural := 20; -- r/w: SPI flash read command - bit 7
-  constant ctrl_page0_c       : natural := 21; -- r/w: XIP memory page - bit 0
-  constant ctrl_page3_c       : natural := 24; -- r/w: XIP memory page - bit 3
-  constant ctrl_spi_csen_c    : natural := 25; -- r/w: SPI chip-select enabled
-  constant ctrl_highspeed_c   : natural := 26; -- r/w: SPI high-speed mode enable (ignoring ctrl_spi_prsc)
-  constant ctrl_burst_en_c    : natural := 27; -- r/w: XIP burst mode enable
+  constant ctrl_spi_csen_c    : natural := 21; -- r/w: SPI chip-select enabled
+  constant ctrl_highspeed_c   : natural := 22; -- r/w: SPI high-speed mode enable (ignoring ctrl_spi_prsc)
+  constant ctrl_burst_en_c    : natural := 23; -- r/w: XIP burst mode enable
   --
   constant ctrl_phy_busy_c    : natural := 30; -- r/-: SPI PHY is busy when set
   constant ctrl_xip_busy_c    : natural := 31; -- r/-: XIP access in progress
   --
-  signal ctrl : std_ulogic_vector(27 downto 0);
+  signal ctrl : std_ulogic_vector(23 downto 0);
 
   -- Direct SPI access registers --
   signal spi_data_lo : std_ulogic_vector(31 downto 0);
@@ -117,6 +102,7 @@ architecture neorv32_xip_rtl of neorv32_xip is
     state_nxt      : arbiter_state_t;
     addr           : std_ulogic_vector(31 downto 0);
     addr_lookahead : std_ulogic_vector(31 downto 0);
+    xip_acc_err    : std_ulogic;
     busy           : std_ulogic;
     tmo_cnt        : std_ulogic_vector(04 downto 0); -- timeout counter for auto CS de-assert (burst mode only)
   end record;
@@ -163,14 +149,6 @@ architecture neorv32_xip_rtl of neorv32_xip is
 
 begin
 
-  -- Access Control (IO/CTRL port) ----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  ct_acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = xip_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  ct_addr   <= xip_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  ct_wren   <= ct_acc_en and bus_req_i.we;
-  ct_rden   <= ct_acc_en and bus_req_i.re;
-
-
   -- Control Write Access -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   ctrl_write_access : process(rstn_i, clk_i)
@@ -182,9 +160,9 @@ begin
       spi_trigger <= '0';
     elsif rising_edge(clk_i) then
       spi_trigger <= '0';
-      if (ct_wren = '1') then -- only full-word writes!
+      if (bus_req_i.we = '1') then -- only full-word writes!
         -- control register --
-        if (ct_addr = xip_ctrl_addr_c) then
+        if (bus_req_i.addr(3 downto 2) = "00") then
           ctrl(ctrl_enable_c)                                <= bus_req_i.data(ctrl_enable_c);
           ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= bus_req_i.data(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
           ctrl(ctrl_spi_cpol_c)                              <= bus_req_i.data(ctrl_spi_cpol_c);
@@ -193,17 +171,16 @@ begin
           ctrl(ctrl_xip_enable_c)                            <= bus_req_i.data(ctrl_xip_enable_c);
           ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= bus_req_i.data(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
           ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= bus_req_i.data(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
-          ctrl(ctrl_page3_c downto ctrl_page0_c)             <= bus_req_i.data(ctrl_page3_c downto ctrl_page0_c);
           ctrl(ctrl_spi_csen_c)                              <= bus_req_i.data(ctrl_spi_csen_c);
           ctrl(ctrl_highspeed_c)                             <= bus_req_i.data(ctrl_highspeed_c);
           ctrl(ctrl_burst_en_c)                              <= bus_req_i.data(ctrl_burst_en_c);
         end if;
         -- SPI direct data access register lo --
-        if (ct_addr = xip_data_lo_addr_c) then
+        if (bus_req_i.addr(3 downto 2) = "10") then
           spi_data_lo <= bus_req_i.data;
         end if;
         -- SPI direct data access register hi --
-        if (ct_addr = xip_data_hi_addr_c) then
+        if (bus_req_i.addr(3 downto 2) = "11") then
           spi_data_hi <= bus_req_i.data;
           spi_trigger <= '1'; -- trigger direct SPI transaction
         end if;
@@ -211,22 +188,16 @@ begin
     end if;
   end process ctrl_write_access;
 
-  -- XIP enabled --
-  xip_en_o <= ctrl(ctrl_enable_c);
-
-  -- XIP page output --
-  xip_page_o <= ctrl(ctrl_page3_c downto ctrl_page0_c);
-
 
   -- Control Read Access --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   ctrl_read_access : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= ct_wren or ct_rden; -- access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.we or bus_req_i.re; -- access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (ct_rden = '1') then
-        case ct_addr(3 downto 2) is
+      if (bus_req_i.re = '1') then
+        case bus_req_i.addr(3 downto 2) is
           when "00" => -- 'xip_ctrl_addr_c' - control register
             bus_rsp_o.data(ctrl_enable_c)                                <= ctrl(ctrl_enable_c);
             bus_rsp_o.data(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)     <= ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c);
@@ -236,7 +207,6 @@ begin
             bus_rsp_o.data(ctrl_xip_enable_c)                            <= ctrl(ctrl_xip_enable_c);
             bus_rsp_o.data(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c) <= ctrl(ctrl_xip_abytes1_c downto ctrl_xip_abytes0_c);
             bus_rsp_o.data(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c)         <= ctrl(ctrl_rd_cmd7_c downto ctrl_rd_cmd0_c);
-            bus_rsp_o.data(ctrl_page3_c downto ctrl_page0_c)             <= ctrl(ctrl_page3_c downto ctrl_page0_c);
             bus_rsp_o.data(ctrl_spi_csen_c)                              <= ctrl(ctrl_spi_csen_c);
             bus_rsp_o.data(ctrl_highspeed_c)                             <= ctrl(ctrl_highspeed_c);
             bus_rsp_o.data(ctrl_burst_en_c)                              <= ctrl(ctrl_burst_en_c);
@@ -285,10 +255,16 @@ begin
         arbiter.state <= arbiter.state_nxt;
       end if;
       -- address look-ahead --
-      if (xip_req_i.re = '1') and (xip_req_i.addr(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
+      if (xip_req_i.re = '1') then
         arbiter.addr <= xip_req_i.addr; -- buffer address (reducing fan-out on CPU's address net)
       end if;
       arbiter.addr_lookahead <= std_ulogic_vector(unsigned(arbiter.addr) + 4); -- prefetch address of *next* linear access
+      -- XIP access error? --
+      if (arbiter.state = S_DIRECT) then
+        arbiter.xip_acc_err <= xip_req_i.re or xip_req_i.we;
+      else
+        arbiter.xip_acc_err <= '0';
+      end if;
       -- pending flash access timeout --
       if (ctrl(ctrl_enable_c) = '0') or (ctrl(ctrl_xip_enable_c) = '0') or (arbiter.state = S_BUSY) then -- sync reset
         arbiter.tmo_cnt <= (others => '0');
@@ -308,7 +284,7 @@ begin
     -- bus interface defaults --
     xip_rsp_o.data <= (others => '0');
     xip_rsp_o.ack  <= '0';
-    xip_rsp_o.err  <= '0';
+    xip_rsp_o.err  <= arbiter.xip_acc_err;
 
     -- SPI PHY interface defaults --
     phy_if.start <= '0';
@@ -327,12 +303,10 @@ begin
 
       when S_IDLE => -- wait for new bus request
       -- ------------------------------------------------------------
-        if (xip_req_i.addr(31 downto 28) = ctrl(ctrl_page3_c downto ctrl_page0_c)) then
-          if (xip_req_i.re = '1') then
-            arbiter.state_nxt <= S_CHECK;
-          elsif (xip_req_i.we = '1') then
-            arbiter.state_nxt <= S_ERROR;
-          end if;
+        if (xip_req_i.re = '1') then
+          arbiter.state_nxt <= S_CHECK;
+        elsif (xip_req_i.we = '1') then
+          arbiter.state_nxt <= S_ERROR;
         end if;
 
       when S_CHECK => -- check if we can resume flash access
@@ -373,9 +347,6 @@ begin
 
   -- arbiter status --
   arbiter.busy <= '1' when (arbiter.state = S_TRIG) or (arbiter.state = S_BUSY) else '0'; -- actual XIP access in progress
-
-  -- status output --
-  xip_acc_o <= arbiter.busy;
 
 
   -- SPI Clock Generator --------------------------------------------------------------------

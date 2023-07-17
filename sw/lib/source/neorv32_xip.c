@@ -105,17 +105,13 @@ void neorv32_xip_setup(int prsc, int cpol, int cpha, uint8_t rd_cmd) {
  * Enable XIP mode (to allow CPU to _transparently_ fetch data & instructions).
  *
  * @param[in] abytes Number of address bytes used to access the SPI flash (1,2,3,4).
- * @param[in] page_base XIP memory page base address (top 4 address bits, 0..15).
  * @return 0 if XIP configuration is OK, -1 if configuration error.
  **************************************************************************/
-int neorv32_xip_start(int abytes, uint32_t page_base) {
+int neorv32_xip_start(int abytes) {
 
-  if ((abytes < 1) || (abytes > 4) || // invalid address bytes
-      (page_base  & 0x0FFFFFFFUL)  || // invalid granularity
-      (page_base >= 0xF0000000UL)) {  // IO/BOOTROM page
+  if ((abytes < 1) || (abytes > 4)) {
     return -1;
   }
-  page_base >>= 28;
 
   uint32_t ctrl = NEORV32_XIP->CTRL;
 
@@ -127,10 +123,6 @@ int neorv32_xip_start(int abytes, uint32_t page_base) {
   // 'abytes' address bytes + 1 command byte + 4 bytes RX data (one 32-bit word)
   ctrl &= ~(0xF << XIP_CTRL_SPI_NBYTES_LSB); // clear old configuration
   ctrl |= ((uint32_t)(abytes+1+4)) << XIP_CTRL_SPI_NBYTES_LSB; // set new configuration
-
-  // XIP memory page
-  ctrl &= ~(0xF << XIP_CTRL_PAGE_LSB); // clear old configuration
-  ctrl |= ((uint32_t)(page_base & 0xf)) << XIP_CTRL_PAGE_LSB; // set new configuration
 
   ctrl |= 1 << XIP_CTRL_XIP_EN; // enable XIP mode
 

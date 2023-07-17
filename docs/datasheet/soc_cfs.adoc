@@ -93,9 +93,9 @@ generic (default = 32-bit). The size of the output signal conduit `cfs_out_o` is
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Function
-| `0xfffffe00` | `REG[0]`  |`31:0` | (r)/(w) | custom CFS register 0
-| `0xfffffe04` | `REG[1]`  |`31:0` | (r)/(w) | custom CFS register 1
+| `0xffffeb00` | `REG[0]`  |`31:0` | (r)/(w) | custom CFS register 0
+| `0xffffeb04` | `REG[1]`  |`31:0` | (r)/(w) | custom CFS register 1
 | ...          | ...       |`31:0` | (r)/(w) | ...
-| `0xfffffef8` | `REG[62]` |`31:0` | (r)/(w) | custom CFS register 62
-| `0xfffffefc` | `REG[63]` |`31:0` | (r)/(w) | custom CFS register 63
+| `0xffffebf8` | `REG[62]` |`31:0` | (r)/(w) | custom CFS register 62
+| `0xffffebfc` | `REG[63]` |`31:0` | (r)/(w) | custom CFS register 63
 |=======================

@@ -64,16 +64,6 @@ end neorv32_xirq;
 
 architecture neorv32_xirq_rtl of neorv32_xirq is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(xirq_size_c); -- low address boundary bit
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
-  signal wren   : std_ulogic; -- word write enable
-  signal rden   : std_ulogic; -- read enable
-
   -- interface registers --
   signal irq_enable   : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0); -- r/w: channel enable
   signal nclr_pending : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0); -- r/w: pending IRQs
@@ -103,11 +93,6 @@ begin
 
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = xirq_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= xirq_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
 
   -- write access --
   write_access: process(rstn_i, clk_i)
@@ -117,11 +102,11 @@ begin
       irq_enable   <= (others => '0');
     elsif rising_edge(clk_i) then
       nclr_pending <= (others => '1');
-      if (wren = '1') then
-        if (addr = xirq_enable_addr_c) then -- channel-enable
+      if (bus_req_i.we = '1') then
+        if (bus_req_i.addr(3 downto 2) = "00") then -- channel-enable
           irq_enable <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0);
         end if;
-        if (addr = xirq_pending_addr_c) then -- clear pending IRQs
+        if (bus_req_i.addr(3 downto 2) = "01") then -- clear pending IRQs
           nclr_pending <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0); -- set zero to clear pending IRQ
         end if;
       end if;
@@ -132,13 +117,13 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= rden or wren; -- bus handshake
+      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus handshake
       bus_rsp_o.data <= (others => '0');
-      if (rden = '1') then
-        case addr is
-          when xirq_enable_addr_c  => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
-          when xirq_pending_addr_c => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_pending; -- pending IRQs
-          when others              => bus_rsp_o.data(4 downto 0)             <= irq_source; -- IRQ source
+      if (bus_req_i.re = '1') then
+        case bus_req_i.addr(3 downto 2) is
+          when "00"   => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
+          when "01"   => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_pending; -- pending IRQs
+          when others => bus_rsp_o.data(4 downto 0)             <= irq_source; -- IRQ source
         end case;
       end if;
     end if;
@@ -222,7 +207,7 @@ begin
           cpu_irq_o  <= '1';
           irq_active <= '1';
         end if;
-      elsif (wren = '1') and (addr = xirq_source_addr_c) then -- acknowledge on write access
+      elsif (bus_req_i.we = '1') and (bus_req_i.addr(3 downto 2) = "10") then -- acknowledge on write access
         irq_active <= '0';
       end if;
     end if;

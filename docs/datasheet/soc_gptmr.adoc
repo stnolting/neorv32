@@ -57,10 +57,10 @@ remains pending inside the CPU until it explicitly cleared by writing zero to th
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.4+<| `0xffffff60` .4+<| `CTRL` <|`0`    `GPTMR_CTRL_EN`                       ^| r/w <| Timer enable flag
+.4+<| `0xfffff100` .4+<| `CTRL` <|`0`    `GPTMR_CTRL_EN`                       ^| r/w <| Timer enable flag
                                 <|`3:1`  `GPTMR_CTRL_PRSC2 : GPTMR_CTRL_PRSC0` ^| r/w <| 3-bit clock prescaler select
                                 <|`4`    `GPTMR_CTRL_MODE`                     ^| r/w <| Counter mode: `0`=single-shot, `1`=continuous
                                 <|`31:5` -                                     ^| r/- <| _reserved_, read as zero
-| `0xffffff64` | `THRES` |`31:0` | r/w | Threshold value register
-| `0xffffff68` | `COUNT` |`31:0` | r/w | Counter register
+| `0xfffff104` | `THRES` |`31:0` | r/w | Threshold value register
+| `0xfffff108` | `COUNT` |`31:0` | r/w | Counter register
 |=======================

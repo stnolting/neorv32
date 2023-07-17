@@ -69,7 +69,7 @@ overlapping operation of fetch and execute) at a reduced hardware footprint (due
 As a Von-Neumann machine, the CPU provides independent interfaces for instruction fetch and data access. However,
 these two bus interfaces are merged into a single processor-internal bus via a prioritizing bus switch (data accesses
 have higher priority). Hence, _all_ memory addresses including peripheral devices are mapped to a single unified 32-bit
-address space (see section <<_cpu_data_and_instruction_access>>).
+<<_address_space>>.
 
 [NOTE]
 The CPU does not perform any speculative/out-of-order operations at all. Hence, it is not vulnerable to security issues
@@ -821,9 +821,9 @@ The processor-internal modules do not have to respond within a fixed cycle amoun
 However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window
 is defined by the global `max_proc_int_response_time_c` constant (default = 15 cycles; the processor's VHDL package file
 `rtl/neorv32_package.vhd`). It defines the maximum number of cycles after which a non-responding bus request (i.e. no `ack`
-and no `*err` signal) will **time out** and will raise a bus access fault exception. The <<_internal_bus_monitor_buskeeper>>
+and no `*err` signal) will **time out** and will raise a bus access fault exception. The memory GATEWAY
 keeps track of all bus transactions to enforce this time window. If any bus operations times out - for example when
-accessing "address space holes" - the BUSKEEPER will issue a bus error to the CPU that will raise the according bus
+accessing "address space holes" - the GATEWAY will issue a bus error to the CPU that will raise the according bus
 exception.
 
 .Access Boundaries

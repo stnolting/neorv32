@@ -128,36 +128,36 @@ of the user guide.
 === Project Folder Structure
 
 ...................................
-neorv32                - Project home folder
+neorv32                  - Project home folder
 │
-├docs                  - Project documentation
-│├datasheet            - AsciiDoc sources for the NEORV32 data sheet
-│├figures              - Figures and logos
-│├icons                - Misc. symbols
-│├references           - Data sheets and RISC-V specs.
-│└userguide            - AsciiDoc sources for the NEORV32 user guide
+├-docs                   - Project documentation
+│ ├-datasheet            - AsciiDoc sources for the NEORV32 data sheet
+│ ├-figures              - Figures and logos
+│ ├-icons                - Misc. symbols
+│ ├-references           - Data sheets and RISC-V specs.
+│ └-userguide            - AsciiDoc sources for the NEORV32 user guide
 │
-├rtl                   - VHDL sources
-│├core                 - Core sources of the CPU & SoC
-││└mem                 - SoC-internal memories (default architectures)
-│├processor_templates  - Pre-configured SoC wrappers
-│├system_integration   - System wrappers for advanced connectivity
-│└test_setups          - Minimal test setup "SoCs" used in the User Guide
+├-rtl                    - VHDL sources
+│ ├-core                 - Core sources of the CPU & SoC
+│ │ └-mem                - SoC-internal memories (default architectures)
+│ ├-processor_templates  - Pre-configured SoC wrappers
+│ ├-system_integration   - System wrappers for advanced connectivity
+│ └-test_setups          - Minimal test setup "SoCs" used in the User Guide
 │
-├sim                   - Simulation files (see User Guide)
+├-sim                    - Simulation files (see User Guide)
 │
-└sw                    - Software framework
- ├bootloader           - Sources of the processor-internal bootloader
- ├common               - Linker script, crt0.S start-up code and central makefile
- ├example              - Example programs for the core and the SoC modules
- │└...
- ├lib                  - Processor core library
- │├include             - Header files (*.h)
- │└source              - Source files (*.c)
- ├image_gen            - Helper program to generate NEORV32 executables
- ├ocd_firmware         - Firmware for the on-chip debugger's "park loop"
- ├openocd              - OpenOCD configuration files
- └svd                  - Processor system view description file (CMSIS-SVD)
+└-sw                     - Software framework
+  ├-bootloader           - Sources of the processor-internal bootloader
+  ├-common               - Linker script, crt0.S start-up code and central makefile
+  ├-example              - Example programs for the core and the SoC modules
+  │ └-...
+  ├-lib                  - Processor core library
+  │ ├-include            - Header files (*.h)
+  │ └-source             - Source files (*.c)
+  ├-image_gen            - Helper program to generate NEORV32 executables
+  ├-ocd_firmware         - Firmware for the on-chip debugger's "park loop"
+  ├-openocd              - OpenOCD configuration files
+  └-svd                  - Processor system view description file (CMSIS-SVD)
 ...................................
 
 
@@ -170,63 +170,70 @@ neorv32                - Project home folder
 All necessary VHDL hardware description files are located in the project's `rtl/core` folder. The top entity
 of the entire processor including all the required configuration generics is `neorv32_top.vhd`.
 
-.NEORV32 VHDL Library
+.Compile Order
+[IMPORTANT]
+Most of the RTL sources use **entity instantiation**. Hence, the RTL compile order might be relevant.
+The list below shows the hierarchical compile order srarting at the top.
+
+.VHDL Library
 [IMPORTANT]
 All core VHDL files from the list below have to be assigned to a new design library named `neorv32`.
 
 ...................................
-neorv32_top.vhd                  - NEORV32 Processor top entity
+
+┌-neorv32_package.vhd              - Processor/CPU main VHDL package file
+├-neorv32_fifo.vhd                 - Generic FIFO component
 │
-├neorv32_fifo.vhd                - General purpose FIFO component
-├neorv32_package.vhd             - Processor/CPU main VHDL package file
+│   ┌-neorv32_cpu_cp_bitmanip.vhd  - Bit-manipulation co-processor (B ext.)
+│   ├-neorv32_cpu_cp_cfu.vhd       - Custom instructions co-processor (Zxcfu ext.)
+│   ├-neorv32_cpu_cp_cond.vhd      - Conditional operations co-processor (Zicond ext.)
+│   ├-neorv32_cpu_cp_fpu.vhd       - Floating-point co-processor (Zfinx ext.)
+│   ├-neorv32_cpu_cp_shifter.vhd   - Bit-shift co-processor (base ISA)
+│   ├-neorv32_cpu_cp_muldiv.vhd    - Mul/Div co-processor (M ext.)
+│ ┌-neorv32_cpu_alu.vhd            - Arithmetic/logic unit
+│ ├-neorv32_cpu_bus.vhd            - Load/store unit + physical memory protection
+│ │ ┌-neorv32_cpu_decompressor.vhd - Compressed instructions decoder
+│ ├-neorv32_cpu_control.vhd        - CPU control, exception system and CSRs
+│ ├-neorv32_cpu_regfile.vhd        - Data register file
+├-neorv32_cpu.vhd                  - NEORV32 CPU top entity
 │
-├neorv32_cpu.vhd                 - NEORV32 CPU top entity
-│├neorv32_cpu_alu.vhd            - Arithmetic/logic unit
-││├neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
-││├neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
-││├neorv32_cpu_cp_cond.vhd       - Conditional operations co-processor (Zicond ext.)
-││├neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
-││├neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M ext.)
-││└neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
-│├neorv32_cpu_bus.vhd            - Load/store unit + physical memory protection
-│├neorv32_cpu_control.vhd        - CPU control, exception system and CSRs
-││└neorv32_cpu_decompressor.vhd  - Compressed instructions decoder
-│└neorv32_cpu_regfile.vhd        - Data register file
+├-mem/neorv32_dmem.default.vhd     - _Default_ data memory (architecture-only)
+├-mem/neorv32_imem.default.vhd     - _Default_ instruction memory (architecture-only)
 │
-├neorv32_boot_rom.vhd            - Bootloader ROM
-│└neorv32_bootloader_image.vhd   - Bootloader ROM memory image
-├neorv32_busswitch.vhd           - Processor bus switch for CPU buses (I&D)
-├neorv32_bus_keeper.vhd          - Processor-internal bus monitor
-├neorv32_cfs.vhd                 - Custom functions subsystem
-├neorv32_crc.vhd                 - Cyclic redundancy check unit
-├neorv32_dcache.vhd              - Processor-internal data cache
-├neorv32_debug_dm.vhd            - on-chip debugger: debug module
-├neorv32_debug_dtm.vhd           - on-chip debugger: debug transfer module
-├neorv32_dma.vhd                 - Direct memory access controller
-├neorv32_dmem.entity.vhd         - Processor-internal data memory (entity-only!)
-├neorv32_gpio.vhd                - General purpose input/output port unit
-├neorv32_gptmr.vhd               - General purpose 32-bit timer
-├neorv32_icache.vhd              - Processor-internal instruction cache
-├neorv32_imem.entity.vhd         - Processor-internal instruction memory (entity-only!)
-│└neor32_application_image.vhd   - IMEM application initialization image
-├neorv32_mtime.vhd               - Machine system timer
-├neorv32_neoled.vhd              - NeoPixel (TM) compatible smart LED interface
-├neorv32_onewire.vhd             - One-Wire serial interface controller
-├neorv32_pwm.vhd                 - Pulse-width modulation controller
-├neorv32_sdi.vhd                 - Serial data interface controller (SPI device)
-├neorv32_slink.vhd               - Stream link interface
-├neorv32_spi.vhd                 - Serial peripheral interface controller (SPI host)
-├neorv32_sysinfo.vhd             - System configuration information memory
-├neorv32_trng.vhd                - True random number generator
-├neorv32_twi.vhd                 - Two wire serial interface controller
-├neorv32_uart.vhd                - Universal async. receiver/transmitter
-├neorv32_wdt.vhd                 - Watchdog timer
-├neorv32_wishbone.vhd            - External (Wishbone) bus interface
-├neorv32_xip.vhd                 - Execute in place module
-├neorv32_xirq.vhd                - External interrupt controller
+│ ┌-neorv32_bootloader_image.vhd   - Bootloader ROM memory image
+├-neorv32_boot_rom.vhd             - Bootloader ROM
 │
-├mem/neorv32_dmem.default.vhd    - _Default_ data memory (architecture-only)
-└mem/neorv32_imem.default.vhd    - _Default_ instruction memory (architecture-only)
+│ ┌-neor32_application_image.vhd   - IMEM application initialization image
+├-neorv32_imem.entity.vhd          - Processor-internal instruction memory (entity-only!)
+│
+├neorv32_cfs.vhd                   - Custom functions subsystem
+├neorv32_crc.vhd                   - Cyclic redundancy check unit
+├neorv32_dcache.vhd                - Processor-internal data cache
+├neorv32_debug_dm.vhd              - on-chip debugger: debug module
+├neorv32_debug_dtm.vhd             - on-chip debugger: debug transfer module
+├neorv32_dma.vhd                   - Direct memory access controller
+├neorv32_dmem.entity.vhd           - Processor-internal data memory (entity-only!)
+├neorv32_gpio.vhd                  - General purpose input/output port unit
+├neorv32_gptmr.vhd                 - General purpose 32-bit timer
+├neorv32_icache.vhd                - Processor-internal instruction cache
+├neorv32_intercon.vhd              - SoC bus infrastructure
+├neorv32_mtime.vhd                 - Machine system timer
+├neorv32_neoled.vhd                - NeoPixel (TM) compatible smart LED interface
+├neorv32_onewire.vhd               - One-Wire serial interface controller
+├neorv32_pwm.vhd                   - Pulse-width modulation controller
+├neorv32_sdi.vhd                   - Serial data interface controller (SPI device)
+├neorv32_slink.vhd                 - Stream link interface
+├neorv32_spi.vhd                   - Serial peripheral interface controller (SPI host)
+├neorv32_sysinfo.vhd               - System configuration information memory
+├neorv32_trng.vhd                  - True random number generator
+├neorv32_twi.vhd                   - Two wire serial interface controller
+├neorv32_uart.vhd                  - Universal async. receiver/transmitter
+├neorv32_wdt.vhd                   - Watchdog timer
+├neorv32_wishbone.vhd              - External (Wishbone) bus interface
+├neorv32_xip.vhd                   - Execute in place module
+├neorv32_xirq.vhd                  - External interrupt controller
+│
+neorv32_top.vhd                    - NEORV32 Processor top entity
 ...................................
 
 [NOTE]
@@ -287,7 +294,7 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 [cols="<2,<8"]
 [grid="topbot"]
 |=======================
-| HW version:  | `1.6.8.3++`
+| HW version:  | `1.8.6.4`
 | Top entity:  | `rtl/core/neorv32_top.vhd`
 | FPGA:        | Intel Cyclone IV E `EP4CE22F17C6`
 | Toolchain:   | Quartus Prime Lite 21.1
@@ -298,35 +305,38 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 [cols="<2,<8,>1,>1,>2,>1"]
 [options="header",grid="rows"]
 |=======================
-| Module       | Description                                                    | LEs | FFs | MEM bits | DSPs
-| Boot ROM     | Bootloader ROM (4kB)                                           |   3 |   2 |    32768 |    0
-| BUSKEEPER    | Processor-internal bus monitor                                 |  28 |  15 |        0 |    0
-| CFS          | Custom functions subsystem footnote:[Resource utilization depends on custom design logic.] | - | - | - | -
-| CRC          | Cyclic redundancy check unit                                   | 135 | 117 |        0 |    0
-| DM           | On-chip debugger - debug module                                | 391 | 220 |        0 |    0
-| DMA          | Direct memory access controller                                | 313 | 257 |        0 |    0
-| DTM          | On-chip debugger - debug transfer module (JTAG)                | 259 | 221 |        0 |    0
-| DMEM         | Processor-internal data memory (8kB)                           |  18 |   2 |    65536 |    0
-| GPIO         | General purpose input/output ports                             | 102 |  98 |        0 |    0
-| GPTMR        | General Purpose Timer                                          | 153 | 105 |        0 |    0
-| iCACHE       | Instruction cache (2x4 blocks, 64 bytes per block)             | 417 | 294 |     4096 |    0
-| dCACHE       | Data cache (4 blocks, 64 bytes per block)                      | 308 | 167 |     2112 |    0
-| IMEM         | Processor-internal instruction memory (16kB)                   |  12 |   2 |   131072 |    0
-| MTIME        | Machine system timer                                           | 345 | 166 |        0 |    0
-| NEOLED       | Smart LED Interface (NeoPixel/WS28128) (FIFO_depth=1)          | 227 | 184 |        0 |    0
-| ONEWIRE      | 1-wire interface                                               | 107 |  77 |        0 |    0
-| PWM          | Pulse_width modulation controller (8 channels)                 | 128 | 117 |        0 |    0
-| SPI          | Serial peripheral interface                                    | 114 |  94 |        0 |    0
-| SLINK        | Stream link interface (RX/TX FIFO depth=32)                    | 104 |  73 |     2048 |    0
-| SDI          | Serial data interface                                          |  72 |  66 |        0 |    0
-| SYSINFO      | System configuration information memory                        |  13 |  11 |        0 |    0
-| TRNG         | True random number generator                                   |  89 |  79 |        0 |    0
-| TWI          | Two-wire interface                                             |  77 |  43 |        0 |    0
-| UART0, UART1 | Universal asynchronous receiver/transmitter 0/1 (FIFO_depth=1) | 195 | 143 |        0 |    0
-| WDT          | Watchdog timer                                                 |  61 |  46 |        0 |    0
-| WISHBONE     | External memory interface                                      | 120 | 112 |        0 |    0
-| XIP          | Execute in place module                                        | 318 | 244 |        0 |    0
-| XIRQ         | External interrupt controller (32 channels)                    | 245 | 200 |        0 |    0
+| Module           | Description                                                    | LEs | FFs | MEM bits | DSPs
+| BOOT ROM         | Bootloader ROM (4kB)                                           |   2 |   2 |    32768 |    0
+| BUSSWITCH (core) | _SoC bus infrastructure_                                       |  28 |  15 |        0 |    0
+| BUSSWITCH (DMA)  | _SoC bus infrastructure_                                       | 159 |   9 |        0 |    0
+| CFS              | Custom functions subsystem footnote:[Resource utilization depends on custom design logic.] | - | - | - | -
+| CRC              | Cyclic redundancy check unit                                   | 130 | 117 |        0 |    0
+| dCACHE           | Data cache (4 blocks, 64 bytes per block)                      | 300 | 167 |     2112 |    0
+| DM               | On-chip debugger - debug module                                | 377 | 241 |        0 |    0
+| DTM              | On-chip debugger - debug transfer module (JTAG)                | 262 | 220 |        0 |    0
+| DMA              | Direct memory access controller                                | 365 | 291 |        0 |    0
+| DMEM             | Processor-internal data memory (8kB)                           |   6 |   2 |    65536 |    0
+| Gateway          | _SoC bus infrastructure_                                       | 215 |  91 |        0 |    0
+| GPIO             | General purpose input/output ports                             | 102 |  98 |        0 |    0
+| GPTMR            | General Purpose Timer                                          | 150 | 105 |        0 |    0
+| IO Switch        | _SoC bus infrastructure_                                       | 217 |   0 |        0 |    0
+| iCACHE           | Instruction cache (2x4 blocks, 64 bytes per block)             | 458 | 296 |     4096 |    0
+| IMEM             | Processor-internal instruction memory (16kB)                   |   7 |   2 |   131072 |    0
+| MTIME            | Machine system timer                                           | 307 | 166 |        0 |    0
+| NEOLED           | Smart LED Interface (NeoPixel/WS28128) (FIFO_depth=1)          | 171 | 129 |        0 |    0
+| ONEWIRE          | 1-wire interface                                               | 105 |  77 |        0 |    0
+| PWM              | Pulse_width modulation controller (4 channels)                 |  91 |  81 |        0 |    0
+| SDI              | Serial data interface                                          | 103 |  77 |      512 |    0
+| SLINK            | Stream link interface (RX/TX FIFO depth=32)                    |  96 |  73 |     2048 |    0
+| SPI              | Serial peripheral interface                                    | 137 |  97 |     1024 |    0
+| SYSINFO          | System configuration information memory                        |  11 |  11 |        0 |    0
+| TRNG             | True random number generator                                   | 140 | 108 |      512 |    0
+| TWI              | Two-wire interface                                             |  93 |  64 |        0 |    0
+| UART0, UART1     | Universal asynchronous receiver/transmitter 0/1 (FIFO_depth=1) | 222 | 142 |     1024 |    0
+| WDT              | Watchdog timer                                                 | 107 |  89 |        0 |    0
+| WISHBONE         | External memory interface                                      | 122 | 112 |        0 |    0
+| XIP              | Execute in place module                                        | 369 | 276 |        0 |    0
+| XIRQ             | External interrupt controller (4 channels)                     |  35 |  29 |        0 |    0
 |=======================
 
 

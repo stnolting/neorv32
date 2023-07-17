@@ -100,29 +100,11 @@ end neorv32_sysinfo;
 
 architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(sysinfo_size_c); -- low address boundary bit
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal rden   : std_ulogic;
-  signal wren   : std_ulogic;
-  signal addr   : std_ulogic_vector(2 downto 0);
-
   -- system information ROM --
   type info_mem_t is array (0 to 7) of std_ulogic_vector(31 downto 0);
   signal sysinfo : info_mem_t;
 
 begin
-
-  -- Access Control -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = sysinfo_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= bus_req_i.addr(index_size_f(sysinfo_size_c)-1 downto 2);
-  rden   <= acc_en and bus_req_i.re; -- read access
-  wren   <= acc_en and bus_req_i.we; -- write access
-
 
   -- Construct Info ROM ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -181,10 +163,10 @@ begin
   sysinfo(3)(31 downto 28) <= (others => '0'); -- d-cache: replacement strategy
 
   -- SYSINFO(4): Base address of instruction memory space --
-  sysinfo(4) <= ispace_base_c; -- defined in neorv32_package.vhd file
+  sysinfo(4) <= mem_ispace_base_c; -- defined in neorv32_package.vhd file
 
   -- SYSINFO(5): Base address of data memory space --
-  sysinfo(5) <= dspace_base_c; -- defined in neorv32_package.vhd file
+  sysinfo(5) <= mem_dspace_base_c; -- defined in neorv32_package.vhd file
 
   -- SYSINFO(6): Size of IMEM in bytes --
   sysinfo(6) <= std_ulogic_vector(to_unsigned(MEM_INT_IMEM_SIZE, 32)) when (MEM_INT_IMEM_EN = true) else (others => '0');
@@ -198,11 +180,11 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= rden;
-      bus_rsp_o.err  <= wren; -- read-only!
+      bus_rsp_o.ack  <= bus_req_i.re;
+      bus_rsp_o.err  <= bus_req_i.we; -- read-only!
       bus_rsp_o.data <= (others => '0');
-      if (rden = '1') then
-        bus_rsp_o.data <= sysinfo(to_integer(unsigned(addr)));
+      if (bus_req_i.re = '1') then
+        bus_rsp_o.data <= sysinfo(to_integer(unsigned(bus_req_i.addr(4 downto 2))));
       end if;
     end if;
   end process read_access;

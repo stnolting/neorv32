@@ -57,15 +57,6 @@ end neorv32_dma;
 
 architecture neorv32_dma_rtl of neorv32_dma is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(dma_size_c); -- low address boundary bit
-
-  -- control access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal wren   : std_ulogic; -- word write enable
-  signal rden   : std_ulogic; -- read enable
-
   -- transfer type register bits --
   constant type_num_lo_c  : natural :=  0; -- r/w: Number of elements to transfer, LSB
   constant type_num_hi_c  : natural := 23; -- r/w: Number of elements to transfer, MSB
@@ -140,11 +131,6 @@ begin
   -- Control Interface -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
-  -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = dma_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
-
   -- write access --
   write_access: process(rstn_i, clk_i)
   begin
@@ -162,7 +148,7 @@ begin
       config.start     <= '0';
     elsif rising_edge(clk_i) then
       config.start <= '0'; -- default
-      if (wren = '1') then
+      if (bus_req_i.we = '1') then
         if (bus_req_i.addr(3 downto 2) = "00") then -- control and status register
           config.enable    <= bus_req_i.data(ctrl_en_c);
           config.auto      <= bus_req_i.data(ctrl_auto_c);
@@ -190,9 +176,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= rden or wren; -- bus access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (rden = '1') then
+      if (bus_req_i.re = '1') then
         case bus_req_i.addr(3 downto 2) is
           when "00" => -- control and status register
             bus_rsp_o.data(ctrl_en_c)       <= config.enable;

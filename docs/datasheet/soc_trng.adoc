@@ -71,7 +71,7 @@ an active TRNG interrupt has to be explicitly cleared again by writing zero to t
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.11+<| `0xffffffb8` .11+<| `CTRL` <|`7:0`   `TRNG_CTRL_DATA_MSB : TRNG_CTRL_DATA_MSB` ^| r/- <| 8-bit random data
+.11+<| `0xfffffa00` .11+<| `CTRL` <|`7:0`   `TRNG_CTRL_DATA_MSB : TRNG_CTRL_DATA_MSB` ^| r/- <| 8-bit random data
                                   <|`15:8`   -                                        ^| r/- <| reserved, read as zero
                                   <|`19:16` `TRNG_CTRL_FIFO_MSB : TRNG_CTRL_FIFO_MSB` ^| r/- <| FIFO depth, log2(`IO_TRNG_FIFO`)
                                   <|`25:20`  -                                        ^| r/- <| reserved, read as zero

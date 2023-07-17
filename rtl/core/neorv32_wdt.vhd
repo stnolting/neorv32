@@ -65,10 +65,6 @@ end neorv32_wdt;
 
 architecture neorv32_wdt_rtl of neorv32_wdt is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(wdt_size_c); -- low address boundary bit
-
   -- Control register bits --
   constant ctrl_enable_c      : natural :=  0; -- r/w: WDT enable
   constant ctrl_lock_c        : natural :=  1; -- r/w: lock write access to control register when set
@@ -79,11 +75,6 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   --
   constant ctrl_timeout_lsb_c : natural :=  8; -- r/w: timeout value LSB
   constant ctrl_timeout_msb_c : natural := 31; -- r/w: timeout value MSB
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal wren   : std_ulogic;
-  signal rden   : std_ulogic;
 
   -- control register --
   type ctrl_t is record
@@ -114,10 +105,6 @@ begin
 
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = wdt_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
 
   -- write access --
   write_access: process(rstn_int_i, clk_i)
@@ -131,7 +118,7 @@ begin
       ctrl.timeout <= (others => '0');
     elsif rising_edge(clk_i) then
       ctrl.reset <= '0'; -- default
-      if (wren = '1') then
+      if (bus_req_i.we = '1') then
         ctrl.reset <= bus_req_i.data(ctrl_reset_c);
         if (ctrl.lock = '0') then -- update configuration only if not locked
           ctrl.enable  <= bus_req_i.data(ctrl_enable_c);
@@ -148,9 +135,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= rden or wren;
+      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we;
       bus_rsp_o.data <= (others => '0');
-      if (rden = '1') then
+      if (bus_req_i.re = '1') then
         bus_rsp_o.data(ctrl_enable_c)                                <= ctrl.enable;
         bus_rsp_o.data(ctrl_lock_c)                                  <= ctrl.lock;
         bus_rsp_o.data(ctrl_dben_c)                                  <= ctrl.dben;

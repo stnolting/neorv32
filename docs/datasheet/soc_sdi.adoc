@@ -82,7 +82,7 @@ Furthermore, an active SDI interrupt has to be explicitly cleared again by writi
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.16+<| `0xfffffff0` .16+<| `CTRL` <|`0`     `SDI_CTRL_EN`                           ^| r/w <| SDI module enable
+.16+<| `0xfffff700` .16+<| `CTRL` <|`0`     `SDI_CTRL_EN`                           ^| r/w <| SDI module enable
                                   <|`1`     `SDI_CTRL_CLR_RX`                       ^| -/w <| clear RX FIFO when set, bit auto-clears
                                   <|`3:2`   _reserved_                              ^| r/- <| reserved, read as zero
                                   <|`7:4`   `SDI_CTRL_FIFO_MSB : SDI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(_IO_SDI_FIFO_)
@@ -98,5 +98,5 @@ Furthermore, an active SDI interrupt has to be explicitly cleared again by writi
                                   <|`26`    `SDI_CTRL_TX_EMPTY`                     ^| r/- <| TX FIFO empty
                                   <|`27`    `SDI_CTRL_TX_FULL`                      ^| r/- <| TX FIFO full
                                   <|`31:28` _reserved_                              ^| r/- <| reserved, read as zero
-| `0xfffffff4` | `DATA` |`7:0` | r/w | receive/transmit data (FIFO)
+| `0xfffff704` | `DATA` |`7:0` | r/w | receive/transmit data (FIFO)
 |=======================

@@ -71,16 +71,6 @@ end neorv32_neoled;
 
 architecture neorv32_neoled_rtl of neorv32_neoled is
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(neoled_size_c); -- low address boundary bit
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
-  signal wren   : std_ulogic; -- word write enable
-  signal rden   : std_ulogic; -- read enable
-
   -- Control register bits --
   constant ctrl_en_c       : natural :=  0; -- r/w: module enable
   constant ctrl_mode_c     : natural :=  1; -- r/w: 0 = 24-bit RGB mode, 1 = 32-bit RGBW mode
@@ -175,12 +165,6 @@ begin
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
-  -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = neoled_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= neoled_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
-
   -- write access --
   write_access: process(rstn_i, clk_i)
   begin
@@ -194,7 +178,7 @@ begin
       ctrl.t0_high  <= (others => '0');
       ctrl.t1_high  <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (wren = '1') and (addr = neoled_ctrl_addr_c) then
+      if (bus_req_i.we = '1') and (bus_req_i.addr(2) = '0') then
         ctrl.enable   <= bus_req_i.data(ctrl_en_c);
         ctrl.mode     <= bus_req_i.data(ctrl_mode_c);
         ctrl.strobe   <= bus_req_i.data(ctrl_strobe_c);
@@ -211,9 +195,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= wren or rden; -- access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.we or bus_req_i.re; -- access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (rden = '1') then -- and (addr = neoled_ctrl_addr_c) then
+      if (bus_req_i.re = '1') then
         bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
         bus_rsp_o.data(ctrl_mode_c)                          <= ctrl.mode;
         bus_rsp_o.data(ctrl_strobe_c)                        <= ctrl.strobe;
@@ -265,7 +249,7 @@ begin
   );
 
   tx_fifo.re    <= '1' when (serial.state = "100") else '0';
-  tx_fifo.we    <= '1' when (wren = '1') and (addr = neoled_data_addr_c) else '0';
+  tx_fifo.we    <= '1' when (bus_req_i.we = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.wdata <= ctrl.strobe & ctrl.mode & bus_req_i.data;
   tx_fifo.clear <= not ctrl.enable;
 

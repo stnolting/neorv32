@@ -85,15 +85,6 @@ architecture neorv32_trng_rtl of neorv32_trng is
   constant ctrl_en_c            : natural := 30; -- r/w: TRNG enable
   constant ctrl_valid_c         : natural := 31; -- r/-: Output data valid
 
-  -- IO space: module base address --
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(trng_size_c); -- low address boundary bit
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal wren   : std_ulogic; -- full word write enable
-  signal rden   : std_ulogic; -- read enable
-
   -- Component: neoTRNG true random number generator --
   component neoTRNG
     generic (
@@ -148,11 +139,6 @@ begin
   -- Write Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
-  -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = trng_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  wren   <= acc_en and bus_req_i.we;
-  rden   <= acc_en and bus_req_i.re;
-
   -- write access --
   write_access: process(rstn_i, clk_i)
   begin
@@ -164,7 +150,7 @@ begin
       irq_fifo_full   <= '0';
     elsif rising_edge(clk_i) then
       fifo_clr <= '0'; -- auto-clear
-      if (wren = '1') then
+      if (bus_req_i.we = '1') then
         enable          <= bus_req_i.data(ctrl_en_c);
         fifo_clr        <= bus_req_i.data(ctrl_fifo_clr_c);
         irq_fifo_nempty <= bus_req_i.data(ctrl_irq_fifo_nempty);
@@ -178,9 +164,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= wren or rden; -- host bus acknowledge
+      bus_rsp_o.ack  <= bus_req_i.we or bus_req_i.re; -- host bus acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (rden = '1') then
+      if (bus_req_i.re = '1') then
         bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
         --
         bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_TRNG_FIFO), 4));
@@ -245,7 +231,7 @@ begin
   );
 
   fifo.clear <= '1' when (enable = '0') or (fifo_clr = '1') else '0';
-  fifo.re    <= '1' when (rden = '1') else '0';
+  fifo.re    <= '1' when (bus_req_i.re = '1') else '0';
 
   -- FIFO-level interrupt generator --
  irq_generator: process(clk_i)

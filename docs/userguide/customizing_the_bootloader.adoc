@@ -37,7 +37,6 @@ minimal base + privileged ISA `rv32i_zicsr` only to ensure it can work independe
 | `SPI_BOOT_BASE_ADDR`    | `0x00400000`        | _any_ 32-bit value | Defines the _base_ address of the executable in external flash
 4+^| XIP configuration
 | `XIP_EN`                | `0` | `0`, `1`      | Set `1` to enable the XIP options
-| `XIP_PAGE_BASE_ADDR`    | `0x40000000`        | _any_ 32-bit value | Defines the page _base_ address where the XP flash will be mapped to
 |=======================
 
 [NOTE]

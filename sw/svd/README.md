@@ -1,6 +1,6 @@
 # NEORV32 System View Description (SVD) File
 
-Manually created from `sw/lib/include/neorv32.h`.
+Manually created from `sw/lib/include/*.
 
 * Format: CMSIS-SVD
 * Copyright by ARM Ltd, Apache-2.0 License 

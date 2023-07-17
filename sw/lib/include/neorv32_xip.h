@@ -73,11 +73,9 @@ enum NEORV32_XIP_CTRL_enum {
   XIP_CTRL_XIP_ABYTES_MSB = 12, /**< XIP control register(12) (r/w): Number XIP address bytes (minus 1), MSB */
   XIP_CTRL_RD_CMD_LSB     = 13, /**< XIP control register(13) (r/w): SPI flash read command, LSB */
   XIP_CTRL_RD_CMD_MSB     = 20, /**< XIP control register(20) (r/w): SPI flash read command, MSB */
-  XIP_CTRL_PAGE_LSB       = 21, /**< XIP control register(21) (r/w): XIP memory page, LSB */
-  XIP_CTRL_PAGE_MSB       = 24, /**< XIP control register(24) (r/w): XIP memory page, MSB */
-  XIP_CTRL_SPI_CSEN       = 25, /**< XIP control register(25) (r/w): SPI chip-select enable */
-  XIP_CTRL_HIGHSPEED      = 26, /**< XIP control register(26) (r/w): SPI high-speed mode enable (ignoring XIP_CTRL_PRSC) */
-  XIP_CTRL_BURST_EN       = 27, /**< XIP control register(27) (r/w): Enable XIP burst mode */
+  XIP_CTRL_SPI_CSEN       = 21, /**< XIP control register(21) (r/w): SPI chip-select enable */
+  XIP_CTRL_HIGHSPEED      = 22, /**< XIP control register(22) (r/w): SPI high-speed mode enable (ignoring XIP_CTRL_PRSC) */
+  XIP_CTRL_BURST_EN       = 23, /**< XIP control register(23) (r/w): Enable XIP burst mode */
 
   XIP_CTRL_PHY_BUSY       = 30, /**< XIP control register(20) (r/-): SPI PHY is busy */
   XIP_CTRL_XIP_BUSY       = 31  /**< XIP control register(31) (r/-): XIP access in progress */
@@ -91,7 +89,7 @@ enum NEORV32_XIP_CTRL_enum {
 /**@{*/
 int  neorv32_xip_available(void);
 void neorv32_xip_setup(int prsc, int cpol, int cpha, uint8_t rd_cmd);
-int  neorv32_xip_start(int abytes, uint32_t page_base);
+int  neorv32_xip_start(int abytes);
 void neorv32_xip_highspeed_enable(void);
 void neorv32_xip_highspeed_disable(void);
 void neorv32_xip_burst_mode_enable(void);

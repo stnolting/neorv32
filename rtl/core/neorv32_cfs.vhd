@@ -67,33 +67,12 @@ end neorv32_cfs;
 
 architecture neorv32_cfs_rtl of neorv32_cfs is
 
-  -- IO space: module base address --
-  -- WARNING: Do not modify the CFS base address or the CFS' occupied address
-  -- space as this might cause access collisions with other processor modules.
-  constant hi_abb_c : natural := index_size_f(io_size_c)-1; -- high address boundary bit
-  constant lo_abb_c : natural := index_size_f(cfs_size_c); -- low address boundary bit
-
-  -- access control --
-  signal acc_en : std_ulogic; -- module access enable
-  signal addr   : std_ulogic_vector(31 downto 0); -- access address
-  signal wren   : std_ulogic; -- word write enable
-  signal rden   : std_ulogic; -- read enable
-
   -- default CFS interface registers --
   type cfs_regs_t is array (0 to 3) of std_ulogic_vector(31 downto 0); -- just implement 4 registers for this example
   signal cfs_reg_wr : cfs_regs_t; -- interface registers for WRITE accesses
   signal cfs_reg_rd : cfs_regs_t; -- interface registers for READ accesses
 
 begin
-
-  -- Access Control -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- This logic is required to handle the CPU accesses - DO NOT MODIFY!
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = cfs_base_c(hi_abb_c downto lo_abb_c)) else '0';
-  addr   <= cfs_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
-  wren   <= acc_en and bus_req_i.we; -- only full-word write accesses are supported
-  rden   <= acc_en and bus_req_i.re; -- read accesses always return a full 32-bit word
-
 
   -- CFS Generics ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -210,33 +189,33 @@ begin
       -- transfer/access acknowledge --
       -- default: required for the CPU to check the CFS is answering a bus read OR write request;
       -- all read and write accesses (to any cfs_reg, even if there is no according physical register implemented) will succeed.
-      bus_rsp_o.ack <= rden or wren;
+      bus_rsp_o.ack <= bus_req_i.re or bus_req_i.we;
 
       -- write access --
-      if (wren = '1') then -- full-word write access, high for one cycle if there is an actual write access
-        if (addr = cfs_reg0_addr_c) then -- make sure to use the internal "addr" signal for the read/write interface
+      if (bus_req_i.we = '1') then -- full-word write access, high for one cycle if there is an actual write access
+        if (bus_req_i.addr(7 downto 2) = "000000") then -- make sure to use the internal "addr" signal for the read/write interface
           cfs_reg_wr(0) <= bus_req_i.data; -- some physical register, for example: control register
         end if;
-        if (addr = cfs_reg1_addr_c) then
+        if (bus_req_i.addr(7 downto 2) = "000001") then
           cfs_reg_wr(1) <= bus_req_i.data; -- some physical register, for example: data in/out fifo
         end if;
-        if (addr = cfs_reg2_addr_c) then
+        if (bus_req_i.addr(7 downto 2) = "000010") then
           cfs_reg_wr(2) <= bus_req_i.data; -- some physical register, for example: command fifo
         end if;
-        if (addr = cfs_reg3_addr_c) then
+        if (bus_req_i.addr(7 downto 2) = "000011") then
           cfs_reg_wr(3) <= bus_req_i.data; -- some physical register, for example: status register
         end if;
       end if;
 
       -- read access --
       bus_rsp_o.data <= (others => '0'); -- the output HAS TO BE ZERO if there is no actual read access
-      if (rden = '1') then -- the read access is always 32-bit wide, high for one cycle if there is an actual read access
-        case addr is -- make sure to use the internal 'addr' signal for the read/write interface
-          when cfs_reg0_addr_c => bus_rsp_o.data <= cfs_reg_rd(0);
-          when cfs_reg1_addr_c => bus_rsp_o.data <= cfs_reg_rd(1);
-          when cfs_reg2_addr_c => bus_rsp_o.data <= cfs_reg_rd(2);
-          when cfs_reg3_addr_c => bus_rsp_o.data <= cfs_reg_rd(3);
-          when others          => bus_rsp_o.data <= (others => '0'); -- the remaining registers are not implemented and will read as zero
+      if (bus_req_i.re = '1') then -- the read access is always 32-bit wide, high for one cycle if there is an actual read access
+        case bus_req_i.addr(7 downto 2) is -- make sure to use the internal 'addr' signal for the read/write interface
+          when "000000" => bus_rsp_o.data <= cfs_reg_rd(0);
+          when "000001" => bus_rsp_o.data <= cfs_reg_rd(1);
+          when "000010" => bus_rsp_o.data <= cfs_reg_rd(2);
+          when "000011" => bus_rsp_o.data <= cfs_reg_rd(3);
+          when others   => bus_rsp_o.data <= (others => '0'); -- the remaining registers are not implemented and will read as zero
         end case;
       end if;
     end if;
