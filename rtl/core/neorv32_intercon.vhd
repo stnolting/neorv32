@@ -404,8 +404,8 @@ begin
     boot_req_o.re <= main_req_i.re and port_en(port_boot_c);
     --
     io_req        <= main_req_i;
-    io_req.we     <= main_req_i.we and port_en(port_io_c) and and_reduce_f(main_req_i.ben) ; -- PMA: 32-bit writes only
-    io_req.re     <= main_req_i.re and port_en(port_io_c) and (not main_req_i.src); -- PMA: no-execute
+    io_req.we     <= main_req_i.we and port_en(port_io_c);-- and and_reduce_f(main_req_i.ben) ; -- PMA: 32-bit writes only
+    io_req.re     <= main_req_i.re and port_en(port_io_c);-- and (not main_req_i.src); -- PMA: no-execute
     --
     ext_req_o     <= main_req_i;
     ext_req_o.we  <= main_req_i.we and port_en(port_ext_c);

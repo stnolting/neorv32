@@ -471,7 +471,7 @@ image::address_space.png[900]
 | 2 | Data address space          | `rwx` | For application runtime data (heap, stack, etc.). A configurable section of this address space can be used by the internal <<_data_memory_dmem>>). Code can also be executed from data memory.
 | 3 | Memory-mapped XIP flash     | `r-x` | Memory-mapped access to the <<_execute_in_place_module_xip>> SPI flash.
 | 4 | Bootloader address space    | `r-x` | Read-only memory for the internal <<_bootloader_rom_bootrom>> containing the default <<_bootloader>>.
-| 5 | IO/peripheral address space | `rw-` | Processor-internal peripherals / IO devices. These devices can only be written in full 32-bit (word) quantities.
+| 5 | IO/peripheral address space | `rwx` | Processor-internal peripherals / IO devices.
 | 6 | The "void"                  | `rwx` | Unmapped address space. All accesses to this region(s) are redirected to the <<_processor_external_memory_interface_wishbone>>.
 |=======================
 
@@ -573,9 +573,8 @@ The occupied address space has to be a power of two (minimum 4 bytes). Addresses
 
 .Full-Word Write Accesses Only
 [IMPORTANT]
-All peripheral/IO devices can only be written in full-word mode (i.e. 32-bit). Byte or half-word (8/16-bit) write accesses
-will raise a store access fault exception. Read accesses are not size constrained. Processor-internal memories as well as
-modules connected to the external memory interface can be written with arbitrary granularity.
+All peripheral/IO devices should only be written in full-word mode (i.e. 32-bit). Byte or half-word (8/16-bit) write accesses
+might cause undefined behavior.
 
 .IO Module's Address Space
 [IMPORTANT]
