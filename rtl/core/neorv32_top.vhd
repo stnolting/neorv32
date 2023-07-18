@@ -1100,7 +1100,7 @@ begin
     if (IO_UART0_EN = true) generate
       neorv32_uart0_inst: entity neorv32.neorv32_uart
       generic map (
-        UART_PRIMARY => true,
+        SIM_LOG_FILE => "neorv32.uart0.sim_mode.text.out",
         UART_RX_FIFO => IO_UART0_RX_FIFO,
         UART_TX_FIFO => IO_UART0_TX_FIFO
       )
@@ -1137,7 +1137,7 @@ begin
     if (IO_UART1_EN = true) generate
       neorv32_uart1_inst: entity neorv32.neorv32_uart
       generic map (
-        UART_PRIMARY => false,
+        SIM_LOG_FILE => "neorv32.uart1.sim_mode.text.out",
         UART_RX_FIFO => IO_UART1_RX_FIFO,
         UART_TX_FIFO => IO_UART1_TX_FIFO
       )

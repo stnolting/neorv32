@@ -88,7 +88,7 @@ see section <<_faster_simulation_console_output>>.
 :sectnums:
 === Faster Simulation Console Output
 
-When printing data via the UART the communication speed will always be based on the configured BAUD
+When printing data via the physical UART the communication speed will always be based on the configured BAUD
 rate. For a simulation this might take some time. To have faster output you can enable the **simulation mode**
 for UART0/UART1 (see section https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0[Documentation: Primary Universal Asynchronous Receiver and Transmitter (UART0)]).
 
@@ -96,7 +96,6 @@ ASCII data sent to UART0|UART1 will be immediately printed to the simulator cons
 execution directory:
 
 * `neorv32.uart?.sim_mode.text.out`: ASCII data.
-* `neorv32.uart?.sim_mode.data.out`: all written 32-bit dumped as 8-char hexadecimal values.
 
 You can "automatically" enable the simulation mode of UART0/UART1 when compiling an application.
 In this case, the "real" UART0/UART1 transmitter unit is permanently disabled.

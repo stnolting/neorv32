@@ -53,7 +53,7 @@ _**Baud rate**_ = (_f~main~[Hz]_ / `clock_prescaler`) / (`baud_div` + 1)
 The control register's `UART_CTRL_RX_*` and `UART_CTRL_TX_*` flags provide information about the RX and TX FIFO fill level.
 Disabling the module via the `UART_CTRL_EN` bit will also clear these FIFOs.
 
-A new TX transmission is started by writing data to the lowest byte of the `DATA` register. The
+A new TX transmission is started by writing to the `DATA` register. The
 transfer is completed when the `UART_CTRL_TX_BUSY` control register flag returns to zero. RX data is available when
 the `UART_CTRL_RX_NEMPTY` flag becomes set. The `UART_CTRL_RX_OVER` will be set if the RX FIFO overflows. This flag
 is cleared by reading the `DATA` register or by disabling the module.
@@ -106,11 +106,8 @@ unconnected. If the CTS handshake is not required it has to be tied to zero.
 
 The UART provides a _simulation-only_ mode to dump console data as well as raw data directly to a file. When the simulation
 mode is enabled (by setting the `UART_CTRL_SIM_MODE` bit) there will be **no** physical transaction on the `uart0_txd_o` signal.
-Instead, all data written to the `DATA` register is immediately dumped to a file.
-
-. Data written to `DATA[7:0]` will be dumped as ASCII chars to a file named `neorv32.uart0.sim_mode.text.out`. Additionally,
-the ASCII data is printed to the simulator console.
-. Data written to `DATA[31:0]` will be dumped as 8-chars ASCII hexadecimal value to a file named `neorv32.uart0.sim_mode.data.out`.
+Instead, all data written to the `DATA` register is immediately dumped to a file. Data written to `DATA[7:0]` will be dumped as
+ASCII chars to a file named `neorv32.uart0.sim_mode.text.out`. Additionally, the ASCII data is printed to the simulator console.
 
 Both file are created in the simulation's home folder.
 
@@ -141,11 +138,10 @@ Both file are created in the simulation's home folder.
                                   <|`29:27` -                                   ^| r/- <| _reserved_ read as zero
                                   <|`30`    `UART_CTRL_RX_OVER`                 ^| r/- <| RX FIFO overflow
                                   <|`31`    `UART_CTRL_TX_BUSY`                 ^| r/- <| TX busy or TX FIFO not empty
-.5+<| `0xfffff504` .3+<| `DATA` <|`7:0`   `UART_DATA_RTX_MSB : UART_DATA_RTX_LSB`                   ^| r/w <| receive/transmit data
+.4+<| `0xfffff504` .4+<| `DATA` <|`7:0`   `UART_DATA_RTX_MSB : UART_DATA_RTX_LSB`                   ^| r/w <| receive/transmit data
                                 <|`11:8`  `UART_DATA_RX_FIFO_SIZE_MSB : UART_DATA_RX_FIFO_SIZE_LSB` ^| r/- <| log2(RX FIFO size)
                                 <|`15:12` `UART_DATA_TX_FIFO_SIZE_MSB : UART_DATA_TX_FIFO_SIZE_LSB` ^| r/- <| log2(RX FIFO size)
                                 <|`31:16` ^| r/- <| _reserved_, read as zero
-                                <|`31:0`  ^| -/w <| **simulation data output**
 |=======================
 
 
@@ -184,9 +180,7 @@ as for the primary UART. The RX and TX interrupts of UART1 are mapped to differe
 **Simulation Mode**
 
 The secondary UART (UART1) provides the same simulation options as the primary UART (UART0). However, output data is
-written to UART1-specific files: `neorv32.uart1.sim_mode.text.out` is used to dump plain ASCII text. This data is also
-printed to the simulator console. `neorv32.uart1.sim_mode.data.out` is used to dump full 32-bit hexadecimal ASCII-chars
-data words.
+written to UART1-specific file `neorv32.uart1.sim_mode.text.out`. This data is also printed to the simulator console.
 
 
 **Register Map**

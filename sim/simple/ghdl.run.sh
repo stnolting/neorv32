@@ -8,12 +8,11 @@ echo "Tip: Compile application with USER_FLAGS+=-DUART[0/1]_SIM_MODE to auto-ena
 
 # Prepare simulation output files for UART0 and UART 1
 # - Testbench receiver log file (neorv32.testbench_uart?.out)
-# - Direct simulation output (neorv32.uart?.sim_mode.[text|data].out)
+# - Direct simulation output (neorv32.uart?.sim_mode.text.out)
 for uart in 0 1; do
   for item in \
     testbench_uart"$uart" \
-    uart"$uart".sim_mode.text \
-    uart"$uart".sim_mode.data; do
+    uart"$uart".sim_mode.text; do
     touch neorv32."$item".out
     chmod 777 neorv32."$item".out
   done
