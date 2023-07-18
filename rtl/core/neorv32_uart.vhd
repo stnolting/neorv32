@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Universal Asynchronous Receiver and Transmitter (UART0/1) >>                     #
+-- # << NEORV32 - Universal Asynchronous Receiver and Transmitter (UART) >>                        #
 -- # ********************************************************************************************* #
 -- # Frame configuration: 1 start bit, 8 bit data, parity bit (none/even/odd), 1 stop bit,         #
 -- # programmable BAUD rate via clock pre-scaler and 12-bit BAUD value configuration register,     #
@@ -11,19 +11,11 @@
 -- # * uart_rts_o = 0: RX is ready to receive a new char, enabled via CTRL.ctrl_rts_en_c           #
 -- # * uart_cts_i = 0: TX is allowed to send a new char, enabled via CTRL.ctrl_cts_en_c            #
 -- #                                                                                               #
--- # UART0 / UART1:                                                                                #
--- # This module is used for implementing UART0 and UART1. The UART_PRIMARY generic configures the #
--- # interface register addresses and simulation outputs for UART0 (UART_PRIMARY = true) or UART1  #
--- # (UART_PRIMARY = false).                                                                       #
--- #                                                                                               #
 -- # SIMULATION MODE:                                                                              #
 -- # When the simulation mode is enabled (setting the ctrl.ctrl_sim_en_c bit) any write            #
--- # access to the TX register will not trigger any UART activity. Instead, the written data is    #
--- # output to the simulation environment. The lowest 8 bits of the written data are printed as    #
--- # ASCII char to the simulator console.                                                          #
--- # This char is also stored to the file "neorv32.uartX.sim_mode.text.out" (where X = 0 for UART0 #
--- # and X = 1 for UART1). The full 32-bit write data is also stored as 8-digit hexadecimal value  #
--- # to the file "neorv32.uartX.sim_mode.data.out" (where X = 0 for UART0 and X = 1 for UART1).    #
+-- # access to the TX register will not trigger any physical UART activity. Instead, the written   #
+-- # data is output to the simulation environment. The lowest 8 bits of the TX data are printed    #
+-- # as ASCII char to the simulator console. This char is also stored to the file <SIM_LOG_FILE> . #
 -- # No interrupts are triggered when in SIMULATION MODE.                                          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
@@ -67,7 +59,7 @@ use std.textio.all;
 
 entity neorv32_uart is
   generic (
-    UART_PRIMARY : boolean; -- true = primary UART (UART0), false = secondary UART (UART1)
+    SIM_LOG_FILE : string;  -- name of SM mode's log file
     UART_RX_FIFO : natural; -- RX fifo depth, has to be a power of two, min 1
     UART_TX_FIFO : natural  -- TX fifo depth, has to be a power of two, min 1
   );
@@ -88,13 +80,6 @@ entity neorv32_uart is
 end neorv32_uart;
 
 architecture neorv32_uart_rtl of neorv32_uart is
-
-  -- simulation output configuration --
-  constant sim_screen_output_en_c : boolean := true; -- output lowest byte as char to simulator console when enabled
-  constant sim_text_output_en_c   : boolean := true; -- output lowest byte as char to text file when enabled
-  constant sim_data_output_en_c   : boolean := true; -- dump 32-bit TX word to file when enabled
-  constant sim_uart_text_file_c   : string  := cond_sel_string_f(UART_PRIMARY, "neorv32.uart0.sim_mode.text.out", "neorv32.uart1.sim_mode.text.out");
-  constant sim_uart_data_file_c   : string  := cond_sel_string_f(UART_PRIMARY, "neorv32.uart0.sim_mode.data.out", "neorv32.uart1.sim_mode.data.out");
 
   -- control register bits --
   constant ctrl_en_c            : natural :=  0; -- r/w: UART enable
@@ -197,9 +182,9 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert not (is_power_of_two_f(UART_RX_FIFO) = false)
-    report "NEORV32 PROCESSOR CONFIG ERROR: UART" & cond_sel_string_f(UART_PRIMARY, "0", "1") & " FIFO depth has to be a power of two." severity error;
+    report "NEORV32 PROCESSOR CONFIG ERROR: UART RX FIFO depth has to be a power of two." severity error;
   assert not (is_power_of_two_f(UART_TX_FIFO) = false)
-    report "NEORV32 PROCESSOR CONFIG ERROR: UART" & cond_sel_string_f(UART_PRIMARY, "0", "1") & " FIFO depth has to be a power of two." severity error;
+    report "NEORV32 PROCESSOR CONFIG ERROR: UART TX FIFO depth has to be a power of two." severity error;
 
 
   -- Host Access ----------------------------------------------------------------------------
@@ -514,52 +499,30 @@ begin
   -- -------------------------------------------------------------------------------------------
   simulation_transmitter:
   if (is_simulation_c = true) generate -- for SIMULATION ONLY!
-    process(clk_i)
-      file file_uart_text_out : text open write_mode is sim_uart_text_file_c;
-      file file_uart_data_out : text open write_mode is sim_uart_data_file_c;
-      variable char_v         : integer;
-      variable line_screen_v  : line; -- we need several line variables here since "writeline" seems to flush the source variable
-      variable line_text_v    : line;
-      variable line_data_v    : line;
+    sim_tx: process(clk_i)
+      file file_out          : text open write_mode is SIM_LOG_FILE;
+      variable char_v        : integer;
+      variable line_screen_v : line; -- we need several line variables here since "writeline" seems to flush the source variable
+      variable line_file_v   : line;
     begin
       if rising_edge(clk_i) then
-        if (ctrl.enable = '1') and (ctrl.sim_mode = '1') and -- UART simulation mode
-           (bus_req_i.we = '1') and (bus_req_i.addr(2) = '1') then
-
-          -- print lowest byte as ASCII char --
+        if (ctrl.enable = '1') and (ctrl.sim_mode = '1') and (bus_req_i.we = '1') and (bus_req_i.addr(2) = '1') then
+          -- convert lowest byte to ASCII char --
           char_v := to_integer(unsigned(bus_req_i.data(7 downto 0)));
-          if (char_v >= 128) then -- out of range?
+          if (char_v >= 128) then -- out of printable range?
             char_v := 0;
           end if;
-
           -- ASCII output --
           if (char_v /= 10) and (char_v /= 13) then -- skip line breaks - they are issued via "writeline"
-            if (sim_screen_output_en_c = true) then
-              write(line_screen_v, character'val(char_v));
-            end if;
-            if (sim_text_output_en_c = true) then
-              write(line_text_v, character'val(char_v));
-            end if;
+            write(line_screen_v, character'val(char_v)); -- console
+            write(line_file_v, character'val(char_v)); -- log file
           elsif (char_v = 10) then -- line break: write to screen and text file
-            if (sim_screen_output_en_c = true) then
-              writeline(output, line_screen_v);
-            end if;
-            if (sim_text_output_en_c = true) then
-              writeline(file_uart_text_out, line_text_v);
-            end if;
+            writeline(output, line_screen_v); -- console
+            writeline(file_out, line_file_v); -- log file
           end if;
-
-          -- dump raw data as 8 hex chars to file --
-          if (sim_data_output_en_c = true) then
-            for x in 7 downto 0 loop
-              write(line_data_v, to_hexchar_f(bus_req_i.data(3+x*4 downto 0+x*4))); -- write in hex form
-            end loop;
-            writeline(file_uart_data_out, line_data_v);
-          end if;
-
         end if;
       end if;
-    end process;
+    end process sim_tx;
   end generate;
 
 
