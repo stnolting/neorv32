@@ -148,7 +148,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   signal dm_reg : dm_reg_t;
 
   -- cpu program buffer --
-  type cpu_progbuf_t is array (0 to 4) of std_ulogic_vector(31 downto 0);
+  type cpu_progbuf_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
   signal cpu_progbuf : cpu_progbuf_t;
 
   -- **********************************************************
@@ -197,8 +197,8 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
   -- code ROM containing "park loop" --
   -- copied manually from 'sw/ocd-firmware/neorv32_debug_mem_code.vhd' --
-  type code_rom_file_t is array (0 to 15) of std_ulogic_vector(31 downto 0);
-  constant code_rom_file : code_rom_file_t := (
+  type code_rom_t is array (0 to 15) of std_ulogic_vector(31 downto 0);
+  constant code_rom : code_rom_t := (
     00 => x"fc0001a3",
     01 => x"00100073",
     02 => x"7b241073",
@@ -742,7 +742,7 @@ begin
       if (rden = '1') then -- output enable
         case bus_req_i.addr(7 downto 6) is -- module select
           when "00" => -- dm_code_base_c: code ROM
-            bus_rsp_o.data <= code_rom_file(to_integer(unsigned(bus_req_i.addr(5 downto 2))));
+            bus_rsp_o.data <= code_rom(to_integer(unsigned(bus_req_i.addr(5 downto 2))));
           when "01" => -- dm_pbuf_base_c: program buffer
             bus_rsp_o.data <= cpu_progbuf(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
           when "10" => -- dm_data_base_c: data buffer
