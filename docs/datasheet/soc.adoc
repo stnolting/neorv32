@@ -39,10 +39,9 @@ image::neorv32_processor.png[align=center]
 * _optional_ execute in-place module (<<_execute_in_place_module_xip,**XIP**>>)
 * _optional_ 1-wire serial interface controller (<<_one_wire_serial_interface_controller_onewire,**ONEWIRE**>>), compatible to the 1-wire standard
 * _optional_ autonomous direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
-* _optional_ stream link interface (<<_stream_link_interface_slink>>,**SLINK**), AXI4-Stream compatible
+* _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream compatible
 * _optional_ cyclic redundancy check unit (<<_cyclic_redundancy_check_crc,**CRC**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
-* bus keeper to monitor processor-internal bus transactions (<<_internal_bus_monitor_buskeeper,**BUSKEEPER**>>)
 * system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
 
@@ -475,9 +474,10 @@ image::address_space.png[900]
 | 6 | The "void"                  | `rwx` | Unmapped address space. All accesses to this region(s) are redirected to the <<_processor_external_memory_interface_wishbone>>.
 |=======================
 
-The entire address space layout can be customized via the "Processor Address Space Layout" constants in the processor's
-main VHDL package file (`rtl/core/neorv323_package.vhd`).
+The entire address space layout can be customized via the "Processor Address Space Layout" constants section in the
+processor's main VHDL package file (`rtl/core/neorv323_package.vhd`).
 
+.Main Address Regions Configuration in the VHDL Package File
 [source,vhdl]
 ----
   -- Main Address Regions ---
@@ -493,26 +493,40 @@ main VHDL package file (`rtl/core/neorv323_package.vhd`).
 
 The CPU can access all of the 32-bit address space from the instruction fetch interface and also from the
 data access interface. These two CPU interfaces are multiplexed by a simple bus switch into a single processor-internal
-bus. Optionally, this bus is further shared by another instance of the bus switch so the DMA can controller can
-also access the entire address space.
-
-Accesses via the resulting SoC bus are split by a gateway, that forwards accesses to the according main memory regions.
-This gateway also implements a bus monitor that keeps track of active bus requests. If an accessed address responds with
-an error conditions of if no response is received at all an according bus access exception is raised (see <<_bus_interface_protocol>>).
-All processor-internal peripherals / IO devices are attached to an IO switch that performs the fine-granular address
-decoding issuing accesses to the according module being accesses.
+bus. Optionally, this bus is further switched by another instance of the bus switch so the <<_direct_memory_access_controller_dma>>
+controller can also access the entire address space. Accesses via the resulting SoC bus are split by a **gateway**,
+that redirects accesses to the according main memory regions. Accesses to the processor-internal IO/peripheral devices
+are further redirected via a dedicated **IO switch**.
 
 .Processor-internal bus architecture
 image::neorv32_bus.png[1300]
 
-.DMA Access
-[NOTE]
-The processor-internal <<_direct_memory_access_controller_dma>> has access to the same (_identical_) address
-space as the CPU core.
-
 .Bus Interface
-[TIP]
+[NOTE]
 See sections CPU <<_architecture>> and <<_bus_interface>> for more information regarding the CPU bus accesses.
+
+The gateway also implements a **bus monitor** that keeps track of all active bus requests. If an accessed address
+responds with an error conditions or if no response is received at all an according bus access exception is raised.
+
+**Maximum Response Latency**
+
+The device at the accessed address does not have to respond within a fixed cycle amount after a bus request has been initiated.
+However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window
+is defined by the global `max_proc_int_response_time_c` constant (default = 15 cycles) in the processor's VHDL package file.
+This constant defines the maximum number of cycles after which a non-responding bus request (i.e. no `ack`
+and no `*err` signal) will **time out** and will raise a bus access fault exception. The memory GATEWAY
+keeps track of all bus transactions to enforce this time window. If any bus operations times out - for example when
+accessing "address space holes" - the GATEWAY will issue a bus error to the CPU that will raise a bus access error
+exception according to the timed-out bus access type (instruction fetch / load access /store access).
+
+.XIP Timeout
+[NOTE]
+Accesses to the memory-mapped XIP flash will _never_ time out.
+
+.External Bus Interface Timeout
+[NOTE]
+Accesses that are delegated to the external bus interface have a different maximum timeout value that is defined by an
+explicit specific processor generic. See section <<_processor_external_memory_interface_wishbone>> for more information.
 
 
 :sectnums:
