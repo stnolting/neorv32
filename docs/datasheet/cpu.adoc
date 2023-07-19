@@ -709,7 +709,7 @@ show the values written to the according CSRs when a trap is triggered:
 |=======================
 | Trap ID [C] | Triggered when ...
 | `TRAP_CODE_I_MISALIGNED` | fetching a 32-bit instruction word that is not 32-bit-aligned (see note below)
-| `TRAP_CODE_I_ACCESS`     | bus timeout or bus access error during instruction word fetch
+| `TRAP_CODE_I_ACCESS`     | bus timeout or bus access error during instruction fetch
 | `TRAP_CODE_I_ILLEGAL`    | trying to execute an invalid instruction word (malformed or not supported) or on a privilege violation
 | `TRAP_CODE_MENV_CALL`    | executing `ecall` instruction in machine-mode
 | `TRAP_CODE_UENV_CALL`    | executing `ecall` instruction in user-mode
@@ -802,7 +802,7 @@ Bus transaction are entirely triggered by the request bus. A new bus request is 
 (= read request) or by the `we` signal (= write request). These signals are mutually exclusive. In case of a request,
 the according signal is high for exactly one clock cycle. The transaction is completed when the accessed device returns
 a response via the response interface: `ack` is high for exactly one cycle if the transaction was completed successfully.
-`err` is high for exactly one cycle if the transaction failed to complete. These two signals are also mutually exclusive.
+`err` is high for exactly one cycle if the transaction failed to complete. These two signals are mutually exclusive.
 If a bus request is terminated by the `err` signal the CPU will raise the according "bus access fault" exception.
 
 .Example CPU Bus Accesses
@@ -813,18 +813,6 @@ a| image::cpu_interface_read_long.png[read,300,150]
 a| image::cpu_interface_write_long.png[write,300,150]
 | Read access | Write access
 |=======================
-
-
-**Maximal Response Latency**
-
-The processor-internal modules do not have to respond within a fixed cycle amount after a bus request has been initiated.
-However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window
-is defined by the global `max_proc_int_response_time_c` constant (default = 15 cycles; the processor's VHDL package file
-`rtl/neorv32_package.vhd`). It defines the maximum number of cycles after which a non-responding bus request (i.e. no `ack`
-and no `*err` signal) will **time out** and will raise a bus access fault exception. The memory GATEWAY
-keeps track of all bus transactions to enforce this time window. If any bus operations times out - for example when
-accessing "address space holes" - the GATEWAY will issue a bus error to the CPU that will raise the according bus
-exception.
 
 .Access Boundaries
 [NOTE]
