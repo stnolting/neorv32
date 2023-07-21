@@ -223,7 +223,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_BRANCH);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT12, 1 << HPMCNT_EVENT_TBRANCH);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT13, 1 << HPMCNT_EVENT_TRAP);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT13, 1 << HPMCNT_EVENT_ILLEGAL);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT14, 1 << HPMCNT_EVENT_ILLEGAL);
 
     // make sure there was no exception
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
@@ -251,7 +251,7 @@ int main() {
   tmp_b = ((1 << PMPCFG_L) << 0) | ((1 << PMPCFG_L) << 8) | ((1 << PMPCFG_L) << 16);
 
   if (tmp_a & tmp_b) {
-    PRINT_CRITICAL("\nPMP LOCKED!\n");
+    PRINT_CRITICAL("\nERROR! PMP LOCKED!\n");
     return 1;
   }
 
@@ -1968,7 +1968,7 @@ int main() {
                    "#10 Jumps    : %u\n"
                    "#11 Branches : %u\n"
                    "#12 >taken   : %u\n"
-                   "#13 Traps    : %u\n",
+                   "#13 Traps    : %u\n"
                    "#14 Illegals : %u\n",
                    (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET),
                    (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE),
