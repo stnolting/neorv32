@@ -77,7 +77,7 @@ end neorv32_wishbone;
 architecture neorv32_wishbone_rtl of neorv32_wishbone is
 
   -- auto-configuration --
-  constant async_rx_c : boolean := ASYNC_RX and (not PIPE_MODE); -- classic mode requires a sync RX path for the inter-cycle pause
+  constant async_rx_c : boolean := ASYNC_RX and PIPE_MODE; -- classic mode requires a sync RX path for the inter-cycle pause
 
   -- timeout enable --
   constant timeout_en_c : boolean := boolean(BUS_TIMEOUT /= 0); -- timeout enabled if BUS_TIMEOUT > 0
@@ -124,9 +124,9 @@ begin
     cond_sel_string_f(ASYNC_TX, "ASYNC ", "registered ") & "TX"
     severity note;
 
-  -- async RX override warning
-  assert not ((ASYNC_RX = false) and (PIPE_MODE = false)) report
-    "NEORV32 PROCESSOR CONFIG WARNING! Ext. Bus Interface - Non-pipelined/standard mode requires sync RX (auto-enabling sync RX)." severity warning;
+  -- async RX override warning --
+  assert not ((ASYNC_RX = true) and (async_rx_c = false)) report
+    "NEORV32 PROCESSOR CONFIG WARNING! Ext. Bus Interface - Non-pipelined/standard mode requires sync RX (auto-disabling async RX)." severity warning;
 
   -- zero timeout warning --
   assert not (BUS_TIMEOUT = 0) report
