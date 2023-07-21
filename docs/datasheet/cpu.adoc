@@ -325,6 +325,11 @@ do not modify current reservation sets.
 More information regarding the atomic memory accesses and the according reservation
 sets can be found in section <<_reservation_set_controller>>.
 
+.LR/SC Bus Protocol
+[NOTE]
+More details regarding the LR/SC instruction's bus transactions can be found in section
+<<_bus_interface>> / <<_atomic_accesses>>.
+
 
 ==== `I` ISA Extension
 
@@ -875,3 +880,7 @@ being returned via the `rsp.data` signal together with the `ack`.
 
 .Three Exemplary LR/SC Bus Transactions
 image::bus_interface_atomic.png[700]
+
+.SC Status
+[NOTE]
+The normal "load data" mechanism is used to return success/failure of the `sc.w` instruction to the CPU (via `rsp.data`).
