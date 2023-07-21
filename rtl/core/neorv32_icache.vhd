@@ -190,6 +190,7 @@ begin
     bus_req_o.addr     <= ctrl.addr_reg;
     bus_req_o.we       <= '0';
     bus_req_o.re       <= '0';
+    bus_req_o.rvso     <= cpu_req_i.rvso;
 
     -- fsm --
     case ctrl.state is
