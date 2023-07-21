@@ -67,17 +67,17 @@
  **************************************************************************/
 /**@{*/
 //** for simulation only! */
-//#ifdef SUPPRESS_OPTIONAL_UART_PRINT
-////** print standard output to UART0 */
-//#define PRINT_STANDARD(...)
-////** print critical output to UART1 */
-//#define PRINT_CRITICAL(...) neorv32_uart1_printf(__VA_ARGS__)
-//#else
+#ifdef SUPPRESS_OPTIONAL_UART_PRINT
+//** print standard output to UART0 */
+#define PRINT_STANDARD(...)
+//** print critical output to UART1 */
+#define PRINT_CRITICAL(...) neorv32_uart1_printf(__VA_ARGS__)
+#else
 //** print standard output to UART0 */
 #define PRINT_STANDARD(...) neorv32_uart0_printf(__VA_ARGS__)
 //** print critical output to UART0 */
 #define PRINT_CRITICAL(...) neorv32_uart0_printf(__VA_ARGS__)
-//#endif
+#endif
 /**@}*/
 
 
@@ -137,9 +137,9 @@ int main() {
   NEORV32_UART1->CTRL = 0;
   NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
 
-//#ifdef SUPPRESS_OPTIONAL_UART_PRINT
-//  neorv32_uart0_disable(); // do not generate any UART0 output
-//#endif
+#ifdef SUPPRESS_OPTIONAL_UART_PRINT
+  neorv32_uart0_disable(); // do not generate any UART0 output
+#endif
 
 
   // setup RTE
@@ -170,7 +170,7 @@ int main() {
   // get number of implemented PMP regions
   pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
 
-/*
+
   // fancy intro
   // -----------------------------------------------
   // check MISA CSR (hardware configuration) vs. compiler flags (software configuration)
@@ -184,7 +184,7 @@ int main() {
 
   // show full hardware configuration report
   neorv32_rte_print_hw_config();
-*/
+
 
   // **********************************************************************************************
   // Run CPU and SoC tests
@@ -1737,11 +1737,6 @@ int main() {
     tmp_b = neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xaaaaaaaa);
     asm volatile ("fence"); // flush/reload d-cache
 
-PRINT_STANDARD("\n > tmp_a   = 0x%x", tmp_a);
-PRINT_STANDARD(" > amo_var = 0x%x", amo_var);
-PRINT_STANDARD(" > tmp_b   = 0x%x", tmp_b);
-PRINT_STANDARD(" > mcause  = 0x%x", neorv32_cpu_csr_read(CSR_MCAUSE));
-
     if ((tmp_a   == 0x00cafe00) && // correct LR.W result
         (amo_var == 0x10cafe00) && // atomic variable NOT altered by SC.W
         (tmp_b   == 0x00000001) && // SC.W failed
@@ -1777,16 +1772,11 @@ PRINT_STANDARD(" > mcause  = 0x%x", neorv32_cpu_csr_read(CSR_MCAUSE));
     tmp_a = neorv32_cpu_load_reservate_word((uint32_t)&amo_var);
     asm volatile ("fence"); // flush/reload d-cache
     neorv32_cpu_load_unsigned_word((uint32_t)&amo_var); // dummy read, must not alter reservation set state
-    tmp_b = neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xbbbbbbbb);
+    tmp_b = neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xcccccccc);
     asm volatile ("fence"); // flush/reload d-cache
 
-PRINT_STANDARD("\n > tmp_a   = 0x%x", tmp_a);
-PRINT_STANDARD(" > amo_var = 0x%x", amo_var);
-PRINT_STANDARD(" > tmp_b   = 0x%x", tmp_b);
-PRINT_STANDARD(" > mcause  = 0x%x", neorv32_cpu_csr_read(CSR_MCAUSE));
-
     if ((tmp_a   == 0x00abba00) && // correct LR.W result
-        (amo_var == 0xbbbbbbbb) && // atomic variable WAS altered by SC.W
+        (amo_var == 0xcccccccc) && // atomic variable WAS altered by SC.W
         (tmp_b   == 0x00000000) && // SC.W succeeded
         (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
       test_ok();
