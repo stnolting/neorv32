@@ -173,6 +173,9 @@ int main() {
 
   // fancy intro
   // -----------------------------------------------
+  // check MISA CSR (hardware configuration) vs. compiler flags (software configuration)
+  neorv32_rte_check_isa(0);
+
   // show NEORV32 ASCII logo
   neorv32_rte_print_logo();
 
@@ -1712,10 +1715,10 @@ int main() {
   }
 
 
-
   // ----------------------------------------------------------
   // Test atomic lr/sc memory access - failing access
   // ----------------------------------------------------------
+#if defined __riscv_atomic
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
   PRINT_STANDARD("failing) ");
@@ -1747,11 +1750,13 @@ int main() {
   else {
     PRINT_STANDARD("[n.a.]\n");
   }
+#endif
 
 
   // ----------------------------------------------------------
   // Test atomic lr/sc memory access - succeeding access
   // ----------------------------------------------------------
+#if defined __riscv_atomic
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
   PRINT_STANDARD("succeed) ");
@@ -1783,6 +1788,7 @@ int main() {
   else {
     PRINT_STANDARD("[n.a.]\n");
   }
+#endif
 
 
   // ----------------------------------------------------------
