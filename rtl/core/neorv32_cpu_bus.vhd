@@ -43,6 +43,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_bus is
   generic (
+    AMO_LRSC_ENABLE     : boolean; -- enable atomic LR/SC operations
     PMP_NUM_REGIONS     : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   );
@@ -201,7 +202,7 @@ begin
     if (rstn_i = '0') then
       rdata_o <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (arbiter.pend_rd = '1') then -- update only if required (reduce dynamic power)
+      if (arbiter.pend_rd = '1') or ((AMO_LRSC_ENABLE = true) and (arbiter.pend_wr = '1')) then -- also update on write access for atomic sc.w
         case ctrl_i.ir_funct3(1 downto 0) is
           when "00" => -- byte
             case mar(1 downto 0) is

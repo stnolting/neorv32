@@ -48,6 +48,7 @@ entity neorv32_cpu is
     CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
     CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic memory operations extension?
     CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
@@ -149,6 +150,7 @@ begin
     "NEORV32 CPU CONFIG NOTE: Core ISA ('MARCH') = RV32" &
     cond_sel_string_f(CPU_EXTENSION_RISCV_E,        "E", "I") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_M,        "M", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_A,        "A", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_C,        "C", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_B,        "B", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_U,        "U", "") &
@@ -217,6 +219,7 @@ begin
     CPU_DEBUG_PARK_ADDR          => CPU_DEBUG_PARK_ADDR,          -- cpu debug mode parking loop entry address
     CPU_DEBUG_EXC_ADDR           => CPU_DEBUG_EXC_ADDR,           -- cpu debug mode exception entry address
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic memory operations extension?
     CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
@@ -303,6 +306,7 @@ begin
   ibus_req_o.ben  <= (others => '0');
   ibus_req_o.we   <= '0'; -- read-only
   ibus_req_o.src  <= '1'; -- source = instruction fetch
+  ibus_req_o.rvso <= '0'; -- cannot be a reservation set operation
 
 
   -- Register File --------------------------------------------------------------------------
@@ -372,8 +376,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_bus_inst: entity neorv32.neorv32_cpu_bus
   generic map (
-    PMP_NUM_REGIONS     => PMP_NUM_REGIONS,    -- number of regions (0..16)
-    PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    AMO_LRSC_ENABLE     => CPU_EXTENSION_RISCV_A, -- enable atomic LR/SC operations
+    PMP_NUM_REGIONS     => PMP_NUM_REGIONS,       -- number of regions (0..16)
+    PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY    -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   )
   port map (
     -- global control --
@@ -409,6 +414,7 @@ begin
 
   dbus_req_o.priv <= ctrl.bus_priv;
   dbus_req_o.src  <= '0'; -- source = data access
+  dbus_req_o.rvso <= ctrl.bus_rvso when (CPU_EXTENSION_RISCV_A = true) else '0'; -- is LR/SC operation
 
 
 end neorv32_cpu_rtl;
