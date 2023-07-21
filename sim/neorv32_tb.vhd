@@ -265,8 +265,8 @@ begin
     MEM_EXT_TIMEOUT              => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)
     MEM_EXT_PIPE_MODE            => false,         -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
     MEM_EXT_BIG_ENDIAN           => false,         -- byte order: true=big-endian, false=little-endian
-    MEM_EXT_ASYNC_RX             => false,         -- use register buffer for RX data when false
-    MEM_EXT_ASYNC_TX             => false,         -- use register buffer for TX data when false
+    MEM_EXT_ASYNC_RX             => true,          -- use register buffer for RX data when false
+    MEM_EXT_ASYNC_TX             => true,          -- use register buffer for TX data when false
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  => 32,            -- number of external IRQ channels (0..32)
     XIRQ_TRIGGER_TYPE            => (others => '1'), -- trigger type: 0=level, 1=edge

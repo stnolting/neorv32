@@ -211,7 +211,7 @@ begin
     -- External memory interface --
     MEM_EXT_EN                   => true,          -- implement external memory bus interface?
     MEM_EXT_TIMEOUT              => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)
-    MEM_EXT_PIPE_MODE            => false,         -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    MEM_EXT_PIPE_MODE            => true,          -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
     MEM_EXT_BIG_ENDIAN           => false,         -- byte order: true=big-endian, false=little-endian
     MEM_EXT_ASYNC_RX             => false,         -- use register buffer for RX data when false
     MEM_EXT_ASYNC_TX             => false,         -- use register buffer for TX data when false
