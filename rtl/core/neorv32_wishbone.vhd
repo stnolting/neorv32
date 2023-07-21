@@ -76,6 +76,9 @@ end neorv32_wishbone;
 
 architecture neorv32_wishbone_rtl of neorv32_wishbone is
 
+  -- auto-configuration --
+  constant async_rx_c : boolean := ASYNC_RX and (not PIPE_MODE); -- classic mode requires a sync RX path for the inter-cycle pause
+
   -- timeout enable --
   constant timeout_en_c : boolean := boolean(BUS_TIMEOUT /= 0); -- timeout enabled if BUS_TIMEOUT > 0
 
@@ -117,12 +120,16 @@ begin
     cond_sel_string_f(PIPE_MODE, "PIPELINED", "CLASSIC/STANDARD") & " Wishbone protocol, " &
     cond_sel_string_f(boolean(BUS_TIMEOUT /= 0), "auto-timeout (" & integer'image(BUS_TIMEOUT) & " cycles), ", "NO auto-timeout, ") &
     cond_sel_string_f(BIG_ENDIAN, "BIG", "LITTLE") & "-endian byte order, " &
-    cond_sel_string_f(ASYNC_RX, "ASYNC ", "registered ") & "RX, " &
+    cond_sel_string_f(async_rx_c, "ASYNC ", "registered ") & "RX, " &
     cond_sel_string_f(ASYNC_TX, "ASYNC ", "registered ") & "TX"
     severity note;
 
+  -- async RX override warning
+  assert not ((ASYNC_RX = false) and (PIPE_MODE = false)) report
+    "NEORV32 PROCESSOR CONFIG WARNING! Ext. Bus Interface - Non-pipelined/standard mode requires sync RX (auto-enabling sync RX)." severity warning;
+
   -- zero timeout warning --
-  assert not (BUS_TIMEOUT  = 0) report
+  assert not (BUS_TIMEOUT = 0) report
     "NEORV32 PROCESSOR CONFIG WARNING! Ext. Bus Interface - NO auto-timeout defined; can cause permanent CPU stall!" severity warning;
 
 
@@ -167,7 +174,9 @@ begin
 
       else -- BUSY, transfer in progress
         -- ------------------------------------------------------------
-        ctrl.rdat <= wb_dat_i;
+        if (ctrl.we = '0') then -- sync output gate (keep output zero if write access)
+          ctrl.rdat <= wb_dat_i;
+        end if;
         if (wb_ack_i = '1') then -- normal bus termination
           ctrl.ack   <= '1';
           ctrl.state <= '0';
@@ -190,12 +199,12 @@ begin
   -- host access --
   ack_gated   <= wb_ack_i when (ctrl.state = '1') else '0'; -- CPU ACK gate for "async" RX
   err_gated   <= wb_err_i when (ctrl.state = '1') else '0'; -- CPU ERR gate for "async" RX
-  rdata_gated <= wb_dat_i when (ctrl.state = '1') else (others => '0'); -- CPU read data gate for "async" RX
+  rdata_gated <= wb_dat_i when (ctrl.state = '1') and (ctrl.we = '0') else (others => '0'); -- async output gate
 
-  rdata          <= ctrl.rdat when (ASYNC_RX = false) else rdata_gated;
+  rdata          <= ctrl.rdat when (async_rx_c = false) else rdata_gated;
   bus_rsp_o.data <= rdata when (BIG_ENDIAN = false) else bswap32_f(rdata); -- endianness conversion
-  bus_rsp_o.ack  <= ctrl.ack when (ASYNC_RX = false) else ack_gated;
-  bus_rsp_o.err  <= ctrl.err when (ASYNC_RX = false) else err_gated;
+  bus_rsp_o.ack  <= ctrl.ack when (async_rx_c = false) else ack_gated;
+  bus_rsp_o.err  <= ctrl.err when (async_rx_c = false) else err_gated;
 
   -- wishbone interface --
   wb_tag_o(0) <= bus_req_i.priv when (ASYNC_TX = true) else ctrl.priv; -- 0 = unprivileged (U-mode), 1 = privileged (M-mode)

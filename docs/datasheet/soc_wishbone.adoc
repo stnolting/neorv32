@@ -57,6 +57,11 @@ a| image::wishbone_pipelined_write.png[700,300]
 | **Classic** Wishbone read access | **Pipelined** Wishbone write access
 |=======================
 
+[WARNING]
+If the Wishbone interface is configured to operate in classic/standard mode (`MEM_EXT_PIPE_MODE` = false) a
+**sync** RX path (`MEM_EXT_ASYNC_RX` = false) is required for the inter-cycle pause. If `MEM_EXT_ASYNC_RX` is
+enabled while `MEM_EXT_PIPE_MODE` is disabled the module will automatically disable the asynchronous RX option.
+
 .Wishbone Specs.
 [TIP]
 A detailed description of the implemented Wishbone bus protocol and the according interface signals
@@ -84,9 +89,9 @@ setting `wb_cyc_o` low again and a CPU load/store/instruction fetch bus access f
 
 The 3-bit wishbone `wb_tag_o` signal provides additional information regarding the access type:
 
-* `wb_tag_o(0)` 1: privileged access (CPU is in machine mode); 0: unprivileged access (CPU is not in machine mode)
-* `wb_tag_o(1)` always zero (indicating "secure access")
-* `wb_tag_o(2)` 1: instruction fetch access, 0: data access
+* `wb_tag_o(0)`: `1` = privileged access (CPU is in machine mode); `0` = unprivileged access (CPU is not in machine mode)
+* `wb_tag_o(1)`: always zero
+* `wb_tag_o(2)`: `1` = instruction fetch access, `0` = data access
 
 
 **Endianness**
