@@ -265,12 +265,14 @@ will _not_ cause an illegal instruction exception.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
+| 0     | `CSR_MISA_A_EXT` | r/- | **A**: CPU extension (atomic memory access) available, set when <<_a_isa_extension>> enabled
+| 1     | `CSR_MISA_B_EXT` | r/- | **B**: CPU extension (bit-manipulation) available, set when <<_b_isa_extension>> enabled
 | 2     | `CSR_MISA_C_EXT` | r/- | **C**: CPU extension (compressed instruction) available, set when <<_c_isa_extension>> enabled
 | 4     | `CSR_MISA_E_EXT` | r/- | **E**: CPU extension (embedded) available, set when <<_e_isa_extension>> enabled
 | 8     | `CSR_MISA_I_EXT` | r/- | **I**: CPU base ISA, cleared when <<_e_isa_extension>> enabled
 | 12    | `CSR_MISA_M_EXT` | r/- | **M**: CPU extension (mul/div) available, set when <<_m_isa_extension>> enabled
 | 20    | `CSR_MISA_U_EXT` | r/- | **U**: CPU extension (user mode) available, set when <<_u_isa_extension>> enabled
-| 23    | `CSR_MISA_X_EXT` | r/- | **X**: extension bit is always set to indicate custom non-standard extensions
+| 23    | `CSR_MISA_X_EXT` | r/- | **X**: bit is always set to indicate non-standard / NEORV32-specific extensions
 | 31:30 | `CSR_MISA_MXL_HI_EXT` : `CSR_MISA_MXL_LO_EXT` | r/- | **MXL**: 32-bit architecture indicator (always `01`)
 |=======================
 
