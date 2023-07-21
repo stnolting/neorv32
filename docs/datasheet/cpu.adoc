@@ -2,7 +2,7 @@
 == NEORV32 Central Processing Unit (CPU)
 
 The NEORV32 CPU is an area-optimized RISC-V core implementing the `rv32iZicsr` base ISA and supporting
-several optional ISA extensions. The CPU's micro architecture is based on a von-Neumann machine build
+several additional/optional ISA extensions. The CPU's micro architecture is based on a von-Neumann machine build
 upon a mixture of multi-cycle and pipelined execution schemes.
 
 [NOTE]
@@ -40,12 +40,17 @@ instruction exception (-> <<_full_virtualization>>).
 The NEORV32 does not implement the user-mode `time[h]` registers. Any access to these registers will trap.
 It is recommended that the trap handler software provides a means of accessing the platform-defined <<_machine_system_timer_mtime>>.
 
-
 .No Hardware Support of Misaligned Memory Accesses
 [IMPORTANT]
 The CPU does not support resolving unaligned memory access by the hardware (this is not a
 RISC-V-incompatibility issue but an important thing to know!). Any kind of unaligned memory access
 will raise an exception to allow a _software-based_ emulation provided by the application.
+
+.No Atomic Read-Modify-Write Operations
+[IMPORTANT]
+The NEORV32 <<_a_isa_extension>> only supports the load-reservate (LR) and store-conditional (SR) instructions.
+The remaining read-modify-write operations are not supported. However, these missing instructions can
+be emulated by using LR/SC pairs.
 
 
 <<<
@@ -283,6 +288,42 @@ and checking for an illegal instruction exception (i.e. <<_full_virtualization>>
 .ISA Extensions-Specific CSRs
 [NOTE]
 The <<_control_and_status_registers_csrs>> section lists the according ISA extensions for all CSRs.
+
+
+==== `A` ISA Extension
+
+The `A` ISA extension adds instructions and mechanisms for atomic memory access operations. Note that the NEORV32 `A`
+only includes the _load-reservate_ (`lr.w`) and _store-conditional_ (`sc.w`) instructions - the remaining read-modify-write
+instructions (like `amoswap`) are **not supported**. However, these missing instructions can be emulated using the
+LR and SC operations.
+
+Atomic instructions allow to notify an application if a certain memory location has been altered by another instance
+(like another process running on the same CPU or a DMA access). Hence, they can be used to implement synchronization
+mechanisms like mutexes and semaphores). 
+
+The NEORV32 `A` extension is enabled via the `CPU_EXTENSION_RISCV_A` generic (see <<_processor_top_entity_generics>>).
+When enabled the following additional instructions are available.
+
+.Instructions and Timing
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| Load-reservate word    | `lr.w` | 5
+| Store-conditional word | `sc.w` | 5
+|=======================
+
+The `lr.w` instructions stores one word to a word-aligned address and registers a _reservation set_. The `sc.w`
+instruction stores a word to a word-aligned address only if the reservation set is still valid. Furthermore, the
+`sc.w` operations returns the state of the reservation set (0 = reservation set still valid, data has been written;
+1 = reservation set was broken, no data has been written). The reservation set is invalidated if another `lr.w` instruction
+is executed or if any write access to the _reservated_ address takes place. Traps and/or CPU privilege level changes
+do not modify current reservation sets.
+
+.Atomic Memory Access on Hardware Level
+[NOTE]
+More information regarding the atomic memory accesses and the according reservation
+sets can be found in section <<_reservation_set_controller>>.
 
 
 ==== `I` ISA Extension
