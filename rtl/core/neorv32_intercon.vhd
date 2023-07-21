@@ -202,6 +202,7 @@ begin
 
   x_req_o.priv <= a_req_i.priv when (arbiter.bus_sel = '0') else b_req_i.priv;
   x_req_o.src  <= a_req_i.src  when (arbiter.bus_sel = '0') else b_req_i.src;
+  x_req_o.rvso <= a_req_i.rvso when (arbiter.bus_sel = '0') else b_req_i.rvso;
 
   x_bus_we     <= a_req_i.we when (arbiter.bus_sel = '0') else b_req_i.we;
   x_bus_re     <= a_req_i.re when (arbiter.bus_sel = '0') else b_req_i.re;
@@ -341,7 +342,7 @@ architecture neorv32_gateway_rtl of neorv32_gateway is
   constant port_boot_c : natural := 3;
   constant port_io_c   : natural := 4;
   constant port_ext_c  : natural := 5;
-  signal port_en : std_ulogic_vector(5 downto 0);
+  signal   port_sel    : std_ulogic_vector(5 downto 0);
 
   -- IO buffer stage --
   signal io_req : bus_req_t;
@@ -369,47 +370,47 @@ begin
 
   -- Address Section Decoder ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  port_en(port_imem_c) <= '1' when (main_req_i.addr(31 downto index_size_f(IMEM_SIZE)) = IMEM_BASE(31 downto index_size_f(IMEM_SIZE))) and (IMEM_ENABLE = true) else '0';
-  port_en(port_dmem_c) <= '1' when (main_req_i.addr(31 downto index_size_f(DMEM_SIZE)) = DMEM_BASE(31 downto index_size_f(DMEM_SIZE))) and (DMEM_ENABLE = true) else '0';
-  port_en(port_xip_c)  <= '1' when (main_req_i.addr(31 downto index_size_f(XIP_SIZE))  = XIP_BASE( 31 downto index_size_f(XIP_SIZE)))  and (XIP_ENABLE  = true) else '0';
-  port_en(port_boot_c) <= '1' when (main_req_i.addr(31 downto index_size_f(BOOT_SIZE)) = BOOT_BASE(31 downto index_size_f(BOOT_SIZE))) and (BOOT_ENABLE = true) else '0';
-  port_en(port_io_c)   <= '1' when (main_req_i.addr(31 downto index_size_f(IO_SIZE))   = IO_BASE(  31 downto index_size_f(IO_SIZE)))   and (IO_ENABLE   = true) else '0';
+  port_sel(port_imem_c) <= '1' when (main_req_i.addr(31 downto index_size_f(IMEM_SIZE)) = IMEM_BASE(31 downto index_size_f(IMEM_SIZE))) and (IMEM_ENABLE = true) else '0';
+  port_sel(port_dmem_c) <= '1' when (main_req_i.addr(31 downto index_size_f(DMEM_SIZE)) = DMEM_BASE(31 downto index_size_f(DMEM_SIZE))) and (DMEM_ENABLE = true) else '0';
+  port_sel(port_xip_c)  <= '1' when (main_req_i.addr(31 downto index_size_f(XIP_SIZE))  = XIP_BASE( 31 downto index_size_f(XIP_SIZE)))  and (XIP_ENABLE  = true) else '0';
+  port_sel(port_boot_c) <= '1' when (main_req_i.addr(31 downto index_size_f(BOOT_SIZE)) = BOOT_BASE(31 downto index_size_f(BOOT_SIZE))) and (BOOT_ENABLE = true) else '0';
+  port_sel(port_io_c)   <= '1' when (main_req_i.addr(31 downto index_size_f(IO_SIZE))   = IO_BASE(  31 downto index_size_f(IO_SIZE)))   and (IO_ENABLE   = true) else '0';
 
   -- accesses to the "void" (= no section is matched) are redirected to the external bus interface --
-  port_en(port_ext_c) <= '1' when (port_en(port_imem_c) = '0') and
-                                  (port_en(port_dmem_c) = '0') and
-                                  (port_en(port_xip_c)  = '0') and
-                                  (port_en(port_boot_c) = '0') and
-                                  (port_en(port_io_c)   = '0') and (EXT_ENABLE = true) else '0';
+  port_sel(port_ext_c) <= '1' when (port_sel(port_imem_c) = '0') and
+                                   (port_sel(port_dmem_c) = '0') and
+                                   (port_sel(port_xip_c)  = '0') and
+                                   (port_sel(port_boot_c) = '0') and
+                                   (port_sel(port_io_c)   = '0') and (EXT_ENABLE = true) else '0';
 
 
   -- Bus Request (enforce PMAs) -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  request: process(main_req_i, port_en)
+  request: process(main_req_i, port_sel)
   begin
     imem_req_o    <= main_req_i;
-    imem_req_o.we <= main_req_i.we and port_en(port_imem_c);
-    imem_req_o.re <= main_req_i.re and port_en(port_imem_c);
+    imem_req_o.we <= main_req_i.we and port_sel(port_imem_c);
+    imem_req_o.re <= main_req_i.re and port_sel(port_imem_c);
     --
     dmem_req_o    <= main_req_i;
-    dmem_req_o.we <= main_req_i.we and port_en(port_dmem_c);
-    dmem_req_o.re <= main_req_i.re and port_en(port_dmem_c);
+    dmem_req_o.we <= main_req_i.we and port_sel(port_dmem_c);
+    dmem_req_o.re <= main_req_i.re and port_sel(port_dmem_c);
     --
     xip_req_o     <= main_req_i;
     xip_req_o.we  <= '0'; -- PMA: read-only
-    xip_req_o.re  <= main_req_i.re and port_en(port_xip_c);
+    xip_req_o.re  <= main_req_i.re and port_sel(port_xip_c);
     --
     boot_req_o    <= main_req_i;
     boot_req_o.we <= '0'; -- PMA: read-only
-    boot_req_o.re <= main_req_i.re and port_en(port_boot_c);
+    boot_req_o.re <= main_req_i.re and port_sel(port_boot_c);
     --
     io_req        <= main_req_i;
-    io_req.we     <= main_req_i.we and port_en(port_io_c);
-    io_req.re     <= main_req_i.re and port_en(port_io_c);
+    io_req.we     <= main_req_i.we and port_sel(port_io_c);
+    io_req.re     <= main_req_i.re and port_sel(port_io_c);
     --
     ext_req_o     <= main_req_i;
-    ext_req_o.we  <= main_req_i.we and port_en(port_ext_c);
-    ext_req_o.re  <= main_req_i.re and port_en(port_ext_c);
+    ext_req_o.we  <= main_req_i.we and port_sel(port_ext_c);
+    ext_req_o.re  <= main_req_i.re and port_sel(port_ext_c);
   end process request;
 
 
@@ -431,7 +432,6 @@ begin
   if (IO_REQ_REG = false) generate
     io_req_o <= io_req;
   end generate;
-
 
   io_rsp_buffer_true:
   if (IO_RSP_REG = true) generate
@@ -508,7 +508,7 @@ begin
     elsif rising_edge(clk_i) then
       -- defaults --
       keeper.err  <= '0';
-      keeper.halt <= port_en(port_xip_c) or port_en(port_ext_c); -- no timeout if XIP or EXTERNAL access
+      keeper.halt <= port_sel(port_xip_c) or port_sel(port_ext_c); -- no timeout if XIP or EXTERNAL access
       -- fsm --
       if (keeper.busy = '0') then -- bus idle
         keeper.cnt <= std_ulogic_vector(to_unsigned(TIMEOUT, keeper.cnt'length));
@@ -663,6 +663,7 @@ begin
     dev_req_o(i).re   <= main_req_i.re and device_sel(i);
     dev_req_o(i).src  <= main_req_i.src;
     dev_req_o(i).priv <= main_req_i.priv;
+    dev_req_o(i).rvso <= main_req_i.rvso;
   end generate;
 
 
@@ -672,7 +673,7 @@ begin
     variable tmp_v : bus_rsp_t;
   begin
     tmp_v := rsp_terminate_c; -- start with all-zero
-    for i in 0 to (num_devs_physical_c-1) loop -- OR all response signals
+    for i in 0 to (num_devs_physical_c-1) loop -- logical or OR of all response signals entries
       tmp_v.data := tmp_v.data or dev_rsp_i(i).data;
       tmp_v.ack  := tmp_v.ack  or dev_rsp_i(i).ack;
       tmp_v.err  := tmp_v.err  or dev_rsp_i(i).err;
@@ -682,3 +683,175 @@ begin
 
 
 end io_switch_rtl;
+
+
+-- ############################################################################################################################
+-- ############################################################################################################################
+
+
+-- #################################################################################################
+-- # << NEORV32 - Processor Bus: Reservation Set Control >>                                        #
+-- # ********************************************************************************************* #
+-- # Reservation set controller for the A (atomic) ISA extension's LR.W (load-reservate) and SC.W  #
+-- # (store-conditional) instructions. Only a single reservation set is supported.                 #
+-- # The reservation set's granularity can be configured via the GRANULARITY generic.              #
+-- # ********************************************************************************************* #
+-- # BSD 3-Clause License                                                                          #
+-- #                                                                                               #
+-- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- #                                                                                               #
+-- # Redistribution and use in source and binary forms, with or without modification, are          #
+-- # permitted provided that the following conditions are met:                                     #
+-- #                                                                                               #
+-- # 1. Redistributions of source code must retain the above copyright notice, this list of        #
+-- #    conditions and the following disclaimer.                                                   #
+-- #                                                                                               #
+-- # 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
+-- #    conditions and the following disclaimer in the documentation and/or other materials        #
+-- #    provided with the distribution.                                                            #
+-- #                                                                                               #
+-- # 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
+-- #    endorse or promote products derived from this software without specific prior written      #
+-- #    permission.                                                                                #
+-- #                                                                                               #
+-- # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
+-- # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
+-- # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
+-- # COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
+-- # EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
+-- # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
+-- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
+-- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
+-- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
+-- # ********************************************************************************************* #
+-- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+-- #################################################################################################
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+library neorv32;
+use neorv32.neorv32_package.all;
+
+entity neorv32_reservation_set is
+  generic (
+    GRANULARITY : natural -- reservation set granularity in bytes; has to be power of 2, min 4
+  );
+  port (
+    -- global control --
+    clk_i       : in  std_ulogic; -- global clock, rising edge
+    rstn_i      : in  std_ulogic; -- global reset, low-active, async
+    -- external status and control --
+    rvs_addr_o  : out std_ulogic_vector(31 downto 0);
+    rvs_valid_o : out std_ulogic;
+    rvs_clear_i : in  std_ulogic;
+    -- core/cpu port --
+    core_req_i  : in  bus_req_t;
+    core_rsp_o  : out bus_rsp_t;
+    -- system ports --
+    sys_req_o   : out bus_req_t;
+    sys_rsp_i   : in  bus_rsp_t
+  );
+end neorv32_reservation_set;
+
+architecture neorv32_reservation_set_rtl of neorv32_reservation_set is
+
+  -- reservation set granularity address boundary bit --
+  constant abb_c : natural := index_size_f(GRANULARITY);
+
+  -- reservation set --
+  type rsvs_t is record
+    state : std_ulogic_vector(01 downto 0);
+    addr  : std_ulogic_vector(31 downto abb_c);
+    valid : std_ulogic;
+  end record;
+  signal rsvs : rsvs_t;
+
+  -- ACK override for failed SC.W --
+  signal ack_force : std_ulogic;
+
+begin
+
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not (is_power_of_two_f(GRANULARITY) = false) report
+    "NEORV32 PROCESSOR CONFIG ERROR: Reservation set granularity has to be a power of 2." severity error;
+  assert not (GRANULARITY < 4) report
+    "NEORV32 PROCESSOR CONFIG ERROR: Reservation set granularity has to be at least 4 bytes wide." severity error;
+
+
+  -- Reservation Set Control ----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  rvs_control: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      rsvs.state <= "00";
+      rsvs.addr  <= (others => '0');
+    elsif rising_edge(clk_i) then
+      case rsvs.state is
+
+        when "10" => -- active reservation, wait for condition to remove reservation
+          if ((core_req_i.we = '1') and (core_req_i.rvso = '1')) then -- store-conditional instruction (any address)
+            rsvs.state <= "11";
+          elsif ((core_req_i.we = '1') and (core_req_i.addr(31 downto abb_c) = rsvs.addr)) or -- store to reservated address -> remove
+                (rvs_clear_i = '1') then -- external clear request -> remove
+            rsvs.state <= "00";
+          end if;
+
+        when "11" => -- evaluate active reservation, remove reservation at the end of bus access
+          if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
+            rsvs.state <= "00";
+          end if;
+
+        when others => -- "0-": no reservation, wait for for reservation registration
+          if (core_req_i.re = '1') and (core_req_i.rvso = '1') then -- load-reservate instruction
+            rsvs.addr  <= core_req_i.addr(31 downto abb_c);
+            rsvs.state <= "10";
+          end if;
+
+      end case;
+    end if;
+  end process rvs_control;
+
+  -- reservation valid? --
+  rsvs.valid <= rsvs.state(1);
+
+  -- status for external system --
+  rvs_valid_o                  <= rsvs.valid;
+  rvs_addr_o(31 downto abb_c)  <= rsvs.addr;
+  rvs_addr_o(abb_c-1 downto 0) <= (others => '0');
+
+
+  -- System Bus Interface -------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+
+  -- gated request --
+  bus_request: process(core_req_i, rsvs.valid)
+  begin
+    sys_req_o <= core_req_i;
+    if (core_req_i.rvso = '1') then -- reservation set operation (LR or SC)
+      sys_req_o.we <= core_req_i.we and rsvs.valid; -- write allowed if reservation still valid
+    else -- normal write request
+      sys_req_o.we <= core_req_i.we;
+    end if;
+  end process bus_request;
+
+  -- if a SC.W instruction fails we need to provide a local ACK to complete the bus access --
+  ack_override: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      ack_force <= '0';
+    elsif rising_edge(clk_i) then
+      ack_force <= core_req_i.rvso and core_req_i.we and (not rsvs.valid);
+    end if;
+  end process ack_override;
+
+  -- response --
+  core_rsp_o.err <= sys_rsp_i.err;
+  core_rsp_o.ack <= sys_rsp_i.ack or ack_force; -- force ACK if SC fails
+  core_rsp_o.data(31 downto 1) <= sys_rsp_i.data(31 downto 1);
+  core_rsp_o.data(0) <= sys_rsp_i.data(0) or (core_req_i.rvso and (not rsvs.valid)); -- inject 1 into LSB if SC fails
+
+
+end neorv32_reservation_set_rtl;
