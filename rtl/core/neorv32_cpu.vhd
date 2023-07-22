@@ -168,7 +168,7 @@ begin
     severity note;
 
   -- simulation notifier --
-  assert not (is_simulation_c = true)  report
+  assert not (is_simulation_c = true) report
     "NEORV32 CPU WARNING! Assuming this is a simulation." severity warning;
   assert not (is_simulation_c = false) report
     "NEORV32 CPU NOTE: Assuming this is real hardware." severity note;
@@ -334,7 +334,7 @@ begin
   );
 
 
-  -- ALU ------------------------------------------------------------------------------------
+  -- ALU (Arithmetic/Logic Unit) and ALU Co-Processors --------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_inst: entity neorv32.neorv32_cpu_alu
   generic map (
@@ -414,7 +414,7 @@ begin
 
   dbus_req_o.priv <= ctrl.bus_priv;
   dbus_req_o.src  <= '0'; -- source = data access
-  dbus_req_o.rvso <= ctrl.bus_rvso when (CPU_EXTENSION_RISCV_A = true) else '0'; -- is LR/SC operation
+  dbus_req_o.rvso <= ctrl.bus_rvso when (CPU_EXTENSION_RISCV_A = true) else '0'; -- is LR/SC reservation set operation
 
 
 end neorv32_cpu_rtl;

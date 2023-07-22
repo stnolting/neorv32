@@ -769,7 +769,7 @@ architecture neorv32_reservation_set_rtl of neorv32_reservation_set is
   signal rsvs : rsvs_t;
 
   -- ACK override for failed SC.W --
-  signal ack_force : std_ulogic;
+  signal ack_local : std_ulogic;
 
 begin
 
@@ -804,7 +804,7 @@ begin
             rsvs.state <= "00";
           end if;
 
-        when others => -- "0-": no reservation, wait for for reservation registration
+        when others => -- "0-": no active reservation, wait for for new registration
           if (core_req_i.re = '1') and (core_req_i.rvso = '1') then -- load-reservate instruction
             rsvs.addr  <= core_req_i.addr(31 downto abb_c);
             rsvs.state <= "10";
@@ -831,27 +831,28 @@ begin
   begin
     sys_req_o <= core_req_i;
     if (core_req_i.rvso = '1') then -- reservation set operation (LR or SC)
-      sys_req_o.we <= core_req_i.we and rsvs.valid; -- write allowed if reservation still valid
+      sys_req_o.we <= core_req_i.we and rsvs.valid; -- write allowed (SC) if reservation still valid
     else -- normal write request
       sys_req_o.we <= core_req_i.we;
     end if;
   end process bus_request;
 
-  -- if a SC.W instruction fails we need to provide a local ACK to complete the bus access --
+  -- if a SC.W instruction fails there will be no write-request being send to the bus system
+  -- so we need to provide a local ACK to complete the bus access
   ack_override: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ack_force <= '0';
+      ack_local <= '0';
     elsif rising_edge(clk_i) then
-      ack_force <= core_req_i.rvso and core_req_i.we and (not rsvs.valid);
+      ack_local <= core_req_i.rvso and core_req_i.we and (not rsvs.valid);
     end if;
   end process ack_override;
 
   -- response --
   core_rsp_o.err <= sys_rsp_i.err;
-  core_rsp_o.ack <= sys_rsp_i.ack or ack_force; -- force ACK if SC fails
+  core_rsp_o.ack <= sys_rsp_i.ack or ack_local; -- generate local ACK if SC fails
   core_rsp_o.data(31 downto 1) <= sys_rsp_i.data(31 downto 1);
-  core_rsp_o.data(0) <= sys_rsp_i.data(0) or (core_req_i.rvso and (not rsvs.valid)); -- inject 1 into LSB if SC fails
+  core_rsp_o.data(0) <= sys_rsp_i.data(0) or (core_req_i.rvso and (not rsvs.valid)); -- inject 1 into read data's LSB if SC fails
 
 
 end neorv32_reservation_set_rtl;

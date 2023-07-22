@@ -180,14 +180,16 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re;
-      bus_rsp_o.err  <= bus_req_i.we; -- read-only!
+      bus_rsp_o.ack  <= bus_req_i.re; -- read-only!
       bus_rsp_o.data <= (others => '0');
       if (bus_req_i.re = '1') then
         bus_rsp_o.data <= sysinfo(to_integer(unsigned(bus_req_i.addr(4 downto 2))));
       end if;
     end if;
   end process read_access;
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
 
 end neorv32_sysinfo_rtl;

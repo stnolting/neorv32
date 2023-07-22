@@ -246,6 +246,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- RISC-V control and status registers (CSRs) --
   type csr_t is record
     addr          : std_ulogic_vector(11 downto 0); -- csr address
+    raddr         : std_ulogic_vector(11 downto 0); -- csr read address (gated from csr.addr)
     we            : std_ulogic; -- csr write enable
     we_nxt        : std_ulogic;
     re            : std_ulogic; -- csr read enable
@@ -358,16 +359,13 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- illegal instruction check --
   signal illegal_cmd : std_ulogic;
 
-  -- CSR access/privilege and r/w check --
-  signal csr_reg_valid  : std_ulogic; -- valid CSR access (implemented at all)
-  signal csr_rw_valid   : std_ulogic; -- valid CSR access (valid r/w access rights)
-  signal csr_priv_valid : std_ulogic; -- valid CSR access (valid access privilege)
+  -- CSR access/privilege/read-write check --
+  signal csr_reg_valid  : std_ulogic; -- CSR implemented at all
+  signal csr_rw_valid   : std_ulogic; -- valid r/w access rights
+  signal csr_priv_valid : std_ulogic; -- valid access privilege
 
   -- hardware trigger module --
   signal hw_trigger_fire : std_ulogic;
-
-  -- misc --
-  signal csr_raddr : std_ulogic_vector(11 downto 0); -- CSR read address (AND-gated)
 
 begin
 
@@ -1419,7 +1417,7 @@ begin
       -- ------------------------------------------------------------
         illegal_cmd <= (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx)) or (not decode_aux.is_f_op);
 
-      when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => -- custom instructions (CFU); all encodings valid if CFU enable
+      when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => -- all encodings valid if CFU enable
       -- ------------------------------------------------------------
         illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);
 
@@ -1433,11 +1431,12 @@ begin
 
   -- Illegal Operation Check ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trap_ctrl.instr_il <= '1' when
-    ((illegal_cmd = '1') or -- illegal instruction?
-     (alu_exc_i = '1') or -- invalid ALU operation?
-     (execute_engine.ir(instr_opcode_lsb_c+1 downto instr_opcode_lsb_c) /= "11")) and -- illegal opcode LSBs?
-    ((execute_engine.state = EXECUTE) or (execute_engine.state = ALU_WAIT)) else '0'; -- check in EXECUTE states only
+  trap_ctrl.instr_il <= '1' when ((execute_engine.state = EXECUTE) or (execute_engine.state = ALU_WAIT)) and -- check in execution states only
+                                 (
+                                  (illegal_cmd = '1') or -- illegal instruction?
+                                  (alu_exc_i = '1') or -- invalid ALU operation?
+                                  (execute_engine.ir(instr_opcode_lsb_c+1 downto instr_opcode_lsb_c) /= "11") -- illegal opcode LSBs?
+                                 ) else '0';
 
 
 -- ****************************************************************************************************************************
@@ -2103,7 +2102,7 @@ begin
     if rising_edge(clk_i) then
       csr.re    <= csr.re_nxt; -- read access?
       csr.rdata <= (others => '0'); -- default output, unimplemented CSR/bits read as zero
-      case csr_raddr is
+      case csr.raddr is
 
         -- hardware-only CSRs --
         -- --------------------------------------------------------------------
@@ -2370,7 +2369,7 @@ begin
 
   -- AND-gate CSR read address: csr.rdata is zero if csr.re is not set --
   -- [WARNING] M-mode (9:8 = 11) and U-mode (9:8 = 00) CSRs only!
-  csr_raddr <= (csr.addr(11 downto 10) & csr.addr(8) & csr.addr(8) & csr.addr(7 downto 0)) when (csr.re = '1') else (others => '0');
+  csr.raddr <= (csr.addr(11 downto 10) & csr.addr(8) & csr.addr(8) & csr.addr(7 downto 0)) when (csr.re = '1') else (others => '0');
 
   -- CSR read data output --
   csr_rdata_o <= csr.rdata;
