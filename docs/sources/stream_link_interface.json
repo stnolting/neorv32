@@ -1,0 +1,7 @@
+{signal: [
+  {name: 'clk',  wave: 'p.........'},
+  {name: 'dat',  wave: 'x345..6x7x', data: ["A", "B", "C", "D", "E"]},
+  {name: 'val',  wave: '01.....010'},
+  {name: 'rdy',  wave: '01.0.1...0'},
+  {name: 'lst',  wave: '0.......10'},
+]}

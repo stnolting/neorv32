@@ -23,6 +23,11 @@ Icons used by the data sheet and the user guide.
 Reference material like RISC-V and Wishbone specifications.
 
 
+### [`sources`](https://github.com/stnolting/neorv32/tree/main/docs/sources)
+
+Various sources for the images in `figures/`.
+
+
 ### [`userguide`](https://github.com/stnolting/neorv32/tree/main/docs/userguide)
 
 AsciiDoc sources for the NEORV32 user guide. The online version of the user guide is

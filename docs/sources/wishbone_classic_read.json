@@ -1,0 +1,14 @@
+{signal: [
+  {name: 'clk',       wave: 'p....|...'},
+  {name: 'wb_tag_o',  wave: 'x3...|.x.', data: ['Tag']},
+  {name: 'wb_adr_o',  wave: 'x3...|.x.', data: ['Address']},
+  {name: 'wb_dat_i',  wave: 'x....|3x.', data: ['rdata']},
+  {name: 'wb_dat_o',  wave: 'x....|.x.', data: ['Wdata']},
+  {name: 'wb_we_o',   wave: 'x0...|.x.'},
+  {name: 'wb_sel_o',  wave: 'x....|.x.', data: ['Byte_enable']},
+  {name: 'wb_stb_o',  wave: '01...|.0.'},
+  {name: 'wb_cyc_o',  wave: '01...|.0.'},
+  {name: 'wb_lock_o', wave: '0....|...'},
+  {name: 'wb_ack_i',  wave: '0....|10.'},
+  {name: 'wb_err_i',  wave: '0....|...'},
+]}

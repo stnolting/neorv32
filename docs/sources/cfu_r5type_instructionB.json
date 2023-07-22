@@ -1,0 +1,9 @@
+{reg: [
+    {bits: 7, name: 123,      attr: 'Opcode: Custom-3'},
+    {bits: 5, name: 'rd',     attr: 'Destination'},
+    {bits: 3, name: 'rs4.lo', attr: 'Source 4'},
+    {bits: 5, name: 'rs1',    attr: 'Source 1'},
+    {bits: 5, name: 'rs2',    attr: 'Source 2'},
+    {bits: 2, name: 'rs4.hi', attr: 'Source 4'},
+    {bits: 5, name: 'rs3',    attr: 'Source 3'}
+]}
