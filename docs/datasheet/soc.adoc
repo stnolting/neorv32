@@ -565,6 +565,11 @@ The reservation is invalidated if...
 * ... a normal store access to the reservated address takes place (by the CPU or by the DMA).
 * ... a hardware reset is triggered.
 
+.Bus Access Errors
+[IMPORTANT]
+If the LR operation causes a bus access error (raising a load access exception) the reservation **is registered anyway**.
+If the SC operation causes a bus access error (raising a store access exception) the reservation set **is invalidated anyway**.
+
 .Strong Semantic
 [IMPORTANT]
 The LR/SC mechanism follows the _strong semantic_ approach: the LR/SC instruction pair fails only if there is a write
