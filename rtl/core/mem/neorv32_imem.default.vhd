@@ -155,17 +155,18 @@ begin
     if rising_edge(clk_i) then
       rden <= bus_req_i.re;
       if (IMEM_AS_IROM = true) then
-        bus_rsp_o.ack <= bus_req_i.re;
-        bus_rsp_o.err <= bus_req_i.we;
+        bus_rsp_o.ack <= bus_req_i.re; -- read-only!
       else
         bus_rsp_o.ack <= bus_req_i.re or bus_req_i.we;
-        bus_rsp_o.err <= '0';
       end if;
     end if;
   end process bus_feedback;
 
   -- output gate --
   bus_rsp_o.data <= rdata when (rden = '1') else (others => '0');
+
+  -- no access error possible --
+  bus_rsp_o.err <= '0';
 
 
 end neorv32_imem_rtl;
