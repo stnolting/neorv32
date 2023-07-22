@@ -50,7 +50,8 @@ will raise an exception to allow a _software-based_ emulation provided by the ap
 [IMPORTANT]
 The NEORV32 <<_a_isa_extension>> only supports the load-reservate (LR) and store-conditional (SR) instructions.
 The remaining read-modify-write operations are not supported. However, these missing instructions can
-be emulated by using LR/SC pairs.
+be emulated. The NEORV32 <<_core_libraries>> provide an emulation wrapper for the missing AMO/read-modify-write
+instructions that is based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
 
 
 <<<
@@ -296,6 +297,11 @@ The `A` ISA extension adds instructions and mechanisms for atomic memory access 
 only includes the _load-reservate_ (`lr.w`) and _store-conditional_ (`sc.w`) instructions - the remaining read-modify-write
 instructions (like `amoswap`) are **not supported**. However, these missing instructions can be emulated using the
 LR and SC operations.
+
+.AMO Emulation
+[NOTE]
+The NEORV32 <<_core_libraries>> provide an emulation wrapper for the missing AMO/read-modify-write instructions that is
+based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
 
 Atomic instructions allow to notify an application if a certain memory location has been altered by another instance
 (like another process running on the same CPU or a DMA access). Hence, they can be used to implement synchronization
@@ -864,6 +870,12 @@ load/store bus transactions but with the `rvso` ("reservation set operation") si
 .Reservation Set Controller
 [NOTE]
 See section <<_address_space>> / <<_reservation_set_controller>> for more information.
+
+.Read-Modify-Write Operations
+[IMPORTANT]
+Read-modify-write operations (line an atomic swap / `amoswap.w`) are **not** supported. However, the NEORV32
+<<_core_libraries>> provide an emulation wrapper for those unsupported instructions that is
+based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
 
 The figure below shows three exemplary bus accesses. For easier understanding the current state of the reservation set
 is added as `rvs_valid` signal.

@@ -86,6 +86,7 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 | `neorv32_cfs.c`     | `neorv32_cfs.h`        | <<_custom_functions_subsystem_cfs>> HAL
 | `neorv32_crc.c`     | `neorv32_crc.h`        | <<_cyclic_redundancy_check_crc>> HAL
 | `neorv32_cpu.c`     | `neorv32_cpu.h`        | <<_neorv32_central_processing_unit_cpu>> HAL
+| `neorv32_cpu_amo.c` | `neorv32_cpu_amo.h`    | Emulation functions for the read-modify-write  <<_a_isa_extension>> instructions
 |                     | `neorv32_cpu_csr.h`    | <<_control_and_status_registers_csrs>> definitions
 | `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | <<_custom_functions_unit_cfu>> HAL
 | -                   | `neorv32_dm.h`         | <<_debug_module_dm>> HAL
@@ -108,7 +109,7 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 | `neorv32_wdt.c`     | `neorv32_wdt.h`        | <<_watchdog_timer_wdt>> HAL
 | `neorv32_xip.c`     | `neorv32_xip.h`        | <<_execute_in_place_module_xip>> HAL
 | `neorv32_xirq.c`    | `neorv32_xirq.h`       | <<_external_interrupt_controller_xirq>> HAL
-| `syscalls.c`        | -                      | Newlib "system calls"
+| `syscalls.c`        | -                      | Newlib "system calls" (stubs)
 | -                   | `legacy.h`             | Backwards compatibility wrappers and functions (do not use for new designs)
 |=======================
 
