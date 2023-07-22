@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080606"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080607"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -160,6 +160,7 @@ package neorv32_package is
     re   : std_ulogic; -- read request (single-shot)
     src  : std_ulogic; -- access source (1=instruction fetch, 0=data access)
     priv : std_ulogic; -- set if privileged (machine-mode) access
+    rvso : std_ulogic; -- set if reservation set operation (atomic LR/SC)
   end record;
 
   -- bus response --
@@ -177,7 +178,8 @@ package neorv32_package is
     we   => '0',
     re   => '0',
     src  => '0',
-    priv => '0'
+    priv => '0',
+    rvso => '0'
   );
 
   -- endpoint termination --
@@ -663,6 +665,7 @@ package neorv32_package is
     bus_fence     : std_ulogic;                     -- fence operation
     bus_fencei    : std_ulogic;                     -- fence.i operation
     bus_priv      : std_ulogic;                     -- effective privilege level for load/store
+    bus_rvso      : std_ulogic;                     -- reservation set operation (atomic LR/SC)
     -- instruction word --
     ir_funct3     : std_ulogic_vector(02 downto 0); -- funct3 bit field
     ir_funct12    : std_ulogic_vector(11 downto 0); -- funct12 bit field
@@ -695,6 +698,7 @@ package neorv32_package is
     bus_fence    => '0',
     bus_fencei   => '0',
     bus_priv     => '0',
+    bus_rvso     => '0',
     ir_funct3    => (others => '0'),
     ir_funct12   => (others => '0'),
     ir_opcode    => (others => '0'),
@@ -895,6 +899,7 @@ package neorv32_package is
       -- On-Chip Debugger (OCD) --
       ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
       -- RISC-V CPU Extensions --
+      CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic memory operations extension?
       CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit-manipulation extension?
       CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
       CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
@@ -917,6 +922,8 @@ package neorv32_package is
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..29)
       HPM_CNT_WIDTH                : natural := 40;     -- total size of HPM counters (0..64)
+      -- Atomic Memory Access - Reservation Set Granularity --
+      AMO_RVS_GRANULARITY          : natural := 4;      -- size in bytes, has to be a power of 2, min 4
       -- Internal Instruction memory (IMEM) --
       MEM_INT_IMEM_EN              : boolean := false;  -- implement processor-internal instruction memory
       MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes

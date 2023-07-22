@@ -191,6 +191,7 @@ begin
     bus_req_o.we       <= '0';
     bus_req_o.src      <= cpu_req_i.src;
     bus_req_o.priv     <= cpu_req_i.priv;
+    bus_req_o.rvso     <= cpu_req_i.rvso;
 
     -- fsm --
     case ctrl.state is
@@ -201,7 +202,7 @@ begin
         if (ctrl.clear_buf = '1') then -- invalidate cache
           ctrl.state_nxt <= S_CLEAR;
         elsif (cpu_req_i.re = '1') or (ctrl.re_buf = '1') or (cpu_req_i.we = '1') or (ctrl.we_buf = '1') then
-          if (unsigned(cpu_req_i.addr(31 downto 28)) >= unsigned(DCACHE_UC_PBEGIN)) then -- uncached access -> direct access
+          if (unsigned(cpu_req_i.addr(31 downto 28)) >= unsigned(DCACHE_UC_PBEGIN)) or (cpu_req_i.rvso = '1') then -- uncached access -> direct access
             ctrl.state_nxt <= S_DIRECT_REQ;
           else -- cached access
             ctrl.state_nxt <= S_CHECK;

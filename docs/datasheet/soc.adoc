@@ -206,6 +206,7 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 | `CUSTOM_ID`             | suv(31:0) | 0x00000000 | User-defined identifier to identify a certain setup or to pass user-defined flags to software (via the <<_system_configuration_information_memory_sysinfo>>).
 | `ON_CHIP_DEBUGGER_EN`   | boolean   | false      | Implement the on-chip debugger <<_on_chip_debugger_ocd>> and the CPU debug mode.
 4+^| **CPU <<_instruction_sets_and_extensions>>**
+| `CPU_EXTENSION_RISCV_A`        | boolean | false | Enable <<_a_isa_extension>> (atomic memory accesses).
 | `CPU_EXTENSION_RISCV_B`        | boolean | false | Enable <<_b_isa_extension>> (bit-manipulation).
 | `CPU_EXTENSION_RISCV_C`        | boolean | false | Enable <<_c_isa_extension>> (compressed instructions).
 | `CPU_EXTENSION_RISCV_E`        | boolean | false | Enable <<_e_isa_extension>> (reduced register file size).
@@ -228,6 +229,8 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 4+^| **Hardware Performance Monitors (<<_zihpm_isa_extension>>)**
 | `HPM_NUM_CNTS`          | natural   | 0          | Number of implemented hardware performance monitor counters (0..29).
 | `HPM_CNT_WIDTH`         | natural   | 40         | Total LSB-aligned size of each HPM counter. Min 0, max 64.
+4+^| **Atomic Memory Access Reservation Set Granularity (<<_a_isa_extension>>)**
+| `AMO_RVS_GRANULARITY`   | natural   | 4          | Size in bytes, has to be a power of 2, min 4.
 4+^| **Internal <<_instruction_memory_imem>>**
 | `MEM_INT_IMEM_EN`       | boolean   | false      | Implement the processor-internal instruction memory.
 | `MEM_INT_IMEM_SIZE`     | natural   | 16*1024    | Size in bytes of the processor internal instruction memory.
@@ -474,8 +477,28 @@ image::address_space.png[900]
 | 6 | The "void"                  | `rwx` | Unmapped address space. All accesses to this region(s) are redirected to the <<_processor_external_memory_interface_wishbone>>.
 |=======================
 
-The entire address space layout can be customized via the "Processor Address Space Layout" constants section in the
-processor's main VHDL package file (`rtl/core/neorv323_package.vhd`).
+The CPU can access all of the 32-bit address space from the instruction fetch interface and also from the data access
+interface. Both interfaces can be equipped with optional caches (<<_processor_internal_data_cache_dcache>> and
+<<_processor_internal_instruction_cache_icache>>). The two CPU interfaces are multiplexed by a simple bus switch into
+a single processor-internal bus. Optionally, this bus is further switched by another instance of the bus switch so the
+<<_direct_memory_access_controller_dma>> controller can also access the entire address space. Accesses via the
+resulting SoC bus are split by the <<_bus_gateway>> that redirects accesses to the according main address regions.
+Accesses to the processor-internal IO/peripheral devices are further redirected via a dedicated <<_io_switch>>.
+
+.Processor-Internal Bus Architecture
+image::neorv32_bus.png[1300]
+
+.Bus Interface
+[TIP]
+See sections CPU <<_architecture>> and <<_bus_interface>> for more information regarding the CPU bus accesses.
+
+
+:sectnums:
+==== Bus Gateway
+
+The central bus gateway serves two purposes: **redirect** core accesses to the according modules (e.g. memory accesses
+vs. memory-mapped IO accesses) and **monitor** all bus transactions. The redirection of access request is based on a
+customizable memory map implemented via VHDL constants in the main package file (`rtl/core/neorv323_package.vhd`):
 
 .Main Address Regions Configuration in the VHDL Package File
 [source,vhdl]
@@ -491,42 +514,106 @@ processor's main VHDL package file (`rtl/core/neorv323_package.vhd`).
   constant mem_io_size_c     : natural := 8*1024;
 ----
 
-The CPU can access all of the 32-bit address space from the instruction fetch interface and also from the
-data access interface. These two CPU interfaces are multiplexed by a simple bus switch into a single processor-internal
-bus. Optionally, this bus is further switched by another instance of the bus switch so the <<_direct_memory_access_controller_dma>>
-controller can also access the entire address space. Accesses via the resulting SoC bus are split by a **gateway**,
-that redirects accesses to the according main memory regions. Accesses to the processor-internal IO/peripheral devices
-are further redirected via a dedicated **IO switch**.
+Besides the delegation of bus requests the gateway also implements a bus monitor (aka "the bus keeper") that tracks all
+active bus transactions to ensure _safe_ and _deterministic_ operations.
 
-.Processor-internal bus architecture
-image::neorv32_bus.png[1300]
+Whenever a memory-mapped device is accessed (a real memory, a memory-mapped IO or some processor-external module) the bus
+monitor starts an internal timer. The accessed module has to respond ("ACK") to the bus request within a specific
+**time window**. This time window is defined by a global constant in the processor's VHDL package file
+(`rtl/core/neorv323_package.vhd`).
 
-.Bus Interface
-[NOTE]
-See sections CPU <<_architecture>> and <<_bus_interface>> for more information regarding the CPU bus accesses.
+.Internal Bus Timeout Configuration
+[source,vhdl]
+----
+  -- "response time window" for processor-internal modules --
+  -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception
+  constant max_proc_int_response_time_c : natural := 15; -- default = 15
+----
 
-The gateway also implements a **bus monitor** that keeps track of all active bus requests. If an accessed address
-responds with an error conditions or if no response is received at all an according bus access exception is raised.
-
-**Maximum Response Latency**
-
-The device at the accessed address does not have to respond within a fixed cycle amount after a bus request has been initiated.
-However, the bus transaction has to be completed (= acknowledged) within a certain **response time window**. This time window
-is defined by the global `max_proc_int_response_time_c` constant (default = 15 cycles) in the processor's VHDL package file.
-This constant defines the maximum number of cycles after which a non-responding bus request (i.e. no `ack`
-and no `*err` signal) will **time out** and will raise a bus access fault exception. The memory GATEWAY
-keeps track of all bus transactions to enforce this time window. If any bus operations times out - for example when
-accessing "address space holes" - the GATEWAY will issue a bus error to the CPU that will raise a bus access error
-exception according to the timed-out bus access type (instruction fetch / load access /store access).
+This constant defines the _maximum_ number of cycles after which a non-responding bus request (i.e. no `ack`
+and no `err` signal) will time out raising a bus access fault exception. For example this can happen when accessing
+"address space holes" - addresses that are not mapped to any physical module. The resulting exception type corresponds
+to the according access type, i.e. instruction fetch access exception, load access exception or store access exception.
 
 .XIP Timeout
 [NOTE]
-Accesses to the memory-mapped XIP flash will _never_ time out.
+Accesses to the memory-mapped XIP flash (via the <<_execute_in_place_module_xip>>) will _never_ time out.
 
 .External Bus Interface Timeout
 [NOTE]
 Accesses that are delegated to the external bus interface have a different maximum timeout value that is defined by an
 explicit specific processor generic. See section <<_processor_external_memory_interface_wishbone>> for more information.
+
+
+
+:sectnums:
+==== Reservation Set Controller
+
+The reservation set controller is responsible for handling the load-reservate and store-conditional bus transaction that
+are triggered by the `lr.w` and `sc.w` instructions from the CPU's <<_a_isa_extension>>.
+
+A "reservation" defines an address or address range that provides a guarding mechanism to support atomic accesses. A new
+reservation is registered by the `lr.w` instruction. The address provided by this instruction defines the memory location
+that is now monitored for atomic accesses. The according `sc.w` instruction evaluates the state of this reservation. If
+the reservation is still valid the write access triggered by the `sc.w` instruction is finally executed and the instruction
+return a "success" state. If the reservation has been invalidated the `sc.w` instructions write access does not take place
+and the instruction returns a "failed" state.
+
+The reservation is invalidated if...
+
+* ... another `lr.w` instruction is executed
+* ... a normal store access to the reservated address takes place (by the CPU or by the DMA)
+* ... a hardware reset is triggered
+* Traps, interrupts, changes of privilege level, etc. do not alter the state of the reservation set at all.
+
+.Strong Semantic
+[NOTE]
+The LR/SC mechanism follows the _strong_ semantic approach: the LL/SC instruction pair fails only if there is an
+access to the referenced memory location between the LL and SC instructions (by the CPU itself or by the DMA).
+Context changes, interrupts, traps, etc. do not effect the reservation state at all.
+
+The controller supports only a single global reservation set. By default this reservation set "monitors" a word-aligned
+4-byte granule. However, the granularity can be customized via the `AMO_RVS_GRANULARITY` top entity generic (see
+<<_processor_top_entity_generics>>).
+
+.Physical Memory Attributes
+[NOTE]
+The reservation set can be set for _any_ address (only constrained by the configured granularity). This also
+includes cached memory, IO devices and processor-external modules.
+
+Bus transactions triggered by the `lr.w` instruction register a new reservation set and are delegated to the adressed
+memory/device. Bus transactions triggered by the `sc.w` remove a reservation set and are forwarded to the adressed
+memory/device only if the SC operations succeeds. Otherwise, the access request is not forwarded and a local ACK is
+generated to terminate the bus transaction.
+
+.LR/SC Bus Protocol
+[NOTE]
+More information regarding the /LR/SC bus transactions and the the according protocol can be found in section
+<<_bus_interface>> / <<_atomic_accesses>>.
+
+.Cache Coherency
+[IMPORTANT]
+Atomic operations **always bypass** the cache using direct/uncached accesses. HEnce, care must be taken
+to maintain data cache coherency (e.g. by using the `fence` instruction).
+
+
+:sectnums:
+==== IO Switch
+
+The IO switch further decodes the address when accessing the processor-internal IO/peripheral devices and forwards
+the access request to the according module. Note that a total address space size of 256 bytes is assigned to each
+IO module in order to simplify address decoding. The IO-specific address map is also defined in the main VHDL
+package file (`rtl/core/neorv323_package.vhd`).
+
+.Exemplary Cut-Out from the IO Address Map
+[source,vhdl]
+----
+  -- IO Address Map --
+  constant iodev_size_c    : natural := 256; -- size of a single IO device (bytes)
+  constant base_io_cfs_c   : std_ulogic_vector(31 downto 0) := x"ffffeb00";
+  constant base_io_slink_c : std_ulogic_vector(31 downto 0) := x"ffffec00";
+  constant base_io_dma_c   : std_ulogic_vector(31 downto 0) := x"ffffed00";
+----
 
 
 :sectnums:

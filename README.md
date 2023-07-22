@@ -109,9 +109,10 @@ see the [_open-source architecture ID list_](https://github.com/riscv/riscv-isa-
 `RV32`
 [[`I`](https://stnolting.github.io/neorv32/#_i_isa_extension)/
 [`E`](https://stnolting.github.io/neorv32/#_e_isa_extension)]
-[[`B`](https://stnolting.github.io/neorv32/#_b_isa_extension)]
-[[`C`](https://stnolting.github.io/neorv32/#_c_isa_extension)]
 [[`M`](https://stnolting.github.io/neorv32/#_m_isa_extension)]
+[[`A`](https://stnolting.github.io/neorv32/#_a_isa_extension)]
+[[`C`](https://stnolting.github.io/neorv32/#_c_isa_extension)]
+[[`B`](https://stnolting.github.io/neorv32/#_b_isa_extension)]
 [[`U`](https://stnolting.github.io/neorv32/#_u_isa_extension)]
 [[`X`](https://stnolting.github.io/neorv32/#_x_isa_extension)]
 [[`Zicntr`](https://stnolting.github.io/neorv32/#_zicntr_isa_extension)]

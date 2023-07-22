@@ -58,6 +58,7 @@ entity neorv32_cpu_control is
     CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
     CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic memory operations extension?
     CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
@@ -179,6 +180,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- instruction decoding helper logic --
   type decode_aux_t is record
     opcode    : std_ulogic_vector(6 downto 0);
+    is_a_lr   : std_ulogic;
+    is_a_sc   : std_ulogic;
     is_f_op   : std_ulogic;
     is_m_mul  : std_ulogic;
     is_m_div  : std_ulogic;
@@ -591,6 +594,11 @@ begin
   imm_gen: process(clk_i)
   begin
     if rising_edge(clk_i) then
+      -- default: I-immediate: ALU-immediate, loads, jump-and-link with register --
+      imm_o(XLEN-1 downto 11) <= (others => execute_engine.ir(31)); -- sign extension
+      imm_o(10 downto 01)     <= execute_engine.ir(30 downto 21);
+      imm_o(00)               <= execute_engine.ir(20);
+      --
       case decode_aux.opcode is
         when opcode_store_c => -- S-immediate: store
           imm_o(XLEN-1 downto 11) <= (others => execute_engine.ir(31)); -- sign extension
@@ -611,10 +619,13 @@ begin
           imm_o(11)               <= execute_engine.ir(20);
           imm_o(10 downto 01)     <= execute_engine.ir(30 downto 21);
           imm_o(00)               <= '0';
-        when others => -- I-immediate: ALU-immediate, loads, jump-and-link with register
-          imm_o(XLEN-1 downto 11) <= (others => execute_engine.ir(31)); -- sign extension
-          imm_o(10 downto 01)     <= execute_engine.ir(30 downto 21);
-          imm_o(00)               <= execute_engine.ir(20);
+        when opcode_amo_c => -- atomic memory access
+          if (CPU_EXTENSION_RISCV_A = true) then
+            imm_o <= (others => '0');
+          else
+            NULL;
+          end if;
+        when others => NULL;
       end case;
     end if;
   end process imm_gen;
@@ -708,6 +719,8 @@ begin
   begin
     -- defaults --
     decode_aux.is_f_op   <= '0';
+    decode_aux.is_a_lr   <= '0';
+    decode_aux.is_a_sc   <= '0';
     decode_aux.is_m_mul  <= '0';
     decode_aux.is_m_div  <= '0';
     decode_aux.is_b_imm  <= '0';
@@ -718,6 +731,15 @@ begin
 
     -- simplified opcode --
     decode_aux.opcode <= execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
+
+    -- is ATOMIC operation? --
+    if (CPU_EXTENSION_RISCV_A = true) then -- ATOMIC implemented at all?
+      if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and
+         (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c+3) = "0001") then
+        decode_aux.is_a_lr <= not execute_engine.ir(instr_funct7_lsb_c+2); -- LR.W
+        decode_aux.is_a_sc <=     execute_engine.ir(instr_funct7_lsb_c+2); -- SC.W
+      end if;
+    end if;
 
     -- is BITMANIP instruction? --
     -- pretty complex as we have to check the already-crowded ALU/ALUI instruction space --
@@ -854,7 +876,7 @@ begin
 
     -- ALU operand B: is immediate? --
     case decode_aux.opcode is
-      when opcode_alui_c | opcode_lui_c | opcode_auipc_c | opcode_load_c | opcode_store_c | opcode_branch_c | opcode_jal_c | opcode_jalr_c =>
+      when opcode_alui_c | opcode_lui_c | opcode_auipc_c | opcode_load_c | opcode_store_c | opcode_amo_c | opcode_branch_c | opcode_jal_c | opcode_jalr_c =>
         ctrl_nxt.alu_opb_mux <= '1';
       when others =>
         ctrl_nxt.alu_opb_mux <= '0';
@@ -969,7 +991,7 @@ begin
             ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back
             execute_engine.state_nxt <= DISPATCH;
 
-          when opcode_load_c | opcode_store_c => -- load/store
+          when opcode_load_c | opcode_store_c | opcode_amo_c => -- memory access
           -- ------------------------------------------------------------
             ctrl_nxt.bus_mo_we       <= '1'; -- write memory output registers (data & address)
             execute_engine.state_nxt <= MEM_REQ;
@@ -1053,21 +1075,35 @@ begin
 
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
-        if (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- no request if illegal instruction
-          ctrl_nxt.bus_req_rd <= not execute_engine.ir(5); -- load
-          ctrl_nxt.bus_req_wr <=     execute_engine.ir(5); -- store
+        if (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then -- abort if illegal instruction
+          execute_engine.state_nxt <= DISPATCH;
+        else
+          if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2)) then -- atomic operation
+            ctrl_nxt.bus_req_rd <= decode_aux.is_a_lr; -- LR.W
+            ctrl_nxt.bus_req_wr <= decode_aux.is_a_sc; -- SC.W
+            ctrl_nxt.bus_rvso   <= '1'; -- this is a reservation set operation
+          else -- normal load/store
+            ctrl_nxt.bus_req_rd <= not execute_engine.ir(5); -- load
+            ctrl_nxt.bus_req_wr <=     execute_engine.ir(5); -- store
+          end if;
+          execute_engine.state_nxt <= MEM_WAIT;
         end if;
-        execute_engine.state_nxt <= MEM_WAIT;
 
       when MEM_WAIT => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
+        if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2)) then
+          ctrl_nxt.bus_rvso <= '1'; -- this is a reservation set operation
+        end if;
         ctrl_nxt.rf_mux <= rf_mux_mem_c; -- memory read data
         if (trap_ctrl.exc_buf(exc_laccess_c)  = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- bus access error
-           (trap_ctrl.exc_buf(exc_lalign_c)   = '1') or (trap_ctrl.exc_buf(exc_salign_c)  = '1') or -- alignment error
-           (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then -- illegal instruction
+           (trap_ctrl.exc_buf(exc_lalign_c)   = '1') or (trap_ctrl.exc_buf(exc_salign_c)  = '1') then -- alignment error
           execute_engine.state_nxt <= DISPATCH; -- abort!
         elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
-          ctrl_nxt.rf_wb_en        <= not execute_engine.ir(instr_opcode_msb_c-1); -- data write-back for load
+          if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2)) then -- atomic operation
+            ctrl_nxt.rf_wb_en <= '1';
+          else -- normal load/store
+            ctrl_nxt.rf_wb_en <= not execute_engine.ir(instr_opcode_msb_c-1); -- data write-back for load
+          end if;
           execute_engine.state_nxt <= DISPATCH;
         end if;
 
@@ -1132,6 +1168,7 @@ begin
   ctrl_o.bus_fence    <= ctrl.bus_fence;
   ctrl_o.bus_fencei   <= ctrl.bus_fencei;
   ctrl_o.bus_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
+  ctrl_o.bus_rvso     <= ctrl.bus_rvso;
 
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= execute_engine.ir(instr_funct3_msb_c  downto instr_funct3_lsb_c);
@@ -1275,33 +1312,41 @@ begin
       -- ------------------------------------------------------------
         illegal_cmd <= '0';
 
-      when opcode_jalr_c => -- check JALR.funct3
+      when opcode_jalr_c => -- check funct3
       -- ------------------------------------------------------------
         case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           when "000"  => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
 
-      when opcode_branch_c => -- check BRANCH.funct3
+      when opcode_branch_c => -- check funct3
       -- ------------------------------------------------------------
         case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           when funct3_beq_c | funct3_bne_c | funct3_blt_c | funct3_bge_c | funct3_bltu_c | funct3_bgeu_c => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
 
-      when opcode_load_c => -- check LOAD.funct3
+      when opcode_load_c => -- check funct3
       -- ------------------------------------------------------------
         case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           when funct3_lb_c | funct3_lh_c | funct3_lw_c | funct3_lbu_c | funct3_lhu_c => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
 
-      when opcode_store_c => -- check STORE.funct3
+      when opcode_store_c => -- check funct3
       -- ------------------------------------------------------------
         case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           when funct3_sb_c | funct3_sh_c | funct3_sw_c => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
+
+      when opcode_amo_c => -- check funct7 and funct3
+      -- ------------------------------------------------------------
+        if (CPU_EXTENSION_RISCV_A = true) and ((decode_aux.is_a_lr = '1') or (decode_aux.is_a_sc = '1')) then -- LR.W/SC.W
+          illegal_cmd <= '0';
+        else
+          illegal_cmd <= '1';
+        end if;
 
       when opcode_alu_c => -- check operation specifier
       -- ------------------------------------------------------------
@@ -2089,6 +2134,7 @@ begin
 --        csr.rdata <= (others => '0');
 
         when csr_misa_c => -- ISA and extensions
+          csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
           csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
           csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
           csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension

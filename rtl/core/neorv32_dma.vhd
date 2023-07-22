@@ -308,12 +308,13 @@ begin
   engine.busy <= '0' when (engine.state = S_IDLE) else '1';
 
   -- transfer-done interrupt --
-  irq_o <= engine.done and config.enable;
+  irq_o <= engine.done;
 
   -- bus output --
   dma_req_o.priv <= priv_mode_m_c;
   dma_req_o.src  <= '0'; -- source = data access
   dma_req_o.addr <= engine.src_addr when (engine.state = S_READ) else engine.dst_addr;
+  dma_req_o.rvso <= '0'; -- no reservation set operation possible
 
   -- address increment --
   address_inc: process(config.qsel)

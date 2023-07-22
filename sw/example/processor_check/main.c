@@ -107,6 +107,8 @@ uint32_t xirq_trap_handler_ack = 0;
 volatile uint32_t dma_src;
 /// Variable to test store accesses
 volatile uint32_t store_access_addr[2];
+/// Variable for testing atomic memory accesses
+volatile uint32_t amo_var;
 /// Variable to test PMP
 volatile uint32_t __attribute__((aligned(4))) pmp_access[2];
 /// Number of implemented PMP regions
@@ -171,6 +173,9 @@ int main() {
 
   // fancy intro
   // -----------------------------------------------
+  // check MISA CSR (hardware configuration) vs. compiler flags (software configuration)
+  neorv32_rte_check_isa(0);
+
   // show NEORV32 ASCII logo
   neorv32_rte_print_logo();
 
@@ -200,10 +205,10 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test performance counter: setup as many events and counters as possible
+  // Setup HPMs
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] HPM init ", cnt_test);
+  PRINT_STANDARD("[%i] HPM setup ", cnt_test);
 
   num_hpm_cnts_global = neorv32_cpu_hpm_get_num_counters();
 
@@ -242,14 +247,14 @@ int main() {
   // Setup PMP for tests
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] PMP init ", cnt_test);
+  PRINT_STANDARD("[%i] PMP setup ", cnt_test);
 
   // check if PMP is already locked
   tmp_a = neorv32_cpu_csr_read(CSR_PMPCFG0);
   tmp_b = ((1 << PMPCFG_L) << 0) | ((1 << PMPCFG_L) << 8) | ((1 << PMPCFG_L) << 16);
 
   if (tmp_a & tmp_b) {
-    PRINT_CRITICAL("\nERROR! PMP locked!\n");
+    PRINT_CRITICAL("\nERROR! PMP LOCKED!\n");
     return 1;
   }
 
@@ -281,7 +286,9 @@ int main() {
   cnt_test++;
 
   asm volatile ("fence"); // flush/reload d-cache
-  asm volatile ("fence.i"); // clear instruction prefetch buffer and clear i-cache
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIFENCEI)) {
+    asm volatile ("fence.i"); // clear instruction prefetch buffer and clear i-cache
+  }
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
     test_ok();
@@ -442,7 +449,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MSCRATCH, 0);
 
     // setup test program in external memory
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+0, 0x3407D073); // csrwi mscratch, 15
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+0, 0x3407D073); // csrwi mscratch, 15 (32-bit)
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+4, 0x00008067); // ret (32-bit)
 
     // execute program
@@ -471,7 +478,7 @@ int main() {
 
   cnt_test++;
 
-  tmp_a = neorv32_cpu_csr_read(CSR_DSCRATCH0); // only accessible in debug mode
+  neorv32_cpu_csr_read(CSR_DSCRATCH0); // only accessible in debug mode
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
     test_ok();
@@ -523,7 +530,7 @@ int main() {
   // Unaligned instruction address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Fetch align EXC ", cnt_test);
+  PRINT_STANDARD("[%i] IF align EXC ", cnt_test);
 
   // skip if C-mode is implemented
   if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) == 0) {
@@ -551,7 +558,7 @@ int main() {
   // Instruction access fault
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Fetch access EXC ", cnt_test);
+  PRINT_STANDARD("[%i] IF access EXC ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
     cnt_test++;
@@ -665,7 +672,7 @@ int main() {
   // Unaligned load address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Load align EXC ", cnt_test);
+  PRINT_STANDARD("[%i] LW align EXC ", cnt_test);
   cnt_test++;
 
   // load from unaligned address
@@ -687,7 +694,7 @@ int main() {
   // Load access fault
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Load access EXC ", cnt_test);
+  PRINT_STANDARD("[%i] LW access EXC ", cnt_test);
 
   cnt_test++;
 
@@ -710,7 +717,7 @@ int main() {
   // Unaligned store address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Store align EXC ", cnt_test);
+  PRINT_STANDARD("[%i] SW align EXC ", cnt_test);
   cnt_test++;
 
   // initialize test variable
@@ -737,7 +744,7 @@ int main() {
   // Store access fault
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Store access EXC ", cnt_test);
+  PRINT_STANDARD("[%i] SW access EXC ", cnt_test);
 
   cnt_test++;
 
@@ -801,7 +808,7 @@ int main() {
   // Machine timer interrupt (MTIME)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] MTI (MTIME) IRQ ", cnt_test);
+  PRINT_STANDARD("[%i] MTI IRQ ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
     cnt_test++;
@@ -905,7 +912,7 @@ int main() {
   // Permanent IRQ (make sure interrupted program proceeds)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Permanent IRQ (MTIME) ", cnt_test);
+  PRINT_STANDARD("[%i] Permanent IRQ (MTI) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
     cnt_test++;
@@ -937,7 +944,7 @@ int main() {
   // Test pending interrupt
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Pending IRQ (MTIME) ", cnt_test);
+  PRINT_STANDARD("[%i] Pending IRQ (MTI) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
     cnt_test++;
@@ -1576,7 +1583,7 @@ int main() {
   // mstatus.mie is cleared before to check if machine-mode IRQ still trigger in user-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] User-mode WFI (wake-up via MTIME) ", cnt_test);
+  PRINT_STANDARD("[%i] User-mode WFI (wake-up via MTI) ", cnt_test);
 
   if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) &&
       (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U))) {
@@ -1616,31 +1623,36 @@ int main() {
   // Test if CPU wakes-up from WFI if m-mode interrupts are disabled globally
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] WFI (wakeup on pending MTIME) ", cnt_test);
+  PRINT_STANDARD("[%i] WFI (wakeup on pending MTI) ", cnt_test);
 
-  cnt_test++;
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
+    cnt_test++;
 
-  // disable m-mode interrupts globally
-  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+    // disable m-mode interrupts globally
+    neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
-  // program wake-up timer
-  neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 300);
+    // program wake-up timer
+    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 300);
 
-  // enable mtime interrupt
-  neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
+    // enable mtime interrupt
+    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
 
-  // put CPU into sleep mode -the CPU has to wakeup again if any enabled interrupt source
-  // becomes pending - even if we are in m-mode and mstatus.mie is cleared
-  asm volatile ("wfi");
+    // put CPU into sleep mode -the CPU has to wakeup again if any enabled interrupt source
+    // becomes pending - even if we are in m-mode and mstatus.mie is cleared
+    asm volatile ("wfi");
 
-  neorv32_cpu_csr_write(CSR_MIE, 0);
-  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+    neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
-    test_ok();
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
   }
   else {
-    test_fail();
+    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -1691,7 +1703,7 @@ int main() {
                     "csrr %[rd], misa " : [rd] "=r" (tmp_a) : ); // has to fail
     }
 
-    if ((tmp_a = 234) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL)) {
+    if ((tmp_a == 234) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL)) {
       test_ok();
     }
     else {
@@ -1701,6 +1713,82 @@ int main() {
   else {
     PRINT_STANDARD("[n.a.]\n");
   }
+
+
+  // ----------------------------------------------------------
+  // Test atomic lr/sc memory access - failing access
+  // ----------------------------------------------------------
+#if defined __riscv_atomic
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
+  PRINT_STANDARD("failing) ");
+
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_A)) {
+    cnt_test++;
+
+    // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
+    //        it before/after making "normal" load/store operations
+
+    amo_var = 0x00cafe00; // initialize
+
+    tmp_a = neorv32_cpu_load_reservate_word((uint32_t)&amo_var);
+    amo_var = 0x10cafe00; // break reservation
+    asm volatile ("fence"); // flush/reload d-cache
+    tmp_b = neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xaaaaaaaa);
+    asm volatile ("fence"); // flush/reload d-cache
+
+    if ((tmp_a   == 0x00cafe00) && // correct LR.W result
+        (amo_var == 0x10cafe00) && // atomic variable NOT altered by SC.W
+        (tmp_b   == 0x00000001) && // SC.W failed
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
+#endif
+
+
+  // ----------------------------------------------------------
+  // Test atomic lr/sc memory access - succeeding access
+  // ----------------------------------------------------------
+#if defined __riscv_atomic
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
+  PRINT_STANDARD("succeed) ");
+
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_A)) {
+    cnt_test++;
+
+    // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
+    //        it before/after making "normal" load/store operations
+
+    amo_var = 0x00abba00; // initialize
+
+    tmp_a = neorv32_cpu_load_reservate_word((uint32_t)&amo_var);
+    asm volatile ("fence"); // flush/reload d-cache
+    neorv32_cpu_load_unsigned_word((uint32_t)&amo_var); // dummy read, must not alter reservation set state
+    tmp_b = neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xcccccccc);
+    asm volatile ("fence"); // flush/reload d-cache
+
+    if ((tmp_a   == 0x00abba00) && // correct LR.W result
+        (amo_var == 0xcccccccc) && // atomic variable WAS altered by SC.W
+        (tmp_b   == 0x00000000) && // SC.W succeeded
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
+#endif
 
 
   // ----------------------------------------------------------
@@ -1720,7 +1808,7 @@ int main() {
     // fail as u-mode has no permissions by default
     // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-    PRINT_STANDARD("[%i] PMP: U-mode read (denied) ", cnt_test);
+    PRINT_STANDARD("[%i] PMP U-mode read (denied) ", cnt_test);
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
@@ -1741,7 +1829,7 @@ int main() {
     // Create PMP protected region
     // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-    PRINT_STANDARD("[%i] PMP: setup ", cnt_test);
+    PRINT_STANDARD("[%i] PMP config ", cnt_test);
     cnt_test++;
 
     tmp_a = (uint32_t)(&pmp_access[0]); // base address of protected region
@@ -1763,7 +1851,7 @@ int main() {
     // LOAD from U-mode: should succeed
     // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-    PRINT_STANDARD("[%i] PMP: U-mode R (granted) ", cnt_test);
+    PRINT_STANDARD("[%i] PMP U-mode R (granted) ", cnt_test);
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
@@ -1785,7 +1873,7 @@ int main() {
     // STORE from U-mode: should fail
     // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-    PRINT_STANDARD("[%i] PMP: U-mode W (denied) ", cnt_test);
+    PRINT_STANDARD("[%i] PMP U-mode W (denied) ", cnt_test);
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
@@ -1805,7 +1893,7 @@ int main() {
     // EXECUTE from U-mode: should fail
     // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-    PRINT_STANDARD("[%i] PMP: U-mode X (denied) ", cnt_test);
+    PRINT_STANDARD("[%i] PMP U-mode X (denied) ", cnt_test);
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
@@ -1825,7 +1913,7 @@ int main() {
     // STORE from M mode using U mode permissions: should fail
     // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-    PRINT_STANDARD("[%i] PMP: M-mode (U-mode perm.) W (denied) ", cnt_test);
+    PRINT_STANDARD("[%i] PMP M-mode (U-mode perm.) W (denied) ", cnt_test);
     cnt_test++;
 
     // make M-mode load/store accesses use U-mode rights
@@ -1847,7 +1935,7 @@ int main() {
     // STORE from M mode with LOCKED: should fail
     // ---------------------------------------------
     neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-    PRINT_STANDARD("[%i] PMP: M-mode (LOCKED) W (denied) ", cnt_test);
+    PRINT_STANDARD("[%i] PMP M-mode (LOCKED) W (denied) ", cnt_test);
     cnt_test++;
 
     // set lock bit
@@ -1864,8 +1952,7 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("[%i] PMP: \n", cnt_test);
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT_STANDARD("[%i] PMP [n.a.]\n", cnt_test);
   }
 
 
@@ -1874,21 +1961,21 @@ int main() {
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all HPM counters
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIHPM)) {
-    PRINT_STANDARD("\n\nHPMs\n"
-                   "00 Instr. %u\n"
-                   "02 Clocks %u\n"
-                   "03 Compr. %u\n"
-                   "04 IF w.  %u\n"
-                   "05 II w.  %u\n"
-                   "06 ALU w. %u\n"
-                   "07 M LD   %u\n"
-                   "08 M ST   %u\n"
-                   "09 M w.   %u\n"
-                   "10 Jump   %u\n"
-                   "11 Branch %u\n"
-                   "12 >taken %u\n"
-                   "13 EXCs   %u\n"
-                   "14 Traps  %u\n",
+    PRINT_STANDARD("\n\nHPMs:\n"
+                   "#00 Instr.   : %u\n"
+                   "#02 Clocks   : %u\n"
+                   "#03 C instr. : %u\n"
+                   "#04 IF wait  : %u\n"
+                   "#05 II wait  : %u\n"
+                   "#06 ALU wait : %u\n"
+                   "#07 MEM LD   : %u\n"
+                   "#08 MEM ST   : %u\n"
+                   "#09 MEM wait : %u\n"
+                   "#10 Jumps    : %u\n"
+                   "#11 Branches : %u\n"
+                   "#12 >taken   : %u\n"
+                   "#13 Traps    : %u\n"
+                   "#14 Illegals : %u\n",
                    (uint32_t)neorv32_cpu_csr_read(CSR_INSTRET),
                    (uint32_t)neorv32_cpu_csr_read(CSR_CYCLE),
                    (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3),

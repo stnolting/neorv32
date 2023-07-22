@@ -57,6 +57,7 @@ entity neorv32_top is
     ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
 
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic memory operations extension?
     CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
@@ -82,6 +83,9 @@ entity neorv32_top is
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..29)
     HPM_CNT_WIDTH                : natural := 40;     -- total size of HPM counters (0..64)
+
+    -- Atomic Memory Access - Reservation Set Granularity --
+    AMO_RVS_GRANULARITY          : natural := 4;      -- size in bytes, has to be a power of 2, min 4
 
     -- Internal Instruction memory (IMEM) --
     MEM_INT_IMEM_EN              : boolean := false;  -- implement processor-internal instruction memory
@@ -253,6 +257,7 @@ architecture neorv32_top_rtl of neorv32_top is
   -- auto-configuration --
   constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(INT_BOOTLOADER_EN, mem_boot_base_c, mem_ispace_base_c);
   constant io_reg_buf_en_c : boolean := ICACHE_EN or DCACHE_EN;
+  constant imem_as_rom_c   : boolean := not INT_BOOTLOADER_EN;
 
   -- reset generator --
   signal rstn_ext_sreg, rstn_int_sreg : std_ulogic_vector(3 downto 0);
@@ -300,8 +305,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal core_rsp               : bus_rsp_t; -- core complex (CPU + caches)
 
   -- bus: core complex + DMA --
-  signal main_req, dma_req : bus_req_t; -- core complex (CPU + caches + DMA)
-  signal main_rsp, dma_rsp : bus_rsp_t; -- core complex (CPU + caches + DMA)
+  signal main_req, main2_req, dma_req : bus_req_t; -- core complex (CPU + caches + DMA)
+  signal main_rsp, main2_rsp, dma_rsp : bus_rsp_t; -- core complex (CPU + caches + DMA)
 
   -- bus: main sections --
   signal imem_req, dmem_req, xip_req, boot_req, io_req, xbus_req : bus_req_t;
@@ -475,6 +480,7 @@ begin
       CPU_DEBUG_PARK_ADDR          => dm_park_entry_c,
       CPU_DEBUG_EXC_ADDR           => dm_exc_entry_c,
       -- RISC-V CPU Extensions --
+      CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,
       CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,
       CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,
       CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,
@@ -673,57 +679,86 @@ begin
 
 
   -- **************************************************************************************************************************
+  -- Reservation Set Controller (for atomic LR/SC memory accesses)
+  -- **************************************************************************************************************************
+  neorv32_reservation_set_true:
+  if (CPU_EXTENSION_RISCV_A = true) generate
+    neorv32_reservation_set_inst: entity neorv32.neorv32_reservation_set
+    generic map (
+      GRANULARITY => AMO_RVS_GRANULARITY
+    )
+    port map (
+      clk_i       => clk_i,
+      rstn_i      => rstn_int,
+      rvs_addr_o  => open, -- yet unused
+      rvs_valid_o => open, -- yet unused
+      rvs_clear_i => '0',  -- yet unused
+      core_req_i  => main_req,
+      core_rsp_o  => main_rsp,
+      sys_req_o   => main2_req,
+      sys_rsp_i   => main2_rsp
+    );
+  end generate;
+
+  neorv32_reservation_set_false:
+  if (CPU_EXTENSION_RISCV_A = false) generate
+    main2_req <= main_req;
+    main_rsp  <= main2_rsp;
+  end generate;
+
+
+  -- **************************************************************************************************************************
   -- Address Region Gateway
   -- **************************************************************************************************************************
   neorv32_gateway_inst: entity neorv32.neorv32_gateway
-    generic map (
-      TIMEOUT     => max_proc_int_response_time_c,
-      -- IMEM port --
-      IMEM_ENABLE => MEM_INT_IMEM_EN,
-      IMEM_BASE   => mem_ispace_base_c,
-      IMEM_SIZE   => MEM_INT_IMEM_SIZE,
-      -- DMEM port --
-      DMEM_ENABLE => MEM_INT_DMEM_EN,
-      DMEM_BASE   => mem_dspace_base_c,
-      DMEM_SIZE   => MEM_INT_DMEM_SIZE,
-      -- XIP port --
-      XIP_ENABLE  => IO_XIP_EN,
-      XIP_BASE    => mem_xip_base_c,
-      XIP_SIZE    => mem_xip_size_c,
-      -- BOOT ROM port --
-      BOOT_ENABLE => INT_BOOTLOADER_EN,
-      BOOT_BASE   => mem_boot_base_c,
-      BOOT_SIZE   => mem_boot_size_c,
-      -- IO port --
-      IO_ENABLE   => true,
-      IO_REQ_REG  => io_reg_buf_en_c,
-      IO_RSP_REG  => io_reg_buf_en_c,
-      IO_BASE     => mem_io_base_c,
-      IO_SIZE     => mem_io_size_c,
-      -- EXT port --
-      EXT_ENABLE  => MEM_EXT_EN
-    )
-    port map (
-      -- global control --
-      clk_i      => clk_i,
-      rstn_i     => rstn_int,
-      -- host port --
-      main_req_i => main_req,
-      main_rsp_o => main_rsp,
-      -- section ports --
-      imem_req_o => imem_req,
-      imem_rsp_i => imem_rsp,
-      dmem_req_o => dmem_req,
-      dmem_rsp_i => dmem_rsp,
-      xip_req_o  => xip_req,
-      xip_rsp_i  => xip_rsp,
-      boot_req_o => boot_req,
-      boot_rsp_i => boot_rsp,
-      io_req_o   => io_req,
-      io_rsp_i   => io_rsp,
-      ext_req_o  => xbus_req,
-      ext_rsp_i  => xbus_rsp
-    );
+  generic map (
+    TIMEOUT     => max_proc_int_response_time_c,
+    -- IMEM port --
+    IMEM_ENABLE => MEM_INT_IMEM_EN,
+    IMEM_BASE   => mem_ispace_base_c,
+    IMEM_SIZE   => MEM_INT_IMEM_SIZE,
+    -- DMEM port --
+    DMEM_ENABLE => MEM_INT_DMEM_EN,
+    DMEM_BASE   => mem_dspace_base_c,
+    DMEM_SIZE   => MEM_INT_DMEM_SIZE,
+    -- XIP port --
+    XIP_ENABLE  => IO_XIP_EN,
+    XIP_BASE    => mem_xip_base_c,
+    XIP_SIZE    => mem_xip_size_c,
+    -- BOOT ROM port --
+    BOOT_ENABLE => INT_BOOTLOADER_EN,
+    BOOT_BASE   => mem_boot_base_c,
+    BOOT_SIZE   => mem_boot_size_c,
+    -- IO port --
+    IO_ENABLE   => true,
+    IO_REQ_REG  => io_reg_buf_en_c,
+    IO_RSP_REG  => io_reg_buf_en_c,
+    IO_BASE     => mem_io_base_c,
+    IO_SIZE     => mem_io_size_c,
+    -- EXT port --
+    EXT_ENABLE  => MEM_EXT_EN
+  )
+  port map (
+    -- global control --
+    clk_i      => clk_i,
+    rstn_i     => rstn_int,
+    -- host port --
+    main_req_i => main2_req,
+    main_rsp_o => main2_rsp,
+    -- section ports --
+    imem_req_o => imem_req,
+    imem_rsp_i => imem_rsp,
+    dmem_req_o => dmem_req,
+    dmem_rsp_i => dmem_rsp,
+    xip_req_o  => xip_req,
+    xip_rsp_i  => xip_rsp,
+    boot_req_o => boot_req,
+    boot_rsp_i => boot_rsp,
+    io_req_o   => io_req,
+    io_rsp_i   => io_rsp,
+    ext_req_o  => xbus_req,
+    ext_rsp_i  => xbus_rsp
+  );
 
 
   -- **************************************************************************************************************************
@@ -739,7 +774,7 @@ begin
       neorv32_int_imem_inst: entity neorv32.neorv32_imem
       generic map (
         IMEM_SIZE    => MEM_INT_IMEM_SIZE,
-        IMEM_AS_IROM => not INT_BOOTLOADER_EN
+        IMEM_AS_IROM => imem_as_rom_c
       )
       port map (
         clk_i     => clk_i,
@@ -1027,7 +1062,6 @@ begin
         GPIO_NUM => IO_GPIO_NUM
       )
       port map (
-        -- host access --
         clk_i     => clk_i,
         rstn_i    => rstn_int,
         bus_req_i => io_dev_req(IODEV_GPIO),

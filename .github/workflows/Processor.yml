@@ -61,7 +61,7 @@ jobs:
           USER_FLAGS+=-DUART0_SIM_MODE
           USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT
           USER_FLAGS+=-flto
-          MARCH=rv32imc
+          MARCH=rv32imac
           info
           all
 
@@ -122,7 +122,7 @@ jobs:
 #         USER_FLAGS+=-DRUN_CHECK \
 #         USER_FLAGS+=-DUART0_SIM_MODE \
 #         USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT \
-#         MARCH=rv32imc \
+#         MARCH=rv32imac \
 #         info \
 #         all
 #
