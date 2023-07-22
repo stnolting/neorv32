@@ -1738,7 +1738,7 @@ int main() {
     asm volatile ("fence"); // flush/reload d-cache
 
     if ((tmp_a   == 0x00cafe00) && // correct LR.W result
-        (amo_var == 0x10cafe00) && // atomic variable NOT altered by SC.W
+        (amo_var == 0x10cafe00) && // atomic variable NOT updates by SC.W
         (tmp_b   == 0x00000001) && // SC.W failed
         (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
       test_ok();
@@ -1776,7 +1776,7 @@ int main() {
     asm volatile ("fence"); // flush/reload d-cache
 
     if ((tmp_a   == 0x00abba00) && // correct LR.W result
-        (amo_var == 0xcccccccc) && // atomic variable WAS altered by SC.W
+        (amo_var == 0xcccccccc) && // atomic variable WAS updates by SC.W
         (tmp_b   == 0x00000000) && // SC.W succeeded
         (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
       test_ok();
