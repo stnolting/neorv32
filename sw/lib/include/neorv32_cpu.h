@@ -220,6 +220,7 @@ inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint3
  * @param[in] addr Address (32-bit).
  * @return Read data word (32-bit).
  **************************************************************************/
+#if defined __riscv_atomic
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_reservate_word(uint32_t addr) {
 
   uint32_t amo_addr = addr;
@@ -229,6 +230,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_reservate_word(
 
   return amo_rdata;
 }
+#endif
 
 
 /**********************************************************************//**
@@ -241,6 +243,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_reservate_word(
  * @param[in] wdata Data word to-be-written conditionally (32-bit).
  * @return Status: 0 = ok, 1 = failed (32-bit).
  **************************************************************************/
+#if defined __riscv_atomic
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_store_conditional_word(uint32_t addr, uint32_t wdata) {
 
   uint32_t amo_addr  = addr;
@@ -251,6 +254,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_store_conditional_wo
 
   return amo_status;
 }
+#endif
 
 
 /**********************************************************************//**
