@@ -3,15 +3,17 @@
   {name: 'req.addr',  wave: 'x3..x|.4..x|.5..x', data: ['addr', 'addr', 'addr']},
   {name: 'req.data',  wave: 'x....|.4..x|.5..x', data: ['wdata1', 'wdata2']},
   {name: 'req.ben',   wave: 'xx..x|.4..x|.5..x', data: ['0b1111', '0b1111']},
-  {name: 'req.we',    wave: '0....|.10..|.10..'},
-  {name: 'req.re',    wave: '010..|.....|.....'},
+  {name: 'req.we',    wave: '0....|.10..|.10..', node: '.......d......'},
+  {name: 'req.re',    wave: '010..|.....|.....', node: '.a............'},
   {name: 'req.src',   wave: '0....|.....|.....'},
   {name: 'req.priv',  wave: '0....|.....|.....'},
-  {name: 'req.rvso',  wave: '01..0|.1..0|.1..0'},
+  {name: 'req.rvso',  wave: '01..0|.1..0|.1..0', node: '.b.......e....'},
   {},
   {name: 'rsp.data',  wave: '2..32|...42|...52', data: ['0', 'rdata', '0', '0', '0', '1']},
-  {name: 'rsp.ack',   wave: '0..10|...10|...10'},
+  {name: 'rsp.ack',   wave: '0..10|...10|...10', node: '.........f....'},
   {name: 'rsp.err',   wave: '0....|.....|.....'},
   {},
-  {name: 'rvs_valid', wave: '0.1..|....0|.....'}
-]}
+  {name: 'rvs_valid', wave: '0.1..|....0|.....', node: '..c.......g...'}
+],
+ edge: ['a~>c', 'b~>c', 'd~>g', 'e~>g', 'f~>g']
+}
