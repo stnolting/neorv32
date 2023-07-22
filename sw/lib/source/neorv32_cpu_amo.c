@@ -55,6 +55,8 @@ static inline int32_t MINU(uint32_t a, uint32_t b) { return((a) < (b) ? a : b); 
 
 /**********************************************************************//**
  * Atomic SWAP (AMOSWAP.W).
+ * return <= MEM[addr]; MEM[addr] <= wdata
+ *
  * @note This function requires the CPU A ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
@@ -80,6 +82,8 @@ uint32_t neorv32_cpu_amoswapw(uint32_t addr, uint32_t wdata) {
 
 /**********************************************************************//**
  * Atomic ADD (AMOADD.W).
+ * return <= MEM[addr]; MEM[addr] <= MEM[addr] + wdata
+ *
  * @note This function requires the CPU A ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
@@ -107,6 +111,8 @@ uint32_t neorv32_cpu_amoaddw(uint32_t addr, uint32_t wdata) {
 
 /**********************************************************************//**
  * Atomic AND (AMOAND.W).
+ * return <= MEM[addr]; MEM[addr] <= MEM[addr] and wdata
+ *
  * @note This function requires the CPU A ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
@@ -134,6 +140,8 @@ uint32_t neorv32_cpu_amoandw(uint32_t addr, uint32_t wdata) {
 
 /**********************************************************************//**
  * Atomic OR (AMOOR.W).
+ * return <= MEM[addr]; MEM[addr] <= MEM[addr] or wdata
+ *
  * @note This function requires the CPU A ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
@@ -161,6 +169,8 @@ uint32_t neorv32_cpu_amoorw(uint32_t addr, uint32_t wdata) {
 
 /**********************************************************************//**
  * Atomic XOR (AMOXOR.W).
+ * return <= MEM[addr]; MEM[addr] <= MEM[addr] xor wdata
+ *
  * @note This function requires the CPU A ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
@@ -188,6 +198,8 @@ uint32_t neorv32_cpu_amoxorw(uint32_t addr, uint32_t wdata) {
 
 /**********************************************************************//**
  * Atomic signed MAX (AMOMAX.W).
+ * return <= MEM[addr]; MEM[addr] <= maximum_signed(MEM[addr], wdata)
+ *
  * @note This function requires the CPU A ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
@@ -215,6 +227,8 @@ int32_t neorv32_cpu_amomaxw(uint32_t addr, int32_t wdata) {
 
 /**********************************************************************//**
  * Atomic unsigned MAX (AMOMAXU.W).
+ * return <= MEM[addr]; MEM[addr] <= maximum_unsigned(MEM[addr], wdata)
+ *
  * @note This function requires the CPU A ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
@@ -242,6 +256,8 @@ uint32_t neorv32_cpu_amomaxuw(uint32_t addr, uint32_t wdata) {
 
 /**********************************************************************//**
  * Atomic signed MIN (AMOMIN.W).
+ * return <= MEM[addr]; MEM[addr] <= minimum_signed(MEM[addr], wdata)
+ *
  * @note This function requires the CPU A ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
@@ -269,6 +285,8 @@ int32_t neorv32_cpu_amominw(uint32_t addr, int32_t wdata) {
 
 /**********************************************************************//**
  * Atomic unsigned MIN (AMOMINU.W).
+ * return <= MEM[addr]; MEM[addr] <= minimum_unsigned(MEM[addr], wdata)
+ *
  * @note This function requires the CPU A ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
