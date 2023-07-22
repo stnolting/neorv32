@@ -9,7 +9,7 @@ When creating a new synthesis/simulation project make sure that all `*.vhd` file
 
 :warning: The sub-folder [`core/mem`](https://github.com/stnolting/neorv32/tree/main/rtl/core/mem)
 contains the _platform-agnostic_ VHDL architectures of the processor-internal memories.
-You can _replace_ inclusion of these files by platform-optimized memory architectures.
+These files can be replaced by platform-specific memory modules.
 
 
 ### [`processor_templates`](https://github.com/stnolting/neorv32/tree/main/rtl/processor_templates)
@@ -31,4 +31,4 @@ or a top entity with _resolved_ port signal types.
 Minimal test setups (FPGA- and board-independent) for the processor. See the
 [README](https://github.com/stnolting/neorv32/tree/main/rtl/test_setups)
 in that folder for more information. Note that these test setups are used in the
-[NEORV32 USer Guide](https://stnolting.github.io/neorv32/ug).
+[NEORV32 User Guide](https://stnolting.github.io/neorv32/ug).
