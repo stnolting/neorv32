@@ -214,38 +214,40 @@ inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint3
 /**********************************************************************//**
  * Atomic memory access: load-reservate word.
  *
- * @note An unaligned access address will raise an alignment exception.
+ * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A ISA extension.
  *
  * @param[in] addr Address (32-bit).
  * @return Read data word (32-bit).
  **************************************************************************/
-#if defined __riscv_atomic
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_reservate_word(uint32_t addr) {
 
+#if defined __riscv_atomic
   uint32_t amo_addr = addr;
   uint32_t amo_rdata;
 
   asm volatile ("lr.w %[dst], 0(%[addr])" : [dst] "=r" (amo_rdata) : [addr] "r" (amo_addr));
 
   return amo_rdata;
-}
+#else
+  return 0;
 #endif
+}
 
 
 /**********************************************************************//**
  * Atomic memory access: store-conditional word.
  *
- * @note An unaligned access address will raise an alignment exception.
+ * @note The address has to be word-aligned - otherwise an alignment exception will be raised.
  * @warning This function requires the A ISA extension.
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Data word to-be-written conditionally (32-bit).
  * @return Status: 0 = ok, 1 = failed (32-bit).
  **************************************************************************/
-#if defined __riscv_atomic
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_store_conditional_word(uint32_t addr, uint32_t wdata) {
 
+#if defined __riscv_atomic
   uint32_t amo_addr  = addr;
   uint32_t amo_wdata = wdata;
   uint32_t amo_status;
@@ -253,8 +255,10 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_store_conditional_wo
   asm volatile ("sc.w %[dst], %[src], (%[addr])" : [dst] "=r" (amo_status) : [src] "r" (amo_wdata), [addr] "r" (amo_addr));
 
   return amo_status;
-}
+#else
+  return 1; // always fail
 #endif
+}
 
 
 /**********************************************************************//**
