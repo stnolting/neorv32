@@ -255,9 +255,12 @@ end neorv32_top;
 architecture neorv32_top_rtl of neorv32_top is
 
   -- auto-configuration --
-  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_stdulogicvector_f(INT_BOOTLOADER_EN, mem_boot_base_c, mem_ispace_base_c);
+  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(INT_BOOTLOADER_EN, mem_boot_base_c, mem_ispace_base_c);
   constant io_reg_buf_en_c : boolean := ICACHE_EN or DCACHE_EN;
   constant imem_as_rom_c   : boolean := not INT_BOOTLOADER_EN;
+  constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
+  constant io_xirq_en_c    : boolean := boolean(XIRQ_NUM_CH > 0);
+  constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
 
   -- reset generator --
   signal rstn_ext_sreg, rstn_int_sreg : std_ulogic_vector(3 downto 0);
@@ -349,19 +352,19 @@ begin
       cond_sel_string_f(MEM_EXT_EN, "WISHBONE ", "") &
       cond_sel_string_f(ON_CHIP_DEBUGGER_EN, "OCD ", "") &
       "+ " &
-      cond_sel_string_f(boolean(IO_GPIO_NUM > 0), "GPIO ", "") &
+      cond_sel_string_f(io_gpio_en_c, "GPIO ", "") &
       cond_sel_string_f(IO_MTIME_EN, "MTIME ", "") &
       cond_sel_string_f(IO_UART0_EN, "UART0 ", "") &
       cond_sel_string_f(IO_UART1_EN, "UART1 ", "") &
       cond_sel_string_f(IO_SPI_EN, "SPI ", "") &
       cond_sel_string_f(IO_SDI_EN, "SDI ", "") &
       cond_sel_string_f(IO_TWI_EN, "TWI ", "") &
-      cond_sel_string_f(boolean(IO_PWM_NUM_CH > 0), "PWM ", "") &
+      cond_sel_string_f(io_pwm_en_c, "PWM ", "") &
       cond_sel_string_f(IO_WDT_EN, "WDT ", "") &
       cond_sel_string_f(IO_TRNG_EN, "TRNG ", "") &
       cond_sel_string_f(IO_CFS_EN, "CFS ", "") &
       cond_sel_string_f(IO_NEOLED_EN, "NEOLED ", "") &
-      cond_sel_string_f(boolean(XIRQ_NUM_CH > 0), "XIRQ ", "") &
+      cond_sel_string_f(io_xirq_en_c, "XIRQ ", "") &
       cond_sel_string_f(IO_GPTMR_EN, "GPTMR ", "") &
       cond_sel_string_f(IO_XIP_EN, "XIP ", "") &
       cond_sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ", "") &
@@ -731,7 +734,7 @@ begin
     BOOT_BASE   => mem_boot_base_c,
     BOOT_SIZE   => mem_boot_size_c,
     -- IO port --
-    IO_ENABLE   => true,
+    IO_ENABLE   => true, -- always enabled (mandatory core module)
     IO_REQ_REG  => io_reg_buf_en_c,
     IO_RSP_REG  => io_reg_buf_en_c,
     IO_BASE     => mem_io_base_c,
@@ -918,78 +921,56 @@ begin
     -- -------------------------------------------------------------------------------------------
     io_switch_inst: entity neorv32.io_switch
     generic map (
-      DEV_SIZE    => iodev_size_c, -- size of a single IO device
-      -- device base addresses --
-      DEV_00_BASE => base_io_dm_c,
-      DEV_01_BASE => base_io_sysinfo_c,
-      DEV_02_BASE => base_io_neoled_c,
-      DEV_03_BASE => base_io_gpio_c,
-      DEV_04_BASE => base_io_wdt_c,
-      DEV_05_BASE => base_io_trng_c,
-      DEV_06_BASE => base_io_twi_c,
-      DEV_07_BASE => base_io_spi_c,
-      DEV_08_BASE => base_io_sdi_c,
-      DEV_09_BASE => base_io_uart1_c,
-      DEV_10_BASE => base_io_uart0_c,
-      DEV_11_BASE => base_io_mtime_c,
-      DEV_12_BASE => base_io_xirq_c,
-      DEV_13_BASE => base_io_onewire_c,
-      DEV_14_BASE => base_io_gptmr_c,
-      DEV_15_BASE => base_io_pwm_c,
-      DEV_16_BASE => base_io_xip_c,
-      DEV_17_BASE => base_io_crc_c,
-      DEV_18_BASE => base_io_dma_c,
-      DEV_19_BASE => base_io_slink_c,
-      DEV_20_BASE => base_io_cfs_c
+      DEV_SIZE  => iodev_size_c, -- size of a single IO device
+      -- device port enable and base address --
+      DEV_00_EN => ON_CHIP_DEBUGGER_EN, DEV_00_BASE => base_io_dm_c,
+      DEV_01_EN => true,                DEV_01_BASE => base_io_sysinfo_c, -- always enabled (mandatory core module)
+      DEV_02_EN => IO_NEOLED_EN,        DEV_02_BASE => base_io_neoled_c,
+      DEV_03_EN => io_gpio_en_c,        DEV_03_BASE => base_io_gpio_c,
+      DEV_04_EN => IO_WDT_EN,           DEV_04_BASE => base_io_wdt_c,
+      DEV_05_EN => IO_TRNG_EN,          DEV_05_BASE => base_io_trng_c,
+      DEV_06_EN => IO_TWI_EN,           DEV_06_BASE => base_io_twi_c,
+      DEV_07_EN => IO_SPI_EN,           DEV_07_BASE => base_io_spi_c,
+      DEV_08_EN => IO_SDI_EN,           DEV_08_BASE => base_io_sdi_c,
+      DEV_09_EN => IO_UART1_EN,         DEV_09_BASE => base_io_uart1_c,
+      DEV_10_EN => IO_UART0_EN,         DEV_10_BASE => base_io_uart0_c,
+      DEV_11_EN => IO_MTIME_EN,         DEV_11_BASE => base_io_mtime_c,
+      DEV_12_EN => io_xirq_en_c,        DEV_12_BASE => base_io_xirq_c,
+      DEV_13_EN => IO_ONEWIRE_EN,       DEV_13_BASE => base_io_onewire_c,
+      DEV_14_EN => IO_GPTMR_EN,         DEV_14_BASE => base_io_gptmr_c,
+      DEV_15_EN => io_pwm_en_c,         DEV_15_BASE => base_io_pwm_c,
+      DEV_16_EN => IO_XIP_EN,           DEV_16_BASE => base_io_xip_c,
+      DEV_17_EN => IO_CRC_EN,           DEV_17_BASE => base_io_crc_c,
+      DEV_18_EN => IO_DMA_EN,           DEV_18_BASE => base_io_dma_c,
+      DEV_19_EN => IO_SLINK_EN,         DEV_19_BASE => base_io_slink_c,
+      DEV_20_EN => IO_CFS_EN,           DEV_20_BASE => base_io_cfs_c
     )
     port map (
       -- host port --
       main_req_i => io_req,
       main_rsp_o => io_rsp,
       -- device ports --
-      dev_req_o(00) => io_dev_req(IODEV_OCD),
-      dev_req_o(01) => io_dev_req(IODEV_SYSINFO),
-      dev_req_o(02) => io_dev_req(IODEV_NEOLED),
-      dev_req_o(03) => io_dev_req(IODEV_GPIO),
-      dev_req_o(04) => io_dev_req(IODEV_WDT),
-      dev_req_o(05) => io_dev_req(IODEV_TRNG),
-      dev_req_o(06) => io_dev_req(IODEV_TWI),
-      dev_req_o(07) => io_dev_req(IODEV_SPI),
-      dev_req_o(08) => io_dev_req(IODEV_SDI),
-      dev_req_o(09) => io_dev_req(IODEV_UART1),
-      dev_req_o(10) => io_dev_req(IODEV_UART0),
-      dev_req_o(11) => io_dev_req(IODEV_MTIME),
-      dev_req_o(12) => io_dev_req(IODEV_XIRQ),
-      dev_req_o(13) => io_dev_req(IODEV_ONEWIRE),
-      dev_req_o(14) => io_dev_req(IODEV_GPTMR),
-      dev_req_o(15) => io_dev_req(IODEV_PWM),
-      dev_req_o(16) => io_dev_req(IODEV_XIP),
-      dev_req_o(17) => io_dev_req(IODEV_CRC),
-      dev_req_o(18) => io_dev_req(IODEV_DMA),
-      dev_req_o(19) => io_dev_req(IODEV_SLINK),
-      dev_req_o(20) => io_dev_req(IODEV_CFS),
-      --
-      dev_rsp_i(00) => io_dev_rsp(IODEV_OCD),
-      dev_rsp_i(01) => io_dev_rsp(IODEV_SYSINFO),
-      dev_rsp_i(02) => io_dev_rsp(IODEV_NEOLED),
-      dev_rsp_i(03) => io_dev_rsp(IODEV_GPIO),
-      dev_rsp_i(04) => io_dev_rsp(IODEV_WDT),
-      dev_rsp_i(05) => io_dev_rsp(IODEV_TRNG),
-      dev_rsp_i(06) => io_dev_rsp(IODEV_TWI),
-      dev_rsp_i(07) => io_dev_rsp(IODEV_SPI),
-      dev_rsp_i(08) => io_dev_rsp(IODEV_SDI),
-      dev_rsp_i(09) => io_dev_rsp(IODEV_UART1),
-      dev_rsp_i(10) => io_dev_rsp(IODEV_UART0),
-      dev_rsp_i(11) => io_dev_rsp(IODEV_MTIME),
-      dev_rsp_i(12) => io_dev_rsp(IODEV_XIRQ),
-      dev_rsp_i(13) => io_dev_rsp(IODEV_ONEWIRE),
-      dev_rsp_i(14) => io_dev_rsp(IODEV_GPTMR),
-      dev_rsp_i(15) => io_dev_rsp(IODEV_PWM),
-      dev_rsp_i(16) => io_dev_rsp(IODEV_XIP),
-      dev_rsp_i(17) => io_dev_rsp(IODEV_CRC),
-      dev_rsp_i(18) => io_dev_rsp(IODEV_DMA),
-      dev_rsp_i(19) => io_dev_rsp(IODEV_SLINK),
-      dev_rsp_i(20) => io_dev_rsp(IODEV_CFS)
+      dev_00_req_o => io_dev_req(IODEV_OCD),     dev_00_rsp_i => io_dev_rsp(IODEV_OCD),
+      dev_01_req_o => io_dev_req(IODEV_SYSINFO), dev_01_rsp_i => io_dev_rsp(IODEV_SYSINFO),
+      dev_02_req_o => io_dev_req(IODEV_NEOLED),  dev_02_rsp_i => io_dev_rsp(IODEV_NEOLED),
+      dev_03_req_o => io_dev_req(IODEV_GPIO),    dev_03_rsp_i => io_dev_rsp(IODEV_GPIO),
+      dev_04_req_o => io_dev_req(IODEV_WDT),     dev_04_rsp_i => io_dev_rsp(IODEV_WDT),
+      dev_05_req_o => io_dev_req(IODEV_TRNG),    dev_05_rsp_i => io_dev_rsp(IODEV_TRNG),
+      dev_06_req_o => io_dev_req(IODEV_TWI),     dev_06_rsp_i => io_dev_rsp(IODEV_TWI),
+      dev_07_req_o => io_dev_req(IODEV_SPI),     dev_07_rsp_i => io_dev_rsp(IODEV_SPI),
+      dev_08_req_o => io_dev_req(IODEV_SDI),     dev_08_rsp_i => io_dev_rsp(IODEV_SDI),
+      dev_09_req_o => io_dev_req(IODEV_UART1),   dev_09_rsp_i => io_dev_rsp(IODEV_UART1),
+      dev_10_req_o => io_dev_req(IODEV_UART0),   dev_10_rsp_i => io_dev_rsp(IODEV_UART0),
+      dev_11_req_o => io_dev_req(IODEV_MTIME),   dev_11_rsp_i => io_dev_rsp(IODEV_MTIME),
+      dev_12_req_o => io_dev_req(IODEV_XIRQ),    dev_12_rsp_i => io_dev_rsp(IODEV_XIRQ),
+      dev_13_req_o => io_dev_req(IODEV_ONEWIRE), dev_13_rsp_i => io_dev_rsp(IODEV_ONEWIRE),
+      dev_14_req_o => io_dev_req(IODEV_GPTMR),   dev_14_rsp_i => io_dev_rsp(IODEV_GPTMR),
+      dev_15_req_o => io_dev_req(IODEV_PWM),     dev_15_rsp_i => io_dev_rsp(IODEV_PWM),
+      dev_16_req_o => io_dev_req(IODEV_XIP),     dev_16_rsp_i => io_dev_rsp(IODEV_XIP),
+      dev_17_req_o => io_dev_req(IODEV_CRC),     dev_17_rsp_i => io_dev_rsp(IODEV_CRC),
+      dev_18_req_o => io_dev_req(IODEV_DMA),     dev_18_rsp_i => io_dev_rsp(IODEV_DMA),
+      dev_19_req_o => io_dev_req(IODEV_SLINK),   dev_19_rsp_i => io_dev_rsp(IODEV_SLINK),
+      dev_20_req_o => io_dev_req(IODEV_CFS),     dev_20_rsp_i => io_dev_rsp(IODEV_CFS)
     );
 
 
@@ -1057,7 +1038,7 @@ begin
     -- General Purpose Input/Output Port (GPIO) -----------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_gpio_inst_true:
-    if (IO_GPIO_NUM > 0) generate
+    if (io_gpio_en_c = true) generate
       neorv32_gpio_inst: entity neorv32.neorv32_gpio
       generic map (
         GPIO_NUM => IO_GPIO_NUM
@@ -1073,7 +1054,7 @@ begin
     end generate;
 
     neorv32_gpio_inst_false:
-    if (IO_GPIO_NUM = 0) generate
+    if (io_gpio_en_c = false) generate
       io_dev_rsp(IODEV_GPIO) <= rsp_terminate_c;
       gpio_o                 <= (others => '0');
     end generate;
@@ -1270,7 +1251,7 @@ begin
     -- Pulse-Width Modulation Controller (PWM) ------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_pwm_inst_true:
-    if (IO_PWM_NUM_CH > 0) generate
+    if (io_pwm_en_c = true) generate
       neorv32_pwm_inst: entity neorv32.neorv32_pwm
       generic map (
         NUM_CHANNELS => IO_PWM_NUM_CH
@@ -1287,7 +1268,7 @@ begin
     end generate;
 
     neorv32_pwm_inst_false:
-    if (IO_PWM_NUM_CH = 0) generate
+    if (io_pwm_en_c = false) generate
       io_dev_rsp(IODEV_PWM) <= rsp_terminate_c;
       cg_en.pwm             <= '0';
       pwm_o                 <= (others => '0');
@@ -1350,7 +1331,7 @@ begin
     -- External Interrupt Controller (XIRQ) ---------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_xirq_inst_true:
-    if (XIRQ_NUM_CH > 0) generate
+    if (io_xirq_en_c = true) generate
       neorv32_xirq_inst: entity neorv32.neorv32_xirq
       generic map (
         XIRQ_NUM_CH           => XIRQ_NUM_CH,
@@ -1369,7 +1350,7 @@ begin
     end generate;
 
     neorv32_xirq_inst_false:
-    if (XIRQ_NUM_CH = 0) generate
+    if (io_xirq_en_c = false) generate
       io_dev_rsp(IODEV_XIRQ) <= rsp_terminate_c;
       firq.xirq              <= '0';
     end generate;
@@ -1513,19 +1494,19 @@ begin
       -- On-Chip Debugger --
       ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,
       -- Processor peripherals --
-      IO_GPIO_NUM          => IO_GPIO_NUM,
+      IO_GPIO_EN           => io_gpio_en_c,
       IO_MTIME_EN          => IO_MTIME_EN,
       IO_UART0_EN          => IO_UART0_EN,
       IO_UART1_EN          => IO_UART1_EN,
       IO_SPI_EN            => IO_SPI_EN,
       IO_SDI_EN            => IO_SDI_EN,
       IO_TWI_EN            => IO_TWI_EN,
-      IO_PWM_NUM_CH        => IO_PWM_NUM_CH,
+      IO_PWM_EN            => io_pwm_en_c,
       IO_WDT_EN            => IO_WDT_EN,
       IO_TRNG_EN           => IO_TRNG_EN,
       IO_CFS_EN            => IO_CFS_EN,
       IO_NEOLED_EN         => IO_NEOLED_EN,
-      IO_XIRQ_NUM_CH       => XIRQ_NUM_CH,
+      IO_XIRQ_EN           => io_xirq_en_c,
       IO_GPTMR_EN          => IO_GPTMR_EN,
       IO_XIP_EN            => IO_XIP_EN,
       IO_ONEWIRE_EN        => IO_ONEWIRE_EN,
