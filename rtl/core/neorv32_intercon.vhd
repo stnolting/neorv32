@@ -384,33 +384,52 @@ begin
                                    (port_sel(port_io_c)   = '0') and (EXT_ENABLE = true) else '0';
 
 
-  -- Bus Request (enforce PMAs) -------------------------------------------------------------
+  -- Bus Request (also enforce PMAs here) ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   request: process(main_req_i, port_sel)
   begin
-    imem_req_o    <= main_req_i;
-    imem_req_o.we <= main_req_i.we and port_sel(port_imem_c);
-    imem_req_o.re <= main_req_i.re and port_sel(port_imem_c);
-    --
-    dmem_req_o    <= main_req_i;
-    dmem_req_o.we <= main_req_i.we and port_sel(port_dmem_c);
-    dmem_req_o.re <= main_req_i.re and port_sel(port_dmem_c);
-    --
-    xip_req_o     <= main_req_i;
-    xip_req_o.we  <= '0'; -- PMA: read-only
-    xip_req_o.re  <= main_req_i.re and port_sel(port_xip_c);
-    --
-    boot_req_o    <= main_req_i;
-    boot_req_o.we <= '0'; -- PMA: read-only
-    boot_req_o.re <= main_req_i.re and port_sel(port_boot_c);
-    --
-    io_req        <= main_req_i;
-    io_req.we     <= main_req_i.we and port_sel(port_io_c);
-    io_req.re     <= main_req_i.re and port_sel(port_io_c);
-    --
-    ext_req_o     <= main_req_i;
-    ext_req_o.we  <= main_req_i.we and port_sel(port_ext_c);
-    ext_req_o.re  <= main_req_i.re and port_sel(port_ext_c);
+    if (IMEM_ENABLE = true) then
+      imem_req_o    <= main_req_i;
+      imem_req_o.we <= main_req_i.we and port_sel(port_imem_c);
+      imem_req_o.re <= main_req_i.re and port_sel(port_imem_c);
+    else
+      imem_req_o <= req_terminate_c;
+    end if;
+    if (DMEM_ENABLE = true) then
+      dmem_req_o    <= main_req_i;
+      dmem_req_o.we <= main_req_i.we and port_sel(port_dmem_c);
+      dmem_req_o.re <= main_req_i.re and port_sel(port_dmem_c);
+    else
+      dmem_req_o <= req_terminate_c;
+    end if;
+    if (XIP_ENABLE = true) then
+      xip_req_o     <= main_req_i;
+      xip_req_o.we  <= '0'; -- PMA: read-only
+      xip_req_o.re  <= main_req_i.re and port_sel(port_xip_c);
+    else
+      xip_req_o <= req_terminate_c;
+    end if;
+    if (BOOT_ENABLE = true) then
+      boot_req_o    <= main_req_i;
+      boot_req_o.we <= '0'; -- PMA: read-only
+      boot_req_o.re <= main_req_i.re and port_sel(port_boot_c);
+    else
+      boot_req_o <= req_terminate_c;
+    end if;
+    if (IO_ENABLE = true) then
+      io_req        <= main_req_i;
+      io_req.we     <= main_req_i.we and port_sel(port_io_c);
+      io_req.re     <= main_req_i.re and port_sel(port_io_c);
+    else
+      io_req <= req_terminate_c;
+    end if;
+    if (EXT_ENABLE = true) then
+      ext_req_o     <= main_req_i;
+      ext_req_o.we  <= main_req_i.we and port_sel(port_ext_c);
+      ext_req_o.re  <= main_req_i.re and port_sel(port_ext_c);
+    else
+      ext_req_o <= req_terminate_c;
+    end if;
   end process request;
 
 
@@ -580,103 +599,211 @@ use neorv32.neorv32_package.all;
 
 entity io_switch is
   generic (
-    DEV_SIZE : natural; -- size of a single IO device, has to be a power of two
-    -- device base addresses --
-    DEV_00_BASE : std_ulogic_vector(31 downto 0);
-    DEV_01_BASE : std_ulogic_vector(31 downto 0);
-    DEV_02_BASE : std_ulogic_vector(31 downto 0);
-    DEV_03_BASE : std_ulogic_vector(31 downto 0);
-    DEV_04_BASE : std_ulogic_vector(31 downto 0);
-    DEV_05_BASE : std_ulogic_vector(31 downto 0);
-    DEV_06_BASE : std_ulogic_vector(31 downto 0);
-    DEV_07_BASE : std_ulogic_vector(31 downto 0);
-    DEV_08_BASE : std_ulogic_vector(31 downto 0);
-    DEV_09_BASE : std_ulogic_vector(31 downto 0);
-    DEV_10_BASE : std_ulogic_vector(31 downto 0);
-    DEV_11_BASE : std_ulogic_vector(31 downto 0);
-    DEV_12_BASE : std_ulogic_vector(31 downto 0);
-    DEV_13_BASE : std_ulogic_vector(31 downto 0);
-    DEV_14_BASE : std_ulogic_vector(31 downto 0);
-    DEV_15_BASE : std_ulogic_vector(31 downto 0);
-    DEV_16_BASE : std_ulogic_vector(31 downto 0);
-    DEV_17_BASE : std_ulogic_vector(31 downto 0);
-    DEV_18_BASE : std_ulogic_vector(31 downto 0);
-    DEV_19_BASE : std_ulogic_vector(31 downto 0);
-    DEV_20_BASE : std_ulogic_vector(31 downto 0)
+    DEV_SIZE  : natural; -- size of a single IO device, has to be a power of two
+    -- device port enable and base address --
+    DEV_00_EN : boolean; DEV_00_BASE : std_ulogic_vector(31 downto 0);
+    DEV_01_EN : boolean; DEV_01_BASE : std_ulogic_vector(31 downto 0);
+    DEV_02_EN : boolean; DEV_02_BASE : std_ulogic_vector(31 downto 0);
+    DEV_03_EN : boolean; DEV_03_BASE : std_ulogic_vector(31 downto 0);
+    DEV_04_EN : boolean; DEV_04_BASE : std_ulogic_vector(31 downto 0);
+    DEV_05_EN : boolean; DEV_05_BASE : std_ulogic_vector(31 downto 0);
+    DEV_06_EN : boolean; DEV_06_BASE : std_ulogic_vector(31 downto 0);
+    DEV_07_EN : boolean; DEV_07_BASE : std_ulogic_vector(31 downto 0);
+    DEV_08_EN : boolean; DEV_08_BASE : std_ulogic_vector(31 downto 0);
+    DEV_09_EN : boolean; DEV_09_BASE : std_ulogic_vector(31 downto 0);
+    DEV_10_EN : boolean; DEV_10_BASE : std_ulogic_vector(31 downto 0);
+    DEV_11_EN : boolean; DEV_11_BASE : std_ulogic_vector(31 downto 0);
+    DEV_12_EN : boolean; DEV_12_BASE : std_ulogic_vector(31 downto 0);
+    DEV_13_EN : boolean; DEV_13_BASE : std_ulogic_vector(31 downto 0);
+    DEV_14_EN : boolean; DEV_14_BASE : std_ulogic_vector(31 downto 0);
+    DEV_15_EN : boolean; DEV_15_BASE : std_ulogic_vector(31 downto 0);
+    DEV_16_EN : boolean; DEV_16_BASE : std_ulogic_vector(31 downto 0);
+    DEV_17_EN : boolean; DEV_17_BASE : std_ulogic_vector(31 downto 0);
+    DEV_18_EN : boolean; DEV_18_BASE : std_ulogic_vector(31 downto 0);
+    DEV_19_EN : boolean; DEV_19_BASE : std_ulogic_vector(31 downto 0);
+    DEV_20_EN : boolean; DEV_20_BASE : std_ulogic_vector(31 downto 0)
   );
   port (
     -- host port --
     main_req_i : in  bus_req_t; -- host request
     main_rsp_o : out bus_rsp_t; -- host response
     -- device ports --
-    dev_req_o  : out bus_req_array_t;
-    dev_rsp_i  : in  bus_rsp_array_t
+    dev_00_req_o : out bus_req_t; dev_00_rsp_i : in bus_rsp_t;
+    dev_01_req_o : out bus_req_t; dev_01_rsp_i : in bus_rsp_t;
+    dev_02_req_o : out bus_req_t; dev_02_rsp_i : in bus_rsp_t;
+    dev_03_req_o : out bus_req_t; dev_03_rsp_i : in bus_rsp_t;
+    dev_04_req_o : out bus_req_t; dev_04_rsp_i : in bus_rsp_t;
+    dev_05_req_o : out bus_req_t; dev_05_rsp_i : in bus_rsp_t;
+    dev_06_req_o : out bus_req_t; dev_06_rsp_i : in bus_rsp_t;
+    dev_07_req_o : out bus_req_t; dev_07_rsp_i : in bus_rsp_t;
+    dev_08_req_o : out bus_req_t; dev_08_rsp_i : in bus_rsp_t;
+    dev_09_req_o : out bus_req_t; dev_09_rsp_i : in bus_rsp_t;
+    dev_10_req_o : out bus_req_t; dev_10_rsp_i : in bus_rsp_t;
+    dev_11_req_o : out bus_req_t; dev_11_rsp_i : in bus_rsp_t;
+    dev_12_req_o : out bus_req_t; dev_12_rsp_i : in bus_rsp_t;
+    dev_13_req_o : out bus_req_t; dev_13_rsp_i : in bus_rsp_t;
+    dev_14_req_o : out bus_req_t; dev_14_rsp_i : in bus_rsp_t;
+    dev_15_req_o : out bus_req_t; dev_15_rsp_i : in bus_rsp_t;
+    dev_16_req_o : out bus_req_t; dev_16_rsp_i : in bus_rsp_t;
+    dev_17_req_o : out bus_req_t; dev_17_rsp_i : in bus_rsp_t;
+    dev_18_req_o : out bus_req_t; dev_18_rsp_i : in bus_rsp_t;
+    dev_19_req_o : out bus_req_t; dev_19_rsp_i : in bus_rsp_t;
+    dev_20_req_o : out bus_req_t; dev_20_rsp_i : in bus_rsp_t
   );
 end io_switch;
 
 architecture io_switch_rtl of io_switch is
 
+  -- ------------------------------------------------------------------------------------------- --
+  -- How to add another device port                                                              --
+  -- ------------------------------------------------------------------------------------------- --
+  -- 1. Increment <num_devs_physical_c> (must not exceed <num_devs_logical_c>).                  --
+  -- 2. Append another pair of "DEV_xx_EN" and "DEV_xx_BASE" generics.                           --
+  -- 3. Append these two generics to the according <dev_base_list_c> and <dev_en_list_c> arrays. --
+  -- 4. Append another pair of "dev_xx_req_o" and "dev_xx_rsp_i" ports.                          --
+  -- 5. Append these two ports to the according <dev_req> and <dev_rsp> array assignments in     --
+  --    the "Combine Device Ports" section.                                                      --
+  -- ------------------------------------------------------------------------------------------- --
+
   -- module configuration --
   constant num_devs_physical_c : natural := 21; -- actual number of devices, max num_devs_logical_c
   constant num_devs_logical_c  : natural := 32; -- logical max number of devices; do not change!
-  --
-  constant lo_c : natural := index_size_f(DEV_SIZE); -- low address boundary bit
-  constant hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_logical_c)) - 1; -- high address boundary bit
 
-  signal device_sel : std_ulogic_vector(num_devs_physical_c-1 downto 0); -- device select, one-hot
+  -- address bits for access decoding --
+  constant abb_lo_c : natural := index_size_f(DEV_SIZE); -- low address boundary bit
+  constant abb_hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_logical_c)) - 1; -- high address boundary bit
+
+  -- list of device base addresses --
+  type dev_base_list_t is array (0 to num_devs_physical_c-1) of std_ulogic_vector(31 downto 0);
+  constant dev_base_list_c : dev_base_list_t := (
+    DEV_00_BASE,
+    DEV_01_BASE,
+    DEV_02_BASE,
+    DEV_03_BASE,
+    DEV_04_BASE,
+    DEV_05_BASE,
+    DEV_06_BASE,
+    DEV_07_BASE,
+    DEV_08_BASE,
+    DEV_09_BASE,
+    DEV_10_BASE,
+    DEV_11_BASE,
+    DEV_12_BASE,
+    DEV_13_BASE,
+    DEV_14_BASE,
+    DEV_15_BASE,
+    DEV_16_BASE,
+    DEV_17_BASE,
+    DEV_18_BASE,
+    DEV_19_BASE,
+    DEV_20_BASE
+  );
+
+  -- list of enabled device ports --
+  type dev_en_list_t is array (0 to num_devs_physical_c-1) of boolean;
+  constant dev_en_list_c : dev_en_list_t := (
+    DEV_00_EN,
+    DEV_01_EN,
+    DEV_02_EN,
+    DEV_03_EN,
+    DEV_04_EN,
+    DEV_05_EN,
+    DEV_06_EN,
+    DEV_07_EN,
+    DEV_08_EN,
+    DEV_09_EN,
+    DEV_10_EN,
+    DEV_11_EN,
+    DEV_12_EN,
+    DEV_13_EN,
+    DEV_14_EN,
+    DEV_15_EN,
+    DEV_16_EN,
+    DEV_17_EN,
+    DEV_18_EN,
+    DEV_19_EN,
+    DEV_20_EN
+  );
+
+  -- device ports combined as arrays --
+  type dev_req_t is array (num_devs_physical_c-1 downto 0) of bus_req_t;
+  type dev_rsp_t is array (num_devs_physical_c-1 downto 0) of bus_rsp_t;
+  signal dev_req : dev_req_t;
+  signal dev_rsp : dev_rsp_t;
+
+  -- device select, one-hot --
+  signal dev_sel : std_ulogic_vector(num_devs_physical_c-1 downto 0);
 
 begin
 
-  -- Device Decoder -------------------------------------------------------------------------
+  -- Combine Device Ports -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  device_sel(00) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_00_BASE(hi_c downto lo_c)) else '0';
-  device_sel(01) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_01_BASE(hi_c downto lo_c)) else '0';
-  device_sel(02) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_02_BASE(hi_c downto lo_c)) else '0';
-  device_sel(03) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_03_BASE(hi_c downto lo_c)) else '0';
-  device_sel(04) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_04_BASE(hi_c downto lo_c)) else '0';
-  device_sel(05) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_05_BASE(hi_c downto lo_c)) else '0';
-  device_sel(06) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_06_BASE(hi_c downto lo_c)) else '0';
-  device_sel(07) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_07_BASE(hi_c downto lo_c)) else '0';
-  device_sel(08) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_08_BASE(hi_c downto lo_c)) else '0';
-  device_sel(09) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_09_BASE(hi_c downto lo_c)) else '0';
-  device_sel(10) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_10_BASE(hi_c downto lo_c)) else '0';
-  device_sel(11) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_11_BASE(hi_c downto lo_c)) else '0';
-  device_sel(12) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_12_BASE(hi_c downto lo_c)) else '0';
-  device_sel(13) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_13_BASE(hi_c downto lo_c)) else '0';
-  device_sel(14) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_14_BASE(hi_c downto lo_c)) else '0';
-  device_sel(15) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_15_BASE(hi_c downto lo_c)) else '0';
-  device_sel(16) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_16_BASE(hi_c downto lo_c)) else '0';
-  device_sel(17) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_17_BASE(hi_c downto lo_c)) else '0';
-  device_sel(18) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_18_BASE(hi_c downto lo_c)) else '0';
-  device_sel(19) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_19_BASE(hi_c downto lo_c)) else '0';
-  device_sel(20) <= '1' when (main_req_i.addr(hi_c downto lo_c) = DEV_20_BASE(hi_c downto lo_c)) else '0';
+  dev_00_req_o <= dev_req(00); dev_rsp(00) <= dev_00_rsp_i;
+  dev_01_req_o <= dev_req(01); dev_rsp(01) <= dev_01_rsp_i;
+  dev_02_req_o <= dev_req(02); dev_rsp(02) <= dev_02_rsp_i;
+  dev_03_req_o <= dev_req(03); dev_rsp(03) <= dev_03_rsp_i;
+  dev_04_req_o <= dev_req(04); dev_rsp(04) <= dev_04_rsp_i;
+  dev_05_req_o <= dev_req(05); dev_rsp(05) <= dev_05_rsp_i;
+  dev_06_req_o <= dev_req(06); dev_rsp(06) <= dev_06_rsp_i;
+  dev_07_req_o <= dev_req(07); dev_rsp(07) <= dev_07_rsp_i;
+  dev_08_req_o <= dev_req(08); dev_rsp(08) <= dev_08_rsp_i;
+  dev_09_req_o <= dev_req(09); dev_rsp(09) <= dev_09_rsp_i;
+  dev_10_req_o <= dev_req(10); dev_rsp(10) <= dev_10_rsp_i;
+  dev_11_req_o <= dev_req(11); dev_rsp(11) <= dev_11_rsp_i;
+  dev_12_req_o <= dev_req(12); dev_rsp(12) <= dev_12_rsp_i;
+  dev_13_req_o <= dev_req(13); dev_rsp(13) <= dev_13_rsp_i;
+  dev_14_req_o <= dev_req(14); dev_rsp(14) <= dev_14_rsp_i;
+  dev_15_req_o <= dev_req(15); dev_rsp(15) <= dev_15_rsp_i;
+  dev_16_req_o <= dev_req(16); dev_rsp(16) <= dev_16_rsp_i;
+  dev_17_req_o <= dev_req(17); dev_rsp(17) <= dev_17_rsp_i;
+  dev_18_req_o <= dev_req(18); dev_rsp(18) <= dev_18_rsp_i;
+  dev_19_req_o <= dev_req(19); dev_rsp(19) <= dev_19_rsp_i;
+  dev_20_req_o <= dev_req(20); dev_rsp(20) <= dev_20_rsp_i;
+
+
+  -- Device Access Decoders -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  access_gen:
+  for i in 0 to (num_devs_physical_c-1) generate
+    dev_sel(i) <= '1' when (main_req_i.addr(abb_hi_c downto abb_lo_c) = dev_base_list_c(i)(abb_hi_c downto abb_lo_c)) and
+                           (dev_en_list_c(i) = true) else '0';
+  end generate;
 
 
   -- Device Requests ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   request_gen:
   for i in 0 to (num_devs_physical_c-1) generate
-    dev_req_o(i).addr <= main_req_i.addr;
-    dev_req_o(i).data <= main_req_i.data;
-    dev_req_o(i).ben  <= main_req_i.ben;
-    dev_req_o(i).we   <= main_req_i.we and device_sel(i);
-    dev_req_o(i).re   <= main_req_i.re and device_sel(i);
-    dev_req_o(i).src  <= main_req_i.src;
-    dev_req_o(i).priv <= main_req_i.priv;
-    dev_req_o(i).rvso <= main_req_i.rvso;
+    request_gen_enabled:
+    if (dev_en_list_c(i) = true) generate
+      dev_req(i).addr <= main_req_i.addr;
+      dev_req(i).data <= main_req_i.data;
+      dev_req(i).ben  <= main_req_i.ben;
+      dev_req(i).we   <= main_req_i.we and dev_sel(i);
+      dev_req(i).re   <= main_req_i.re and dev_sel(i);
+      dev_req(i).src  <= main_req_i.src;
+      dev_req(i).priv <= main_req_i.priv;
+      dev_req(i).rvso <= main_req_i.rvso;
+    end generate;
+    request_gen_disabled:
+    if (dev_en_list_c(i) = false) generate
+      dev_req(i) <= req_terminate_c;
+    end generate;
   end generate;
 
 
   -- Global Response ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_response: process(dev_rsp_i)
+  bus_response: process(dev_rsp)
     variable tmp_v : bus_rsp_t;
   begin
     tmp_v := rsp_terminate_c; -- start with all-zero
-    for i in 0 to (num_devs_physical_c-1) loop -- logical or OR of all response signals entries
-      tmp_v.data := tmp_v.data or dev_rsp_i(i).data;
-      tmp_v.ack  := tmp_v.ack  or dev_rsp_i(i).ack;
-      tmp_v.err  := tmp_v.err  or dev_rsp_i(i).err;
+    for i in 0 to (num_devs_physical_c-1) loop -- logical or OR of all response signal entries
+      if (dev_en_list_c(i) = true) then
+        tmp_v.data := tmp_v.data or dev_rsp(i).data;
+        tmp_v.ack  := tmp_v.ack  or dev_rsp(i).ack;
+        tmp_v.err  := tmp_v.err  or dev_rsp(i).err;
+      end if;
     end loop;
     main_rsp_o <= tmp_v;
   end process;
@@ -765,6 +892,7 @@ architecture neorv32_reservation_set_rtl of neorv32_reservation_set is
     state : std_ulogic_vector(01 downto 0);
     addr  : std_ulogic_vector(31 downto abb_c);
     valid : std_ulogic;
+    match : std_ulogic;
   end record;
   signal rsvs : rsvs_t;
 
@@ -791,20 +919,23 @@ begin
     elsif rising_edge(clk_i) then
       case rsvs.state is
 
-        when "10" => -- active reservation, wait for condition to remove reservation
-          if ((core_req_i.we = '1') and (core_req_i.rvso = '1')) then -- store-conditional instruction (any address)
-            rsvs.state <= "11";
-          elsif ((core_req_i.we = '1') and (core_req_i.addr(31 downto abb_c) = rsvs.addr)) or -- store to reservated address -> remove
-                (rvs_clear_i = '1') then -- external clear request -> remove
-            rsvs.state <= "00";
+        when "10" => -- active reservation: wait for condition to invalidate reservation
+          if (rvs_clear_i = '1') then -- external clear request
+            rsvs.state <= "00"; -- invalidate reservation
+          elsif (core_req_i.we = '1') then
+            if (core_req_i.rvso = '1') then -- store-conditional instruction
+              rsvs.state <= "11";
+            elsif (rsvs.match = '1') then -- store to reservated address
+              rsvs.state <= "00"; -- invalidate reservation
+            end if;
           end if;
 
-        when "11" => -- evaluate active reservation, remove reservation at the end of bus access
+        when "11" => -- active reservation: invalidate reservation at the end of bus access
           if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
             rsvs.state <= "00";
           end if;
 
-        when others => -- "0-": no active reservation, wait for for new registration
+        when others => -- "0-" no active reservation: wait for for new registration request
           if (core_req_i.re = '1') and (core_req_i.rvso = '1') then -- load-reservate instruction
             rsvs.addr  <= core_req_i.addr(31 downto abb_c);
             rsvs.state <= "10";
@@ -813,6 +944,9 @@ begin
       end case;
     end if;
   end process rvs_control;
+
+  -- address match? --
+  rsvs.match <= '1' when (core_req_i.addr(31 downto abb_c) = rsvs.addr) else '0';
 
   -- reservation valid? --
   rsvs.valid <= rsvs.state(1);
