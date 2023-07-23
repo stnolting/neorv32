@@ -456,7 +456,7 @@ begin
   fetch_engine.a_err <= '1' when (fetch_engine.unaligned = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
 
   -- instruction bus response --
-  -- [NOTE] PMP and alignment-error will keep pending until the actually triggered bus access completes (or fails)
+  -- [NOTE] PMP and alignment errors will keep pending until the triggered bus access request retires
   fetch_engine.resp <= '1' when (i_bus_ack_i = '1') or (i_bus_err_i = '1') else '0';
 
   -- IPB instruction data and status --
@@ -506,6 +506,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   issue_engine_enabled:
   if (CPU_EXTENSION_RISCV_C = true) generate
+
     issue_engine_fsm_sync: process(clk_i)
     begin
       if rising_edge(clk_i) then
@@ -547,6 +548,7 @@ begin
         end if;
       end if;
     end process issue_engine_fsm_comb;
+
   end generate; -- /issue_engine_enabled
 
   issue_engine_disabled:
@@ -592,7 +594,7 @@ begin
   imm_gen: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- default: I-immediate: ALU-immediate, loads, jump-and-link with register --
+      -- default: I-immediate: ALU-immediate, load, jump-and-link with register --
       imm_o(XLEN-1 downto 11) <= (others => execute_engine.ir(31)); -- sign extension
       imm_o(10 downto 01)     <= execute_engine.ir(30 downto 21);
       imm_o(00)               <= execute_engine.ir(20);
@@ -602,7 +604,7 @@ begin
           imm_o(XLEN-1 downto 11) <= (others => execute_engine.ir(31)); -- sign extension
           imm_o(10 downto 05)     <= execute_engine.ir(30 downto 25);
           imm_o(04 downto 00)     <= execute_engine.ir(11 downto 07);
-        when opcode_branch_c => -- B-immediate: conditional branches
+        when opcode_branch_c => -- B-immediate: conditional branch
           imm_o(XLEN-1 downto 12) <= (others => execute_engine.ir(31)); -- sign extension
           imm_o(11)               <= execute_engine.ir(07);
           imm_o(10 downto 05)     <= execute_engine.ir(30 downto 25);
@@ -611,7 +613,7 @@ begin
         when opcode_lui_c | opcode_auipc_c => -- U-immediate: lui, auipc
           imm_o(XLEN-1 downto 12) <= execute_engine.ir(31 downto 12);
           imm_o(11 downto 00)     <= (others => '0');
-        when opcode_jal_c => -- J-immediate: unconditional jumps
+        when opcode_jal_c => -- J-immediate: unconditional jump
           imm_o(XLEN-1 downto 20) <= (others => execute_engine.ir(31)); -- sign extension
           imm_o(19 downto 12)     <= execute_engine.ir(19 downto 12);
           imm_o(11)               <= execute_engine.ir(20);
@@ -1901,7 +1903,7 @@ begin
             csr.mstatus_mpie <= '1';
           end if;
 
-        end if; -- /trap exit
+        end if;
 
       end if; -- /hardware csr access
 
