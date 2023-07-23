@@ -568,7 +568,8 @@ The reservation is invalidated if...
 .Bus Access Errors
 [IMPORTANT]
 If the LR operation causes a bus access error (raising a load access exception) the reservation **is registered anyway**.
-If the SC operation causes a bus access error (raising a store access exception) the reservation set **is invalidated anyway**.
+If the SC operation causes a bus access error (raising a store access exception) an already registered reservation set
+**is invalidated anyway**.
 
 .Strong Semantic
 [IMPORTANT]
