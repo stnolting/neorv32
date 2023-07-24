@@ -929,7 +929,7 @@ begin
             rsvs.state <= "00"; -- invalidate reservation
           elsif (core_req_i.we = '1') then -- write access
 
-            if (core_req_i.rvso = '1') then -- store-conditional instruction 
+            if (core_req_i.rvso = '1') then -- store-conditional instruction
               if (rsvs.match = '1') then -- SC to reservated address
                 rsvs.state <= "11"; -- execute SC instruction (reservation still valid)
               else -- SC to any other address (new reservation attempt while the current one is still valid)
@@ -953,7 +953,6 @@ begin
           if (core_req_i.re = '1') and (core_req_i.rvso = '1') then -- load-reservate instruction
             rsvs.addr  <= core_req_i.addr(31 downto abb_c);
             rsvs.state <= "10";
-            assert false report "## AMO: New RV @ 0x" & to_hstring32_f(core_req_i.addr) severity warning;
           end if;
 
       end case;
