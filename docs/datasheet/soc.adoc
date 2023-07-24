@@ -525,8 +525,6 @@ monitor starts an internal timer. The accessed module has to respond ("ACK") to 
 .Internal Bus Timeout Configuration
 [source,vhdl]
 ----
-  -- "response time window" for processor-internal modules --
-  -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception
   constant max_proc_int_response_time_c : natural := 15; -- default = 15
 ----
 
@@ -550,20 +548,28 @@ explicit specific processor generic. See section <<_processor_external_memory_in
 ==== Reservation Set Controller
 
 The reservation set controller is responsible for handling the load-reservate and store-conditional bus transaction that
-are triggered by the `lr.w` and `sc.w` instructions from the CPU's <<_a_isa_extension>>.
+are triggered by the `lr.w` (LR) and `sc.w` (SC) instructions from the CPU's <<_a_isa_extension>>.
 
 A "reservation" defines an address or address range that provides a guarding mechanism to support atomic accesses. A new
-reservation is registered by the `lr.w` instruction. The address provided by this instruction defines the memory location
-that is now monitored for atomic accesses. The according `sc.w` instruction evaluates the state of this reservation. If
-the reservation is still valid the write access triggered by the `sc.w` instruction is finally executed and the instruction
-return a "success" state. If the reservation has been invalidated the `sc.w` instructions write access does not take place
-and the instruction returns a "failed" state.
+reservation is registered by the LR instruction. The address provided by this instruction defines the memory location
+that is now monitored for atomic accesses. The according SC instruction evaluates the state of this reservation. If
+the reservation is still valid the write access triggered by the SC instruction is finally executed and the instruction
+return a "success" state (`rd` = 0). If the reservation has been invalidated the SC instruction will not write to memory
+and will return a "failed" state (`rd` = 1).
 
 The reservation is invalidated if...
 
-* ... another `lr.w` instruction is executed.
-* ... a normal store access to the reservated address takes place (by the CPU or by the DMA).
-* ... a hardware reset is triggered.
+* an SC instruction is executed that accesses an address **outside** of the reservation set of the previous LR instruction.
+This SC instruction will **fail** (not writing to memory).
+* an SC instruction is executed that accesses an address **inside** of the reservation set of the previous LR instruction.
+This SC instruction will **succeed** (finally writing to memory).
+* a normal store operation accesses an address **inside** of the current reservation set (by the CPU or by the DMA).
+* a hardware reset is triggered.
+
+.Consecutive LR Instructions
+[NOTE]
+If an LR instruction is followed by another LR instruction the reservation set of the former one is overridden
+by the reservation set of the latter one.
 
 .Bus Access Errors
 [IMPORTANT]
@@ -587,19 +593,19 @@ that the size of the address region has to be a power of two.
 The reservation set can be set for _any_ address (only constrained by the configured granularity). This also
 includes cached memory, memory-mapped IO devices and processor-external address spaces.
 
-Bus transactions triggered by the `lr.w` instruction register a new reservation set and are delegated to the adressed
-memory/device. Bus transactions triggered by the `sc.w` remove a reservation set and are forwarded to the adressed
+Bus transactions triggered by the LR instruction register a new reservation set and are delegated to the adressed
+memory/device. Bus transactions triggered by the SC remove a reservation set and are forwarded to the adressed
 memory/device only if the SC operations succeeds. Otherwise, the access request is not forwarded and a local ACK is
 generated to terminate the bus transaction.
 
 .LR/SC Bus Protocol
 [NOTE]
-More information regarding the /LR/SC bus transactions and the the according protocol can be found in section
+More information regarding the LR/SC bus transactions and the the according protocol can be found in section
 <<_bus_interface>> / <<_atomic_accesses>>.
 
 .Cache Coherency
 [IMPORTANT]
-Atomic operations **always bypass** the cache using direct/uncached accesses. HEnce, care must be taken
+Atomic operations **always bypass** the cache using direct/uncached accesses. Care must be taken
 to maintain data cache coherency (e.g. by using the `fence` instruction).
 
 
