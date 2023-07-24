@@ -920,25 +920,40 @@ begin
       case rsvs.state is
 
         when "10" => -- active reservation: wait for condition to invalidate reservation
-          if (rvs_clear_i = '1') then -- external clear request
+        -- --------------------------------------------------------------------
+          if (core_req_i.re = '1') and (core_req_i.rvso = '1') then -- another LR instruction overriding the current reservation
+            rsvs.addr <= core_req_i.addr(31 downto abb_c);
+          end if;
+          --
+          if (rvs_clear_i = '1') then -- external clear request (highest priority!)
             rsvs.state <= "00"; -- invalidate reservation
-          elsif (core_req_i.we = '1') then
-            if (core_req_i.rvso = '1') then -- store-conditional instruction
-              rsvs.state <= "11";
-            elsif (rsvs.match = '1') then -- store to reservated address
+          elsif (core_req_i.we = '1') then -- write access
+
+            if (core_req_i.rvso = '1') then -- store-conditional instruction 
+              if (rsvs.match = '1') then -- SC to reservated address
+                rsvs.state <= "11"; -- execute SC instruction (reservation still valid)
+              else -- SC to any other address (new reservation attempt while the current one is still valid)
+                rsvs.state <= "00"; -- invalidate reservation
+              end if;
+
+            elsif (rsvs.match = '1') then -- normal write to reservated address
               rsvs.state <= "00"; -- invalidate reservation
             end if;
+
           end if;
 
         when "11" => -- active reservation: invalidate reservation at the end of bus access
+        -- --------------------------------------------------------------------
           if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
             rsvs.state <= "00";
           end if;
 
         when others => -- "0-" no active reservation: wait for for new registration request
+        -- --------------------------------------------------------------------
           if (core_req_i.re = '1') and (core_req_i.rvso = '1') then -- load-reservate instruction
             rsvs.addr  <= core_req_i.addr(31 downto abb_c);
             rsvs.state <= "10";
+            assert false report "## AMO: New RV @ 0x" & to_hstring32_f(core_req_i.addr) severity warning;
           end if;
 
       end case;
