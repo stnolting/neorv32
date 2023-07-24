@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080608"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080609"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -170,7 +170,7 @@ package neorv32_package is
     err  : std_ulogic; -- access error (single-shot)
   end record;
 
-  -- source termination --
+  -- source (request) termination --
   constant req_terminate_c : bus_req_t := (
     addr => (others => '0'),
     data => (others => '0'),
@@ -182,16 +182,12 @@ package neorv32_package is
     rvso => '0'
   );
 
-  -- endpoint termination --
+  -- endpoint (response) termination --
   constant rsp_terminate_c : bus_rsp_t := (
     data => (others => '0'),
     ack  => '0',
     err  => '0'
   );
-
-  -- pre-constrained array types --
-  type bus_req_array_t is array (20 downto 0) of bus_req_t;
-  type bus_rsp_array_t is array (20 downto 0) of bus_rsp_t;
 
 
 -- ****************************************************************************************************************************
@@ -865,8 +861,7 @@ package neorv32_package is
   function index_size_f(input : natural) return natural;
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural;
   function cond_sel_int_f(cond : boolean; val_t : integer; val_f : integer) return integer;
-  function cond_sel_stdulogicvector_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector;
-  function cond_sel_stdulogic_f(cond : boolean; val_t : std_ulogic; val_f : std_ulogic) return std_ulogic;
+  function cond_sel_suv_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector;
   function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string;
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
   function bin_to_gray_f(input : std_ulogic_vector) return std_ulogic_vector;
@@ -876,7 +871,6 @@ package neorv32_package is
   function xor_reduce_f(a : std_ulogic_vector) return std_ulogic;
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
   function to_hstring32_f(input : std_ulogic_vector(31 downto 0)) return string;
-  function hexchar_to_stdulogicvector_f(input : character) return std_ulogic_vector;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
   function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector;
@@ -1110,25 +1104,14 @@ package body neorv32_package is
 
   -- Conditional select std_ulogic_vector ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function cond_sel_stdulogicvector_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector is
+  function cond_sel_suv_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector is
   begin
     if (cond = true) then
       return val_t;
     else
       return val_f;
     end if;
-  end function cond_sel_stdulogicvector_f;
-
-  -- Conditional select std_ulogic ----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function cond_sel_stdulogic_f(cond : boolean; val_t : std_ulogic; val_f : std_ulogic) return std_ulogic is
-  begin
-    if (cond = true) then
-      return val_t;
-    else
-      return val_f;
-    end if;
-  end function cond_sel_stdulogic_f;
+  end function cond_sel_suv_f;
 
   -- Conditional select string --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1141,7 +1124,7 @@ package body neorv32_package is
     end if;
   end function cond_sel_string_f;
 
-  -- Convert bool to std_ulogic -------------------------------------------------------------
+  -- Convert boolean to std_ulogic ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function bool_to_ulogic_f(cond : boolean) return std_ulogic is
   begin
@@ -1253,33 +1236,6 @@ package body neorv32_package is
     end loop; -- i
     return res_v;
   end function to_hstring32_f;
-
-  -- Convert hex char to 4-bit std_ulogic_vector --------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function hexchar_to_stdulogicvector_f(input : character) return std_ulogic_vector is
-    variable res_v : std_ulogic_vector(3 downto 0);
-  begin
-    case input is
-      when '0'       => res_v := x"0";
-      when '1'       => res_v := x"1";
-      when '2'       => res_v := x"2";
-      when '3'       => res_v := x"3";
-      when '4'       => res_v := x"4";
-      when '5'       => res_v := x"5";
-      when '6'       => res_v := x"6";
-      when '7'       => res_v := x"7";
-      when '8'       => res_v := x"8";
-      when '9'       => res_v := x"9";
-      when 'a' | 'A' => res_v := x"a";
-      when 'b' | 'B' => res_v := x"b";
-      when 'c' | 'C' => res_v := x"c";
-      when 'd' | 'D' => res_v := x"d";
-      when 'e' | 'E' => res_v := x"e";
-      when 'f' | 'F' => res_v := x"f";
-      when others    => res_v := x"0";
-    end case;
-    return res_v;
-  end function hexchar_to_stdulogicvector_f;
 
   -- Bit reversal ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

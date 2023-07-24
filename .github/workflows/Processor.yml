@@ -57,7 +57,6 @@ jobs:
         args: >-
           make -C sw/example/processor_check
           clean_all
-          USER_FLAGS+=-DRUN_CHECK
           USER_FLAGS+=-DUART0_SIM_MODE
           USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT
           USER_FLAGS+=-flto
@@ -119,7 +118,6 @@ jobs:
 #       make -C sw/example/processor_check \
 #         RISCV_PREFIX=riscv64-unknown-elf- \
 #         clean_all \
-#         USER_FLAGS+=-DRUN_CHECK \
 #         USER_FLAGS+=-DUART0_SIM_MODE \
 #         USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT \
 #         MARCH=rv32imac \

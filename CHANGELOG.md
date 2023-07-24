@@ -33,6 +33,7 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 23.07.2023 | 1.8.6.9 | optimize bus system and customization options; [#653](https://github.com/stnolting/neorv32/pull/653) |
 | 22.07.2023 | 1.8.6.8 | minor rtl edits; [#652](https://github.com/stnolting/neorv32/pull/652) |
 | 21.07.2023 | 1.8.6.7 | :sparkles: add support for **RISC-V A ISA Extension** (atomic memory accesses; `lr.w`/`sc.w` only!); [#651](https://github.com/stnolting/neorv32/pull/651) |
 | 18.07.2023 | 1.8.6.6 | :warning: remove 32-bit data dump mode from UART0/1 sim-mode; [#650](https://github.com/stnolting/neorv32/pull/650) |

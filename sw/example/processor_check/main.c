@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file processor_check/main.c
  * @author Stephan Nolting
- * @brief CPU/Processor test program.
+ * @brief CPU/Processor test/verification program.
  **************************************************************************/
 
 #include <neorv32.h>
@@ -118,7 +118,6 @@ uint32_t pmp_num_regions;
 /**********************************************************************//**
  * High-level CPU/processor test program.
  *
- * @note Applications has to be compiler with <USER_FLAGS+=-DRUN_CPUTEST>
  * @warning This test is intended for simulation only.
  * @warning This test requires all optional extensions/modules to be enabled.
  *
@@ -672,7 +671,7 @@ int main() {
   // Unaligned load address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] LW align EXC ", cnt_test);
+  PRINT_STANDARD("[%i] LD align EXC ", cnt_test);
   cnt_test++;
 
   // load from unaligned address
@@ -694,7 +693,7 @@ int main() {
   // Load access fault
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] LW access EXC ", cnt_test);
+  PRINT_STANDARD("[%i] LD access EXC ", cnt_test);
 
   cnt_test++;
 
@@ -717,7 +716,7 @@ int main() {
   // Unaligned store address
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] SW align EXC ", cnt_test);
+  PRINT_STANDARD("[%i] ST align EXC ", cnt_test);
   cnt_test++;
 
   // initialize test variable
@@ -744,7 +743,7 @@ int main() {
   // Store access fault
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] SW access EXC ", cnt_test);
+  PRINT_STANDARD("[%i] ST access EXC ", cnt_test);
 
   cnt_test++;
 
