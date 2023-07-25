@@ -1734,11 +1734,13 @@ int main() {
     amo_var = 0x10cafe00; // break reservation
     asm volatile ("fence"); // flush/reload d-cache
     tmp_b = neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xaaaaaaaa);
+    tmp_b = (tmp_b << 1) | neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xcccccccc); // another SC: must fail
+    tmp_b = (tmp_b << 1) | neorv32_cpu_store_conditional_word((uint32_t)ADDR_UNREACHABLE, 0); // another SC: must fail; no bus exception!
     asm volatile ("fence"); // flush/reload d-cache
 
     if ((tmp_a   == 0x00cafe00) && // correct LR.W result
         (amo_var == 0x10cafe00) && // atomic variable NOT updates by SC.W
-        (tmp_b   == 0x00000001) && // SC.W failed
+        (tmp_b   == 0x00000007) && // SC.W[2] failed, SC.W[1] failed, SC.W[0] failed
         (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
       test_ok();
     }
@@ -1772,11 +1774,13 @@ int main() {
     asm volatile ("fence"); // flush/reload d-cache
     neorv32_cpu_load_unsigned_word((uint32_t)&amo_var); // dummy read, must not alter reservation set state
     tmp_b = neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xcccccccc);
+    tmp_b = (tmp_b << 1) | neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xcccccccc); // another SC: must fail
+    tmp_b = (tmp_b << 1) | neorv32_cpu_store_conditional_word((uint32_t)ADDR_UNREACHABLE, 0); // another SC: must fail; no bus exception!
     asm volatile ("fence"); // flush/reload d-cache
 
     if ((tmp_a   == 0x00abba00) && // correct LR.W result
         (amo_var == 0xcccccccc) && // atomic variable WAS updates by SC.W
-        (tmp_b   == 0x00000000) && // SC.W succeeded
+        (tmp_b   == 0x00000003) && // SC.W[2] succeeded, SC.W[1] failed, SC.W[0] failed
         (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
       test_ok();
     }
