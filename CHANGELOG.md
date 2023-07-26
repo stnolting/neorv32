@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 26.07.2023 | [**:rocket:1.8.7**](https://github.com/stnolting/neorv32/releases/tag/v1.8.7) | **New release** 
 | 24.07.2023 | 1.8.6.10 | :bug: fixing some LR/SC design flaws; [#654](https://github.com/stnolting/neorv32/pull/654) |
 | 23.07.2023 | 1.8.6.9 | optimize bus system and customization options; [#653](https://github.com/stnolting/neorv32/pull/653) |
 | 22.07.2023 | 1.8.6.8 | minor rtl edits; [#652](https://github.com/stnolting/neorv32/pull/652) |
