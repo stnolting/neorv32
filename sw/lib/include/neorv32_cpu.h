@@ -63,12 +63,9 @@ void     neorv32_cpu_goto_user_mode(void);
 /**@}*/
 
 
-/**********************************************************************//**
- * Prototype for "after-main handler". This function is called if main() returns.
- *
- * @param[in] return_code Return value of main() function.
- **************************************************************************/
-extern void __attribute__ ((weak)) __neorv32_crt0_after_main(int32_t return_code);
+// #################################################################################################
+// Load/store
+// #################################################################################################
 
 
 /**********************************************************************//**
@@ -211,6 +208,11 @@ inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint3
 }
 
 
+// #################################################################################################
+// Atomic memory access / load-reservate/store-conditional
+// #################################################################################################
+
+
 /**********************************************************************//**
  * Atomic memory access: load-reservate word.
  *
@@ -259,6 +261,24 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_store_conditional_wo
   return 1; // always fail
 #endif
 }
+
+
+/**********************************************************************//**
+ * Atomic memory access: invalidate (all) current reservation sets
+ *
+ * @warning This function requires the A ISA extension.
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_cpu_invalidate_reservations(void) {
+
+#if defined __riscv_atomic
+  asm volatile ("sc.w zero, zero, (zero)");
+#endif
+}
+
+
+// #################################################################################################
+// CSR access
+// #################################################################################################
 
 
 /**********************************************************************//**
@@ -317,6 +337,19 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int csr_id
 
   asm volatile ("csrc %[input_i], %[input_j]" :  : [input_i] "i" (csr_id), [input_j] "r" (csr_data));
 }
+
+
+// #################################################################################################
+// Misc
+// #################################################################################################
+
+
+/**********************************************************************//**
+ * Prototype for "after-main handler". This function is called if main() returns.
+ *
+ * @param[in] return_code Return value of main() function.
+ **************************************************************************/
+extern void __attribute__ ((weak)) __neorv32_crt0_after_main(int32_t return_code);
 
 
 /**********************************************************************//**
