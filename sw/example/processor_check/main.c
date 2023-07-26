@@ -1728,17 +1728,21 @@ int main() {
     // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
     //        it before/after making "normal" load/store operations
 
+    neorv32_cpu_invalidate_reservations(); // invalidate all current reservations
+
     amo_var = 0x00cafe00; // initialize
 
     tmp_a = neorv32_cpu_load_reservate_word((uint32_t)&amo_var);
     amo_var = 0x10cafe00; // break reservation
     asm volatile ("fence"); // flush/reload d-cache
     tmp_b = neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xaaaaaaaa);
+    tmp_b = (tmp_b << 1) | neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xcccccccc); // another SC: must fail
+    tmp_b = (tmp_b << 1) | neorv32_cpu_store_conditional_word((uint32_t)ADDR_UNREACHABLE, 0); // another SC: must fail; no bus exception!
     asm volatile ("fence"); // flush/reload d-cache
 
     if ((tmp_a   == 0x00cafe00) && // correct LR.W result
         (amo_var == 0x10cafe00) && // atomic variable NOT updates by SC.W
-        (tmp_b   == 0x00000001) && // SC.W failed
+        (tmp_b   == 0x00000007) && // SC.W[2] failed, SC.W[1] failed, SC.W[0] failed
         (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
       test_ok();
     }
@@ -1766,17 +1770,21 @@ int main() {
     // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
     //        it before/after making "normal" load/store operations
 
+    neorv32_cpu_invalidate_reservations(); // invalidate all current reservations
+
     amo_var = 0x00abba00; // initialize
 
     tmp_a = neorv32_cpu_load_reservate_word((uint32_t)&amo_var);
     asm volatile ("fence"); // flush/reload d-cache
     neorv32_cpu_load_unsigned_word((uint32_t)&amo_var); // dummy read, must not alter reservation set state
     tmp_b = neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xcccccccc);
+    tmp_b = (tmp_b << 1) | neorv32_cpu_store_conditional_word((uint32_t)&amo_var, 0xcccccccc); // another SC: must fail
+    tmp_b = (tmp_b << 1) | neorv32_cpu_store_conditional_word((uint32_t)ADDR_UNREACHABLE, 0); // another SC: must fail; no bus exception!
     asm volatile ("fence"); // flush/reload d-cache
 
     if ((tmp_a   == 0x00abba00) && // correct LR.W result
         (amo_var == 0xcccccccc) && // atomic variable WAS updates by SC.W
-        (tmp_b   == 0x00000000) && // SC.W succeeded
+        (tmp_b   == 0x00000003) && // SC.W[2] succeeded, SC.W[1] failed, SC.W[0] failed
         (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
       test_ok();
     }
@@ -1834,9 +1842,9 @@ int main() {
     tmp_a = (uint32_t)(&pmp_access[0]); // base address of protected region
 
     // configure new region (with highest priority)
-    PRINT_STANDARD("[0] OFF @ 0x%x, ", tmp_a); // base
+    PRINT_STANDARD("[0]: OFF @ 0x%x, ", tmp_a); // base
     tmp_b = neorv32_cpu_pmp_configure_region(0, tmp_a >> 2, 0);
-    PRINT_STANDARD("[1] TOR (!L,!X,!W,R) @ 0x%x ", tmp_a+4); // bound
+    PRINT_STANDARD("[1]: TOR (!L,!X,!W,R) @ 0x%x ", tmp_a+4); // bound
     tmp_b += neorv32_cpu_pmp_configure_region(1, (tmp_a+4) >> 2, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_R)); // read-only
 
     if ((tmp_b == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) {

@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080609"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080610"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -93,17 +93,17 @@ package neorv32_package is
 
   -- IO Address Map --
   constant iodev_size_c      : natural := 256; -- size of a single IO device (bytes)
---constant base_res_cfs_c    : std_ulogic_vector(31 downto 0) := x"ffffe000"; -- reserved
---constant base_res_cfs_c    : std_ulogic_vector(31 downto 0) := x"ffffe100"; -- reserved
---constant base_res_cfs_c    : std_ulogic_vector(31 downto 0) := x"ffffe200"; -- reserved
---constant base_res_cfs_c    : std_ulogic_vector(31 downto 0) := x"ffffe300"; -- reserved
---constant base_res_cfs_c    : std_ulogic_vector(31 downto 0) := x"ffffe400"; -- reserved
---constant base_res_cfs_c    : std_ulogic_vector(31 downto 0) := x"ffffe500"; -- reserved
---constant base_res_cfs_c    : std_ulogic_vector(31 downto 0) := x"ffffe600"; -- reserved
---constant base_res_cfs_c    : std_ulogic_vector(31 downto 0) := x"ffffe700"; -- reserved
---constant base_res_cfs_c    : std_ulogic_vector(31 downto 0) := x"ffffe800"; -- reserved
---constant base_res_cfs_c    : std_ulogic_vector(31 downto 0) := x"ffffe900"; -- reserved
---constant base_res_cfs_c    : std_ulogic_vector(31 downto 0) := x"ffffea00"; -- reserved
+--constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe000"; -- reserved
+--constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe100"; -- reserved
+--constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe200"; -- reserved
+--constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe300"; -- reserved
+--constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe400"; -- reserved
+--constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe500"; -- reserved
+--constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe600"; -- reserved
+--constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe700"; -- reserved
+--constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe800"; -- reserved
+--constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe900"; -- reserved
+--constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffea00"; -- reserved
   constant base_io_cfs_c     : std_ulogic_vector(31 downto 0) := x"ffffeb00";
   constant base_io_slink_c   : std_ulogic_vector(31 downto 0) := x"ffffec00";
   constant base_io_dma_c     : std_ulogic_vector(31 downto 0) := x"ffffed00";
@@ -126,7 +126,7 @@ package neorv32_package is
   constant base_io_sysinfo_c : std_ulogic_vector(31 downto 0) := x"fffffe00";
   constant base_io_dm_c      : std_ulogic_vector(31 downto 0) := x"ffffff00";
 
-  -- OCD Debug Module Entry Points --
+  -- On-Chip Debugger - Debug Module Entry Points (Code ROM) --
   constant dm_exc_entry_c  : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- = base_io_dm_c + 0, exceptions entry point
   constant dm_park_entry_c : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- = base_io_dm_c + 8, normal entry point
 
@@ -1076,7 +1076,7 @@ package body neorv32_package is
       if (2**i >= input) then
         return i;
       end if;
-    end loop; -- i
+    end loop;
     return 0;
   end function index_size_f;
 
@@ -1143,7 +1143,7 @@ package body neorv32_package is
     tmp_v(input'length-1) := input(input'length-1); -- keep MSB
     for i in input'length-2 downto 0 loop
       tmp_v(i) := input(i) xor input(i+1);
-    end loop; -- i
+    end loop;
     return tmp_v;
   end function bin_to_gray_f;
 
@@ -1155,7 +1155,7 @@ package body neorv32_package is
     tmp_v(input'length-1) := input(input'length-1); -- keep MSB
     for i in input'length-2 downto 0 loop
       tmp_v(i) := tmp_v(i+1) xor input(i);
-    end loop; -- i
+    end loop;
     return tmp_v;
   end function gray_to_bin_f;
 
@@ -1167,7 +1167,7 @@ package body neorv32_package is
     tmp_v := '0';
     for i in a'range loop
       tmp_v := tmp_v or a(i);
-    end loop; -- i
+    end loop;
     return tmp_v;
   end function or_reduce_f;
 
@@ -1179,7 +1179,7 @@ package body neorv32_package is
     tmp_v := '1';
     for i in a'range loop
       tmp_v := tmp_v and a(i);
-    end loop; -- i
+    end loop;
     return tmp_v;
   end function and_reduce_f;
 
@@ -1191,7 +1191,7 @@ package body neorv32_package is
     tmp_v := '0';
     for i in a'range loop
       tmp_v := tmp_v xor a(i);
-    end loop; -- i
+    end loop;
     return tmp_v;
   end function xor_reduce_f;
 
@@ -1233,7 +1233,7 @@ package body neorv32_package is
     for i in 0 to 7 loop
       hex_v := tmp_v(i*4+3 downto i*4+0);
       res_v(i+1) := to_hexchar_f(bit_rev_f(hex_v));
-    end loop; -- i
+    end loop;
     return res_v;
   end function to_hstring32_f;
 
@@ -1244,7 +1244,7 @@ package body neorv32_package is
   begin
     for i in 0 to input'length-1 loop
       output_v(input'length-i-1) := input(i);
-    end loop; -- i
+    end loop;
     return output_v;
   end function bit_rev_f;
 
@@ -1289,7 +1289,7 @@ package body neorv32_package is
       if (input(i) = '1') then
         cnt_v := cnt_v + 1;
       end if;
-    end loop; -- i
+    end loop;
     return cnt_v;
   end function popcount_f;
 
@@ -1305,7 +1305,7 @@ package body neorv32_package is
       else
         exit;
       end if;
-    end loop; -- i
+    end loop;
     return cnt_v;
   end function leading_zeros_f;
 
@@ -1319,9 +1319,9 @@ package body neorv32_package is
     if (init'length > depth) then
       return mem_v;
     end if;
-    for idx_v in 0 to init'length-1 loop -- init only in range of source data array
-      mem_v(idx_v) := init(idx_v);
-    end loop; -- idx_v
+    for i in 0 to init'length-1 loop -- init only in range of source data array
+      mem_v(i) := init(i);
+    end loop;
     return mem_v;
   end function mem32_init_f;
 

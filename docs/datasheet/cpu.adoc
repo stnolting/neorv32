@@ -326,15 +326,20 @@ instruction stores a word to a word-aligned address only if the reservation set 
 is executed or if any write access to the _reservated_ address takes place. Traps and/or CPU privilege level changes
 do not modify current reservation sets.
 
+.`aq` and `rl` Bits
+[NOTE]
+The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
+
 .Atomic Memory Access on Hardware Level
 [NOTE]
 More information regarding the atomic memory accesses and the according reservation
 sets can be found in section <<_reservation_set_controller>>.
 
-.LR/SC Bus Protocol
-[NOTE]
-More details regarding the LR/SC instruction's bus transactions can be found in section
-<<_bus_interface>> / <<_atomic_accesses>>.
+.Cache Coherency
+[IMPORTANT]
+Atomic operations **always bypass** the cache using direct/uncached accesses. Care must be taken
+to maintain data cache coherency (e.g. by using the `fence` instruction).
+
 
 
 ==== `I` ISA Extension
@@ -356,7 +361,12 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Illegal inst. | -                                                                         | 3
 |=======================
 
-.`fence` Instruction
+.`fence` Instruction - Predecessor and Successor Bits
+[NOTE]
+The `fence` instruction word's _predecessor_ and _successor_ bits (used for memory ordering) are not evaluated
+by the hardware at all.
+
+.`fence` Instruction - How it works
 [NOTE]
 CPU-internally, the `fence` instruction does not perform any operation inside the CPU. It only sets the
 top's `d_bus_fence_o` signal high for one cycle to inform the memory system a `fence` instruction has been
@@ -813,7 +823,7 @@ is driven by the _accessed_ device or bus system (i.e. a processor-internal memo
 | `ben`  |     4 | Byte-enable for each byte in `data`
 | `we`   |     1 | **Write** request trigger (single-shot)
 | `re`   |     1 | **Read** request trigger (single-shot)
-| `src`  |     1 | Access source (`0` = instruction fetch, `1` = data access)
+| `src`  |     1 | Access source (`0` = instruction fetch, `1` = load/store)
 | `priv` |     1 | Set if privileged (M-mode) access
 | `rvso` |     1 | Set if current access is a reservation-set operation (atomic `lr` or `sc` instruction)
 |=======================
@@ -848,7 +858,7 @@ The figure below shows three exemplary bus accesses:
 
 [start=1]
 . A read access to address `A_addr` returning `rdata` after several cycles (slow response; `ACK` arrives after several cycles).
-. A word-wide write access to address `B_addr` writing `wdata` (fast response; `ACK` arrives right in the next cycle).
+. A write access to address `B_addr` writing `wdata` (fastest response; `ACK` arrives right in the next cycle).
 . A failing read access to address `C_addr` (slow response; `ERR` arrives after several cycles).
 
 .Three Exemplary Bus Transactions

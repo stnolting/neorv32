@@ -1,7 +1,7 @@
 ## Project Change Log
 
-The most recent version of the **NEORV32** project can be found at the top of this list.
-"Stable releases" are linked and highlighted :rocket:. The latest release is
+The most recent version of the project can be found at the top of this list.
+Releases are linked and highlighted. The latest release is
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases).
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases).
 
@@ -10,14 +10,13 @@ The _version identifier_ uses an additional **custom** element (`MAJOR.MINOR.PAT
 to track _individual_ changes. The identifier number is incremented with every core RTL
 modification and also by major framework modifications.
 
-The version number is globally defined by the `hw_version_c` constant in the main VHDL
+The version identifier is globally defined by the `hw_version_c` constant in the main VHDL
 [package file](https://github.com/stnolting/neorv32/blob/main/rtl/core/neorv32_package.vhd).
-The processor can determine this version by reading the RISC-V-compatible `mimpid` CSR.
-A 8x4-bit BCD representation is used. Examples:
+Software can determine this version by reading the RISC-V-compatible `mimpid` CSR, which uses
+a 8x4-bit BCD (binary-coded decimal) representation. Example:
 
 ```
-mimpid = 0x01040312 => Version 01.04.03.12 => v1.4.3.12
-mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
+mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 ```
 
 
@@ -33,6 +32,7 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 24.07.2023 | 1.8.6.10 | :bug: fixing some LR/SC design flaws; [#654](https://github.com/stnolting/neorv32/pull/654) |
 | 23.07.2023 | 1.8.6.9 | optimize bus system and customization options; [#653](https://github.com/stnolting/neorv32/pull/653) |
 | 22.07.2023 | 1.8.6.8 | minor rtl edits; [#652](https://github.com/stnolting/neorv32/pull/652) |
 | 21.07.2023 | 1.8.6.7 | :sparkles: add support for **RISC-V A ISA Extension** (atomic memory accesses; `lr.w`/`sc.w` only!); [#651](https://github.com/stnolting/neorv32/pull/651) |
