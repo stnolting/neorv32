@@ -13,7 +13,7 @@ modification and also by major framework modifications.
 The version identifier is globally defined by the `hw_version_c` constant in the main VHDL
 [package file](https://github.com/stnolting/neorv32/blob/main/rtl/core/neorv32_package.vhd).
 Software can determine this version by reading the RISC-V-compatible `mimpid` CSR, which uses
-a 8x4-bit BCD (binary-coded decimal) representation is used. Example:
+a 8x4-bit BCD (binary-coded decimal) representation. Example:
 
 ```
 mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
