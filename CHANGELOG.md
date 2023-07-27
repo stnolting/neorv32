@@ -6,9 +6,9 @@ Releases are linked and highlighted. The latest release is
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases).
 
 Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org).
-The _version identifier_ uses an additional **custom** element (`MAJOR.MINOR.PATCH.custom`)
-to track _individual_ changes. The identifier number is incremented with every core RTL
-modification and also by major framework modifications.
+The **version identifier** uses an additional custom element (`MAJOR.MINOR.PATCH.custom`)
+to track individual changes. The identifier is incremented by every core RTL modification
+and also by major software/project changes.
 
 The version identifier is globally defined by the `hw_version_c` constant in the main VHDL
 [package file](https://github.com/stnolting/neorv32/blob/main/rtl/core/neorv32_package.vhd).
@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 27.07.2023 | 1.8.7.2 | :bug: make sure that IMEM/DMEM size is always a power of two; [#658](https://github.com/stnolting/neorv32/pull/658) |
 | 27.07.2023 | 1.8.7.1 | :warning: remove `CUSTOM_ID` generic; cleanup and re-layout `NEORV32_SYSINFO.SOC` bits; (:bug:) fix gateway's generics (`positive` -> `natural` as these generics are allowed to be zero); [#657](https://github.com/stnolting/neorv32/pull/657) |
 | 26.07.2023 | [**:rocket:1.8.7**](https://github.com/stnolting/neorv32/releases/tag/v1.8.7) | **New release** |
 | 24.07.2023 | 1.8.6.10 | :bug: fixing some LR/SC design flaws; [#654](https://github.com/stnolting/neorv32/pull/654) |
