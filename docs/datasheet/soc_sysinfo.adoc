@@ -17,13 +17,9 @@
 
 The SYSINFO allows the application software to determine the setting of most of the <<_processor_top_entity_generics>>
 that are related to processor/SoC configuration. All registers of this unit are read-only.
-
 This device is always implemented - regardless of the actual hardware configuration. The bootloader as well
 as the NEORV32 software runtime environment require information from this device (like memory layout
 and default clock speed) for correct operation.
-
-[NOTE]
-Any write access to the SYSINFO module will raise a store bus error exception.
 
 
 **Register Map**
@@ -34,12 +30,12 @@ Any write access to the SYSINFO module will raise a store bus error exception.
 |=======================
 | Address | Name [C] | Function
 | `0xfffffe00` | `CLK`         | clock speed in Hz (via top's `CLOCK_FREQUENCY` generic)
-| `0xfffffe04` | `CUSTOM_ID    | custom user-defined ID (via top's `CUSTOM_ID` generic)
-| `0xfffffe08` | `SOC`         | specific SoC configuration (see `sysinfo_soc_configuration>>)
+| `0xfffffe04` | -             | _reserved_, read as zero
+| `0xfffffe08` | `SOC`         | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
 | `0xfffffe0c` | `CACHE`       | cache configuration information (see <<_sysinfo_cache_configuration>>)
-| `0xfffffe10` | `ISPACE_BASE` | instruction address space base (via package's `ispace_base_c` constant)
-| `0xfffffe14` | `IMEM_SIZE`   | internal IMEM size in bytes (via top's `MEM_INT_IMEM_SIZE` generic)
-| `0xfffffe18` | `DSPACE_BASE` | data address space base (via package's `sdspace_base_c` constant)
+| `0xfffffe10` | `ISPACE_BASE` | instruction address space base (via package's `mem_ispace_base_c` constant)
+| `0xfffffe14` | `DSPACE_BASE` | data address space base (via package's `mem_dspace_base_c` constant)
+| `0xfffffe18` | `IMEM_SIZE`   | internal IMEM size in bytes (via top's `MEM_INT_IMEM_SIZE` generic)
 | `0xfffffe1c` | `DMEM_SIZE`   | internal DMEM size in bytes (via top's `MEM_INT_DMEM_SIZE` generic)
 |=======================
 
@@ -58,28 +54,27 @@ Any write access to the SYSINFO module will raise a store bus error exception.
 | `4`     | `SYSINFO_SOC_MEM_EXT_ENDIAN` | set if external bus interface uses BIG-endian byte-order (via top's `MEM_EXT_BIG_ENDIAN` generic)
 | `5`     | `SYSINFO_SOC_ICACHE`         | set if processor-internal instruction cache is implemented (via top's `ICACHE_EN` generic)
 | `6`     | `SYSINFO_SOC_DCACHE`         | set if processor-internal data cache is implemented (via top's `DCACHE_EN` generic)
-| `9:7`   | -                            | _reserved_, read as zero
-| `10`    | `SYSINFO_SOC_OCD`            | set if on-chip debugger is implemented (via top's `ON_CHIP_DEBUGGER_EN` generic)
-| `12:11` | -                            | _reserved_, read as zero
-| `13`    | `SYSINFO_SOC_IO_CRC`         | set if cyclic redundancy check unit is implemented (via top's `IO_CRC_EN` generic)
-| `14`    | `SYSINFO_SOC_IO_SLINK`       | set if stream link interface is implemented (via top's `IO_SLINK_EN` generic)
-| `15`    | `SYSINFO_SOC_IO_DMA`         | set if direct memory access controller is implemented (via top's `IO_DMA_EN` generic)
-| `16`    | `SYSINFO_SOC_IO_GPIO`        | set if the GPIO is implemented (via top's `IO_GPIO_EN` generic)
-| `17`    | `SYSINFO_SOC_IO_MTIME`       | set if the MTIME is implemented (via top's `IO_MTIME_EN` generic)
-| `18`    | `SYSINFO_SOC_IO_UART0`       | set if the primary UART0 is implemented (via top's `IO_UART0_EN` generic)
-| `19`    | `SYSINFO_SOC_IO_SPI`         | set if the SPI is implemented (via top's `IO_SPI_EN` generic)
-| `20`    | `SYSINFO_SOC_IO_TWI`         | set if the TWI is implemented (via top's `IO_TWI_EN` generic)
-| `21`    | `SYSINFO_SOC_IO_PWM`         | set if the PWM is implemented (via top's `IO_PWM_NUM_CH` generic)
-| `22`    | `SYSINFO_SOC_IO_WDT`         | set if the WDT is implemented (via top's `IO_WDT_EN` generic)
-| `23`    | `SYSINFO_SOC_IO_CFS`         | set if the custom functions subsystem is implemented (via top's `IO_CFS_EN` generic)
-| `24`    | `SYSINFO_SOC_IO_TRNG`        | set if the TRNG is implemented (via top's `IO_TRNG_EN` generic)
-| `25`    | `SYSINFO_SOC_IO_SDI`         | set if the SDI is implemented (via top's `IO_SDI_EN` generic)
-| `26`    | `SYSINFO_SOC_IO_UART1`       | set if the secondary UART1 is implemented (via top's `IO_UART1_EN` generic)
-| `27`    | `SYSINFO_SOC_IO_NEOLED`      | set if the NEOLED is implemented (via top's `IO_NEOLED_EN` generic)
-| `28`    | `SYSINFO_SOC_IO_XIRQ`        | set if the XIRQ is implemented (via top's `XIRQ_NUM_CH` generic)
-| `29`    | `SYSINFO_SOC_IO_GPTMR`       | set if the GPTMR is implemented (via top's `IO_GPTMR_EN` generic)
-| `30`    | `SYSINFO_SOC_IO_XIP`         | set if the XIP module is implemented (via top's `IO_XIP_EN` generic)
-| `31`    | `SYSINFO_SOC_IO_ONEWIRE`     | set if the ONEWIRE interface is implemented (via top's `IO_ONEWIRE_EN` generic)
+| `11:7`  | -                            | _reserved_, read as zero
+| `12`    | `SYSINFO_SOC_IO_CRC`         | set if cyclic redundancy check unit is implemented (via top's `IO_CRC_EN` generic)
+| `13`    | `SYSINFO_SOC_IO_SLINK`       | set if stream link interface is implemented (via top's `IO_SLINK_EN` generic)
+| `14`    | `SYSINFO_SOC_IO_DMA`         | set if direct memory access controller is implemented (via top's `IO_DMA_EN` generic)
+| `15`    | `SYSINFO_SOC_IO_GPIO`        | set if the GPIO is implemented (via top's `IO_GPIO_EN` generic)
+| `16`    | `SYSINFO_SOC_IO_MTIME`       | set if the MTIME is implemented (via top's `IO_MTIME_EN` generic)
+| `17`    | `SYSINFO_SOC_IO_UART0`       | set if the primary UART0 is implemented (via top's `IO_UART0_EN` generic)
+| `18`    | `SYSINFO_SOC_IO_SPI`         | set if the SPI is implemented (via top's `IO_SPI_EN` generic)
+| `19`    | `SYSINFO_SOC_IO_TWI`         | set if the TWI is implemented (via top's `IO_TWI_EN` generic)
+| `20`    | `SYSINFO_SOC_IO_PWM`         | set if the PWM is implemented (via top's `IO_PWM_NUM_CH` generic)
+| `21`    | `SYSINFO_SOC_IO_WDT`         | set if the WDT is implemented (via top's `IO_WDT_EN` generic)
+| `22`    | `SYSINFO_SOC_IO_CFS`         | set if the custom functions subsystem is implemented (via top's `IO_CFS_EN` generic)
+| `23`    | `SYSINFO_SOC_IO_TRNG`        | set if the TRNG is implemented (via top's `IO_TRNG_EN` generic)
+| `24`    | `SYSINFO_SOC_IO_SDI`         | set if the SDI is implemented (via top's `IO_SDI_EN` generic)
+| `25`    | `SYSINFO_SOC_IO_UART1`       | set if the secondary UART1 is implemented (via top's `IO_UART1_EN` generic)
+| `26`    | `SYSINFO_SOC_IO_NEOLED`      | set if the NEOLED is implemented (via top's `IO_NEOLED_EN` generic)
+| `27`    | `SYSINFO_SOC_IO_XIRQ`        | set if the XIRQ is implemented (via top's `XIRQ_NUM_CH` generic)
+| `28`    | `SYSINFO_SOC_IO_GPTMR`       | set if the GPTMR is implemented (via top's `IO_GPTMR_EN` generic)
+| `29`    | `SYSINFO_SOC_IO_XIP`         | set if the XIP module is implemented (via top's `IO_XIP_EN` generic)
+| `30`    | `SYSINFO_SOC_IO_ONEWIRE`     | set if the ONEWIRE interface is implemented (via top's `IO_ONEWIRE_EN` generic)
+| `31`    | `SYSINFO_SOC_OCD`            | set if on-chip debugger is implemented (via top's `ON_CHIP_DEBUGGER_EN` generic)
 |=======================
 
 

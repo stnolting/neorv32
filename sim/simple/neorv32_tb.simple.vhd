@@ -163,7 +163,6 @@ begin
     CLOCK_FREQUENCY              => f_clock_c,     -- clock frequency of clk_i in Hz
     HART_ID                      => x"00000000",   -- hardware thread ID
     VENDOR_ID                    => x"00000000",   -- vendor's JEDEC ID
-    CUSTOM_ID                    => x"12345678",   -- custom user-defined ID
     INT_BOOTLOADER_EN            => false,         -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          => true,          -- implement on-chip debugger

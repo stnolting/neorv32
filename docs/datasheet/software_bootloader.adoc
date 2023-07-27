@@ -88,7 +88,6 @@ following intro screen shows up:
 
 BLDV: Mar  7 2023
 HWV:  0x01080107
-CID:  0x00000000
 CLK:  0x05f5e100
 MISA: 0x40901106
 XISA: 0xc0000fab
@@ -106,7 +105,6 @@ The start-up screen gives some brief information about the bootloader and severa
 |=======================
 | `BLDV` | Bootloader version (built date).
 | `HWV`  | Processor hardware version (the <<_mimpid>> CSR); in BCD format; example: `0x01040606` = v1.4.6.6).
-| `CID`  | Custom user-defined ID (via the `CUSTOM_ID` register from <<_system_configuration_information_memory_sysinfo>>.
 | `CLK`  | Processor clock speed in Hz (via the `CLK` register from <<_system_configuration_information_memory_sysinfo>>.
 | `MISA` | RISC-V CPU extensions (<<_misa>> CSR).
 | `XISA` | NEORV32-specific CPU extensions (<<_mxisa>> CSR).
@@ -124,7 +122,6 @@ you press any key within the 8 seconds, the actual bootloader user console start
 
 BLDV: Mar  7 2023
 HWV:  0x01080107
-CID:  0x00000000
 CLK:  0x05f5e100
 MISA: 0x40901106
 XISA: 0xc0000fab

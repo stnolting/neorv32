@@ -46,7 +46,6 @@ entity neorv32_sysinfo is
   generic (
     -- General --
     CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
-    CUSTOM_ID            : std_ulogic_vector(31 downto 0); -- custom user-defined ID
     INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- Physical memory protection --
     PMP_NUM_REGIONS      : natural; -- number of regions (0..64)
@@ -105,8 +104,8 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant int_dmem_en_c : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
 
   -- system information ROM --
-  type info_mem_t is array (0 to 7) of std_ulogic_vector(31 downto 0);
-  signal sysinfo : info_mem_t;
+  type sysinfo_t is array (0 to 7) of std_ulogic_vector(31 downto 0);
+  signal sysinfo : sysinfo_t;
 
 begin
 
@@ -115,8 +114,8 @@ begin
   -- SYSINFO(0): Processor (primary) clock frequency --
   sysinfo(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
 
-  -- SYSINFO(1): Custom user-defined ID --
-  sysinfo(1) <= CUSTOM_ID;
+  -- SYSINFO(1): reserved --
+  sysinfo(1) <= (others => '0');
 
   -- SYSINFO(2): SoC Configuration --
   -- Memory System --
@@ -127,33 +126,33 @@ begin
   sysinfo(2)(04) <= bool_to_ulogic_f(MEM_EXT_BIG_ENDIAN);  -- is external memory bus interface using BIG-endian byte-order?
   sysinfo(2)(05) <= bool_to_ulogic_f(ICACHE_EN);           -- processor-internal instruction cache implemented?
   sysinfo(2)(06) <= bool_to_ulogic_f(DCACHE_EN);           -- processor-internal data cache implemented?
+  -- reserved --
   sysinfo(2)(07) <= '0'; -- reserved
   sysinfo(2)(08) <= '0'; -- reserved
   sysinfo(2)(09) <= '0'; -- reserved
-  -- On-Chip Debugger --
-  sysinfo(2)(10) <= bool_to_ulogic_f(ON_CHIP_DEBUGGER_EN); -- on-chip debugger implemented?
+  sysinfo(2)(10) <= '0'; -- reserved
   sysinfo(2)(11) <= '0'; -- reserved
-  -- Peripherals --
-  sysinfo(2)(12) <= '0'; -- reserved
-  sysinfo(2)(13) <= bool_to_ulogic_f(IO_CRC_EN);           -- cyclic redundancy check unit (CRC) implemented?
-  sysinfo(2)(14) <= bool_to_ulogic_f(IO_SLINK_EN);         -- stream link interface (SLINK) implemented?
-  sysinfo(2)(15) <= bool_to_ulogic_f(IO_DMA_EN);           -- direct memory access controller (DMA) implemented?
-  sysinfo(2)(16) <= bool_to_ulogic_f(IO_GPIO_EN);          -- general purpose input/output port unit (GPIO) implemented?
-  sysinfo(2)(17) <= bool_to_ulogic_f(IO_MTIME_EN);         -- machine system timer (MTIME) implemented?
-  sysinfo(2)(18) <= bool_to_ulogic_f(IO_UART0_EN);         -- primary universal asynchronous receiver/transmitter (UART0) implemented?
-  sysinfo(2)(19) <= bool_to_ulogic_f(IO_SPI_EN);           -- serial peripheral interface (SPI) implemented?
-  sysinfo(2)(20) <= bool_to_ulogic_f(IO_TWI_EN);           -- two-wire interface (TWI) implemented?
-  sysinfo(2)(21) <= bool_to_ulogic_f(IO_PWM_EN);           -- pulse-width modulation unit (PWM) implemented?
-  sysinfo(2)(22) <= bool_to_ulogic_f(IO_WDT_EN);           -- watch dog timer (WDT) implemented?
-  sysinfo(2)(23) <= bool_to_ulogic_f(IO_CFS_EN);           -- custom functions subsystem (CFS) implemented?
-  sysinfo(2)(24) <= bool_to_ulogic_f(IO_TRNG_EN);          -- true random number generator (TRNG) implemented?
-  sysinfo(2)(25) <= bool_to_ulogic_f(IO_SDI_EN);           -- serial data interface (SDI) implemented?
-  sysinfo(2)(26) <= bool_to_ulogic_f(IO_UART1_EN);         -- secondary universal asynchronous receiver/transmitter (UART1) implemented?
-  sysinfo(2)(27) <= bool_to_ulogic_f(IO_NEOLED_EN);        -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
-  sysinfo(2)(28) <= bool_to_ulogic_f(IO_XIRQ_EN);          -- external interrupt controller (XIRQ) implemented?
-  sysinfo(2)(29) <= bool_to_ulogic_f(IO_GPTMR_EN);         -- general purpose timer (GPTMR) implemented?
-  sysinfo(2)(30) <= bool_to_ulogic_f(IO_XIP_EN);           -- execute in place module (XIP) implemented?
-  sysinfo(2)(31) <= bool_to_ulogic_f(IO_ONEWIRE_EN);       -- 1-wire interface (ONEWIRE) implemented?
+  -- Peripherals/IO --
+  sysinfo(2)(12) <= bool_to_ulogic_f(IO_CRC_EN);           -- cyclic redundancy check unit (CRC) implemented?
+  sysinfo(2)(13) <= bool_to_ulogic_f(IO_SLINK_EN);         -- stream link interface (SLINK) implemented?
+  sysinfo(2)(14) <= bool_to_ulogic_f(IO_DMA_EN);           -- direct memory access controller (DMA) implemented?
+  sysinfo(2)(15) <= bool_to_ulogic_f(IO_GPIO_EN);          -- general purpose input/output port unit (GPIO) implemented?
+  sysinfo(2)(16) <= bool_to_ulogic_f(IO_MTIME_EN);         -- machine system timer (MTIME) implemented?
+  sysinfo(2)(17) <= bool_to_ulogic_f(IO_UART0_EN);         -- primary universal asynchronous receiver/transmitter (UART0) implemented?
+  sysinfo(2)(18) <= bool_to_ulogic_f(IO_SPI_EN);           -- serial peripheral interface (SPI) implemented?
+  sysinfo(2)(19) <= bool_to_ulogic_f(IO_TWI_EN);           -- two-wire interface (TWI) implemented?
+  sysinfo(2)(20) <= bool_to_ulogic_f(IO_PWM_EN);           -- pulse-width modulation unit (PWM) implemented?
+  sysinfo(2)(21) <= bool_to_ulogic_f(IO_WDT_EN);           -- watch dog timer (WDT) implemented?
+  sysinfo(2)(22) <= bool_to_ulogic_f(IO_CFS_EN);           -- custom functions subsystem (CFS) implemented?
+  sysinfo(2)(23) <= bool_to_ulogic_f(IO_TRNG_EN);          -- true random number generator (TRNG) implemented?
+  sysinfo(2)(24) <= bool_to_ulogic_f(IO_SDI_EN);           -- serial data interface (SDI) implemented?
+  sysinfo(2)(25) <= bool_to_ulogic_f(IO_UART1_EN);         -- secondary universal asynchronous receiver/transmitter (UART1) implemented?
+  sysinfo(2)(26) <= bool_to_ulogic_f(IO_NEOLED_EN);        -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
+  sysinfo(2)(27) <= bool_to_ulogic_f(IO_XIRQ_EN);          -- external interrupt controller (XIRQ) implemented?
+  sysinfo(2)(28) <= bool_to_ulogic_f(IO_GPTMR_EN);         -- general purpose timer (GPTMR) implemented?
+  sysinfo(2)(29) <= bool_to_ulogic_f(IO_XIP_EN);           -- execute in place module (XIP) implemented?
+  sysinfo(2)(30) <= bool_to_ulogic_f(IO_ONEWIRE_EN);       -- 1-wire interface (ONEWIRE) implemented?
+  sysinfo(2)(31) <= bool_to_ulogic_f(ON_CHIP_DEBUGGER_EN); -- on-chip debugger implemented?
 
   -- SYSINFO(3): Cache configuration --
   sysinfo(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE),    4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(block_size_in_bytes)
@@ -172,10 +171,10 @@ begin
   -- SYSINFO(5): Base address of data memory space --
   sysinfo(5) <= mem_dspace_base_c; -- defined in neorv32_package.vhd file
 
-  -- SYSINFO(6): Size of IMEM in bytes --
+  -- SYSINFO(6): Size of internal IMEM in bytes --
   sysinfo(6) <= std_ulogic_vector(to_unsigned(MEM_INT_IMEM_SIZE, 32)) when (MEM_INT_IMEM_EN = true) else (others => '0');
 
-  -- SYSINFO(7): Size of DMEM in bytes --
+  -- SYSINFO(7): Size of internal DMEM in bytes --
   sysinfo(7) <= std_ulogic_vector(to_unsigned(MEM_INT_DMEM_SIZE, 32)) when (MEM_INT_DMEM_EN = true) else (others => '0');
 
 

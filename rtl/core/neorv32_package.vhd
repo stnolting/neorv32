@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080700"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080701"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -866,9 +866,9 @@ package neorv32_package is
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
   function bin_to_gray_f(input : std_ulogic_vector) return std_ulogic_vector;
   function gray_to_bin_f(input : std_ulogic_vector) return std_ulogic_vector;
-  function or_reduce_f(a : std_ulogic_vector) return std_ulogic;
-  function and_reduce_f(a : std_ulogic_vector) return std_ulogic;
-  function xor_reduce_f(a : std_ulogic_vector) return std_ulogic;
+  function or_reduce_f(input : std_ulogic_vector) return std_ulogic;
+  function and_reduce_f(input : std_ulogic_vector) return std_ulogic;
+  function xor_reduce_f(input : std_ulogic_vector) return std_ulogic;
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
   function to_hstring32_f(input : std_ulogic_vector(31 downto 0)) return string;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
@@ -888,7 +888,6 @@ package neorv32_package is
       CLOCK_FREQUENCY              : natural;           -- clock frequency of clk_i in Hz
       HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
       VENDOR_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
-      CUSTOM_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom user-defined ID
       INT_BOOTLOADER_EN            : boolean := false;  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
       -- On-Chip Debugger (OCD) --
       ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
@@ -1159,80 +1158,62 @@ package body neorv32_package is
     return tmp_v;
   end function gray_to_bin_f;
 
-  -- OR-reduce all bits ---------------------------------------------------------------------
+  -- OR all bits ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function or_reduce_f(a : std_ulogic_vector) return std_ulogic is
+  function or_reduce_f(input : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := '0';
-    for i in a'range loop
-      tmp_v := tmp_v or a(i);
+    for i in input'range loop
+      tmp_v := tmp_v or input(i);
     end loop;
     return tmp_v;
   end function or_reduce_f;
 
-  -- AND-reduce all bits --------------------------------------------------------------------
+  -- AND all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function and_reduce_f(a : std_ulogic_vector) return std_ulogic is
+  function and_reduce_f(input : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := '1';
-    for i in a'range loop
-      tmp_v := tmp_v and a(i);
+    for i in input'range loop
+      tmp_v := tmp_v and input(i);
     end loop;
     return tmp_v;
   end function and_reduce_f;
 
-  -- XOR-reduce all bits --------------------------------------------------------------------
+  -- XOR all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function xor_reduce_f(a : std_ulogic_vector) return std_ulogic is
+  function xor_reduce_f(input : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := '0';
-    for i in a'range loop
-      tmp_v := tmp_v xor a(i);
+    for i in input'range loop
+      tmp_v := tmp_v xor input(i);
     end loop;
     return tmp_v;
   end function xor_reduce_f;
 
-  -- Convert std_ulogic_vector to hex char --------------------------------------------------
+  -- Convert std_ulogic_vector to lowercase HEX char ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character is
-    variable res_v : character;
+    variable hex_v : string(1 to 16);
   begin
-    case input is
-      when x"0"   => res_v := '0';
-      when x"1"   => res_v := '1';
-      when x"2"   => res_v := '2';
-      when x"3"   => res_v := '3';
-      when x"4"   => res_v := '4';
-      when x"5"   => res_v := '5';
-      when x"6"   => res_v := '6';
-      when x"7"   => res_v := '7';
-      when x"8"   => res_v := '8';
-      when x"9"   => res_v := '9';
-      when x"a"   => res_v := 'a';
-      when x"b"   => res_v := 'b';
-      when x"c"   => res_v := 'c';
-      when x"d"   => res_v := 'd';
-      when x"e"   => res_v := 'e';
-      when x"f"   => res_v := 'f';
-      when others => res_v := '?';
-    end case;
-    return res_v;
+    hex_v := "0123456789abcdef";
+    if (to_integer(unsigned(input)) > 15) then
+      return '?';
+    else
+      return hex_v(to_integer(unsigned(input)) + 1);
+    end if;
   end function to_hexchar_f;
 
   -- Convert 32-bit std_ulogic_vector to hex string -----------------------------------------
   -- -------------------------------------------------------------------------------------------
   function to_hstring32_f(input : std_ulogic_vector(31 downto 0)) return string is
     variable res_v : string(1 to 8);
-    variable tmp_v : std_ulogic_vector(31 downto 0);
-    variable hex_v : std_ulogic_vector(3 downto 0);
   begin
-    tmp_v := bit_rev_f(input);
-    for i in 0 to 7 loop
-      hex_v := tmp_v(i*4+3 downto i*4+0);
-      res_v(i+1) := to_hexchar_f(bit_rev_f(hex_v));
+    for i in 7 downto 0 loop
+      res_v(8-i) := to_hexchar_f(input(i*4+3 downto i*4+0));
     end loop;
     return res_v;
   end function to_hstring32_f;
@@ -1309,9 +1290,8 @@ package body neorv32_package is
     return cnt_v;
   end function leading_zeros_f;
 
-  --  Initialize mem32_t array from another mem32_t array -----------------------------------
+  -- Initialize mem32_t array from another mem32_t array ------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- impure function: returns NOT the same result every time it is evaluated with the same arguments since the source file might have changed
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t is
     variable mem_v : mem32_t(0 to depth-1);
   begin
@@ -1319,7 +1299,7 @@ package body neorv32_package is
     if (init'length > depth) then
       return mem_v;
     end if;
-    for i in 0 to init'length-1 loop -- init only in range of source data array
+    for i in 0 to init'length-1 loop -- initialize only in range of source data array
       mem_v(i) := init(i);
     end loop;
     return mem_v;

@@ -48,7 +48,7 @@
 /** SYSINFO module prototype - whole module is read-only */
 typedef volatile struct __attribute__((packed,aligned(4))) {
   const uint32_t CLK;         /**< offset 0:  clock speed in Hz */
-  const uint32_t CUSTOM_ID;   /**< offset 4:  custom user-defined ID (via top generic) */
+  const uint32_t reserved;    /**< offset 4:  reserved */
   const uint32_t SOC;         /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
   const uint32_t CACHE;       /**< offset 12: cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
   const uint32_t ISPACE_BASE; /**< offset 16: instruction memory address space base */
@@ -70,27 +70,26 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_ICACHE         =  5, /**< SYSINFO_FEATURES  (5) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
   SYSINFO_SOC_DCACHE         =  6, /**< SYSINFO_FEATURES  (6) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
 
-  SYSINFO_SOC_OCD            = 10, /**< SYSINFO_FEATURES (10) (r/-): On-chip debugger implemented when 1 (via ON_CHIP_DEBUGGER_EN generic) */
-
-  SYSINFO_SOC_IO_CRC         = 13, /**< SYSINFO_FEATURES (13) (r/-):Cyclic redundancy check unit implemented when 1 (via IO_CRC_EN generic) */
-  SYSINFO_SOC_IO_SLINK       = 14, /**< SYSINFO_FEATURES (14) (r/-): Stream link interface implemented when 1 (via IO_SLINK_EN generic) */
-  SYSINFO_SOC_IO_DMA         = 15, /**< SYSINFO_FEATURES (15) (r/-): Direct memory access controller implemented when 1 (via IO_DMA_EN generic) */
-  SYSINFO_SOC_IO_GPIO        = 16, /**< SYSINFO_FEATURES (16) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
-  SYSINFO_SOC_IO_MTIME       = 17, /**< SYSINFO_FEATURES (17) (r/-): Machine system timer implemented when 1 (via IO_MTIME_EN generic) */
-  SYSINFO_SOC_IO_UART0       = 18, /**< SYSINFO_FEATURES (18) (r/-): Primary universal asynchronous receiver/transmitter 0 implemented when 1 (via IO_UART0_EN generic) */
-  SYSINFO_SOC_IO_SPI         = 19, /**< SYSINFO_FEATURES (19) (r/-): Serial peripheral interface implemented when 1 (via IO_SPI_EN generic) */
-  SYSINFO_SOC_IO_TWI         = 20, /**< SYSINFO_FEATURES (20) (r/-): Two-wire interface implemented when 1 (via IO_TWI_EN generic) */
-  SYSINFO_SOC_IO_PWM         = 21, /**< SYSINFO_FEATURES (21) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_EN generic) */
-  SYSINFO_SOC_IO_WDT         = 22, /**< SYSINFO_FEATURES (22) (r/-): Watchdog timer implemented when 1 (via IO_WDT_EN generic) */
-  SYSINFO_SOC_IO_CFS         = 23, /**< SYSINFO_FEATURES (23) (r/-): Custom functions subsystem implemented when 1 (via IO_CFS_EN generic) */
-  SYSINFO_SOC_IO_TRNG        = 24, /**< SYSINFO_FEATURES (24) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
-  SYSINFO_SOC_IO_SDI         = 25, /**< SYSINFO_FEATURES (25) (r/-): Serial data interface implemented when 1 (via IO_SDI_EN generic) */
-  SYSINFO_SOC_IO_UART1       = 26, /**< SYSINFO_FEATURES (26) (r/-): Secondary universal asynchronous receiver/transmitter 1 implemented when 1 (via IO_UART1_EN generic) */
-  SYSINFO_SOC_IO_NEOLED      = 27, /**< SYSINFO_FEATURES (27) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
-  SYSINFO_SOC_IO_XIRQ        = 28, /**< SYSINFO_FEATURES (28) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
-  SYSINFO_SOC_IO_GPTMR       = 29, /**< SYSINFO_FEATURES (29) (r/-): General purpose timer implemented when 1 (via IO_GPTMR_EN generic) */
-  SYSINFO_SOC_IO_XIP         = 30, /**< SYSINFO_FEATURES (30) (r/-): Execute in place module implemented when 1 (via IO_XIP_EN generic) */
-  SYSINFO_SOC_IO_ONEWIRE     = 31  /**< SYSINFO_FEATURES (31) (r/-): 1-wire interface controller implemented when 1 (via IO_ONEWIRE_EN generic) */
+  SYSINFO_SOC_IO_CRC         = 12, /**< SYSINFO_FEATURES (12) (r/-):Cyclic redundancy check unit implemented when 1 (via IO_CRC_EN generic) */
+  SYSINFO_SOC_IO_SLINK       = 13, /**< SYSINFO_FEATURES (13) (r/-): Stream link interface implemented when 1 (via IO_SLINK_EN generic) */
+  SYSINFO_SOC_IO_DMA         = 14, /**< SYSINFO_FEATURES (14) (r/-): Direct memory access controller implemented when 1 (via IO_DMA_EN generic) */
+  SYSINFO_SOC_IO_GPIO        = 15, /**< SYSINFO_FEATURES (15) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
+  SYSINFO_SOC_IO_MTIME       = 16, /**< SYSINFO_FEATURES (16) (r/-): Machine system timer implemented when 1 (via IO_MTIME_EN generic) */
+  SYSINFO_SOC_IO_UART0       = 17, /**< SYSINFO_FEATURES (17) (r/-): Primary universal asynchronous receiver/transmitter 0 implemented when 1 (via IO_UART0_EN generic) */
+  SYSINFO_SOC_IO_SPI         = 18, /**< SYSINFO_FEATURES (18) (r/-): Serial peripheral interface implemented when 1 (via IO_SPI_EN generic) */
+  SYSINFO_SOC_IO_TWI         = 19, /**< SYSINFO_FEATURES (19) (r/-): Two-wire interface implemented when 1 (via IO_TWI_EN generic) */
+  SYSINFO_SOC_IO_PWM         = 20, /**< SYSINFO_FEATURES (20) (r/-): Pulse-width modulation unit implemented when 1 (via IO_PWM_EN generic) */
+  SYSINFO_SOC_IO_WDT         = 21, /**< SYSINFO_FEATURES (21) (r/-): Watchdog timer implemented when 1 (via IO_WDT_EN generic) */
+  SYSINFO_SOC_IO_CFS         = 22, /**< SYSINFO_FEATURES (22) (r/-): Custom functions subsystem implemented when 1 (via IO_CFS_EN generic) */
+  SYSINFO_SOC_IO_TRNG        = 23, /**< SYSINFO_FEATURES (23) (r/-): True random number generator implemented when 1 (via IO_TRNG_EN generic) */
+  SYSINFO_SOC_IO_SDI         = 24, /**< SYSINFO_FEATURES (24) (r/-): Serial data interface implemented when 1 (via IO_SDI_EN generic) */
+  SYSINFO_SOC_IO_UART1       = 25, /**< SYSINFO_FEATURES (25) (r/-): Secondary universal asynchronous receiver/transmitter 1 implemented when 1 (via IO_UART1_EN generic) */
+  SYSINFO_SOC_IO_NEOLED      = 26, /**< SYSINFO_FEATURES (26) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
+  SYSINFO_SOC_IO_XIRQ        = 27, /**< SYSINFO_FEATURES (27) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
+  SYSINFO_SOC_IO_GPTMR       = 28, /**< SYSINFO_FEATURES (28) (r/-): General purpose timer implemented when 1 (via IO_GPTMR_EN generic) */
+  SYSINFO_SOC_IO_XIP         = 29, /**< SYSINFO_FEATURES (29) (r/-): Execute in place module implemented when 1 (via IO_XIP_EN generic) */
+  SYSINFO_SOC_IO_ONEWIRE     = 30, /**< SYSINFO_FEATURES (30) (r/-): 1-wire interface controller implemented when 1 (via IO_ONEWIRE_EN generic) */
+  SYSINFO_SOC_OCD            = 31  /**< SYSINFO_FEATURES (31) (r/-): On-chip debugger implemented when 1 (via ON_CHIP_DEBUGGER_EN generic) */
 };
 
 /** NEORV32_SYSINFO->CACHE (r/-): Cache configuration */
