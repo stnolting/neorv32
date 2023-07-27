@@ -203,7 +203,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `INT_BOOTLOADER_EN`     | boolean   | false      | Implement the processor-internal <<_bootloader_rom_bootrom>>, pre-initialized with the default <<_bootloader>> image.
 | `HART_ID`               | suv(31:0) | 0x00000000 | The hart thread ID of the CPU (passed to <<_mhartid>> CSRs).
 | `VENDOR_ID`             | suv(31:0) | 0x00000000 | JEDEC ID (passed to <<_mvendorid>> CSRs).
-| `CUSTOM_ID`             | suv(31:0) | 0x00000000 | User-defined identifier to identify a certain setup or to pass user-defined flags to software (via the <<_system_configuration_information_memory_sysinfo>>).
 | `ON_CHIP_DEBUGGER_EN`   | boolean   | false      | Implement the on-chip debugger <<_on_chip_debugger_ocd>> and the CPU debug mode.
 4+^| **CPU <<_instruction_sets_and_extensions>>**
 | `CPU_EXTENSION_RISCV_A`        | boolean | false | Enable <<_a_isa_extension>> (atomic memory accesses).
