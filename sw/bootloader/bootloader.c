@@ -326,8 +326,6 @@ int main(void) {
   PRINT_TEXT("\n\n\n<< NEORV32 Bootloader >>\n\n"
                      "BLDV: "__DATE__"\nHWV:  ");
   PRINT_XNUM(neorv32_cpu_csr_read(CSR_MIMPID));
-  PRINT_TEXT("\nCID:  ");
-  PRINT_XNUM(NEORV32_SYSINFO->CUSTOM_ID);
   PRINT_TEXT("\nCLK:  ");
   PRINT_XNUM(NEORV32_SYSINFO->CLK);
   PRINT_TEXT("\nMISA: ");
