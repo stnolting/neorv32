@@ -284,29 +284,29 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_gateway is
   generic (
-    TIMEOUT     : positive; -- internal bus timeout cycles
+    TIMEOUT     : natural; -- internal bus timeout cycles
     -- IMEM port --
     IMEM_ENABLE : boolean;
     IMEM_BASE   : std_ulogic_vector(31 downto 0);
-    IMEM_SIZE   : positive;
+    IMEM_SIZE   : natural;
     -- DMEM port --
     DMEM_ENABLE : boolean;
     DMEM_BASE   : std_ulogic_vector(31 downto 0);
-    DMEM_SIZE   : positive;
+    DMEM_SIZE   : natural;
     -- XIP port --
     XIP_ENABLE  : boolean;
     XIP_BASE    : std_ulogic_vector(31 downto 0);
-    XIP_SIZE    : positive;
+    XIP_SIZE    : natural;
     -- BOOT ROM port --
     BOOT_ENABLE : boolean;
     BOOT_BASE   : std_ulogic_vector(31 downto 0);
-    BOOT_SIZE   : positive;
+    BOOT_SIZE   : natural;
     -- IO port --
     IO_ENABLE   : boolean;
     IO_REQ_REG  : boolean;
     IO_RSP_REG  : boolean;
     IO_BASE     : std_ulogic_vector(31 downto 0);
-    IO_SIZE     : positive;
+    IO_SIZE     : natural;
     -- EXTERNAL port --
     EXT_ENABLE  : boolean
   );
