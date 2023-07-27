@@ -1161,8 +1161,9 @@ package body neorv32_package is
   -- OR all bits ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function or_reduce_f(input : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic := '0';
+    variable tmp_v : std_ulogic;
   begin
+    tmp_v := '0';
     for i in input'range loop
       tmp_v := tmp_v or input(i);
     end loop;
@@ -1172,8 +1173,9 @@ package body neorv32_package is
   -- AND all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function and_reduce_f(input : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic := '1';
+    variable tmp_v : std_ulogic;
   begin
+    tmp_v := '1';
     for i in input'range loop
       tmp_v := tmp_v and input(i);
     end loop;
@@ -1183,8 +1185,9 @@ package body neorv32_package is
   -- XOR all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function xor_reduce_f(input : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic := '0';
+    variable tmp_v : std_ulogic;
   begin
+    tmp_v := '0';
     for i in input'range loop
       tmp_v := tmp_v xor input(i);
     end loop;
@@ -1194,8 +1197,9 @@ package body neorv32_package is
   -- Convert std_ulogic_vector to lowercase HEX char ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character is
-    variable hex_v : string(1 to 16) := "0123456789abcdef";
+    variable hex_v : string(1 to 16);
   begin
+    hex_v := "0123456789abcdef";
     if (to_integer(unsigned(input)) > 15) then
       return '?';
     else
