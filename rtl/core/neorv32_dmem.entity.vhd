@@ -41,7 +41,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_dmem is
   generic (
-    DMEM_SIZE : natural -- processor-internal instruction memory size in bytes
+    DMEM_SIZE : natural -- processor-internal instruction memory size in bytes, has to be a power of 2
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
