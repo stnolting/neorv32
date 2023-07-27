@@ -41,7 +41,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_imem is
   generic (
-    IMEM_SIZE    : natural; -- processor-internal instruction memory size in bytes
+    IMEM_SIZE    : natural; -- processor-internal instruction memory size in bytes, has to be a power of 2
     IMEM_AS_IROM : boolean  -- implement IMEM as pre-initialized read-only memory?
   );
   port (
