@@ -10,7 +10,7 @@
 | Software driver file(s): | none                         | _implicitly used_
 | Top entity port:         | none                         | 
 | Configuration generics:  | `MEM_INT_DMEM_EN`            | implement processor-internal DMEM when `true`
-|                          | `MEM_INT_DMEM_SIZE`          | DMEM size in bytes
+|                          | `MEM_INT_DMEM_SIZE`          | DMEM size in bytes (use a power of 2)
 | CPU interrupts:          | none                         | 
 |=======================
 
@@ -19,6 +19,12 @@ generic. The size in bytes is defined via the `MEM_INT_DMEM_SIZE` generic. If th
 the memory is mapped into the data memory space and located right at the beginning of the data memory
 space (default `dspace_base_c` = 0x80000000), see <<_address_space>>. The DMEM is always implemented
 as true RAM.
+
+.Memory Size
+[IMPORTANT]
+If the configured memory size (via the `MEM_INT_IMEM_SIZE` generic) is **not** a power of two the actual memory
+size will be auto-adjusted to the next power of two (e.g. configuring a memory size of 60kB will result in a
+physical memory size of 64kB).
 
 .VHDL Source File
 [NOTE]

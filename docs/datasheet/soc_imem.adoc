@@ -10,7 +10,7 @@
 | Software driver file(s): | none                         | _implicitly used_
 | Top entity port:         | none                         | 
 | Configuration generics:  | `MEM_INT_IMEM_EN`            | implement processor-internal IMEM when `true`
-|                          | `MEM_INT_IMEM_SIZE`          | IMEM size in bytes
+|                          | `MEM_INT_IMEM_SIZE`          | IMEM size in bytes (use a power of 2)
 |                          | `INT_BOOTLOADER_EN`          | use internal bootloader when `true` (implements IMEM as _uninitialized_ RAM, otherwise the IMEM is implemented an _pre-intialized_ ROM)
 | CPU interrupts:          | none                         | 
 |=======================
@@ -30,6 +30,12 @@ When the IMEM is implemented as ROM, it will be initialized during synthesis wit
 image. The compiler toolchain provides an option to generate and override the default VHDL initialization file
 `rtl/core/neorv32_application_image.vhd`, which is automatically inserted into the IMEM. If the IMEM is implemented
 as RAM (default), the memory will **not be initialized at all**.
+
+.Memory Size
+[IMPORTANT]
+If the configured memory size (via the `MEM_INT_IMEM_SIZE` generic) is **not** a power of two the actual memory
+size will be auto-adjusted to the next power of two (e.g. configuring a memory size of 60kB will result in a
+physical memory size of 64kB).
 
 .VHDL Source File
 [NOTE]
