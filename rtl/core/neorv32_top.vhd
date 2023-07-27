@@ -88,11 +88,11 @@ entity neorv32_top is
 
     -- Internal Instruction memory (IMEM) --
     MEM_INT_IMEM_EN              : boolean := false;  -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes (use a power of 2)
 
     -- Internal Data memory (DMEM) --
     MEM_INT_DMEM_EN              : boolean := false;  -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_SIZE            : natural := 8*1024; -- size of processor-internal data memory in bytes (use a power of 2)
 
     -- Internal Instruction Cache (iCACHE) --
     ICACHE_EN                    : boolean := false;  -- implement instruction cache
@@ -261,6 +261,15 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_xirq_en_c    : boolean := boolean(XIRQ_NUM_CH > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
 
+  -- make sure physical memory sizes are a power of two --
+  constant imem_size_valid_c : boolean := is_power_of_two_f(MEM_INT_IMEM_SIZE);
+  constant imem_size_pow2_c  : natural := 2**index_size_f(MEM_INT_IMEM_SIZE);
+  constant imem_size_c       : natural := cond_sel_natural_f(imem_size_valid_c, MEM_INT_IMEM_SIZE, imem_size_pow2_c);
+  --
+  constant dmem_size_valid_c : boolean := is_power_of_two_f(MEM_INT_DMEM_SIZE);
+  constant dmem_size_pow2_c  : natural := 2**index_size_f(MEM_INT_DMEM_SIZE);
+  constant dmem_size_c       : natural := cond_sel_natural_f(dmem_size_valid_c, MEM_INT_DMEM_SIZE, dmem_size_pow2_c);
+
   -- reset generator --
   signal rstn_ext_sreg, rstn_int_sreg : std_ulogic_vector(3 downto 0);
   signal rstn_ext, rstn_int, rstn_wdt : std_ulogic;
@@ -381,11 +390,13 @@ begin
     assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report
       "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-external memory)." severity note;
 
-    -- memory layout --
-    assert not (mem_ispace_base_c /= x"00000000") report
-      "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for INSTRUCTION ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
-    assert not (mem_dspace_base_c /= x"80000000") report
-      "NEORV32 PROCESSOR CONFIG WARNING! Non-default base address for DATA ADDRESS SPACE. Make sure this is sync with the software framework." severity warning;
+    -- internal memory sizes --
+    assert not ((imem_size_valid_c = false) and (MEM_INT_IMEM_EN = true)) report
+      "NEORV32 PROCESSOR CONFIG WARNING: Configured internal IMEM size (" & natural'image(MEM_INT_IMEM_SIZE) & " bytes) is not a power of two. " &
+      "Auto-increasing memory size to the next power of two (" & natural'image(imem_size_c) & " bytes)" severity warning;
+    assert not ((dmem_size_valid_c = false) and (MEM_INT_DMEM_EN = true)) report
+      "NEORV32 PROCESSOR CONFIG WARNING: Configured internal DMEM size (" & natural'image(MEM_INT_DMEM_SIZE) & " bytes) is not a power of two. " &
+      "Auto-increasing memory size to the next power of two (" & natural'image(dmem_size_c) & " bytes)" severity warning;
 
     -- on-chip debugger --
     assert not (ON_CHIP_DEBUGGER_EN = true) report
@@ -719,11 +730,11 @@ begin
     -- IMEM port --
     IMEM_ENABLE => MEM_INT_IMEM_EN,
     IMEM_BASE   => mem_ispace_base_c,
-    IMEM_SIZE   => MEM_INT_IMEM_SIZE,
+    IMEM_SIZE   => imem_size_c,
     -- DMEM port --
     DMEM_ENABLE => MEM_INT_DMEM_EN,
     DMEM_BASE   => mem_dspace_base_c,
-    DMEM_SIZE   => MEM_INT_DMEM_SIZE,
+    DMEM_SIZE   => dmem_size_c,
     -- XIP port --
     XIP_ENABLE  => IO_XIP_EN,
     XIP_BASE    => mem_xip_base_c,
@@ -773,10 +784,10 @@ begin
     -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_int_imem_inst_true:
-    if (MEM_INT_IMEM_EN = true) and (MEM_INT_IMEM_SIZE > 0) generate
+    if (MEM_INT_IMEM_EN = true) and (imem_size_c > 0) generate
       neorv32_int_imem_inst: entity neorv32.neorv32_imem
       generic map (
-        IMEM_SIZE    => MEM_INT_IMEM_SIZE,
+        IMEM_SIZE    => imem_size_c,
         IMEM_AS_IROM => imem_as_rom_c
       )
       port map (
@@ -787,7 +798,7 @@ begin
     end generate;
 
     neorv32_int_imem_inst_false:
-    if (MEM_INT_IMEM_EN = false) or (MEM_INT_IMEM_SIZE = 0) generate
+    if (MEM_INT_IMEM_EN = false) or (imem_size_c = 0) generate
       imem_rsp <= rsp_terminate_c;
     end generate;
 
@@ -795,10 +806,10 @@ begin
     -- Processor-Internal Data Memory (DMEM) --------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_int_dmem_inst_true:
-    if (MEM_INT_DMEM_EN = true) and (MEM_INT_DMEM_SIZE > 0) generate
+    if (MEM_INT_DMEM_EN = true) and (dmem_size_c > 0) generate
       neorv32_int_dmem_inst: entity neorv32.neorv32_dmem
       generic map (
-        DMEM_SIZE => MEM_INT_DMEM_SIZE
+        DMEM_SIZE => dmem_size_c
       )
       port map (
         clk_i     => clk_i,
@@ -808,7 +819,7 @@ begin
     end generate;
 
     neorv32_int_dmem_inst_false:
-    if (MEM_INT_DMEM_EN = false) or (MEM_INT_DMEM_SIZE = 0) generate
+    if (MEM_INT_DMEM_EN = false) or (dmem_size_c = 0) generate
       dmem_rsp <= rsp_terminate_c;
     end generate;
 
@@ -1473,10 +1484,10 @@ begin
       PMP_NUM_REGIONS      => PMP_NUM_REGIONS,
       -- internal Instruction memory --
       MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,
-      MEM_INT_IMEM_SIZE    => MEM_INT_IMEM_SIZE,
+      MEM_INT_IMEM_SIZE    => imem_size_c,
       -- Internal Data memory --
       MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,
-      MEM_INT_DMEM_SIZE    => MEM_INT_DMEM_SIZE,
+      MEM_INT_DMEM_SIZE    => dmem_size_c,
       -- Instruction cache --
       ICACHE_EN            => ICACHE_EN,
       ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS,
