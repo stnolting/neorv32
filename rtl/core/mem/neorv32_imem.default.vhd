@@ -85,6 +85,9 @@ begin
   assert false report
     "NEORV32 PROCESSOR CONFIG NOTE: Using DEFAULT platform-agnostic IMEM." severity note;
 
+  assert not (is_power_of_two_f(IMEM_SIZE) = false) report
+    "NEORV32 PROCESSOR CONFIG ERROR: Internal IMEM size has to be a power of two!" severity error;
+
   assert not (IMEM_AS_IROM = true) report
     "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (" & natural'image(IMEM_SIZE) &
     " bytes), pre-initialized with application (" & natural'image(imem_app_size_c) & " bytes)." severity note;
