@@ -41,6 +41,12 @@
 #include "neorv32.h"
 #include "neorv32_rte.h"
 
+
+// #################################################################################################
+// RTE Core
+// #################################################################################################
+
+
 /**********************************************************************//**
  * The >private< trap vector look-up table of the NEORV32 RTE.
  **************************************************************************/
@@ -270,6 +276,11 @@ static void __neorv32_rte_debug_handler(void) {
 }
 
 
+// #################################################################################################
+// RTE Hardware Analysis Helpers
+// #################################################################################################
+
+
 /**********************************************************************//**
  * NEORV32 runtime environment: Print hardware configuration information via UART
  **************************************************************************/
@@ -294,12 +305,10 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("On-chip debugger:  "); __neorv32_rte_print_true_false(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD));
 
   // IDs
-  neorv32_uart0_printf("Custom ID:         0x%x\n"
-                       "Hart ID:           0x%x\n"
+  neorv32_uart0_printf("Hart ID:           0x%x\n"
                        "Vendor ID:         0x%x\n"
                        "Architecture ID:   0x%x\n"
                        "Implementation ID: 0x%x",
-                       NEORV32_SYSINFO->CUSTOM_ID,
                        neorv32_cpu_csr_read(CSR_MHARTID),
                        neorv32_cpu_csr_read(CSR_MVENDORID),
                        neorv32_cpu_csr_read(CSR_MARCHID),
