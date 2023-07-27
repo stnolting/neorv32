@@ -121,6 +121,8 @@ https://stnolting.github.io/neorv32/sw/files.html.
 .CMSIS System View Description File (SVD)
 [TIP]
 A CMSIS-SVD-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
+Together with a third-party plugin the processor's SVD file can be imported right into GDB to allow comfortable
+debugging of peripheral/IO devices (see https://github.com/stnolting/neorv32/discussions/656).
 
 
 <<<

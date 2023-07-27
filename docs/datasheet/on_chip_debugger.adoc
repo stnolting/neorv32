@@ -28,6 +28,11 @@ available in `docs/references`.
 Access via the OCD is **always authenticated** (`dmstatus.authenticated = 1`). Hence, the entire system can always
 be accessed via the on-chip debugger.
 
+.GDB + SVD
+[TIP]
+Together with a third-party plugin the processor's SVD file can be imported right into GDB to allow comfortable
+debugging of peripheral/IO devices (see https://github.com/stnolting/neorv32/discussions/656).
+
 .Hands-On Tutorial
 [TIP]
 A simple example on how to use NEORV32 on-chip debugger in combination with OpenOCD and the GNU debugger is shown in

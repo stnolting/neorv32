@@ -2,7 +2,7 @@
 :sectnums:
 == Debugging using the On-Chip Debugger
 
-The NEORV32 on-chip debugger allows _online_ in-system debugging via an external JTAG access port from a
+The NEORV32 on-chip debugger ("OCD") allows _online_ in-system debugging via an external JTAG access port from a
 host machine. The general flow is independent of the host machine's operating system. However, this tutorial uses
 Windows and Linux (Ubuntu on Windows / WSL) in parallel running the upstream version of OpenOCD and the
 RISC-V _GNU debugger_ `gdb`.
@@ -13,10 +13,12 @@ You can start a pre-configured debug session (using default `main.elf` as execut
 `target extended-remote localhost:3333` as gdb connection configuration) by using the **gdb** makefile target
 (i.e. `make gdb`).
 
+.OCD Hardware Implementation
 [NOTE]
 See datasheet section https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd[On Chip Debugger (OCD)]
 for more information regarding the actual hardware.
 
+.OCD CPU Requirements
 [NOTE]
 The on-chip debugger is only implemented if the _ON_CHIP_DEBUGGER_EN_ generic is set _true_. Furthermore, it requires
 the `Zicsr` and `Zifencei` CPU extension to be implemented (top generics _CPU_EXTENSION_RISCV_Zicsr_ = _true_
@@ -26,10 +28,10 @@ and _CPU_EXTENSION_RISCV_Zifencei_ = _true_).
 :sectnums:
 === Hardware Requirements
 
-Make sure the on-chip debugger of your NEORV32 setup is implemented (_ON_CHIP_DEBUGGER_EN_ generic = true). This
+Make sure the on-chip debugger of your NEORV32 setup is implemented (`ON_CHIP_DEBUGGER_EN` generic = true). This
 tutorial uses `gdb` to **directly upload an executable** to the processor. If you are using the default
 processor setup _with_ internal instruction memory (IMEM) make sure it is implemented as RAM
-(_INT_BOOTLOADER_EN_ generic = true).
+(`INT_BOOTLOADER_EN` generic = true).
 
 Connect a JTAG adapter to the NEORV32 `jtag_*` interface signals. If you do not have a full-scale JTAG adapter, you can
 also use a FTDI-based adapter like the "FT2232H-56Q Mini Module", which is a simple and inexpensive FTDI breakout board.
@@ -97,8 +99,10 @@ the `misa` CSRs). The processor is halted and OpenOCD waits fot `gdb` to connect
 :sectnums:
 === Debugging with GDB
 
+.GDB + SVD
 [TIP]
-The GNU debugger is part of the RISC-V GCC toolchain (see <<_software_toolchain_setup>>).
+Together with a third-party plugin the processor's SVD file can be imported right into GDB to allow comfortable
+debugging of peripheral/IO devices (see https://github.com/stnolting/neorv32/discussions/656).
 
 This guide uses the simple "blink example" from `sw/example/demo_blink_led` as simplified test application to
 show the basics of in-system debugging.
