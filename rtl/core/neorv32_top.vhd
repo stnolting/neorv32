@@ -254,7 +254,7 @@ end neorv32_top;
 architecture neorv32_top_rtl of neorv32_top is
 
   -- auto-configuration --
-  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(INT_BOOTLOADER_EN, mem_boot_base_c, mem_ispace_base_c);
+  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(INT_BOOTLOADER_EN, mem_boot_base_c, mem_imem_base_c);
   constant io_reg_buf_en_c : boolean := ICACHE_EN or DCACHE_EN;
   constant imem_as_rom_c   : boolean := not INT_BOOTLOADER_EN;
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
@@ -351,15 +351,13 @@ begin
   if (true) generate
 
     assert false report
-      "NEORV32 PROCESSOR CONFIGURATION: " &
+      "NEORV32 Processor Configuration: " &
       cond_sel_string_f(MEM_INT_IMEM_EN, "IMEM ", "") &
       cond_sel_string_f(MEM_INT_DMEM_EN, "DMEM ", "") &
       cond_sel_string_f(INT_BOOTLOADER_EN, "BOOTROM ", "") &
       cond_sel_string_f(ICACHE_EN, "I-CACHE ", "") &
       cond_sel_string_f(DCACHE_EN, "D-CACHE ", "") &
       cond_sel_string_f(MEM_EXT_EN, "WISHBONE ", "") &
-      cond_sel_string_f(ON_CHIP_DEBUGGER_EN, "OCD ", "") &
-      "+ " &
       cond_sel_string_f(io_gpio_en_c, "GPIO ", "") &
       cond_sel_string_f(IO_MTIME_EN, "MTIME ", "") &
       cond_sel_string_f(IO_UART0_EN, "UART0 ", "") &
@@ -379,16 +377,10 @@ begin
       cond_sel_string_f(IO_DMA_EN, "DMA ", "") &
       cond_sel_string_f(IO_SLINK_EN, "SLINK ", "") &
       cond_sel_string_f(IO_CRC_EN, "CRC ", "") &
+      cond_sel_string_f(true, "SYSINFO ", "") &
+      cond_sel_string_f(ON_CHIP_DEBUGGER_EN, "OCD ", "") &
       ""
       severity note;
-
-    -- boot configuration --
-    assert not (INT_BOOTLOADER_EN = true) report
-      "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Indirect boot via bootloader (processor-internal BOOTROM)." severity note;
-    assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = true)) report
-      "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-internal IMEM)." severity note;
-    assert not ((INT_BOOTLOADER_EN = false) and (MEM_INT_IMEM_EN = false)) report
-      "NEORV32 PROCESSOR CONFIG NOTE: Boot configuration = direct boot from memory (processor-external memory)." severity note;
 
     -- internal memory sizes --
     assert not ((imem_size_valid_c = false) and (MEM_INT_IMEM_EN = true)) report
@@ -398,13 +390,9 @@ begin
       "NEORV32 PROCESSOR CONFIG WARNING: Configured internal DMEM size (" & natural'image(MEM_INT_DMEM_SIZE) & " bytes) is not a power of two. " &
       "Auto-increasing memory size to the next power of two (" & natural'image(dmem_size_c) & " bytes)" severity warning;
 
-    -- on-chip debugger --
-    assert not (ON_CHIP_DEBUGGER_EN = true) report
-      "NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD)." severity note;
-
     -- caches --
     assert not ((ICACHE_EN = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report
-      "NEORV32 CPU CONFIG WARNING! <CPU_EXTENSION_RISCV_Zifencei> ISA extension is required to perform i-cache memory sync operations." severity warning;
+      "NEORV32 CPU CONFIG ERROR: <CPU_EXTENSION_RISCV_Zifencei> ISA extension is required to perform i-cache memory sync. operations." severity error;
 
   end generate; -- /sanity_checks
 
@@ -729,11 +717,11 @@ begin
     TIMEOUT     => max_proc_int_response_time_c,
     -- IMEM port --
     IMEM_ENABLE => MEM_INT_IMEM_EN,
-    IMEM_BASE   => mem_ispace_base_c,
+    IMEM_BASE   => mem_imem_base_c,
     IMEM_SIZE   => imem_size_c,
     -- DMEM port --
     DMEM_ENABLE => MEM_INT_DMEM_EN,
-    DMEM_BASE   => mem_dspace_base_c,
+    DMEM_BASE   => mem_dmem_base_c,
     DMEM_SIZE   => dmem_size_c,
     -- XIP port --
     XIP_ENABLE  => IO_XIP_EN,
@@ -1488,6 +1476,8 @@ begin
       -- Internal Data memory --
       MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,
       MEM_INT_DMEM_SIZE    => dmem_size_c,
+      -- Reservation Set Granularity --
+      AMO_RVS_GRANULARITY  => AMO_RVS_GRANULARITY,
       -- Instruction cache --
       ICACHE_EN            => ICACHE_EN,
       ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS,

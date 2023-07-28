@@ -92,8 +92,8 @@ CLK:  0x05f5e100
 MISA: 0x40901106
 XISA: 0xc0000fab
 SOC:  0xffff402f
-IMEM: 0x00008000 bytes @0x00000000
-DMEM: 0x00002000 bytes @0x80000000
+IMEM: 0x00008000
+DMEM: 0x00002000
 
 Autoboot in 8s. Press any key to abort.
 ----
@@ -105,12 +105,12 @@ The start-up screen gives some brief information about the bootloader and severa
 |=======================
 | `BLDV` | Bootloader version (built date).
 | `HWV`  | Processor hardware version (the <<_mimpid>> CSR); in BCD format; example: `0x01040606` = v1.4.6.6).
-| `CLK`  | Processor clock speed in Hz (via the `CLK` register from <<_system_configuration_information_memory_sysinfo>>.
+| `CLK`  | Processor clock speed in Hz (via the `CLK` register from the <<_system_configuration_information_memory_sysinfo>>.
 | `MISA` | RISC-V CPU extensions (<<_misa>> CSR).
 | `XISA` | NEORV32-specific CPU extensions (<<_mxisa>> CSR).
 | `SOC`  | Processor configuration (via the `SOC` register from the <<_system_configuration_information_memory_sysinfo>>.
-| `IMEM` | IMEM memory base address and size in byte (via the `IMEM_SIZE` and `ISPACE_BASE` registers from the <<_system_configuration_information_memory_sysinfo>>.
-| `DMEM` | DMEM memory base address and size in byte (via the `DMEM_SIZE` and `DSPACE_BASE` registers from the <<_system_configuration_information_memory_sysinfo>>.
+| `IMEM` | Internal IMEM size in byte (via the `MEM` register from the <<_system_configuration_information_memory_sysinfo>>.
+| `DMEM` | Internal DMEM size in byte (via the `MEM` register from the <<_system_configuration_information_memory_sysinfo>>.
 |=======================
 
 Now you have 8 seconds to press _any_ key. Otherwise, the bootloader starts the <<_auto_boot_sequence>>. When
@@ -126,8 +126,8 @@ CLK:  0x05f5e100
 MISA: 0x40901106
 XISA: 0xc0000fab
 SOC:  0xffff402f
-IMEM: 0x00008000 bytes @0x00000000
-DMEM: 0x00002000 bytes @0x80000000
+IMEM: 0x00008000
+DMEM: 0x00002000
 
 Autoboot in 8s. Press any key to abort. <1>
 Aborted.

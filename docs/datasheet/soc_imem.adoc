@@ -17,8 +17,7 @@
 
 Implementation of the processor-internal instruction memory is enabled via the processor's
 `MEM_INT_IMEM_EN` generic. The size in bytes is defined via the `MEM_INT_IMEM_SIZE` generic. If the
-IMEM is implemented, the memory is mapped into the instruction memory space and located right at the
-beginning of the instruction memory space (default `ispace_base_c` = 0x00000000), see <<_address_space>>.
+IMEM is implemented, it is mapped to base address `0x00000000` by default (see section <<_address_space>>).
 
 By default the IMEM is implemented as true RAM so the content can be modified during run time. This is
 required when using a bootloader that can update the content of the IMEM at any time. If you do not need

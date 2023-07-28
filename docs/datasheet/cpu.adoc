@@ -166,9 +166,7 @@ CPU back-end for actual execution. Execution is conducted by a state-machine tha
 includes the <<_control_and_status_registers_csrs>> as well as the trap controller.
 
 
-// ####################################################################################################################
-:sectnums:
-=== Sleep Mode
+==== Sleep Mode
 
 The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing dynamic
 power consumption. Sleep mode in entered by executing the `wfi` instruction. When in sleep mode, all CPU-internal
@@ -184,9 +182,7 @@ The CPU automatically wakes up from sleep mode if a debug session is started via
 a simple `nop` when the CPU is _in_ debug-mode or during single-stepping.
 
 
-// ####################################################################################################################
-:sectnums:
-=== Full Virtualization
+==== Full Virtualization
 
 Just like the RISC-V ISA, the NEORV32 aims to provide _maximum virtualization_ capabilities on CPU and SoC level to
 allow a high standard of **execution safety**. The CPU supports **all** traps specified by the official RISC-V
@@ -195,6 +191,115 @@ specifications. Thus, the CPU provides defined hardware fall-backs via traps for
 of trap the core is always in a defined and fully synchronized state throughout the whole system (i.e. there are no
 out-of-order operations that might have to be reverted). This allows a defined and predictable execution behavior
 at any time improving overall execution safety.
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Bus Interface
+
+The NEORV32 CPU provides separated instruction fetch and data access interfaces making it a **Harvard Architecture**:
+the instruction fetch interface (`i_bus_*` signals) is used for fetching instructions and the data access interface
+(`d_bus_*` signals) is used to access data via load and store operations. Each of these interfaces can access an address
+space of up to 2^32^ bytes (4GB).
+
+The bus interface uses two custom interface types: `bus_req_t` is used to propagate the bus access **requests**. These
+signals are driven by the _accessing_ device (i.e. the CPU core). `bus_rsp_t` is used to return the bus **response** and
+is driven by the _accessed_ device or bus system (i.e. a processor-internal memory or IO device).
+
+.Bus Interface - Request Bus (`bus_req_t`)
+[cols="^1,^1,<6"]
+[options="header",grid="rows"]
+|=======================
+| Signal | Width | Description
+| `addr` |    32 | Access address (byte addressing)
+| `data` |    32 | Write data
+| `ben`  |     4 | Byte-enable for each byte in `data`
+| `we`   |     1 | **Write** request trigger (single-shot)
+| `re`   |     1 | **Read** request trigger (single-shot)
+| `src`  |     1 | Access source (`0` = instruction fetch, `1` = load/store)
+| `priv` |     1 | Set if privileged (M-mode) access
+| `rvso` |     1 | Set if current access is a reservation-set operation (atomic `lr` or `sc` instruction)
+|=======================
+
+.Bus Interface - Response Bus (`bus_rsp_t`)
+[cols="^1,^1,<6"]
+[options="header",grid="rows"]
+|=======================
+| Signal | Width | Description
+| `data` |    32 | Read data (single-shot)
+| `ack`  |     1 | Transfer acknowledge / success (single-shot)
+| `err`  |     1 | Transfer error / fail (single-shot)
+|=======================
+
+.Processor Bus System
+[NOTE]
+This type of bus system is used for used for the entire NEORV32 processor to construct the <<_address_space>>.
+
+
+:sectnums:
+==== Bus Interface Protocol
+
+Bus transaction are entirely triggered by the request bus. A new bus request is initiated either by the `re` signal
+(= read request) or by the `we` signal (= write request). These signals are mutually exclusive. In case of a request,
+the according signal is high for exactly one clock cycle. The transaction is completed when the accessed device returns
+a response via the response interface: `ack` is high for exactly one cycle if the transaction was completed successfully.
+`err` is high for exactly one cycle if the transaction failed to complete. These two signals are also mutually exclusive.
+In case of a read access the read data is returned together with the `ack` signal. Otherwise, the return data signal is
+kept at all-zero allowing wired-or interconnection of all response buses.
+
+The figure below shows three exemplary bus accesses:
+
+[start=1]
+. A read access to address `A_addr` returning `rdata` after several cycles (slow response; `ACK` arrives after several cycles).
+. A write access to address `B_addr` writing `wdata` (fastest response; `ACK` arrives right in the next cycle).
+. A failing read access to address `C_addr` (slow response; `ERR` arrives after several cycles).
+
+.Three Exemplary Bus Transactions
+image::bus_interface.png[700]
+
+.Signal State
+[NOTE]
+All signals of the request bus interface (except for the read/write transfer triggers)
+remain stable until the bus access is completed.
+
+
+:sectnums:
+==== Atomic Accesses
+
+The load-reservate (`lr.w`) and store-conditional (`sc.w`) instructions from the <<_a_isa_extension>> execute as standard
+load/store bus transactions but with the `rvso` ("reservation set operation") signal being set. It is the task of the
+<<_reservation_set_controller>> to handle these LR/SC bus transactions accordingly.
+
+.Reservation Set Controller
+[NOTE]
+See section <<_address_space>> / <<_reservation_set_controller>> for more information.
+
+.Read-Modify-Write Operations
+[IMPORTANT]
+Read-modify-write operations (line an atomic swap / `amoswap.w`) are **not** supported. However, the NEORV32
+<<_core_libraries>> provide an emulation wrapper for those unsupported instructions that is
+based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
+
+The figure below shows three exemplary bus accesses. For easier understanding the current state of the reservation set
+is added as `rvs_valid` signal.
+
+[start=1]
+. A load-reservate (LR) instruction using `addr` as address. This instruction returns the loaded data `rdata` and also
+registers a reservation for the address `addr` (`rvs_valid` becomes set).
+. A store-conditional (SC) instruction attempts to write `wdata1` to `addr`. This SC operation **succeeds**, so `wdata1`
+is actually written to `addr`. The successful operation is indicated by a 1 being returned via the `rsp.data` signal
+together with the `ack`. As the LR/SC is completed the registered reservation is invalidated (`rvs_valid` becomes cleared).
+. Another store-conditional (SC) instruction attempts to write `wdata2` to `addr`. As the reservation set is already invalidated
+(`rvs_valid` is `0`) the store access fails, so `wdata2` is **not** written to `addr`. The failed operation is indicated by a 0
+being returned via the `rsp.data` signal together with the `ack`.
+
+.Three Exemplary LR/SC Bus Transactions
+image::bus_interface_atomic.png[700]
+
+.SC Status
+[NOTE]
+The normal "load data" mechanism is used to return success/failure of the `sc.w` instruction to the CPU (via `rsp.data`).
 
 
 <<<
@@ -796,113 +901,3 @@ address misaligned" exception are not resumable in most cases. These exception m
 For 32-bit-only instructions (= no `C` extension) the misaligned instruction exception is raised if bit 1 of the fetch
 address is set (i.e. not on a 32-bit boundary). If the `C` extension is implemented there will never be a misaligned
 instruction exception _at all_. In both cases bit 0 of the program counter (and all related CSRs) is hardwired to zero.
-
-
-
-<<<
-// ####################################################################################################################
-:sectnums:
-==== Bus Interface
-
-The NEORV32 CPU provides separated instruction fetch and data access interfaces making it a **Harvard Architecture**:
-the instruction fetch interface (`i_bus_*` signals) is used for fetching instructions and the data access interface
-(`d_bus_*` signals) is used to access data via load and store operations. Each of these interfaces can access an address
-space of up to 2^32^ bytes (4GB).
-
-The bus interface uses two custom interface types: `bus_req_t` is used to propagate the bus access **requests**. These
-signals are driven by the _accessing_ device (i.e. the CPU core). `bus_rsp_t` is used to return the bus **response** and
-is driven by the _accessed_ device or bus system (i.e. a processor-internal memory or IO device).
-
-.Bus Interface - Request Bus (`bus_req_t`)
-[cols="^1,^1,<6"]
-[options="header",grid="rows"]
-|=======================
-| Signal | Width | Description
-| `addr` |    32 | Access address (byte addressing)
-| `data` |    32 | Write data
-| `ben`  |     4 | Byte-enable for each byte in `data`
-| `we`   |     1 | **Write** request trigger (single-shot)
-| `re`   |     1 | **Read** request trigger (single-shot)
-| `src`  |     1 | Access source (`0` = instruction fetch, `1` = load/store)
-| `priv` |     1 | Set if privileged (M-mode) access
-| `rvso` |     1 | Set if current access is a reservation-set operation (atomic `lr` or `sc` instruction)
-|=======================
-
-.Bus Interface - Response Bus (`bus_rsp_t`)
-[cols="^1,^1,<6"]
-[options="header",grid="rows"]
-|=======================
-| Signal | Width | Description
-| `data` |    32 | Read data (single-shot)
-| `ack`  |     1 | Transfer acknowledge / success (single-shot)
-| `err`  |     1 | Transfer error / fail (single-shot)
-|=======================
-
-.Processor Bus System
-[NOTE]
-This type of bus system is used for used for the entire NEORV32 processor to construct the <<_address_space>>.
-
-
-:sectnums:
-===== Bus Interface Protocol
-
-Bus transaction are entirely triggered by the request bus. A new bus request is initiated either by the `re` signal
-(= read request) or by the `we` signal (= write request). These signals are mutually exclusive. In case of a request,
-the according signal is high for exactly one clock cycle. The transaction is completed when the accessed device returns
-a response via the response interface: `ack` is high for exactly one cycle if the transaction was completed successfully.
-`err` is high for exactly one cycle if the transaction failed to complete. These two signals are also mutually exclusive.
-In case of a read access the read data is returned together with the `ack` signal. Otherwise, the return data signal is
-kept at all-zero allowing wired-or interconnection of all response buses.
-
-The figure below shows three exemplary bus accesses:
-
-[start=1]
-. A read access to address `A_addr` returning `rdata` after several cycles (slow response; `ACK` arrives after several cycles).
-. A write access to address `B_addr` writing `wdata` (fastest response; `ACK` arrives right in the next cycle).
-. A failing read access to address `C_addr` (slow response; `ERR` arrives after several cycles).
-
-.Three Exemplary Bus Transactions
-image::bus_interface.png[700]
-
-.Signal State
-[NOTE]
-All signals of the request bus interface (except for the read/write transfer triggers)
-remain stable until the bus access is completed.
-
-
-:sectnums:
-===== Atomic Accesses
-
-The load-reservate (`lr.w`) and store-conditional (`sc.w`) instructions from the <<_a_isa_extension>> execute as standard
-load/store bus transactions but with the `rvso` ("reservation set operation") signal being set. It is the task of the
-<<_reservation_set_controller>> to handle these LR/SC bus transactions accordingly.
-
-.Reservation Set Controller
-[NOTE]
-See section <<_address_space>> / <<_reservation_set_controller>> for more information.
-
-.Read-Modify-Write Operations
-[IMPORTANT]
-Read-modify-write operations (line an atomic swap / `amoswap.w`) are **not** supported. However, the NEORV32
-<<_core_libraries>> provide an emulation wrapper for those unsupported instructions that is
-based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
-
-The figure below shows three exemplary bus accesses. For easier understanding the current state of the reservation set
-is added as `rvs_valid` signal.
-
-[start=1]
-. A load-reservate (LR) instruction using `addr` as address. This instruction returns the loaded data `rdata` and also
-registers a reservation for the address `addr` (`rvs_valid` becomes set).
-. A store-conditional (SC) instruction attempts to write `wdata1` to `addr`. This SC operation **succeeds**, so `wdata1`
-is actually written to `addr`. The successful operation is indicated by a 1 being returned via the `rsp.data` signal
-together with the `ack`. As the LR/SC is completed the registered reservation is invalidated (`rvs_valid` becomes cleared).
-. Another store-conditional (SC) instruction attempts to write `wdata2` to `addr`. As the reservation set is already invalidated
-(`rvs_valid` is `0`) the store access fails, so `wdata2` is **not** written to `addr`. The failed operation is indicated by a 0
-being returned via the `rsp.data` signal together with the `ack`.
-
-.Three Exemplary LR/SC Bus Transactions
-image::bus_interface_atomic.png[700]
-
-.SC Status
-[NOTE]
-The normal "load data" mechanism is used to return success/failure of the `sc.w` instruction to the CPU (via `rsp.data`).

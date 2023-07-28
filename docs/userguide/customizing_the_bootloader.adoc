@@ -19,6 +19,8 @@ minimal base + privileged ISA `rv32i_zicsr` only to ensure it can work independe
 [options="header", grid="rows"]
 |=======================
 | Parameter | Default | Legal values | Description
+4+^| Memory layout
+| `EXE_BASE_ADDR` | `0x00000000` | _any_ | Base address / boot address for the executable (see section <<_address_space>>)
 4+^| Serial console interface
 | `UART_EN`   | `1` | `0`, `1` | Set to `0` to disable UART0 (no serial console at all)
 | `UART_BAUD` | `19200` | _any_ | Baud rate of UART0

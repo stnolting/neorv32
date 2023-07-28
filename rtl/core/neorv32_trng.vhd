@@ -130,10 +130,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   assert not (IO_TRNG_FIFO < 1) report
     "NEORV32 PROCESSOR CONFIG ERROR: TRNG FIFO size <IO_TRNG_FIFO> has to be >= 1." severity error;
+
   assert not (is_power_of_two_f(IO_TRNG_FIFO) = false) report
     "NEORV32 PROCESSOR CONFIG ERROR: TRNG FIFO size <IO_TRNG_FIFO> has to be a power of two." severity error;
-  assert not (sim_mode_c = true) report
-    "NEORV32 PROCESSOR CONFIG WARNING: TRNG uses SIMULATION mode!" severity warning;
 
 
   -- Write Access ---------------------------------------------------------------------------
@@ -392,7 +391,6 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert not (true) report "<< neoTRNG V2 - A Tiny and Platform-Independent True Random Number Generator for any FPGA >>" severity note;
-  assert not (POST_PROC_EN = true) report "neoTRNG note: Post-processing enabled." severity note;
   assert not (IS_SIM = true) report "neoTRNG WARNING: Simulation mode (PRNG!) enabled!" severity warning;
   assert not (NUM_CELLS < 2) report "neoTRNG config ERROR: Total number of ring-oscillator cells <NUM_CELLS> has to be >= 2." severity error;
   assert not ((NUM_INV_START mod 2)  = 0) report "neoTRNG config ERROR: Number of inverters in first cell <NUM_INV_START> has to be odd." severity error;
@@ -717,7 +715,6 @@ begin
   -- For simulation/debugging only! --
   sim_rng:
   if (IS_SIM = true) generate
-    assert false report "neoTRNG WARNING: Implementing simulation-only PRNG (LFSR)!" severity warning;
     sim_lfsr: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then

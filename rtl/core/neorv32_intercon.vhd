@@ -362,12 +362,6 @@ architecture neorv32_gateway_rtl of neorv32_gateway is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert false report
-    "NEORV32 PROCESSOR CONFIG NOTE: Processor-internal bus timeout after " & integer'image(TIMEOUT) & " cycles." severity note;
-
-
   -- Address Section Decoder ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   port_sel(port_imem_c) <= '1' when (main_req_i.addr(31 downto index_size_f(IMEM_SIZE)) = IMEM_BASE(31 downto index_size_f(IMEM_SIZE))) and (IMEM_ENABLE = true) else '0';
@@ -381,7 +375,8 @@ begin
                                    (port_sel(port_dmem_c) = '0') and
                                    (port_sel(port_xip_c)  = '0') and
                                    (port_sel(port_boot_c) = '0') and
-                                   (port_sel(port_io_c)   = '0') and (EXT_ENABLE = true) else '0';
+                                   (port_sel(port_io_c)   = '0') and
+                                   (EXT_ENABLE = true) else '0';
 
 
   -- Bus Request (also enforce PMAs here) ---------------------------------------------------

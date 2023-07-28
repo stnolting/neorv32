@@ -206,7 +206,7 @@ static void __neorv32_rte_debug_handler(void) {
   // intro
   neorv32_uart0_puts("<RTE> ");
 
-  // privilege level of the CPU when the trap occured
+  // privilege level of the CPU when the trap occurred
   if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3 << CSR_MSTATUS_MPP_L)) {
     neorv32_uart0_puts("[M] "); // machine-mode
   }
@@ -297,7 +297,7 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\n\n<< NEORV32 Processor Configuration >>\n");
 
   // CPU configuration
-  neorv32_uart0_printf("\n== Core ==\n");
+  neorv32_uart0_printf("\n==== Core ====\n");
 
   // general
   neorv32_uart0_printf("Is simulation:     "); __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM));
@@ -404,22 +404,20 @@ void neorv32_rte_print_hw_config(void) {
 
 
   // Memory configuration
-  neorv32_uart0_printf("\n\n== Memory ==\n");
+  neorv32_uart0_printf("\n\n==== Memory ====\n");
 
   neorv32_uart0_printf("Boot configuration:  Boot ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {
     neorv32_uart0_printf("via Bootloader\n");
   }
   else {
-    neorv32_uart0_printf("from memory (@ 0x%x)\n", NEORV32_SYSINFO->ISPACE_BASE);
+    neorv32_uart0_printf("from memory\n");
   }
-
-  neorv32_uart0_printf("Instr. base address: 0x%x\n", NEORV32_SYSINFO->ISPACE_BASE);
 
   // internal IMEM
   neorv32_uart0_printf("Internal IMEM:       ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_IMEM)) {
-    neorv32_uart0_printf("%u bytes\n", NEORV32_SYSINFO->IMEM_SIZE);
+    neorv32_uart0_printf("%u bytes\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_IMEM]) & 0xFFFFFFFCUL);
   }
   else {
     neorv32_uart0_printf("none\n");
@@ -454,10 +452,9 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // internal DMEM
-  neorv32_uart0_printf("Data base address:   0x%x\n", NEORV32_SYSINFO->DSPACE_BASE);
   neorv32_uart0_printf("Internal DMEM:       ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) {
-    neorv32_uart0_printf("%u bytes\n", NEORV32_SYSINFO->DMEM_SIZE);
+    neorv32_uart0_printf("%u bytes\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_DMEM]) & 0xFFFFFFFCUL);
   }
   else {
     neorv32_uart0_printf("none\n");
@@ -479,6 +476,10 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("none\n");
   }
 
+  // reservation set granularity --
+  neorv32_uart0_printf("Reservation set:     ");
+    neorv32_uart0_printf("%u bytes granularity\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_RVSG]) & 0xFFFFFFFCUL);
+
   // external bus interface
   neorv32_uart0_printf("Ext. bus interface:  ");
   __neorv32_rte_print_true_false(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_EXT));
@@ -491,7 +492,7 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   // peripherals
-  neorv32_uart0_printf("\n== Peripherals ==\n");
+  neorv32_uart0_printf("\n==== Peripherals ====\n");
 
   tmp = NEORV32_SYSINFO->SOC;
   __neorv32_rte_print_checkbox(tmp & (1 << SYSINFO_SOC_IO_GPIO));    neorv32_uart0_printf(" GPIO\n");
