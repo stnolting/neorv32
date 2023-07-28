@@ -29,10 +29,10 @@ and default clock speed) for correct operation.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Function
-| `0xfffffe00` | `CLK`   | clock speed in Hz (via top's `CLOCK_FREQUENCY` generic)
-| `0xfffffe04` | `MEM`   | internal memory configuration (see <<_sysinfo_memory_configuration>>)
-| `0xfffffe08` | `SOC`   | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
-| `0xfffffe0c` | `CACHE` | cache configuration information (see <<_sysinfo_cache_configuration>>)
+| `0xfffffe00` | `CLK`    | clock speed in Hz (via top's `CLOCK_FREQUENCY` generic)
+| `0xfffffe04` | `MEM[4]` | internal memory configuration (see <<_sysinfo_memory_configuration>>)
+| `0xfffffe08` | `SOC`    | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
+| `0xfffffe0c` | `CACHE`  | cache configuration information (see <<_sysinfo_cache_configuration>>)
 |=======================
 
 
