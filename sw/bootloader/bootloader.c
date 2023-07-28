@@ -49,6 +49,13 @@
  **************************************************************************/
 /**@{*/
 
+/* -------- Memory layout -------- */
+
+/** Memory base address for the executable */
+#ifndef EXE_BASE_ADDR
+  #define EXE_BASE_ADDR 0x00000000UL
+#endif
+
 /* -------- UART interface -------- */
 
 /** Set to 0 to disable UART interface */
@@ -324,7 +331,7 @@ int main(void) {
   // Show bootloader intro and system info
   // ------------------------------------------------
   PRINT_TEXT("\n\n\n<< NEORV32 Bootloader >>\n\n"
-                     "BLDV: "__DATE__"\nHWV:  ");
+             "BLDV: "__DATE__"\nHWV:  ");
   PRINT_XNUM(neorv32_cpu_csr_read(CSR_MIMPID));
   PRINT_TEXT("\nCLK:  ");
   PRINT_XNUM(NEORV32_SYSINFO->CLK);
@@ -335,12 +342,9 @@ int main(void) {
   PRINT_TEXT("\nSOC:  ");
   PRINT_XNUM(NEORV32_SYSINFO->SOC);
   PRINT_TEXT("\nIMEM: ");
-  PRINT_XNUM(NEORV32_SYSINFO->IMEM_SIZE); PRINT_TEXT(" bytes @");
-  PRINT_XNUM(NEORV32_SYSINFO->ISPACE_BASE);
+  PRINT_XNUM((uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_IMEM]) & 0xFFFFFFFCUL);
   PRINT_TEXT("\nDMEM: ");
-  PRINT_XNUM(NEORV32_SYSINFO->DMEM_SIZE);
-  PRINT_TEXT(" bytes @");
-  PRINT_XNUM(NEORV32_SYSINFO->DSPACE_BASE);
+  PRINT_XNUM((uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_DMEM]) & 0xFFFFFFFCUL);
   PRINT_TEXT("\n");
 
 
@@ -425,7 +429,7 @@ int main(void) {
     }
 #endif
     else if (c == '?') {
-      PRINT_TEXT("github.com/stnolting/neorv32");
+      PRINT_TEXT("by Stephan Nolting\ngithub.com/stnolting/neorv32");
     }
     else { // unknown command
       PRINT_TEXT("Invalid CMD");
@@ -467,7 +471,7 @@ void start_app(int boot_xip) {
   // deactivate global IRQs
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
-  register uint32_t app_base = NEORV32_SYSINFO->ISPACE_BASE; // default = start at beginning of IMEM
+  register uint32_t app_base = (uint32_t)EXE_BASE_ADDR; // default = start at beginning of IMEM
 #if (XIP_EN != 0)
   if (boot_xip) {
     app_base = (uint32_t)(XIP_MEM_BASE_ADDRESS + SPI_BOOT_BASE_ADDR); // start from XIP mapped address
@@ -576,7 +580,7 @@ void get_exe(int src) {
   uint32_t check = get_exe_word(src, addr + EXE_OFFSET_CHECKSUM); // complement sum checksum
 
   // transfer program data
-  uint32_t *pnt = (uint32_t*)NEORV32_SYSINFO->ISPACE_BASE;
+  uint32_t *pnt = (uint32_t*)EXE_BASE_ADDR;
   uint32_t checksum = 0;
   uint32_t d = 0, i = 0;
   addr = addr + EXE_OFFSET_DATA;
@@ -646,7 +650,7 @@ void save_exe(void) {
 
   // store data from instruction memory and update checksum
   uint32_t checksum = 0;
-  uint32_t *pnt = (uint32_t*)NEORV32_SYSINFO->ISPACE_BASE;
+  uint32_t *pnt = (uint32_t*)EXE_BASE_ADDR;
   addr = addr + EXE_OFFSET_DATA;
   uint32_t i = 0;
   while (i < size) { // in chunks of 4 bytes
