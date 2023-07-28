@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080702"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080703"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -79,14 +79,14 @@ package neorv32_package is
 -- ****************************************************************************************************************************
 
   -- Main Address Regions ---
-  constant mem_ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via generic
-  constant mem_dspace_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via generic
-  constant mem_xip_base_c    : std_ulogic_vector(31 downto 0) := x"e0000000"; -- page (4MSBs) only!
-  constant mem_xip_size_c    : natural := 256*1024*1024;
-  constant mem_boot_base_c   : std_ulogic_vector(31 downto 0) := x"ffffc000";
-  constant mem_boot_size_c   : natural := 8*1024;
-  constant mem_io_base_c     : std_ulogic_vector(31 downto 0) := x"ffffe000";
-  constant mem_io_size_c     : natural := 8*1024;
+  constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via generic
+  constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via generic
+  constant mem_xip_base_c  : std_ulogic_vector(31 downto 0) := x"e0000000"; -- page (4MSBs) only!
+  constant mem_xip_size_c  : natural := 256*1024*1024;
+  constant mem_boot_base_c : std_ulogic_vector(31 downto 0) := x"ffffc000";
+  constant mem_boot_size_c : natural := 8*1024;
+  constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffffe000";
+  constant mem_io_size_c   : natural := 8*1024;
 
   -- Start of uncached memory access (page / 4MSBs only) --
   constant uncached_begin_c  : std_ulogic_vector(31 downto 0) := x"f0000000";
