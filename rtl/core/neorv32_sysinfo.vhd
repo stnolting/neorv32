@@ -55,6 +55,8 @@ entity neorv32_sysinfo is
     -- Internal data memory --
     MEM_INT_DMEM_EN      : boolean; -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE    : natural; -- size of processor-internal data memory in bytes
+    -- Reservation Set Granularity --
+    AMO_RVS_GRANULARITY  : natural; -- size in bytes, has to be a power of 2, min 4
     -- Instruction cache --
     ICACHE_EN            : boolean; -- implement instruction cache
     ICACHE_NUM_BLOCKS    : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
@@ -104,18 +106,21 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant int_dmem_en_c : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
 
   -- system information ROM --
-  type sysinfo_t is array (0 to 7) of std_ulogic_vector(31 downto 0);
+  type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
   signal sysinfo : sysinfo_t;
 
 begin
 
   -- Construct Info ROM ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- SYSINFO(0): Processor (primary) clock frequency --
+  -- SYSINFO(0): Processor Clock Frequency --
   sysinfo(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
 
-  -- SYSINFO(1): reserved --
-  sysinfo(1) <= (others => '0');
+  -- SYSINFO(1): Internal Memory Configuration (sizes)
+  sysinfo(1)(07 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_IMEM_SIZE), 8)); -- log2(IMEM size)
+  sysinfo(1)(15 downto 08) <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_DMEM_SIZE), 8)); -- log2(DMEM size)
+  sysinfo(1)(23 downto 16) <= (others => '0'); -- reserved
+  sysinfo(1)(31 downto 24) <= std_ulogic_vector(to_unsigned(index_size_f(AMO_RVS_GRANULARITY), 8)); -- log2(reservation set granularity)
 
   -- SYSINFO(2): SoC Configuration --
   -- Memory System --
@@ -154,7 +159,7 @@ begin
   sysinfo(2)(30) <= bool_to_ulogic_f(IO_ONEWIRE_EN);       -- 1-wire interface (ONEWIRE) implemented?
   sysinfo(2)(31) <= bool_to_ulogic_f(ON_CHIP_DEBUGGER_EN); -- on-chip debugger implemented?
 
-  -- SYSINFO(3): Cache configuration --
+  -- SYSINFO(3): Cache Configuration --
   sysinfo(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE),    4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(block_size_in_bytes)
   sysinfo(3)(07 downto 04) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_NUM_BLOCKS),    4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(number_of_block)
   sysinfo(3)(11 downto 08) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_ASSOCIATIVITY), 4)) when (ICACHE_EN = true) else (others => '0'); -- i-cache: log2(associativity)
@@ -165,18 +170,6 @@ begin
   sysinfo(3)(27 downto 24) <= (others => '0'); -- d-cache: log2(associativity)
   sysinfo(3)(31 downto 28) <= (others => '0'); -- d-cache: replacement strategy
 
-  -- SYSINFO(4): Base address of instruction memory space --
-  sysinfo(4) <= mem_ispace_base_c; -- defined in neorv32_package.vhd file
-
-  -- SYSINFO(5): Base address of data memory space --
-  sysinfo(5) <= mem_dspace_base_c; -- defined in neorv32_package.vhd file
-
-  -- SYSINFO(6): Size of internal IMEM in bytes --
-  sysinfo(6) <= std_ulogic_vector(to_unsigned(MEM_INT_IMEM_SIZE, 32)) when (MEM_INT_IMEM_EN = true) else (others => '0');
-
-  -- SYSINFO(7): Size of internal DMEM in bytes --
-  sysinfo(7) <= std_ulogic_vector(to_unsigned(MEM_INT_DMEM_SIZE, 32)) when (MEM_INT_DMEM_EN = true) else (others => '0');
-
 
   -- Read Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -186,7 +179,7 @@ begin
       bus_rsp_o.ack  <= bus_req_i.re; -- read-only!
       bus_rsp_o.data <= (others => '0');
       if (bus_req_i.re = '1') then
-        bus_rsp_o.data <= sysinfo(to_integer(unsigned(bus_req_i.addr(4 downto 2))));
+        bus_rsp_o.data <= sysinfo(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
       end if;
     end if;
   end process read_access;

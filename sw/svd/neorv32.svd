@@ -1508,10 +1508,16 @@
           <access>read-only</access>
         </register>
         <register>
-          <name>SYSINFO_reserved</name>
-          <description>reserved</description>
+          <name>MEM</name>
+          <description>Memory configuration (sizes)</description>
           <addressOffset>0x04</addressOffset>
           <access>read-only</access>
+          <fields>
+            <field><name>SYSINFO_MEM_0</name><bitRange>[7:0]</bitRange><description>log2(IMEM size in bytes)</description></field>
+            <field><name>SYSINFO_MEM_1</name><bitRange>[15:8]</bitRange><description>log2(DMEM size in bytes)</description></field>
+            <field><name>SYSINFO_MEM_2</name><bitRange>[23:16]</bitRange><description>reserved</description></field>
+            <field><name>SYSINFO_MEM_3</name><bitRange>[31:24]</bitRange><description>log2(reservation set granulartiy in bytes)</description></field>
+          </fields>
         </register>
         <register>
           <name>SOC</name>
@@ -1559,30 +1565,6 @@
             <field><name>SYSINFO_CACHE_IC_ASSOCIATIVITY</name><bitRange>[11:8]</bitRange><description>i-cache: log2(associativity)</description></field>
             <field><name>SYSINFO_CACHE_IC_REPLACEMENT</name><bitRange>[15:12]</bitRange><description>i-cache: replacement policy (0001 = LRU if associativity > 0)</description></field>
           </fields>
-        </register>
-        <register>
-          <name>ISPACE_BASE</name>
-          <description>Instruction memory address space base address</description>
-          <addressOffset>0x10</addressOffset>
-          <access>read-only</access>
-        </register>
-        <register>
-          <name>DSPACE_BASE</name>
-          <description>Data memory address space base address</description>
-          <addressOffset>0x14</addressOffset>
-          <access>read-only</access>
-        </register>
-        <register>
-          <name>IMEM_SIZE</name>
-          <description>Internal instruction memory (IMEM) size in bytes</description>
-          <addressOffset>0x18</addressOffset>
-          <access>read-only</access>
-        </register>
-        <register>
-          <name>DMEM_SIZE</name>
-          <description>Internal data memory (DMEM) size in bytes</description>
-          <addressOffset>0x1C</addressOffset>
-          <access>read-only</access>
         </register>
       </registers>
     </peripheral>
