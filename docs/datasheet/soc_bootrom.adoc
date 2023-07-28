@@ -17,12 +17,12 @@ This boot ROM module provides a read-only memory that contain the executable ima
 is automatically set to the beginning of the bootloader ROM. See sections <<_address_space>> and
 <<_boot_configuration>> for more information regarding the processor's different boot scenarios.
 
+.Memory Size
+[IMPORTANT]
+If the configured boot ROM size is **not** a power of two the actual memory size will be auto-adjusted to
+the next power of two (e.g. configuring a memory size of 6kB will result in a physical memory size of 8kB).
+
 .Bootloader Image
 [IMPORTANT]
 The boot ROM is initialized during synthesis with the default bootloader image
 (`rtl/core/neorv32_bootloader_image.vhd`).
-
-
-.Read-Only Access
-[NOTE]
-Any write access to the BOOTROM will raise a _store access fault_ exception.

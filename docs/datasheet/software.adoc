@@ -322,8 +322,8 @@ __neorv32_rom_size = DEFINED(__neorv32_rom_size) ? __neorv32_rom_size : 2048M;
 __neorv32_ram_size = DEFINED(__neorv32_ram_size) ? __neorv32_ram_size : 8K;
 
 /* Default section base addresses */
-__neorv32_rom_base = DEFINED(__neorv32_rom_base) ? __neorv32_rom_base : 0x00000000; /* = VHDL package's "ispace_base_c" */
-__neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x80000000; /* = VHDL package's "dspace_base_c" */
+__neorv32_rom_base = DEFINED(__neorv32_rom_base) ? __neorv32_rom_base : 0x00000000;
+__neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x80000000;
 ----
 
 The region size and base address configuration can be edited by the user - either by explicitly
@@ -336,9 +336,8 @@ $ make USER_FLAGS+="-Wl,--defsym,__neorv32_rom_size=4096" clean_all exe
 ----
 
 [IMPORTANT]
-`neorv32_rom_base` (= `ORIGIN` of the `ram` section) has to be always identical to the processor's `dspace_base_c` hardware
-configuration. Also, `neorv32_ram_base` (= `ORIGIN` of the `rom` section) has to be always identical to the processor's
-`ispace_base_c` hardware configuration.
+`__neorv32_rom_base` (= `ORIGIN` of the `ram` section) and `__neorv32_ram_base` (= `ORIGIN` of the `rom` section) have to
+be sync to the actual memory layout configuration of the processor (see section <<_address_space>>).
 
 [NOTE]
 The default configuration for the `rom` section assumes a maximum of 2GB _logical_ memory address space. This size does not

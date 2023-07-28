@@ -16,9 +16,8 @@
 
 Implementation of the processor-internal data memory is enabled via the processor's `MEM_INT_DMEM_EN`
 generic. The size in bytes is defined via the `MEM_INT_DMEM_SIZE` generic. If the DMEM is implemented,
-the memory is mapped into the data memory space and located right at the beginning of the data memory
-space (default `dspace_base_c` = 0x80000000), see <<_address_space>>. The DMEM is always implemented
-as true RAM.
+it is mapped to base address `0x80000000` by default (see section <<_address_space>>).
+The DMEM is always implemented as true RAM.
 
 .Memory Size
 [IMPORTANT]
