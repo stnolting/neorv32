@@ -65,14 +65,11 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert false report
-    "NEORV32 PROCESSOR CONFIG NOTE: Using DEFAULT platform-agnostic DMEM." severity note;
-
   assert not (is_power_of_two_f(DMEM_SIZE) = false) report
     "NEORV32 PROCESSOR CONFIG ERROR: Internal DMEM size has to be a power of two!" severity error;
 
   assert false report
-    "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal DMEM (RAM, " & natural'image(DMEM_SIZE) &
+    "NEORV32 PROCESSOR CONFIG NOTE: Implementing DEFAULT processor-internal DMEM (RAM, " & natural'image(DMEM_SIZE) &
     " bytes)." severity note;
 
 

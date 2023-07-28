@@ -136,8 +136,6 @@ begin
     "NEORV32 PROCESSOR CONFIG ERROR! i-cache block size <ICACHE_BLOCK_SIZE> has to be >= 4." severity error;
   assert not ((ICACHE_NUM_SETS = 0) or (ICACHE_NUM_SETS > 2)) report
     "NEORV32 PROCESSOR CONFIG ERROR! i-cache associativity <ICACHE_NUM_SETS> has to be 1 (direct-mapped) or 2 (2-way set-associative)." severity error;
-  assert false report
-    "NEORV32 PROCESSOR CONFIG NOTE: i-cache uncached memory space 0x" & to_hstring32_f(ICACHE_UC_PBEGIN & x"0000000") & "..0xffffffff." severity note;
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------

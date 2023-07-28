@@ -147,7 +147,7 @@ begin
 
   -- CPU ISA configuration --
   assert false report
-    "NEORV32 CPU CONFIG NOTE: Core ISA ('MARCH') = RV32" &
+    "NEORV32 CPU Configuration: RV32" &
     cond_sel_string_f(CPU_EXTENSION_RISCV_E,        "E", "I") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_M,        "M", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_A,        "A", "") &
@@ -170,14 +170,10 @@ begin
   -- simulation notifier --
   assert not (is_simulation_c = true) report
     "NEORV32 CPU WARNING! Assuming this is a simulation." severity warning;
-  assert not (is_simulation_c = false) report
-    "NEORV32 CPU NOTE: Assuming this is real hardware." severity note;
 
   -- CPU boot address --
   assert not (CPU_BOOT_ADDR(1 downto 0) /= "00") report
     "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
-  assert false report
-    "NEORV32 CPU CONFIG NOTE: Boot from address 0x" & to_hstring32_f(CPU_BOOT_ADDR) & "." severity note;
 
   -- Instruction prefetch buffer --
   assert not (is_power_of_two_f(CPU_IPB_ENTRIES) = false) report

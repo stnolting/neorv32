@@ -133,8 +133,6 @@ begin
     "NEORV32 PROCESSOR CONFIG ERROR! d-cache number of blocks <DCACHE_NUM_BLOCKS> has to be >= 1." severity error;
   assert not (DCACHE_BLOCK_SIZE < 4) report
     "NEORV32 PROCESSOR CONFIG ERROR! d-cache block size <DCACHE_BLOCK_SIZE> has to be >= 4." severity error;
-  assert false report
-    "NEORV32 PROCESSOR CONFIG NOTE: d-cache uncached memory space 0x" & to_hstring32_f(DCACHE_UC_PBEGIN & x"0000000") & "..0xffffffff." severity note;
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------
