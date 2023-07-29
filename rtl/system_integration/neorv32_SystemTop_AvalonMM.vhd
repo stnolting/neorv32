@@ -69,7 +69,6 @@ entity neorv32_top_avalonmm is
     -- Extension Options --
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
-    CPU_IPB_ENTRIES              : natural := 1;      -- entries is instruction prefetch buffer, has to be a power of 1, min 1
 
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..16)

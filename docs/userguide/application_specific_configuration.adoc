@@ -23,8 +23,6 @@ multiplications, `FAST_SHIFT_EN => true` use a fast barrel shifter for shift ope
 * Implement the instruction cache: `ICACHE_EN => true`
 * Use as many _internal_ memory as possible to reduce memory access latency: `MEM_INT_IMEM_EN => true` and
 `MEM_INT_DMEM_EN => true`, maximize `MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE`
-* Increase the CPU's instruction prefetch buffer size: if **no** instruction cache is implemented `CPU_IPB_ENTRIES` should be
-quite large
 * _To be continued..._
 
 
@@ -53,7 +51,6 @@ also reduces program code size by approximately 30%.
 * If not explicitly used/required, exclude the CPU standard counters `[m]instret[h]`
 (number of instruction) and `[m]cycle[h]` (number of cycles) from synthesis by disabling the `Zicntr` ISA extension
 (note, this is not RISC-V compliant).
-* Reduce the CPU's prefetch buffer size (`CPU_IPB_ENTRIES`) to its minimum (=1).
 * Map CPU shift operations to a small and iterative shifter unit (`FAST_SHIFT_EN => false`).
 * If you have unused DSP block available, you can map multiplication operations to those slices instead of
 using LUTs to implement the multiplier (`FAST_MUL_EN => true`).

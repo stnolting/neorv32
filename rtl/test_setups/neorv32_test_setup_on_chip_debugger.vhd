@@ -84,8 +84,6 @@ begin
     CPU_EXTENSION_RISCV_M        => true,              -- implement mul/div extension?
     CPU_EXTENSION_RISCV_Zicntr   => true,              -- implement base counters?
     CPU_EXTENSION_RISCV_Zifencei => true,              -- implement instruction stream sync.? (required for the on-chip debugger)
-    -- Tuning Options --
-    CPU_IPB_ENTRIES              => 2,                 -- entries in instruction prefetch buffer, has to be a power of 2, min 1
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => true,              -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
