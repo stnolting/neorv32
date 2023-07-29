@@ -145,7 +145,8 @@ The control unit is split into a "front-end" and a "back-end".
 
 The front-end is responsible for fetching instructions in chunks of 32-bits. This can be a single aligned 32-bit instruction,
 two aligned 16-bit instructions or a mixture of those. The instructions including control and exception information are stored
-to a FIFO queue - the instruction prefetch buffer (IPB). The depth of this FIFO can be configured by the `CPU_IPB_ENTRIES` top generic.
+to a FIFO queue - the instruction prefetch buffer (IPB). This FIFO has a depth of two entries by default but can be customized
+via the `ipb_depth_c` VHDL package constant.
 
 The FIFO allows the front-end to do "speculative" instruction fetches, as it keeps fetching the next consecutive instruction
 all the time. This also allows to decouple front-end (instruction fetch) and back-end (instruction execution) so both modules
@@ -695,7 +696,6 @@ Auto-increment of the HPMs can be deactivated individually via the <<_mcountinhi
 This is a sub-extension of the <<_m_isa_extension>> ISA extension. It implements only the multiplication operations
 of the `M` extensions and is intended for size-constrained setups that require hardware-based
 integer multiplications but not hardware-based divisions, which will be computed entirely in software.
-This extension requires only ~50% of the hardware utilization of the "full" `M` extension.
 
 
 ==== `Zxcfu` ISA Extension
