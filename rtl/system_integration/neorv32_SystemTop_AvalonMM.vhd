@@ -253,7 +253,6 @@ begin
     -- Extension Options --
     FAST_MUL_EN => FAST_MUL_EN,
     FAST_SHIFT_EN => FAST_SHIFT_EN,
-    CPU_IPB_ENTRIES => CPU_IPB_ENTRIES,
 
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS => PMP_NUM_REGIONS,
