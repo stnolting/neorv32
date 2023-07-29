@@ -174,10 +174,7 @@ begin
                   a_req_i.ben when (PORT_B_READ_ONLY = true) else
                   a_req_i.ben when (arbiter.host_sel = '0')  else b_req_i.ben;
 
-  x_req_o.rvso <= b_req_i.rvso when (PORT_A_READ_ONLY = true) else
-                  a_req_i.rvso when (PORT_B_READ_ONLY = true) else
-                  a_req_i.rvso when (arbiter.host_sel = '0')  else b_req_i.rvso;
-
+  x_req_o.rvso <= a_req_i.rvso when (arbiter.host_sel = '0') else b_req_i.rvso;
   x_req_o.priv <= a_req_i.priv when (arbiter.host_sel = '0') else b_req_i.priv;
   x_req_o.src  <= a_req_i.src  when (arbiter.host_sel = '0') else b_req_i.src;
 
