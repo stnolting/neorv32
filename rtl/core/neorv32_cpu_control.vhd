@@ -2425,7 +2425,7 @@ begin
 
   -- hardware counters --
   cpu_counter_gen:
-  for i in 0 to (2+hpm_num_c) generate
+  for i in 0 to 31 generate
     -- counter CSRs --
     cnt_reg: process(rstn_i, clk_i)
     begin
