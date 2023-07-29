@@ -66,7 +66,6 @@ entity neorv32_cpu is
     -- Extension Options --
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
-    CPU_IPB_ENTRIES              : natural; -- entries in instruction prefetch buffer, has to be a power of 2, min 1
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -99,13 +98,9 @@ end neorv32_cpu;
 
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
-  -- local constants: additional register file read ports --
+  -- auto-configuration --
   constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port (rs3)
   constant regfile_rs4_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu; -- 4th register file read port (rs4)
-
-  -- local constant: instruction prefetch buffer depth --
-  constant ipb_override_c : boolean := (CPU_EXTENSION_RISCV_C = true) and (CPU_IPB_ENTRIES < 2); -- override IPB size: set to 2?
-  constant ipb_depth_c    : natural := cond_sel_natural_f(ipb_override_c, 2, CPU_IPB_ENTRIES);
 
   -- local signals --
   signal ctrl        : ctrl_bus_t; -- main control bus
@@ -120,7 +115,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal mem_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- memory read data
   signal cp_done     : std_ulogic; -- ALU co-processor operation done
   signal alu_exc     : std_ulogic; -- ALU exception
-  signal bus_d_wait  : std_ulogic; -- wait for current bus data access
+  signal bus_d_wait  : std_ulogic; -- wait for current data bus access
   signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
   signal mar         : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
   signal ma_load     : std_ulogic; -- misaligned load data address
@@ -143,7 +138,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- say hello --
   assert false report
-    "The NEORV32 RISC-V Processor (Version 0x" & to_hstring32_f(hw_version_c) & ") - github.com/stnolting/neorv32" severity note;
+    "The NEORV32 RISC-V Processor Version 0x" & to_hstring32_f(hw_version_c) & " - github.com/stnolting/neorv32" severity note;
 
   -- CPU ISA configuration --
   assert false report
@@ -174,12 +169,6 @@ begin
   -- CPU boot address --
   assert not (CPU_BOOT_ADDR(1 downto 0) /= "00") report
     "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
-
-  -- Instruction prefetch buffer --
-  assert not (is_power_of_two_f(CPU_IPB_ENTRIES) = false) report
-    "NEORV32 CPU CONFIG ERROR! Number of entries in instruction prefetch buffer <CPU_IPB_ENTRIES> has to be a power of two." severity error;
-  assert not (ipb_override_c = true) report
-    "NEORV32 CPU CONFIG WARNING! Overriding <CPU_IPB_ENTRIES> configuration (setting =2) because C ISA extension is enabled." severity warning;
 
   -- PMP --
   assert not (PMP_NUM_REGIONS > 16) report
@@ -233,7 +222,6 @@ begin
     -- Tuning Options --
     FAST_MUL_EN                  => FAST_MUL_EN,                  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,                -- use barrel shifter for shift operations
-    CPU_IPB_ENTRIES              => ipb_depth_c,                  -- entries is instruction prefetch buffer, has to be a power of 2, min 1
     -- Physical memory protection (PMP) --
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS,              -- number of regions (0..16)
     PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY,          -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -323,10 +311,10 @@ begin
     csr_i  => csr_rdata, -- CSR read data
     pc2_i  => next_pc,   -- next PC
     -- data output --
-    rs1_o  => rs1,       -- operand 1
-    rs2_o  => rs2,       -- operand 2
-    rs3_o  => rs3,       -- operand 3
-    rs4_o  => rs4        -- operand 4
+    rs1_o  => rs1,       -- rs1
+    rs2_o  => rs2,       -- rs2
+    rs3_o  => rs3,       -- rs3
+    rs4_o  => rs4        -- rs4
   );
 
 

@@ -321,7 +321,6 @@ begin
     -- Extension Options --
     FAST_MUL_EN                  => FAST_MUL_EN,        -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,      -- use barrel shifter for shift operations
-    CPU_IPB_ENTRIES              => 2,                  -- entries is instruction prefetch buffer, has to be a power of 2, min 1
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              => PMP_NUM_REGIONS,    -- number of regions (0..16)
     PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes

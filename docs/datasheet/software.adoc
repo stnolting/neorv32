@@ -265,6 +265,8 @@ The following default compiler flags are used for compiling an application. Thes
 | `-lgcc`               | Make sure we have no unresolved references to internal GCC library subroutines.
 | `-mno-fdiv`           | Use built-in software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
 | `-g`                  | Include debugging information/symbols in ELF.
+| `-mstrict-align`      | Unaligned memory accesses cannot be resolved by the hardware and require emulation.
+| `-mbranch-cost=...`   | Branches cost a lot cycles on a multi-cycle architecture.
 |=======================
 
 :sectnums:

@@ -73,7 +73,6 @@ entity neorv32_top is
     -- Tuning Options --
     FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
-    CPU_IPB_ENTRIES              : natural := 1;      -- entries in instruction prefetch buffer, has to be a power of 2, min 1
 
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..16)
@@ -255,7 +254,6 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- auto-configuration --
   constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(INT_BOOTLOADER_EN, mem_boot_base_c, mem_imem_base_c);
-  constant io_reg_buf_en_c : boolean := ICACHE_EN or DCACHE_EN;
   constant imem_as_rom_c   : boolean := not INT_BOOTLOADER_EN;
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
   constant io_xirq_en_c    : boolean := boolean(XIRQ_NUM_CH > 0);
@@ -499,7 +497,6 @@ begin
       -- Extension Options --
       FAST_MUL_EN                  => FAST_MUL_EN,
       FAST_SHIFT_EN                => FAST_SHIFT_EN,
-      CPU_IPB_ENTRIES              => CPU_IPB_ENTRIES,
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS              => PMP_NUM_REGIONS,
       PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY,
@@ -611,7 +608,7 @@ begin
 
     -- Core Complex Bus Switch ----------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_core_busswitch_inst: entity neorv32.neorv32_busswitch
+    neorv32_core_bus_switch_inst: entity neorv32.neorv32_bus_switch
     generic map (
       PORT_A_READ_ONLY => false,
       PORT_B_READ_ONLY => true -- i-fetch is read-only
@@ -619,7 +616,7 @@ begin
     port map (
       clk_i   => clk_i,
       rstn_i  => rstn_int,
-      a_req_i => dcache_req,
+      a_req_i => dcache_req, -- prioritized
       a_rsp_o => dcache_rsp,
       b_req_i => icache_req,
       b_rsp_o => icache_rsp,
@@ -653,7 +650,7 @@ begin
 
     -- DMA Bus Switch -------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_dma_busswitch_inst: entity neorv32.neorv32_busswitch
+    neorv32_dma_bus_switch_inst: entity neorv32.neorv32_bus_switch
     generic map (
       PORT_A_READ_ONLY => false,
       PORT_B_READ_ONLY => false
@@ -661,7 +658,7 @@ begin
     port map (
       clk_i   => clk_i,
       rstn_i  => rstn_int,
-      a_req_i => core_req,
+      a_req_i => core_req, -- prioritized
       a_rsp_o => core_rsp,
       b_req_i => dma_req,
       b_rsp_o => dma_rsp,
@@ -669,7 +666,7 @@ begin
       x_rsp_i => main_rsp
     );
 
-  end generate;
+  end generate; -- /neorv32_dma_complex_true
 
   neorv32_dma_complex_false:
   if (IO_DMA_EN = false) generate
@@ -683,9 +680,9 @@ begin
   -- **************************************************************************************************************************
   -- Reservation Set Controller (for atomic LR/SC memory accesses)
   -- **************************************************************************************************************************
-  neorv32_reservation_set_true:
+  neorv32_bus_reservation_set_true:
   if (CPU_EXTENSION_RISCV_A = true) generate
-    neorv32_reservation_set_inst: entity neorv32.neorv32_reservation_set
+    neorv32_bus_reservation_set_inst: entity neorv32.neorv32_bus_reservation_set
     generic map (
       GRANULARITY => AMO_RVS_GRANULARITY
     )
@@ -702,7 +699,7 @@ begin
     );
   end generate;
 
-  neorv32_reservation_set_false:
+  neorv32_bus_reservation_set_false:
   if (CPU_EXTENSION_RISCV_A = false) generate
     main2_req <= main_req;
     main_rsp  <= main2_rsp;
@@ -712,7 +709,7 @@ begin
   -- **************************************************************************************************************************
   -- Address Region Gateway
   -- **************************************************************************************************************************
-  neorv32_gateway_inst: entity neorv32.neorv32_gateway
+  neorv32_bus_gateway_inst: entity neorv32.neorv32_bus_gateway
   generic map (
     TIMEOUT     => max_proc_int_response_time_c,
     -- IMEM port --
@@ -733,8 +730,6 @@ begin
     BOOT_SIZE   => mem_boot_size_c,
     -- IO port --
     IO_ENABLE   => true, -- always enabled (mandatory core module)
-    IO_REQ_REG  => io_reg_buf_en_c,
-    IO_RSP_REG  => io_reg_buf_en_c,
     IO_BASE     => mem_io_base_c,
     IO_SIZE     => mem_io_size_c,
     -- EXT port --
@@ -917,7 +912,7 @@ begin
 
     -- IO Switch ------------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    io_switch_inst: entity neorv32.io_switch
+    neorv32_bus_io_switch_inst: entity neorv32.neorv32_bus_io_switch
     generic map (
       DEV_SIZE  => iodev_size_c, -- size of a single IO device
       -- device port enable and base address --

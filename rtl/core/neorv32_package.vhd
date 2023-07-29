@@ -54,9 +54,12 @@ package neorv32_package is
   -- log2 of co-processor timeout cycles --
   constant cp_timeout_c : natural := 7; -- default = 7 (= 128 cycles)
 
+  -- instruction prefetch buffer depth --
+  constant ipb_depth_c : natural := 2; -- hast to be a power of two, min 2, default 2
+
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080703"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080704"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -654,7 +657,7 @@ package neorv32_package is
     alu_unsigned  : std_ulogic;                     -- is unsigned ALU operation
     alu_frm       : std_ulogic_vector(02 downto 0); -- FPU rounding mode
     alu_cp_trig   : std_ulogic_vector(05 downto 0); -- co-processor trigger (one-hot)
-    -- bus interface --
+    -- data bus interface --
     bus_req_rd    : std_ulogic;                     -- trigger memory read request
     bus_req_wr    : std_ulogic;                     -- trigger memory write request
     bus_mo_we     : std_ulogic;                     -- memory address and data output register write enable
@@ -755,10 +758,6 @@ package neorv32_package is
   constant trap_sma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00110"; -- 6:  store address misaligned
   constant trap_saf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00111"; -- 7:  store access fault
   constant trap_env_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "010UU"; -- 8..11:  environment call from u/s/h/m
---constant trap_ipf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01100"; -- 12: instruction page fault
---constant trap_lpf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01101"; -- 13: load page fault
---constant trap_???_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01110"; -- 14: reserved
---constant trap_spf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01111"; -- 15: store page fault
   -- RISC-V compliant asynchronous exceptions (interrupts) --
   constant trap_msi_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00011"; -- 3:  machine software interrupt
   constant trap_mti_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00111"; -- 7:  machine timer interrupt
@@ -860,7 +859,6 @@ package neorv32_package is
 
   function index_size_f(input : natural) return natural;
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural;
-  function cond_sel_int_f(cond : boolean; val_t : integer; val_f : integer) return integer;
   function cond_sel_suv_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector;
   function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string;
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
@@ -908,7 +906,6 @@ package neorv32_package is
       -- Tuning Options --
       FAST_MUL_EN                  : boolean := false;  -- use DSPs for M extension's multiplier
       FAST_SHIFT_EN                : boolean := false;  -- use barrel shifter for shift operations
-      CPU_IPB_ENTRIES              : natural := 1;      -- entries in instruction prefetch buffer, has to be a power of 2, min 1
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..16)
       PMP_MIN_GRANULARITY          : natural := 4;      -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -1089,17 +1086,6 @@ package body neorv32_package is
       return val_f;
     end if;
   end function cond_sel_natural_f;
-
-  -- Conditional select integer -------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function cond_sel_int_f(cond : boolean; val_t : integer; val_f : integer) return integer is
-  begin
-    if (cond = true) then
-      return val_t;
-    else
-      return val_f;
-    end if;
-  end function cond_sel_int_f;
 
   -- Conditional select std_ulogic_vector ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------

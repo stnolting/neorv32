@@ -130,7 +130,7 @@ IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 
 # Compiler & linker flags
 CC_OPTS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
-CC_OPTS += -g -Wl,--gc-sections
+CC_OPTS += -mstrict-align -mbranch-cost=10 -g -Wl,--gc-sections
 CC_OPTS += $(USER_FLAGS)
 LD_LIBS =  -lm -lc -lgcc
 LD_LIBS += $(USER_LIBS)

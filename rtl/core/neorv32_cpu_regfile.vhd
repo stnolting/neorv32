@@ -67,23 +67,24 @@ entity neorv32_cpu_regfile is
     csr_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
     pc2_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- next PC
     -- data output --
-    rs1_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 1
-    rs2_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 2
-    rs3_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 4
-    rs4_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- operand 3
+    rs1_o  : out std_ulogic_vector(XLEN-1 downto 0); -- rs1
+    rs2_o  : out std_ulogic_vector(XLEN-1 downto 0); -- rs2
+    rs3_o  : out std_ulogic_vector(XLEN-1 downto 0); -- rs3
+    rs4_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- rs4
   );
 end neorv32_cpu_regfile;
 
 architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
 
+  -- auto-configuration --
+  constant addr_bits_c : natural := cond_sel_natural_f(RVE, 4, 5); -- address width
+
   -- register file --
-  type   reg_file_t is array (31 downto 0) of std_ulogic_vector(XLEN-1 downto 0);
-  type   reg_file_emb_t is array (15 downto 0) of std_ulogic_vector(XLEN-1 downto 0);
-  signal reg_file     : reg_file_t;
-  signal reg_file_emb : reg_file_emb_t;
+  type   reg_file_t is array ((2**addr_bits_c)-1 downto 0) of std_ulogic_vector(XLEN-1 downto 0);
+  signal reg_file : reg_file_t;
 
   -- access --
-  signal rf_wdata : std_ulogic_vector(XLEN-1 downto 0); -- actual write-back data
+  signal rf_wdata : std_ulogic_vector(XLEN-1 downto 0); -- write-back data
   signal rf_we    : std_ulogic; -- write enable
   signal rd_zero  : std_ulogic; -- writing to x0?
   signal opa_addr : std_ulogic_vector(4 downto 0); -- rs1/dst address
@@ -101,7 +102,7 @@ begin
       when rf_mux_alu_c => rf_wdata <= alu_i; -- ALU result
       when rf_mux_mem_c => rf_wdata <= mem_i; -- memory read data
       when rf_mux_csr_c => rf_wdata <= csr_i; -- CSR read data
-      when rf_mux_npc_c => rf_wdata <= pc2_i; -- next PC (branch return/link address)
+      when rf_mux_npc_c => rf_wdata <= pc2_i; -- next PC (return/link address)
       when others       => rf_wdata <= alu_i; -- don't care
     end case;
   end process wb_select;
@@ -122,66 +123,32 @@ begin
   rf_we   <= (ctrl_i.rf_wb_en and (not rd_zero)) or ctrl_i.rf_zero_we; -- do not write to x0 unless explicitly forced
 
 
-  -- RV32I Register File with 32 Entries ----------------------------------------------------
+  -- Register File --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  reg_file_rv32i:
-  if (RVE = false) generate
-    rf_access: process(clk_i)
-    begin
-      if rising_edge(clk_i) then -- sync read and write
-        if (rf_we = '1') then
-          reg_file(to_integer(unsigned(opa_addr(4 downto 0)))) <= rf_wdata;
-        end if;
-        rs1_o <= reg_file(to_integer(unsigned(opa_addr(4 downto 0))));
-        rs2_o <= reg_file(to_integer(unsigned(opb_addr(4 downto 0))));
-
-        -- optional 3rd read port --
-        if (RS3_EN = true) then
-          rs3_o <= reg_file(to_integer(unsigned(opc_addr(4 downto 0))));
-        else
-          rs3_o <= (others => '0');
-        end if;
-
-        -- optional 4th read port --
-        if (RS4_EN = true) then
-          rs4_o <= reg_file(to_integer(unsigned(opd_addr(4 downto 0))));
-        else
-          rs4_o <= (others => '0');
-        end if;
+  register_file: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if (rf_we = '1') then
+        reg_file(to_integer(unsigned(opa_addr(addr_bits_c-1 downto 0)))) <= rf_wdata;
       end if;
-    end process rf_access;
-  end generate;
+      rs1_o <= reg_file(to_integer(unsigned(opa_addr(addr_bits_c-1 downto 0))));
+      rs2_o <= reg_file(to_integer(unsigned(opb_addr(addr_bits_c-1 downto 0))));
 
-
-  -- RV32E Register File with 16 Entries ----------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  reg_file_rv32e:
-  if (RVE = true) generate
-    rf_access: process(clk_i)
-    begin
-      if rising_edge(clk_i) then -- sync read and write
-        if (rf_we = '1') then
-          reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0)))) <= rf_wdata;
-        end if;
-        rs1_o <= reg_file_emb(to_integer(unsigned(opa_addr(3 downto 0))));
-        rs2_o <= reg_file_emb(to_integer(unsigned(opb_addr(3 downto 0))));
-
-        -- optional 3rd read port --
-        if (RS3_EN = true) then
-          rs3_o <= reg_file_emb(to_integer(unsigned(opc_addr(3 downto 0))));
-        else
-          rs3_o <= (others => '0');
-        end if;
-
-        -- optional 4th read port --
-        if (RS4_EN = true) then -- implement fourth read port?
-          rs4_o <= reg_file_emb(to_integer(unsigned(opd_addr(3 downto 0))));
-        else
-          rs4_o <= (others => '0');
-        end if;
+      -- optional 3rd read port --
+      if (RS3_EN = true) then
+        rs3_o <= reg_file(to_integer(unsigned(opc_addr(addr_bits_c-1 downto 0))));
+      else
+        rs3_o <= (others => '0');
       end if;
-    end process rf_access;
-  end generate;
+
+      -- optional 4th read port --
+      if (RS4_EN = true) then
+        rs4_o <= reg_file(to_integer(unsigned(opd_addr(addr_bits_c-1 downto 0))));
+      else
+        rs4_o <= (others => '0');
+      end if;
+    end if;
+  end process register_file;
 
 
 end neorv32_cpu_regfile_rtl;
