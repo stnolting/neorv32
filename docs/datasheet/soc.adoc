@@ -458,7 +458,7 @@ A pending FIRQ has to be explicitly cleared by writing zero to the according <<_
 
 As a 32-bit architecture the NEORV32 can access a 4GB physical address space. By default, this address space is
 split into six main regions. Each region provides specific _physical memory attributes_ ("PMAs") that define
-the access capabilities (`rwxac`; `r` = read permission, `w` = execute permission, `x` - execute permission,
+the access capabilities (`rwxac`; `r` = read permission, `w` = write permission, `x` - execute permission,
 `a` = atomic access support, `c` = cached CPU access).
 
 .NEORV32 Processor Address Space (Default Configuration)
