@@ -189,14 +189,14 @@ begin
 
   -- Access Arbiter -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  data_access_arbiter: process(rstn_i, clk_i)
+  access_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       arbiter.bus_err <= '0';
       arbiter.pend_rd <= '0';
       arbiter.pend_wr <= '0';
     elsif rising_edge(clk_i) then
-      arbiter.bus_err <= d_bus_err_i; -- bus error
+      arbiter.bus_err <= d_bus_err_i and (arbiter.pend_rd or arbiter.pend_wr); -- bus error during access
       if (arbiter.pend_rd = '0') and (arbiter.pend_wr = '0') then -- idle
         arbiter.pend_rd <= ctrl_i.lsu_req_rd;
         arbiter.pend_wr <= ctrl_i.lsu_req_wr;
@@ -205,12 +205,12 @@ begin
         arbiter.pend_wr <= '0';
       end if;
     end if;
-  end process data_access_arbiter;
+  end process access_arbiter;
 
   -- wait for bus response --
   d_wait_o <= not d_bus_ack_i;
 
-  -- output data access error to control unit --
+  -- output data access/alignment errors to control unit --
   ma_load_o  <= arbiter.pend_rd and misaligned;
   be_load_o  <= arbiter.pend_rd and (arbiter.bus_err or pmp_r_fault_i);
   ma_store_o <= arbiter.pend_wr and misaligned;
