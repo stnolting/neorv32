@@ -48,8 +48,8 @@ Any illegal read access to a CSR will return zero in the operation's destination
 | 0x343   | <<_mtval>>                          | `CSR_MTVAL`          | MRW | Machine bad address or instruction
 | 0x344   | <<_mip>>                            | `CSR_MIP`            | MRW | Machine interrupt pending register
 5+^| **<<_machine_physical_memory_protection_csrs>>**
-| 0x3A0 .. 0x3AF | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg15`>>     | `CSR_PMPCFG0` .. `CSR_PMPCFG15`    | MRW | Physical memory protection configuration for region 0..15
-| 0x3B0 .. 0x3EF | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr63`>> | `CSR_PMPADDR0` .. `CSR_PMPADDR63` | MRW | Physical memory protection address register region 0..15
+| 0x3A0 .. 0x303 | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg3`>>      | `CSR_PMPCFG0` .. `CSR_PMPCFG3`    | MRW | Physical memory protection configuration registers
+| 0x3B0 .. 0x3BF | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr15`>> | `CSR_PMPADDR0` .. `CSR_PMPADDR15` | MRW | Physical memory protection address registers
 5+^| **<<_trigger_module_csrs>>**
 | 0x7A0   | <<_tselect>>                        | `CSR_TSELECT`        | MRW | Trigger select register
 | 0x7A1   | <<_tdata1>>                         | `CSR_TDATA1`         | MRW | Trigger data register 1
@@ -518,15 +518,11 @@ See section <<_pmp_isa_extension>> for more information.
 [frame="topbot",grid="none"]
 |=======================
 | Name        | PMP region configuration registers
-| Address     | `0x3a0` (`pmpcfg0`) ... `0x3af` (`pmpcfg15`)
+| Address     | `0x3a0` (`pmpcfg0`) ... `0x3a3` (`pmpcfg3`)
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` + `PMP`
 | Description | Configuration of physical memory protection regions. Each region provides an individual 8-bit array in these CSRs.
 |=======================
-
-[IMPORTANT]
-Note that only PMP configuration registers `pmpcfg0` to `pmpcfg3` will be implemented if `PMP_NUM_REGIONS` is set to its
-maximum value (=16). The remaining `pmpcfg4` to `pmpcfg15` CSRs are read-only and will always read as zero.
 
 .`pmpcfg0` CSR Bits
 [cols="^1,^2,^1,<11"]
@@ -552,15 +548,11 @@ The `pmpaddr*` CSRs are used to configure the region's address boundaries.
 [frame="topbot",grid="none"]
 |=======================
 | Name        | Physical memory protection address registers
-| Address     | `0x3b0` (`pmpaddr0`) ... `0x3ef` (`pmpaddr63`)
+| Address     | `0x3b0` (`pmpaddr0`) ... `0x3bf` (`pmpaddr15`)
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` + `PMP`
 | Description | Region address configuration. The two MSBs of each CSR are hardwired to zero (= bits 33:32 of the physical address).
 |=======================
-
-[IMPORTANT]
-Note that only PMP address registers `pmpaddr0` to `pmpaddr15` will be implemented if `PMP_NUM_REGIONS` is set to its
-maximum value (=16). The remaining `pmpaddr16` to `pmpaddr63` CSRs are read-only and will always read as zero.
 
 .Address Register Update Latency
 [IMPORTANT]
