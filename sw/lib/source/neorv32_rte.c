@@ -340,7 +340,7 @@ void neorv32_rte_print_hw_config(void) {
     }
   }
 
-  // Z* CPU extensions
+  // CPU sub-extensions
   tmp = neorv32_cpu_csr_read(CSR_MXISA);
   if (tmp & (1<<CSR_MXISA_ZICSR)) {
     neorv32_uart0_printf("Zicsr ");
@@ -371,6 +371,9 @@ void neorv32_rte_print_hw_config(void) {
   }
   if (tmp & (1<<CSR_MXISA_SDTRIG)) {
     neorv32_uart0_printf("Sdtrig ");
+  }
+  if (tmp & (1<<CSR_MXISA_PMP)) {
+    neorv32_uart0_printf("Smpmp ");
   }
 
   // CPU tuning options
