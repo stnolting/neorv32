@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Co-Processor: RISC-V Conditional Operations ('Zicond') ISA Extension >>      #
+-- # << NEORV32 CPU - Co-Processor: RISC-V Conditional Operations ('Zicond') ISA Extension >>      #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #

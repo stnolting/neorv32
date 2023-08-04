@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Co-Processor: Single-Prec. Floating Point Unit (RISC-V "Zfinx" Extension) >> #
+-- # << NEORV32 CPU - Co-Processor: Single-Prec. Floating Point Unit (RISC-V "Zfinx" Extension) >> #
 -- # ********************************************************************************************* #
 -- # The Zfinx floating-point extension uses the integer register file (x) for all FP operations.  #
 -- # See the official RISC-V specs (https://github.com/riscv/riscv-zfinx) for more information.    #

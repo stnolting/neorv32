@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Co-Processor: Shifter (CPU Base ISA) >>                                      #
+-- # << NEORV32 CPU - Co-Processor: Shifter (CPU Base ISA) >>                                      #
 -- # ********************************************************************************************* #
 -- # FAST_SHIFT_EN = false (default) : Use bit-serial shifter architecture (small but slow)        #
 -- # FAST_SHIFT_EN = true            : Use barrel shifter architecture (large but fast)            #
