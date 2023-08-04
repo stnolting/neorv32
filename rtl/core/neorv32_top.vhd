@@ -940,8 +940,8 @@ begin
     )
     port map (
       -- host port --
-      main_req_i => io_req,
-      main_rsp_o => io_rsp,
+      main_req_i   => io_req,
+      main_rsp_o   => io_rsp,
       -- device ports --
       dev_00_req_o => io_dev_req(IODEV_OCD),     dev_00_rsp_i => io_dev_rsp(IODEV_OCD),
       dev_01_req_o => io_dev_req(IODEV_SYSINFO), dev_01_rsp_i => io_dev_rsp(IODEV_SYSINFO),
