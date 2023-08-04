@@ -59,6 +59,11 @@ entity neorv32_cpu_alu is
     clk_i       : in  std_ulogic; -- global clock, rising edge
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  ctrl_bus_t; -- main control bus
+    -- CSR interface --
+    csr_we_i    : in  std_ulogic; -- global write enable
+    csr_addr_i  : in  std_ulogic_vector(11 downto 0); -- address
+    csr_wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
+    csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- data input --
     rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
@@ -70,7 +75,6 @@ entity neorv32_cpu_alu is
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
     res_o       : out std_ulogic_vector(XLEN-1 downto 0); -- ALU result
     add_o       : out std_ulogic_vector(XLEN-1 downto 0); -- address computation result
-    fpu_flags_o : out std_ulogic_vector(4 downto 0); -- FPU exception flags
     -- status --
     cp_done_o   : out std_ulogic  -- co-processor operation done?
   );
@@ -252,26 +256,30 @@ begin
     neorv32_cpu_cp_fpu_inst: entity neorv32.neorv32_cpu_cp_fpu
     port map (
       -- global control --
-      clk_i    => clk_i,        -- global clock, rising edge
-      rstn_i   => rstn_i,       -- global reset, low-active, async
-      ctrl_i   => ctrl_i,       -- main control bus
-      start_i  => cp_start(3),  -- trigger operation
+      clk_i       => clk_i,        -- global clock, rising edge
+      rstn_i      => rstn_i,       -- global reset, low-active, async
+      ctrl_i      => ctrl_i,       -- main control bus
+      start_i     => cp_start(3),  -- trigger operation
+      -- CSR interface --
+      csr_we_i    => csr_we_i,     -- global write enable
+      csr_addr_i  => csr_addr_i,   -- address
+      csr_wdata_i => csr_wdata_i,  -- write data
+      csr_rdata_o => csr_rdata_o,  -- read data
       -- data input --
-      cmp_i    => cmp,          -- comparator status
-      rs1_i    => rs1_i,        -- rf source 1
-      rs2_i    => rs2_i,        -- rf source 2
-      rs3_i    => rs3_i,        -- rf source 3
+      cmp_i       => cmp,          -- comparator status
+      rs1_i       => rs1_i,        -- rf source 1
+      rs2_i       => rs2_i,        -- rf source 2
+      rs3_i       => rs3_i,        -- rf source 3
       -- result and status --
-      res_o    => cp_result(3), -- operation result
-      fflags_o => fpu_flags_o,  -- exception flags
-      valid_o  => cp_valid(3)   -- data output valid
+      res_o       => cp_result(3), -- operation result
+      valid_o     => cp_valid(3)   -- data output valid
     );
   end generate;
 
   neorv32_cpu_cp_fpu_inst_false:
   if (CPU_EXTENSION_RISCV_Zfinx = false) generate
+    csr_rdata_o  <= (others => '0');
     cp_result(3) <= (others => '0');
-    fpu_flags_o  <= (others => '0');
     cp_valid(3)  <= '0';
   end generate;
 

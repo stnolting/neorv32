@@ -332,7 +332,6 @@ package neorv32_package is
 
   -- RISC-V CSR Addresses -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant csr_zero_c           : std_ulogic_vector(11 downto 0) := x"000"; -- always returns zero, only relevant for hardware access
   -- <<< standard read/write CSRs >>> --
   -- user floating-point CSRs --
   constant csr_fflags_c         : std_ulogic_vector(11 downto 0) := x"001";
@@ -585,7 +584,6 @@ package neorv32_package is
     alu_opa_mux   : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
     alu_opb_mux   : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
     alu_unsigned  : std_ulogic;                     -- is unsigned ALU operation
-    alu_frm       : std_ulogic_vector(02 downto 0); -- FPU rounding mode
     alu_cp_trig   : std_ulogic_vector(05 downto 0); -- co-processor trigger (one-hot)
     -- load/store unit --
     lsu_req_rd    : std_ulogic;                     -- trigger memory read request
@@ -619,7 +617,6 @@ package neorv32_package is
     alu_opa_mux  => '0',
     alu_opb_mux  => '0',
     alu_unsigned => '0',
-    alu_frm      => (others => '0'),
     alu_cp_trig  => (others => '0'),
     lsu_req_rd   => '0',
     lsu_req_wr   => '0',
