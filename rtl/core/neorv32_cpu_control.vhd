@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Operations Control Unit >>                                                   #
+-- # << NEORV32 CPU - Central Operation Control Unit >>                                            #
 -- # ********************************************************************************************* #
 -- # CPU operations are controlled by several "engines" (modules). These engines operate in        #
 -- # parallel to implement a simple pipeline:                                                      #
@@ -8,6 +8,7 @@
 -- #  + Execute engine:  Multi-cycle execution of instructions (generate control signals)          #
 -- #  + Trap controller: Handles interrupts and exceptions                                         #
 -- #  + CSR module:      Read/write access to control and status registers                         #
+-- #  + CPU counters:    Base and HPM counters                                                     #
 -- #  + Debug module:    CPU debug mode handling (on-chip debugger)                                #
 -- #  + Trigger module:  Hardware-assisted breakpoints (on-chip debugger)                          #
 -- # ********************************************************************************************* #
@@ -77,8 +78,7 @@ entity neorv32_cpu_control is
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
     -- Physical memory protection (PMP) --
-    PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
-    PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_EN                       : boolean; -- physical memory protection enabled
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
     HPM_CNT_WIDTH                : natural  -- total size of HPM counters (0..64)
@@ -97,7 +97,6 @@ entity neorv32_cpu_control is
     i_pmp_fault_i : in  std_ulogic; -- instruction fetch pmp fault
     -- status input --
     alu_cp_done_i : in  std_ulogic; -- ALU iterative operation done
-    alu_exc_i     : in  std_ulogic; -- ALU exception
     bus_d_wait_i  : in  std_ulogic; -- wait for bus
     -- data input --
     cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
@@ -108,17 +107,17 @@ entity neorv32_cpu_control is
     curr_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
     next_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- next PC (corresponding to next instruction)
     csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
-    -- FPU interface --
-    fpu_flags_i   : in  std_ulogic_vector(4 downto 0); -- exception flags
+    -- external CSR interface --
+    xcsr_we_o     : out std_ulogic; -- global write enable
+    xcsr_addr_o   : out std_ulogic_vector(11 downto 0); -- address
+    xcsr_wdata_o  : out std_ulogic_vector(XLEN-1 downto 0); -- write data
+    xcsr_rdata_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- interrupts --
     db_halt_req_i : in  std_ulogic; -- debug mode (halt) request
     msi_i         : in  std_ulogic; -- machine software interrupt
     mei_i         : in  std_ulogic; -- machine external interrupt
     mti_i         : in  std_ulogic; -- machine timer interrupt
     firq_i        : in  std_ulogic_vector(15 downto 0); -- fast interrupts
-    -- physical memory protection --
-    pmp_addr_o    : out pmp_addr_if_t; -- addresses
-    pmp_ctrl_o    : out pmp_ctrl_if_t; -- configs
     -- bus access exceptions --
     mar_i         : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
     ma_load_i     : in  std_ulogic; -- misaligned load data address
@@ -146,7 +145,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     reset      : std_ulogic;
     resp       : std_ulogic; -- bus response
     a_err      : std_ulogic; -- alignment error
-    pmp_err    : std_ulogic; -- PMP error
   end record;
   signal fetch_engine : fetch_engine_t;
 
@@ -244,7 +242,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- RISC-V control and status registers (CSRs) --
   type csr_t is record
     addr          : std_ulogic_vector(11 downto 0); -- csr address
-    raddr         : std_ulogic_vector(11 downto 0); -- csr read address (gated from csr.addr)
+    raddr         : std_ulogic_vector(11 downto 0); -- simplified csr read address
     we            : std_ulogic; -- csr write enable
     we_nxt        : std_ulogic;
     re            : std_ulogic; -- csr read enable
@@ -275,9 +273,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mcounteren    : std_ulogic_vector(XLEN-1 downto 0); -- machine counter access enable
     mcountinhibit : std_ulogic_vector(XLEN-1 downto 0); -- inhibit counter auto-increment
     --
-    frm           : std_ulogic_vector(2 downto 0); -- FPU rounding mode
-    fflags        : std_ulogic_vector(4 downto 0); -- FPU exception flags
-    --
     dcsr_ebreakm  : std_ulogic; -- behavior of ebreak instruction in m-mode
     dcsr_ebreaku  : std_ulogic; -- behavior of ebreak instruction in u-mode
     dcsr_step     : std_ulogic; -- single-step mode
@@ -304,21 +299,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal hpmevent    : hpmevent_t;
   signal hpmevent_rd : hpmevent_rd_t;
-
-  -- physical memory protection CSRs --
-  type pmp_cfg_t     is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
-  type pmp_addr_t    is array (0 to PMP_NUM_REGIONS-1) of std_ulogic_vector(XLEN-1 downto 0);
-  type pmp_cfg_rd_t  is array (0 to 03) of std_ulogic_vector(XLEN-1 downto 0);
-  type pmp_addr_rd_t is array (0 to 15) of std_ulogic_vector(XLEN-1 downto 0);
-  type pmp_t is record
-    we_cfg  : std_ulogic_vector(03 downto 0);
-    we_addr : std_ulogic_vector(15 downto 0);
-    cfg     : pmp_cfg_t;
-    addr    : pmp_addr_t;
-  end record;
-  signal pmp         : pmp_t;
-  signal pmp_cfg_rd  : pmp_cfg_rd_t;
-  signal pmp_addr_rd : pmp_addr_rd_t;
 
   -- counter CSRs --
   type cnt_dat_t is array (0 to 31) of std_ulogic_vector(XLEN-1 downto 0);
@@ -365,6 +345,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- hardware trigger module --
   signal hw_trigger_fire : std_ulogic;
 
+  -- CSr read-back data helpers --
+  signal csr_rdata, csr_rdata_pmp : std_ulogic_vector(XLEN-1 downto 0);
+
 begin
 
 -- ****************************************************************************************************************************
@@ -381,7 +364,6 @@ begin
       fetch_engine.restart    <= '1'; -- set to reset IPB
       fetch_engine.unaligned  <= '0'; -- always start at aligned address after reset
       fetch_engine.pc         <= (others => '0');
-      fetch_engine.pmp_err    <= '0';
     elsif rising_edge(clk_i) then
       -- previous state (for HPM) --
       fetch_engine.state_prev <= fetch_engine.state;
@@ -392,9 +374,6 @@ begin
       else -- buffer request
         fetch_engine.restart <= fetch_engine.restart or fetch_engine.reset;
       end if;
-
-      -- register PMP fault --
-      fetch_engine.pmp_err <= i_pmp_fault_i;
 
       -- fsm --
       case fetch_engine.state is
@@ -458,8 +437,8 @@ begin
   fetch_engine.resp <= '1' when (i_bus_ack_i = '1') or (i_bus_err_i = '1') else '0';
 
   -- IPB instruction data and status --
-  ipb.wdata(0) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
-  ipb.wdata(1) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(31 downto 16);
+  ipb.wdata(0) <= (i_bus_err_i or i_pmp_fault_i) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
+  ipb.wdata(1) <= (i_bus_err_i or i_pmp_fault_i) & fetch_engine.a_err & i_bus_rdata_i(31 downto 16);
 
   -- IPB write enable --
   ipb.we(0) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') and
@@ -814,9 +793,6 @@ begin
   -- simplified opcode --
   decode_aux.opcode <= execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
 
-  -- CSR access address --
-  csr.addr <= execute_engine.ir(instr_imm12_msb_c downto instr_imm12_lsb_c);
-
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -846,7 +822,7 @@ begin
     csr.re_nxt                  <= '0';
 
     -- control defaults --
-    ctrl_nxt        <= ctrl_bus_zero_c; -- all zero/off by default
+    ctrl_nxt        <= ctrl_bus_zero_c; -- all zero by default
     ctrl_nxt.alu_op <= alu_op_add_c; -- default ALU operation: ADD
     ctrl_nxt.rf_mux <= rf_mux_alu_c; -- default RF input: ALU
 
@@ -984,7 +960,7 @@ begin
 
           when opcode_load_c | opcode_store_c | opcode_amo_c => -- memory access
           -- ------------------------------------------------------------
-            ctrl_nxt.bus_mo_we       <= '1'; -- write memory output registers (data & address)
+            ctrl_nxt.lsu_mo_we       <= '1'; -- write memory output registers (data & address)
             execute_engine.state_nxt <= MEM_REQ;
 
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c => -- branch / jump and link (with register)
@@ -996,11 +972,11 @@ begin
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
             if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then
-              ctrl_nxt.bus_fencei      <= '1'; -- fence.i
+              ctrl_nxt.lsu_fencei      <= '1'; -- fence.i
               execute_engine.state_nxt <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC)
             else
               if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then
-                ctrl_nxt.bus_fence <= '1'; -- fence
+                ctrl_nxt.lsu_fence <= '1'; -- fence
               end if;
               execute_engine.state_nxt <= DISPATCH;
             end if;
@@ -1070,12 +1046,12 @@ begin
           execute_engine.state_nxt <= DISPATCH;
         else
           if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2)) then -- atomic operation
-            ctrl_nxt.bus_req_rd <= decode_aux.is_a_lr; -- LR.W
-            ctrl_nxt.bus_req_wr <= decode_aux.is_a_sc; -- SC.W
-            ctrl_nxt.bus_rvso   <= '1'; -- this is a reservation set operation
+            ctrl_nxt.lsu_req_rd <= decode_aux.is_a_lr; -- LR.W
+            ctrl_nxt.lsu_req_wr <= decode_aux.is_a_sc; -- SC.W
+            ctrl_nxt.lsu_rvso   <= '1'; -- this is a reservation set operation
           else -- normal load/store
-            ctrl_nxt.bus_req_rd <= not execute_engine.ir(5); -- load
-            ctrl_nxt.bus_req_wr <=     execute_engine.ir(5); -- store
+            ctrl_nxt.lsu_req_rd <= not execute_engine.ir(5); -- load
+            ctrl_nxt.lsu_req_wr <=     execute_engine.ir(5); -- store
           end if;
           execute_engine.state_nxt <= MEM_WAIT;
         end if;
@@ -1083,7 +1059,7 @@ begin
       when MEM_WAIT => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
         if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2)) then
-          ctrl_nxt.bus_rvso <= '1'; -- this is a reservation set operation
+          ctrl_nxt.lsu_rvso <= '1'; -- this is a reservation set operation
         end if;
         ctrl_nxt.rf_mux <= rf_mux_mem_c; -- memory read data
         if (trap_ctrl.exc_buf(exc_laccess_c)  = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- bus access error
@@ -1149,17 +1125,16 @@ begin
   ctrl_o.alu_opa_mux  <= ctrl.alu_opa_mux;
   ctrl_o.alu_opb_mux  <= ctrl.alu_opb_mux;
   ctrl_o.alu_unsigned <= ctrl.alu_unsigned;
-  ctrl_o.alu_frm      <= csr.frm;
   ctrl_o.alu_cp_trig  <= ctrl.alu_cp_trig;
 
   -- data bus interface --
-  ctrl_o.bus_req_rd   <= ctrl.bus_req_rd;
-  ctrl_o.bus_req_wr   <= ctrl.bus_req_wr;
-  ctrl_o.bus_mo_we    <= ctrl.bus_mo_we;
-  ctrl_o.bus_fence    <= ctrl.bus_fence;
-  ctrl_o.bus_fencei   <= ctrl.bus_fencei;
-  ctrl_o.bus_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
-  ctrl_o.bus_rvso     <= ctrl.bus_rvso;
+  ctrl_o.lsu_req_rd   <= ctrl.lsu_req_rd;
+  ctrl_o.lsu_req_wr   <= ctrl.lsu_req_wr;
+  ctrl_o.lsu_mo_we    <= ctrl.lsu_mo_we;
+  ctrl_o.lsu_fence    <= ctrl.lsu_fence;
+  ctrl_o.lsu_fencei   <= ctrl.lsu_fencei;
+  ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
+  ctrl_o.lsu_rvso     <= ctrl.lsu_rvso;
 
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= execute_engine.ir(instr_funct3_msb_c  downto instr_funct3_lsb_c);
@@ -1196,17 +1171,10 @@ begin
         csr_reg_valid <= '1';
 
       -- physical memory protection (PMP) --
-      when csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   | csr_pmpcfg4_c   | csr_pmpcfg5_c   | csr_pmpcfg6_c   | csr_pmpcfg7_c   | -- configuration
-           csr_pmpcfg8_c   | csr_pmpcfg9_c   | csr_pmpcfg10_c  | csr_pmpcfg11_c  | csr_pmpcfg12_c  | csr_pmpcfg13_c  | csr_pmpcfg14_c  | csr_pmpcfg15_c  |
-           csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  | -- address
-           csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c | csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c |
-           csr_pmpaddr16_c | csr_pmpaddr17_c | csr_pmpaddr18_c | csr_pmpaddr19_c | csr_pmpaddr20_c | csr_pmpaddr21_c | csr_pmpaddr22_c | csr_pmpaddr23_c |
-           csr_pmpaddr24_c | csr_pmpaddr25_c | csr_pmpaddr26_c | csr_pmpaddr27_c | csr_pmpaddr28_c | csr_pmpaddr29_c | csr_pmpaddr30_c | csr_pmpaddr31_c |
-           csr_pmpaddr32_c | csr_pmpaddr33_c | csr_pmpaddr34_c | csr_pmpaddr35_c | csr_pmpaddr36_c | csr_pmpaddr37_c | csr_pmpaddr38_c | csr_pmpaddr39_c |
-           csr_pmpaddr40_c | csr_pmpaddr41_c | csr_pmpaddr42_c | csr_pmpaddr43_c | csr_pmpaddr44_c | csr_pmpaddr45_c | csr_pmpaddr46_c | csr_pmpaddr47_c |
-           csr_pmpaddr48_c | csr_pmpaddr49_c | csr_pmpaddr50_c | csr_pmpaddr51_c | csr_pmpaddr52_c | csr_pmpaddr53_c | csr_pmpaddr54_c | csr_pmpaddr55_c |
-           csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c =>
-        csr_reg_valid <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- valid if PMP implemented
+      when csr_pmpcfg0_c  | csr_pmpcfg1_c  | csr_pmpcfg2_c   | csr_pmpcfg3_c   | -- configuration
+           csr_pmpaddr0_c | csr_pmpaddr1_c | csr_pmpaddr2_c  | csr_pmpaddr3_c  | csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  | -- address
+           csr_pmpaddr8_c | csr_pmpaddr9_c | csr_pmpaddr10_c | csr_pmpaddr11_c | csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c =>
+        csr_reg_valid <= bool_to_ulogic_f(PMP_EN); -- valid if PMP implemented
 
       -- hardware performance monitors (HPM) --
       when csr_hpmcounter3_c    | csr_hpmcounter4_c    | csr_hpmcounter5_c    | csr_hpmcounter6_c    | csr_hpmcounter7_c    | csr_hpmcounter8_c    | -- user counters LOW
@@ -1427,7 +1395,6 @@ begin
   trap_ctrl.instr_il <= '1' when ((execute_engine.state = EXECUTE) or (execute_engine.state = ALU_WAIT)) and -- check in execution states only
                                  (
                                   (illegal_cmd = '1') or -- illegal instruction?
-                                  (alu_exc_i = '1') or -- invalid ALU operation?
                                   (execute_engine.ir(instr_opcode_lsb_c+1 downto instr_opcode_lsb_c) /= "11") -- illegal opcode LSBs?
                                  ) else '0';
 
@@ -1624,7 +1591,15 @@ begin
 -- Control and Status Registers (CSRs)
 -- ****************************************************************************************************************************
 
-  -- Control and Status Registers - Write Data ----------------------------------------------
+  -- CSR Access Address ---------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- CSR access address (for validation check only) --
+  csr.addr <= execute_engine.ir(instr_imm12_msb_c downto instr_imm12_lsb_c);
+  -- simplified CSR read address - [WARNING] M-mode (9:8 = 11) and U-mode (9:8 = 00) CSRs only! --
+  csr.raddr <= csr.addr(11 downto 10) & csr.addr(8) & csr.addr(8) & csr.addr(7 downto 0);
+
+
+  -- CSR Write Data -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_write_data: process(execute_engine.ir, csr.rdata, rs1_i)
     variable tmp_v : std_ulogic_vector(XLEN-1 downto 0);
@@ -1645,7 +1620,15 @@ begin
   end process csr_write_data;
 
 
-  -- Control and Status Registers - Write Access --------------------------------------------
+  -- External CSR Interface -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  xcsr_we_o     <= csr.we;
+  xcsr_addr_o   <= csr.addr;
+  xcsr_wdata_o  <= csr.wdata;
+  csr_rdata_pmp <= xcsr_rdata_i;
+
+
+  -- CSR Write Access -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_write_access: process(rstn_i, clk_i)
   begin
@@ -1669,8 +1652,6 @@ begin
       csr.mcounteren    <= (others => '0');
       csr.mcountinhibit <= (others => '0');
       csr.mip_firq_nclr <= (others => '0');
-      csr.fflags        <= (others => '0');
-      csr.frm           <= (others => '0');
       csr.dcsr_ebreakm  <= '0';
       csr.dcsr_ebreaku  <= '0';
       csr.dcsr_step     <= '0';
@@ -1695,24 +1676,6 @@ begin
       -- ********************************************************************************
       if (csr.we = '1') then -- manual write access and not illegal instruction
         case csr.addr is
-
-          -- user floating-point CSRs --
-          -- --------------------------------------------------------------------
-          when csr_fflags_c => -- floating-point exception flags
-            if (CPU_EXTENSION_RISCV_Zfinx = true) then
-              csr.fflags <= csr.wdata(4 downto 0);
-            end if;
-
-          when csr_frm_c => -- floating-point rounding mode
-            if (CPU_EXTENSION_RISCV_Zfinx = true) then
-              csr.frm <= csr.wdata(2 downto 0);
-            end if;
-
-          when csr_fcsr_c => -- floating-point control/status (frm & fflags)
-            if (CPU_EXTENSION_RISCV_Zfinx = true) then
-              csr.frm    <= csr.wdata(7 downto 5);
-              csr.fflags <= csr.wdata(4 downto 0);
-            end if;
 
           -- machine trap setup --
           -- --------------------------------------------------------------------
@@ -1819,13 +1782,6 @@ begin
       else
 
         -- --------------------------------------------------------------------
-        -- floating-point (FPU) exception flags
-        -- --------------------------------------------------------------------
-        if (CPU_EXTENSION_RISCV_Zfinx = true) and (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- no illegal instruction
-          csr.fflags <= csr.fflags or fpu_flags_i; -- accumulate flags ("accrued exception flags")
-        end if;
-
-        -- --------------------------------------------------------------------
         -- TRAP ENTER
         -- --------------------------------------------------------------------
         if (trap_ctrl.env_enter = '1') then -- trap handler starting?
@@ -1906,12 +1862,6 @@ begin
       csr.mcounteren(1)    <= '0'; -- time[h] not implemented
       csr.mcountinhibit(1) <= '0'; -- time[h] not implemented
 
-      -- no FPU --
-      if (CPU_EXTENSION_RISCV_Zfinx = false) then
-        csr.frm    <= (others => '0');
-        csr.fflags <= (others => '0');
-      end if;
-
       -- no base counters --
       if (CPU_EXTENSION_RISCV_Zicntr = false) then
         csr.mcounteren(2 downto 0)    <= (others => '0');
@@ -1958,444 +1908,263 @@ begin
   end process csr_write_access;
 
   -- effective privilege mode is MACHINE when in debug mode --
-  csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_Sdext = true) and (debug_ctrl.running = '1') else csr.privilege;
+  csr.privilege_eff <= priv_mode_m_c when (debug_ctrl.running = '1') else csr.privilege;
 
 
-  -- Physical Memory Protection (PMP) CSRs --------------------------------------------------
+  -- CSR Read Access ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  pmp_gen_enable:
-  if (PMP_NUM_REGIONS > 0) generate
-
-    -- write enable decoder --
-    pmp_we: process(csr)
-    begin
-      -- Configuration registers --
-      pmp.we_cfg <= (others => '0');
-      if (csr.addr(11 downto 2) = csr_pmpcfg0_c(11 downto 2)) and (csr.we = '1') then
-        pmp.we_cfg(to_integer(unsigned(csr.addr(1 downto 0)))) <= '1';
-      end if;
-      -- Address registers --
-      pmp.we_addr <= (others => '0');
-      if (csr.addr(11 downto 4) = csr_pmpaddr0_c(11 downto 4)) and (csr.we = '1') then
-        pmp.we_addr(to_integer(unsigned(csr.addr(3 downto 0)))) <= '1';
-      end if;
-    end process pmp_we;
-
-    -- PMP registers --
-    pmp_reg_gen:
-    for i in 0 to PMP_NUM_REGIONS-1 generate
-      pmp_reg: process(rstn_i, clk_i)
-      begin
-        if (rstn_i = '0') then
-          pmp.cfg(i)  <= (others => '0');
-          pmp.addr(i) <= (others => '0');
-        elsif rising_edge(clk_i) then
-
-          -- configuration --
-          if (pmp.we_cfg(i/4) = '1') and (pmp.cfg(i)(7) = '0') then -- unlocked write access
-            pmp.cfg(i)(2 downto 0) <= csr.wdata((i mod 4)*8+2 downto (i mod 4)*8+0); -- X (execute), W (write), R (read)
-            if (PMP_MIN_GRANULARITY > 4) and (csr.wdata((i mod 4)*8+4 downto (i mod 4)*8+3) = pmp_mode_na4_c) then
-              pmp.cfg(i)(4 downto 3) <= pmp_mode_off_c; -- NA4 not available, fall back to OFF
-            else
-              pmp.cfg(i)(4 downto 3) <= csr.wdata((i mod 4)*8+4 downto (i mod 4)*8+3); -- A (mode)
-            end if;
-            pmp.cfg(i)(6 downto 5) <= "00"; -- reserved
-            pmp.cfg(i)(7) <= csr.wdata((i mod 4)*8+7); -- L (locked)
-          end if;
-
-          -- address --
-          if (pmp.we_addr(i) = '1') and (pmp.cfg(i)(7) = '0') then -- unlocked write access
-            if (i < PMP_NUM_REGIONS-1) then
-              if (pmp.cfg(i+1)(7) = '0') or (pmp.cfg(i+1)(4 downto 3) /= pmp_mode_tor_c) then -- cfg(i+1) not "LOCKED TOR"
-                pmp.addr(i) <= "00" & csr.wdata(XLEN-3 downto 0);
-              end if;
-            else -- very last entry
-              pmp.addr(i) <= "00" & csr.wdata(XLEN-3 downto 0);
-            end if;
-          end if;
-
-        end if;
-      end process pmp_reg;
-    end generate;
-
-    -- PMP output to bus unit and CSR read-back --
-    pmp_connect: process(pmp)
-    begin
-      pmp_ctrl_o  <= (others => (others => '0'));
-      pmp_addr_o  <= (others => (others => '0'));
-      pmp_cfg_rd  <= (others => (others => '0'));
-      pmp_addr_rd <= (others => (others => '0'));
-      for i in 0 to PMP_NUM_REGIONS-1 loop
-        pmp_ctrl_o(i) <= pmp.cfg(i);
-        pmp_addr_o(i) <= pmp.addr(i) & "00"; -- word aligned address
-        pmp_cfg_rd(i/4)(8*(i mod 4)+7 downto 8*(i mod 4)+0) <= pmp.cfg(i);
-        pmp_addr_rd(i)(XLEN-1 downto index_size_f(PMP_MIN_GRANULARITY)-2) <= pmp.addr(i)(XLEN-1 downto index_size_f(PMP_MIN_GRANULARITY)-2);
-        if (PMP_MIN_GRANULARITY = 8) then -- bit [G-1] reads as zero in TOR or OFF mode
-          if (pmp.cfg(i)(4) = '0') then -- TOR/OFF
-            pmp_addr_rd(i)(index_size_f(PMP_MIN_GRANULARITY)-1) <= '0';
-          end if;
-        elsif (PMP_MIN_GRANULARITY > 8) then
-          -- in NAPOT mode, bits [G-2:0] must read as one
-          pmp_addr_rd(i)(index_size_f(PMP_MIN_GRANULARITY)-2 downto 0) <= (others => '1');
-          -- in TOR or OFF mode, bits [G-1:0] must read as zero
-          if (pmp.cfg(i)(4) = '0') then -- TOR/OFF
-            pmp_addr_rd(i)(index_size_f(PMP_MIN_GRANULARITY)-1 downto 0) <= (others => '0');
-          end if;
-        end if;
-      end loop;
-    end process pmp_connect;
-
-  end generate; -- /pmp_gen_enable
-
-
-  -- no PMP implemented --
-  pmp_gen_disable:
-  if (PMP_NUM_REGIONS = 0) generate
-    pmp_ctrl_o  <= (others => (others => '0'));
-    pmp_addr_o  <= (others => (others => '0'));
-    pmp_cfg_rd  <= (others => (others => '0'));
-    pmp_addr_rd <= (others => (others => '0'));
-  end generate; -- /pmp_gen_disable
-  
-  
-  -- Hardware Performance Monitors (HPM) - Counter Event Configuration CSRs -----------------
-  -- -------------------------------------------------------------------------------------------
-  hpm_gen_enable:
-  if (CPU_EXTENSION_RISCV_Zihpm = true) generate
-
-    -- write enable decoder --
-    hpmevent_we: process(csr)
-    begin
-      hpmevent.we <= (others => '0');
-      if (csr.addr(11 downto 5) = csr_cnt_setup_c) and (csr.we = '1') then
-        hpmevent.we(to_integer(unsigned(csr.addr(4 downto 0)))) <= '1';
-      end if;
-    end process hpmevent_we;
-
-    -- HPM event registers --
-    hpmevent_reg_gen:
-    for i in 0 to hpm_num_c-1 generate
-      hpmevent_reg: process(rstn_i, clk_i)
-      begin
-        if (rstn_i = '0') then
-          hpmevent.cfg(i) <= (others => '0');
-        elsif rising_edge(clk_i) then
-          if (hpmevent.we(3+i) = '1') then
-            hpmevent.cfg(i) <= csr.wdata(hpmcnt_event_size_c-1 downto 0);
-          end if;
-        end if;
-      end process hpmevent_reg;
-    end generate;
-
-    -- HPM event CSR read-back --
-    hpm_event_connect: process(hpmevent)
-    begin
-      hpmevent_rd <= (others => (others => '0'));
-      for i in 3 to (hpm_num_c+3)-1 loop
-        hpmevent_rd(i)(hpmcnt_event_size_c-1 downto 0) <= hpmevent.cfg(i-3);
-        hpmevent_rd(i)(hpmcnt_event_tm_c)              <= '0'; -- time, unused/reserved
-      end loop;
-    end process hpm_event_connect;
-
-  end generate; -- /hpm_gen_enable
-
-
-  -- no HPMs implemented --
-  hpm_gen_disable:
-  if (CPU_EXTENSION_RISCV_Zihpm = false) generate
-    hpmevent.we  <= (others => '0');
-    hpmevent.cfg <= (others => (others => '0'));
-    hpmevent_rd  <= (others => (others => '0'));
-  end generate; -- /hpm_gen_disable
-
-
-  -- Control and Status Registers - Read Access ---------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  csr_read_access: process(clk_i)
+  csr_read_access: process(csr, trap_ctrl.irq_pnd, hpmevent_rd, cnt_lo_rd, cnt_hi_rd)
   begin
-    if rising_edge(clk_i) then
-      csr.re    <= csr.re_nxt; -- read access?
-      csr.rdata <= (others => '0'); -- default output, unimplemented CSR/bits read as zero
-      case csr.raddr is
+    csr_rdata <= (others => '0'); -- default
+    case csr.raddr is
 
-        -- hardware-only CSRs --
-        -- --------------------------------------------------------------------
---      when csr_zero_c => -- zero: always returns zero, only relevant for hardware-access, not visible to ISA
---        csr.rdata <= (others => '0');
+      -- machine trap setup --
+      -- --------------------------------------------------------------------
+      when csr_mstatus_c => -- machine status register - low word
+        csr_rdata(03) <= csr.mstatus_mie;
+        csr_rdata(07) <= csr.mstatus_mpie;
+        csr_rdata(12 downto 11) <= (others => csr.mstatus_mpp);
+        csr_rdata(17) <= csr.mstatus_mprv;
+        csr_rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);
 
-        -- floating-point CSRs --
-        -- --------------------------------------------------------------------
-        when csr_fflags_c => -- floating-point (FPU) exception flags
-          if (CPU_EXTENSION_RISCV_Zfinx) then csr.rdata(4 downto 0) <= csr.fflags; end if;
+--    when csr_mstatush_c => csr_rdata <= (others => '0'); -- machine status register - high word, implemented but always zero
 
-        when csr_frm_c => -- floating-point (FPU) rounding mode
-          if (CPU_EXTENSION_RISCV_Zfinx) then csr.rdata(2 downto 0) <= csr.frm; end if;
+      when csr_misa_c => -- ISA and extensions
+        csr_rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
+        csr_rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
+        csr_rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
+        csr_rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
+        csr_rdata(08) <= bool_to_ulogic_f(not CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
+        csr_rdata(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
+        csr_rdata(20) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);     -- U CPU extension
+        csr_rdata(23) <= '1';                                         -- X CPU extension (non-standard extensions / NEORV32-specific)
+        csr_rdata(31 downto 30) <= "01"; -- MXL = 32
 
-        when csr_fcsr_c => -- floating-point (FPU) control/status (frm & fflags)
-          if (CPU_EXTENSION_RISCV_Zfinx) then csr.rdata(7 downto 0) <= csr.frm & csr.fflags; end if;
+      when csr_mie_c => -- machine interrupt-enable register
+        csr_rdata(03) <= csr.mie_msi;
+        csr_rdata(07) <= csr.mie_mti;
+        csr_rdata(11) <= csr.mie_mei;
+        csr_rdata(31 downto 16) <= csr.mie_firq;
 
-        -- machine trap setup --
-        -- --------------------------------------------------------------------
-        when csr_mstatus_c => -- machine status register - low word
-          csr.rdata(03) <= csr.mstatus_mie; -- MIE
-          csr.rdata(07) <= csr.mstatus_mpie; -- MPIE
-          csr.rdata(12 downto 11) <= (others => csr.mstatus_mpp); -- MPP: machine previous privilege mode
-          csr.rdata(17) <= csr.mstatus_mprv;
-          csr.rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- TW
+      when csr_mtvec_c => -- machine trap-handler base address (for ALL exceptions)
+        csr_rdata <= csr.mtvec(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0
 
---      when csr_mstatush_c => -- machine status register - high word, implemented but always zero
---        csr.rdata <= (others => '0');
-
-        when csr_misa_c => -- ISA and extensions
-          csr.rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
-          csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_B);     -- B CPU extension
-          csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_C);     -- C CPU extension
-          csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_E);     -- E CPU extension
-          csr.rdata(08) <= bool_to_ulogic_f(not CPU_EXTENSION_RISCV_E); -- I CPU extension (if not E)
-          csr.rdata(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_M);     -- M CPU extension
-          csr.rdata(20) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);     -- U CPU extension
-          csr.rdata(23) <= '1';                                         -- X CPU extension (non-standard extensions / NEORV32-specific)
-          csr.rdata(31 downto 30) <= "01"; -- machine XLEN = 32
-
-        when csr_mie_c => -- machine interrupt-enable register
-          csr.rdata(03) <= csr.mie_msi;
-          csr.rdata(07) <= csr.mie_mti;
-          csr.rdata(11) <= csr.mie_mei;
-          csr.rdata(31 downto 16) <= csr.mie_firq;
-
-        when csr_mtvec_c => --machine trap-handler base address (for ALL exceptions)
-          csr.rdata <= csr.mtvec(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0
-
-        when csr_mcounteren_c => -- machine counter enable register
-          if (CPU_EXTENSION_RISCV_U = true) then
-            csr.rdata(0) <= csr.mcounteren(0); -- allow user-level access to cycle[h]
-            csr.rdata(2) <= csr.mcounteren(2); -- allow user-level access to instret[h]
-            if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then -- any HPMs implemented?
-              csr.rdata((hpm_num_c+3)-1 downto 3) <= csr.mcounteren((hpm_num_c+3)-1 downto 3); -- allow user-level access to all available hpmcounter*[h] CSRs
-            end if;
-          end if;
-
-        -- machine configuration --
-        -- --------------------------------------------------------------------
---      when csr_menvcfg_c  => csr.rdata <= (others => '0'); -- hardwired to zero
---      when csr_menvcfgh_c => csr.rdata <= (others => '0'); -- hardwired to zero
-
-        -- machine trap handling --
-        -- --------------------------------------------------------------------
-        when csr_mscratch_c => -- machine scratch register
-          csr.rdata <= csr.mscratch;
-
-        when csr_mepc_c => -- machine exception program counter
-          csr.rdata <= csr.mepc(XLEN-1 downto 1) & '0';
-
-        when csr_mcause_c => -- machine trap cause
-          csr.rdata(31)         <= csr.mcause(5);
-          csr.rdata(4 downto 0) <= csr.mcause(4 downto 0);
-
-        when csr_mtval_c => -- machine bad address or instruction
-          csr.rdata <= csr.mtval;
-
-        when csr_mip_c => -- machine interrupt pending
-          csr.rdata(03)           <= trap_ctrl.irq_pnd(irq_msi_irq_c);
-          csr.rdata(07)           <= trap_ctrl.irq_pnd(irq_mti_irq_c);
-          csr.rdata(11)           <= trap_ctrl.irq_pnd(irq_mei_irq_c);
-          csr.rdata(31 downto 16) <= trap_ctrl.irq_pnd(irq_firq_15_c downto irq_firq_0_c);
-
-        -- physical memory protection --
-        -- --------------------------------------------------------------------
-        -- region configuration --
-        when csr_pmpcfg0_c => if (PMP_NUM_REGIONS > 00) then csr.rdata <= pmp_cfg_rd(0); end if;
-        when csr_pmpcfg1_c => if (PMP_NUM_REGIONS > 04) then csr.rdata <= pmp_cfg_rd(1); end if;
-        when csr_pmpcfg2_c => if (PMP_NUM_REGIONS > 08) then csr.rdata <= pmp_cfg_rd(2); end if;
-        when csr_pmpcfg3_c => if (PMP_NUM_REGIONS > 12) then csr.rdata <= pmp_cfg_rd(3); end if;
-
-        -- region address --
-        when csr_pmpaddr0_c  => if (PMP_NUM_REGIONS > 00) then csr.rdata <= pmp_addr_rd(00); end if;
-        when csr_pmpaddr1_c  => if (PMP_NUM_REGIONS > 01) then csr.rdata <= pmp_addr_rd(01); end if;
-        when csr_pmpaddr2_c  => if (PMP_NUM_REGIONS > 02) then csr.rdata <= pmp_addr_rd(02); end if;
-        when csr_pmpaddr3_c  => if (PMP_NUM_REGIONS > 03) then csr.rdata <= pmp_addr_rd(03); end if;
-        when csr_pmpaddr4_c  => if (PMP_NUM_REGIONS > 04) then csr.rdata <= pmp_addr_rd(04); end if;
-        when csr_pmpaddr5_c  => if (PMP_NUM_REGIONS > 05) then csr.rdata <= pmp_addr_rd(05); end if;
-        when csr_pmpaddr6_c  => if (PMP_NUM_REGIONS > 06) then csr.rdata <= pmp_addr_rd(06); end if;
-        when csr_pmpaddr7_c  => if (PMP_NUM_REGIONS > 07) then csr.rdata <= pmp_addr_rd(07); end if;
-        when csr_pmpaddr8_c  => if (PMP_NUM_REGIONS > 08) then csr.rdata <= pmp_addr_rd(08); end if;
-        when csr_pmpaddr9_c  => if (PMP_NUM_REGIONS > 09) then csr.rdata <= pmp_addr_rd(09); end if;
-        when csr_pmpaddr10_c => if (PMP_NUM_REGIONS > 10) then csr.rdata <= pmp_addr_rd(10); end if;
-        when csr_pmpaddr11_c => if (PMP_NUM_REGIONS > 11) then csr.rdata <= pmp_addr_rd(11); end if;
-        when csr_pmpaddr12_c => if (PMP_NUM_REGIONS > 12) then csr.rdata <= pmp_addr_rd(12); end if;
-        when csr_pmpaddr13_c => if (PMP_NUM_REGIONS > 13) then csr.rdata <= pmp_addr_rd(13); end if;
-        when csr_pmpaddr14_c => if (PMP_NUM_REGIONS > 14) then csr.rdata <= pmp_addr_rd(14); end if;
-        when csr_pmpaddr15_c => if (PMP_NUM_REGIONS > 15) then csr.rdata <= pmp_addr_rd(15); end if;
-
-        -- machine counter setup --
-        -- --------------------------------------------------------------------
-        when csr_mcountinhibit_c => -- machine counter-inhibit register
-          if (CPU_EXTENSION_RISCV_Zicntr = true) then
-            csr.rdata(0) <= csr.mcountinhibit(0); -- inhibit [m]cycle[h] counter
-            csr.rdata(2) <= csr.mcountinhibit(2); -- inhibit [m]instret[h] counter
-          end if;
+      when csr_mcounteren_c => -- machine counter enable register
+        if (CPU_EXTENSION_RISCV_U = true) then
+          csr_rdata(0) <= csr.mcounteren(0); -- cycle[h]
+          csr_rdata(2) <= csr.mcounteren(2); -- instret[h]
           if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then -- any HPMs implemented?
-            csr.rdata((hpm_num_c+3)-1 downto 3) <= csr.mcountinhibit((hpm_num_c+3)-1 downto 3); -- inhibit [m]hpmcounter*[h] counter
+            csr_rdata((hpm_num_c+3)-1 downto 3) <= csr.mcounteren((hpm_num_c+3)-1 downto 3); -- hpmcounter*[h]
           end if;
+        end if;
 
-        -- HPM event select --
-        when csr_mhpmevent3_c  => if (hpm_num_c > 00) then csr.rdata <= hpmevent_rd(03); end if;
-        when csr_mhpmevent4_c  => if (hpm_num_c > 01) then csr.rdata <= hpmevent_rd(04); end if;
-        when csr_mhpmevent5_c  => if (hpm_num_c > 02) then csr.rdata <= hpmevent_rd(05); end if;
-        when csr_mhpmevent6_c  => if (hpm_num_c > 03) then csr.rdata <= hpmevent_rd(06); end if;
-        when csr_mhpmevent7_c  => if (hpm_num_c > 04) then csr.rdata <= hpmevent_rd(07); end if;
-        when csr_mhpmevent8_c  => if (hpm_num_c > 05) then csr.rdata <= hpmevent_rd(08); end if;
-        when csr_mhpmevent9_c  => if (hpm_num_c > 06) then csr.rdata <= hpmevent_rd(09); end if;
-        when csr_mhpmevent10_c => if (hpm_num_c > 07) then csr.rdata <= hpmevent_rd(10); end if;
-        when csr_mhpmevent11_c => if (hpm_num_c > 08) then csr.rdata <= hpmevent_rd(11); end if;
-        when csr_mhpmevent12_c => if (hpm_num_c > 09) then csr.rdata <= hpmevent_rd(12); end if;
-        when csr_mhpmevent13_c => if (hpm_num_c > 10) then csr.rdata <= hpmevent_rd(13); end if;
-        when csr_mhpmevent14_c => if (hpm_num_c > 11) then csr.rdata <= hpmevent_rd(14); end if;
-        when csr_mhpmevent15_c => if (hpm_num_c > 12) then csr.rdata <= hpmevent_rd(15); end if;
-        when csr_mhpmevent16_c => if (hpm_num_c > 13) then csr.rdata <= hpmevent_rd(16); end if;
-        when csr_mhpmevent17_c => if (hpm_num_c > 14) then csr.rdata <= hpmevent_rd(17); end if;
-        when csr_mhpmevent18_c => if (hpm_num_c > 15) then csr.rdata <= hpmevent_rd(18); end if;
-        when csr_mhpmevent19_c => if (hpm_num_c > 16) then csr.rdata <= hpmevent_rd(19); end if;
-        when csr_mhpmevent20_c => if (hpm_num_c > 17) then csr.rdata <= hpmevent_rd(20); end if;
-        when csr_mhpmevent21_c => if (hpm_num_c > 18) then csr.rdata <= hpmevent_rd(21); end if;
-        when csr_mhpmevent22_c => if (hpm_num_c > 19) then csr.rdata <= hpmevent_rd(22); end if;
-        when csr_mhpmevent23_c => if (hpm_num_c > 20) then csr.rdata <= hpmevent_rd(23); end if;
-        when csr_mhpmevent24_c => if (hpm_num_c > 21) then csr.rdata <= hpmevent_rd(24); end if;
-        when csr_mhpmevent25_c => if (hpm_num_c > 22) then csr.rdata <= hpmevent_rd(25); end if;
-        when csr_mhpmevent26_c => if (hpm_num_c > 23) then csr.rdata <= hpmevent_rd(26); end if;
-        when csr_mhpmevent27_c => if (hpm_num_c > 24) then csr.rdata <= hpmevent_rd(27); end if;
-        when csr_mhpmevent28_c => if (hpm_num_c > 25) then csr.rdata <= hpmevent_rd(28); end if;
-        when csr_mhpmevent29_c => if (hpm_num_c > 26) then csr.rdata <= hpmevent_rd(29); end if;
-        when csr_mhpmevent30_c => if (hpm_num_c > 27) then csr.rdata <= hpmevent_rd(30); end if;
-        when csr_mhpmevent31_c => if (hpm_num_c > 28) then csr.rdata <= hpmevent_rd(31); end if;
+      -- machine configuration --
+      -- --------------------------------------------------------------------
+--    when csr_menvcfg_c  => csr_rdata <= (others => '0'); -- hardwired to zero
+--    when csr_menvcfgh_c => csr_rdata <= (others => '0'); -- hardwired to zero
 
-        -- counters and timers --
-        -- --------------------------------------------------------------------
-        -- low word --
-        when csr_mcycle_c        | csr_cycle_c        => if (CPU_EXTENSION_RISCV_Zicntr) then csr.rdata <= cnt_lo_rd(00); end if;
-        when csr_minstret_c      | csr_instret_c      => if (CPU_EXTENSION_RISCV_Zicntr) then csr.rdata <= cnt_lo_rd(02); end if;
-        when csr_mhpmcounter3_c  | csr_hpmcounter3_c  => if (hpm_num_c > 00) then csr.rdata <= cnt_lo_rd(03); end if;
-        when csr_mhpmcounter4_c  | csr_hpmcounter4_c  => if (hpm_num_c > 01) then csr.rdata <= cnt_lo_rd(04); end if;
-        when csr_mhpmcounter5_c  | csr_hpmcounter5_c  => if (hpm_num_c > 02) then csr.rdata <= cnt_lo_rd(05); end if;
-        when csr_mhpmcounter6_c  | csr_hpmcounter6_c  => if (hpm_num_c > 03) then csr.rdata <= cnt_lo_rd(06); end if;
-        when csr_mhpmcounter7_c  | csr_hpmcounter7_c  => if (hpm_num_c > 04) then csr.rdata <= cnt_lo_rd(07); end if;
-        when csr_mhpmcounter8_c  | csr_hpmcounter8_c  => if (hpm_num_c > 05) then csr.rdata <= cnt_lo_rd(08); end if;
-        when csr_mhpmcounter9_c  | csr_hpmcounter9_c  => if (hpm_num_c > 06) then csr.rdata <= cnt_lo_rd(09); end if;
-        when csr_mhpmcounter10_c | csr_hpmcounter10_c => if (hpm_num_c > 07) then csr.rdata <= cnt_lo_rd(10); end if;
-        when csr_mhpmcounter11_c | csr_hpmcounter11_c => if (hpm_num_c > 08) then csr.rdata <= cnt_lo_rd(11); end if;
-        when csr_mhpmcounter12_c | csr_hpmcounter12_c => if (hpm_num_c > 09) then csr.rdata <= cnt_lo_rd(12); end if;
-        when csr_mhpmcounter13_c | csr_hpmcounter13_c => if (hpm_num_c > 10) then csr.rdata <= cnt_lo_rd(13); end if;
-        when csr_mhpmcounter14_c | csr_hpmcounter14_c => if (hpm_num_c > 11) then csr.rdata <= cnt_lo_rd(14); end if;
-        when csr_mhpmcounter15_c | csr_hpmcounter15_c => if (hpm_num_c > 12) then csr.rdata <= cnt_lo_rd(15); end if;
-        when csr_mhpmcounter16_c | csr_hpmcounter16_c => if (hpm_num_c > 13) then csr.rdata <= cnt_lo_rd(16); end if;
-        when csr_mhpmcounter17_c | csr_hpmcounter17_c => if (hpm_num_c > 14) then csr.rdata <= cnt_lo_rd(17); end if;
-        when csr_mhpmcounter18_c | csr_hpmcounter18_c => if (hpm_num_c > 15) then csr.rdata <= cnt_lo_rd(18); end if;
-        when csr_mhpmcounter19_c | csr_hpmcounter19_c => if (hpm_num_c > 16) then csr.rdata <= cnt_lo_rd(19); end if;
-        when csr_mhpmcounter20_c | csr_hpmcounter20_c => if (hpm_num_c > 17) then csr.rdata <= cnt_lo_rd(20); end if;
-        when csr_mhpmcounter21_c | csr_hpmcounter21_c => if (hpm_num_c > 18) then csr.rdata <= cnt_lo_rd(21); end if;
-        when csr_mhpmcounter22_c | csr_hpmcounter22_c => if (hpm_num_c > 19) then csr.rdata <= cnt_lo_rd(22); end if;
-        when csr_mhpmcounter23_c | csr_hpmcounter23_c => if (hpm_num_c > 20) then csr.rdata <= cnt_lo_rd(23); end if;
-        when csr_mhpmcounter24_c | csr_hpmcounter24_c => if (hpm_num_c > 21) then csr.rdata <= cnt_lo_rd(24); end if;
-        when csr_mhpmcounter25_c | csr_hpmcounter25_c => if (hpm_num_c > 22) then csr.rdata <= cnt_lo_rd(25); end if;
-        when csr_mhpmcounter26_c | csr_hpmcounter26_c => if (hpm_num_c > 23) then csr.rdata <= cnt_lo_rd(26); end if;
-        when csr_mhpmcounter27_c | csr_hpmcounter27_c => if (hpm_num_c > 24) then csr.rdata <= cnt_lo_rd(27); end if;
-        when csr_mhpmcounter28_c | csr_hpmcounter28_c => if (hpm_num_c > 25) then csr.rdata <= cnt_lo_rd(28); end if;
-        when csr_mhpmcounter29_c | csr_hpmcounter29_c => if (hpm_num_c > 26) then csr.rdata <= cnt_lo_rd(29); end if;
-        when csr_mhpmcounter30_c | csr_hpmcounter30_c => if (hpm_num_c > 27) then csr.rdata <= cnt_lo_rd(30); end if;
-        when csr_mhpmcounter31_c | csr_hpmcounter31_c => if (hpm_num_c > 28) then csr.rdata <= cnt_lo_rd(31); end if;
+      -- machine trap handling --
+      -- --------------------------------------------------------------------
+      when csr_mscratch_c => -- machine scratch register
+        csr_rdata <= csr.mscratch;
 
-        -- high word --
-        when csr_mcycleh_c        | csr_cycleh_c        => if (CPU_EXTENSION_RISCV_Zicntr) then csr.rdata <= cnt_hi_rd(00); end if;
-        when csr_minstreth_c      | csr_instreth_c      => if (CPU_EXTENSION_RISCV_Zicntr) then csr.rdata <= cnt_hi_rd(02); end if;
-        when csr_mhpmcounter3h_c  | csr_hpmcounter3h_c  => if (hpm_num_c > 00) then csr.rdata <= cnt_hi_rd(03); end if;
-        when csr_mhpmcounter4h_c  | csr_hpmcounter4h_c  => if (hpm_num_c > 01) then csr.rdata <= cnt_hi_rd(04); end if;
-        when csr_mhpmcounter5h_c  | csr_hpmcounter5h_c  => if (hpm_num_c > 02) then csr.rdata <= cnt_hi_rd(05); end if;
-        when csr_mhpmcounter6h_c  | csr_hpmcounter6h_c  => if (hpm_num_c > 03) then csr.rdata <= cnt_hi_rd(06); end if;
-        when csr_mhpmcounter7h_c  | csr_hpmcounter7h_c  => if (hpm_num_c > 04) then csr.rdata <= cnt_hi_rd(07); end if;
-        when csr_mhpmcounter8h_c  | csr_hpmcounter8h_c  => if (hpm_num_c > 05) then csr.rdata <= cnt_hi_rd(08); end if;
-        when csr_mhpmcounter9h_c  | csr_hpmcounter9h_c  => if (hpm_num_c > 06) then csr.rdata <= cnt_hi_rd(09); end if;
-        when csr_mhpmcounter10h_c | csr_hpmcounter10h_c => if (hpm_num_c > 07) then csr.rdata <= cnt_hi_rd(10); end if;
-        when csr_mhpmcounter11h_c | csr_hpmcounter11h_c => if (hpm_num_c > 08) then csr.rdata <= cnt_hi_rd(11); end if;
-        when csr_mhpmcounter12h_c | csr_hpmcounter12h_c => if (hpm_num_c > 09) then csr.rdata <= cnt_hi_rd(12); end if;
-        when csr_mhpmcounter13h_c | csr_hpmcounter13h_c => if (hpm_num_c > 10) then csr.rdata <= cnt_hi_rd(13); end if;
-        when csr_mhpmcounter14h_c | csr_hpmcounter14h_c => if (hpm_num_c > 11) then csr.rdata <= cnt_hi_rd(14); end if;
-        when csr_mhpmcounter15h_c | csr_hpmcounter15h_c => if (hpm_num_c > 12) then csr.rdata <= cnt_hi_rd(15); end if;
-        when csr_mhpmcounter16h_c | csr_hpmcounter16h_c => if (hpm_num_c > 13) then csr.rdata <= cnt_hi_rd(16); end if;
-        when csr_mhpmcounter17h_c | csr_hpmcounter17h_c => if (hpm_num_c > 14) then csr.rdata <= cnt_hi_rd(17); end if;
-        when csr_mhpmcounter18h_c | csr_hpmcounter18h_c => if (hpm_num_c > 15) then csr.rdata <= cnt_hi_rd(18); end if;
-        when csr_mhpmcounter19h_c | csr_hpmcounter19h_c => if (hpm_num_c > 16) then csr.rdata <= cnt_hi_rd(19); end if;
-        when csr_mhpmcounter20h_c | csr_hpmcounter20h_c => if (hpm_num_c > 17) then csr.rdata <= cnt_hi_rd(20); end if;
-        when csr_mhpmcounter21h_c | csr_hpmcounter21h_c => if (hpm_num_c > 18) then csr.rdata <= cnt_hi_rd(21); end if;
-        when csr_mhpmcounter22h_c | csr_hpmcounter22h_c => if (hpm_num_c > 19) then csr.rdata <= cnt_hi_rd(22); end if;
-        when csr_mhpmcounter23h_c | csr_hpmcounter23h_c => if (hpm_num_c > 20) then csr.rdata <= cnt_hi_rd(23); end if;
-        when csr_mhpmcounter24h_c | csr_hpmcounter24h_c => if (hpm_num_c > 21) then csr.rdata <= cnt_hi_rd(24); end if;
-        when csr_mhpmcounter25h_c | csr_hpmcounter25h_c => if (hpm_num_c > 22) then csr.rdata <= cnt_hi_rd(25); end if;
-        when csr_mhpmcounter26h_c | csr_hpmcounter26h_c => if (hpm_num_c > 23) then csr.rdata <= cnt_hi_rd(26); end if;
-        when csr_mhpmcounter27h_c | csr_hpmcounter27h_c => if (hpm_num_c > 24) then csr.rdata <= cnt_hi_rd(27); end if;
-        when csr_mhpmcounter28h_c | csr_hpmcounter28h_c => if (hpm_num_c > 25) then csr.rdata <= cnt_hi_rd(28); end if;
-        when csr_mhpmcounter29h_c | csr_hpmcounter29h_c => if (hpm_num_c > 26) then csr.rdata <= cnt_hi_rd(29); end if;
-        when csr_mhpmcounter30h_c | csr_hpmcounter30h_c => if (hpm_num_c > 27) then csr.rdata <= cnt_hi_rd(30); end if;
-        when csr_mhpmcounter31h_c | csr_hpmcounter31h_c => if (hpm_num_c > 28) then csr.rdata <= cnt_hi_rd(31); end if;
+      when csr_mepc_c => -- machine exception program counter
+        csr_rdata <= csr.mepc(XLEN-1 downto 1) & '0';
 
-        -- machine information registers --
-        -- --------------------------------------------------------------------
-        when csr_mvendorid_c  => csr.rdata <= VENDOR_ID; -- vendor's JEDEC ID
-        when csr_marchid_c    => csr.rdata(4 downto 0) <= "10011"; -- architecture ID - official RISC-V open-source arch ID
-        when csr_mimpid_c     => csr.rdata <= hw_version_c; -- implementation ID -- NEORV32 hardware version
-        when csr_mhartid_c    => csr.rdata <= HART_ID; -- hardware thread ID
---      when csr_mconfigptr_c => csr.rdata <= (others => '0'); -- machine configuration pointer register, implemented but always zero
+      when csr_mcause_c => -- machine trap cause
+        csr_rdata(31)         <= csr.mcause(5);
+        csr_rdata(4 downto 0) <= csr.mcause(4 downto 0);
 
-        -- debug mode CSRs --
-        -- --------------------------------------------------------------------
-        when csr_dcsr_c      => if (CPU_EXTENSION_RISCV_Sdext) then csr.rdata <= csr.dcsr_rd;   end if; -- debug mode control and status
-        when csr_dpc_c       => if (CPU_EXTENSION_RISCV_Sdext) then csr.rdata <= csr.dpc;       end if; -- debug mode program counter
-        when csr_dscratch0_c => if (CPU_EXTENSION_RISCV_Sdext) then csr.rdata <= csr.dscratch0; end if; -- debug mode scratch register 0
+      when csr_mtval_c => -- machine bad address or instruction
+        csr_rdata <= csr.mtval;
 
-        -- trigger module CSRs --
-        -- --------------------------------------------------------------------
---      when csr_tselect_c  => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= (others => '0'); end if; -- always zero = only 1 trigger available
-        when csr_tdata1_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= csr.tdata1_rd;   end if; -- match control
-        when csr_tdata2_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= csr.tdata2;      end if; -- address-compare
---      when csr_tdata3_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= (others => '0'); end if; -- implemented but always zero
-        when csr_tinfo_c    => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= x"00000004";     end if; -- address-match trigger only
---      when csr_tcontrol_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= (others => '0'); end if; -- implemented but always zero
---      when csr_mcontext_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= (others => '0'); end if; -- implemented but always zero
---      when csr_scontext_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr.rdata <= (others => '0'); end if; -- implemented but always zero
+      when csr_mip_c => -- machine interrupt pending
+        csr_rdata(03)           <= trap_ctrl.irq_pnd(irq_msi_irq_c);
+        csr_rdata(07)           <= trap_ctrl.irq_pnd(irq_mti_irq_c);
+        csr_rdata(11)           <= trap_ctrl.irq_pnd(irq_mei_irq_c);
+        csr_rdata(31 downto 16) <= trap_ctrl.irq_pnd(irq_firq_15_c downto irq_firq_0_c);
 
-        -- NEORV32-specific (RISC-V "custom") read-only CSRs --
-        -- --------------------------------------------------------------------
-        -- machine extended ISA extensions information --
-        when csr_mxisa_c =>
-          -- extended ISA (sub-)extensions --
-          csr.rdata(00) <= '1';                                            -- Zicsr: CSR access (always enabled)
-          csr.rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei: instruction stream sync.
-          csr.rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul: mul/div
-          csr.rdata(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);    -- Zxcfu: custom RISC-V instructions
-          csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicond);   -- Zicond: conditional operations
-          csr.rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx: FPU using x registers
---        csr.rdata(06) <= '0'; -- reserved
-          csr.rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr);   -- Zicntr: base counters
-          csr.rdata(08) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP: physical memory protection (Zspmp)
-          csr.rdata(09) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm);    -- Zihpm: hardware performance monitors
-          csr.rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdext);    -- Sdext: RISC-V (external) debug mode
-          csr.rdata(11) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdtrig);   -- Sdtrig: trigger module
-          -- misc --
-          csr.rdata(20) <= bool_to_ulogic_f(is_simulation_c);              -- is this a simulation?
-          -- tuning options --
-          csr.rdata(30) <= bool_to_ulogic_f(FAST_MUL_EN);                  -- DSP-based multiplication (M extensions only)
-          csr.rdata(31) <= bool_to_ulogic_f(FAST_SHIFT_EN);                -- parallel logic for shifts (barrel shifters)
+      -- machine counter setup --
+      -- --------------------------------------------------------------------
+      when csr_mcountinhibit_c => -- machine counter-inhibit register
+        if (CPU_EXTENSION_RISCV_Zicntr = true) then
+          csr_rdata(0) <= csr.mcountinhibit(0); -- [m]cycle[h]
+          csr_rdata(2) <= csr.mcountinhibit(2); -- [m]instret[h]
+        end if;
+        if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then -- any HPMs implemented?
+          csr_rdata((hpm_num_c+3)-1 downto 3) <= csr.mcountinhibit((hpm_num_c+3)-1 downto 3); -- [m]hpmcounter*[h]
+        end if;
 
-        -- undefined/unavailable --
-        -- --------------------------------------------------------------------
-        when others => NULL; -- not implemented, read as zero
+      -- HPM event select --
+      when csr_mhpmevent3_c  => if (hpm_num_c > 00) then csr_rdata <= hpmevent_rd(03); end if;
+      when csr_mhpmevent4_c  => if (hpm_num_c > 01) then csr_rdata <= hpmevent_rd(04); end if;
+      when csr_mhpmevent5_c  => if (hpm_num_c > 02) then csr_rdata <= hpmevent_rd(05); end if;
+      when csr_mhpmevent6_c  => if (hpm_num_c > 03) then csr_rdata <= hpmevent_rd(06); end if;
+      when csr_mhpmevent7_c  => if (hpm_num_c > 04) then csr_rdata <= hpmevent_rd(07); end if;
+      when csr_mhpmevent8_c  => if (hpm_num_c > 05) then csr_rdata <= hpmevent_rd(08); end if;
+      when csr_mhpmevent9_c  => if (hpm_num_c > 06) then csr_rdata <= hpmevent_rd(09); end if;
+      when csr_mhpmevent10_c => if (hpm_num_c > 07) then csr_rdata <= hpmevent_rd(10); end if;
+      when csr_mhpmevent11_c => if (hpm_num_c > 08) then csr_rdata <= hpmevent_rd(11); end if;
+      when csr_mhpmevent12_c => if (hpm_num_c > 09) then csr_rdata <= hpmevent_rd(12); end if;
+      when csr_mhpmevent13_c => if (hpm_num_c > 10) then csr_rdata <= hpmevent_rd(13); end if;
+      when csr_mhpmevent14_c => if (hpm_num_c > 11) then csr_rdata <= hpmevent_rd(14); end if;
+      when csr_mhpmevent15_c => if (hpm_num_c > 12) then csr_rdata <= hpmevent_rd(15); end if;
+      when csr_mhpmevent16_c => if (hpm_num_c > 13) then csr_rdata <= hpmevent_rd(16); end if;
+      when csr_mhpmevent17_c => if (hpm_num_c > 14) then csr_rdata <= hpmevent_rd(17); end if;
+      when csr_mhpmevent18_c => if (hpm_num_c > 15) then csr_rdata <= hpmevent_rd(18); end if;
+      when csr_mhpmevent19_c => if (hpm_num_c > 16) then csr_rdata <= hpmevent_rd(19); end if;
+      when csr_mhpmevent20_c => if (hpm_num_c > 17) then csr_rdata <= hpmevent_rd(20); end if;
+      when csr_mhpmevent21_c => if (hpm_num_c > 18) then csr_rdata <= hpmevent_rd(21); end if;
+      when csr_mhpmevent22_c => if (hpm_num_c > 19) then csr_rdata <= hpmevent_rd(22); end if;
+      when csr_mhpmevent23_c => if (hpm_num_c > 20) then csr_rdata <= hpmevent_rd(23); end if;
+      when csr_mhpmevent24_c => if (hpm_num_c > 21) then csr_rdata <= hpmevent_rd(24); end if;
+      when csr_mhpmevent25_c => if (hpm_num_c > 22) then csr_rdata <= hpmevent_rd(25); end if;
+      when csr_mhpmevent26_c => if (hpm_num_c > 23) then csr_rdata <= hpmevent_rd(26); end if;
+      when csr_mhpmevent27_c => if (hpm_num_c > 24) then csr_rdata <= hpmevent_rd(27); end if;
+      when csr_mhpmevent28_c => if (hpm_num_c > 25) then csr_rdata <= hpmevent_rd(28); end if;
+      when csr_mhpmevent29_c => if (hpm_num_c > 26) then csr_rdata <= hpmevent_rd(29); end if;
+      when csr_mhpmevent30_c => if (hpm_num_c > 27) then csr_rdata <= hpmevent_rd(30); end if;
+      when csr_mhpmevent31_c => if (hpm_num_c > 28) then csr_rdata <= hpmevent_rd(31); end if;
 
-      end case;
-    end if;
+      -- counters and timers --
+      -- --------------------------------------------------------------------
+      -- low word --
+      when csr_mcycle_c        | csr_cycle_c        => if (CPU_EXTENSION_RISCV_Zicntr) then csr_rdata <= cnt_lo_rd(00); end if;
+      when csr_minstret_c      | csr_instret_c      => if (CPU_EXTENSION_RISCV_Zicntr) then csr_rdata <= cnt_lo_rd(02); end if;
+      when csr_mhpmcounter3_c  | csr_hpmcounter3_c  => if (hpm_num_c > 00) then csr_rdata <= cnt_lo_rd(03); end if;
+      when csr_mhpmcounter4_c  | csr_hpmcounter4_c  => if (hpm_num_c > 01) then csr_rdata <= cnt_lo_rd(04); end if;
+      when csr_mhpmcounter5_c  | csr_hpmcounter5_c  => if (hpm_num_c > 02) then csr_rdata <= cnt_lo_rd(05); end if;
+      when csr_mhpmcounter6_c  | csr_hpmcounter6_c  => if (hpm_num_c > 03) then csr_rdata <= cnt_lo_rd(06); end if;
+      when csr_mhpmcounter7_c  | csr_hpmcounter7_c  => if (hpm_num_c > 04) then csr_rdata <= cnt_lo_rd(07); end if;
+      when csr_mhpmcounter8_c  | csr_hpmcounter8_c  => if (hpm_num_c > 05) then csr_rdata <= cnt_lo_rd(08); end if;
+      when csr_mhpmcounter9_c  | csr_hpmcounter9_c  => if (hpm_num_c > 06) then csr_rdata <= cnt_lo_rd(09); end if;
+      when csr_mhpmcounter10_c | csr_hpmcounter10_c => if (hpm_num_c > 07) then csr_rdata <= cnt_lo_rd(10); end if;
+      when csr_mhpmcounter11_c | csr_hpmcounter11_c => if (hpm_num_c > 08) then csr_rdata <= cnt_lo_rd(11); end if;
+      when csr_mhpmcounter12_c | csr_hpmcounter12_c => if (hpm_num_c > 09) then csr_rdata <= cnt_lo_rd(12); end if;
+      when csr_mhpmcounter13_c | csr_hpmcounter13_c => if (hpm_num_c > 10) then csr_rdata <= cnt_lo_rd(13); end if;
+      when csr_mhpmcounter14_c | csr_hpmcounter14_c => if (hpm_num_c > 11) then csr_rdata <= cnt_lo_rd(14); end if;
+      when csr_mhpmcounter15_c | csr_hpmcounter15_c => if (hpm_num_c > 12) then csr_rdata <= cnt_lo_rd(15); end if;
+      when csr_mhpmcounter16_c | csr_hpmcounter16_c => if (hpm_num_c > 13) then csr_rdata <= cnt_lo_rd(16); end if;
+      when csr_mhpmcounter17_c | csr_hpmcounter17_c => if (hpm_num_c > 14) then csr_rdata <= cnt_lo_rd(17); end if;
+      when csr_mhpmcounter18_c | csr_hpmcounter18_c => if (hpm_num_c > 15) then csr_rdata <= cnt_lo_rd(18); end if;
+      when csr_mhpmcounter19_c | csr_hpmcounter19_c => if (hpm_num_c > 16) then csr_rdata <= cnt_lo_rd(19); end if;
+      when csr_mhpmcounter20_c | csr_hpmcounter20_c => if (hpm_num_c > 17) then csr_rdata <= cnt_lo_rd(20); end if;
+      when csr_mhpmcounter21_c | csr_hpmcounter21_c => if (hpm_num_c > 18) then csr_rdata <= cnt_lo_rd(21); end if;
+      when csr_mhpmcounter22_c | csr_hpmcounter22_c => if (hpm_num_c > 19) then csr_rdata <= cnt_lo_rd(22); end if;
+      when csr_mhpmcounter23_c | csr_hpmcounter23_c => if (hpm_num_c > 20) then csr_rdata <= cnt_lo_rd(23); end if;
+      when csr_mhpmcounter24_c | csr_hpmcounter24_c => if (hpm_num_c > 21) then csr_rdata <= cnt_lo_rd(24); end if;
+      when csr_mhpmcounter25_c | csr_hpmcounter25_c => if (hpm_num_c > 22) then csr_rdata <= cnt_lo_rd(25); end if;
+      when csr_mhpmcounter26_c | csr_hpmcounter26_c => if (hpm_num_c > 23) then csr_rdata <= cnt_lo_rd(26); end if;
+      when csr_mhpmcounter27_c | csr_hpmcounter27_c => if (hpm_num_c > 24) then csr_rdata <= cnt_lo_rd(27); end if;
+      when csr_mhpmcounter28_c | csr_hpmcounter28_c => if (hpm_num_c > 25) then csr_rdata <= cnt_lo_rd(28); end if;
+      when csr_mhpmcounter29_c | csr_hpmcounter29_c => if (hpm_num_c > 26) then csr_rdata <= cnt_lo_rd(29); end if;
+      when csr_mhpmcounter30_c | csr_hpmcounter30_c => if (hpm_num_c > 27) then csr_rdata <= cnt_lo_rd(30); end if;
+      when csr_mhpmcounter31_c | csr_hpmcounter31_c => if (hpm_num_c > 28) then csr_rdata <= cnt_lo_rd(31); end if;
+
+      -- high word --
+      when csr_mcycleh_c        | csr_cycleh_c        => if (CPU_EXTENSION_RISCV_Zicntr) then csr_rdata <= cnt_hi_rd(00); end if;
+      when csr_minstreth_c      | csr_instreth_c      => if (CPU_EXTENSION_RISCV_Zicntr) then csr_rdata <= cnt_hi_rd(02); end if;
+      when csr_mhpmcounter3h_c  | csr_hpmcounter3h_c  => if (hpm_num_c > 00) then csr_rdata <= cnt_hi_rd(03); end if;
+      when csr_mhpmcounter4h_c  | csr_hpmcounter4h_c  => if (hpm_num_c > 01) then csr_rdata <= cnt_hi_rd(04); end if;
+      when csr_mhpmcounter5h_c  | csr_hpmcounter5h_c  => if (hpm_num_c > 02) then csr_rdata <= cnt_hi_rd(05); end if;
+      when csr_mhpmcounter6h_c  | csr_hpmcounter6h_c  => if (hpm_num_c > 03) then csr_rdata <= cnt_hi_rd(06); end if;
+      when csr_mhpmcounter7h_c  | csr_hpmcounter7h_c  => if (hpm_num_c > 04) then csr_rdata <= cnt_hi_rd(07); end if;
+      when csr_mhpmcounter8h_c  | csr_hpmcounter8h_c  => if (hpm_num_c > 05) then csr_rdata <= cnt_hi_rd(08); end if;
+      when csr_mhpmcounter9h_c  | csr_hpmcounter9h_c  => if (hpm_num_c > 06) then csr_rdata <= cnt_hi_rd(09); end if;
+      when csr_mhpmcounter10h_c | csr_hpmcounter10h_c => if (hpm_num_c > 07) then csr_rdata <= cnt_hi_rd(10); end if;
+      when csr_mhpmcounter11h_c | csr_hpmcounter11h_c => if (hpm_num_c > 08) then csr_rdata <= cnt_hi_rd(11); end if;
+      when csr_mhpmcounter12h_c | csr_hpmcounter12h_c => if (hpm_num_c > 09) then csr_rdata <= cnt_hi_rd(12); end if;
+      when csr_mhpmcounter13h_c | csr_hpmcounter13h_c => if (hpm_num_c > 10) then csr_rdata <= cnt_hi_rd(13); end if;
+      when csr_mhpmcounter14h_c | csr_hpmcounter14h_c => if (hpm_num_c > 11) then csr_rdata <= cnt_hi_rd(14); end if;
+      when csr_mhpmcounter15h_c | csr_hpmcounter15h_c => if (hpm_num_c > 12) then csr_rdata <= cnt_hi_rd(15); end if;
+      when csr_mhpmcounter16h_c | csr_hpmcounter16h_c => if (hpm_num_c > 13) then csr_rdata <= cnt_hi_rd(16); end if;
+      when csr_mhpmcounter17h_c | csr_hpmcounter17h_c => if (hpm_num_c > 14) then csr_rdata <= cnt_hi_rd(17); end if;
+      when csr_mhpmcounter18h_c | csr_hpmcounter18h_c => if (hpm_num_c > 15) then csr_rdata <= cnt_hi_rd(18); end if;
+      when csr_mhpmcounter19h_c | csr_hpmcounter19h_c => if (hpm_num_c > 16) then csr_rdata <= cnt_hi_rd(19); end if;
+      when csr_mhpmcounter20h_c | csr_hpmcounter20h_c => if (hpm_num_c > 17) then csr_rdata <= cnt_hi_rd(20); end if;
+      when csr_mhpmcounter21h_c | csr_hpmcounter21h_c => if (hpm_num_c > 18) then csr_rdata <= cnt_hi_rd(21); end if;
+      when csr_mhpmcounter22h_c | csr_hpmcounter22h_c => if (hpm_num_c > 19) then csr_rdata <= cnt_hi_rd(22); end if;
+      when csr_mhpmcounter23h_c | csr_hpmcounter23h_c => if (hpm_num_c > 20) then csr_rdata <= cnt_hi_rd(23); end if;
+      when csr_mhpmcounter24h_c | csr_hpmcounter24h_c => if (hpm_num_c > 21) then csr_rdata <= cnt_hi_rd(24); end if;
+      when csr_mhpmcounter25h_c | csr_hpmcounter25h_c => if (hpm_num_c > 22) then csr_rdata <= cnt_hi_rd(25); end if;
+      when csr_mhpmcounter26h_c | csr_hpmcounter26h_c => if (hpm_num_c > 23) then csr_rdata <= cnt_hi_rd(26); end if;
+      when csr_mhpmcounter27h_c | csr_hpmcounter27h_c => if (hpm_num_c > 24) then csr_rdata <= cnt_hi_rd(27); end if;
+      when csr_mhpmcounter28h_c | csr_hpmcounter28h_c => if (hpm_num_c > 25) then csr_rdata <= cnt_hi_rd(28); end if;
+      when csr_mhpmcounter29h_c | csr_hpmcounter29h_c => if (hpm_num_c > 26) then csr_rdata <= cnt_hi_rd(29); end if;
+      when csr_mhpmcounter30h_c | csr_hpmcounter30h_c => if (hpm_num_c > 27) then csr_rdata <= cnt_hi_rd(30); end if;
+      when csr_mhpmcounter31h_c | csr_hpmcounter31h_c => if (hpm_num_c > 28) then csr_rdata <= cnt_hi_rd(31); end if;
+
+      -- machine information registers --
+      -- --------------------------------------------------------------------
+      when csr_mvendorid_c  => csr_rdata <= VENDOR_ID; -- vendor's JEDEC ID
+      when csr_marchid_c    => csr_rdata(4 downto 0) <= "10011"; -- architecture ID - official RISC-V open-source arch ID
+      when csr_mimpid_c     => csr_rdata <= hw_version_c; -- implementation ID -- NEORV32 hardware version
+      when csr_mhartid_c    => csr_rdata <= HART_ID; -- hardware thread ID
+--    when csr_mconfigptr_c => csr_rdata <= (others => '0'); -- machine configuration pointer register, implemented but always zero
+
+      -- debug mode CSRs --
+      -- --------------------------------------------------------------------
+      when csr_dcsr_c      => if (CPU_EXTENSION_RISCV_Sdext) then csr_rdata <= csr.dcsr_rd;   end if; -- debug mode control and status
+      when csr_dpc_c       => if (CPU_EXTENSION_RISCV_Sdext) then csr_rdata <= csr.dpc;       end if; -- debug mode program counter
+      when csr_dscratch0_c => if (CPU_EXTENSION_RISCV_Sdext) then csr_rdata <= csr.dscratch0; end if; -- debug mode scratch register 0
+
+      -- trigger module CSRs --
+      -- --------------------------------------------------------------------
+--    when csr_tselect_c  => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- always zero = only 1 trigger available
+      when csr_tdata1_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= csr.tdata1_rd;   end if; -- match control
+      when csr_tdata2_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= csr.tdata2;      end if; -- address-compare
+--    when csr_tdata3_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- implemented but always zero
+      when csr_tinfo_c    => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= x"00000004";     end if; -- address-match trigger only
+--    when csr_tcontrol_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- implemented but always zero
+--    when csr_mcontext_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- implemented but always zero
+--    when csr_scontext_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- implemented but always zero
+
+      -- NEORV32-specific (RISC-V "custom") read-only CSRs --
+      -- --------------------------------------------------------------------
+      -- machine extended ISA extensions information --
+      when csr_mxisa_c =>
+        -- extended ISA (sub-)extensions --
+        csr_rdata(00) <= '1';                                            -- Zicsr: CSR access (always enabled)
+        csr_rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei: instruction stream sync.
+        csr_rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul: mul/div
+        csr_rdata(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);    -- Zxcfu: custom RISC-V instructions
+        csr_rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicond);   -- Zicond: conditional operations
+        csr_rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx: FPU using x registers
+--      csr_rdata(06) <= '0'; -- reserved
+        csr_rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr);   -- Zicntr: base counters
+        csr_rdata(08) <= bool_to_ulogic_f(PMP_EN);                       -- PMP: physical memory protection (Smpmp)
+        csr_rdata(09) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm);    -- Zihpm: hardware performance monitors
+        csr_rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdext);    -- Sdext: RISC-V (external) debug mode
+        csr_rdata(11) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdtrig);   -- Sdtrig: trigger module
+        -- misc --
+        csr_rdata(20) <= bool_to_ulogic_f(is_simulation_c);              -- is this a simulation?
+        -- tuning options --
+        csr_rdata(30) <= bool_to_ulogic_f(FAST_MUL_EN);                  -- DSP-based multiplication (M extensions only)
+        csr_rdata(31) <= bool_to_ulogic_f(FAST_SHIFT_EN);                -- parallel logic for shifts (barrel shifters)
+
+      -- undefined/unavailable --
+      -- --------------------------------------------------------------------
+      when others => NULL; -- not implemented, read as zero
+
+    end case;
   end process csr_read_access;
 
-  -- AND-gate CSR read address: csr.rdata is zero if csr.re is not set --
-  -- [WARNING] M-mode (9:8 = 11) and U-mode (9:8 = 00) CSRs only!
-  csr.raddr <= (csr.addr(11 downto 10) & csr.addr(8) & csr.addr(8) & csr.addr(7 downto 0)) when (csr.re = '1') else (others => '0');
+
+  -- CSR read-data gate --
+  csr_read_reg: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      csr.re    <= '0';
+      csr.rdata <= (others => '0');
+    elsif rising_edge(clk_i) then
+      csr.re <= csr.re_nxt;
+      if (csr.re = '1') then
+        csr.rdata <= csr_rdata or csr_rdata_pmp;
+      else
+        csr.rdata <= (others => '0');
+      end if;
+    end if;
+  end process csr_read_reg;
 
   -- CSR read data output --
   csr_rdata_o <= csr.rdata;
@@ -2481,6 +2250,57 @@ begin
   end process cnt_connect;
 
 
+  -- Hardware Performance Monitors (HPM) - Counter Event Configuration CSRs -----------------
+  -- -------------------------------------------------------------------------------------------
+  hpm_gen_enable:
+  if (CPU_EXTENSION_RISCV_Zihpm = true) generate
+
+    -- write enable decoder --
+    hpmevent_we: process(csr)
+    begin
+      hpmevent.we <= (others => '0');
+      if (csr.addr(11 downto 5) = csr_cnt_setup_c) and (csr.we = '1') then
+        hpmevent.we(to_integer(unsigned(csr.addr(4 downto 0)))) <= '1';
+      end if;
+    end process hpmevent_we;
+
+    -- HPM event registers --
+    hpmevent_reg_gen:
+    for i in 0 to hpm_num_c-1 generate
+      hpmevent_reg: process(rstn_i, clk_i)
+      begin
+        if (rstn_i = '0') then
+          hpmevent.cfg(i) <= (others => '0');
+        elsif rising_edge(clk_i) then
+          if (hpmevent.we(3+i) = '1') then
+            hpmevent.cfg(i) <= csr.wdata(hpmcnt_event_size_c-1 downto 0);
+          end if;
+        end if;
+      end process hpmevent_reg;
+    end generate;
+
+    -- HPM event CSR read-back --
+    hpm_event_connect: process(hpmevent)
+    begin
+      hpmevent_rd <= (others => (others => '0'));
+      for i in 3 to (hpm_num_c+3)-1 loop
+        hpmevent_rd(i)(hpmcnt_event_size_c-1 downto 0) <= hpmevent.cfg(i-3);
+        hpmevent_rd(i)(hpmcnt_event_tm_c)              <= '0'; -- time, unused/reserved
+      end loop;
+    end process hpm_event_connect;
+
+  end generate;
+
+
+  -- no HPMs implemented --
+  hpm_gen_disable:
+  if (CPU_EXTENSION_RISCV_Zihpm = false) generate
+    hpmevent.we  <= (others => '0');
+    hpmevent.cfg <= (others => (others => '0'));
+    hpmevent_rd  <= (others => (others => '0'));
+  end generate;
+
+
   -- Counter Increment Control (Trigger Events) ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
   counter_event: process(clk_i)
@@ -2509,8 +2329,8 @@ begin
   cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)   and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
   cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                                else '0'; -- multi-cycle alu-operation wait cycle
 
-  cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl.bus_req_rd = '1')                                                       else '0'; -- load operation
-  cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl.bus_req_wr = '1')                                                       else '0'; -- store operation
+  cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl.lsu_req_rd = '1')                                                       else '0'; -- load operation
+  cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl.lsu_req_wr = '1')                                                       else '0'; -- store operation
   cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = MEM_WAIT) and (execute_engine.state_prev2 = MEM_WAIT) else '0'; -- load/store memory wait cycle
 
   cnt_event(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.ir(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
