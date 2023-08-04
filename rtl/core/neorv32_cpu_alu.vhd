@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Arithmetical/Logical Unit >>                                                     #
+-- # << NEORV32 CPU - Arithmetic/Logic Unit >>                                                     #
 -- # ********************************************************************************************* #
 -- # Main data/address ALU and ALU co-processors (= multi-cycle function units).                   #
 -- # ********************************************************************************************* #
@@ -72,7 +72,6 @@ entity neorv32_cpu_alu is
     add_o       : out std_ulogic_vector(XLEN-1 downto 0); -- address computation result
     fpu_flags_o : out std_ulogic_vector(4 downto 0); -- FPU exception flags
     -- status --
-    exc_o       : out std_ulogic; -- ALU exception
     cp_done_o   : out std_ulogic  -- co-processor operation done?
   );
 end neorv32_cpu_alu;
@@ -91,15 +90,6 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   -- intermediate results --
   signal addsub_res : std_ulogic_vector(XLEN downto 0);
   signal cp_res     : std_ulogic_vector(XLEN-1 downto 0);
-
-  -- co-processor monitor --
-  type cp_monitor_t is record
-    run : std_ulogic;
-    fin : std_ulogic;
-    exc : std_ulogic;
-    cnt : std_ulogic_vector(cp_timeout_c downto 0); -- timeout counter
-  end record;
-  signal cp_monitor : cp_monitor_t;
 
   -- co-processor interface --
   type cp_data_t  is array (0 to 5) of std_ulogic_vector(XLEN-1 downto 0);
@@ -158,41 +148,9 @@ begin
   -- ALU Co-Processors
   -- **************************************************************************************************************************
 
-  -- Co-Processor Control -------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  coprocessor_monitor: process(rstn_i, clk_i)
-  begin
-    -- make sure that no co-processor iterates forever stalling the entire CPU;
-    -- an illegal instruction exception is raised if a co-processor operation
-    -- takes longer than 2^cp_timeout_c cycles (package constant)
-    if (rstn_i = '0') then
-      cp_monitor.run <= '0';
-      cp_monitor.fin <= '0';
-      cp_monitor.exc <= '0';
-      cp_monitor.cnt <= (others => '0');
-    elsif rising_edge(clk_i) then
-      cp_monitor.exc <= cp_monitor.run and cp_monitor.cnt(cp_monitor.cnt'left) and (not cp_monitor.fin);
-      cp_monitor.fin <= or_reduce_f(cp_valid);
-      if (cp_monitor.run = '0') then -- co-processors are idle
-        cp_monitor.cnt <= (others => '0');
-        if (or_reduce_f(ctrl_i.alu_cp_trig) = '1') then -- start
-          cp_monitor.run <= '1';
-        end if;
-      else -- co-processor operation in progress
-        cp_monitor.cnt <= std_ulogic_vector(unsigned(cp_monitor.cnt) + 1);
-        if (cp_monitor.fin = '1') or (ctrl_i.cpu_trap = '1') then -- done or abort
-          cp_monitor.run <= '0';
-        end if;
-      end if;
-    end if;
-  end process coprocessor_monitor;
-
-  -- ALU processing exception --
-  exc_o <= cp_monitor.exc;
-
   -- co-processor select / start trigger --
   -- > "cp_start" is high for one cycle to trigger operation of the according co-processor
-  cp_start(5 downto 0) <= ctrl_i.alu_cp_trig;
+  cp_start <= ctrl_i.alu_cp_trig;
 
   -- (iterative) co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
