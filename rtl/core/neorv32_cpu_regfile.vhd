@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU General Purpose Data Register File >>                                        #
+-- # << NEORV32 CPU - General Purpose Data Register File >>                                        #
 -- # ********************************************************************************************* #
 -- # Data register file. 32 entries (= 1024 bit) for RV32I ISA (default), 16 entries (= 512 bit)   #
 -- # for RV32E ISA (when RISC-V "E" extension is enabled).                                         #
@@ -108,7 +108,7 @@ begin
   end process wb_select;
 
 
-  -- Register File Access -------------------------------------------------------------------
+  -- Access Logic ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- access addresses --
   opa_addr <= "00000" when (ctrl_i.rf_zero_we = '1') else -- force rd = zero
