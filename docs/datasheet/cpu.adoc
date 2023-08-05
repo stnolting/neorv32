@@ -676,7 +676,7 @@ will raise an illegal instruction exception if <<_mstatus>>`.TW` is set.
 
 ==== `Zihpm` ISA Extension
 
-In additions to the base counters the NEORV32 CPU provides up to 29 hardware performance monitors (HPM 3..31),
+In additions to the base counters the NEORV32 CPU provides up to 13 hardware performance monitors (HPM 3..15),
 which can be used to benchmark applications. Each HPM consists of an N-bit wide counter (split in a high-word 32-bit
 CSR and a low-word 32-bit CSR), where N is defined via the top's
 `HPM_CNT_WIDTH` generic and a corresponding event configuration CSR. The event configuration
