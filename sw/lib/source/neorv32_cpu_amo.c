@@ -261,7 +261,7 @@ uint32_t neorv32_cpu_amomaxuw(uint32_t addr, uint32_t wdata) {
  * @note This function requires the CPU A ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
- * @param[in] wdata Data word to be atomically MAX-ed with original data at address (signed 32-bit).
+ * @param[in] wdata Data word to be atomically MIN-ed with original data at address (signed 32-bit).
  * @return Pre-operation data loaded from address (signed 32-bit)
  **************************************************************************/
 int32_t neorv32_cpu_amominw(uint32_t addr, int32_t wdata) {
@@ -290,7 +290,7 @@ int32_t neorv32_cpu_amominw(uint32_t addr, int32_t wdata) {
  * @note This function requires the CPU A ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
- * @param[in] wdata Data word to be atomically MAX-ed with original data at address (unsigned 32-bit).
+ * @param[in] wdata Data word to be atomically MIN-ed with original data at address (unsigned 32-bit).
  * @return Pre-operation data loaded from address (unsigned 32-bit)
  **************************************************************************/
 uint32_t neorv32_cpu_amominuw(uint32_t addr, uint32_t wdata) {

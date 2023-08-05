@@ -340,7 +340,7 @@ void neorv32_rte_print_hw_config(void) {
     }
   }
 
-  // Z* CPU extensions
+  // CPU sub-extensions
   tmp = neorv32_cpu_csr_read(CSR_MXISA);
   if (tmp & (1<<CSR_MXISA_ZICSR)) {
     neorv32_uart0_printf("Zicsr ");
@@ -371,6 +371,9 @@ void neorv32_rte_print_hw_config(void) {
   }
   if (tmp & (1<<CSR_MXISA_SDTRIG)) {
     neorv32_uart0_printf("Sdtrig ");
+  }
+  if (tmp & (1<<CSR_MXISA_PMP)) {
+    neorv32_uart0_printf("Smpmp ");
   }
 
   // CPU tuning options
@@ -423,6 +426,15 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("none\n");
   }
 
+  // internal DMEM
+  neorv32_uart0_printf("Internal DMEM:       ");
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) {
+    neorv32_uart0_printf("%u bytes\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_DMEM]) & 0xFFFFFFFCUL);
+  }
+  else {
+    neorv32_uart0_printf("none\n");
+  }
+
   // internal i-cache
   neorv32_uart0_printf("Internal i-cache:    ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_ICACHE)) {
@@ -446,15 +458,6 @@ void neorv32_rte_print_hw_config(void) {
     else {
       neorv32_uart0_printf("\n");
     }
-  }
-  else {
-    neorv32_uart0_printf("none\n");
-  }
-
-  // internal DMEM
-  neorv32_uart0_printf("Internal DMEM:       ");
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) {
-    neorv32_uart0_printf("%u bytes\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_DMEM]) & 0xFFFFFFFCUL);
   }
   else {
     neorv32_uart0_printf("none\n");

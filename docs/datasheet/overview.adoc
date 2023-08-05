@@ -192,7 +192,8 @@ All core VHDL files from the list below have to be assigned to a new design libr
 │   ├-neorv32_cpu_cp_shifter.vhd   - Bit-shift co-processor (base ISA)
 │   ├-neorv32_cpu_cp_muldiv.vhd    - Mul/Div co-processor (M ext.)
 │ ┌-neorv32_cpu_alu.vhd            - Arithmetic/logic unit
-│ ├-neorv32_cpu_bus.vhd            - Load/store unit + physical memory protection
+│ ├-neorv32_cpu_pmp.vhd            - Physical memory protection unit
+│ ├-neorv32_cpu_lsu.vhd            - Load/store unit
 │ │ ┌-neorv32_cpu_decompressor.vhd - Compressed instructions decoder
 │ ├-neorv32_cpu_control.vhd        - CPU control, exception system and CSRs
 │ ├-neorv32_cpu_regfile.vhd        - Data register file

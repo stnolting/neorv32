@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - Arithmetical/Logical Unit >>                                                     #
+-- # << NEORV32 CPU - Arithmetic/Logic Unit >>                                                     #
 -- # ********************************************************************************************* #
 -- # Main data/address ALU and ALU co-processors (= multi-cycle function units).                   #
 -- # ********************************************************************************************* #
@@ -59,6 +59,11 @@ entity neorv32_cpu_alu is
     clk_i       : in  std_ulogic; -- global clock, rising edge
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  ctrl_bus_t; -- main control bus
+    -- CSR interface --
+    csr_we_i    : in  std_ulogic; -- global write enable
+    csr_addr_i  : in  std_ulogic_vector(11 downto 0); -- address
+    csr_wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
+    csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- data input --
     rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
@@ -70,9 +75,7 @@ entity neorv32_cpu_alu is
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
     res_o       : out std_ulogic_vector(XLEN-1 downto 0); -- ALU result
     add_o       : out std_ulogic_vector(XLEN-1 downto 0); -- address computation result
-    fpu_flags_o : out std_ulogic_vector(4 downto 0); -- FPU exception flags
     -- status --
-    exc_o       : out std_ulogic; -- ALU exception
     cp_done_o   : out std_ulogic  -- co-processor operation done?
   );
 end neorv32_cpu_alu;
@@ -91,15 +94,6 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   -- intermediate results --
   signal addsub_res : std_ulogic_vector(XLEN downto 0);
   signal cp_res     : std_ulogic_vector(XLEN-1 downto 0);
-
-  -- co-processor monitor --
-  type cp_monitor_t is record
-    run : std_ulogic;
-    fin : std_ulogic;
-    exc : std_ulogic;
-    cnt : std_ulogic_vector(cp_timeout_c downto 0); -- timeout counter
-  end record;
-  signal cp_monitor : cp_monitor_t;
 
   -- co-processor interface --
   type cp_data_t  is array (0 to 5) of std_ulogic_vector(XLEN-1 downto 0);
@@ -158,41 +152,9 @@ begin
   -- ALU Co-Processors
   -- **************************************************************************************************************************
 
-  -- Co-Processor Control -------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  coprocessor_monitor: process(rstn_i, clk_i)
-  begin
-    -- make sure that no co-processor iterates forever stalling the entire CPU;
-    -- an illegal instruction exception is raised if a co-processor operation
-    -- takes longer than 2^cp_timeout_c cycles (package constant)
-    if (rstn_i = '0') then
-      cp_monitor.run <= '0';
-      cp_monitor.fin <= '0';
-      cp_monitor.exc <= '0';
-      cp_monitor.cnt <= (others => '0');
-    elsif rising_edge(clk_i) then
-      cp_monitor.exc <= cp_monitor.run and cp_monitor.cnt(cp_monitor.cnt'left) and (not cp_monitor.fin);
-      cp_monitor.fin <= or_reduce_f(cp_valid);
-      if (cp_monitor.run = '0') then -- co-processors are idle
-        cp_monitor.cnt <= (others => '0');
-        if (or_reduce_f(ctrl_i.alu_cp_trig) = '1') then -- start
-          cp_monitor.run <= '1';
-        end if;
-      else -- co-processor operation in progress
-        cp_monitor.cnt <= std_ulogic_vector(unsigned(cp_monitor.cnt) + 1);
-        if (cp_monitor.fin = '1') or (ctrl_i.cpu_trap = '1') then -- done or abort
-          cp_monitor.run <= '0';
-        end if;
-      end if;
-    end if;
-  end process coprocessor_monitor;
-
-  -- ALU processing exception --
-  exc_o <= cp_monitor.exc;
-
   -- co-processor select / start trigger --
   -- > "cp_start" is high for one cycle to trigger operation of the according co-processor
-  cp_start(5 downto 0) <= ctrl_i.alu_cp_trig;
+  cp_start <= ctrl_i.alu_cp_trig;
 
   -- (iterative) co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
@@ -294,26 +256,30 @@ begin
     neorv32_cpu_cp_fpu_inst: entity neorv32.neorv32_cpu_cp_fpu
     port map (
       -- global control --
-      clk_i    => clk_i,        -- global clock, rising edge
-      rstn_i   => rstn_i,       -- global reset, low-active, async
-      ctrl_i   => ctrl_i,       -- main control bus
-      start_i  => cp_start(3),  -- trigger operation
+      clk_i       => clk_i,        -- global clock, rising edge
+      rstn_i      => rstn_i,       -- global reset, low-active, async
+      ctrl_i      => ctrl_i,       -- main control bus
+      start_i     => cp_start(3),  -- trigger operation
+      -- CSR interface --
+      csr_we_i    => csr_we_i,     -- global write enable
+      csr_addr_i  => csr_addr_i,   -- address
+      csr_wdata_i => csr_wdata_i,  -- write data
+      csr_rdata_o => csr_rdata_o,  -- read data
       -- data input --
-      cmp_i    => cmp,          -- comparator status
-      rs1_i    => rs1_i,        -- rf source 1
-      rs2_i    => rs2_i,        -- rf source 2
-      rs3_i    => rs3_i,        -- rf source 3
+      cmp_i       => cmp,          -- comparator status
+      rs1_i       => rs1_i,        -- rf source 1
+      rs2_i       => rs2_i,        -- rf source 2
+      rs3_i       => rs3_i,        -- rf source 3
       -- result and status --
-      res_o    => cp_result(3), -- operation result
-      fflags_o => fpu_flags_o,  -- exception flags
-      valid_o  => cp_valid(3)   -- data output valid
+      res_o       => cp_result(3), -- operation result
+      valid_o     => cp_valid(3)   -- data output valid
     );
   end generate;
 
   neorv32_cpu_cp_fpu_inst_false:
   if (CPU_EXTENSION_RISCV_Zfinx = false) generate
+    csr_rdata_o  <= (others => '0');
     cp_result(3) <= (others => '0');
-    fpu_flags_o  <= (others => '0');
     cp_valid(3)  <= '0';
   end generate;
 

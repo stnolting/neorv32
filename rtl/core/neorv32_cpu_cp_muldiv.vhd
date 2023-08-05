@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Co-Processor: Integer Multiplier/Divider Unit (RISC-V "M" Extension) >>      #
+-- # << NEORV32 CPU - Co-Processor: Integer Multiplier/Divider Unit (RISC-V "M" Extension) >>      #
 -- # ********************************************************************************************* #
 -- # Multiplier core (signed/unsigned) uses serial add-and-shift algorithm. Multiplications can be #
 -- # mapped to DSP blocks (faster!) when FAST_MUL_EN = true. Divider core (unsigned-only; pre and  #

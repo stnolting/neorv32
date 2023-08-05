@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Co-Processor: Custom (Instructions) Functions Unit >>                        #
+-- # << NEORV32 CPU - Co-Processor: Custom (Instructions) Functions Unit >>                        #
 -- # ********************************************************************************************* #
 -- # For user-defined custom RISC-V instructions (R3-type, R4-type and R5-type formats).           #
 -- # See the CPU's documentation for more information.                                             #
