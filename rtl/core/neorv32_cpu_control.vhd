@@ -1867,8 +1867,8 @@ begin
 
       -- no hardware performance monitors --
       if (CPU_EXTENSION_RISCV_Zihpm = false) then
-        csr.mcounteren((hpm_num_c+2)-1 downto 3)    <= (others => '0');
-        csr.mcountinhibit((hpm_num_c+2)-1 downto 3) <= (others => '0');
+        csr.mcounteren((hpm_num_c+3)-1 downto 3)    <= (others => '0');
+        csr.mcountinhibit((hpm_num_c+3)-1 downto 3) <= (others => '0');
       end if;
 
       -- no user mode --
@@ -1951,7 +1951,7 @@ begin
           csr_rdata(0) <= csr.mcounteren(0); -- cycle[h]
           csr_rdata(2) <= csr.mcounteren(2); -- instret[h]
           if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then
-            for i in 3 to (hpm_num_c+2)-1 loop
+            for i in 3 to (hpm_num_c+3)-1 loop
               csr_rdata(i) <= csr.mcounteren(i); -- hpmcounter*[h]
             end loop;
           end if;
@@ -1991,7 +1991,7 @@ begin
           csr_rdata(2) <= csr.mcountinhibit(2); -- [m]instret[h]
         end if;
         if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then
-          for i in 3 to (hpm_num_c+2)-1 loop
+          for i in 3 to (hpm_num_c+3)-1 loop
             csr_rdata(i) <= csr.mcountinhibit(i); -- [m]hpmcounter*[h]
           end loop;
         end if;
