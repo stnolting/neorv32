@@ -349,7 +349,6 @@ package neorv32_package is
   constant csr_menvcfg_c        : std_ulogic_vector(11 downto 0) := x"30a";
   constant csr_menvcfgh_c       : std_ulogic_vector(11 downto 0) := x"31a";
   -- machine counter setup --
-  constant csr_cnt_setup_c      : std_ulogic_vector(06 downto 0) := x"3" & "001"; -- counter setup
   constant csr_mcountinhibit_c  : std_ulogic_vector(11 downto 0) := x"320";
   constant csr_mhpmevent3_c     : std_ulogic_vector(11 downto 0) := x"323";
   constant csr_mhpmevent4_c     : std_ulogic_vector(11 downto 0) := x"324";
@@ -364,22 +363,6 @@ package neorv32_package is
   constant csr_mhpmevent13_c    : std_ulogic_vector(11 downto 0) := x"32d";
   constant csr_mhpmevent14_c    : std_ulogic_vector(11 downto 0) := x"32e";
   constant csr_mhpmevent15_c    : std_ulogic_vector(11 downto 0) := x"32f";
-  constant csr_mhpmevent16_c    : std_ulogic_vector(11 downto 0) := x"330";
-  constant csr_mhpmevent17_c    : std_ulogic_vector(11 downto 0) := x"331";
-  constant csr_mhpmevent18_c    : std_ulogic_vector(11 downto 0) := x"332";
-  constant csr_mhpmevent19_c    : std_ulogic_vector(11 downto 0) := x"333";
-  constant csr_mhpmevent20_c    : std_ulogic_vector(11 downto 0) := x"334";
-  constant csr_mhpmevent21_c    : std_ulogic_vector(11 downto 0) := x"335";
-  constant csr_mhpmevent22_c    : std_ulogic_vector(11 downto 0) := x"336";
-  constant csr_mhpmevent23_c    : std_ulogic_vector(11 downto 0) := x"337";
-  constant csr_mhpmevent24_c    : std_ulogic_vector(11 downto 0) := x"338";
-  constant csr_mhpmevent25_c    : std_ulogic_vector(11 downto 0) := x"339";
-  constant csr_mhpmevent26_c    : std_ulogic_vector(11 downto 0) := x"33a";
-  constant csr_mhpmevent27_c    : std_ulogic_vector(11 downto 0) := x"33b";
-  constant csr_mhpmevent28_c    : std_ulogic_vector(11 downto 0) := x"33c";
-  constant csr_mhpmevent29_c    : std_ulogic_vector(11 downto 0) := x"33d";
-  constant csr_mhpmevent30_c    : std_ulogic_vector(11 downto 0) := x"33e";
-  constant csr_mhpmevent31_c    : std_ulogic_vector(11 downto 0) := x"33f";
   -- machine trap handling --
   constant csr_mscratch_c       : std_ulogic_vector(11 downto 0) := x"340";
   constant csr_mepc_c           : std_ulogic_vector(11 downto 0) := x"341";
@@ -423,7 +406,7 @@ package neorv32_package is
   constant csr_dscratch0_c      : std_ulogic_vector(11 downto 0) := x"7b2";
   -- machine counters/timers --
   constant csr_mcycle_c         : std_ulogic_vector(11 downto 0) := x"b00";
-  constant csr_mtime_c          : std_ulogic_vector(11 downto 0) := x"b01"; -- dummy address
+--constant csr_mtime_c          : std_ulogic_vector(11 downto 0) := x"b01";
   constant csr_minstret_c       : std_ulogic_vector(11 downto 0) := x"b02";
   constant csr_mhpmcounter3_c   : std_ulogic_vector(11 downto 0) := x"b03";
   constant csr_mhpmcounter4_c   : std_ulogic_vector(11 downto 0) := x"b04";
@@ -438,25 +421,9 @@ package neorv32_package is
   constant csr_mhpmcounter13_c  : std_ulogic_vector(11 downto 0) := x"b0d";
   constant csr_mhpmcounter14_c  : std_ulogic_vector(11 downto 0) := x"b0e";
   constant csr_mhpmcounter15_c  : std_ulogic_vector(11 downto 0) := x"b0f";
-  constant csr_mhpmcounter16_c  : std_ulogic_vector(11 downto 0) := x"b10";
-  constant csr_mhpmcounter17_c  : std_ulogic_vector(11 downto 0) := x"b11";
-  constant csr_mhpmcounter18_c  : std_ulogic_vector(11 downto 0) := x"b12";
-  constant csr_mhpmcounter19_c  : std_ulogic_vector(11 downto 0) := x"b13";
-  constant csr_mhpmcounter20_c  : std_ulogic_vector(11 downto 0) := x"b14";
-  constant csr_mhpmcounter21_c  : std_ulogic_vector(11 downto 0) := x"b15";
-  constant csr_mhpmcounter22_c  : std_ulogic_vector(11 downto 0) := x"b16";
-  constant csr_mhpmcounter23_c  : std_ulogic_vector(11 downto 0) := x"b17";
-  constant csr_mhpmcounter24_c  : std_ulogic_vector(11 downto 0) := x"b18";
-  constant csr_mhpmcounter25_c  : std_ulogic_vector(11 downto 0) := x"b19";
-  constant csr_mhpmcounter26_c  : std_ulogic_vector(11 downto 0) := x"b1a";
-  constant csr_mhpmcounter27_c  : std_ulogic_vector(11 downto 0) := x"b1b";
-  constant csr_mhpmcounter28_c  : std_ulogic_vector(11 downto 0) := x"b1c";
-  constant csr_mhpmcounter29_c  : std_ulogic_vector(11 downto 0) := x"b1d";
-  constant csr_mhpmcounter30_c  : std_ulogic_vector(11 downto 0) := x"b1e";
-  constant csr_mhpmcounter31_c  : std_ulogic_vector(11 downto 0) := x"b1f";
   --
   constant csr_mcycleh_c        : std_ulogic_vector(11 downto 0) := x"b80";
-  constant csr_mtimeh_c         : std_ulogic_vector(11 downto 0) := x"b81"; -- dummy address
+--constant csr_mtimeh_c         : std_ulogic_vector(11 downto 0) := x"b81";
   constant csr_minstreth_c      : std_ulogic_vector(11 downto 0) := x"b82";
   constant csr_mhpmcounter3h_c  : std_ulogic_vector(11 downto 0) := x"b83";
   constant csr_mhpmcounter4h_c  : std_ulogic_vector(11 downto 0) := x"b84";
@@ -471,22 +438,6 @@ package neorv32_package is
   constant csr_mhpmcounter13h_c : std_ulogic_vector(11 downto 0) := x"b8d";
   constant csr_mhpmcounter14h_c : std_ulogic_vector(11 downto 0) := x"b8e";
   constant csr_mhpmcounter15h_c : std_ulogic_vector(11 downto 0) := x"b8f";
-  constant csr_mhpmcounter16h_c : std_ulogic_vector(11 downto 0) := x"b90";
-  constant csr_mhpmcounter17h_c : std_ulogic_vector(11 downto 0) := x"b91";
-  constant csr_mhpmcounter18h_c : std_ulogic_vector(11 downto 0) := x"b92";
-  constant csr_mhpmcounter19h_c : std_ulogic_vector(11 downto 0) := x"b93";
-  constant csr_mhpmcounter20h_c : std_ulogic_vector(11 downto 0) := x"b94";
-  constant csr_mhpmcounter21h_c : std_ulogic_vector(11 downto 0) := x"b95";
-  constant csr_mhpmcounter22h_c : std_ulogic_vector(11 downto 0) := x"b96";
-  constant csr_mhpmcounter23h_c : std_ulogic_vector(11 downto 0) := x"b97";
-  constant csr_mhpmcounter24h_c : std_ulogic_vector(11 downto 0) := x"b98";
-  constant csr_mhpmcounter25h_c : std_ulogic_vector(11 downto 0) := x"b99";
-  constant csr_mhpmcounter26h_c : std_ulogic_vector(11 downto 0) := x"b9a";
-  constant csr_mhpmcounter27h_c : std_ulogic_vector(11 downto 0) := x"b9b";
-  constant csr_mhpmcounter28h_c : std_ulogic_vector(11 downto 0) := x"b9c";
-  constant csr_mhpmcounter29h_c : std_ulogic_vector(11 downto 0) := x"b9d";
-  constant csr_mhpmcounter30h_c : std_ulogic_vector(11 downto 0) := x"b9e";
-  constant csr_mhpmcounter31h_c : std_ulogic_vector(11 downto 0) := x"b9f";
   -- <<< standard read-only CSRs >>> --
   -- user counters/timers --
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
@@ -505,22 +456,6 @@ package neorv32_package is
   constant csr_hpmcounter13_c   : std_ulogic_vector(11 downto 0) := x"c0d";
   constant csr_hpmcounter14_c   : std_ulogic_vector(11 downto 0) := x"c0e";
   constant csr_hpmcounter15_c   : std_ulogic_vector(11 downto 0) := x"c0f";
-  constant csr_hpmcounter16_c   : std_ulogic_vector(11 downto 0) := x"c10";
-  constant csr_hpmcounter17_c   : std_ulogic_vector(11 downto 0) := x"c11";
-  constant csr_hpmcounter18_c   : std_ulogic_vector(11 downto 0) := x"c12";
-  constant csr_hpmcounter19_c   : std_ulogic_vector(11 downto 0) := x"c13";
-  constant csr_hpmcounter20_c   : std_ulogic_vector(11 downto 0) := x"c14";
-  constant csr_hpmcounter21_c   : std_ulogic_vector(11 downto 0) := x"c15";
-  constant csr_hpmcounter22_c   : std_ulogic_vector(11 downto 0) := x"c16";
-  constant csr_hpmcounter23_c   : std_ulogic_vector(11 downto 0) := x"c17";
-  constant csr_hpmcounter24_c   : std_ulogic_vector(11 downto 0) := x"c18";
-  constant csr_hpmcounter25_c   : std_ulogic_vector(11 downto 0) := x"c19";
-  constant csr_hpmcounter26_c   : std_ulogic_vector(11 downto 0) := x"c1a";
-  constant csr_hpmcounter27_c   : std_ulogic_vector(11 downto 0) := x"c1b";
-  constant csr_hpmcounter28_c   : std_ulogic_vector(11 downto 0) := x"c1c";
-  constant csr_hpmcounter29_c   : std_ulogic_vector(11 downto 0) := x"c1d";
-  constant csr_hpmcounter30_c   : std_ulogic_vector(11 downto 0) := x"c1e";
-  constant csr_hpmcounter31_c   : std_ulogic_vector(11 downto 0) := x"c1f";
   --
   constant csr_cycleh_c         : std_ulogic_vector(11 downto 0) := x"c80";
   constant csr_timeh_c          : std_ulogic_vector(11 downto 0) := x"c81";
@@ -538,22 +473,6 @@ package neorv32_package is
   constant csr_hpmcounter13h_c  : std_ulogic_vector(11 downto 0) := x"c8d";
   constant csr_hpmcounter14h_c  : std_ulogic_vector(11 downto 0) := x"c8e";
   constant csr_hpmcounter15h_c  : std_ulogic_vector(11 downto 0) := x"c8f";
-  constant csr_hpmcounter16h_c  : std_ulogic_vector(11 downto 0) := x"c90";
-  constant csr_hpmcounter17h_c  : std_ulogic_vector(11 downto 0) := x"c91";
-  constant csr_hpmcounter18h_c  : std_ulogic_vector(11 downto 0) := x"c92";
-  constant csr_hpmcounter19h_c  : std_ulogic_vector(11 downto 0) := x"c93";
-  constant csr_hpmcounter20h_c  : std_ulogic_vector(11 downto 0) := x"c94";
-  constant csr_hpmcounter21h_c  : std_ulogic_vector(11 downto 0) := x"c95";
-  constant csr_hpmcounter22h_c  : std_ulogic_vector(11 downto 0) := x"c96";
-  constant csr_hpmcounter23h_c  : std_ulogic_vector(11 downto 0) := x"c97";
-  constant csr_hpmcounter24h_c  : std_ulogic_vector(11 downto 0) := x"c98";
-  constant csr_hpmcounter25h_c  : std_ulogic_vector(11 downto 0) := x"c99";
-  constant csr_hpmcounter26h_c  : std_ulogic_vector(11 downto 0) := x"c9a";
-  constant csr_hpmcounter27h_c  : std_ulogic_vector(11 downto 0) := x"c9b";
-  constant csr_hpmcounter28h_c  : std_ulogic_vector(11 downto 0) := x"c9c";
-  constant csr_hpmcounter29h_c  : std_ulogic_vector(11 downto 0) := x"c9d";
-  constant csr_hpmcounter30h_c  : std_ulogic_vector(11 downto 0) := x"c9e";
-  constant csr_hpmcounter31h_c  : std_ulogic_vector(11 downto 0) := x"c9f";
   -- machine information registers --
   constant csr_mvendorid_c      : std_ulogic_vector(11 downto 0) := x"f11";
   constant csr_marchid_c        : std_ulogic_vector(11 downto 0) := x"f12";
@@ -833,7 +752,7 @@ package neorv32_package is
       PMP_NUM_REGIONS              : natural := 0;      -- number of regions (0..16)
       PMP_MIN_GRANULARITY          : natural := 4;      -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
       -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..29)
+      HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..13)
       HPM_CNT_WIDTH                : natural := 40;     -- total size of HPM counters (0..64)
       -- Atomic Memory Access - Reservation Set Granularity --
       AMO_RVS_GRANULARITY          : natural := 4;      -- size in bytes, has to be a power of 2, min 4

@@ -70,7 +70,7 @@ entity neorv32_cpu is
     PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
+    HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..13)
     HPM_CNT_WIDTH                : natural  -- total size of HPM counters (0..64)
   );
   port (
@@ -176,8 +176,8 @@ begin
     "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
 
   -- HPM counters --
-  assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 29)) report
-    "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..29)." severity error;
+  assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 13)) report
+    "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..13)." severity error;
   assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and ((HPM_CNT_WIDTH < 0) or (HPM_CNT_WIDTH > 64))) report
     "NEORV32 CPU CONFIG ERROR! HPM counter width <HPM_CNT_WIDTH> has to be 0..64 bit." severity error;
 
@@ -222,7 +222,7 @@ begin
     -- Physical memory protection (PMP) --
     PMP_EN                       => pmp_enable_c,                 -- physical memory protection enabled
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 => HPM_NUM_CNTS,                 -- number of implemented HPM counters (0..29)
+    HPM_NUM_CNTS                 => HPM_NUM_CNTS,                 -- number of implemented HPM counters (0..13)
     HPM_CNT_WIDTH                => HPM_CNT_WIDTH                 -- total size of HPM counters
   )
   port map (

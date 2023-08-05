@@ -79,7 +79,7 @@ entity neorv32_top is
     PMP_MIN_GRANULARITY          : natural := 4;      -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
 
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..29)
+    HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..13)
     HPM_CNT_WIDTH                : natural := 40;     -- total size of HPM counters (0..64)
 
     -- Atomic Memory Access - Reservation Set Granularity --
