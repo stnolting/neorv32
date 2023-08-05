@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU: Compressed Instructions Decoder (RISC-V "C" Extension) >>                   #
+-- # << NEORV32 CPU - Compressed Instructions Decoder (RISC-V "C" Extension) >>                    #
 -- # ********************************************************************************************* #
 -- # Compressed instructions decoder compatible to the RISC-V C ISA extensions. Illegal compressed #
 -- # instructions are output "as-is".                                                              #
@@ -180,7 +180,7 @@ begin
             if (ci_instr16_i(12 downto 5) = "00000000") or -- canonical illegal C instruction or C.ADDI4SPN with nzuimm = 0
                (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "001") or -- C.FLS / C.LQ
                (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "100") or -- reserved
-               (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "101") then -- C.C.FSD / C.SQ
+               (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "101") then -- C.FSD / C.SQ
               illegal <= '1';
             end if;
 

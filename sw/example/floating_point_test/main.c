@@ -36,7 +36,8 @@
 /**********************************************************************//**
  * @file floating_point_test/main.c
  * @author Stephan Nolting
- * @brief Verification program for the NEORV32 'Zfinx' extension (floating-point in x registers) using pseudo-random data as input; compares results from hardware against pure-sw reference functions.
+ * @brief Verification program for the NEORV32 'Zfinx' extension (floating-point in x registers) using
+ * pseudo-random data as input; compares results from hardware against pure-sw reference functions.
  **************************************************************************/
 
 #include <neorv32.h>
@@ -66,6 +67,8 @@
 #define NUM_TEST_CASES     (1000000)
 //** Silent mode (only show actual errors when != 0) */
 #define SILENT_MODE        (1)
+//** Run FPU CSR tests when != 0 */
+#define RUN_CSR_TESTS      (1)
 //** Run conversion tests when != 0 */
 #define RUN_CONV_TESTS     (1)
 //** Run add/sub tests when != 0 */
@@ -95,7 +98,8 @@ void print_report(uint32_t num_err);
 
 
 /**********************************************************************//**
- * Main function; test all available operations of the NEORV32 'Zfinx' extensions using bit floating-point hardware intrinsics and software-only reference functions (emulation).
+ * Main function; test all available operations of the NEORV32 'Zfinx' extensions using bit floating-point
+ * hardware intrinsics and software-only reference functions (emulation).
  *
  * @note This program requires the Zfinx CPU extension.
  *
@@ -146,6 +150,51 @@ int main() {
 #endif
   neorv32_uart0_printf("Test cases per instruction: %u\n", (uint32_t)NUM_TEST_CASES);
   neorv32_uart0_printf("NOTE: The NEORV32 FPU does not support subnormal numbers yet. Subnormal numbers are flushed to zero.\n\n");
+
+
+// ----------------------------------------------------------------------------
+// CSR Read/Write Tests
+// ----------------------------------------------------------------------------
+#if (RUN_CSR_TESTS != 0)
+  neorv32_uart0_printf("\n#%u: FFLAGS CSR...\n", test_cnt);
+  err_cnt = 0;
+  for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
+    opa.binary_value = get_test_vector() & 0x1F;
+    neorv32_cpu_csr_write(CSR_FFLAGS, opa.binary_value);
+    res_hw.binary_value = neorv32_cpu_csr_read(CSR_FFLAGS);
+    res_sw.binary_value = opa.binary_value;
+    err_cnt += verify_result(i, opa.binary_value, 0, res_sw.binary_value, res_hw.binary_value);
+  }
+  print_report(err_cnt);
+  err_cnt_total += err_cnt;
+  test_cnt++;
+
+  neorv32_uart0_printf("\n#%u: FRM CSR...\n", test_cnt);
+  err_cnt = 0;
+  for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
+    opa.binary_value = get_test_vector() & 0x07;
+    neorv32_cpu_csr_write(CSR_FRM, opa.binary_value);
+    res_hw.binary_value = neorv32_cpu_csr_read(CSR_FRM);
+    res_sw.binary_value = opa.binary_value;
+    err_cnt += verify_result(i, opa.binary_value, 0, res_sw.binary_value, res_hw.binary_value);
+  }
+  print_report(err_cnt);
+  err_cnt_total += err_cnt;
+  test_cnt++;
+
+  neorv32_uart0_printf("\n#%u: FCSR CSR...\n", test_cnt);
+  err_cnt = 0;
+  for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
+    opa.binary_value = get_test_vector() & 0xFF;
+    neorv32_cpu_csr_write(CSR_FCSR, opa.binary_value);
+    res_hw.binary_value = neorv32_cpu_csr_read(CSR_FCSR);
+    res_sw.binary_value = opa.binary_value;
+    err_cnt += verify_result(i, opa.binary_value, 0, res_sw.binary_value, res_hw.binary_value);
+  }
+  print_report(err_cnt);
+  err_cnt_total += err_cnt;
+  test_cnt++;
+#endif
 
   // clear FPU status/control word
   neorv32_cpu_csr_write(CSR_FCSR, 0);
@@ -402,7 +451,7 @@ int main() {
   test_cnt++;
 #endif
 
-  
+
 // ----------------------------------------------------------------------------
 // UNSUPPORTED Instructions Tests - Execution should raise illegal instruction exception
 // ----------------------------------------------------------------------------

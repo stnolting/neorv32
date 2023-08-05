@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 04.08.2023 | 1.8.7.5 | :warning: major code edits/cleanups and file renaming; #664 |
 | 29.07.2023 | 1.8.7.4 | RTL cleanup and optimizations (less synthesis warnings, less resource requirements); [#660](https://github.com/stnolting/neorv32/pull/660) |
 | 28.07.2023 | 1.8.7.3 | :warning: reworked **SYSINFO** module; clean-up address space layout; clean-up assertion notes; [#659](https://github.com/stnolting/neorv32/pull/659) |
 | 27.07.2023 | 1.8.7.2 | :bug: make sure that IMEM/DMEM size is always a power of two; [#658](https://github.com/stnolting/neorv32/pull/658) |

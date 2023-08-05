@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 - CPU Co-Processor: Bit-Manipulation Co-Processor Unit (RISC-V "B" Extension) >>   #
+-- # << NEORV32 CPU - Co-Processor: Bit-Manipulation Co-Processor Unit (RISC-V "B" Extension) >>   #
 -- # ********************************************************************************************* #
 -- # Supported B sub-extensions (Zb*):                                                             #
 -- # - Zba: Address-generation instructions                                                        #

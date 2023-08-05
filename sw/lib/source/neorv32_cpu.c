@@ -394,12 +394,6 @@ int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
     default: break;
   }
 
-  // wait for hardware to compute address masks
-  int i;
-  for (i=0; i<16; i++) {
-    asm volatile ("nop");
-  }
-
   // set configuration
   uint32_t clr_mask = 0xff;
   uint32_t set_mask = (uint32_t)config;
@@ -422,7 +416,7 @@ int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
 /**********************************************************************//**
  * Hardware performance monitors (HPM): Get number of available HPM counters.
  *
- * @return Returns number of available HPM counters (0..29).
+ * @return Returns number of available HPM counters.
  **************************************************************************/
 uint32_t neorv32_cpu_hpm_get_num_counters(void) {
 

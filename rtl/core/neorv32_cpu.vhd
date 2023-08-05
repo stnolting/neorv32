@@ -70,7 +70,7 @@ entity neorv32_cpu is
     PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
     PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..29)
+    HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..13)
     HPM_CNT_WIDTH                : natural  -- total size of HPM counters (0..64)
   );
   port (
@@ -101,6 +101,15 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- auto-configuration --
   constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port (rs3)
   constant regfile_rs4_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu; -- 4th register file read port (rs4)
+  constant pmp_enable_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
+
+  -- external CSR interface --
+  signal xcsr_we        : std_ulogic;
+  signal xcsr_addr      : std_ulogic_vector(11 downto 0);
+  signal xcsr_wdata     : std_ulogic_vector(XLEN-1 downto 0);
+  signal xcsr_rdata_pmp : std_ulogic_vector(XLEN-1 downto 0);
+  signal xcsr_rdata_alu : std_ulogic_vector(XLEN-1 downto 0);
+  signal xcsr_rdata_res : std_ulogic_vector(XLEN-1 downto 0);
 
   -- local signals --
   signal ctrl        : ctrl_bus_t; -- main control bus
@@ -114,7 +123,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal alu_cmp     : std_ulogic_vector(1 downto 0); -- comparator result
   signal mem_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- memory read data
   signal cp_done     : std_ulogic; -- ALU co-processor operation done
-  signal alu_exc     : std_ulogic; -- ALU exception
   signal bus_d_wait  : std_ulogic; -- wait for current data bus access
   signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
   signal mar         : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
@@ -125,12 +133,9 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal fetch_pc    : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
   signal curr_pc     : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
   signal next_pc     : std_ulogic_vector(XLEN-1 downto 0); -- next pc (for next executed instruction)
-  signal fpu_flags   : std_ulogic_vector(4 downto 0); -- FPU exception flags
-  signal i_pmp_fault : std_ulogic; -- instruction fetch PMP fault
-
-  -- pmp interface --
-  signal pmp_addr : pmp_addr_if_t;
-  signal pmp_ctrl : pmp_ctrl_if_t;
+  signal pmp_i_fault : std_ulogic; -- PMP instruction fetch fault
+  signal pmp_r_fault : std_ulogic; -- PMP read fault
+  signal pmp_w_fault : std_ulogic; -- PMP write fault
 
 begin
 
@@ -138,7 +143,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- say hello --
   assert false report
-    "The NEORV32 RISC-V Processor Version 0x" & to_hstring32_f(hw_version_c) & " - github.com/stnolting/neorv32" severity note;
+    "The NEORV32 RISC-V Processor, Version 0x" & to_hstring32_f(hw_version_c) & " - github.com/stnolting/neorv32" severity note;
 
   -- CPU ISA configuration --
   assert false report
@@ -159,7 +164,7 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,    "_Zxcfu", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,    "_Sdext", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Sdtrig,   "_Sdtrig", "") &
-    ""
+    cond_sel_string_f(pmp_enable_c,                 "_Smpmp", "")
     severity note;
 
   -- simulation notifier --
@@ -170,17 +175,9 @@ begin
   assert not (CPU_BOOT_ADDR(1 downto 0) /= "00") report
     "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
 
-  -- PMP --
-  assert not (PMP_NUM_REGIONS > 16) report
-    "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out of valid range (0..16)." severity error;
-  assert not ((is_power_of_two_f(PMP_MIN_GRANULARITY) = false) and (PMP_NUM_REGIONS > 0)) report
-    "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be a power of two." severity error;
-  assert not ((PMP_MIN_GRANULARITY < 4) and (PMP_NUM_REGIONS > 0)) report
-    "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be >= 4 bytes." severity error;
-
   -- HPM counters --
-  assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 29)) report
-    "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..29)." severity error;
+  assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 13)) report
+    "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..13)." severity error;
   assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and ((HPM_CNT_WIDTH < 0) or (HPM_CNT_WIDTH > 64))) report
     "NEORV32 CPU CONFIG ERROR! HPM counter width <HPM_CNT_WIDTH> has to be 0..64 bit." severity error;
 
@@ -223,10 +220,9 @@ begin
     FAST_MUL_EN                  => FAST_MUL_EN,                  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => FAST_SHIFT_EN,                -- use barrel shifter for shift operations
     -- Physical memory protection (PMP) --
-    PMP_NUM_REGIONS              => PMP_NUM_REGIONS,              -- number of regions (0..16)
-    PMP_MIN_GRANULARITY          => PMP_MIN_GRANULARITY,          -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_EN                       => pmp_enable_c,                 -- physical memory protection enabled
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 => HPM_NUM_CNTS,                 -- number of implemented HPM counters (0..29)
+    HPM_NUM_CNTS                 => HPM_NUM_CNTS,                 -- number of implemented HPM counters (0..13)
     HPM_CNT_WIDTH                => HPM_CNT_WIDTH                 -- total size of HPM counters
   )
   port map (
@@ -240,10 +236,9 @@ begin
     i_bus_re_o    => ibus_req_o.re,   -- read enable
     i_bus_ack_i   => ibus_rsp_i.ack,  -- bus transfer acknowledge
     i_bus_err_i   => ibus_rsp_i.err,  -- bus transfer error
-    i_pmp_fault_i => i_pmp_fault,     -- instruction fetch pmp fault
+    i_pmp_fault_i => pmp_i_fault,     -- instruction fetch pmp fault
     -- status input --
     alu_cp_done_i => cp_done,         -- ALU iterative operation done
-    alu_exc_i     => alu_exc,         -- ALU exception
     bus_d_wait_i  => bus_d_wait,      -- wait for bus
     -- data input --
     cmp_i         => alu_cmp,         -- comparator status
@@ -254,8 +249,11 @@ begin
     curr_pc_o     => curr_pc,         -- current PC (corresponding to current instruction)
     next_pc_o     => next_pc,         -- next PC (corresponding to next instruction)
     csr_rdata_o   => csr_rdata,       -- CSR read data
-    -- FPU interface --
-    fpu_flags_i   => fpu_flags,       -- exception flags
+    -- external CSR interface --
+    xcsr_we_o     => xcsr_we,         -- global write enable
+    xcsr_addr_o   => xcsr_addr,       -- address
+    xcsr_wdata_o  => xcsr_wdata,      -- write data
+    xcsr_rdata_i  => xcsr_rdata_res,  -- read data
     -- debug mode (halt) request --
     db_halt_req_i => dbi_i,
     -- interrupts (risc-v compliant) --
@@ -264,9 +262,6 @@ begin
     mti_i         => mti_i,           -- machine timer interrupt
     -- fast interrupts (custom) --
     firq_i        => firq_i,          -- fast interrupt trigger
-    -- physical memory protection --
-    pmp_addr_o    => pmp_addr,        -- addresses
-    pmp_ctrl_o    => pmp_ctrl,        -- configs
     -- bus access exceptions --
     mar_i         => mar,             -- memory address register
     ma_load_i     => ma_load,         -- misaligned load data address
@@ -275,19 +270,22 @@ begin
     be_store_i    => be_store         -- bus error on store data access
   );
 
+  -- external CSR read-back --
+  xcsr_rdata_res <= xcsr_rdata_pmp or xcsr_rdata_alu;
+
   -- CPU state --
   sleep_o <= ctrl.cpu_sleep; -- set when CPU is sleeping (after WFI)
   debug_o <= ctrl.cpu_debug; -- set when CPU is in debug mode
 
   -- instruction/data fence --
-  ifence_o <= ctrl.bus_fencei;
-  dfence_o <= ctrl.bus_fence;
+  ifence_o <= ctrl.lsu_fencei;
+  dfence_o <= ctrl.lsu_fence;
 
   -- instruction fetch interface --
   ibus_req_o.addr <= fetch_pc;
   ibus_req_o.priv <= ctrl.cpu_priv;
-  ibus_req_o.data <= (others => '0');
-  ibus_req_o.ben  <= (others => '0');
+  ibus_req_o.data <= (others => '0'); -- read-only
+  ibus_req_o.ben  <= (others => '0'); -- read-only
   ibus_req_o.we   <= '0'; -- read-only
   ibus_req_o.src  <= '1'; -- source = instruction fetch
   ibus_req_o.rvso <= '0'; -- cannot be a reservation set operation
@@ -335,45 +333,43 @@ begin
   )
   port map (
     -- global control --
-    clk_i       => clk_i,     -- global clock, rising edge
-    rstn_i      => rstn_i,    -- global reset, low-active, async
-    ctrl_i      => ctrl,      -- main control bus
+    clk_i       => clk_i,          -- global clock, rising edge
+    rstn_i      => rstn_i,         -- global reset, low-active, async
+    ctrl_i      => ctrl,           -- main control bus
+    -- CSR interface --
+    csr_we_i    => xcsr_we,        -- global write enable
+    csr_addr_i  => xcsr_addr,      -- address
+    csr_wdata_i => xcsr_wdata,     -- write data
+    csr_rdata_o => xcsr_rdata_alu, -- read data
     -- data input --
-    rs1_i       => rs1,       -- rf source 1
-    rs2_i       => rs2,       -- rf source 2
-    rs3_i       => rs3,       -- rf source 3
-    rs4_i       => rs4,       -- rf source 4
-    pc_i        => curr_pc,   -- current PC
-    imm_i       => imm,       -- immediate
+    rs1_i       => rs1,            -- rf source 1
+    rs2_i       => rs2,            -- rf source 2
+    rs3_i       => rs3,            -- rf source 3
+    rs4_i       => rs4,            -- rf source 4
+    pc_i        => curr_pc,        -- current PC
+    imm_i       => imm,            -- immediate
     -- data output --
-    cmp_o       => alu_cmp,   -- comparator status
-    res_o       => alu_res,   -- ALU result
-    add_o       => alu_add,   -- address computation result
-    fpu_flags_o => fpu_flags, -- FPU exception flags
+    cmp_o       => alu_cmp,        -- comparator status
+    res_o       => alu_res,        -- ALU result
+    add_o       => alu_add,        -- address computation result
     -- status --
-    exc_o       => alu_exc,   -- ALU exception
-    cp_done_o   => cp_done    -- iterative processing units done?
+    cp_done_o   => cp_done         -- iterative processing units done?
   );
 
 
-  -- Bus Interface (Load/Store Unit) --------------------------------------------------------
+  -- Load/Store Unit ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_bus_inst: entity neorv32.neorv32_cpu_bus
+  neorv32_cpu_lsu_inst: entity neorv32.neorv32_cpu_lsu
   generic map (
-    AMO_LRSC_ENABLE     => CPU_EXTENSION_RISCV_A, -- enable atomic LR/SC operations
-    PMP_NUM_REGIONS     => PMP_NUM_REGIONS,       -- number of regions (0..16)
-    PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY    -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    AMO_LRSC_ENABLE => CPU_EXTENSION_RISCV_A -- enable atomic LR/SC operations
   )
   port map (
     -- global control --
     clk_i         => clk_i,           -- global clock, rising edge
     rstn_i        => rstn_i,          -- global reset, low-active, async
     ctrl_i        => ctrl,            -- main control bus
-    -- cpu instruction fetch interface --
-    fetch_pc_i    => fetch_pc,        -- PC for instruction fetch
-    i_pmp_fault_o => i_pmp_fault,     -- instruction fetch pmp fault
     -- cpu data access interface --
-    addr_i        => alu_add,         -- ALU.add result -> access address
+    addr_i        => alu_add,         -- access address
     wdata_i       => rs2,             -- write data
     rdata_o       => mem_rdata,       -- read data
     mar_o         => mar,             -- current memory address register
@@ -382,9 +378,8 @@ begin
     ma_store_o    => ma_store,        -- misaligned store data address
     be_load_o     => be_load,         -- bus error on load data access
     be_store_o    => be_store,        -- bus error on store data access
-    -- physical memory protection --
-    pmp_addr_i    => pmp_addr,        -- addresses
-    pmp_ctrl_i    => pmp_ctrl,        -- configurations
+    pmp_r_fault_i => pmp_r_fault,     -- PMP read fault
+    pmp_w_fault_i => pmp_w_fault,     -- PMP write fault
     -- data bus --
     d_bus_addr_o  => dbus_req_o.addr, -- bus access address
     d_bus_rdata_i => dbus_rsp_i.data, -- bus read data
@@ -396,9 +391,48 @@ begin
     d_bus_err_i   => dbus_rsp_i.err   -- bus transfer error
   );
 
-  dbus_req_o.priv <= ctrl.bus_priv;
+  -- data access interface --
+  dbus_req_o.priv <= ctrl.lsu_priv;
   dbus_req_o.src  <= '0'; -- source = data access
-  dbus_req_o.rvso <= ctrl.bus_rvso when (CPU_EXTENSION_RISCV_A = true) else '0'; -- is LR/SC reservation set operation
+  dbus_req_o.rvso <= ctrl.lsu_rvso when (CPU_EXTENSION_RISCV_A = true) else '0'; -- is LR/SC reservation set operation
+
+
+  -- Physical Memory Protection -------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  pmp_inst_true:
+  if (pmp_enable_c = true) generate
+    neorv32_cpu_pmp_inst: entity neorv32.neorv32_cpu_pmp
+    generic map (
+      NUM_REGIONS => PMP_NUM_REGIONS,    -- number of regions (0..16)
+      GRANULARITY => PMP_MIN_GRANULARITY -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    )
+    port map (
+      -- global control --
+      clk_i       => clk_i,          -- global clock, rising edge
+      rstn_i      => rstn_i,         -- global reset, low-active, async
+      ctrl_i      => ctrl,           -- main control bus
+      -- CSR interface --
+      csr_we_i    => xcsr_we,        -- global write enable
+      csr_addr_i  => xcsr_addr,      -- address
+      csr_wdata_i => xcsr_wdata,     -- write data
+      csr_rdata_o => xcsr_rdata_pmp, -- read data
+      -- address input --
+      addr_if_i   => fetch_pc,       -- instruction fetch address
+      addr_ls_i   => alu_add,        -- load/store address
+      -- faults --
+      fault_if_o  => pmp_i_fault,    -- instruction fetch fault
+      fault_ld_o  => pmp_r_fault,    -- data load fault
+      fault_st_o  => pmp_w_fault     -- data store fault
+    );
+  end generate;
+
+  pmp_inst_false:
+  if (pmp_enable_c = false) generate
+    xcsr_rdata_pmp <= (others => '0');
+    pmp_i_fault    <= '0';
+    pmp_r_fault    <= '0';
+    pmp_w_fault    <= '0';
+  end generate;
 
 
 end neorv32_cpu_rtl;
