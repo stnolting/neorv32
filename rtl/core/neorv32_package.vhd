@@ -858,6 +858,7 @@ package neorv32_package is
 -- ****************************************************************************************************************************
 
   function index_size_f(input : natural) return natural;
+  function cond_sel_int_f(cond : boolean; val_t : integer; val_f : integer) return integer;
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural;
   function cond_sel_suv_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector;
   function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string;
@@ -1075,6 +1076,17 @@ package body neorv32_package is
     end loop;
     return 0;
   end function index_size_f;
+
+  -- Conditional select integer -------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function cond_sel_int_f(cond : boolean; val_t : integer; val_f : integer) return integer is
+  begin
+    if (cond = true) then
+      return val_t;
+    else
+      return val_f;
+    end if;
+  end function cond_sel_int_f;
 
   -- Conditional select natural -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
