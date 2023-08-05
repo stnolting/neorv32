@@ -268,7 +268,7 @@ begin
     for i in pmp_lsb_c+1 to XLEN-1 generate
       addr_mask_napot(r)(i) <= addr_mask_napot(r)(i-1) or (not xaddr(r)(i-1));
     end generate;
-    
+
     -- address mask select --
     addr_masking: process(rstn_i, clk_i)
     begin

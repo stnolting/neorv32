@@ -426,6 +426,15 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("none\n");
   }
 
+  // internal DMEM
+  neorv32_uart0_printf("Internal DMEM:       ");
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) {
+    neorv32_uart0_printf("%u bytes\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_DMEM]) & 0xFFFFFFFCUL);
+  }
+  else {
+    neorv32_uart0_printf("none\n");
+  }
+
   // internal i-cache
   neorv32_uart0_printf("Internal i-cache:    ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_ICACHE)) {
@@ -449,15 +458,6 @@ void neorv32_rte_print_hw_config(void) {
     else {
       neorv32_uart0_printf("\n");
     }
-  }
-  else {
-    neorv32_uart0_printf("none\n");
-  }
-
-  // internal DMEM
-  neorv32_uart0_printf("Internal DMEM:       ");
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) {
-    neorv32_uart0_printf("%u bytes\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_DMEM]) & 0xFFFFFFFCUL);
   }
   else {
     neorv32_uart0_printf("none\n");

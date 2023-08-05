@@ -141,7 +141,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     state_prev : fetch_engine_state_t;
     restart    : std_ulogic;
     unaligned  : std_ulogic;
-    pc         : std_ulogic_vector(XLEN-1 downto 0);
+    pc         : std_ulogic_vector(XLEN-1 downto 2); -- word-aligned
     reset      : std_ulogic;
     resp       : std_ulogic; -- bus response
     a_err      : std_ulogic; -- alignment error
@@ -380,7 +380,7 @@ begin
 
         when IF_RESTART => -- set new fetch start address
         -- ------------------------------------------------------------
-          fetch_engine.pc        <= execute_engine.pc(XLEN-1 downto 2) & "00"; -- initialize with "real" PC, 32-bit aligned
+          fetch_engine.pc        <= execute_engine.pc(XLEN-1 downto 2); -- initialize with logical PC, word aligned
           fetch_engine.unaligned <= execute_engine.pc(1);
           fetch_engine.state     <= IF_REQUEST;
 
@@ -393,7 +393,7 @@ begin
         when IF_PENDING => -- wait for bus response and write instruction data to prefetch buffer
         -- ------------------------------------------------------------
           if (fetch_engine.resp = '1') then -- wait for bus response
-            fetch_engine.pc        <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4); -- next word
+            fetch_engine.pc        <= std_ulogic_vector(unsigned(fetch_engine.pc) + 1); -- next word
             fetch_engine.unaligned <= '0';
             if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
               fetch_engine.state <= IF_RESTART;
@@ -424,7 +424,7 @@ begin
   end process fetch_engine_fsm;
 
   -- PC output for instruction fetch --
-  i_bus_addr_o <= fetch_engine.pc(XLEN-1 downto 2) & "00"; -- 32-bit aligned
+  i_bus_addr_o <= fetch_engine.pc & "00"; -- word aligned
 
   -- instruction fetch (read) request if IPB not full --
   i_bus_re_o <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
@@ -1682,13 +1682,13 @@ begin
             end if;
 
           when csr_mie_c => -- machine interrupt enable register
-            csr.mie_msi  <= csr.wdata(03); -- machine SW IRQ
-            csr.mie_mti  <= csr.wdata(07); -- machine TIMER IRQ
-            csr.mie_mei  <= csr.wdata(11); -- machine EXT IRQ
-            csr.mie_firq <= csr.wdata(31 downto 16); -- FIRQ channels 0..15
+            csr.mie_msi  <= csr.wdata(03);
+            csr.mie_mti  <= csr.wdata(07);
+            csr.mie_mei  <= csr.wdata(11);
+            csr.mie_firq <= csr.wdata(31 downto 16);
 
           when csr_mtvec_c => -- machine trap-handler base address
-            csr.mtvec <= csr.wdata(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0
+            csr.mtvec <= csr.wdata(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0 (direct)
 
           when csr_mcounteren_c => -- machine counter access enable
             if (CPU_EXTENSION_RISCV_U = true) then
@@ -1696,7 +1696,7 @@ begin
                 csr.mcounteren(0) <= csr.wdata(0);
                 csr.mcounteren(2) <= csr.wdata(2);
               end if;
-              if (CPU_EXTENSION_RISCV_Zihpm = true) then -- any HPMs available?
+              if (CPU_EXTENSION_RISCV_Zihpm = true) then
                 for i in 3 to (hpm_num_c+3)-1 loop
                   csr.mcounteren(i) <= csr.wdata(i);
                 end loop;
@@ -1721,12 +1721,12 @@ begin
           -- --------------------------------------------------------------------
           when csr_mcountinhibit_c => -- machine counter-inhibit register
             if (CPU_EXTENSION_RISCV_Zicntr = true) then
-              csr.mcountinhibit(0) <= csr.wdata(0); -- inhibit auto-increment of [m]cycle[h] counter
-              csr.mcountinhibit(2) <= csr.wdata(2); -- inhibit auto-increment of [m]instret[h] counter
+              csr.mcountinhibit(0) <= csr.wdata(0);
+              csr.mcountinhibit(2) <= csr.wdata(2);
             end if;
-            if (CPU_EXTENSION_RISCV_Zihpm = true) then -- any HPMs available?
+            if (CPU_EXTENSION_RISCV_Zihpm = true) then
               for i in 3 to (hpm_num_c+3)-1 loop
-                csr.mcountinhibit(i) <= csr.wdata(i); -- inhibit auto-increment of [m]hpmcounter*[h] counter
+                csr.mcountinhibit(i) <= csr.wdata(i);
               end loop;
             end if;
 
@@ -1736,7 +1736,7 @@ begin
             if (CPU_EXTENSION_RISCV_Sdext = true) then
               csr.dcsr_ebreakm <= csr.wdata(15);
               csr.dcsr_step    <= csr.wdata(2);
-              if (CPU_EXTENSION_RISCV_U = true) then -- user mode implemented
+              if (CPU_EXTENSION_RISCV_U = true) then
                 csr.dcsr_ebreaku <= csr.wdata(12);
                 csr.dcsr_prv     <= csr.wdata(1) or csr.wdata(0); -- everything /= U will fall back to M
               end if;
@@ -1848,11 +1848,11 @@ begin
 
         end if;
 
-      end if; -- /hardware csr access
+      end if;
 
 
       -- ********************************************************************************
-      -- Override - hardwire unimplemented registers to all-zero
+      -- Override - hardwire/terminate unimplemented registers/bits
       -- ********************************************************************************
 
       -- hardwired bits --
@@ -1924,7 +1924,7 @@ begin
         csr_rdata(17) <= csr.mstatus_mprv;
         csr_rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);
 
---    when csr_mstatush_c => csr_rdata <= (others => '0'); -- machine status register - high word, implemented but always zero
+--    when csr_mstatush_c => csr_rdata <= (others => '0'); -- machine status register - hardwired to zero
 
       when csr_misa_c => -- ISA and extensions
         csr_rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
@@ -1943,14 +1943,14 @@ begin
         csr_rdata(11) <= csr.mie_mei;
         csr_rdata(31 downto 16) <= csr.mie_firq;
 
-      when csr_mtvec_c => -- machine trap-handler base address (for ALL exceptions)
-        csr_rdata <= csr.mtvec(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0
+      when csr_mtvec_c => -- machine trap-handler base address
+        csr_rdata <= csr.mtvec(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0 (direct)
 
       when csr_mcounteren_c => -- machine counter enable register
         if (CPU_EXTENSION_RISCV_U = true) then
           csr_rdata(0) <= csr.mcounteren(0); -- cycle[h]
           csr_rdata(2) <= csr.mcounteren(2); -- instret[h]
-          if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then -- any HPMs implemented?
+          if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then
             for i in 3 to (hpm_num_c+2)-1 loop
               csr_rdata(i) <= csr.mcounteren(i); -- hpmcounter*[h]
             end loop;
@@ -1990,7 +1990,7 @@ begin
           csr_rdata(0) <= csr.mcountinhibit(0); -- [m]cycle[h]
           csr_rdata(2) <= csr.mcountinhibit(2); -- [m]instret[h]
         end if;
-        if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then -- any HPMs implemented?
+        if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then
           for i in 3 to (hpm_num_c+2)-1 loop
             csr_rdata(i) <= csr.mcountinhibit(i); -- [m]hpmcounter*[h]
           end loop;
@@ -2053,7 +2053,7 @@ begin
       when csr_marchid_c    => csr_rdata(4 downto 0) <= "10011"; -- architecture ID - official RISC-V open-source arch ID
       when csr_mimpid_c     => csr_rdata <= hw_version_c; -- implementation ID -- NEORV32 hardware version
       when csr_mhartid_c    => csr_rdata <= HART_ID; -- hardware thread ID
---    when csr_mconfigptr_c => csr_rdata <= (others => '0'); -- machine configuration pointer register, implemented but always zero
+--    when csr_mconfigptr_c => csr_rdata <= (others => '0'); -- machine configuration pointer register - hardwired to zero
 
       -- debug mode CSRs --
       -- --------------------------------------------------------------------
@@ -2063,14 +2063,14 @@ begin
 
       -- trigger module CSRs --
       -- --------------------------------------------------------------------
---    when csr_tselect_c  => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- always zero = only 1 trigger available
+--    when csr_tselect_c  => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- hardwired to zero = only 1 trigger available
       when csr_tdata1_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= csr.tdata1_rd;   end if; -- match control
       when csr_tdata2_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= csr.tdata2;      end if; -- address-compare
---    when csr_tdata3_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- implemented but always zero
+--    when csr_tdata3_c   => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- hardwired to zero
       when csr_tinfo_c    => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= x"00000004";     end if; -- address-match trigger only
---    when csr_tcontrol_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- implemented but always zero
---    when csr_mcontext_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- implemented but always zero
---    when csr_scontext_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- implemented but always zero
+--    when csr_tcontrol_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- hardwired to zero
+--    when csr_mcontext_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- hardwired to zero
+--    when csr_scontext_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- hardwired to zero
 
       -- NEORV32-specific (RISC-V "custom") read-only CSRs --
       -- --------------------------------------------------------------------
@@ -2097,7 +2097,7 @@ begin
 
       -- undefined/unavailable --
       -- --------------------------------------------------------------------
-      when others => NULL; -- not implemented, read as zero
+      when others => NULL; -- read as zero
 
     end case;
   end process csr_read_access;
