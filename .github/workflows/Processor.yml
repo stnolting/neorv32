@@ -1,5 +1,3 @@
-# Check NEORV32 software framework and test processor
-
 name: Processor
 
 on:
@@ -75,57 +73,3 @@ jobs:
       with:
         image: ghcr.io/stnolting/neorv32/sim
         cmd: ./sim/run.py --ci-mode -v
-
-
-# Windows:
-#   runs-on: windows-latest
-#   strategy:
-#     fail-fast: false
-#     matrix:
-#       include: [
-#         {icon: '⬛', installs: 'MINGW32' },
-#         {icon: '🟦', installs: 'MINGW64' },
-#       ]
-#   name: '${{ matrix.icon }} ${{ matrix.installs }} | VUnit'
-#   defaults:
-#     run:
-#       shell: msys2 {0}
-#   steps:
-#
-#   - name: '⚙️ git config'
-#     run: git config --global core.autocrlf input
-#     shell: bash
-#
-#   - name: '🧰 Checkout'
-#     uses: actions/checkout@v3
-#     with:
-#       # The command 'git describe' (used for version) needs the history.
-#       fetch-depth: 0
-#
-#   - name: '${{ matrix.icon }} Setup MSYS2'
-#     uses: msys2/setup-msys2@v2
-#     with:
-#       msystem: ${{ matrix.installs }}
-#       update: true
-#       install: make
-#       pacboy: >
-#         ghdl:p
-#         python-pip:p
-#         riscv64-unknown-elf-gcc:p
-#
-#   - name: '⚙️ Build and install Processor Check software'
-#     run: |
-#       make -C sw/example/processor_check \
-#         RISCV_PREFIX=riscv64-unknown-elf- \
-#         clean_all \
-#         USER_FLAGS+=-DUART0_SIM_MODE \
-#         USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT \
-#         MARCH=rv32imac \
-#         info \
-#         all
-#
-#   - name: '🐍 Install VUnit'
-#     run: pip install vunit_hdl
-#
-#   - name: '🚧 Run Processor Hardware Tests with VUnit'
-#     run: ./sim/run.py --ci-mode -v

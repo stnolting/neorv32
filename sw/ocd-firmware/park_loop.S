@@ -61,7 +61,7 @@ entry_exception:
   sb      zero, (DM_SREG_BASE+SREG_EXC_ACK)(zero) // trigger exception-acknowledge to inform DM
   ebreak                                          // re-enter debug mode (at "entry_normal" entry point)
 
-// BASE + 8: normale entry - ebreak in debug-mode, halt request or return from single-stepped instruction
+// BASE + 8: normal entry - ebreak in debug-mode, halt request or return from single-stepped instruction
 entry_normal:
   csrw    dscratch0, x8                           // backup x8 to dscratch0 so we have a GPR available
 
@@ -87,4 +87,5 @@ execute:
   jalr    zero, zero, %lo(DM_PBUF_BASE)           // jump to beginning of program buffer (PBUF)
 
 // fill remaining ROM space with instructions that cause a debug-mode-internal exception
+unused:
   ecall
