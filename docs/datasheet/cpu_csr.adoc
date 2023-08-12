@@ -878,7 +878,7 @@ discover ISA sub-extensions and CPU configuration options
 |  1    | `CSR_MXISA_ZIFENCEI`  | r/- | <<_zifencei_isa_extension>> available
 |  2    | `CSR_MXISA_ZMMUL`     | r/- | <<_zmmul_isa_extension>> available
 |  3    | `CSR_MXISA_ZXCFU`     | r/- | <<_zxcfu_isa_extension>> available
-|  4    | `CSR_MXISA_ZICOND`    | r/- | <<_zicond_isa_extension>> available
+|  4    | -                     | r/- | _reserved_, read as zero
 |  5    | `CSR_MXISA_ZFINX`     | r/- | <<_zfinx_isa_extension>> available
 |  6    | -                     | r/- | _reserved_, read as zero
 |  7    | `CSR_MXISA_ZICNTR`    | r/- | <<_zicntr_isa_extension>> available
