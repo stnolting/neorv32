@@ -44,15 +44,14 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_alu is
   generic (
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_B      : boolean; -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
-    CPU_EXTENSION_RISCV_Zicond : boolean; -- implement conditional operations extension?
+    CPU_EXTENSION_RISCV_B     : boolean; -- implement bit-manipulation extension?
+    CPU_EXTENSION_RISCV_M     : boolean; -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_Zmmul : boolean; -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zfinx : boolean; -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zxcfu : boolean; -- implement custom (instr.) functions unit?
     -- Extension Options --
-    FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN              : boolean  -- use barrel shifter for shift operations
+    FAST_MUL_EN               : boolean; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN             : boolean  -- use barrel shifter for shift operations
   );
   port (
     -- global control --
@@ -96,10 +95,10 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal cp_res     : std_ulogic_vector(XLEN-1 downto 0);
 
   -- co-processor interface --
-  type cp_data_t  is array (0 to 5) of std_ulogic_vector(XLEN-1 downto 0);
+  type cp_data_t  is array (0 to 4) of std_ulogic_vector(XLEN-1 downto 0);
   signal cp_result : cp_data_t; -- co-processor result
-  signal cp_start  : std_ulogic_vector(5 downto 0); -- co-processor trigger
-  signal cp_valid  : std_ulogic_vector(5 downto 0); -- co-processor done
+  signal cp_start  : std_ulogic_vector(4 downto 0); -- co-processor trigger
+  signal cp_valid  : std_ulogic_vector(4 downto 0); -- co-processor done
 
 begin
 
@@ -158,11 +157,11 @@ begin
 
   -- (iterative) co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
-  cp_done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5);
+  cp_done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4);
 
   -- co-processor result --
   -- > "cp_result" data has to be always zero unless the specific co-processor has been actually triggered
-  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5);
+  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4);
 
 
   -- Co-Processor 0: Shifter Unit (Base ISA) ------------------------------------------------
@@ -310,32 +309,6 @@ begin
   if (CPU_EXTENSION_RISCV_Zxcfu = false) generate
     cp_result(4) <= (others => '0');
     cp_valid(4)  <= '0';
-  end generate;
-
-
-  -- Co-Processor 5: Conditional Operations ('Zicond' ISA Extension) ------------------------
-  -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_cond_inst_true:
-  if (CPU_EXTENSION_RISCV_Zicond = true) generate
-    neorv32_cpu_cp_cond_inst: entity neorv32.neorv32_cpu_cp_cond
-    port map (
-      -- global control --
-      clk_i   => clk_i,        -- global clock, rising edge
-      ctrl_i  => ctrl_i,       -- main control bus
-      start_i => cp_start(5),  -- trigger operation
-      -- data input --
-      rs1_i   => rs1_i,        -- rf source 1
-      rs2_i   => rs2_i,        -- rf source 2
-      -- result and status --
-      res_o   => cp_result(5), -- operation result
-      valid_o => cp_valid(5)   -- data output valid
-    );
-  end generate;
-
-  neorv32_cpu_cp_cond_inst_false:
-  if (CPU_EXTENSION_RISCV_Zicond = false) generate
-    cp_result(5) <= (others => '0');
-    cp_valid(5)  <= '0';
   end generate;
 
 

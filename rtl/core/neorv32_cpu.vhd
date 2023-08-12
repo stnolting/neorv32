@@ -56,7 +56,6 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
-    CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement conditional operations extension?
     CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
@@ -156,7 +155,6 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_U,        "U", "") &
     cond_sel_string_f(true,                         "_Zicsr", "") & -- always enabled
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr,   "_Zicntr", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicond,   "_Zicond", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zifencei, "_Zifencei", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,    "_Zfinx", "") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm,    "_Zihpm", "") &
@@ -209,7 +207,6 @@ begin
     CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr   => CPU_EXTENSION_RISCV_Zicntr,   -- implement base counters?
-    CPU_EXTENSION_RISCV_Zicond   => CPU_EXTENSION_RISCV_Zicond,   -- implement conditional operations extension?
     CPU_EXTENSION_RISCV_Zihpm    => CPU_EXTENSION_RISCV_Zihpm,    -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
@@ -321,15 +318,14 @@ begin
   neorv32_cpu_alu_inst: entity neorv32.neorv32_cpu_alu
   generic map (
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_B      => CPU_EXTENSION_RISCV_B,      -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,      -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,  -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,  -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
-    CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond, -- implement conditional operations extension?
+    CPU_EXTENSION_RISCV_B     => CPU_EXTENSION_RISCV_B,     -- implement bit-manipulation extension?
+    CPU_EXTENSION_RISCV_M     => CPU_EXTENSION_RISCV_M,     -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_Zmmul => CPU_EXTENSION_RISCV_Zmmul, -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zfinx => CPU_EXTENSION_RISCV_Zfinx, -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zxcfu => CPU_EXTENSION_RISCV_Zxcfu, -- implement custom (instr.) functions unit?
     -- Extension Options --
-    FAST_MUL_EN                => FAST_MUL_EN,                -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN              => FAST_SHIFT_EN               -- use barrel shifter for shift operations
+    FAST_MUL_EN               => FAST_MUL_EN,               -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN             => FAST_SHIFT_EN              -- use barrel shifter for shift operations
   )
   port map (
     -- global control --
