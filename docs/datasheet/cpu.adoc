@@ -30,15 +30,15 @@ test framework is available in a separate repository at GitHub: https://github.c
 .Unsupported ISA Extensions
 [TIP]
 Executing instructions or accessing CSRs from yet unsupported ISA extensions will raise an illegal
-instruction exception (-> <<_full_virtualization>>).
+instruction exception (see section  <<_full_virtualization>>).
 
 
 **Incompatibility Issues and Limitations**
 
 .`time[h]` CSRs (Wall Clock Time)
 [IMPORTANT]
-The NEORV32 does not implement the user-mode `time[h]` registers. Any access to these registers will trap.
-It is recommended that the trap handler software provides a means of accessing the platform-defined <<_machine_system_timer_mtime>>.
+The NEORV32 does not implement the `time[h]` registers. Any access to these registers will trap. It is
+recommended that the trap handler software provides a means of accessing the platform-defined <<_machine_system_timer_mtime>>.
 
 .No Hardware Support of Misaligned Memory Accesses
 [IMPORTANT]
@@ -807,8 +807,8 @@ show the values written to the according CSRs when a trap is triggered:
 
 * **I-PC** - address of interrupted instruction (instruction has _not_ been executed yet)
 * **PC** - address of instruction that caused the trap (instruction has been executed)
-* **ADR** - bad memory access address that caused the trap
-* **CMD** - the instruction word that caused the trap (zero-extended if compressed instruction)
+* **ADR** - bad data memory access address that caused the trap
+* **INS** - the (decompressed) instruction word that caused the trap
 * **0** - zero
 
 .NEORV32 Trap Listing
@@ -817,16 +817,16 @@ show the values written to the according CSRs when a trap is triggered:
 |=======================
 | Prio. | `mcause`     | ID [C]                   | Cause                                | `mepc`   | `mtval`
 6+^| **Exceptions** (_synchronous_ to instruction execution)
-| 1     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned       | **I-PC** | **0**
-| 2     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction access bus fault         | **I-PC** | **0**
-| 3     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                  | **PC**   | **CMD**
-| 4     | `0x0000000B` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode         | **PC**   | **0**
+| 1     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction fetch address misaligned | **I-PC** | **0**
+| 2     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction fetch bus access fault   | **I-PC** | **0**
+| 3     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                  | **PC**   | **INS**
+| 4     | `0x0000000b` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode         | **PC**   | **0**
 | 5     | `0x00000008` | `TRAP_CODE_UENV_CALL`    | environment call from U-mode         | **PC**   | **0**
-| 6     | `0x00000003` | `TRAP_CODE_BREAKPOINT`   | software breakpoint / trigger firing | **PC**   | **PC**
+| 6     | `0x00000003` | `TRAP_CODE_BREAKPOINT`   | software breakpoint / trigger firing | **PC**   | **0**
 | 7     | `0x00000006` | `TRAP_CODE_S_MISALIGNED` | store address misaligned             | **PC**   | **ADR**
 | 8     | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned              | **PC**   | **ADR**
-| 9     | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store access bus fault               | **PC**   | **ADR**
-| 10    | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load access bus fault                | **PC**   | **ADR**
+| 9     | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store bus access fault               | **PC**   | **ADR**
+| 10    | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load bus access fault                | **PC**   | **ADR**
 6+^| **Interrupts** (_asynchronous_ to instruction execution)
 | 11    | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0     | **I-PC** | **0**
 | 12    | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1     | **I-PC** | **0**
