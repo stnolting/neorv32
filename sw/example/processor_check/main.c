@@ -160,7 +160,7 @@ int main() {
 
   // prepare (performance) counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable counter auto increment (ALL counters)
-  neorv32_cpu_csr_write(CSR_MCOUNTEREN, 7); // allow access from user-mode code to base counters only
+  neorv32_cpu_csr_write(CSR_MCOUNTEREN, -1); // allow counter access from user-mode code
 
   // set CMP of machine system timer MTIME to max to prevent an IRQ
   neorv32_mtime_set_timecmp(-1);
@@ -338,25 +338,20 @@ int main() {
   if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
     cnt_test++;
 
-    // no access to instret CSR
-    neorv32_cpu_csr_clr(CSR_MCOUNTEREN, 0b111);
-    neorv32_cpu_csr_set(CSR_MCOUNTEREN, 0b001);
-
     // stop base counters
     neorv32_cpu_csr_set(CSR_MCOUNTINHIBIT, 0b101);
+
+    // no access to counter CSRs
+    neorv32_cpu_csr_write(CSR_MCOUNTEREN, 0);
 
     // read counters from user mode
     neorv32_cpu_goto_user_mode();
     {
-      asm volatile ("rdcycle   %[rd]" : [rd] "=r" (tmp_a) : );
       asm volatile ("addi      %[rd], zero, 123 \n" // this value must not change
-                    "rdinstret %[rd]" : [rd] "=r" (tmp_b) : ); // has to fail
+                    "rdinstret %[rd]" : [rd] "=r" (tmp_a) : ); // has to trap
     }
 
-    // make sure counter have NOT incremented and there was no exception during access
-    if ((tmp_a == neorv32_cpu_csr_read(CSR_MCYCLE)) &&
-        (tmp_b == 123) &&
-        ((neorv32_cpu_csr_read(CSR_MCOUNTEREN) & 7) == 0b001) &&
+    if ((tmp_a == 123) && ((neorv32_cpu_csr_read(CSR_MCOUNTEREN) & 7) == 0b000) &&
         (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL)) {
       test_ok();
     }
