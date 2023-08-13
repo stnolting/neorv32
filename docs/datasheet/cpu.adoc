@@ -631,23 +631,6 @@ This extensions is stated as _mandatory_ by the RISC-V spec. However, area-const
 support for these counters. 
 
 
-==== `Zicond` ISA Extension
-
-The `Ziconds` ISA extension implements conditional operations ("move or set-to-zero"). 
-
-[WARNING]
-The `Zicond` extension is not ratified yet. An intrinsic library is provided to utilize the `Zicond`
-conditional operations from C-language code (see `sw/example/zicond_test`) even without compiler support.
-
-.Instructions and Timing
-[cols="<2,<4,<3"]
-[options="header", grid="rows"]
-|=======================
-| Class | Instructions | Execution cycles
-| Conditional operations | `czero.eqz` `czero.nez` | 3
-|=======================
-
-
 ==== `Zicsr` ISA Extension
 
 This ISA extensions provides instructions for accessing the <<_control_and_status_registers_csrs>> as well as further

@@ -64,7 +64,6 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
     CPU_EXTENSION_RISCV_Zicntr   : boolean := true;   -- implement base counters?
-    CPU_EXTENSION_RISCV_Zicond   : boolean := false;  -- implement conditional operations extension?
     CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean := false;  -- implement multiply-only M sub-extension?
@@ -487,7 +486,6 @@ begin
       CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,
       CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,
       CPU_EXTENSION_RISCV_Zicntr   => CPU_EXTENSION_RISCV_Zicntr,
-      CPU_EXTENSION_RISCV_Zicond   => CPU_EXTENSION_RISCV_Zicond,
       CPU_EXTENSION_RISCV_Zihpm    => CPU_EXTENSION_RISCV_Zihpm,
       CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei,
       CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,
@@ -711,7 +709,7 @@ begin
   -- **************************************************************************************************************************
   neorv32_bus_gateway_inst: entity neorv32.neorv32_bus_gateway
   generic map (
-    TIMEOUT     => max_proc_int_response_time_c,
+    TIMEOUT     => bus_timeout_c,
     -- IMEM port --
     IMEM_ENABLE => MEM_INT_IMEM_EN,
     IMEM_BASE   => mem_imem_base_c,

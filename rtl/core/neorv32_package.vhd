@@ -47,16 +47,16 @@ package neorv32_package is
   -- if register x0 is implemented as a *physical register* it has to be explicitly set to zero by the CPU hardware --
   constant reset_x0_c : boolean := true; -- has to be 'true' for the default register file rtl description (BRAM-based)
 
-  -- "response time window" for processor-internal modules --
-  -- = cycles after which an *unacknowledged* internal bus access will timeout and trigger a bus fault exception
-  constant max_proc_int_response_time_c : natural := 15; -- default = 15
+  -- max response time for processor-internal bus transactions --
+  -- = cycles after which an *unacknowledged* internal bus access will timeout triggering a bus fault exception
+  constant bus_timeout_c : natural := 15; -- default = 15
 
   -- instruction prefetch buffer depth --
   constant ipb_depth_c : natural := 2; -- hast to be a power of two, min 2, default 2
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080706"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080707"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -255,9 +255,9 @@ package neorv32_package is
   constant funct3_bltu_c   : std_ulogic_vector(2 downto 0) := "110"; -- branch if less than (unsigned)
   constant funct3_bgeu_c   : std_ulogic_vector(2 downto 0) := "111"; -- branch if greater than or equal (unsigned)
   -- memory access --
-  constant funct3_lb_c     : std_ulogic_vector(2 downto 0) := "000"; -- load byte
-  constant funct3_lh_c     : std_ulogic_vector(2 downto 0) := "001"; -- load half word
-  constant funct3_lw_c     : std_ulogic_vector(2 downto 0) := "010"; -- load word
+  constant funct3_lb_c     : std_ulogic_vector(2 downto 0) := "000"; -- load byte (signed)
+  constant funct3_lh_c     : std_ulogic_vector(2 downto 0) := "001"; -- load half word (signed)
+  constant funct3_lw_c     : std_ulogic_vector(2 downto 0) := "010"; -- load word (signed)
   constant funct3_lbu_c    : std_ulogic_vector(2 downto 0) := "100"; -- load byte (unsigned)
   constant funct3_lhu_c    : std_ulogic_vector(2 downto 0) := "101"; -- load half word (unsigned)
   constant funct3_lwu_c    : std_ulogic_vector(2 downto 0) := "110"; -- load word (unsigned)
@@ -278,7 +278,7 @@ package neorv32_package is
   constant funct3_csrrw_c  : std_ulogic_vector(2 downto 0) := "001"; -- csr r/w
   constant funct3_csrrs_c  : std_ulogic_vector(2 downto 0) := "010"; -- csr read & set
   constant funct3_csrrc_c  : std_ulogic_vector(2 downto 0) := "011"; -- csr read & clear
-  constant funct3_csril_c  : std_ulogic_vector(2 downto 0) := "100"; -- undefined/illegal
+  constant funct3_csril_c  : std_ulogic_vector(2 downto 0) := "100"; -- undefined/illegal csr command
   constant funct3_csrrwi_c : std_ulogic_vector(2 downto 0) := "101"; -- csr r/w immediate
   constant funct3_csrrsi_c : std_ulogic_vector(2 downto 0) := "110"; -- csr read & set immediate
   constant funct3_csrrci_c : std_ulogic_vector(2 downto 0) := "111"; -- csr read & clear immediate
@@ -286,9 +286,8 @@ package neorv32_package is
   constant funct3_fence_c  : std_ulogic_vector(2 downto 0) := "000"; -- fence - order IO/memory access
   constant funct3_fencei_c : std_ulogic_vector(2 downto 0) := "001"; -- fence.i - instruction stream sync
 
-  -- RISC-V Funct12 -------------------------------------------------------------------------
+  -- RISC-V Funct12 - SYSTEM ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- system --
   constant funct12_ecall_c  : std_ulogic_vector(11 downto 0) := x"000"; -- ecall
   constant funct12_ebreak_c : std_ulogic_vector(11 downto 0) := x"001"; -- ebreak
   constant funct12_wfi_c    : std_ulogic_vector(11 downto 0) := x"105"; -- wfi
@@ -297,7 +296,6 @@ package neorv32_package is
 
   -- RISC-V Floating-Point Stuff ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- formats --
   constant float_single_c : std_ulogic_vector(1 downto 0) := "00"; -- single-precision (32-bit)
 --constant float_double_c : std_ulogic_vector(1 downto 0) := "01"; -- double-precision (64-bit)
 --constant float_half_c   : std_ulogic_vector(1 downto 0) := "10"; -- half-precision (16-bit)
@@ -330,7 +328,7 @@ package neorv32_package is
   constant fp_single_pos_zero_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- positive zero
   constant fp_single_neg_zero_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- negative zero
 
-  -- RISC-V CSR Addresses -------------------------------------------------------------------
+  -- RISC-V CSRs ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- <<< standard read/write CSRs >>> --
   -- user floating-point CSRs --
@@ -503,7 +501,7 @@ package neorv32_package is
     alu_opa_mux   : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
     alu_opb_mux   : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
     alu_unsigned  : std_ulogic;                     -- is unsigned ALU operation
-    alu_cp_trig   : std_ulogic_vector(05 downto 0); -- co-processor trigger (one-hot)
+    alu_cp_trig   : std_ulogic_vector(04 downto 0); -- co-processor trigger (one-hot)
     -- load/store unit --
     lsu_req_rd    : std_ulogic;                     -- trigger memory read request
     lsu_req_wr    : std_ulogic;                     -- trigger memory write request
@@ -565,7 +563,6 @@ package neorv32_package is
   constant cp_sel_bitmanip_c : natural := 2; -- CP2: bit manipulation ('B' extensions)
   constant cp_sel_fpu_c      : natural := 3; -- CP3: floating-point unit ('Zfinx' extension)
   constant cp_sel_cfu_c      : natural := 4; -- CP4: custom instructions CFU ('Zxcfu' extension)
-  constant cp_sel_cond_c     : natural := 5; -- CP5: conditional operations ('Zicond' extension)
 
   -- ALU Function Codes [DO NOT CHANGE ENCODING!] -------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -741,7 +738,6 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_U        : boolean := false;  -- implement user mode extension?
       CPU_EXTENSION_RISCV_Zfinx    : boolean := false;  -- implement 32-bit floating-point extension (using INT regs!)
       CPU_EXTENSION_RISCV_Zicntr   : boolean := true;   -- implement base counters?
-      CPU_EXTENSION_RISCV_Zicond   : boolean := false;  -- implement conditional operations extension?
       CPU_EXTENSION_RISCV_Zihpm    : boolean := false;  -- implement hardware performance monitors?
       CPU_EXTENSION_RISCV_Zifencei : boolean := false;  -- implement instruction stream sync.?
       CPU_EXTENSION_RISCV_Zmmul    : boolean := false;  -- implement multiply-only M sub-extension?
