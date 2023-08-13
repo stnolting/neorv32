@@ -248,8 +248,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     wdata         : std_ulogic_vector(XLEN-1 downto 0); -- csr write data
     rdata         : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
     --
-    mstatus_mie   : std_ulogic; -- global IRQ enable
-    mstatus_mpie  : std_ulogic; -- previous global IRQ enable
+    mstatus_mie   : std_ulogic; -- machine-mode IRQ enable
+    mstatus_mpie  : std_ulogic; -- previous machine-mode IRQ enable
     mstatus_mpp   : std_ulogic; -- machine previous privilege mode
     mstatus_mprv  : std_ulogic; -- effective privilege level for machine-mode load/stores
     mstatus_tw    : std_ulogic; -- do not allow user mode to execute WFI instruction when set
@@ -268,7 +268,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mtvec         : std_ulogic_vector(XLEN-1 downto 0); -- machine trap-handler base address
     mtval         : std_ulogic_vector(XLEN-1 downto 0); -- machine bad address or instruction
     mscratch      : std_ulogic_vector(XLEN-1 downto 0); -- machine scratch register
-    mcounteren    : std_ulogic_vector(15 downto 0); -- machine counter access enable
+    mcounteren    : std_ulogic; -- machine counter access enable (from user-mode)
     mcountinhibit : std_ulogic_vector(15 downto 0); -- inhibit counter auto-increment
     --
     dcsr_ebreakm  : std_ulogic; -- behavior of ebreak instruction in m-mode
@@ -1229,10 +1229,9 @@ begin
     if ((csr.addr = csr_dcsr_c) or (csr.addr = csr_dpc_c) or (csr.addr = csr_dscratch0_c)) and -- debug-mode-only CSR?
        (CPU_EXTENSION_RISCV_Sdext = true) and (debug_ctrl.running = '0') then -- debug-mode implemented and not running?
       csr_priv_valid <= '0'; -- invalid access
-    elsif (csr.addr(11 downto 8) = csr_cycle_c(11 downto 8)) and -- user counter access
+    elsif (csr.addr(11 downto 8) = csr_cycle_c(11 downto 8)) and -- user-mode counter access
           ((CPU_EXTENSION_RISCV_Zicntr = true) or (CPU_EXTENSION_RISCV_Zihpm = true)) and -- any counters available?
-          (CPU_EXTENSION_RISCV_U = true) and (csr.privilege_eff = '0') and -- user mode enabled and active
-          (csr.mcounteren(to_integer(unsigned(csr.addr(3 downto 0)))) = '0') then -- access not allowed?
+          (CPU_EXTENSION_RISCV_U = true) and (csr.privilege_eff = '0') and (csr.mcounteren = '0') then -- user mode enabled, active and access not allowed?
       csr_priv_valid <= '0'; -- invalid access
     elsif (csr.addr(9 downto 8) /= "00") and (csr.privilege_eff = '0') then -- invalid privilege level
       csr_priv_valid <= '0'; -- invalid access
@@ -1281,7 +1280,7 @@ begin
           when others => illegal_cmd <= '1';
         end case;
 
-      when opcode_amo_c => -- check funct7 and funct3
+      when opcode_amo_c => -- check funct7 and funct3 via decode helper
       -- ------------------------------------------------------------
         if (CPU_EXTENSION_RISCV_A = true) and ((decode_aux.is_a_lr = '1') or (decode_aux.is_a_sc = '1')) then -- LR.W/SC.W
           illegal_cmd <= '0';
@@ -1289,7 +1288,7 @@ begin
           illegal_cmd <= '1';
         end if;
 
-      when opcode_alu_c => -- check operation specifier
+      when opcode_alu_c => -- check operation identifier
       -- ------------------------------------------------------------
         if ((((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c)) and
              (execute_engine.ir(instr_funct7_msb_c-2 downto instr_funct7_lsb_c) = "00000") and (execute_engine.ir(instr_funct7_msb_c) = '0')) or
@@ -1308,7 +1307,7 @@ begin
           illegal_cmd <= '1';
         end if;
 
-      when opcode_alui_c => -- check operation specifier
+      when opcode_alui_c => -- check operation identifier
       -- ------------------------------------------------------------
         if ((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or
             (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or
@@ -1355,7 +1354,7 @@ begin
           illegal_cmd <= '0';
         end if;
 
-      when opcode_fop_c => -- all encodings valid if FPU enabled
+      when opcode_fop_c => -- all Zfinx encodings valid if FPU enabled
       -- ------------------------------------------------------------
         illegal_cmd <= (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx)) or (not decode_aux.is_f_op);
 
@@ -1629,7 +1628,7 @@ begin
       csr.mepc          <= (others => '0');
       csr.mcause        <= (others => '0');
       csr.mtval         <= (others => '0');
-      csr.mcounteren    <= (others => '0');
+      csr.mcounteren    <= '0';
       csr.mcountinhibit <= (others => '0');
       csr.mip_firq_nclr <= (others => '0');
       csr.dcsr_ebreakm  <= '0';
@@ -1679,12 +1678,12 @@ begin
 
           when csr_mcounteren_c => -- machine counter access enable
             if (CPU_EXTENSION_RISCV_U = true) then
-              if (CPU_EXTENSION_RISCV_Zicntr = true) then
-                csr.mcounteren(0) <= csr.wdata(0);
-                csr.mcounteren(2) <= csr.wdata(2);
-              end if;
-              if (CPU_EXTENSION_RISCV_Zihpm = true) then
-                csr.mcounteren(15 downto 3) <= csr.wdata(15 downto 3);
+              if (CPU_EXTENSION_RISCV_Zicntr = true) and (CPU_EXTENSION_RISCV_Zihpm = true) then
+                csr.mcounteren <= or_reduce_f(csr.wdata(15 downto 0)); -- hpms, instret, time, cycle
+              elsif (CPU_EXTENSION_RISCV_Zicntr = true) then
+                csr.mcounteren <= or_reduce_f(csr.wdata(02 downto 0)); -- instret, time, cycle
+              elsif (CPU_EXTENSION_RISCV_Zihpm = true) then
+                csr.mcounteren <= or_reduce_f(csr.wdata(15 downto 3)); -- hpms
               end if;
             end if;
 
@@ -1779,8 +1778,6 @@ begin
                 csr.mtval <= mar_i; -- faulting data access address
               when trap_iil_c => -- illegal instruction
                 csr.mtval <= execute_engine.ir; -- faulting instruction word
-              when trap_brk_c => -- breakpoint instruction
-                csr.mtval <= trap_ctrl.epc(XLEN-1 downto 1) & '0'; -- address of breakpoint instruction [NOTE] redundant - might be removed again
               when others => -- everything else including all interrupts
                 csr.mtval <= (others => '0');
             end case;
@@ -1807,7 +1804,7 @@ begin
         -- --------------------------------------------------------------------
         elsif (trap_ctrl.env_exit = '1') then
 
-          -- return from debug mode --
+          -- return from debug mode trap --
           if (CPU_EXTENSION_RISCV_Sdext = true) and (debug_ctrl.running = '1') then
             if (CPU_EXTENSION_RISCV_U = true) then
               csr.privilege <= csr.dcsr_prv;
@@ -1816,7 +1813,7 @@ begin
               end if;
             end if;
 
-          -- return from "normal trap" --
+          -- return from normal trap --
           else
             if (CPU_EXTENSION_RISCV_U = true) then
               csr.privilege   <= csr.mstatus_mpp; -- restore previous privilege mode
@@ -1825,7 +1822,7 @@ begin
                 csr.mstatus_mprv <= '0'; -- clear if return priv. mode is less than M
               end if;
             end if;
-            csr.mstatus_mie  <= csr.mstatus_mpie; -- restore global IRQ enable flag
+            csr.mstatus_mie  <= csr.mstatus_mpie; -- restore machine-mode IRQ enable flag
             csr.mstatus_mpie <= '1';
           end if;
 
@@ -1839,18 +1836,15 @@ begin
       -- ********************************************************************************
 
       -- hardwired bits --
-      csr.mcounteren(1)    <= '0'; -- time[h] not implemented
       csr.mcountinhibit(1) <= '0'; -- time[h] not implemented
 
       -- no base counters --
       if (CPU_EXTENSION_RISCV_Zicntr = false) then
-        csr.mcounteren(2 downto 0)    <= (others => '0');
         csr.mcountinhibit(2 downto 0) <= (others => '0');
       end if;
   
      -- no hardware performance monitors --
       if (CPU_EXTENSION_RISCV_Zihpm = false) then
-        csr.mcounteren(15 downto 3)    <= (others => '0');
         csr.mcountinhibit(15 downto 3) <= (others => '0');
       end if;
 
@@ -1862,7 +1856,7 @@ begin
         csr.mstatus_tw    <= '0';
         csr.dcsr_ebreaku  <= '0';
         csr.dcsr_prv      <= '0';
-        csr.mcounteren    <= (others => '0');
+        csr.mcounteren    <= '0';
       end if;
 
       -- no debug mode --
@@ -1931,12 +1925,11 @@ begin
 
       when csr_mcounteren_c => -- machine counter enable register
         if (CPU_EXTENSION_RISCV_U = true) then
-          csr_rdata(0) <= csr.mcounteren(0); -- cycle[h]
-          csr_rdata(2) <= csr.mcounteren(2); -- instret[h]
-          if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then
-            for i in 3 to (hpm_num_c+3)-1 loop
-              csr_rdata(i) <= csr.mcounteren(i); -- hpmcounter*[h]
-            end loop;
+          if (CPU_EXTENSION_RISCV_Zicntr = true) then
+            csr_rdata(02 downto 0) <= (others => csr.mcounteren); -- instret[h], time[h], cycle[h]
+          end if;
+          if (CPU_EXTENSION_RISCV_Zihpm = true) then
+            csr_rdata(15 downto 3) <= (others => csr.mcounteren); -- hpmcounter*[h]
           end if;
         end if;
 
