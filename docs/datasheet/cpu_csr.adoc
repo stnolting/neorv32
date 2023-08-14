@@ -228,8 +228,8 @@ Any illegal read access to a CSR will return zero in the operation's destination
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 3     | `CSR_MSTATUS_MIE`  | r/w | **MIE**: Machine global interrupt enable flag
-| 7     | `CSR_MSTATUS_MPIE` | r/w | **MPIE**: Previous machine global interrupt enable flag state
+| 3     | `CSR_MSTATUS_MIE`  | r/w | **MIE**: Machine-mode interrupt enable flag
+| 7     | `CSR_MSTATUS_MPIE` | r/w | **MPIE**: Previous machine-mode interrupt enable flag state
 | 12:11 | `CSR_MSTATUS_MPP_H` : `CSR_MSTATUS_MPP_L` | r/w | **MPP**: Previous machine privilege mode, 11 = machine (M) mode, 00 = user (U) mode
 | 17    | `CSR_MSTATUS_MPRV` | r/w | **MPRV**: Effective privilege mode for load/stores in machine mode; use `MPP`'s as effective privilege mode when set; hardwired to zero if user-mode not implemented
 | 21    | `CSR_MSTATUS_TW`   | r/w | **TW**: Trap on execution of `wfi` instruction in user mode when set; hardwired to zero if user-mode not implemented
@@ -351,12 +351,17 @@ This CSR is also available if U mode is disabled, but the register is hardwired 
 [cols="^1,^1,<8"]
 [options="header",grid="rows"]
 |=======================
-| Bit  | R/W | Function
-| 0    | r/w | **CY**: User-mode code is allowed to read <<_cycleh>> CSRs when set
-| 1    | r/- | **TM**: Hardwired to zero as `time[h]` CSRs are not implemented
-| 2    | r/w | **IR**: User-mode code is allowed to read <<_instreth>> CSRs when set
-| 15:3 | r/w | **HPM**: user-mode code is allowed to read <<_hpmcounterh>> CSRs when set
+| Bit  | R/W     | Function
+| 0    | r/w (!) | **CY**: User-mode is allowed to read <<_cycleh>> CSRs when set
+| 1    | r/w (!) | **TM**: User-mode is allowed to read `time[h]` CSRs when set
+| 2    | r/w (!) | **IR**: User-mode is allowed to read <<_instreth>> CSRs when set
+| 15:3 | r/w (!) | **HPM**: user-mode is allowed to read <<_hpmcounterh>> CSRs when set
 |=======================
+
+[IMPORTANT]
+Physically, the NEORV32's `mcounteren` CSR is implemented as a **single 1-bit register**. Setting _any_ bit of
+the CSR will result in all bits being set. Hence, user-mode access can only be granted for _all_ counter CSRs
+or denied for _all_ counter CSRs. 
 
 
 {empty} +
