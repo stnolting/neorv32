@@ -32,7 +32,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
-| 12.08.2023 | 1.8.7.7 | remove `Zicond` ISA extension; minor rtl code cleanups and optimizations; [#670](https://github.com/stnolting/neorv32/pull/670) |
+| 13.08.2023 | 1.8.7.8 | :warning: constrain/optimize `mtval` and `mcounteren` CSRs; [#671](https://github.com/stnolting/neorv32/pull/671) |
+| 12.08.2023 | 1.8.7.7 | remove _unratified_ `Zicond` ISA extension; minor rtl code cleanups and optimizations; [#670](https://github.com/stnolting/neorv32/pull/670) |
 | 05.08.2023 | 1.8.7.6 | :bug: fix bug: HPM width configurations below 32 bit fail; [#665](https://github.com/stnolting/neorv32/pull/665) |
 | 04.08.2023 | 1.8.7.5 | :warning: major code edits/cleanups and file renaming; [#664](https://github.com/stnolting/neorv32/pull/664) |
 | 29.07.2023 | 1.8.7.4 | RTL cleanup and optimizations (less synthesis warnings, less resource requirements); [#660](https://github.com/stnolting/neorv32/pull/660) |
