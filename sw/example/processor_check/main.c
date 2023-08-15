@@ -344,7 +344,7 @@ int main() {
     // no access to counter CSRs
     neorv32_cpu_csr_write(CSR_MCOUNTEREN, 0);
 
-    // read counters from user mode
+    // read counter from user mode
     neorv32_cpu_goto_user_mode();
     {
       asm volatile ("addi      %[rd], zero, 123 \n" // this value must not change
@@ -472,9 +472,11 @@ int main() {
 
   cnt_test++;
 
-  neorv32_cpu_csr_read(CSR_DSCRATCH0); // only accessible in debug mode
+  // DSCRATCH0 is accessible in only debug mode
+  asm volatile ("addi %[rd], zero, 789 \n" // this value must not change
+                "csrr %[rd], %[csr]" : [rd] "=r" (tmp_a) : [csr] "i" (CSR_DSCRATCH0));
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+  if ((tmp_a == 789) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL)) {
     test_ok();
   }
   else {
