@@ -38,7 +38,7 @@ Want to know more? Check out the [project's rationale](https://stnolting.github.
 
 * :books: For detailed information see the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
 * :recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
-* :heavy_check_mark: [Continuous integration](#project-status) to check for regressions (including RISC-V ISA compatibility test using **RISCOF**).
+* :heavy_check_mark: [Continuous integration](#project-status) to check for regressions (including RISC-V ISA compatibility check using **RISCOF**).
 * :package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
 [community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
 targeting various FPGA boards and toolchains to get started.
@@ -50,8 +50,7 @@ targeting various FPGA boards and toolchains to get started.
 
 :bulb: Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
 [discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or if something is
-not working as expected. Or have a chat on our [gitter channel](https://gitter.im/neorv32/community).
-See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
+not working as expected. See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
 
 
 ### Key Features
@@ -131,7 +130,7 @@ and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/
 * `machine` and `user` privilege modes
 * implements **all** standard RISC-V exceptions and interrupts + 16 fast interrupt request channels as NEORV32-specific extension
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as `Zxcfu` ISA extension)
-for _custom RISC-V instructions_ (R3-type, R4-type and R5-type);
+for **custom RISC-V instructions**;
 * _intrinsic_ libraries for CPU extensions that are not yet supported by GCC
 
 **Memories**
@@ -155,7 +154,7 @@ allows booting application code via UART or from external SPI flash
 ([UART](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0),
 [SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi) (host),
 [SDI](https://stnolting.github.io/neorv32/#_serial_data_interface_controller_sdi) (SPI device),
-[TWI/I²C](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi)),
+[TWI/I²C](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi),
 [ONEWIRE/1-Wire](https://stnolting.github.io/neorv32/#_one_wire_serial_interface_controller_onewire))
 * general purpose IOs ([GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio)) and
 [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
