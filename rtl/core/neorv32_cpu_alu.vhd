@@ -49,7 +49,7 @@ entity neorv32_cpu_alu is
     CPU_EXTENSION_RISCV_Zmmul : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zfinx : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zxcfu : boolean; -- implement custom (instr.) functions unit?
-    -- Extension Options --
+    -- Tuning Options --
     FAST_MUL_EN               : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN             : boolean  -- use barrel shifter for shift operations
   );

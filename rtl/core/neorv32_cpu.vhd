@@ -62,7 +62,7 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext    : boolean; -- implement external debug mode extension?
     CPU_EXTENSION_RISCV_Sdtrig   : boolean; -- implement trigger module extension?
-    -- Extension Options --
+    -- Tuning Options --
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
@@ -323,7 +323,7 @@ begin
     CPU_EXTENSION_RISCV_Zmmul => CPU_EXTENSION_RISCV_Zmmul, -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zfinx => CPU_EXTENSION_RISCV_Zfinx, -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zxcfu => CPU_EXTENSION_RISCV_Zxcfu, -- implement custom (instr.) functions unit?
-    -- Extension Options --
+    -- Tuning Options --
     FAST_MUL_EN               => FAST_MUL_EN,               -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN             => FAST_SHIFT_EN              -- use barrel shifter for shift operations
   )
