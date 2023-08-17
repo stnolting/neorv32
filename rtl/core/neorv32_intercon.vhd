@@ -354,47 +354,42 @@ begin
   -- -------------------------------------------------------------------------------------------
   request: process(main_req_i, port_sel)
   begin
+    imem_req_o <= req_terminate_c;
+    dmem_req_o <= req_terminate_c;
+    xip_req_o  <= req_terminate_c;
+    boot_req_o <= req_terminate_c;
+    io_req_o   <= req_terminate_c;
+    ext_req_o  <= req_terminate_c;
+    --
     if (IMEM_ENABLE = true) then
       imem_req_o    <= main_req_i;
       imem_req_o.we <= main_req_i.we and port_sel(port_imem_c);
       imem_req_o.re <= main_req_i.re and port_sel(port_imem_c);
-    else
-      imem_req_o <= req_terminate_c;
     end if;
     if (DMEM_ENABLE = true) then
       dmem_req_o    <= main_req_i;
       dmem_req_o.we <= main_req_i.we and port_sel(port_dmem_c);
       dmem_req_o.re <= main_req_i.re and port_sel(port_dmem_c);
-    else
-      dmem_req_o <= req_terminate_c;
     end if;
     if (XIP_ENABLE = true) then
       xip_req_o    <= main_req_i;
       xip_req_o.we <= '0'; -- PMA: read-only
       xip_req_o.re <= main_req_i.re and port_sel(port_xip_c);
-    else
-      xip_req_o <= req_terminate_c;
     end if;
     if (BOOT_ENABLE = true) then
       boot_req_o    <= main_req_i;
       boot_req_o.we <= '0'; -- PMA: read-only
       boot_req_o.re <= main_req_i.re and port_sel(port_boot_c);
-    else
-      boot_req_o <= req_terminate_c;
     end if;
     if (IO_ENABLE = true) then
       io_req_o    <= main_req_i;
       io_req_o.we <= main_req_i.we and port_sel(port_io_c);
       io_req_o.re <= main_req_i.re and port_sel(port_io_c);
-    else
-      io_req_o <= req_terminate_c;
     end if;
     if (EXT_ENABLE = true) then
       ext_req_o    <= main_req_i;
       ext_req_o.we <= main_req_i.we and port_sel(port_ext_c);
       ext_req_o.re <= main_req_i.re and port_sel(port_ext_c);
-    else
-      ext_req_o <= req_terminate_c;
     end if;
   end process request;
 
@@ -659,21 +654,15 @@ begin
   dev_20_req_o <= dev_req(20); dev_rsp(20) <= dev_20_rsp_i;
 
 
-  -- Device Access Decoders -----------------------------------------------------------------
+  -- Device Requests ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   access_gen:
   for i in 0 to (num_devs_physical_c-1) generate
-    dev_sel(i) <= '1' when (main_req_i.addr(abb_hi_c downto abb_lo_c) = dev_base_list_c(i)(abb_hi_c downto abb_lo_c)) and
-                           (dev_en_list_c(i) = true) else '0';
-  end generate;
 
-
-  -- Device Requests ------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  request_gen:
-  for i in 0 to (num_devs_physical_c-1) generate
-    request_gen_enabled:
+    access_gen_enabled:
     if (dev_en_list_c(i) = true) generate
+      dev_sel(i) <= '1' when main_req_i.addr(abb_hi_c downto abb_lo_c) = dev_base_list_c(i)(abb_hi_c downto abb_lo_c) else '0';
+      --
       dev_req(i).addr <= main_req_i.addr;
       dev_req(i).data <= main_req_i.data;
       dev_req(i).ben  <= main_req_i.ben;
@@ -683,10 +672,13 @@ begin
       dev_req(i).priv <= main_req_i.priv;
       dev_req(i).rvso <= main_req_i.rvso;
     end generate;
-    request_gen_disabled:
+
+    access_gen_disabled:
     if (dev_en_list_c(i) = false) generate
+      dev_sel(i) <= '0';
       dev_req(i) <= req_terminate_c;
     end generate;
+
   end generate;
 
 
@@ -696,7 +688,7 @@ begin
     variable tmp_v : bus_rsp_t;
   begin
     tmp_v := rsp_terminate_c; -- start with all-zero
-    for i in 0 to (num_devs_physical_c-1) loop -- logical or OR of all response signal entries
+    for i in 0 to (num_devs_physical_c-1) loop -- logical OR of all response signals
       if (dev_en_list_c(i) = true) then
         tmp_v.data := tmp_v.data or dev_rsp(i).data;
         tmp_v.ack  := tmp_v.ack  or dev_rsp(i).ack;

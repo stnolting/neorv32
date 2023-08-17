@@ -83,8 +83,7 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   constant mode_napot_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
 
   -- PMP helpers --
-  constant pmp_lsb_c  : natural := index_size_f(GRANULARITY); -- min = 2
-  constant pmp_zero_c : std_ulogic_vector(XLEN-1 downto pmp_lsb_c) := (others => '0');
+  constant pmp_lsb_c : natural := index_size_f(GRANULARITY); -- min = 2
 
   -- PMP CSRs --
   type csr_cfg_t      is array (0 to NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
@@ -158,7 +157,6 @@ begin
     end if;
   end process csr_we;
 
-
   -- PMP CSR registers --
   csr_reg_gen:
   for i in 0 to NUM_REGIONS-1 generate
@@ -214,7 +212,6 @@ begin
       csr_rdata_o <= (others => '0');
     end if;
   end process csr_read_access;
-
 
   -- CSR read-back --
   csr_read_back_gen:
@@ -274,7 +271,7 @@ begin
     begin
       if (rstn_i = '0') then
         addr_mask(r) <= (others => '0');
-      elsif rising_edge(clk_i) then -- register output to relax timing of the (huge!) comparator logic
+      elsif rising_edge(clk_i) then
         if (csr.cfg(r)(cfg_al_c) = '1') then -- NAPOT
           addr_mask(r) <= addr_mask_napot(r);
         else -- NA4
@@ -350,7 +347,7 @@ begin
   end generate;
 
 
-  -- final PMP access fault signals (bypass PMP rules when in debug mode) --
+  -- final PMP access fault signals (ignore PMP rules when in debug mode) --
   fault_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then

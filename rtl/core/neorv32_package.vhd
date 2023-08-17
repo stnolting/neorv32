@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080708"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080709"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -134,7 +134,8 @@ package neorv32_package is
 -- SoC Definitions
 -- ****************************************************************************************************************************
 
-  -- SoC Clock Select --
+  -- SoC Clock Select -----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   constant clk_div2_c    : natural := 0;
   constant clk_div4_c    : natural := 1;
   constant clk_div8_c    : natural := 2;
