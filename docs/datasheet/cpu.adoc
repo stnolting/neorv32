@@ -44,7 +44,9 @@ recommended that the trap handler software provides a means of accessing the pla
 [IMPORTANT]
 The CPU does not support resolving unaligned memory access by the hardware (this is not a
 RISC-V-incompatibility issue but an important thing to know!). Any kind of unaligned memory access
-will raise an exception to allow a _software-based_ emulation provided by the application.
+will raise an exception to allow a _software-based_ emulation provided by the application. However, unaligned memory
+access can be **emulated** using the NEORV32 runtime environment. See section <<_application_context_handling>>
+for more information.
 
 .No Atomic Read-Modify-Write Operations
 [IMPORTANT]
@@ -128,6 +130,7 @@ effect maximal operation frequency.
 [WARNING]
 The CPU does not support a hardware-based handling of unaligned memory accesses! Any unaligned access will raise a bus load/store unaligned
 address exception. The exception handler can be used to _emulate_ unaligned memory accesses in software.
+See the NEORV32 Runtime Environment's <<_application_context_handling>> section for more information.
 
 
 :sectnums:
