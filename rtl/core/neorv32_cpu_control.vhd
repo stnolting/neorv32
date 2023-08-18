@@ -447,13 +447,13 @@ begin
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   prefetch_buffer:
-  for i in 0 to 1 generate -- low half-word and high half-word (+status)
+  for i in 0 to 1 generate -- low half-word and high half-word (incl. status bits)
     prefetch_buffer_inst: entity neorv32.neorv32_fifo
     generic map (
       FIFO_DEPTH => ipb_depth_c,         -- number of fifo entries; has to be a power of two
       FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in fifo
       FIFO_RSYNC => false,               -- we NEED to read data asynchronously
-      FIFO_SAFE  => false                -- no safe access required (ensured by FIFO-external control)
+      FIFO_SAFE  => false                -- no safe access required (ensured by FIFO-external logic)
     )
     port map (
       -- control --
@@ -846,7 +846,7 @@ begin
 
       when DISPATCH => -- Wait for ISSUE engine to become ready
       -- ------------------------------------------------------------
-        if (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- new instruction available / IFETCH and ISSUE ready again?
+        if (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- new instruction word available
           if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap
             execute_engine.state_nxt <= TRAP_ENTER;
           else -- normal execution
@@ -1142,7 +1142,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   csr_avail_check: process(csr.addr)
   begin
-    csr_reg_valid <= '0'; -- default: invalid access
     case csr.addr is
 
       -- floating-point CSRs --
@@ -1154,7 +1153,7 @@ begin
            csr_mscratch_c      | csr_mepc_c       | csr_mcause_c  | csr_mip_c        | csr_mtval_c     |
            csr_mcountinhibit_c | csr_mcounteren_c | csr_menvcfg_c | csr_menvcfgh_c   | csr_mvendorid_c |
            csr_marchid_c       | csr_mimpid_c     | csr_mhartid_c | csr_mconfigptr_c | csr_mxisa_c =>
-        csr_reg_valid <= '1'; -- always available
+        csr_reg_valid <= '1'; -- always available (but CSR might be hardwired)
 
       -- physical memory protection (PMP) --
       when csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   | -- configuration
@@ -1806,7 +1805,7 @@ begin
             if (CPU_EXTENSION_RISCV_U = true) then
               csr.privilege <= csr.dcsr_prv;
               if (csr.dcsr_prv /= priv_mode_m_c) then
-                csr.mstatus_mprv <= '0'; -- clear if return priv. mode is less than M
+                csr.mstatus_mprv <= '0'; -- clear if return to priv. mode less than M
               end if;
             end if;
 
@@ -1816,7 +1815,7 @@ begin
               csr.privilege   <= csr.mstatus_mpp; -- restore previous privilege mode
               csr.mstatus_mpp <= priv_mode_u_c; -- set to least-privileged mode that is supported
               if (csr.mstatus_mpp /= priv_mode_m_c) then
-                csr.mstatus_mprv <= '0'; -- clear if return priv. mode is less than M
+                csr.mstatus_mprv <= '0'; -- clear if return to priv. mode less than M
               end if;
             end if;
             csr.mstatus_mie  <= csr.mstatus_mpie; -- restore machine-mode IRQ enable flag
@@ -1840,7 +1839,7 @@ begin
         csr.mcountinhibit(2 downto 0) <= (others => '0');
       end if;
 
-     -- no hardware performance monitors --
+      -- no hardware performance monitors --
       if (CPU_EXTENSION_RISCV_Zihpm = false) then
         csr.mcountinhibit(15 downto 3) <= (others => '0');
       end if;
