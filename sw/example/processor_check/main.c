@@ -172,17 +172,9 @@ int main() {
 
   // fancy intro
   // -----------------------------------------------
-  // check MISA CSR (hardware configuration) vs. compiler flags (software configuration)
-  neorv32_rte_check_isa(0);
-
-  // show NEORV32 ASCII logo
-  neorv32_rte_print_logo();
-
-  // show project credits
-  neorv32_rte_print_credits();
-
-  // show full hardware configuration report
-  neorv32_rte_print_hw_config();
+  neorv32_rte_print_logo(); // show NEORV32 ASCII logo
+  neorv32_rte_print_credits(); // show project credits
+  neorv32_rte_print_hw_config(); // show full hardware configuration report
 
 
   // **********************************************************************************************
@@ -601,7 +593,7 @@ int main() {
   // make sure this has caused an illegal exception
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) && // illegal instruction exception
       ((neorv32_cpu_csr_read(CSR_MSTATUS) & (1 << CSR_MSTATUS_MIE)) == 0) && // MIE should still be cleared
-      (neorv32_cpu_csr_read(CSR_MTVAL) == 0x3020007fUL)) { // instruction word that caused the exception
+      (neorv32_cpu_csr_read(CSR_MTINST) == 0x3020007fUL)) { // instruction word that caused the exception
     test_ok();
   }
   else {
@@ -821,7 +813,9 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MTI) {
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MTI) &&
+        (neorv32_cpu_csr_read(CSR_MTVAL)  == 0) && // has to be zero for interrupts
+        (neorv32_cpu_csr_read(CSR_MTINST) == 0)) { // has to be zero for interrupts
       test_ok();
     }
     else {
@@ -852,7 +846,6 @@ int main() {
     sim_irq_trigger(1 << CSR_MIE_MSIE);
 
     // wait some time for the IRQ to arrive the CPU
-    asm volatile ("nop");
     asm volatile ("nop");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -886,7 +879,6 @@ int main() {
     sim_irq_trigger(1 << CSR_MIE_MEIE);
 
     // wait some time for the IRQ to arrive the CPU
-    asm volatile ("nop");
     asm volatile ("nop");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -952,7 +944,6 @@ int main() {
     neorv32_mtime_set_timecmp(0); // force interrupt
 
     // wait some time for the IRQ to arrive the CPU
-    asm volatile ("nop");
     asm volatile ("nop");
 
     uint32_t was_pending = neorv32_cpu_csr_read(CSR_MIP) & (1 << CSR_MIP_MTIP); // should be pending now
@@ -1040,8 +1031,8 @@ int main() {
     neorv32_uart0_putc(0);
     while(neorv32_uart0_tx_busy());
 
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // wait for interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1085,8 +1076,8 @@ int main() {
     // UART0 TX interrupt enable
     neorv32_cpu_irq_enable(UART0_TX_FIRQ_ENABLE);
 
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // wait for interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1127,8 +1118,8 @@ int main() {
     neorv32_uart1_putc(0);
     while(neorv32_uart1_tx_busy());
 
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // wait for interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1169,8 +1160,8 @@ int main() {
     // UART0 TX interrupt enable
     neorv32_cpu_irq_enable(UART1_TX_FIRQ_ENABLE);
 
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // wait for interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1207,9 +1198,8 @@ int main() {
     // trigger SPI IRQ
     neorv32_spi_trans(0); // blocking
 
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // wait for interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1243,9 +1233,8 @@ int main() {
     // trigger TWI IRQ
     neorv32_twi_start_trans(0xA5);
 
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // wait for interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1283,9 +1272,8 @@ int main() {
     // trigger XIRQ channel 1 and 0
     neorv32_gpio_port_set(3);
 
-    // wait for IRQs to arrive CPU
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // wait for interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1413,9 +1401,8 @@ int main() {
     tmp_a = neorv32_spi_trans(0x83);
     neorv32_spi_cs_dis();
 
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // wait for interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1448,9 +1435,8 @@ int main() {
     // configure timer IRQ for one-shot mode after CLK_PRSC_2*2=4 clock cycles
     neorv32_gptmr_setup(CLK_PRSC_2, 0, 2);
 
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // wait for interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1485,9 +1471,8 @@ int main() {
     // read single bit from bus
     neorv32_onewire_read_bit_blocking();
 
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // wait for interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1521,9 +1506,8 @@ int main() {
     // send data word
     neorv32_slink_put(0xAABBCCDD);
 
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // wait for interrupt
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1552,7 +1536,7 @@ int main() {
     // enable TRNG FIRQ
     neorv32_cpu_irq_enable(TRNG_FIRQ_ENABLE);
 
-    // configure interface for minimal timing
+    // configure interface
     NEORV32_TRNG->CTRL = (1 << TRNG_CTRL_EN) |
                          (1 << TRNG_CTRL_IRQ_FIFO_FULL); // IRQ if FIFO is full
 
