@@ -99,7 +99,7 @@ bits can actually be modified.
 | Name        | Floating-point accrued exceptions
 | Address     | `0x001`
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `Zfinx`
+| ISA         | `Zicsr` & `Zfinx`
 | Description | FPU status flags.
 |=======================
 
@@ -126,7 +126,7 @@ bits can actually be modified.
 | Name        | Floating-point dynamic rounding mode
 | Address     | `0x002`
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `Zfinx`
+| ISA         | `Zicsr` & `Zfinx`
 | Description | The `frm` CSR is used to configure the rounding mode of the FPU.
 |=======================
 
@@ -150,7 +150,7 @@ bits can actually be modified.
 | Name        | Floating-point control and status register
 | Address     | `0x003`
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `Zfinx`
+| ISA         | `Zicsr` & `Zfinx`
 | Description | The `fcsr` provides combined access to the <<_fflags>> and <<_frm>> flags.
 |=======================
 
@@ -179,7 +179,7 @@ bits can actually be modified.
 | Name        | Machine environment configuration register
 | Address     | `0x30a`
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `U`
+| ISA         | `Zicsr` & `U`
 | Description | The features of this CSR are not implemented yet. The register is read-only and always returns zero.
 |=======================
 
@@ -194,7 +194,7 @@ bits can actually be modified.
 | Name        | Machine environment configuration register - high word
 | Address     | `0x31a`
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `U`
+| ISA         | `Zicsr` & `U`
 | Description | The features of this CSR are not implemented yet. The register is read-only and always returns zero.
 |=======================
 
@@ -336,7 +336,7 @@ interrupt is triggered or an exception is raised.
 | Name        | Machine counter enable
 | Address     | `0x306`
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `U`
+| ISA         | `Zicsr` & `U`
 | Description | The `mcounteren` CSR is used to constrain user-mode access to the CPU's counter CSRs.
 This CSR is also available if U mode is disabled, but the register is hardwired to all-zero in this case.
 |=======================
@@ -519,7 +519,7 @@ See section <<_pmp_isa_extension>> for more information.
 | Name        | PMP region configuration registers
 | Address     | `0x3a0` (`pmpcfg0`) ... `0x3a3` (`pmpcfg3`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `PMP`
+| ISA         | `Zicsr` & `PMP`
 | Description | Configuration of physical memory protection regions. Each region provides an individual 8-bit array in these CSRs.
 |=======================
 
@@ -549,7 +549,7 @@ The `pmpaddr*` CSRs are used to configure the region's address boundaries.
 | Name        | Physical memory protection address registers
 | Address     | `0x3b0` (`pmpaddr0`) ... `0x3bf` (`pmpaddr15`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `PMP`
+| ISA         | `Zicsr` & `PMP`
 | Description | Region address configuration. The two MSBs of each CSR are hardwired to zero (= bits 33:32 of the physical address).
 |=======================
 
@@ -586,7 +586,7 @@ if this instruction is actually going to retire or if it causes an exception.
 | Address     | `0xc00` (`cycle`)
 |             | `0xc80` (`cycleh`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `Zicntr`
+| ISA         | `Zicsr` & `Zicntr`
 | Description | The `cycle[h]` CSRs are user-mode shadow copies of the according <<_mcycleh>> CSRs. The user-mode
 counter are read-only. Any write access will raise an illegal instruction exception.
 |=======================
@@ -603,7 +603,7 @@ counter are read-only. Any write access will raise an illegal instruction except
 | Address     | `0xc02` (`instret`)
 |             | `0xc82` (`instreth`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `Zicntr`
+| ISA         | `Zicsr` & `Zicntr`
 | Description | The `instret[h]` CSRs are user-mode shadow copies of the according <<_minstreth>> CSRs. The user-mode
 counter are read-only. Any write access will raise an illegal instruction exception.
 |=======================
@@ -620,7 +620,7 @@ counter are read-only. Any write access will raise an illegal instruction except
 | Address     | `0xb00` (`mcycle`)
 |             | `0xb80` (`mcycleh`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `Zicntr`
+| ISA         | `Zicsr` & `Zicntr`
 | Description | If not halted via the <<_mcountinhibit>> CSR the `cycle[h]` CSRs will increment with every active CPU clock
 cycle (CPU not in sleep mode). These registers are read/write only for machine-mode software.
 |=======================
@@ -637,7 +637,7 @@ cycle (CPU not in sleep mode). These registers are read/write only for machine-m
 | Address     | `0xb02` (`minstret`)
 |             | `0xb82` (`minstreth`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `Zicntr`
+| ISA         | `Zicsr` & `Zicntr`
 | Description | If not halted via the <<_mcountinhibit>> CSR the `minstret[h]` CSRs will increment with every retired instruction.
 These registers are read/write only for machine-mode software
 |=======================
@@ -673,7 +673,7 @@ If `HPM_NUM_CNTS` is less than 64, all remaining MSB-aligned bits are hardwired 
 | Name        | Machine hardware performance monitor event select
 | Address     | `0x233` (`mhpmevent3`) ... `0x32f` (`mhpmevent15`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `Zihpm`
+| ISA         | `Zicsr` & `Zihpm`
 | Description | The value in these CSRs define the architectural events that cause an increment of the according `mhpmcounter*[h]` counter(s).
 All available events are listed in the table below. If more than one event is selected, the according counter will increment if _any_ of
 the enabled events is observed (logical OR). Note that the counter will only increment by 1 step per clock
@@ -715,7 +715,7 @@ cycle even if more than one trigger event is observed.
 | Address     | `0xb03` (`mhpmcounter3`) ... `0xb0f` (mhpmcounter15)
 |             | `0xb83` (`mhpmcounter3h`) ... `0xb8f` (`mhpmcounter15h`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `Zihpm`
+| ISA         | `Zicsr` & `Zihpm`
 | Description | If not halted via the <<_mcountinhibit>> CSR the HPM counter CSR(s) increment whenever a
 configured event from the according <<_mhpmevent>> CSR occurs. The counter registers are read/write for machine mode
 and are not accessible for lower-privileged software.
@@ -733,7 +733,7 @@ and are not accessible for lower-privileged software.
 | Address     | `0xc03` (`hpmcounter3`) ... `0xc0f` (hpmcounter15)
 |             | `0xc83` (`hpmcounter3h`) ... `0xc8f` (`hpmcounter15h`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` + `Zihpm`
+| ISA         | `Zicsr` & `Zihpm`
 | Description | The `hpmcounter*[h]` are user-mode shadow copies of the according <<_mhpmcounterh>> CSRs. The user mode
 counter CSRs are read-only. Any write access will raise an illegal instruction exception.
 |=======================
@@ -872,7 +872,7 @@ outside of machine-mode will raise an illegal instruction exception.
 | Name        | Machine extended isa and extensions register
 | Address     | `0xfc0`
 | Reset value | `DEFINED`
-| ISA         | `Zicsr` + `X`
+| ISA         | `Zicsr` & `X`
 | Description | The `mxisa` CSRs is a NEORV32-specific read-only CSR that helps machine-mode software to
 discover ISA sub-extensions and CPU configuration options
 |=======================

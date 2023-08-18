@@ -490,16 +490,17 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
 
 /**********************************************************************//**
  * Switch from privilege mode MACHINE to privilege mode USER.
- *
- * @note This function will **return** with the CPU being in user mode.
  **************************************************************************/
 void __attribute__((naked,noinline)) neorv32_cpu_goto_user_mode(void) {
 
-  // make sure to use NO registers in here! -> naked
-
-  asm volatile ("csrw  mepc, ra          \n" // move return address to mepc so we can return using "mret". also, we can now use ra as temp register
-                "li    ra, %[input_imm]  \n" // bit mask to clear the two MPP bits
-                "csrrc zero, mstatus, ra \n" // clear MPP bits -> MPP=u-mode
-                "mret                    \n" // return and switch to user mode
-                :  : [input_imm] "i" ((1 << CSR_MSTATUS_MPP_H) | (1 << CSR_MSTATUS_MPP_L)));
+  asm volatile (
+    "csrw mepc, ra     \n" // move return address to mepc so we can return using "mret". also, we can now use ra as temp register
+    "li   ra, 3<<11    \n" // bit mask to clear the two MPP bits
+    "csrc mstatus, ra  \n" // clear MPP bits -> MPP = u-mode
+    "csrr ra, mstatus  \n" // get mstatus
+    "andi ra, ra, 1<<3 \n" // isolate MIE bit
+    "slli ra, ra, 4    \n" // shift to MPIE position
+    "csrs mstatus, ra  \n" // set MPIE if MIE is set
+    "mret              \n" // return and switch to user mode
+  );
 }

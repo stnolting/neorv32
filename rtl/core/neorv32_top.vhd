@@ -492,7 +492,7 @@ begin
       CPU_EXTENSION_RISCV_Zxcfu    => CPU_EXTENSION_RISCV_Zxcfu,
       CPU_EXTENSION_RISCV_Sdext    => ON_CHIP_DEBUGGER_EN,
       CPU_EXTENSION_RISCV_Sdtrig   => ON_CHIP_DEBUGGER_EN,
-      -- Extension Options --
+      -- Tuning Options --
       FAST_MUL_EN                  => FAST_MUL_EN,
       FAST_SHIFT_EN                => FAST_SHIFT_EN,
       -- Physical Memory Protection (PMP) --
