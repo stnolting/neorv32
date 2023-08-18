@@ -647,7 +647,7 @@ However, access privileges are still enforced so these instruction variants _do_
 
 [NOTE]
 The `wfi` instruction is used to enter <<_sleep_mode>>. Executing the `wfi` instruction in user-mode
-will raise an illegal instruction exception if <<_mstatus>>`.TW` is set.
+will raise an illegal instruction exception if <<_mstatus>>.TW is set.
 
 .Instructions and Timing
 [cols="<2,<4,<3"]
@@ -745,12 +745,10 @@ available at https://github.com/riscv-non-isa/riscv-trace-spec):
 * **trap**: the transfer of control to a trap handler caused by either an _exception_ or an _interrupt_
 
 Whenever an exception or interrupt is triggered, the CPU switches to machine-mode (if not already in machine-mode)
-and transfers control to the address stored in <<_mtvec>> CSR. The cause of the the trap can be determined via the
+and continues operation at the address being stored in the <<_mtvec>> CSR. The cause of the the trap can be determined via the
 <<_mcause>> CSR. A list of all implemented `mcause` values and the according description can be found below in section
 <<_neorv32_trap_listing>>. The address that reflects the current program counter when a trap was taken is stored to
-<<_mepc>> CSR. This might be the address of the instruction that actually caused the trap or that has not been executed
-yet as it was interrupted by a trap. Additional information regarding the cause of the trap can be retrieved from the
-<<_mtval>> CSR.
+<<_mepc>> CSR. Additional information regarding the cause of the trap can be retrieved from the <<_mtval>> and <<_mtinst>> CSRs.
 
 The traps are prioritized. If several _exceptions_ occur at once only the one with highest priority is triggered
 while all remaining exceptions are ignored and discarded. If several _interrupts_ trigger at once, the one with highest priority
@@ -760,7 +758,7 @@ the second highest priority will get serviced and so on until no further interru
 .Interrupts when in User-Mode
 [IMPORTANT]
 If the core is currently operating in less privileged user-mode, interrupts are globally enabled
-even if <<_mstatus>>`.mie` is cleared.
+even if <<_mstatus>>.mie is cleared.
 
 .Interrupt Signal Requirements - Standard RISC-V Interrupts
 [IMPORTANT]
@@ -803,10 +801,10 @@ and the CSR side-effects.
 
 **Table Annotations**
 
-The "Prio." column shows the priority of each trap. The highest priority is 1. The "`mcause`" column shows the
-cause ID of the according trap that is written to <<_mcause>> CSR.  The "ID [C]" names are defined by the NEORV32
-core library (the runtime environment _RTE_) and can be used in plain C code. The <<_mepc>> and <<_mtval>> columns
-show the values written to the according CSRs when a trap is triggered:
+The "Prio." column shows the priority of each trap with the highest priority being 1. The "RTE Trap ID" aliases are
+defined by the NEORV32 core library (the runtime environment _RTE_) and can be used in plain C code when interacting
+with the pre-defined RTE function. The <<_mcause>>, <<_mepc>>, <<_mtval>> and <<_mtinst>> columns show the value being
+written to the according CSRs when a trap is triggered:
 
 * **I-PC** - address of interrupted instruction (instruction has _not_ been executed yet)
 * **PC** - address of instruction that caused the trap (instruction has been executed)
@@ -815,41 +813,41 @@ show the values written to the according CSRs when a trap is triggered:
 * **0** - zero
 
 .NEORV32 Trap Listing
-[cols="1,4,8,10,2,2"]
+[cols="1,4,8,10,2,2,2"]
 [options="header",grid="rows"]
 |=======================
-| Prio. | `mcause`     | ID [C]                   | Cause                                | `mepc`   | `mtval`
-6+^| **Exceptions** (_synchronous_ to instruction execution)
-| 1     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction fetch address misaligned | **I-PC** | **0**
-| 2     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction fetch bus access fault   | **I-PC** | **0**
-| 3     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                  | **PC**   | **INS**
-| 4     | `0x0000000b` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode         | **PC**   | **0**
-| 5     | `0x00000008` | `TRAP_CODE_UENV_CALL`    | environment call from U-mode         | **PC**   | **0**
-| 6     | `0x00000003` | `TRAP_CODE_BREAKPOINT`   | software breakpoint / trigger firing | **PC**   | **0**
-| 7     | `0x00000006` | `TRAP_CODE_S_MISALIGNED` | store address misaligned             | **PC**   | **ADR**
-| 8     | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned              | **PC**   | **ADR**
-| 9     | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store bus access fault               | **PC**   | **ADR**
-| 10    | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load bus access fault                | **PC**   | **ADR**
-6+^| **Interrupts** (_asynchronous_ to instruction execution)
-| 11    | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0     | **I-PC** | **0**
-| 12    | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1     | **I-PC** | **0**
-| 13    | `0x80000012` | `TRAP_CODE_FIRQ_2`       | fast interrupt request channel 2     | **I-PC** | **0**
-| 14    | `0x80000013` | `TRAP_CODE_FIRQ_3`       | fast interrupt request channel 3     | **I-PC** | **0**
-| 15    | `0x80000014` | `TRAP_CODE_FIRQ_4`       | fast interrupt request channel 4     | **I-PC** | **0**
-| 16    | `0x80000015` | `TRAP_CODE_FIRQ_5`       | fast interrupt request channel 5     | **I-PC** | **0**
-| 17    | `0x80000016` | `TRAP_CODE_FIRQ_6`       | fast interrupt request channel 6     | **I-PC** | **0**
-| 18    | `0x80000017` | `TRAP_CODE_FIRQ_7`       | fast interrupt request channel 7     | **I-PC** | **0**
-| 19    | `0x80000018` | `TRAP_CODE_FIRQ_8`       | fast interrupt request channel 8     | **I-PC** | **0**
-| 20    | `0x80000019` | `TRAP_CODE_FIRQ_9`       | fast interrupt request channel 9     | **I-PC** | **0**
-| 21    | `0x8000001a` | `TRAP_CODE_FIRQ_10`      | fast interrupt request channel 10    | **I-PC** | **0**
-| 22    | `0x8000001b` | `TRAP_CODE_FIRQ_11`      | fast interrupt request channel 11    | **I-PC** | **0**
-| 23    | `0x8000001c` | `TRAP_CODE_FIRQ_12`      | fast interrupt request channel 12    | **I-PC** | **0**
-| 24    | `0x8000001d` | `TRAP_CODE_FIRQ_13`      | fast interrupt request channel 13    | **I-PC** | **0**
-| 25    | `0x8000001e` | `TRAP_CODE_FIRQ_14`      | fast interrupt request channel 14    | **I-PC** | **0**
-| 26    | `0x8000001f` | `TRAP_CODE_FIRQ_15`      | fast interrupt request channel 15    | **I-PC** | **0**
-| 27    | `0x8000000B` | `TRAP_CODE_MEI`          | machine external interrupt (MEI)     | **I-PC** | **0**
-| 28    | `0x80000003` | `TRAP_CODE_MSI`          | machine software interrupt (MSI)     | **I-PC** | **0**
-| 29    | `0x80000007` | `TRAP_CODE_MTI`          | machine timer interrupt (MTI)        | **I-PC** | **0**
+| Prio. | `mcause`     | RTE Trap ID              | Cause                                | `mepc` | `mtval` | `mtinst`
+7+^| **Exceptions** (_synchronous_ to instruction execution)                                                 
+| 1     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction fetch address misaligned | I-PC   | 0       | INS
+| 2     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction fetch bus access fault   | I-PC   | 0       | INS
+| 3     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                  | PC     | 0       | INS
+| 4     | `0x0000000b` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode         | PC     | 0       | INS
+| 5     | `0x00000008` | `TRAP_CODE_UENV_CALL`    | environment call from U-mode         | PC     | 0       | INS
+| 6     | `0x00000003` | `TRAP_CODE_BREAKPOINT`   | software breakpoint / trigger firing | PC     | 0       | INS
+| 7     | `0x00000006` | `TRAP_CODE_S_MISALIGNED` | store address misaligned             | PC     | ADR     | INS
+| 8     | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned              | PC     | ADR     | INS
+| 9     | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store bus access fault               | PC     | ADR     | INS
+| 10    | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load bus access fault                | PC     | ADR     | INS
+7+^| **Interrupts** (_asynchronous_ to instruction execution)                                                
+| 11    | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0     | I-PC   | 0       | 0
+| 12    | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1     | I-PC   | 0       | 0
+| 13    | `0x80000012` | `TRAP_CODE_FIRQ_2`       | fast interrupt request channel 2     | I-PC   | 0       | 0
+| 14    | `0x80000013` | `TRAP_CODE_FIRQ_3`       | fast interrupt request channel 3     | I-PC   | 0       | 0
+| 15    | `0x80000014` | `TRAP_CODE_FIRQ_4`       | fast interrupt request channel 4     | I-PC   | 0       | 0
+| 16    | `0x80000015` | `TRAP_CODE_FIRQ_5`       | fast interrupt request channel 5     | I-PC   | 0       | 0
+| 17    | `0x80000016` | `TRAP_CODE_FIRQ_6`       | fast interrupt request channel 6     | I-PC   | 0       | 0
+| 18    | `0x80000017` | `TRAP_CODE_FIRQ_7`       | fast interrupt request channel 7     | I-PC   | 0       | 0
+| 19    | `0x80000018` | `TRAP_CODE_FIRQ_8`       | fast interrupt request channel 8     | I-PC   | 0       | 0
+| 20    | `0x80000019` | `TRAP_CODE_FIRQ_9`       | fast interrupt request channel 9     | I-PC   | 0       | 0
+| 21    | `0x8000001a` | `TRAP_CODE_FIRQ_10`      | fast interrupt request channel 10    | I-PC   | 0       | 0
+| 22    | `0x8000001b` | `TRAP_CODE_FIRQ_11`      | fast interrupt request channel 11    | I-PC   | 0       | 0
+| 23    | `0x8000001c` | `TRAP_CODE_FIRQ_12`      | fast interrupt request channel 12    | I-PC   | 0       | 0
+| 24    | `0x8000001d` | `TRAP_CODE_FIRQ_13`      | fast interrupt request channel 13    | I-PC   | 0       | 0
+| 25    | `0x8000001e` | `TRAP_CODE_FIRQ_14`      | fast interrupt request channel 14    | I-PC   | 0       | 0
+| 26    | `0x8000001f` | `TRAP_CODE_FIRQ_15`      | fast interrupt request channel 15    | I-PC   | 0       | 0
+| 27    | `0x8000000B` | `TRAP_CODE_MEI`          | machine external interrupt (MEI)     | I-PC   | 0       | 0
+| 28    | `0x80000003` | `TRAP_CODE_MSI`          | machine software interrupt (MSI)     | I-PC   | 0       | 0
+| 29    | `0x80000007` | `TRAP_CODE_MTI`          | machine timer interrupt (MTI)        | I-PC   | 0       | 0
 |=======================
 
 .NEORV32 Trap Description
@@ -858,15 +856,15 @@ show the values written to the according CSRs when a trap is triggered:
 |=======================
 | Trap ID [C] | Triggered when ...
 | `TRAP_CODE_I_MISALIGNED` | fetching a 32-bit instruction word that is not 32-bit-aligned (see note below)
-| `TRAP_CODE_I_ACCESS`     | bus timeout or bus access error during instruction fetch
+| `TRAP_CODE_I_ACCESS`     | bus timeout, bus access error or <<_pmp_isa_extension,PMP>> rule violation during instruction fetch
 | `TRAP_CODE_I_ILLEGAL`    | trying to execute an invalid instruction word (malformed or not supported) or on a privilege violation
 | `TRAP_CODE_MENV_CALL`    | executing `ecall` instruction in machine-mode
 | `TRAP_CODE_UENV_CALL`    | executing `ecall` instruction in user-mode
-| `TRAP_CODE_BREAKPOINT`   | executing `[c.]ebreak` instruction or if <<_trigger_module>> fires
-| `TRAP_CODE_S_MISALIGNED` | storing data to an address that is not naturally aligned to the data size (byte, half, word)
-| `TRAP_CODE_L_MISALIGNED` | loading data from an address that is not naturally aligned to the data size  (byte, half, word)
-| `TRAP_CODE_S_ACCESS`     | bus timeout or bus access error during load data operation
-| `TRAP_CODE_L_ACCESS`     | bus timeout or bus access error during store data operation
+| `TRAP_CODE_BREAKPOINT`   | executing `ebreak` instruction or if <<_trigger_module>> fires
+| `TRAP_CODE_S_MISALIGNED` | storing data to an address that is not naturally aligned to the data size (half/word)
+| `TRAP_CODE_L_MISALIGNED` | loading data from an address that is not naturally aligned to the data size  (half/word)
+| `TRAP_CODE_S_ACCESS`     | bus timeout, bus access error or <<_pmp_isa_extension,PMP>> rule violation during load data operation
+| `TRAP_CODE_L_ACCESS`     | bus timeout, bus access error or <<_pmp_isa_extension,PMP>> rule violation during store data operation
 | `TRAP_CODE_FIRQ_*`       | caused by interrupt-condition of **processor-internal modules**, see <<_neorv32_specific_fast_interrupt_requests>>
 | `TRAP_CODE_MEI`          | machine external interrupt (via dedicated <<_processor_top_entity_signals>>)
 | `TRAP_CODE_MSI`          | machine software interrupt (via dedicated <<_processor_top_entity_signals>>)
@@ -882,4 +880,4 @@ address misaligned" exception are not resumable in most cases. These exception m
 [NOTE]
 For 32-bit-only instructions (= no `C` extension) the misaligned instruction exception is raised if bit 1 of the fetch
 address is set (i.e. not on a 32-bit boundary). If the `C` extension is implemented there will never be a misaligned
-instruction exception _at all_. In both cases bit 0 of the program counter (and all related CSRs) is hardwired to zero.
+instruction exception _at all_.

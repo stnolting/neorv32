@@ -24,7 +24,7 @@ bits can actually be modified.
 5+^| **<<_floating_point_csrs>>**
 | 0x001 | <<_fflags>> | `CSR_FFLAGS` | URW | Floating-point accrued exceptions
 | 0x002 | <<_frm>>    | `CSR_FRM`    | URW | Floating-point dynamic rounding mode
-| 0x003 | <<_fcsr>>   | `CSR_FCSR`   | URW | Floating-point control and status (`frm` + `fflags`)
+| 0x003 | <<_fcsr>>   | `CSR_FCSR`   | URW | Floating-point control and status
 5+^| **<<_machine_configuration_csrs>>**
 | 0x30a | <<_menvcfg>>  | `CSR_MENVCFG`  | MRW | Machine environment configuration register - low word
 | 0x31a | <<_menvcfgh>> | `CSR_MENVCFGH` | MRW | Machine environment configuration register - low word
@@ -39,8 +39,9 @@ bits can actually be modified.
 | 0x340 | <<_mscratch>> | `CSR_MSCRATCH` | MRW | Machine scratch register
 | 0x341 | <<_mepc>>     | `CSR_MEPC`     | MRW | Machine exception program counter
 | 0x342 | <<_mcause>>   | `CSR_MCAUSE`   | MRW | Machine trap cause
-| 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW | Machine bad address or instruction
+| 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW | Machine trap value
 | 0x344 | <<_mip>>      | `CSR_MIP`      | MRW | Machine interrupt pending register
+| 0x34a | <<_mtinst>>   | `CSR_MTINST`   | MRW | Machine trap instruction
 5+^| **<<_machine_physical_memory_protection_csrs>>**
 | 0x3a0 .. 0x303 | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg3`>>      | `CSR_PMPCFG0` .. `CSR_PMPCFG3`    | MRW | Physical memory protection configuration registers
 | 0x3b0 .. 0x3bf | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr15`>> | `CSR_PMPADDR0` .. `CSR_PMPADDR15` | MRW | Physical memory protection address registers
@@ -81,7 +82,7 @@ bits can actually be modified.
 | 0xf14 | <<_mhartid>>    | `CSR_MHARTID`    | MRO | Machine hardware thread ID
 | 0xf15 | <<_mconfigptr>> | `CSR_MCONFIGPTR` | MRO | Machine configuration pointer register
 5+^| **<<_neorv32_specific_csrs>>**
-| 0xfc0 | <<_mxisa>> | `CSR_MXISA` | MRO | NEORV32-specific "extended" machine CPU ISA and extensions
+| 0xfc0 | <<_mxisa>> | `CSR_MXISA` | MRO | NEORV32-specific "eXtended" machine CPU ISA and extensions
 |=======================
 
 
@@ -225,7 +226,7 @@ bits can actually be modified.
 | 3     | `CSR_MSTATUS_MIE`  | r/w | **MIE**: Machine-mode interrupt enable flag
 | 7     | `CSR_MSTATUS_MPIE` | r/w | **MPIE**: Previous machine-mode interrupt enable flag state
 | 12:11 | `CSR_MSTATUS_MPP_H` : `CSR_MSTATUS_MPP_L` | r/w | **MPP**: Previous machine privilege mode, 11 = machine (M) mode, 00 = user (U) mode
-| 17    | `CSR_MSTATUS_MPRV` | r/w | **MPRV**: Effective privilege mode for load/stores in machine mode; use `MPP`'s as effective privilege mode when set; hardwired to zero if user-mode not implemented
+| 17    | `CSR_MSTATUS_MPRV` | r/w | **MPRV**: Effective privilege mode for load/stores in machine mode; use `MPP` as effective privilege mode when set; hardwired to zero if user-mode not implemented
 | 21    | `CSR_MSTATUS_TW`   | r/w | **TW**: Trap on execution of `wfi` instruction in user mode when set; hardwired to zero if user-mode not implemented
 |=======================
 
@@ -441,28 +442,17 @@ an instruction is triggered / an exception is raised. See section <<_traps_excep
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
 |=======================
-| Name        | Machine trap value register
+| Name        | Machine trap value
 | Address     | `0x343`
 | Reset value | `0x00000000`
 | ISA         | `Zicsr`
-| Description | The `mtval` CSR provides additional information why a trap was entered. See section <<_traps_exceptions_and_interrupts>> for more information
+| Description | The `mtval` CSR provides additional information why a trap was entered. See section <<_traps_exceptions_and_interrupts>> for more information.
 |=======================
 
+.Read-Only
 [IMPORTANT]
-Note that the NEORV32 `mtval` register is read only. Any write-access will be ignored and will not cause an exception to
-maintain RISC-V compatibility.
-
-.`mtval` CSR bits
-[cols="^5,^5"]
-[options="header",grid="rows"]
-|=======================
-| Trap cause | `mtval` value
-| misaligned instruction fetch address or instruction fetch access fault | address of faulting instruction fetch
-| misaligned load address, load access fault, misaligned store address or store access fault | address of faulting instruction
-| illegal instruction | instruction word that caused the exception (zero-extended if compressed instruction)
-| breakpoint exception | address of breakpoint instruction / instruction address that caused a hardware trigger
-| everything else (including all interrupts) | all-zero
-|=======================
+Note that the NEORV32 `mtval` CSR is updated by the hardware only and cannot be written from software.
+However, any write-access will be ignored and will not cause an exception to maintain RISC-V compatibility.
 
 
 {empty} +
@@ -497,6 +487,33 @@ specific for the interrupt-causing modules. the according interrupt-generating d
 [TIP]
 See section <<_neorv32_specific_fast_interrupt_requests>> for the mapping of the FIRQ channels and the according
 interrupt-triggering processor module.
+
+
+{empty} +
+[discrete]
+===== **`mtinst`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Machine trap instruction
+| Address     | `0x34a`
+| Reset value | `0x00000000`
+| ISA         | `Zicsr`
+| Description | The `mtinst` CSR provides additional information why a trap was entered. See section <<_traps_exceptions_and_interrupts>> for more information.
+|=======================
+
+.Read-Only
+[IMPORTANT]
+Note that the NEORV32 `mtinst` CSR is updated by the hardware only and cannot be written from software.
+However, any write-access will be ignored and will not cause an exception to maintain RISC-V compatibility.
+
+.Instruction Transformation
+[IMPORTANT]
+The RISC-V priv. spec. suggests that the instruction word written to `mtinst` by the hardware should be "transformed".
+However, the NEORV32 `mtinst` CSR uses a simplified transformation scheme: if the trap-causing instruction is a
+standard 32-bit instruction, `mtinst` contains the exact instruction word that caused the trap. If the trap-causing
+instruction is a compressed instruction, `mtinst` contains the de-compressed 32-bit equivalent with bit 1 being cleared.
 
 
 <<<
