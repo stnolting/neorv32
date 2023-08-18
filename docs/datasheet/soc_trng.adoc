@@ -55,9 +55,9 @@ setting the `TRNG_CTRL_FIFO_CLR` flag. The FIFO depth can be retrieved by softwa
 **TRNG Interrupt**
 
 The TRNG provides a single interrupt channel that can be programmed to trigger on certain FIFO fill-level conditions.
-This feature can be used to inform the CPU that a dertain amount of entropy is available for further processing. Using
+This feature can be used to inform the CPU that a certain amount of entropy is available for further processing. Using
 the control register's `TRNG_CTRL_IRQ_*` bits the IRQ can be configured to trigger if the data FIFO is empty
-(TRNG_CTRL_IRQ_FIFO_NEMPTY`), if the data FIFO is at least half full (`TRNG_CTRL_IRQ_FIFO_HALF`) or if the data FIFO is
+(`TRNG_CTRL_IRQ_FIFO_NEMPTY`), if the data FIFO is at least half full (`TRNG_CTRL_IRQ_FIFO_HALF`) or if the data FIFO is
 entirely full (`TRNG_CTRL_IRQ_FIFO_NEMPTY`). Note that all enabled interrupt conditions are logically OR-ed.
 
 Once the TRNG interrupt has fired it remains pending until the actual cause of the interrupt is resolved. Furthermore,

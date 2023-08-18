@@ -71,7 +71,7 @@ R3-type instructions can be implemented (7-bit + 3-bit = 10 bit -> 1024 differen
 :sectnums:
 ==== CFU R4-Type Instructions
 
-The R4-type CFU instructions operate on three source registers `rs1, `rs2` and `rs2` and return the processing
+The R4-type CFU instructions operate on three source registers `rs1`, `rs2` and `rs2` and return the processing
 result to the destination register `rd`. The actual operation can be defined by using the `funct3` bit field.
 Alternatively, this immediate can also be used to pass additional data to the CFU like offsets, look-up-tables
 addresses or shift-amounts. However, the actual functionality is entirely user-defined.

@@ -495,7 +495,7 @@ The `crt0.S` start-up performs the following operations:
 . Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
 . If `main` returns:
 ** Interrupts are disabled by clearing <<_mie>>.
-** `mains`'s return value is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
+** The return value of `main` is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
 ** Call all _destructors_ (if there are any).
 ** An optional <<_after_main_handler>> is called (if defined at all).
 ** The CPU enters sleep mode (executing the `wfi` instruction) in an endless loop.

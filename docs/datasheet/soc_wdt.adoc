@@ -85,7 +85,7 @@ the last system reset was caused by the watchdog itself.
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Reset value | Writable if locked | Function
 .8+<| `0xfffffb00` .8+<| `CTRL` <|`0` `WDT_CTRL_EN`     ^| r/w ^| `0` ^| no  <| watchdog enable
-                                <|`1  `WDT_CTRL_LOCK`   ^| r/w ^| `0` ^| no  <| lock configuration when set, clears only on system reset, can only be set if enable bit is set already
+                                <|`1` `WDT_CTRL_LOCK`   ^| r/w ^| `0` ^| no  <| lock configuration when set, clears only on system reset, can only be set if enable bit is set already
                                 <|`2` `WDT_CTRL_DBEN`   ^| r/w ^| `0` ^| no  <| set to allow WDT to continue operation even when CPU is in debug mode
                                 <|`3` `WDT_CTRL_SEN`    ^| r/w ^| `0` ^| no  <| set to allow WDT to continue operation even when CPU is in sleep mode
                                 <|`4` `WDT_CTRL_RESET`  ^| -/w ^| -   ^| yes <| reset watchdog when set, auto-clears

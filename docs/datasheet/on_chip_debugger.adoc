@@ -511,9 +511,9 @@ The CPU debug mode requires the `Zicsr` and `Zifencei` CPU extension to be imple
 The CPU debug-mode is entered on any of the following events:
 
 [start=1]
-. executed `ebreak` instruction (when in machine-mode and <<_dcsr>>`.ebreakm` is set OR when in user-mode and <<_dcsr>>`.ebreaku` is set)
+. executed `ebreak` instruction (when in machine-mode and <<_dcsr>>.ebreakm is set OR when in user-mode and <<_dcsr>>.ebreaku is set)
 . debug halt request from external DM (via CPU signal `db_halt_req_i`, high-active, triggering on rising-edge)
-. finished executing of a single instruction while in single-step debugging mode (enabled via <<_dcsr>>`.step`)
+. finished executing of a single instruction while in single-step debugging mode (enabled via <<_dcsr>>.step)
 . hardware trigger by the <<_trigger_module>>
 
 [NOTE]
@@ -595,7 +595,7 @@ an illegal instruction exception is raised.
 | 9     | `stoptime`    | r/- | `0` - timers increment as usual
 | 8:6   | `cause`       | r/- | cause identifier - why debug mode was entered (see below)
 | 5     | -             | r/- | `0` - _reserved_
-| 4     | `mprven`      | r/- | `1` - <<_mstatus>>`.mprv` is also evaluated when in debug mode
+| 4     | `mprven`      | r/- | `1` - <<_mstatus>>.mprv is also evaluated when in debug mode
 | 3     | `nmip`        | r/- | `0` - non-maskable interrupt is pending
 | 2     | `step`        | r/w | enable single-stepping when set
 | 1:0   | `prv`         | r/w | CPU privilege level before/after debug mode
@@ -659,7 +659,7 @@ address gets executed.
 ==== Trigger Module CSRs
 
 The `Sdtrig` ISA extension add 8 additional CSRs, which are accessible in debug-mode and also in machine-mode.
-Machine-level accesses can be ignore by setting <<_tdata1>>`.dmode´. This is automatically done by GDB if it uses the trigger module
+Machine-level accesses can be ignore by setting <<_tdata1>> ´.dmode´. This is automatically done by GDB if it uses the trigger module
 for implementing a "hardware breakpoint"
 
 :sectnums!:

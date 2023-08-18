@@ -15,7 +15,7 @@
 
 The MTIME module implements a memory-mapped MTIME machine system timer that is compatible to the RISC-V
 privileged specifications. The 64-bit system time is accessed via the  memory-mapped `TIME_LO` and
-`TIME_HI`registers. A 64-bit time compare register, which is accessible via the memory-mapped `TIMECMP_LO`
+`TIME_HI` registers. A 64-bit time compare register, which is accessible via the memory-mapped `TIMECMP_LO`
 and `TIMECMP_HI` registers, can be used to configure the CPU's `MTI` (machine timer interrupt). The interrupt
 is triggered whenever `TIME` (high & low part) is greater than or equal to `TIMECMP` (high & low part).
 The interrupt remains active (=pending) until `TIME` becomes less `TIMECMP` again (either by modifying

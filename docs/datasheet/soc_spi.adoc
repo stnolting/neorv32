@@ -123,7 +123,7 @@ Furthermore, an active SPI interrupt has to be explicitly cleared again by writi
                                   <|`21`    `SPI_CTRL_IRQ_TX_EMPTY`                 ^| r/w <| Trigger IRQ if TX FIFO empty
                                   <|`22`    `SPI_CTRL_IRQ_TX_NHALF`                 ^| r/w <| Trigger IRQ if TX FIFO _not_ at least half full
                                   <|`26:23` `SPI_CTRL_FIFO_MSB : SPI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(_IO_SPI_FIFO_)
-                                  <|`30:27` `reserved_                              ^| r/- <| reserved, read as zero
+                                  <|`30:27` _reserved_                              ^| r/- <| reserved, read as zero
                                   <|`31`    `SPI_CTRL_BUSY`                         ^| r/- <| SPI module busy when set (serial engine operation in progress and TX FIFO not empty yet)
 | `0xfffff804` | `DATA` |`7:0` | r/w | receive/transmit data (FIFO)
 |=======================
