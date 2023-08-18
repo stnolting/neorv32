@@ -212,3 +212,35 @@ obtained from the <<_mcause>> CSR (see <<_neorv32_trap_listing>>). A full list o
 | "Fast IRQ 0x0000000f"            | `0x8000001f`
 | "Unknown trap cause"             | undefined
 |=======================
+
+
+==== Application Context Handling
+
+Upon trap entry the RTE backups the _entire_ application context (i.e. all `x` general purpose registers)
+to the stack. The context is restored automatically after trap completion. The base address of the according
+stack frame is copied to the <<_mscratch>> CSR. By having this information available, the RTE provides dedicated
+functions for accessing and _altering_ the application context:
+
+.Context Access Functions
+[source,c]
+----
+// Prototypes
+uint32_t neorv32_rte_context_get(int x); // read register x
+void     neorv32_rte_context_put(int x, uint32_t data); write data to register x
+
+// Examples
+uint32_t tmp = neorv32_rte_context_get(9); // read register 'x9'
+neorv32_rte_context_put(28, tmp); // write 'tmp' to register 'x28'
+----
+
+.RISC-V `E` Extension
+[NOTE]
+Registers `x16..x31` are not available if the RISC-V <<_e_isa_extension>> is enabled.
+
+The context access functions can be used by application-specific trap handlers to emulate unsupported
+CPU / SoC features like unimplemented IO modules, unsupported instructions and even unaligned memory accesses.
+
+.Demo Program: Emulate Unaligned Memory Access
+[TIP]
+A demo program, which showcases how to emulate unaligned memory accesses using the NEORV32 runtime environment
+can be found in `sw/example/demo_emulate_unaligned`.

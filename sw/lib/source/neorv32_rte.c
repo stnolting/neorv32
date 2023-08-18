@@ -54,7 +54,7 @@
 static uint32_t __neorv32_rte_vector_lut[NEORV32_RTE_NUM_TRAPS] __attribute__((unused)); // trap handler vector table
 
 // private functions
-static void __attribute__((__interrupt__)) __neorv32_rte_core(void) __attribute__((aligned(4)));
+static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void);
 static void __neorv32_rte_debug_handler(void);
 static void __neorv32_rte_print_true_false(int state);
 static void __neorv32_rte_print_hex_word(uint32_t num);
@@ -92,7 +92,7 @@ void neorv32_rte_setup(void) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE).
- * Install trap handler function.
+ * Install trap handler function (second-level trap handler).
  *
  * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
  * @param[in] handler The actual handler function for the specified trap (function MUST be of type "void function(void);").
@@ -130,11 +130,53 @@ int neorv32_rte_handler_uninstall(int id) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE).
- * This is the [private!] core of the NEORV32 RTE.
- *
- * @warning When using the RTE this function is the ONLY function that can use the 'interrupt' attribute!
+ * This is the core of the NEORV32 RTE (first-level trap handler).
  **************************************************************************/
-static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32_rte_core(void) {
+static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
+
+  // save context
+	asm volatile (
+    "csrw mscratch, sp  \n" // backup original stack pointer
+    "addi sp, sp, -32*4 \n"
+
+    "sw x0, 0*4(sp) \n"
+    "sw x1, 1*4(sp) \n"
+
+    "csrrw x1, mscratch, sp \n" // mscratch = base address of original context
+    "sw    x1, 2*4(sp)      \n" // store original stack pointer
+
+    "sw x3,   3*4(sp) \n"
+    "sw x4,   4*4(sp) \n"
+    "sw x5,   5*4(sp) \n"
+    "sw x6,   6*4(sp) \n"
+    "sw x7,   7*4(sp) \n"
+    "sw x8,   8*4(sp) \n"
+    "sw x9,   9*4(sp) \n"
+    "sw x10, 10*4(sp) \n"
+    "sw x11, 11*4(sp) \n"
+    "sw x12, 12*4(sp) \n"
+    "sw x13, 13*4(sp) \n"
+    "sw x14, 14*4(sp) \n"
+    "sw x15, 15*4(sp) \n"
+#ifndef __riscv_32e
+    "sw x16, 16*4(sp) \n"
+    "sw x17, 17*4(sp) \n"
+    "sw x18, 18*4(sp) \n"
+    "sw x19, 19*4(sp) \n"
+    "sw x20, 20*4(sp) \n"
+    "sw x21, 21*4(sp) \n"
+    "sw x22, 22*4(sp) \n"
+    "sw x23, 23*4(sp) \n"
+    "sw x24, 24*4(sp) \n"
+    "sw x25, 25*4(sp) \n"
+    "sw x26, 26*4(sp) \n"
+    "sw x27, 27*4(sp) \n"
+    "sw x28, 28*4(sp) \n"
+    "sw x29, 29*4(sp) \n"
+    "sw x30, 30*4(sp) \n"
+    "sw x31, 31*4(sp) \n"
+#endif
+  );
 
   // find according trap handler base address
   uint32_t handler_base;
@@ -197,6 +239,83 @@ static void __attribute__((__interrupt__)) __attribute__((aligned(4))) __neorv32
     // update return address
     neorv32_cpu_csr_write(CSR_MEPC, rte_mepc);
   }
+
+  // restore context
+  asm volatile (
+//  "lw x0,   0*4(sp) \n"
+    "lw x1,   1*4(sp) \n"
+    "lw x3,   3*4(sp) \n"
+    "lw x4,   4*4(sp) \n"
+    "lw x5,   5*4(sp) \n"
+    "lw x6,   6*4(sp) \n"
+    "lw x7,   7*4(sp) \n"
+    "lw x8,   8*4(sp) \n"
+    "lw x9,   9*4(sp) \n"
+    "lw x10, 10*4(sp) \n"
+    "lw x11, 11*4(sp) \n"
+    "lw x12, 12*4(sp) \n"
+    "lw x13, 13*4(sp) \n"
+    "lw x14, 14*4(sp) \n"
+    "lw x15, 15*4(sp) \n"
+#ifndef __riscv_32e
+    "lw x16, 16*4(sp) \n"
+    "lw x17, 17*4(sp) \n"
+    "lw x18, 18*4(sp) \n"
+    "lw x19, 19*4(sp) \n"
+    "lw x20, 20*4(sp) \n"
+    "lw x21, 21*4(sp) \n"
+    "lw x22, 22*4(sp) \n"
+    "lw x23, 23*4(sp) \n"
+    "lw x24, 24*4(sp) \n"
+    "lw x25, 25*4(sp) \n"
+    "lw x26, 26*4(sp) \n"
+    "lw x27, 27*4(sp) \n"
+    "lw x28, 28*4(sp) \n"
+    "lw x29, 29*4(sp) \n"
+    "lw x30, 30*4(sp) \n"
+    "lw x31, 31*4(sp) \n"
+#endif
+    "lw x2,   2*4(sp) \n" // restore original stack pointer
+    "mret             \n"
+	);
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment:
+ * Read register from application context.
+ *
+ * @param[in] x Register number (0..31, corresponds to register x0..x31).
+ * @return Content of register x.
+ **************************************************************************/
+uint32_t neorv32_rte_context_get(int x) {
+
+  uint32_t tmp = neorv32_cpu_csr_read(CSR_MSCRATCH);
+#ifdef __riscv_32e
+  tmp += (x & 15) << 2;
+#else
+  tmp += (x & 31) << 2;
+#endif
+  return neorv32_cpu_load_unsigned_word(tmp);
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment:
+ * Write register in application context.
+ *
+ * @param[in] x Register number (0..31, corresponds to register x0..x31).
+ * @param[in] data Data to be written to register x.
+ **************************************************************************/
+void neorv32_rte_context_put(int x, uint32_t data) {
+
+  uint32_t tmp = neorv32_cpu_csr_read(CSR_MSCRATCH);
+#ifdef __riscv_32e
+  tmp += (x & 15) << 2;
+#else
+  tmp += (x & 31) << 2;
+#endif
+  neorv32_cpu_store_unsigned_word(tmp, data);
 }
 
 
@@ -253,7 +372,7 @@ static void __neorv32_rte_debug_handler(void) {
     case TRAP_CODE_FIRQ_13:
     case TRAP_CODE_FIRQ_14:
     case TRAP_CODE_FIRQ_15:      neorv32_uart0_puts("Fast IRQ "); __neorv32_rte_print_hex_word(trap_cause & 0xf); break;
-    default:                     neorv32_uart0_puts("UNKNOWN trap cause "); __neorv32_rte_print_hex_word(trap_cause); break;
+    default:                     neorv32_uart0_puts("Unknown trap cause "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
   // check if FIRQ
@@ -263,8 +382,7 @@ static void __neorv32_rte_debug_handler(void) {
 
   // instruction address
   neorv32_uart0_puts(" @ PC=");
-  uint32_t mepc = neorv32_cpu_csr_read(CSR_MEPC);
-  __neorv32_rte_print_hex_word(mepc);
+  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
 
   // trap value
   neorv32_uart0_puts(", MTVAL=");
@@ -274,7 +392,6 @@ static void __neorv32_rte_debug_handler(void) {
   if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_I_MISALIGNED)) {
     neorv32_uart0_puts(" [FATAL EXCEPTION!] Halting CPU. </RTE>\n");
     neorv32_cpu_csr_write(CSR_MIE, 0);
-    neorv32_cpu_csr_write(CSR_MIP, 0);
     while(1) {
       asm volatile ("wfi");
     }
