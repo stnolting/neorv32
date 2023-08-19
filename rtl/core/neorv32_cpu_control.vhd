@@ -267,6 +267,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mcause        : std_ulogic_vector(5 downto 0); -- machine trap cause
     mtvec         : std_ulogic_vector(XLEN-1 downto 0); -- machine trap-handler base address
     mtval         : std_ulogic_vector(XLEN-1 downto 0); -- machine bad address or instruction
+    mtinst        : std_ulogic_vector(XLEN-1 downto 0); -- machine trap instruction
     mscratch      : std_ulogic_vector(XLEN-1 downto 0); -- machine scratch register
     mcounteren    : std_ulogic; -- machine counter access enable (from user-mode)
     mcountinhibit : std_ulogic_vector(15 downto 0); -- inhibit counter auto-increment
@@ -1149,10 +1150,10 @@ begin
         csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- available if FPU implemented
 
       -- machine trap setup/handling, counter setup, environment & information registers, etc. --
-      when csr_mstatus_c       | csr_mstatush_c   | csr_misa_c    | csr_mie_c        | csr_mtvec_c     |
-           csr_mscratch_c      | csr_mepc_c       | csr_mcause_c  | csr_mip_c        | csr_mtval_c     |
-           csr_mcountinhibit_c | csr_mcounteren_c | csr_menvcfg_c | csr_menvcfgh_c   | csr_mvendorid_c |
-           csr_marchid_c       | csr_mimpid_c     | csr_mhartid_c | csr_mconfigptr_c | csr_mxisa_c =>
+      when csr_mstatus_c    | csr_mstatush_c   | csr_misa_c     | csr_mie_c       | csr_mtvec_c   | csr_mscratch_c      |
+           csr_mepc_c       | csr_mcause_c     | csr_mip_c      | csr_mtval_c     | csr_mtinst_c  | csr_mcountinhibit_c |
+           csr_mcounteren_c | csr_menvcfg_c    | csr_menvcfgh_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c        |
+           csr_mhartid_c    | csr_mconfigptr_c | csr_mxisa_c =>
         csr_reg_valid <= '1'; -- always available (but CSR might be hardwired)
 
       -- physical memory protection (PMP) --
@@ -1178,11 +1179,11 @@ begin
            csr_mhpmcounter13h_c | csr_mhpmcounter14h_c | csr_mhpmcounter15h_c | -- machine counters HIGH
            csr_mhpmevent3_c     | csr_mhpmevent4_c     | csr_mhpmevent5_c     | csr_mhpmevent6_c     | csr_mhpmevent7_c     |
            csr_mhpmevent8_c     | csr_mhpmevent9_c     | csr_mhpmevent10_c    | csr_mhpmevent11_c    | csr_mhpmevent12_c    |
-           csr_mhpmevent13_c    | csr_mhpmevent14_c    | csr_mhpmevent15_c    => -- event configuration
+           csr_mhpmevent13_c    | csr_mhpmevent14_c    | csr_mhpmevent15_c => -- event configuration
         csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm); -- available if Zihpm implemented
 
       -- counter and timer CSRs --
-      when csr_cycle_c  | csr_mcycle_c  | csr_instret_c  | csr_minstret_c  |
+      when csr_cycle_c  | csr_mcycle_c  | csr_instret_c  | csr_minstret_c |
            csr_cycleh_c | csr_mcycleh_c | csr_instreth_c | csr_minstreth_c =>
         csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr); -- available if Zicntr implemented
 
@@ -1624,6 +1625,7 @@ begin
       csr.mepc          <= (others => '0');
       csr.mcause        <= (others => '0');
       csr.mtval         <= (others => '0');
+      csr.mtinst        <= (others => '0');
       csr.mcounteren    <= '0';
       csr.mcountinhibit <= (others => '0');
       csr.mip_firq_nclr <= (others => '0');
@@ -1759,33 +1761,35 @@ begin
         -- --------------------------------------------------------------------
         -- TRAP ENTER
         -- --------------------------------------------------------------------
-        if (trap_ctrl.env_enter = '1') then -- trap handler starting?
+        if (trap_ctrl.env_enter = '1') then
 
-          -- NORMAL trap entry: write mcause, mepc and mtval - no update when in debug-mode! --
-          -- --------------------------------------------------------------------
+          -- NORMAL trap entry - no CSR update when in debug-mode! --
           if (CPU_EXTENSION_RISCV_Sdext = false) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.running = '0')) then
-            -- trap cause --
-            csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- type & identifier
-            -- trap PC --
-            csr.mepc <= trap_ctrl.epc(XLEN-1 downto 1) & '0';
+            csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- trap type & identifier
+            csr.mepc   <= trap_ctrl.epc(XLEN-1 downto 1) & '0'; -- trap PC
             -- trap value --
-            case trap_ctrl.cause is
-              when trap_lma_c | trap_laf_c | trap_sma_c | trap_saf_c => -- misaligned load/store address or load/store access error
-                csr.mtval <= mar_i; -- faulting data access address
-              when trap_iil_c => -- illegal instruction
-                csr.mtval <= execute_engine.ir; -- faulting instruction word
-              when others => -- everything else including all interrupts
-                csr.mtval <= (others => '0');
-            end case;
-            -- update privilege level and interrupt enable stack --
+            if (trap_ctrl.cause(6) = '0') and (trap_ctrl.cause(4 downto 2) = trap_lma_c(4 downto 2)) then -- load/store misaligned/fault
+              csr.mtval <= mar_i; -- faulting data access address
+            else -- everything else including all interrupts
+              csr.mtval <= (others => '0');
+            end if;
+            -- trap instruction --
+            if (trap_ctrl.cause(6) = '0') then -- exception
+              csr.mtinst <= execute_engine.ir;
+              if (execute_engine.is_ci = '1') and (CPU_EXTENSION_RISCV_C = true) then
+                csr.mtinst(1) <= '0'; -- RISC-V priv. spec: clear bit 1 if compressed instruction
+              end if;
+            else -- interrupt
+              csr.mtinst <= (others => '0');
+            end if;
+            -- update privilege level and interrupt-enable stack --
             csr.privilege    <= priv_mode_m_c; -- execute trap in machine mode
             csr.mstatus_mie  <= '0'; -- disable interrupts
             csr.mstatus_mpie <= csr.mstatus_mie; -- backup previous mie state
             csr.mstatus_mpp  <= csr.privilege; -- backup previous privilege mode
           end if;
 
-          -- DEBUG MODE entry: write dpc and dcsr - no update when already in debug-mode! --
-          -- --------------------------------------------------------------------
+          -- DEBUG MODE entry - no CSR update when already in debug-mode! --
           if (CPU_EXTENSION_RISCV_Sdext = true) and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then
             -- trap cause --
             csr.dcsr_cause <= trap_ctrl.cause(2 downto 0); -- why did we enter debug mode?
@@ -1947,7 +1951,7 @@ begin
         csr_rdata(31)         <= csr.mcause(5);
         csr_rdata(4 downto 0) <= csr.mcause(4 downto 0);
 
-      when csr_mtval_c => -- machine bad address or instruction
+      when csr_mtval_c => -- machine trap value
         csr_rdata <= csr.mtval;
 
       when csr_mip_c => -- machine interrupt pending
@@ -1955,6 +1959,9 @@ begin
         csr_rdata(07)           <= trap_ctrl.irq_pnd(irq_mti_irq_c);
         csr_rdata(11)           <= trap_ctrl.irq_pnd(irq_mei_irq_c);
         csr_rdata(31 downto 16) <= trap_ctrl.irq_pnd(irq_firq_15_c downto irq_firq_0_c);
+
+      when csr_mtinst_c => -- machine trap instruction
+        csr_rdata <= csr.mtinst;
 
       -- machine counter setup --
       -- --------------------------------------------------------------------

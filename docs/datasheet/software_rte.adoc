@@ -160,17 +160,17 @@ cannot be resolved by the default debug trap handlers and will halt the CPU (see
 .RTE Default Trap Handler Output Examples
 [source]
 ----
-<RTE> [M] Illegal instruction @ PC=0x000002d6, MTVAL=0x000000FF </RTE> <1>
-<RTE> [U] Illegal instruction @ PC=0x00000302, MTVAL=0x00000000 </RTE> <2>
-<RTE> [U] Load address misaligned @ PC=0x00000440, MTVAL=0x80000101 </RTE> <3>
-<RTE> [M] Fast IRQ 0x00000003 @ PC=0x00000820, MTVAL=0x00000000 </RTE> <4>
-<RTE> [M] Instruction access fault @ PC=0x90000000, MTVAL=0x00000000 [FATAL EXCEPTION] Halting CPU. </RTE>\n <5>
+<RTE> [M] Illegal instruction @ PC=0x000002d6, MTINST=0x000000FF, MTVAL=0x00000000 </RTE> <1>
+<RTE> [U] Illegal instruction @ PC=0x00000302, MTINST=0x00000000, MTVAL=0x00000000 </RTE> <2>
+<RTE> [U] Load address misaligned @ PC=0x00000440, MTINST=0x01052603, MTVAL=0x80000101 </RTE> <3>
+<RTE> [M] Fast IRQ 0x00000003 @ PC=0x00000820, MTINST=0x00000000, MTVAL=0x00000000 </RTE> <4>
+<RTE> [M] Instruction access fault @ PC=0x90000000, MTINST=0x42078b63, MTVAL=0x00000000 [FATAL EXCEPTION] Halting CPU. </RTE>\n <5>
 ----
-<1> Illegal 32-bit instruction `0x000000FF` at address `0x000002d6` while the CPU was in machine-mode (`[M]`).
-<2> Illegal 16-bit instruction `0x0000` (zero-extended) at address `0x00000302` while the CPU was in user-mode (`[U]`).
-<3> Misaligned load access at address `0x00000440` (trying to load a full 32-bit word from address `0x80000101`) while the CPU was in machine-mode.
-<4> Fast interrupt request from channel 3 before executing instruction at address `0x00000820` while the CPU was in machine-mode.
-<5> Instruction bus access fault at address `0x90000000` - this is fatal for the default debug trap handler while the CPU was in machine-mode.
+<1> Illegal 32-bit instruction `MTINST=0x000000FF` at address `PC=0x000002d6` while the CPU was in machine-mode (`[M]`).
+<2> Illegal 16-bit instruction `MTINST=0x00000000` at address `PC=0x00000302` while the CPU was in user-mode (`[U]`).
+<3> Misaligned load access at address `PC=0x00000440` caused by instruction `MTINST=0x01052603` (trying to load a full 32-bit word from address `MTVAL=0x80000101`) while the CPU was in machine-mode (`[U]`).
+<4> Fast interrupt request from channel 3 before executing instruction at address `PC=0x00000820` while the CPU was in machine-mode (`[M]`).
+<5> Instruction bus access fault at address `PC=0x90000000` while executing instruction `MTINST=0x42078b63` - this is fatal for the default debug trap handler while the CPU was in machine-mode (`[M]`).
 
 The specific message right at the beginning of the debug trap handler message corresponds to the trap code
 obtained from the <<_mcause>> CSR (see <<_neorv32_trap_listing>>). A full list of all messages and the according

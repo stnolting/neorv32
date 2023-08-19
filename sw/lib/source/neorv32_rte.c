@@ -218,20 +218,17 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
   handler_pnt = (void*)handler_base;
   (*handler_pnt)();
 
-  // compute return address
-  // modify pc only if not interrupt (MSB cleared); do not try to load the instruction word for an
-  // instruction fetch error as this is the reason we are here already
+  // compute return address (for exceptions only)
+  // do not alter return address if instruction access exception (fatal?)
   uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
   if ((((int32_t)cause) >= 0) && (cause != TRAP_CODE_I_ACCESS)) {
 
     uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
-
-    // get opcode of faulting instruction
-    uint32_t rte_trap_inst = (uint32_t)neorv32_cpu_load_unsigned_byte(rte_mepc);
-
     rte_mepc += 4; // default: faulting instruction is uncompressed
+
+    // adjust return address if compressed instruction
     if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) { // C extension implemented?
-      if ((rte_trap_inst & 3) != 3) { // faulting instruction is compressed instruction
+      if ((neorv32_cpu_csr_read(CSR_MTINST) & 3) != 3) { // faulting instruction is compressed instruction
         rte_mepc -= 2;
       }
     }
@@ -383,6 +380,10 @@ static void __neorv32_rte_debug_handler(void) {
   // instruction address
   neorv32_uart0_puts(" @ PC=");
   __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
+
+  // trap instruction
+  neorv32_uart0_puts(", MTINST=");
+  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTINST));
 
   // trap value
   neorv32_uart0_puts(", MTVAL=");

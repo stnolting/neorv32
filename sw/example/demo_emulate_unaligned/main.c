@@ -49,6 +49,8 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
+/** Show debug info when 1 */
+#define DEBUG_INFO 0
 /**@}*/
 
 
@@ -67,22 +69,24 @@ volatile uint32_t data_block[2];
  **************************************************************************/
 void trap_handler_emulate_unaligned_lw(void) {
 
-  uint32_t mepc = neorv32_cpu_csr_read(CSR_MEPC);
-
-  // this function assumes that the exception is raised by an UNCOMPRESSED load operation
-  uint32_t inst = neorv32_cpu_load_unsigned_word(mepc);
+  uint32_t inst = neorv32_cpu_csr_read(CSR_MTINST);
 
   // decompose I-type instruction
-  uint32_t opcode   = (inst >>  0) & 0x007;
+  uint32_t opcode   = (inst >>  0) & 0x07f;
   uint32_t funct3   = (inst >> 12) & 0x003;
   uint32_t rs1_addr = (inst >> 15) & 0x01f;
   uint32_t rd_addr  = (inst >>  7) & 0x01f;
   uint32_t imm12    = (inst >> 20) & 0xfff;
 
+  // set opcode bit 1 as the instruction word might be transformed (de-compressed)
+  opcode |= 1 << 1;
+
   // check if the trap-causing instruction is 'lw' instruction
   if ((opcode == 0b0000011) && (funct3 == 0b010)) {
 
-//  neorv32_uart0_printf("\n<< emulating 'lw x%u, %i(x%u)' >>\n", rd_addr, imm12, rs1_addr);
+#if (DEBUG_INFO != 0)
+    neorv32_uart0_printf("\n<< emulating 'lw x%u, %i(x%u)' >>\n", rd_addr, imm12, rs1_addr);
+#endif
 
     // get operands from main's context
     uint32_t rs1 = neorv32_rte_context_get(rs1_addr);
@@ -99,30 +103,6 @@ void trap_handler_emulate_unaligned_lw(void) {
     neorv32_rte_context_put(rd_addr, rd);
 
   }
-}
-
-
-/**********************************************************************//**
- * Load 32-bit data from memory. This wrapper function is used to ensure the emitted
- * load instruction is UNCOMPRESSED.
- *
- * @param[in] addr Address (32-bit).
- * @return Read data word (32-bit).
- **************************************************************************/
-uint32_t lw32(uint32_t addr) {
-
-  uint32_t reg_addr = addr;
-  uint32_t reg_data;
-
-  asm volatile (
-    ".option push       \n"
-    ".option norvc      \n" // make sure this emits uncompressed code
-    "lw %[da], 0(%[ad]) \n"
-    ".option pop        \n"
-    : [da] "=r" (reg_data) : [ad] "r" (reg_addr)
-  );
-
-  return reg_data;
 }
 
 
@@ -160,7 +140,8 @@ int main() {
   addr = ((uint32_t)&data_block[0]) + 1; // = unaligned address
   neorv32_uart0_printf("MEM[0x%x] = ", addr);
 
-  data = lw32(addr); // this will raise an exception
+  // read from unaligned address
+  data = neorv32_cpu_load_unsigned_word(addr); // this will raise an exception
 
   if (data == 0x77001122) {
     neorv32_uart0_printf("0x%x [ok]\n", data);
@@ -181,7 +162,8 @@ int main() {
   addr = ((uint32_t)&data_block[0]) + 1; // = unaligned address
   neorv32_uart0_printf("MEM[0x%x] = ", addr);
 
-  data = lw32(addr); // this will raise an exception
+  // read from unaligned address
+  data = neorv32_cpu_load_unsigned_word(addr); // this will raise an exception
 
   if (data == 0x77001122) {
     neorv32_uart0_printf("0x%x [ok]\n", data);
