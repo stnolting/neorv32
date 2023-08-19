@@ -1291,14 +1291,24 @@
               <description>WDT enable flag</description>
             </field>
             <field>
-              <name>WDT_CTRL_CLK_SEL</name>
-              <bitRange>[3:1]</bitRange>
-              <description>Clock prescaler select</description>
+              <name>WDT_CTRL_LOCK</name>
+              <bitRange>[1:1]</bitRange>
+              <description>Lock write access to control register, clears on reset (HW or WDT) only</description>
             </field>
             <field>
-              <name>WDT_CTRL_MODE</name>
+              <name>WDT_CTRL_DBEN</name>
+              <bitRange>[2:2]</bitRange>
+              <description>Allow WDT to continue operation even when in debug mode</description>
+            </field>
+            <field>
+              <name>WDT_CTRL_SEN</name>
+              <bitRange>[3:3]</bitRange>
+              <description>Allow WDT to continue operation even when in sleep mode</description>
+            </field>
+            <field>
+              <name>WDT_CTRL_RESET</name>
               <bitRange>[4:4]</bitRange>
-              <description>Watchdog mode: 0=timeout causes interrupt, 1=timeout causes processor reset</description>
+              <description>Reset WDT counter when set, auto-clears</description>
             </field>
             <field>
               <name>WDT_CTRL_RCAUSE</name>
@@ -1307,40 +1317,9 @@
               <description>Cause of last system reset: 0=external reset, 1=watchdog</description>
             </field>
             <field>
-              <name>WDT_CTRL_RESET</name>
-              <bitRange>[6:6]</bitRange>
-              <description>Reset WDT counter when set, auto-clears</description>
-            </field>
-            <field>
-              <name>WDT_CTRL_FORCE</name>
-              <bitRange>[7:7]</bitRange>
-              <description>Force WDT action, auto-clears</description>
-            </field>
-            <field>
-              <name>WDT_CTRL_LOCK</name>
-              <bitRange>[8:8]</bitRange>
-              <description>Lock write access to control register, clears on reset (HW or WDT) only</description>
-            </field>
-            <field>
-              <name>WDT_CTRL_DBEN</name>
-              <bitRange>[9:9]</bitRange>
-              <description>Allow WDT to continue operation even when in debug mode</description>
-            </field>
-            <field>
-              <name>WDT_CTRL_HALF</name>
-              <bitRange>[10:10]</bitRange>
-              <access>read-only</access>
-              <description>Set if at least half of the max. timeout counter value has been reached</description>
-            </field>
-            <field>
-              <name>WDT_CTRL_PAUSE</name>
-              <bitRange>[11:11]</bitRange>
-              <description>Pause WDT when CPU is in sleep mode</description>
-            </field>
-            <field>
-              <name>WDT_CTRL_PWD</name>
-              <bitRange>[31:16]</bitRange>
-              <description>Watchdog password, has to be `0xCA36` - otherwise any write access is ignored, reads as zero</description>
+              <name>WDT_CTRL_TIMEOUT</name>
+              <bitRange>[31:8]</bitRange>
+              <description>Timeout value</description>
             </field>
           </fields>
         </register>
