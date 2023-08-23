@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 23.08.2023 | 1.8.8.3 | :test_tube: add experimental `Smcntrpmf` ISA extension (counter privilege mode filtering; spec. is frozen but not yet ratified); remove unused `menvcfg` CSRs; [#676](https://github.com/stnolting/neorv32/pull/676) |
 | 19.08.2023 | 1.8.8.2 | :warning: constrain `mtval` CSR; add support for `mtinst` CSR (trap instruction); [#674](https://github.com/stnolting/neorv32/pull/674) |
 | 19.08.2023 | 1.8.8.1 | :test_tube: update RTE to support easy emulation of instructions; add example program to showcase how to emulate unaligned memory accesses; [#673](https://github.com/stnolting/neorv32/pull/673) |
 | 18.08.2023 | [**:rocket:1.8.8**](https://github.com/stnolting/neorv32/releases/tag/v1.8.8) | **New release** |
