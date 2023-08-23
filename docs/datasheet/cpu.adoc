@@ -693,11 +693,11 @@ behave like regular C functions but that evaluate to a single custom instruction
 
 ==== `PMP` ISA Extension
 
-The NEORV32 physical memory protection (PMP) provides an elementary memory protection mechanism that can be used
-to constrain read, write and execute rights of arbitrary memory regions. The NEORV32 PMP is partly compatible
-to the RISC-V Privileged Architecture Specifications. In general, the PMP can **grant permissions to user mode**,
-which by default has none, and can **revoke permissions from M-mode**, which by default has full permissions.
-The PMP is configured via the <<_machine_physical_memory_protection_csrs>>.
+The NEORV32 physical memory protection (PMP, also known as `Smpmp` ISA extension) provides an elementary memory
+protection mechanism that can be used to constrain read, write and execute rights of arbitrary memory regions.
+The NEORV32 PMP is fully compatible to the RISC-V Privileged Architecture Specifications. In general, the PMP can
+**grant permissions to user mode**, which by default has none, and can **revoke permissions from M-mode**, which
+by default has full permissions. The PMP is configured via the <<_machine_physical_memory_protection_csrs>>.
 
 .PMP Rules when in Debug Mode
 [NOTE]
@@ -706,6 +706,23 @@ When in debug-mode all PMP rules are ignored making the debugger have maximum ac
 [IMPORTANT]
 Instruction fetches are also triggered when denied by a certain PMP rule. However, the fetched instruction(s)
 will not be executed and will not change CPU core state to preserve memory access protection. 
+
+
+==== `Smcntrpmf` - ISA Extension
+
+[IMPORTANT]
+The `Smcntrpmf` ISA extension is frozen but not ratified yet.
+
+The _counter privilege mode filtering_ `Smcntrpmf` ISA extension allows to halt the standard cycle ([m]cycle[h])
+and instructions-retired (`[m]instret[h]`) counters if the CPU is in a specific privilege mode (machine oder user).
+This ISA extension is automatically enabled if the <<_u_isa_extension>> is enabled.
+
+Four additional CSRs are provided by this extensions:
+
+* <<_mcyclecfgh, `mcyclecfg`>>
+* <<_mcyclecfgh, `mcyclecfgh`>>
+* <<_minstretcfgh, `minstretcfg`>>
+* <<_minstretcfgh, `minstretcfgh`>>
 
 
 ==== `Sdext` ISA Extension
