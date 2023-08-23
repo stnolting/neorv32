@@ -57,9 +57,7 @@ enum NEORV32_CSR_enum {
   CSR_MIE            = 0x304, /**< 0x304 - mie:           Machine interrupt-enable register */
   CSR_MTVEC          = 0x305, /**< 0x305 - mtvec:         Machine trap-handler base address */
   CSR_MCOUNTEREN     = 0x306, /**< 0x305 - mcounteren:    Machine counter enable register */
-  CSR_MENVCFG        = 0x30a, /**< 0x30a - menvcfg:       Machine environment configuration register */
   CSR_MSTATUSH       = 0x310, /**< 0x310 - mstatush:      Machine status register - high word */
-  CSR_MENVCFGH       = 0x31a, /**< 0x31a - menvcfgh:      Machine environment configuration register - high word */
   CSR_MCOUNTINHIBIT  = 0x320, /**< 0x320 - mcountinhibit: Machine counter-inhibit register */
   CSR_MCYCLECFG      = 0x321, /**< 0x321 - mcyclecfg:     Machine cycle counter privilege mode filtering - low word */
   CSR_MINSTRETCFG    = 0x322, /**< 0x322 - minstretcfg:   Machine instret counter privilege mode filtering - low word */
