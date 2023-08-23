@@ -161,9 +161,11 @@ int main() {
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
 
-  // prepare (performance) counters
+  // prepare counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable counter auto increment (ALL counters)
-  neorv32_cpu_csr_write(CSR_MCOUNTEREN, -1); // allow counter access from user-mode code
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
+    neorv32_cpu_csr_write(CSR_MCOUNTEREN, -1); // allow counter access from user-mode code
+  }
 
   // set CMP of machine system timer MTIME to max to prevent an IRQ
   neorv32_mtime_set_timecmp(-1);
@@ -395,6 +397,47 @@ int main() {
 
   // re-enable all counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0);
+
+
+  // ----------------------------------------------------------
+  // Test mcyclecfg: counter privilege mode filtering
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] mcyclecfg CSR ", cnt_test);
+
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_SMCNTRPMF)) {
+    cnt_test++;
+
+    neorv32_cpu_csr_write(CSR_MCYCLECFGH, 1<<CSR_MCYCLECFGH_UINH); // inhibit when in user-mode
+
+    tmp_a = neorv32_cpu_csr_read(CSR_CYCLE);
+    asm volatile ("nop");
+    asm volatile ("nop");
+    tmp_a = neorv32_cpu_csr_read(CSR_CYCLE) - tmp_a; // delta machine-mode
+
+    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    neorv32_cpu_goto_user_mode();
+    {
+      tmp_b = neorv32_cpu_csr_read(CSR_CYCLE);
+      asm volatile ("nop");
+      asm volatile ("nop");
+      tmp_b = neorv32_cpu_csr_read(CSR_CYCLE) - tmp_b; // delta user-mode
+      asm volatile ("ecall"); // leave user-mode
+    }
+
+    if ((tmp_a != 0) && (tmp_b == 0)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    // re-enable base counters for all privilege modes
+    neorv32_cpu_csr_write(CSR_MCYCLECFGH, 0);
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------
