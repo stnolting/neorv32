@@ -54,6 +54,7 @@ entity neorv32_top is
 
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
+    DM_LEGACY_MODE               : boolean := false;  -- debug module spec version: false = v1.0, true = v0.13
 
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic memory operations extension?
@@ -288,18 +289,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal d_fence   : std_ulogic; -- data fence
 
   -- debug module interface (DMI) --
-  type dmi_t is record
-    req_valid   : std_ulogic;
-    req_ready   : std_ulogic; -- DMI is allowed to make new requests when set
-    req_address : std_ulogic_vector(05 downto 0);
-    req_op      : std_ulogic_vector(01 downto 0);
-    req_data    : std_ulogic_vector(31 downto 0);
-    rsp_valid   : std_ulogic; -- response valid when set
-    rsp_ready   : std_ulogic; -- ready to receive respond
-    rsp_data    : std_ulogic_vector(31 downto 0);
-    rsp_op      : std_ulogic_vector(01 downto 0);
-  end record;
-  signal dmi : dmi_t;
+  signal dmi_req : dmi_req_t;
+  signal dmi_rsp : dmi_rsp_t;
 
   -- debug core interface (DCI) --
   signal dci_ndmrstn, dci_halt_req : std_ulogic;
@@ -1531,53 +1522,40 @@ begin
     )
     port map (
       -- global control --
-      clk_i             => clk_i,
-      rstn_i            => rstn_ext,
+      clk_i        => clk_i,
+      rstn_i       => rstn_ext,
       -- jtag connection --
-      jtag_trst_i       => jtag_trst_i,
-      jtag_tck_i        => jtag_tck_i,
-      jtag_tdi_i        => jtag_tdi_i,
-      jtag_tdo_o        => jtag_tdo_o,
-      jtag_tms_i        => jtag_tms_i,
+      jtag_trst_i  => jtag_trst_i,
+      jtag_tck_i   => jtag_tck_i,
+      jtag_tdi_i   => jtag_tdi_i,
+      jtag_tdo_o   => jtag_tdo_o,
+      jtag_tms_i   => jtag_tms_i,
       -- debug module interface (DMI) --
-      dmi_req_valid_o   => dmi.req_valid,
-      dmi_req_ready_i   => dmi.req_ready,
-      dmi_req_address_o => dmi.req_address,
-      dmi_req_data_o    => dmi.req_data,
-      dmi_req_op_o      => dmi.req_op,
-      dmi_rsp_valid_i   => dmi.rsp_valid,
-      dmi_rsp_ready_o   => dmi.rsp_ready,
-      dmi_rsp_data_i    => dmi.rsp_data,
-      dmi_rsp_op_i      => dmi.rsp_op
+      dmi_req_o    => dmi_req,
+      dmi_rsp_i    => dmi_rsp
     );
 
     -- On-Chip Debugger - Debug Module (DM) ---------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_debug_dm_inst: entity neorv32.neorv32_debug_dm
     generic map (
-      CPU_BASE_ADDR => base_io_dm_c
+      CPU_BASE_ADDR => base_io_dm_c,
+      LEGACY_MODE   => DM_LEGACY_MODE
     )
     port map (
       -- global control --
-      clk_i             => clk_i,
-      rstn_i            => rstn_ext,
-      cpu_debug_i       => cpu_debug,
+      clk_i          => clk_i,
+      rstn_i         => rstn_ext,
+      cpu_debug_i    => cpu_debug,
       -- debug module interface (DMI) --
-      dmi_req_valid_i   => dmi.req_valid,
-      dmi_req_ready_o   => dmi.req_ready,
-      dmi_req_address_i => dmi.req_address,
-      dmi_req_data_i    => dmi.req_data,
-      dmi_req_op_i      => dmi.req_op,
-      dmi_rsp_valid_o   => dmi.rsp_valid,
-      dmi_rsp_ready_i   => dmi.rsp_ready,
-      dmi_rsp_data_o    => dmi.rsp_data,
-      dmi_rsp_op_o      => dmi.rsp_op,
+      dmi_req_i      => dmi_req,
+      dmi_rsp_o      => dmi_rsp,
       -- CPU bus access --
-      bus_req_i         => io_dev_req(IODEV_OCD),
-      bus_rsp_o         => io_dev_rsp(IODEV_OCD),
+      bus_req_i      => io_dev_req(IODEV_OCD),
+      bus_rsp_o      => io_dev_rsp(IODEV_OCD),
       -- CPU control --
-      cpu_ndmrstn_o     => dci_ndmrstn,
-      cpu_halt_req_o    => dci_halt_req
+      cpu_ndmrstn_o  => dci_ndmrstn,
+      cpu_halt_req_o => dci_halt_req
     );
 
   end generate;
