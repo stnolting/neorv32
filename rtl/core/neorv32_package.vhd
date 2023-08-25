@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080803"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080804"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -190,6 +190,25 @@ package neorv32_package is
     err  => '0'
   );
 
+  -- Debug Module Interface -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- request --
+  type dmi_req_t is record
+    addr : std_ulogic_vector(06 downto 0);
+    op   : std_ulogic_vector(01 downto 0);
+    data : std_ulogic_vector(31 downto 0);
+  end record;
+
+  -- request operation --
+  constant dmi_req_nop_c : std_ulogic_vector(1 downto 0) := "00"; -- no operation
+  constant dmi_req_rd_c  : std_ulogic_vector(1 downto 0) := "01"; -- read access
+  constant dmi_req_wr_c  : std_ulogic_vector(1 downto 0) := "10"; -- write access
+
+  -- response --
+  type dmi_rsp_t is record
+    data : std_ulogic_vector(31 downto 0);
+    ack  : std_ulogic;
+  end record;
 
 -- ****************************************************************************************************************************
 -- RISC-V ISA Definitions
