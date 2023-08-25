@@ -6,6 +6,7 @@
 The NEORV32 Processor is based on the NEORV32 CPU. Together with common peripheral
 interfaces and embedded memories it provides a RISC-V-based full-scale microcontroller-like SoC platform.
 
+.The NEORV32 Processor (Block Diagram)
 image::neorv32_processor.png[align=center]
 
 **Section Structure**
@@ -104,8 +105,8 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 | `slink_tx_val_o` |  1 | out | TX data valid
 | `slink_tx_rdy_i` |  1 |  in | TX allowed to send
 4+^| **Advanced Memory Control Signals**
-| `fence_o`        |  1 | out | indicates an executed _fence_ instruction
-| `fencei_o`       |  1 | out | indicates an executed _fencei_ instruction
+| `fence_o`        |  1 | out | set if `fence` instruction is being executed
+| `fencei_o`       |  1 | out | set if `fence.i` instruction is being executed
 4+^| **<<_execute_in_place_module_xip>>**
 | `xip_csn_o`      |  1 | out | chi select, low-active
 | `xip_clk_o`      |  1 | out | serial clock
