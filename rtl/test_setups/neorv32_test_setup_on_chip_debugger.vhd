@@ -82,6 +82,7 @@ begin
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_C        => true,              -- implement compressed extension?
     CPU_EXTENSION_RISCV_M        => true,              -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_U        => true,              -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zicntr   => true,              -- implement base counters?
     CPU_EXTENSION_RISCV_Zifencei => true,              -- implement instruction stream sync.? (required for the on-chip debugger)
     -- Internal Instruction memory --
