@@ -70,6 +70,11 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
   constant dmi_version_c : std_ulogic_vector(03 downto 0) := "0001";   -- debug spec. version (0.13 & 1.0)
   constant dmi_abits_c   : std_ulogic_vector(05 downto 0) := "000111"; -- number of DMI address bits (7)
 
+  -- TAP data register addresses --
+  constant addr_idcode_c : std_ulogic_vector(4 downto 0) := "00001"; -- identifier
+  constant addr_dtmcs_c  : std_ulogic_vector(4 downto 0) := "10000"; -- DTM status and control
+  constant addr_dmi_c    : std_ulogic_vector(4 downto 0) := "10001"; -- debug module interface
+
   -- tap JTAG signal synchronizer --
   type tap_sync_t is record
     -- internal --
@@ -102,12 +107,11 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
   signal tap_reg : tap_reg_t;
 
   -- update trigger --
-  type dr_update_trig_t is record
-    valid        : std_ulogic;
-    is_update    : std_ulogic;
-    is_update_ff : std_ulogic;
+  type dr_trigger_t is record
+    sreg  : std_ulogic_vector(1 downto 0);
+    valid : std_ulogic;
   end record;
-  signal dr_update_trig : dr_update_trig_t;
+  signal dr_trigger : dr_trigger_t;
 
   -- debug module interface controller --
   type dmi_ctrl_t is record
@@ -188,6 +192,23 @@ begin
     end if;
   end process tap_control;
 
+  -- trigger for UPDATE state --
+  update_trigger: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      dr_trigger.sreg <= "00";
+    elsif rising_edge(clk_i) then
+      if (tap_ctrl_state = DR_UPDATE) then
+        dr_trigger.sreg(0) <= '1';
+      else
+        dr_trigger.sreg(0) <= '0';
+      end if;
+      dr_trigger.sreg(1) <= dr_trigger.sreg(0);
+    end if;
+  end process update_trigger;
+
+  dr_trigger.valid <= '1' when (dr_trigger.sreg = "01") else '0';
+
 
   -- Tap Register Access --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -204,7 +225,7 @@ begin
 
       -- serial data input: instruction register --
       if (tap_ctrl_state = LOGIC_RESET) or (tap_ctrl_state = IR_CAPTURE) then -- preload phase
-        tap_reg.ireg <= "00001"; -- IDCODE
+        tap_reg.ireg <= addr_idcode_c;
       elsif (tap_ctrl_state = IR_SHIFT) then -- access phase
         if (tap_sync.tck_rising = '1') then -- [JTAG-SYNC] evaluate TDI on rising edge of TCK
           tap_reg.ireg <= tap_sync.tdi & tap_reg.ireg(tap_reg.ireg'left downto 1);
@@ -214,18 +235,18 @@ begin
       -- serial data input: data register --
       if (tap_ctrl_state = DR_CAPTURE) then -- preload phase
         case tap_reg.ireg is
-          when "00001" => tap_reg.idcode <= IDCODE_VERSION & IDCODE_PARTID & IDCODE_MANID & '1'; -- identifier (LSB has to be set)
-          when "10000" => tap_reg.dtmcs  <= tap_reg.dtmcs_nxt; -- status register
-          when "10001" => tap_reg.dmi    <= tap_reg.dmi_nxt; -- register interface
-          when others  => tap_reg.bypass <= '0'; -- pass through
+          when addr_idcode_c => tap_reg.idcode <= IDCODE_VERSION & IDCODE_PARTID & IDCODE_MANID & '1'; -- identifier (LSB has to be set)
+          when addr_dtmcs_c  => tap_reg.dtmcs  <= tap_reg.dtmcs_nxt; -- status register
+          when addr_dmi_c    => tap_reg.dmi    <= tap_reg.dmi_nxt; -- register interface
+          when others        => tap_reg.bypass <= '0'; -- pass through
         end case;
       elsif (tap_ctrl_state = DR_SHIFT) then -- access phase
         if (tap_sync.tck_rising = '1') then -- [JTAG-SYNC] evaluate TDI on rising edge of TCK
           case tap_reg.ireg is
-            when "00001" => tap_reg.idcode <= tap_sync.tdi & tap_reg.idcode(tap_reg.idcode'left downto 1);
-            when "10000" => tap_reg.dtmcs  <= tap_sync.tdi & tap_reg.dtmcs(tap_reg.dtmcs'left downto 1);
-            when "10001" => tap_reg.dmi    <= tap_sync.tdi & tap_reg.dmi(tap_reg.dmi'left downto 1);
-            when others  => tap_reg.bypass <= tap_sync.tdi;
+            when addr_idcode_c => tap_reg.idcode <= tap_sync.tdi & tap_reg.idcode(tap_reg.idcode'left downto 1);
+            when addr_dtmcs_c  => tap_reg.dtmcs  <= tap_sync.tdi & tap_reg.dtmcs(tap_reg.dtmcs'left downto 1);
+            when addr_dmi_c    => tap_reg.dmi    <= tap_sync.tdi & tap_reg.dmi(tap_reg.dmi'left downto 1);
+            when others        => tap_reg.bypass <= tap_sync.tdi;
           end case;
         end if;
       end if;
@@ -236,10 +257,10 @@ begin
           jtag_tdo_o <= tap_reg.ireg(0);
         else
           case tap_reg.ireg is
-            when "00001" => jtag_tdo_o <= tap_reg.idcode(0);
-            when "10000" => jtag_tdo_o <= tap_reg.dtmcs(0);
-            when "10001" => jtag_tdo_o <= tap_reg.dmi(0);
-            when others  => jtag_tdo_o <= tap_reg.bypass;
+            when addr_idcode_c => jtag_tdo_o <= tap_reg.idcode(0);
+            when addr_dtmcs_c  => jtag_tdo_o <= tap_reg.dtmcs(0);
+            when addr_dmi_c    => jtag_tdo_o <= tap_reg.dmi(0);
+            when others        => jtag_tdo_o <= tap_reg.bypass;
           end case;
         end if;
       end if;
@@ -279,7 +300,7 @@ begin
     elsif rising_edge(clk_i) then
 
       -- DMI reset control --
-      if (dr_update_trig.valid = '1') and (tap_reg.ireg = "10000") then
+      if (dr_trigger.valid = '1') and (tap_reg.ireg = addr_dtmcs_c) then
         dmi_ctrl.dmireset     <= tap_reg.dtmcs(16);
         dmi_ctrl.dmihardreset <= tap_reg.dtmcs(17);
       elsif (dmi_ctrl.busy = '0') then
@@ -290,7 +311,7 @@ begin
       -- sticky error --
       if (dmi_ctrl.dmireset = '1') or (dmi_ctrl.dmihardreset = '1') then
         dmi_ctrl.err <= '0';
-      elsif (dmi_ctrl.busy = '1') and (dr_update_trig.valid = '1') and (tap_reg.ireg = "10001") then -- access attempt while DMI is busy
+      elsif (dmi_ctrl.busy = '1') and (dr_trigger.valid = '1') and (tap_reg.ireg = addr_dmi_c) then -- access attempt while DMI is busy
         dmi_ctrl.err <= '1';
       end if;
 
@@ -299,7 +320,7 @@ begin
       if (dmi_ctrl.busy = '0') then -- idle: waiting for new request
 
         if (dmi_ctrl.dmihardreset = '0') then -- no DMI hard reset
-          if (dr_update_trig.valid = '1') and (tap_reg.ireg = "10001") then
+          if (dr_trigger.valid = '1') and (tap_reg.ireg = addr_dmi_c) then
             dmi_ctrl.addr  <= tap_reg.dmi(40 downto 34);
             dmi_ctrl.wdata <= tap_reg.dmi(33 downto 02);
             if (tap_reg.dmi(1 downto 0) = dmi_req_rd_c) or (tap_reg.dmi(1 downto 0) = dmi_req_wr_c) then
@@ -319,19 +340,6 @@ begin
       end if;
     end if;
   end process dmi_controller;
-
-  -- trigger for UPDATE state --
-  tap_update_trigger: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      dr_update_trig.is_update_ff <= '0';
-    elsif rising_edge(clk_i) then
-      dr_update_trig.is_update_ff <= dr_update_trig.is_update;
-    end if;
-  end process tap_update_trigger;
-
-  dr_update_trig.is_update <= '1' when (tap_ctrl_state = DR_UPDATE) else '0';
-  dr_update_trig.valid     <= '1' when (dr_update_trig.is_update = '1') and (dr_update_trig.is_update_ff = '0') else '0';
 
   -- direct DMI output --
   dmi_req_o.op   <= dmi_ctrl.op;

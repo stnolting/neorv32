@@ -194,7 +194,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     05 => x"00041c63",
     06 => x"fc104403",
     07 => x"fe0408e3",
-    08 => x"fc8000a3",
+    08 => x"fc0000a3",
     09 => x"7b202473",
     10 => x"7b200073",
     11 => x"fc000123",
@@ -689,11 +689,11 @@ begin
         dci.data_reg <= bus_req_i.data;
       end if;
       -- control and status register CPU write access --
-      -- NOTE: we only check the individual BYTE ACCESSES - not the actual write data --
       dci.halt_ack      <= '0'; -- all writable flags auto-clear
       dci.resume_ack    <= '0';
       dci.execute_ack   <= '0';
       dci.exception_ack <= '0';
+      -- NOTE: only check the individual BYTE ACCESSES - not the actual write data --
       if (bus_req_i.addr(7 downto 6) = dm_sreg_base_c(7 downto 6)) and (wren = '1') then
         dci.halt_ack      <= bus_req_i.ben(sreg_halt_ack_c/8);
         dci.resume_ack    <= bus_req_i.ben(sreg_resume_ack_c/8);
