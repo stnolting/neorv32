@@ -134,7 +134,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   constant hpm_cnt_hi_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0)); -- width high word
 
   -- instruction fetch engine --
-  type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING, IF_WAIT);
+  type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING);
   type fetch_engine_t is record
     state      : fetch_engine_state_t;
     state_prev : fetch_engine_state_t;
@@ -368,7 +368,7 @@ begin
       fetch_engine.unaligned  <= '0'; -- always start at aligned address after reset
       fetch_engine.pc         <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- previous state (for HPM) --
+      -- previous state (for HPMs only) --
       fetch_engine.state_prev <= fetch_engine.state;
 
       -- restart request buffer --
@@ -398,24 +398,11 @@ begin
           if (fetch_engine.resp = '1') then -- wait for bus response
             fetch_engine.pc        <= std_ulogic_vector(unsigned(fetch_engine.pc) + 1); -- next word
             fetch_engine.unaligned <= '0';
-            if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast)
+            if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast) due to branch
               fetch_engine.state <= IF_RESTART;
-            -- halt instruction fetch when a branch instruction is in progress (wait for branch destination)
-            elsif (execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_branch_c(6 downto 2)) or -- might be taken
-                  (execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_jal_c(6 downto 2)) or    -- will be taken
-                  (execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_jalr_c(6 downto 2)) then -- will be taken
-              fetch_engine.state <= IF_WAIT;
-            else -- request next instruction word
+            else -- request next linear instruction word
               fetch_engine.state <= IF_REQUEST;
             end if;
-          end if;
-
-        when IF_WAIT => -- wait for branch instruction to commit
-        -- ------------------------------------------------------------
-          if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast) if taken branch
-            fetch_engine.state <= IF_RESTART;
-          else
-            fetch_engine.state <= IF_REQUEST;
           end if;
 
         when others => -- undefined

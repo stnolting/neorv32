@@ -153,11 +153,6 @@ can operate in parallel to increase performance. However, all potential side eff
 instruction fetch are already handled by the CPU front-end ensuring a defined execution stage while preventing security
 side attacks.
 
-.Branch Prediction
-[NOTE]
-The front-end implements a very simple branch prediction that **stops** fetching further instruction while
-a branch/jump/call operation is in progress.
-
 
 **Back-End**
 
