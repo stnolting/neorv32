@@ -35,14 +35,14 @@
 
 /**********************************************************************//**
  * @file neorv32_dm.h
- * @brief On-Chip Debugger (should NOT be used by application software at all!)
+ * @brief On-Chip Debugger (CANNOT be accessed by application software!)
  **************************************************************************/
 
 #ifndef neorv32_dm_h
 #define neorv32_dm_h
 
 /**********************************************************************//**
- * @name IO Device: On-Chip Debugger (should NOT be used by application software at all!)
+ * @name IO Device: On-Chip Debugger (CANNOT be accessed by application software!)
  **************************************************************************/
 /**@{*/
 /** on-chip debugger - debug module prototype */
