@@ -228,6 +228,7 @@ begin
   assert not (LEGACY_MODE = true)  report "NEORV32 [OCD] on-chip debugger: DM compatible to debug spec. version 0.13" severity note;
   assert not (LEGACY_MODE = false) report "NEORV32 [OCD] on-chip debugger: DM compatible to debug spec. version 1.0"  severity note;
 
+
   -- DMI Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   dmi_wren <= '1' when (dmi_req_i.op = dmi_req_wr_c) else '0';
