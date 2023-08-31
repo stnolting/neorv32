@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 30.08.2023 | 1.8.8.5 | remove "branch prediction" logic - core is smaller and _even faster_ without it; [#678](https://github.com/stnolting/neorv32/pull/678) |
 | 25.08.2023 | 1.8.8.4 | add new generic to downgrade on-chip debugger's debug module back to spec. version 0.13 (`DM_LEGACY_MODE` generic); [#677](https://github.com/stnolting/neorv32/pull/677) |
 | 23.08.2023 | 1.8.8.3 | :test_tube: add experimental `Smcntrpmf` ISA extension (counter privilege mode filtering; spec. is frozen but not yet ratified); remove unused `menvcfg` CSRs; [#676](https://github.com/stnolting/neorv32/pull/676) |
 | 19.08.2023 | 1.8.8.2 | :warning: constrain `mtval` CSR; add support for `mtinst` CSR (trap instruction); [#674](https://github.com/stnolting/neorv32/pull/674) |
