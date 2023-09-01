@@ -318,8 +318,8 @@ interrupt is triggered or an exception is raised.
 
 [IMPORTANT]
 Physically, the NEORV32's `mcounteren` CSR is implemented as a **single 1-bit register**. Setting _any_ bit of
-the CSR will result in all bits being set. Hence, user-mode access can only be granted for _all_ counter CSRs
-or denied for _all_ counter CSRs. 
+the CSR will result in all bits being set. Hence, user-mode access can either be granted for **all** counter CSRs
+or entirely denied allowing access to **none** counter CSRs. 
 
 
 {empty} +
