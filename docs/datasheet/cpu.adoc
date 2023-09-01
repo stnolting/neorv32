@@ -458,6 +458,8 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Load/store    | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 5
 | System        | `ecall` `ebreak`                                                          | 3
 | Data fence    | `fence`                                                                   | 5
+| System        | `wfi`                                                                     | 3
+| System        | `mret`                                                                    | 5
 | Illegal inst. | -                                                                         | 3
 |=======================
 
@@ -473,6 +475,11 @@ top's `d_bus_fence_o` signal high for one cycle to inform the memory system a `f
 executed. Any flags within the `fence` instruction word are ignore by the hardware. However, the `d_bus_fence_o`
 signal is connected to the <<_processor_internal_data_cache_dcache>>. Hence, executing the `fence` instruction
 will clear/flush the data cache and resynchronize it with main memory.
+
+.`wfi` Instruction
+[NOTE]
+The `wfi` instruction is used to enter <<_sleep_mode>>. Executing the `wfi` instruction in user-mode
+will raise an illegal instruction exception if the `TW` bit of <<_mstatus>> is set.
 
 
 ==== `B` ISA Extension
@@ -633,16 +640,12 @@ support for these counters.
 
 This ISA extensions provides instructions for accessing the <<_control_and_status_registers_csrs>> as well as further
 privileged-architecture extensions. This extension is mandatory and cannot be disabled. Hence, there is no generic
-for enabling/disabling this ISa extension.
+for enabling/disabling this ISA extension.
 
 [NOTE]
 If `rd=x0` for the `csrrw[i]` instructions there will be no actual read access to the according CSR.
 However, access privileges are still enforced so these instruction variants _do_ cause side-effects
 (the RISC-V spec. state that these combinations "shall" not cause any side-effects).
-
-[NOTE]
-The `wfi` instruction is used to enter <<_sleep_mode>>. Executing the `wfi` instruction in user-mode
-will raise an illegal instruction exception if <<_mstatus>>.TW is set.
 
 .Instructions and Timing
 [cols="<2,<4,<3"]
@@ -650,8 +653,6 @@ will raise an illegal instruction exception if <<_mstatus>>.TW is set.
 |=======================
 | Class | Instructions | Execution cycles
 | System | `csrrw[i]` `csrrs[i]` `csrrc[i]` | 3
-| System | `wfi`                            | 3
-| System | `mret` `dret`                    | 5
 |=======================
 
 
@@ -679,11 +680,11 @@ integer multiplications but not hardware-based divisions, which will be computed
 
 The `Zxcfu` presents a NEORV32-specific ISA extension. It adds the <<_custom_functions_unit_cfu>> to
 the CPU core, which allows to add custom RISC-V instructions to the processor core.
-For more detailed information regarding the CFU, it's hardware and the according software interface
+For more detailed information regarding the CFU, its hardware and the according software interface
 see section <<_custom_functions_unit_cfu>>.
 
-Software can utilize the custom instructions by using _intrinsic_, which are basically inline assembly functions that
-behave like regular C functions but that evaluate to a single custom instruction word (not calling overhead at all).
+Software can utilize the custom instructions by using _intrinsics_, which are basically inline assembly functions that
+behave like regular C functions but that evaluate to a single custom instruction word (no calling overhead at all).
 
 
 ==== `PMP` ISA Extension
@@ -726,6 +727,13 @@ This ISA extension enables the RISC-V-compatible "external debug support" by imp
 the CPU "debug mode", which is required for the on-chip debugger.
 See section <<_on_chip_debugger_ocd>> / <<_cpu_debug_mode>> for more information.
 
+.Instructions and Timing
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| System | `dret` | 5
+|=======================
 
 ==== `Sdtrig` ISA Extension
 

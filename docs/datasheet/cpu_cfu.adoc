@@ -216,17 +216,5 @@ is highly commented to explain the available signals and the handshake with the 
 .CFU Hardware Resource Requirements
 [WARNING]
 Enabling the CFU and actually implementing R4-type and/or R5-type instructions (or more precisely, using
-the according operands for the CFU hardware) will add one or two additional read ports to the core's
-register file increasing resource requirements.
-
-.CFU Execution Time
-[NOTE]
-The CFU has to complete computation within a **bound time window**. Otherwise, the CFU operation is terminated
-by the hardware and an illegal instruction exception is raised. See section <<_cpu_arithmetic_logic_unit>>
-for more information.
-
-.CFU Exception
-[NOTE]
-The CFU can intentionally raise an illegal instruction exception by not asserting the "done" signal within
-a bound time window. For example this can be used to signal invalid configurations/operations to the runtime
-environment. See the CFU's VHDL file for more information.
+the according operands for the CFU hardware) will add one or two, respectively, additional read ports to
+the core's register file significantly increasing resource requirements.
