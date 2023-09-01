@@ -112,7 +112,6 @@ begin
   a_req_pending <= (a_rd_req_buf or a_wr_req_buf) when (PORT_A_READ_ONLY = false) else a_rd_req_buf;
   b_req_pending <= (b_rd_req_buf or b_wr_req_buf) when (PORT_B_READ_ONLY = false) else b_rd_req_buf;
 
-
   -- FSM --
   arbiter_comb: process(arbiter, a_req_current, b_req_current, a_req_pending, b_req_pending,
                         a_rd_req_buf, a_wr_req_buf, b_rd_req_buf, b_wr_req_buf, x_rsp_i)
@@ -399,7 +398,7 @@ begin
   response: process(imem_rsp_i, dmem_rsp_i, boot_rsp_i, xip_rsp_i, io_rsp_i, ext_rsp_i)
     variable tmp_v : bus_rsp_t;
   begin
-    tmp_v := rsp_terminate_c; -- start will all-zero
+    tmp_v := rsp_terminate_c; -- start with all-zero
     if (IMEM_ENABLE = true) then
       tmp_v.data := tmp_v.data or imem_rsp_i.data;
       tmp_v.ack  := tmp_v.ack  or imem_rsp_i.ack;
@@ -451,7 +450,6 @@ begin
     elsif rising_edge(clk_i) then
       keeper.err  <= '0'; -- default
       keeper.halt <= port_sel(port_xip_c) or port_sel(port_ext_c); -- no timeout if XIP or EXTERNAL access
-      -- fsm --
       if (keeper.busy = '0') then -- bus idle
         keeper.cnt <= std_ulogic_vector(to_unsigned(TIMEOUT, keeper.cnt'length));
         if (main_req_i.re = '1') or (main_req_i.we = '1') then
@@ -548,8 +546,8 @@ entity neorv32_bus_io_switch is
   );
   port (
     -- host port --
-    main_req_i : in  bus_req_t; -- host request
-    main_rsp_o : out bus_rsp_t; -- host response
+    main_req_i   : in  bus_req_t; -- host request
+    main_rsp_o   : out bus_rsp_t; -- host response
     -- device ports --
     dev_00_req_o : out bus_req_t; dev_00_rsp_i : in bus_rsp_t;
     dev_01_req_o : out bus_req_t; dev_01_rsp_i : in bus_rsp_t;
@@ -582,7 +580,7 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   -- ------------------------------------------------------------------------------------------- --
   -- 1. Increment <num_devs_physical_c> (must not exceed <num_devs_logical_c>).                  --
   -- 2. Append another pair of "DEV_xx_EN" and "DEV_xx_BASE" generics.                           --
-  -- 3. Append these two generics to the according <dev_base_list_c> and <dev_en_list_c> arrays. --
+  -- 3. Append these two generics to the according <dev_en_list_c> and <dev_base_list_c> arrays. --
   -- 4. Append another pair of "dev_xx_req_o" and "dev_xx_rsp_i" ports.                          --
   -- 5. Append these two ports to the according <dev_req> and <dev_rsp> array assignments in     --
   --    the "Combine Device Ports" section.                                                      --
@@ -596,17 +594,6 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   constant abb_lo_c : natural := index_size_f(DEV_SIZE); -- low address boundary bit
   constant abb_hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_logical_c)) - 1; -- high address boundary bit
 
-  -- list of device base addresses --
-  type dev_base_list_t is array (0 to num_devs_physical_c-1) of std_ulogic_vector(31 downto 0);
-  constant dev_base_list_c : dev_base_list_t := (
-    DEV_00_BASE, DEV_01_BASE, DEV_02_BASE, DEV_03_BASE,
-    DEV_04_BASE, DEV_05_BASE, DEV_06_BASE, DEV_07_BASE,
-    DEV_08_BASE, DEV_09_BASE, DEV_10_BASE, DEV_11_BASE,
-    DEV_12_BASE, DEV_13_BASE, DEV_14_BASE, DEV_15_BASE,
-    DEV_16_BASE, DEV_17_BASE, DEV_18_BASE, DEV_19_BASE,
-    DEV_20_BASE
-  );
-
   -- list of enabled device ports --
   type dev_en_list_t is array (0 to num_devs_physical_c-1) of boolean;
   constant dev_en_list_c : dev_en_list_t := (
@@ -616,6 +603,17 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
     DEV_12_EN, DEV_13_EN, DEV_14_EN, DEV_15_EN,
     DEV_16_EN, DEV_17_EN, DEV_18_EN, DEV_19_EN,
     DEV_20_EN
+  );
+
+  -- list of device base addresses --
+  type dev_base_list_t is array (0 to num_devs_physical_c-1) of std_ulogic_vector(31 downto 0);
+  constant dev_base_list_c : dev_base_list_t := (
+    DEV_00_BASE, DEV_01_BASE, DEV_02_BASE, DEV_03_BASE,
+    DEV_04_BASE, DEV_05_BASE, DEV_06_BASE, DEV_07_BASE,
+    DEV_08_BASE, DEV_09_BASE, DEV_10_BASE, DEV_11_BASE,
+    DEV_12_BASE, DEV_13_BASE, DEV_14_BASE, DEV_15_BASE,
+    DEV_16_BASE, DEV_17_BASE, DEV_18_BASE, DEV_19_BASE,
+    DEV_20_BASE
   );
 
   -- device ports combined as arrays --
@@ -661,8 +659,7 @@ begin
 
     access_gen_enabled:
     if (dev_en_list_c(i) = true) generate
-      dev_sel(i) <= '1' when main_req_i.addr(abb_hi_c downto abb_lo_c) = dev_base_list_c(i)(abb_hi_c downto abb_lo_c) else '0';
-      --
+      dev_sel(i)      <= '1' when main_req_i.addr(abb_hi_c downto abb_lo_c) = dev_base_list_c(i)(abb_hi_c downto abb_lo_c) else '0';
       dev_req(i).addr <= main_req_i.addr;
       dev_req(i).data <= main_req_i.data;
       dev_req(i).ben  <= main_req_i.ben;
@@ -819,7 +816,7 @@ begin
             rsvs.state <= "00"; -- invalidate reservation
           elsif (core_req_i.we = '1') then -- write access
 
-            if (core_req_i.rvso = '1') then -- store-conditional instruction
+            if (core_req_i.rvso = '1') then -- store-conditional to reservated address
               if (rsvs.match = '1') then -- SC to reservated address
                 rsvs.state <= "11"; -- execute SC instruction (reservation still valid)
               else -- SC to any other address (new reservation attempt while the current one is still valid)

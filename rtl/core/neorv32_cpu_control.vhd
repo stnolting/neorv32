@@ -65,7 +65,7 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT regs)
     CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
     CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
@@ -166,8 +166,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     align_clr : std_ulogic;
     ci_i16    : std_ulogic_vector(15 downto 0);
     ci_i32    : std_ulogic_vector(31 downto 0);
-    data      : std_ulogic_vector((3+32)-1 downto 0); -- 3-bit status & 32-bit instruction
-    valid     : std_ulogic_vector(1 downto 0); -- data word is valid when != 0
+    data      : std_ulogic_vector((3+32)-1 downto 0); -- 3-bit status + 32-bit instruction
+    valid     : std_ulogic_vector(1 downto 0); -- data word is valid
     ack       : std_ulogic;
   end record;
   signal issue_engine : issue_engine_t;
@@ -520,10 +520,9 @@ begin
           issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
           issue_engine.valid(0)  <= ipb.avail(0);
           issue_engine.data      <= ipb.rdata(0)(17 downto 16) & '1' & issue_engine.ci_i32;
-        else -- aligned uncompressed
+        else -- aligned uncompressed; use IPB(0) status flags only
           issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-          issue_engine.data  <= (ipb.rdata(1)(17 downto 16) or ipb.rdata(0)(17 downto 16)) & '0' &
-                                (ipb.rdata(1)(15 downto 00)  & ipb.rdata(0)(15 downto 00));
+          issue_engine.data  <= ipb.rdata(0)(17 downto 16) & '0' & ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
         end if;
       -- start with HIGH half-word --
       else
@@ -531,25 +530,24 @@ begin
           issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
           issue_engine.valid(1)  <= ipb.avail(1);
           issue_engine.data      <= ipb.rdata(1)(17 downto 16) & '1' & issue_engine.ci_i32;
-        else -- unaligned uncompressed
+        else -- unaligned uncompressed; use IPB(0) status flags only
           issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-          issue_engine.data  <= (ipb.rdata(0)(17 downto 16) or ipb.rdata(1)(17 downto 16)) & '0' &
-                                (ipb.rdata(0)(15 downto 00)  & ipb.rdata(1)(15 downto 00));
+          issue_engine.data  <= ipb.rdata(0)(17 downto 16) & '0' & ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
         end if;
       end if;
     end process issue_engine_fsm_comb;
 
   end generate; -- /issue_engine_enabled
 
-  issue_engine_disabled:
+  issue_engine_disabled: -- use IPB(0) status flags only
   if (CPU_EXTENSION_RISCV_C = false) generate
-    issue_engine.valid <= (others => ipb.avail(0)); -- only use status flags from IPB[0]
+    issue_engine.valid <= (others => ipb.avail(0));
     issue_engine.data  <= ipb.rdata(0)(17 downto 16) & '0' & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
   end generate; -- /issue_engine_disabled
 
-  -- update IPB FIFOs (ready-for-next)? --
-  ipb.re(0) <= '1' when (issue_engine.valid(0) = '1') and (issue_engine.ack = '1') else '0';
-  ipb.re(1) <= '1' when (issue_engine.valid(1) = '1') and (issue_engine.ack = '1') else '0';
+  -- update IPB FIFOs --
+  ipb.re(0) <= issue_engine.valid(0) and issue_engine.ack;
+  ipb.re(1) <= issue_engine.valid(1) and issue_engine.ack;
 
 
 -- ****************************************************************************************************************************
@@ -638,10 +636,10 @@ begin
 
       -- PC update --
       if (execute_engine.pc_we = '1') then
-        if (execute_engine.pc_mux_sel = '0') then
-          execute_engine.pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0'; -- next instruction address
-        else
-          execute_engine.pc <= alu_add_i(XLEN-1 downto 1) & '0'; -- jump/taken-branch
+        if (execute_engine.pc_mux_sel = '0') then -- next (linear) instruction address
+          execute_engine.pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
+        else -- jump/taken-branch
+          execute_engine.pc <= alu_add_i(XLEN-1 downto 1) & '0';
         end if;
       end if;
 
@@ -826,7 +824,8 @@ begin
 
     -- ALU operand B: is immediate? --
     case decode_aux.opcode is
-      when opcode_alui_c | opcode_lui_c | opcode_auipc_c | opcode_load_c | opcode_store_c | opcode_amo_c | opcode_branch_c | opcode_jal_c | opcode_jalr_c =>
+      when opcode_alui_c | opcode_lui_c    | opcode_auipc_c | opcode_load_c | opcode_store_c |
+           opcode_amo_c  | opcode_branch_c | opcode_jal_c   | opcode_jalr_c =>
         ctrl_nxt.alu_opb_mux <= '1';
       when others =>
         ctrl_nxt.alu_opb_mux <= '0';
@@ -836,7 +835,7 @@ begin
     -- state machine --
     case execute_engine.state is
 
-      when DISPATCH => -- Wait for ISSUE engine to become ready
+      when DISPATCH => -- Wait for ISSUE ENGINE to emit valid instruction word
       -- ------------------------------------------------------------
         if (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- new instruction word available
           if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap
@@ -846,7 +845,7 @@ begin
             trap_ctrl.instr_be        <= issue_engine.data(34); -- bus access fault during instruction fetch
             trap_ctrl.instr_ma        <= issue_engine.data(33) and (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_C)); -- misaligned instruction fetch (if C disabled)
             execute_engine.is_ci_nxt  <= issue_engine.data(32); -- this is a de-compressed instruction
-            execute_engine.ir_nxt     <= issue_engine.data(31 downto 0);
+            execute_engine.ir_nxt     <= issue_engine.data(31 downto 0); -- instruction word
             execute_engine.pc_we      <= not execute_engine.branched; -- update PC with next_pc if there was no actual branch
             execute_engine.state_nxt  <= EXECUTE;
           end if;
@@ -1001,7 +1000,7 @@ begin
           execute_engine.pc_we <= '1'; -- update PC with branch DST; will be overridden in DISPATCH if branch not taken
         end if;
         if (execute_engine.ir(instr_opcode_lsb_c+2) = '1') or (execute_engine.branch_taken = '1') then -- JAL[R] or taken branch
-          fetch_engine.reset       <= '1'; -- reset instruction fetch starting at modified PC
+          fetch_engine.reset       <= '1'; -- reset instruction fetch to restart at modified PC
           execute_engine.state_nxt <= BRANCHED;
         else
           execute_engine.state_nxt <= DISPATCH;
@@ -1039,15 +1038,14 @@ begin
         if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2)) then
           ctrl_nxt.lsu_rvso <= '1'; -- this is a reservation set operation
         end if;
-        ctrl_nxt.rf_mux <= rf_mux_mem_c; -- memory read data
+        ctrl_nxt.rf_mux <= rf_mux_mem_c; -- RF input = memory read data
         if (trap_ctrl.exc_buf(exc_laccess_c)  = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- bus access error
            (trap_ctrl.exc_buf(exc_lalign_c)   = '1') or (trap_ctrl.exc_buf(exc_salign_c)  = '1') then -- alignment error
-          execute_engine.state_nxt <= DISPATCH; -- abort!
-        elsif (bus_d_wait_i = '0') then -- wait for bus to finish transaction
-          if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2)) then -- atomic operation
-            ctrl_nxt.rf_wb_en <= '1';
-          else -- normal load/store
-            ctrl_nxt.rf_wb_en <= not execute_engine.ir(instr_opcode_msb_c-1); -- data write-back for load
+          execute_engine.state_nxt <= DISPATCH; -- abort
+        elsif (bus_d_wait_i = '0') then -- bus system has completed the transaction
+          if ((CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2))) or -- atomic operation
+             (execute_engine.ir(instr_opcode_msb_c-1) = '0') then -- normal load
+            ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file
           end if;
           execute_engine.state_nxt <= DISPATCH;
         end if;
@@ -1346,7 +1344,7 @@ begin
           illegal_cmd <= '0';
         end if;
 
-      when opcode_fop_c => -- all Zfinx encodings valid if FPU enabled
+      when opcode_fop_c => -- all encodings valid if FPU enabled
       -- ------------------------------------------------------------
         illegal_cmd <= (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx)) or (not decode_aux.is_f_op);
 
@@ -1486,7 +1484,7 @@ begin
     elsif rising_edge(clk_i) then
       trap_ctrl.wakeup <= or_reduce_f(trap_ctrl.irq_buf); -- wakeup from sleep on any (enabled! #583) pending IRQ (including debug IRQs)
       if (trap_ctrl.env_pending = '0') then -- no pending trap environment yet
-        -- trigger IRQ only in EXECUTE state to continue execution even on permanent IRQ
+        -- trigger IRQ only in EXECUTE states to *continue execution* even if there are permanent interrupt requests
         if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and (execute_engine.state = EXECUTE)) then
           trap_ctrl.env_pending <= '1'; -- now execute engine can start trap handling
         end if;
@@ -1504,7 +1502,7 @@ begin
     (
      (or_reduce_f(trap_ctrl.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending IRQ
      ((csr.mstatus_mie = '1') or (csr.privilege = priv_mode_u_c)) and -- take IRQ when in M-mode and MIE=1 OR when in U-mode
-     (debug_ctrl.running = '0') and (csr.dcsr_step = '0') -- no IRQs when in single-stepping mode or during single-stepping
+     (debug_ctrl.running = '0') and (csr.dcsr_step = '0') -- no IRQs when in debug-mode or during debug single-stepping
     ) or
     (trap_ctrl.irq_buf(irq_db_step_c) = '1') or -- debug-mode single-step IRQ
     (trap_ctrl.irq_buf(irq_db_halt_c) = '1') else '0'; -- debug-mode halt IRQ
@@ -1528,7 +1526,7 @@ begin
       elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c;  -- load address misaligned
       elsif (trap_ctrl.exc_buf(exc_saccess_c)  = '1') then trap_ctrl.cause <= trap_saf_c;  -- store access fault
       elsif (trap_ctrl.exc_buf(exc_laccess_c)  = '1') then trap_ctrl.cause <= trap_laf_c;  -- load access fault
-      -- debug mode exceptions and interrupts --
+      -- standard RISC-V debug mode exceptions and interrupts --
       elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request (async)
       elsif (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') then trap_ctrl.cause <= trap_db_trig_c;  -- hardware trigger (sync)
       elsif (trap_ctrl.exc_buf(exc_db_break_c) = '1') then trap_ctrl.cause <= trap_db_break_c; -- break instruction (sync)
@@ -1641,11 +1639,9 @@ begin
       csr.tdata2           <= (others => '0');
     elsif rising_edge(clk_i) then
 
-      -- write access? --
-      csr.we <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- write if not an illegal instruction
-
       -- defaults --
-      csr.mip_firq_nclr <= (others => '1'); -- active low
+      csr.we            <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- write if not an illegal instruction
+      csr.mip_firq_nclr <= (others => '1'); -- inactive FIRQ clear (active low)
 
       -- ********************************************************************************
       -- CSR access by application software
@@ -1763,84 +1759,75 @@ begin
 
         end case;
 
+      -- ********************************************************************************
+      -- Hardware CSR access: TRAP ENTER
+      -- ********************************************************************************
+      elsif (trap_ctrl.env_enter = '1') then
+
+        -- NORMAL trap entry - no CSR update when in debug-mode! --
+        if (CPU_EXTENSION_RISCV_Sdext = false) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.running = '0')) then
+          csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- trap type & identifier
+          csr.mepc   <= trap_ctrl.epc(XLEN-1 downto 1) & '0'; -- trap PC
+          -- trap value --
+          if (trap_ctrl.cause(6) = '0') and (trap_ctrl.cause(4 downto 2) = trap_lma_c(4 downto 2)) then -- load/store misaligned/fault
+            csr.mtval <= mar_i; -- faulting data access address
+          else -- everything else including all interrupts
+            csr.mtval <= (others => '0');
+          end if;
+          -- trap instruction --
+          if (trap_ctrl.cause(6) = '0') then -- exception
+            csr.mtinst <= execute_engine.ir;
+            if (execute_engine.is_ci = '1') and (CPU_EXTENSION_RISCV_C = true) then
+              csr.mtinst(1) <= '0'; -- RISC-V priv. spec: clear bit 1 if compressed instruction
+            end if;
+          else -- interrupt
+            csr.mtinst <= (others => '0');
+          end if;
+          -- update privilege level and interrupt-enable stack --
+          csr.privilege    <= priv_mode_m_c; -- execute trap in machine mode
+          csr.mstatus_mie  <= '0'; -- disable interrupts
+          csr.mstatus_mpie <= csr.mstatus_mie; -- backup previous mie state
+          csr.mstatus_mpp  <= csr.privilege; -- backup previous privilege mode
+        end if;
+
+        -- DEBUG MODE entry - no CSR update when already in debug-mode! --
+        if (CPU_EXTENSION_RISCV_Sdext = true) and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then
+          -- trap cause --
+          csr.dcsr_cause <= trap_ctrl.cause(2 downto 0); -- why did we enter debug mode?
+          -- current privilege mode when debug mode was entered --
+          csr.dcsr_prv <= csr.privilege;
+          -- trap PC --
+          csr.dpc <= trap_ctrl.epc(XLEN-1 downto 1) & '0';
+        end if;
 
       -- ********************************************************************************
-      -- Automatic CSR access by hardware
+      -- Hardware CSR access: TRAP EXIT
       -- ********************************************************************************
-      else
+      elsif (trap_ctrl.env_exit = '1') then
 
-        -- --------------------------------------------------------------------
-        -- TRAP ENTER
-        -- --------------------------------------------------------------------
-        if (trap_ctrl.env_enter = '1') then
-
-          -- NORMAL trap entry - no CSR update when in debug-mode! --
-          if (CPU_EXTENSION_RISCV_Sdext = false) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.running = '0')) then
-            csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- trap type & identifier
-            csr.mepc   <= trap_ctrl.epc(XLEN-1 downto 1) & '0'; -- trap PC
-            -- trap value --
-            if (trap_ctrl.cause(6) = '0') and (trap_ctrl.cause(4 downto 2) = trap_lma_c(4 downto 2)) then -- load/store misaligned/fault
-              csr.mtval <= mar_i; -- faulting data access address
-            else -- everything else including all interrupts
-              csr.mtval <= (others => '0');
+        -- return from debug mode trap --
+        if (CPU_EXTENSION_RISCV_Sdext = true) and (debug_ctrl.running = '1') then
+          if (CPU_EXTENSION_RISCV_U = true) then
+            csr.privilege <= csr.dcsr_prv;
+            if (csr.dcsr_prv /= priv_mode_m_c) then
+              csr.mstatus_mprv <= '0'; -- clear if return to priv. mode less than M
             end if;
-            -- trap instruction --
-            if (trap_ctrl.cause(6) = '0') then -- exception
-              csr.mtinst <= execute_engine.ir;
-              if (execute_engine.is_ci = '1') and (CPU_EXTENSION_RISCV_C = true) then
-                csr.mtinst(1) <= '0'; -- RISC-V priv. spec: clear bit 1 if compressed instruction
-              end if;
-            else -- interrupt
-              csr.mtinst <= (others => '0');
-            end if;
-            -- update privilege level and interrupt-enable stack --
-            csr.privilege    <= priv_mode_m_c; -- execute trap in machine mode
-            csr.mstatus_mie  <= '0'; -- disable interrupts
-            csr.mstatus_mpie <= csr.mstatus_mie; -- backup previous mie state
-            csr.mstatus_mpp  <= csr.privilege; -- backup previous privilege mode
           end if;
 
-          -- DEBUG MODE entry - no CSR update when already in debug-mode! --
-          if (CPU_EXTENSION_RISCV_Sdext = true) and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then
-            -- trap cause --
-            csr.dcsr_cause <= trap_ctrl.cause(2 downto 0); -- why did we enter debug mode?
-            -- current privilege mode when debug mode was entered --
-            csr.dcsr_prv <= csr.privilege;
-            -- trap PC --
-            csr.dpc <= trap_ctrl.epc(XLEN-1 downto 1) & '0';
-          end if;
-
-        -- --------------------------------------------------------------------
-        -- TRAP EXIT
-        -- --------------------------------------------------------------------
-        elsif (trap_ctrl.env_exit = '1') then
-
-          -- return from debug mode trap --
-          if (CPU_EXTENSION_RISCV_Sdext = true) and (debug_ctrl.running = '1') then
-            if (CPU_EXTENSION_RISCV_U = true) then
-              csr.privilege <= csr.dcsr_prv;
-              if (csr.dcsr_prv /= priv_mode_m_c) then
-                csr.mstatus_mprv <= '0'; -- clear if return to priv. mode less than M
-              end if;
+        -- return from normal trap --
+        else
+          if (CPU_EXTENSION_RISCV_U = true) then
+            csr.privilege   <= csr.mstatus_mpp; -- restore previous privilege mode
+            csr.mstatus_mpp <= priv_mode_u_c; -- set to least-privileged mode that is supported
+            if (csr.mstatus_mpp /= priv_mode_m_c) then
+              csr.mstatus_mprv <= '0'; -- clear if return to priv. mode less than M
             end if;
-
-          -- return from normal trap --
-          else
-            if (CPU_EXTENSION_RISCV_U = true) then
-              csr.privilege   <= csr.mstatus_mpp; -- restore previous privilege mode
-              csr.mstatus_mpp <= priv_mode_u_c; -- set to least-privileged mode that is supported
-              if (csr.mstatus_mpp /= priv_mode_m_c) then
-                csr.mstatus_mprv <= '0'; -- clear if return to priv. mode less than M
-              end if;
-            end if;
-            csr.mstatus_mie  <= csr.mstatus_mpie; -- restore machine-mode IRQ enable flag
-            csr.mstatus_mpie <= '1';
           end if;
-
+          csr.mstatus_mie  <= csr.mstatus_mpie; -- restore machine-mode IRQ enable flag
+          csr.mstatus_mpie <= '1';
         end if;
 
       end if;
-
 
       -- ********************************************************************************
       -- Override - hardwire/terminate unimplemented registers/bits
@@ -1885,7 +1872,7 @@ begin
         csr.dscratch0    <= (others => '0');
       end if;
 
-      -- no trigger module--
+      -- no trigger module --
       if (CPU_EXTENSION_RISCV_Sdtrig = false) then
         csr.tdata1_exe    <= '0';
         csr.tdata1_action <= '0';
@@ -2402,7 +2389,7 @@ begin
   csr.tdata1_rd(26 downto 21) <= "000000"; -- maskmax: only exact values
   csr.tdata1_rd(20)           <= '0'; -- hit: feature not implemented
   csr.tdata1_rd(19)           <= '0'; -- select: fire on address match
-  csr.tdata1_rd(18)           <= '1'; -- timing: trigger AFTER executing the triggering instruction
+  csr.tdata1_rd(18)           <= '1'; -- timing: trigger AFTER executing the programmed instruction address
   csr.tdata1_rd(17 downto 16) <= "00"; -- sizelo: match against an access of any size
   csr.tdata1_rd(15 downto 12) <= "000" & csr.tdata1_action; -- action = 1: enter debug mode on trigger, action = 0: ebreak exception on trigger
   csr.tdata1_rd(11)           <= '0'; -- chain: chaining not supported - there is only one trigger

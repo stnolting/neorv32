@@ -153,14 +153,10 @@ begin
   end process crc_core;
 
   -- operation mode --
-  mode_select: process(crc)
-  begin
-    case crc.mode is
-      when "00"   => crc.msb <= crc.sreg(07); -- crc8
-      when "01"   => crc.msb <= crc.sreg(15); -- crc16
-      when others => crc.msb <= crc.sreg(31); -- crc32
-    end case;
-  end process mode_select;
+	with crc.mode select crc.msb <= 
+		crc.sreg(07) when "00",   -- crc8
+		crc.sreg(15) when "01",   -- crc16
+		crc.sreg(31) when others; -- crc32
 
 
 end neorv32_crc_rtl;
