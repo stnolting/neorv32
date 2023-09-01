@@ -66,8 +66,8 @@ architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
   -- serial shifter --
   type shifter_t is record
     busy    : std_ulogic;
-    busy_ff : std_ulogic;
     done    : std_ulogic;
+    done_ff : std_ulogic;
     cnt     : std_ulogic_vector(index_size_f(XLEN)-1 downto 0);
     sreg    : std_ulogic_vector(XLEN-1 downto 0);
   end record;
@@ -89,13 +89,13 @@ begin
     serial_shifter_core: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        shifter.busy_ff <= '0';
         shifter.busy    <= '0';
+        shifter.done_ff <= '0';
         shifter.cnt     <= (others => '0');
         shifter.sreg    <= (others => '0');
       elsif rising_edge(clk_i) then
         -- arbitration --
-        shifter.busy_ff <= shifter.busy;
+        shifter.done_ff <= shifter.busy and shifter.done;
         if (start_i = '1') then
           shifter.busy <= '1';
         elsif (shifter.done = '1') or (ctrl_i.cpu_trap = '1') then -- abort on trap
@@ -119,7 +119,7 @@ begin
     -- shift control/output --
     shifter.done <= '1' when (or_reduce_f(shifter.cnt(shifter.cnt'left downto 1)) = '0') else '0';
     valid_o      <= shifter.busy and shifter.done;
-    res_o        <= shifter.sreg when (shifter.busy = '0') and (shifter.busy_ff = '1') else (others => '0');
+    res_o        <= shifter.sreg when (shifter.done_ff = '1') else (others => '0');
 
   end generate; -- /serial_shifter
 

@@ -223,14 +223,14 @@ begin
     begin
       addr_rd(i) <= (others => '0');
       addr_rd(i)(XLEN-1 downto pmp_lsb_c-2) <= csr.addr(i)(XLEN-1 downto pmp_lsb_c-2);
-      if (GRANULARITY = 8) then -- bit [G-1] reads as zero in TOR or OFF mode
+      if (GRANULARITY = 8) then -- bit G-1 reads as zero in TOR or OFF mode
         if (csr.cfg(i)(cfg_ah_c) = '0') then -- TOR/OFF mode
           addr_rd(i)(pmp_lsb_c) <= '0';
         end if;
       elsif (GRANULARITY > 8) then
-        addr_rd(i)(pmp_lsb_c-2 downto 0) <= (others => '1'); -- in NAPOT mode bits [G-2:0] must read as one
+        addr_rd(i)(pmp_lsb_c-2 downto 0) <= (others => '1'); -- in NAPOT mode bits G-2:0 must read as one
         if (csr.cfg(i)(cfg_ah_c) = '0') then -- TOR/OFF mode
-          addr_rd(i)(pmp_lsb_c-1 downto 0) <= (others => '0'); -- in TOR or OFF mode bits [G-1:0] must read as zero
+          addr_rd(i)(pmp_lsb_c-1 downto 0) <= (others => '0'); -- in TOR or OFF mode bits G-1:0 must read as zero
         end if;
       end if;
     end process address_read_back;

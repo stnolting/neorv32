@@ -169,6 +169,7 @@ begin
 
         when others => -- undefined
           ctrl.state <= S_IDLE;
+
       end case;
     end if;
   end process coprocessor_ctrl;
