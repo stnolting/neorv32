@@ -368,7 +368,7 @@ begin
     addr_i        => alu_add,         -- access address
     wdata_i       => rs2,             -- write data
     rdata_o       => mem_rdata,       -- read data
-    mar_o         => mar,             -- current memory address register
+    mar_o         => mar,             -- memory address register
     d_wait_o      => bus_d_wait,      -- wait for access to complete
     ma_load_o     => ma_load,         -- misaligned load data address
     ma_store_o    => ma_store,        -- misaligned store data address

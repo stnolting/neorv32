@@ -120,7 +120,7 @@ begin
 
   -- write enable --
   rd_zero <= '1' when (ctrl_i.rf_rd = "00000") else '0';
-  rf_we   <= (ctrl_i.rf_wb_en and (not rd_zero)) or ctrl_i.rf_zero_we; -- do not write to x0 unless explicitly forced
+  rf_we   <= (ctrl_i.rf_wb_en and (not rd_zero)) or ctrl_i.rf_zero_we; -- do not allow writes to x0 unless explicitly forced
 
 
   -- Register File --------------------------------------------------------------------------
