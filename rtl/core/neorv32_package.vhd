@@ -54,9 +54,12 @@ package neorv32_package is
   -- instruction prefetch buffer depth --
   constant ipb_depth_c : natural := 2; -- hast to be a power of two, min 2, default 2
 
+  -- instruction monitor: raise exception if multi-cycle operation times out --
+  constant monitor_mc_tmo_c : natural := 9; -- = log2 of max execution cycles (default = 512 cycles)
+
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080806"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080807"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -350,7 +353,6 @@ package neorv32_package is
 
   -- RISC-V CSRs ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- <<< standard read/write CSRs >>> --
   -- user floating-point CSRs --
   constant csr_fflags_c         : std_ulogic_vector(11 downto 0) := x"001";
   constant csr_frm_c            : std_ulogic_vector(11 downto 0) := x"002";
@@ -458,7 +460,6 @@ package neorv32_package is
   constant csr_mhpmcounter13h_c : std_ulogic_vector(11 downto 0) := x"b8d";
   constant csr_mhpmcounter14h_c : std_ulogic_vector(11 downto 0) := x"b8e";
   constant csr_mhpmcounter15h_c : std_ulogic_vector(11 downto 0) := x"b8f";
-  -- <<< standard read-only CSRs >>> --
   -- user counters/timers --
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
   constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
@@ -499,8 +500,7 @@ package neorv32_package is
   constant csr_mimpid_c         : std_ulogic_vector(11 downto 0) := x"f13";
   constant csr_mhartid_c        : std_ulogic_vector(11 downto 0) := x"f14";
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
-  -- <<< NEORV32-specific (custom) read-only CSRs >>> ---
-  -- machine extended ISA extensions information --
+  -- NEORV32-specific (machine-mode) registers --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
 
 -- ****************************************************************************************************************************

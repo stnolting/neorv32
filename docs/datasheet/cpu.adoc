@@ -114,6 +114,11 @@ The co-processors are implemented as iterative units that require several cycles
 the co-processors are used to implement all further processing-based ISA extensions (e.g. <<_m_isa_extension>> and
 <<_b_isa_extension>>).
 
+.Multi-Cycle Execution Monitor
+[NOTE]
+The CPU control system will raise an illegal instruction exception if a multi-cycle functional unit (like the <<_custom_functions_unit_cfu>>)
+does not complete processing in a bound amount of time (configured via the package's `monitor_mc_tmo_c` constant; default = 512 clock cycles).
+
 
 :sectnums:
 ==== CPU Bus Unit
@@ -680,7 +685,7 @@ integer multiplications but not hardware-based divisions, which will be computed
 
 The `Zxcfu` presents a NEORV32-specific ISA extension. It adds the <<_custom_functions_unit_cfu>> to
 the CPU core, which allows to add custom RISC-V instructions to the processor core.
-For more detailed information regarding the CFU, its hardware and the according software interface
+For detailed information regarding the CFU, its hardware and the according software interface
 see section <<_custom_functions_unit_cfu>>.
 
 Software can utilize the custom instructions by using _intrinsics_, which are basically inline assembly functions that
