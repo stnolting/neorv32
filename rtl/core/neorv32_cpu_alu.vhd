@@ -101,7 +101,7 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal cp_valid  : std_ulogic_vector(4 downto 0); -- co-processor done
 
   -- CSR read-backs --
-  signal csr_rdata_fpu : std_ulogic_vector(XLEN-1 downto 0);
+  signal csr_rdata_fpu, csr_rdata_cfu : std_ulogic_vector(XLEN-1 downto 0);
 
 begin
 
@@ -158,7 +158,7 @@ begin
   -- > "cp_start" is high for one cycle to trigger operation of the according co-processor
   cp_start <= ctrl_i.alu_cp_trig;
 
-  -- (iterative) co-processor operation done? --
+  -- multi-cycle co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
   cp_done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4);
 
@@ -167,7 +167,8 @@ begin
   cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4);
 
   -- co-processor CSR read-back --
-  csr_rdata_o <= csr_rdata_fpu;
+  -- > "csr_rdata_*" data has to be always zero unless the specific co-processor is actually being accessed
+  csr_rdata_o <= csr_rdata_fpu or csr_rdata_cfu;
 
 
   -- Co-Processor 0: Shifter Unit (Base ISA) ------------------------------------------------
@@ -296,25 +297,31 @@ begin
     neorv32_cpu_cp_cfu_inst: entity neorv32.neorv32_cpu_cp_cfu
     port map (
       -- global control --
-      clk_i   => clk_i,        -- global clock, rising edge
-      rstn_i  => rstn_i,       -- global reset, low-active, async
-      ctrl_i  => ctrl_i,       -- main control bus
-      start_i => cp_start(4),  -- trigger operation
+      clk_i   => clk_i,             -- global clock, rising edge
+      rstn_i  => rstn_i,            -- global reset, low-active, async
+      ctrl_i  => ctrl_i,            -- main control bus
+      start_i => cp_start(4),       -- trigger operation
+      -- CSR interface --
+      csr_we_i    => csr_we_i,      -- global write enable
+      csr_addr_i  => csr_addr_i,    -- address
+      csr_wdata_i => csr_wdata_i,   -- write data
+      csr_rdata_o => csr_rdata_cfu, -- read data
       -- data input --
-      rs1_i   => rs1_i,        -- rf source 1
-      rs2_i   => rs2_i,        -- rf source 2
-      rs3_i   => rs3_i,        -- rf source 3
-      rs4_i   => rs4_i,        -- rf source 4
+      rs1_i   => rs1_i,             -- rf source 1
+      rs2_i   => rs2_i,             -- rf source 2
+      rs3_i   => rs3_i,             -- rf source 3
+      rs4_i   => rs4_i,             -- rf source 4
       -- result and status --
-      res_o   => cp_result(4), -- operation result
-      valid_o => cp_valid(4)   -- data output valid
+      res_o   => cp_result(4),      -- operation result
+      valid_o => cp_valid(4)        -- data output valid
     );
   end generate;
 
   neorv32_cpu_cp_cfu_inst_false:
   if (CPU_EXTENSION_RISCV_Zxcfu = false) generate
-    cp_result(4) <= (others => '0');
-    cp_valid(4)  <= '0';
+    csr_rdata_cfu <= (others => '0');
+    cp_result(4)  <= (others => '0');
+    cp_valid(4)   <= '0';
   end generate;
 
 
