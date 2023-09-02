@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -56,4 +56,30 @@ int neorv32_cpu_cfu_available(void) {
   else {
     return 0;
   }
+}
+
+
+/**********************************************************************//**
+ * Indirect write to user-defined CFU-internal CSR.
+ *
+ * @param[in] sel User-defined CFU-internal CSR select.
+ * @param[in] wdata Write data.
+ **************************************************************************/
+void neorv32_cpu_cfu_write_csr(uint32_t sel, uint32_t wdata) {
+
+  neorv32_cpu_csr_write(CSR_CFUSEL, sel); // set address
+  neorv32_cpu_csr_write(CSR_CFUREG, wdata); // write data
+}
+
+
+/**********************************************************************//**
+ * Indirect read from user-defined CFU-internal CSR.
+ *
+ * @param[in] sel User-defined CFU-internal CSR select.
+ * @return Read data.
+ *************************************************************************/
+uint32_t neorv32_cpu_cfu_read_csr(uint32_t sel) {
+
+  neorv32_cpu_csr_write(CSR_CFUSEL, sel); // set address
+  return neorv32_cpu_csr_read(CSR_CFUREG); // read data
 }
