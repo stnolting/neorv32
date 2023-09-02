@@ -211,6 +211,14 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal execute_engine : execute_engine_t;
 
+  -- execution monitor --
+  type monitor_t is record
+    cnt     : std_ulogic_vector(monitor_mc_tmo_c downto 0);
+    cnt_add : std_ulogic_vector(monitor_mc_tmo_c downto 0);
+    exc     : std_ulogic;
+  end record;
+  signal monitor : monitor_t;
+
   -- trap controller --
   type trap_ctrl_t is record
     exc_buf       : std_ulogic_vector(exc_width_c-1 downto 0); -- synchronous exception buffer (one bit per exception)
@@ -241,12 +249,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type csr_t is record
     addr             : std_ulogic_vector(11 downto 0); -- csr address
     raddr            : std_ulogic_vector(11 downto 0); -- simplified csr read address
-    we               : std_ulogic; -- csr write enable
-    we_nxt           : std_ulogic;
-    re               : std_ulogic; -- csr read enable
-    re_nxt           : std_ulogic;
-    wdata            : std_ulogic_vector(XLEN-1 downto 0); -- csr write data
-    rdata            : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
+    we, we_nxt       : std_ulogic; -- csr write enable
+    re, re_nxt       : std_ulogic; -- csr read enable
+    wdata, rdata     : std_ulogic_vector(XLEN-1 downto 0); -- csr write/read data
     --
     mstatus_mie      : std_ulogic; -- machine-mode IRQ enable
     mstatus_mpie     : std_ulogic; -- previous machine-mode IRQ enable
@@ -1125,8 +1130,26 @@ begin
 
 
 -- ****************************************************************************************************************************
--- Illegal Instruction and CSR Access Check
+-- Illegal Instruction Detection and CSR Access Check
 -- ****************************************************************************************************************************
+
+  -- Instruction Execution Monitor ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  multi_cycle_monitor: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      monitor.cnt <= (others => '0');
+    elsif rising_edge(clk_i) then
+      monitor.cnt <= std_ulogic_vector(unsigned(monitor.cnt_add) + 1);
+    end if;
+  end process multi_cycle_monitor;
+
+  -- timeout counter (allow mapping of entire logic into the LUTs in front of the carry-chain) --
+  monitor.cnt_add <= monitor.cnt when (execute_engine.state = ALU_WAIT) else (others => '0');
+
+  -- raise illegal instruction exception if a multi-cycle instruction takes longer than a bound amount of time --
+  monitor.exc <= monitor.cnt(monitor.cnt'left);
+
 
   -- CSR Access Check: Available at All -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1364,6 +1387,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   trap_ctrl.instr_il <= '1' when ((execute_engine.state = EXECUTE) or (execute_engine.state = ALU_WAIT)) and -- check in execution states only
                                  (
+                                  (monitor.exc = '1') or -- execution monitor exception
                                   (illegal_cmd = '1') or -- illegal instruction?
                                   (execute_engine.ir(instr_opcode_lsb_c+1 downto instr_opcode_lsb_c) /= "11") -- illegal opcode LSBs?
                                  ) else '0';
