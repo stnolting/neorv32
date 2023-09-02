@@ -548,7 +548,7 @@ address masks. Make sure to wait for this time before completing the PMP region 
 
 The <<_custom_functions_unit_cfu>> allows to implement up to 2^32 CFU-internal CSRs that are accessed by the CPU
 via an _indirect_ CSR interface consisting of a select CSR (`cfusel`) and a data alias (`cfureg`) CSR. See the
-CFU chapter section <<_custom_control_and_status_registers_csrs>> for more information.
+CFU chapter section <<_cfu_internal_control_and_status_registers_cfu_csrs>> for more information.
 
 [discrete]
 ===== **`cfusel`**
