@@ -396,7 +396,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- The CFU provides an **indirect** CSR access mechanism that allows to implement up to
   -- 2^32 custom CFU-internal CSRs (using a 'select' CSR to hold the actual indirect
-  -- address and a `reg` CSR that serves as access alias).
+  -- address and a `reg` CSR that serves as access alias). Advanced users can remove this proxy
+  -- logic and can even repurpose the two CPU CSRs (cfusel and cfureg) to implement CFU-CSRs
+  -- with minimal hardware resources.
   cfu_csrs_enable:
   if (csr_enable_c = true) generate
     csr_control: process(rstn_i, clk_i)
@@ -411,15 +413,15 @@ begin
         csr_rdata_o <= (others => '0'); -- default
         if (csr_addr_i(11 downto 1) = csr_cfusel_c(11 downto 1)) then -- access to CFU CSRs
           -- write access --
-          if (csr_we_i = '1') and (csr_addr_i(0) = '0') then -- select register
+          if (csr_we_i = '1') and (csr_addr_i(0) = csr_cfusel_c(0)) then -- select register
             csr.addr <= csr_wdata_i(csr_awidth_c-1 downto 0);
           end if;
-          if (csr_we_i = '1') and (csr_addr_i(0) = '1') then -- data register
+          if (csr_we_i = '1') and (csr_addr_i(0) = csr_cfureg_c(0)) then -- data register
             csr.we    <= '1';
             csr.wdata <= csr_wdata_i;
           end if;
           -- read access --
-          if (csr_addr_i(0) = '0') then -- select register
+          if (csr_addr_i(0) = csr_cfusel_c(0)) then -- select register
             csr_rdata_o(csr_awidth_c-1 downto 0) <= csr.addr;
           else -- data register
             csr_rdata_o <= csr.rdata;
