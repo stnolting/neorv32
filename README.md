@@ -2,11 +2,12 @@
 
 # The NEORV32 RISC-V Processor
 
-[![datasheet (pdf)](https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor)](https://github.com/stnolting/neorv32/releases/tag/nightly)
+[![RISCV-ARCHID](https://img.shields.io/badge/RISC--V%20Architecture%20ID-19-000000.svg?longCache=true&style=flat-square&logo=riscv&colorA=273274&colorB=fbb517)](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
+[![datasheet (pdf)](https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor&colorA=273274)](https://github.com/stnolting/neorv32/releases/tag/nightly)
 [![datasheet (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat-square)](https://stnolting.github.io/neorv32)
-[![userguide (pdf)](https://img.shields.io/badge/user%20guide-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor)](https://github.com/stnolting/neorv32/releases/tag/nightly)
+[![userguide (pdf)](https://img.shields.io/badge/user%20guide-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor&colorA=273274)](https://github.com/stnolting/neorv32/releases/tag/nightly)
 [![userguide (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat-square)](https://stnolting.github.io/neorv32/ug)
-[![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen)](https://stnolting.github.io/neorv32/sw/files.html)
+[![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen&colorA=273274)](https://stnolting.github.io/neorv32/sw/files.html)
 
 1. [Overview](#1-overview)
    * [Key Features](#key-features)
@@ -100,8 +101,6 @@ setup according to your needs. Note that all of the following SoC modules are en
 
 **CPU Core**
 
-* [![NEORV32_MARCHID](https://img.shields.io/badge/RISC--V%20Architecture%20ID-19-000000.svg?longCache=true&style=flat-square&logo=riscv&colorA=273274&colorB=fbb517)](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) -
-see the [_open-source architecture ID list_](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md) in the official RISC-V ISA manual repository
 * 32-bit little-endian RISC-V single-core, pipelined/multi-cycle modified Harvard architecture
 * configurable ISA extensions:
 \
