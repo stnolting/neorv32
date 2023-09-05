@@ -373,10 +373,10 @@ begin
     -- internal memory sizes --
     assert not ((imem_size_valid_c = false) and (MEM_INT_IMEM_EN = true)) report
       "NEORV32 PROCESSOR CONFIG WARNING: Configured internal IMEM size (" & natural'image(MEM_INT_IMEM_SIZE) & " bytes) is not a power of two. " &
-      "Auto-increasing memory size to the next power of two (" & natural'image(imem_size_c) & " bytes)" severity warning;
+      "Auto-adjusting memory size to the next power of two (" & natural'image(imem_size_c) & " bytes)" severity warning;
     assert not ((dmem_size_valid_c = false) and (MEM_INT_DMEM_EN = true)) report
       "NEORV32 PROCESSOR CONFIG WARNING: Configured internal DMEM size (" & natural'image(MEM_INT_DMEM_SIZE) & " bytes) is not a power of two. " &
-      "Auto-increasing memory size to the next power of two (" & natural'image(dmem_size_c) & " bytes)" severity warning;
+      "Auto-adjusting memory size to the next power of two (" & natural'image(dmem_size_c) & " bytes)" severity warning;
 
     -- caches --
     assert not ((ICACHE_EN = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report
