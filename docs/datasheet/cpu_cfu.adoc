@@ -228,13 +228,19 @@ interfacing the custom user logic to the CPU pipeline.
 [TIP]
 The default CFU hardware module already implement some exemplary instructions that are used for illustration
 by the CFU example program. See the CFU's VHDL source file (`rtl/core/neorv32_cpu_cp_cfu.vhd`), which
-is highly commented to explain the available signals and the handshake with the CPU pipeline.
+is highly commented to explain the available signals, implementation options and the handshake with the CPU pipeline.
 
 .CFU Hardware Resource Requirements
-[WARNING]
+[NOTE]
 Enabling the CFU and actually implementing R4-type and/or R5-type instructions (or more precisely, using
 the according operands for the CFU hardware) will add one or two, respectively, additional read ports to
 the core's register file significantly increasing resource requirements.
+
+.CFU Access
+[NOTE]
+The CFU is accessible from all privilege modes (including CFU-internal registers accessed via the indirects CSR
+access mechanism). It is the task of the CFU designers to add according access-constraining logic if certain CFU
+states shall not be exposed to all privilege levels (i.e. exncryption keys).
 
 .CFU Execution Time
 [NOTE]
