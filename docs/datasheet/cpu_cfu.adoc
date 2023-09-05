@@ -32,14 +32,14 @@ Non-Standard Encoding Space"). The NEORV32 CFU uses the `custom` opcodes to iden
 by the CFU and to differentiate between the different instruction formats. The according binary encoding of these
 opcodes is shown below:
 
-* `custom-0`: `0001011` RISC-V standard, used for CFU R3-type instructions
-* `custom-1`: `0101011` RISC-V standard, used for CFU R4-type instructions
-* `custom-2`: `1011011` NEORV32-specific, used for CFU R5-type instruction A
-* `custom-3`: `1111011` NEORV32-specific, used for CFU R5-type instruction B
+* `custom-0`: `0001011` RISC-V standard, used for <<_cfu_r3_type_instructions>>
+* `custom-1`: `0101011` RISC-V standard, used for <<_cfu_r4_type_instructions>>
+* `custom-2`: `1011011` NEORV32-specific, used for <<_cfu_r5_type_instructions>> type A
+* `custom-3`: `1111011` NEORV32-specific, used for <<_cfu_r5_type_instructions>> type B
 
 
 :sectnums:
-==== CFU R3-Type Instructions
+===== CFU R3-Type Instructions
 
 The R3-type CFU instructions operate on two source registers `rs1` and `rs2` and return the processing result to
 the destination register `rd`. The actual operation can be defined by using the `funct7` and `funct3` bit fields.
@@ -69,7 +69,7 @@ R3-type instructions can be implemented (7-bit + 3-bit = 10 bit -> 1024 differen
 
 
 :sectnums:
-==== CFU R4-Type Instructions
+===== CFU R4-Type Instructions
 
 The R4-type CFU instructions operate on three source registers `rs1`, `rs2` and `rs2` and return the processing
 result to the destination register `rd`. The actual operation can be defined by using the `funct3` bit field.
@@ -105,7 +105,7 @@ instructions can be implemented (3-bit -> 8 different values).
 
 
 :sectnums:
-==== CFU R5-Type Instructions
+===== CFU R5-Type Instructions
 
 The R5-type CFU instructions operate on four source registers `rs1`, `rs2`, `rs3` and `r4` and return the
 processing result to the destination register `rd`. As all bits of the instruction word are used to encode the
@@ -128,11 +128,6 @@ image::cfu_r5type_instruction_b.png[align=center]
 * `rd`: address of destination register (for the 32-bit processing result)
 * `opcode`: `1011011` (RISC-V "custom-2" opcode) and/or `1111011` (RISC-V "custom-3" opcode)
 
-.RS4 bit field
-[NOTE]
-The `rs4` bit-field is split into two instruction word fields `rs4.hi` and `rs4.lo`. This allows a simple
-decoding logic as the location of the remaining register fields is identical to other R-type instructions.
-
 .RISC-V compatibility
 [IMPORTANT]
 The RISC-V ISA specifications does not specify a R5-type instruction format. Hence, this instruction
@@ -153,6 +148,11 @@ The custom instructions provided by the CFU can be used in plain C code by using
 behave like "normal" C functions but under the hood they are a set of macros that hide the complexity of inline assembly.
 Using intrinsics removes the need to modify the compiler, built-in libraries or the assembler when using custom
 instructions. Each intrinsic will be compiled into a single 32-bit instruction word providing maximum code efficiency.
+
+.CFU Example Program
+[TIP]
+There is an example program for the CFU, which shows how to use the _default_ CFU hardware module.
+This example program is located in `sw/example/demo_cfu`.
 
 The NEORV32 software framework provides four pre-defined prototypes for custom instructions, which are defined in
 `sw/lib/include/neorv32_cpu_cfu.h`:
@@ -178,7 +178,7 @@ if not needed. Each intrinsic function requires several arguments depending on t
 
 The `funct3` and `funct7` bit-fields are used to pass 3-bit or 7-bit literals to the CFU. The `rs1`, `rs2`, `rs3`
 and `r4` arguments pass the actual data to the CFU. These register arguments can be populated with variables or
-literals. The following example shows how to pass arguments when executing all exemplary CFU instruction types:
+literals. The following example shows how to pass arguments:
 
 .CFU instruction usage example
 [source,c]
@@ -190,10 +190,27 @@ uint32_t foo = neorv32_cfu_r4_instr(0b011, tmp, res, (uint32_t)some_array[i]);
 uint32_t bar = neorv32_cfu_r5_instr_a(tmp, res, foo, tmp);
 ----
 
-.CFU Example Program
-[TIP]
-There is an example program for the CFU, which shows how to use the _default_ CFU hardware module.
-This example program is located in `sw/example/demo_cfu`.
+
+:sectnums:
+==== CFU-Internal Control and Status Registers (CFU-CSRs)
+
+The user-designed CFU can implement up to 2^32 CFU-internal status and control registers (CFU-CSRs) that can
+be used to provide further operands, to configure execution properties or to check processing status. For example,
+the CFU-internal CSRs could be used to program a 256-bit key that is processed by an encryption/decryption accelerator
+implemented via the CFU's custom instructions.
+
+These CFU-internal registers are accessed via an _indirect access_ mechanism.
+From the CPU side, access is controlled via just two user-mode CSRs: <<_cfusel>> and <<_cfureg>>. `cfusel` is used
+to configure the actual access address while `cfureg` is used for the actual data exchange. Hence, CFU-CSR accesses
+require two consecutive CSR instructions (making them non-atomic). The NEORV32 software framework abstracts this
+indirect interface by providing two functions that can be used to access the CFU-internal CSRs:
+
+.Indirect CFU-internal CSR access functions (prototypes)
+[source,c]
+----
+void     neorv32_cpu_cfu_write_csr(uint32_t sel, uint32_t wdata); // write to CFU-CSR
+uint32_t neorv32_cpu_cfu_read_csr(uint32_t sel); // read from CFU-CSR
+----
 
 
 :sectnums:
@@ -211,10 +228,28 @@ interfacing the custom user logic to the CPU pipeline.
 [TIP]
 The default CFU hardware module already implement some exemplary instructions that are used for illustration
 by the CFU example program. See the CFU's VHDL source file (`rtl/core/neorv32_cpu_cp_cfu.vhd`), which
-is highly commented to explain the available signals and the handshake with the CPU pipeline.
+is highly commented to explain the available signals, implementation options and the handshake with the CPU pipeline.
 
 .CFU Hardware Resource Requirements
-[WARNING]
+[NOTE]
 Enabling the CFU and actually implementing R4-type and/or R5-type instructions (or more precisely, using
 the according operands for the CFU hardware) will add one or two, respectively, additional read ports to
 the core's register file significantly increasing resource requirements.
+
+.CFU Access
+[NOTE]
+The CFU is accessible from all privilege modes (including CFU-internal registers accessed via the indirects CSR
+access mechanism). It is the task of the CFU designers to add according access-constraining logic if certain CFU
+states shall not be exposed to all privilege levels (i.e. exncryption keys).
+
+.CFU Execution Time
+[NOTE]
+The CFU has to complete computation within a **bound time window**. Otherwise, the CFU operation is terminated
+by the hardware and an illegal instruction exception is raised. See section <<_cpu_arithmetic_logic_unit>>
+for more information.
+
+.CFU Exception
+[NOTE]
+The CFU can intentionally raise an illegal instruction exception by not asserting the `done` at all causing an
+execution timeout. For example this can be used to signal invalid configurations/operations to the runtime
+environment. See the CFU's VHDL file for more information.

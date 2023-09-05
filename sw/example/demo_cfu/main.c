@@ -37,8 +37,8 @@
  * @file demo_cfu/main.c
  * @author Stephan Nolting
  * @brief Example program showing how to use the CFU's custom instructions.
- * Take a look at the "hardware-counterpart" of this CFU example in
- * 'rtl/core/neorv32_cpu_cp_cfu.vhd'.
+ * @note Take a look at the highly-commented "hardware-counterpart" of this CFU
+ * example in 'rtl/core/neorv32_cpu_cp_cfu.vhd'.
  **************************************************************************/
 #include <neorv32.h>
 
@@ -101,11 +101,10 @@ int main() {
 
 
   // intro
-  neorv32_uart0_printf("\n<<< NEORV32 Custom Functions Unit (CFU) - Custom Instructions Example Program >>>\n\n");
+  neorv32_uart0_printf("\n<<< NEORV32 Custom Functions Unit (CFU) - Custom Instructions Example >>>\n\n");
 
   neorv32_uart0_printf("[NOTE] This program assumes the _default_ CFU hardware module, which\n"
                        "       implements simple and exemplary data processing instructions.\n\n");
-
 
 /*
   The CFU custom instructions can be used as plain C functions as they are simple "intrinsics".
@@ -154,7 +153,7 @@ int main() {
   // R4-type instructions (up to 8 custom instructions)
   // ----------------------------------------------------------
 
-// You can use <define> to simplify the usage of the custom instructions.
+// You can use macros to simplify the usage of the custom instructions.
 #define madd_lo(a, b, c) neorv32_cfu_r4_instr(0b000, a, b, c)
 #define madd_hi(a, b, c) neorv32_cfu_r4_instr(0b001, a, b, c)
 
@@ -208,7 +207,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Unimplemented (=illegal) R3-type instruction
+  // Unimplemented R3-type (=illegal) instruction
   // ----------------------------------------------------------
 
   neorv32_uart0_printf("\n--- CFU Unimplemented (= illegal) R3-Type ---\n");
@@ -216,8 +215,39 @@ int main() {
     rs1 = xorshift32();
     rs2 = xorshift32();
     // this funct3 is NOT implemented by the default CFU hardware causing an illegal instruction exception
+    // due to a multi-cycle execution timeout (processing does not complete within a bound time)
     neorv32_uart0_printf("%u: neorv32_cfu_r3_instr( funct7=0b0000000, funct3=0b111, [rs1]=0x%x, [rs2]=0x%x ) = ", i, rs1, rs2);
     neorv32_uart0_printf("0x%x\n", neorv32_cfu_r3_instr(0b0000000, 0b111, rs1, rs2));
+  }
+
+
+  // ----------------------------------------------------------
+  // CFU-internal control and status registers (CFU-CSRs)
+  // ----------------------------------------------------------
+  neorv32_uart0_printf("\n--- CFU CSRs: Control and Status Registers ---\n");
+
+/*
+  The CFU provides up to 4 user-defined CSR. These registers are mapped to the "platform-specific
+  user-mode read/write register" address space and can be accessed from _any_ privilege level.
+*/
+
+  // check if CFU actually implements any internal CSRs
+  neorv32_cpu_csr_write(CSR_CFUSEL, -1); // try to set all bits
+  if (neorv32_cpu_csr_read(CSR_CFUSEL)) { // any bit set?
+    neorv32_cpu_cfu_write_csr(0, 0xffffffff); // just write some exemplary data to CSR
+    neorv32_uart0_printf("CFU-CSR[0] = 0x%x\n", neorv32_cpu_cfu_read_csr(0)); // read-back data from CSR
+
+    neorv32_cpu_cfu_write_csr(1, 0x12345678);
+    neorv32_uart0_printf("CFU-CSR[1] = 0x%x\n", neorv32_cpu_cfu_read_csr(1));
+
+    neorv32_cpu_cfu_write_csr(2, 0x22334455);
+    neorv32_uart0_printf("CFU-CSR[2] = 0x%x\n", neorv32_cpu_cfu_read_csr(2));
+
+    neorv32_cpu_cfu_write_csr(3, 0xabcdabcd);
+    neorv32_uart0_printf("CFU-CSR[3] = 0x%x\n", neorv32_cpu_cfu_read_csr(3));
+  }
+  else {
+    neorv32_uart0_printf("no CFU-CSRs detected\n");
   }
 
 

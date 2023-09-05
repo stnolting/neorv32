@@ -1157,6 +1157,10 @@ begin
   begin
     case csr.addr is
 
+      -- user-defined U-mode CFU CSRs --
+      when csr_cfusel_c | csr_cfureg_c =>
+        csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- available if CFU implemented
+
       -- floating-point CSRs --
       when csr_fflags_c | csr_frm_c | csr_fcsr_c =>
         csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- available if FPU implemented

@@ -55,6 +55,9 @@ bits can actually be modified.
 | 0x7b0 | <<_dcsr>>      | - | DRW | Debug control and status register
 | 0x7b1 | <<_dpc>>       | - | DRW | Debug program counter
 | 0x7b2 | <<_dscratch0>> | - | DRW | Debug scratch register 0
+5+^| **<<_custom_functions_unit_cfu_csrs>>**
+| 0x800 | <<_cfusel>> | `CSR_CFUCSEL` | URW | CFU indirect register select
+| 0x801 | <<_cfureg>> | `CSR_CFUCREG` | URW | CFU indirect register alias
 5+^| **<<_machine_counter_and_timer_csrs>>**
 | 0xb00 | <<_mcycleh, `mcycle`>>      | `CSR_MCYCLE`    | MRW | Machine cycle counter low word
 | 0xb02 | <<_minstreth, `minstret`>>  | `CSR_MINSTRET`  | MRW | Machine instruction-retired counter low word
@@ -536,6 +539,46 @@ The `pmpaddr*` CSRs are used to configure the region's address boundaries.
 After writing a `pmpaddr` CSR the hardware requires up to 32 clock cycles to compute the according
 address masks. Make sure to wait for this time before completing the PMP region configuration
 (only relevant for `NA4` and `NAPOT` modes).
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+==== Custom Functions Unit (CFU) CSRs
+
+The <<_custom_functions_unit_cfu>> allows to implement up to 2^32 CFU-internal CSRs that are accessed by the CPU
+via an _indirect_ CSR interface consisting of a select CSR (`cfusel`) and a data alias (`cfureg`) CSR. See the
+CFU chapter section <<_cfu_internal_control_and_status_registers_cfu_csrs>> for more information.
+
+[discrete]
+===== **`cfusel`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | CFU indirect register select
+| Address     | `0x800`
+| Reset value | `0x00000000`
+| ISA         | `Zicsr` & `Zxcfu`
+| Description | This CSR is used to specify the address of the CFU-internal CSR that is accessed via the
+`cfureg` alias register.
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`cfureg`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | CFU indirect register alias
+| Address     | `0x801`
+| Reset value | `0x00000000`
+| ISA         | `Zicsr` & `Zxcfu`
+| Description | This CSR provides indirect data access to the CFU-internal CSR that is selected via the
+`cfusel` CSR.
+|=======================
 
 
 <<<
