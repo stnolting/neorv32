@@ -783,31 +783,3 @@ Write attempts to the hardwired bits are ignored.
 | ISA         | `Zicsr` & `Sdtrig`
 | Description | This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
 |=======================
-
-
-:sectnums!:
-===== **`mcontext`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | Machine context register
-| Address     | `0x7a8`
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` & `Sdtrig`
-| Description | This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
-|=======================
-
-
-:sectnums!:
-===== **`scontext`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | Supervisor context register
-| Address     | `0x7aa`
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` & `Sdtrig`
-| Description | This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
-|=======================
