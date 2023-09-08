@@ -227,8 +227,9 @@ int main() {
   neorv32_uart0_printf("\n--- CFU CSRs: Control and Status Registers ---\n");
 
 /*
-  The CFU provides up to 4 user-defined CSR. These registers are mapped to the "platform-specific
-  user-mode read/write register" address space and can be accessed from _any_ privilege level.
+  The CFU can implement up to 2^32 internal CSRs that are accessed via an indirect access
+  mechanism (up to 32-bit address and up to32-bit read/write data). Note that these
+  CFU-internal CSRs can be accessed from any privilege mode.
 */
 
   // check if CFU actually implements any internal CSRs
