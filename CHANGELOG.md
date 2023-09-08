@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 08.09.2023 | 1.8.8.9 | removed unused `mcontext` and `scontext` CSRs (`Sdtrig` ISA extension); CPU optimizations (area and timing); [#683](https://github.com/stnolting/neorv32/pull/683) |
 | 02.09.2023 | 1.8.8.8 | :sparkles: add option to implement **up to 2^32 CFU-internal user-defined CSRs** (via indirect CSR access); [#681](https://github.com/stnolting/neorv32/pull/681) |
 | 02.09.2023 | 1.8.8.7 | :lock: (re-)add **execution monitor**: raise an exception if a multi-cycle ALU operation does not complete within a bound amount of time; [#680](https://github.com/stnolting/neorv32/pull/680) |
 | 01.09.2023 | 1.8.8.6 | minor rtl edits and cleanups; [#679](https://github.com/stnolting/neorv32/pull/679) |

@@ -119,8 +119,6 @@ enum NEORV32_CSR_enum {
   CSR_TDATA3         = 0x7a3, /**< 0x7a3 - tdata3:   Trigger data register 2 */
   CSR_TINFO          = 0x7a4, /**< 0x7a4 - tinfo:    Trigger info */
   CSR_TCONTROL       = 0x7a5, /**< 0x7a5 - tcontrol: Trigger control */
-  CSR_MCONTEXT       = 0x7a8, /**< 0x7a8 - mcontext: Machine context register */
-  CSR_SCONTEXT       = 0x7aa, /**< 0x7aa - scontext: Supervisor context register */
 
   /* CPU debug mode CSRs - not accessible by software running outside of debug mode */
   CSR_DCSR           = 0x7b0, /**< 0x7b0 - dcsr:      Debug status and control register */
