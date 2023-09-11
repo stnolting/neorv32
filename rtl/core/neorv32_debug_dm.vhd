@@ -215,7 +215,6 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     execute_req   : std_ulogic; -- DM wants CPU to execute program buffer when set
     execute_ack   : std_ulogic; -- CPU starts executing program buffer when set (single-shot)
     exception_ack : std_ulogic; -- CPU has detected an exception (single-shot)
-    progbuf       : std_ulogic_vector(255 downto 0); -- program buffer, 4 32-bit entries
     data_we       : std_ulogic; -- write abstract data
     data_reg      : std_ulogic_vector(31 downto 0); -- memory-mapped data exchange register
   end record;
