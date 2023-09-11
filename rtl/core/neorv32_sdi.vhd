@@ -44,7 +44,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_sdi is
   generic (
-    RTX_FIFO : natural -- RTX fifo depth, has to be a power of two, min 1
+    RTX_FIFO : natural range 1 to 2**15 -- RTX fifo depth, has to be a power of two, min 1
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -134,8 +134,6 @@ begin
   -- -------------------------------------------------------------------------------------------
   assert not (is_power_of_two_f(RTX_FIFO) = false) report
     "NEORV32 PROCESSOR CONFIG ERROR: SDI FIFO size has to be a power of two." severity error;
-  assert not (RTX_FIFO > 2**15) report
-    "NEORV32 PROCESSOR CONFIG ERROR: SDI FIFO size out of valid range (1..32768)." severity error;
 
 
   -- Host Access ----------------------------------------------------------------------------

@@ -41,7 +41,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_pmp is
   generic (
-    NUM_REGIONS : natural; -- number of regions (0..16)
+    NUM_REGIONS : natural range 0 to 16; -- number of regions (0..16)
     GRANULARITY : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   );
   port (
@@ -131,12 +131,8 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (NUM_REGIONS > 16) report
-    "NEORV32 CPU CONFIG ERROR! Number of PMP regions out of valid range (0..16)." severity error;
-
   assert not (is_power_of_two_f(GRANULARITY) = false) report
     "NEORV32 CPU CONFIG ERROR! PMP granularity has to be a power of two." severity error;
-
   assert not (GRANULARITY < 4) report
     "NEORV32 CPU CONFIG ERROR! PMP granularity has to be at least 4 bytes." severity error;
 

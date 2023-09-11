@@ -44,9 +44,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_icache is
   generic (
-    ICACHE_NUM_BLOCKS : natural; -- number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
-    ICACHE_NUM_SETS   : natural; -- associativity / number of sets (1=direct_mapped), has to be a power of 2
+    ICACHE_NUM_BLOCKS : natural range 1 to 256; -- number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE : natural range 1 to 2**16; -- block size in bytes (min 4), has to be a power of 2
+    ICACHE_NUM_SETS   : natural range 1 to 2; -- associativity / number of sets; 1=direct-mapped, 2=2-way set-associative
     ICACHE_UC_PBEGIN  : std_ulogic_vector(3 downto 0) -- begin of uncached address space (page number)
   );
   port (
@@ -130,12 +130,6 @@ begin
     "NEORV32 PROCESSOR CONFIG ERROR! i-cache block size <ICACHE_BLOCK_SIZE> has to be a power of 2." severity error;
   assert not ((is_power_of_two_f(ICACHE_NUM_SETS) = false)) report
     "NEORV32 PROCESSOR CONFIG ERROR! i-cache associativity <ICACHE_NUM_SETS> has to be a power of 2." severity error;
-  assert not (ICACHE_NUM_BLOCKS < 1) report
-    "NEORV32 PROCESSOR CONFIG ERROR! i-cache number of blocks <ICACHE_NUM_BLOCKS> has to be >= 1." severity error;
-  assert not (ICACHE_BLOCK_SIZE < 4) report
-    "NEORV32 PROCESSOR CONFIG ERROR! i-cache block size <ICACHE_BLOCK_SIZE> has to be >= 4." severity error;
-  assert not ((ICACHE_NUM_SETS = 0) or (ICACHE_NUM_SETS > 2)) report
-    "NEORV32 PROCESSOR CONFIG ERROR! i-cache associativity <ICACHE_NUM_SETS> has to be 1 (direct-mapped) or 2 (2-way set-associative)." severity error;
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------

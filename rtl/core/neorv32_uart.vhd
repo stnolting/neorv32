@@ -59,9 +59,9 @@ use std.textio.all;
 
 entity neorv32_uart is
   generic (
-    SIM_LOG_FILE : string;  -- name of SM mode's log file
-    UART_RX_FIFO : natural; -- RX fifo depth, has to be a power of two, min 1
-    UART_TX_FIFO : natural  -- TX fifo depth, has to be a power of two, min 1
+    SIM_LOG_FILE : string;  -- name of SIM mode log file
+    UART_RX_FIFO : natural range 1 to 2**15; -- RX fifo depth, has to be a power of two, min 1
+    UART_TX_FIFO : natural range 1 to 2**15  -- TX fifo depth, has to be a power of two, min 1
   );
   port (
     clk_i       : in  std_ulogic; -- global clock line

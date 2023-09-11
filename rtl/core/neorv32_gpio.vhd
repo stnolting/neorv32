@@ -41,7 +41,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_gpio is
   generic (
-    GPIO_NUM : natural -- number of GPIO input/output pairs (0..64)
+    GPIO_NUM : natural range 0 to 64 -- number of GPIO input/output pairs (0..64)
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -59,12 +59,6 @@ architecture neorv32_gpio_rtl of neorv32_gpio is
   signal din, din_rd, dout, dout_rd : std_ulogic_vector(63 downto 0);
 
 begin
-
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not ((GPIO_NUM < 0) or (GPIO_NUM > 64)) report
-    "NEORV32 PROCESSOR CONFIG ERROR! Invalid GPIO pin number configuration (0..64)." severity error;
-
 
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

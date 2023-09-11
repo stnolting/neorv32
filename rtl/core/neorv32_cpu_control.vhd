@@ -79,8 +79,8 @@ entity neorv32_cpu_control is
     -- Physical memory protection (PMP) --
     PMP_EN                       : boolean; -- physical memory protection enabled
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH                : natural  -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS                 : natural range 0 to 13; -- number of implemented HPM counters (0..13)
+    HPM_CNT_WIDTH                : natural range 0 to 64  -- total size of HPM counters (0..64)
   );
   port (
     -- global control --

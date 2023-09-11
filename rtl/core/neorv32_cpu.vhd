@@ -66,11 +66,11 @@ entity neorv32_cpu is
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS              : natural; -- number of regions (0..16)
+    PMP_NUM_REGIONS              : natural range 0 to 16; -- number of regions (0..16)
     PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural; -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH                : natural  -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS                 : natural range 0 to 13; -- number of implemented HPM counters (0..13)
+    HPM_CNT_WIDTH                : natural range 0 to 64  -- total size of HPM counters (0..64)
   );
   port (
     -- global control --
@@ -172,12 +172,6 @@ begin
   -- CPU boot address --
   assert not (CPU_BOOT_ADDR(1 downto 0) /= "00") report
     "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
-
-  -- HPM counters --
-  assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 13)) report
-    "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..13)." severity error;
-  assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and ((HPM_CNT_WIDTH < 0) or (HPM_CNT_WIDTH > 64))) report
-    "NEORV32 CPU CONFIG ERROR! HPM counter width <HPM_CNT_WIDTH> has to be 0..64 bit." severity error;
 
   -- Hardware multiplier extensions --
   assert not ((CPU_EXTENSION_RISCV_Zmmul = true) and (CPU_EXTENSION_RISCV_M = true)) report

@@ -44,7 +44,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_pwm is
   generic (
-    NUM_CHANNELS : natural -- number of PWM channels (0..12)
+    NUM_CHANNELS : natural range 0 to 12 -- number of PWM channels (0..12)
   );
   port (
     clk_i       : in  std_ulogic; -- global clock line
@@ -81,11 +81,6 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
   signal pwm_cnt : std_ulogic_vector(7 downto 0);
 
 begin
-
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not (NUM_CHANNELS > 12) report "NEORV32 PROCESSOR CONFIG ERROR! <PWM controller> invalid number of channels (0..12)!" severity error;
-
 
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
