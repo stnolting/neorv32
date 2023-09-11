@@ -507,7 +507,7 @@ begin
   s0_axis_tready_int <= std_ulogic(s0_axis_tready);
   s1_axis_tdata_int  <= std_ulogic_vector(s1_axis_tdata);
   s1_axis_tvalid_int <= std_ulogic(s1_axis_tvalid);
-  slink_rx_rdy_o     <= std_logic(s1_axis_tready);
+  s1_axis_tready     <= std_logic(s1_axis_tready_int);
 
   xip_csn_o          <= std_logic(xip_csn_o_int);
   xip_clk_o          <= std_logic(xip_clk_o_int);
