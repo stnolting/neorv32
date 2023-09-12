@@ -146,7 +146,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant dm_version_c : std_ulogic_vector(03 downto 0) := cond_sel_suv_f(LEGACY_MODE, "0010", "0011"); -- version: v0.13 / v1.0
 
   -- debug module controller --
-  type dm_ctrl_state_t is (CMD_IDLE, CMD_EXE_CHECK, CMD_EXE_PREPARE, CMD_EXE_TRIGGER, CMD_EXE_BUSY, CMD_EXE_ERROR);
+  type dm_ctrl_state_t is (CMD_IDLE, CMD_CHECK, CMD_PREPARE, CMD_TRIGGER, CMD_BUSY, CMD_ERROR);
   type dm_ctrl_t is record
     -- fsm --
     state           : dm_ctrl_state_t;
@@ -215,7 +215,6 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     execute_req   : std_ulogic; -- DM wants CPU to execute program buffer when set
     execute_ack   : std_ulogic; -- CPU starts executing program buffer when set (single-shot)
     exception_ack : std_ulogic; -- CPU has detected an exception (single-shot)
-    progbuf       : std_ulogic_vector(255 downto 0); -- program buffer, 4 32-bit entries
     data_we       : std_ulogic; -- write abstract data
     data_reg      : std_ulogic_vector(31 downto 0); -- memory-mapped data exchange register
   end record;
@@ -264,14 +263,14 @@ begin
             if (dmi_wren = '1') then -- valid DM write access
               if (dmi_req_i.addr = addr_command_c) then
                 if (dm_ctrl.cmderr = "000") then -- only execute if no error
-                  dm_ctrl.state <= CMD_EXE_CHECK;
+                  dm_ctrl.state <= CMD_CHECK;
                 end if;
               end if;
             elsif (dm_reg.autoexec_rd = '1') or (dm_reg.autoexec_wr = '1') then -- auto execution trigger
-              dm_ctrl.state <= CMD_EXE_CHECK;
+              dm_ctrl.state <= CMD_CHECK;
             end if;
 
-          when CMD_EXE_CHECK => -- check if command is valid / supported
+          when CMD_CHECK => -- check if command is valid / supported
           -- ------------------------------------------------------------
             if (dm_reg.command(31 downto 24) = x"00") and -- cmdtype: register access
                (dm_reg.command(23) = '0') and -- reserved
@@ -279,55 +278,49 @@ begin
                (dm_reg.command(19) = '0') and -- aarpostincrement: not supported
                ((dm_reg.command(17) = '0') or (dm_reg.command(15 downto 05) = "00010000000")) then -- regno: only GPRs are supported: 0x1000..0x101f if transfer is set
               if (dm_ctrl.hart_halted = '1') then -- CPU is halted
-                dm_ctrl.state <= CMD_EXE_PREPARE;
+                dm_ctrl.state <= CMD_PREPARE;
               else -- error! CPU is still running
                 dm_ctrl.illegal_state <= '1';
-                dm_ctrl.state         <= CMD_EXE_ERROR;
+                dm_ctrl.state         <= CMD_ERROR;
               end if;
             else -- error! invalid command
               dm_ctrl.illegal_cmd <= '1';
-              dm_ctrl.state       <= CMD_EXE_ERROR;
+              dm_ctrl.state       <= CMD_ERROR;
             end if;
 
-          when CMD_EXE_PREPARE => -- setup program buffer
+          when CMD_PREPARE => -- setup program buffer
           -- ------------------------------------------------------------
             if (dm_reg.command(17) = '1') then -- "transfer"
               if (dm_reg.command(16) = '0') then -- "write" = 0 -> read from GPR
                 dm_ctrl.ldsw_progbuf <= instr_sw_c;
-                dm_ctrl.ldsw_progbuf(31 downto 25) <= dataaddr_c(11 downto 05); -- destination address
+                dm_ctrl.ldsw_progbuf(31 downto 25) <= dataaddr_c(11 downto 5); -- destination address
                 dm_ctrl.ldsw_progbuf(24 downto 20) <= dm_reg.command(4 downto 0); -- "regno" = source register
-                dm_ctrl.ldsw_progbuf(11 downto 07) <= dataaddr_c(04 downto 00); -- destination address
+                dm_ctrl.ldsw_progbuf(11 downto 07) <= dataaddr_c(4 downto 0); -- destination address
               else -- "write" = 1 -> write to GPR
                 dm_ctrl.ldsw_progbuf <= instr_lw_c;
-                dm_ctrl.ldsw_progbuf(31 downto 20) <= dataaddr_c(11 downto 00); -- source address
+                dm_ctrl.ldsw_progbuf(31 downto 20) <= dataaddr_c(11 downto 0); -- source address
                 dm_ctrl.ldsw_progbuf(11 downto 07) <= dm_reg.command(4 downto 0); -- "regno" = destination register
               end if;
             else
               dm_ctrl.ldsw_progbuf <= instr_nop_c; -- NOP - do nothing
             end if;
-            --
-            if (dm_reg.command(18) = '1') then -- "postexec" - execute program buffer
-              dm_ctrl.pbuf_en <= '1';
-            else -- execute all program buffer entries as NOPs
-              dm_ctrl.pbuf_en <= '0';
-            end if;
-            --
-            dm_ctrl.state <= CMD_EXE_TRIGGER;
+            dm_ctrl.pbuf_en <= dm_reg.command(18); -- "postexec" - execute program buffer when set (execute as NOPs if not)
+            dm_ctrl.state   <= CMD_TRIGGER;
 
-          when CMD_EXE_TRIGGER => -- request CPU to execute command
+          when CMD_TRIGGER => -- request CPU to execute command
           -- ------------------------------------------------------------
             dci.execute_req <= '1'; -- request execution
             if (dci.execute_ack = '1') then -- CPU starts execution
-              dm_ctrl.state <= CMD_EXE_BUSY;
+              dm_ctrl.state <= CMD_BUSY;
             end if;
 
-          when CMD_EXE_BUSY => -- wait for CPU to finish
+          when CMD_BUSY => -- wait for CPU to finish
           -- ------------------------------------------------------------
             if (dci.halt_ack = '1') then -- CPU is parked (halted) again -> execution done
               dm_ctrl.state <= CMD_IDLE;
             end if;
 
-          when CMD_EXE_ERROR => -- delay cycle for error to arrive abstracts.cmderr
+          when CMD_ERROR => -- delay cycle for error to arrive abstracts.cmderr
           -- ------------------------------------------------------------
             dm_ctrl.state <= CMD_IDLE;
 

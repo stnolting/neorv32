@@ -44,8 +44,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_slink is
   generic (
-    SLINK_RX_FIFO : natural; -- RX fifo depth, has to be a power of two
-    SLINK_TX_FIFO : natural  -- TX fifo depth, has to be a power of two
+    SLINK_RX_FIFO : natural range 1 to 2**15; -- RX fifo depth, has to be a power of two
+    SLINK_TX_FIFO : natural range 1 to 2**15  -- TX fifo depth, has to be a power of two
   );
   port (
     -- Host access --
@@ -126,10 +126,8 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not ((SLINK_TX_FIFO < 1) or (SLINK_TX_FIFO > 2**15) or (is_power_of_two_f(SLINK_TX_FIFO) = false)) report
-    "NEORV32 PROCESSOR CONFIG ERROR: <SLINK_TX_FIFO> has to be 1..2^15 and a power of two." severity error;
-  assert not ((SLINK_RX_FIFO < 1) or (SLINK_RX_FIFO > 2**15) or (is_power_of_two_f(SLINK_RX_FIFO) = false)) report
-    "NEORV32 PROCESSOR CONFIG ERROR: <SLINK_RX_FIFO> has to be 1..2^15 and a power of two." severity error;
+  assert not ((is_power_of_two_f(SLINK_TX_FIFO) = false) or (is_power_of_two_f(SLINK_RX_FIFO) = false)) report
+    "NEORV32 PROCESSOR CONFIG ERROR: SLINK FIFO sizes have to be a power of two." severity error;
 
 
   -- Host Access ----------------------------------------------------------------------------

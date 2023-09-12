@@ -45,7 +45,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_trng is
   generic (
-    IO_TRNG_FIFO : natural := 1 -- RND fifo depth, has to be a power of two, min 1
+    IO_TRNG_FIFO : natural range 1 to 2**15 -- RND fifo depth, has to be a power of two, min 1
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -128,9 +128,6 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (IO_TRNG_FIFO < 1) report
-    "NEORV32 PROCESSOR CONFIG ERROR: TRNG FIFO size <IO_TRNG_FIFO> has to be >= 1." severity error;
-
   assert not (is_power_of_two_f(IO_TRNG_FIFO) = false) report
     "NEORV32 PROCESSOR CONFIG ERROR: TRNG FIFO size <IO_TRNG_FIFO> has to be a power of two." severity error;
 

@@ -48,7 +48,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_xirq is
   generic (
-    XIRQ_NUM_CH           : natural; -- number of external IRQ channels (0..32)
+    XIRQ_NUM_CH           : natural range 0 to 32; -- number of external IRQ channels
     XIRQ_TRIGGER_TYPE     : std_ulogic_vector(31 downto 0); -- trigger type: 0=level, 1=edge
     XIRQ_TRIGGER_POLARITY : std_ulogic_vector(31 downto 0)  -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
   );
@@ -84,12 +84,6 @@ architecture neorv32_xirq_rtl of neorv32_xirq is
   signal irq_active     : std_ulogic;
 
 begin
-
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert (XIRQ_NUM_CH <= 32)
-    report "NEORV32 PROCESSOR CONFIG ERROR: Number of XIRQ inputs <XIRQ_NUM_CH> has to be 0..32." severity error;
-
 
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

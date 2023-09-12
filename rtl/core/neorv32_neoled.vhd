@@ -55,7 +55,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_neoled is
   generic (
-    FIFO_DEPTH : natural -- NEOLED FIFO depth, has to be a power of two, min 1
+    FIFO_DEPTH : natural range 1 to 2**15 -- NEOLED FIFO depth, has to be a power of two, min 1
   );
   port (
     clk_i       : in  std_ulogic; -- global clock line
@@ -158,8 +158,8 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not ((is_power_of_two_f(FIFO_DEPTH) = false) or (FIFO_DEPTH < 1) or (FIFO_DEPTH > 32768))
-    report "NEORV32 PROCESSOR CONFIG ERROR! Invalid NEOLED FIFO size configuration (1..32k)." severity error;
+  assert not (is_power_of_two_f(FIFO_DEPTH) = false)
+    report "NEORV32 PROCESSOR CONFIG ERROR! NEOLED FIFO size has to be a power of two." severity error;
 
 
   -- Host Access ----------------------------------------------------------------------------

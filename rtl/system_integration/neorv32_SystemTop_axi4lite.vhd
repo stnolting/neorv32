@@ -2,7 +2,6 @@
 -- # << NEORV32 - Processor Top Entity with AXI4-Lite Compatible Master Interface >>               #
 -- # ********************************************************************************************* #
 -- # (c) "AXI", "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.                         #
--- # Note: External MTIME is not supported.                                                        #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -54,7 +53,9 @@ entity neorv32_SystemTop_axi4lite is
     INT_BOOTLOADER_EN            : boolean := true;   -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
+    DM_LEGACY_MODE               : boolean := false;  -- debug module spec version: false = v1.0, true = v0.13
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        : boolean := false;  -- implement atomic memory operations extension?
     CPU_EXTENSION_RISCV_B        : boolean := false;  -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        : boolean := false;  -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        : boolean := false;  -- implement embedded RF extension?
@@ -75,6 +76,8 @@ entity neorv32_SystemTop_axi4lite is
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 : natural := 0;      -- number of implemented HPM counters (0..29)
     HPM_CNT_WIDTH                : natural := 40;     -- total size of HPM counters (0..64)
+    -- Atomic Memory Access - Reservation Set Granularity --
+    AMO_RVS_GRANULARITY          : natural := 4;      -- size in bytes, has to be a power of 2, min 4
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              : boolean := true;   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            : natural := 16*1024; -- size of processor-internal instruction memory in bytes
@@ -105,6 +108,8 @@ entity neorv32_SystemTop_axi4lite is
     IO_UART1_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    : boolean := true;   -- implement serial peripheral interface (SPI)?
     IO_SPI_FIFO                  : natural := 1;      -- SPI RTX fifo depth, has to be a power of two, min 1
+    IO_SDI_EN                    : boolean := false;  -- implement serial data interface (SDI)?
+    IO_SDI_FIFO                  : natural := 1;      -- RTX fifo depth, has to be zero or a power of two, min 1
     IO_TWI_EN                    : boolean := true;   -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                : natural := 0;      -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    : boolean := true;   -- implement watch dog timer (WDT)?
@@ -118,93 +123,115 @@ entity neorv32_SystemTop_axi4lite is
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
     IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
-    IO_ONEWIRE_EN                : boolean := false   -- implement 1-wire interface (ONEWIRE)?
+    IO_ONEWIRE_EN                : boolean := false;  -- implement 1-wire interface (ONEWIRE)?
+    IO_DMA_EN                    : boolean := false;  -- implement direct memory access controller (DMA)?
+    IO_SLINK_EN                  : boolean := false;  -- implement stream link interface (SLINK)?
+    IO_SLINK_RX_FIFO             : natural := 1;      -- RX fifo depth, has to be a power of two, min 1
+    IO_SLINK_TX_FIFO             : natural := 1;      -- TX fifo depth, has to be a power of two, min 1
+    IO_CRC_EN                    : boolean := false   -- implement cyclic redundancy check unit (CRC)?
   );
   port (
     -- ------------------------------------------------------------
     -- AXI4-Lite-Compatible Master Interface --
     -- ------------------------------------------------------------
     -- Clock and Reset --
-    m_axi_aclk    : in  std_logic;
-    m_axi_aresetn : in  std_logic;
+    m_axi_aclk     : in  std_logic;
+    m_axi_aresetn  : in  std_logic;
     -- Write Address Channel --
-    m_axi_awaddr  : out std_logic_vector(31 downto 0);
-    m_axi_awprot  : out std_logic_vector(2 downto 0);
-    m_axi_awvalid : out std_logic;
-    m_axi_awready : in  std_logic;
+    m_axi_awaddr   : out std_logic_vector(31 downto 0);
+    m_axi_awprot   : out std_logic_vector(2 downto 0);
+    m_axi_awvalid  : out std_logic;
+    m_axi_awready  : in  std_logic;
     -- Write Data Channel --
-    m_axi_wdata   : out std_logic_vector(31 downto 0);
-    m_axi_wstrb   : out std_logic_vector(3 downto 0);
-    m_axi_wvalid  : out std_logic;
-    m_axi_wready  : in  std_logic;
+    m_axi_wdata    : out std_logic_vector(31 downto 0);
+    m_axi_wstrb    : out std_logic_vector(3 downto 0);
+    m_axi_wvalid   : out std_logic;
+    m_axi_wready   : in  std_logic;
     -- Read Address Channel --
-    m_axi_araddr  : out std_logic_vector(31 downto 0);
-    m_axi_arprot  : out std_logic_vector(2 downto 0);
-    m_axi_arvalid : out std_logic;
-    m_axi_arready : in  std_logic;
+    m_axi_araddr   : out std_logic_vector(31 downto 0);
+    m_axi_arprot   : out std_logic_vector(2 downto 0);
+    m_axi_arvalid  : out std_logic;
+    m_axi_arready  : in  std_logic;
     -- Read Data Channel --
-    m_axi_rdata   : in  std_logic_vector(31 downto 0);
-    m_axi_rresp   : in  std_logic_vector(1 downto 0);
-    m_axi_rvalid  : in  std_logic;
-    m_axi_rready  : out std_logic;
+    m_axi_rdata    : in  std_logic_vector(31 downto 0);
+    m_axi_rresp    : in  std_logic_vector(1 downto 0);
+    m_axi_rvalid   : in  std_logic;
+    m_axi_rready   : out std_logic;
     -- Write Response Channel --
-    m_axi_bresp   : in  std_logic_vector(1 downto 0);
-    m_axi_bvalid  : in  std_logic;
-    m_axi_bready  : out std_logic;
+    m_axi_bresp    : in  std_logic_vector(1 downto 0);
+    m_axi_bvalid   : in  std_logic;
+    m_axi_bready   : out std_logic;
+    -- ------------------------------------------------------------
+    -- AXI4-Stream-Compatible Interface --
+    -- ------------------------------------------------------------
+    -- Source --
+    s0_axis_tdata  : out std_logic_vector(31 downto 0);
+    s0_axis_tvalid : out std_logic;
+    s0_axis_tready : in  std_logic;
+    -- Sink --
+    s1_axis_tdata  : in  std_logic_vector(31 downto 0);
+    s1_axis_tvalid : in  std_logic;
+    s1_axis_tready : out std_logic;
     -- ------------------------------------------------------------
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
     -- ------------------------------------------------------------
-    jtag_trst_i   : in  std_logic; -- low-active TAP reset (optional)
-    jtag_tck_i    : in  std_logic; -- serial clock
-    jtag_tdi_i    : in  std_logic; -- serial data input
-    jtag_tdo_o    : out std_logic; -- serial data output
-    jtag_tms_i    : in  std_logic; -- mode select
+    jtag_trst_i    : in  std_logic; -- low-active TAP reset (optional)
+    jtag_tck_i     : in  std_logic; -- serial clock
+    jtag_tdi_i     : in  std_logic; -- serial data input
+    jtag_tdo_o     : out std_logic; -- serial data output
+    jtag_tms_i     : in  std_logic; -- mode select
     -- ------------------------------------------------------------
     -- Processor IO --
     -- ------------------------------------------------------------
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
-    xip_csn_o     : out std_logic; -- chip-select, low-active
-    xip_clk_o     : out std_logic; -- serial clock
-    xip_dat_i     : in  std_logic; -- device data input
-    xip_dat_o     : out std_logic; -- controller data output
+    xip_csn_o      : out std_logic; -- chip-select, low-active
+    xip_clk_o      : out std_logic; -- serial clock
+    xip_dat_i      : in  std_logic; -- device data input
+    xip_dat_o      : out std_logic; -- controller data output
     -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o        : out std_logic_vector(63 downto 0); -- parallel output
-    gpio_i        : in  std_logic_vector(63 downto 0); -- parallel input
+    gpio_o         : out std_logic_vector(63 downto 0); -- parallel output
+    gpio_i         : in  std_logic_vector(63 downto 0); -- parallel input
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o   : out std_logic; -- UART0 send data
-    uart0_rxd_i   : in  std_logic; -- UART0 receive data
-    uart0_rts_o   : out std_logic; -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i   : in  std_logic; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_txd_o    : out std_logic; -- UART0 send data
+    uart0_rxd_i    : in  std_logic; -- UART0 receive data
+    uart0_rts_o    : out std_logic; -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i    : in  std_logic; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o   : out std_logic; -- UART1 send data
-    uart1_rxd_i   : in  std_logic; -- UART1 receive data
-    uart1_rts_o   : out std_logic; -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i   : in  std_logic; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_txd_o    : out std_logic; -- UART1 send data
+    uart1_rxd_i    : in  std_logic; -- UART1 receive data
+    uart1_rts_o    : out std_logic; -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i    : in  std_logic; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
-    spi_clk_o     : out std_logic; -- SPI serial clock
-    spi_dat_o     : out std_logic; -- controller data out, peripheral data in
-    spi_dat_i     : in  std_logic; -- controller data in, peripheral data out
-    spi_csn_o     : out std_logic_vector(07 downto 0); -- SPI CS
+    spi_clk_o      : out std_logic; -- SPI serial clock
+    spi_dat_o      : out std_logic; -- controller data out, peripheral data in
+    spi_dat_i      : in  std_logic; -- controller data in, peripheral data out
+    spi_csn_o      : out std_logic_vector(07 downto 0); -- SPI CS
+    -- SDI (available if IO_SDI_EN = true) --
+    sdi_clk_i      : in  std_logic; -- SDI serial clock
+    sdi_dat_o      : out std_logic; -- controller data out, peripheral data in
+    sdi_dat_i      : in  std_logic; -- controller data in, peripheral data out
+    sdi_csn_i      : in  std_logic; -- chip-select
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_i     : in  std_logic; -- serial data line sense input
-    twi_sda_o     : out std_logic; -- serial data line output (pull low only)
-    twi_scl_i     : in  std_logic; -- serial clock line sense input
-    twi_scl_o     : out std_logic; -- serial clock line output (pull low only)
+    twi_sda_i      : in  std_logic; -- serial data line sense input
+    twi_sda_o      : out std_logic; -- serial data line output (pull low only)
+    twi_scl_i      : in  std_logic; -- serial clock line sense input
+    twi_scl_o      : out std_logic; -- serial clock line output (pull low only)
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_i     : in  std_logic; -- 1-wire bus sense input
-    onewire_o     : out std_logic; -- 1-wire bus output (pull low only)
+    onewire_i      : in  std_logic; -- 1-wire bus sense input
+    onewire_o      : out std_logic; -- 1-wire bus output (pull low only)
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o         : out std_logic_vector(11 downto 0);  -- pwm channels
+    pwm_o          : out std_logic_vector(11 downto 0);  -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i      : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom inputs
-    cfs_out_o     : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom outputs
+    cfs_in_i       : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0); -- custom inputs
+    cfs_out_o      : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom outputs
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o      : out std_logic; -- async serial data line
+    neoled_o       : out std_logic; -- async serial data line
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i        : in  std_logic_vector(31 downto 0); -- IRQ channels
+    xirq_i         : in  std_logic_vector(31 downto 0); -- IRQ channels
     -- CPU Interrupts --
-    msw_irq_i     : in  std_logic; -- machine software interrupt
-    mext_irq_i    : in  std_logic  -- machine external interrupt
+    mtime_irq_i    : in  std_logic; -- machine timer interrupt, available if IO_MTIME_EN = false
+    msw_irq_i      : in  std_logic; -- machine software interrupt
+    mext_irq_i     : in  std_logic  -- machine external interrupt
   );
 end entity;
 
@@ -215,57 +242,64 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   constant XIRQ_TRIGGER_TYPE_INT     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(XIRQ_TRIGGER_TYPE);
   constant XIRQ_TRIGGER_POLARITY_INT : std_ulogic_vector(31 downto 0) := std_ulogic_vector(XIRQ_TRIGGER_POLARITY);
   --
-  signal clk_i_int       : std_ulogic;
-  signal rstn_i_int      : std_ulogic;
+  signal clk_i_int          : std_ulogic;
+  signal rstn_i_int         : std_ulogic;
+  -- 
+  signal s0_axis_tdata_int  : std_ulogic_vector(31 downto 0);
+  signal s0_axis_tvalid_int : std_ulogic;
+  signal s0_axis_tready_int : std_ulogic;
+  signal s1_axis_tdata_int  : std_ulogic_vector(31 downto 0);
+  signal s1_axis_tvalid_int : std_ulogic;
+  signal s1_axis_tready_int : std_ulogic;
   --
-  signal jtag_trst_i_int :std_ulogic;
-  signal jtag_tck_i_int  :std_ulogic;
-  signal jtag_tdi_i_int  :std_ulogic;
-  signal jtag_tdo_o_int  :std_ulogic;
-  signal jtag_tms_i_int  :std_ulogic;
+  signal jtag_trst_i_int    : std_ulogic;
+  signal jtag_tck_i_int     : std_ulogic;
+  signal jtag_tdi_i_int     : std_ulogic;
+  signal jtag_tdo_o_int     : std_ulogic;
+  signal jtag_tms_i_int     : std_ulogic;
   --
-  signal xip_csn_o_int   : std_ulogic;
-  signal xip_clk_o_int   : std_ulogic;
-  signal xip_dat_i_int   : std_ulogic;
-  signal xip_dat_o_int   : std_ulogic;
+  signal xip_csn_o_int      : std_ulogic;
+  signal xip_clk_o_int      : std_ulogic;
+  signal xip_dat_i_int      : std_ulogic;
+  signal xip_dat_o_int      : std_ulogic;
   --
-  signal gpio_o_int      : std_ulogic_vector(63 downto 0);
-  signal gpio_i_int      : std_ulogic_vector(63 downto 0);
+  signal gpio_o_int         : std_ulogic_vector(63 downto 0);
+  signal gpio_i_int         : std_ulogic_vector(63 downto 0);
   --
-  signal uart0_txd_o_int : std_ulogic;
-  signal uart0_rxd_i_int : std_ulogic;
-  signal uart0_rts_o_int : std_ulogic;
-  signal uart0_cts_i_int : std_ulogic;
+  signal uart0_txd_o_int    : std_ulogic;
+  signal uart0_rxd_i_int    : std_ulogic;
+  signal uart0_rts_o_int    : std_ulogic;
+  signal uart0_cts_i_int    : std_ulogic;
   --
-  signal uart1_txd_o_int : std_ulogic;
-  signal uart1_rxd_i_int : std_ulogic;
-  signal uart1_rts_o_int : std_ulogic;
-  signal uart1_cts_i_int : std_ulogic;
+  signal uart1_txd_o_int    : std_ulogic;
+  signal uart1_rxd_i_int    : std_ulogic;
+  signal uart1_rts_o_int    : std_ulogic;
+  signal uart1_cts_i_int    : std_ulogic;
   --
-  signal spi_clk_o_int   : std_ulogic;
-  signal spi_dat_o_int   : std_ulogic;
-  signal spi_dat_i_int   : std_ulogic;
-  signal spi_csn_o_int   : std_ulogic_vector(07 downto 0);
+  signal spi_clk_o_int      : std_ulogic;
+  signal spi_dat_o_int      : std_ulogic;
+  signal spi_dat_i_int      : std_ulogic;
+  signal spi_csn_o_int      : std_ulogic_vector(07 downto 0);
   --
-  signal pwm_o_int       : std_ulogic_vector(11 downto 0);
+  signal pwm_o_int          : std_ulogic_vector(11 downto 0);
   --
-  signal cfs_in_i_int    : std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0);
-  signal cfs_out_o_int   : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
+  signal cfs_in_i_int       : std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0);
+  signal cfs_out_o_int      : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
   --
-  signal neoled_o_int    : std_ulogic;
+  signal neoled_o_int       : std_ulogic;
   --
-  signal twi_sda_i_int   : std_ulogic;
-  signal twi_sda_o_int   : std_ulogic;
-  signal twi_scl_i_int   : std_ulogic;
-  signal twi_scl_o_int   : std_ulogic;
+  signal twi_sda_i_int      : std_ulogic;
+  signal twi_sda_o_int      : std_ulogic;
+  signal twi_scl_i_int      : std_ulogic;
+  signal twi_scl_o_int      : std_ulogic;
   --
-  signal onewire_i_int   : std_ulogic;
-  signal onewire_o_int   : std_ulogic;
+  signal onewire_i_int      : std_ulogic;
+  signal onewire_o_int      : std_ulogic;
   --
-  signal xirq_i_int      : std_ulogic_vector(31 downto 0);
+  signal xirq_i_int         : std_ulogic_vector(31 downto 0);
   --
-  signal msw_irq_i_int   : std_ulogic;
-  signal mext_irq_i_int  : std_ulogic;
+  signal msw_irq_i_int      : std_ulogic;
+  signal mext_irq_i_int     : std_ulogic;
 
   -- internal wishbone bus --
   type wb_bus_t is record
@@ -305,8 +339,10 @@ begin
     VENDOR_ID                    => VENDOR_ID,          -- vendor's JEDEC ID
     INT_BOOTLOADER_EN            => INT_BOOTLOADER_EN,  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN          => ON_CHIP_DEBUGGER_EN,          -- implement on-chip debugger
+    ON_CHIP_DEBUGGER_EN          => ON_CHIP_DEBUGGER_EN, -- implement on-chip debugger
+    DM_LEGACY_MODE               => DM_LEGACY_MODE,      -- debug module spec version: false = v1.0, true = v0.13
     -- RISC-V CPU Extensions --
+    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic memory operations extension?
     CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
@@ -327,6 +363,8 @@ begin
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 => HPM_NUM_CNTS,       -- number of implemented HPM counters (0..29)
     HPM_CNT_WIDTH                => HPM_CNT_WIDTH,      -- total size of HPM counters (0..64)
+    -- Atomic Memory Access - Reservation Set Granularity --
+    AMO_RVS_GRANULARITY          => AMO_RVS_GRANULARITY, -- size in bytes, has to be a power of 2, min 4
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => MEM_INT_IMEM_EN,    -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE,  -- size of processor-internal instruction memory in bytes
@@ -364,6 +402,8 @@ begin
     IO_UART1_TX_FIFO             => IO_UART1_TX_FIFO,   -- TX fifo depth, has to be a power of two, min 1
     IO_SPI_EN                    => IO_SPI_EN,          -- implement serial peripheral interface (SPI)?
     IO_SPI_FIFO                  => IO_SPI_FIFO,        -- SPI RTX fifo depth, has to be a power of two, min 1
+    IO_SDI_EN                    => IO_SDI_EN,          -- implement serial data interface (SDI)?
+    IO_SDI_FIFO                  => IO_SDI_FIFO,        -- RTX fifo depth, has to be zero or a power of two, min 1
     IO_TWI_EN                    => IO_TWI_EN,          -- implement two-wire interface (TWI)?
     IO_PWM_NUM_CH                => IO_PWM_NUM_CH,      -- number of PWM channels to implement (0..12); 0 = disabled
     IO_WDT_EN                    => IO_WDT_EN,          -- implement watch dog timer (WDT)?
@@ -377,126 +417,145 @@ begin
     IO_NEOLED_TX_FIFO            => IO_NEOLED_TX_FIFO,  -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  => IO_GPTMR_EN,        -- implement general purpose timer (GPTMR)?
     IO_XIP_EN                    => IO_XIP_EN,          -- implement execute in place module (XIP)?
-    IO_ONEWIRE_EN                => IO_ONEWIRE_EN       -- implement 1-wire interface (ONEWIRE)?
+    IO_ONEWIRE_EN                => IO_ONEWIRE_EN,      -- implement 1-wire interface (ONEWIRE)?
+    IO_DMA_EN                    => IO_DMA_EN,          -- implement direct memory access controller (DMA)?
+    IO_SLINK_EN                  => IO_SLINK_EN,        -- implement stream link interface (SLINK)?
+    IO_SLINK_RX_FIFO             => IO_SLINK_RX_FIFO,   -- RX fifo depth, has to be a power of two, min 1
+    IO_SLINK_TX_FIFO             => IO_SLINK_TX_FIFO,   -- TX fifo depth, has to be a power of two, min 1
+    IO_CRC_EN                    => IO_CRC_EN           -- implement cyclic redundancy check unit (CRC)?
   )
   port map (
     -- Global control --
-    clk_i       => clk_i_int,       -- global clock, rising edge
-    rstn_i      => rstn_i_int,      -- global reset, low-active, async
+    clk_i         => clk_i_int,       -- global clock, rising edge
+    rstn_i        => rstn_i_int,      -- global reset, low-active, async
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_trst_i => jtag_trst_i_int, -- low-active TAP reset (optional)
-    jtag_tck_i  => jtag_tck_i_int,  -- serial clock
-    jtag_tdi_i  => jtag_tdi_i_int,  -- serial data input
-    jtag_tdo_o  => jtag_tdo_o_int,  -- serial data output
-    jtag_tms_i  => jtag_tms_i_int,  -- mode select
+    jtag_trst_i    => jtag_trst_i_int, -- low-active TAP reset (optional)
+    jtag_tck_i     => jtag_tck_i_int,  -- serial clock
+    jtag_tdi_i     => jtag_tdi_i_int,  -- serial data input
+    jtag_tdo_o     => jtag_tdo_o_int,  -- serial data output
+    jtag_tms_i     => jtag_tms_i_int,  -- mode select
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o    => wb_core.tag,     -- tag
-    wb_adr_o    => wb_core.adr,     -- address
-    wb_dat_i    => wb_core.di,      -- read data
-    wb_dat_o    => wb_core.do,      -- write data
-    wb_we_o     => wb_core.we,      -- read/write
-    wb_sel_o    => wb_core.sel,     -- byte enable
-    wb_stb_o    => wb_core.stb,     -- strobe
-    wb_cyc_o    => wb_core.cyc,     -- valid cycle
-    wb_ack_i    => wb_core.ack,     -- transfer acknowledge
-    wb_err_i    => wb_core.err,     -- transfer error
+    wb_tag_o       => wb_core.tag,     -- tag
+    wb_adr_o       => wb_core.adr,     -- address
+    wb_dat_i       => wb_core.di,      -- read data
+    wb_dat_o       => wb_core.do,      -- write data
+    wb_we_o        => wb_core.we,      -- read/write
+    wb_sel_o       => wb_core.sel,     -- byte enable
+    wb_stb_o       => wb_core.stb,     -- strobe
+    wb_cyc_o       => wb_core.cyc,     -- valid cycle
+    wb_ack_i       => wb_core.ack,     -- transfer acknowledge
+    wb_err_i       => wb_core.err,     -- transfer error
+    -- Stream Link Interface (available if IO_SLINK_EN = true) --
+    slink_rx_dat_i => s1_axis_tdata_int,  -- RX input data
+    slink_rx_val_i => s1_axis_tvalid_int, -- RX valid input
+    slink_rx_rdy_o => s1_axis_tready_int, -- RX ready to receive
+    slink_tx_dat_o => s0_axis_tdata_int,  -- TX output data
+    slink_tx_val_o => s0_axis_tvalid_int, -- TX valid output
+    slink_tx_rdy_i => s0_axis_tready_int, -- TX ready to send
     -- Advanced memory control signals (available if MEM_EXT_EN = true) --
-    fence_o     => open,            -- indicates an executed FENCE operation
-    fencei_o    => open,            -- indicates an executed FENCEI operation
+    fence_o        => open,            -- indicates an executed FENCE operation
+    fencei_o       => open,            -- indicates an executed FENCEI operation
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
-    xip_csn_o   => xip_csn_o_int,   -- chip-select, low-active
-    xip_clk_o   => xip_clk_o_int,   -- serial clock
-    xip_dat_i   => xip_dat_i_int,   -- device data input
-    xip_dat_o   => xip_dat_o_int,   -- controller data output
+    xip_csn_o      => xip_csn_o_int,   -- chip-select, low-active
+    xip_clk_o      => xip_clk_o_int,   -- serial clock
+    xip_dat_i      => xip_dat_i_int,   -- device data input
+    xip_dat_o      => xip_dat_o_int,   -- controller data output
     -- GPIO (available if IO_GPIO_NUM > 0) --
-    gpio_o      => gpio_o_int,      -- parallel output
-    gpio_i      => gpio_i_int,      -- parallel input
+    gpio_o         => gpio_o_int,      -- parallel output
+    gpio_i         => gpio_i_int,      -- parallel input
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o => uart0_txd_o_int, -- UART0 send data
-    uart0_rxd_i => uart0_rxd_i_int, -- UART0 receive data
-    uart0_rts_o => uart0_rts_o_int, -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i => uart0_cts_i_int, -- HW flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_txd_o    => uart0_txd_o_int, -- UART0 send data
+    uart0_rxd_i    => uart0_rxd_i_int, -- UART0 receive data
+    uart0_rts_o    => uart0_rts_o_int, -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i    => uart0_cts_i_int, -- HW flow control: UART0.TX allowed to transmit, low-active, optional
     -- secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o => uart1_txd_o_int, -- UART1 send data
-    uart1_rxd_i => uart1_rxd_i_int, -- UART1 receive data
-    uart1_rts_o => uart1_rts_o_int, -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i => uart1_cts_i_int, -- HW flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_txd_o    => uart1_txd_o_int, -- UART1 send data
+    uart1_rxd_i    => uart1_rxd_i_int, -- UART1 receive data
+    uart1_rts_o    => uart1_rts_o_int, -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i    => uart1_cts_i_int, -- HW flow control: UART1.TX allowed to transmit, low-active, optional
     -- SPI (available if IO_SPI_EN = true) --
-    spi_clk_o   => spi_clk_o_int,   -- SPI serial clock
-    spi_dat_o   => spi_dat_o_int,   -- controller data out, peripheral data in
-    spi_dat_i   => spi_dat_i_int,   -- controller data in, peripheral data out
-    spi_csn_o   => spi_csn_o_int,   -- SPI CS
+    spi_clk_o      => spi_clk_o_int,   -- SPI serial clock
+    spi_dat_o      => spi_dat_o_int,   -- controller data out, peripheral data in
+    spi_dat_i      => spi_dat_i_int,   -- controller data in, peripheral data out
+    spi_csn_o      => spi_csn_o_int,   -- SPI CS
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_i   => twi_sda_i_int,   -- serial data line sense input
-    twi_sda_o   => twi_sda_o_int,   -- serial data line output (pull low only)
-    twi_scl_i   => twi_scl_i_int,   -- serial clock line sense input
-    twi_scl_o   => twi_scl_o_int,   -- serial clock line output (pull low only)
+    twi_sda_i      => twi_sda_i_int,   -- serial data line sense input
+    twi_sda_o      => twi_sda_o_int,   -- serial data line output (pull low only)
+    twi_scl_i      => twi_scl_i_int,   -- serial clock line sense input
+    twi_scl_o      => twi_scl_o_int,   -- serial clock line output (pull low only)
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_i   => onewire_i_int,   -- 1-wire bus sense input
-    onewire_o   => onewire_o_int,   -- 1-wire bus output (pull low only)
+    onewire_i      => onewire_i_int,   -- 1-wire bus sense input
+    onewire_o      => onewire_o_int,   -- 1-wire bus output (pull low only)
     -- PWM available if IO_PWM_NUM_CH > 0) --
-    pwm_o       => pwm_o_int,       -- pwm channels
+    pwm_o          => pwm_o_int,       -- pwm channels
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i    => cfs_in_i_int,    -- custom inputs
-    cfs_out_o   => cfs_out_o_int,   -- custom outputs
+    cfs_in_i       => cfs_in_i_int,    -- custom inputs
+    cfs_out_o      => cfs_out_o_int,   -- custom outputs
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o    => neoled_o_int,    -- async serial data line
+    neoled_o       => neoled_o_int,    -- async serial data line
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i      => xirq_i_int,      -- IRQ channels
+    xirq_i         => xirq_i_int,      -- IRQ channels
     -- CPU Interrupts --
-    mtime_irq_i => '0',             -- machine timer interrupt, available if IO_MTIME_EN = false
-    msw_irq_i   => msw_irq_i_int,   -- machine software interrupt
-    mext_irq_i  => mext_irq_i_int   -- machine external interrupt
+    mtime_irq_i    => '0',             -- machine timer interrupt, available if IO_MTIME_EN = false
+    msw_irq_i      => msw_irq_i_int,   -- machine software interrupt
+    mext_irq_i     => mext_irq_i_int   -- machine external interrupt
   );
 
   -- type conversion --
-  xip_csn_o       <= std_logic(xip_csn_o_int);
-  xip_clk_o       <= std_logic(xip_clk_o_int);
-  xip_dat_i_int   <= std_ulogic(xip_dat_i);
-  xip_dat_o       <= std_logic(xip_dat_o_int);
+  s0_axis_tdata      <= std_logic_vector(s0_axis_tdata_int);
+  s0_axis_tvalid     <= std_logic(s0_axis_tvalid_int);
+  s0_axis_tready_int <= std_ulogic(s0_axis_tready);
+  s1_axis_tdata_int  <= std_ulogic_vector(s1_axis_tdata);
+  s1_axis_tvalid_int <= std_ulogic(s1_axis_tvalid);
+  s1_axis_tready     <= std_logic(s1_axis_tready_int);
 
-  gpio_o          <= std_logic_vector(gpio_o_int);
-  gpio_i_int      <= std_ulogic_vector(gpio_i);
+  xip_csn_o          <= std_logic(xip_csn_o_int);
+  xip_clk_o          <= std_logic(xip_clk_o_int);
+  xip_dat_i_int      <= std_ulogic(xip_dat_i);
+  xip_dat_o          <= std_logic(xip_dat_o_int);
 
-  jtag_trst_i_int <= std_ulogic(jtag_trst_i);
-  jtag_tck_i_int  <= std_ulogic(jtag_tck_i);
-  jtag_tdi_i_int  <= std_ulogic(jtag_tdi_i);
-  jtag_tdo_o      <= std_logic(jtag_tdo_o_int);
-  jtag_tms_i_int  <= std_ulogic(jtag_tms_i);
+  gpio_o             <= std_logic_vector(gpio_o_int);
+  gpio_i_int         <= std_ulogic_vector(gpio_i);
 
-  uart0_txd_o     <= std_logic(uart0_txd_o_int);
-  uart0_rxd_i_int <= std_ulogic(uart0_rxd_i);
-  uart0_rts_o     <= std_logic(uart0_rts_o_int);
-  uart0_cts_i_int <= std_ulogic(uart0_cts_i);
-  uart1_txd_o     <= std_logic(uart1_txd_o_int);
-  uart1_rxd_i_int <= std_ulogic(uart1_rxd_i);
-  uart1_rts_o     <= std_logic(uart1_rts_o_int);
-  uart1_cts_i_int <= std_ulogic(uart1_cts_i);
+  jtag_trst_i_int    <= std_ulogic(jtag_trst_i);
+  jtag_tck_i_int     <= std_ulogic(jtag_tck_i);
+  jtag_tdi_i_int     <= std_ulogic(jtag_tdi_i);
+  jtag_tdo_o         <= std_logic(jtag_tdo_o_int);
+  jtag_tms_i_int     <= std_ulogic(jtag_tms_i);
 
-  spi_clk_o       <= std_logic(spi_clk_o_int);
-  spi_dat_o       <= std_logic(spi_dat_o_int);
-  spi_dat_i_int   <= std_ulogic(spi_dat_i);
-  spi_csn_o       <= std_logic_vector(spi_csn_o_int);
+  uart0_txd_o        <= std_logic(uart0_txd_o_int);
+  uart0_rxd_i_int    <= std_ulogic(uart0_rxd_i);
+  uart0_rts_o        <= std_logic(uart0_rts_o_int);
+  uart0_cts_i_int    <= std_ulogic(uart0_cts_i);
+  uart1_txd_o        <= std_logic(uart1_txd_o_int);
+  uart1_rxd_i_int    <= std_ulogic(uart1_rxd_i);
+  uart1_rts_o        <= std_logic(uart1_rts_o_int);
+  uart1_cts_i_int    <= std_ulogic(uart1_cts_i);
 
-  pwm_o           <= std_logic_vector(pwm_o_int);
+  spi_clk_o          <= std_logic(spi_clk_o_int);
+  spi_dat_o          <= std_logic(spi_dat_o_int);
+  spi_dat_i_int      <= std_ulogic(spi_dat_i);
+  spi_csn_o          <= std_logic_vector(spi_csn_o_int);
 
-  cfs_in_i_int    <= std_ulogic_vector(cfs_in_i);
-  cfs_out_o       <= std_logic_vector(cfs_out_o_int);
+  pwm_o              <= std_logic_vector(pwm_o_int);
 
-  neoled_o        <= std_logic(neoled_o_int);
+  cfs_in_i_int       <= std_ulogic_vector(cfs_in_i);
+  cfs_out_o          <= std_logic_vector(cfs_out_o_int);
 
-  twi_sda_i_int   <= std_ulogic(twi_sda_i);
-  twi_sda_o       <= std_logic(twi_sda_o_int);
-  twi_scl_i_int   <= std_ulogic(twi_scl_i);
-  twi_scl_o       <= std_logic(twi_scl_o_int);
+  neoled_o           <= std_logic(neoled_o_int);
 
-  onewire_i_int   <= std_ulogic(onewire_i);
-  onewire_o       <= std_logic(onewire_o_int);
+  twi_sda_i_int      <= std_ulogic(twi_sda_i);
+  twi_sda_o          <= std_logic(twi_sda_o_int);
+  twi_scl_i_int      <= std_ulogic(twi_scl_i);
+  twi_scl_o          <= std_logic(twi_scl_o_int);
 
-  xirq_i_int      <= std_ulogic_vector(xirq_i);
+  onewire_i_int      <= std_ulogic(onewire_i);
+  onewire_o          <= std_logic(onewire_o_int);
 
-  msw_irq_i_int   <= std_ulogic(msw_irq_i);
-  mext_irq_i_int  <= std_ulogic(mext_irq_i);
+  xirq_i_int         <= std_ulogic_vector(xirq_i);
+
+  msw_irq_i_int      <= std_ulogic(msw_irq_i);
+  mext_irq_i_int     <= std_ulogic(mext_irq_i);
 
 
   -- Wishbone to AXI4-Lite Bridge -----------------------------------------------------------

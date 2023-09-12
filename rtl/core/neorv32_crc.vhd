@@ -153,7 +153,7 @@ begin
   end process crc_core;
 
   -- operation mode --
-	with crc.mode select crc.msb <= 
+	with crc.mode select crc.msb <=
 		crc.sreg(07) when "00",   -- crc8
 		crc.sreg(15) when "01",   -- crc16
 		crc.sreg(31) when others; -- crc32

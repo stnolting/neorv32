@@ -57,7 +57,7 @@ entity neorv32_wdt is
     cpu_debug_i : in  std_ulogic; -- CPU is in debug mode
     cpu_sleep_i : in  std_ulogic; -- CPU is in sleep mode
     clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(07 downto 0);
+    clkgen_i    : in  std_ulogic_vector(7 downto 0);
     irq_o       : out std_ulogic; -- timeout IRQ
     rstn_o      : out std_ulogic  -- timeout reset, low_active, sync
   );

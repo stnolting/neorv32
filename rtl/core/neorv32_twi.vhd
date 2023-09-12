@@ -51,7 +51,7 @@ entity neorv32_twi is
     bus_req_i   : in  bus_req_t;  -- bus request
     bus_rsp_o   : out bus_rsp_t;  -- bus response
     clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(07 downto 0);
+    clkgen_i    : in  std_ulogic_vector(7 downto 0);
     twi_sda_i   : in  std_ulogic; -- serial data line input
     twi_sda_o   : out std_ulogic; -- serial data line output
     twi_scl_i   : in  std_ulogic; -- serial clock line input

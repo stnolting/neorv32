@@ -44,8 +44,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_dcache is
   generic (
-    DCACHE_NUM_BLOCKS : natural; -- number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
+    DCACHE_NUM_BLOCKS : natural range 1 to 256; -- number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE : natural range 4 to 2**16; -- block size in bytes (min 4), has to be a power of 2
     DCACHE_UC_PBEGIN  : std_ulogic_vector(3 downto 0) -- begin of uncached address space (page number)
   );
   port (
@@ -129,10 +129,6 @@ begin
     "NEORV32 PROCESSOR CONFIG ERROR! d-cache number of blocks <DCACHE_NUM_BLOCKS> has to be a power of 2." severity error;
   assert not (is_power_of_two_f(DCACHE_BLOCK_SIZE) = false) report
     "NEORV32 PROCESSOR CONFIG ERROR! d-cache block size <DCACHE_BLOCK_SIZE> has to be a power of 2." severity error;
-  assert not (DCACHE_NUM_BLOCKS < 1) report
-    "NEORV32 PROCESSOR CONFIG ERROR! d-cache number of blocks <DCACHE_NUM_BLOCKS> has to be >= 1." severity error;
-  assert not (DCACHE_BLOCK_SIZE < 4) report
-    "NEORV32 PROCESSOR CONFIG ERROR! d-cache block size <DCACHE_BLOCK_SIZE> has to be >= 4." severity error;
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------

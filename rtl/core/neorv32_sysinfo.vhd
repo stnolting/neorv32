@@ -47,8 +47,6 @@ entity neorv32_sysinfo is
     -- General --
     CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
     INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-    -- Physical memory protection --
-    PMP_NUM_REGIONS      : natural; -- number of regions (0..64)
     -- Internal instruction memory --
     MEM_INT_IMEM_EN      : boolean; -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE    : natural; -- size of processor-internal instruction memory in bytes
