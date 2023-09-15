@@ -57,29 +57,3 @@ int neorv32_cpu_cfu_available(void) {
     return 0;
   }
 }
-
-
-/**********************************************************************//**
- * Indirect write to user-defined CFU-internal CSR.
- *
- * @param[in] sel User-defined CFU-internal CSR select.
- * @param[in] wdata Write data.
- **************************************************************************/
-void neorv32_cpu_cfu_write_csr(uint32_t sel, uint32_t wdata) {
-
-  neorv32_cpu_csr_write(CSR_CFUSEL, sel); // set address
-  neorv32_cpu_csr_write(CSR_CFUREG, wdata); // write data
-}
-
-
-/**********************************************************************//**
- * Indirect read from user-defined CFU-internal CSR.
- *
- * @param[in] sel User-defined CFU-internal CSR select.
- * @return Read data.
- *************************************************************************/
-uint32_t neorv32_cpu_cfu_read_csr(uint32_t sel) {
-
-  neorv32_cpu_csr_write(CSR_CFUSEL, sel); // set address
-  return neorv32_cpu_csr_read(CSR_CFUREG); // read data
-}
