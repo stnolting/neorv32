@@ -298,6 +298,7 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   --
   signal xirq_i_int         : std_ulogic_vector(31 downto 0);
   --
+  signal mtime_irq_i_int    : std_ulogic;
   signal msw_irq_i_int      : std_ulogic;
   signal mext_irq_i_int     : std_ulogic;
 
@@ -496,7 +497,7 @@ begin
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         => xirq_i_int,      -- IRQ channels
     -- CPU Interrupts --
-    mtime_irq_i    => '0',             -- machine timer interrupt, available if IO_MTIME_EN = false
+    mtime_irq_i    => mtime_irq_i_int, -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i      => msw_irq_i_int,   -- machine software interrupt
     mext_irq_i     => mext_irq_i_int   -- machine external interrupt
   );
@@ -554,6 +555,7 @@ begin
 
   xirq_i_int         <= std_ulogic_vector(xirq_i);
 
+  mtime_irq_i_int    <= std_ulogic(mtime_irq_i);
   msw_irq_i_int      <= std_ulogic(msw_irq_i);
   mext_irq_i_int     <= std_ulogic(mext_irq_i);
 
