@@ -59,7 +59,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080901"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080902"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -425,8 +425,10 @@ package neorv32_package is
   constant csr_dpc_c            : std_ulogic_vector(11 downto 0) := x"7b1";
   constant csr_dscratch0_c      : std_ulogic_vector(11 downto 0) := x"7b2";
   -- NEORV32-specific (user-mode) registers --
-  constant csr_cfusel_c         : std_ulogic_vector(11 downto 0) := x"800";
-  constant csr_cfureg_c         : std_ulogic_vector(11 downto 0) := x"801";
+  constant csr_cfureg0_c        : std_ulogic_vector(11 downto 0) := x"800";
+  constant csr_cfureg1_c        : std_ulogic_vector(11 downto 0) := x"801";
+  constant csr_cfureg2_c        : std_ulogic_vector(11 downto 0) := x"802";
+  constant csr_cfureg3_c        : std_ulogic_vector(11 downto 0) := x"803";
   -- machine counters/timers --
   constant csr_mcycle_c         : std_ulogic_vector(11 downto 0) := x"b00";
 --constant csr_mtime_c          : std_ulogic_vector(11 downto 0) := x"b01";
@@ -512,36 +514,36 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   type ctrl_bus_t is record
     -- register file --
-    rf_wb_en      : std_ulogic; -- write back enable
-    rf_rs1        : std_ulogic_vector(04 downto 0); -- source register 1 address
-    rf_rs2        : std_ulogic_vector(04 downto 0); -- source register 2 address
-    rf_rs3        : std_ulogic_vector(04 downto 0); -- source register 3 address
-    rf_rd         : std_ulogic_vector(04 downto 0); -- destination register address
-    rf_mux        : std_ulogic_vector(01 downto 0); -- input source select
-    rf_zero_we    : std_ulogic;                     -- allow/force write access to x0
+    rf_wb_en     : std_ulogic; -- write back enable
+    rf_rs1       : std_ulogic_vector(04 downto 0); -- source register 1 address
+    rf_rs2       : std_ulogic_vector(04 downto 0); -- source register 2 address
+    rf_rs3       : std_ulogic_vector(04 downto 0); -- source register 3 address
+    rf_rd        : std_ulogic_vector(04 downto 0); -- destination register address
+    rf_mux       : std_ulogic_vector(01 downto 0); -- input source select
+    rf_zero_we   : std_ulogic;                     -- allow/force write access to x0
     -- alu --
-    alu_op        : std_ulogic_vector(02 downto 0); -- ALU operation select
-    alu_opa_mux   : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
-    alu_opb_mux   : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
-    alu_unsigned  : std_ulogic;                     -- is unsigned ALU operation
-    alu_cp_trig   : std_ulogic_vector(04 downto 0); -- co-processor trigger (one-hot)
+    alu_op       : std_ulogic_vector(02 downto 0); -- ALU operation select
+    alu_opa_mux  : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
+    alu_opb_mux  : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
+    alu_unsigned : std_ulogic;                     -- is unsigned ALU operation
+    alu_cp_trig  : std_ulogic_vector(04 downto 0); -- co-processor trigger (one-hot)
     -- load/store unit --
-    lsu_req_rd    : std_ulogic;                     -- trigger memory read request
-    lsu_req_wr    : std_ulogic;                     -- trigger memory write request
-    lsu_mo_we     : std_ulogic;                     -- memory address and data output register write enable
-    lsu_fence     : std_ulogic;                     -- fence operation
-    lsu_fencei    : std_ulogic;                     -- fence.i operation
-    lsu_priv      : std_ulogic;                     -- effective privilege level for load/store
-    lsu_rvso      : std_ulogic;                     -- reservation set operation (atomic LR/SC)
+    lsu_req_rd   : std_ulogic;                     -- trigger memory read request
+    lsu_req_wr   : std_ulogic;                     -- trigger memory write request
+    lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
+    lsu_fence    : std_ulogic;                     -- fence operation
+    lsu_fencei   : std_ulogic;                     -- fence.i operation
+    lsu_priv     : std_ulogic;                     -- effective privilege level for load/store
+    lsu_rvso     : std_ulogic;                     -- reservation set operation (atomic LR/SC)
     -- instruction word --
-    ir_funct3     : std_ulogic_vector(02 downto 0); -- funct3 bit field
-    ir_funct12    : std_ulogic_vector(11 downto 0); -- funct12 bit field
-    ir_opcode     : std_ulogic_vector(06 downto 0); -- opcode bit field
+    ir_funct3    : std_ulogic_vector(02 downto 0); -- funct3 bit field
+    ir_funct12   : std_ulogic_vector(11 downto 0); -- funct12 bit field
+    ir_opcode    : std_ulogic_vector(06 downto 0); -- opcode bit field
     -- cpu status --
-    cpu_priv      : std_ulogic;                     -- effective privilege mode
-    cpu_sleep     : std_ulogic;                     -- set when CPU is in sleep mode
-    cpu_trap      : std_ulogic;                     -- set when CPU is entering trap exec
-    cpu_debug     : std_ulogic;                     -- set when CPU is in debug mode
+    cpu_priv     : std_ulogic;                     -- effective privilege mode
+    cpu_sleep    : std_ulogic;                     -- set when CPU is in sleep mode
+    cpu_trap     : std_ulogic;                     -- set when CPU is entering trap exec
+    cpu_debug    : std_ulogic;                     -- set when CPU is in debug mode
   end record;
 
   -- control bus reset initializer --

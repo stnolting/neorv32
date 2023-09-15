@@ -1054,7 +1054,7 @@ begin
         end if;
 
 
-      when others => -- SYSTEM - system environment operation; no state change if illegal instruction
+      when others => -- SYSTEM - system environment operation; no effect if illegal instruction
       -- ------------------------------------------------------------
         execute_engine.state_nxt <= DISPATCH; -- default
         ctrl_nxt.rf_mux          <= rf_mux_csr_c; -- CSR read data
@@ -1149,7 +1149,7 @@ begin
     case csr.addr is
 
       -- user-defined U-mode CFU CSRs --
-      when csr_cfusel_c | csr_cfureg_c =>
+      when csr_cfureg0_c | csr_cfureg1_c | csr_cfureg2_c | csr_cfureg3_c =>
         csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- available if CFU implemented
 
       -- floating-point CSRs --
