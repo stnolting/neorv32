@@ -846,13 +846,13 @@ begin
           if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap
             execute_engine.state_nxt <= TRAP_ENTER;
           else -- normal execution
-            issue_engine.ack          <= '1';
-            trap_ctrl.instr_be        <= issue_engine.data(34); -- bus access fault during instruction fetch
-            trap_ctrl.instr_ma        <= issue_engine.data(33) and (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_C)); -- misaligned instruction fetch (if C disabled)
-            execute_engine.is_ci_nxt  <= issue_engine.data(32); -- this is a de-compressed instruction
-            execute_engine.ir_nxt     <= issue_engine.data(31 downto 0); -- instruction word
-            execute_engine.pc_we      <= not execute_engine.branched; -- update PC with next_pc if there was no actual branch
-            execute_engine.state_nxt  <= EXECUTE;
+            issue_engine.ack         <= '1';
+            trap_ctrl.instr_be       <= issue_engine.data(34); -- bus access fault during instruction fetch
+            trap_ctrl.instr_ma       <= issue_engine.data(33) and (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_C)); -- misaligned instruction fetch (if C disabled)
+            execute_engine.is_ci_nxt <= issue_engine.data(32); -- this is a de-compressed instruction
+            execute_engine.ir_nxt    <= issue_engine.data(31 downto 0); -- instruction word
+            execute_engine.pc_we     <= not execute_engine.branched; -- update PC with next_pc if there was no actual branch
+            execute_engine.state_nxt <= EXECUTE;
           end if;
         end if;
 
@@ -871,7 +871,7 @@ begin
 
       when TRAP_EXECUTE => -- Process trap environment
       -- ------------------------------------------------------------
-        execute_engine.pc_mux_sel <= '0'; -- next_PC (xEPC or trap vector)
+        execute_engine.pc_mux_sel <= '0'; -- next_pc
         fetch_engine.reset        <= '1';
         execute_engine.pc_we      <= '1';
         execute_engine.state_nxt  <= BRANCHED;
@@ -944,7 +944,7 @@ begin
           -- ------------------------------------------------------------
             execute_engine.state_nxt <= MEM_REQ;
 
-          when opcode_branch_c | opcode_jal_c | opcode_jalr_c => -- branch / jump and link (with register)
+          when opcode_branch_c | opcode_jal_c | opcode_jalr_c => -- branch / jump and link / with register
           -- ------------------------------------------------------------
             execute_engine.state_nxt <= BRANCH;
 
@@ -952,7 +952,7 @@ begin
           -- ------------------------------------------------------------
             if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then
               ctrl_nxt.lsu_fencei      <= '1'; -- fence.i
-              execute_engine.state_nxt <= TRAP_EXECUTE; -- use TRAP_EXECUTE to "modify" PC (PC <= PC)
+              execute_engine.state_nxt <= TRAP_EXECUTE; -- used to flush IPB
             else
               if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then
                 ctrl_nxt.lsu_fence <= '1'; -- fence
