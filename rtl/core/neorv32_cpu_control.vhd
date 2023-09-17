@@ -656,7 +656,11 @@ begin
           elsif (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- any other trap INSIDE debug mode
             execute_engine.next_pc <= CPU_DEBUG_EXC_ADDR; -- debug mode enter: start at "parking loop" <exception_entry>
           else -- normal start of trap
-            execute_engine.next_pc <= csr.mtvec(XLEN-1 downto 2) & "00";
+            if (csr.mtvec(1 downto 0) = "01") and (trap_ctrl.cause(6) = '1') then -- vectored mode + interrupt
+              execute_engine.next_pc <= csr.mtvec(XLEN-1 downto 7) & trap_ctrl.cause(4 downto 0) & "00"; -- pc = mtvec + 4 * mcause
+            else
+              execute_engine.next_pc <= csr.mtvec(XLEN-1 downto 2) & "00"; -- pc = mtvec
+            end if;
           end if;
         when TRAP_EXIT => -- leaving trap environment
           if (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- debug mode exit
@@ -1672,7 +1676,11 @@ begin
             csr.mie_firq <= csr.wdata(31 downto 16);
 
           when csr_mtvec_c => -- machine trap-handler base address
-            csr.mtvec <= csr.wdata(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0 (direct)
+            if (csr.wdata(1 downto 0) = "01") then
+              csr.mtvec <= csr.wdata(XLEN-1 downto 7) & "00000" & "01"; -- mtvec.MODE=1 (vectored)
+            else
+              csr.mtvec <= csr.wdata(XLEN-1 downto 2) & "00";           -- mtvec.MODE=0 (direct)
+            end if;
 
           when csr_mcounteren_c => -- machine counter access enable
             if (CPU_EXTENSION_RISCV_U = true) then
@@ -1933,7 +1941,7 @@ begin
         csr_rdata(31 downto 16) <= csr.mie_firq;
 
       when csr_mtvec_c => -- machine trap-handler base address
-        csr_rdata <= csr.mtvec(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0 (direct)
+        csr_rdata <= csr.mtvec;
 
       when csr_mcounteren_c => -- machine counter enable register
         if (CPU_EXTENSION_RISCV_U = true) then
