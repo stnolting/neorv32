@@ -56,8 +56,7 @@ bits can actually be modified.
 | 0x7b1 | <<_dpc>>       | - | DRW | Debug program counter
 | 0x7b2 | <<_dscratch0>> | - | DRW | Debug scratch register 0
 5+^| **<<_custom_functions_unit_cfu_csrs>>**
-| 0x800 | <<_cfusel>> | `CSR_CFUCSEL` | URW | CFU indirect register select
-| 0x801 | <<_cfureg>> | `CSR_CFUCREG` | URW | CFU indirect register alias
+| 0x800 .. 0x803 | <<_cfureg, `cfureg0`>> .. <<_cfureg, `cfureg3`>> | `CSR_CFUCREG0` .. `CSR_CFUCREG3` | URW | Custom CFU registers 0 to 3
 5+^| **<<_machine_counter_and_timer_csrs>>**
 | 0xb00 | <<_mcycleh, `mcycle`>>      | `CSR_MCYCLE`    | MRW | Machine cycle counter low word
 | 0xb02 | <<_minstreth, `minstret`>>  | `CSR_MINSTRET`  | MRW | Machine instruction-retired counter low word
@@ -499,7 +498,10 @@ See section <<_pmp_isa_extension>> for more information.
 [frame="topbot",grid="none"]
 |=======================
 | Name        | PMP region configuration registers
-| Address     | `0x3a0` (`pmpcfg0`) ... `0x3a3` (`pmpcfg3`)
+| Address     | `0x3a0` (`pmpcfg0`)
+|             | `0x3a1` (`pmpcfg1`)
+|             | `0x3a2` (`pmpcfg2`)
+|             | `0x3a3` (`pmpcfg3`)
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `PMP`
 | Description | Configuration of physical memory protection regions. Each region provides an individual 8-bit array in these CSRs.
@@ -528,7 +530,22 @@ The `pmpaddr*` CSRs are used to configure the region's address boundaries.
 [frame="topbot",grid="none"]
 |=======================
 | Name        | Physical memory protection address registers
-| Address     | `0x3b0` (`pmpaddr0`) ... `0x3bf` (`pmpaddr15`)
+| Address     | `0x3b0` (`pmpaddr1`)
+|             | `0x3b1` (`pmpaddr2`)
+|             | `0x3b2` (`pmpaddr3`)
+|             | `0x3b3` (`pmpaddr4`)
+|             | `0x3b4` (`pmpaddr5`)
+|             | `0x3b5` (`pmpaddr6`)
+|             | `0x3b6` (`pmpaddr6`)
+|             | `0x3b7` (`pmpaddr7`)
+|             | `0x3b8` (`pmpaddr8`)
+|             | `0x3b9` (`pmpaddr9`)
+|             | `0x3ba` (`pmpaddr10`)
+|             | `0x3bb` (`pmpaddr11`)
+|             | `0x3bc` (`pmpaddr12`)
+|             | `0x3bd` (`pmpaddr13`)
+|             | `0x3be` (`pmpaddr14`)
+|             | `0x3bf` (`pmpaddr15`)
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `PMP`
 | Description | Region address configuration. The two MSBs of each CSR are hardwired to zero (= bits 33:32 of the physical address).
@@ -546,38 +563,20 @@ address masks. Make sure to wait for this time before completing the PMP region 
 :sectnums:
 ==== Custom Functions Unit (CFU) CSRs
 
-The <<_custom_functions_unit_cfu>> allows to implement up to 2^32 CFU-internal CSRs that are accessed by the CPU
-via an _indirect_ CSR interface consisting of a select CSR (`cfusel`) and a data alias (`cfureg`) CSR. See the
-CFU chapter section <<_cfu_internal_control_and_status_registers_cfu_csrs>> for more information.
-
-[discrete]
-===== **`cfusel`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | CFU indirect register select
-| Address     | `0x800`
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` & `Zxcfu`
-| Description | This CSR is used to specify the address of the CFU-internal CSR that is accessed via the
-`cfureg` alias register.
-|=======================
-
-
-{empty} +
 [discrete]
 ===== **`cfureg`**
 
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
 |=======================
-| Name        | CFU indirect register alias
-| Address     | `0x801`
+| Name        | Custom (user-defined) CFU CSRs
+| Address     | `0x800` (`cfureg0`)
+|             | `0x801` (`cfureg1`)
+|             | `0x802` (`cfureg2`)
+|             | `0x803` (`cfureg3`)
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `Zxcfu`
-| Description | This CSR provides indirect data access to the CFU-internal CSR that is selected via the
-`cfusel` CSR.
+| Description | User-defined CSRs to be used within the <<_custom_functions_unit_cfu>>.
 |=======================
 
 
@@ -692,7 +691,19 @@ If `HPM_NUM_CNTS` is less than 64, all remaining MSB-aligned bits are hardwired 
 [frame="topbot",grid="none"]
 |=======================
 | Name        | Machine hardware performance monitor event select
-| Address     | `0x233` (`mhpmevent3`) ... `0x32f` (`mhpmevent15`)
+| Address     | `0x233` (`mhpmevent3`)
+|             | `0x234` (`mhpmevent4`)
+|             | `0x235` (`mhpmevent5`)
+|             | `0x236` (`mhpmevent6`)
+|             | `0x237` (`mhpmevent7`)
+|             | `0x238` (`mhpmevent8`)
+|             | `0x239` (`mhpmevent9`)
+|             | `0x23a` (`mhpmevent10`)
+|             | `0x23b` (`mhpmevent11`)
+|             | `0x23c` (`mhpmevent12`)
+|             | `0x23d` (`mhpmevent13`)
+|             | `0x23e` (`mhpmevent14`)
+|             | `0x23f` (`mhpmevent15`)
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `Zihpm`
 | Description | The value in these CSRs define the architectural events that cause an increment of the according `mhpmcounter*[h]` counter(s).
@@ -732,8 +743,19 @@ cycle even if more than one trigger event is observed.
 [frame="topbot",grid="none"]
 |=======================
 | Name        | Machine hardware performance monitor (HPM) counter
-| Address     | `0xb03` (`mhpmcounter3`) ... `0xb0f` (mhpmcounter15)
-|             | `0xb83` (`mhpmcounter3h`) ... `0xb8f` (`mhpmcounter15h`)
+| Address     | `0xb03`, `0xb83` (`mhpmcounter3`, `mhpmcounter3h`)
+|             | `0xb04`, `0xb84` (`mhpmcounter4`, `mhpmcounter4h`)
+|             | `0xb05`, `0xb85` (`mhpmcounter5`, `mhpmcounter5h`)
+|             | `0xb06`, `0xb86` (`mhpmcounter6`, `mhpmcounter6h`)
+|             | `0xb07`, `0xb87` (`mhpmcounter7`, `mhpmcounter7h`)
+|             | `0xb08`, `0xb88` (`mhpmcounter8`, `mhpmcounter8h`)
+|             | `0xb09`, `0xb89` (`mhpmcounter9`, `mhpmcounter9h`)
+|             | `0xb0a`, `0xb8a` (`mhpmcounter10`, `mhpmcounter10h`)
+|             | `0xb0b`, `0xb8b` (`mhpmcounter11`, `mhpmcounter11h`)
+|             | `0xb0c`, `0xb8c` (`mhpmcounter12`, `mhpmcounter12h`)
+|             | `0xb0d`, `0xb8d` (`mhpmcounter13`, `mhpmcounter13h`)
+|             | `0xb0e`, `0xb8e` (`mhpmcounter14`, `mhpmcounter14h`)
+|             | `0xb0f`, `0xb8f` (`mhpmcounter15`, `mhpmcounter15h`)
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `Zihpm`
 | Description | If not halted via the <<_mcountinhibit>> CSR the HPM counter CSR(s) increment whenever a
@@ -750,8 +772,19 @@ and are not accessible for lower-privileged software.
 [frame="topbot",grid="none"]
 |=======================
 | Name        | User hardware performance monitor (HPM) counter
-| Address     | `0xc03` (`hpmcounter3`) ... `0xc0f` (hpmcounter15)
-|             | `0xc83` (`hpmcounter3h`) ... `0xc8f` (`hpmcounter15h`)
+| Address     | `0xc03`, `0xc83` (`hpmcounter3`, `hpmcounter3h`)
+|             | `0xc04`, `0xc84` (`hpmcounter4`, `hpmcounter4h`)
+|             | `0xc05`, `0xc85` (`hpmcounter5`, `hpmcounter5h`)
+|             | `0xc06`, `0xc86` (`hpmcounter6`, `hpmcounter6h`)
+|             | `0xc07`, `0xc87` (`hpmcounter7`, `hpmcounter7h`)
+|             | `0xc08`, `0xc88` (`hpmcounter8`, `hpmcounter8h`)
+|             | `0xc09`, `0xc89` (`hpmcounter9`, `hpmcounter9h`)
+|             | `0xc0a`, `0xc8a` (`hpmcounter10`, `hpmcounter10h`)
+|             | `0xc0b`, `0xc8b` (`hpmcounter11`, `hpmcounter11h`)
+|             | `0xc0c`, `0xc8c` (`hpmcounter12`, `hpmcounter12h`)
+|             | `0xc0d`, `0xc8d` (`hpmcounter13`, `hpmcounter13h`)
+|             | `0xc0e`, `0xc8e` (`hpmcounter14`, `hpmcounter14h`)
+|             | `0xc0f`, `0xc8f` (`hpmcounter15`, `hpmcounter15h`)
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `Zihpm`
 | Description | The `hpmcounter*[h]` are user-mode shadow copies of the according <<_mhpmcounterh>> CSRs. The user mode

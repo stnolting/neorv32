@@ -42,9 +42,7 @@
 #define neorv32_cpu_cfu_h
 
 // prototypes
-int      neorv32_cpu_cfu_available(void);
-void     neorv32_cpu_cfu_write_csr(uint32_t sel, uint32_t wdata);
-uint32_t neorv32_cpu_cfu_read_csr(uint32_t sel);
+int neorv32_cpu_cfu_available(void);
 
 
 /**********************************************************************//**

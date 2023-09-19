@@ -226,30 +226,18 @@ int main() {
   // ----------------------------------------------------------
   neorv32_uart0_printf("\n--- CFU CSRs: Control and Status Registers ---\n");
 
-/*
-  The CFU can implement up to 2^32 internal CSRs that are accessed via an indirect access
-  mechanism (up to 32-bit address and up to32-bit read/write data). Note that these
-  CFU-internal CSRs can be accessed from any privilege mode.
-*/
 
-  // check if CFU actually implements any internal CSRs
-  neorv32_cpu_csr_write(CSR_CFUSEL, -1); // try to set all bits
-  if (neorv32_cpu_csr_read(CSR_CFUSEL)) { // any bit set?
-    neorv32_cpu_cfu_write_csr(0, 0xffffffff); // just write some exemplary data to CSR
-    neorv32_uart0_printf("CFU-CSR[0] = 0x%x\n", neorv32_cpu_cfu_read_csr(0)); // read-back data from CSR
+  neorv32_cpu_csr_write(CSR_CFUREG0, 0xffffffff); // just write some exemplary data to CSR
+  neorv32_uart0_printf("CFU-CSR 0 = 0x%x\n", neorv32_cpu_csr_read(CSR_CFUREG0)); // read-back data from CSR
 
-    neorv32_cpu_cfu_write_csr(1, 0x12345678);
-    neorv32_uart0_printf("CFU-CSR[1] = 0x%x\n", neorv32_cpu_cfu_read_csr(1));
+  neorv32_cpu_csr_write(CSR_CFUREG1, 0x12345678);
+  neorv32_uart0_printf("CFU-CSR 1 = 0x%x\n", neorv32_cpu_csr_read(CSR_CFUREG0));
 
-    neorv32_cpu_cfu_write_csr(2, 0x22334455);
-    neorv32_uart0_printf("CFU-CSR[2] = 0x%x\n", neorv32_cpu_cfu_read_csr(2));
+  neorv32_cpu_csr_write(CSR_CFUREG2, 0x22334455);
+  neorv32_uart0_printf("CFU-CSR 2 = 0x%x\n", neorv32_cpu_csr_read(CSR_CFUREG2));
 
-    neorv32_cpu_cfu_write_csr(3, 0xabcdabcd);
-    neorv32_uart0_printf("CFU-CSR[3] = 0x%x\n", neorv32_cpu_cfu_read_csr(3));
-  }
-  else {
-    neorv32_uart0_printf("no CFU-CSRs detected\n");
-  }
+  neorv32_cpu_csr_write(CSR_CFUREG3, 0xabcdabcd);
+  neorv32_uart0_printf("CFU-CSR 3 = 0x%x\n", neorv32_cpu_csr_read(CSR_CFUREG3));
 
 
   neorv32_uart0_printf("\nCFU demo program completed.\n");

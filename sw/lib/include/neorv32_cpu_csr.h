@@ -126,8 +126,10 @@ enum NEORV32_CSR_enum {
   CSR_DSCRATCH0      = 0x7b2, /**< 0x7b2 - dscratch0: Debug scratch register */
 
   /* custom functions unit (CFU) registers */
-  CSR_CFUSEL         = 0x800, /**< 0x800 - cfusel: CFU indirect register select */
-  CSR_CFUREG         = 0x801, /**< 0x801 - cfureg: CFU indirect register alias */
+  CSR_CFUREG0        = 0x800, /**< 0x800 - cfureg0: custom CFU CSR 0 */
+  CSR_CFUREG1        = 0x801, /**< 0x801 - cfureg1: custom CFU CSR 1 */
+  CSR_CFUREG2        = 0x802, /**< 0x802 - cfureg2: custom CFU CSR 2 */
+  CSR_CFUREG3        = 0x803, /**< 0x803 - cfureg3: custom CFU CSR 3 */
 
   /* machine counters and timers */
   CSR_MCYCLE         = 0xb00, /**< 0xb00 - mcycle:        Machine cycle counter low word */

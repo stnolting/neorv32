@@ -68,11 +68,6 @@ end neorv32_cpu_cp_cfu;
 
 architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
 
-  -- User Configuration --------------------------------------
-  -- ------------------------------------------------------------
-  constant csr_enable_c : boolean := true; -- set 'true' to enable CFU-internal CSRs
-  constant csr_awidth_c : natural := 8; -- CFU-internal CSR access address width
-
   -- CFU Control - do not modify! ----------------------------
   -- ------------------------------------------------------------
   type control_t is record
@@ -91,14 +86,18 @@ architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
   constant r5typeA_c : std_ulogic_vector(1 downto 0) := "10"; -- R5-type instruction A (custom-2 opcode)
   constant r5typeB_c : std_ulogic_vector(1 downto 0) := "11"; -- R5-type instruction B (custom-3 opcode)
 
+  -- valid CSR access --
+  signal cfu_csr : std_ulogic;
+
   -- control and status register interface --
   type csr_t is record
     we    : std_ulogic;
-    addr  : std_ulogic_vector(csr_awidth_c-1 downto 0);
+    addr  : std_ulogic_vector(1 downto 0);
     wdata : std_ulogic_vector(XLEN-1 downto 0);
     rdata : std_ulogic_vector(XLEN-1 downto 0);
   end record;
   signal csr : csr_t;
+
 
   -- User-Defined Logic --------------------------------------
   -- ------------------------------------------------------------
@@ -119,6 +118,49 @@ architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
   signal cfu_csr_0, cfu_csr_1 : std_ulogic_vector(XLEN-1 downto 0);
 
 begin
+
+-- ****************************************************************************************************************************
+-- This controller / proxy-logic is required to handle the CFU <-> CPU interface. Do not modify!
+-- ****************************************************************************************************************************
+
+  -- CFU Controller -------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- The <control> record acts as proxy logic that ensures correct communication with the
+  -- CPU pipeline. However, this control instance adds one additional cycle of latency.
+  -- Advanced users can remove this default control instance to obtain maximum throughput.
+  cfu_control: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      res_o        <= (others => '0');
+      control.busy <= '0';
+    elsif rising_edge(clk_i) then
+      res_o <= (others => '0'); -- default; all CPU co-processor outputs are logically OR-ed
+      if (control.busy = '0') then -- idle
+        if (start_i = '1') then -- trigger new CFU operation
+          control.busy <= '1';
+        end if;
+      elsif (control.done = '1') or (ctrl_i.cpu_trap = '1') then -- operation done? abort if trap (exception)
+        res_o        <= control.result; -- output result for just one cycle, CFU output has to be all-zero otherwise
+        control.busy <= '0';
+      end if;
+    end if;
+  end process cfu_control;
+
+  -- CPU feedback --
+  valid_o <= control.busy and control.done; -- set one cycle before result data
+
+  -- pack user-defined instruction type/function bits --
+  control.rtype  <= ctrl_i.ir_opcode(6 downto 5);
+  control.funct3 <= ctrl_i.ir_funct3;
+  control.funct7 <= ctrl_i.ir_funct12(11 downto 5);
+
+  -- CSR proxy logic --
+  cfu_csr     <= '1' when (csr_addr_i(11 downto 2) = csr_cfureg0_c(11 downto 2)) else '0';
+  csr.we      <= cfu_csr and csr_we_i;
+  csr.addr    <= csr_addr_i(1 downto 0);
+  csr.wdata   <= csr_wdata_i;
+  csr_rdata_o <= csr.rdata when (cfu_csr = '1') else (others => '0');
+
 
 -- ****************************************************************************************************************************
 -- CFU Hardware Documentation
@@ -205,18 +247,17 @@ begin
   -- CFU-Internal Control and Status Registers (CFU-CSRs)
   -- ----------------------------------------------------------------------------------------
   -- > csr.we    (input,   1-bit): set to indicate a valid CFU CSR write access
-  -- > csr.addr  (input,   8-bit): CSR address, size defined via <csr_awidth_c> constant, valid when <csr.we> is set
+  -- > csr.addr  (input,   2-bit): CSR address
   -- > csr.wdata (input,  32-bit): CSR write data, valid when <csr.we> is set
-  -- > csr.rdata (output, 32-bit): CSR read data
+  -- > csr.rdata (output, 32-bit): CSR read data, hardwire to all-zero if no CSRs are used
   --
-  -- The CFU can utilize up to 2^32 internal CSRs. These registers can be used to pass further operands, to check the unit's
-  -- status or to configure operation modes. For instance, a 256-bit wide key could be passed to an encryption system
-  -- implemented within the CFU. These CFU-CSRs are accessed via an _indirect access mechanism_ from the CPU. Therefore,
-  -- the CPU provides two dedicated CSRs: one for the CFU-CSR selection and one for the actual data exchange. Hence, always
-  -- two CPU CSR operations are required to alter one CFU-CSR.
+  -- The NEORV32 provides four directly accessible CSRs for custom use inside the CFU. These registers can be used to pass
+  -- further operands, to check the unit's status or to configure operation modes. For instance, a 128-bit wide key could be
+  -- passed to an encryption system. These CFU-CSRs are accessed via an _indirect access mechanism_ from the CPU.
   --
-  -- If the CFU does not require any internal CSRs then this mechanism should be disabled by setting <csr_enable_c> to false.
-  -- The effective address range (i.e. the maximum number of internal CSRs) can be constrained using the <csr_awidth_c> constant.
+  -- If more than four CFU-internal CSRs are required the designer can implement an "indirect access mechanism" based on just
+  -- two of the default CSRs: one CSR is used to configure the index while the other is used as alias to exchange data with
+  -- the indexed CFU-internal CSR - this concept is similar to the RISC-V Indirect CSR Access Extension Specification (Smcsrind).
 
 
 -- ****************************************************************************************************************************
@@ -248,8 +289,7 @@ begin
       when "00"   => csr.rdata <= cfu_csr_0;       -- CSR0: simple read/write register
       when "01"   => csr.rdata <= cfu_csr_1;       -- CSR1: simple read/write register
       when "10"   => csr.rdata <= x"1234abcd";     -- CSR2: hardwired/read-only register
-      when "11"   => csr.rdata <= (others => '0'); -- CSR3: not implemented
-      when others => csr.rdata <= (others => '0');
+      when others => csr.rdata <= (others => '0'); -- CSR3: not implemented
     end case;
   end process csr_read_access;
 
@@ -354,90 +394,6 @@ begin
 
     end case;
   end process out_select;
-
-
--- ****************************************************************************************************************************
--- This controller / proxy-logic is required to handle the CFU <-> CPU interface. Do not modify!
--- ****************************************************************************************************************************
-
-  -- CFU Controller -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- The <control> record acts as proxy logic that ensures correct communication with the
-  -- CPU pipeline. However, this control instance adds one additional cycle of latency.
-  -- Advanced users can remove this default control instance to obtain maximum throughput.
-  cfu_control: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      res_o        <= (others => '0');
-      control.busy <= '0';
-    elsif rising_edge(clk_i) then
-      res_o <= (others => '0'); -- default; all CPU co-processor outputs are logically OR-ed
-      if (control.busy = '0') then -- idle
-        if (start_i = '1') then -- trigger new CFU operation
-          control.busy <= '1';
-        end if;
-      elsif (control.done = '1') or (ctrl_i.cpu_trap = '1') then -- operation done? abort if trap (exception)
-        res_o        <= control.result; -- output result for just one cycle, CFU output has to be all-zero otherwise
-        control.busy <= '0';
-      end if;
-    end if;
-  end process cfu_control;
-
-  -- CPU feedback --
-  valid_o <= control.busy and control.done; -- set one cycle before result data
-
-  -- pack user-defined instruction type/function bits --
-  control.rtype  <= ctrl_i.ir_opcode(6 downto 5);
-  control.funct3 <= ctrl_i.ir_funct3;
-  control.funct7 <= ctrl_i.ir_funct12(11 downto 5);
-
-
-  -- CSR Controller -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- The CFU provides an **indirect** CSR access mechanism that allows to implement up to
-  -- 2^32 custom CFU-internal CSRs (using a 'select' CSR to hold the actual indirect
-  -- address and a `reg` CSR that serves as access alias). Advanced users can remove this proxy
-  -- logic and can even repurpose the two CPU CSRs (cfusel and cfureg) to implement CFU-CSRs
-  -- with minimal hardware resources.
-  cfu_csrs_enable:
-  if (csr_enable_c = true) generate
-    csr_control: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        csr.we      <= '0';
-        csr.addr    <= (others => '0');
-        csr.wdata   <= (others => '0');
-        csr_rdata_o <= (others => '0');
-      elsif rising_edge(clk_i) then
-        csr.we      <= '0'; -- default
-        csr_rdata_o <= (others => '0'); -- default
-        if (csr_addr_i(11 downto 1) = csr_cfusel_c(11 downto 1)) then -- access to CFU CSRs
-          -- write access --
-          if (csr_we_i = '1') and (csr_addr_i(0) = csr_cfusel_c(0)) then -- select register
-            csr.addr <= csr_wdata_i(csr_awidth_c-1 downto 0);
-          end if;
-          if (csr_we_i = '1') and (csr_addr_i(0) = csr_cfureg_c(0)) then -- data register
-            csr.we    <= '1';
-            csr.wdata <= csr_wdata_i;
-          end if;
-          -- read access --
-          if (csr_addr_i(0) = csr_cfusel_c(0)) then -- select register
-            csr_rdata_o(csr_awidth_c-1 downto 0) <= csr.addr;
-          else -- data register
-            csr_rdata_o <= csr.rdata;
-          end if;
-        end if;
-      end if;
-    end process csr_control;
-  end generate;
-
-  cfu_csrs_disabled:
-  if (csr_enable_c = false) generate
-    csr.we      <= '0';
-    csr.addr    <= (others => '0');
-    csr.wdata   <= (others => '0');
-    csr_rdata_o <= (others => '0');
-  end generate;
 
 
 end neorv32_cpu_cp_cfu_rtl;

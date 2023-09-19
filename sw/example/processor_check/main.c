@@ -111,6 +111,8 @@ volatile uint32_t store_access_addr[2];
 volatile uint32_t amo_var;
 /// Variable to test PMP
 volatile uint32_t __attribute__((aligned(4))) pmp_access[2];
+/// Number of triggered traps
+volatile uint32_t trap_cnt;
 /// Number of implemented PMP regions
 uint32_t pmp_num_regions;
 
@@ -198,6 +200,9 @@ int main() {
 
   // enable machine-mode interrupts
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+
+  // no traps so far
+  trap_cnt = 0;
 
 
   // ----------------------------------------------------------
@@ -628,18 +633,31 @@ int main() {
 
   cnt_test++;
 
-  // clear mstatus.mie and set mstatus.mpie
+  // disable machine-mode interrupts
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
-  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MPIE);
 
-  // illegal 32-bit instruction (MRET with incorrect opcode)
-  asm volatile (".align 4 \n"
-                ".word 0x3020007f");
+  tmp_a = trap_cnt; // current amount of illegal instruction exception
 
-  // make sure this has caused an illegal exception
+  {
+    asm volatile (".align 4");
+    asm volatile (".word 0x0e00202f"); // amoswap.w x0, x0, (x0)
+    asm volatile (".word 0x34004073"); // illegal CSR access funct3 (using mscratch)
+    asm volatile (".word 0x30200077"); // mret with illegal opcode
+    asm volatile (".word 0x3020007f"); // mret with illegal opcode
+    asm volatile (".word 0x7b200073"); // dret outside of debug mode
+    asm volatile (".word 0x7b300073"); // illegal system funct12
+    asm volatile (".word 0xfe000033"); // illegal add funct7
+    asm volatile (".word 0x00002063"); // illegal branch funct3
+    asm volatile (".word 0x0000200f"); // illegal fence funct3
+    asm volatile (".word 0xfe002fe3"); // illegal store funct3
+    asm volatile (".align 4");
+  }
+
+  tmp_b = trap_cnt; // number of traps we are expecting
+
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) && // illegal instruction exception
-      ((neorv32_cpu_csr_read(CSR_MSTATUS) & (1 << CSR_MSTATUS_MIE)) == 0) && // MIE should still be cleared
-      (neorv32_cpu_csr_read(CSR_MTINST) == 0x3020007fUL)) { // instruction word that caused the exception
+      (neorv32_cpu_csr_read(CSR_MTINST) == 0xfe002fe3) && // instruction word of last illegal instruction
+      ((tmp_a + 10) == tmp_b)) { // right amount of illegal instruction exceptions
     test_ok();
   }
   else {
@@ -801,9 +819,14 @@ int main() {
   PRINT_STANDARD("[%i] ENVCALL M EXC ", cnt_test);
   cnt_test++;
 
+  // clear mstatus.mie and set mstatus.mpie
+  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MPIE);
+
   asm volatile ("ecall");
 
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MENV_CALL) {
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MENV_CALL) &&
+      ((neorv32_cpu_csr_read(CSR_MSTATUS) & (1 << CSR_MSTATUS_MIE)) == 0)) { // MIE should still be cleared
     test_ok();
   }
   else {
@@ -2088,6 +2111,9 @@ void global_trap_handler(void) {
   if (cause == TRAP_CODE_I_ACCESS) {
     neorv32_cpu_csr_write(CSR_MEPC, neorv32_cpu_csr_read(CSR_MEPC) + 4);
   }
+
+  // increment global trap counter
+  trap_cnt++;
 
   // hack: always come back in MACHINE MODE
   neorv32_cpu_csr_set(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));

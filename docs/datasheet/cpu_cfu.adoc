@@ -192,25 +192,28 @@ uint32_t bar = neorv32_cfu_r5_instr_a(tmp, res, foo, tmp);
 
 
 :sectnums:
-==== CFU-Internal Control and Status Registers (CFU-CSRs)
+==== CFU Control and Status Registers (CFU-CSRs)
 
-The user-designed CFU can implement up to 2^32 CFU-internal status and control registers (CFU-CSRs) that can
-be used to provide further operands, to configure execution properties or to check processing status. For example,
-the CFU-internal CSRs could be used to program a 256-bit key that is processed by an encryption/decryption accelerator
-implemented via the CFU's custom instructions.
+The CPU provides up to four control and status registers (<<_cfureg, `cfureg*`>>) to be
+used within the CFU. These CSRs are mapped to the "custom user-mode read/write" CSR address space, which is
+explicitly reserved for platform-specific application by the RISC-V spec. For example, these CSRs can be used
+to pass additional operands to the CFU, to obtain additional results, to check processing status or to program
+operation modes.
 
-These CFU-internal registers are accessed via an _indirect access_ mechanism.
-From the CPU side, access is controlled via just two user-mode CSRs: <<_cfusel>> and <<_cfureg>>. `cfusel` is used
-to configure the actual access address while `cfureg` is used for the actual data exchange. Hence, CFU-CSR accesses
-require two consecutive CSR instructions (making them non-atomic). The NEORV32 software framework abstracts this
-indirect interface by providing two functions that can be used to access the CFU-internal CSRs:
-
-.Indirect CFU-internal CSR access functions (prototypes)
+.CFU CSR Access Example
 [source,c]
 ----
-void     neorv32_cpu_cfu_write_csr(uint32_t sel, uint32_t wdata); // write to CFU-CSR
-uint32_t neorv32_cpu_cfu_read_csr(uint32_t sel); // read from CFU-CSR
+neorv32_cpu_csr_write(CSR_CFUREG0, 0xabcdabcd); // write data to CFU CSR 0
+uint32_t tmp = neorv32_cpu_csr_read(CSR_CFUREG3); // read data from CFU CSR 3
 ----
+
+
+.Additional CFU-internal CSRs
+[TIP]
+If more than four CFU-internal CSRs are required the designer can implement an "indirect access mechanism" based
+on just two of the default CSRs: one CSR is used to configure the index while the other is used as alias to exchange
+data with the indexed CFU-internal CSR - this concept is similar to the RISC-V Indirect CSR Access Extension
+Specification (`Smcsrind`).
 
 
 :sectnums:
