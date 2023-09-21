@@ -48,7 +48,7 @@
 /** UART BAUD rate */
 #define BAUD_RATE 19200
 /** WDT timeout (until system reset) in seconds */
-#define WDT_TIMEOUT_S 4
+#define WDT_TIMEOUT_S 8
 /**@}*/
 
 
@@ -58,7 +58,7 @@
  **************************************************************************/
 void wdt_firq_handler(void) {
 
-  neorv32_cpu_csr_write(CSR_MIP, ~(1<<WDT_FIRQ_PENDING)); // clear/ack pending FIRQ
+  neorv32_cpu_csr_clr(CSR_MIP, 1<<WDT_FIRQ_PENDING); // clear/ack pending FIRQ
   neorv32_uart0_puts("WDT IRQ! Timeout imminent!\n");
 }
 
@@ -125,8 +125,13 @@ int main() {
 
 
   // feed the watchdog
-  neorv32_uart0_puts("Resetting WDT...\n");
-  neorv32_wdt_feed(); // reset internal counter to zero
+  neorv32_uart0_puts("Resetting WDT 5 times...\n");
+  int i;
+  for (i=0; i<5; i++) {
+    neorv32_cpu_delay_ms(750);
+    neorv32_wdt_feed(); // reset internal counter to zero
+    neorv32_uart0_puts("WDT reset.\n");
+  }
 
 
   // go to sleep mode and wait for watchdog to kick in
