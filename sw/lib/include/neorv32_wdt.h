@@ -49,7 +49,8 @@
 /**@{*/
 /** WDT module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL; /**< offset 0: control register (#NEORV32_WDT_CTRL_enum) */
+  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_WDT_CTRL_enum) */
+  uint32_t RESET; /**< offset 4: WDT reset trigger (write password to "feed" watchdog) */
 } neorv32_wdt_t;
 
 /** WDT module hardware access (#neorv32_wdt_t) */
@@ -61,12 +62,14 @@ enum NEORV32_WDT_CTRL_enum {
   WDT_CTRL_LOCK        =  1, /**< WDT control register(1) (r/w): Lock write access to control register, clears on reset only */
   WDT_CTRL_DBEN        =  2, /**< WDT control register(2) (r/w): Allow WDT to continue operation even when CPU is in debug mode */
   WDT_CTRL_SEN         =  3, /**< WDT control register(3) (r/w): Allow WDT to continue operation even when CPU is in sleep mode */
-  WDT_CTRL_RESET       =  4, /**< WDT control register(4) (-/w): Reset WDT counter when set, auto-clears */
-  WDT_CTRL_RCAUSE      =  5, /**< WDT control register(5) (r/-): Cause of last system reset: 0=external reset, 1=watchdog */
+  WDT_CTRL_RCAUSE      =  4, /**< WDT control register(4) (r/-): Cause of last system reset: 0=external reset, 1=watchdog */
 
   WDT_CTRL_TIMEOUT_LSB =  8, /**< WDT control register(8)  (r/w): Timeout value, LSB */
   WDT_CTRL_TIMEOUT_MSB = 31  /**< WDT control register(31) (r/w): Timeout value, MSB */
 };
+
+/** WDT control register bits */
+#define WDT_PASSWORD (0X709D1AB3)
 /**@}*/
 
 

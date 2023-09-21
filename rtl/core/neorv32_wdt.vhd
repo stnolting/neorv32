@@ -65,13 +65,15 @@ end neorv32_wdt;
 
 architecture neorv32_wdt_rtl of neorv32_wdt is
 
+  -- Reset password --
+  constant reset_pwd_c : std_ulogic_vector(31 downto 0) := x"709d1ab3";
+
   -- Control register bits --
   constant ctrl_enable_c      : natural :=  0; -- r/w: WDT enable
   constant ctrl_lock_c        : natural :=  1; -- r/w: lock write access to control register when set
   constant ctrl_dben_c        : natural :=  2; -- r/w: allow WDT to continue operation even when CPU is in debug mode
   constant ctrl_sen_c         : natural :=  3; -- r/w: allow WDT to continue operation even when CPU is in sleep mode
-  constant ctrl_reset_c       : natural :=  4; -- -/w: reset WDT if set ("feed" watchdog)
-  constant ctrl_rcause_c      : natural :=  5; -- r/-: cause of last system reset: 0=external reset, 1=watchdog timeout
+  constant ctrl_rcause_c      : natural :=  4; -- r/-: cause of last system reset: 0=external reset, 1=watchdog timeout
   --
   constant ctrl_timeout_lsb_c : natural :=  8; -- r/w: timeout value LSB
   constant ctrl_timeout_msb_c : natural := 31; -- r/w: timeout value MSB
@@ -82,11 +84,13 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
     lock    : std_ulogic; -- lock write access to control register when set
     dben    : std_ulogic; -- allow WDT to continue operation even when CPU is in debug mode
     sen     : std_ulogic; -- allow WDT to continue operation even when CPU is in sleep mode
-    reset   : std_ulogic; -- reset WDT if set ("feed" watchdog)
     rcause  : std_ulogic; -- cause of last system reset: 0=external reset, 1=watchdog timeout
     timeout : std_ulogic_vector(23 downto 0); -- timeout value
   end record;
   signal ctrl : ctrl_t;
+
+  -- watchdog reset --
+  signal wdt_reset : std_ulogic;
 
   -- prescaler clock generator --
   signal prsc_tick : std_ulogic;
@@ -99,7 +103,7 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   signal timeout_irq         : std_ulogic;
 
   -- interrupt & reset generators --
-  signal irq_gen_buf, hw_rstn : std_ulogic;
+  signal irq_gen_buf, hw_rst : std_ulogic;
 
 begin
 
@@ -114,18 +118,23 @@ begin
       ctrl.lock    <= '0'; -- unlock after reset
       ctrl.dben    <= '0';
       ctrl.sen     <= '0';
-      ctrl.reset   <= '0';
       ctrl.timeout <= (others => '0');
+      wdt_reset    <= '0';
     elsif rising_edge(clk_i) then
-      ctrl.reset <= '0'; -- default
+      wdt_reset <= '0'; -- default
       if (bus_req_i.we = '1') then
-        ctrl.reset <= bus_req_i.data(ctrl_reset_c);
-        if (ctrl.lock = '0') then -- update configuration only if not locked
-          ctrl.enable  <= bus_req_i.data(ctrl_enable_c);
-          ctrl.lock    <= bus_req_i.data(ctrl_lock_c) and ctrl.enable; -- lock only if already enabled
-          ctrl.dben    <= bus_req_i.data(ctrl_dben_c);
-          ctrl.sen     <= bus_req_i.data(ctrl_sen_c);
-          ctrl.timeout <= bus_req_i.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c);
+        if (bus_req_i.addr(2) = '0') then -- control register
+          if (ctrl.lock = '0') then -- update configuration only if not locked
+            ctrl.enable  <= bus_req_i.data(ctrl_enable_c);
+            ctrl.lock    <= bus_req_i.data(ctrl_lock_c) and ctrl.enable; -- lock only if already enabled
+            ctrl.dben    <= bus_req_i.data(ctrl_dben_c);
+            ctrl.sen     <= bus_req_i.data(ctrl_sen_c);
+            ctrl.timeout <= bus_req_i.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c);
+          end if;
+        else -- reset register
+          if (bus_req_i.data(31 downto 0) = reset_pwd_c) then -- password correct
+            wdt_reset <= '1'; -- reset timer
+          end if;
         end if;
       end if;
     end if;
@@ -157,7 +166,7 @@ begin
     if (rstn_ext_i = '0') then
       ctrl.rcause <= '0';
     elsif rising_edge(clk_i) then
-      ctrl.rcause <= ctrl.rcause or (not hw_rstn); -- sticky-set on WDT timeout/force
+      ctrl.rcause <= ctrl.rcause or hw_rst; -- sticky-set on WDT timeout
     end if;
   end process reset_cause;
 
@@ -168,8 +177,8 @@ begin
   begin
     if rising_edge(clk_i) then
       cnt_inc_ff  <= cnt_inc;
-      cnt_started <= ctrl.enable and (cnt_started or prsc_tick); -- set with next clock tick
-      if (ctrl.enable = '0') or (ctrl.reset = '1') then -- watchdog disabled or reset
+      cnt_started <= ctrl.enable and (cnt_started or prsc_tick); -- start with next clock tick
+      if (ctrl.enable = '0') or (wdt_reset = '1') then -- watchdog disabled or reset
         cnt <= (others => '0');
       elsif (cnt_inc_ff = '1') then
         cnt <= std_ulogic_vector(unsigned(cnt) + 1);
@@ -182,24 +191,25 @@ begin
   prsc_tick   <= clkgen_i(clk_div4096_c); -- clock enable tick
 
   -- valid counter increment? --
-  cnt_inc <= '1' when (prsc_tick = '1') and (cnt_started = '1') and -- clock tick and started
-                      ((cpu_debug_i = '0') or (ctrl.dben = '1')) and -- not in debug mode or allowed to run in debug mode
+  cnt_inc <= '1' when ((prsc_tick = '1') and (cnt_started = '1')) and -- clock tick and started
+                      ((cpu_debug_i = '0') or (ctrl.dben = '1'))  and -- not in debug mode or allowed to run in debug mode
                       ((cpu_sleep_i = '0') or (ctrl.sen = '1')) else '0'; -- not in sleep mode or allowed to run in sleep mode
 
   -- timeout detection --
   timeout_irq <= '1' when (cnt_started = '1') and (cnt = ('0' & ctrl.timeout(23 downto 1))) else '0'; -- half timeout value
-  timeout_rst <= '1' when (cnt_started = '1') and (cnt = ctrl.timeout(23 downto 0)) else '0'; -- full timeout value
+  timeout_rst <= '1' when (cnt_started = '1') and (cnt =        ctrl.timeout(23 downto 0))  else '0'; -- full timeout value
 
 
   -- Event Generators -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+
   -- interrupt --
   irq_trigger: process(clk_i)
   begin
     if rising_edge(clk_i) then
       irq_gen_buf <= timeout_irq;
-      if (irq_gen_buf = '0') and (timeout_irq = '1') and -- rising edge detector
-         (ctrl.enable = '1') and (timeout_rst = '0') then -- enabled and not a HW reset
+      if (irq_gen_buf = '0') and (timeout_irq = '1') and -- rising-edge detector
+         (cnt_started = '1') and (timeout_rst = '0') then -- enabled and not a HW reset
         irq_o <= '1';
       else
         irq_o <= '0';
@@ -211,18 +221,18 @@ begin
   rst_trigger: process(rstn_int_i, clk_i)
   begin
     if (rstn_int_i = '0') then
-      hw_rstn <= '1';
+      hw_rst <= '0';
     elsif rising_edge(clk_i) then
-      if (ctrl.enable = '1') and (timeout_rst = '1') then
-        hw_rstn <= '0';
+      if (cnt_started = '1') and (timeout_rst = '1') then
+        hw_rst <= '1';
       else
-        hw_rstn <= '1';
+        hw_rst <= '0';
       end if;
     end if;
   end process rst_trigger;
 
-  -- system wide reset --
-  rstn_o <= hw_rstn;
+  -- system-wide reset --
+  rstn_o <= not hw_rst;
 
 
 end neorv32_wdt_rtl;

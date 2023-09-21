@@ -116,7 +116,7 @@ int neorv32_wdt_disable(void) {
  **************************************************************************/
 void neorv32_wdt_feed(void) {
 
-  NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_RESET);
+  NEORV32_WDT->RESET = (uint32_t)WDT_PASSWORD;
 }
 
 
