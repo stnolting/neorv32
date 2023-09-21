@@ -154,7 +154,7 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     icache_nb    => ( 0,       0,       8,       8     ), -- number of cache blocks (lines), power of two
     icache_bs    => ( 0,       0,       64,      256   ), -- size of cache clock (lines) in bytes, power of two
     icache_as    => ( 1,       1,       1,       2     ), -- associativity (1 or 2)
-    dcache_en    => ( false,   false,   true,    true  ), -- instruction data enabled
+    dcache_en    => ( false,   false,   true,    true  ), -- data cache enabled
     dcache_nb    => ( 0,       0,       8,       8     ), -- number of cache blocks (lines), power of two
     dcache_bs    => ( 0,       0,       64,      256   ), -- size of cache clock (lines) in bytes, power of two
     mtime        => ( false,   true,    true,    true  )  -- RISC-V machine system timers
