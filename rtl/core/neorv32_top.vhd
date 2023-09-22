@@ -269,8 +269,10 @@ architecture neorv32_top_rtl of neorv32_top is
   constant dmem_size_c       : natural := cond_sel_natural_f(dmem_size_valid_c, MEM_INT_DMEM_SIZE, dmem_size_pow2_c);
 
   -- reset generator --
-  signal rstn_ext_sreg, rstn_int_sreg : std_ulogic_vector(3 downto 0);
-  signal rstn_ext, rstn_int, rstn_wdt : std_ulogic;
+  signal rstn_wdt                     : std_ulogic;
+  signal rstn_sys_sreg, rstn_ext_sreg : std_ulogic_vector(3 downto 0);
+  signal rstn_sys, rstn_ext           : std_ulogic;
+  signal rst_cause                    : std_ulogic_vector(1 downto 0);
 
   -- clock generator --
   signal clk_div, clk_div_ff       : std_ulogic_vector(11 downto 0);
@@ -397,30 +399,45 @@ begin
     begin
       if (rstn_i = '0') then
         rstn_ext_sreg <= (others => '0');
-        rstn_int_sreg <= (others => '0');
         rstn_ext      <= '0';
-        rstn_int      <= '0';
+        rstn_sys_sreg <= (others => '0');
+        rstn_sys      <= '0';
       elsif falling_edge(clk_i) then -- inverted clock to release reset _before_ all FFs trigger (rising edge)
         -- external reset --
         rstn_ext_sreg <= rstn_ext_sreg(rstn_ext_sreg'left-1 downto 0) & '1'; -- active for at least <rstn_ext_sreg'size> clock cycles
+        rstn_ext      <= and_reduce_f(rstn_ext_sreg);
         -- internal reset --
         if (rstn_wdt = '0') or (dci_ndmrstn = '0') then -- sync reset sources
-          rstn_int_sreg <= (others => '0');
+          rstn_sys_sreg <= (others => '0');
         else
-          rstn_int_sreg <= rstn_int_sreg(rstn_int_sreg'left-1 downto 0) & '1'; -- active for at least <rstn_int_sreg'size> clock cycles
+          rstn_sys_sreg <= rstn_sys_sreg(rstn_sys_sreg'left-1 downto 0) & '1'; -- active for at least <rstn_sys_sreg'size> clock cycles
         end if;
-        -- reset nets --
-        rstn_ext <= and_reduce_f(rstn_ext_sreg); -- external reset (via reset pin)
-        rstn_int <= and_reduce_f(rstn_int_sreg); -- internal reset (via reset pin, WDT or OCD)
+        rstn_sys <= and_reduce_f(rstn_sys_sreg);
       end if;
     end process reset_generator;
 
 
+    -- Reset Cause ----------------------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    reset_cause: process(rstn_ext, clk_i)
+    begin
+      if (rstn_ext = '0') then
+        rst_cause <= "00"; -- reset from external pin
+      elsif falling_edge(clk_i) then
+        if (dci_ndmrstn = '0') then
+          rst_cause <= "01"; -- reset from on-chip debugger
+        elsif (rstn_wdt = '0') then
+          rst_cause <= "10"; -- reset from watchdog timer
+        end if;
+      end if;
+    end process reset_cause;
+
+
     -- Clock Generator ------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    clock_generator: process(rstn_int, clk_i)
+    clock_generator: process(rstn_sys, clk_i)
     begin
-      if (rstn_int = '0') then
+      if (rstn_sys = '0') then
         clk_gen_en_ff <= '0';
         clk_div       <= (others => '0');
         clk_div_ff    <= (others => '0');
@@ -496,7 +513,7 @@ begin
     port map (
       -- global control --
       clk_i      => clk_i,
-      rstn_i     => rstn_int,
+      rstn_i     => rstn_sys,
       sleep_o    => cpu_sleep,
       debug_o    => cpu_debug,
       ifence_o   => i_fence,
@@ -551,7 +568,7 @@ begin
       )
       port map (
         clk_i     => clk_i,
-        rstn_i    => rstn_int,
+        rstn_i    => rstn_sys,
         clear_i   => i_fence,
         cpu_req_i => cpu_i_req,
         cpu_rsp_o => cpu_i_rsp,
@@ -579,7 +596,7 @@ begin
       )
       port map (
         clk_i     => clk_i,
-        rstn_i    => rstn_int,
+        rstn_i    => rstn_sys,
         clear_i   => d_fence,
         cpu_req_i => cpu_d_req,
         cpu_rsp_o => cpu_d_rsp,
@@ -604,7 +621,7 @@ begin
     )
     port map (
       clk_i   => clk_i,
-      rstn_i  => rstn_int,
+      rstn_i  => rstn_sys,
       a_req_i => dcache_req, -- prioritized
       a_rsp_o => dcache_rsp,
       b_req_i => icache_req,
@@ -627,7 +644,7 @@ begin
     neorv32_dma_inst: entity neorv32.neorv32_dma
     port map (
       clk_i     => clk_i,
-      rstn_i    => rstn_int,
+      rstn_i    => rstn_sys,
       bus_req_i => io_dev_req(IODEV_DMA),
       bus_rsp_o => io_dev_rsp(IODEV_DMA),
       dma_req_o => dma_req,
@@ -646,7 +663,7 @@ begin
     )
     port map (
       clk_i   => clk_i,
-      rstn_i  => rstn_int,
+      rstn_i  => rstn_sys,
       a_req_i => core_req, -- prioritized
       a_rsp_o => core_rsp,
       b_req_i => dma_req,
@@ -677,7 +694,7 @@ begin
     )
     port map (
       clk_i       => clk_i,
-      rstn_i      => rstn_int,
+      rstn_i      => rstn_sys,
       rvs_addr_o  => open, -- yet unused
       rvs_valid_o => open, -- yet unused
       rvs_clear_i => '0',  -- yet unused
@@ -727,7 +744,7 @@ begin
   port map (
     -- global control --
     clk_i      => clk_i,
-    rstn_i     => rstn_int,
+    rstn_i     => rstn_sys,
     -- host port --
     main_req_i => main2_req,
     main_rsp_o => main2_rsp,
@@ -822,7 +839,7 @@ begin
       port map (
         -- global control --
         clk_i       => clk_i,
-        rstn_i      => rstn_int,
+        rstn_i      => rstn_sys,
         bus_req_i   => io_dev_req(IODEV_XIP),
         bus_rsp_o   => io_dev_rsp(IODEV_XIP),
         xip_req_i   => xip_req,
@@ -861,7 +878,7 @@ begin
       )
       port map (
         clk_i     => clk_i,
-        rstn_i    => rstn_int,
+        rstn_i    => rstn_sys,
         bus_req_i => xbus_req,
         bus_rsp_o => xbus_rsp,
         --
@@ -968,7 +985,7 @@ begin
       )
       port map (
         clk_i       => clk_i,
-        rstn_i      => rstn_int,
+        rstn_i      => rstn_sys,
         bus_req_i   => io_dev_req(IODEV_CFS),
         bus_rsp_o   => io_dev_rsp(IODEV_CFS),
         clkgen_en_o => cg_en.cfs,
@@ -998,7 +1015,7 @@ begin
       )
       port map (
         clk_i     => clk_i,
-        rstn_i    => rstn_int,
+        rstn_i    => rstn_sys,
         bus_req_i => io_dev_req(IODEV_SDI),
         bus_rsp_o => io_dev_rsp(IODEV_SDI),
         sdi_csn_i => sdi_csn_i,
@@ -1027,7 +1044,7 @@ begin
       )
       port map (
         clk_i     => clk_i,
-        rstn_i    => rstn_int,
+        rstn_i    => rstn_sys,
         bus_req_i => io_dev_req(IODEV_GPIO),
         bus_rsp_o => io_dev_rsp(IODEV_GPIO),
         gpio_o    => gpio_o,
@@ -1049,8 +1066,8 @@ begin
       neorv32_wdt_inst: entity neorv32.neorv32_wdt
       port map (
         clk_i       => clk_i,
-        rstn_ext_i  => rstn_ext,
-        rstn_int_i  => rstn_int,
+        rstn_i      => rstn_sys,
+        rst_cause_i => rst_cause,
         bus_req_i   => io_dev_req(IODEV_WDT),
         bus_rsp_o   => io_dev_rsp(IODEV_WDT),
         cpu_debug_i => cpu_debug,
@@ -1078,7 +1095,7 @@ begin
       neorv32_mtime_inst: entity neorv32.neorv32_mtime
       port map (
         clk_i     => clk_i,
-        rstn_i    => rstn_int,
+        rstn_i    => rstn_sys,
         bus_req_i => io_dev_req(IODEV_MTIME),
         bus_rsp_o => io_dev_rsp(IODEV_MTIME),
         irq_o     => mtime_irq
@@ -1104,7 +1121,7 @@ begin
       )
       port map (
         clk_i       => clk_i,
-        rstn_i      => rstn_int,
+        rstn_i      => rstn_sys,
         bus_req_i   => io_dev_req(IODEV_UART0),
         bus_rsp_o   => io_dev_rsp(IODEV_UART0),
         clkgen_en_o => cg_en.uart0,
@@ -1141,7 +1158,7 @@ begin
       )
       port map (
         clk_i       => clk_i,
-        rstn_i      => rstn_int,
+        rstn_i      => rstn_sys,
         bus_req_i   => io_dev_req(IODEV_UART1),
         bus_rsp_o   => io_dev_rsp(IODEV_UART1),
         clkgen_en_o => cg_en.uart1,
@@ -1176,7 +1193,7 @@ begin
       )
       port map (
         clk_i       => clk_i,
-        rstn_i      => rstn_int,
+        rstn_i      => rstn_sys,
         bus_req_i   => io_dev_req(IODEV_SPI),
         bus_rsp_o   => io_dev_rsp(IODEV_SPI),
         clkgen_en_o => cg_en.spi,
@@ -1207,7 +1224,7 @@ begin
       neorv32_twi_inst: entity neorv32.neorv32_twi
       port map (
         clk_i       => clk_i,
-        rstn_i      => rstn_int,
+        rstn_i      => rstn_sys,
         bus_req_i   => io_dev_req(IODEV_TWI),
         bus_rsp_o   => io_dev_rsp(IODEV_TWI),
         clkgen_en_o => cg_en.twi,
@@ -1240,7 +1257,7 @@ begin
       )
       port map (
         clk_i       => clk_i,
-        rstn_i      => rstn_int,
+        rstn_i      => rstn_sys,
         bus_req_i   => io_dev_req(IODEV_PWM),
         bus_rsp_o   => io_dev_rsp(IODEV_PWM),
         clkgen_en_o => cg_en.pwm,
@@ -1267,7 +1284,7 @@ begin
       )
       port map (
         clk_i     => clk_i,
-        rstn_i    => rstn_int,
+        rstn_i    => rstn_sys,
         bus_req_i => io_dev_req(IODEV_TRNG),
         bus_rsp_o => io_dev_rsp(IODEV_TRNG),
         irq_o     => firq.trng
@@ -1291,7 +1308,7 @@ begin
       )
       port map (
         clk_i       => clk_i,
-        rstn_i      => rstn_int,
+        rstn_i      => rstn_sys,
         bus_req_i   => io_dev_req(IODEV_NEOLED),
         bus_rsp_o   => io_dev_rsp(IODEV_NEOLED),
         clkgen_en_o => cg_en.neoled,
@@ -1323,7 +1340,7 @@ begin
       port map (
         -- host access --
         clk_i     => clk_i,
-        rstn_i    => rstn_int,
+        rstn_i    => rstn_sys,
         bus_req_i => io_dev_req(IODEV_XIRQ),
         bus_rsp_o => io_dev_rsp(IODEV_XIRQ),
         xirq_i    => xirq_i,
@@ -1345,7 +1362,7 @@ begin
       neorv32_gptmr_inst: entity neorv32.neorv32_gptmr
       port map (
         clk_i       => clk_i,
-        rstn_i      => rstn_int,
+        rstn_i      => rstn_sys,
         bus_req_i   => io_dev_req(IODEV_GPTMR),
         bus_rsp_o   => io_dev_rsp(IODEV_GPTMR),
         clkgen_en_o => cg_en.gptmr,
@@ -1369,7 +1386,7 @@ begin
       neorv32_onewire_inst: entity neorv32.neorv32_onewire
       port map (
         clk_i       => clk_i,
-        rstn_i      => rstn_int,
+        rstn_i      => rstn_sys,
         bus_req_i   => io_dev_req(IODEV_ONEWIRE),
         bus_rsp_o   => io_dev_rsp(IODEV_ONEWIRE),
         clkgen_en_o => cg_en.onewire,
@@ -1401,7 +1418,7 @@ begin
       port map (
         -- Host access --
         clk_i            => clk_i,
-        rstn_i           => rstn_int,
+        rstn_i           => rstn_sys,
         bus_req_i        => io_dev_req(IODEV_SLINK),
         bus_rsp_o        => io_dev_rsp(IODEV_SLINK),
         irq_o            => firq.slink,
@@ -1433,7 +1450,7 @@ begin
       neorv32_crc_inst: entity neorv32.neorv32_crc
         port map (
         clk_i     => clk_i,
-        rstn_i    => rstn_int,
+        rstn_i    => rstn_sys,
         bus_req_i => io_dev_req(IODEV_CRC),
         bus_rsp_o => io_dev_rsp(IODEV_CRC)
       );

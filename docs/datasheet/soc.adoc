@@ -362,6 +362,10 @@ The processor-wide reset can be triggered by any of the following sources:
 * the <<_on_chip_debugger_ocd>>
 * the <<_watchdog_timer_wdt>>
 
+.Reset Cause
+[TIP]
+The actual reset cause can be determined via the <<_watchdog_timer_wdt>>.
+
 If any of these sources trigger a reset, the internal reset will be triggered for at least 4 clock cycles ensuring
 a valid reset of the entire processor. The internal global reset is asserted _aysynchronoulsy_ if triggered by the external
 `rstn_i` signal. For internal reset sources, the global reset is asserted _synchronously_. If the reset cause gets inactive
