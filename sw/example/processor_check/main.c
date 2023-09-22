@@ -1050,8 +1050,8 @@ int main() {
     neorv32_cpu_irq_enable(WDT_FIRQ_ENABLE);
 
     // configure WDT:
-    // timeout = 1*4096 cycles, no lock, disable in debug mode, enable in sleep mode
-    neorv32_wdt_setup(1, 0, 0, 1);
+    // timeout = 1*4096 cycles, no lock, disable in debug mode, enable in sleep mode, enable strict reset mode
+    neorv32_wdt_setup(1, 0, 0, 1, 1);
 
     // sleep until interrupt
     asm volatile ("wfi");
