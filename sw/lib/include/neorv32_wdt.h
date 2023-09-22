@@ -62,11 +62,18 @@ enum NEORV32_WDT_CTRL_enum {
   WDT_CTRL_LOCK        =  1, /**< WDT control register(1) (r/w): Lock write access to control register, clears on reset only */
   WDT_CTRL_DBEN        =  2, /**< WDT control register(2) (r/w): Allow WDT to continue operation even when CPU is in debug mode */
   WDT_CTRL_SEN         =  3, /**< WDT control register(3) (r/w): Allow WDT to continue operation even when CPU is in sleep mode */
-  WDT_CTRL_RCAUSE      =  4, /**< WDT control register(4) (r/-): Cause of last system reset: 0=external reset, 1=watchdog */
+  WDT_CTRL_STRICT      =  4, /**< WDT control register(4) (r/w): Force hardware reset if reset password is incorrect or if write attempt to locked CTRL register */
+  WDT_CTRL_RCAUSE_LO   =  5, /**< WDT control register(5) (r/-): Cause of last system reset - low */
+  WDT_CTRL_RCAUSE_HI   =  6, /**< WDT control register(5) (r/-): Cause of last system reset - high */
 
   WDT_CTRL_TIMEOUT_LSB =  8, /**< WDT control register(8)  (r/w): Timeout value, LSB */
   WDT_CTRL_TIMEOUT_MSB = 31  /**< WDT control register(31) (r/w): Timeout value, MSB */
 };
+
+/** Reset causes */
+#define WDT_RCAUSE_EXT (0b00) /**< Reset caused by external pin */
+#define WDT_RCAUSE_OCD (0b01) /**< Reset caused by on-chip debugger */
+#define WDT_RCAUSE_WDT (0b10) /**< Reset caused by watchdog timer */
 
 /** WDT control register bits */
 #define WDT_PASSWORD (0X709D1AB3)
@@ -78,7 +85,7 @@ enum NEORV32_WDT_CTRL_enum {
  **************************************************************************/
 /**@{*/
 int  neorv32_wdt_available(void);
-void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en);
+void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en, int strict);
 int  neorv32_wdt_disable(void);
 void neorv32_wdt_feed(void);
 int  neorv32_wdt_get_cause(void);

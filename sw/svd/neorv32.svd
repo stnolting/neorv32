@@ -1306,10 +1306,15 @@
               <description>Allow WDT to continue operation even when in sleep mode</description>
             </field>
             <field>
-              <name>WDT_CTRL_RCAUSE</name>
+              <name>WDT_CTRL_STRICT</name>
               <bitRange>[4:4]</bitRange>
+              <description>Force hardware reset if reset password is incorrect or if write attempt to locked CTRL register</description>
+            </field>
+            <field>
+              <name>WDT_CTRL_RCAUSE</name>
+              <bitRange>[6:5]</bitRange>
               <access>read-only</access>
-              <description>Cause of last system reset: 0=external reset, 1=watchdog</description>
+              <description>Cause of last system reset: 0=external reset, 1=OCD reset, 2=WDT reset</description>
             </field>
             <field>
               <name>WDT_CTRL_TIMEOUT</name>
