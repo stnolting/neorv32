@@ -48,7 +48,7 @@
 /** UART BAUD rate */
 #define BAUD_RATE 19200
 /** WDT timeout (until system reset) in seconds */
-#define WDT_TIMEOUT_S 4
+#define WDT_TIMEOUT_S 8
 /**@}*/
 
 
@@ -58,7 +58,7 @@
  **************************************************************************/
 void wdt_firq_handler(void) {
 
-  neorv32_cpu_csr_write(CSR_MIP, ~(1<<WDT_FIRQ_PENDING)); // clear/ack pending FIRQ
+  neorv32_cpu_csr_clr(CSR_MIP, 1<<WDT_FIRQ_PENDING); // clear/ack pending FIRQ
   neorv32_uart0_puts("WDT IRQ! Timeout imminent!\n");
 }
 
@@ -95,11 +95,17 @@ int main() {
 
   // show the cause of the last processor reset
   neorv32_uart0_puts("Cause of last processor reset: ");
-  if (neorv32_wdt_get_cause() == 0) {
+  if (neorv32_wdt_get_cause() == WDT_RCAUSE_EXT) {
     neorv32_uart0_puts("External reset\n\n");
   }
+  else if (neorv32_wdt_get_cause() == WDT_RCAUSE_OCD) {
+    neorv32_uart0_puts("On-chip debugger reset\n\n");
+  }
+  else if (neorv32_wdt_get_cause() == WDT_RCAUSE_WDT) {
+    neorv32_uart0_puts("Watchdog reset\n\n");
+  }
   else {
-    neorv32_uart0_puts("Watchdog timeout\n\n");
+    neorv32_uart0_puts("Unknown\n\n");
   }
 
 
@@ -119,14 +125,19 @@ int main() {
     return -1;
   }
 
-  // setup watchdog: no lock, disable in debug mode, enable in sleep mode
+  // setup watchdog: no lock, disable in debug mode, enable in sleep mode, enable strict password check
   neorv32_uart0_puts("Starting WDT...\n");
-  neorv32_wdt_setup(timeout, 0, 0, 1);
+  neorv32_wdt_setup(timeout, 0, 0, 1, 1);
 
 
   // feed the watchdog
-  neorv32_uart0_puts("Resetting WDT...\n");
-  neorv32_wdt_feed(); // reset internal counter to zero
+  neorv32_uart0_puts("Resetting WDT 5 times...\n");
+  int i;
+  for (i=0; i<5; i++) {
+    neorv32_cpu_delay_ms(750);
+    neorv32_wdt_feed(); // reset internal counter to zero
+    neorv32_uart0_puts("WDT reset.\n");
+  }
 
 
   // go to sleep mode and wait for watchdog to kick in

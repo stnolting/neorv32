@@ -70,18 +70,20 @@ int neorv32_wdt_available(void) {
  * @param[in] lock Control register will be locked when 1 (until next reset).
  * @param[in] debug_en Allow watchdog to continue operation even when CPU is in debug mode.
  * @param[in] sleep_en Allow watchdog to continue operation even when CPU is in sleep mode.
+ * @param[in] strict Force hardware reset if reset password is incorrect.
  **************************************************************************/
-void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en) {
+void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en, int strict) {
 
   NEORV32_WDT->CTRL = 0; // reset and disable
 
-  uint32_t enable_int   = ((uint32_t)(1))                    << WDT_CTRL_EN;
-  uint32_t timeout_int  = ((uint32_t)(timeout  & 0xffffffU)) << WDT_CTRL_TIMEOUT_LSB;
-  uint32_t debug_en_int = ((uint32_t)(debug_en & 0x1U))      << WDT_CTRL_DBEN;
-  uint32_t sleep_en_int = ((uint32_t)(sleep_en & 0x1U))      << WDT_CTRL_SEN;
-
-  // update WDT control register
-  NEORV32_WDT->CTRL = enable_int | timeout_int | debug_en_int | sleep_en_int;
+  // update configuration
+  uint32_t ctrl = 0;
+  ctrl |= ((uint32_t)(1))                    << WDT_CTRL_EN;
+  ctrl |= ((uint32_t)(timeout  & 0xffffffU)) << WDT_CTRL_TIMEOUT_LSB;
+  ctrl |= ((uint32_t)(debug_en & 0x1U))      << WDT_CTRL_DBEN;
+  ctrl |= ((uint32_t)(sleep_en & 0x1U))      << WDT_CTRL_SEN;
+  ctrl |= ((uint32_t)(strict & 0x1U))        << WDT_CTRL_STRICT;
+  NEORV32_WDT->CTRL = ctrl;
 
   // lock configuration?
   if (lock) {
@@ -116,21 +118,20 @@ int neorv32_wdt_disable(void) {
  **************************************************************************/
 void neorv32_wdt_feed(void) {
 
-  NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_RESET);
+  NEORV32_WDT->RESET = (uint32_t)WDT_PASSWORD;
 }
 
 
 /**********************************************************************//**
  * Get cause of last system reset.
  *
- * @return Cause of last reset (0: system reset - OCD or external, 1: watchdog timeout).
+ * @return Cause of last reset (0: external reset, 1: OCD reset, 2: WDT reset).
  **************************************************************************/
 int neorv32_wdt_get_cause(void) {
 
-  if (NEORV32_WDT->CTRL & (1 << WDT_CTRL_RCAUSE)) { // reset caused by watchdog
-    return 1;
-  }
-  else { // reset caused by system (external or OCD)
-    return 0;
-  }
+  uint32_t tmp = NEORV32_WDT->CTRL;
+  tmp = tmp >> WDT_CTRL_RCAUSE_LO;
+  tmp = tmp & 3;
+
+  return tmp;
 }

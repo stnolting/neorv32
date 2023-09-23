@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 22.09.2023 | 1.8.9.3 | :lock: **watchdog**: add reset password and optional "strict" mode for increased safety; [#692](https://github.com/stnolting/neorv32/pull/692) |
 | 15.09.2023 | 1.8.9.2 | :warning: rework CFU CSRs; minor rtl edits; [#690](https://github.com/stnolting/neorv32/pull/690) |
 | 11.09.2023 | 1.8.9.1 | minor rtl edits and updates; [#684](https://github.com/stnolting/neorv32/pull/684) |
 | 09.09.2023 | [**:rocket:1.8.9**](https://github.com/stnolting/neorv32/releases/tag/v1.8.9) | **New release** |

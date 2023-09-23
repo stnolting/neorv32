@@ -232,7 +232,7 @@ are configured as "zero" and are read-only. Writing '1' to these bits/fields wil
 | 31  | `haltreq`      | -/w | set/clear hart halt request
 | 30  | `resumereq`    | -/w | request hart to resume
 | 28  | `ackhavereset` | -/w | write `1` to clear `*havereset` flags
-|  1  | `ndmreset`     | r/w | put whole processor into reset sate when `1`
+|  1  | `ndmreset`     | r/w | put whole system (except OCD) into reset state when `1`
 |  0  | `dmactive`     | r/w | DM enable; writing `0`-`1` will reset the DM
 |=======================
 

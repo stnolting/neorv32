@@ -1275,7 +1275,7 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x04</size>
+        <size>0x08</size>
         <usage>registers</usage>
       </addressBlock>
 
@@ -1306,20 +1306,33 @@
               <description>Allow WDT to continue operation even when in sleep mode</description>
             </field>
             <field>
-              <name>WDT_CTRL_RESET</name>
+              <name>WDT_CTRL_STRICT</name>
               <bitRange>[4:4]</bitRange>
-              <description>Reset WDT counter when set, auto-clears</description>
+              <description>Force hardware reset if reset password is incorrect or if write attempt to locked CTRL register</description>
             </field>
             <field>
               <name>WDT_CTRL_RCAUSE</name>
-              <bitRange>[5:5]</bitRange>
+              <bitRange>[6:5]</bitRange>
               <access>read-only</access>
-              <description>Cause of last system reset: 0=external reset, 1=watchdog</description>
+              <description>Cause of last system reset: 0=external reset, 1=OCD reset, 2=WDT reset</description>
             </field>
             <field>
               <name>WDT_CTRL_TIMEOUT</name>
               <bitRange>[31:8]</bitRange>
               <description>Timeout value</description>
+            </field>
+          </fields>
+        </register>
+
+        <register>
+          <name>RESET</name>
+          <description>Watchdog reset register</description>
+          <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>WDT_RESET</name>
+              <bitRange>[31:0]</bitRange>
+              <description>Write password to reset/feed the watchdog (0x709D1AB3)</description>
             </field>
           </fields>
         </register>
