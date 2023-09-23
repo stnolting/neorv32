@@ -69,15 +69,23 @@ enum NEORV32_WDT_CTRL_enum {
   WDT_CTRL_TIMEOUT_LSB =  8, /**< WDT control register(8)  (r/w): Timeout value, LSB */
   WDT_CTRL_TIMEOUT_MSB = 31  /**< WDT control register(31) (r/w): Timeout value, MSB */
 };
-
-/** Reset causes */
-#define WDT_RCAUSE_EXT (0b00) /**< Reset caused by external pin */
-#define WDT_RCAUSE_OCD (0b01) /**< Reset caused by on-chip debugger */
-#define WDT_RCAUSE_WDT (0b10) /**< Reset caused by watchdog timer */
-
-/** WDT control register bits */
-#define WDT_PASSWORD (0X709D1AB3)
 /**@}*/
+
+
+/**********************************************************************//**
+ * Reset Password
+ **************************************************************************/
+#define WDT_PASSWORD (0x709D1AB3)
+
+
+/**********************************************************************//**
+ * Reset Cause
+ **************************************************************************/
+enum NEORV32_WDT_RCAUSE_enum {
+  WDT_RCAUSE_EXT = 0b00, /**< Reset caused by external signal/pin */
+  WDT_RCAUSE_OCD = 0b01, /**< Reset caused by on-chip debugger */
+  WDT_RCAUSE_WDT = 0b10  /**< Reset caused by watchdog timer */
+};
 
 
 /**********************************************************************//**
