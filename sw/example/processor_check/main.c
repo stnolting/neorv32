@@ -84,6 +84,9 @@
 // Prototypes
 void sim_irq_trigger(uint32_t sel);
 void global_trap_handler(void);
+void vectored_irq_table(void) __attribute__((naked, aligned(128)));
+void vectored_global_handler(void) __attribute__((interrupt("machine")));
+void vectored_mei_handler(void) __attribute__((interrupt("machine")));
 void xirq_trap_handler0(void);
 void xirq_trap_handler1(void);
 void test_ok(void);
@@ -101,6 +104,8 @@ int cnt_ok   = 0;
 int cnt_test = 0;
 /// Global number of available HPMs
 uint32_t num_hpm_cnts_global = 0;
+/// Vectored MEI trap handler acknowledge
+volatile int vectored_mei_handler_ack = 0;
 /// XIRQ trap handler acknowledge
 uint32_t xirq_trap_handler_ack = 0;
 /// DMA source & destination data
@@ -1031,6 +1036,49 @@ int main() {
     else {
       test_fail();
     }
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test vectored interrupt via testbench external interrupt
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] Vectored IRQ (sim) ", cnt_test);
+
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
+    cnt_test++;
+
+    // back-up RTE
+    uint32_t mtvec_bak = neorv32_cpu_csr_read(CSR_MTVEC);
+
+    // install vector table and enable vector mode (mtvec[1:0] = 0b01)
+    neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)&vectored_irq_table | 0x1);
+
+    // enable interrupt
+    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MEIE);
+
+    // trigger IRQ
+    sim_irq_trigger(1 << CSR_MIE_MEIE);
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile ("nop");
+    asm volatile ("nop");
+
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+    sim_irq_trigger(0);
+
+    if (vectored_mei_handler_ack == 1) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    // restore RTE
+    neorv32_cpu_csr_write(CSR_MTVEC, mtvec_bak);
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
@@ -2117,6 +2165,61 @@ void global_trap_handler(void) {
 
   // hack: always come back in MACHINE MODE
   neorv32_cpu_csr_set(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
+}
+
+
+/**********************************************************************//**
+ * Vectored mtvec mode jump table.
+ **************************************************************************/
+void vectored_irq_table(void) {
+  asm volatile(
+    ".org  vectored_irq_table + 0*4  \n"
+    "jal   zero, %[glb]              \n" // 0
+    ".org  vectored_irq_table + 3*4  \n"
+    "jal   zero, %[glb]              \n" // 3
+    ".org  vectored_irq_table + 7*4  \n"
+    "jal   zero, %[glb]              \n" // 7
+    ".org  vectored_irq_table + 11*4 \n"
+    "jal   zero, %[mei]              \n" // 11
+    ".org  vectored_irq_table + 16*4 \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]              \n"
+    "jal   zero, %[glb]                "
+    : : [glb] "i" ((uint32_t)&vectored_global_handler), [mei] "i" ((uint32_t)&vectored_mei_handler)
+  );
+}
+
+
+/**********************************************************************//**
+ * Vectored trap handler for ALL exceptions/interrupts.
+ **************************************************************************/
+void vectored_global_handler(void) {
+
+  // Call the default trap handler, cannot be put into the vector table directly
+  // as all function in the table must have the gcc attribute "interrupt".
+  global_trap_handler();
+}
+
+
+/**********************************************************************//**
+ * Machine external interrupt handler.
+ **************************************************************************/
+void vectored_mei_handler(void) {
+
+  vectored_mei_handler_ack = 1; // successfully called
 }
 
 
