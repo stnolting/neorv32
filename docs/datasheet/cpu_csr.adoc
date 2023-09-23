@@ -288,7 +288,7 @@ interrupt is triggered or an exception is raised.
 [options="header",grid="rows"]
 |=======================
 | Bit  | R/W | Function
-| 1:0  | r/- | **MODE**: always zero; BASE defines entry for _all_ traps
+| 1:0  | r/- | **MODE**: always zero (= DIRECT mode); BASE defines entry for _all_ traps
 | 31:2 | r/w | **BASE**: 4-byte aligned base address of trap base handler
 |=======================
 
