@@ -19,7 +19,7 @@ not use the RTE at all in order to increase response time.
 ==== RTE Operation
 
 The RTE manages the trap-related CSRs of the CPU's privileged architecture (<<_machine_trap_handling_csrs>>).
-It initializes the <<_mtvec>> CSR, which provides the base entry point for all trap handlers. The address
+It initializes the <<_mtvec>> CSR in DIRECT mode, which then provides the base entry point for _all_ traps. The address
 stored to this register defines the address of the  **first-level trap handler**, which is provided by the
 NEORV32 RTE. Whenever an exception or interrupt is triggered this first-level trap handler is executed.
 
