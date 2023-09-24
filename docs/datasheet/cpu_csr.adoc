@@ -279,8 +279,7 @@ Machine-mode software can discover available `Z*` _sub-extensions_ (like `Zicsr`
 | Address     | `0x305`
 | Reset value | `0x00000000`
 | ISA         | `Zicsr`
-| Description | The `mtvec` CSR contain the address of the primary trap handler, which gets executed whenever an
-interrupt is triggered or an exception is raised.
+| Description | The `mtvec` CSR holds the trap vector configuration.
 |=======================
 
 .`mtvec` CSR bits
@@ -288,10 +287,13 @@ interrupt is triggered or an exception is raised.
 [options="header",grid="rows"]
 |=======================
 | Bit  | R/W | Function
-| 1:0  | r/- | **MODE**: always zero (= DIRECT mode); BASE defines entry for _all_ traps
-| 31:2 | r/w | **BASE**: 4-byte aligned base address of trap base handler
+| 1:0  | r/w | **MODE**: mode configuration, `00` = DIRECT, `01` = VECTORED. (Others will fall back to DIRECT mode.)
+| 31:2 | r/w | **BASE**: in DIRECT mode = 4-byte aligned base address of trap base handler, _all_ traps set `pc` = `BASE`; in VECTORED mode = 128-byte aligned base address of trap vector table, interrupts cause a jump to `pc` = `BASE` + 4 * `mcause` and exceptions to `pc` = `BASE`.
 |=======================
 
+.Interrupt Latency
+[TIP]
+The vectored `mtvec` mode is useful for reducing the time between interrupt request (IRQ) and servicing it (ISR). As software does not need to determine the interrupt cause the reduction in latency can be 5 to 10 times and as low as _26_ cycles.
 
 {empty} +
 [discrete]
