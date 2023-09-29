@@ -164,6 +164,9 @@ begin
   -- Device Request Switch ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   x_req_o.addr <= a_req_i.addr when (arbiter.host_sel = '0') else b_req_i.addr;
+  x_req_o.rvso <= a_req_i.rvso when (arbiter.host_sel = '0') else b_req_i.rvso;
+  x_req_o.priv <= a_req_i.priv when (arbiter.host_sel = '0') else b_req_i.priv;
+  x_req_o.src  <= a_req_i.src  when (arbiter.host_sel = '0') else b_req_i.src;
 
   x_req_o.data <= b_req_i.data when (PORT_A_READ_ONLY = true) else
                   a_req_i.data when (PORT_B_READ_ONLY = true) else
@@ -172,10 +175,6 @@ begin
   x_req_o.ben  <= b_req_i.ben when (PORT_A_READ_ONLY = true) else
                   a_req_i.ben when (PORT_B_READ_ONLY = true) else
                   a_req_i.ben when (arbiter.host_sel = '0')  else b_req_i.ben;
-
-  x_req_o.rvso <= a_req_i.rvso when (arbiter.host_sel = '0') else b_req_i.rvso;
-  x_req_o.priv <= a_req_i.priv when (arbiter.host_sel = '0') else b_req_i.priv;
-  x_req_o.src  <= a_req_i.src  when (arbiter.host_sel = '0') else b_req_i.src;
 
   x_bus_we     <= a_req_i.we when (arbiter.host_sel = '0') else b_req_i.we;
   x_bus_re     <= a_req_i.re when (arbiter.host_sel = '0') else b_req_i.re;
@@ -210,15 +209,14 @@ end neorv32_bus_switch_rtl;
 -- # << NEORV32 - Processor Bus Infrastructure: Section Gateway >>                                 #
 -- # ********************************************************************************************* #
 -- # Bus gateway to distribute the core's access to the processor's main memory sections:          #
--- # -> IMEM - internal instruction memory [optional], {rwx}                                       #
--- # -> DMEM - internal data memory [optional], {rwx}                                              #
--- # -> XIP  - memory-mapped XIP flash [optional], {r-x}                                           #
--- # -> BOOT - internal bootloader ROM [optional], {r-x}                                           #
--- # -> IO   - internal IO devices [mandatory], {rw-}                                              #
+-- # -> IMEM - internal instruction memory [optional]                                              #
+-- # -> DMEM - internal data memory [optional]                                                     #
+-- # -> XIP  - memory-mapped XIP flash [optional]                                                  #
+-- # -> BOOT - internal bootloader ROM [optional]                                                  #
+-- # -> IO   - internal IO devices [mandatory]                                                     #
 -- # All accesses that do not match any of these sections are redirected to the "external" port.   #
 -- # The gateway-internal bus monitor ensures that all processor-internal accesses are completed   #
 -- # within a fixed time window.                                                                   #
--- # This module also enforces the region's PMAs (physical memory attributes).                     #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -349,7 +347,7 @@ begin
                                    (EXT_ENABLE = true) else '0';
 
 
-  -- Bus Request (also enforce PMAs here) ---------------------------------------------------
+  -- Bus Request ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   request: process(main_req_i, port_sel)
   begin
@@ -372,12 +370,12 @@ begin
     end if;
     if (XIP_ENABLE = true) then
       xip_req_o    <= main_req_i;
-      xip_req_o.we <= '0'; -- PMA: read-only
+      xip_req_o.we <= main_req_i.we and port_sel(port_xip_c);
       xip_req_o.re <= main_req_i.re and port_sel(port_xip_c);
     end if;
     if (BOOT_ENABLE = true) then
       boot_req_o    <= main_req_i;
-      boot_req_o.we <= '0'; -- PMA: read-only
+      boot_req_o.we <= main_req_i.we and port_sel(port_boot_c);
       boot_req_o.re <= main_req_i.re and port_sel(port_boot_c);
     end if;
     if (IO_ENABLE = true) then
@@ -835,7 +833,7 @@ begin
             rsvs.state <= "00";
           end if;
 
-        when others => -- "0-" no active reservation: wait for for new registration request
+        when others => -- "0-" no active reservation: wait for new registration request
         -- --------------------------------------------------------------------
           if (core_req_i.re = '1') and (core_req_i.rvso = '1') then -- load-reservate instruction
             rsvs.addr  <= core_req_i.addr(31 downto abb_c);
