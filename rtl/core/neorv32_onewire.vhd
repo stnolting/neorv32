@@ -327,8 +327,8 @@ begin
 
         when others => -- "0--" OFFLINE: deactivated, reset externally-readable signals
         -- ------------------------------------------------------------
-          serial.sreg     <= (others => '0');
-          serial.presence <= '0';
+          serial.sreg              <= (others => '0');
+          serial.presence          <= '0';
           serial.state(1 downto 0) <= "00"; -- stay here, go to IDLE when module is enabled
 
       end case;

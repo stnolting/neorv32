@@ -55,7 +55,6 @@ end neorv32_gpio;
 
 architecture neorv32_gpio_rtl of neorv32_gpio is
 
-  -- accessible regs --
   signal din, din_rd, dout, dout_rd : std_ulogic_vector(63 downto 0);
 
 begin
@@ -84,9 +83,7 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack <= bus_req_i.we or bus_req_i.re;
-      -- read data --
+      bus_rsp_o.ack  <= bus_req_i.we or bus_req_i.re;
       bus_rsp_o.data <= (others => '0');
       if (bus_req_i.re = '1') then
         case bus_req_i.addr(3 downto 2) is
@@ -116,9 +113,16 @@ begin
     end loop;
   end process pin_mapping;
 
-  -- IO --
+  -- output --
   gpio_o <= dout_rd;
-  din    <= gpio_i when rising_edge(clk_i); -- sample buffer to prevent metastability
+
+  -- synchronize input --
+  input_sync: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      din <= gpio_i; -- to prevent metastability
+    end if;
+  end process input_sync;
 
 
 end neorv32_gpio_rtl;

@@ -175,9 +175,13 @@ begin
 
   -- Timeout Counter ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  wdt_counter: process(clk_i)
+  wdt_counter: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      cnt_inc_ff  <= '0';
+      cnt_started <= '0';
+      cnt         <= (others => '0');
+    elsif rising_edge(clk_i) then
       cnt_inc_ff  <= cnt_inc;
       cnt_started <= ctrl.enable and (cnt_started or prsc_tick); -- start with next clock tick
       if (ctrl.enable = '0') or (reset_wdt = '1') then -- watchdog disabled or reset with correct password
