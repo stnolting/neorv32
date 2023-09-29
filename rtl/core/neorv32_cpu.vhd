@@ -122,7 +122,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal alu_cmp     : std_ulogic_vector(1 downto 0); -- comparator result
   signal mem_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- memory read data
   signal cp_done     : std_ulogic; -- ALU co-processor operation done
-  signal bus_d_wait  : std_ulogic; -- wait for current data bus access
+  signal lsu_wait    : std_ulogic; -- wait for current data bus access
   signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
   signal mar         : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
   signal ma_load     : std_ulogic; -- misaligned load data address
@@ -230,7 +230,7 @@ begin
     i_pmp_fault_i => pmp_i_fault,     -- instruction fetch pmp fault
     -- status input --
     alu_cp_done_i => cp_done,         -- ALU iterative operation done
-    bus_d_wait_i  => bus_d_wait,      -- wait for bus
+    bus_d_wait_i  => lsu_wait,        -- wait for data bus
     -- data input --
     cmp_i         => alu_cmp,         -- comparator status
     alu_add_i     => alu_add,         -- ALU address result
@@ -363,7 +363,7 @@ begin
     wdata_i       => rs2,             -- write data
     rdata_o       => mem_rdata,       -- read data
     mar_o         => mar,             -- memory address register
-    d_wait_o      => bus_d_wait,      -- wait for access to complete
+    wait_o        => lsu_wait,        -- wait for access to complete
     ma_load_o     => ma_load,         -- misaligned load data address
     ma_store_o    => ma_store,        -- misaligned store data address
     be_load_o     => be_load,         -- bus error on load data access
@@ -371,20 +371,9 @@ begin
     pmp_r_fault_i => pmp_r_fault,     -- PMP read fault
     pmp_w_fault_i => pmp_w_fault,     -- PMP write fault
     -- data bus --
-    d_bus_addr_o  => dbus_req_o.addr, -- bus access address
-    d_bus_rdata_i => dbus_rsp_i.data, -- bus read data
-    d_bus_wdata_o => dbus_req_o.data, -- bus write data
-    d_bus_ben_o   => dbus_req_o.ben,  -- byte enable
-    d_bus_we_o    => dbus_req_o.we,   -- write enable
-    d_bus_re_o    => dbus_req_o.re,   -- read enable
-    d_bus_ack_i   => dbus_rsp_i.ack,  -- bus transfer acknowledge
-    d_bus_err_i   => dbus_rsp_i.err   -- bus transfer error
+    bus_req_o     => dbus_req_o,      -- request
+    bus_rsp_i     => dbus_rsp_i       -- response
   );
-
-  -- data access interface --
-  dbus_req_o.priv <= ctrl.lsu_priv;
-  dbus_req_o.src  <= '0'; -- source = data access
-  dbus_req_o.rvso <= ctrl.lsu_rvso when (CPU_EXTENSION_RISCV_A = true) else '0'; -- is LR/SC reservation set operation
 
 
   -- Physical Memory Protection -------------------------------------------------------------

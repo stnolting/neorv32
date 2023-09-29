@@ -59,7 +59,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080904"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080905"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -534,7 +534,6 @@ package neorv32_package is
     lsu_fence    : std_ulogic;                     -- fence operation
     lsu_fencei   : std_ulogic;                     -- fence.i operation
     lsu_priv     : std_ulogic;                     -- effective privilege level for load/store
-    lsu_rvso     : std_ulogic;                     -- reservation set operation (atomic LR/SC)
     -- instruction word --
     ir_funct3    : std_ulogic_vector(02 downto 0); -- funct3 bit field
     ir_funct12   : std_ulogic_vector(11 downto 0); -- funct12 bit field
@@ -566,7 +565,6 @@ package neorv32_package is
     lsu_fence    => '0',
     lsu_fencei   => '0',
     lsu_priv     => '0',
-    lsu_rvso     => '0',
     ir_funct3    => (others => '0'),
     ir_funct12   => (others => '0'),
     ir_opcode    => (others => '0'),
