@@ -33,7 +33,8 @@
   <!-- Peripherals -->
   <peripherals>
 
-    <!-- CFS -->
+    <!-- CFS ------------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>CFS</name>
       <description>Custom functions subsystem</description>
@@ -116,7 +117,8 @@
       </registers>
     </peripheral>
 
-    <!-- SDI -->
+    <!-- SDI ------------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>SDI</name>
       <description>Serial data interface controller</description>
@@ -212,7 +214,8 @@
       </registers>
     </peripheral>
 
-    <!-- SLINK -->
+    <!-- SLINK ----------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>SLINK</name>
       <description>Stream Link Interface</description>
@@ -248,7 +251,6 @@
               <bitRange>[2:2]</bitRange>
               <description>Clear TX FIFO (auto-clears)</description>
             </field>
-
             <field>
               <name>SLINK_CTRL_RX_EMPTY</name>
               <bitRange>[8:8]</bitRange>
@@ -285,7 +287,6 @@
               <access>read-only</access>
               <description>TX FIFO full</description>
             </field>
-
             <field>
               <name>SLINK_CTRL_IRQ_RX_NEMPTY</name>
               <bitRange>[16:16]</bitRange>
@@ -316,7 +317,6 @@
               <bitRange>[21:21]</bitRange>
               <description>IRQ if TX FIFO not full</description>
             </field>
-
             <field>
               <name>SLINK_CTRL_RX_FIFO</name>
               <bitRange>[27:24]</bitRange>
@@ -339,7 +339,8 @@
       </registers>
     </peripheral>
 
-    <!-- DMA -->
+    <!-- DMA ------------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>DMA</name>
       <description>Direct memory access controller</description>
@@ -366,9 +367,9 @@
               <description>DMA enable flag</description>
             </field>
             <field>
-              <name>DMA_CTRL_ATUO</name>
+              <name>DMA_CTRL_AUTO</name>
               <bitRange>[1:1]</bitRange>
-              <description>Enable automatic mode (FIRQ-triggered)</description>
+              <description>Enable automatic transfer trigger (FIRQ-triggered)</description>
             </field>
             <field>
               <name>DMA_CTRL_ERROR_RD</name>
@@ -440,7 +441,8 @@
       </registers>
     </peripheral>
 
-    <!-- CRC -->
+    <!-- CRC ------------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>CRC</name>
       <description>Cyclic redundancy check unit</description>
@@ -477,7 +479,8 @@
       </registers>
     </peripheral>
 
-    <!-- PWM -->
+    <!-- PWM ------------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>PWM</name>
       <description>Pulse-width modulation controller</description>
@@ -526,7 +529,8 @@
       </registers>
     </peripheral>
 
-    <!-- XIP -->
+    <!-- XIP ------------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>XIP</name>
       <description>Execute In Place Module</description>
@@ -627,7 +631,8 @@
       </registers>
     </peripheral>
 
-    <!-- GPTMR -->
+    <!-- GPTMR ----------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>GPTMR</name>
       <description>General purpose timer</description>
@@ -678,7 +683,8 @@
       </registers>
     </peripheral>
 
-    <!-- ONEWIRE -->
+    <!-- ONEWIRE --------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>ONEWIRE</name>
       <description>1-Wire Interface Controller</description>
@@ -764,8 +770,8 @@
       </registers>
     </peripheral>
 
-
-    <!-- XIRQ -->
+    <!-- XIRQ ------------------------------------------------------------------------------------>
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>XIRQ</name>
       <description>External interrupts controller</description>
@@ -799,7 +805,8 @@
       </registers>
     </peripheral>
 
-    <!-- MTIME -->
+    <!-- MTIME ----------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>MTIME</name>
       <description>Machine timer</description>
@@ -836,7 +843,8 @@
       </registers>
     </peripheral>
 
-    <!-- UART0 -->
+    <!-- UART0 ----------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>UART0</name>
       <description>Primary universal asynchronous receiver and transmitter</description>
@@ -966,7 +974,8 @@
       </registers>
     </peripheral>
 
-    <!-- UART1 -->
+    <!-- UART1 ----------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral derivedFrom="UART0">
       <name>UART1</name>
       <description>Secondary universal asynchronous receiver and transmitter</description>
@@ -983,7 +992,8 @@
       </addressBlock>
     </peripheral>
 
-    <!-- SPI -->
+    <!-- SPI ------------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>SPI</name>
       <description>Serial peripheral interface controller</description>
@@ -1100,7 +1110,8 @@
       </registers>
     </peripheral>
 
-    <!-- TWI -->
+    <!-- TWI ------------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>TWI</name>
       <description>Two-wire interface controller</description>
@@ -1191,7 +1202,8 @@
       </registers>
     </peripheral>
 
-    <!-- TRNG -->
+    <!-- TRNG ------------------------------------------------------------------------------------>
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>TRNG</name>
       <description>True random number generator</description>
@@ -1264,7 +1276,8 @@
       </registers>
     </peripheral>
 
-    <!-- WDT -->
+    <!-- WDT ------------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>WDT</name>
       <description>Watchdog timer</description>
@@ -1339,7 +1352,8 @@
       </registers>
     </peripheral>
 
-    <!-- GPIO -->
+    <!-- GPIO ------------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>GPIO</name>
       <description>General purpose input/output port</description>
@@ -1378,7 +1392,8 @@
       </registers>
     </peripheral>
 
-    <!-- NEOLED -->
+    <!-- NEOLED ---------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>NEOLED</name>
       <description>Smart LED hardware interface</description>
@@ -1479,7 +1494,8 @@
       </registers>
     </peripheral>
 
-    <!-- SYSINFO -->
+    <!-- SYSINFO --------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------------------------->
     <peripheral>
       <name>SYSINFO</name>
       <description>System configuration information memory</description>
