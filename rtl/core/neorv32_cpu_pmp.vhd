@@ -58,9 +58,9 @@ entity neorv32_cpu_pmp is
     addr_if_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- instruction fetch address
     addr_ls_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- load/store address
     -- faults --
-    fault_if_o  : out std_ulogic; -- instruction fetch fault
-    fault_ld_o  : out std_ulogic; -- data load fault
-    fault_st_o  : out std_ulogic  -- data store fault
+    fault_ex_o  : out std_ulogic; -- instruction fetch fault
+    fault_rd_o  : out std_ulogic; -- data load fault
+    fault_wr_o  : out std_ulogic  -- data store fault
   );
 end neorv32_cpu_pmp;
 
@@ -119,11 +119,9 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
     i_match  : std_ulogic_vector(NUM_REGIONS-1 downto 0);
     d_match  : std_ulogic_vector(NUM_REGIONS-1 downto 0);
     perm_ex  : std_ulogic_vector(NUM_REGIONS-1 downto 0);
-    perm_rd  : std_ulogic_vector(NUM_REGIONS-1 downto 0);
-    perm_wr  : std_ulogic_vector(NUM_REGIONS-1 downto 0);
+    perm_rw  : std_ulogic_vector(NUM_REGIONS-1 downto 0);
     fail_ex  : std_ulogic_vector(NUM_REGIONS   downto 0);
-    fail_rd  : std_ulogic_vector(NUM_REGIONS   downto 0);
-    fail_wr  : std_ulogic_vector(NUM_REGIONS   downto 0);
+    fail_rw  : std_ulogic_vector(NUM_REGIONS   downto 0);
   end record;
   signal check : check_t;
 
@@ -321,25 +319,43 @@ begin
     end process match_check;
 
 
-    -- generate permission bits --
-    -- M mode: always allow if lock bit not set, otherwise check permission
-    check.perm_ex(r) <= csr.cfg(r)(cfg_x_c) or (not csr.cfg(r)(cfg_l_c)) when (ctrl_i.cpu_priv = priv_mode_m_c) else csr.cfg(r)(cfg_x_c);
-    check.perm_rd(r) <= csr.cfg(r)(cfg_r_c) or (not csr.cfg(r)(cfg_l_c)) when (ctrl_i.lsu_priv = priv_mode_m_c) else csr.cfg(r)(cfg_r_c);
-    check.perm_wr(r) <= csr.cfg(r)(cfg_w_c) or (not csr.cfg(r)(cfg_l_c)) when (ctrl_i.lsu_priv = priv_mode_m_c) else csr.cfg(r)(cfg_w_c);
+    -- compute region permission --
+    perm_check: process(csr.cfg, ctrl_i)
+    begin
+      -- execute (X) --
+      if (ctrl_i.cpu_priv = priv_mode_m_c) then -- M mode: always allow if lock bit
+        check.perm_ex(r) <= csr.cfg(r)(cfg_x_c) or (not csr.cfg(r)(cfg_l_c));
+      else -- U mode: check actual permission
+        check.perm_ex(r) <= csr.cfg(r)(cfg_x_c);
+      end if;
+      -- read (R) --
+      if (ctrl_i.lsu_rw = '0') then
+        if (ctrl_i.lsu_priv = priv_mode_m_c) then -- M mode: always allow if lock bit
+          check.perm_rw(r) <= csr.cfg(r)(cfg_r_c) or (not csr.cfg(r)(cfg_l_c));
+        else -- U mode: check actual permission
+          check.perm_rw(r) <= csr.cfg(r)(cfg_r_c);
+        end if;
+      -- write (W) --
+      else
+        if (ctrl_i.lsu_priv = priv_mode_m_c) then -- M mode: always allow if lock bit
+          check.perm_rw(r) <= csr.cfg(r)(cfg_w_c) or (not csr.cfg(r)(cfg_l_c));
+        else -- U mode: check actual permission
+          check.perm_rw(r) <= csr.cfg(r)(cfg_w_c);
+        end if;
+      end if;
+    end process perm_check;
 
   end generate;
 
 
   -- check for access fault (using static prioritization) --
-  check.fail_ex(NUM_REGIONS) <= '1' when (ctrl_i.cpu_priv /= priv_mode_m_c) else '0'; -- default: fault if not M-mode
-  check.fail_rd(NUM_REGIONS) <= '1' when (ctrl_i.lsu_priv /= priv_mode_m_c) else '0'; -- default: fault if not M-mode
-  check.fail_wr(NUM_REGIONS) <= '1' when (ctrl_i.lsu_priv /= priv_mode_m_c) else '0'; -- default: fault if not M-mode
+  check.fail_ex(NUM_REGIONS) <= '1' when (ctrl_i.cpu_priv /= priv_mode_m_c) else '0'; -- default (if not match): fault if not M-mode
+  check.fail_rw(NUM_REGIONS) <= '1' when (ctrl_i.lsu_priv /= priv_mode_m_c) else '0'; -- default (if not match): fault if not M-mode
   -- this is a *structural* description of a prioritization logic implemented as a multiplexer chain --
   fault_check_gen:
   for r in NUM_REGIONS-1 downto 0 generate -- start with lowest priority
     check.fail_ex(r) <= not check.perm_ex(r) when (check.i_match(r) = '1') else check.fail_ex(r+1);
-    check.fail_rd(r) <= not check.perm_rd(r) when (check.d_match(r) = '1') else check.fail_rd(r+1);
-    check.fail_wr(r) <= not check.perm_wr(r) when (check.d_match(r) = '1') else check.fail_wr(r+1);
+    check.fail_rw(r) <= not check.perm_rw(r) when (check.d_match(r) = '1') else check.fail_rw(r+1);
   end generate;
 
 
@@ -347,13 +363,13 @@ begin
   fault_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      fault_if_o <= '0';
-      fault_ld_o <= '0';
-      fault_st_o <= '0';
+      fault_ex_o <= '0';
+      fault_rd_o <= '0';
+      fault_wr_o <= '0';
     elsif rising_edge(clk_i) then
-      fault_if_o <= (not ctrl_i.cpu_debug) and check.fail_ex(0);
-      fault_ld_o <= (not ctrl_i.cpu_debug) and check.fail_rd(0);
-      fault_st_o <= (not ctrl_i.cpu_debug) and check.fail_wr(0);
+      fault_ex_o <= (not ctrl_i.cpu_debug) and check.fail_ex(0);
+      fault_rd_o <= (not ctrl_i.cpu_debug) and check.fail_rw(0) and (not ctrl_i.lsu_rw);
+      fault_wr_o <= (not ctrl_i.cpu_debug) and check.fail_rw(0) and (    ctrl_i.lsu_rw);
     end if;
   end process fault_reg;
 

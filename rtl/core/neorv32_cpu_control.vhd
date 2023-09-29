@@ -790,7 +790,7 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, issue_engine, csr, alu_cp_done_i, lsu_wait_i)
+  execute_engine_fsm_comb: process(ctrl, execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, issue_engine, csr, alu_cp_done_i, lsu_wait_i)
   begin
     -- arbiter defaults --
     execute_engine.state_nxt    <= execute_engine.state;
@@ -842,6 +842,13 @@ begin
       when others =>
         ctrl_nxt.alu_opb_mux <= '0';
     end case;
+
+    -- memory read/write access --
+    if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2)) then -- lr/sc
+      ctrl_nxt.lsu_rw <= execute_engine.ir(instr_funct7_lsb_c+2);
+    else -- normal load/store
+      ctrl_nxt.lsu_rw <= execute_engine.ir(5);
+    end if;
 
 
     -- state machine --
@@ -979,7 +986,7 @@ begin
       when ALU_WAIT => -- wait for multi-cycle ALU co-processor operation to finish/trap
       -- ------------------------------------------------------------
         ctrl_nxt.alu_op <= alu_op_cp_c;
-        if (alu_cp_done_i = '1') or (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then
+        if (alu_cp_done_i = '1') or (trap_ctrl.exc_buf(exc_illegal_c) = '1') then
           ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back (won't happen in case of an illegal instruction)
           execute_engine.state_nxt <= DISPATCH;
         end if;
@@ -987,7 +994,7 @@ begin
 
       when FENCE => -- memory fence
       -- ------------------------------------------------------------
-        if (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then -- abort if illegal instruction
+        if (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- abort if illegal instruction
           execute_engine.state_nxt <= DISPATCH;
         elsif (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then
           ctrl_nxt.lsu_fencei      <= '1'; -- instruction fence
@@ -1005,7 +1012,7 @@ begin
         ctrl_nxt.rf_mux           <= rf_mux_npc_c; -- return address = next PC
         ctrl_nxt.rf_wb_en         <= execute_engine.ir(instr_opcode_lsb_c+2); -- save return address if link operation
         execute_engine.pc_mux_sel <= '1'; -- PC <= alu.add = branch/jump destination
-        if (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- update only if not illegal instruction
+        if (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- update only if not illegal instruction
           execute_engine.pc_we <= '1'; -- update PC with branch DST; will be overridden in DISPATCH if branch not taken
         end if;
         if (execute_engine.ir(instr_opcode_lsb_c+2) = '1') or (execute_engine.branch_taken = '1') then -- JAL[R] or taken branch
@@ -1028,15 +1035,13 @@ begin
 
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
-        if (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then -- abort if illegal instruction
+        if (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- abort if illegal instruction
           execute_engine.state_nxt <= DISPATCH;
         else
-          if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2)) then -- atomic operation
-            ctrl_nxt.lsu_req_rd <=  not execute_engine.ir(instr_funct7_lsb_c+2); -- LR.W
-            ctrl_nxt.lsu_req_wr <=      execute_engine.ir(instr_funct7_lsb_c+2); -- SC.W
-          else -- normal load/store
-            ctrl_nxt.lsu_req_rd <= not execute_engine.ir(5); -- load
-            ctrl_nxt.lsu_req_wr <=     execute_engine.ir(5); -- store
+          if (ctrl.lsu_rw = '1') then
+            ctrl_nxt.lsu_req_wr <= '1'; -- write
+          else
+            ctrl_nxt.lsu_req_rd <= '1'; -- read
           end if;
           execute_engine.state_nxt <= MEM_WAIT;
         end if;
@@ -1068,7 +1073,7 @@ begin
         execute_engine.state_nxt <= DISPATCH; -- default
         ctrl_nxt.rf_mux          <= rf_mux_csr_c; -- CSR read data
         if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and -- ENVIRONMENT
-           (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- and NOT already identified as illegal instruction
+           (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- and NOT already identified as illegal instruction
           case execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c) is
             when funct12_ecall_c                 => trap_ctrl.env_call       <= '1'; -- ecall
             when funct12_ebreak_c                => trap_ctrl.break_point    <= '1'; -- ebreak
@@ -1092,7 +1097,7 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- register file --
-  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- no write if illegal instruction
+  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and (not trap_ctrl.exc_buf(exc_illegal_c)); -- no write if illegal instruction
   ctrl_o.rf_rs1       <= execute_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c);
   ctrl_o.rf_rs2       <= execute_engine.ir(instr_rs2_msb_c downto instr_rs2_lsb_c);
   ctrl_o.rf_rs3       <= execute_engine.ir(instr_rs3_msb_c downto instr_rs3_lsb_c);
@@ -1110,6 +1115,7 @@ begin
   -- data bus interface --
   ctrl_o.lsu_req_rd   <= ctrl.lsu_req_rd;
   ctrl_o.lsu_req_wr   <= ctrl.lsu_req_wr;
+  ctrl_o.lsu_rw       <= ctrl.lsu_rw;
   ctrl_o.lsu_mo_we    <= '1' when (execute_engine.state = MEM_REQ) else '0'; -- write memory output registers (data & address)
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   ctrl_o.lsu_fencei   <= ctrl.lsu_fencei;
@@ -1343,7 +1349,7 @@ begin
           if (decode_aux.rs1_zero = '1') and (decode_aux.rd_zero = '1') then
             case execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c) is
               when funct12_ecall_c | funct12_ebreak_c => illegal_cmd <= '0'; -- ECALL, EBREAK
-              when funct12_mret_c                     => illegal_cmd <= not csr.privilege; -- MRET allowed in M-mode only
+              when funct12_mret_c                     => illegal_cmd <= (not csr.privilege) or debug_ctrl.running; -- MRET allowed in M-mode only
               when funct12_dret_c                     => illegal_cmd <= not debug_ctrl.running; -- DRET allowed in debug mode only
               when funct12_wfi_c                      => illegal_cmd <= (not csr.privilege) and csr.mstatus_tw; -- WFI allowed in M-mode or if TW is zero
               when others => illegal_cmd <= '1';
@@ -1413,8 +1419,8 @@ begin
       trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_enter);
 
       -- illegal instruction & environment call --
-      trap_ctrl.exc_buf(exc_ecall_c)    <= (trap_ctrl.exc_buf(exc_ecall_c)    or trap_ctrl.env_call) and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_iillegal_c) <= (trap_ctrl.exc_buf(exc_iillegal_c) or trap_ctrl.instr_il) and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_ecall_c)   <= (trap_ctrl.exc_buf(exc_ecall_c)   or trap_ctrl.env_call) and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_illegal_c) <= (trap_ctrl.exc_buf(exc_illegal_c) or trap_ctrl.instr_il) and (not trap_ctrl.env_enter);
 
       -- break point --
       if (CPU_EXTENSION_RISCV_Sdext = true) then
@@ -1494,7 +1500,7 @@ begin
       -- standard RISC-V exceptions --
       if    (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c;  -- instruction address misaligned
       elsif (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c;  -- instruction access fault
-      elsif (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then trap_ctrl.cause <= trap_iil_c;  -- illegal instruction
+      elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c;  -- illegal instruction
       elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & csr.privilege & csr.privilege; -- environment call (U/M)
       elsif (trap_ctrl.exc_buf(exc_ebreak_c)   = '1') then trap_ctrl.cause <= trap_brk_c;  -- breakpoint
       elsif (trap_ctrl.exc_buf(exc_salign_c)   = '1') then trap_ctrl.cause <= trap_sma_c;  -- store address misaligned
@@ -1652,7 +1658,7 @@ begin
     elsif rising_edge(clk_i) then
 
       -- defaults --
-      csr.we            <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_iillegal_c)); -- write if not an illegal instruction
+      csr.we            <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_illegal_c)); -- write if not an illegal instruction
       csr.mip_firq_nclr <= (others => '1'); -- inactive FIRQ clear (active low)
 
       -- ********************************************************************************
