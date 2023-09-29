@@ -189,7 +189,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
   -- make sure reset state is the first item in the list (discussion #415)
-  type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, SLEEP,
+  type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_EXIT, TRAP_EXECUTE, FENCE, SLEEP,
                                   EXECUTE, ALU_WAIT, BRANCH, BRANCHED, SYSTEM, MEM_REQ, MEM_WAIT);
   type execute_engine_t is record
     state        : execute_engine_state_t;
@@ -329,15 +329,12 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal cnt_event : std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
 
   -- debug mode controller --
-  type debug_ctrl_state_t is (DEBUG_OFFLINE, DEBUG_ONLINE, DEBUG_LEAVING);
   type debug_ctrl_t is record
-    state        : debug_ctrl_state_t;
     running      : std_ulogic; -- CPU is in debug mode
     trig_hw      : std_ulogic; -- hardware trigger
     trig_break   : std_ulogic; -- ebreak instruction trigger
     trig_halt    : std_ulogic; -- external request trigger
     trig_step    : std_ulogic; -- single-stepping mode trigger
-    dret         : std_ulogic; -- executed DRET instruction
     ext_halt_req : std_ulogic; -- external halt request buffer
   end record;
   signal debug_ctrl : debug_ctrl_t;
@@ -806,7 +803,6 @@ begin
     trap_ctrl.instr_ma          <= '0';
     trap_ctrl.env_call          <= '0';
     trap_ctrl.break_point       <= '0';
-    debug_ctrl.dret             <= '0';
     --
     csr.we_nxt                  <= '0';
     csr.re_nxt                  <= '0';
@@ -861,7 +857,7 @@ begin
         end if;
 
 
-      when TRAP_ENTER => -- Start trap environment and get trap vector
+      when TRAP_ENTER => -- Enter trap environment and get trap vector
       -- ------------------------------------------------------------
         if (trap_ctrl.env_pending = '1') then
           trap_ctrl.env_enter      <= '1';
@@ -873,7 +869,7 @@ begin
         trap_ctrl.env_exit       <= '1';
         execute_engine.state_nxt <= TRAP_EXECUTE;
 
-      when TRAP_EXECUTE => -- Process trap environment
+      when TRAP_EXECUTE => -- Process trap enter/exit (update PC)
       -- ------------------------------------------------------------
         execute_engine.pc_mux_sel <= '0'; -- next_pc
         fetch_engine.reset        <= '1';
@@ -884,8 +880,7 @@ begin
       when EXECUTE => -- Decode and execute instruction (control has to be here for exactly 1 cycle in any case!)
       -- [NOTE] register file is read in this stage; due to the sync read, data will be available in the _next_ state
       -- ------------------------------------------------------------
-        -- clear branch flipflop --
-        execute_engine.branched_nxt <= '0';
+        execute_engine.branched_nxt <= '0'; -- clear branch flipflop
 
         -- decode instruction class --
         case decode_aux.opcode is
@@ -954,25 +949,17 @@ begin
 
           when opcode_fence_c => -- fence operations
           -- ------------------------------------------------------------
-            if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then
-              ctrl_nxt.lsu_fencei      <= '1'; -- fence.i
-              execute_engine.state_nxt <= TRAP_EXECUTE; -- used to flush IPB
-            else
-              if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then
-                ctrl_nxt.lsu_fence <= '1'; -- fence
-              end if;
-              execute_engine.state_nxt <= DISPATCH;
-            end if;
+            execute_engine.state_nxt <= FENCE;
 
           when opcode_fop_c => -- FPU: floating-point operations
           -- ------------------------------------------------------------
             ctrl_nxt.alu_cp_trig(cp_sel_fpu_c) <= '1'; -- trigger FPU CP
-            execute_engine.state_nxt <= ALU_WAIT; -- will be aborted via monitor exception if FPU not implemented
+            execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if FPU not implemented
 
           when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => -- CFU: custom RISC-V instructions
           -- ------------------------------------------------------------
             ctrl_nxt.alu_cp_trig(cp_sel_cfu_c) <= '1'; -- trigger CFU CP
-            execute_engine.state_nxt <= ALU_WAIT; -- will be aborted via monitor exception if CFU not implemented
+            execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if CFU not implemented
 
           when others => -- environment/CSR operation or ILLEGAL opcode
           -- ------------------------------------------------------------
@@ -987,6 +974,21 @@ begin
         ctrl_nxt.alu_op <= alu_op_cp_c;
         if (alu_cp_done_i = '1') or (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then
           ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back (won't happen in case of an illegal instruction)
+          execute_engine.state_nxt <= DISPATCH;
+        end if;
+
+
+      when FENCE => -- memory fence
+      -- ------------------------------------------------------------
+        if (trap_ctrl.exc_buf(exc_iillegal_c) = '1') then -- abort if illegal instruction
+          execute_engine.state_nxt <= DISPATCH;
+        elsif (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) and (CPU_EXTENSION_RISCV_Zifencei = true) then
+          ctrl_nxt.lsu_fencei      <= '1'; -- instruction fence
+          execute_engine.state_nxt <= TRAP_EXECUTE; -- used to flush instruction prefetch buffer
+        elsif (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then
+          ctrl_nxt.lsu_fence       <= '1'; -- fence
+          execute_engine.state_nxt <= DISPATCH;
+        else
           execute_engine.state_nxt <= DISPATCH;
         end if;
 
@@ -1025,7 +1027,6 @@ begin
           if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2)) then -- atomic operation
             ctrl_nxt.lsu_req_rd <=  not execute_engine.ir(instr_funct7_lsb_c+2); -- LR.W
             ctrl_nxt.lsu_req_wr <=      execute_engine.ir(instr_funct7_lsb_c+2); -- SC.W
-            ctrl_nxt.lsu_rvso   <= '1'; -- this is a reservation set operation
           else -- normal load/store
             ctrl_nxt.lsu_req_rd <= not execute_engine.ir(5); -- load
             ctrl_nxt.lsu_req_wr <=     execute_engine.ir(5); -- store
@@ -1036,9 +1037,6 @@ begin
       when MEM_WAIT => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
         ctrl_nxt.rf_mux <= rf_mux_mem_c; -- RF input = memory read data
-        if (CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2)) then
-          ctrl_nxt.lsu_rvso <= '1'; -- this is a reservation set operation
-        end if;
         if (trap_ctrl.exc_buf(exc_laccess_c)  = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- bus access error
            (trap_ctrl.exc_buf(exc_lalign_c)   = '1') or (trap_ctrl.exc_buf(exc_salign_c)  = '1') then -- alignment error
           execute_engine.state_nxt <= DISPATCH; -- abort
@@ -1065,11 +1063,10 @@ begin
         if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and -- ENVIRONMENT
            (trap_ctrl.exc_buf(exc_iillegal_c) = '0') then -- and NOT already identified as illegal instruction
           case execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c) is
-            when funct12_ecall_c  => trap_ctrl.env_call       <= '1'; -- ecall
-            when funct12_ebreak_c => trap_ctrl.break_point    <= '1'; -- ebreak
-            when funct12_mret_c   => execute_engine.state_nxt <= TRAP_EXIT; -- mret
-            when funct12_dret_c   => execute_engine.state_nxt <= TRAP_EXIT; debug_ctrl.dret <= '1'; -- dret
-            when others           => execute_engine.state_nxt <= SLEEP; -- "funct12_wfi_c" - wfi/sleep
+            when funct12_ecall_c                 => trap_ctrl.env_call       <= '1'; -- ecall
+            when funct12_ebreak_c                => trap_ctrl.break_point    <= '1'; -- ebreak
+            when funct12_mret_c | funct12_dret_c => execute_engine.state_nxt <= TRAP_EXIT; -- xRET
+            when others                          => execute_engine.state_nxt <= SLEEP; -- "funct12_wfi_c" - wfi/sleep
           end case;
         else -- CSR ACCESS - no CSR/GPR will be altered if illegal instruction
           if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
@@ -1110,7 +1107,6 @@ begin
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   ctrl_o.lsu_fencei   <= ctrl.lsu_fencei;
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
-  ctrl_o.lsu_rvso     <= ctrl.lsu_rvso;
 
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= execute_engine.ir(instr_funct3_msb_c  downto instr_funct3_lsb_c);
@@ -1341,8 +1337,8 @@ begin
             case execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c) is
               when funct12_ecall_c | funct12_ebreak_c => illegal_cmd <= '0'; -- ECALL, EBREAK
               when funct12_mret_c                     => illegal_cmd <= not csr.privilege; -- MRET allowed in M-mode only
-              when funct12_wfi_c                      => illegal_cmd <= (not csr.privilege) and csr.mstatus_tw; -- WFI allowed in M-mode or if TW is zero
               when funct12_dret_c                     => illegal_cmd <= not debug_ctrl.running; -- DRET allowed in debug mode only
+              when funct12_wfi_c                      => illegal_cmd <= (not csr.privilege) and csr.mstatus_tw; -- WFI allowed in M-mode or if TW is zero
               when others => illegal_cmd <= '1';
             end case;
           else
@@ -2317,48 +2313,29 @@ begin
 
   -- Debug Control --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ocd_true:
-  if (CPU_EXTENSION_RISCV_Sdext = true) generate
-    debug_control: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        debug_ctrl.ext_halt_req <= '0';
-        debug_ctrl.state        <= DEBUG_OFFLINE;
-      elsif rising_edge(clk_i) then
+  debug_control: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      debug_ctrl.ext_halt_req <= '0';
+      debug_ctrl.running      <= '0';
+    elsif rising_edge(clk_i) then
+      if (CPU_EXTENSION_RISCV_Sdext = true) then
         debug_ctrl.ext_halt_req <= db_halt_req_i; -- external halt request (from Debug Module)
-        case debug_ctrl.state is -- state machine
-
-          when DEBUG_OFFLINE => -- waiting to start debug mode
-            if (trap_ctrl.env_enter = '1') and (trap_ctrl.cause(5) = '1') then -- processing trap entry into debug mode
-              debug_ctrl.state <= DEBUG_ONLINE;
-            end if;
-
-          when DEBUG_ONLINE => -- we are in debug mode
-            if (debug_ctrl.dret = '1') then -- DRET instruction
-              debug_ctrl.state <= DEBUG_LEAVING;
-            end if;
-
-          when DEBUG_LEAVING => -- leaving debug mode
-            if (execute_engine.state = TRAP_EXECUTE) then -- processing trap exit (updating PC and status registers)
-              debug_ctrl.state <= DEBUG_OFFLINE;
-            end if;
-
-          when others => -- undefined
-            debug_ctrl.state <= DEBUG_OFFLINE;
-
-        end case;
+        if (debug_ctrl.running = '0') then -- debug mode OFFLINE - waiting for entry event
+          if (trap_ctrl.env_enter = '1') and (trap_ctrl.cause(5) = '1') then
+            debug_ctrl.running <= '1';
+          end if;
+        else -- debug mode ONLINE - waiting for exit event
+          if (trap_ctrl.env_exit = '1') then
+            debug_ctrl.running <= '0';
+          end if;
+        end if;
+      else
+        debug_ctrl.ext_halt_req <= '0';
+        debug_ctrl.running      <= '0';
       end if;
-    end process debug_control;
-  end generate;
-
-  ocd_false:
-  if (CPU_EXTENSION_RISCV_Sdext = false) generate
-    debug_ctrl.ext_halt_req <= '0';
-    debug_ctrl.state        <= DEBUG_OFFLINE;
-  end generate;
-
-  -- CPU is in debug mode --
-  debug_ctrl.running <= '0' when (debug_ctrl.state = DEBUG_OFFLINE) else '1';
+    end if;
+  end process debug_control;
 
   -- debug mode entry triggers --
   debug_ctrl.trig_hw    <= hw_trigger_fire and (not debug_ctrl.running) and csr.tdata1_action and csr.tdata1_dmode; -- enter debug mode by HW trigger module request (only valid if dmode = 1)
