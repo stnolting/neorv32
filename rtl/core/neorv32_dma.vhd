@@ -69,7 +69,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
 
   -- control and status register bits --
   constant ctrl_en_c            : natural :=  0; -- r/w: DMA enable
-  constant ctrl_auto_c          : natural :=  1; -- r/w: enable FIRQ-triggered  transfer
+  constant ctrl_auto_c          : natural :=  1; -- r/w: enable FIRQ-triggered transfer
   --
   constant ctrl_error_rd_c      : natural :=  8; -- r/-: error during read transfer
   constant ctrl_error_wr_c      : natural :=  9; -- r/-: error during write transfer

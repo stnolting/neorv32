@@ -462,7 +462,7 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Jump/call     | `jal[r]`                                                                  | 6
 | Load/store    | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 5
 | System        | `ecall` `ebreak`                                                          | 3
-| Data fence    | `fence`                                                                   | 5
+| Data fence    | `fence`                                                                   | 3
 | System        | `wfi`                                                                     | 3
 | System        | `mret`                                                                    | 5
 | Illegal inst. | -                                                                         | 3
