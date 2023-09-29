@@ -59,7 +59,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080905"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080906"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -530,6 +530,7 @@ package neorv32_package is
     -- load/store unit --
     lsu_req_rd   : std_ulogic;                     -- trigger memory read request
     lsu_req_wr   : std_ulogic;                     -- trigger memory write request
+    lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
     lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
     lsu_fence    : std_ulogic;                     -- fence operation
     lsu_fencei   : std_ulogic;                     -- fence.i operation
@@ -561,6 +562,7 @@ package neorv32_package is
     alu_cp_trig  => (others => '0'),
     lsu_req_rd   => '0',
     lsu_req_wr   => '0',
+    lsu_rw       => '0',
     lsu_mo_we    => '0',
     lsu_fence    => '0',
     lsu_fencei   => '0',
@@ -650,7 +652,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- exception source bits --
   constant exc_iaccess_c  : natural :=  0; -- instruction access fault
-  constant exc_iillegal_c : natural :=  1; -- illegal instruction
+  constant exc_illegal_c  : natural :=  1; -- illegal instruction
   constant exc_ialign_c   : natural :=  2; -- instruction address misaligned
   constant exc_ecall_c    : natural :=  3; -- environment call
   constant exc_ebreak_c   : natural :=  4; -- breakpoint
