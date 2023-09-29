@@ -111,30 +111,30 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal xcsr_rdata_res : std_ulogic_vector(XLEN-1 downto 0);
 
   -- local signals --
-  signal ctrl        : ctrl_bus_t; -- main control bus
-  signal imm         : std_ulogic_vector(XLEN-1 downto 0); -- immediate
-  signal rs1         : std_ulogic_vector(XLEN-1 downto 0); -- source register 1
-  signal rs2         : std_ulogic_vector(XLEN-1 downto 0); -- source register 2
-  signal rs3         : std_ulogic_vector(XLEN-1 downto 0); -- source register 3
-  signal rs4         : std_ulogic_vector(XLEN-1 downto 0); -- source register 4
-  signal alu_res     : std_ulogic_vector(XLEN-1 downto 0); -- alu result
-  signal alu_add     : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
-  signal alu_cmp     : std_ulogic_vector(1 downto 0); -- comparator result
-  signal mem_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- memory read data
-  signal cp_done     : std_ulogic; -- ALU co-processor operation done
-  signal lsu_wait    : std_ulogic; -- wait for current data bus access
-  signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
-  signal mar         : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-  signal ma_load     : std_ulogic; -- misaligned load data address
-  signal ma_store    : std_ulogic; -- misaligned store data address
-  signal be_load     : std_ulogic; -- bus error on load data access
-  signal be_store    : std_ulogic; -- bus error on store data access
-  signal fetch_pc    : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
-  signal curr_pc     : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
-  signal next_pc     : std_ulogic_vector(XLEN-1 downto 0); -- next pc (for next executed instruction)
-  signal pmp_i_fault : std_ulogic; -- PMP instruction fetch fault
-  signal pmp_r_fault : std_ulogic; -- PMP read fault
-  signal pmp_w_fault : std_ulogic; -- PMP write fault
+  signal ctrl         : ctrl_bus_t; -- main control bus
+  signal imm          : std_ulogic_vector(XLEN-1 downto 0); -- immediate
+  signal rs1          : std_ulogic_vector(XLEN-1 downto 0); -- source register 1
+  signal rs2          : std_ulogic_vector(XLEN-1 downto 0); -- source register 2
+  signal rs3          : std_ulogic_vector(XLEN-1 downto 0); -- source register 3
+  signal rs4          : std_ulogic_vector(XLEN-1 downto 0); -- source register 4
+  signal alu_res      : std_ulogic_vector(XLEN-1 downto 0); -- alu result
+  signal alu_add      : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
+  signal alu_cmp      : std_ulogic_vector(1 downto 0); -- comparator result
+  signal mem_rdata    : std_ulogic_vector(XLEN-1 downto 0); -- memory read data
+  signal cp_done      : std_ulogic; -- ALU co-processor operation done
+  signal lsu_wait     : std_ulogic; -- wait for current data bus access
+  signal csr_rdata    : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
+  signal mar          : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
+  signal ma_load      : std_ulogic; -- misaligned load data address
+  signal ma_store     : std_ulogic; -- misaligned store data address
+  signal be_load      : std_ulogic; -- bus error on load data access
+  signal be_store     : std_ulogic; -- bus error on store data access
+  signal fetch_pc     : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
+  signal curr_pc      : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
+  signal next_pc      : std_ulogic_vector(XLEN-1 downto 0); -- next pc (for next executed instruction)
+  signal pmp_ex_fault : std_ulogic; -- PMP instruction fetch fault
+  signal pmp_rd_fault : std_ulogic; -- PMP read fault
+  signal pmp_wr_fault : std_ulogic; -- PMP write fault
 
 begin
 
@@ -225,7 +225,7 @@ begin
     bus_req_o     => ibus_req_o,     -- request
     bus_rsp_i     => ibus_rsp_i,     -- response
     -- status input --
-    i_pmp_fault_i => pmp_i_fault,    -- instruction fetch pmp fault
+    i_pmp_fault_i => pmp_ex_fault,   -- instruction fetch pmp fault
     alu_cp_done_i => cp_done,        -- ALU iterative operation done
     lsu_wait_i    => lsu_wait,       -- wait for data bus
     cmp_i         => alu_cmp,        -- comparator status
@@ -344,24 +344,24 @@ begin
   )
   port map (
     -- global control --
-    clk_i         => clk_i,       -- global clock, rising edge
-    rstn_i        => rstn_i,      -- global reset, low-active, async
-    ctrl_i        => ctrl,        -- main control bus
+    clk_i         => clk_i,        -- global clock, rising edge
+    rstn_i        => rstn_i,       -- global reset, low-active, async
+    ctrl_i        => ctrl,         -- main control bus
     -- cpu data access interface --
-    addr_i        => alu_add,     -- access address
-    wdata_i       => rs2,         -- write data
-    rdata_o       => mem_rdata,   -- read data
-    mar_o         => mar,         -- memory address register
-    wait_o        => lsu_wait,    -- wait for access to complete
-    ma_load_o     => ma_load,     -- misaligned load data address
-    ma_store_o    => ma_store,    -- misaligned store data address
-    be_load_o     => be_load,     -- bus error on load data access
-    be_store_o    => be_store,    -- bus error on store data access
-    pmp_r_fault_i => pmp_r_fault, -- PMP read fault
-    pmp_w_fault_i => pmp_w_fault, -- PMP write fault
+    addr_i        => alu_add,      -- access address
+    wdata_i       => rs2,          -- write data
+    rdata_o       => mem_rdata,    -- read data
+    mar_o         => mar,          -- memory address register
+    wait_o        => lsu_wait,     -- wait for access to complete
+    ma_load_o     => ma_load,      -- misaligned load data address
+    ma_store_o    => ma_store,     -- misaligned store data address
+    be_load_o     => be_load,      -- bus error on load data access
+    be_store_o    => be_store,     -- bus error on store data access
+    pmp_r_fault_i => pmp_rd_fault, -- PMP read fault
+    pmp_w_fault_i => pmp_wr_fault, -- PMP write fault
     -- data bus --
-    bus_req_o     => dbus_req_o,  -- request
-    bus_rsp_i     => dbus_rsp_i   -- response
+    bus_req_o     => dbus_req_o,   -- request
+    bus_rsp_i     => dbus_rsp_i    -- response
   );
 
 
@@ -388,18 +388,18 @@ begin
       addr_if_i   => fetch_pc,       -- instruction fetch address
       addr_ls_i   => alu_add,        -- load/store address
       -- faults --
-      fault_if_o  => pmp_i_fault,    -- instruction fetch fault
-      fault_ld_o  => pmp_r_fault,    -- data load fault
-      fault_st_o  => pmp_w_fault     -- data store fault
+      fault_ex_o  => pmp_ex_fault,   -- instruction fetch fault
+      fault_rd_o  => pmp_rd_fault,   -- data load fault
+      fault_wr_o  => pmp_wr_fault    -- data store fault
     );
   end generate;
 
   pmp_inst_false:
   if (pmp_enable_c = false) generate
     xcsr_rdata_pmp <= (others => '0');
-    pmp_i_fault    <= '0';
-    pmp_r_fault    <= '0';
-    pmp_w_fault    <= '0';
+    pmp_ex_fault    <= '0';
+    pmp_rd_fault    <= '0';
+    pmp_wr_fault    <= '0';
   end generate;
 
 
