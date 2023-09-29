@@ -88,21 +88,19 @@ entity neorv32_cpu_control is
     rstn_i        : in  std_ulogic; -- global reset, low-active, async
     ctrl_o        : out ctrl_bus_t; -- main control bus
     -- instruction fetch interface --
-    i_bus_addr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- bus access address
-    i_bus_rdata_i : in  std_ulogic_vector(31 downto 0); -- bus read data
-    i_bus_re_o    : out std_ulogic; -- read enable
-    i_bus_ack_i   : in  std_ulogic; -- bus transfer acknowledge
-    i_bus_err_i   : in  std_ulogic; -- bus transfer error
-    i_pmp_fault_i : in  std_ulogic; -- instruction fetch pmp fault
+    bus_req_o     : out bus_req_t;  -- request
+    bus_rsp_i     : in  bus_rsp_t;  -- response
     -- status input --
+    i_pmp_fault_i : in  std_ulogic; -- instruction fetch pmp fault
     alu_cp_done_i : in  std_ulogic; -- ALU iterative operation done
-    bus_d_wait_i  : in  std_ulogic; -- wait for bus
-    -- data input --
+    lsu_wait_i    : in  std_ulogic; -- wait for data bus
     cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
+    -- data input --
     alu_add_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU address result
     rs1_i         : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     -- data output --
     imm_o         : out std_ulogic_vector(XLEN-1 downto 0); -- immediate
+    fetch_pc_o    : out std_ulogic_vector(XLEN-1 downto 0); -- instruction fetch address
     curr_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
     next_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- next PC (corresponding to next instruction)
     csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
@@ -416,26 +414,35 @@ begin
   end process fetch_engine_fsm;
 
   -- PC output for instruction fetch --
-  i_bus_addr_o <= fetch_engine.pc & "00"; -- word aligned
+  bus_req_o.addr <= fetch_engine.pc & "00"; -- word aligned
+  fetch_pc_o     <= fetch_engine.pc & "00"; -- word aligned
 
   -- instruction fetch (read) request if IPB not full --
-  i_bus_re_o <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
+  bus_req_o.re <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
 
   -- unaligned access error (no alignment exceptions possible when using C-extension) --
   fetch_engine.a_err <= '1' when (fetch_engine.unaligned = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
 
   -- instruction bus response --
   -- [NOTE] PMP and alignment errors will keep pending until the triggered bus access request retires
-  fetch_engine.resp <= '1' when (i_bus_ack_i = '1') or (i_bus_err_i = '1') else '0';
+  fetch_engine.resp <= '1' when (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') else '0';
 
   -- IPB instruction data and status --
-  ipb.wdata(0) <= (i_bus_err_i or i_pmp_fault_i) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
-  ipb.wdata(1) <= (i_bus_err_i or i_pmp_fault_i) & fetch_engine.a_err & i_bus_rdata_i(31 downto 16);
+  ipb.wdata(0) <= (bus_rsp_i.err or i_pmp_fault_i) & fetch_engine.a_err & bus_rsp_i.data(15 downto 00);
+  ipb.wdata(1) <= (bus_rsp_i.err or i_pmp_fault_i) & fetch_engine.a_err & bus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
   ipb.we(0) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') and
                         ((fetch_engine.unaligned = '0') or (CPU_EXTENSION_RISCV_C = false)) else '0';
   ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
+
+  -- bus access type --
+  bus_req_o.priv <= ctrl.cpu_priv;
+  bus_req_o.data <= (others => '0'); -- read-only
+  bus_req_o.ben  <= (others => '0'); -- read-only
+  bus_req_o.we   <= '0'; -- read-only
+  bus_req_o.src  <= '1'; -- source = instruction fetch
+  bus_req_o.rvso <= '0'; -- cannot be a reservation set operation
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
@@ -783,7 +790,7 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, issue_engine, csr, alu_cp_done_i, bus_d_wait_i)
+  execute_engine_fsm_comb: process(execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, issue_engine, csr, alu_cp_done_i, lsu_wait_i)
   begin
     -- arbiter defaults --
     execute_engine.state_nxt    <= execute_engine.state;
@@ -1040,7 +1047,7 @@ begin
         if (trap_ctrl.exc_buf(exc_laccess_c)  = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- bus access error
            (trap_ctrl.exc_buf(exc_lalign_c)   = '1') or (trap_ctrl.exc_buf(exc_salign_c)  = '1') then -- alignment error
           execute_engine.state_nxt <= DISPATCH; -- abort
-        elsif (bus_d_wait_i = '0') then -- bus system has completed the transaction
+        elsif (lsu_wait_i = '0') then -- bus system has completed the transaction
           if ((CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2))) or -- atomic operation
              (execute_engine.ir(instr_opcode_msb_c-1) = '0') then -- normal load
             ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file

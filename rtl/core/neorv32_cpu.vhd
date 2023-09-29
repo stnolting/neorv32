@@ -218,47 +218,45 @@ begin
   )
   port map (
     -- global control --
-    clk_i         => clk_i,           -- global clock, rising edge
-    rstn_i        => rstn_i,          -- global reset, low-active, async
-    ctrl_o        => ctrl,            -- main control bus
+    clk_i         => clk_i,          -- global clock, rising edge
+    rstn_i        => rstn_i,         -- global reset, low-active, async
+    ctrl_o        => ctrl,           -- main control bus
     -- instruction fetch interface --
-    i_bus_addr_o  => fetch_pc,        -- bus access address
-    i_bus_rdata_i => ibus_rsp_i.data, -- bus read data
-    i_bus_re_o    => ibus_req_o.re,   -- read enable
-    i_bus_ack_i   => ibus_rsp_i.ack,  -- bus transfer acknowledge
-    i_bus_err_i   => ibus_rsp_i.err,  -- bus transfer error
-    i_pmp_fault_i => pmp_i_fault,     -- instruction fetch pmp fault
+    bus_req_o     => ibus_req_o,     -- request
+    bus_rsp_i     => ibus_rsp_i,     -- response
     -- status input --
-    alu_cp_done_i => cp_done,         -- ALU iterative operation done
-    bus_d_wait_i  => lsu_wait,        -- wait for data bus
+    i_pmp_fault_i => pmp_i_fault,    -- instruction fetch pmp fault
+    alu_cp_done_i => cp_done,        -- ALU iterative operation done
+    lsu_wait_i    => lsu_wait,       -- wait for data bus
+    cmp_i         => alu_cmp,        -- comparator status
     -- data input --
-    cmp_i         => alu_cmp,         -- comparator status
-    alu_add_i     => alu_add,         -- ALU address result
-    rs1_i         => rs1,             -- rf source 1
+    alu_add_i     => alu_add,        -- ALU address result
+    rs1_i         => rs1,            -- rf source 1
     -- data output --
-    imm_o         => imm,             -- immediate
-    curr_pc_o     => curr_pc,         -- current PC (corresponding to current instruction)
-    next_pc_o     => next_pc,         -- next PC (corresponding to next instruction)
-    csr_rdata_o   => csr_rdata,       -- CSR read data
+    imm_o         => imm,            -- immediate
+    fetch_pc_o    => fetch_pc,       -- instruction fetch address
+    curr_pc_o     => curr_pc,        -- current PC (corresponding to current instruction)
+    next_pc_o     => next_pc,        -- next PC (corresponding to next instruction)
+    csr_rdata_o   => csr_rdata,      -- CSR read data
     -- external CSR interface --
-    xcsr_we_o     => xcsr_we,         -- global write enable
-    xcsr_addr_o   => xcsr_addr,       -- address
-    xcsr_wdata_o  => xcsr_wdata,      -- write data
-    xcsr_rdata_i  => xcsr_rdata_res,  -- read data
+    xcsr_we_o     => xcsr_we,        -- global write enable
+    xcsr_addr_o   => xcsr_addr,      -- address
+    xcsr_wdata_o  => xcsr_wdata,     -- write data
+    xcsr_rdata_i  => xcsr_rdata_res, -- read data
     -- debug mode (halt) request --
     db_halt_req_i => dbi_i,
     -- interrupts (risc-v compliant) --
-    msi_i         => msi_i,           -- machine software interrupt
-    mei_i         => mei_i,           -- machine external interrupt
-    mti_i         => mti_i,           -- machine timer interrupt
+    msi_i         => msi_i,          -- machine software interrupt
+    mei_i         => mei_i,          -- machine external interrupt
+    mti_i         => mti_i,          -- machine timer interrupt
     -- fast interrupts (custom) --
-    firq_i        => firq_i,          -- fast interrupt trigger
+    firq_i        => firq_i,         -- fast interrupt trigger
     -- bus access exceptions --
-    mar_i         => mar,             -- memory address register
-    ma_load_i     => ma_load,         -- misaligned load data address
-    ma_store_i    => ma_store,        -- misaligned store data address
-    be_load_i     => be_load,         -- bus error on load data access
-    be_store_i    => be_store         -- bus error on store data access
+    mar_i         => mar,            -- memory address register
+    ma_load_i     => ma_load,        -- misaligned load data address
+    ma_store_i    => ma_store,       -- misaligned store data address
+    be_load_i     => be_load,        -- bus error on load data access
+    be_store_i    => be_store        -- bus error on store data access
   );
 
   -- external CSR read-back --
@@ -271,15 +269,6 @@ begin
   -- instruction/data fence --
   ifence_o <= ctrl.lsu_fencei;
   dfence_o <= ctrl.lsu_fence;
-
-  -- instruction fetch interface --
-  ibus_req_o.addr <= fetch_pc;
-  ibus_req_o.priv <= ctrl.cpu_priv;
-  ibus_req_o.data <= (others => '0'); -- read-only
-  ibus_req_o.ben  <= (others => '0'); -- read-only
-  ibus_req_o.we   <= '0'; -- read-only
-  ibus_req_o.src  <= '1'; -- source = instruction fetch
-  ibus_req_o.rvso <= '0'; -- cannot be a reservation set operation
 
 
   -- Register File --------------------------------------------------------------------------
@@ -355,24 +344,24 @@ begin
   )
   port map (
     -- global control --
-    clk_i         => clk_i,           -- global clock, rising edge
-    rstn_i        => rstn_i,          -- global reset, low-active, async
-    ctrl_i        => ctrl,            -- main control bus
+    clk_i         => clk_i,       -- global clock, rising edge
+    rstn_i        => rstn_i,      -- global reset, low-active, async
+    ctrl_i        => ctrl,        -- main control bus
     -- cpu data access interface --
-    addr_i        => alu_add,         -- access address
-    wdata_i       => rs2,             -- write data
-    rdata_o       => mem_rdata,       -- read data
-    mar_o         => mar,             -- memory address register
-    wait_o        => lsu_wait,        -- wait for access to complete
-    ma_load_o     => ma_load,         -- misaligned load data address
-    ma_store_o    => ma_store,        -- misaligned store data address
-    be_load_o     => be_load,         -- bus error on load data access
-    be_store_o    => be_store,        -- bus error on store data access
-    pmp_r_fault_i => pmp_r_fault,     -- PMP read fault
-    pmp_w_fault_i => pmp_w_fault,     -- PMP write fault
+    addr_i        => alu_add,     -- access address
+    wdata_i       => rs2,         -- write data
+    rdata_o       => mem_rdata,   -- read data
+    mar_o         => mar,         -- memory address register
+    wait_o        => lsu_wait,    -- wait for access to complete
+    ma_load_o     => ma_load,     -- misaligned load data address
+    ma_store_o    => ma_store,    -- misaligned store data address
+    be_load_o     => be_load,     -- bus error on load data access
+    be_store_o    => be_store,    -- bus error on store data access
+    pmp_r_fault_i => pmp_r_fault, -- PMP read fault
+    pmp_w_fault_i => pmp_w_fault, -- PMP write fault
     -- data bus --
-    bus_req_o     => dbus_req_o,      -- request
-    bus_rsp_i     => dbus_rsp_i       -- response
+    bus_req_o     => dbus_req_o,  -- request
+    bus_rsp_i     => dbus_rsp_i   -- response
   );
 
 
