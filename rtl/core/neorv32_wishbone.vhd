@@ -161,9 +161,9 @@ begin
       -- state machine --
       if (ctrl.state = '0') then -- IDLE, waiting for host request
         -- ------------------------------------------------------------
-        if (bus_req_i.we = '1') or (bus_req_i.re = '1') then -- request
+        if (bus_req_i.stb = '1') then -- request
           -- buffer (and gate) all outgoing signals --
-          ctrl.we    <= bus_req_i.we;
+          ctrl.we    <= bus_req_i.rw;
           ctrl.adr   <= bus_req_i.addr;
           ctrl.src   <= bus_req_i.src;
           ctrl.priv  <= bus_req_i.priv;
@@ -211,12 +211,12 @@ begin
   wb_tag_o(1) <= '0'; -- 0 = secure, 1 = non-secure
   wb_tag_o(2) <= bus_req_i.src when (ASYNC_TX = true) else ctrl.src; -- 0 = data access, 1 = instruction access
 
-  stb_int <=  (bus_req_i.we or bus_req_i.re)                when (ASYNC_TX = true) else (ctrl.state and (not ctrl.state_ff));
-  cyc_int <= ((bus_req_i.we or bus_req_i.re) or ctrl.state) when (ASYNC_TX = true) else  ctrl.state;
+  stb_int <=  bus_req_i.stb                when (ASYNC_TX = true) else (ctrl.state and (not ctrl.state_ff));
+  cyc_int <= (bus_req_i.stb or ctrl.state) when (ASYNC_TX = true) else  ctrl.state;
 
   wb_adr_o <= bus_req_i.addr when (ASYNC_TX = true) else ctrl.adr;
   wb_dat_o <= bus_req_i.data when (ASYNC_TX = true) else ctrl.wdat;
-  wb_we_o  <= (bus_req_i.we or (ctrl.we and ctrl.state)) when (ASYNC_TX = true) else ctrl.we;
+  wb_we_o  <= bus_req_i.rw   when (ASYNC_TX = true) else ctrl.we;
   wb_sel_o <= end_byteen when (ASYNC_TX = true) else ctrl.sel;
   wb_stb_o <= stb_int    when (PIPE_MODE = true) else cyc_int;
   wb_cyc_o <= cyc_int;
