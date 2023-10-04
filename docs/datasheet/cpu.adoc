@@ -215,8 +215,8 @@ is driven by the _accessed_ device or bus system (i.e. a processor-internal memo
 | `addr` |    32 | Access address (byte addressing)
 | `data` |    32 | Write data
 | `ben`  |     4 | Byte-enable for each byte in `data`
-| `we`   |     1 | **Write** request trigger (single-shot)
-| `re`   |     1 | **Read** request trigger (single-shot)
+| `stb`  |     1 | Request trigger ("strobe", single-shot)
+| `rw`   |     1 | Access direction (`0` = read, `1` = write)
 | `src`  |     1 | Access source (`0` = instruction fetch, `1` = load/store)
 | `priv` |     1 | Set if privileged (M-mode) access
 | `rvso` |     1 | Set if current access is a reservation-set operation (atomic `lr` or `sc` instruction)
@@ -232,20 +232,18 @@ is driven by the _accessed_ device or bus system (i.e. a processor-internal memo
 | `err`  |     1 | Transfer error / fail (single-shot)
 |=======================
 
-.Processor Bus System
-[NOTE]
-This type of bus system is used for used for the entire NEORV32 processor to construct the <<_address_space>>.
-
 
 :sectnums:
 ==== Bus Interface Protocol
 
-Bus transaction are entirely triggered by the request bus. A new bus request is initiated either by the `re` signal
-(= read request) or by the `we` signal (= write request). These signals are mutually exclusive. In case of a request,
-the according signal is high for exactly one clock cycle. The transaction is completed when the accessed device returns
-a response via the response interface: `ack` is high for exactly one cycle if the transaction was completed successfully.
-`err` is high for exactly one cycle if the transaction failed to complete. These two signals are also mutually exclusive.
-In case of a read access the read data is returned together with the `ack` signal. Otherwise, the return data signal is
+Transactions are triggered entirely by the request bus. A new bus request is initiated by setting the _strobe_
+signal `stb` high for exactly one cycle. All remaining signals of the bus are set together with `stb` and will
+remain unchanged until the transaction is completed.
+
+The transaction is completed when the accessed device returns a response via the response interface:
+`ack` is high for exactly one cycle if the transaction was completed successfully. `err` is high for exactly
+one cycle if the transaction failed to complete. These two signals are mutually exclusive. In case of a read
+access the read data is returned together with the `ack` signal. Otherwise, the return data signal is
 kept at all-zero allowing wired-or interconnection of all response buses.
 
 The figure below shows three exemplary bus accesses:
@@ -257,11 +255,6 @@ The figure below shows three exemplary bus accesses:
 
 .Three Exemplary Bus Transactions
 image::bus_interface.png[700]
-
-.Signal State
-[NOTE]
-All signals of the request bus interface (except for the read/write transfer triggers)
-remain stable until the bus access is completed.
 
 
 :sectnums:
@@ -299,7 +292,7 @@ image::bus_interface_atomic.png[700]
 
 .SC Status
 [NOTE]
-The normal "load data" mechanism is used to return success/failure of the `sc.w` instruction to the CPU (via `rsp.data`).
+The "normal" load data mechanism is used to return success/failure of the `sc.w` instruction to the CPU (via the LSB of `rsp.data`).
 
 
 <<<
