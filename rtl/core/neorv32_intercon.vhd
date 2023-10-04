@@ -61,27 +61,20 @@ end neorv32_bus_switch;
 
 architecture neorv32_bus_switch_rtl of neorv32_bus_switch is
 
-  -- access requests --
-  signal a_rd_req_buf,  a_wr_req_buf  : std_ulogic;
-  signal b_rd_req_buf,  b_wr_req_buf  : std_ulogic;
-  signal a_req_current, a_req_pending : std_ulogic;
-  signal b_req_current, b_req_pending : std_ulogic;
-
-  -- internal bus lines --
-  signal a_bus_ack, a_bus_err : std_ulogic;
-  signal b_bus_ack, b_bus_err : std_ulogic;
-  signal x_bus_we,  x_bus_re  : std_ulogic;
-
   -- access arbiter --
   type arbiter_state_t is (IDLE, BUSY_A, BUSY_B);
   type arbiter_t is record
     state     : arbiter_state_t;
     state_nxt : arbiter_state_t;
+    a_req     : std_ulogic;
+    b_req     : std_ulogic;
     host_sel  : std_ulogic;
-    re_trig   : std_ulogic;
-    we_trig   : std_ulogic;
+    stb_trig  : std_ulogic;
   end record;
   signal arbiter : arbiter_t;
+
+  -- internal bus lines --
+  signal x_bus_stb, a_bus_ack, b_bus_ack, a_bus_err, b_bus_err : std_ulogic;
 
 begin
 
@@ -91,51 +84,36 @@ begin
   begin
     if (rstn_i = '0') then
       arbiter.state <= IDLE;
-      a_rd_req_buf  <= '0';
-      a_wr_req_buf  <= '0';
-      b_rd_req_buf  <= '0';
-      b_wr_req_buf  <= '0';
+      arbiter.a_req <= '0';
+      arbiter.b_req <= '0';
     elsif rising_edge(clk_i) then
       arbiter.state <= arbiter.state_nxt;
-      a_rd_req_buf  <= (a_rd_req_buf or a_req_i.re) and (not (a_bus_err or a_bus_ack));
-      a_wr_req_buf  <= (a_wr_req_buf or a_req_i.we) and (not (a_bus_err or a_bus_ack)) and bool_to_ulogic_f(not PORT_A_READ_ONLY);
-      b_rd_req_buf  <= (b_rd_req_buf or b_req_i.re) and (not (b_bus_err or b_bus_ack));
-      b_wr_req_buf  <= (b_wr_req_buf or b_req_i.we) and (not (b_bus_err or b_bus_ack)) and bool_to_ulogic_f(not PORT_B_READ_ONLY);
+      -- set on STB, clear on ACK or ERR --
+      arbiter.a_req <= (arbiter.a_req or a_req_i.stb) and (a_bus_err nor a_bus_ack);
+      arbiter.b_req <= (arbiter.b_req or b_req_i.stb) and (b_bus_err nor b_bus_ack);
     end if;
   end process arbiter_sync;
 
-  -- any current requests? --
-  a_req_current <= (a_req_i.re or a_req_i.we) when (PORT_A_READ_ONLY = false) else a_req_i.re;
-  b_req_current <= (b_req_i.re or b_req_i.we) when (PORT_B_READ_ONLY = false) else b_req_i.re;
-
-  -- any pending requests? --
-  a_req_pending <= (a_rd_req_buf or a_wr_req_buf) when (PORT_A_READ_ONLY = false) else a_rd_req_buf;
-  b_req_pending <= (b_rd_req_buf or b_wr_req_buf) when (PORT_B_READ_ONLY = false) else b_rd_req_buf;
-
-  -- FSM --
-  arbiter_comb: process(arbiter, a_req_current, b_req_current, a_req_pending, b_req_pending,
-                        a_rd_req_buf, a_wr_req_buf, b_rd_req_buf, b_wr_req_buf, x_rsp_i)
+  -- fsm --
+  arbiter_comb: process(arbiter, a_req_i, b_req_i, x_rsp_i)
   begin
     -- arbiter defaults --
     arbiter.state_nxt <= arbiter.state;
     arbiter.host_sel  <= '0';
-    arbiter.we_trig   <= '0';
-    arbiter.re_trig   <= '0';
+    arbiter.stb_trig  <= '0';
 
     -- state machine --
     case arbiter.state is
 
       when IDLE => -- wait for requests
       -- ------------------------------------------------------------
-        if (a_req_current = '1') or (a_req_pending = '1') then -- any request from port A?
+        if (a_req_i.stb = '1') or (arbiter.a_req = '1') then -- any request from port A?
           arbiter.host_sel  <= '0';
-          arbiter.we_trig   <= a_wr_req_buf;
-          arbiter.re_trig   <= a_rd_req_buf;
+          arbiter.stb_trig  <= arbiter.a_req;
           arbiter.state_nxt <= BUSY_A;
-        elsif (b_req_current = '1') or (b_req_pending = '1') then -- any request from port B?
+        elsif (b_req_i.stb = '1') or (arbiter.b_req = '1') then -- any request from port B?
           arbiter.host_sel  <= '1';
-          arbiter.we_trig   <= b_wr_req_buf;
-          arbiter.re_trig   <= b_rd_req_buf;
+          arbiter.stb_trig  <= arbiter.b_req;
           arbiter.state_nxt <= BUSY_B;
         end if;
 
@@ -167,6 +145,7 @@ begin
   x_req_o.rvso <= a_req_i.rvso when (arbiter.host_sel = '0') else b_req_i.rvso;
   x_req_o.priv <= a_req_i.priv when (arbiter.host_sel = '0') else b_req_i.priv;
   x_req_o.src  <= a_req_i.src  when (arbiter.host_sel = '0') else b_req_i.src;
+  x_req_o.rw   <= a_req_i.rw   when (arbiter.host_sel = '0') else b_req_i.rw;
 
   x_req_o.data <= b_req_i.data when (PORT_A_READ_ONLY = true) else
                   a_req_i.data when (PORT_B_READ_ONLY = true) else
@@ -176,10 +155,8 @@ begin
                   a_req_i.ben when (PORT_B_READ_ONLY = true) else
                   a_req_i.ben when (arbiter.host_sel = '0')  else b_req_i.ben;
 
-  x_bus_we     <= a_req_i.we when (arbiter.host_sel = '0') else b_req_i.we;
-  x_bus_re     <= a_req_i.re when (arbiter.host_sel = '0') else b_req_i.re;
-  x_req_o.we   <= x_bus_we or arbiter.we_trig;
-  x_req_o.re   <= x_bus_re or arbiter.re_trig;
+  x_bus_stb    <= a_req_i.stb when (arbiter.host_sel = '0') else b_req_i.stb;
+  x_req_o.stb  <= x_bus_stb or arbiter.stb_trig;
 
 
   -- Device Response Switch -----------------------------------------------------------------
@@ -208,12 +185,12 @@ end neorv32_bus_switch_rtl;
 -- #################################################################################################
 -- # << NEORV32 - Processor Bus Infrastructure: Section Gateway >>                                 #
 -- # ********************************************************************************************* #
--- # Bus gateway to distribute the core's access to the processor's main memory sections:          #
--- # -> IMEM - internal instruction memory [optional]                                              #
--- # -> DMEM - internal data memory [optional]                                                     #
--- # -> XIP  - memory-mapped XIP flash [optional]                                                  #
--- # -> BOOT - internal bootloader ROM [optional]                                                  #
--- # -> IO   - internal IO devices [mandatory]                                                     #
+-- # Bus gateway to distribute the core's access to the processor's main address sections:         #
+-- # -> IMEM - internal instruction memory                                                         #
+-- # -> DMEM - internal data memory                                                                #
+-- # -> XIP  - memory-mapped XIP flash                                                             #
+-- # -> BOOT - internal bootloader ROM                                                             #
+-- # -> IO   - internal IO devices                                                                 #
 -- # All accesses that do not match any of these sections are redirected to the "external" port.   #
 -- # The gateway-internal bus monitor ensures that all processor-internal accesses are completed   #
 -- # within a fixed time window.                                                                   #
@@ -308,15 +285,19 @@ end neorv32_bus_gateway;
 architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
 
   -- port select --
-  constant port_imem_c : natural := 0;
-  constant port_dmem_c : natural := 1;
-  constant port_xip_c  : natural := 2;
-  constant port_boot_c : natural := 3;
-  constant port_io_c   : natural := 4;
-  constant port_ext_c  : natural := 5;
-  signal   port_sel    : std_ulogic_vector(5 downto 0);
+  signal port_sel : std_ulogic_vector(5 downto 0);
 
-  -- response summary --
+  -- list of enabled gateway ports --
+  type port_en_list_t is array (0 to 5) of boolean;
+  constant port_en_list_c : port_en_list_t := (IMEM_ENABLE, DMEM_ENABLE, XIP_ENABLE, BOOT_ENABLE, IO_ENABLE, EXT_ENABLE);
+
+  -- gateway ports combined as arrays --
+  type port_req_t is array (0 to 5) of bus_req_t;
+  type port_rsp_t is array (0 to 5) of bus_rsp_t;
+  signal port_req : port_req_t;
+  signal port_rsp : port_rsp_t;
+
+  -- summarized response --
   signal int_rsp : bus_rsp_t;
 
   -- bus monitor --
@@ -332,101 +313,49 @@ begin
 
   -- Address Section Decoder ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  port_sel(port_imem_c) <= '1' when (main_req_i.addr(31 downto index_size_f(IMEM_SIZE)) = IMEM_BASE(31 downto index_size_f(IMEM_SIZE))) and (IMEM_ENABLE = true) else '0';
-  port_sel(port_dmem_c) <= '1' when (main_req_i.addr(31 downto index_size_f(DMEM_SIZE)) = DMEM_BASE(31 downto index_size_f(DMEM_SIZE))) and (DMEM_ENABLE = true) else '0';
-  port_sel(port_xip_c)  <= '1' when (main_req_i.addr(31 downto index_size_f(XIP_SIZE))  = XIP_BASE( 31 downto index_size_f(XIP_SIZE)))  and (XIP_ENABLE  = true) else '0';
-  port_sel(port_boot_c) <= '1' when (main_req_i.addr(31 downto index_size_f(BOOT_SIZE)) = BOOT_BASE(31 downto index_size_f(BOOT_SIZE))) and (BOOT_ENABLE = true) else '0';
-  port_sel(port_io_c)   <= '1' when (main_req_i.addr(31 downto index_size_f(IO_SIZE))   = IO_BASE(  31 downto index_size_f(IO_SIZE)))   and (IO_ENABLE   = true) else '0';
+  port_sel(0) <= '1' when (main_req_i.addr(31 downto index_size_f(IMEM_SIZE)) = IMEM_BASE(31 downto index_size_f(IMEM_SIZE))) and (IMEM_ENABLE = true) else '0';
+  port_sel(1) <= '1' when (main_req_i.addr(31 downto index_size_f(DMEM_SIZE)) = DMEM_BASE(31 downto index_size_f(DMEM_SIZE))) and (DMEM_ENABLE = true) else '0';
+  port_sel(2) <= '1' when (main_req_i.addr(31 downto index_size_f(XIP_SIZE))  = XIP_BASE( 31 downto index_size_f(XIP_SIZE)))  and (XIP_ENABLE  = true) else '0';
+  port_sel(3) <= '1' when (main_req_i.addr(31 downto index_size_f(BOOT_SIZE)) = BOOT_BASE(31 downto index_size_f(BOOT_SIZE))) and (BOOT_ENABLE = true) else '0';
+  port_sel(4) <= '1' when (main_req_i.addr(31 downto index_size_f(IO_SIZE))   = IO_BASE(  31 downto index_size_f(IO_SIZE)))   and (IO_ENABLE   = true) else '0';
 
-  -- accesses to the "void" (= no section is matched) are redirected to the external bus interface --
-  port_sel(port_ext_c) <= '1' when (port_sel(port_imem_c) = '0') and
-                                   (port_sel(port_dmem_c) = '0') and
-                                   (port_sel(port_xip_c)  = '0') and
-                                   (port_sel(port_boot_c) = '0') and
-                                   (port_sel(port_io_c)   = '0') and
-                                   (EXT_ENABLE = true) else '0';
+  -- accesses to the "void" are redirected to the external bus interface --
+  port_sel(5) <= '1' when ((port_sel(4 downto 0) = "00000") and (EXT_ENABLE = true)) else '0';
 
 
-  -- Bus Request ----------------------------------------------------------------------------
+  -- Gateway Ports --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  imem_req_o <= port_req(0); port_rsp(0) <= imem_rsp_i;
+  dmem_req_o <= port_req(1); port_rsp(1) <= dmem_rsp_i;
+  xip_req_o  <= port_req(2); port_rsp(2) <= xip_rsp_i;
+  boot_req_o <= port_req(3); port_rsp(3) <= boot_rsp_i;
+  io_req_o   <= port_req(4); port_rsp(4) <= io_rsp_i;
+  ext_req_o  <= port_req(5); port_rsp(5) <= ext_rsp_i;
+
+  -- bus request --
   request: process(main_req_i, port_sel)
   begin
-    imem_req_o <= req_terminate_c;
-    dmem_req_o <= req_terminate_c;
-    xip_req_o  <= req_terminate_c;
-    boot_req_o <= req_terminate_c;
-    io_req_o   <= req_terminate_c;
-    ext_req_o  <= req_terminate_c;
-    --
-    if (IMEM_ENABLE = true) then
-      imem_req_o    <= main_req_i;
-      imem_req_o.we <= main_req_i.we and port_sel(port_imem_c);
-      imem_req_o.re <= main_req_i.re and port_sel(port_imem_c);
-    end if;
-    if (DMEM_ENABLE = true) then
-      dmem_req_o    <= main_req_i;
-      dmem_req_o.we <= main_req_i.we and port_sel(port_dmem_c);
-      dmem_req_o.re <= main_req_i.re and port_sel(port_dmem_c);
-    end if;
-    if (XIP_ENABLE = true) then
-      xip_req_o    <= main_req_i;
-      xip_req_o.we <= main_req_i.we and port_sel(port_xip_c);
-      xip_req_o.re <= main_req_i.re and port_sel(port_xip_c);
-    end if;
-    if (BOOT_ENABLE = true) then
-      boot_req_o    <= main_req_i;
-      boot_req_o.we <= main_req_i.we and port_sel(port_boot_c);
-      boot_req_o.re <= main_req_i.re and port_sel(port_boot_c);
-    end if;
-    if (IO_ENABLE = true) then
-      io_req_o    <= main_req_i;
-      io_req_o.we <= main_req_i.we and port_sel(port_io_c);
-      io_req_o.re <= main_req_i.re and port_sel(port_io_c);
-    end if;
-    if (EXT_ENABLE = true) then
-      ext_req_o    <= main_req_i;
-      ext_req_o.we <= main_req_i.we and port_sel(port_ext_c);
-      ext_req_o.re <= main_req_i.re and port_sel(port_ext_c);
-    end if;
+    for i in 0 to 5 loop 
+      port_req(i) <= req_terminate_c;
+      if (port_en_list_c(i) = true) then
+        port_req(i)     <= main_req_i;
+        port_req(i).stb <= main_req_i.stb and port_sel(i);
+      end if;
+    end loop;
   end process request;
 
-
-  -- Bus Response ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  response: process(imem_rsp_i, dmem_rsp_i, boot_rsp_i, xip_rsp_i, io_rsp_i, ext_rsp_i)
+  -- bus response --
+  response: process(port_rsp)
     variable tmp_v : bus_rsp_t;
   begin
     tmp_v := rsp_terminate_c; -- start with all-zero
-    if (IMEM_ENABLE = true) then
-      tmp_v.data := tmp_v.data or imem_rsp_i.data;
-      tmp_v.ack  := tmp_v.ack  or imem_rsp_i.ack;
-      tmp_v.err  := tmp_v.err  or imem_rsp_i.err;
-    end if;
-    if (DMEM_ENABLE = true) then
-      tmp_v.data := tmp_v.data or dmem_rsp_i.data;
-      tmp_v.ack  := tmp_v.ack  or dmem_rsp_i.ack;
-      tmp_v.err  := tmp_v.err  or dmem_rsp_i.err;
-    end if;
-    if (XIP_ENABLE = true) then
-      tmp_v.data := tmp_v.data or xip_rsp_i.data;
-      tmp_v.ack  := tmp_v.ack  or xip_rsp_i.ack;
-      tmp_v.err  := tmp_v.err  or xip_rsp_i.err;
-    end if;
-    if (BOOT_ENABLE = true) then
-      tmp_v.data := tmp_v.data or boot_rsp_i.data;
-      tmp_v.ack  := tmp_v.ack  or boot_rsp_i.ack;
-      tmp_v.err  := tmp_v.err  or boot_rsp_i.err;
-    end if;
-    if (IO_ENABLE = true) then
-      tmp_v.data := tmp_v.data or io_rsp_i.data;
-      tmp_v.ack  := tmp_v.ack  or io_rsp_i.ack;
-      tmp_v.err  := tmp_v.err  or io_rsp_i.err;
-    end if;
-    if (EXT_ENABLE = true) then
-      tmp_v.data := tmp_v.data or ext_rsp_i.data;
-      tmp_v.ack  := tmp_v.ack  or ext_rsp_i.ack;
-      tmp_v.err  := tmp_v.err  or ext_rsp_i.err;
-    end if;
+    for i in 0 to 5 loop -- logical OR of all response signals
+      if (port_en_list_c(i) = true) then
+        tmp_v.data := tmp_v.data or port_rsp(i).data;
+        tmp_v.ack  := tmp_v.ack  or port_rsp(i).ack;
+        tmp_v.err  := tmp_v.err  or port_rsp(i).err;
+      end if;
+    end loop;
     int_rsp <= tmp_v;
   end process response;
 
@@ -447,12 +376,10 @@ begin
       keeper.halt <= '0';
     elsif rising_edge(clk_i) then
       keeper.err  <= '0'; -- default
-      keeper.halt <= port_sel(port_xip_c) or port_sel(port_ext_c); -- no timeout if XIP or EXTERNAL access
+      keeper.halt <= port_sel(2) or port_sel(5); -- no timeout if XIP or EXTERNAL access
       if (keeper.busy = '0') then -- bus idle
-        keeper.cnt <= std_ulogic_vector(to_unsigned(TIMEOUT, keeper.cnt'length));
-        if (main_req_i.re = '1') or (main_req_i.we = '1') then
-          keeper.busy <= '1';
-        end if;
+        keeper.cnt  <= std_ulogic_vector(to_unsigned(TIMEOUT, keeper.cnt'length));
+        keeper.busy <= main_req_i.stb;
       else -- bus access in progress
         keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) - 1);
         if (int_rsp.err = '1') or ((or_reduce_f(keeper.cnt) = '0') and (keeper.halt = '0')) then -- bus error or timeout
@@ -615,13 +542,10 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   );
 
   -- device ports combined as arrays --
-  type dev_req_t is array (num_devs_physical_c-1 downto 0) of bus_req_t;
-  type dev_rsp_t is array (num_devs_physical_c-1 downto 0) of bus_rsp_t;
+  type dev_req_t is array (0 to num_devs_physical_c-1) of bus_req_t;
+  type dev_rsp_t is array (0 to num_devs_physical_c-1) of bus_rsp_t;
   signal dev_req : dev_req_t;
   signal dev_rsp : dev_rsp_t;
-
-  -- device select, one-hot --
-  signal dev_sel : std_ulogic_vector(num_devs_physical_c-1 downto 0);
 
 begin
 
@@ -657,20 +581,19 @@ begin
 
     access_gen_enabled:
     if (dev_en_list_c(i) = true) generate
-      dev_sel(i)      <= '1' when main_req_i.addr(abb_hi_c downto abb_lo_c) = dev_base_list_c(i)(abb_hi_c downto abb_lo_c) else '0';
-      dev_req(i).addr <= main_req_i.addr;
-      dev_req(i).data <= main_req_i.data;
-      dev_req(i).ben  <= main_req_i.ben;
-      dev_req(i).we   <= main_req_i.we and dev_sel(i);
-      dev_req(i).re   <= main_req_i.re and dev_sel(i);
-      dev_req(i).src  <= main_req_i.src;
-      dev_req(i).priv <= main_req_i.priv;
-      dev_req(i).rvso <= main_req_i.rvso;
+      req_gen: process(main_req_i)
+      begin
+        dev_req(i) <= main_req_i;
+        if (main_req_i.addr(abb_hi_c downto abb_lo_c) = dev_base_list_c(i)(abb_hi_c downto abb_lo_c)) then
+          dev_req(i).stb <= main_req_i.stb;
+        else
+          dev_req(i).stb <= '0';
+        end if;
+      end process req_gen;
     end generate;
 
     access_gen_disabled:
     if (dev_en_list_c(i) = false) generate
-      dev_sel(i) <= '0';
       dev_req(i) <= req_terminate_c;
     end generate;
 
@@ -806,18 +729,18 @@ begin
 
         when "10" => -- active reservation: wait for condition to invalidate reservation
         -- --------------------------------------------------------------------
-          if (core_req_i.re = '1') and (core_req_i.rvso = '1') then -- another LR instruction overriding the current reservation
+          if (core_req_i.stb = '1') and (core_req_i.rw = '0') and (core_req_i.rvso = '1') then -- another LR instruction overriding the current reservation
             rsvs.addr <= core_req_i.addr(31 downto abb_c);
           end if;
           --
-          if (rvs_clear_i = '1') then -- external clear request (highest priority!)
+          if (rvs_clear_i = '1') then -- external clear request (highest priority)
             rsvs.state <= "00"; -- invalidate reservation
-          elsif (core_req_i.we = '1') then -- write access
+          elsif (core_req_i.stb = '1') and (core_req_i.rw = '1') then -- write access
 
-            if (core_req_i.rvso = '1') then -- store-conditional to reservated address
+            if (core_req_i.rvso = '1') then -- this is a SC operation
               if (rsvs.match = '1') then -- SC to reservated address
                 rsvs.state <= "11"; -- execute SC instruction (reservation still valid)
-              else -- SC to any other address (new reservation attempt while the current one is still valid)
+              else -- SC to any other address
                 rsvs.state <= "00"; -- invalidate reservation
               end if;
 
@@ -835,7 +758,7 @@ begin
 
         when others => -- "0-" no active reservation: wait for new registration request
         -- --------------------------------------------------------------------
-          if (core_req_i.re = '1') and (core_req_i.rvso = '1') then -- load-reservate instruction
+          if (core_req_i.stb = '1') and (core_req_i.rw = '0') and (core_req_i.rvso = '1') then -- load-reservate instruction
             rsvs.addr  <= core_req_i.addr(31 downto abb_c);
             rsvs.state <= "10";
           end if;
@@ -863,10 +786,10 @@ begin
   bus_request: process(core_req_i, rsvs.valid)
   begin
     sys_req_o <= core_req_i;
-    if (core_req_i.rvso = '1') then -- reservation set operation (LR or SC)
-      sys_req_o.we <= core_req_i.we and rsvs.valid; -- write allowed (SC) if reservation still valid
-    else -- normal write request
-      sys_req_o.we <= core_req_i.we;
+    if (core_req_i.rvso = '1') and (core_req_i.rw = '1') then -- SC operation
+      sys_req_o.stb <= core_req_i.stb and rsvs.valid; -- write allowed if reservation still valid
+    else -- normal memory request or LR
+      sys_req_o.stb <= core_req_i.stb;
     end if;
   end process bus_request;
 
@@ -877,15 +800,16 @@ begin
     if (rstn_i = '0') then
       ack_local <= '0';
     elsif rising_edge(clk_i) then
-      ack_local <= core_req_i.rvso and core_req_i.we and (not rsvs.valid);
+      ack_local <= core_req_i.rvso and core_req_i.stb and core_req_i.rw and (not rsvs.valid);
     end if;
   end process ack_override;
 
   -- response --
   core_rsp_o.err <= sys_rsp_i.err;
   core_rsp_o.ack <= sys_rsp_i.ack or ack_local; -- generate local ACK if SC fails
+  -- inject 1 into read data's LSB if SC fails --
   core_rsp_o.data(31 downto 1) <= sys_rsp_i.data(31 downto 1);
-  core_rsp_o.data(0) <= sys_rsp_i.data(0) or (core_req_i.rvso and (not rsvs.valid)); -- inject 1 into read data's LSB if SC fails
+  core_rsp_o.data(0) <= sys_rsp_i.data(0) or (core_req_i.rvso and core_req_i.rw and (not rsvs.valid));
 
 
 end neorv32_bus_reservation_set_rtl;
