@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 04.10.2023 | 1.8.9.7 | :warning: rework internal bus protocol; [#697](https://github.com/stnolting/neorv32/pull/697) |
 | 29.09.2023 | 1.8.9.6 | optimize PMP logic (reducing area requirements); [#695](https://github.com/stnolting/neorv32/pull/695) |
 | 29.09.2023 | 1.8.9.5 | minor CPU optimizations and code clean-ups; [#694](https://github.com/stnolting/neorv32/pull/694) |
 | 23.09.2023 | 1.8.9.4 | :sparkles: added vectored trap handling mode of `mtvec` for reduced latency from IRQ to ISR; [#691](https://github.com/stnolting/neorv32/pull/691)
