@@ -232,6 +232,8 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_reservate_word(
 
   return amo_rdata;
 #else
+  (void)addr;
+
   return 0;
 #endif
 }
@@ -258,6 +260,9 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_store_conditional_wo
 
   return amo_status;
 #else
+  (void)addr;
+  (void)wdata;
+
   return 1; // always fail
 #endif
 }
