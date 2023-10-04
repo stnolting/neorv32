@@ -15,7 +15,7 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: '🛠️ Modifying Doxyfile'
       run: |
@@ -29,7 +29,7 @@ jobs:
         doxyfile-path: 'docs/Doxyfile'
 
     - name: '📤 Upload Artifact'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: NEORV32-Doxygen
         path: doxygen_build/html
@@ -42,7 +42,7 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -53,7 +53,7 @@ jobs:
       run: ./do.py Documentation container
 
     - name: '📤 Upload Artifact: HTML'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: NEORV32
         path: docs/public
@@ -70,10 +70,10 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: '📥 Download Artifacts'
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
 
     - name: '🛠️ Organise public subdir and create a tarball'
       run: |

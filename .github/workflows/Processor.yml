@@ -19,7 +19,6 @@ on:
 
 jobs:
 
-
   Linux:
     runs-on: ubuntu-latest
     name: '🐧 Ubuntu | Shell script'
@@ -27,7 +26,7 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: '⚙️ Build Software Framework Tests'
       uses: docker://ghcr.io/stnolting/neorv32/sim
@@ -47,7 +46,7 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: '⚙️ Build and install Processor Check software'
       uses: docker://ghcr.io/stnolting/neorv32/sim
