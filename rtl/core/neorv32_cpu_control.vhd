@@ -418,7 +418,7 @@ begin
   fetch_pc_o     <= fetch_engine.pc & "00"; -- word aligned
 
   -- instruction fetch (read) request if IPB not full --
-  bus_req_o.re <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
+  bus_req_o.stb <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
 
   -- unaligned access error (no alignment exceptions possible when using C-extension) --
   fetch_engine.a_err <= '1' when (fetch_engine.unaligned = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
@@ -440,7 +440,7 @@ begin
   bus_req_o.priv <= ctrl.cpu_priv;
   bus_req_o.data <= (others => '0'); -- read-only
   bus_req_o.ben  <= (others => '0'); -- read-only
-  bus_req_o.we   <= '0'; -- read-only
+  bus_req_o.rw   <= '0'; -- read-only
   bus_req_o.src  <= '1'; -- source = instruction fetch
   bus_req_o.rvso <= '0'; -- cannot be a reservation set operation
 
@@ -790,7 +790,7 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(ctrl, execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, issue_engine, csr, alu_cp_done_i, lsu_wait_i)
+  execute_engine_fsm_comb: process(execute_engine, debug_ctrl, trap_ctrl, decode_aux, fetch_engine, issue_engine, csr, alu_cp_done_i, lsu_wait_i)
   begin
     -- arbiter defaults --
     execute_engine.state_nxt    <= execute_engine.state;
@@ -1038,11 +1038,7 @@ begin
         if (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- abort if illegal instruction
           execute_engine.state_nxt <= DISPATCH;
         else
-          if (ctrl.lsu_rw = '1') then
-            ctrl_nxt.lsu_req_wr <= '1'; -- write
-          else
-            ctrl_nxt.lsu_req_rd <= '1'; -- read
-          end if;
+          ctrl_nxt.lsu_req         <= '1'; -- memory access request
           execute_engine.state_nxt <= MEM_WAIT;
         end if;
 
@@ -1113,8 +1109,7 @@ begin
   ctrl_o.alu_cp_trig  <= ctrl.alu_cp_trig;
 
   -- data bus interface --
-  ctrl_o.lsu_req_rd   <= ctrl.lsu_req_rd;
-  ctrl_o.lsu_req_wr   <= ctrl.lsu_req_wr;
+  ctrl_o.lsu_req      <= ctrl.lsu_req;
   ctrl_o.lsu_rw       <= ctrl.lsu_rw;
   ctrl_o.lsu_mo_we    <= '1' when (execute_engine.state = MEM_REQ) else '0'; -- write memory output registers (data & address)
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
@@ -2307,8 +2302,8 @@ begin
   cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)   and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
   cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                                else '0'; -- multi-cycle alu-operation wait cycle
 
-  cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl.lsu_req_rd = '1')                                                       else '0'; -- load operation
-  cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl.lsu_req_wr = '1')                                                       else '0'; -- store operation
+  cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '0')                                  else '0'; -- load operation
+  cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '1')                                  else '0'; -- store operation
   cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = MEM_WAIT) and (execute_engine.state_prev2 = MEM_WAIT) else '0'; -- load/store memory wait cycle
 
   cnt_event(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.ir(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)

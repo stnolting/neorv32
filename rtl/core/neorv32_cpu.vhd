@@ -133,8 +133,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal curr_pc      : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
   signal next_pc      : std_ulogic_vector(XLEN-1 downto 0); -- next pc (for next executed instruction)
   signal pmp_ex_fault : std_ulogic; -- PMP instruction fetch fault
-  signal pmp_rd_fault : std_ulogic; -- PMP read fault
-  signal pmp_wr_fault : std_ulogic; -- PMP write fault
+  signal pmp_rw_fault : std_ulogic; -- PMP read/write access fault
 
 begin
 
@@ -344,24 +343,23 @@ begin
   )
   port map (
     -- global control --
-    clk_i         => clk_i,        -- global clock, rising edge
-    rstn_i        => rstn_i,       -- global reset, low-active, async
-    ctrl_i        => ctrl,         -- main control bus
+    clk_i       => clk_i,        -- global clock, rising edge
+    rstn_i      => rstn_i,       -- global reset, low-active, async
+    ctrl_i      => ctrl,         -- main control bus
     -- cpu data access interface --
-    addr_i        => alu_add,      -- access address
-    wdata_i       => rs2,          -- write data
-    rdata_o       => mem_rdata,    -- read data
-    mar_o         => mar,          -- memory address register
-    wait_o        => lsu_wait,     -- wait for access to complete
-    ma_load_o     => ma_load,      -- misaligned load data address
-    ma_store_o    => ma_store,     -- misaligned store data address
-    be_load_o     => be_load,      -- bus error on load data access
-    be_store_o    => be_store,     -- bus error on store data access
-    pmp_r_fault_i => pmp_rd_fault, -- PMP read fault
-    pmp_w_fault_i => pmp_wr_fault, -- PMP write fault
+    addr_i      => alu_add,      -- access address
+    wdata_i     => rs2,          -- write data
+    rdata_o     => mem_rdata,    -- read data
+    mar_o       => mar,          -- memory address register
+    wait_o      => lsu_wait,     -- wait for access to complete
+    ma_load_o   => ma_load,      -- misaligned load data address
+    ma_store_o  => ma_store,     -- misaligned store data address
+    be_load_o   => be_load,      -- bus error on load data access
+    be_store_o  => be_store,     -- bus error on store data access
+    pmp_fault_i => pmp_rw_fault, -- PMP read/write access fault
     -- data bus --
-    bus_req_o     => dbus_req_o,   -- request
-    bus_rsp_i     => dbus_rsp_i    -- response
+    bus_req_o   => dbus_req_o,   -- request
+    bus_rsp_i   => dbus_rsp_i    -- response
   );
 
 
@@ -389,17 +387,15 @@ begin
       addr_ls_i   => alu_add,        -- load/store address
       -- faults --
       fault_ex_o  => pmp_ex_fault,   -- instruction fetch fault
-      fault_rd_o  => pmp_rd_fault,   -- data load fault
-      fault_wr_o  => pmp_wr_fault    -- data store fault
+      fault_rw_o  => pmp_rw_fault    -- read/write access fault
     );
   end generate;
 
   pmp_inst_false:
   if (pmp_enable_c = false) generate
     xcsr_rdata_pmp <= (others => '0');
-    pmp_ex_fault    <= '0';
-    pmp_rd_fault    <= '0';
-    pmp_wr_fault    <= '0';
+    pmp_ex_fault <= '0';
+    pmp_rw_fault <= '0';
   end generate;
 
 
