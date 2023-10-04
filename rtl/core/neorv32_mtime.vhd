@@ -88,7 +88,7 @@ begin
       mtime_hi      <= (others => '0');
     elsif rising_edge(clk_i) then
       -- mtimecmp --
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(3 downto 2) = "10") then
           mtimecmp_lo <= bus_req_i.data;
         end if;
@@ -99,12 +99,12 @@ begin
 
       -- mtime write access buffer --
       mtime_lo_we <= '0';
-      if (bus_req_i.we = '1') and (bus_req_i.addr(3 downto 2) = "00") then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) = "00") then
         mtime_lo_we <= '1';
       end if;
       --
       mtime_hi_we <= '0';
-      if (bus_req_i.we = '1') and (bus_req_i.addr(3 downto 2) = "01") then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) = "01") then
         mtime_hi_we <= '1';
       end if;
 
@@ -134,9 +134,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus handshake
+      bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
       bus_rsp_o.data <= (others => '0'); -- default
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(3 downto 2) is
           when "00"   => bus_rsp_o.data <= mtime_lo;
           when "01"   => bus_rsp_o.data <= mtime_hi;

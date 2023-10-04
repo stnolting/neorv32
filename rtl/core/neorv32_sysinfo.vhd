@@ -130,11 +130,11 @@ begin
   sysinfo(2)(05) <= bool_to_ulogic_f(ICACHE_EN);           -- processor-internal instruction cache implemented?
   sysinfo(2)(06) <= bool_to_ulogic_f(DCACHE_EN);           -- processor-internal data cache implemented?
   -- reserved --
-  sysinfo(2)(07) <= '0'; -- reserved
-  sysinfo(2)(08) <= '0'; -- reserved
-  sysinfo(2)(09) <= '0'; -- reserved
-  sysinfo(2)(10) <= '0'; -- reserved
-  sysinfo(2)(11) <= '0'; -- reserved
+  sysinfo(2)(07) <= '0';
+  sysinfo(2)(08) <= '0';
+  sysinfo(2)(09) <= '0';
+  sysinfo(2)(10) <= '0';
+  sysinfo(2)(11) <= '0';
   -- Peripherals/IO --
   sysinfo(2)(12) <= bool_to_ulogic_f(IO_CRC_EN);           -- cyclic redundancy check unit (CRC) implemented?
   sysinfo(2)(13) <= bool_to_ulogic_f(IO_SLINK_EN);         -- stream link interface (SLINK) implemented?
@@ -174,9 +174,10 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re; -- read-only!
+      bus_rsp_o.ack  <= '0';
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then -- read-only
+        bus_rsp_o.ack  <= '1';
         bus_rsp_o.data <= sysinfo(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
       end if;
     end if;

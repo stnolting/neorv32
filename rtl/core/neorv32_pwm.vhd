@@ -93,7 +93,7 @@ begin
       prsc   <= (others => '0');
       pwm_ch <= (others => (others => '0'));
     elsif rising_edge(clk_i) then
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         -- control register --
         if (bus_req_i.addr(3 downto 2) = "00") then
           enable <= bus_req_i.data(ctrl_enable_c);
@@ -128,9 +128,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus handshake
+      bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         case bus_req_i.addr(3 downto 2) is
           when "00"   => bus_rsp_o.data(ctrl_enable_c) <= enable; bus_rsp_o.data(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c) <= prsc;
           when "01"   => bus_rsp_o.data <= pwm_ch_rd(03) & pwm_ch_rd(02) & pwm_ch_rd(01) & pwm_ch_rd(00);

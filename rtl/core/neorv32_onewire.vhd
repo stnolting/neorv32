@@ -149,7 +149,7 @@ begin
       tx_data        <= (others => '0');
     elsif rising_edge(clk_i) then
       -- write access --
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         -- control register --
         if (bus_req_i.addr(2) = '0') then
           ctrl.enable   <= bus_req_i.data(ctrl_en_c);
@@ -163,7 +163,7 @@ begin
       end if;
 
       -- operation triggers --
-      if (bus_req_i.we = '1') and (bus_req_i.addr(2) = '0') then -- set by host
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') then -- set by host
         ctrl.trig_rst  <= bus_req_i.data(ctrl_trig_rst_c);
         ctrl.trig_bit  <= bus_req_i.data(ctrl_trig_bit_c);
         ctrl.trig_byte <= bus_req_i.data(ctrl_trig_byte_c);
@@ -179,9 +179,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus handshake
+      bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         -- control register --
         if (bus_req_i.addr(2) = '0') then
           bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;

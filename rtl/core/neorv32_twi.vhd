@@ -152,7 +152,7 @@ begin
       trig_stop  <= '0';
       trig_data  <= '0';
       -- bus access --
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(2) = '0') then -- control register
           ctrl.enable <= bus_req_i.data(ctrl_en_c);
           ctrl.mack   <= bus_req_i.data(ctrl_mack_c);
@@ -172,9 +172,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus handshake
+      bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         if (bus_req_i.addr(2) = '0') then -- control register
           bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
           bus_rsp_o.data(ctrl_mack_c)                      <= ctrl.mack;

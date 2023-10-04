@@ -68,7 +68,7 @@ begin
     if (rstn_i = '0') then
       dout <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(3 downto 2) = "10") then
           dout(31 downto 00) <= bus_req_i.data;
         end if;
@@ -83,9 +83,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.we or bus_req_i.re;
+      bus_rsp_o.ack  <= bus_req_i.stb;
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(3 downto 2) is
           when "00"   => bus_rsp_o.data <= din_rd(31 downto 00);
           when "01"   => bus_rsp_o.data <= din_rd(63 downto 32);
