@@ -205,7 +205,7 @@ begin
       ctrl.irq_tx_empty  <= '0';
       ctrl.irq_tx_nhalf  <= '0';
     elsif rising_edge(clk_i) then
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(2) = '0') then -- control register
           ctrl.enable        <= bus_req_i.data(ctrl_en_c);
           ctrl.sim_mode      <= bus_req_i.data(ctrl_sim_en_c);
@@ -227,9 +227,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.we or bus_req_i.re; -- bus access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         if (bus_req_i.addr(2) = '0') then -- control register
           bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
           bus_rsp_o.data(ctrl_sim_en_c)                    <= ctrl.sim_mode;
@@ -298,7 +298,7 @@ begin
 
   tx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
   tx_fifo.wdata <= bus_req_i.data(data_rtx_msb_c downto data_rtx_lsb_c);
-  tx_fifo.we    <= '1' when (bus_req_i.we = '1') and (bus_req_i.addr(2) = '1') else '0';
+  tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.re    <= '1' when (tx_engine.state = "100") else '0';
 
   -- TX interrupt generator --
@@ -339,7 +339,7 @@ begin
   rx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
   rx_fifo.wdata <= rx_engine.sreg(8 downto 1);
   rx_fifo.we    <= rx_engine.done;
-  rx_fifo.re    <= '1' when (bus_req_i.re = '1') and (bus_req_i.addr(2) = '1') else '0';
+  rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
 
   -- RX interrupt generator --
   rx_irq_generator: process(clk_i)
@@ -469,7 +469,7 @@ begin
   fifo_overrun: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if ((bus_req_i.re = '1') and (bus_req_i.addr(2) = '1')) or (ctrl.enable = '0') then -- clear when reading data register
+      if ((bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1')) or (ctrl.enable = '0') then -- clear when reading data register
         rx_engine.over <= '0';
       elsif (rx_fifo.we = '1') and (rx_fifo.free = '0') then -- writing to full FIFO
         rx_engine.over <= '1';
@@ -506,7 +506,7 @@ begin
       variable line_file_v   : line;
     begin
       if rising_edge(clk_i) then
-        if (ctrl.enable = '1') and (ctrl.sim_mode = '1') and (bus_req_i.we = '1') and (bus_req_i.addr(2) = '1') then
+        if (ctrl.enable = '1') and (ctrl.sim_mode = '1') and (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') then
           -- convert lowest byte to ASCII char --
           char_v := to_integer(unsigned(bus_req_i.data(7 downto 0)));
           if (char_v >= 128) then -- out of printable range?

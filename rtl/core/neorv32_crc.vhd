@@ -89,7 +89,7 @@ begin
       crc.data <= (others => '0');
       we_ack   <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(3 downto 2) = mode_addr_c) then -- mode select
           crc.mode <= bus_req_i.data(01 downto 0);
         end if;
@@ -101,7 +101,7 @@ begin
         end if;
       end if;
       -- delayed write ACK --
-      we_ack <= we_ack(we_ack'left-1 downto 0) & bus_req_i.we;
+      we_ack <= we_ack(we_ack'left-1 downto 0) & (bus_req_i.stb and bus_req_i.rw);
     end if;
   end process write_access;
 
@@ -110,8 +110,8 @@ begin
   begin
     if rising_edge(clk_i) then
       bus_rsp_o.data <= (others => '0');
-      bus_rsp_o.ack  <= we_ack(we_ack'left) or bus_req_i.re;
-      if (bus_req_i.re = '1') then
+      bus_rsp_o.ack  <= we_ack(we_ack'left) or (bus_req_i.stb and (not bus_req_i.rw));
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(3 downto 2) is
           when mode_addr_c => bus_rsp_o.data(01 downto 0) <= crc.mode; -- mode select
           when poly_addr_c => bus_rsp_o.data(31 downto 0) <= crc.poly; -- polynomial
@@ -134,13 +134,13 @@ begin
       crc.sreg <= (others => '0');
     elsif rising_edge(clk_i) then
       -- arbitration --
-      if (bus_req_i.we = '1') and (bus_req_i.addr(3 downto 2) = data_addr_c) then -- writing new data
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) = data_addr_c) then -- writing new data
         crc.cnt <= "0111"; -- start with MSB
       elsif (crc.cnt(3) = '0') then -- not done yet?
         crc.cnt <= std_ulogic_vector(unsigned(crc.cnt) - 1);
       end if;
       -- computation --
-      if (bus_req_i.we = '1') and (bus_req_i.addr(3 downto 2) = sreg_addr_c) then -- set start value
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) = sreg_addr_c) then -- set start value
         crc.sreg <= bus_req_i.data;
       elsif (crc.cnt(3) = '0') then
         if (crc.msb = crc.data(to_integer(unsigned(crc.cnt(2 downto 0))))) then

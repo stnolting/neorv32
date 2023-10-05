@@ -159,7 +159,7 @@ begin
       ctrl.irq_tx_empty <= '0';
       ctrl.irq_tx_nhalf <= '0';
     elsif rising_edge(clk_i) then
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(2) = '0') then -- control register
           ctrl.enable       <= bus_req_i.data(ctrl_en_c);
           ctrl.cpha         <= bus_req_i.data(ctrl_cpha_c);
@@ -180,9 +180,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.we or bus_req_i.re; -- bus access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         if (bus_req_i.addr(2) = '0') then -- control register
           bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
           bus_rsp_o.data(ctrl_cpha_c)                          <= ctrl.cpha;
@@ -251,7 +251,7 @@ begin
   );
 
   tx_fifo.clear <= not ctrl.enable;
-  tx_fifo.we    <= '1' when (bus_req_i.we = '1') and (bus_req_i.addr(2) = '1') else '0';
+  tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.wdata <= bus_req_i.data(7 downto 0);
   tx_fifo.re    <= '1' when (rtx_engine.state = "100") else '0';
 
@@ -283,7 +283,7 @@ begin
   rx_fifo.clear <= not ctrl.enable;
   rx_fifo.wdata <= rtx_engine.sreg;
   rx_fifo.we    <= rtx_engine.done;
-  rx_fifo.re    <= '1' when (bus_req_i.re = '1') and (bus_req_i.addr(2) = '1') else '0';
+  rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
 
 
   -- IRQ generator --

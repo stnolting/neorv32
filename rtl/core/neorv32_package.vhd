@@ -59,7 +59,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080906"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080907"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -160,8 +160,8 @@ package neorv32_package is
     addr : std_ulogic_vector(31 downto 0); -- access address
     data : std_ulogic_vector(31 downto 0); -- write data
     ben  : std_ulogic_vector(03 downto 0); -- byte enable
-    we   : std_ulogic; -- write request (single-shot)
-    re   : std_ulogic; -- read request (single-shot)
+    stb  : std_ulogic; -- request strobe (single-shot)
+    rw   : std_ulogic; -- 0=read, 1=write
     src  : std_ulogic; -- access source (1=instruction fetch, 0=data access)
     priv : std_ulogic; -- set if privileged (machine-mode) access
     rvso : std_ulogic; -- set if reservation set operation (atomic LR/SC)
@@ -179,8 +179,8 @@ package neorv32_package is
     addr => (others => '0'),
     data => (others => '0'),
     ben  => (others => '0'),
-    we   => '0',
-    re   => '0',
+    stb  => '0',
+    rw   => '0',
     src  => '0',
     priv => '0',
     rvso => '0'
@@ -528,8 +528,7 @@ package neorv32_package is
     alu_unsigned : std_ulogic;                     -- is unsigned ALU operation
     alu_cp_trig  : std_ulogic_vector(04 downto 0); -- co-processor trigger (one-hot)
     -- load/store unit --
-    lsu_req_rd   : std_ulogic;                     -- trigger memory read request
-    lsu_req_wr   : std_ulogic;                     -- trigger memory write request
+    lsu_req      : std_ulogic;                     -- trigger memory access request
     lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
     lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
     lsu_fence    : std_ulogic;                     -- fence operation
@@ -560,8 +559,7 @@ package neorv32_package is
     alu_opb_mux  => '0',
     alu_unsigned => '0',
     alu_cp_trig  => (others => '0'),
-    lsu_req_rd   => '0',
-    lsu_req_wr   => '0',
+    lsu_req      => '0',
     lsu_rw       => '0',
     lsu_mo_we    => '0',
     lsu_fence    => '0',

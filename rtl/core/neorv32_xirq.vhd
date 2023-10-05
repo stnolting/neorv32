@@ -96,7 +96,7 @@ begin
       irq_enable   <= (others => '0');
     elsif rising_edge(clk_i) then
       nclr_pending <= (others => '1');
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(3 downto 2) = "00") then -- channel-enable
           irq_enable <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0);
         end if;
@@ -111,9 +111,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus handshake
+      bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(3 downto 2) is
           when "00"   => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
           when "01"   => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_pending; -- pending IRQs
@@ -201,7 +201,7 @@ begin
           cpu_irq_o  <= '1';
           irq_active <= '1';
         end if;
-      elsif (bus_req_i.we = '1') and (bus_req_i.addr(3 downto 2) = "10") then -- acknowledge on write access
+      elsif (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) = "10") then -- acknowledge on write access
         irq_active <= '0';
       end if;
     end if;

@@ -178,7 +178,7 @@ begin
       ctrl.t0_high  <= (others => '0');
       ctrl.t1_high  <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (bus_req_i.we = '1') and (bus_req_i.addr(2) = '0') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') then
         ctrl.enable   <= bus_req_i.data(ctrl_en_c);
         ctrl.mode     <= bus_req_i.data(ctrl_mode_c);
         ctrl.strobe   <= bus_req_i.data(ctrl_strobe_c);
@@ -195,9 +195,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.we or bus_req_i.re; -- access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.stb; -- access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
         bus_rsp_o.data(ctrl_mode_c)                          <= ctrl.mode;
         bus_rsp_o.data(ctrl_strobe_c)                        <= ctrl.strobe;
@@ -249,7 +249,7 @@ begin
   );
 
   tx_fifo.re    <= '1' when (serial.state = "100") else '0';
-  tx_fifo.we    <= '1' when (bus_req_i.we = '1') and (bus_req_i.addr(2) = '1') else '0';
+  tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.wdata <= ctrl.strobe & ctrl.mode & bus_req_i.data;
   tx_fifo.clear <= not ctrl.enable;
 

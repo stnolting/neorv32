@@ -128,7 +128,7 @@ begin
       reset_wdt   <= '0';
       reset_force <= '0';
       -- bus access --
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(2) = '0') then -- control register
           if (ctrl.lock = '0') then -- update configuration only if not locked
             ctrl.enable  <= bus_req_i.data(ctrl_enable_c);
@@ -155,9 +155,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we;
+      bus_rsp_o.ack  <= bus_req_i.stb;
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         bus_rsp_o.data(ctrl_enable_c)                                <= ctrl.enable;
         bus_rsp_o.data(ctrl_lock_c)                                  <= ctrl.lock;
         bus_rsp_o.data(ctrl_dben_c)                                  <= ctrl.dben;

@@ -91,7 +91,7 @@ begin
       timer.thres  <= (others => '0');
     elsif rising_edge(clk_i) then
       timer.cnt_we <= '0'; -- default
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(3 downto 2) = "00") then -- control register
           ctrl(ctrl_en_c)    <= bus_req_i.data(ctrl_en_c);
           ctrl(ctrl_prsc0_c) <= bus_req_i.data(ctrl_prsc0_c);
@@ -113,9 +113,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(3 downto 2) is
           when "00" => -- control register
             bus_rsp_o.data(ctrl_en_c)    <= ctrl(ctrl_en_c);

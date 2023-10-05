@@ -160,7 +160,7 @@ begin
       spi_trigger <= '0';
     elsif rising_edge(clk_i) then
       spi_trigger <= '0';
-      if (bus_req_i.we = '1') then -- only full-word writes!
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         -- control register --
         if (bus_req_i.addr(3 downto 2) = "00") then
           ctrl(ctrl_enable_c)                                <= bus_req_i.data(ctrl_enable_c);
@@ -194,9 +194,9 @@ begin
   ctrl_read_access : process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.we or bus_req_i.re; -- access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.stb; -- access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(3 downto 2) is
           when "00" => -- 'xip_ctrl_addr_c' - control register
             bus_rsp_o.data(ctrl_enable_c)                                <= ctrl(ctrl_enable_c);
@@ -255,13 +255,13 @@ begin
         arbiter.state <= arbiter.state_nxt;
       end if;
       -- address look-ahead --
-      if (xip_req_i.re = '1') then
+      if (xip_req_i.stb = '1') and (xip_req_i.rw = '0') then
         arbiter.addr <= xip_req_i.addr; -- buffer address (reducing fan-out on CPU's address net)
       end if;
       arbiter.addr_lookahead <= std_ulogic_vector(unsigned(arbiter.addr) + 4); -- prefetch address of *next* linear access
       -- XIP access error? --
       if (arbiter.state = S_DIRECT) then
-        arbiter.xip_acc_err <= xip_req_i.re or xip_req_i.we;
+        arbiter.xip_acc_err <= xip_req_i.stb;
       else
         arbiter.xip_acc_err <= '0';
       end if;
@@ -303,10 +303,12 @@ begin
 
       when S_IDLE => -- wait for new bus request
       -- ------------------------------------------------------------
-        if (xip_req_i.re = '1') then
-          arbiter.state_nxt <= S_CHECK;
-        elsif (xip_req_i.we = '1') then
-          arbiter.state_nxt <= S_ERROR;
+        if (xip_req_i.stb = '1') then
+          if (xip_req_i.rw = '0') then
+            arbiter.state_nxt <= S_CHECK;
+          else
+            arbiter.state_nxt <= S_ERROR;
+          end if;
         end if;
 
       when S_CHECK => -- check if we can resume flash access

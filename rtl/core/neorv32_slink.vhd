@@ -149,7 +149,7 @@ begin
     elsif rising_edge(clk_i) then
       ctrl.rx_clr <= '0'; -- auto-clear
       ctrl.tx_clr <= '0'; -- auto-clear
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(2) = '0') then -- control register
           ctrl.enable <= bus_req_i.data(ctrl_en_c);
           ctrl.rx_clr <= bus_req_i.data(ctrl_rx_clr_c);
@@ -170,9 +170,9 @@ begin
   read_aceess: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         if (bus_req_i.addr(2) = '0') then -- control register
           bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
           --
@@ -229,7 +229,7 @@ begin
   );
 
   rx_fifo.clear <= (not ctrl.enable) or ctrl.rx_clr;
-  rx_fifo.re    <= '1' when (bus_req_i.re = '1') and (bus_req_i.addr(2) = '1') else '0';
+  rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
 
   rx_fifo.we       <= slink_rx_valid_i;
   rx_fifo.wdata    <= slink_rx_data_i;
@@ -262,7 +262,7 @@ begin
   );
 
   tx_fifo.clear <= (not ctrl.enable) or ctrl.tx_clr;
-  tx_fifo.we    <= '1' when (bus_req_i.we = '1') and (bus_req_i.addr(2) = '1') else '0';
+  tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.wdata <= bus_req_i.data;
 
   tx_fifo.re       <= slink_tx_ready_i;

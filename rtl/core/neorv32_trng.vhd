@@ -146,7 +146,7 @@ begin
       irq_fifo_full   <= '0';
     elsif rising_edge(clk_i) then
       fifo_clr <= '0'; -- auto-clear
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         enable          <= bus_req_i.data(ctrl_en_c);
         fifo_clr        <= bus_req_i.data(ctrl_fifo_clr_c);
         irq_fifo_nempty <= bus_req_i.data(ctrl_irq_fifo_nempty);
@@ -160,9 +160,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.we or bus_req_i.re; -- host bus acknowledge
+      bus_rsp_o.ack  <= bus_req_i.stb; -- host bus acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
         --
         bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_TRNG_FIFO), 4));
@@ -227,7 +227,7 @@ begin
   );
 
   fifo.clear <= '1' when (enable = '0') or (fifo_clr = '1') else '0';
-  fifo.re    <= '1' when (bus_req_i.re = '1') else '0';
+  fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') else '0';
 
   -- FIFO-level interrupt generator --
  irq_generator: process(clk_i)

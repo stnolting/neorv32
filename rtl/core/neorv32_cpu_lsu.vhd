@@ -45,40 +45,32 @@ entity neorv32_cpu_lsu is
   );
   port (
     -- global control --
-    clk_i         : in  std_ulogic; -- global clock, rising edge
-    rstn_i        : in  std_ulogic := '0'; -- global reset, low-active, async
-    ctrl_i        : in  ctrl_bus_t; -- main control bus
+    clk_i       : in  std_ulogic; -- global clock, rising edge
+    rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
+    ctrl_i      : in  ctrl_bus_t; -- main control bus
     -- cpu data access interface --
-    addr_i        : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU result -> access address
-    wdata_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
-    rdata_o       : out std_ulogic_vector(XLEN-1 downto 0); -- read data
-    mar_o         : out std_ulogic_vector(XLEN-1 downto 0); -- current memory address register
-    wait_o        : out std_ulogic; -- wait for access to complete
-    ma_load_o     : out std_ulogic; -- misaligned load data address
-    ma_store_o    : out std_ulogic; -- misaligned store data address
-    be_load_o     : out std_ulogic; -- bus error on load data access
-    be_store_o    : out std_ulogic; -- bus error on store data access
-    pmp_r_fault_i : in  std_ulogic; -- PMP read fault
-    pmp_w_fault_i : in  std_ulogic; -- PMP write fault
+    addr_i      : in  std_ulogic_vector(XLEN-1 downto 0); -- access address
+    wdata_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
+    rdata_o     : out std_ulogic_vector(XLEN-1 downto 0); -- read data
+    mar_o       : out std_ulogic_vector(XLEN-1 downto 0); -- current memory address register
+    wait_o      : out std_ulogic; -- wait for access to complete
+    ma_load_o   : out std_ulogic; -- misaligned load data address
+    ma_store_o  : out std_ulogic; -- misaligned store data address
+    be_load_o   : out std_ulogic; -- bus error on load data access
+    be_store_o  : out std_ulogic; -- bus error on store data access
+    pmp_fault_i : in  std_ulogic; -- PMP read/write access fault
     -- data bus --
-    bus_req_o     : out bus_req_t;  -- request
-    bus_rsp_i     : in  bus_rsp_t   -- response
+    bus_req_o   : out bus_req_t;  -- request
+    bus_rsp_i   : in  bus_rsp_t   -- response
   );
 end neorv32_cpu_lsu;
 
 architecture neorv32_cpu_lsu_rtl of neorv32_cpu_lsu is
 
-  -- bus arbiter --
-  type bus_arbiter_t is record
-    pend_rd : std_ulogic; -- pending bus read access
-    pend_wr : std_ulogic; -- pending bus write access
-    bus_err : std_ulogic; -- bus access error
-  end record;
-  signal arbiter : bus_arbiter_t;
-
-  -- misc --
-  signal mar        : std_ulogic_vector(XLEN-1 downto 0); -- data memory address register
-  signal misaligned : std_ulogic; -- misaligned address
+  signal mar         : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
+  signal misaligned  : std_ulogic; -- misaligned address
+  signal arbiter_req : std_ulogic; -- pending bus request
+  signal arbiter_err : std_ulogic; -- access error
 
 begin
 
@@ -95,8 +87,7 @@ begin
         case ctrl_i.ir_funct3(1 downto 0) is -- alignment check
           when "00"   => misaligned <= '0'; -- byte
           when "01"   => misaligned <= addr_i(0); -- half-word
-          when "10"   => misaligned <= addr_i(1) or addr_i(0); -- word
-          when others => misaligned <= '0'; -- undefined
+          when others => misaligned <= addr_i(1) or addr_i(0); -- word
         end case;
       end if;
     end if;
@@ -112,10 +103,13 @@ begin
   mem_type_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      bus_req_o.rw   <= '0';
       bus_req_o.priv <= '0';
       bus_req_o.rvso <= '0';
     elsif rising_edge(clk_i) then
       if (ctrl_i.lsu_mo_we = '1') then
+        -- read/write --
+        bus_req_o.rw <= ctrl_i.lsu_rw;
         -- privilege level --
         bus_req_o.priv <= ctrl_i.lsu_priv;
         -- reservation set operation --
@@ -132,7 +126,7 @@ begin
   bus_req_o.src <= '0'; -- 0 = data access
 
 
-  -- Write Data: Alignment and Byte Enable --------------------------------------------------
+  -- Data Output - Alignment and Byte Enable ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   mem_do_reg: process(rstn_i, clk_i)
   begin
@@ -166,14 +160,14 @@ begin
   end process mem_do_reg;
 
 
-  -- Read Data: Alignment and Sign-Extension ------------------------------------------------
+  -- Data Input - Alignment and Sign-Extension ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   mem_di_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       rdata_o <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (arbiter.pend_rd = '1') or ((AMO_LRSC_ENABLE = true) and (arbiter.pend_wr = '1')) then -- also update on write access for atomic sc.w
+      if (arbiter_req = '1') then -- pending request
         case ctrl_i.ir_funct3(1 downto 0) is
           when "00" => -- byte
             case mar(1 downto 0) is
@@ -191,15 +185,15 @@ begin
                 rdata_o(XLEN-1 downto 8) <= (others => ((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(31))); -- sign-ext
             end case;
           when "01" => -- half-word
-            if (mar(1) = '0') then
-              rdata_o(15 downto 0) <= bus_rsp_i.data(15 downto 00); -- low half-word
+            if (mar(1) = '0') then -- low half-word
+              rdata_o(15 downto 0) <= bus_rsp_i.data(15 downto 00);
               rdata_o(XLEN-1 downto 16) <= (others => ((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(15))); -- sign-ext
-            else
-              rdata_o(15 downto 0) <= bus_rsp_i.data(31 downto 16); -- high half-word
+            else -- high half-word
+              rdata_o(15 downto 0) <= bus_rsp_i.data(31 downto 16);
               rdata_o(XLEN-1 downto 16) <= (others => ((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(31))); -- sign-ext
             end if;
           when others => -- word
-            rdata_o(XLEN-1 downto 0) <= bus_rsp_i.data(XLEN-1 downto 0); -- full word
+            rdata_o(XLEN-1 downto 0) <= bus_rsp_i.data(XLEN-1 downto 0);
         end case;
       end if;
     end if;
@@ -211,17 +205,14 @@ begin
   access_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      arbiter.bus_err <= '0';
-      arbiter.pend_rd <= '0';
-      arbiter.pend_wr <= '0';
+      arbiter_err <= '0';
+      arbiter_req <= '0';
     elsif rising_edge(clk_i) then
-      arbiter.bus_err <= bus_rsp_i.err and (arbiter.pend_rd or arbiter.pend_wr); -- bus error during access
-      if (arbiter.pend_rd = '0') and (arbiter.pend_wr = '0') then -- idle
-        arbiter.pend_rd <= ctrl_i.lsu_req_rd;
-        arbiter.pend_wr <= ctrl_i.lsu_req_wr;
+      arbiter_err <= arbiter_req and (bus_rsp_i.err or pmp_fault_i);
+      if (arbiter_req = '0') then -- idle
+        arbiter_req <= ctrl_i.lsu_req;
       elsif (bus_rsp_i.ack = '1') or (ctrl_i.cpu_trap = '1') then -- normal termination or start of trap handling
-        arbiter.pend_rd <= '0';
-        arbiter.pend_wr <= '0';
+        arbiter_req <= '0';
       end if;
     end if;
   end process access_arbiter;
@@ -230,14 +221,13 @@ begin
   wait_o <= not bus_rsp_i.ack;
 
   -- output data access/alignment errors to control unit --
-  ma_load_o  <= arbiter.pend_rd and misaligned;
-  be_load_o  <= arbiter.pend_rd and (arbiter.bus_err or pmp_r_fault_i);
-  ma_store_o <= arbiter.pend_wr and misaligned;
-  be_store_o <= arbiter.pend_wr and (arbiter.bus_err or pmp_w_fault_i);
+  ma_load_o  <= arbiter_req and (not ctrl_i.lsu_rw) and misaligned;
+  be_load_o  <= arbiter_req and (not ctrl_i.lsu_rw) and arbiter_err;
+  ma_store_o <= arbiter_req and (    ctrl_i.lsu_rw) and misaligned;
+  be_store_o <= arbiter_req and (    ctrl_i.lsu_rw) and arbiter_err;
 
-  -- access requests (all source signals are driven by registers!) --
-  bus_req_o.re <= ctrl_i.lsu_req_rd and (not misaligned) and (not pmp_r_fault_i);
-  bus_req_o.we <= ctrl_i.lsu_req_wr and (not misaligned) and (not pmp_w_fault_i);
+  -- access request (all source signals are driven by registers!) --
+  bus_req_o.stb <= ctrl_i.lsu_req and (not misaligned) and (not pmp_fault_i);
 
 
 end neorv32_cpu_lsu_rtl;

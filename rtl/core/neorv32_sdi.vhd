@@ -151,7 +151,7 @@ begin
       ctrl.irq_tx_empty <= '0';
     elsif rising_edge(clk_i) then
       ctrl.clr_rx <= '0';
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(2) = '0') then -- control register
           ctrl.enable <= bus_req_i.data(ctrl_en_c);
           ctrl.clr_rx <= bus_req_i.data(ctrl_clr_rx_c);
@@ -169,9 +169,9 @@ begin
   read_aceess: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         if (bus_req_i.addr(2) = '0') then -- control register
           bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
           --
@@ -228,7 +228,7 @@ begin
   -- write access (CPU) --
   tx_fifo.clear <= not ctrl.enable;
   tx_fifo.wdata <= bus_req_i.data(7 downto 0);
-  tx_fifo.we    <= '1' when (bus_req_i.we = '1') and (bus_req_i.addr(2) = '1') else '0';
+  tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
 
   -- read access (SDI) --
   tx_fifo.re <= serial.start;
@@ -263,7 +263,7 @@ begin
 
   -- read access (CPU) --
   rx_fifo.clear <= (not ctrl.enable) or ctrl.clr_rx;
-  rx_fifo.re    <= '1' when (bus_req_i.re = '1') and (bus_req_i.addr(2) = '1') else '0';
+  rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
 
 
   -- Input Synchronizer ---------------------------------------------------------------------

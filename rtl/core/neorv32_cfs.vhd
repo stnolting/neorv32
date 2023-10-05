@@ -187,36 +187,35 @@ begin
       bus_rsp_o.data <= (others => '0');
     elsif rising_edge(clk_i) then -- synchronous interface for read and write accesses
       -- transfer/access acknowledge --
-      -- default: required for the CPU to check the CFS is answering a bus read OR write request;
-      -- all read and write accesses (to any cfs_reg, even if there is no according physical register implemented) will succeed.
-      bus_rsp_o.ack <= bus_req_i.re or bus_req_i.we;
+      bus_rsp_o.ack <= bus_req_i.stb;
 
-      -- write access --
-      if (bus_req_i.we = '1') then -- full-word write access, high for one cycle if there is an actual write access
-        if (bus_req_i.addr(7 downto 2) = "000000") then -- make sure to use the internal "addr" signal for the read/write interface
-          cfs_reg_wr(0) <= bus_req_i.data; -- some physical register, for example: control register
-        end if;
-        if (bus_req_i.addr(7 downto 2) = "000001") then
-          cfs_reg_wr(1) <= bus_req_i.data; -- some physical register, for example: data in/out fifo
-        end if;
-        if (bus_req_i.addr(7 downto 2) = "000010") then
-          cfs_reg_wr(2) <= bus_req_i.data; -- some physical register, for example: command fifo
-        end if;
-        if (bus_req_i.addr(7 downto 2) = "000011") then
-          cfs_reg_wr(3) <= bus_req_i.data; -- some physical register, for example: status register
-        end if;
-      end if;
-
-      -- read access --
+      -- defaults --
       bus_rsp_o.data <= (others => '0'); -- the output HAS TO BE ZERO if there is no actual read access
-      if (bus_req_i.re = '1') then -- the read access is always 32-bit wide, high for one cycle if there is an actual read access
-        case bus_req_i.addr(7 downto 2) is -- make sure to use the internal 'addr' signal for the read/write interface
-          when "000000" => bus_rsp_o.data <= cfs_reg_rd(0);
-          when "000001" => bus_rsp_o.data <= cfs_reg_rd(1);
-          when "000010" => bus_rsp_o.data <= cfs_reg_rd(2);
-          when "000011" => bus_rsp_o.data <= cfs_reg_rd(3);
-          when others   => bus_rsp_o.data <= (others => '0'); -- the remaining registers are not implemented and will read as zero
-        end case;
+
+      -- bus access --
+      if (bus_req_i.stb = '1') then -- valid access cycle, STB is high for one cycle
+        if (bus_req_i.rw = '1') then -- write access
+          if (bus_req_i.addr(7 downto 2) = "000000") then -- make sure to use the internal "addr" signal for the read/write interface
+            cfs_reg_wr(0) <= bus_req_i.data; -- some physical register, for example: control register
+          end if;
+          if (bus_req_i.addr(7 downto 2) = "000001") then
+            cfs_reg_wr(1) <= bus_req_i.data; -- some physical register, for example: data in/out fifo
+          end if;
+          if (bus_req_i.addr(7 downto 2) = "000010") then
+            cfs_reg_wr(2) <= bus_req_i.data; -- some physical register, for example: command fifo
+          end if;
+          if (bus_req_i.addr(7 downto 2) = "000011") then
+            cfs_reg_wr(3) <= bus_req_i.data; -- some physical register, for example: status register
+          end if;
+        else -- read access
+          case bus_req_i.addr(7 downto 2) is -- make sure to use the internal 'addr' signal for the read/write interface
+            when "000000" => bus_rsp_o.data <= cfs_reg_rd(0);
+            when "000001" => bus_rsp_o.data <= cfs_reg_rd(1);
+            when "000010" => bus_rsp_o.data <= cfs_reg_rd(2);
+            when "000011" => bus_rsp_o.data <= cfs_reg_rd(3);
+            when others   => bus_rsp_o.data <= (others => '0'); -- the remaining registers are not implemented and will read as zero
+          end case;
+        end if;
       end if;
     end if;
   end process host_access;

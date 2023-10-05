@@ -148,7 +148,7 @@ begin
       config.start     <= '0';
     elsif rising_edge(clk_i) then
       config.start <= '0'; -- default
-      if (bus_req_i.we = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(3 downto 2) = "00") then -- control and status register
           config.enable    <= bus_req_i.data(ctrl_en_c);
           config.auto      <= bus_req_i.data(ctrl_auto_c);
@@ -176,9 +176,9 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.re or bus_req_i.we; -- bus access acknowledge
+      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.re = '1') then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(3 downto 2) is
           when "00" => -- control and status register
             bus_rsp_o.data(ctrl_en_c)       <= config.enable;
@@ -233,13 +233,12 @@ begin
       engine.err_rd   <= '0';
       engine.err_wr   <= '0';
       engine.done     <= '0';
-      dma_req_o.re    <= '0';
-      dma_req_o.we    <= '0';
+      dma_req_o.rw    <= '0';
+      dma_req_o.stb    <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
-      engine.done  <= '0';
-      dma_req_o.re <= '0';
-      dma_req_o.we <= '0';
+      engine.done   <= '0';
+      dma_req_o.stb <= '0';
 
       -- state machine --
       case engine.state is
@@ -254,7 +253,8 @@ begin
               ((config.auto = '1') and (atrigger = '1'))) then -- automatic trigger
             engine.err_rd <= '0';
             engine.err_wr <= '0';
-            dma_req_o.re  <= '1'; -- issue read request
+            dma_req_o.rw  <= '0'; -- read
+            dma_req_o.stb <= '1'; -- issue read request
             engine.state  <= S_READ;
           end if;
 
@@ -265,8 +265,9 @@ begin
             engine.err_rd <= '1';
             engine.state  <= S_IDLE;
           elsif (dma_rsp_i.ack = '1') then
-            dma_req_o.we <= '1';
-            engine.state <= S_WRITE;
+            dma_req_o.rw  <= '1'; -- write
+            dma_req_o.stb <= '1'; -- issue write request
+            engine.state  <= S_WRITE;
           end if;
 
         when S_WRITE => -- pending write access
@@ -292,8 +293,9 @@ begin
             if (config.dst_inc = '1') then -- incrementing destination address
               engine.dst_addr <= std_ulogic_vector(unsigned(engine.dst_addr) + engine.dst_add);
             end if;
-            dma_req_o.re <= '1'; -- issue read request
-            engine.state <= S_READ;
+            dma_req_o.rw  <= '0'; -- read
+            dma_req_o.stb <= '1'; -- issue read request
+            engine.state  <= S_READ;
           end if;
 
         when others => -- undefined

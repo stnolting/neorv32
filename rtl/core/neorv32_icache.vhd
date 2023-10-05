@@ -94,6 +94,7 @@ architecture neorv32_icache_rtl of neorv32_icache is
   -- cache interface --
   type cache_if_t is record
     clear      : std_ulogic; -- cache clear
+    host_re    : std_ulogic; -- read access
     host_addr  : std_ulogic_vector(31 downto 0); -- cpu access address
     host_rdata : std_ulogic_vector(31 downto 0); -- cpu read data
     host_rstat : std_ulogic; -- cpu read status
@@ -113,8 +114,8 @@ architecture neorv32_icache_rtl of neorv32_icache is
     state_nxt     : ctrl_engine_state_t; -- next state
     addr_reg      : std_ulogic_vector(31 downto 0); -- address register for block download
     addr_reg_nxt  : std_ulogic_vector(31 downto 0);
-    re_buf        : std_ulogic; -- read request buffer
-    re_buf_nxt    : std_ulogic;
+    req_buf       : std_ulogic; -- request buffer
+    req_buf_nxt   : std_ulogic;
     clear_buf     : std_ulogic; -- clear request buffer
     clear_buf_nxt : std_ulogic;
   end record;
@@ -138,12 +139,12 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl.state     <= S_CLEAR; -- to reset cache information memory, which does not have an explicit reset
-      ctrl.re_buf    <= '0';
+      ctrl.req_buf   <= '0';
       ctrl.clear_buf <= '0';
       ctrl.addr_reg  <= (others => '0');
     elsif rising_edge(clk_i) then
       ctrl.state     <= ctrl.state_nxt;
-      ctrl.re_buf    <= ctrl.re_buf_nxt;
+      ctrl.req_buf   <= ctrl.req_buf_nxt;
       ctrl.clear_buf <= ctrl.clear_buf_nxt;
       ctrl.addr_reg  <= ctrl.addr_reg_nxt;
     end if;
@@ -157,11 +158,12 @@ begin
     -- control defaults --
     ctrl.state_nxt     <= ctrl.state;
     ctrl.addr_reg_nxt  <= ctrl.addr_reg;
-    ctrl.re_buf_nxt    <= ctrl.re_buf or cpu_req_i.re;
+    ctrl.req_buf_nxt   <= ctrl.req_buf or cpu_req_i.stb;
     ctrl.clear_buf_nxt <= ctrl.clear_buf or clear_i; -- buffer clear request from CPU
 
     -- cache defaults --
     cache.clear        <= '0';
+    cache.host_re      <= cpu_req_i.stb and (not cpu_req_i.rw);
     cache.host_addr    <= cpu_req_i.addr;
     cache.ctrl_en      <= '0';
     cache.ctrl_addr    <= ctrl.addr_reg;
@@ -180,8 +182,8 @@ begin
     bus_req_o.src      <= cpu_req_i.src;
     bus_req_o.priv     <= cpu_req_i.priv;
     bus_req_o.addr     <= ctrl.addr_reg;
-    bus_req_o.we       <= '0';
-    bus_req_o.re       <= '0';
+    bus_req_o.rw       <= '0'; -- read-only
+    bus_req_o.stb      <= '0';
     bus_req_o.rvso     <= cpu_req_i.rvso;
 
     -- fsm --
@@ -192,7 +194,7 @@ begin
         ctrl.addr_reg_nxt <= cpu_req_i.addr;
         if (ctrl.clear_buf = '1') then -- cache control operation?
           ctrl.state_nxt <= S_CLEAR;
-        elsif (cpu_req_i.re = '1') or (ctrl.re_buf = '1') then
+        elsif (cpu_req_i.stb = '1') or (ctrl.req_buf = '1') then
           if (unsigned(cpu_req_i.addr(31 downto 28)) >= unsigned(ICACHE_UC_PBEGIN)) then
             ctrl.state_nxt <= S_DIRECT_REQ; -- uncached access
           else
@@ -206,7 +208,7 @@ begin
         ctrl.addr_reg_nxt((cache_offset_size_c+2)-1 downto 2) <= (others => '0'); -- block-aligned
         ctrl.addr_reg_nxt(1 downto 0) <= "00"; -- word-aligned
         --
-        ctrl.re_buf_nxt <= '0';
+        ctrl.req_buf_nxt <= '0';
         if (cache.hit = '1') then -- cache HIT
           if (cache.host_rstat = '1') then -- data word from cache marked as faulty?
             cpu_rsp_o.err <= '1';
@@ -220,7 +222,7 @@ begin
 
       when S_DOWNLOAD_REQ => -- download new cache block: request new word
       -- ------------------------------------------------------------
-        bus_req_o.re   <= '1'; -- request new read transfer
+        bus_req_o.stb  <= '1'; -- request new read transfer
         ctrl.state_nxt <= S_DOWNLOAD_GET;
 
       when S_DOWNLOAD_GET => -- download new cache block: wait for bus response
@@ -238,13 +240,13 @@ begin
 
       when S_DIRECT_REQ => -- direct access: request new word
       -- ------------------------------------------------------------
-        bus_req_o.re   <= '1'; -- request new read transfer
+        bus_req_o.stb  <= '1'; -- request new read transfer
         ctrl.state_nxt <= S_DIRECT_GET;
 
       when S_DIRECT_GET => -- direct access: wait for bus response
       -- ------------------------------------------------------------
-        ctrl.re_buf_nxt <= '0';
-        cpu_rsp_o.data  <= bus_rsp_i.data;
+        ctrl.req_buf_nxt <= '0';
+        cpu_rsp_o.data   <= bus_rsp_i.data;
         if (bus_rsp_i.err = '1') then
           cpu_rsp_o.err  <= '1';
           ctrl.state_nxt <= S_IDLE;
@@ -286,7 +288,7 @@ begin
     hit_o        => cache.hit,
     -- host cache access (read-only) --
     host_addr_i  => cache.host_addr,
-    host_re_i    => cpu_req_i.re,
+    host_re_i    => cache.host_re,
     host_rdata_o => cache.host_rdata,
     host_rstat_o => cache.host_rstat,
     -- ctrl cache access (write-only) --

@@ -85,17 +85,19 @@ begin
   begin
     if rising_edge(clk_i) then
       addr_ff <= addr;
-      if (bus_req_i.we = '1') and (bus_req_i.ben(0) = '1') then -- byte 0
-        mem_ram_b0(to_integer(unsigned(addr))) <= bus_req_i.data(07 downto 00);
-      end if;
-      if (bus_req_i.we = '1') and (bus_req_i.ben(1) = '1') then -- byte 1
-        mem_ram_b1(to_integer(unsigned(addr))) <= bus_req_i.data(15 downto 08);
-      end if;
-      if (bus_req_i.we = '1') and (bus_req_i.ben(2) = '1') then -- byte 2
-        mem_ram_b2(to_integer(unsigned(addr))) <= bus_req_i.data(23 downto 16);
-      end if;
-      if (bus_req_i.we = '1') and (bus_req_i.ben(3) = '1') then -- byte 3
-        mem_ram_b3(to_integer(unsigned(addr))) <= bus_req_i.data(31 downto 24);
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
+        if (bus_req_i.ben(0) = '1') then -- byte 0
+          mem_ram_b0(to_integer(unsigned(addr))) <= bus_req_i.data(07 downto 00);
+        end if;
+        if (bus_req_i.ben(1) = '1') then -- byte 1
+          mem_ram_b1(to_integer(unsigned(addr))) <= bus_req_i.data(15 downto 08);
+        end if;
+        if (bus_req_i.ben(2) = '1') then -- byte 2
+          mem_ram_b2(to_integer(unsigned(addr))) <= bus_req_i.data(23 downto 16);
+        end if;
+        if (bus_req_i.ben(3) = '1') then -- byte 3
+          mem_ram_b3(to_integer(unsigned(addr))) <= bus_req_i.data(31 downto 24);
+        end if;
       end if;
     end if;
   end process mem_access;
@@ -112,8 +114,8 @@ begin
   bus_feedback: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      rden          <= bus_req_i.re;
-      bus_rsp_o.ack <= bus_req_i.re or bus_req_i.we;
+      rden          <= bus_req_i.stb and (not bus_req_i.rw);
+      bus_rsp_o.ack <= bus_req_i.stb;
     end if;
   end process bus_feedback;
 

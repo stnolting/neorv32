@@ -76,7 +76,7 @@ begin
   mem_file_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      rden  <= bus_req_i.re;
+      rden  <= bus_req_i.stb and (not bus_req_i.rw); -- read-only
       rdata <= mem_rom(to_integer(unsigned(bus_req_i.addr(boot_rom_size_index_c+1 downto 2))));
     end if;
   end process mem_file_access;
