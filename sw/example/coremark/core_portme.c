@@ -173,7 +173,6 @@ portable_init(core_portable *p, int *argc, char *argv[])
 
   // stop all counters for now
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1);
-  neorv32_cpu_csr_write(CSR_MCOUNTEREN, -1); // enable access to all counters
 
   // try to setup as many counters/HPMs as possible
   neorv32_cpu_set_mcycle(0);
