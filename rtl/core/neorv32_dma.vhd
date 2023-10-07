@@ -74,6 +74,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
   constant ctrl_error_rd_c      : natural :=  8; -- r/-: error during read transfer
   constant ctrl_error_wr_c      : natural :=  9; -- r/-: error during write transfer
   constant ctrl_busy_c          : natural := 10; -- r/-: DMA transfer in progress
+  constant ctrl_done_c          : natural := 11; -- r/c: a DMA transfer was executed/attempted
   --
   constant ctrl_firq_mask_lsb_c : natural := 16; -- r/w: FIRQ trigger mask LSB
   constant ctrl_firq_mask_msb_c : natural := 31; -- r/w: FIRQ trigger mask MSB
@@ -97,6 +98,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
     dst_inc   : std_ulogic; -- constant (0) or incrementing (1) destination address
     endian    : std_ulogic; -- convert endianness when set
     start     : std_ulogic; -- transfer start trigger
+    done      : std_ulogic; -- transfer was executed (but might have failed)
   end record;
   signal config : config_t;
 
@@ -146,12 +148,15 @@ begin
       config.dst_inc   <= '0';
       config.endian    <= '0';
       config.start     <= '0';
+      config.done     <= '0';
     elsif rising_edge(clk_i) then
       config.start <= '0'; -- default
+      config.done  <= config.enable and (config.done or engine.done); -- set if enabled and transfer done
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(3 downto 2) = "00") then -- control and status register
           config.enable    <= bus_req_i.data(ctrl_en_c);
           config.auto      <= bus_req_i.data(ctrl_auto_c);
+          config.done      <= '0'; -- clear on write access
           config.firq_mask <= bus_req_i.data(ctrl_firq_mask_msb_c downto ctrl_firq_mask_lsb_c);
         end if;
         if (bus_req_i.addr(3 downto 2) = "01") then -- source base address
@@ -186,6 +191,7 @@ begin
             bus_rsp_o.data(ctrl_error_rd_c) <= engine.err_rd;
             bus_rsp_o.data(ctrl_error_wr_c) <= engine.err_wr;
             bus_rsp_o.data(ctrl_busy_c)     <= engine.busy;
+            bus_rsp_o.data(ctrl_done_c)     <= config.done;
             bus_rsp_o.data(ctrl_firq_mask_msb_c downto ctrl_firq_mask_lsb_c) <= config.firq_mask;
           when "01" => -- address of last read access
             bus_rsp_o.data <= engine.src_addr;

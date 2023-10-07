@@ -390,6 +390,11 @@
               <description>DMA transfer in progress</description>
             </field>
             <field>
+              <name>DMA_CTRL_DONE</name>
+              <bitRange>[11:11]</bitRange>
+              <description>DMA transfer done; auto-clears on write access</description>
+            </field>
+            <field>
               <name>DMA_CTRL_FIRQ_MASK</name>
               <bitRange>[31:16]</bitRange>
               <description>FIRQ trigger mask</description>

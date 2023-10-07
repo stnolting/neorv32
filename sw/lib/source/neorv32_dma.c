@@ -140,3 +140,21 @@ int neorv32_dma_status(void) {
     return DMA_STATUS_IDLE; // idle
   }
 }
+
+
+/**********************************************************************//**
+ * Check if a transfer has actually been executed.
+ *
+ * @return 0 if no transfer was executed, 1 if a transfer has actually been executed.
+ * Use neorv32_dma_status(void) to check if there was an error during that transfer.
+ **************************************************************************/
+int neorv32_dma_done(void) {
+
+  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DONE)) {
+    return 1; // there was a transfer
+  }
+  else {
+    return 0; // no transfer executed
+  }
+
+}
