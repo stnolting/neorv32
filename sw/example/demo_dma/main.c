@@ -202,8 +202,7 @@ int main() {
   neorv32_cpu_sleep();
 
   // check if transfer was successful
-  rc = neorv32_dma_status();
-  if ((rc == DMA_STATUS_ERR_RD) || (rc == DMA_STATUS_ERR_WR)) {
+  if (neorv32_dma_status() != DMA_STATUS_IDLE) {
     neorv32_uart0_printf("Transfer failed!\n");
   }
 
@@ -242,9 +241,9 @@ int main() {
     // sleep until interrupt (from DMA)
     neorv32_cpu_sleep();
 
-    // check DMA status
-    rc = neorv32_dma_status();
-    if ((rc == DMA_STATUS_ERR_RD) || (rc == DMA_STATUS_ERR_WR)) {
+    // transfer successful (and actually executed)?
+    if ((neorv32_dma_done() == 0) || // check if the DMA has actually completed a transfer
+        (neorv32_dma_status() != DMA_STATUS_IDLE)) { // DMA is in idle mode without errors
       neorv32_uart0_printf("Transfer failed!\n");
     }
 

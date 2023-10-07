@@ -1489,6 +1489,7 @@ int main() {
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == DMA_TRAP_CODE) && // correct interrupt source
         (neorv32_crc_get() == 0x31DC476E) && // correct CRC sum
+        (neorv32_dma_done() != 0) && // DMA has actually attempted a transfer
         (neorv32_dma_status() == DMA_STATUS_IDLE)) { // DMA back in idle mode without errors
       test_ok();
     }

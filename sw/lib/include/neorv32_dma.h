@@ -59,13 +59,14 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 #define NEORV32_DMA ((neorv32_dma_t*) (NEORV32_DMA_BASE))
 
 /** DMA control and status register bits */
-enum NEORV32_DMA_QSEL_enum {
+enum NEORV32_DMA_CTRL_enum {
   DMA_CTRL_EN            =  0, /**< DMA control register(0) (r/w): DMA enable */
   DMA_CTRL_AUTO          =  1, /**< DMA control register(1) (r/w): Automatic trigger mode enable */
 
   DMA_CTRL_ERROR_RD      =  8, /**< DMA control register(8)  (r/-): Error during read access; SRC_BASE shows the faulting address */
   DMA_CTRL_ERROR_WR      =  9, /**< DMA control register(9)  (r/-): Error during write access; DST_BASE shows the faulting address */
   DMA_CTRL_BUSY          = 10, /**< DMA control register(10) (r/-): DMA busy / transfer in progress */
+  DMA_CTRL_DONE          = 11, /**< DMA control register(11) (r/c): A transfer was executed when set */
 
   DMA_CTRL_FIRQ_MASK_LSB = 16, /**< DMA control register(16) (r/w): FIRQ trigger mask LSB */
   DMA_CTRL_FIRQ_MASK_MSB = 31  /**< DMA control register(31) (r/w): FIRQ trigger mask MSB */
@@ -125,6 +126,7 @@ void neorv32_dma_disable(void);
 void neorv32_dma_transfer(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config);
 void neorv32_dma_transfer_auto(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config, uint32_t firq_mask);
 int  neorv32_dma_status(void);
+int  neorv32_dma_done(void);
 /**@}*/
 
 
