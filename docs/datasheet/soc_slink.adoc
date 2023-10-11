@@ -72,29 +72,29 @@ it has to be explicitly cleared again by writing zero to the according <<_mip>> 
 **Register Map**
 
 .SLINK register map (`struct NEORV32_SLINK`)
-[cols="^4,<5,^2,^2,<14"]
+[cols="<2,<2,<4,^1,<4"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Function
-.20+<| `0xffffec00` .20+<| `NEORV32_SLINK.CTRL` <| `0`    `SLINK_CTRL_EN`                                    ^| r/w | SLINK global enable
-                                                <| `1`    `SLINK_CTRL_RX_CLR`                                ^| -/w | Clear RX FIFO (bit auto-clears)
-                                                <| `2`    `SLINK_CTRL_TX_CLR`                                ^| -/w | Clear TX FIFO (bit auto-clears)
-                                                <| `7:3`  _reserved_                                         ^| r/- | _reserved_, read as zero
-                                                <| `8`    `SLINK_CTRL_RX_EMPTY`                              ^| r/- | RX FIFO empty
-                                                <| `9`    `SLINK_CTRL_RX_HALF`                               ^| r/- | RX FIFO at least half full
-                                                <| `10`   `SLINK_CTRL_RX_FULL`                               ^| r/- | RX FIFO full
-                                                <| `11`   `SLINK_CTRL_TX_EMPTY`                              ^| r/- | TX FIFO empty
-                                                <| `12`   `SLINK_CTRL_TX_HALF`                               ^| r/- | TX FIFO at least half full
-                                                <| `13`   `SLINK_CTRL_TX_FULL`                               ^| r/- | TX FIFO full
-                                                <| `15:14` _reserved_                                        ^| r/- | _reserved_, read as zero
-                                                <| `16`   `SLINK_CTRL_IRQ_RX_NEMPTY`                         ^| r/w | IRQ if RX FIFO not empty 
-                                                <| `17`   `SLINK_CTRL_IRQ_RX_HALF`                           ^| r/w | IRQ if RX FIFO at least half full
-                                                <| `18`   `SLINK_CTRL_IRQ_RX_FULL`                           ^| r/w | IRQ if RX FIFO full
-                                                <| `19`   `SLINK_CTRL_IRQ_TX_EMPTY`                          ^| r/w | IRQ if TX FIFO empty
-                                                <| `20`   `SLINK_CTRL_IRQ_TX_NHALF`                          ^| r/w | IRQ if TX FIFO not at least half full
-                                                <| `21`   `SLINK_CTRL_IRQ_TX_NFULL`                          ^| r/w | IRQ if TX FIFO not full
-                                                <| `23:22` _reserved_                                        ^| r/- | _reserved_, read as zero
-                                                <| `27:24` `SLINK_CTRL_RX_FIFO_MSB : SLINK_CTRL_RX_FIFO_LSB` ^| r/- | log2(RX FIFO size)
-                                                <| `31:28` `SLINK_CTRL_TX_FIFO_MSB : SLINK_CTRL_TX_FIFO_LSB` ^| r/- | log2(TX FIFO size)
+.20+<| `0xffffec00` .20+<| `NEORV32_SLINK.CTRL` <| `0`    `SLINK_CTRL_EN`                                    ^| r/w <| SLINK global enable
+                                                <| `1`    `SLINK_CTRL_RX_CLR`                                ^| -/w <| Clear RX FIFO (bit auto-clears)
+                                                <| `2`    `SLINK_CTRL_TX_CLR`                                ^| -/w <| Clear TX FIFO (bit auto-clears)
+                                                <| `7:3`  _reserved_                                         ^| r/- <| _reserved_, read as zero
+                                                <| `8`    `SLINK_CTRL_RX_EMPTY`                              ^| r/- <| RX FIFO empty
+                                                <| `9`    `SLINK_CTRL_RX_HALF`                               ^| r/- <| RX FIFO at least half full
+                                                <| `10`   `SLINK_CTRL_RX_FULL`                               ^| r/- <| RX FIFO full
+                                                <| `11`   `SLINK_CTRL_TX_EMPTY`                              ^| r/- <| TX FIFO empty
+                                                <| `12`   `SLINK_CTRL_TX_HALF`                               ^| r/- <| TX FIFO at least half full
+                                                <| `13`   `SLINK_CTRL_TX_FULL`                               ^| r/- <| TX FIFO full
+                                                <| `15:14` _reserved_                                        ^| r/- <| _reserved_, read as zero
+                                                <| `16`   `SLINK_CTRL_IRQ_RX_NEMPTY`                         ^| r/w <| IRQ if RX FIFO not empty 
+                                                <| `17`   `SLINK_CTRL_IRQ_RX_HALF`                           ^| r/w <| IRQ if RX FIFO at least half full
+                                                <| `18`   `SLINK_CTRL_IRQ_RX_FULL`                           ^| r/w <| IRQ if RX FIFO full
+                                                <| `19`   `SLINK_CTRL_IRQ_TX_EMPTY`                          ^| r/w <| IRQ if TX FIFO empty
+                                                <| `20`   `SLINK_CTRL_IRQ_TX_NHALF`                          ^| r/w <| IRQ if TX FIFO not at least half full
+                                                <| `21`   `SLINK_CTRL_IRQ_TX_NFULL`                          ^| r/w <| IRQ if TX FIFO not full
+                                                <| `23:22` _reserved_                                        ^| r/- <| _reserved_, read as zero
+                                                <| `27:24` `SLINK_CTRL_RX_FIFO_MSB : SLINK_CTRL_RX_FIFO_LSB` ^| r/- <| log2(RX FIFO size)
+                                                <| `31:28` `SLINK_CTRL_TX_FIFO_MSB : SLINK_CTRL_TX_FIFO_LSB` ^| r/- <| log2(TX FIFO size)
 | `0xffffec04` | `NEORV32_SLINK.DATA` | `31:0` | r/w | RX/TX data
 |=======================
