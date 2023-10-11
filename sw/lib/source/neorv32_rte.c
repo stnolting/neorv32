@@ -130,7 +130,7 @@ int neorv32_rte_handler_uninstall(int id) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE).
- * This is the core of the NEORV32 RTE (first-level trap handler).
+ * This is the core of the NEORV32 RTE (first-level trap handler, executed in machine mode).
  **************************************************************************/
 static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
 
