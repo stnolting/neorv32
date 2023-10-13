@@ -836,7 +836,7 @@ counter CSRs are read-only. Any write access will raise an illegal instruction e
 | Address     | `0x321` (`mcyclecfg`)
 |             | `0x721` (`mcyclecfgh`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` & `U` (<<_smcntrpmf_isa_extension>>)
+| ISA         | `Zicsr` & `Zicntr` (<<_smcntrpmf_isa_extension>>)
 | Description | Halt cycle counter when the CPU is in a specific privilege mode. Note that `mcyclecfg` is hardwired to all-zero.
 |=======================
 
@@ -861,7 +861,7 @@ counter CSRs are read-only. Any write access will raise an illegal instruction e
 | Address     | `0x322` (`minstretcfg`)
 |             | `0x722` (`minstretcfgh`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` & `U` (<<_smcntrpmf_isa_extension>>)
+| ISA         | `Zicsr` & `Zicntr` (<<_smcntrpmf_isa_extension>>)
 | Description | Halt instret counter when the CPU is in a specific privilege mode. Note that `minstretcfg` is hardwired to all-zero.
 |=======================
 

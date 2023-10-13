@@ -709,7 +709,7 @@ The `Smcntrpmf` ISA extension is frozen but not ratified yet.
 
 The _counter privilege mode filtering_ `Smcntrpmf` ISA extension allows to halt the standard cycle ([m]cycle[h])
 and instructions-retired (`[m]instret[h]`) counters if the CPU is in a specific privilege mode (machine oder user).
-This ISA extension is automatically enabled if the <<_u_isa_extension>> is enabled.
+This ISA extension is automatically enabled if the <<_Zicntr_isa_extension>> is enabled.
 
 Four additional CSRs are provided by this extensions:
 
@@ -797,10 +797,12 @@ another interrupt handler can start. This allows program progress even if there 
 :sectnums:
 ===== Memory Access Exceptions
 
-If a load operation causes any exception, the instruction's destination register is
-_not written_ at all. Load exceptions caused by a misalignment or a physical memory protection fault do not
-trigger a bus/memory read-operation at all. Vice versa, exceptions caused by a store address misalignment or a
-store physical memory protection fault do not trigger a bus/memory write-operation at all.
+If a load operation causes any exception, the instruction's destination register is **not written** at all. Furthermore,
+exceptions caused by a misaligned memory address a physical memory protection fault do not trigger a memory access request at all.
+
+For 32-bit-only instructions (= no `C` extension) the misaligned instruction exception is raised if bit 1 of the fetch
+address is set (i.e. not on a 32-bit boundary). If the `C` extension is implemented there will **never** be a misaligned
+instruction exception at all.
 
 
 :sectnums:
@@ -894,8 +896,3 @@ written to the according CSRs when a trap is triggered:
 Note that not all exceptions are resumable. For example, the "instruction access fault" exception or the "instruction
 address misaligned" exception are not resumable in most cases. These exception might indicate a fatal memory hardware failure.
 
-.Misaligned Instruction Address Exception
-[NOTE]
-For 32-bit-only instructions (= no `C` extension) the misaligned instruction exception is raised if bit 1 of the fetch
-address is set (i.e. not on a 32-bit boundary). If the `C` extension is implemented there will never be a misaligned
-instruction exception _at all_.
