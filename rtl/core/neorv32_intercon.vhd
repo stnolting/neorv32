@@ -68,13 +68,13 @@ architecture neorv32_bus_switch_rtl of neorv32_bus_switch is
     state_nxt : arbiter_state_t;
     a_req     : std_ulogic;
     b_req     : std_ulogic;
-    host_sel  : std_ulogic;
-    stb_trig  : std_ulogic;
+    sel       : std_ulogic;
+    stb       : std_ulogic;
   end record;
   signal arbiter : arbiter_t;
 
   -- internal bus lines --
-  signal x_bus_stb, a_bus_ack, b_bus_ack, a_bus_err, b_bus_err : std_ulogic;
+  signal a_bus_ack, b_bus_ack, a_bus_err, b_bus_err : std_ulogic;
 
 begin
 
@@ -99,34 +99,34 @@ begin
   begin
     -- arbiter defaults --
     arbiter.state_nxt <= arbiter.state;
-    arbiter.host_sel  <= '0';
-    arbiter.stb_trig  <= '0';
+    arbiter.sel       <= '0';
+    arbiter.stb       <= '0';
 
     -- state machine --
     case arbiter.state is
 
       when IDLE => -- wait for requests
       -- ------------------------------------------------------------
-        if (a_req_i.stb = '1') or (arbiter.a_req = '1') then -- any request from port A?
-          arbiter.host_sel  <= '0';
-          arbiter.stb_trig  <= arbiter.a_req;
+        if (a_req_i.stb = '1') or (arbiter.a_req = '1') then -- any request from port A (prioritized)?
+          arbiter.sel       <= '0';
+          arbiter.stb       <= '1';
           arbiter.state_nxt <= BUSY_A;
         elsif (b_req_i.stb = '1') or (arbiter.b_req = '1') then -- any request from port B?
-          arbiter.host_sel  <= '1';
-          arbiter.stb_trig  <= arbiter.b_req;
+          arbiter.sel       <= '1';
+          arbiter.stb       <= '1';
           arbiter.state_nxt <= BUSY_B;
         end if;
 
       when BUSY_A => -- port A access in progress
       -- ------------------------------------------------------------
-        arbiter.host_sel <= '0';
+        arbiter.sel <= '0';
         if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
           arbiter.state_nxt <= IDLE;
         end if;
 
       when BUSY_B => -- port B access in progress
       -- ------------------------------------------------------------
-        arbiter.host_sel <= '1';
+        arbiter.sel <= '1';
         if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
           arbiter.state_nxt <= IDLE;
         end if;
@@ -139,38 +139,37 @@ begin
   end process arbiter_comb;
 
 
-  -- Device Request Switch ------------------------------------------------------------------
+  -- Request Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  x_req_o.addr <= a_req_i.addr when (arbiter.host_sel = '0') else b_req_i.addr;
-  x_req_o.rvso <= a_req_i.rvso when (arbiter.host_sel = '0') else b_req_i.rvso;
-  x_req_o.priv <= a_req_i.priv when (arbiter.host_sel = '0') else b_req_i.priv;
-  x_req_o.src  <= a_req_i.src  when (arbiter.host_sel = '0') else b_req_i.src;
-  x_req_o.rw   <= a_req_i.rw   when (arbiter.host_sel = '0') else b_req_i.rw;
+  x_req_o.addr <= a_req_i.addr when (arbiter.sel = '0') else b_req_i.addr;
+  x_req_o.rvso <= a_req_i.rvso when (arbiter.sel = '0') else b_req_i.rvso;
+  x_req_o.priv <= a_req_i.priv when (arbiter.sel = '0') else b_req_i.priv;
+  x_req_o.src  <= a_req_i.src  when (arbiter.sel = '0') else b_req_i.src;
+  x_req_o.rw   <= a_req_i.rw   when (arbiter.sel = '0') else b_req_i.rw;
 
   x_req_o.data <= b_req_i.data when (PORT_A_READ_ONLY = true) else
                   a_req_i.data when (PORT_B_READ_ONLY = true) else
-                  a_req_i.data when (arbiter.host_sel = '0')  else b_req_i.data;
+                  a_req_i.data when (arbiter.sel = '0')  else b_req_i.data;
 
   x_req_o.ben  <= b_req_i.ben when (PORT_A_READ_ONLY = true) else
                   a_req_i.ben when (PORT_B_READ_ONLY = true) else
-                  a_req_i.ben when (arbiter.host_sel = '0')  else b_req_i.ben;
+                  a_req_i.ben when (arbiter.sel = '0')  else b_req_i.ben;
 
-  x_bus_stb    <= a_req_i.stb when (arbiter.host_sel = '0') else b_req_i.stb;
-  x_req_o.stb  <= x_bus_stb or arbiter.stb_trig;
+  x_req_o.stb  <= arbiter.stb;
 
 
-  -- Device Response Switch -----------------------------------------------------------------
+  -- Response Switch ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   a_rsp_o.data <= x_rsp_i.data;
   b_rsp_o.data <= x_rsp_i.data;
 
-  a_bus_ack    <= x_rsp_i.ack when (arbiter.host_sel = '0') else '0';
-  b_bus_ack    <= x_rsp_i.ack when (arbiter.host_sel = '1') else '0';
+  a_bus_ack    <= x_rsp_i.ack when (arbiter.sel = '0') else '0';
+  b_bus_ack    <= x_rsp_i.ack when (arbiter.sel = '1') else '0';
   a_rsp_o.ack  <= a_bus_ack;
   b_rsp_o.ack  <= b_bus_ack;
 
-  a_bus_err    <= x_rsp_i.err when (arbiter.host_sel = '0') else '0';
-  b_bus_err    <= x_rsp_i.err when (arbiter.host_sel = '1') else '0';
+  a_bus_err    <= x_rsp_i.err when (arbiter.sel = '0') else '0';
+  b_bus_err    <= x_rsp_i.err when (arbiter.sel = '1') else '0';
   a_rsp_o.err  <= a_bus_err;
   b_rsp_o.err  <= b_bus_err;
 

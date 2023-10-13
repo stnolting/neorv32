@@ -76,7 +76,7 @@ begin
 
   -- Access Address -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_adr_reg: process(rstn_i, clk_i)
+  mem_addr_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       mar        <= (others => '0');
@@ -91,7 +91,7 @@ begin
         end case;
       end if;
     end if;
-  end process mem_adr_reg;
+  end process mem_addr_reg;
 
   -- address output --
   bus_req_o.addr <= mar;
@@ -208,7 +208,7 @@ begin
       arbiter_err <= '0';
       arbiter_req <= '0';
     elsif rising_edge(clk_i) then
-      arbiter_err <= arbiter_req and (bus_rsp_i.err or pmp_fault_i);
+      arbiter_err <= bus_rsp_i.err or pmp_fault_i; -- buffer stage
       if (arbiter_req = '0') then -- idle
         arbiter_req <= ctrl_i.lsu_req;
       elsif (bus_rsp_i.ack = '1') or (ctrl_i.cpu_trap = '1') then -- normal termination or start of trap handling
@@ -226,7 +226,7 @@ begin
   ma_store_o <= arbiter_req and (    ctrl_i.lsu_rw) and misaligned;
   be_store_o <= arbiter_req and (    ctrl_i.lsu_rw) and arbiter_err;
 
-  -- access request (all source signals are driven by registers!) --
+  -- access request (all source signals are driven by registers) --
   bus_req_o.stb <= ctrl_i.lsu_req and (not misaligned) and (not pmp_fault_i);
 
 
