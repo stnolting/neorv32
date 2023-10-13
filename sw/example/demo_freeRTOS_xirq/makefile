@@ -1,5 +1,5 @@
 # *****************************************************************************
-# USER CONFIGURATION
+# USER CONFIGURATION OVERRIDE
 # *****************************************************************************
 # User's application sources (*.c, *.cpp, *.s, *.S); add additional files here
 APP_SRC ?= $(wildcard ./*.c) $(wildcard ./*.s) $(wildcard ./*.cpp) $(wildcard ./*.S)
@@ -8,13 +8,6 @@ APP_SRC ?= $(wildcard ./*.c) $(wildcard ./*.s) $(wildcard ./*.cpp) $(wildcard ./
 APP_INC ?= -I .
 # User's application include folders - for assembly files only (don't forget the '-I' before each entry)
 ASM_INC ?= -I .
-
-# Optimization
-EFFORT ?= -Os
-
-# CPU architecture and ABI
-MARCH ?= rv32i
-MABI  ?= ilp32
 
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
