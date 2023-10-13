@@ -351,7 +351,6 @@ The specific generics are listed below.
 [NOTE]
 The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 
-
 .NEORV32 CPU-Exclusive Generic List
 [cols="<4,^2,<8"]
 [options="header",grid="rows"]
@@ -372,6 +371,32 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 
 The NEORV32 CPU provides several optional RISC-V and custom ISA extensions. The extensions can be enabled/configured
 via the according <<_processor_top_entity_generics>>. This chapter gives a brief overview of the different ISA extensions.
+
+.NEORV32 Instruction Set Extensions
+[cols="<2,<6,<2"]
+[options="header",grid="rows"]
+|=======================
+| Name | Description | Note
+| <<_a_isa_extension,`A`>> | Atomic memory access instructions |
+| <<_b_isa_extension,`B`>> | Bit-manipulation instructions |
+| <<_c_isa_extension,`C`>> | Compressed (16-bit) instructions |
+| <<_e_isa_extension,`E`>> | Embedded CPU extension (reduced register file size) |
+| <<_i_isa_extension,`I`>> | Integer instructions | Base ISA
+| <<_m_isa_extension,`M`>> | Integer multiplication and division instructions |
+| <<_u_isa_extension,`U`>> | Less-privileged _user_ mode extension |
+| <<_x_isa_extension,`X`>> | Platform-specific / NEORV32-specific extension | **Always enabled**
+| <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction |
+| <<_zfinx_isa_extension,`Zfinx`>> | Floating-point instructions using integer registers | `F` alternative
+| <<_zicntr_isa_extension,`Zicntr`>> | Base counters extension |
+| <<_zicsr_isa_extension,`Zicsr`>> | Control and status register access instructions | **Always enabled**
+| <<_zihpm_isa_extension,`Zihpm`>> | Hardware performance monitors extension |
+| <<_zmmul_isa_extension,`Zmmul`>> | Integer multiplication-only instruction | `M` alternative)
+| <<_zcfu_isa_extension,`Zcfu`>> | Custom / user-defined instructions |
+| <<_pmp_isa_extension,`PMP`>> | Physical memory protection extension |
+| <<_smcntrpmf_isa_extension,`Smcntrpmf`>> | Counter privilege mode filtering extension |
+| <<_sdext_isa_extension,`Sdext`>> | External debug support extension | For on-chip debugger
+| <<_sdtrig_isa_extension,`Sdtrig`>> | Trigger module extension | For on-chip debugger
+|=======================
 
 .RISC-V ISA Specifications
 [TIP]
@@ -439,47 +464,6 @@ Atomic operations **always bypass** the cache using direct/uncached accesses. Ca
 to maintain data cache coherency (e.g. by using the `fence` instruction).
 
 
-
-==== `I` ISA Extension
-
-The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
-
-.Instructions and Timing
-[cols="<2,<4,<3"]
-[options="header", grid="rows"]
-|=======================
-| Class | Instructions | Execution cycles
-| ALU           | `add[i]` `slt[i]` `slt[i]u` `xor[i]` `or[i]` `and[i]` `sub` `lui` `auipc` | 2
-| ALU shifts    | `sll[i]` `srl[i]` `sra[i]`                                                | 3 + 1..32; FAST_SHIFT: 4
-| Branches      | `beq` `bne` `blt` `bge` `bltu` `bgeu`                                     | taken: 6; not taken: 3
-| Jump/call     | `jal[r]`                                                                  | 6
-| Load/store    | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 5
-| System        | `ecall` `ebreak`                                                          | 3
-| Data fence    | `fence`                                                                   | 3
-| System        | `wfi`                                                                     | 3
-| System        | `mret`                                                                    | 5
-| Illegal inst. | -                                                                         | 3
-|=======================
-
-.`fence` Instruction - Predecessor and Successor Bits
-[NOTE]
-The `fence` instruction word's _predecessor_ and _successor_ bits (used for memory ordering) are not evaluated
-by the hardware at all.
-
-.`fence` Instruction - How it works
-[NOTE]
-CPU-internally, the `fence` instruction does not perform any operation inside the CPU. It only sets the
-top's `d_bus_fence_o` signal high for one cycle to inform the memory system a `fence` instruction has been
-executed. Any flags within the `fence` instruction word are ignore by the hardware. However, the `d_bus_fence_o`
-signal is connected to the <<_processor_internal_data_cache_dcache>>. Hence, executing the `fence` instruction
-will clear/flush the data cache and resynchronize it with main memory.
-
-.`wfi` Instruction
-[NOTE]
-The `wfi` instruction is used to enter <<_sleep_mode>>. Executing the `wfi` instruction in user-mode
-will raise an illegal instruction exception if the `TW` bit of <<_mstatus>> is set.
-
-
 ==== `B` ISA Extension
 
 The `B` ISA extension adds instructions for bit-manipulation operations. The NEORV32 `B` ISA extension includes
@@ -530,6 +514,46 @@ shrink hardware size. It provides the same instructions as the the base `I` ISA 
 
 [NOTE]
 Due to the reduced register file size an alternate toolchain ABI (`ilp32e*`) is required.
+
+
+==== `I` ISA Extension
+
+The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
+
+.Instructions and Timing
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| ALU           | `add[i]` `slt[i]` `slt[i]u` `xor[i]` `or[i]` `and[i]` `sub` `lui` `auipc` | 2
+| ALU shifts    | `sll[i]` `srl[i]` `sra[i]`                                                | 3 + 1..32; FAST_SHIFT: 4
+| Branches      | `beq` `bne` `blt` `bge` `bltu` `bgeu`                                     | taken: 6; not taken: 3
+| Jump/call     | `jal[r]`                                                                  | 6
+| Load/store    | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 5
+| System        | `ecall` `ebreak`                                                          | 3
+| Data fence    | `fence`                                                                   | 3
+| System        | `wfi`                                                                     | 3
+| System        | `mret`                                                                    | 5
+| Illegal inst. | -                                                                         | 3
+|=======================
+
+.`fence` Instruction - Predecessor and Successor Bits
+[NOTE]
+The `fence` instruction word's _predecessor_ and _successor_ bits (used for memory ordering) are not evaluated
+by the hardware at all.
+
+.`fence` Instruction - How it works
+[NOTE]
+CPU-internally, the `fence` instruction does not perform any operation inside the CPU. It only sets the
+top's `d_bus_fence_o` signal high for one cycle to inform the memory system a `fence` instruction has been
+executed. Any flags within the `fence` instruction word are ignore by the hardware. However, the `d_bus_fence_o`
+signal is connected to the <<_processor_internal_data_cache_dcache>>. Hence, executing the `fence` instruction
+will clear/flush the data cache and resynchronize it with main memory.
+
+.`wfi` Instruction
+[NOTE]
+The `wfi` instruction is used to enter <<_sleep_mode>>. Executing the `wfi` instruction in user-mode
+will raise an illegal instruction exception if the `TW` bit of <<_mstatus>> is set.
 
 
 ==== `M` ISA Extension
