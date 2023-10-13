@@ -124,7 +124,7 @@ For example the simulation time can be set to 20ms using `--stop-time=20ms` as a
 
 [source, bash]
 ----
-neorv32/sim/simple$ sh ghdl_sim.sh --stop-time=20ms
+neorv32/sim/simple$ sh ghdl.sh --stop-time=20ms
 ----
 
 
