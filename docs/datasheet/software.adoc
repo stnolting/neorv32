@@ -52,7 +52,7 @@ build instructions on the official RISC-V GNU toolchain GitHub page: https://git
 The NEORV32 implements a 32-bit RISC-V architecture and uses a 32-bit integer and soft-float ABI by default.
 Make sure the toolchain / toolchain build is configured accordingly.
 
-* `MARCH=rv32i_zicsr`
+* `MARCH=rv32i`
 * `MABI=ilp32`
 * `RISCV_PREFIX=riscv32-unknown-elf-`
 
