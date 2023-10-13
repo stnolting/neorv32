@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 13.10.2023 | 1.9.0.1 | update software framework to GCC-13.2.0; [#705](https://github.com/stnolting/neorv32/pull/705) |
 | 13.10.2023 | [**:rocket:1.9.0**](https://github.com/stnolting/neorv32/releases/tag/v1.9.0) | **New release** |
 | 13.10.2023 | 1.8.9.9 | minor hardware edits and optimizations; [#703](https://github.com/stnolting/neorv32/pull/703) |
 | 07.10.2023 | 1.8.9.8 | add "transfer done" flag to DMA; [#699](https://github.com/stnolting/neorv32/pull/699) |
