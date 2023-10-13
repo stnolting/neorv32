@@ -51,7 +51,7 @@ EFFORT ?= -Os
 RISCV_PREFIX ?= riscv32-unknown-elf-
 
 # CPU architecture and ABI
-MARCH ?= rv32i_zicsr
+MARCH ?= rv32i_zicsr_zifencei
 MABI  ?= ilp32
 
 # User flags for additional configuration (will be added to compiler flags)

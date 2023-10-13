@@ -178,7 +178,7 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
  USER_FLAGS   - Custom toolchain flags [append only], default ""
  USER_LIBS    - Custom libraries [append only], default ""
  EFFORT       - Optimization level, default "-Os"
- MARCH        - Machine architecture, default "rv32i_zicsr"
+ MARCH        - Machine architecture, default "rv32i_zicsr_zifencei"
  MABI         - Machine binary interface, default "ilp32"
  APP_INC      - C include folder(s) [append only], default "-I ."
  ASM_INC      - ASM include folder(s) [append only], default "-I ."
@@ -197,7 +197,7 @@ makefile (`sw/common/common.mk`):
 .Customizing Makefile Variables
 [TIP]
 The makefile configuration variables can be overridden or extended directly when invoking the makefile. For
-example `$ make MARCH=rv32ic_zicsr clean_all exe` overrides the default `MARCH` variable definitions.
+example `$ make MARCH=rv32ic_zicsr_zifencei clean_all exe` overrides the default `MARCH` variable definitions.
 
 .Default Makefile Configuration
 [source,makefile]
@@ -217,7 +217,7 @@ EFFORT ?= -Os
 # Compiler toolchain
 RISCV_PREFIX ?= riscv32-unknown-elf-
 # CPU architecture and ABI
-MARCH ?= rv32i_zicsr
+MARCH ?= rv32i_zicsr_zifencei
 MABI  ?= ilp32
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
