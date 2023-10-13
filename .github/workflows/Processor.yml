@@ -57,7 +57,7 @@ jobs:
           USER_FLAGS+=-DUART0_SIM_MODE
           USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT
           USER_FLAGS+=-flto
-          MARCH=rv32imac
+          MARCH=rv32imac_zicsr_zifencei
           info
           all
 
