@@ -38,8 +38,9 @@ following parameters:
 
 [start=4]
 . Also make sure that single chars are send from your computer _without_ any consecutive "new line" or "carriage
-return" commands (this is highly dependent on your terminal application of choice, TeraTerm only
-sends the raw chars by default).
+return" commands. This is highly dependent on your terminal application of choice, TeraTerm only
+sends the raw chars by default. In `cutecom`, change `LF` to `None` in the dropdown menu 
+next to the input text box.
 . Press the NEORV32 reset button to restart the bootloader. The status LED starts blinking and the
 bootloader intro screen appears in your console. Hurry up and press any key (hit space!) to abort the
 automatic boot sequence and to start the actual bootloader user interface console.
