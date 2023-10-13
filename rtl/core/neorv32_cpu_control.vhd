@@ -272,7 +272,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mtval            : std_ulogic_vector(XLEN-1 downto 0); -- machine bad address or instruction
     mtinst           : std_ulogic_vector(XLEN-1 downto 0); -- machine trap instruction
     mscratch         : std_ulogic_vector(XLEN-1 downto 0); -- machine scratch register
-    mcounteren       : std_ulogic; -- machine counter access enable (from user-mode)
+    mcounteren       : std_ulogic; -- machine counter access enable (from user-mode) for ALL counters
     mcountinhibit    : std_ulogic_vector(15 downto 0); -- inhibit counter auto-increment
     mcyclecfg_minh   : std_ulogic; -- inhibit cycle counter when in machine-mode
     mcyclecfg_uinh   : std_ulogic; -- inhibit cycle counter when in user-mode
@@ -850,7 +850,6 @@ begin
       ctrl_nxt.lsu_rw <= execute_engine.ir(5);
     end if;
 
-
     -- state machine --
     case execute_engine.state is
 
@@ -870,7 +869,6 @@ begin
           end if;
         end if;
 
-
       when TRAP_ENTER => -- Enter trap environment and get trap vector
       -- ------------------------------------------------------------
         if (trap_ctrl.env_pending = '1') then
@@ -889,7 +887,6 @@ begin
         fetch_engine.reset        <= '1';
         execute_engine.pc_we      <= '1';
         execute_engine.state_nxt  <= BRANCHED;
-
 
       when EXECUTE => -- Decode and execute instruction (control has to be here for exactly 1 cycle in any case!)
       -- [NOTE] register file is read in this stage; due to the sync read, data will be available in the _next_ state
@@ -982,7 +979,6 @@ begin
 
         end case; -- /EXECUTE
 
-
       when ALU_WAIT => -- wait for multi-cycle ALU co-processor operation to finish/trap
       -- ------------------------------------------------------------
         ctrl_nxt.alu_op <= alu_op_cp_c;
@@ -990,7 +986,6 @@ begin
           ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back (won't happen in case of an illegal instruction)
           execute_engine.state_nxt <= DISPATCH;
         end if;
-
 
       when FENCE => -- memory fence
       -- ------------------------------------------------------------
@@ -1005,7 +1000,6 @@ begin
         else
           execute_engine.state_nxt <= DISPATCH;
         end if;
-
 
       when BRANCH => -- update PC on taken branches and jumps
       -- ------------------------------------------------------------
@@ -1032,7 +1026,6 @@ begin
           ctrl_nxt.rf_zero_we <= '1'; -- allow/force write access to x0
         end if;
 
-
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
         if (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- abort if illegal instruction
@@ -1056,13 +1049,11 @@ begin
           execute_engine.state_nxt <= DISPATCH;
         end if;
 
-
       when SLEEP => -- Sleep mode; no sleep during debugging; wakeup on pending IRQ
       -- ------------------------------------------------------------
         if (debug_ctrl.running = '1') or (csr.dcsr_step = '1') or (trap_ctrl.wakeup = '1') then
           execute_engine.state_nxt <= DISPATCH;
         end if;
-
 
       when others => -- SYSTEM - system environment operation; no effect if illegal instruction
       -- ------------------------------------------------------------
@@ -1856,6 +1847,10 @@ begin
       -- no base counters --
       if (CPU_EXTENSION_RISCV_Zicntr = false) then
         csr.mcountinhibit(2 downto 0) <= (others => '0');
+        csr.mcyclecfg_minh   <= '0';
+        csr.mcyclecfg_uinh   <= '0';
+        csr.minstretcfg_minh <= '0';
+        csr.minstretcfg_uinh <= '0';
       end if;
 
       -- no hardware performance monitors --
@@ -1870,17 +1865,13 @@ begin
 
       -- no user mode --
       if (CPU_EXTENSION_RISCV_U = false) then
-        csr.privilege        <= priv_mode_m_c;
-        csr.mstatus_mpp      <= priv_mode_m_c;
-        csr.mstatus_mprv     <= '0';
-        csr.mstatus_tw       <= '0';
-        csr.dcsr_ebreaku     <= '0';
-        csr.dcsr_prv         <= '0';
-        csr.mcounteren       <= '0';
-        csr.mcyclecfg_minh   <= '0';
-        csr.mcyclecfg_uinh   <= '0';
-        csr.minstretcfg_minh <= '0';
-        csr.minstretcfg_uinh <= '0';
+        csr.privilege    <= priv_mode_m_c;
+        csr.mstatus_mpp  <= priv_mode_m_c;
+        csr.mstatus_mprv <= '0';
+        csr.mstatus_tw   <= '0';
+        csr.dcsr_ebreaku <= '0';
+        csr.dcsr_prv     <= '0';
+        csr.mcounteren   <= '0';
       end if;
 
       -- no debug mode --
@@ -1925,7 +1916,7 @@ begin
         csr_rdata(17) <= csr.mstatus_mprv;
         csr_rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);
 
---    when csr_mstatush_c => csr_rdata <= (others => '0'); -- machine status register - hardwired to zero
+--    when csr_mstatush_c => csr_rdata <= (others => '0'); -- machine status register - high word - hardwired to zero
 
       when csr_misa_c => -- ISA and extensions
         csr_rdata(00) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_A);     -- A CPU extension
