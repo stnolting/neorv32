@@ -84,6 +84,7 @@
 // Prototypes
 void sim_irq_trigger(uint32_t sel);
 void global_trap_handler(void);
+void rte_service_handler(void);
 void vectored_irq_table(void) __attribute__((naked, aligned(128)));
 void vectored_global_handler(void) __attribute__((interrupt("machine")));
 void vectored_mei_handler(void) __attribute__((interrupt("machine")));
@@ -1624,6 +1625,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 14 (SLINK)
   // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] FIRQ14 (SLINK) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SLINK)) {
@@ -1661,6 +1663,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 15 (TRNG)
   // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] FIRQ15 (TRNG) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
@@ -1688,6 +1691,48 @@ int main() {
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // RTE context modification
+  // implemented as "system service call"
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] RTE context ", cnt_test);
+  cnt_test++;
+
+  // install ecall service handler
+  neorv32_rte_handler_install(RTE_TRAP_MENV_CALL, rte_service_handler);
+  neorv32_rte_handler_install(RTE_TRAP_UENV_CALL, rte_service_handler);
+
+  // make sure all arguments are passed via specific register
+  register uint32_t syscall_a0 asm ("a0");
+  register uint32_t syscall_a1 asm ("a1");
+  register uint32_t syscall_a2 asm ("a2");
+
+  // try to execute service call in user mode
+  // hart will be back in MACHINE mode when trap handler returns
+  neorv32_cpu_goto_user_mode();
+  {
+    syscall_a0 = 127;
+    syscall_a1 = 12000;
+    syscall_a2 = 628;
+
+    asm ("ecall" : "=r" (syscall_a0) : "r" (syscall_a0), "r" (syscall_a1), "r" (syscall_a2));
+  }
+
+  // restore initial trap handlers
+  neorv32_rte_handler_install(RTE_TRAP_MENV_CALL, global_trap_handler);
+  neorv32_rte_handler_install(RTE_TRAP_UENV_CALL, global_trap_handler);
+
+  if (((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MENV_CALL) ||
+       (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_UENV_CALL)) &&
+       (syscall_a0 == 12628)) { // correct "service" result
+    test_ok();
+  }
+  else {
+    test_fail();
   }
 
 
@@ -2165,6 +2210,26 @@ void global_trap_handler(void) {
   trap_cnt++;
 
   // hack: always come back in MACHINE MODE
+  neorv32_cpu_csr_set(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
+}
+
+
+/**********************************************************************//**
+ * RTE's ecall "system service handler"; modifies application context to provide "system services"
+ **************************************************************************/
+void rte_service_handler(void) {
+
+  // get service arguments
+  uint32_t arg0 = neorv32_rte_context_get(10); // a0
+  uint32_t arg1 = neorv32_rte_context_get(11); // a1
+  uint32_t arg2 = neorv32_rte_context_get(12); // a2
+
+  // valid service?
+  if (arg0 == 127) {
+    neorv32_rte_context_put(10, arg1 + arg2); // service result in a0
+  }
+  
+  // hack: return in MACHINE MODE
   neorv32_cpu_csr_set(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
 }
 
