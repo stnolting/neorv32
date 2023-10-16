@@ -5,7 +5,7 @@ Releases are linked and highlighted. The latest release is
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases).
 A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases).
 
-Starting with version `1.5.7` this project uses [semantic versioning](https://semver.org).
+This project uses [semantic versioning](https://semver.org).
 The **version identifier** uses an additional custom element (`MAJOR.MINOR.PATCH.custom`)
 to track individual changes. The identifier is incremented by every core RTL modification
 and also by major software/project changes.
@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 16.10.2023 | 1.9.0.2 | minor CPU control cleanups and optimizations (branch system); [#707](https://github.com/stnolting/neorv32/pull/707) |
 | 13.10.2023 | 1.9.0.1 | update software framework to GCC-13.2.0; [#705](https://github.com/stnolting/neorv32/pull/705) |
 | 13.10.2023 | [**:rocket:1.9.0**](https://github.com/stnolting/neorv32/releases/tag/v1.9.0) | **New release** |
 | 13.10.2023 | 1.8.9.9 | minor hardware edits and optimizations; [#703](https://github.com/stnolting/neorv32/pull/703) |

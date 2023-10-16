@@ -204,8 +204,8 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     15 => x"00000073"
   );
 
-  -- access helpers --
-  signal rden, wren : std_ulogic;
+  -- CPU access helpers --
+  signal accen, rden, wren : std_ulogic;
 
   -- Debug Core Interface --
   type dci_t is record
@@ -661,8 +661,9 @@ begin
 
   -- Access Control ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rden <= cpu_debug_i and bus_req_i.stb and (not bus_req_i.rw); -- allow access only when in debug mode
-  wren <= cpu_debug_i and bus_req_i.stb and (    bus_req_i.rw); -- allow access only when in debug mode
+  accen <= cpu_debug_i and bus_req_i.stb; -- allow access only when in debug-mode
+  rden  <= accen and (not bus_req_i.rw);
+  wren  <= accen and (    bus_req_i.rw);
 
 
   -- Write Access ---------------------------------------------------------------------------
@@ -687,9 +688,8 @@ begin
       dci.resume_ack    <= '0';
       dci.execute_ack   <= '0';
       dci.exception_ack <= '0';
-      -- NOTE: only check the individual BYTE ACCESSES - not the actual write data --
       if (bus_req_i.addr(7 downto 6) = dm_sreg_base_c(7 downto 6)) and (wren = '1') then
-        dci.halt_ack      <= bus_req_i.ben(sreg_halt_ack_c/8);
+        dci.halt_ack      <= bus_req_i.ben(sreg_halt_ack_c/8); -- [NOTE] use the individual BYTE ENABLES and not the actual write data
         dci.resume_ack    <= bus_req_i.ben(sreg_resume_ack_c/8);
         dci.execute_ack   <= bus_req_i.ben(sreg_execute_ack_c/8);
         dci.exception_ack <= bus_req_i.ben(sreg_exception_ack_c/8);
@@ -703,7 +703,7 @@ begin
   read_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= rden or wren;
+      bus_rsp_o.ack  <= accen;
       bus_rsp_o.data <= (others => '0');
       if (rden = '1') then -- output enable
         case bus_req_i.addr(7 downto 6) is -- module select

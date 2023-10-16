@@ -53,7 +53,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_regfile is
   generic (
-    RVE    : boolean; -- implement embedded RF extension?
+    RVE_EN : boolean; -- implement embedded RF extension?
     RS3_EN : boolean; -- enable 3rd read port
     RS4_EN : boolean  -- enable 4th read port
   );
@@ -77,7 +77,7 @@ end neorv32_cpu_regfile;
 architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
 
   -- auto-configuration --
-  constant addr_bits_c : natural := cond_sel_natural_f(RVE, 4, 5); -- address width
+  constant addr_bits_c : natural := cond_sel_natural_f(RVE_EN, 4, 5); -- address width
 
   -- register file --
   type   reg_file_t is array ((2**addr_bits_c)-1 downto 0) of std_ulogic_vector(XLEN-1 downto 0);

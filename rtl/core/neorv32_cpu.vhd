@@ -274,7 +274,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_regfile_inst: entity neorv32.neorv32_cpu_regfile
   generic map (
-    RVE    => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension?
+    RVE_EN => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension?
     RS3_EN => regfile_rs3_en_c,      -- enable 3rd read port
     RS4_EN => regfile_rs4_en_c       -- enable 4th read port
   )
