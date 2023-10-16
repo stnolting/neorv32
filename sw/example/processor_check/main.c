@@ -1710,6 +1710,7 @@ int main() {
   register uint32_t syscall_a0 asm ("a0");
   register uint32_t syscall_a1 asm ("a1");
   register uint32_t syscall_a2 asm ("a2");
+  uint32_t syscall_res = 0;
 
   // try to execute service call in user mode
   // hart will be back in MACHINE mode when trap handler returns
@@ -1719,7 +1720,8 @@ int main() {
     syscall_a1 = 12000;
     syscall_a2 = 628;
 
-    asm ("ecall" : "=r" (syscall_a0) : "r" (syscall_a0), "r" (syscall_a1), "r" (syscall_a2));
+    asm volatile ("ecall" : "=r" (syscall_a0) : "r" (syscall_a0), "r" (syscall_a1), "r" (syscall_a2));
+    syscall_res = syscall_a0; // backup result before a0 is used for something else
   }
 
   // restore initial trap handlers
@@ -1728,7 +1730,7 @@ int main() {
 
   if (((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MENV_CALL) ||
        (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_UENV_CALL)) &&
-       (syscall_a0 == 12628)) { // correct "service" result
+       (syscall_res == 12628)) { // correct "service" result
     test_ok();
   }
   else {
