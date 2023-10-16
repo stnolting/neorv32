@@ -224,7 +224,7 @@ begin
         end if;
         -- hardware reset --
         if ((timeout_rst = '1') and (prsc_tick = '1')) or -- timeout
-           ((ctrl.strict = '1') and (reset_force = '1')) then -- strict mode and incorrect password / locked CTRL write attempt
+           ((ctrl.strict = '1') and (reset_force = '1')) then -- strict mode and incorrect password
           hw_rst <= '1';
         end if;
       end if;
