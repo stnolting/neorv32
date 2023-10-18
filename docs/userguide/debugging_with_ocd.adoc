@@ -21,8 +21,7 @@ for more information regarding the actual hardware.
 .OCD CPU Requirements
 [NOTE]
 The on-chip debugger is only implemented if the _ON_CHIP_DEBUGGER_EN_ generic is set _true_. Furthermore, it requires
-the `Zicsr` and `Zifencei` CPU extension to be implemented (top generics _CPU_EXTENSION_RISCV_Zicsr_ = _true_
-and _CPU_EXTENSION_RISCV_Zifencei_ = _true_).
+the `Zicsr` and `Zifencei` CPU extension, which are always enabled by the CPU.
 
 
 :sectnums:

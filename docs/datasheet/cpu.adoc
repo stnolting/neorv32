@@ -1,9 +1,9 @@
 :sectnums:
 == NEORV32 Central Processing Unit (CPU)
 
-The NEORV32 CPU is an area-optimized RISC-V core implementing the `rv32iZicsr` base ISA and supporting
-several additional/optional ISA extensions. The CPU's micro architecture is based on a von-Neumann machine build
-upon a mixture of multi-cycle and pipelined execution schemes.
+The NEORV32 CPU is an area-optimized RISC-V core implementing the `rv32i_zicsr_zifencei` base (privileged) ISA and
+supporting several additional/optional ISA extensions. The CPU's micro architecture is based on a von-Neumann
+machine build upon a mixture of multi-cycle and pipelined execution schemes.
 
 [NOTE]
 This chapter assumes that the reader is familiar with the official
@@ -385,7 +385,7 @@ via the according <<_processor_top_entity_generics>>. This chapter gives a brief
 | <<_m_isa_extension,`M`>> | Integer multiplication and division instructions |
 | <<_u_isa_extension,`U`>> | Less-privileged _user_ mode extension |
 | <<_x_isa_extension,`X`>> | Platform-specific / NEORV32-specific extension | **Always enabled**
-| <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction |
+| <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction | **Always enabled**
 | <<_zfinx_isa_extension,`Zfinx`>> | Floating-point instructions using integer registers | `F` alternative
 | <<_zicntr_isa_extension,`Zicntr`>> | Base counters extension |
 | <<_zicsr_isa_extension,`Zicsr`>> | Control and status register access instructions | **Always enabled**
@@ -590,7 +590,8 @@ RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 
 ==== `Zifencei` ISA Extension
 
-The `Zifencei` CPU extension allows manual synchronization of the instruction stream.
+The `Zifencei` CPU extension allows manual synchronization of the instruction stream. This extension is always enabled.
+
 The `fence.i` instruction resets the CPU's front-end (instruction fetch) and flushes the prefetch buffer.
 This allows a clean re-fetch of modified instructions from memory. Also, the top's `i_bus_fencei_o` signal is set
 high for one cycle to inform the memory system (like the <<_processor_internal_instruction_cache_icache>> to perform a flush/reload.
