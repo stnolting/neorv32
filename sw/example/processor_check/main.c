@@ -293,9 +293,9 @@ int main() {
   cnt_test++;
 
   asm volatile ("fence"); // flush/reload d-cache
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIFENCEI)) {
-    asm volatile ("fence.i"); // clear instruction prefetch buffer and clear i-cache
-  }
+  asm volatile ("fence.i"); // clear instruction prefetch buffer and clear i-cache
+  asm volatile ("fence");
+  asm volatile ("fence.i");
 
   if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
     test_ok();
