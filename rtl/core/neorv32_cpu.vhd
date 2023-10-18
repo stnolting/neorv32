@@ -57,7 +57,6 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
     CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext    : boolean; -- implement external debug mode extension?
@@ -146,22 +145,22 @@ begin
   -- CPU ISA configuration --
   assert false report
     "NEORV32 CPU Configuration: RV32" &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_E,        "E", "I") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_M,        "M", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_A,        "A", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_C,        "C", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_B,        "B", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_U,        "U", "") &
-    cond_sel_string_f(true,                         "_Zicsr", "") & -- always enabled
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr,   "_Zicntr", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zifencei, "_Zifencei", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,    "_Zfinx", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm,    "_Zihpm", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,    "_Zmmul", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,    "_Zxcfu", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,    "_Sdext", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdtrig,   "_Sdtrig", "") &
-    cond_sel_string_f(pmp_enable_c,                 "_Smpmp", "")
+    cond_sel_string_f(CPU_EXTENSION_RISCV_E,      "E", "I") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_M,      "M", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_A,      "A", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_C,      "C", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_B,      "B", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_U,      "U", "") &
+    cond_sel_string_f(true,                       "_Zicsr", "") & -- always enabled
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_Zicntr", "") &
+    cond_sel_string_f(true,                       "_Zifencei", "") & -- always enabled
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,  "_Zfinx", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm,  "_Zihpm", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,  "_Zmmul", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,  "_Zxcfu", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,  "_Sdext", "") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdtrig, "_Sdtrig", "") &
+    cond_sel_string_f(pmp_enable_c,               "_Smpmp", "")
     severity note;
 
   -- simulation notifier --
@@ -176,44 +175,39 @@ begin
   assert not ((CPU_EXTENSION_RISCV_Zmmul = true) and (CPU_EXTENSION_RISCV_M = true)) report
     "NEORV32 CPU CONFIG ERROR! <M> and <Zmmul> extensions cannot co-exist!" severity error;
 
-  -- Debug mode --
-  assert not ((CPU_EXTENSION_RISCV_Sdext = true) and (CPU_EXTENSION_RISCV_Zifencei = false)) report
-    "NEORV32 CPU CONFIG ERROR! Debug mode requires <CPU_EXTENSION_RISCV_Zifencei> extension to be enabled." severity error;
-
 
   -- Control Unit ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_control_inst: entity neorv32.neorv32_cpu_control
   generic map (
     -- General --
-    HART_ID                      => HART_ID,                      -- hardware thread ID
-    VENDOR_ID                    => VENDOR_ID,                    -- vendor's JEDEC ID
-    CPU_BOOT_ADDR                => CPU_BOOT_ADDR,                -- cpu boot address
-    CPU_DEBUG_PARK_ADDR          => CPU_DEBUG_PARK_ADDR,          -- cpu debug mode parking loop entry address
-    CPU_DEBUG_EXC_ADDR           => CPU_DEBUG_EXC_ADDR,           -- cpu debug mode exception entry address
+    HART_ID                    => HART_ID,                      -- hardware thread ID
+    VENDOR_ID                  => VENDOR_ID,                    -- vendor's JEDEC ID
+    CPU_BOOT_ADDR              => CPU_BOOT_ADDR,                -- cpu boot address
+    CPU_DEBUG_PARK_ADDR        => CPU_DEBUG_PARK_ADDR,          -- cpu debug mode parking loop entry address
+    CPU_DEBUG_EXC_ADDR         => CPU_DEBUG_EXC_ADDR,           -- cpu debug mode exception entry address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        => CPU_EXTENSION_RISCV_A,        -- implement atomic memory operations extension?
-    CPU_EXTENSION_RISCV_B        => CPU_EXTENSION_RISCV_B,        -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_C        => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        => CPU_EXTENSION_RISCV_M,        -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U        => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zfinx    => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zicntr   => CPU_EXTENSION_RISCV_Zicntr,   -- implement base counters?
-    CPU_EXTENSION_RISCV_Zihpm    => CPU_EXTENSION_RISCV_Zihpm,    -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zifencei => CPU_EXTENSION_RISCV_Zifencei, -- implement instruction stream sync.?
-    CPU_EXTENSION_RISCV_Zmmul    => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zxcfu    => CPU_EXTENSION_RISCV_Zxcfu,    -- implement custom (instr.) functions unit?
-    CPU_EXTENSION_RISCV_Sdext    => CPU_EXTENSION_RISCV_Sdext,    -- implement external debug mode extension?
-    CPU_EXTENSION_RISCV_Sdtrig   => CPU_EXTENSION_RISCV_Sdtrig,   -- implement trigger module extension?
+    CPU_EXTENSION_RISCV_A      => CPU_EXTENSION_RISCV_A,        -- implement atomic memory operations extension?
+    CPU_EXTENSION_RISCV_B      => CPU_EXTENSION_RISCV_B,        -- implement bit-manipulation extension?
+    CPU_EXTENSION_RISCV_C      => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E      => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,        -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_U      => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr,   -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm  => CPU_EXTENSION_RISCV_Zihpm,    -- implement hardware performance monitors?
+    CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,    -- implement custom (instr.) functions unit?
+    CPU_EXTENSION_RISCV_Sdext  => CPU_EXTENSION_RISCV_Sdext,    -- implement external debug mode extension?
+    CPU_EXTENSION_RISCV_Sdtrig => CPU_EXTENSION_RISCV_Sdtrig,   -- implement trigger module extension?
     -- Tuning Options --
-    FAST_MUL_EN                  => FAST_MUL_EN,                  -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN                => FAST_SHIFT_EN,                -- use barrel shifter for shift operations
+    FAST_MUL_EN                => FAST_MUL_EN,                  -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN              => FAST_SHIFT_EN,                -- use barrel shifter for shift operations
     -- Physical memory protection (PMP) --
-    PMP_EN                       => pmp_enable_c,                 -- physical memory protection enabled
+    PMP_EN                     => pmp_enable_c,                 -- physical memory protection enabled
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 => HPM_NUM_CNTS,                 -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH                => HPM_CNT_WIDTH                 -- total size of HPM counters
+    HPM_NUM_CNTS               => HPM_NUM_CNTS,                 -- number of implemented HPM counters (0..13)
+    HPM_CNT_WIDTH              => HPM_CNT_WIDTH                 -- total size of HPM counters
   )
   port map (
     -- global control --

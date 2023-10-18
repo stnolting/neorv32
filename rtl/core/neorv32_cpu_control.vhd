@@ -53,34 +53,33 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    HART_ID                      : std_ulogic_vector(31 downto 0); -- hardware thread ID
-    VENDOR_ID                    : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
-    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
-    CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
-    CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
+    HART_ID                    : std_ulogic_vector(31 downto 0); -- hardware thread ID
+    VENDOR_ID                  : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
+    CPU_BOOT_ADDR              : std_ulogic_vector(31 downto 0); -- cpu boot address
+    CPU_DEBUG_PARK_ADDR        : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
+    CPU_DEBUG_EXC_ADDR         : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic memory operations extension?
-    CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT regs)
-    CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
-    CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zifencei : boolean; -- implement instruction stream sync.?
-    CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
-    CPU_EXTENSION_RISCV_Sdext    : boolean; -- implement external debug mode extension?
-    CPU_EXTENSION_RISCV_Sdtrig   : boolean; -- implement trigger module extension?
+    CPU_EXTENSION_RISCV_A      : boolean; -- implement atomic memory operations extension?
+    CPU_EXTENSION_RISCV_B      : boolean; -- implement bit-manipulation extension?
+    CPU_EXTENSION_RISCV_C      : boolean; -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E      : boolean; -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_U      : boolean; -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT regs)
+    CPU_EXTENSION_RISCV_Zicntr : boolean; -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm  : boolean; -- implement hardware performance monitors?
+    CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
+    CPU_EXTENSION_RISCV_Sdext  : boolean; -- implement external debug mode extension?
+    CPU_EXTENSION_RISCV_Sdtrig : boolean; -- implement trigger module extension?
     -- Tuning Options --
-    FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
+    FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN              : boolean; -- use barrel shifter for shift operations
     -- Physical memory protection (PMP) --
-    PMP_EN                       : boolean; -- physical memory protection enabled
+    PMP_EN                     : boolean; -- physical memory protection enabled
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural range 0 to 13; -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH                : natural range 0 to 64  -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS               : natural range 0 to 13; -- number of implemented HPM counters (0..13)
+    HPM_CNT_WIDTH              : natural range 0 to 64  -- total size of HPM counters (0..64)
   );
   port (
     -- global control --
@@ -980,12 +979,10 @@ begin
       -- ------------------------------------------------------------
         if (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- abort if illegal instruction
           execute_engine.state_nxt <= DISPATCH;
-        elsif (execute_engine.ir(instr_funct3_lsb_c) = funct3_fencei_c(0)) and (CPU_EXTENSION_RISCV_Zifencei = true) then
-          ctrl_nxt.lsu_fencei      <= '1'; -- instruction fence
-          execute_engine.state_nxt <= RESTART; -- reset instruction fetch + IPB
         else
-          ctrl_nxt.lsu_fence       <= '1'; -- data fence
-          execute_engine.state_nxt <= DISPATCH;
+          ctrl_nxt.lsu_fence       <= not execute_engine.ir(instr_funct3_lsb_c); -- data: fence
+          ctrl_nxt.lsu_fencei      <=     execute_engine.ir(instr_funct3_lsb_c); -- instruction: fence.i
+          execute_engine.state_nxt <= RESTART; -- reset instruction fetch + IPB (only required for fence.i)
         end if;
 
       when BRANCH => -- update PC on taken branches and jumps
@@ -1310,9 +1307,8 @@ begin
 
       when opcode_fence_c =>
         case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when funct3_fence_c  => illegal_cmd <= '0'; -- FENCE
-          when funct3_fencei_c => illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- FENCE.I
-          when others          => illegal_cmd <= '1';
+          when funct3_fence_c | funct3_fencei_c => illegal_cmd <= '0'; -- FENCE[.I]
+          when others                           => illegal_cmd <= '1';
         end case;
 
       when opcode_system_c =>
@@ -2063,23 +2059,23 @@ begin
       -- machine extended ISA extensions information --
       when csr_mxisa_c =>
         -- extended ISA (sub-)extensions --
-        csr_rdata(00) <= '1';                                            -- Zicsr: CSR access (always enabled)
-        csr_rdata(01) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zifencei); -- Zifencei: instruction stream sync.
-        csr_rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);    -- Zmmul: mul/div
-        csr_rdata(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);    -- Zxcfu: custom RISC-V instructions
-        csr_rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);        -- Smcntrpmf: counter privilege mode filtering (enabled if U implemented)
-        csr_rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);    -- Zfinx: FPU using x registers
+        csr_rdata(00) <= '1';                                          -- Zicsr: CSR access (always enabled)
+        csr_rdata(01) <= '1';                                          -- Zifencei: instruction stream sync. (always enabled)
+        csr_rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);  -- Zmmul: mul/div
+        csr_rdata(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);  -- Zxcfu: custom RISC-V instructions
+        csr_rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);      -- Smcntrpmf: counter privilege mode filtering (enabled if U implemented)
+        csr_rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);  -- Zfinx: FPU using x registers
 --      csr_rdata(06) <= '0'; -- reserved
-        csr_rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr);   -- Zicntr: base counters
-        csr_rdata(08) <= bool_to_ulogic_f(PMP_EN);                       -- PMP: physical memory protection (Smpmp)
-        csr_rdata(09) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm);    -- Zihpm: hardware performance monitors
-        csr_rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdext);    -- Sdext: RISC-V (external) debug mode
-        csr_rdata(11) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdtrig);   -- Sdtrig: trigger module
+        csr_rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr); -- Zicntr: base counters
+        csr_rdata(08) <= bool_to_ulogic_f(PMP_EN);                     -- PMP: physical memory protection (Smpmp)
+        csr_rdata(09) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm);  -- Zihpm: hardware performance monitors
+        csr_rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdext);  -- Sdext: RISC-V (external) debug mode
+        csr_rdata(11) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdtrig); -- Sdtrig: trigger module
         -- misc --
-        csr_rdata(20) <= bool_to_ulogic_f(is_simulation_c);              -- is this a simulation?
+        csr_rdata(20) <= bool_to_ulogic_f(is_simulation_c);            -- is this a simulation?
         -- tuning options --
-        csr_rdata(30) <= bool_to_ulogic_f(FAST_MUL_EN);                  -- DSP-based multiplication (M extensions only)
-        csr_rdata(31) <= bool_to_ulogic_f(FAST_SHIFT_EN);                -- parallel logic for shifts (barrel shifters)
+        csr_rdata(30) <= bool_to_ulogic_f(FAST_MUL_EN);                -- DSP-based multiplication (M extensions only)
+        csr_rdata(31) <= bool_to_ulogic_f(FAST_SHIFT_EN);              -- parallel logic for shifts (barrel shifters)
 
       -- undefined/unavailable (or implemented externally) --
       -- --------------------------------------------------------------------
