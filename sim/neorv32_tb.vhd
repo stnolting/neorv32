@@ -233,7 +233,6 @@ begin
     CPU_EXTENSION_RISCV_Zfinx    => true,          -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr   => true,          -- implement base counters?
     CPU_EXTENSION_RISCV_Zihpm    => true,          -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zifencei => true,          -- implement instruction stream sync.?
     CPU_EXTENSION_RISCV_Zmmul    => false,         -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu    => true,          -- implement custom (instr.) functions unit?
     -- Extension Options --
