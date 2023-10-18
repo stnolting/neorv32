@@ -75,26 +75,25 @@ begin
   neorv32_top_inst: neorv32_top
   generic map (
     -- General --
-    CLOCK_FREQUENCY              => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
-    INT_BOOTLOADER_EN            => true,              -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    CLOCK_FREQUENCY            => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
+    INT_BOOTLOADER_EN          => true,              -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN          => true,              -- implement on-chip debugger
+    ON_CHIP_DEBUGGER_EN        => true,              -- implement on-chip debugger
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C        => true,              -- implement compressed extension?
-    CPU_EXTENSION_RISCV_M        => true,              -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U        => true,              -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zicntr   => true,              -- implement base counters?
-    CPU_EXTENSION_RISCV_Zifencei => true,              -- implement instruction stream sync.? (required for the on-chip debugger)
+    CPU_EXTENSION_RISCV_C      => true,              -- implement compressed extension?
+    CPU_EXTENSION_RISCV_M      => true,              -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_U      => true,              -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zicntr => true,              -- implement base counters?
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN              => true,              -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_EN            => true,              -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE          => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
     -- Internal Data memory --
-    MEM_INT_DMEM_EN              => true,              -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_EN            => true,              -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE          => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
     -- Processor peripherals --
-    IO_GPIO_NUM                  => 8,                 -- number of GPIO input/output pairs (0..64)
-    IO_MTIME_EN                  => true,              -- implement machine system timer (MTIME)?
-    IO_UART0_EN                  => true               -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_GPIO_NUM                => 8,                 -- number of GPIO input/output pairs (0..64)
+    IO_MTIME_EN                => true,              -- implement machine system timer (MTIME)?
+    IO_UART0_EN                => true               -- implement primary universal asynchronous receiver/transmitter (UART0)?
   )
   port map (
     -- Global control --
