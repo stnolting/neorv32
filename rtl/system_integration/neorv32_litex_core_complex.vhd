@@ -167,45 +167,44 @@ begin
   neorv32_core_complex: neorv32_top
   generic map (
     -- General --
-    CLOCK_FREQUENCY              => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
-    HART_ID                      => hart_id_c,                      -- hardware thread ID
-    VENDOR_ID                    => jedec_id_c,                     -- vendor's JEDEC ID
+    CLOCK_FREQUENCY            => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
+    HART_ID                    => hart_id_c,                      -- hardware thread ID
+    VENDOR_ID                  => jedec_id_c,                     -- vendor's JEDEC ID
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN          => DEBUG,                          -- implement on-chip debugger
+    ON_CHIP_DEBUGGER_EN        => DEBUG,                          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C        => configs_c.riscv_c(CONFIG),      -- implement compressed extension?
-    CPU_EXTENSION_RISCV_M        => configs_c.riscv_m(CONFIG),      -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U        => configs_c.riscv_u(CONFIG),      -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zicntr   => configs_c.riscv_zicntr(CONFIG), -- implement base counters?
-    CPU_EXTENSION_RISCV_Zihpm    => configs_c.riscv_zihpm(CONFIG),  -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zifencei => true,                           -- implement instruction stream sync.?
+    CPU_EXTENSION_RISCV_C      => configs_c.riscv_c(CONFIG),      -- implement compressed extension?
+    CPU_EXTENSION_RISCV_M      => configs_c.riscv_m(CONFIG),      -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_U      => configs_c.riscv_u(CONFIG),      -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zicntr => configs_c.riscv_zicntr(CONFIG), -- implement base counters?
+    CPU_EXTENSION_RISCV_Zihpm  => configs_c.riscv_zihpm(CONFIG),  -- implement hardware performance monitors?
     -- Tuning Options --
-    FAST_MUL_EN                  => configs_c.fast_ops(CONFIG),     -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN                => configs_c.fast_ops(CONFIG),     -- use barrel shifter for shift operations
+    FAST_MUL_EN                => configs_c.fast_ops(CONFIG),     -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN              => configs_c.fast_ops(CONFIG),     -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS              => configs_c.pmp_nr(CONFIG),       -- number of regions (0..16)
-    PMP_MIN_GRANULARITY          => 4,                              -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_NUM_REGIONS            => configs_c.pmp_nr(CONFIG),       -- number of regions (0..16)
+    PMP_MIN_GRANULARITY        => 4,                              -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 => configs_c.hpm_nr(CONFIG),       -- number of implemented HPM counters (0..29)
-    HPM_CNT_WIDTH                => 64,                             -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS               => configs_c.hpm_nr(CONFIG),       -- number of implemented HPM counters (0..29)
+    HPM_CNT_WIDTH              => 64,                             -- total size of HPM counters (0..64)
     -- Internal Instruction Cache (iCACHE) --
-    ICACHE_EN                    => configs_c.icache_en(CONFIG),    -- implement instruction cache
-    ICACHE_NUM_BLOCKS            => configs_c.icache_nb(CONFIG),    -- i-cache: number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE            => configs_c.icache_bs(CONFIG),    -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY         => configs_c.icache_as(CONFIG),    -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
+    ICACHE_EN                  => configs_c.icache_en(CONFIG),    -- implement instruction cache
+    ICACHE_NUM_BLOCKS          => configs_c.icache_nb(CONFIG),    -- i-cache: number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE          => configs_c.icache_bs(CONFIG),    -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_ASSOCIATIVITY       => configs_c.icache_as(CONFIG),    -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
     -- Internal Data Cache (dCACHE) --
-    DCACHE_EN                    => configs_c.dcache_en(CONFIG),    -- implement data cache
-    DCACHE_NUM_BLOCKS            => configs_c.dcache_nb(CONFIG),    -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE            => configs_c.dcache_bs(CONFIG),    -- d-cache: block size in bytes (min 4), has to be a power of 2
+    DCACHE_EN                  => configs_c.dcache_en(CONFIG),    -- implement data cache
+    DCACHE_NUM_BLOCKS          => configs_c.dcache_nb(CONFIG),    -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE          => configs_c.dcache_bs(CONFIG),    -- d-cache: block size in bytes (min 4), has to be a power of 2
     -- External memory interface (WISHBONE) --
-    MEM_EXT_EN                   => true,                           -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT              => wb_timeout_c,                   -- cycles after a pending bus access auto-terminates (0 = disabled)
-    MEM_EXT_PIPE_MODE            => true,                           -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    MEM_EXT_BIG_ENDIAN           => big_endian_c,                   -- byte order: true=big-endian, false=little-endian
-    MEM_EXT_ASYNC_RX             => true,                           -- use register buffer for RX data when false
-    MEM_EXT_ASYNC_TX             => true,                           -- use register buffer for TX data when false
+    MEM_EXT_EN                 => true,                           -- implement external memory bus interface?
+    MEM_EXT_TIMEOUT            => wb_timeout_c,                   -- cycles after a pending bus access auto-terminates (0 = disabled)
+    MEM_EXT_PIPE_MODE          => true,                           -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    MEM_EXT_BIG_ENDIAN         => big_endian_c,                   -- byte order: true=big-endian, false=little-endian
+    MEM_EXT_ASYNC_RX           => true,                           -- use register buffer for RX data when false
+    MEM_EXT_ASYNC_TX           => true,                           -- use register buffer for TX data when false
     -- Processor peripherals --
-    IO_MTIME_EN                  => configs_c.mtime(CONFIG)         -- implement machine system timer (MTIME)?
+    IO_MTIME_EN                => configs_c.mtime(CONFIG)         -- implement machine system timer (MTIME)?
   )
   port map (
     -- Global control --
