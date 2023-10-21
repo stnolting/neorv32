@@ -101,6 +101,12 @@ read/write port for reading register `rs1` (first source operand) or for writing
 Hence, a simple dual-port RAM can be used to implement the entire register file. From a functional point of view, read and write accesses to
 the register file do never occur in the same clock cycle, so no bypass logic is required at all.
 
+.Register File Reset
+[IMPORTANT]
+The CPU register file does **not** provide any reset capabilities (in order to allow mapping to block RAM).
+Hence, all integer registers (`x1` to `x15`/`x31`) have unknown values after a hardware reset and can still contain
+sensitive data like encryption keys.
+
 
 :sectnums:
 ==== CPU Arithmetic Logic Unit
