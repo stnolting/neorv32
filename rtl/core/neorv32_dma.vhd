@@ -148,7 +148,7 @@ begin
       config.dst_inc   <= '0';
       config.endian    <= '0';
       config.start     <= '0';
-      config.done     <= '0';
+      config.done      <= '0';
     elsif rising_edge(clk_i) then
       config.start <= '0'; -- default
       config.done  <= config.enable and (config.done or engine.done); -- set if enabled and transfer done
@@ -240,7 +240,7 @@ begin
       engine.err_wr   <= '0';
       engine.done     <= '0';
       dma_req_o.rw    <= '0';
-      dma_req_o.stb    <= '0';
+      dma_req_o.stb   <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
       engine.done   <= '0';
@@ -319,7 +319,7 @@ begin
   irq_o <= engine.done and config.enable; -- no interrupt if transfer was aborted
 
   -- bus output --
-  dma_req_o.priv <= priv_mode_m_c;
+  dma_req_o.priv <= priv_mode_m_c; -- privileged access
   dma_req_o.src  <= '0'; -- source = data access
   dma_req_o.addr <= engine.src_addr when (engine.state = S_READ) else engine.dst_addr;
   dma_req_o.rvso <= '0'; -- no reservation set operation possible
