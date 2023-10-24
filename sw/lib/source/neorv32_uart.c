@@ -57,17 +57,17 @@ static void __neorv32_uart_touppercase(uint32_t len, char *ptr) __attribute__((u
  * @param[in,out] Hardware handle to UART register struct, #neorv32_uart_t.
  * @return 0 if UART0/1 was not synthesized, 1 if UART0/1 is available.
  **************************************************************************/
-int neorv32_uart_available (neorv32_uart_t *UARTx) {
-
-  int available = 0;
+int neorv32_uart_available(neorv32_uart_t *UARTx) {
 
   if ( ((uint32_t)UARTx == NEORV32_UART0_BASE) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART0)) ) {
-    available = 1;
+    return 1;
   }
-  if ( ((uint32_t)UARTx == NEORV32_UART1_BASE) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1)) ) {
-    available = 1;
+  else if ( ((uint32_t)UARTx == NEORV32_UART1_BASE) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1)) ) {
+    return 1;
   }
-  return(available);
+  else {
+    return 0;
+  }
 }
 
 
@@ -307,7 +307,7 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
 
 
 /**********************************************************************//**
- * Custom version of 'vprintf'.
+ * Custom version of 'vprintf' printing to UART.
  *
  * @note This function is blocking.
  *
@@ -390,7 +390,7 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
 
 
 /**********************************************************************//**
- * Custom version of 'printf'.
+ * Custom version of 'printf' printing to UART.
  *
  * @note This function is blocking.
  *
@@ -407,7 +407,7 @@ void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {
 
 
 /**********************************************************************//**
- * Simplified custom version of 'scanf'.
+ * Simplified custom version of 'scanf' reading from UART.
  *
  * @note This function is blocking.
  *
