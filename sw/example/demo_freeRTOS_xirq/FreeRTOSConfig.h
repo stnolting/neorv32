@@ -91,8 +91,8 @@
 /******************************************************************************
  * Modified for the NEORV32 processor by Stephan Nolting.
  ******************************************************************************/
-#define configMTIME_BASE_ADDRESS 	( 0xFFFFFF90UL  )
-#define configMTIMECMP_BASE_ADDRESS ( 0xFFFFFF98UL  )
+#define configMTIME_BASE_ADDRESS 	( 0xFFFFF400U )
+#define configMTIMECMP_BASE_ADDRESS ( 0xFFFFF408U )
 
 #define configISR_STACK_SIZE_WORDS ( 128 )
 
