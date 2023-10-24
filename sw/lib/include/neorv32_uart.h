@@ -128,6 +128,7 @@ char neorv32_uart_getc(neorv32_uart_t *UARTx);
 int  neorv32_uart_char_received(neorv32_uart_t *UARTx);
 char neorv32_uart_char_received_get(neorv32_uart_t *UARTx);
 void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s);
+void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list args);
 void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...);
 int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int echo);
 /**@}*/

@@ -307,12 +307,13 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
 
 
 /**********************************************************************//**
- * Custom version of 'printf' function using UART.
+ * Custom version of 'vprintf'.
  *
  * @note This function is blocking.
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] format Pointer to format string.
+ * @param[in] args A value identifying a variable arguments list.
  *
  * <TABLE>
  * <TR><TD>%s</TD><TD>String (array of chars, zero-terminated)</TD></TR>
@@ -324,27 +325,27 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
  * <TR><TD>%p</TD><TD>32-bit pointer, printed as 8-char hexadecimal - lower-case</TD></TR>
  * </TABLE>
  **************************************************************************/
-void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {
+void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list args) {
 
-  char c, string_buf[11];
+  char c, string_buf[12];
   int32_t n;
-
-  va_list a;
-  va_start(a, format);
 
   while ((c = *format++)) {
     if (c == '%') {
       c = *format++;
       switch (c) {
+
         case 's': // string
-          neorv32_uart_puts(UARTx, va_arg(a, char*));
+          neorv32_uart_puts(UARTx, va_arg(args, char*));
           break;
+
         case 'c': // char
-          neorv32_uart_putc(UARTx, (char)va_arg(a, int));
+          neorv32_uart_putc(UARTx, (char)va_arg(args, int));
           break;
+
         case 'i': // 32-bit signed
         case 'd':
-          n = (int32_t)va_arg(a, int32_t);
+          n = (int32_t)va_arg(args, int32_t);
           if (n < 0) {
             n = -n;
             neorv32_uart_putc(UARTx, '-');
@@ -352,22 +353,26 @@ void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {
           __neorv32_uart_itoa((uint32_t)n, string_buf);
           neorv32_uart_puts(UARTx, string_buf);
           break;
+
         case 'u': // 32-bit unsigned
-          __neorv32_uart_itoa(va_arg(a, uint32_t), string_buf);
+          __neorv32_uart_itoa(va_arg(args, uint32_t), string_buf);
           neorv32_uart_puts(UARTx, string_buf);
           break;
+
         case 'x': // 32-bit hexadecimal
         case 'p':
         case 'X':
-          __neorv32_uart_tohex(va_arg(a, uint32_t), string_buf);
+          __neorv32_uart_tohex(va_arg(args, uint32_t), string_buf);
           if (c == 'X') {
-            __neorv32_uart_touppercase(11, string_buf);
+           __neorv32_uart_touppercase(11, string_buf);
           }
           neorv32_uart_puts(UARTx, string_buf);
           break;
+
         case '%': // escaped percent sign
           neorv32_uart_putc(UARTx, '%');
           break;
+
         default: // unsupported format
           neorv32_uart_putc(UARTx, '%');
           neorv32_uart_putc(UARTx, c);
@@ -381,12 +386,28 @@ void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {
       neorv32_uart_putc(UARTx, c);
     }
   }
-  va_end(a);
 }
 
 
 /**********************************************************************//**
- * Simplified custom version of 'scanf' function for UART.
+ * Custom version of 'printf'.
+ *
+ * @note This function is blocking.
+ *
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
+ * @param[in] format Pointer to format string. See neorv32_uart_vprintf.
+ **************************************************************************/
+void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {
+
+  va_list args;
+  va_start(args, format);
+  neorv32_uart_vprintf(UARTx, format, args);
+  va_end(args);
+}
+
+
+/**********************************************************************//**
+ * Simplified custom version of 'scanf'.
  *
  * @note This function is blocking.
  *
