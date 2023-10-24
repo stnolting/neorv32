@@ -122,7 +122,7 @@ the co-processors are used to implement all further processing-based ISA extensi
 
 .Multi-Cycle Execution Monitor
 [NOTE]
-The CPU control system will raise an illegal instruction exception if a multi-cycle functional unit (like the <<_custom_functions_unit_cfu>>)
+The CPU control will raise an illegal instruction exception if a multi-cycle functional unit (like the <<_custom_functions_unit_cfu>>)
 does not complete processing in a bound amount of time (configured via the package's `monitor_mc_tmo_c` constant; default = 512 clock cycles).
 
 
@@ -537,7 +537,7 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Jump/call     | `jal[r]`                                                                  | 6
 | Load/store    | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 5
 | System        | `ecall` `ebreak`                                                          | 3
-| Data fence    | `fence`                                                                   | 3
+| Data fence    | `fence`                                                                   | 5
 | System        | `wfi`                                                                     | 3
 | System        | `mret`                                                                    | 5
 | Illegal inst. | -                                                                         | 3

@@ -58,9 +58,10 @@ When the `DMA_CTRL_DONE` flag is set the DMA has actually executed a transfer. H
 should also be checked to verify that the executed transfer completed without errors. The `DMA_CTRL_DONE` flag is
 automatically cleared when writing the `CTRL` register.
 
+.DMA Access Privilege Level
 [WARNING]
-Transactions performed by the DMA use _machine mode_ permissions (having full access rights) and will
-also **bypass** any physical memory protection rules (<<_pmp_isa_extension>>).
+Transactions performed by the DMA are executed as bus transactions with elevated **machine-mode** privilege level.
+Additionally, all physical memory protection rules (<<_pmp_isa_extension>>) defined by the CPU are **bypassed**.
 
 
 **Transfer Configuration**
