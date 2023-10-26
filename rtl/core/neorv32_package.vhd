@@ -96,17 +96,17 @@ package neorv32_package is
 
   -- IO Address Map --
   constant iodev_size_c      : natural := 256; -- size of a single IO device (bytes)
---constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe000"; -- reserved
---constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe100"; -- reserved
---constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe200"; -- reserved
---constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe300"; -- reserved
---constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe400"; -- reserved
---constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe500"; -- reserved
---constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe600"; -- reserved
---constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe700"; -- reserved
---constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe800"; -- reserved
---constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffe900"; -- reserved
---constant base_???_c        : std_ulogic_vector(31 downto 0) := x"ffffea00"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe000"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe100"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe200"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe300"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe400"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe500"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe600"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe700"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe800"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe900"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffea00"; -- reserved
   constant base_io_cfs_c     : std_ulogic_vector(31 downto 0) := x"ffffeb00";
   constant base_io_slink_c   : std_ulogic_vector(31 downto 0) := x"ffffec00";
   constant base_io_dma_c     : std_ulogic_vector(31 downto 0) := x"ffffed00";

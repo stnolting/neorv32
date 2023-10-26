@@ -192,7 +192,7 @@ end neorv32_bus_switch_rtl;
 -- # -> IO   - internal IO devices                                                                 #
 -- # All accesses that do not match any of these sections are redirected to the "external" port.   #
 -- # The gateway-internal bus monitor ensures that all processor-internal accesses are completed   #
--- # within a fixed time window.                                                                   #
+-- # within a fixed time window; a bus error is triggered otherwise.                               #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #

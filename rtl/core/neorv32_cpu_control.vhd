@@ -863,7 +863,7 @@ begin
 
       when TRAP_ENTER => -- Enter trap environment and jump to trap vector
       -- ------------------------------------------------------------
-        if (trap_ctrl.env_pending = '1') then
+        if (trap_ctrl.env_pending = '1') then -- wait for sync. exceptions to become pending
           trap_ctrl.env_enter      <= '1';
           execute_engine.state_nxt <= RESTART;
         end if;
@@ -1428,7 +1428,7 @@ begin
       trap_ctrl.irq_pnd(irq_db_halt_c) <= '0'; -- unused
       trap_ctrl.irq_pnd(irq_db_step_c) <= '0'; -- unused
 
-      -- Interrupt Masking Buffer ---------------------------------------------
+      -- Interrupt (Masking) Buffer -------------------------------------------
       -- Masking of interrupt request lines. Furthermore, this buffer ensures
       -- that an *active* interrupt request line *stays* active (even if
       -- disabled via MIE) if the trap environment is *currently* starting.
