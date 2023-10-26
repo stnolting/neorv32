@@ -55,7 +55,7 @@
 /**********************************************************************//**
  * @name Max heap size (from linker script's "__neorv32_heap_size")
  **************************************************************************/
-extern const unsigned __crt0_max_heap;
+extern char __crt0_max_heap[];
 
 
 /**********************************************************************//**
@@ -85,12 +85,12 @@ int main() {
   neorv32_uart0_printf("<<< Newlib demo/test program >>>\n\n");
 
   // heap size definition
-  volatile uint32_t max_heap = (uint32_t)&__crt0_max_heap;
+  volatile uint32_t max_heap = (uint32_t)__crt0_max_heap;
   if (max_heap > 0){
     neorv32_uart0_printf("MAX heap size: %u bytes\n", max_heap);
   }
   else {
-    neorv32_uart0_printf("ERROR! No heap size defined (linker script -> '__neorv32_heap_size')!\n");
+    neorv32_uart0_printf("ERROR! No heap size defined (USER_FLAGS+='-Wl,--defsym,__neorv32_heap_size=1024')!\n");
     return -1;
   }
 

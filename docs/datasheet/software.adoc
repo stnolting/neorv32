@@ -277,10 +277,10 @@ calling `make` without the need to change the makefile(s) or the linker script. 
 to the executable (`-g`) and will also re-define the linker script's `__neorv32_heap_size` variable setting the maximal heap
 size to 4096 bytes (see sections <<_linker_script>> and <<_ram_layout>>):
 
-.Using the `USER_FLAGS` Variable for Customization
+.Using the `USER_FLAGS` Variable for Customization (setting the heap size to 4kB)
 [source,bash]
 ----
-$ make USER_FLAGS+="-g -Wl,--__neorv32_heap_size,__heap_size=4096" clean_all exe
+$ make USER_FLAGS+="-Wl,--defsym,__neorv32_heap_size=4096" clean_all exe
 ----
 
 
