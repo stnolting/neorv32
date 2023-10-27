@@ -64,6 +64,9 @@ NEORV32_LOCAL_RTL ?= $(NEORV32_HOME)/rtl
 # GDB arguments
 GDB_ARGS ?= -ex "target extended-remote localhost:3333"
 
+# GHDL simulation run arguments
+GHDL_RUN_FLAGS ?=
+
 
 # -----------------------------------------------------------------------------
 # NEORV32 framework
@@ -290,7 +293,7 @@ endif
 # -----------------------------------------------------------------------------
 sim: $(APP_IMG) install
 	@echo "Simulating $(APP_IMG)..."
-	@sh $(NEORV32_SIM_PATH)/simple/ghdl.sh
+	@sh $(NEORV32_SIM_PATH)/simple/ghdl.sh $(GHDL_RUN_FLAGS)
 
 
 # -----------------------------------------------------------------------------
@@ -345,21 +348,25 @@ info:
 	@echo "------------------------------------------------------"
 	@echo "-- RISC-V CPU"
 	@echo "------------------------------------------------------"
-	@echo "MARCH:      $(MARCH)"
-	@echo "MABI:       $(MABI)"
+	@echo "MARCH:          $(MARCH)"
+	@echo "MABI:           $(MABI)"
 	@echo "------------------------------------------------------"
 	@echo "-- Toolchain"
 	@echo "------------------------------------------------------"
-	@echo "Toolchain:  $(RISCV_TOLLCHAIN)"
-	@echo "CC:         $(CC)"
-	@echo "OBJDUMP:    $(OBJDUMP)"
-	@echo "OBJCOPY:    $(OBJCOPY)"
-	@echo "SIZE:       $(SIZE)"
-	@echo "DEBUGGER:   $(GDB)"
+	@echo "Toolchain:      $(RISCV_TOLLCHAIN)"
+	@echo "CC:             $(CC)"
+	@echo "OBJDUMP:        $(OBJDUMP)"
+	@echo "OBJCOPY:        $(OBJCOPY)"
+	@echo "SIZE:           $(SIZE)"
+	@echo "DEBUGGER:       $(GDB)"
 	@echo "------------------------------------------------------"
 	@echo "-- GDB Arguments"
 	@echo "------------------------------------------------------"
-	@echo "GDB_ARGS:   $(GDB_ARGS)"
+	@echo "GDB_ARGS:       $(GDB_ARGS)"
+	@echo "------------------------------------------------------"
+	@echo "-- GHDL Run Arguments"
+	@echo "------------------------------------------------------"
+	@echo "GHDL_RUN_FLAGS: $(GHDL_RUN_FLAGS)"
 	@echo "------------------------------------------------------"
 	@echo "-- Libraries"
 	@echo "------------------------------------------------------"
@@ -368,25 +375,25 @@ info:
 	@echo "SEARCH-DIRS:"
 	@$(CC) -print-search-dirs
 	@echo "------------------------------------------------------"
-	@echo "-- Flags"
+	@echo "-- Compiler Flags"
 	@echo "------------------------------------------------------"
-	@echo "USER_FLAGS: $(USER_FLAGS)"
-	@echo "CC_OPTS:    $(CC_OPTS)"
+	@echo "USER_FLAGS:     $(USER_FLAGS)"
+	@echo "CC_OPTS:        $(CC_OPTS)"
 	@echo "------------------------------------------------------"
 	@echo "-- Libraries"
 	@echo "------------------------------------------------------"
-	@echo "USER_LIBS: $(USER_LIBS)"
-	@echo "LD_LIBS:   $(LD_LIBS)"
+	@echo "USER_LIBS:      $(USER_LIBS)"
+	@echo "LD_LIBS:        $(LD_LIBS)"
 
 
 # -----------------------------------------------------------------------------
 # Help
 # -----------------------------------------------------------------------------
 help:
-	@echo "<<< NEORV32 SW Application Makefile >>>"
-	@echo "Make sure to add the bin folder of RISC-V GCC to your PATH variable."
+	@echo "NEORV32 Software Application Makefile"
+	@echo "Find more information at https://github.com/stnolting/neorv32"
 	@echo ""
-	@echo "=== Targets ==="
+	@echo "Targets:"
 	@echo " help       - show this text"
 	@echo " check      - check toolchain"
 	@echo " info       - show makefile/toolchain configuration"
@@ -406,15 +413,16 @@ help:
 	@echo " bl_image   - compile and generate VHDL BOOTROM boot image (for bootloader only, no header) in local folder"
 	@echo " bootloader - compile, generate and install VHDL BOOTROM boot image (for bootloader only, no header)"
 	@echo ""
-	@echo "=== Variables ==="
-	@echo " USER_FLAGS   - Custom toolchain flags [append only]: \"$(USER_FLAGS)\""
-	@echo " USER_LIBS    - Custom libraries [append only]: \"$(USER_LIBS)\""
-	@echo " EFFORT       - Optimization level: \"$(EFFORT)\""
-	@echo " MARCH        - Machine architecture: \"$(MARCH)\""
-	@echo " MABI         - Machine binary interface: \"$(MABI)\""
-	@echo " APP_INC      - C include folder(s) [append only]: \"$(APP_INC)\""
-	@echo " ASM_INC      - ASM include folder(s) [append only]: \"$(ASM_INC)\""
-	@echo " RISCV_PREFIX - Toolchain prefix: \"$(RISCV_PREFIX)\""
-	@echo " NEORV32_HOME - NEORV32 home folder: \"$(NEORV32_HOME)\""
-	@echo " GDB_ARGS     - GDB (connection) arguments: \"$(GDB_ARGS)\""
+	@echo "Variables:"
+	@echo " USER_FLAGS     - Custom toolchain flags [append only]: \"$(USER_FLAGS)\""
+	@echo " USER_LIBS      - Custom libraries [append only]: \"$(USER_LIBS)\""
+	@echo " EFFORT         - Optimization level: \"$(EFFORT)\""
+	@echo " MARCH          - Machine architecture: \"$(MARCH)\""
+	@echo " MABI           - Machine binary interface: \"$(MABI)\""
+	@echo " APP_INC        - C include folder(s) [append only]: \"$(APP_INC)\""
+	@echo " ASM_INC        - ASM include folder(s) [append only]: \"$(ASM_INC)\""
+	@echo " RISCV_PREFIX   - Toolchain prefix: \"$(RISCV_PREFIX)\""
+	@echo " NEORV32_HOME   - NEORV32 home folder: \"$(NEORV32_HOME)\""
+	@echo " GDB_ARGS       - GDB (connection) arguments: \"$(GDB_ARGS)\""
+	@echo " GHDL_RUN_FLAGS - GHDL simulation run arguments: \"$(GHDL_RUN_FLAGS)\""
 	@echo ""

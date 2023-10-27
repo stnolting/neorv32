@@ -22,8 +22,14 @@ GHDL="${GHDL:-ghdl}"
 
 $GHDL -m --work=neorv32 --workdir=build neorv32_tb_simple
 
-GHDL_RUN_ARGS="${@:---stop-time=10ms}"
-echo "Using simulation runtime args: $GHDL_RUN_ARGS";
+if [ -z "$1" ]
+  then
+    GHDL_RUN_ARGS="${@:---stop-time=10ms}"
+  else
+    GHDL_RUN_ARGS=$1
+fi
+
+echo "Using simulation run arguments: $GHDL_RUN_ARGS";
 
 runcmd="$GHDL -r --work=neorv32 --workdir=build neorv32_tb_simple \
   --max-stack-alloc=0 \

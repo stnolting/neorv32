@@ -152,10 +152,10 @@ Just executing `make` (or executing `make help`) will show the help menu listing
 [source,makefile]
 ----
 $ make
-<<< NEORV32 SW Application Makefile >>>
-Make sure to add the bin folder of RISC-V GCC to your PATH variable.
+NEORV32 Software Application Makefile
+Find more information at https://github.com/stnolting/neorv32
 
-=== Targets ===
+Targets:
  help       - show this text
  check      - check toolchain
  info       - show makefile/toolchain configuration
@@ -174,17 +174,18 @@ Make sure to add the bin folder of RISC-V GCC to your PATH variable.
  bl_image   - compile and generate VHDL BOOTROM boot image (for bootloader only, no header) in local folder
  bootloader - compile, generate and install VHDL BOOTROM boot image (for bootloader only, no header)
 
-=== Variables ===
- USER_FLAGS   - Custom toolchain flags [append only], default ""
- USER_LIBS    - Custom libraries [append only], default ""
- EFFORT       - Optimization level, default "-Os"
- MARCH        - Machine architecture, default "rv32i_zicsr_zifencei"
- MABI         - Machine binary interface, default "ilp32"
- APP_INC      - C include folder(s) [append only], default "-I ."
- ASM_INC      - ASM include folder(s) [append only], default "-I ."
- RISCV_PREFIX - Toolchain prefix, default "riscv32-unknown-elf-"
- NEORV32_HOME - NEORV32 home folder, default "../../.."
- GDB_ARGS     - GDB (connection) arguments: "-ex target extended-remote localhost:3333"
+Variables:
+ USER_FLAGS     - Custom toolchain flags [append only]: ""
+ USER_LIBS      - Custom libraries [append only]: ""
+ EFFORT         - Optimization level: "-Os"
+ MARCH          - Machine architecture: "rv32i_zicsr_zifencei"
+ MABI           - Machine binary interface: "ilp32"
+ APP_INC        - C include folder(s) [append only]: "-I ."
+ ASM_INC        - ASM include folder(s) [append only]: "-I ."
+ RISCV_PREFIX   - Toolchain prefix: "riscv32-unknown-elf-"
+ NEORV32_HOME   - NEORV32 home folder: "../../.."
+ GDB_ARGS       - GDB (connection) arguments: "-ex target extended-remote localhost:3333"
+ GHDL_RUN_FLAGS - GHDL simulation run arguments: ""
 ----
 
 
@@ -234,17 +235,18 @@ GDB_ARGS ?= -ex "target extended-remote localhost:3333"
 [cols="<2,<8"]
 [grid="none"]
 |=======================
-| `APP_SRC`      | The source files of the application (`*.c`, `*.cpp`, `*.S` and `*.s` files are allowed; files of these types in the project folder are automatically added via wild cards). Additional files can be added separated by white spaces
-| `APP_INC`      | Include file folders; separated by white spaces; must be defined with `-I` prefix
-| `ASM_INC`      | Include file folders that are used only for the assembly source files (`*.S`/`*.s`).
-| `EFFORT`       | Optimization level, optimize for size (`-Os`) is default; legal values: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Ofast`, ...
-| `RISCV_PREFIX` | The toolchain prefix to be used; follows the triplet naming convention `[architecture]-[host_system]-[output]-...`
-| `MARCH`        | The targeted RISC-V architecture/ISA
-| `MABI`         | Application binary interface (default: 32-bit integer ABI `ilp32`)
-| `USER_FLAGS`   | Additional flags that will be forwarded to the compiler tools
-| `USER_LIBS`    | Additional libraries to include during linking (`*.a`)
-| `NEORV32_HOME` | Relative or absolute path to the NEORV32 project home folder; adapt this if the makefile/project is not in the project's default `sw/example` folder
-| `GDB_ARGS`     | Default GDB arguments when running the `gdb` target
+| `APP_SRC`        | The source files of the application (`*.c`, `*.cpp`, `*.S` and `*.s` files are allowed; files of these types in the project folder are automatically added via wild cards). Additional files can be added separated by white spaces
+| `APP_INC`        | Include file folders; separated by white spaces; must be defined with `-I` prefix
+| `ASM_INC`        | Include file folders that are used only for the assembly source files (`*.S`/`*.s`).
+| `EFFORT`         | Optimization level, optimize for size (`-Os`) is default; legal values: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Ofast`, ...
+| `RISCV_PREFIX`   | The toolchain prefix to be used; follows the triplet naming convention `[architecture]-[host_system]-[output]-...`
+| `MARCH`          | The targeted RISC-V architecture/ISA
+| `MABI`           | Application binary interface (default: 32-bit integer ABI `ilp32`)
+| `USER_FLAGS`     | Additional flags that will be forwarded to the compiler tools
+| `USER_LIBS`      | Additional libraries to include during linking (`*.a`)
+| `NEORV32_HOME`   | Relative or absolute path to the NEORV32 project home folder; adapt this if the makefile/project is not in the project's default `sw/example` folder
+| `GDB_ARGS`       | Default GDB arguments when running the `gdb` target
+| `GHDL_RUN_FLAGS` | GHDL run arguments (e.g. `--stop-time=1ms`)
 |=======================
 
 :sectnums:
@@ -277,10 +279,19 @@ calling `make` without the need to change the makefile(s) or the linker script. 
 to the executable (`-g`) and will also re-define the linker script's `__neorv32_heap_size` variable setting the maximal heap
 size to 4096 bytes (see sections <<_linker_script>> and <<_ram_layout>>):
 
-.Using the `USER_FLAGS` Variable for Customization (setting the heap size to 4kB)
+.Using the `USER_FLAGS` Variable for Customization
 [source,bash]
 ----
-$ make USER_FLAGS+="-Wl,--defsym,__neorv32_heap_size=4096" clean_all exe
+$ make USER_FLAGS+="-g -Wl,--__neorv32_heap_size,__heap_size=4096" clean_all exe
+----
+
+The configuration can also be made "permanent" by adapting the application's makefile (make sure to use the
+`override` command here):
+
+.Using the `USER_FLAGS` Variable for Permanent Customization
+[source,makefile]
+----
+override USER_FLAGS += "-g -Wl,--__neorv32_heap_size,__heap_size=4096"
 ----
 
 
