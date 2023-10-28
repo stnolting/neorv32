@@ -113,15 +113,6 @@ int main (void)
 
     // clear cycle counter
     neorv32_cpu_set_mcycle(0);
-
-#ifndef RUN_DHRYSTONE
-    #warning DHRYSTONE HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_DHRYSTONE clean_all exe<< to compile it.
-
-    // inform the user if you are actually executing this
-    neorv32_uart0_printf("ERROR! DhryStone has not been compiled. Use >>make USER_FLAGS+=-RUN_DHRYSTONE clean_all exe<< to compile it.\n");
-
-    while(1);
-#endif
   } /* ***** /NEORV32-SPECIFIC ***** */
 
 

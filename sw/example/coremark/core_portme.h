@@ -206,14 +206,7 @@ typedef struct CORE_PORTABLE_S
 } core_portable;
 
 /* target specific init/fini */
-#ifndef RUN_COREMARK
-void
-__attribute__((__noreturn__))
-portable_init(core_portable *p, int *argc, char *argv[]);
-#else
-void
-portable_init(core_portable *p, int *argc, char *argv[]);
-#endif
+void portable_init(core_portable *p, int *argc, char *argv[]);
 void portable_fini(core_portable *p);
 
 #if !defined(PROFILE_RUN) && !defined(PERFORMANCE_RUN) \

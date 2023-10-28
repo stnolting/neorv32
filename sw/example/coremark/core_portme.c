@@ -44,9 +44,7 @@ volatile ee_s32 seed5_volatile = 0;
    cpu clock cycles performance counter etc. Sample implementation for standard
    time.h and windows.h definitions included.
 */
-CORETIMETYPE
-barebones_clock()
-{
+CORETIMETYPE barebones_clock() {
 /*
 #error \
     "You must implement a method to measure time in barebones_clock()! This function should return current time.\n"
@@ -78,9 +76,7 @@ static CORETIMETYPE start_time_val, stop_time_val;
    example code) or zeroing some system parameters - e.g. setting the cpu clocks
    cycles to 0.
 */
-void
-start_time(void)
-{
+void start_time(void) {
     GETMYTIME(&start_time_val);
     neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // start all counters
 }
@@ -92,9 +88,7 @@ start_time(void)
    example code) or other system parameters - e.g. reading the current value of
    cpu cycles counter.
 */
-void
-stop_time(void)
-{
+void stop_time(void) {
     neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
     GETMYTIME(&stop_time_val);
 }
@@ -107,9 +101,7 @@ stop_time(void)
    sample implementation returns milliseconds by default, and the resolution is
    controlled by <TIMER_RES_DIVIDER>
 */
-CORE_TICKS
-get_time(void)
-{
+CORE_TICKS get_time(void) {
     CORE_TICKS elapsed
         = (CORE_TICKS)(MYTIMEDIFF(stop_time_val, start_time_val));
     return elapsed;
@@ -121,9 +113,7 @@ get_time(void)
    floating point. Default implementation implemented by the EE_TICKS_PER_SEC
    macro above.
 */
-secs_ret
-time_in_secs(CORE_TICKS ticks)
-{
+secs_ret time_in_secs(CORE_TICKS ticks) {
     /* NEORV32-specific */
     secs_ret retval = (secs_ret)(((CORE_TICKS)ticks) / ((CORE_TICKS)NEORV32_SYSINFO->CLK));
     return retval;
@@ -139,32 +129,14 @@ uint32_t num_hpm_cnts_global = 0;
         Target specific initialization code
         Test for some common mistakes.
 */
-#ifndef RUN_COREMARK
-void
-__attribute__((__noreturn__))
-portable_init(core_portable *p, int *argc, char *argv[])
-#else
-void
-portable_init(core_portable *p, int *argc, char *argv[])
-#endif
-{
+void portable_init(core_portable *p, int *argc, char *argv[]) {
+
   /* NEORV32-specific */
   neorv32_cpu_csr_write(CSR_MIE, 0); // no interrupt, thanks
-  neorv32_rte_setup(); // capture all exceptions and give debug information, no HW flow control
+  neorv32_rte_setup(); // capture all trap and give debug information, no HW flow control
 
   // setup UART at default baud rate, no interrupts
   neorv32_uart0_setup(BAUD_RATE, 0);
-
-
-// Disable coremark compilation by default
-#ifndef RUN_COREMARK
-  #warning COREMARK HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_COREMARK clean_all exe<< to compile it.
-
-  // inform the user if you are actually executing this
-  neorv32_uart0_printf("ERROR! CoreMark has not been compiled. Use >>make USER_FLAGS+=-DRUN_COREMARK clean_all exe<< to compile it.\n");
-
-  while(1);
-#endif
 
   // check available hardware extensions and compare with compiler flags
   neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
@@ -207,19 +179,14 @@ portable_init(core_portable *p, int *argc, char *argv[])
         ee_printf("ERROR! Please define ee_u32 to a 32b unsigned type!\n");
     }
     p->portable_id = 1;
-
-#ifndef RUN_COREMARK
-  while(1);
-#endif
 }
 
 
 /* Function : portable_fini
-        Target specific final code
+   Target specific final code
 */
-void
-portable_fini(core_portable *p)
-{
+void portable_fini(core_portable *p) {
+
     p->portable_id = 0;
 
     neorv32_uart0_printf("\nNEORV32: Hardware Performance Monitors (low words only)\n");
