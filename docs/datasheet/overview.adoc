@@ -378,10 +378,6 @@ The performance of the NEORV32 was tested and evaluated using the https://www.ee
 The according sources can be found in the `sw/example/coremark` folder.
 The resulting CoreMark score is defined as CoreMark iterations per second per MHz.
 
-.Dhrystone Benchmark
-[TIP]
-A very simple port of the Dhrystone benchmark is also available in `sw/example/dhrystone`.
-
 .Configuration
 [cols="<2,<8"]
 [grid="topbot"]
