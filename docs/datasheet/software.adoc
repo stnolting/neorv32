@@ -430,7 +430,9 @@ The default software framework relies on **newlib** as default C standard librar
 The NEORV32 CPU and processor **do support** embedded RTOS like FreeRTOS and Zephyr. See the User guide section
 https://stnolting.github.io/neorv32/ug/#_zephyr_rtos_support[Zephyr RTOS Support] and
 https://stnolting.github.io/neorv32/ug/#_freertos_support[FreeRTOS Support]
-for more information.
+for more information. +
++
+The FreeRTOS port and demo is available in a separate repository: https://github.com/stnolting/neorv32-freertos
 
 Newlib provides stubs for common "system calls" (like file handling and standard input/output) that are used by other
 C libraries like `stdio`. These stubs are available in `sw/source/source/syscalls.c` and were adapted for the NEORV32 processor.

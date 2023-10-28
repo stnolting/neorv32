@@ -3,5 +3,4 @@
 == FreeRTOS Support
 
 A NEORV32-specific port and a simple demo for FreeRTOS (https://github.com/FreeRTOS/FreeRTOS) are
-available in the `sw/example/demo_freeRTOS` folder. See the according documentation (`sw/example/demo_freeRTOS/README.md`)
-for more information.
+available in a separate repository on GitHub: https://github.com/stnolting/neorv32-freertos
