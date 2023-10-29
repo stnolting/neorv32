@@ -138,42 +138,30 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- say hello --
-  assert false report
-    "The NEORV32 RISC-V Processor, Version 0x" & to_hstring32_f(hw_version_c) & " - github.com/stnolting/neorv32" severity note;
-
   -- CPU ISA configuration --
   assert false report
     "NEORV32 CPU Configuration: RV32" &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_E,      "E", "I") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_M,      "M", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_A,      "A", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_C,      "C", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_B,      "B", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_U,      "U", "") &
-    cond_sel_string_f(true,                       "_Zicsr", "") & -- always enabled
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_Zicntr", "") &
-    cond_sel_string_f(true,                       "_Zifencei", "") & -- always enabled
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,  "_Zfinx", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm,  "_Zihpm", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,  "_Zmmul", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,  "_Zxcfu", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,  "_Sdext", "") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdtrig, "_Sdtrig", "") &
-    cond_sel_string_f(pmp_enable_c,               "_Smpmp", "")
+    cond_sel_string_f(CPU_EXTENSION_RISCV_E,      "E",         "I") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_M,      "M",         "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_A,      "A",         "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_C,      "C",         "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_B,      "B",         "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_U,      "U",         "" ) &
+    cond_sel_string_f(true,                       "_Zicsr",    "" ) & -- always enabled
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_Zicntr",   "" ) &
+    cond_sel_string_f(true,                       "_Zifencei", "" ) & -- always enabled
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,  "_Zfinx",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm,  "_Zihpm",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,  "_Zmmul",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,  "_Zxcfu",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,  "_Sdext",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdtrig, "_Sdtrig",   "" ) &
+    cond_sel_string_f(pmp_enable_c,               "_Smpmp",    "" )
     severity note;
 
   -- simulation notifier --
   assert not (is_simulation_c = true) report
     "NEORV32 CPU WARNING! Assuming this is a simulation." severity warning;
-
-  -- CPU boot address --
-  assert not (CPU_BOOT_ADDR(1 downto 0) /= "00") report
-    "NEORV32 CPU CONFIG ERROR! <CPU_BOOT_ADDR> has to be 32-bit aligned." severity error;
-
-  -- Hardware multiplier extensions --
-  assert not ((CPU_EXTENSION_RISCV_Zmmul = true) and (CPU_EXTENSION_RISCV_M = true)) report
-    "NEORV32 CPU CONFIG ERROR! <M> and <Zmmul> extensions cannot co-exist!" severity error;
 
 
   -- Control Unit ---------------------------------------------------------------------------
