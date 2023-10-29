@@ -65,13 +65,16 @@ end neorv32_fifo;
 
 architecture neorv32_fifo_rtl of neorv32_fifo is
 
+  -- make sure FIFO depth is a power of two --
+  constant fifo_depth_c : natural := cond_sel_natural_f(is_power_of_two_f(FIFO_DEPTH), FIFO_DEPTH, 2**index_size_f(FIFO_DEPTH));
+
   -- FIFO --
-  type fifo_data_t is array (0 to FIFO_DEPTH-1) of std_ulogic_vector(FIFO_WIDTH-1 downto 0);
+  type fifo_data_t is array (0 to fifo_depth_c-1) of std_ulogic_vector(FIFO_WIDTH-1 downto 0);
   type fifo_t is record
     we    : std_ulogic; -- write enable
     re    : std_ulogic; -- read enable
-    w_pnt : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- write pointer
-    r_pnt : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0); -- read pointer
+    w_pnt : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0); -- write pointer
+    r_pnt : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0); -- read pointer
     data  : fifo_data_t; -- fifo memory
     buf   : std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- if single-entry FIFO
     match : std_ulogic;
@@ -84,15 +87,9 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
   signal fifo : fifo_t;
 
   -- misc --
-  signal level_diff : std_ulogic_vector(index_size_f(FIFO_DEPTH) downto 0);
+  signal level_diff : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0);
 
 begin
-
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not (FIFO_DEPTH = 0) report "NEORV32 CONFIG ERROR: FIFO depth has to be > 0." severity error;
-  assert not (is_power_of_two_f(FIFO_DEPTH) = false) report "NEORV32 CONFIG ERROR: FIFO depth has to be a power of two." severity error;
-
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -127,7 +124,7 @@ begin
   -- FIFO Status ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   check_large:
-  if (FIFO_DEPTH > 1) generate
+  if (fifo_depth_c > 1) generate
     fifo.match <= '1' when (fifo.r_pnt(fifo.r_pnt'left-1 downto 0) = fifo.w_pnt(fifo.w_pnt'left-1 downto 0)) else '0';
     fifo.full  <= '1' when (fifo.r_pnt(fifo.r_pnt'left) /= fifo.w_pnt(fifo.w_pnt'left)) and (fifo.match = '1') else '0';
     fifo.empty <= '1' when (fifo.r_pnt(fifo.r_pnt'left)  = fifo.w_pnt(fifo.w_pnt'left)) and (fifo.match = '1') else '0';
@@ -136,7 +133,7 @@ begin
   end generate;
 
   check_small:
-  if (FIFO_DEPTH = 1) generate
+  if (fifo_depth_c = 1) generate
     fifo.match <= '1' when (fifo.r_pnt(0) = fifo.w_pnt(0)) else '0';
     fifo.full  <= not fifo.match;
     fifo.empty <= fifo.match;
@@ -176,7 +173,7 @@ begin
   -- FIFO Memory - Write --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   fifo_memory: -- real FIFO memory (several entries)
-  if (FIFO_DEPTH > 1) generate
+  if (fifo_depth_c > 1) generate
     sync_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
@@ -189,7 +186,7 @@ begin
   end generate;
 
   fifo_buffer: -- simple register (single entry)
-  if (FIFO_DEPTH = 1) generate
+  if (fifo_depth_c = 1) generate
     sync_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
@@ -208,7 +205,7 @@ begin
   if (FIFO_RSYNC = false) generate
     async_read: process(fifo)
     begin
-      if (FIFO_DEPTH = 1) then
+      if (fifo_depth_c = 1) then
         rdata_o <= fifo.buf;
       else
         rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
@@ -221,7 +218,7 @@ begin
     async_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        if (FIFO_DEPTH = 1) then
+        if (fifo_depth_c = 1) then
           rdata_o <= fifo.buf;
         else
           rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
