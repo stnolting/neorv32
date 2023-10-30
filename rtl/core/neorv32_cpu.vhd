@@ -268,7 +268,7 @@ begin
     alu_i  => alu_res,   -- ALU result
     mem_i  => mem_rdata, -- memory read data
     csr_i  => csr_rdata, -- CSR read data
-    pc2_i  => next_pc,   -- next PC
+    npc_i  => next_pc,   -- next PC
     -- data output --
     rs1_o  => rs1,       -- rs1
     rs2_o  => rs2,       -- rs2
@@ -376,8 +376,8 @@ begin
   pmp_inst_false:
   if (pmp_enable_c = false) generate
     xcsr_rdata_pmp <= (others => '0');
-    pmp_ex_fault <= '0';
-    pmp_rw_fault <= '0';
+    pmp_ex_fault   <= '0';
+    pmp_rw_fault   <= '0';
   end generate;
 
 
