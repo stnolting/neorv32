@@ -143,9 +143,9 @@ begin
       when alu_op_slt_c  => res_o(XLEN-1 downto 1) <= (others => '0');
                             res_o(0) <= addsub_res(addsub_res'left); -- carry/borrow
       when alu_op_movb_c => res_o <= opb;
-      when alu_op_xor_c  => res_o <= rs1_i xor opb; -- only rs1 is required for logic ops (opa would also contain pc)
-      when alu_op_or_c   => res_o <= rs1_i or  opb;
-      when alu_op_and_c  => res_o <= rs1_i and opb;
+      when alu_op_xor_c  => res_o <= opb xor rs1_i;
+      when alu_op_or_c   => res_o <= opb or  rs1_i;
+      when alu_op_and_c  => res_o <= opb and rs1_i;
       when others        => res_o <= addsub_res(XLEN-1 downto 0); -- don't care
     end case;
   end process alu_core;

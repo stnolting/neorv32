@@ -50,7 +50,7 @@ architecture neorv32_dmem_rtl of neorv32_dmem is
   -- -------------------------------------------------------------------------------------------------------------- --
   -- The memory (RAM) is built from 4 individual byte-wide memories b0..b3, since some synthesis tools have         --
   -- problems with 32-bit memories that provide dedicated byte-enable signals AND/OR with multi-dimensional arrays. --
-  -- [NOTE] Read-during-write behavior is irrelevant as read and write access are mutually exclusive.               --
+  -- [NOTE] Read-during-write behavior is irrelevant as read and write accesses are mutually exclusive.             --
   -- -------------------------------------------------------------------------------------------------------------- --
 
   -- RAM - not initialized at all --
