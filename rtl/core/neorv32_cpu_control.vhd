@@ -344,7 +344,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- hardware trigger module --
   signal hw_trigger_fire : std_ulogic;
 
-  -- CSR read-back data helpers --
+  -- CSR read-back helpers --
   signal csr_rdata, xcsr_rdata : std_ulogic_vector(XLEN-1 downto 0);
 
 begin
@@ -367,7 +367,7 @@ begin
       -- previous state (for HPMs only) --
       fetch_engine.state_prev <= fetch_engine.state;
 
-      -- restart request buffer --
+      -- restart request --
       if (fetch_engine.state = IF_RESTART) then -- restart done
         fetch_engine.restart <= '0';
       else -- buffer request
@@ -595,7 +595,8 @@ begin
           else
             NULL;
           end if;
-        when others => NULL;
+        when others =>
+          NULL;
       end case;
     end if;
   end process imm_gen;
@@ -1004,7 +1005,7 @@ begin
         execute_engine.state_nxt <= DISPATCH;
         -- house keeping: use this state to (re-)initialize the register file's x0/zero register --
         if (reset_x0_c = true) then -- if x0 is a "real" register that has to be initialized to zero
-          ctrl_nxt.rf_mux     <= rf_mux_csr_c; -- this will return 0 since csr.re_nxt has not been set
+          ctrl_nxt.rf_mux     <= rf_mux_csr_c; -- this will return 0 since csr.re_nxt is zero
           ctrl_nxt.rf_zero_we <= '1'; -- allow/force write access to x0
         end if;
 
@@ -1653,7 +1654,7 @@ begin
             if (csr.wdata(1 downto 0) = "01") then
               csr.mtvec <= csr.wdata(XLEN-1 downto 7) & "00000" & "01"; -- mtvec.MODE=1 (vectored)
             else
-              csr.mtvec <= csr.wdata(XLEN-1 downto 2) & "00";           -- mtvec.MODE=0 (direct)
+              csr.mtvec <= csr.wdata(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0 (direct)
             end if;
 
           when csr_mcounteren_c => -- machine counter access enable
@@ -2092,10 +2093,11 @@ begin
       csr.re    <= '0';
       csr.rdata <= (others => '0');
     elsif rising_edge(clk_i) then
-      csr.re    <= csr.re_nxt;
-      csr.rdata <= (others => '0'); -- output zero if no valid CSR access operation
+      csr.re <= csr.re_nxt;
       if (csr.re = '1') then
         csr.rdata <= csr_rdata or xcsr_rdata;
+      else
+        csr.rdata <= (others => '0'); -- output zero if no valid CSR read access operation
       end if;
     end if;
   end process csr_read_reg;
@@ -2299,12 +2301,12 @@ begin
     elsif rising_edge(clk_i) then
       if (CPU_EXTENSION_RISCV_Sdext = true) then
         debug_ctrl.ext_halt_req <= db_halt_req_i; -- external halt request (from Debug Module)
-        if (debug_ctrl.running = '0') then -- debug mode OFFLINE - waiting for entry event
-          if (trap_ctrl.env_enter = '1') and (trap_ctrl.cause(5) = '1') then
+        if (debug_ctrl.running = '0') then -- debug mode OFFLINE
+          if (trap_ctrl.env_enter = '1') and (trap_ctrl.cause(5) = '1') then -- waiting for entry event
             debug_ctrl.running <= '1';
           end if;
-        else -- debug mode ONLINE - waiting for exit event
-          if (trap_ctrl.env_exit = '1') then
+        else -- debug mode ONLINE
+          if (trap_ctrl.env_exit = '1') then -- waiting for exit event
             debug_ctrl.running <= '0';
           end if;
         end if;
@@ -2329,7 +2331,7 @@ begin
   csr.dcsr_rd(31 downto 28) <= "0100"; -- xdebugver: external debug support compatible to spec. version 1.0
   csr.dcsr_rd(27 downto 16) <= (others => '0'); -- reserved
   csr.dcsr_rd(15)           <= csr.dcsr_ebreakm; -- ebreakm: what happens on ebreak in m-mode? (normal trap OR debug-enter)
-  csr.dcsr_rd(14)           <= '0'; -- ebreakh: hypervisor mode not implemented
+  csr.dcsr_rd(14)           <= '0'; -- reserved
   csr.dcsr_rd(13)           <= '0'; -- ebreaks: supervisor mode not implemented
   csr.dcsr_rd(12)           <= csr.dcsr_ebreaku when (CPU_EXTENSION_RISCV_U = true) else '0'; -- ebreaku: what happens on ebreak in u-mode? (normal trap OR debug-enter)
   csr.dcsr_rd(11)           <= '0'; -- stepie: interrupts are disabled during single-stepping
