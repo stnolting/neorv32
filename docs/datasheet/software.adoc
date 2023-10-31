@@ -501,17 +501,17 @@ The `crt0.S` start-up performs the following operations:
 . Clear <<_mie>> disabling all interrupt sources.
 . Install an <<_early_trap_handler>> to <<_mtvec>>.
 . Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
-. Initialize all integer register `x1 - x31` (only `x1 - x15` if the `E` CPU extension is enabled).
+. Initialize all integer register `x1` - `x31` (only `x1` - `x15` if the `E` CPU extension is enabled).
 . Setup `.data` section to configure initialized variables.
 . Clear the `.bss` section.
 . Call all _constructors_ (if there are any).
 . Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
 . If `main` returns:
-** Interrupts are disabled by clearing <<_mie>>.
+** All interrupt sources are disabled by clearing <<_mie>>.
 ** The return value of `main` is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
 ** Call all _destructors_ (if there are any).
 ** An optional <<_after_main_handler>> is called (if defined at all).
-** The CPU enters sleep mode (executing the `wfi` instruction) in an endless loop.
+** The CPU enters sleep mode executing the `wfi` instruction in an endless loop.
 
 .Bootloader Start-Up Code
 [NOTE]
