@@ -57,9 +57,9 @@ __crt0_entry:
 // Setup CPU core CSRs
 // ************************************************************************************************
 __crt0_cpu_csr_init:
-  csrw mie,   zero                // disable all interrupt sources
   la   x1,    __crt0_trap_handler // configure early-boot trap handler
   csrw mtvec, x1
+  csrw mie,   zero // disable all interrupt sources
 
 
 // ************************************************************************************************
@@ -215,43 +215,42 @@ __crt0_main_aftermath_end:
 // Go to endless sleep mode
 // ************************************************************************************************
 __crt0_shutdown:
-  wfi // go to sleep mode
-  j __crt0_shutdown // endless loop
+  wfi
+  j __crt0_shutdown
 
 
 // ************************************************************************************************
-// Dummy trap handler (for all traps during very early boot stage)
-// - does nothing but trying to move on to the next instruction
+// Early-boot trap handler - does nothing but trying to move on to the next linear instruction
 // ************************************************************************************************
-.balign 4                                   // the trap handler has to be 32-bit aligned
+.balign 4 // the trap handler has to be 32-bit aligned
 __crt0_trap_handler:
 
-  addi  sp,   sp, -8
-  sw    x8,   0(sp)
-  sw    x9,   4(sp)
+  // backup x8
+  csrw  mscratch, x8
 
+  // we are done if interrupt
   csrr  x8,   mcause
-  blt   x8,   zero, __crt0_trap_handler_end // skip mepc modification if interrupt
+  bltz  x8,   __crt0_trap_handler_end
 
-// update mepc
+  // mepc = mepc + 2 (for compressed instruction)
   csrr  x8,   mepc
-  lh    x9,   0(x8)                         // get compressed instruction or lower 16 bits of uncompressed instruction that caused exception
-  andi  x9,   x9, 3                         // mask: isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
-
-  addi  x8,   x8, +2                        // mepc +2 only for compressed instructions
-  csrw  mepc, x8                            // set new return address
-
-  addi  x8,   zero, 3
-  bne   x8,   x9, __crt0_trap_handler_end   // done if compressed instruction
-
-  csrr  x8,   mepc
-  addi  x8,   x8, +2                        // add another +2 to mepc (making +4) for uncompressed instructions
+  addi  x8,   x8, +2
   csrw  mepc, x8
 
+  // we are done if trap-causing instruction is compressed
+  csrr  x8,   mtinst // get transformed trap-causing instruction
+  andi  x8,   x8,  3 // isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
+  addi  x8,   x8, -3 // x8 is zero after this if uncompressed instruction
+  beqz  x8,   __crt0_trap_handler_end
+
+  // mepc = mepc + 2 (another time; for uncompressed instruction)
+  csrr  x8,   mepc
+  addi  x8,   x8, +2
+  csrw  mepc, x8
+
+  // restore x8
 __crt0_trap_handler_end:
-  lw    x8,   0(sp)
-  lw    x9,   4(sp)
-  addi  sp,   sp, +8
+  csrr  x8,   mscratch
 
   mret
 
