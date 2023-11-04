@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 04.11.2023 | 1.9.0.7 | upgrade true random number generator to [neoTRNG version 3](https://github.com/stnolting/neoTRNG); [#721](https://github.com/stnolting/neorv32/pull/721) |
 | 31.10.2023 | 1.9.0.6 | update crt0's early-boot trap handler; [#719](https://github.com/stnolting/neorv32/pull/719) |
 | 30.10.2023 | 1.9.0.5 | minor rtl cleanups and code beautification; [#718](https://github.com/stnolting/neorv32/pull/718) |
 | 28.10.2023 | 1.9.0.4 | :warning: :sparkles: move FreeRTOS port and demo to a new repository: https://github.com/stnolting/neorv32-freertos; [#716](https://github.com/stnolting/neorv32/pull/716) |
