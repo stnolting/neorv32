@@ -179,14 +179,6 @@ architecture neorv32_uart_rtl of neorv32_uart is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not (is_power_of_two_f(UART_RX_FIFO) = false)
-    report "NEORV32 PROCESSOR CONFIG ERROR: UART RX FIFO depth has to be a power of two." severity error;
-  assert not (is_power_of_two_f(UART_TX_FIFO) = false)
-    report "NEORV32 PROCESSOR CONFIG ERROR: UART TX FIFO depth has to be a power of two." severity error;
-
-
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 

@@ -124,12 +124,6 @@ architecture neorv32_slink_rtl of neorv32_slink is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not ((is_power_of_two_f(SLINK_TX_FIFO) = false) or (is_power_of_two_f(SLINK_RX_FIFO) = false)) report
-    "NEORV32 PROCESSOR CONFIG ERROR: SLINK FIFO sizes have to be a power of two." severity error;
-
-
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 

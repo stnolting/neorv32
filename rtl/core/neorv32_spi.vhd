@@ -135,12 +135,6 @@ architecture neorv32_spi_rtl of neorv32_spi is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not ((is_power_of_two_f(IO_SPI_FIFO) = false))
-    report "NEORV32 PROCESSOR CONFIG ERROR: SPI FIFO size has to be a power of two." severity error;
-
-
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
