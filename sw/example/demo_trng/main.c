@@ -56,6 +56,7 @@ void print_random_data(void);
 void repetition_count_test(void);
 void adaptive_proportion_test(void);
 void generate_histogram(void);
+void compute_rate(void);
 
 
 /**********************************************************************//**
@@ -109,6 +110,7 @@ int main(void) {
     neorv32_uart0_printf("\nCommands:\n"
                          " n: Print 8-bit random numbers (abort by pressing any key)\n"
                          " h: Generate histogram and analyze data\n"
+                         " t: Compute average random generation rate\n"
                          " 1: Run repetition count test (NIST SP 800-90B)\n"
                          " 2: Run adaptive proportion test (NIST SP 800-90B)\n");
 
@@ -119,6 +121,9 @@ int main(void) {
 
     if (cmd == 'n') {
       print_random_data();
+    }
+    else if (cmd == 't') {
+      compute_rate();
     }
     else if (cmd == 'h') {
       generate_histogram();
@@ -145,6 +150,8 @@ void print_random_data(void) {
 
   uint32_t num_samples = 0;
   uint8_t trng_data;
+
+  neorv32_trng_fifo_clear();
 
   while(1) {
     if (neorv32_trng_get(&trng_data)) {
@@ -173,6 +180,8 @@ void repetition_count_test(void) {
 
   neorv32_uart0_printf("\nRunning test... Press any key to stop.\n");
   neorv32_uart0_printf("Cut-off value = %u\n", c);
+
+  neorv32_trng_fifo_clear();
 
   while (neorv32_trng_get(&a));
   b = 1;
@@ -223,6 +232,8 @@ void adaptive_proportion_test(void) {
   neorv32_uart0_printf("\nRunning test... Press any key to stop.\n");
   neorv32_uart0_printf("Cut-off value = %u, windows size = %u\n", c, w);
 
+  neorv32_trng_fifo_clear();
+
   while (1) {
     while (neorv32_trng_get(&a));
     b = 1;
@@ -259,16 +270,14 @@ void adaptive_proportion_test(void) {
  **************************************************************************/
 void generate_histogram(void) {
 
+  const uint32_t n_samples = 4*1024*1024;
+
   uint32_t hist[256];
-  uint32_t i;
-  uint32_t cnt = 0;
+  uint32_t i, cnt;
   uint8_t trng_data;
   uint64_t average = 0;
 
-  neorv32_uart0_printf("Press any key to start.\n");
-
-  while(neorv32_uart0_char_received() == 0);
-  neorv32_uart0_char_received_get(); // discard received char
+  neorv32_trng_fifo_clear();
 
   neorv32_uart0_printf("Sampling... Press any key to stop.\n");
 
@@ -277,9 +286,11 @@ void generate_histogram(void) {
     hist[i] = 0;
   }
 
+  neorv32_trng_fifo_clear();
 
   // sample random data
-  while(1) {
+  cnt = 0;
+  while (1) {
 
     // get raw TRNG data
     if (neorv32_trng_get(&trng_data)) {
@@ -293,9 +304,13 @@ void generate_histogram(void) {
     // average
     average += (uint64_t)trng_data;
 
-    // abort conditions
-    if ((neorv32_uart0_char_received()) || // abort when key pressed
-        (cnt & 0x80000000UL)) { // to prevent overflow
+    // max number of samples
+    if (cnt >= n_samples) {
+      break;
+    }
+
+    // user abort
+    if (neorv32_uart0_char_received()) {
       neorv32_uart0_char_received_get(); // discard received char
       break;
     }
@@ -303,31 +318,36 @@ void generate_histogram(void) {
 
   average = average / cnt;
 
+  // analyze histogram data
+  uint32_t occ_avg = cnt / 256;
+  int32_t  occ_avg_dev_tmp = 0;
+  uint32_t occ_avg_dev = 0;
+  uint32_t occ_tmp;
+  uint32_t occ_max = 0;
+  uint32_t bin_max = 0;
+  uint32_t occ_min = -1;
+  uint32_t bin_min = 0;
 
-  // deviation (histogram samples)
-  uint32_t avg_occurence = cnt / 256;
-  int32_t tmp_int;
-  int32_t dev_int;
-  int32_t dev_int_max = 0x80000000UL; uint32_t bin_max = 0;
-  int32_t dev_int_min = 0x7fffffffUL; uint32_t bin_min = 0;
-  int32_t dev_int_avg = 0;
   for (i=0; i<256; i++) {
-    tmp_int = (int32_t)hist[i];
-    dev_int = tmp_int - avg_occurence;
+    occ_tmp = (int32_t)hist[i];
 
-    dev_int_avg += (uint64_t)dev_int;
+    occ_avg_dev_tmp = (int32_t)occ_avg - (int32_t)occ_tmp;
+    if (occ_avg_dev_tmp < 0) {
+      occ_avg_dev_tmp = -occ_avg_dev_tmp;
+    }
+    occ_avg_dev += occ_avg_dev_tmp;
 
-    if (dev_int < dev_int_min) {
-      dev_int_min = dev_int;
+    if (occ_tmp < occ_min) {
+      occ_min = occ_tmp;
       bin_min = i;
     }
-    if (dev_int > dev_int_max) {
-      dev_int_max = dev_int;
+    if (occ_tmp > occ_max) {
+      occ_max = occ_tmp;
       bin_max = i;
     }
   }
 
-  dev_int_avg = dev_int_avg / 256;
+  occ_avg_dev = occ_avg_dev / 256;
 
   // print histogram
   neorv32_uart0_printf("Histogram [random data value] : [# occurrences]\n");
@@ -336,14 +356,41 @@ void generate_histogram(void) {
   }
   neorv32_uart0_printf("\n");
 
-
   // print results
-  neorv32_uart0_printf("Analysis results (integer only)\n\n");
   neorv32_uart0_printf("Number of samples: %u\n", cnt);
   neorv32_uart0_printf("Arithmetic mean:   %u\n", (uint32_t)average);
-  neorv32_uart0_printf("\nArithmetic deviation\n");
-  neorv32_uart0_printf("Avg. occurrence: %u\n", avg_occurence);
-  neorv32_uart0_printf("Avg. deviation:  %i\n", dev_int_avg);
-  neorv32_uart0_printf("Minimum:         %i (histogram bin %u)\n", dev_int_min, bin_min);
-  neorv32_uart0_printf("Maximum:         %i (histogram bin %u)\n", dev_int_max, bin_max);
+  neorv32_uart0_printf("\nHistogram occurrence\n");
+  neorv32_uart0_printf("Average:      %u\n", occ_avg);
+  neorv32_uart0_printf("Min:          %u = average - %u at bin %u\n", occ_min, occ_avg - occ_min, bin_min);
+  neorv32_uart0_printf("Max:          %u = average + %u at bin %u\n", occ_max, occ_max - occ_avg, bin_max);
+  neorv32_uart0_printf("Average dev.: +/- %u\n", occ_avg_dev);
+}
+
+
+/**********************************************************************//**
+ * Compute average random generation rate
+ **************************************************************************/
+void compute_rate(void) {
+
+  const uint32_t n_samples = 16*1024;
+  uint32_t i;
+  uint32_t tmp;
+
+  uint32_t cycles = neorv32_cpu_csr_read(CSR_CYCLE);
+
+  i = 0;
+  while (i<n_samples) {
+    tmp = NEORV32_TRNG->CTRL;
+    if (tmp & (1<<TRNG_CTRL_VALID)) { // valid sample?
+      i++;
+    }
+  }
+
+  uint32_t delta = neorv32_cpu_csr_read(CSR_CYCLE) - cycles;
+  uint32_t cycles_per_rnd = delta / n_samples;
+  uint32_t rnd_per_sec = NEORV32_SYSINFO->CLK / cycles_per_rnd;
+
+  neorv32_uart0_printf("\nAverage random generation rate\n");
+  neorv32_uart0_printf("Cycles per random byte: ~%u\n", cycles_per_rnd);
+  neorv32_uart0_printf("Throughput (bytes/s):   ~%u\n", rnd_per_sec);
 }
