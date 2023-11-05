@@ -357,13 +357,14 @@ void generate_histogram(void) {
   neorv32_uart0_printf("\n");
 
   // print results
+neorv32_uart0_printf("[NOTE] integer numbers only\n");
   neorv32_uart0_printf("Number of samples: %u\n", cnt);
-  neorv32_uart0_printf("Arithmetic mean:   %u\n", (uint32_t)average);
+  neorv32_uart0_printf("Arithmetic mean:   %u (optimum would be 127)\n", (uint32_t)average);
   neorv32_uart0_printf("\nHistogram occurrence\n");
-  neorv32_uart0_printf("Average:      %u\n", occ_avg);
-  neorv32_uart0_printf("Min:          %u = average - %u at bin %u\n", occ_min, occ_avg - occ_min, bin_min);
-  neorv32_uart0_printf("Max:          %u = average + %u at bin %u\n", occ_max, occ_max - occ_avg, bin_max);
-  neorv32_uart0_printf("Average dev.: +/- %u\n", occ_avg_dev);
+  neorv32_uart0_printf("Average:      %u (optimum would be %u/256 = %u)\n", occ_avg, n_samples, n_samples/256);
+  neorv32_uart0_printf("Min:          %u = average - %u (deviation) at bin %u (optimum deviation would be 0)\n", occ_min, occ_avg - occ_min, bin_min);
+  neorv32_uart0_printf("Max:          %u = average + %u (deviation) at bin %u (optimum deviation would be 0)\n", occ_max, occ_max - occ_avg, bin_max);
+  neorv32_uart0_printf("Average dev.: +/- %u (optimum would be 0)\n", occ_avg_dev);
 }
 
 
