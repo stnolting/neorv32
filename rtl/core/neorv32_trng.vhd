@@ -244,9 +244,10 @@ end neorv32_trng_rtl;
 -- # can be implemented for any FPGA without requiring primitive instantiation or technology-      #
 -- # specific attributes or synthesis options.                                                     #
 -- #                                                                                               #
--- # The random output from all entropy cells is synchronized, XOR-ed and fed to a simple  2-bit a #
--- # von Neumann randomness extractor (extracting edges). 64 de-biased bits are "combined" using a #
--- # LFSR-style shift register to provide one random data byte.                                    #
+-- # The random output from each entropy cells is synchronized and XOR-ed with the other cell's    #
+-- # outputs before it is and fed into a simple 2-bit "von Neumann randomness extractor"           #
+-- # (extracting edges). 64 de-biased bits are "combined" using a LFSR-style shift register (in    #
+-- # order to improve spectral distribution) to provide one final random data byte.                #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
