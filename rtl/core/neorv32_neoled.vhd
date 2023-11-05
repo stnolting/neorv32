@@ -156,12 +156,6 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not (is_power_of_two_f(FIFO_DEPTH) = false)
-    report "NEORV32 PROCESSOR CONFIG ERROR! NEOLED FIFO size has to be a power of two." severity error;
-
-
   -- Host Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
