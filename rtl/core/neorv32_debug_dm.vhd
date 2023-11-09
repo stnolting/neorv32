@@ -86,18 +86,18 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- **********************************************************
 
   -- available DMI registers --
-  constant addr_data0_c        : std_ulogic_vector(6 downto 0) := "000" & x"4";
-  constant addr_dmcontrol_c    : std_ulogic_vector(6 downto 0) := "001" & x"0";
-  constant addr_dmstatus_c     : std_ulogic_vector(6 downto 0) := "001" & x"1";
-  constant addr_hartinfo_c     : std_ulogic_vector(6 downto 0) := "001" & x"2";
-  constant addr_abstractcs_c   : std_ulogic_vector(6 downto 0) := "001" & x"6";
-  constant addr_command_c      : std_ulogic_vector(6 downto 0) := "001" & x"7";
-  constant addr_abstractauto_c : std_ulogic_vector(6 downto 0) := "001" & x"8";
-  constant addr_nextdm_c       : std_ulogic_vector(6 downto 0) := "001" & x"d";
-  constant addr_progbuf0_c     : std_ulogic_vector(6 downto 0) := "010" & x"0";
-  constant addr_progbuf1_c     : std_ulogic_vector(6 downto 0) := "010" & x"1";
-  constant addr_sbcs_c         : std_ulogic_vector(6 downto 0) := "011" & x"8";
-  constant addr_haltsum0_c     : std_ulogic_vector(6 downto 0) := "100" & x"0";
+  constant addr_data0_c        : std_ulogic_vector(6 downto 0) := "0000100";
+  constant addr_dmcontrol_c    : std_ulogic_vector(6 downto 0) := "0010000";
+  constant addr_dmstatus_c     : std_ulogic_vector(6 downto 0) := "0010001";
+  constant addr_hartinfo_c     : std_ulogic_vector(6 downto 0) := "0010010";
+  constant addr_abstractcs_c   : std_ulogic_vector(6 downto 0) := "0010110";
+  constant addr_command_c      : std_ulogic_vector(6 downto 0) := "0010111";
+  constant addr_abstractauto_c : std_ulogic_vector(6 downto 0) := "0011000";
+  constant addr_nextdm_c       : std_ulogic_vector(6 downto 0) := "0011101";
+  constant addr_progbuf0_c     : std_ulogic_vector(6 downto 0) := "0100000";
+  constant addr_progbuf1_c     : std_ulogic_vector(6 downto 0) := "0100001";
+  constant addr_sbcs_c         : std_ulogic_vector(6 downto 0) := "0111000";
+  constant addr_haltsum0_c     : std_ulogic_vector(6 downto 0) := "1000000";
 
   -- RISC-V 32-bit instruction prototypes --
   constant instr_nop_c    : std_ulogic_vector(31 downto 0) := x"00000013"; -- nop

@@ -59,7 +59,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090007"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090008"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -646,7 +646,7 @@ package neorv32_package is
   constant trap_db_halt_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00011"; -- 3: external halt request (async)
   constant trap_db_step_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00100"; -- 4: single-stepping (async)
 
-  -- CPU Trap System ------------------------------------------------------------------------
+  -- Trap System ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- exception source bits --
   constant exc_iaccess_c  : natural :=  0; -- instruction access fault
@@ -659,8 +659,8 @@ package neorv32_package is
   constant exc_saccess_c  : natural :=  7; -- store access fault
   constant exc_laccess_c  : natural :=  8; -- load access fault
   -- for debug mode only --
-  constant exc_db_break_c : natural :=  9; -- enter debug mode via ebreak instruction ("sync EXCEPTION")
-  constant exc_db_hw_c    : natural := 10; -- enter debug mode via hw trigger ("sync EXCEPTION")
+  constant exc_db_break_c : natural :=  9; -- enter debug mode via ebreak instruction
+  constant exc_db_hw_c    : natural := 10; -- enter debug mode via hw trigger
   --
   constant exc_width_c    : natural := 11; -- length of this list in bits
   -- interrupt source bits --
@@ -684,12 +684,12 @@ package neorv32_package is
   constant irq_firq_14_c  : natural := 17; -- fast interrupt channel 14
   constant irq_firq_15_c  : natural := 18; -- fast interrupt channel 15
   -- for debug mode only --
-  constant irq_db_halt_c  : natural := 19; -- enter debug mode via external halt request ("async IRQ")
-  constant irq_db_step_c  : natural := 20; -- enter debug mode via single-stepping ("async IRQ")
+  constant irq_db_halt_c  : natural := 19; -- enter debug mode via external halt request
+  constant irq_db_step_c  : natural := 20; -- enter debug mode via single-stepping
   --
   constant irq_width_c    : natural := 21; -- length of this list in bits
 
-  -- CPU Privilege Modes --------------------------------------------------------------------
+  -- Privilege Modes ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant priv_mode_m_c : std_ulogic := '1'; -- machine mode
   constant priv_mode_u_c : std_ulogic := '0'; -- user mode
