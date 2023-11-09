@@ -567,7 +567,7 @@ begin
 
   -- Min/Max Select (FMIN/FMAX) -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  min_max_select: process(fpu_operands, comp_less_ff, fu_compare, ctrl_i)
+  min_max_select: process(fpu_operands, comp_less_ff, ctrl_i)
     variable cond_v : std_ulogic_vector(2 downto 0);
   begin
     -- comparison result - check for special cases: -0 is less than +0
@@ -576,7 +576,7 @@ begin
     elsif ((fpu_operands.rs1_class(fp_class_pos_zero_c) = '1') and (fpu_operands.rs2_class(fp_class_neg_zero_c) = '1')) then
       cond_v(0) := not ctrl_i.ir_funct3(0);
     else -- "normal= comparison
-      cond_v(0) := comp_less_ff xnor ctrl_i.ir_funct3(0); -- min/max select
+      cond_v(0) := not (comp_less_ff xor ctrl_i.ir_funct3(0)); -- min/max select
     end if;
 
     -- number NaN check --

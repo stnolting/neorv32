@@ -350,7 +350,7 @@ begin
             control.result <= bit_rev_f(rs1_i);
             control.done   <= '1'; -- pure-combinatorial, so we are done "immediately"
           when "001" => -- funct3 = "001": XNOR input operands
-            control.result <= rs1_i xnor rs2_i;
+            control.result <= not (rs1_i xor rs2_i);
             control.done   <= '1'; -- pure-combinatorial, so we are done "immediately"
           when others => -- not implemented
             control.result <= (others => '0');
