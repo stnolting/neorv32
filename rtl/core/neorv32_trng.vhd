@@ -512,22 +512,18 @@ begin
   sim_mode_false:
   if SIM_MODE = false generate
 
-    assert false report
-      "[neoTRNG NOTE] Implementing physical entropy cell with " &
-      natural'image(NUM_INV) & " inverters." severity note;
-
     -- ring oscillator --
     ring_osc:
     for i in 0 to NUM_INV-1 generate
 
       ring_osc_start:
-      if (i = 0) generate
-        rosc(i) <= '0' when (en_i = '0') else (not rosc(NUM_INV-1)) when (sreg(i) = '1'); -- inverting latch
+      if (i = 0) generate -- inverting latch
+        rosc(i) <= '0' when (en_i = '0') else (not rosc(NUM_INV-1)) when (sreg(i) = '1') else rosc(i);
       end generate;
 
       ring_osc_chain:
-      if (i > 0) generate
-        rosc(i) <= '0' when (en_i = '0') else (not rosc(i-1)) when (sreg(i) = '1'); -- inverting latch
+      if (i > 0) generate -- inverting latch
+        rosc(i) <= '0' when (en_i = '0') else (not rosc(i-1)) when (sreg(i) = '1') else rosc(i);
       end generate;
 
     end generate;
@@ -551,10 +547,11 @@ begin
       if (rstn_i = '0') then
         rosc <= (others => '0');
       elsif rising_edge(clk_i) then
-        if (sreg(sreg'left) = '0') or (en_i = '0') then
+        if (en_i = '0') then
           rosc <= (others => '0');
         else -- sequence might NOT be maximum-length!
-          rosc <= rosc(rosc'left-1 downto 0) & (rosc(rosc'left) xnor rosc(0));
+          rosc(rosc'left downto 1) <= rosc(rosc'left-1 downto 0);
+          rosc(0) <= not (rosc(NUM_INV-1) xor rosc(0));
         end if;
       end if;
     end process sim_lfsr;
