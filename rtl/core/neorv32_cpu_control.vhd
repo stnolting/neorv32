@@ -502,9 +502,11 @@ begin
   issue_engine_enabled:
   if (CPU_EXTENSION_RISCV_C = true) generate
 
-    issue_engine_fsm_sync: process(clk_i)
+    issue_engine_fsm_sync: process(rstn_i, clk_i)
     begin
-      if rising_edge(clk_i) then
+      if (rstn_i = '0') then
+        issue_engine.align <= '0'; -- start aligned after reset
+      elsif rising_edge(clk_i) then
         if (fetch_engine.restart = '1') then
           issue_engine.align <= execute_engine.pc(1); -- branch to unaligned address?
         elsif (issue_engine.ack = '1') then
@@ -561,9 +563,11 @@ begin
 
   -- Immediate Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  imm_gen: process(clk_i)
+  imm_gen: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      imm_o <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- default = I-immediate: ALU-immediate, load, jump-and-link with register --
       imm_o(XLEN-1 downto 11) <= (others => execute_engine.ir(31)); -- sign extension
       imm_o(10 downto 01)     <= execute_engine.ir(30 downto 21);
@@ -1460,9 +1464,11 @@ begin
 
   -- Trap Priority Logic --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trap_priority: process(clk_i)
+  trap_priority: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      trap_ctrl.cause <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- standard RISC-V exceptions --
       if    (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c;  -- instruction address misaligned
       elsif (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c;  -- instruction access fault
@@ -1473,6 +1479,8 @@ begin
       elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c;  -- load address misaligned
       elsif (trap_ctrl.exc_buf(exc_saccess_c)  = '1') then trap_ctrl.cause <= trap_saf_c;  -- store access fault
       elsif (trap_ctrl.exc_buf(exc_laccess_c)  = '1') then trap_ctrl.cause <= trap_laf_c;  -- load access fault
+      
+      
       -- standard RISC-V debug mode exceptions and interrupts --
       elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request (async)
       elsif (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') then trap_ctrl.cause <= trap_db_trig_c;  -- hardware trigger (sync)
@@ -2243,9 +2251,11 @@ begin
 
   -- Counter Increment Control (Trigger Events) ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  counter_event: process(clk_i)
+  counter_event: process(rstn_i, clk_i)
   begin -- increment if an enabled event fires; do not increment if CPU is in debug mode or if counter is inhibited
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      cnt.inc <= (others => '0');
+    elsif rising_edge(clk_i) then
       cnt.inc <= (others => '0'); -- default
       -- base counters --
       cnt.inc(0) <= cnt_event(hpmcnt_event_cy_c) and (not csr.mcountinhibit(0)) and (not debug_ctrl.running);

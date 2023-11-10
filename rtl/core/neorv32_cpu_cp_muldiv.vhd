@@ -194,9 +194,13 @@ begin
   if (FAST_MUL_EN = true) generate
 
     -- direct approach --
-    multiplier_core: process(clk_i)
+    multiplier_core: process(rstn_i, clk_i)
     begin
-      if rising_edge(clk_i) then
+      if (rstn_i = '0') then
+        mul.dsp_x <= (others => '0');
+        mul.dsp_y <= (others => '0');
+        mul.prod  <= (others => '0');
+      elsif rising_edge(clk_i) then
         if (mul.start = '1') then
           mul.dsp_x <= signed((rs1_i(rs1_i'left) and ctrl.rs1_is_signed) & rs1_i);
           mul.dsp_y <= signed((rs2_i(rs2_i'left) and ctrl.rs2_is_signed) & rs2_i);
@@ -225,9 +229,11 @@ begin
   if (FAST_MUL_EN = false) generate
 
     -- shift-and-add algorithm --
-    multiplier_core: process(clk_i)
+    multiplier_core: process(rstn_i, clk_i)
     begin
-      if rising_edge(clk_i) then
+      if (rstn_i = '0') then
+        mul.prod <= (others => '0');
+      elsif rising_edge(clk_i) then
         if (mul.start = '1') then -- start new multiplication
           mul.prod(63 downto 32) <= (others => '0');
           mul.prod(31 downto 00) <= rs1_i;
@@ -271,9 +277,12 @@ begin
   if (DIVISION_EN = true) generate
 
     -- restoring division algorithm --
-    divider_core: process(clk_i)
+    divider_core: process(rstn_i, clk_i)
     begin
-      if rising_edge(clk_i) then
+      if (rstn_i = '0') then
+        div.quotient  <= (others => '0');
+        div.remainder <= (others => '0');
+      elsif rising_edge(clk_i) then
         if (div.start = '1') then -- start new division
           if ((rs1_i(rs1_i'left) and ctrl.rs1_is_signed) = '1') then -- signed division?
             div.quotient <= std_ulogic_vector(0 - unsigned(rs1_i)); -- make positive
