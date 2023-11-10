@@ -784,6 +784,7 @@ begin
       )
       port map (
         clk_i     => clk_i,
+        rstn_i    => rstn_sys,
         bus_req_i => imem_req,
         bus_rsp_o => imem_rsp
       );
@@ -805,6 +806,7 @@ begin
       )
       port map (
         clk_i     => clk_i,
+        rstn_i    => rstn_sys,
         bus_req_i => dmem_req,
         bus_rsp_o => dmem_rsp
       );
@@ -823,6 +825,7 @@ begin
       neorv32_boot_rom_inst: entity neorv32.neorv32_boot_rom
       port map (
         clk_i     => clk_i,
+        rstn_i    => rstn_sys,
         bus_req_i => boot_req,
         bus_rsp_o => boot_rsp
       );
@@ -1517,6 +1520,7 @@ begin
     )
     port map (
       clk_i     => clk_i,
+      rstn_i    => rstn_sys,
       bus_req_i => iodev_req(IODEV_SYSINFO),
       bus_rsp_o => iodev_rsp(IODEV_SYSINFO)
     );
