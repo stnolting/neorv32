@@ -55,7 +55,7 @@ architecture neorv32_imem_rtl of neorv32_imem is
   -- --------------------------- --
 
   -- application (image) size in bytes --
-  constant imem_app_size_c : natural range 0 to IMEM_SIZE-1 := (application_init_image'length)*4;
+  constant imem_app_size_c : natural := (application_init_image'length)*4;
 
   -- ROM - initialized with executable code --
   constant mem_rom_c : mem32_t(0 to IMEM_SIZE/4-1) := mem32_init_f(application_init_image, IMEM_SIZE/4);
