@@ -74,18 +74,22 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
 
 begin
 
-  -- Write Access ---------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      mtimecmp_lo   <= (others => '0');
-      mtimecmp_hi   <= (others => '0');
-      mtime_lo_we   <= '0';
-      mtime_hi_we   <= '0';
-      mtime_lo      <= (others => '0');
-      mtime_lo_ovfl <= (others => '0');
-      mtime_hi      <= (others => '0');
+      mtimecmp_lo    <= (others => '0');
+      mtimecmp_hi    <= (others => '0');
+      mtime_lo_we    <= '0';
+      mtime_hi_we    <= '0';
+      mtime_lo       <= (others => '0');
+      mtime_lo_ovfl  <= (others => '0');
+      mtime_hi       <= (others => '0');
+      --
+      bus_rsp_o.ack  <= '0';
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
     elsif rising_edge(clk_i) then
       -- mtimecmp --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
@@ -122,19 +126,10 @@ begin
       else -- auto increment (if mtime.low overflows)
         mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + unsigned(mtime_lo_ovfl));
       end if;
-    end if;
-  end process write_access;
 
-  -- mtime.time_LO increment --
-  mtime_lo_nxt <= std_ulogic_vector(unsigned('0' & mtime_lo) + 1);
-
-
-  -- Read Access ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
+      -- read access --
       bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
+      bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0'); -- default
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(3 downto 2) is
@@ -145,17 +140,20 @@ begin
         end case;
       end if;
     end if;
-  end process read_access;
+  end process bus_access;
 
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  -- mtime.time_LO increment --
+  mtime_lo_nxt <= std_ulogic_vector(unsigned('0' & mtime_lo) + 1);
 
 
   -- Comparator -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cmp_sync: process(clk_i)
+  cmp_sync: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      cmp_lo_ge_ff <= '0';
+      irq_o        <= '0';
+    elsif rising_edge(clk_i) then
       cmp_lo_ge_ff <= cmp_lo_ge; -- there is one cycle delay between low (earlier) and high (later) word
       irq_o        <= cmp_hi_gt or (cmp_hi_eq and cmp_lo_ge_ff);
     end if;

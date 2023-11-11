@@ -82,68 +82,67 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
 
 begin
 
-  -- Host Access ----------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      enable <= '0';
-      prsc   <= (others => '0');
-      pwm_ch <= (others => (others => '0'));
-    elsif rising_edge(clk_i) then
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        -- control register --
-        if (bus_req_i.addr(3 downto 2) = "00") then
-          enable <= bus_req_i.data(ctrl_enable_c);
-          prsc   <= bus_req_i.data(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c);
-        end if;
-        -- duty cycle register 0 --
-        if (bus_req_i.addr(3 downto 2) = "01") then
-          pwm_ch(00) <= bus_req_i.data(07 downto 00);
-          pwm_ch(01) <= bus_req_i.data(15 downto 08);
-          pwm_ch(02) <= bus_req_i.data(23 downto 16);
-          pwm_ch(03) <= bus_req_i.data(31 downto 24);
-        end if;
-        -- duty cycle register 1 --
-        if (bus_req_i.addr(3 downto 2) = "10") then
-          pwm_ch(04) <= bus_req_i.data(07 downto 00);
-          pwm_ch(05) <= bus_req_i.data(15 downto 08);
-          pwm_ch(06) <= bus_req_i.data(23 downto 16);
-          pwm_ch(07) <= bus_req_i.data(31 downto 24);
-        end if;
-        -- duty cycle register 2 --
-        if (bus_req_i.addr(3 downto 2) = "11") then
-          pwm_ch(08) <= bus_req_i.data(07 downto 00);
-          pwm_ch(09) <= bus_req_i.data(15 downto 08);
-          pwm_ch(10) <= bus_req_i.data(23 downto 16);
-          pwm_ch(11) <= bus_req_i.data(31 downto 24);
-        end if;
-      end if;
-    end if;
-  end process write_access;
-
-  -- read access --
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
+      bus_rsp_o.ack  <= '0';
+      bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        case bus_req_i.addr(3 downto 2) is
-          when "00"   => bus_rsp_o.data(ctrl_enable_c) <= enable; bus_rsp_o.data(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c) <= prsc;
-          when "01"   => bus_rsp_o.data <= pwm_ch_rd(03) & pwm_ch_rd(02) & pwm_ch_rd(01) & pwm_ch_rd(00);
-          when "10"   => bus_rsp_o.data <= pwm_ch_rd(07) & pwm_ch_rd(06) & pwm_ch_rd(05) & pwm_ch_rd(04);
-          when "11"   => bus_rsp_o.data <= pwm_ch_rd(11) & pwm_ch_rd(10) & pwm_ch_rd(09) & pwm_ch_rd(08);
-          when others => bus_rsp_o.data <= (others => '0');
-        end case;
+      enable         <= '0';
+      prsc           <= (others => '0');
+      pwm_ch         <= (others => (others => '0'));
+    elsif rising_edge(clk_i) then
+      -- bus handshake --
+      bus_rsp_o.ack  <= bus_req_i.stb;
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
+      if (bus_req_i.stb = '1') then
+
+        -- write access --
+        if (bus_req_i.rw = '1') then
+          -- control register --
+          if (bus_req_i.addr(3 downto 2) = "00") then
+            enable <= bus_req_i.data(ctrl_enable_c);
+            prsc   <= bus_req_i.data(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c);
+          end if;
+          -- duty cycle register 0 --
+          if (bus_req_i.addr(3 downto 2) = "01") then
+            pwm_ch(00) <= bus_req_i.data(07 downto 00);
+            pwm_ch(01) <= bus_req_i.data(15 downto 08);
+            pwm_ch(02) <= bus_req_i.data(23 downto 16);
+            pwm_ch(03) <= bus_req_i.data(31 downto 24);
+          end if;
+          -- duty cycle register 1 --
+          if (bus_req_i.addr(3 downto 2) = "10") then
+            pwm_ch(04) <= bus_req_i.data(07 downto 00);
+            pwm_ch(05) <= bus_req_i.data(15 downto 08);
+            pwm_ch(06) <= bus_req_i.data(23 downto 16);
+            pwm_ch(07) <= bus_req_i.data(31 downto 24);
+          end if;
+          -- duty cycle register 2 --
+          if (bus_req_i.addr(3 downto 2) = "11") then
+            pwm_ch(08) <= bus_req_i.data(07 downto 00);
+            pwm_ch(09) <= bus_req_i.data(15 downto 08);
+            pwm_ch(10) <= bus_req_i.data(23 downto 16);
+            pwm_ch(11) <= bus_req_i.data(31 downto 24);
+          end if;
+
+        -- read access --
+        else
+          case bus_req_i.addr(3 downto 2) is
+            when "00"   => bus_rsp_o.data(ctrl_enable_c) <= enable; bus_rsp_o.data(ctrl_prsc2_bit_c downto ctrl_prsc0_bit_c) <= prsc;
+            when "01"   => bus_rsp_o.data <= pwm_ch_rd(03) & pwm_ch_rd(02) & pwm_ch_rd(01) & pwm_ch_rd(00);
+            when "10"   => bus_rsp_o.data <= pwm_ch_rd(07) & pwm_ch_rd(06) & pwm_ch_rd(05) & pwm_ch_rd(04);
+            when "11"   => bus_rsp_o.data <= pwm_ch_rd(11) & pwm_ch_rd(10) & pwm_ch_rd(09) & pwm_ch_rd(08);
+            when others => bus_rsp_o.data <= (others => '0');
+          end case;
+        end if;
+
       end if;
     end if;
-  end process read_access;
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  end process bus_access;
 
   -- duty cycle read-back --
   pwm_dc_rd_gen: process(pwm_ch)
@@ -157,9 +156,12 @@ begin
 
   -- PWM Core -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  pwm_core: process(clk_i)
+  pwm_core: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      pwm_cnt <= (others => '0');
+      pwm_o   <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- pwm base counter --
       if (enable = '0') then
         pwm_cnt <= (others => '0');

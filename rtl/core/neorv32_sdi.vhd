@@ -130,13 +130,14 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
 
 begin
 
-  -- Host Access ----------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      bus_rsp_o.ack     <= '0';
+      bus_rsp_o.err     <= '0';
+      bus_rsp_o.data    <= (others => '0');
       ctrl.enable       <= '0';
       ctrl.clr_rx       <= '0';
       ctrl.irq_rx_avail <= '0';
@@ -144,52 +145,53 @@ begin
       ctrl.irq_rx_full  <= '0';
       ctrl.irq_tx_empty <= '0';
     elsif rising_edge(clk_i) then
-      ctrl.clr_rx <= '0';
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          ctrl.enable <= bus_req_i.data(ctrl_en_c);
-          ctrl.clr_rx <= bus_req_i.data(ctrl_clr_rx_c);
-          --
-          ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
-          ctrl.irq_rx_half  <= bus_req_i.data(ctrl_irq_rx_half_c);
-          ctrl.irq_rx_full  <= bus_req_i.data(ctrl_irq_rx_full_c);
-          ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
-        end if;
-      end if;
-    end if;
-  end process write_access;
-
-  -- read access --
-  read_aceess: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
+      -- bus handshake --
+      bus_rsp_o.ack  <= bus_req_i.stb;
+      bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
-          --
-          bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(RTX_FIFO), 4));
-          --
-          bus_rsp_o.data(ctrl_irq_rx_avail_c) <= ctrl.irq_rx_avail;
-          bus_rsp_o.data(ctrl_irq_rx_half_c)  <= ctrl.irq_rx_half;
-          bus_rsp_o.data(ctrl_irq_rx_full_c)  <= ctrl.irq_rx_full;
-          bus_rsp_o.data(ctrl_irq_tx_empty_c) <= ctrl.irq_tx_empty;
-          --
-          bus_rsp_o.data(ctrl_rx_avail_c) <= rx_fifo.avail;
-          bus_rsp_o.data(ctrl_rx_half_c)  <= rx_fifo.half;
-          bus_rsp_o.data(ctrl_rx_full_c)  <= not rx_fifo.free;
-          bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
-          bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
-        else -- data register
-          bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
+
+      -- defaults --
+      ctrl.clr_rx <= '0';
+
+      if (bus_req_i.stb = '1') then
+
+        -- write access --
+        if (bus_req_i.rw = '1') then
+          if (bus_req_i.addr(2) = '0') then -- control register
+            ctrl.enable <= bus_req_i.data(ctrl_en_c);
+            ctrl.clr_rx <= bus_req_i.data(ctrl_clr_rx_c);
+            --
+            ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
+            ctrl.irq_rx_half  <= bus_req_i.data(ctrl_irq_rx_half_c);
+            ctrl.irq_rx_full  <= bus_req_i.data(ctrl_irq_rx_full_c);
+            ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
+          end if;
+
+        -- read access --
+        else
+          if (bus_req_i.addr(2) = '0') then -- control register
+            bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
+            --
+            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(RTX_FIFO), 4));
+            --
+            bus_rsp_o.data(ctrl_irq_rx_avail_c) <= ctrl.irq_rx_avail;
+            bus_rsp_o.data(ctrl_irq_rx_half_c)  <= ctrl.irq_rx_half;
+            bus_rsp_o.data(ctrl_irq_rx_full_c)  <= ctrl.irq_rx_full;
+            bus_rsp_o.data(ctrl_irq_tx_empty_c) <= ctrl.irq_tx_empty;
+            --
+            bus_rsp_o.data(ctrl_rx_avail_c) <= rx_fifo.avail;
+            bus_rsp_o.data(ctrl_rx_half_c)  <= rx_fifo.half;
+            bus_rsp_o.data(ctrl_rx_full_c)  <= not rx_fifo.free;
+            bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
+            bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
+          else -- data register
+            bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
+          end if;
         end if;
+
       end if;
     end if;
-  end process read_aceess;
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  end process bus_access;
 
 
   -- Data FIFO ("Ring Buffer") --------------------------------------------------------------
@@ -262,9 +264,13 @@ begin
 
   -- Input Synchronizer ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  synchronizer: process(clk_i)
+  synchronizer: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      sync.sck_ff <= (others => '0');
+      sync.csn_ff <= (others => '0');
+      sync.sdi_ff <= (others => '0');
+    elsif rising_edge(clk_i) then
       sync.sck_ff <= sync.sck_ff(1 downto 0) & sdi_clk_i;
       sync.csn_ff <= sync.csn_ff(0) & sdi_csn_i;
       sync.sdi_ff <= sync.sdi_ff(0) & sdi_dat_i;
@@ -278,9 +284,16 @@ begin
 
   -- Serial Engine --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  serial_engine: process(clk_i)
+  serial_engine: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      serial.start  <= '0';
+      serial.done   <= '0';
+      serial.state  <= (others => '0');
+      serial.cnt    <= (others => '0');
+      serial.sreg   <= (others => '0');
+      serial.sdi_ff <= '0';
+    elsif rising_edge(clk_i) then
       -- defaults --
       serial.start <= '0';
       serial.done  <= '0';
@@ -340,9 +353,11 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_generator: process(clk_i)
+  irq_generator: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      irq_o <= '0';
+    elsif rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
                (ctrl.irq_rx_avail and rx_fifo.avail)      or -- RX FIFO not empty
                (ctrl.irq_rx_half  and rx_fifo.half)       or -- RX FIFO at least half full

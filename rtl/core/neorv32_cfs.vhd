@@ -165,60 +165,66 @@ begin
   -- and is set INSTEAD of the ACK signal. Setting the ERR signal will raise a bus access exception with a "Device Error" qualifier
   -- that can be handled by the application software. Note that the current privilege level should not be exposed to software to
   -- maintain full virtualization. Hence, CFS-based "privilege escalation" should trigger a bus access exception (e.g. by setting 'err_o').
-
-  bus_rsp_o.err <= '0'; -- Tie to zero if not explicitly used.
-
-
+  --
   -- Host access example: Read and write access to the interface registers + bus transfer acknowledge. This example only
   -- implements four physical r/w register (the four lowest CFS registers). The remaining addresses of the CFS are not associated
   -- with any physical registers - any access to those is simply ignored but still acknowledged. Only full-word write accesses are
   -- supported (and acknowledged) by this example. Sub-word write access will not alter any CFS register state and will cause
   -- a "bus store access" exception (with a "Device Timeout" qualifier as not ACK is generated in that case).
 
-  host_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cfs_reg_wr(0) <= (others => '0');
-      cfs_reg_wr(1) <= (others => '0');
-      cfs_reg_wr(2) <= (others => '0');
-      cfs_reg_wr(3) <= (others => '0');
+      cfs_reg_wr(0)  <= (others => '0');
+      cfs_reg_wr(1)  <= (others => '0');
+      cfs_reg_wr(2)  <= (others => '0');
+      cfs_reg_wr(3)  <= (others => '0');
       --
       bus_rsp_o.ack  <= '0';
+      bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
     elsif rising_edge(clk_i) then -- synchronous interface for read and write accesses
       -- transfer/access acknowledge --
       bus_rsp_o.ack <= bus_req_i.stb;
 
+      -- tie to zero if not explicitly used --
+      bus_rsp_o.err <= '0';
+
       -- defaults --
-      bus_rsp_o.data <= (others => '0'); -- the output HAS TO BE ZERO if there is no actual read access
+      bus_rsp_o.data <= (others => '0'); -- the output HAS TO BE ZERO if there is no actual (read) access
 
       -- bus access --
       if (bus_req_i.stb = '1') then -- valid access cycle, STB is high for one cycle
-        if (bus_req_i.rw = '1') then -- write access
-          if (bus_req_i.addr(7 downto 2) = "000000") then -- make sure to use the internal "addr" signal for the read/write interface
-            cfs_reg_wr(0) <= bus_req_i.data; -- some physical register, for example: control register
+
+        -- write access --
+        if (bus_req_i.rw = '1') then
+          if (bus_req_i.addr(7 downto 2) = "000000") then -- address size is fixed!
+            cfs_reg_wr(0) <= bus_req_i.data;
           end if;
           if (bus_req_i.addr(7 downto 2) = "000001") then
-            cfs_reg_wr(1) <= bus_req_i.data; -- some physical register, for example: data in/out fifo
+            cfs_reg_wr(1) <= bus_req_i.data;
           end if;
           if (bus_req_i.addr(7 downto 2) = "000010") then
-            cfs_reg_wr(2) <= bus_req_i.data; -- some physical register, for example: command fifo
+            cfs_reg_wr(2) <= bus_req_i.data;
           end if;
           if (bus_req_i.addr(7 downto 2) = "000011") then
-            cfs_reg_wr(3) <= bus_req_i.data; -- some physical register, for example: status register
+            cfs_reg_wr(3) <= bus_req_i.data;
           end if;
-        else -- read access
-          case bus_req_i.addr(7 downto 2) is -- make sure to use the internal 'addr' signal for the read/write interface
+
+        -- read access --
+        else
+          case bus_req_i.addr(7 downto 2) is -- address size is fixed!
             when "000000" => bus_rsp_o.data <= cfs_reg_rd(0);
             when "000001" => bus_rsp_o.data <= cfs_reg_rd(1);
             when "000010" => bus_rsp_o.data <= cfs_reg_rd(2);
             when "000011" => bus_rsp_o.data <= cfs_reg_rd(3);
-            when others   => bus_rsp_o.data <= (others => '0'); -- the remaining registers are not implemented and will read as zero
+            when others   => bus_rsp_o.data <= (others => '0');
           end case;
         end if;
+
       end if;
     end if;
-  end process host_access;
+  end process bus_access;
 
 
   -- CFS Function Core ----------------------------------------------------------------------
