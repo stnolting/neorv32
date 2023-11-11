@@ -236,9 +236,17 @@ begin
 
   -- Debug Module Command Controller --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dm_controller: process(clk_i)
+  dm_controller: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      dm_ctrl.state         <= CMD_IDLE;
+      dm_ctrl.ldsw_progbuf  <= (others => '0');
+      dci.execute_req       <= '0';
+      dm_ctrl.pbuf_en       <= '0';
+      dm_ctrl.illegal_cmd   <= '0';
+      dm_ctrl.illegal_state <= '0';
+      dm_ctrl.cmderr        <= "000";
+    elsif rising_edge(clk_i) then
       if (dm_reg.dmcontrol_dmactive = '0') then -- DM reset / DM disabled
         dm_ctrl.state         <= CMD_IDLE;
         dm_ctrl.ldsw_progbuf  <= instr_sw_c;
@@ -523,9 +531,14 @@ begin
 
   -- Debug Module Interface - Read Access ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dmi_read_access: process(clk_i)
+  dmi_read_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      dmi_rsp_o.ack      <= '0';
+      dmi_rsp_o.data     <= (others => '0');
+      dm_reg.rd_acc_err  <= '0';
+      dm_reg.autoexec_rd <= '0';
+    elsif rising_edge(clk_i) then
       dmi_rsp_o.ack      <= dmi_wren or dmi_rden; -- always ACK any request
       dmi_rsp_o.data     <= (others => '0'); -- default
       dm_reg.rd_acc_err  <= '0';
@@ -655,34 +668,32 @@ begin
   end process dmi_read_access;
 
 
-  -- **************************************************************************************************************************
-  -- CPU Bus Interface
-  -- **************************************************************************************************************************
-
-  -- Access Control ------------------------------------------------------------------------
+  -- Bus Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  accen <= cpu_debug_i and bus_req_i.stb; -- allow access only when in debug-mode
-  rden  <= accen and (not bus_req_i.rw);
-  wren  <= accen and (    bus_req_i.rw);
-
-
-  -- Write Access ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      bus_rsp_o.ack     <= '0';
+      bus_rsp_o.err     <= '0';
+      bus_rsp_o.data    <= (others => '0');
       dci.data_reg      <= (others => '0');
       dci.halt_ack      <= '0';
       dci.resume_ack    <= '0';
       dci.execute_ack   <= '0';
       dci.exception_ack <= '0';
     elsif rising_edge(clk_i) then
+      -- bus handshake --
+      bus_rsp_o.ack  <= accen;
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
+
       -- data buffer --
       if (dci.data_we = '1') then -- DM write access
         dci.data_reg <= dmi_req_i.data;
       elsif (bus_req_i.addr(7 downto 6) = dm_data_base_c(7 downto 6)) and (wren = '1') then -- CPU write access
         dci.data_reg <= bus_req_i.data;
       end if;
+
       -- control and status register CPU write access --
       dci.halt_ack      <= '0'; -- all writable flags auto-clear
       dci.resume_ack    <= '0';
@@ -694,17 +705,8 @@ begin
         dci.execute_ack   <= bus_req_i.ben(sreg_execute_ack_c/8);
         dci.exception_ack <= bus_req_i.ben(sreg_exception_ack_c/8);
       end if;
-    end if;
-  end process write_access;
 
-
-  -- Read Access ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= accen;
-      bus_rsp_o.data <= (others => '0');
+      -- control and status register CPU read access --
       if (rden = '1') then -- output enable
         case bus_req_i.addr(7 downto 6) is -- module select
           when "00" => -- dm_code_base_c: code ROM
@@ -719,10 +721,12 @@ begin
         end case;
       end if;
     end if;
-  end process read_access;
+  end process bus_access;
 
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  -- access helpers --
+  accen <= cpu_debug_i and bus_req_i.stb; -- allow access only when in debug-mode
+  rden  <= accen and (not bus_req_i.rw);
+  wren  <= accen and (    bus_req_i.rw);
 
 
 end neorv32_debug_dm_rtl;
