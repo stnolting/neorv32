@@ -76,7 +76,6 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
     w_pnt : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0); -- write pointer
     r_pnt : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0); -- read pointer
     data  : fifo_data_t; -- fifo memory
-    buf   : std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- if single-entry FIFO
     match : std_ulogic;
     empty : std_ulogic;
     full  : std_ulogic;
@@ -120,9 +119,6 @@ begin
     end if;
   end process pointer_update;
 
-
-  -- FIFO Status ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
   check_large:
   if (fifo_depth_c > 1) generate
     fifo.match <= '1' when (fifo.r_pnt(fifo.r_pnt'left-1 downto 0) = fifo.w_pnt(fifo.w_pnt'left-1 downto 0)) else '0';
@@ -144,17 +140,68 @@ begin
   fifo.avail <= not fifo.empty;
 
 
-  -- Status Output --------------------------------------------------------------------------
+  -- FIFO Write -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  status_async: -- asynchronous
+  fifo_memory: -- real FIFO memory (several entries)
+  if (fifo_depth_c > 1) generate
+    sync_read: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to infer block RAM
+        if (fifo.we = '1') then
+          fifo.data(to_integer(unsigned(fifo.w_pnt(fifo.w_pnt'left-1 downto 0)))) <= wdata_i;
+        end if;
+      end if;
+    end process sync_read;
+  end generate;
+
+  fifo_buffer: -- simple register (single entry)
+  if (fifo_depth_c = 1) generate
+    sync_read: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        fifo.data(0) <= (others => '0');
+      elsif rising_edge(clk_i) then
+        if (fifo.we = '1') then
+          fifo.data(0) <= wdata_i;
+        end if;
+      end if;
+    end process sync_read;
+  end generate;
+
+
+  -- FIFO Read ------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  fifo_read_async: -- asynchronous read
   if (FIFO_RSYNC = false) generate
+    async_read: process(fifo)
+    begin
+      if (fifo_depth_c = 1) then
+        rdata_o <= fifo.data(0);
+      else
+        rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
+      end if;
+    end process async_read;
+
+    -- status --
     free_o  <= fifo.free;
     avail_o <= fifo.avail;
     half_o  <= fifo.half;
   end generate;
 
-  status_sync: -- synchronous
+  fifo_read_sync: -- synchronous read
   if (FIFO_RSYNC = true) generate
+    async_read: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        if (fifo_depth_c = 1) then
+          rdata_o <= fifo.data(0);
+        else
+          rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
+        end if;
+      end if;
+    end process async_read;
+
+    -- status --
     sync_status_flags: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
@@ -167,64 +214,6 @@ begin
         half_o  <= fifo.half;
       end if;
     end process sync_status_flags;
-  end generate;
-
-
-  -- FIFO Memory - Write --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  fifo_memory: -- real FIFO memory (several entries)
-  if (fifo_depth_c > 1) generate
-    sync_read: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        if (fifo.we = '1') then
-          fifo.data(to_integer(unsigned(fifo.w_pnt(fifo.w_pnt'left-1 downto 0)))) <= wdata_i;
-        end if;
-      end if;
-    end process sync_read;
-    fifo.buf <= (others => '0'); -- unused
-  end generate;
-
-  fifo_buffer: -- simple register (single entry)
-  if (fifo_depth_c = 1) generate
-    sync_read: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        if (fifo.we = '1') then
-          fifo.buf <= wdata_i;
-        end if;
-      end if;
-    end process sync_read;
-    fifo.data <= (others => (others => '0')); -- unused
-  end generate;
-
-
-  -- FIFO Memory - Read ---------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  fifo_read_async: -- "asynchronous" read
-  if (FIFO_RSYNC = false) generate
-    async_read: process(fifo)
-    begin
-      if (fifo_depth_c = 1) then
-        rdata_o <= fifo.buf;
-      else
-        rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
-      end if;
-    end process async_read;
-  end generate;
-
-  fifo_read_sync: -- synchronous read
-  if (FIFO_RSYNC = true) generate
-    async_read: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        if (fifo_depth_c = 1) then
-          rdata_o <= fifo.buf;
-        else
-          rdata_o <= fifo.data(to_integer(unsigned(fifo.r_pnt(fifo.r_pnt'left-1 downto 0))));
-        end if;
-      end if;
-    end process async_read;
   end generate;
 
 
