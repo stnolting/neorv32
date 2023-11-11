@@ -74,6 +74,7 @@ architecture neorv32_icache_rtl of neorv32_icache is
   );
   port (
     -- global control --
+    rstn_i       : in  std_ulogic; -- global reset, async, low-active
     clk_i        : in  std_ulogic; -- global clock, rising edge
     clear_i      : in  std_ulogic; -- invalidate whole cache
     hit_o        : out std_ulogic; -- hit access
@@ -283,6 +284,7 @@ begin
   )
   port map (
     -- global control --
+    rstn_i       => rstn_i,
     clk_i        => clk_i,
     clear_i      => cache.clear,
     hit_o        => cache.hit,
@@ -358,6 +360,7 @@ entity neorv32_icache_memory is
   );
   port (
     -- global control --
+    rstn_i       : in  std_ulogic; -- global reset, async, low-active
     clk_i        : in  std_ulogic; -- global clock, rising edge
     clear_i      : in  std_ulogic; -- invalidate whole cache
     hit_o        : out std_ulogic; -- hit access
@@ -441,9 +444,13 @@ begin
 
   -- Cache Access History -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  access_history: process(clk_i)
+  access_history: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      history.re_ff          <= '0';
+      history.last_used_set  <= (others => '0');
+      history.to_be_replaced <= '0';
+    elsif rising_edge(clk_i) then
       history.re_ff <= host_re_i;
       if (clear_i = '1') then -- invalidate cache
         history.last_used_set <= (others => '1');
@@ -460,9 +467,13 @@ begin
 
   -- Status Flag Memory ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  status_memory: process(clk_i)
+  status_memory: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      valid_flag_s0 <= (others => '0');
+      valid_flag_s1 <= (others => '0');
+      valid         <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- write access --
       if (clear_i = '1') then -- invalidate cache
         valid_flag_s0 <= (others => '0');
@@ -485,7 +496,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   tag_memory: process(clk_i)
   begin
-    if rising_edge(clk_i) then
+    if rising_edge(clk_i) then -- no reset to allow inferring of blockRAM
       if (ctrl_en_i = '1') and (ctrl_we_i = '1') then -- write access
         if (set_select = '0') then
           tag_mem_s0(to_integer(unsigned(cache_index))) <= ctrl_acc_addr.tag;
@@ -517,7 +528,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   cache_mem_access: process(clk_i)
   begin
-    if rising_edge(clk_i) then
+    if rising_edge(clk_i) then -- no reset to allow inferring of blockRAM
       if (ctrl_we_i = '1') then -- write access from control (full-word)
         if (set_select = '0') or (ICACHE_NUM_SETS = 1) then
           cache_data_memory_s0(to_integer(unsigned(cache_addr))) <= ctrl_wstat_i & ctrl_wdata_i;
