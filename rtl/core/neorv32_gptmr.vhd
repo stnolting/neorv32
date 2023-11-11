@@ -79,61 +79,63 @@ architecture neorv32_gptmr_rtl of neorv32_gptmr is
 
 begin
 
-  -- Host Access ----------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      timer.cnt_we <= '0';
-      ctrl         <= (others => '0');
-      timer.thres  <= (others => '0');
-    elsif rising_edge(clk_i) then
-      timer.cnt_we <= '0'; -- default
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.addr(3 downto 2) = "00") then -- control register
-          ctrl(ctrl_en_c)    <= bus_req_i.data(ctrl_en_c);
-          ctrl(ctrl_prsc0_c) <= bus_req_i.data(ctrl_prsc0_c);
-          ctrl(ctrl_prsc1_c) <= bus_req_i.data(ctrl_prsc1_c);
-          ctrl(ctrl_prsc2_c) <= bus_req_i.data(ctrl_prsc2_c);
-          ctrl(ctrl_mode_c)  <= bus_req_i.data(ctrl_mode_c);
-        end if;
-        if (bus_req_i.addr(3 downto 2) = "01") then -- threshold register
-          timer.thres <= bus_req_i.data;
-        end if;
-        if (bus_req_i.addr(3 downto 2) = "10") then -- counter register
-          timer.cnt_we <= '1';
-        end if;
-      end if;
-    end if;
-  end process write_access;
-
-  -- read access --
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
+      bus_rsp_o.ack  <= '0';
+      bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        case bus_req_i.addr(3 downto 2) is
-          when "00" => -- control register
-            bus_rsp_o.data(ctrl_en_c)    <= ctrl(ctrl_en_c);
-            bus_rsp_o.data(ctrl_prsc0_c) <= ctrl(ctrl_prsc0_c);
-            bus_rsp_o.data(ctrl_prsc1_c) <= ctrl(ctrl_prsc1_c);
-            bus_rsp_o.data(ctrl_prsc2_c) <= ctrl(ctrl_prsc2_c);
-            bus_rsp_o.data(ctrl_mode_c)  <= ctrl(ctrl_mode_c);
-          when "01" => -- threshold register
-            bus_rsp_o.data <= timer.thres;
-          when others => -- counter register
-            bus_rsp_o.data <= timer.count;
-        end case;
+      timer.cnt_we   <= '0';
+      ctrl           <= (others => '0');
+      timer.thres    <= (others => '0');
+    elsif rising_edge(clk_i) then
+      -- bus handshake --
+      bus_rsp_o.ack  <= bus_req_i.stb;
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
+
+      -- defaults --
+      timer.cnt_we <= '0';
+
+      if (bus_req_i.stb = '1') then
+
+        -- write access --
+        if (bus_req_i.rw = '1') then
+          if (bus_req_i.addr(3 downto 2) = "00") then -- control register
+            ctrl(ctrl_en_c)    <= bus_req_i.data(ctrl_en_c);
+            ctrl(ctrl_prsc0_c) <= bus_req_i.data(ctrl_prsc0_c);
+            ctrl(ctrl_prsc1_c) <= bus_req_i.data(ctrl_prsc1_c);
+            ctrl(ctrl_prsc2_c) <= bus_req_i.data(ctrl_prsc2_c);
+            ctrl(ctrl_mode_c)  <= bus_req_i.data(ctrl_mode_c);
+          end if;
+          if (bus_req_i.addr(3 downto 2) = "01") then -- threshold register
+            timer.thres <= bus_req_i.data;
+          end if;
+          if (bus_req_i.addr(3 downto 2) = "10") then -- counter register
+            timer.cnt_we <= '1';
+          end if;
+
+        -- read access --
+        else
+          case bus_req_i.addr(3 downto 2) is
+            when "00" => -- control register
+              bus_rsp_o.data(ctrl_en_c)    <= ctrl(ctrl_en_c);
+              bus_rsp_o.data(ctrl_prsc0_c) <= ctrl(ctrl_prsc0_c);
+              bus_rsp_o.data(ctrl_prsc1_c) <= ctrl(ctrl_prsc1_c);
+              bus_rsp_o.data(ctrl_prsc2_c) <= ctrl(ctrl_prsc2_c);
+              bus_rsp_o.data(ctrl_mode_c)  <= ctrl(ctrl_mode_c);
+            when "01" => -- threshold register
+              bus_rsp_o.data <= timer.thres;
+            when others => -- counter register
+              bus_rsp_o.data <= timer.count;
+          end case;
+        end if;
+
       end if;
     end if;
-  end process read_access;
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  end process bus_access;
 
 
   -- Timer Core -----------------------------------------------------------------------------
@@ -164,17 +166,21 @@ begin
   clkgen_en_o <= ctrl(ctrl_en_c);
 
   -- clock select --
-  clock_select: process(clk_i)
+  clock_select: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      timer.tick <= '0';
+    elsif rising_edge(clk_i) then
       timer.tick <= clkgen_i(to_integer(unsigned(ctrl(ctrl_prsc2_c downto ctrl_prsc0_c))));
     end if;
   end process clock_select;
 
   -- interrupt --
-  irq_generator: process(clk_i)
+  irq_generator: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      irq_o <= '0';
+    elsif rising_edge(clk_i) then
       irq_o <= ctrl(ctrl_en_c) and timer.match;
     end if;
   end process irq_generator;

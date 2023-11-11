@@ -121,53 +121,55 @@ architecture neorv32_trng_rtl of neorv32_trng is
 
 begin
 
-  -- Write Access ---------------------------------------------------------------------------
+  -- Bus Access ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      bus_rsp_o.ack   <= '0';
+      bus_rsp_o.err   <= '0';
+      bus_rsp_o.data  <= (others => '0');
       enable          <= '0';
       fifo_clr        <= '0';
       irq_fifo_nempty <= '0';
       irq_fifo_half   <= '0';
       irq_fifo_full   <= '0';
     elsif rising_edge(clk_i) then
-      fifo_clr <= '0'; -- auto-clear
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        enable          <= bus_req_i.data(ctrl_en_c);
-        fifo_clr        <= bus_req_i.data(ctrl_fifo_clr_c);
-        irq_fifo_nempty <= bus_req_i.data(ctrl_irq_fifo_nempty);
-        irq_fifo_half   <= bus_req_i.data(ctrl_irq_fifo_half);
-        irq_fifo_full   <= bus_req_i.data(ctrl_irq_fifo_full);
-      end if;
-    end if;
-  end process write_access;
-
-  -- read access --
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
+      -- bus handshake --
       bus_rsp_o.ack  <= bus_req_i.stb;
+      bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
-        --
-        bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_TRNG_FIFO), 4));
-        --
-        bus_rsp_o.data(ctrl_irq_fifo_nempty) <= irq_fifo_nempty;
-        bus_rsp_o.data(ctrl_irq_fifo_half)   <= irq_fifo_half;
-        bus_rsp_o.data(ctrl_irq_fifo_full)   <= irq_fifo_full;
-        bus_rsp_o.data(ctrl_sim_mode_c)      <= bool_to_ulogic_f(sim_mode_c);
-        bus_rsp_o.data(ctrl_en_c)            <= enable;
-        bus_rsp_o.data(ctrl_valid_c)         <= fifo.avail;
+
+      -- defaults --
+      fifo_clr <= '0'; -- auto-clear
+
+      if (bus_req_i.stb = '1') then
+
+        -- write access --
+        if (bus_req_i.rw = '1') then
+          enable          <= bus_req_i.data(ctrl_en_c);
+          fifo_clr        <= bus_req_i.data(ctrl_fifo_clr_c);
+          irq_fifo_nempty <= bus_req_i.data(ctrl_irq_fifo_nempty);
+          irq_fifo_half   <= bus_req_i.data(ctrl_irq_fifo_half);
+          irq_fifo_full   <= bus_req_i.data(ctrl_irq_fifo_full);
+        -- read access --
+
+        else
+          bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
+          --
+          bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_TRNG_FIFO), 4));
+          --
+          bus_rsp_o.data(ctrl_irq_fifo_nempty) <= irq_fifo_nempty;
+          bus_rsp_o.data(ctrl_irq_fifo_half)   <= irq_fifo_half;
+          bus_rsp_o.data(ctrl_irq_fifo_full)   <= irq_fifo_full;
+          bus_rsp_o.data(ctrl_sim_mode_c)      <= bool_to_ulogic_f(sim_mode_c);
+          bus_rsp_o.data(ctrl_en_c)            <= enable;
+          bus_rsp_o.data(ctrl_valid_c)         <= fifo.avail;
+        end if;
+
       end if;
     end if;
-  end process read_access;
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  end process bus_access;
 
 
   -- neoTRNG True Random Number Generator ---------------------------------------------------
@@ -216,9 +218,11 @@ begin
   fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') else '0';
 
   -- FIFO-level interrupt generator --
- irq_generator: process(clk_i)
+ irq_generator: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      irq_o <= '0';
+    elsif rising_edge(clk_i) then
       irq_o <= enable and (
                (irq_fifo_nempty and fifo.avail) or     -- IRQ if FIFO not empty
                (irq_fifo_half   and fifo.half)  or     -- IRQ if FIFO at least half full

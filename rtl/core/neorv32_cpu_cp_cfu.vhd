@@ -320,9 +320,15 @@ begin
   madd.done <= madd.sreg(madd.sreg'left);
 
   -- arithmetic core --
-  madd_core: process(clk_i)
+  madd_core: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      madd.opa <= (others => '0');
+      madd.opb <= (others => '0');
+      madd.opc <= (others => '0');
+      madd.mul <= (others => '0');
+      madd.res <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- stage 0: buffer input operands --
       madd.opa <= rs1_i;
       madd.opb <= rs2_i;

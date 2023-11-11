@@ -85,53 +85,58 @@ architecture neorv32_xirq_rtl of neorv32_xirq is
 
 begin
 
-  -- Host Access ----------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      nclr_pending <= (others => '0'); -- clear all pending interrupts on reset
-      irq_enable   <= (others => '0');
-    elsif rising_edge(clk_i) then
-      nclr_pending <= (others => '1');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.addr(3 downto 2) = "00") then -- channel-enable
-          irq_enable <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0);
-        end if;
-        if (bus_req_i.addr(3 downto 2) = "01") then -- clear pending IRQs
-          nclr_pending <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0); -- set zero to clear pending IRQ
-        end if;
-      end if;
-    end if;
-  end process write_access;
-
-  -- read access --
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
+      bus_rsp_o.ack  <= '0';
+      bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        case bus_req_i.addr(3 downto 2) is
-          when "00"   => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
-          when "01"   => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_pending; -- pending IRQs
-          when others => bus_rsp_o.data(4 downto 0)             <= irq_source; -- IRQ source
-        end case;
+      nclr_pending   <= (others => '0');
+      irq_enable     <= (others => '0');
+    elsif rising_edge(clk_i) then
+      -- bus handshake --
+      bus_rsp_o.ack  <= bus_req_i.stb;
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
+
+      -- defaults --
+      nclr_pending <= (others => '1');
+
+      if (bus_req_i.stb = '1') then
+
+        -- write access --
+        if (bus_req_i.rw = '1') then
+          if (bus_req_i.addr(3 downto 2) = "00") then -- channel-enable
+            irq_enable <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0);
+          end if;
+          if (bus_req_i.addr(3 downto 2) = "01") then -- clear pending IRQs
+            nclr_pending <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0); -- set zero to clear pending IRQ
+          end if;
+
+        -- read access --
+        else
+          case bus_req_i.addr(3 downto 2) is
+            when "00"   => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_enable; -- channel-enable
+            when "01"   => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_pending; -- pending IRQs
+            when others => bus_rsp_o.data(4 downto 0)             <= irq_source; -- IRQ source
+          end case;
+        end if;
+
       end if;
     end if;
-  end process read_access;
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  end process bus_access;
 
 
   -- IRQ Trigger --------------------------------------------------------------
   -- -----------------------------------------------------------------------------
-  synchronizer: process(clk_i)
+  synchronizer: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      irq_sync  <= (others => '0');
+      irq_sync2 <= (others => '0');
+    elsif rising_edge(clk_i) then
       irq_sync  <= xirq_i(XIRQ_NUM_CH-1 downto 0);
       irq_sync2 <= irq_sync;
     end if;
@@ -157,9 +162,11 @@ begin
 
   -- IRQ Buffer ---------------------------------------------------------------
   -- -----------------------------------------------------------------------------
-  irq_buffer: process(clk_i)
+  irq_buffer: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      irq_pending <= (others => '0');
+    elsif rising_edge(clk_i) then
       irq_pending <= (irq_pending and nclr_pending) or irq_trig;
     end if;
   end process irq_buffer;

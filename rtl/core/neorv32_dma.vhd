@@ -130,13 +130,14 @@ architecture neorv32_dma_rtl of neorv32_dma is
 
 begin
 
-  -- Control Interface -------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      bus_rsp_o.ack    <= '0';
+      bus_rsp_o.err    <= '0';
+      bus_rsp_o.data   <= (others => '0');
       config.enable    <= '0';
       config.auto      <= '0';
       config.firq_mask <= (others => '0');
@@ -150,73 +151,78 @@ begin
       config.start     <= '0';
       config.done      <= '0';
     elsif rising_edge(clk_i) then
+      -- bus handshake --
+      bus_rsp_o.ack  <= bus_req_i.stb;
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
+
+      -- defaults --
       config.start <= '0'; -- default
       config.done  <= config.enable and (config.done or engine.done); -- set if enabled and transfer done
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.addr(3 downto 2) = "00") then -- control and status register
-          config.enable    <= bus_req_i.data(ctrl_en_c);
-          config.auto      <= bus_req_i.data(ctrl_auto_c);
-          config.done      <= '0'; -- clear on write access
-          config.firq_mask <= bus_req_i.data(ctrl_firq_mask_msb_c downto ctrl_firq_mask_lsb_c);
+
+      if (bus_req_i.stb = '1') then
+
+        -- write access --
+        if (bus_req_i.rw = '1') then
+          if (bus_req_i.addr(3 downto 2) = "00") then -- control and status register
+            config.enable    <= bus_req_i.data(ctrl_en_c);
+            config.auto      <= bus_req_i.data(ctrl_auto_c);
+            config.done      <= '0'; -- clear on write access
+            config.firq_mask <= bus_req_i.data(ctrl_firq_mask_msb_c downto ctrl_firq_mask_lsb_c);
+          end if;
+          if (bus_req_i.addr(3 downto 2) = "01") then -- source base address
+            config.src_base <= bus_req_i.data;
+          end if;
+          if (bus_req_i.addr(3 downto 2) = "10") then -- destination base address
+            config.dst_base <= bus_req_i.data;
+          end if;
+          if (bus_req_i.addr(3 downto 2) = "11") then -- transfer type register
+            config.num     <= bus_req_i.data(type_num_hi_c downto type_num_lo_c);
+            config.qsel    <= bus_req_i.data(type_qsel_hi_c downto type_qsel_lo_c);
+            config.src_inc <= bus_req_i.data(type_src_inc_c);
+            config.dst_inc <= bus_req_i.data(type_dst_inc_c);
+            config.endian  <= bus_req_i.data(type_endian_c);
+            config.start   <= '1'; -- trigger DMA operation
+          end if;
+
+        -- read access --
+        else
+          case bus_req_i.addr(3 downto 2) is
+            when "00" => -- control and status register
+              bus_rsp_o.data(ctrl_en_c)       <= config.enable;
+              bus_rsp_o.data(ctrl_auto_c)     <= config.auto;
+              bus_rsp_o.data(ctrl_error_rd_c) <= engine.err_rd;
+              bus_rsp_o.data(ctrl_error_wr_c) <= engine.err_wr;
+              bus_rsp_o.data(ctrl_busy_c)     <= engine.busy;
+              bus_rsp_o.data(ctrl_done_c)     <= config.done;
+              bus_rsp_o.data(ctrl_firq_mask_msb_c downto ctrl_firq_mask_lsb_c) <= config.firq_mask;
+            when "01" => -- address of last read access
+              bus_rsp_o.data <= engine.src_addr;
+            when "10" => -- address of last write access
+              bus_rsp_o.data <= engine.dst_addr;
+            when others => -- transfer type register
+              bus_rsp_o.data(type_num_hi_c downto type_num_lo_c)   <= engine.num;
+              bus_rsp_o.data(type_qsel_hi_c downto type_qsel_lo_c) <= config.qsel;
+              bus_rsp_o.data(type_src_inc_c)                       <= config.src_inc;
+              bus_rsp_o.data(type_dst_inc_c)                       <= config.dst_inc;
+              bus_rsp_o.data(type_endian_c)                        <= config.endian;
+          end case;
         end if;
-        if (bus_req_i.addr(3 downto 2) = "01") then -- source base address
-          config.src_base <= bus_req_i.data;
-        end if;
-        if (bus_req_i.addr(3 downto 2) = "10") then -- destination base address
-          config.dst_base <= bus_req_i.data;
-        end if;
-        if (bus_req_i.addr(3 downto 2) = "11") then -- transfer type register
-          config.num     <= bus_req_i.data(type_num_hi_c downto type_num_lo_c);
-          config.qsel    <= bus_req_i.data(type_qsel_hi_c downto type_qsel_lo_c);
-          config.src_inc <= bus_req_i.data(type_src_inc_c);
-          config.dst_inc <= bus_req_i.data(type_dst_inc_c);
-          config.endian  <= bus_req_i.data(type_endian_c);
-          config.start   <= '1'; -- trigger DMA operation
-        end if;
+
       end if;
     end if;
-  end process write_access;
-
-  -- read access --
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
-      bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        case bus_req_i.addr(3 downto 2) is
-          when "00" => -- control and status register
-            bus_rsp_o.data(ctrl_en_c)       <= config.enable;
-            bus_rsp_o.data(ctrl_auto_c)     <= config.auto;
-            bus_rsp_o.data(ctrl_error_rd_c) <= engine.err_rd;
-            bus_rsp_o.data(ctrl_error_wr_c) <= engine.err_wr;
-            bus_rsp_o.data(ctrl_busy_c)     <= engine.busy;
-            bus_rsp_o.data(ctrl_done_c)     <= config.done;
-            bus_rsp_o.data(ctrl_firq_mask_msb_c downto ctrl_firq_mask_lsb_c) <= config.firq_mask;
-          when "01" => -- address of last read access
-            bus_rsp_o.data <= engine.src_addr;
-          when "10" => -- address of last write access
-            bus_rsp_o.data <= engine.dst_addr;
-          when others => -- transfer type register
-            bus_rsp_o.data(type_num_hi_c downto type_num_lo_c)   <= engine.num;
-            bus_rsp_o.data(type_qsel_hi_c downto type_qsel_lo_c) <= config.qsel;
-            bus_rsp_o.data(type_src_inc_c)                       <= config.src_inc;
-            bus_rsp_o.data(type_dst_inc_c)                       <= config.dst_inc;
-            bus_rsp_o.data(type_endian_c)                        <= config.endian;
-        end case;
-      end if;
-    end if;
-  end process read_access;
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  end process bus_access;
 
 
   -- Automatic Trigger ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  automatic_trigger: process(clk_i)
+  automatic_trigger: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      firq_buf <= (others => '0');
+      match_ff <= '0';
+      atrigger <= '0';
+    elsif rising_edge(clk_i) then
       firq_buf <= firq_i;
       match_ff <= match;
       atrigger <= match and (not match_ff); -- trigger on rising edge of FIRQ

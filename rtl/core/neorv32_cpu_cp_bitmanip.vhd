@@ -305,9 +305,14 @@ begin
   serial_shifter:
   if (FAST_SHIFT_EN = false) generate
 
-    shifter_unit: process(clk_i)
+    shifter_unit: process(rstn_i, clk_i)
     begin
-      if rising_edge(clk_i) then
+      if (rstn_i = '0') then
+        shifter.cnt     <= (others => '0');
+        shifter.sreg    <= (others => '0');
+        shifter.cnt_max <= (others => '0');
+        shifter.bcnt    <= (others => '0');
+      elsif rising_edge(clk_i) then
         if (shifter.start = '1') then -- trigger new shift
           shifter.cnt <= (others => '0');
           -- shift operand --
@@ -420,9 +425,12 @@ begin
 
   -- Carry-Less Multiplication Core ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  clmul_core: process(clk_i)
+  clmul_core: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      clmul.cnt  <= (others => '0');
+      clmul.prod <= (others => '0');
+    elsif rising_edge(clk_i) then
       if (clmul.start = '1') then -- start new multiplication
         clmul.cnt                 <= (others => '0');
         clmul.cnt(clmul.cnt'left) <= '1';
@@ -544,9 +552,11 @@ begin
 
   -- Output Gate ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  output_gate: process(clk_i)
+  output_gate: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      res_o <= (others => '0');
+    elsif rising_edge(clk_i) then
       res_o <= (others => '0'); -- default
       if (valid = '1') then
         res_o <= res_out(op_andn_c)   or res_out(op_orn_c)    or res_out(op_xnor_c)  or

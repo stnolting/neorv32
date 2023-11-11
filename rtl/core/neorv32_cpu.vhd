@@ -140,23 +140,23 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- CPU ISA configuration --
   assert false report
-    "NEORV32 CPU Configuration: RV32" &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_E,      "E",         "I") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_M,      "M",         "" ) &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_A,      "A",         "" ) &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_C,      "C",         "" ) &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_B,      "B",         "" ) &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_U,      "U",         "" ) &
-    cond_sel_string_f(true,                       "_Zicsr",    "" ) & -- always enabled
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_Zicntr",   "" ) &
-    cond_sel_string_f(true,                       "_Zifencei", "" ) & -- always enabled
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,  "_Zfinx",    "" ) &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm,  "_Zihpm",    "" ) &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,  "_Zmmul",    "" ) &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,  "_Zxcfu",    "" ) &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,  "_Sdext",    "" ) &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdtrig, "_Sdtrig",   "" ) &
-    cond_sel_string_f(pmp_enable_c,               "_Smpmp",    "" )
+    "NEORV32 CPU Configuration: rv32" &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_E,      "e",         "i") &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_M,      "m",         "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_A,      "a",         "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_C,      "c",         "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_B,      "b",         "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_U,      "u",         "" ) &
+    cond_sel_string_f(true,                       "_zicsr",    "" ) & -- always enabled
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_zicntr",   "" ) &
+    cond_sel_string_f(true,                       "_zifencei", "" ) & -- always enabled
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,  "_zfinx",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm,  "_zihpm",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,  "_zmmul",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,  "_zxcfu",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,  "_sdext",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Sdtrig, "_sdtrig",   "" ) &
+    cond_sel_string_f(pmp_enable_c,               "_smpmp",    "" )
     severity note;
 
   -- simulation notifier --

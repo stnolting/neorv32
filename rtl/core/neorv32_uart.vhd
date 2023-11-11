@@ -149,6 +149,7 @@ architecture neorv32_uart_rtl of neorv32_uart is
     done     : std_ulogic;
     busy     : std_ulogic;
     cts_sync : std_ulogic_vector(1 downto 0);
+    txd      : std_ulogic;
   end record;
   signal tx_engine : tx_engine_t;
 
@@ -179,13 +180,14 @@ architecture neorv32_uart_rtl of neorv32_uart is
 
 begin
 
-  -- Host Access ----------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      bus_rsp_o.ack      <= '0';
+      bus_rsp_o.err      <= '0';
+      bus_rsp_o.data     <= (others => '0');
       ctrl.enable        <= '0';
       ctrl.sim_mode      <= '0';
       ctrl.hwfc_en       <= '0';
@@ -197,95 +199,89 @@ begin
       ctrl.irq_tx_empty  <= '0';
       ctrl.irq_tx_nhalf  <= '0';
     elsif rising_edge(clk_i) then
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          ctrl.enable        <= bus_req_i.data(ctrl_en_c);
-          ctrl.sim_mode      <= bus_req_i.data(ctrl_sim_en_c);
-          ctrl.hwfc_en       <= bus_req_i.data(ctrl_hwfc_en_c);
-          ctrl.prsc          <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
-          ctrl.baud          <= bus_req_i.data(ctrl_baud9_c downto ctrl_baud0_c);
-          --
-          ctrl.irq_rx_nempty <= bus_req_i.data(ctrl_irq_rx_nempty_c);
-          ctrl.irq_rx_half   <= bus_req_i.data(ctrl_irq_rx_half_c);
-          ctrl.irq_rx_full   <= bus_req_i.data(ctrl_irq_rx_full_c);
-          ctrl.irq_tx_empty  <= bus_req_i.data(ctrl_irq_tx_empty_c);
-          ctrl.irq_tx_nhalf  <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
-        end if;
-      end if;
-    end if;
-  end process write_access;
-
-  -- read access --
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
+      -- bus handshake --
+      bus_rsp_o.ack  <= bus_req_i.stb;
+      bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
-          bus_rsp_o.data(ctrl_sim_en_c)                    <= ctrl.sim_mode;
-          bus_rsp_o.data(ctrl_hwfc_en_c)                   <= ctrl.hwfc_en;
-          bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
-          bus_rsp_o.data(ctrl_baud9_c downto ctrl_baud0_c) <= ctrl.baud;
-          --
-          bus_rsp_o.data(ctrl_rx_nempty_c)                 <= rx_fifo.avail;
-          bus_rsp_o.data(ctrl_rx_half_c)                   <= rx_fifo.half;
-          bus_rsp_o.data(ctrl_rx_full_c)                   <= not rx_fifo.free;
-          bus_rsp_o.data(ctrl_tx_empty_c)                  <= not tx_fifo.avail;
-          bus_rsp_o.data(ctrl_tx_nhalf_c)                  <= not tx_fifo.half;
-          bus_rsp_o.data(ctrl_tx_full_c)                   <= not tx_fifo.free;
-          --
-          bus_rsp_o.data(ctrl_irq_rx_nempty_c)             <= ctrl.irq_rx_nempty;
-          bus_rsp_o.data(ctrl_irq_rx_half_c)               <= ctrl.irq_rx_half;
-          bus_rsp_o.data(ctrl_irq_rx_full_c)               <= ctrl.irq_rx_full;
-          bus_rsp_o.data(ctrl_irq_tx_empty_c)              <= ctrl.irq_tx_empty;
-          bus_rsp_o.data(ctrl_irq_tx_nhalf_c)              <= ctrl.irq_tx_nhalf;
-          --
-          bus_rsp_o.data(ctrl_rx_over_c)                   <= rx_engine.over;
-          bus_rsp_o.data(ctrl_tx_busy_c)                   <= tx_engine.busy or tx_fifo.avail;
-        else -- data register
-          bus_rsp_o.data(data_rtx_msb_c        downto data_rtx_lsb_c)        <= rx_fifo.rdata;
-          bus_rsp_o.data(data_rx_fifo_size_msb downto data_rx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_RX_FIFO), 4));
-          bus_rsp_o.data(data_tx_fifo_size_msb downto data_tx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_TX_FIFO), 4));
+      if (bus_req_i.stb = '1') then
+
+        -- write access --
+        if (bus_req_i.rw = '1') then
+          if (bus_req_i.addr(2) = '0') then -- control register
+            ctrl.enable        <= bus_req_i.data(ctrl_en_c);
+            ctrl.sim_mode      <= bus_req_i.data(ctrl_sim_en_c);
+            ctrl.hwfc_en       <= bus_req_i.data(ctrl_hwfc_en_c);
+            ctrl.prsc          <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
+            ctrl.baud          <= bus_req_i.data(ctrl_baud9_c downto ctrl_baud0_c);
+            --
+            ctrl.irq_rx_nempty <= bus_req_i.data(ctrl_irq_rx_nempty_c);
+            ctrl.irq_rx_half   <= bus_req_i.data(ctrl_irq_rx_half_c);
+            ctrl.irq_rx_full   <= bus_req_i.data(ctrl_irq_rx_full_c);
+            ctrl.irq_tx_empty  <= bus_req_i.data(ctrl_irq_tx_empty_c);
+            ctrl.irq_tx_nhalf  <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
+          end if;
+
+        -- read access --
+        else
+          if (bus_req_i.addr(2) = '0') then -- control register
+            bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
+            bus_rsp_o.data(ctrl_sim_en_c)                    <= ctrl.sim_mode;
+            bus_rsp_o.data(ctrl_hwfc_en_c)                   <= ctrl.hwfc_en;
+            bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
+            bus_rsp_o.data(ctrl_baud9_c downto ctrl_baud0_c) <= ctrl.baud;
+            --
+            bus_rsp_o.data(ctrl_rx_nempty_c)                 <= rx_fifo.avail;
+            bus_rsp_o.data(ctrl_rx_half_c)                   <= rx_fifo.half;
+            bus_rsp_o.data(ctrl_rx_full_c)                   <= not rx_fifo.free;
+            bus_rsp_o.data(ctrl_tx_empty_c)                  <= not tx_fifo.avail;
+            bus_rsp_o.data(ctrl_tx_nhalf_c)                  <= not tx_fifo.half;
+            bus_rsp_o.data(ctrl_tx_full_c)                   <= not tx_fifo.free;
+            --
+            bus_rsp_o.data(ctrl_irq_rx_nempty_c)             <= ctrl.irq_rx_nempty;
+            bus_rsp_o.data(ctrl_irq_rx_half_c)               <= ctrl.irq_rx_half;
+            bus_rsp_o.data(ctrl_irq_rx_full_c)               <= ctrl.irq_rx_full;
+            bus_rsp_o.data(ctrl_irq_tx_empty_c)              <= ctrl.irq_tx_empty;
+            bus_rsp_o.data(ctrl_irq_tx_nhalf_c)              <= ctrl.irq_tx_nhalf;
+            --
+            bus_rsp_o.data(ctrl_rx_over_c)                   <= rx_engine.over;
+            bus_rsp_o.data(ctrl_tx_busy_c)                   <= tx_engine.busy or tx_fifo.avail;
+          else -- data register
+            bus_rsp_o.data(data_rtx_msb_c        downto data_rtx_lsb_c)        <= rx_fifo.rdata;
+            bus_rsp_o.data(data_rx_fifo_size_msb downto data_rx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_RX_FIFO), 4));
+            bus_rsp_o.data(data_tx_fifo_size_msb downto data_tx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_TX_FIFO), 4));
+          end if;
         end if;
+
       end if;
     end if;
-  end process read_access;
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  end process bus_access;
 
   -- UART clock enable --
   clkgen_en_o <= ctrl.enable;
   uart_clk    <= clkgen_i(to_integer(unsigned(ctrl.prsc)));
 
 
-  -- Data Buffers ---------------------------------------------------------------------------
+  -- TX FIFO --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- TX FIFO --
   tx_engine_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
-    FIFO_DEPTH => UART_TX_FIFO, -- number of fifo entries; has to be a power of two; min 1
-    FIFO_WIDTH => 8,            -- size of data elements in fifo (32-bit only for simulation)
-    FIFO_RSYNC => true,         -- sync read
-    FIFO_SAFE  => true          -- safe access
+    FIFO_DEPTH => UART_TX_FIFO,
+    FIFO_WIDTH => 8,
+    FIFO_RSYNC => true,
+    FIFO_SAFE  => true
   )
   port map (
     -- control --
-    clk_i   => clk_i,         -- clock, rising edge
-    rstn_i  => rstn_i,        -- async reset, low-active
-    clear_i => tx_fifo.clear, -- sync reset, high-active
-    half_o  => tx_fifo.half,  -- FIFO at least half-full
-    -- write port --
-    wdata_i => tx_fifo.wdata, -- write data
-    we_i    => tx_fifo.we,    -- write enable
-    free_o  => tx_fifo.free,  -- at least one entry is free when set
-    -- read port --
-    re_i    => tx_fifo.re,    -- read enable
-    rdata_o => tx_fifo.rdata, -- read data
-    avail_o => tx_fifo.avail  -- data available when set
+    clk_i   => clk_i,
+    rstn_i  => rstn_i,
+    clear_i => tx_fifo.clear,
+    half_o  => tx_fifo.half,
+    wdata_i => tx_fifo.wdata,
+    we_i    => tx_fifo.we,
+    free_o  => tx_fifo.free,
+    re_i    => tx_fifo.re,
+    rdata_o => tx_fifo.rdata,
+    avail_o => tx_fifo.avail
   );
 
   tx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
@@ -294,9 +290,11 @@ begin
   tx_fifo.re    <= '1' when (tx_engine.state = "100") else '0';
 
   -- TX interrupt generator --
-  tx_irq_generator: process(clk_i)
+  tx_irq_generator: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      irq_tx_o <= '0';
+    elsif rising_edge(clk_i) then
       irq_tx_o <= ctrl.enable and (
                   (ctrl.irq_tx_empty and (not tx_fifo.avail)) or -- fire IRQ if TX FIFO empty
                   (ctrl.irq_tx_nhalf and (not tx_fifo.half)));   -- fire IRQ if TX FIFO not at least half full
@@ -304,28 +302,26 @@ begin
   end process tx_irq_generator;
 
 
-  -- RX FIFO --
+  -- RX FIFO --------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   rx_engine_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
-    FIFO_DEPTH => UART_RX_FIFO, -- number of fifo entries; has to be a power of two; min 1
-    FIFO_WIDTH => 8,            -- size of data elements in fifo
-    FIFO_RSYNC => true,         -- sync read
-    FIFO_SAFE  => true          -- safe access
+    FIFO_DEPTH => UART_RX_FIFO,
+    FIFO_WIDTH => 8,
+    FIFO_RSYNC => true,
+    FIFO_SAFE  => true
   )
   port map (
-    -- control --
-    clk_i   => clk_i,         -- clock, rising edge
-    rstn_i  => rstn_i,        -- async reset, low-active
-    clear_i => rx_fifo.clear, -- sync reset, high-active
-    half_o  => rx_fifo.half,  -- FIFO at least half-full
-    -- write port --
-    wdata_i => rx_fifo.wdata, -- write data
-    we_i    => rx_fifo.we,    -- write enable
-    free_o  => rx_fifo.free,  -- at least one entry is free when set
-    -- read port --
-    re_i    => rx_fifo.re,    -- read enable
-    rdata_o => rx_fifo.rdata, -- read data
-    avail_o => rx_fifo.avail  -- data available when set
+    clk_i   => clk_i,
+    rstn_i  => rstn_i,
+    clear_i => rx_fifo.clear,
+    half_o  => rx_fifo.half,
+    wdata_i => rx_fifo.wdata,
+    we_i    => rx_fifo.we,
+    free_o  => rx_fifo.free,
+    re_i    => rx_fifo.re,
+    rdata_o => rx_fifo.rdata,
+    avail_o => rx_fifo.avail
   );
 
   rx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
@@ -334,9 +330,11 @@ begin
   rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
 
   -- RX interrupt generator --
-  rx_irq_generator: process(clk_i)
+  rx_irq_generator: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      irq_rx_o <= '0';
+    elsif rising_edge(clk_i) then
       irq_rx_o <= ctrl.enable and (
                   (ctrl.irq_rx_nempty and rx_fifo.avail) or     -- fire IRQ if RX FIFO not empty
                   (ctrl.irq_rx_half   and rx_fifo.half)  or     -- fire IRQ if RX FIFO at least half full
@@ -347,14 +345,23 @@ begin
 
   -- Transmit Engine ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  transmitter: process(clk_i)
+  transmitter: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      tx_engine.cts_sync <= (others => '0');
+      tx_engine.done     <= '0';
+      tx_engine.state    <= (others => '0');
+      tx_engine.baudcnt  <= (others => '0');
+      tx_engine.bitcnt   <= (others => '0');
+      tx_engine.sreg     <= (others => '0');
+      tx_engine.txd      <= '1';
+    elsif rising_edge(clk_i) then
       -- synchronize clear-to-send --
       tx_engine.cts_sync <= tx_engine.cts_sync(0) & uart_cts_i;
 
       -- defaults --
       tx_engine.done <= '0';
+      tx_engine.txd  <= '1';
 
       -- FSM --
       tx_engine.state(2) <= ctrl.enable;
@@ -377,6 +384,7 @@ begin
 
         when "111" => -- SEND: transmit data
         -- ------------------------------------------------------------
+          tx_engine.txd <= tx_engine.sreg(0);
           if (uart_clk = '1') then
             if (or_reduce_f(tx_engine.baudcnt) = '0') then -- bit done?
               tx_engine.baudcnt <= ctrl.baud;
@@ -403,14 +411,21 @@ begin
   tx_engine.busy <= '0' when (tx_engine.state(1 downto 0) = "00") else '1';
 
   -- serial data output --
-  uart_txd_o <= tx_engine.sreg(0) when (tx_engine.state = "111") else '1'; -- data is sent LSB-first
+  uart_txd_o <= tx_engine.txd;
 
 
   -- Receive Engine -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  receiver: process(clk_i)
+  receiver: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      rx_engine.sync    <= (others => '0');
+      rx_engine.done    <= '0';
+      rx_engine.state   <= (others => '0');
+      rx_engine.baudcnt <= (others => '0');
+      rx_engine.bitcnt  <= (others => '0');
+      rx_engine.sreg    <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- input synchronizer --
       rx_engine.sync(2) <= uart_rxd_i;
       if (uart_clk = '1') then
@@ -458,9 +473,11 @@ begin
   end process receiver;
 
   -- RX overrun flag --
-  fifo_overrun: process(clk_i)
+  fifo_overrun: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      rx_engine.over <= '0';
+    elsif rising_edge(clk_i) then
       if ((bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1')) or (ctrl.enable = '0') then -- clear when reading data register
         rx_engine.over <= '0';
       elsif (rx_fifo.we = '1') and (rx_fifo.free = '0') then -- writing to full FIFO
@@ -470,9 +487,11 @@ begin
   end process fifo_overrun;
 
   -- HW flow-control: ready to receive? --
-  rtr_control: process(clk_i)
+  rtr_control: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      uart_rts_o <= '0';
+    elsif rising_edge(clk_i) then
       if (ctrl.hwfc_en = '1') then
         if (ctrl.enable = '0') or -- UART disabled
            (rx_fifo.half = '1') then -- RX FIFO at least half-full: no "safe space" left in RX FIFO
@@ -494,10 +513,10 @@ begin
     sim_tx: process(clk_i)
       file file_out          : text open write_mode is SIM_LOG_FILE;
       variable char_v        : integer;
-      variable line_screen_v : line; -- we need several line variables here since "writeline" seems to flush the source variable
+      variable line_screen_v : line;
       variable line_file_v   : line;
     begin
-      if rising_edge(clk_i) then
+      if rising_edge(clk_i) then -- no reset required
         if (ctrl.enable = '1') and (ctrl.sim_mode = '1') and (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') then
           -- convert lowest byte to ASCII char --
           char_v := to_integer(unsigned(bus_req_i.data(7 downto 0)));
