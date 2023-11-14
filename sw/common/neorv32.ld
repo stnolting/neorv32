@@ -3,7 +3,7 @@
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
-/* # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     # */
+/* # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
 /* # permitted provided that the following conditions are met:                                     # */
@@ -32,12 +32,10 @@
 /* # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting # */
 /* ################################################################################################# */
 
-/* Default linker script, for normal executables .
- * Copyright (C) 2014-2020 Free Software Foundation, Inc.
+/* Copyright (C) 2014-2020 Free Software Foundation, Inc.
  * Copying and distribution of this script, with or without modification,
  * are permitted in any medium without royalty provided the copyright
- * notice and this notice are preserved.
- * Modified for the NEORV32 processor by Stephan Nolting. */
+ * notice and this notice are preserved. */
 
 
 OUTPUT_FORMAT("elf32-littleriscv")
@@ -50,7 +48,7 @@ SEARCH_DIR("=/usr/lib")
 
 
 /* ************************************************************************************************* */
-/* +++ NEORV32 memory configuration +++                                                              */
+/* +++ NEORV32 memory layout configuration +++                                                       */
 /* If the symbols are not explicitly defined the default configurations are used. If required, only  */
 /* edit the very last entry in each row.                                                             */
 /* NOTE: section sizes have to be a multiple of 4 bytes; base addresses have to be 32-bit-aligned.   */
@@ -69,8 +67,8 @@ __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x800000
 
 
 /* ************************************************************************************************* */
-/* If compiling the bootloader, the ROM section is automatically re-mapped to the processor-internal */
-/* bootloader ROM address space.                                                                     */
+/* when compiling the bootloader the ROM section is automatically re-mapped to the                   */
+/* processor-internal bootloader ROM address space.                                                  */
 /* ************************************************************************************************* */
 MEMORY
 {
@@ -80,10 +78,11 @@ MEMORY
 
 
 /* ************************************************************************************************* */
+/* Section ".text" - program code                                                                    */
+/* This is the first part of the actual/final executable                                             */
+/* ************************************************************************************************* */
 SECTIONS
 {
-
-  /* First part of the actual executable file: actual instructions */
   .text : ALIGN(4)
   {
     PROVIDE(__text_start = .);
@@ -130,7 +129,10 @@ SECTIONS
   } > rom
 
 
-  /* Second part of the actual executable: read-only data, PLACED RIGHT NEXT to .text using "__etext" symbol */
+/* ************************************************************************************************* */
+/* Section ".rodata" - read-only constants and ".data" initialization                                */
+/* This is the second part of the actual/final executable the will be places right after ".text"     */
+/* ************************************************************************************************* */
   .rodata __etext :
   {
     /* constant data like strings */
@@ -143,7 +145,10 @@ SECTIONS
   } > rom
 
 
-  /* initialized read/write data, accessed in RAM, placed in ROM, copied during boot - not part of the final executable */
+/* ************************************************************************************************* */
+/* Section ".data" - pre-initialized variables                                                       */
+/* The start-up code will initialize this RAM section from the executable's ".rodata" section        */
+/* ************************************************************************************************* */
   .data : ALIGN(4)
   {
     __DATA_BEGIN__ = .;
@@ -175,7 +180,10 @@ SECTIONS
   } > ram AT > rom
 
 
-  /* zero/non-initialized read/write data placed in RAM - not part of the final executable */
+/* ************************************************************************************************* */
+/* Section ".bss" - non-initialized variables                                                        */
+/* The start-up code will clear this section during boot-up                                          */
+/* ************************************************************************************************* */
   .bss (NOLOAD): ALIGN(4)
   {
     __BSS_START__ = .;
@@ -206,7 +214,9 @@ SECTIONS
   } > ram
 
 
-  /* heap for dynamic memory allocation (use carefully!) - not part of the final executable */
+/* ************************************************************************************************* */
+/* Section ".heap" - dynamic memory (e.g. malloc)                                                    */
+/* ************************************************************************************************* */
   .heap : ALIGN(4)
   {
     PROVIDE(__heap_start = .);
@@ -217,7 +227,9 @@ SECTIONS
   } > ram
 
 
-  /* Yet unused */
+/* ************************************************************************************************* */
+/* Unused sections                                                                                   */
+/* ************************************************************************************************* */
   .jcr                : { KEEP (*(.jcr)) }
   .got                : { *(.got.plt) *(.igot.plt) *(.got) *(.igot) }  .interp         : { *(.interp) }
   .note.gnu.build-id  : { *(.note.gnu.build-id) }
@@ -246,7 +258,9 @@ SECTIONS
   .rela.bss           : { *(.rela.bss .rela.bss.* .rela.gnu.linkonce.b.*) }
 
 
-  /* Stabs debugging sections.  */
+/* ************************************************************************************************* */
+/* Debug symbols                                                                                     */
+/* ************************************************************************************************* */
   .stab          0 : { *(.stab) }
   .stabstr       0 : { *(.stabstr) }
   .stab.excl     0 : { *(.stab.excl) }
@@ -290,7 +304,9 @@ SECTIONS
   /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
 
 
-  /* Export symbols for neorv32 crt0 start-up code */
+/* ************************************************************************************************* */
+/* Export symbols for neorv32 crt0 start-up code                                                     */
+/* ************************************************************************************************* */
   PROVIDE(__crt0_max_heap            = __neorv32_heap_size);
   PROVIDE(__crt0_imem_begin          = ORIGIN(rom));
   PROVIDE(__crt0_dmem_begin          = ORIGIN(ram));
