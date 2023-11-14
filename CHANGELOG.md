@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 14.11.2023 | [**:rocket:1.9.1**](https://github.com/stnolting/neorv32/releases/tag/v1.9.1) | **New release** |
 | 11.11.2023 | 1.9.0.9 | :test_tube: add full hardware reset for **all** flip flops in CPU/processor; [#724](https://github.com/stnolting/neorv32/pull/724) |
 | 09.11.2023 | 1.9.0.8 | minor rtl code cleanups; [#723](https://github.com/stnolting/neorv32/pull/723) |
 | 04.11.2023 | 1.9.0.7 | upgrade true random number generator to [neoTRNG version 3](https://github.com/stnolting/neoTRNG); [#721](https://github.com/stnolting/neorv32/pull/721) |
