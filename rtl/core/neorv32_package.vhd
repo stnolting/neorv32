@@ -68,11 +68,9 @@ package neorv32_package is
   constant is_simulation_c : boolean := false -- seems like we're on real hardware
 -- pragma translate_off
 -- synthesis translate_off
--- synthesis synthesis_off
 -- RTL_SYNTHESIS OFF
   or true -- this MIGHT be a simulation
 -- RTL_SYNTHESIS ON
--- synthesis synthesis_on
 -- synthesis translate_on
 -- pragma translate_on
   ;
