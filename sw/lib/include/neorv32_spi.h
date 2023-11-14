@@ -94,17 +94,18 @@ enum NEORV32_SPI_CTRL_enum {
  * @name Prototypes
  **************************************************************************/
 /**@{*/
-int     neorv32_spi_available(void);
-void    neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, uint32_t irq_mask);
-void    neorv32_spi_disable(void);
-void    neorv32_spi_enable(void);
-int     neorv32_spi_get_fifo_depth(void);
-void    neorv32_spi_cs_en(int cs);
-void    neorv32_spi_cs_dis(void);
-uint8_t neorv32_spi_trans(uint8_t tx_data);
-void    neorv32_spi_put_nonblocking(uint8_t tx_data);
-uint8_t neorv32_spi_get_nonblocking(void);
-int     neorv32_spi_busy(void);
+int      neorv32_spi_available(void);
+void     neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, uint32_t irq_mask);
+uint32_t neorv32_spi_get_clock_speed(void);
+void     neorv32_spi_disable(void);
+void     neorv32_spi_enable(void);
+int      neorv32_spi_get_fifo_depth(void);
+void     neorv32_spi_cs_en(int cs);
+void     neorv32_spi_cs_dis(void);
+uint8_t  neorv32_spi_trans(uint8_t tx_data);
+void     neorv32_spi_put_nonblocking(uint8_t tx_data);
+uint8_t  neorv32_spi_get_nonblocking(void);
+int      neorv32_spi_busy(void);
 /**@}*/
 
 #endif // neorv32_spi_h
