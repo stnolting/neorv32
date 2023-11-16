@@ -177,7 +177,7 @@ begin
   --
   -- Up to 8 RISC-V R4-Type Instructions (RISC-V standard):
   -- This format consists of three source registers ('rs1', 'rs2', 'rs3'), a destination register ('rd') and one "immediate"
-  -- bit-field ('funct7').
+  -- bit-field ('funct3').
   --
   -- Two individual RISC-V R5-Type Instructions (NEORV32-specific):
   -- This format consists of four source registers ('rs1', 'rs2', 'rs3', 'rs4') and a destination register ('rd'). There are
