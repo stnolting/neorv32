@@ -653,7 +653,7 @@ int main() {
     asm volatile (".word 0x7b200073"); // dret outside of debug mode
     asm volatile (".word 0x7b300073"); // illegal system funct12
     asm volatile (".word 0xfe000033"); // illegal add funct7
-    asm volatile (".word 0x00002063"); // illegal branch funct3
+    asm volatile (".word 0x80002063"); // illegal branch funct3
     asm volatile (".word 0x0000200f"); // illegal fence funct3
     asm volatile (".word 0xfe002fe3"); // illegal store funct3
     asm volatile (".align 4");

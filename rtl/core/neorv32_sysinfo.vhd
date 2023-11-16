@@ -92,6 +92,7 @@ entity neorv32_sysinfo is
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
+    rstn_i    : in  std_ulogic; -- global reset line, low-active, async
     bus_req_i : in  bus_req_t;  -- bus request
     bus_rsp_o : out bus_rsp_t   -- bus response
   );
@@ -169,22 +170,24 @@ begin
   sysinfo(3)(31 downto 28) <= (others => '0'); -- d-cache: replacement strategy
 
 
-  -- Read Access ----------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  read_access: process(clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
       bus_rsp_o.ack  <= '0';
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
+    elsif rising_edge(clk_i) then
+      bus_rsp_o.ack  <= '0';
+      bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then -- read-only
         bus_rsp_o.ack  <= '1';
         bus_rsp_o.data <= sysinfo(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
       end if;
     end if;
-  end process read_access;
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  end process bus_access;
 
 
 end neorv32_sysinfo_rtl;

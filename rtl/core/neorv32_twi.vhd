@@ -131,76 +131,79 @@ architecture neorv32_twi_rtl of neorv32_twi is
 
 begin
 
-  -- Host Access ----------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl.enable <= '0';
-      ctrl.mack   <= '0';
-      ctrl.csen   <= '0';
-      ctrl.prsc   <= (others => '0');
-      ctrl.cdiv   <= (others => '0');
-      trig_start  <= '0';
-      trig_stop   <= '0';
-      trig_data   <= '0';
+      bus_rsp_o.ack  <= '0';
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
+      ctrl.enable    <= '0';
+      ctrl.mack      <= '0';
+      ctrl.csen      <= '0';
+      ctrl.prsc      <= (others => '0');
+      ctrl.cdiv      <= (others => '0');
+      trig_start     <= '0';
+      trig_stop      <= '0';
+      trig_data      <= '0';
     elsif rising_edge(clk_i) then
+      -- bus handshake --
+      bus_rsp_o.ack  <= bus_req_i.stb;
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
+
       -- defaults --
       trig_start <= '0';
       trig_stop  <= '0';
       trig_data  <= '0';
-      -- bus access --
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          ctrl.enable <= bus_req_i.data(ctrl_en_c);
-          ctrl.mack   <= bus_req_i.data(ctrl_mack_c);
-          ctrl.csen   <= bus_req_i.data(ctrl_csen_c);
-          ctrl.prsc   <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
-          ctrl.cdiv   <= bus_req_i.data(ctrl_cdiv3_c downto ctrl_cdiv0_c);
-          trig_start  <= bus_req_i.data(ctrl_start_c); -- issue START condition
-          trig_stop   <= bus_req_i.data(ctrl_stop_c); -- issue STOP condition
-        else -- data register
-          trig_data <= '1'; -- start data transmission
+
+      if (bus_req_i.stb = '1') then
+
+        -- write access --
+        if (bus_req_i.rw = '1') then
+          if (bus_req_i.addr(2) = '0') then -- control register
+            ctrl.enable <= bus_req_i.data(ctrl_en_c);
+            ctrl.mack   <= bus_req_i.data(ctrl_mack_c);
+            ctrl.csen   <= bus_req_i.data(ctrl_csen_c);
+            ctrl.prsc   <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
+            ctrl.cdiv   <= bus_req_i.data(ctrl_cdiv3_c downto ctrl_cdiv0_c);
+            trig_start  <= bus_req_i.data(ctrl_start_c); -- issue START condition
+            trig_stop   <= bus_req_i.data(ctrl_stop_c); -- issue STOP condition
+          else -- data register
+            trig_data <= '1'; -- start data transmission
+          end if;
+
+        -- read access --
+        else
+          if (bus_req_i.addr(2) = '0') then -- control register
+            bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
+            bus_rsp_o.data(ctrl_mack_c)                      <= ctrl.mack;
+            bus_rsp_o.data(ctrl_csen_c)                      <= ctrl.csen;
+            bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
+            bus_rsp_o.data(ctrl_cdiv3_c downto ctrl_cdiv0_c) <= ctrl.cdiv;
+            --
+            bus_rsp_o.data(ctrl_claimed_c) <= arbiter.claimed;
+            bus_rsp_o.data(ctrl_ack_c)     <= not arbiter.rtx_sreg(0);
+            bus_rsp_o.data(ctrl_busy_c)    <= arbiter.busy;
+          else -- data register
+            bus_rsp_o.data(7 downto 0) <= arbiter.rtx_sreg(8 downto 1);
+          end if;
         end if;
+
       end if;
     end if;
-  end process write_access;
-
-  -- read access --
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
-      bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
-          bus_rsp_o.data(ctrl_mack_c)                      <= ctrl.mack;
-          bus_rsp_o.data(ctrl_csen_c)                      <= ctrl.csen;
-          bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
-          bus_rsp_o.data(ctrl_cdiv3_c downto ctrl_cdiv0_c) <= ctrl.cdiv;
-          --
-          bus_rsp_o.data(ctrl_claimed_c) <= arbiter.claimed;
-          bus_rsp_o.data(ctrl_ack_c)     <= not arbiter.rtx_sreg(0);
-          bus_rsp_o.data(ctrl_busy_c)    <= arbiter.busy;
-        else -- data register
-          bus_rsp_o.data(7 downto 0) <= arbiter.rtx_sreg(8 downto 1);
-        end if;
-      end if;
-    end if;
-  end process read_access;
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  end process bus_access;
 
 
   -- Clock Generation -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  clock_generator: process(clk_i)
+  clock_generator: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      clk_gen.tick <= '0';
+      clk_gen.cnt  <= (others => '0');
+    elsif rising_edge(clk_i) then
       if (ctrl.enable = '0') then -- reset/disabled
         clk_gen.tick <= '0';
         clk_gen.cnt  <= (others => '0');
@@ -222,9 +225,12 @@ begin
   clkgen_en_o <= ctrl.enable;
 
   -- generate four non-overlapping clock phases --
-  phase_generator: process(clk_i)
+  phase_generator: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      clk_gen.phase_gen    <= (others => '0');
+      clk_gen.phase_gen_ff <= (others => '0');
+    elsif rising_edge(clk_i) then
       clk_gen.phase_gen_ff <= clk_gen.phase_gen;
       if (arbiter.state(2) = '0') or (arbiter.state(1 downto 0) = "00") then -- offline or idle
         clk_gen.phase_gen <= "0001"; -- make sure to start with a new phase
@@ -249,9 +255,19 @@ begin
 
   -- TWI Transceiver ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  twi_engine: process(clk_i)
+  twi_engine: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      io_con.sda_in_ff  <= (others => '0');
+      io_con.scl_in_ff  <= (others => '0');
+      io_con.sda_out    <= '0';
+      io_con.scl_out    <= '0';
+      irq_o             <= '0';
+      arbiter.state     <= (others => '0');
+      arbiter.bitcnt    <= (others => '0');
+      arbiter.state_nxt <= (others => '0');
+      arbiter.rtx_sreg  <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- input synchronizer --
       io_con.sda_in_ff <= io_con.sda_in_ff(0) & io_con.sda_in;
       io_con.scl_in_ff <= io_con.scl_in_ff(0) & io_con.scl_in;

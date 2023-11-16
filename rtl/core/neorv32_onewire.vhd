@@ -133,13 +133,14 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
 
 begin
 
-  -- Write Access ---------------------------------------------------------------------------
+  -- Bus Access ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      bus_rsp_o.ack  <= '0';
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
       ctrl.enable    <= '0';
       ctrl.clk_prsc  <= (others => '0');
       ctrl.clk_div   <= (others => '0');
@@ -148,6 +149,11 @@ begin
       ctrl.trig_byte <= '0';
       tx_data        <= (others => '0');
     elsif rising_edge(clk_i) then
+      -- bus handshake --
+      bus_rsp_o.ack  <= bus_req_i.stb;
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
+
       -- write access --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         -- control register --
@@ -172,15 +178,8 @@ begin
         ctrl.trig_bit  <= '0';
         ctrl.trig_byte <= '0';
       end if;
-    end if;
-  end process write_access;
 
-  -- read access --
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
-      bus_rsp_o.data <= (others => '0');
+      -- read access --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         -- control register --
         if (bus_req_i.addr(2) = '0') then
@@ -196,18 +195,21 @@ begin
           bus_rsp_o.data(7 downto 0) <= serial.sreg;
         end if;
       end if;
-    end if;
-  end process read_access;
 
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+    end if;
+  end process bus_access;
 
 
   -- Tick Generator -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  tick_generator: process(clk_i)
+  tick_generator: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      clk_tick       <= '0';
+      clk_cnt        <= (others => '0');
+      serial.tick    <= '0';
+      serial.tick_ff <= '0';
+    elsif rising_edge(clk_i) then
       clk_tick    <= clk_sel(to_integer(unsigned(ctrl.clk_prsc)));
       serial.tick <= '0'; -- default
       if (ctrl.enable = '0') then
@@ -233,9 +235,20 @@ begin
 
   -- Serial Engine --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  serial_engine: process(clk_i)
+  serial_engine: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      serial.wire_in  <= (others => '0');
+      serial.done     <= '0';
+      serial.wire_lo  <= '0';
+      serial.wire_hi  <= '0';
+      serial.state    <= (others => '0');
+      serial.tick_cnt <= (others => '0');
+      serial.bit_cnt  <= (others => '0');
+      serial.sreg     <= (others => '0');
+      serial.sample   <= '0';
+      onewire_o       <= '0';
+    elsif rising_edge(clk_i) then
       -- input synchronizer --
       serial.wire_in <= serial.wire_in(0) & to_stdulogic(to_bit(onewire_i)); -- "to_bit" to avoid hardware-vs-simulation mismatch
 

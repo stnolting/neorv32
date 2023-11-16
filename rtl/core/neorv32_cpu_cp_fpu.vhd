@@ -495,10 +495,15 @@ begin
 
   -- Floating-Point Comparator --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  float_comparator: process(clk_i)
+  float_comparator: process(rstn_i, clk_i)
     variable cond_v : std_ulogic_vector(1 downto 0);
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      comp_equal_ff   <= '0';
+      comp_less_ff    <= '0';
+      fu_compare.done <= '0';
+      fu_min_max.done <= '0';
+    elsif rising_edge(clk_i) then
       -- equal --
       if ((fpu_operands.rs1_class(fp_class_pos_inf_c)   = '1') and (fpu_operands.rs2_class(fp_class_pos_inf_c) = '1')) or -- +inf == +inf
          ((fpu_operands.rs1_class(fp_class_neg_inf_c)   = '1') and (fpu_operands.rs2_class(fp_class_neg_inf_c) = '1')) or -- -inf == -inf
@@ -567,7 +572,7 @@ begin
 
   -- Min/Max Select (FMIN/FMAX) -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  min_max_select: process(fpu_operands, comp_less_ff, fu_compare, ctrl_i)
+  min_max_select: process(fpu_operands, comp_less_ff, ctrl_i)
     variable cond_v : std_ulogic_vector(2 downto 0);
   begin
     -- comparison result - check for special cases: -0 is less than +0
@@ -576,7 +581,7 @@ begin
     elsif ((fpu_operands.rs1_class(fp_class_pos_zero_c) = '1') and (fpu_operands.rs2_class(fp_class_neg_zero_c) = '1')) then
       cond_v(0) := not ctrl_i.ir_funct3(0);
     else -- "normal= comparison
-      cond_v(0) := comp_less_ff xnor ctrl_i.ir_funct3(0); -- min/max select
+      cond_v(0) := not (comp_less_ff xor ctrl_i.ir_funct3(0)); -- min/max select
     end if;
 
     -- number NaN check --
@@ -643,11 +648,15 @@ begin
 
   -- Convert: [unsigned] Integer to Float (FCVT.W.S) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
-  convert_i2f: process(clk_i)
+  convert_i2f: process(rstn_i, clk_i)
   begin
     -- this process only computes the absolute input value
     -- the actual conversion is done by the normalizer
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      fu_conv_i2f.result <= (others => '0');
+      fu_conv_i2f.sign   <= '0';
+      fu_conv_i2f.done   <= '0';
+    elsif rising_edge(clk_i) then
       if (ctrl_i.ir_funct12(0) = '0') and (rs1_i(31) = '1') then -- convert signed integer
         fu_conv_i2f.result <= std_ulogic_vector(0 - unsigned(rs1_i));
         fu_conv_i2f.sign   <= rs1_i(31); -- original sign
@@ -662,9 +671,18 @@ begin
 
   -- Multiplier Core (FMUL) -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  multiplier_core: process(clk_i)
+  multiplier_core: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      multiplier.opa     <= (others => '0');
+      multiplier.opb     <= (others => '0');
+      multiplier.buf_ff  <= (others => '0');
+      multiplier.product <= (others => '0');
+      multiplier.sign    <= '0';
+      multiplier.exp_res <= (others => '0');
+      multiplier.flags   <= (others => '0');
+      multiplier.latency <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- multiplier core --
       if (multiplier.start = '1') then -- FIXME / TODO remove buffer?
         multiplier.opa <= unsigned('1' & fpu_operands.rs1(22 downto 0)); -- append hidden one
@@ -694,6 +712,10 @@ begin
         ((fpu_operands.rs1_class(fp_class_pos_inf_c)  or fpu_operands.rs1_class(fp_class_neg_inf_c)) and
          (fpu_operands.rs2_class(fp_class_pos_zero_c) or fpu_operands.rs2_class(fp_class_neg_zero_c))); -- mul(+/-inf, +/-zero)
 
+      -- unused exception flags --
+      multiplier.flags(fp_exc_dz_c) <= '0'; -- division by zero: not possible here
+      multiplier.flags(fp_exc_nx_c) <= '0'; -- inexcat: not possible here
+
       -- latency shift register --
       multiplier.latency <= multiplier.latency(multiplier.latency'left-1 downto 0) & multiplier.start;
     end if;
@@ -707,20 +729,18 @@ begin
   multiplier.done  <= multiplier.latency(multiplier.latency'left);
   fu_mul.done      <= multiplier.done;
 
-  -- unused exception flags --
-  multiplier.flags(fp_exc_dz_c) <= '0'; -- division by zero: not possible here
-  multiplier.flags(fp_exc_nx_c) <= '0'; -- inexcat: not possible here
-
 
   -- result class --
-  multiplier_class_core: process(clk_i)
+  multiplier_class_core: process(rstn_i, clk_i)
     variable a_pos_norm_v, a_neg_norm_v, b_pos_norm_v, b_neg_norm_v : std_ulogic;
     variable a_pos_subn_v, a_neg_subn_v, b_pos_subn_v, b_neg_subn_v : std_ulogic;
     variable a_pos_zero_v, a_neg_zero_v, b_pos_zero_v, b_neg_zero_v : std_ulogic;
     variable a_pos_inf_v,  a_neg_inf_v,  b_pos_inf_v,  b_neg_inf_v  : std_ulogic;
     variable a_snan_v,     a_qnan_v,     b_snan_v,     b_qnan_v     : std_ulogic;
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      multiplier.res_class <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- minions --
       a_pos_norm_v := fpu_operands.rs1_class(fp_class_pos_norm_c);    b_pos_norm_v := fpu_operands.rs2_class(fp_class_pos_norm_c);
       a_neg_norm_v := fpu_operands.rs1_class(fp_class_neg_norm_c);    b_neg_norm_v := fpu_operands.rs2_class(fp_class_neg_norm_c);
@@ -813,9 +833,21 @@ begin
 
   -- Adder/Subtractor Core (FADD, FSUB) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  adder_subtractor_core: process(clk_i)
+  adder_subtractor_core: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      addsub.latency            <= (others => '0');
+      addsub.exp_comp           <= (others => '0');
+      addsub.man_sreg           <= (others => '0');
+      addsub.exp_cnt            <= (others => '0');
+      addsub.man_g_ext          <= '0';
+      addsub.man_r_ext          <= '0';
+      addsub.man_s_ext          <= '0';
+      addsub.man_comp           <= '0';
+      addsub.add_stage          <= (others => '0');
+      addsub.res_sign           <= '0';
+      addsub.flags(fp_exc_nv_c) <= '0';
+    elsif rising_edge(clk_i) then
       -- arbitration / latency --
       if (ctrl_engine.state = S_IDLE) then -- hacky "reset"
         addsub.latency <= (others => '0');
@@ -948,14 +980,16 @@ begin
 
 
   -- result class --
-  adder_subtractor_class_core: process(clk_i)
+  adder_subtractor_class_core: process(rstn_i, clk_i)
     variable a_pos_norm_v, a_neg_norm_v, b_pos_norm_v, b_neg_norm_v : std_ulogic;
     variable a_pos_subn_v, a_neg_subn_v, b_pos_subn_v, b_neg_subn_v : std_ulogic;
     variable a_pos_zero_v, a_neg_zero_v, b_pos_zero_v, b_neg_zero_v : std_ulogic;
     variable a_pos_inf_v,  a_neg_inf_v,  b_pos_inf_v,  b_neg_inf_v  : std_ulogic;
     variable a_snan_v,     a_qnan_v,     b_snan_v,     b_qnan_v     : std_ulogic;
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      addsub.res_class <= (others => '0');
+    elsif rising_edge(clk_i) then
       -- minions --
       a_pos_norm_v := fpu_operands.rs1_class(fp_class_pos_norm_c);    b_pos_norm_v := fpu_operands.rs2_class(fp_class_pos_norm_c);
       a_neg_norm_v := fpu_operands.rs1_class(fp_class_neg_norm_c);    b_neg_norm_v := fpu_operands.rs2_class(fp_class_neg_norm_c);
@@ -1163,9 +1197,14 @@ begin
 
   -- Output Result to CPU Pipeline ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  output_gate: process(clk_i)
+  output_gate: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      res_o  <= (others => '0');
+      fflags <= (others => '0');
+    elsif rising_edge(clk_i) then
+      res_o  <= (others => '0');
+      fflags <= (others => '0');
       if (ctrl_engine.valid = '1') then
         case funct_ff is
           when op_class_c =>
@@ -1187,9 +1226,6 @@ begin
             res_o  <= normalizer.result;
             fflags <= normalizer.flags_out;
         end case;
-      else
-        res_o  <= (others => '0');
-        fflags <= (others => '0');
       end if;
     end if;
   end process output_gate;

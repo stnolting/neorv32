@@ -150,9 +150,12 @@ begin
     end process barrel_shifter_core;
 
     -- pipeline register --
-    barrel_shifter_buf: process(clk_i)
+    barrel_shifter_buf: process(rstn_i, clk_i)
     begin
-      if rising_edge(clk_i) then
+      if (rstn_i = '0') then
+        bs_start  <= '0';
+        bs_result <= (others => '0');
+      elsif rising_edge(clk_i) then
         bs_start  <= start_i;
         bs_result <= bs_level(0); -- this register can be moved by the register balancing
       end if;

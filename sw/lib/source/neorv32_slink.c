@@ -48,7 +48,7 @@
  **************************************************************************/
 int neorv32_slink_available(void) {
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SDI)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SLINK)) {
     return 1;
   }
   else {

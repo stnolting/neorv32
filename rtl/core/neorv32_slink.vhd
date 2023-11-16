@@ -124,19 +124,14 @@ architecture neorv32_slink_rtl of neorv32_slink is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not ((is_power_of_two_f(SLINK_TX_FIFO) = false) or (is_power_of_two_f(SLINK_RX_FIFO) = false)) report
-    "NEORV32 PROCESSOR CONFIG ERROR: SLINK FIFO sizes have to be a power of two." severity error;
-
-
-  -- Host Access ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      bus_rsp_o.ack      <= '0';
+      bus_rsp_o.err      <= '0';
+      bus_rsp_o.data     <= (others => '0');
       ctrl.enable        <= '0';
       ctrl.rx_clr        <= '0';
       ctrl.tx_clr        <= '0';
@@ -147,60 +142,61 @@ begin
       ctrl.irq_tx_nhalf  <= '0';
       ctrl.irq_tx_nfull  <= '0';
     elsif rising_edge(clk_i) then
+      -- bus handshake --
+      bus_rsp_o.ack  <= bus_req_i.stb;
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
+
+      -- defaults --
       ctrl.rx_clr <= '0'; -- auto-clear
       ctrl.tx_clr <= '0'; -- auto-clear
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          ctrl.enable <= bus_req_i.data(ctrl_en_c);
-          ctrl.rx_clr <= bus_req_i.data(ctrl_rx_clr_c);
-          ctrl.tx_clr <= bus_req_i.data(ctrl_tx_clr_c);
-          --
-          ctrl.irq_rx_nempty <= bus_req_i.data(ctrl_irq_rx_nempty_c);
-          ctrl.irq_rx_half   <= bus_req_i.data(ctrl_irq_rx_half_c);
-          ctrl.irq_rx_full   <= bus_req_i.data(ctrl_irq_rx_full_c);
-          ctrl.irq_tx_empty  <= bus_req_i.data(ctrl_irq_tx_empty_c);
-          ctrl.irq_tx_nhalf  <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
-          ctrl.irq_tx_nfull  <= bus_req_i.data(ctrl_irq_tx_nfull_c);
+
+      if (bus_req_i.stb = '1') then
+
+        -- write access --
+        if (bus_req_i.rw = '1') then
+          if (bus_req_i.addr(2) = '0') then -- control register
+            ctrl.enable <= bus_req_i.data(ctrl_en_c);
+            ctrl.rx_clr <= bus_req_i.data(ctrl_rx_clr_c);
+            ctrl.tx_clr <= bus_req_i.data(ctrl_tx_clr_c);
+            --
+            ctrl.irq_rx_nempty <= bus_req_i.data(ctrl_irq_rx_nempty_c);
+            ctrl.irq_rx_half   <= bus_req_i.data(ctrl_irq_rx_half_c);
+            ctrl.irq_rx_full   <= bus_req_i.data(ctrl_irq_rx_full_c);
+            ctrl.irq_tx_empty  <= bus_req_i.data(ctrl_irq_tx_empty_c);
+            ctrl.irq_tx_nhalf  <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
+            ctrl.irq_tx_nfull  <= bus_req_i.data(ctrl_irq_tx_nfull_c);
+          end if;
+
+        -- read access --
+        else
+          if (bus_req_i.addr(2) = '0') then -- control register
+            bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
+            --
+            bus_rsp_o.data(ctrl_rx_empty_c) <= not rx_fifo.avail;
+            bus_rsp_o.data(ctrl_rx_half_c)  <= rx_fifo.half;
+            bus_rsp_o.data(ctrl_rx_full_c)  <= not rx_fifo.free;
+            bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
+            bus_rsp_o.data(ctrl_tx_half_c)  <= tx_fifo.half;
+            bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
+            --
+            bus_rsp_o.data(ctrl_irq_rx_nempty_c) <= ctrl.irq_rx_nempty;
+            bus_rsp_o.data(ctrl_irq_rx_half_c)   <= ctrl.irq_rx_half;
+            bus_rsp_o.data(ctrl_irq_rx_full_c)   <= ctrl.irq_rx_full;
+            bus_rsp_o.data(ctrl_irq_tx_empty_c)  <= ctrl.irq_tx_empty;
+            bus_rsp_o.data(ctrl_irq_tx_nhalf_c)  <= ctrl.irq_tx_nhalf;
+            bus_rsp_o.data(ctrl_irq_tx_nfull_c)  <= ctrl.irq_tx_nfull;
+            --
+            bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_RX_FIFO), 4));
+            bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_TX_FIFO), 4));
+          else -- RX/TX data register
+            bus_rsp_o.data <= rx_fifo.rdata(31 downto 0);
+          end if;
         end if;
+
       end if;
     end if;
-  end process write_access;
-
-  -- read access --
-  read_aceess: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
-      bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
-          --
-          bus_rsp_o.data(ctrl_rx_empty_c) <= not rx_fifo.avail;
-          bus_rsp_o.data(ctrl_rx_half_c)  <= rx_fifo.half;
-          bus_rsp_o.data(ctrl_rx_full_c)  <= not rx_fifo.free;
-          bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
-          bus_rsp_o.data(ctrl_tx_half_c)  <= tx_fifo.half;
-          bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
-          --
-          bus_rsp_o.data(ctrl_irq_rx_nempty_c) <= ctrl.irq_rx_nempty;
-          bus_rsp_o.data(ctrl_irq_rx_half_c)   <= ctrl.irq_rx_half;
-          bus_rsp_o.data(ctrl_irq_rx_full_c)   <= ctrl.irq_rx_full;
-          bus_rsp_o.data(ctrl_irq_tx_empty_c)  <= ctrl.irq_tx_empty;
-          bus_rsp_o.data(ctrl_irq_tx_nhalf_c)  <= ctrl.irq_tx_nhalf;
-          bus_rsp_o.data(ctrl_irq_tx_nfull_c)  <= ctrl.irq_tx_nfull;
-          --
-          bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_RX_FIFO), 4));
-          bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_TX_FIFO), 4));
-        else -- RX/TX data register
-          bus_rsp_o.data <= rx_fifo.rdata(31 downto 0);
-        end if;
-      end if;
-    end if;
-  end process read_aceess;
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  end process bus_access;
 
 
   -- RX Data FIFO ---------------------------------------------------------------------------
@@ -272,9 +268,11 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_generator: process(clk_i)
+  irq_generator: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      irq_o <= '0';
+    elsif rising_edge(clk_i) then
       irq_o <= ctrl.enable and ( -- IRQ if enabled and ...
               (ctrl.irq_tx_empty  and (not tx_fifo.avail)) or -- TX FIFO is empty
               (ctrl.irq_tx_nhalf  and (not tx_fifo.half))  or -- TX FIFO is not at least half full

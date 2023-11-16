@@ -29,7 +29,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ 8-bit serial data device interface (<<_serial_data_interface_controller_spi,**SDI**>>)
 * _optional_ two wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
 * _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 64xOut, 64xIn
-* _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_memory_interface_wishbone_axi4_lite,**WISHBONE**>>)
+* _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_memory_interface_wishbone,**WISHBONE**>>)
 * _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
 * _optional_ PWM controller with up to 12 channels & 8-bit duty cycle resolution (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
 * _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**>>)
@@ -370,13 +370,9 @@ a valid reset of the entire processor. The internal global reset is asserted _ay
 `rstn_i` signal. For internal reset sources, the global reset is asserted _synchronously_. If the reset cause gets inactive
 the internal reset is de-asserted _synchronously_ at a falling clock edge.
 
-Internally, all processor registers that actually do provide a hardware reset use an **asynchronous reset**. An asynchronous
-reset ensures that the entire processor logic is reset to a defined state even if the main clock is not yet operational.
-
-In order to reduce routing constraints (and by this the actual hardware requirements), some _uncritical registers_
-of the NEORV32 CPU as well as many registers of the entire NEORV32 Processor do not use a dedicated hardware reset.
-For example there are several pipeline registers and "buffer" registers that do not require a defined
-initial state to ensure correct operation.
+Internally, **all registers** that are not meant for mapping to blockRAM (like the register file) do provide a dedicated and
+low-active **asynchronous hardware reset**. This asynchronous reset ensures that the entire processor logic is reset to a
+defined state even if the main clock is not operational yet.
 
 [NOTE]
 The system reset will only reset the control registers of each implemented IO/peripheral module. This control register

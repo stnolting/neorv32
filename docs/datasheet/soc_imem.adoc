@@ -7,6 +7,7 @@
 |=======================
 | Hardware source file(s): | neorv32_imem.entity.vhd      | entity-only definition
 |                          | mem/neorv32_imem.default.vhd | default _platform-agnostic_ memory architecture
+|                          | mem/neorv32_imem.legacy.vhd  | alternative legacy-style memory architecture
 | Software driver file(s): | none                         | _implicitly used_
 | Top entity port:         | none                         | 
 | Configuration generics:  | `MEM_INT_IMEM_EN`            | implement processor-internal IMEM when `true`
@@ -39,10 +40,11 @@ physical memory size of 64kB).
 .VHDL Source File
 [NOTE]
 The actual IMEM is split into two design files: a plain entity definition (`neorv32_imem.entity.vhd`) and the actual
-architecture definition (`mem/neorv32_imem.default.vhd`). This **default architecture** provides a _generic_ and
-_platform independent_ memory design that (should) infers embedded memory block. You can replace/modify the architecture
-source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
-and/or timing.
+architecture definition `mem/neorv32_imem.default.vhd`. This **default architecture** provides a _generic_ and
+_platform independent_ memory design that infers embedded memory blocks (blockRAM). The default architecture can
+be replaced by platform-specific modules in order to use platform-specific features or to improve technology mapping
+and/or timing. A "legacy-style" memory architecture is provided in `rtl/mem` that can be used if the synthesis does
+not correctly infer blockRAMs.
 
 .Read-Only Access
 [NOTE]

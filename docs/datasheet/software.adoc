@@ -499,24 +499,40 @@ The `crt0.S` start-up performs the following operations:
 [start=1]
 . Clear <<_mstatus>>.
 . Clear <<_mie>> disabling all interrupt sources.
-. Install an early-boot dummy trap handler to <<_mtvec>>.
+. Install an <<_early_trap_handler>> to <<_mtvec>>.
 . Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
-. Initialize all integer register `x1 - x31` (only `x1 - x15` if the `E` CPU extension is enabled).
+. Initialize all integer register `x1` - `x31` (only `x1` - `x15` if the `E` CPU extension is enabled).
 . Setup `.data` section to configure initialized variables.
 . Clear the `.bss` section.
 . Call all _constructors_ (if there are any).
 . Call the application's `main` function (with no arguments: `argc` = `argv` = 0).
 . If `main` returns:
-** Interrupts are disabled by clearing <<_mie>>.
+** All interrupt sources are disabled by clearing <<_mie>>.
 ** The return value of `main` is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
 ** Call all _destructors_ (if there are any).
 ** An optional <<_after_main_handler>> is called (if defined at all).
-** The CPU enters sleep mode (executing the `wfi` instruction) in an endless loop.
+** The CPU enters sleep mode executing the `wfi` instruction in an endless loop.
 
 .Bootloader Start-Up Code
 [NOTE]
 The bootloader uses the same start-up code as any "usual" application. However, certain parts are omitted when compiling
 `crt0` for the bootloader (like calling constructors and destructors). See the `crt0` source code for more information.
+
+
+:sectnums:
+===== Early Trap Handler
+
+The start-up code provides a very basic trap handler for the early boot stage. This handler does nothing but trying to move
+on to the next linear instruction whenever an interrupt or synchronous exception is encountered.
+
+This simple trap handler does not interact with the stack at all as it just uses a single register that is backup-ed
+using the <<_mscratch>> CSR. Furthermore, the information if the trap-causing instruction is compressed or uncompressed
+is **not** determined by loading the instruction from memory. Instead, the transformed instruction word is read from the
+<<_mtinst>> CSRs. These two features allow the trap handler to execute with minimal latency and high robustness.
+
+[NOTE]
+The early-trap handler should be replaced by a more capable / informative one as soon as the application software is started
+(for example by using the <<_neorv32_runtime_environment>>).
 
 
 :sectnums:

@@ -77,18 +77,25 @@ architecture neorv32_crc_rtl of neorv32_crc is
 
 begin
 
-  -- Host Access ----------------------------------------------------------------------------
+  -- Bus Access- ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      bus_rsp_o.ack  <= '0';
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.data <= (others => '0');
       crc.mode <= (others => '0');
       crc.poly <= (others => '0');
       crc.data <= (others => '0');
       we_ack   <= (others => '0');
     elsif rising_edge(clk_i) then
+      -- bus handshake --
+      bus_rsp_o.data <= (others => '0');
+      bus_rsp_o.err  <= '0';
+      bus_rsp_o.ack  <= we_ack(we_ack'left) or (bus_req_i.stb and (not bus_req_i.rw));
+
+      -- write access --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(3 downto 2) = mode_addr_c) then -- mode select
           crc.mode <= bus_req_i.data(01 downto 0);
@@ -100,17 +107,11 @@ begin
           crc.data <= bus_req_i.data(07 downto 0);
         end if;
       end if;
+
       -- delayed write ACK --
       we_ack <= we_ack(we_ack'left-1 downto 0) & (bus_req_i.stb and bus_req_i.rw);
-    end if;
-  end process write_access;
 
-  -- read access --
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.data <= (others => '0');
-      bus_rsp_o.ack  <= we_ack(we_ack'left) or (bus_req_i.stb and (not bus_req_i.rw));
+      -- read access --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(3 downto 2) is
           when mode_addr_c => bus_rsp_o.data(01 downto 0) <= crc.mode; -- mode select
@@ -118,11 +119,11 @@ begin
           when others      => bus_rsp_o.data(31 downto 0) <= crc.sreg; -- CRC result
         end case;
       end if;
+
     end if;
-  end process read_access;
+  end process bus_access;
 
   -- no access error possible --
-  bus_rsp_o.err <= '0';
 
 
   -- Bit-Serial CRC Core --------------------------------------------------------------------

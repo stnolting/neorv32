@@ -116,6 +116,7 @@ architecture neorv32_spi_rtl of neorv32_spi is
     sreg     : std_ulogic_vector(7 downto 0);
     bitcnt   : std_ulogic_vector(3 downto 0);
     sdi_sync : std_ulogic;
+    sck : std_ulogic;
     done     : std_ulogic;
   end record;
   signal rtx_engine : rtx_engine_t;
@@ -135,19 +136,14 @@ architecture neorv32_spi_rtl of neorv32_spi is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not ((is_power_of_two_f(IO_SPI_FIFO) = false))
-    report "NEORV32 PROCESSOR CONFIG ERROR: SPI FIFO size has to be a power of two." severity error;
-
-
-  -- Host Access ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-
-  -- write access --
-  write_access: process(rstn_i, clk_i)
+  bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      bus_rsp_o.ack     <= '0';
+      bus_rsp_o.err     <= '0';
+      bus_rsp_o.data    <= (others => '0');
       ctrl.enable       <= '0';
       ctrl.cpha         <= '0';
       ctrl.cpol         <= '0';
@@ -159,59 +155,57 @@ begin
       ctrl.irq_tx_empty <= '0';
       ctrl.irq_tx_nhalf <= '0';
     elsif rising_edge(clk_i) then
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          ctrl.enable       <= bus_req_i.data(ctrl_en_c);
-          ctrl.cpha         <= bus_req_i.data(ctrl_cpha_c);
-          ctrl.cpol         <= bus_req_i.data(ctrl_cpol_c);
-          ctrl.cs_sel       <= bus_req_i.data(ctrl_cs_sel2_c downto ctrl_cs_sel0_c);
-          ctrl.cs_en        <= bus_req_i.data(ctrl_cs_en_c);
-          ctrl.prsc         <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
-          ctrl.cdiv         <= bus_req_i.data(ctrl_cdiv3_c downto ctrl_cdiv0_c);
-          ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
-          ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
-          ctrl.irq_tx_nhalf <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
-        end if;
-      end if;
-    end if;
-  end process write_access;
-
-  -- read access --
-  read_access: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.stb; -- bus access acknowledge
+      -- bus handshake --
+      bus_rsp_o.ack  <= bus_req_i.stb;
+      bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        if (bus_req_i.addr(2) = '0') then -- control register
-          bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
-          bus_rsp_o.data(ctrl_cpha_c)                          <= ctrl.cpha;
-          bus_rsp_o.data(ctrl_cpol_c)                          <= ctrl.cpol;
-          bus_rsp_o.data(ctrl_cs_sel2_c downto ctrl_cs_sel0_c) <= ctrl.cs_sel;
-          bus_rsp_o.data(ctrl_cs_en_c)                         <= ctrl.cs_en;
-          bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c)     <= ctrl.prsc;
-          bus_rsp_o.data(ctrl_cdiv3_c downto ctrl_cdiv0_c)     <= ctrl.cdiv;
-          --
-          bus_rsp_o.data(ctrl_rx_avail_c)     <= rx_fifo.avail;
-          bus_rsp_o.data(ctrl_tx_empty_c)     <= not tx_fifo.avail;
-          bus_rsp_o.data(ctrl_tx_nhalf_c)     <= not tx_fifo.half;
-          bus_rsp_o.data(ctrl_tx_full_c)      <= not tx_fifo.free;
-          bus_rsp_o.data(ctrl_irq_rx_avail_c) <= ctrl.irq_rx_avail;
-          bus_rsp_o.data(ctrl_irq_tx_empty_c) <= ctrl.irq_tx_empty;
-          bus_rsp_o.data(ctrl_irq_tx_nhalf_c) <= ctrl.irq_tx_nhalf;
-          --
-          bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_SPI_FIFO), 4));
-          --
-          bus_rsp_o.data(ctrl_busy_c) <= rtx_engine.busy or tx_fifo.avail;
+      if (bus_req_i.stb = '1') then
+
+        -- write access --
+        if (bus_req_i.rw = '1') then
+          if (bus_req_i.addr(2) = '0') then -- control register
+            ctrl.enable       <= bus_req_i.data(ctrl_en_c);
+            ctrl.cpha         <= bus_req_i.data(ctrl_cpha_c);
+            ctrl.cpol         <= bus_req_i.data(ctrl_cpol_c);
+            ctrl.cs_sel       <= bus_req_i.data(ctrl_cs_sel2_c downto ctrl_cs_sel0_c);
+            ctrl.cs_en        <= bus_req_i.data(ctrl_cs_en_c);
+            ctrl.prsc         <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
+            ctrl.cdiv         <= bus_req_i.data(ctrl_cdiv3_c downto ctrl_cdiv0_c);
+            ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
+            ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
+            ctrl.irq_tx_nhalf <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
+          end if;
+
+        -- read access --
         else
-          bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
+          if (bus_req_i.addr(2) = '0') then -- control register
+            bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
+            bus_rsp_o.data(ctrl_cpha_c)                          <= ctrl.cpha;
+            bus_rsp_o.data(ctrl_cpol_c)                          <= ctrl.cpol;
+            bus_rsp_o.data(ctrl_cs_sel2_c downto ctrl_cs_sel0_c) <= ctrl.cs_sel;
+            bus_rsp_o.data(ctrl_cs_en_c)                         <= ctrl.cs_en;
+            bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c)     <= ctrl.prsc;
+            bus_rsp_o.data(ctrl_cdiv3_c downto ctrl_cdiv0_c)     <= ctrl.cdiv;
+            --
+            bus_rsp_o.data(ctrl_rx_avail_c)     <= rx_fifo.avail;
+            bus_rsp_o.data(ctrl_tx_empty_c)     <= not tx_fifo.avail;
+            bus_rsp_o.data(ctrl_tx_nhalf_c)     <= not tx_fifo.half;
+            bus_rsp_o.data(ctrl_tx_full_c)      <= not tx_fifo.free;
+            bus_rsp_o.data(ctrl_irq_rx_avail_c) <= ctrl.irq_rx_avail;
+            bus_rsp_o.data(ctrl_irq_tx_empty_c) <= ctrl.irq_tx_empty;
+            bus_rsp_o.data(ctrl_irq_tx_nhalf_c) <= ctrl.irq_tx_nhalf;
+            --
+            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_SPI_FIFO), 4));
+            --
+            bus_rsp_o.data(ctrl_busy_c) <= rtx_engine.busy or tx_fifo.avail;
+          else
+            bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
+          end if;
         end if;
+
       end if;
     end if;
-  end process read_access;
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  end process bus_access;
 
   -- direct chip-select (low-active) --
   chip_select: process(ctrl)
@@ -287,9 +281,11 @@ begin
 
 
   -- IRQ generator --
-  irq_generator: process(clk_i)
+  irq_generator: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      irq_o <= '0';
+    elsif rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
                (ctrl.irq_rx_avail and      rx_fifo.avail)  or -- IRQ if RX FIFO is not empty
                (ctrl.irq_tx_empty and (not tx_fifo.avail)) or -- IRQ if TX FIFO is empty
@@ -300,9 +296,16 @@ begin
 
   -- SPI Transceiver ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  transceiver: process(clk_i)
+  transceiver: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      rtx_engine.done     <= '0';
+      rtx_engine.state    <= (others => '0');
+      rtx_engine.bitcnt   <= (others => '0');
+      rtx_engine.sreg     <= (others => '0');
+      rtx_engine.sdi_sync <= '0';
+      rtx_engine.sck      <= '0';
+    elsif rising_edge(clk_i) then
       -- defaults --
       rtx_engine.done <= '0';
 
@@ -312,7 +315,7 @@ begin
 
         when "100" => -- enabled but idle, waiting for new transmission trigger
         -- ------------------------------------------------------------
-          spi_clk_o         <= ctrl.cpol;
+          rtx_engine.sck    <= ctrl.cpol;
           rtx_engine.bitcnt <= (others => '0');
           rtx_engine.sreg   <= tx_fifo.rdata;
           if (tx_fifo.avail = '1') then -- trigger new transmission
@@ -323,7 +326,7 @@ begin
         -- ------------------------------------------------------------
           if (spi_clk_en = '1') then
             if (ctrl.cpha = '1') then -- clock phase shift
-              spi_clk_o <= not ctrl.cpol;
+              rtx_engine.sck <= not ctrl.cpol;
             end if;
             rtx_engine.state(1 downto 0) <= "10";
           end if;
@@ -331,7 +334,7 @@ begin
         when "110" => -- first phase of bit transmission
         -- ------------------------------------------------------------
           if (spi_clk_en = '1') then
-            spi_clk_o                    <= not (ctrl.cpha xor ctrl.cpol);
+            rtx_engine.sck               <= not (ctrl.cpha xor ctrl.cpol);
             rtx_engine.sdi_sync          <= spi_dat_i; -- sample data input
             rtx_engine.bitcnt            <= std_ulogic_vector(unsigned(rtx_engine.bitcnt) + 1);
             rtx_engine.state(1 downto 0) <= "11";
@@ -342,19 +345,18 @@ begin
           if (spi_clk_en = '1') then
             rtx_engine.sreg <= rtx_engine.sreg(6 downto 0) & rtx_engine.sdi_sync; -- shift and set output
             if (rtx_engine.bitcnt(3) = '1') then -- all bits transferred?
-              spi_clk_o                    <= ctrl.cpol;
+              rtx_engine.sck               <= ctrl.cpol;
               rtx_engine.done              <= '1'; -- done!
               rtx_engine.state(1 downto 0) <= "00"; -- transmission done
             else
-              spi_clk_o                    <= ctrl.cpha xor ctrl.cpol;
+              rtx_engine.sck               <= ctrl.cpha xor ctrl.cpol;
               rtx_engine.state(1 downto 0) <= "10";
             end if;
           end if;
 
         when others => -- "0--": SPI deactivated
         -- ------------------------------------------------------------
-          spi_clk_o                    <= ctrl.cpol;
-          rtx_engine.sreg              <= (others => '0');
+          rtx_engine.sck               <= ctrl.cpol;
           rtx_engine.state(1 downto 0) <= "00";
 
       end case;
@@ -364,14 +366,18 @@ begin
   -- PHY busy flag --
   rtx_engine.busy <= '0' when (rtx_engine.state(1 downto 0) = "00") else '1';
 
-  -- data output --
+  -- SPI output --
   spi_dat_o <= rtx_engine.sreg(7); -- MSB first
+  spi_clk_o <= rtx_engine.sck;
 
 
   -- clock generator --
-  clock_generator: process(clk_i)
+  clock_generator: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      spi_clk_en <= '0';
+      cdiv_cnt   <= (others => '0');
+    elsif rising_edge(clk_i) then
       if (ctrl.enable = '0') then -- reset/disabled
         spi_clk_en <= '0';
         cdiv_cnt   <= (others => '0');

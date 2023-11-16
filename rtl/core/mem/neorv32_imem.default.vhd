@@ -58,49 +58,25 @@ architecture neorv32_imem_rtl of neorv32_imem is
   constant imem_app_size_c : natural := (application_init_image'length)*4;
 
   -- ROM - initialized with executable code --
-  constant mem_rom : mem32_t(0 to IMEM_SIZE/4-1) := mem32_init_f(application_init_image, IMEM_SIZE/4);
+  constant mem_rom_c : mem32_t(0 to IMEM_SIZE/4-1) := mem32_init_f(application_init_image, IMEM_SIZE/4);
 
-  -- read data --
-  signal mem_rom_rd : std_ulogic_vector(31 downto 0);
-
-  -- -------------------------------------------------------------------------------------------------------------- --
-  -- The memory (RAM) is built from 4 individual byte-wide memories b0..b3, since some synthesis tools have         --
-  -- problems with 32-bit memories that provide dedicated byte-enable signals AND/OR with multi-dimensional arrays. --
-  -- [NOTE] Read-during-write behavior is irrelevant as read and write access are mutually exclusive.               --
-  -- -------------------------------------------------------------------------------------------------------------- --
-
-  -- RAM - not initialized at all --
-  signal mem_ram_b0 : mem8_t(0 to IMEM_SIZE/4-1);
-  signal mem_ram_b1 : mem8_t(0 to IMEM_SIZE/4-1);
-  signal mem_ram_b2 : mem8_t(0 to IMEM_SIZE/4-1);
-  signal mem_ram_b3 : mem8_t(0 to IMEM_SIZE/4-1);
-
-  -- read data --
-  signal mem_b0_rd, mem_b1_rd, mem_b2_rd, mem_b3_rd : std_ulogic_vector(7 downto 0);
+  -- The memory (RAM) is built from 4 individual byte-wide memories because some synthesis
+  -- tools have issues inferring 32-bit memories that provide dedicated byte-enable signals
+  -- and/or with multi-dimensional arrays. [NOTE] Read-during-write behavior is irrelevant
+  -- as read and write accesses are mutually exclusive.
+  signal mem_ram_b0, mem_ram_b1, mem_ram_b2, mem_ram_b3 : mem8_t(0 to IMEM_SIZE/4-1);
 
 begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (is_power_of_two_f(IMEM_SIZE) = false) report
-    "NEORV32 PROCESSOR CONFIG ERROR: Internal IMEM size has to be a power of two!" severity error;
-
-  assert not (IMEM_AS_IROM = true) report
-    "NEORV32 PROCESSOR CONFIG NOTE: Implementing DEFAULT processor-internal IMEM as ROM (" & natural'image(IMEM_SIZE) &
-    " bytes), pre-initialized with application (" & natural'image(imem_app_size_c) & " bytes)." severity note;
-
-  assert not (IMEM_AS_IROM = false) report
-    "NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as blank RAM (" & natural'image(IMEM_SIZE) &
-    " bytes)." severity note;
+  assert false report
+    "NEORV32 PROCESSOR CONFIG NOTE: Implementing DEFAULT processor-internal IMEM as " &
+    cond_sel_string_f(IMEM_AS_IROM, "pre-initialized ROM.", "blank RAM.") severity note;
 
   assert not ((IMEM_AS_IROM = true) and (imem_app_size_c > IMEM_SIZE)) report
     "NEORV32 PROCESSOR CONFIG ERROR: Application (image = " & natural'image(imem_app_size_c) &
     " bytes) does not fit into processor-internal IMEM (ROM = " & natural'image(IMEM_SIZE) & " bytes)!" severity error;
-
-
-  -- Access Control -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  addr <= bus_req_i.addr(index_size_f(IMEM_SIZE/4)+1 downto 2); -- word aligned
 
 
   -- Implement IMEM as pre-initialized ROM --------------------------------------------------
@@ -109,13 +85,14 @@ begin
   if (IMEM_AS_IROM = true) generate
     mem_access: process(clk_i)
     begin
-      if rising_edge(clk_i) then
-        mem_rom_rd <= mem_rom(to_integer(unsigned(addr)));
+      if rising_edge(clk_i) then -- no reset to infer block RAM
+        rdata <= mem_rom_c(to_integer(unsigned(addr)));
       end if;
     end process mem_access;
-    -- read data --
-    rdata <= mem_rom_rd;
   end generate;
+
+  -- word aligned access --
+  addr <= bus_req_i.addr(index_size_f(IMEM_SIZE/4)+1 downto 2);
 
 
   -- Implement IMEM as non-initialized RAM --------------------------------------------------
@@ -124,7 +101,7 @@ begin
   if (IMEM_AS_IROM = false) generate
     mem_access: process(clk_i)
     begin
-      if rising_edge(clk_i) then
+      if rising_edge(clk_i) then -- no reset to infer block RAM
         if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
           if (bus_req_i.ben(0) = '1') then -- byte 0
             mem_ram_b0(to_integer(unsigned(addr))) <= bus_req_i.data(07 downto 00);
@@ -139,22 +116,23 @@ begin
             mem_ram_b3(to_integer(unsigned(addr))) <= bus_req_i.data(31 downto 24);
           end if;
         end if;
-        mem_b0_rd <= mem_ram_b0(to_integer(unsigned(addr)));
-        mem_b1_rd <= mem_ram_b1(to_integer(unsigned(addr)));
-        mem_b2_rd <= mem_ram_b2(to_integer(unsigned(addr)));
-        mem_b3_rd <= mem_ram_b3(to_integer(unsigned(addr)));
+        rdata(07 downto 00) <= mem_ram_b0(to_integer(unsigned(addr)));
+        rdata(15 downto 08) <= mem_ram_b1(to_integer(unsigned(addr)));
+        rdata(23 downto 16) <= mem_ram_b2(to_integer(unsigned(addr)));
+        rdata(31 downto 24) <= mem_ram_b3(to_integer(unsigned(addr)));
       end if;
     end process mem_access;
-    -- read data --
-    rdata <= mem_b3_rd & mem_b2_rd & mem_b1_rd & mem_b0_rd;
   end generate;
 
 
   -- Bus Feedback ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_feedback: process(clk_i)
+  bus_feedback: process(rstn_i, clk_i)
   begin
-    if rising_edge(clk_i) then
+    if (rstn_i = '0') then
+      rden          <= '0';
+      bus_rsp_o.ack <= '0';
+    elsif rising_edge(clk_i) then
       rden <= bus_req_i.stb and (not bus_req_i.rw);
       if (IMEM_AS_IROM = true) then
         bus_rsp_o.ack <= bus_req_i.stb and (not bus_req_i.rw); -- read-only!
@@ -164,11 +142,8 @@ begin
     end if;
   end process bus_feedback;
 
-  -- output gate --
-  bus_rsp_o.data <= rdata when (rden = '1') else (others => '0');
-
-  -- no access error possible --
-  bus_rsp_o.err <= '0';
+  bus_rsp_o.data <= rdata when (rden = '1') else (others => '0'); -- output gate
+  bus_rsp_o.err  <= '0'; -- no access error possible
 
 
 end neorv32_imem_rtl;

@@ -32,7 +32,7 @@ software handling ("bit-banging" for the GPIO). Hence, it is not recommend to us
 
 === External Bus Interface
 
-The https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite[External Bus Interface]
+The https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone[External Bus Interface]
 provides the classic approach for attaching custom IP. By default, the bus interface implements the widely adopted
 Wishbone interface standard. This project also includes wrappers to convert to other protocol standards like ARM's
 AXI4-Lite or Intel's Avalon protocols. By using a full-featured bus protocol, complex SoC designs can be implemented
@@ -81,7 +81,7 @@ chip-internal extension options:
 
 * https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu[Custom Functions Unit (CFU)] for CPU-internal custom RISC-V instructions
 * https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs[Custom Functions Subsystem (CFS)] for tightly-coupled processor-internal co-processors
-* https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone_axi4_lite[External Bus Interface (WISHBONE)] for processor-external memory-mapped modules
+* https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone[External Bus Interface (WISHBONE)] for processor-external memory-mapped modules
 
 .Comparison of On-Chip Extension Options
 [cols="<1,^1,^1,^1"]
