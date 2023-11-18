@@ -68,8 +68,7 @@ image::SPI_timing_diagram2.wikimedia.png[]
 
 The SPI clock frequency (`spi_clk_o`) is programmed by the 3-bit `SPI_CTRL_PRSCx` clock prescaler for a coarse clock selection
 and a 4-bit clock divider `SPI_CTRL_CDIVx` for a fine clock configuration.
-
-The following clock prescalers (_SPI_CTRL_PRSCx_) are available:
+The following clock prescalers (`SPI_CTRL_PRSCx`) are available:
 
 .SPI prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
@@ -79,13 +78,24 @@ The following clock prescalers (_SPI_CTRL_PRSCx_) are available:
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-Based on the programmen clock configuration, the actual SPI clock frequency f~SPI~ is derived
+Based on the programmed clock configuration, the actual SPI clock frequency f~SPI~ is derived
 from the processor's main clock f~main~ according to the following equation:
 
 _**f~SPI~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler` * (1 + `SPI_CTRL_CDIVx`))
 
 Hence, the maximum SPI clock is f~main~ / 4 and the lowest SPI clock is f~main~ / 131072. The SPI clock is always
 symmetric having a duty cycle of 50%.
+
+
+**High-Speed Mode**
+
+The SPI provides a high-speed mode to further boost the maximum SPI clock frequency. When enabled via the control
+register's `SPI_CTRL_HIGHSPEED` bit the clock prescaler configuration (`SPI_CTRL_PRSCx` bits) is overridden setting it
+to a minimal factor of 1. However, the clock speed can still be fine-tuned using the `SPI_CTRL_CDIVx` bits.
+
+_**f~SPI~**_ = _f~main~[Hz]_ / (2 * 1 * (1 + `SPI_CTRL_CDIVx`))
+
+Hence, the maximum SPI clock when in high-speed mode is f~main~ / 2.
 
 
 **SPI Interrupt**
@@ -107,14 +117,15 @@ Furthermore, an active SPI interrupt has to be explicitly cleared again by writi
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.18+<| `0xfffff800` .18+<| `CTRL` <|`0`     `SPI_CTRL_EN`                           ^| r/w <| SPI module enable
+.19+<| `0xfffff800` .19+<| `CTRL` <|`0`     `SPI_CTRL_EN`                           ^| r/w <| SPI module enable
                                   <|`1`     `SPI_CTRL_CPHA`                         ^| r/w <| clock phase
                                   <|`2`     `SPI_CTRL_CPOL`                         ^| r/w <| clock polarity
                                   <|`5:3`   `SPI_CTRL_CS_SEL2 : SPI_CTRL_CS_SEL0`   ^| r/w <| Direct chip-select 0..7
                                   <|`6`     `SPI_CTRL_CS_EN`                        ^| r/w <| Direct chip-select enable: setting `spi_csn_o(SPI_CTRL_CS_SEL)` low when set
                                   <|`9:7`   `SPI_CTRL_PRSC2 : SPI_CTRL_PRSC0`       ^| r/w <| 3-bit clock prescaler select
-                                  <|`13:10` `SPI_CTRL_CDIV2 : SPI_CTRL_CDIV0`       ^| r/w <| 4-bit clock divider
-                                  <|`15:14`  _reserved_                             ^| r/- <| reserved, read as zero
+                                  <|`13:10` `SPI_CTRL_CDIV2 : SPI_CTRL_CDIV0`       ^| r/w <| 4-bit clock divider for fine-tuning
+                                  <|`14`    `SPI_CTRL_HIGHSPEED`                    ^| r/w <| high-speed mode enable (overriding `SPI_CTRL_PRSC`)
+                                  <|`15`     _reserved_                             ^| r/- <| reserved, read as zero
                                   <|`16`    `SPI_CTRL_RX_AVAIL`                     ^| r/- <| RX FIFO data available (RX FIFO not empty)
                                   <|`17`    `SPI_CTRL_TX_EMPTY`                     ^| r/- <| TX FIFO empty
                                   <|`18`    `SPI_CTRL_TX_NHALF`                     ^| r/- <| TX FIFO _not_ at least half full
