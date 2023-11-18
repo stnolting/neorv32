@@ -213,11 +213,15 @@ begin
   end process bus_access;
 
   -- direct chip-select (low-active) --
-  chip_select: process(ctrl)
+  chip_select: process(rstn_i, clk_i)
   begin
-    spi_csn_o <= (others => '1'); -- default: all disabled
-    if (ctrl.cs_en = '1') and (ctrl.enable = '1') then
-      spi_csn_o(to_integer(unsigned(ctrl.cs_sel))) <= '0';
+    if (rstn_i = '0') then
+      spi_csn_o <= (others => '1');
+    elsif rising_edge(clk_i) then
+      spi_csn_o <= (others => '1'); -- default: all disabled
+      if (ctrl.cs_en = '1') and (ctrl.enable = '1') then
+        spi_csn_o(to_integer(unsigned(ctrl.cs_sel))) <= '0';
+      end if;
     end if;
   end process chip_select;
 
