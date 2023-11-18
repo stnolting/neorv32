@@ -86,6 +86,24 @@ void neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, uint
 
 
 /**********************************************************************//**
+ * Enable high-speed mode.
+ **************************************************************************/
+void neorv32_spi_highspeed_enable(void) {
+
+  NEORV32_SPI->CTRL |= ((uint32_t)(1 << SPI_CTRL_HIGHSPEED));
+}
+
+
+/**********************************************************************//**
+ * Disable high-speed mode.
+ **************************************************************************/
+void neorv32_spi_highspeed_disable(void) {
+
+  NEORV32_SPI->CTRL &= ~((uint32_t)(1 << SPI_CTRL_HIGHSPEED));
+}
+
+
+/**********************************************************************//**
  * Get configured clock speed in Hz.
  *
  * @return Actual configured SPI clock speed in Hz.
@@ -95,10 +113,18 @@ uint32_t neorv32_spi_get_clock_speed(void) {
   const uint16_t PRSC_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
 
   uint32_t ctrl = NEORV32_SPI->CTRL;
-  uint32_t prsc_sel = (ctrl >> SPI_CTRL_PRSC0) & 0x7;
+  uint32_t prsc_sel  = (ctrl >> SPI_CTRL_PRSC0) & 0x7;
   uint32_t clock_div = (ctrl >> SPI_CTRL_CDIV0) & 0xf;
 
-  uint32_t tmp = 2 * PRSC_LUT[prsc_sel] * (1 + clock_div);
+  uint32_t tmp;
+
+  if (ctrl & (1 << SPI_CTRL_HIGHSPEED)) { // high-speed mode enabled?
+    tmp = 2 * 1 * (1 + clock_div);
+  }
+  else {
+    tmp = 2 * PRSC_LUT[prsc_sel] * (1 + clock_div);
+  }
+
   return NEORV32_SYSINFO->CLK / tmp;
 }
 

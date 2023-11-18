@@ -75,6 +75,7 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant ctrl_cdiv1_c        : natural := 11; -- r/w: clock divider bit 1
   constant ctrl_cdiv2_c        : natural := 12; -- r/w: clock divider bit 2
   constant ctrl_cdiv3_c        : natural := 13; -- r/w: clock divider bit 3
+  constant ctrl_highspeed_c    : natural := 14; -- r/w: high-speed mode
   --
   constant ctrl_rx_avail_c     : natural := 16; -- r/-: rx fifo data available (fifo not empty)
   constant ctrl_tx_empty_c     : natural := 17; -- r/-: tx fifo empty
@@ -99,6 +100,7 @@ architecture neorv32_spi_rtl of neorv32_spi is
     cs_en        : std_ulogic;
     prsc         : std_ulogic_vector(2 downto 0);
     cdiv         : std_ulogic_vector(3 downto 0);
+    highspeed    : std_ulogic;
     irq_rx_avail : std_ulogic;
     irq_tx_empty : std_ulogic;
     irq_tx_nhalf : std_ulogic;
@@ -116,7 +118,7 @@ architecture neorv32_spi_rtl of neorv32_spi is
     sreg     : std_ulogic_vector(7 downto 0);
     bitcnt   : std_ulogic_vector(3 downto 0);
     sdi_sync : std_ulogic;
-    sck : std_ulogic;
+    sck      : std_ulogic;
     done     : std_ulogic;
   end record;
   signal rtx_engine : rtx_engine_t;
@@ -151,6 +153,7 @@ begin
       ctrl.cs_en        <= '0';
       ctrl.prsc         <= (others => '0');
       ctrl.cdiv         <= (others => '0');
+      ctrl.highspeed    <= '0';
       ctrl.irq_rx_avail <= '0';
       ctrl.irq_tx_empty <= '0';
       ctrl.irq_tx_nhalf <= '0';
@@ -171,6 +174,7 @@ begin
             ctrl.cs_en        <= bus_req_i.data(ctrl_cs_en_c);
             ctrl.prsc         <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
             ctrl.cdiv         <= bus_req_i.data(ctrl_cdiv3_c downto ctrl_cdiv0_c);
+            ctrl.highspeed    <= bus_req_i.data(ctrl_highspeed_c);
             ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
             ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
             ctrl.irq_tx_nhalf <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
@@ -186,6 +190,7 @@ begin
             bus_rsp_o.data(ctrl_cs_en_c)                         <= ctrl.cs_en;
             bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c)     <= ctrl.prsc;
             bus_rsp_o.data(ctrl_cdiv3_c downto ctrl_cdiv0_c)     <= ctrl.cdiv;
+            bus_rsp_o.data(ctrl_highspeed_c)                     <= ctrl.highspeed;
             --
             bus_rsp_o.data(ctrl_rx_avail_c)     <= rx_fifo.avail;
             bus_rsp_o.data(ctrl_tx_empty_c)     <= not tx_fifo.avail;
@@ -208,11 +213,15 @@ begin
   end process bus_access;
 
   -- direct chip-select (low-active) --
-  chip_select: process(ctrl)
+  chip_select: process(rstn_i, clk_i)
   begin
-    spi_csn_o <= (others => '1'); -- default: all disabled
-    if (ctrl.cs_en = '1') and (ctrl.enable = '1') then
-      spi_csn_o(to_integer(unsigned(ctrl.cs_sel))) <= '0';
+    if (rstn_i = '0') then
+      spi_csn_o <= (others => '1');
+    elsif rising_edge(clk_i) then
+      spi_csn_o <= (others => '1'); -- default: all disabled
+      if (ctrl.cs_en = '1') and (ctrl.enable = '1') then
+        spi_csn_o(to_integer(unsigned(ctrl.cs_sel))) <= '0';
+      end if;
     end if;
   end process chip_select;
 
@@ -317,8 +326,8 @@ begin
         -- ------------------------------------------------------------
           rtx_engine.sck    <= ctrl.cpol;
           rtx_engine.bitcnt <= (others => '0');
-          rtx_engine.sreg   <= tx_fifo.rdata;
           if (tx_fifo.avail = '1') then -- trigger new transmission
+            rtx_engine.sreg              <= tx_fifo.rdata;
             rtx_engine.state(1 downto 0) <= "01";
           end if;
 
@@ -371,25 +380,23 @@ begin
   spi_clk_o <= rtx_engine.sck;
 
 
-  -- clock generator --
+  -- SPI Clock Generator --------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   clock_generator: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       spi_clk_en <= '0';
       cdiv_cnt   <= (others => '0');
     elsif rising_edge(clk_i) then
+      spi_clk_en <= '0'; -- default
       if (ctrl.enable = '0') then -- reset/disabled
-        spi_clk_en <= '0';
-        cdiv_cnt   <= (others => '0');
-      else
-        spi_clk_en <= '0'; -- default
-        if (clkgen_i(to_integer(unsigned(ctrl.prsc))) = '1') then -- pre-scaled clock
-          if (cdiv_cnt = ctrl.cdiv) then -- clock divider for fine-tuning
-            spi_clk_en <= '1';
-            cdiv_cnt   <= (others => '0');
-          else
-            cdiv_cnt <= std_ulogic_vector(unsigned(cdiv_cnt) + 1);
-          end if;
+        cdiv_cnt <= (others => '0');
+      elsif (clkgen_i(to_integer(unsigned(ctrl.prsc))) = '1') or (ctrl.highspeed = '1') then -- pre-scaled clock
+        if (cdiv_cnt = ctrl.cdiv) then -- clock divider for fine-tuning
+          spi_clk_en <= '1';
+          cdiv_cnt   <= (others => '0');
+        else
+          cdiv_cnt <= std_ulogic_vector(unsigned(cdiv_cnt) + 1);
         end if;
       end if;
     end if;
