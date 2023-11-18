@@ -341,7 +341,7 @@ begin
 
     -- say hello --
     assert false report
-      "The NEORV32 RISC-V Processor by Stephan Nolting," &
+      "The NEORV32 RISC-V Processor by Stephan Nolting, " &
       "version 0x" & to_hstring32_f(hw_version_c) & ", " &
       "github.com/stnolting/neorv32" severity note;
 
