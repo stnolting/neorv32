@@ -124,8 +124,6 @@ int main() {
                        "XIP base address:    0x%x\n"
                        "Flash address bytes: %u\n", (uint32_t)FLASH_BASE, (uint32_t)XIP_MEM_BASE_ADDRESS, (uint32_t)FLASH_ABYTES);
 
-  neorv32_uart0_printf("XIP SPI clock speed: %u Hz\n\n", neorv32_cpu_get_clk_from_prsc(XIP_CLK_PRSC)/2);
-
 
   // warning if i-cache is not implemented
   if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_ICACHE)) == 0) {
@@ -134,11 +132,14 @@ int main() {
 
 
   // reset XIP module and configure basic SPI properties
-  // * clock prescaler: XIP_CLK_PRSC
+  // * clock prescaler = XIP_CLK_PRSC (see defines)
+  // * clock divider = 4
   // * clock mode 0 (cpol = 0, cpha = 0)
-  // * flash read command = SPI_FLASH_CMD_READ
+  // * flash read command = SPI_FLASH_CMD_READ (see defines)
   // -> this function will also send 64 dummy clock cycles via the XIP's SPI port (with CS disabled)
-  neorv32_xip_setup(XIP_CLK_PRSC, 0, 0, SPI_FLASH_CMD_READ);
+  neorv32_xip_setup(XIP_CLK_PRSC, 4, 0, 0, SPI_FLASH_CMD_READ);
+
+  neorv32_uart0_printf("XIP SPI clock speed: %u Hz\n\n", neorv32_xip_get_clock_speed());
 
 
   // ----------------------------------------------------------
@@ -148,7 +149,7 @@ int main() {
                        "\n"
                        " Navigate to any example program folder (like 'neorv32/sw/example/hello_word').\n"
                        " Compile the program but relocate the instruction to the beginning of the Flash:\n"
-                       " make MARCH=rv32i USER_FLAGS+=\"-Wl,--defsym,__neorv32_rom_base=0x%x\" clean_all exe\n\n",
+                       " make MARCH=rv32i_zicsr_zifencei USER_FLAGS+=\"-Wl,--defsym,__neorv32_rom_base=0x%x\" clean_all exe\n\n",
                        (uint32_t)(XIP_MEM_BASE_ADDRESS + FLASH_BASE));
 
   neorv32_uart0_printf("Press any key when you are ready.\n\n");
