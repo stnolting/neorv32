@@ -67,11 +67,12 @@ int neorv32_xip_available(void) {
  * @note This function will also send 64 dummy clocks via the SPI port (with chip-select disabled).
  *
  * @param[in] prsc SPI clock prescaler select (0..7).
+ * @prama[in] cdiv Clock divider (0..15).
  * @param[in] cpol SPI clock polarity (0/1).
  * @param[in] cpha SPI clock phase(0/1).
  * @param[in] rd_cmd SPI flash read byte command.
  **************************************************************************/
-void neorv32_xip_setup(int prsc, int cpol, int cpha, uint8_t rd_cmd) {
+void neorv32_xip_setup(int prsc, int cdiv, int cpol, int cpha, uint8_t rd_cmd) {
 
   // reset and disable module
   NEORV32_XIP->CTRL = 0;
@@ -82,6 +83,7 @@ void neorv32_xip_setup(int prsc, int cpol, int cpha, uint8_t rd_cmd) {
 
   uint32_t ctrl = 0;
   ctrl |= ((uint32_t)(1            )) << XIP_CTRL_EN; // enable module
+  ctrl |= ((uint32_t)(cdiv   & 0x0f)) << XIP_CTRL_CDIV0;
   ctrl |= ((uint32_t)(prsc   & 0x07)) << XIP_CTRL_PRSC0;
   ctrl |= ((uint32_t)(cpol   & 0x01)) << XIP_CTRL_CPOL;
   ctrl |= ((uint32_t)(cpha   & 0x01)) << XIP_CTRL_CPHA;
@@ -149,6 +151,32 @@ void neorv32_xip_highspeed_enable(void) {
 void neorv32_xip_highspeed_disable(void) {
 
   NEORV32_XIP->CTRL &= ~(1 << XIP_CTRL_HIGHSPEED);
+}
+
+
+/**********************************************************************//**
+ * Get configured clock speed in Hz.
+ *
+ * @return Actual configured XIP clock speed in Hz.
+ **************************************************************************/
+uint32_t neorv32_xip_get_clock_speed(void) {
+
+  const uint16_t PRSC_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
+
+  uint32_t ctrl = NEORV32_XIP->CTRL;
+  uint32_t prsc_sel  = (ctrl >> XIP_CTRL_PRSC0) & 0x7;
+  uint32_t clock_div = (ctrl >> XIP_CTRL_CDIV0) & 0xf;
+
+  uint32_t tmp;
+
+  if (ctrl & (1 << XIP_CTRL_HIGHSPEED)) { // high-speed mode enabled?
+    tmp = 2 * 1 * (1 + clock_div);
+  }
+  else {
+    tmp = 2 * PRSC_LUT[prsc_sel] * (1 + clock_div);
+  }
+
+  return NEORV32_SYSINFO->CLK / tmp;
 }
 
 
