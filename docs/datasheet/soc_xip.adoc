@@ -40,12 +40,15 @@ An example program is provided in `sw/example/demo_xip` that illustrate how to p
 an external SPI flash to run a program from it.
 
 
-**SPI Protocol**
+**SPI Configuration**
 
 The XIP module accesses external flash using the standard SPI protocol. The module always sends data MSB-first and
 provides all of the standard four clock modes (0..3), which are configured via the `XIP_CTRL_CPOL` (clock polarity)
-and `XIP_CTRL_CPHA` (clock phase) control register bits, respectively. The clock speed of the interface (`xip_clk_o`)
-is defined by a three-bit clock pre-scaler configured using the `XIP_CTRL_PRSCx` bits:
+and `XIP_CTRL_CPHA` (clock phase) control register bits, respectively.
+
+The SPI clock frequency (`xip_clk_o`) is programmed by the 3-bit `XIP_CTRL_PRSCx` clock prescaler for a coarse clock
+selection and a 4-bit clock divider `XPI_CTRL_CDIVx` for a fine clock configuration.
+The following clock prescalers (`XIP_CTRL_PRSCx`) are available:
 
 .XIP prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
@@ -55,12 +58,25 @@ is defined by a three-bit clock pre-scaler configured using the `XIP_CTRL_PRSCx`
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-Based on the clock configuration the actual XIP SPI clock frequency f~XIP~ is derived from the processor's
-main clock f~main~ and is determined by:
+Based on the programmed clock configuration, the actual SPI clock frequency f~SPI~ is derived
+from the processor's main clock f~main~ according to the following equation:
 
-_**f~XIP~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler`)
+_**f~SPI~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler` * (1 + `XPI_CTRL_CDIVx`))
 
-Hence, the maximum XIP clock speed is f~main~ / 4.
+Hence, the maximum SPI clock is f~main~ / 4 and the lowest SPI clock is f~main~ / 131072. The SPI clock is always
+symmetric having a duty cycle of 50%.
+
+
+**High-Speed Mode**
+
+The XIP module provides a high-speed mode to further boost the maximum SPI clock frequency. When enabled via the control
+register's `XIP_CTRL_HIGHSPEED` bit the clock prescaler configuration (`XIP_CTRL_PRSCx` bits) is overridden setting it
+to a minimal factor of 1. However, the clock speed can still be fine-tuned using the `XPI_CTRL_CDIVx` bits.
+
+_**f~SPI~**_ = _f~main~[Hz]_ / (2 * 1 * (1 + `XPI_CTRL_CDIVx`))
+
+Hence, the maximum SPI clock when in high-speed mode is f~main~ / 2.
+
 
 .High-Speed SPI mode
 [TIP]
@@ -170,7 +186,7 @@ By using the XIP burst mode flash read accesses can be accelerated by up to 50%.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.14+<| `0xffffff40` .14+<| `CTRL` <|`0`     `XIP_CTRL_EN`                                       ^| r/w <| XIP module enable
+.15+<| `0xffffff40` .15+<| `CTRL` <|`0`     `XIP_CTRL_EN`                                       ^| r/w <| XIP module enable
                                   <|`3:1`   `XIP_CTRL_PRSC2 : XIP_CTRL_PRSC0`                   ^| r/w <| 3-bit SPI clock prescaler select
                                   <|`4`     `XIP_CTRL_CPOL`                                     ^| r/w <| SPI clock polarity
                                   <|`5`     `XIP_CTRL_CPHA`                                     ^| r/w <| SPI clock phase
@@ -181,6 +197,7 @@ By using the XIP burst mode flash read accesses can be accelerated by up to 50%.
                                   <|`21`    `XIP_CTRL_SPI_CSEN`                                 ^| r/w <| Allow SPI chip-select to be actually asserted when set
                                   <|`22`    `XIP_CTRL_HIGHSPEED`                                ^| r/w <| enable SPI high-speed mode (ignoring _XIP_CTRL_PRSC_)
                                   <|`23`    `XIP_CTRL_BURST_EN`                                 ^| r/w <| Enable XIP burst mode
+                                  <|`24:27` `XIP_CTRL_CDIV3 : XIP_CTRL_CDIV0`                   ^| r/- <| 4-bit clock divider for fine-tuning
                                   <|`29:28` -                                                   ^| r/- <| _reserved_, read as zero
                                   <|`30`   `XIP_CTRL_PHY_BUSY`                                  ^| r/- <| SPI PHY busy when set
                                   <|`31`   `XIP_CTRL_XIP_BUSY`                                  ^| r/- <| XIP access in progress when set

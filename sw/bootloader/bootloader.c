@@ -293,9 +293,9 @@ int main(void) {
 #endif
 
 #if (XIP_EN != 0)
-  // setup XIP: clock mode 0, bursts enabled
+  // setup XIP: clock divider 0, clock mode 0, bursts enabled
   if (neorv32_xip_available()) {
-    neorv32_xip_setup(SPI_FLASH_CLK_PRSC, 0, 0, SPI_FLASH_CMD_READ);
+    neorv32_xip_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0, SPI_FLASH_CMD_READ);
     neorv32_xip_burst_mode_enable();
     neorv32_xip_start(SPI_FLASH_ADDR_BYTES);
   }

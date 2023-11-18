@@ -32,7 +32,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
-| 18.11.2023 | 1.9.1.1 | (re-)add SPI high-speed mode, :bug: fix bug in SPI shift register - introduced in v1.9.0.9; [730](https://github.com/stnolting/neorv32/pull/730) |
+| 18.11.2023 | 1.9.1.2 | add XIP clock divider to fine-tune SPI frequency; [#731](https://github.com/stnolting/neorv32/pull/731) |
+| 18.11.2023 | 1.9.1.1 | (re-)add SPI high-speed mode, :bug: fix bug in SPI shift register - introduced in v1.9.0.9; [#730](https://github.com/stnolting/neorv32/pull/730) |
 | 14.11.2023 | [**:rocket:1.9.1**](https://github.com/stnolting/neorv32/releases/tag/v1.9.1) | **New release** |
 | 11.11.2023 | 1.9.0.9 | :test_tube: add full hardware reset for **all** flip flops in CPU/processor; [#724](https://github.com/stnolting/neorv32/pull/724) |
 | 09.11.2023 | 1.9.0.8 | minor rtl code cleanups; [#723](https://github.com/stnolting/neorv32/pull/723) |

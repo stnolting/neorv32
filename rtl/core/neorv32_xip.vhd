@@ -81,11 +81,15 @@ architecture neorv32_xip_rtl of neorv32_xip is
   constant ctrl_spi_csen_c    : natural := 21; -- r/w: SPI chip-select enabled
   constant ctrl_highspeed_c   : natural := 22; -- r/w: SPI high-speed mode enable (ignoring ctrl_spi_prsc)
   constant ctrl_burst_en_c    : natural := 23; -- r/w: XIP burst mode enable
+  constant ctrl_cdiv0_c       : natural := 24; -- r/w: clock divider bit 0
+  constant ctrl_cdiv1_c       : natural := 25; -- r/w: clock divider bit 1
+  constant ctrl_cdiv2_c       : natural := 26; -- r/w: clock divider bit 2
+  constant ctrl_cdiv3_c       : natural := 27; -- r/w: clock divider bit 3
   --
   constant ctrl_phy_busy_c    : natural := 30; -- r/-: SPI PHY is busy when set
   constant ctrl_xip_busy_c    : natural := 31; -- r/-: XIP access in progress
   --
-  signal ctrl : std_ulogic_vector(23 downto 0);
+  signal ctrl : std_ulogic_vector(27 downto 0);
 
   -- Direct SPI access registers --
   signal spi_data_lo : std_ulogic_vector(31 downto 0);
@@ -104,11 +108,12 @@ architecture neorv32_xip_rtl of neorv32_xip is
     addr_lookahead : std_ulogic_vector(31 downto 0);
     xip_acc_err    : std_ulogic;
     busy           : std_ulogic;
-    tmo_cnt        : std_ulogic_vector(04 downto 0); -- timeout counter for auto CS de-assert (burst mode only)
+    tmo_cnt        : std_ulogic_vector(4 downto 0); -- timeout counter for auto CS de-assert (burst mode only)
   end record;
   signal arbiter : arbiter_t;
 
-  -- SPI clock --
+  -- Clock generator --
+  signal cdiv_cnt   : std_ulogic_vector(3 downto 0);
   signal spi_clk_en : std_ulogic;
 
   -- Component: SPI PHY --
@@ -127,7 +132,7 @@ architecture neorv32_xip_rtl of neorv32_xip is
     op_final_i   : in  std_ulogic; -- end current transmission
     op_csen_i    : in  std_ulogic; -- actually enabled device for transmission
     op_busy_o    : out std_ulogic; -- transmission in progress when set
-    op_nbytes_i  : in  std_ulogic_vector(03 downto 0); -- actual number of bytes to transmit (1..9)
+    op_nbytes_i  : in  std_ulogic_vector(3 downto 0); -- actual number of bytes to transmit (1..9)
     op_wdata_i   : in  std_ulogic_vector(71 downto 0); -- write data
     op_rdata_o   : out std_ulogic_vector(31 downto 0); -- read data
     -- SPI interface --
@@ -188,6 +193,7 @@ begin
             ctrl(ctrl_spi_csen_c)                              <= bus_req_i.data(ctrl_spi_csen_c);
             ctrl(ctrl_highspeed_c)                             <= bus_req_i.data(ctrl_highspeed_c);
             ctrl(ctrl_burst_en_c)                              <= bus_req_i.data(ctrl_burst_en_c);
+            ctrl(ctrl_cdiv3_c downto ctrl_cdiv0_c)             <= bus_req_i.data(ctrl_cdiv3_c downto ctrl_cdiv0_c);
           end if;
           -- SPI direct data access register lo --
           if (bus_req_i.addr(3 downto 2) = "10") then
@@ -214,6 +220,7 @@ begin
               bus_rsp_o.data(ctrl_spi_csen_c)                              <= ctrl(ctrl_spi_csen_c);
               bus_rsp_o.data(ctrl_highspeed_c)                             <= ctrl(ctrl_highspeed_c);
               bus_rsp_o.data(ctrl_burst_en_c)                              <= ctrl(ctrl_burst_en_c);
+              bus_rsp_o.data(ctrl_cdiv3_c downto ctrl_cdiv0_c)             <= ctrl(ctrl_cdiv3_c downto ctrl_cdiv0_c);
               --
               bus_rsp_o.data(ctrl_phy_busy_c) <= phy_if.busy;
               bus_rsp_o.data(ctrl_xip_busy_c) <= arbiter.busy;
@@ -362,11 +369,29 @@ begin
 
   -- SPI Clock Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  clock_generator: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      spi_clk_en <= '0';
+      cdiv_cnt   <= (others => '0');
+    elsif rising_edge(clk_i) then
+      spi_clk_en <= '0'; -- default
+      if (ctrl(ctrl_enable_c) = '0') then -- reset/disabled
+        cdiv_cnt <= (others => '0');
+      elsif (clkgen_i(to_integer(unsigned(ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)))) = '1') or
+            (ctrl(ctrl_highspeed_c) = '1') then -- pre-scaled clock
+        if (cdiv_cnt = ctrl(ctrl_cdiv3_c downto ctrl_cdiv0_c)) then -- clock divider for fine-tuning
+          spi_clk_en <= '1';
+          cdiv_cnt   <= (others => '0');
+        else
+          cdiv_cnt <= std_ulogic_vector(unsigned(cdiv_cnt) + 1);
+        end if;
+      end if;
+    end if;
+  end process clock_generator;
+
   -- enable clock generator --
   clkgen_en_o <= ctrl(ctrl_enable_c);
-
-  -- clock select --
-  spi_clk_en <= clkgen_i(to_integer(unsigned(ctrl(ctrl_spi_prsc2_c downto ctrl_spi_prsc0_c)))) or ctrl(ctrl_highspeed_c);
 
 
   -- SPI Physical Interface -----------------------------------------------------------------
