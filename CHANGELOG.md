@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 20.11.2023 | 1.9.1.3 | :bug: fix wiring of FPU exception flags; [#733](https://github.com/stnolting/neorv32/pull/733) |
 | 18.11.2023 | 1.9.1.2 | add XIP clock divider to fine-tune SPI frequency; [#731](https://github.com/stnolting/neorv32/pull/731) |
 | 18.11.2023 | 1.9.1.1 | (re-)add SPI high-speed mode, :bug: fix bug in SPI shift register - introduced in v1.9.0.9; [#730](https://github.com/stnolting/neorv32/pull/730) |
 | 14.11.2023 | [**:rocket:1.9.1**](https://github.com/stnolting/neorv32/releases/tag/v1.9.1) | **New release** |
