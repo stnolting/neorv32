@@ -59,7 +59,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090102"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090103"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -335,11 +335,11 @@ package neorv32_package is
   constant fp_class_qnan_c       : natural := 9; -- quiet NaN (qNaN)
 
   -- exception flags --
-  constant fp_exc_nv_c : natural := 0; -- invalid operation
-  constant fp_exc_dz_c : natural := 1; -- divide by zero
+  constant fp_exc_nx_c : natural := 0; -- inexact
+  constant fp_exc_uf_c : natural := 1; -- underflow
   constant fp_exc_of_c : natural := 2; -- overflow
-  constant fp_exc_uf_c : natural := 3; -- underflow
-  constant fp_exc_nx_c : natural := 4; -- inexact
+  constant fp_exc_dz_c : natural := 3; -- division by zero
+  constant fp_exc_nv_c : natural := 4; -- invalid operation
 
   -- special values (single-precision) --
   constant fp_single_qnan_c     : std_ulogic_vector(31 downto 0) := x"7fc00000"; -- quiet NaN
