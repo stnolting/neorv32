@@ -621,21 +621,16 @@ less hardware resources and features faster context changes. This also implies t
 register file-related load/store or move instructions. The `Zfinx` extension'S floating-point unit is controlled
 via dedicated <<_floating_point_csrs>>.
 
+.Fused Multiply-Add and Division Instructions
 [WARNING]
 Fused multiply-add instructions `f[n]m[add/sub].s` are not supported!
 Division `fdiv.s` and square root `fsqrt.s` instructions are not supported yet!
 
+.Subnormal Number
 [WARNING]
-Subnormal numbers ("de-normalized" numbers) are not supported by the NEORV32 FPU.
-Subnormal numbers (exponent = 0) are _flushed to zero_ setting them to +/- 0 before entering the
-FPU's processing core. If a computational instruction (like `fmul.s`) generates a subnormal result, the
-result is also flushed to zero during normalization.
-
-[WARNING]
-The `Zfinx` extension is not yet officially ratified, but is expected to stay unchanged. There is no
-software support for the `Zfinx` extension in the upstream GCC RISC-V port yet. However, an
-intrinsic library is provided to utilize the provided `Zfinx` floating-point extension from C-language
-code (see `sw/example/floating_point_test`).
+Subnormal numbers ("de-normalized" numbers, i.e. exponent = 0) are not supported by the NEORV32 FPU.
+Subnormal numbers are _flushed to zero_ setting them to +/- 0 before being processed by **any** FPU operation.
+If a computational instruction generates a subnormal result it is also flushed to zero during normalization.
 
 .Instructions and Timing
 [cols="<2,<4,<3"]
