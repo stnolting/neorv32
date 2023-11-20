@@ -69,6 +69,8 @@
 #define SILENT_MODE        (1)
 //** Run FPU CSR tests when != 0 */
 #define RUN_CSR_TESTS      (1)
+//** Run FPU exception tests when != 0 */
+#define RUN_EXC_TESTS      (1)
 //** Run conversion tests when != 0 */
 #define RUN_CONV_TESTS     (1)
 //** Run add/sub tests when != 0 */
@@ -90,6 +92,16 @@
 /**@}*/
 
 
+/**********************************************************************//**
+ * @name Special floating-point encodings
+ **************************************************************************/
+/**@{*/
+#define FLOAT32_SNAN ( (uint32_t)(0x7fa00000U) )
+#define FLOAT32_PMIN ( (uint32_t)(0x00800000U) )
+#define FLOAT32_PMAX ( (uint32_t)(0x7f7fffffU) )
+/**@}*/
+
+
 // Prototypes
 uint32_t get_test_vector(void);
 uint32_t xorshift32(void);
@@ -98,8 +110,9 @@ void print_report(uint32_t num_err);
 
 
 /**********************************************************************//**
- * Main function; test all available operations of the NEORV32 'Zfinx' extensions using bit floating-point
- * hardware intrinsics and software-only reference functions (emulation).
+ * Main function; test all available operations of the NEORV32 'Zfinx'
+ * extensions using floating-point  * hardware intrinsics and software-only
+ * reference functions (emulation).
  *
  * @note This program requires the Zfinx CPU extension.
  *
@@ -196,8 +209,45 @@ int main() {
   test_cnt++;
 #endif
 
-  // clear FPU status/control word
-  neorv32_cpu_csr_write(CSR_FCSR, 0);
+
+// ----------------------------------------------------------------------------
+// CSR Exception Tests
+// ----------------------------------------------------------------------------
+#if (RUN_EXC_TESTS != 0)
+  neorv32_uart0_printf("\n#%u: FFLAGS.NX (inexact)... <WORK IN PROGRESS>\n", test_cnt);
+  test_cnt++;
+
+  neorv32_uart0_printf("\n#%u: FFLAGS.DZ (divide by zero)... DIVISON NOT SUPPORTED!\n", test_cnt);
+  test_cnt++;
+
+  neorv32_uart0_printf("\n#%u: FFLAGS.UF (underflow)... <WORK IN PROGRESS>\n", test_cnt);
+  test_cnt++;
+
+  neorv32_uart0_printf("\n#%u: FFLAGS.OV (overflow)... <WORK IN PROGRESS>\n", test_cnt);
+  test_cnt++;
+
+  neorv32_uart0_printf("\n#%u: FFLAGS.NV (invalid operation)...\n", test_cnt);
+  err_cnt = 0;
+  for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
+    neorv32_cpu_csr_write(CSR_FFLAGS, 0);
+    opa.binary_value = FLOAT32_SNAN; // signaling NAN
+    opb.binary_value = get_test_vector(); // any number
+    res_hw.float_value = riscv_intrinsic_fadds(opa.float_value, opb.float_value); // discard result
+
+    res_sw.binary_value = (uint32_t)(1 << CSR_FFLAGS_NV);
+    res_hw.binary_value = neorv32_cpu_csr_read(CSR_FFLAGS) & (1 << CSR_FFLAGS_NV);
+    err_cnt += verify_result(i, opa.binary_value, opb.binary_value, res_sw.binary_value, res_hw.binary_value);
+  }
+  print_report(err_cnt);
+  err_cnt_total += err_cnt;
+  test_cnt++;
+#endif
+
+
+// ----------------------------------------------------------------------------
+// Initialize FPU hardware
+// ----------------------------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_FCSR, 0); // clear exception flags and set "round to nearest"
 
 
 // ----------------------------------------------------------------------------
