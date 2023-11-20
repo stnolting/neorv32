@@ -276,6 +276,12 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
 
 begin
 
+  -- Sanity Checks --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert false report
+    "[Zfinx] The NEORV32 floating-point unit is still in experimental state." severity warning;
+
+
 -- ****************************************************************************************************************************
 -- Control
 -- ****************************************************************************************************************************
@@ -306,12 +312,11 @@ begin
             csr_fflags <= csr_wdata_i(4 downto 0);
           end if;
         end if;
-      else -- auto-update
+      else -- auto-update ("accumulate" flags)
         csr_fflags <= csr_fflags or fflags;
       end if;
     end if;
   end process csr_write;
-
 
   -- read access --
   csr_read: process(csr_addr_i, csr_fflags, csr_frm)
@@ -335,7 +340,7 @@ begin
   cmd.instr_f2i    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11000") else '0';
   cmd.instr_sgnj   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00100") else '0';
   cmd.instr_minmax <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00101") else '0';
-  cmd.instr_addsub <= '1' when (ctrl_i.ir_funct12(11 downto 8) = "0000")  else '0';
+  cmd.instr_addsub <= '1' when (ctrl_i.ir_funct12(11 downto 8) = "0000" ) else '0';
   cmd.instr_mul    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00010") else '0';
 
   -- binary re-encoding --
@@ -351,7 +356,7 @@ begin
 
   -- Input Operands: Check for subnormal numbers (flush to zero) ----------------------------
   -- -------------------------------------------------------------------------------------------
-  -- Subnormal numbers are not supported and are "flushed to zero"! FIXME / TODO
+  -- [WARNING] Subnormal numbers are not supported yet and are "flushed to zero"! FIXME / TODO
   -- rs1 --
   op_data(0)(31)           <= rs1_i(31);
   op_data(0)(30 downto 23) <= rs1_i(30 downto 23);
@@ -362,7 +367,7 @@ begin
   op_data(1)(22 downto 00) <= (others => '0') when (rs2_i(30 downto 23) = "00000000") else rs2_i(22 downto 0); -- flush mantissa to zero if subnormal
 
 
-  -- Number Classifier ----------------------------------------------------------------------
+  -- O Classifier ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   number_classifier: process(op_data)
     variable op_m_all_zero_v, op_e_all_zero_v, op_e_all_one_v       : std_ulogic;
@@ -370,18 +375,9 @@ begin
   begin
     for i in 0 to 1 loop -- for rs1 and rs2 inputs
       -- check for all-zero/all-one --
-      op_m_all_zero_v := '0';
-      op_e_all_zero_v := '0';
-      op_e_all_one_v  := '0';
-      if (or_reduce_f(op_data(i)(22 downto 00)) = '0') then
-        op_m_all_zero_v := '1';
-      end if;
-      if (or_reduce_f(op_data(i)(30 downto 23)) = '0') then
-        op_e_all_zero_v := '1';
-      end if;
-      if (and_reduce_f(op_data(i)(30 downto 23)) = '1') then
-        op_e_all_one_v  := '1';
-      end if;
+      op_m_all_zero_v := not or_reduce_f(op_data(i)(22 downto 00));
+      op_e_all_zero_v := not or_reduce_f(op_data(i)(30 downto 23));
+      op_e_all_one_v  :=    and_reduce_f(op_data(i)(30 downto 23));
 
       -- check special cases --
       op_is_zero_v   := op_e_all_zero_v and      op_m_all_zero_v;  -- zero
@@ -1449,10 +1445,10 @@ begin
                ctrl.flags(fp_exc_nv_c)) = '1') then -- invalid
             ctrl.state <= S_FINALIZE;
           -- The normalizer only checks the class of the inputs and not the result.
-          -- Check whether adder result is 0.0 which can happen if eg. 1.0 - 1.0
-          -- Set the ctrl.cnt to 0 to force the resulting exponent to be 0
-          -- Do not change sreg.lower as that is already all 0s
-          -- Do not change sign as that should be the right sign from the add/sub
+          -- Check whether adder result is 0.0 which can happen if eg. 1.0 - 1.0.
+          -- Set ctrl.cnt to 0 to force the resulting exponent to be 0.
+          -- Do not change sreg.lower as that is already all 0s.
+          -- Do not change sign as that should be the right sign from the add/sub.
           elsif (unsigned(mantissa_i(47 downto 0)) = 0) then
             ctrl.cnt <= (others => '0');
             ctrl.state <= S_FINALIZE;
@@ -1541,14 +1537,14 @@ begin
                 (sreg.zero = '1') or (ctrl.class(fp_class_neg_denorm_c) = '1') or (ctrl.class(fp_class_pos_denorm_c) = '1') then -- denormalized (flush-to-zero)
             ctrl.res_exp <= fp_single_pos_zero_c(30 downto 23); -- keep original sign
             ctrl.res_man <= fp_single_pos_zero_c(22 downto 00);
-          else -- result is ok
+          else -- result is fine as it is
             ctrl.res_exp <= ctrl.cnt(7 downto 0);
             ctrl.res_man <= sreg.lower;
           end if;
           -- generate exception flags --
           ctrl.flags(fp_exc_nv_c) <= ctrl.flags(fp_exc_nv_c) or ctrl.class(fp_class_snan_c); -- invalid if input is SIGNALING NaN
-          ctrl.flags(fp_exc_nx_c) <= ctrl.flags(fp_exc_nx_c) or ctrl.rounded; -- inexcat if result is rounded
-          --
+          ctrl.flags(fp_exc_nx_c) <= ctrl.flags(fp_exc_nx_c) or ctrl.rounded; -- inexact if result is rounded
+          -- processing done --
           done_o     <= '1';
           ctrl.state <= S_IDLE;
 
