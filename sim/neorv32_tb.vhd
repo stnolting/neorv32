@@ -184,7 +184,7 @@ begin
     if ci_mode then
       -- No need to send the full expectation in one big chunk
       check_uart(net, uart1_rx_handle, nul & nul);
-      check_uart(net, uart1_rx_handle, "0/57" & cr & lf);
+      check_uart(net, uart1_rx_handle, "0/58" & cr & lf);
     end if;
 
     -- Wait until all expected data has been received
@@ -227,7 +227,7 @@ begin
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A        => true,          -- implement atomic memory operations extension?
     CPU_EXTENSION_RISCV_B        => true,          -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_C        => true,          -- implement compressed extension?
+    CPU_EXTENSION_RISCV_C        => false,         -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,         -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => true,          -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        => true,          -- implement user mode extension?

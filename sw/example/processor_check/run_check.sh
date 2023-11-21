@@ -3,4 +3,4 @@
 set -e
 
 echo "Starting processor check simulation..."
-make USER_FLAGS+="-DUART0_SIM_MODE -DUART1_SIM_MODE -g -flto" EFFORT=-Os MARCH=rv32imac_zicsr_zifencei clean_all all sim
+make USER_FLAGS+="-DUART0_SIM_MODE -DUART1_SIM_MODE -g -flto" EFFORT=-Os MARCH=rv32ima_zicsr_zifencei clean_all all sim
