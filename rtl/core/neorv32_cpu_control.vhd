@@ -56,8 +56,8 @@ entity neorv32_cpu_control is
     HART_ID                    : std_ulogic_vector(31 downto 0); -- hardware thread ID
     VENDOR_ID                  : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     CPU_BOOT_ADDR              : std_ulogic_vector(31 downto 0); -- cpu boot address
-    CPU_DEBUG_PARK_ADDR        : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
-    CPU_DEBUG_EXC_ADDR         : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
+    CPU_DEBUG_PARK_ADDR        : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address, 4-byte aligned
+    CPU_DEBUG_EXC_ADDR         : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address, 4-byte aligned
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_A      : boolean; -- implement atomic memory operations extension?
     CPU_EXTENSION_RISCV_B      : boolean; -- implement bit-manipulation extension?
@@ -140,12 +140,11 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc         : std_ulogic_vector(XLEN-1 downto 2); -- word-aligned
     reset      : std_ulogic;
     resp       : std_ulogic; -- bus response
-    a_err      : std_ulogic; -- alignment error
   end record;
   signal fetch_engine : fetch_engine_t;
 
   -- instruction prefetch buffer (FIFO) interface --
-  type ipb_data_t is array (0 to 1) of std_ulogic_vector((2+16)-1 downto 0); -- status (bus_error, align_error) & 16-bit instruction
+  type ipb_data_t is array (0 to 1) of std_ulogic_vector(16 downto 0); -- bus_error & 16-bit instruction
   type ipb_t is record
     wdata : ipb_data_t;
     we    : std_ulogic_vector(1 downto 0); -- trigger write
@@ -163,7 +162,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     align_clr : std_ulogic;
     ci_i16    : std_ulogic_vector(15 downto 0);
     ci_i32    : std_ulogic_vector(31 downto 0);
-    data      : std_ulogic_vector((3+32)-1 downto 0); -- 3-bit status + 32-bit instruction
+    data      : std_ulogic_vector((2+32)-1 downto 0); -- 2-bit status + 32-bit instruction
     valid     : std_ulogic_vector(1 downto 0); -- data word is valid
     ack       : std_ulogic;
   end record;
@@ -416,16 +415,13 @@ begin
   -- instruction fetch (read) request if IPB not full --
   bus_req_o.stb <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
 
-  -- unaligned access error (no alignment exceptions possible when using C-extension) --
-  fetch_engine.a_err <= '1' when (fetch_engine.unaligned = '1') and (CPU_EXTENSION_RISCV_C = false) else '0';
-
   -- instruction bus response --
   -- [NOTE] PMP and alignment errors will keep pending until the triggered bus access request retires
   fetch_engine.resp <= '1' when (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') else '0';
 
   -- IPB instruction data and status --
-  ipb.wdata(0) <= (bus_rsp_i.err or i_pmp_fault_i) & fetch_engine.a_err & bus_rsp_i.data(15 downto 00);
-  ipb.wdata(1) <= (bus_rsp_i.err or i_pmp_fault_i) & fetch_engine.a_err & bus_rsp_i.data(31 downto 16);
+  ipb.wdata(0) <= (bus_rsp_i.err or i_pmp_fault_i) & bus_rsp_i.data(15 downto 00);
+  ipb.wdata(1) <= (bus_rsp_i.err or i_pmp_fault_i) & bus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
   ipb.we(0) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') and
@@ -526,20 +522,20 @@ begin
         if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed
           issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
           issue_engine.valid(0)  <= ipb.avail(0);
-          issue_engine.data      <= ipb.rdata(0)(17 downto 16) & '1' & issue_engine.ci_i32;
+          issue_engine.data      <= ipb.rdata(0)(16) & '1' & issue_engine.ci_i32;
         else -- aligned uncompressed; use IPB(0) status flags only
           issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-          issue_engine.data  <= ipb.rdata(0)(17 downto 16) & '0' & ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
+          issue_engine.data  <= ipb.rdata(0)(16) & '0' & ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
         end if;
       -- start with HIGH half-word --
       else
         if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed
           issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
           issue_engine.valid(1)  <= ipb.avail(1);
-          issue_engine.data      <= ipb.rdata(1)(17 downto 16) & '1' & issue_engine.ci_i32;
+          issue_engine.data      <= ipb.rdata(1)(16) & '1' & issue_engine.ci_i32;
         else -- unaligned uncompressed; use IPB(0) status flags only
           issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-          issue_engine.data  <= ipb.rdata(0)(17 downto 16) & '0' & ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
+          issue_engine.data  <= ipb.rdata(0)(16) & '0' & ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
         end if;
       end if;
     end process issue_engine_fsm_comb;
@@ -549,7 +545,7 @@ begin
   issue_engine_disabled: -- use IPB(0) status flags only
   if (CPU_EXTENSION_RISCV_C = false) generate
     issue_engine.valid <= (others => ipb.avail(0));
-    issue_engine.data  <= ipb.rdata(0)(17 downto 16) & '0' & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
+    issue_engine.data  <= ipb.rdata(0)(16) & '0' & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
   end generate; -- /issue_engine_disabled
 
   -- update IPB FIFOs --
@@ -645,8 +641,10 @@ begin
       -- program counter (PC) --
       if (execute_engine.pc_we = '1') then
         if (execute_engine.state = BRANCH) then -- jump/taken-branch
-          execute_engine.pc <= alu_add_i(XLEN-1 downto 1) & '0';
-        else -- new/next instruction address
+          if (alu_add_i(1) = '0') or (CPU_EXTENSION_RISCV_C = true) then -- update only if not misaligned
+            execute_engine.pc <= alu_add_i(XLEN-1 downto 1) & '0';
+          end if;
+        else -- new/next instruction address (address will always be properly aligned)
           execute_engine.pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
         end if;
       end if;
@@ -655,9 +653,9 @@ begin
       case execute_engine.state is
         when TRAP_ENTER => -- starting trap environment
           if (trap_ctrl.cause(5) = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- debug mode (re-)entry
-            execute_engine.next_pc <= CPU_DEBUG_PARK_ADDR; -- debug mode enter; start at "parking loop" <normal_entry>
+            execute_engine.next_pc <= CPU_DEBUG_PARK_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter; start at "parking loop" <normal_entry>
           elsif (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- any other trap INSIDE debug mode
-            execute_engine.next_pc <= CPU_DEBUG_EXC_ADDR; -- debug mode enter: start at "parking loop" <exception_entry>
+            execute_engine.next_pc <= CPU_DEBUG_EXC_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter: start at "parking loop" <exception_entry>
           else -- normal start of trap
             if (csr.mtvec(1 downto 0) = "01") and (trap_ctrl.cause(6) = '1') then -- vectored mode + interrupt
               execute_engine.next_pc <= csr.mtvec(XLEN-1 downto 7) & trap_ctrl.cause(4 downto 0) & "00"; -- pc = mtvec + 4 * mcause
@@ -680,6 +678,10 @@ begin
       end case;
     end if;
   end process execute_engine_fsm_sync;
+
+  -- check if branch destination is misaligned --
+  trap_ctrl.instr_ma <= '1' when (execute_engine.state = BRANCH) and (execute_engine.pc_we = '1')    and
+                                 (alu_add_i(1) = '1')            and (CPU_EXTENSION_RISCV_C = false) else '0';
 
   -- PC increment for next LINEAR instruction (+2 for compressed instr., +4 otherwise) --
   execute_engine.next_pc_inc(XLEN-1 downto 4) <= (others => '0');
@@ -804,7 +806,6 @@ begin
     trap_ctrl.env_enter      <= '0';
     trap_ctrl.env_exit       <= '0';
     trap_ctrl.instr_be       <= '0';
-    trap_ctrl.instr_ma       <= '0';
     trap_ctrl.env_call       <= '0';
     trap_ctrl.break_point    <= '0';
     --
@@ -857,8 +858,7 @@ begin
             execute_engine.state_nxt <= TRAP_ENTER;
           else -- normal execution
             issue_engine.ack         <= '1';
-            trap_ctrl.instr_be       <= issue_engine.data(34); -- bus access fault during instruction fetch
-            trap_ctrl.instr_ma       <= issue_engine.data(33) and (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_C)); -- misaligned instruction fetch (if C disabled)
+            trap_ctrl.instr_be       <= issue_engine.data(33); -- bus access fault during instruction fetch
             execute_engine.is_ci_nxt <= issue_engine.data(32); -- this is a de-compressed instruction
             execute_engine.ir_nxt    <= issue_engine.data(31 downto 0); -- instruction word
             execute_engine.pc_we     <= '1'; -- pc <= next_pc
@@ -993,7 +993,7 @@ begin
       when BRANCH => -- update PC on taken branches and jumps
       -- ------------------------------------------------------------
         ctrl_nxt.rf_mux   <= rf_mux_npc_c; -- return address = next PC
-        ctrl_nxt.rf_wb_en <= execute_engine.ir(instr_opcode_lsb_c+2); -- save return address if link operation
+        ctrl_nxt.rf_wb_en <= execute_engine.ir(instr_opcode_lsb_c+2); -- save return address if link operation (will not happen if misaligned)
         if (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- update only if not illegal instruction
           execute_engine.pc_we <= '1'; -- update PC with branch DST; will be overridden in DISPATCH if branch not taken
         end if;
@@ -1025,13 +1025,12 @@ begin
       when MEM_WAIT => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
         ctrl_nxt.rf_mux <= rf_mux_mem_c; -- RF input = memory read data
-        if (trap_ctrl.exc_buf(exc_laccess_c)  = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- bus access error
-           (trap_ctrl.exc_buf(exc_lalign_c)   = '1') or (trap_ctrl.exc_buf(exc_salign_c)  = '1') then -- alignment error
-          execute_engine.state_nxt <= DISPATCH; -- abort
-        elsif (lsu_wait_i = '0') then -- bus system has completed the transaction
+        if (lsu_wait_i = '0') or -- bus system has completed the transaction
+           (trap_ctrl.exc_buf(exc_salign_c) = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- store exception
+           (trap_ctrl.exc_buf(exc_lalign_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') then -- load exception
           if ((CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2))) or -- atomic operation
              (execute_engine.ir(instr_opcode_msb_c-1) = '0') then -- normal load
-            ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file
+            ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file (won't happen in case of exception)
           end if;
           execute_engine.state_nxt <= DISPATCH;
         end if;
@@ -1071,7 +1070,7 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- register file --
-  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and (not trap_ctrl.exc_buf(exc_illegal_c)); -- no write if illegal instruction
+  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and (not or_reduce_f(trap_ctrl.exc_buf(exc_laccess_c downto exc_iaccess_c))); -- no write if (non-debug) exception
   ctrl_o.rf_rs1       <= execute_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c);
   ctrl_o.rf_rs2       <= execute_engine.ir(instr_rs2_msb_c downto instr_rs2_lsb_c);
   ctrl_o.rf_rs3       <= execute_engine.ir(instr_rs3_msb_c downto instr_rs3_lsb_c);
@@ -1479,8 +1478,6 @@ begin
       elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c;  -- load address misaligned
       elsif (trap_ctrl.exc_buf(exc_saccess_c)  = '1') then trap_ctrl.cause <= trap_saf_c;  -- store access fault
       elsif (trap_ctrl.exc_buf(exc_laccess_c)  = '1') then trap_ctrl.cause <= trap_laf_c;  -- load access fault
-      
-      
       -- standard RISC-V debug mode exceptions and interrupts --
       elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request (async)
       elsif (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') then trap_ctrl.cause <= trap_db_trig_c;  -- hardware trigger (sync)
