@@ -49,10 +49,10 @@
 /**@{*/
 //** UART BAUD rate */
 #define BAUD_RATE           (19200)
-//** Reachable unaligned address */
+//** Reachable but unaligned address */
 #define ADDR_UNALIGNED_1    (0x00000001UL)
-//** Reachable unaligned address */
-#define ADDR_UNALIGNED_2    (0x00000002UL)
+//** Reachable but unaligned address */
+#define ADDR_UNALIGNED_3    (0x00000003UL)
 //** Unreachable word-aligned address */
 #define ADDR_UNREACHABLE    ((uint32_t)&NEORV32_DM->SREG)
 //** Read-only word-aligned address */
@@ -583,7 +583,7 @@ int main() {
     cnt_test++;
 
     tmp_a = 0;
-    tmp_b = (uint32_t)ADDR_UNALIGNED_2;
+    tmp_b = (uint32_t)ADDR_UNALIGNED_3;
     asm volatile ("li   %[link], 0x123   \n" // initialize link register with known value
                   "jalr %[link], 0(%[addr])" // must not update link register due to exception
                   : [link] "=r" (tmp_a) : [addr] "r" (tmp_b));
@@ -2207,7 +2207,7 @@ void global_trap_handler(void) {
 
   // hack: make "instruction access fault" exception resumable as we *exactly* know how to handle it in this case
   if (cause == TRAP_CODE_I_ACCESS) {
-    neorv32_cpu_csr_write(CSR_MEPC, neorv32_cpu_csr_read(CSR_MEPC) + 4);
+    neorv32_cpu_csr_write(CSR_MEPC, (uint32_t)EXT_MEM_BASE+0);
   }
 
   // increment global trap counter
