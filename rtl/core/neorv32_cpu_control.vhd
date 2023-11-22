@@ -1878,6 +1878,12 @@ begin
         csr.tdata2        <= (others => '0');
       end if;
 
+      -- RISC-V priv. spec.: xPC[1] is masked when IALIGN = 32 --
+      if (CPU_EXTENSION_RISCV_C = false) then
+        csr.dpc(1)  <= '0';
+        csr.mepc(1) <= '0';
+      end if;
+
     end if;
   end process csr_write_access;
 

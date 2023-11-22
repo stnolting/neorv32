@@ -631,8 +631,11 @@ Cause codes in `dcsr.cause` (highest priority first):
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `Sdext`
 | Description | The register is used to store the current program counter when debug mode is entered. The `dret` instruction will
-return to `dpc` by automatically moving `dpc` to the program counter.
+return to the address stored in `dpc` by automatically moving `dpc` to the program counter.
 |=======================
+
+[NOTE]
+`dpc[0]` is hardwired to zero. If IALIGN = 32 (i.e. <<_c_isa_extension>> is disabled) then `dpc[1]` is also hardwired to zero.
 
 
 :sectnums!:
