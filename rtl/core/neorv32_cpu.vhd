@@ -130,7 +130,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal be_store     : std_ulogic; -- bus error on store data access
   signal fetch_pc     : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
   signal curr_pc      : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
-  signal next_pc      : std_ulogic_vector(XLEN-1 downto 0); -- next pc (for next executed instruction)
+  signal link_pc      : std_ulogic_vector(XLEN-1 downto 0); -- link pc (return address)
   signal pmp_ex_fault : std_ulogic; -- PMP instruction fetch fault
   signal pmp_rw_fault : std_ulogic; -- PMP read/write access fault
 
@@ -217,7 +217,7 @@ begin
     imm_o         => imm,            -- immediate
     fetch_pc_o    => fetch_pc,       -- instruction fetch address
     curr_pc_o     => curr_pc,        -- current PC (corresponding to current instruction)
-    next_pc_o     => next_pc,        -- next PC (corresponding to next instruction)
+    link_pc_o     => link_pc,        -- link PC (return address)
     csr_rdata_o   => csr_rdata,      -- CSR read data
     -- external CSR interface --
     xcsr_we_o     => xcsr_we,        -- global write enable
@@ -268,7 +268,7 @@ begin
     alu_i  => alu_res,   -- ALU result
     mem_i  => mem_rdata, -- memory read data
     csr_i  => csr_rdata, -- CSR read data
-    npc_i  => next_pc,   -- next PC
+    ret_i  => link_pc,   -- return address
     -- data output --
     rs1_o  => rs1,       -- rs1
     rs2_o  => rs2,       -- rs2
