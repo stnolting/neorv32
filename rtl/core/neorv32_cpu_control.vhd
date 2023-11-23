@@ -1679,7 +1679,10 @@ begin
             csr.mscratch <= csr.wdata;
 
           when csr_mepc_c => -- machine exception program counter
-            csr.mepc <= csr.wdata;
+            csr.mepc <= csr.wdata(XLEN-1 downto 1) & '0';
+            if (CPU_EXTENSION_RISCV_C = false) then -- RISC-V priv. spec.: MEPC[1] is masked when IALIGN = 32
+              csr.mepc(1) <= '0';
+            end if;
 
           when csr_mcause_c => -- machine trap cause
             csr.mcause <= csr.wdata(31) & csr.wdata(4 downto 0); -- type (exception/interrupt) & identifier
@@ -1725,6 +1728,9 @@ begin
           when csr_dpc_c => -- debug mode program counter
             if (CPU_EXTENSION_RISCV_Sdext = true) then
               csr.dpc <= csr.wdata(XLEN-1 downto 1) & '0';
+              if (CPU_EXTENSION_RISCV_C = false) then -- RISC-V priv. spec.: DPC[1] is masked when IALIGN = 32
+                csr.dpc(1) <= '0';
+              end if;
             end if;
 
           when csr_dscratch0_c => -- debug mode scratch register 0
@@ -1876,12 +1882,6 @@ begin
         csr.tdata1_action <= '0';
         csr.tdata1_dmode  <= '0';
         csr.tdata2        <= (others => '0');
-      end if;
-
-      -- RISC-V priv. spec.: xPC[1] is masked when IALIGN = 32 --
-      if (CPU_EXTENSION_RISCV_C = false) then
-        csr.dpc(1)  <= '0';
-        csr.mepc(1) <= '0';
       end if;
 
     end if;
