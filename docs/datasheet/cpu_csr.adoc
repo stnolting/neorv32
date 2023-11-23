@@ -373,7 +373,11 @@ or entirely denied allowing access to **none** counter CSRs.
 | ISA         | `Zicsr`
 | Description | The `mepc` CSR provides the instruction address where execution has stopped/failed when
 an instruction is triggered / an exception is raised. See section <<_traps_exceptions_and_interrupts>> for a list of all legal values.
+The `mret` instruction will return to the address stored in `mepc` by automatically moving `mepc` to the program counter.
 |=======================
+
+[NOTE]
+`mepc[0]` is hardwired to zero. If IALIGN = 32 (i.e. <<_c_isa_extension>> is disabled) then `mepc[1]` is also hardwired to zero.
 
 
 {empty} +

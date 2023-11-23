@@ -363,8 +363,8 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 |=======================
 | Name | Type | Description
 | `CPU_BOOT_ADDR`              | suv(31:0) | CPU reset address. See section <<_address_space>>.
-| `CPU_DEBUG_PARK_ADDR`        | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>.
-| `CPU_DEBUG_EXC_ADDR`         | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>.
+| `CPU_DEBUG_PARK_ADDR`        | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
+| `CPU_DEBUG_EXC_ADDR`         | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
 | `CPU_EXTENSION_RISCV_Sdext`  | boolean   | Implement RISC-V-compatible "debug" CPU operation mode required for the <<_on_chip_debugger_ocd>>.
 | `CPU_EXTENSION_RISCV_Sdtrig` | boolean   | Implement RISC-V-compatible trigger module. See section <<_on_chip_debugger_ocd>>.
 |=======================
@@ -864,8 +864,8 @@ written to the according CSRs when a trap is triggered:
 |=======================
 | Prio. | `mcause`     | RTE Trap ID              | Cause                                | `mepc` | `mtval` | `mtinst`
 7+^| **Exceptions** (_synchronous_ to instruction execution)                                                 
-| 1     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction fetch address misaligned | I-PC   | 0       | INS
-| 2     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction fetch bus access fault   | I-PC   | 0       | INS
+| 1     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned       | PC     | 0       | INS
+| 2     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction bus access fault         | I-PC   | 0       | INS
 | 3     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                  | PC     | 0       | INS
 | 4     | `0x0000000b` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode         | PC     | 0       | INS
 | 5     | `0x00000008` | `TRAP_CODE_UENV_CALL`    | environment call from U-mode         | PC     | 0       | INS
