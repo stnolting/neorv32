@@ -101,7 +101,7 @@ entity neorv32_cpu_control is
     imm_o         : out std_ulogic_vector(XLEN-1 downto 0); -- immediate
     fetch_pc_o    : out std_ulogic_vector(XLEN-1 downto 0); -- instruction fetch address
     curr_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
-    next_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- next PC (corresponding to next instruction)
+    link_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- link PC (return address)
     csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
     -- external CSR interface --
     xcsr_we_o     : out std_ulogic; -- global write enable
@@ -137,7 +137,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     state_prev : fetch_engine_state_t;
     restart    : std_ulogic;
     unaligned  : std_ulogic;
-    pc         : std_ulogic_vector(XLEN-1 downto 2); -- word-aligned
+    pc         : std_ulogic_vector(XLEN-1 downto 0);
     reset      : std_ulogic;
     resp       : std_ulogic; -- bus response
   end record;
@@ -201,6 +201,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc_we        : std_ulogic; -- PC update enabled
     next_pc      : std_ulogic_vector(XLEN-1 downto 0); -- next PC, corresponding to next instruction to be executed
     next_pc_inc  : std_ulogic_vector(XLEN-1 downto 0); -- increment to get next PC
+    link_pc      : std_ulogic_vector(XLEN-1 downto 0); -- next PC for linking (return address)
   end record;
   signal execute_engine : execute_engine_t;
 
@@ -361,7 +362,7 @@ begin
       fetch_engine.state_prev <= IF_RESTART;
       fetch_engine.restart    <= '1'; -- set to reset IPB
       fetch_engine.unaligned  <= '0';
-      fetch_engine.pc         <= CPU_BOOT_ADDR(XLEN-1 downto 2); -- 32-bit aligned boot address
+      fetch_engine.pc         <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
     elsif rising_edge(clk_i) then
       -- previous state (for HPMs only) --
       fetch_engine.state_prev <= fetch_engine.state;
@@ -378,8 +379,8 @@ begin
 
         when IF_RESTART => -- set new fetch start address
         -- ------------------------------------------------------------
-          fetch_engine.pc        <= execute_engine.pc(XLEN-1 downto 2); -- initialize with logical PC, word aligned
-          fetch_engine.unaligned <= execute_engine.pc(1);
+          fetch_engine.pc        <= execute_engine.next_pc(XLEN-1 downto 2) & "00"; -- initialize with logical PC, word aligned
+          fetch_engine.unaligned <= execute_engine.next_pc(1);
           fetch_engine.state     <= IF_REQUEST;
 
         when IF_REQUEST => -- request new 32-bit-aligned instruction word
@@ -391,7 +392,7 @@ begin
         when IF_PENDING => -- wait for bus response and write instruction data to prefetch buffer
         -- ------------------------------------------------------------
           if (fetch_engine.resp = '1') then -- wait for bus response
-            fetch_engine.pc        <= std_ulogic_vector(unsigned(fetch_engine.pc) + 1); -- next word
+            fetch_engine.pc        <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4); -- next word
             fetch_engine.unaligned <= '0';
             if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast) due to branch
               fetch_engine.state <= IF_RESTART;
@@ -409,8 +410,8 @@ begin
   end process fetch_engine_fsm;
 
   -- PC output for instruction fetch --
-  bus_req_o.addr <= fetch_engine.pc & "00"; -- word aligned
-  fetch_pc_o     <= fetch_engine.pc & "00"; -- word aligned
+  bus_req_o.addr <= fetch_engine.pc; -- word aligned
+  fetch_pc_o     <= fetch_engine.pc; -- word aligned
 
   -- instruction fetch (read) request if IPB not full --
   bus_req_o.stb <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
@@ -504,7 +505,7 @@ begin
         issue_engine.align <= '0'; -- start aligned after reset
       elsif rising_edge(clk_i) then
         if (fetch_engine.restart = '1') then
-          issue_engine.align <= execute_engine.pc(1); -- branch to unaligned address?
+          issue_engine.align <= execute_engine.next_pc(1); -- branch to unaligned address?
         elsif (issue_engine.ack = '1') then
           issue_engine.align <= (issue_engine.align and (not issue_engine.align_clr)) or issue_engine.align_set; -- "RS" flip-flop
         end if;
@@ -606,10 +607,14 @@ begin
   -- -------------------------------------------------------------------------------------------
   branch_check: process(execute_engine.ir, cmp_i)
   begin
-    if (execute_engine.ir(instr_funct3_msb_c) = '0') then -- beq / bne
-      execute_engine.branch_taken <= cmp_i(cmp_equal_c) xor execute_engine.ir(instr_funct3_lsb_c);
-    else -- blt(u) / bge(u)
-      execute_engine.branch_taken <= cmp_i(cmp_less_c)  xor execute_engine.ir(instr_funct3_lsb_c);
+    if (execute_engine.ir(instr_opcode_lsb_c+2) = '0') then -- conditional branch
+      if (execute_engine.ir(instr_funct3_msb_c) = '0') then -- beq / bne
+        execute_engine.branch_taken <= cmp_i(cmp_equal_c) xor execute_engine.ir(instr_funct3_lsb_c);
+      else -- blt(u) / bge(u)
+        execute_engine.branch_taken <= cmp_i(cmp_less_c)  xor execute_engine.ir(instr_funct3_lsb_c);
+      end if;
+    else -- unconditional branch
+      execute_engine.branch_taken <= '1';
     end if;
   end process branch_check;
 
@@ -627,30 +632,26 @@ begin
       execute_engine.is_ci       <= '0';
       execute_engine.pc          <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
       execute_engine.next_pc     <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
+      execute_engine.link_pc     <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
     elsif rising_edge(clk_i) then
       -- control bus --
       ctrl <= ctrl_nxt;
 
       -- execute engine arbiter --
       execute_engine.state       <= execute_engine.state_nxt;
-      execute_engine.state_prev  <= execute_engine.state; -- for HPMs only
-      execute_engine.state_prev2 <= execute_engine.state_prev; -- for HPMs only
+      execute_engine.state_prev  <= execute_engine.state;
+      execute_engine.state_prev2 <= execute_engine.state_prev;
       execute_engine.ir          <= execute_engine.ir_nxt;
       execute_engine.is_ci       <= execute_engine.is_ci_nxt;
 
-      -- program counter (PC) --
+      -- current PC: address of instruction being executed --
       if (execute_engine.pc_we = '1') then
-        if (execute_engine.state = BRANCH) then -- jump/taken-branch
-          if (alu_add_i(1) = '0') or (CPU_EXTENSION_RISCV_C = true) then -- update only if not misaligned
-            execute_engine.pc <= alu_add_i(XLEN-1 downto 1) & '0';
-          end if;
-        else -- new/next instruction address (address will always be properly aligned)
-          execute_engine.pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
-        end if;
+        execute_engine.pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
       end if;
 
-      -- next PC --
+      -- next PC: address of next logic instruction --
       case execute_engine.state is
+
         when TRAP_ENTER => -- starting trap environment
           if (trap_ctrl.cause(5) = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- debug mode (re-)entry
             execute_engine.next_pc <= CPU_DEBUG_PARK_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter; start at "parking loop" <normal_entry>
@@ -663,25 +664,38 @@ begin
               execute_engine.next_pc <= csr.mtvec(XLEN-1 downto 2) & "00"; -- pc = mtvec
             end if;
           end if;
+
         when TRAP_EXIT => -- leaving trap environment
           if (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- debug mode exit
             execute_engine.next_pc <= csr.dpc(XLEN-1 downto 1) & '0';
           else -- normal end of trap
             execute_engine.next_pc <= csr.mepc(XLEN-1 downto 1) & '0';
           end if;
-        when BRANCHED => -- control flow transfer
-          execute_engine.next_pc <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- branch/jump destination
+
+        when BRANCH => -- control flow transfer
+          if (trap_ctrl.exc_buf(exc_illegal_c) = '0') and (execute_engine.branch_taken = '1') then -- valid taken branch
+            execute_engine.next_pc <= alu_add_i(XLEN-1 downto 1) & '0';
+          end if;
+
         when EXECUTE => -- linear increment
-          execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc)); -- next linear PC
-        when others =>
+          execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc));
+
+        when others => -- no update
           NULL;
+
       end case;
+
+      -- link PC: return address --
+      if (execute_engine.state = BRANCH) then
+        execute_engine.link_pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
+      end if;
     end if;
   end process execute_engine_fsm_sync;
 
   -- check if branch destination is misaligned --
-  trap_ctrl.instr_ma <= '1' when (execute_engine.state = BRANCH) and (execute_engine.pc_we = '1')    and
-                                 (alu_add_i(1) = '1')            and (CPU_EXTENSION_RISCV_C = false) else '0';
+  trap_ctrl.instr_ma <= '1' when (execute_engine.state = BRANCH) and (trap_ctrl.exc_buf(exc_illegal_c) = '0') and -- valid branch instruction
+                                 (execute_engine.branch_taken = '1') and -- branch is taken
+                                 (alu_add_i(1) = '1') and (CPU_EXTENSION_RISCV_C = false) else '0'; -- misaligned destination
 
   -- PC increment for next LINEAR instruction (+2 for compressed instr., +4 otherwise) --
   execute_engine.next_pc_inc(XLEN-1 downto 4) <= (others => '0');
@@ -689,7 +703,7 @@ begin
 
   -- PC output --
   curr_pc_o <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- current PC
-  next_pc_o <= execute_engine.next_pc(XLEN-1 downto 1) & '0'; -- next PC
+  link_pc_o <= execute_engine.link_pc(XLEN-1 downto 1) & '0'; -- return address
 
 
   -- Decoding Helper Logic ------------------------------------------------------------------
@@ -853,17 +867,15 @@ begin
 
       when DISPATCH => -- Wait for ISSUE ENGINE to emit valid instruction word
       -- ------------------------------------------------------------
-        if (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- new instruction word available
-          if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
-            execute_engine.state_nxt <= TRAP_ENTER;
-          else -- normal execution
-            issue_engine.ack         <= '1';
-            trap_ctrl.instr_be       <= issue_engine.data(33); -- bus access fault during instruction fetch
-            execute_engine.is_ci_nxt <= issue_engine.data(32); -- this is a de-compressed instruction
-            execute_engine.ir_nxt    <= issue_engine.data(31 downto 0); -- instruction word
-            execute_engine.pc_we     <= '1'; -- pc <= next_pc
-            execute_engine.state_nxt <= EXECUTE;
-          end if;
+        if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
+          execute_engine.state_nxt <= TRAP_ENTER;
+        elsif (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- new instruction word available
+          issue_engine.ack         <= '1';
+          trap_ctrl.instr_be       <= issue_engine.data(33); -- bus access fault during instruction fetch
+          execute_engine.is_ci_nxt <= issue_engine.data(32); -- this is a de-compressed instruction
+          execute_engine.ir_nxt    <= issue_engine.data(31 downto 0); -- instruction word
+          execute_engine.pc_we     <= '1'; -- pc <= next_pc
+          execute_engine.state_nxt <= EXECUTE;
         end if;
 
       when TRAP_ENTER => -- Enter trap environment and jump to trap vector
@@ -881,7 +893,6 @@ begin
       when RESTART => -- reset and restart instruction fetch at <next_pc>
       -- ------------------------------------------------------------
         fetch_engine.reset       <= '1';
-        execute_engine.pc_we     <= '1';
         execute_engine.state_nxt <= BRANCHED;
 
       when EXECUTE => -- Decode and execute instruction (control will be here for exactly 1 cycle in any case)
@@ -990,14 +1001,11 @@ begin
           execute_engine.state_nxt <= RESTART; -- reset instruction fetch + IPB (only required for fence.i)
         end if;
 
-      when BRANCH => -- update PC on taken branches and jumps
+      when BRANCH => -- update next_PC on taken branches and jumps
       -- ------------------------------------------------------------
-        ctrl_nxt.rf_mux   <= rf_mux_npc_c; -- return address = next PC
+        ctrl_nxt.rf_mux   <= rf_mux_ret_c; -- return address = link PC
         ctrl_nxt.rf_wb_en <= execute_engine.ir(instr_opcode_lsb_c+2); -- save return address if link operation (will not happen if misaligned)
-        if (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- update only if not illegal instruction
-          execute_engine.pc_we <= '1'; -- update PC with branch DST; will be overridden in DISPATCH if branch not taken
-        end if;
-        if (execute_engine.ir(instr_opcode_lsb_c+2) = '1') or (execute_engine.branch_taken = '1') then -- JAL[R] or taken branch
+        if (trap_ctrl.exc_buf(exc_illegal_c) = '0') and (execute_engine.branch_taken = '1') then -- valid taken branch
           fetch_engine.reset       <= '1'; -- reset instruction fetch to restart at modified PC
           execute_engine.state_nxt <= BRANCHED;
         else
