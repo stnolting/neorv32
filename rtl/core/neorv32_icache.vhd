@@ -62,6 +62,15 @@ end neorv32_icache;
 
 architecture neorv32_icache_rtl of neorv32_icache is
 
+  -- make sure caches sizes are a power of two --
+  constant nblocks_valid_c : boolean := is_power_of_two_f(ICACHE_NUM_BLOCKS);
+  constant nblocks_pow2_c  : natural := 2**index_size_f(ICACHE_NUM_BLOCKS);
+  constant nblocks_c       : natural := cond_sel_natural_f(nblocks_valid_c, ICACHE_NUM_BLOCKS, nblocks_pow2_c);
+  --
+  constant block_size_valid_c : boolean := is_power_of_two_f(ICACHE_BLOCK_SIZE);
+  constant block_size_pow2_c  : natural := 2**index_size_f(ICACHE_BLOCK_SIZE);
+  constant block_size_c       : natural := cond_sel_natural_f(block_size_valid_c, ICACHE_BLOCK_SIZE, block_size_pow2_c);
+
   -- cache layout --
   constant cache_offset_size_c : natural := index_size_f(ICACHE_BLOCK_SIZE/4); -- offset addresses full 32-bit words
 
@@ -126,12 +135,8 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (is_power_of_two_f(ICACHE_NUM_BLOCKS) = false) report
-    "NEORV32 PROCESSOR CONFIG ERROR! i-cache number of blocks <ICACHE_NUM_BLOCKS> has to be a power of 2." severity error;
-  assert not (is_power_of_two_f(ICACHE_BLOCK_SIZE) = false) report
-    "NEORV32 PROCESSOR CONFIG ERROR! i-cache block size <ICACHE_BLOCK_SIZE> has to be a power of 2." severity error;
-  assert not ((is_power_of_two_f(ICACHE_NUM_SETS) = false)) report
-    "NEORV32 PROCESSOR CONFIG ERROR! i-cache associativity <ICACHE_NUM_SETS> has to be a power of 2." severity error;
+  assert not ((nblocks_valid_c = false) or (block_size_valid_c = false)) report
+    "[NEORV32] Auto-adjusting invalid i-cache size configuration(s)." severity warning;
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------
@@ -278,8 +283,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_icache_memory_inst: neorv32_icache_memory
   generic map (
-    ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
-    ICACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE,
+    ICACHE_NUM_BLOCKS => nblocks_c,
+    ICACHE_BLOCK_SIZE => block_size_c,
     ICACHE_NUM_SETS   => ICACHE_NUM_SETS
   )
   port map (
