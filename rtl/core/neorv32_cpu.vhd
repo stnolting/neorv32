@@ -64,6 +64,7 @@ entity neorv32_cpu is
     -- Tuning Options --
     FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
+    REGFILE_HW_RST               : boolean; -- implement full hardware reset for register file
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              : natural range 0 to 16; -- number of regions (0..16)
     PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -191,6 +192,7 @@ begin
     -- Tuning Options --
     FAST_MUL_EN                => FAST_MUL_EN,                  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN              => FAST_SHIFT_EN,                -- use barrel shifter for shift operations
+    REGFILE_HW_RST             => REGFILE_HW_RST,               -- implement full hardware reset for register file
     -- Physical memory protection (PMP) --
     PMP_EN                     => pmp_enable_c,                 -- physical memory protection enabled
     -- Hardware Performance Monitors (HPM) --
@@ -256,13 +258,15 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_regfile_inst: entity neorv32.neorv32_cpu_regfile
   generic map (
-    RVE_EN => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension?
+    RST_EN => REGFILE_HW_RST,        -- enable dedicated hardware reset ("ASIC style")
+    RVE_EN => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension
     RS3_EN => regfile_rs3_en_c,      -- enable 3rd read port
     RS4_EN => regfile_rs4_en_c       -- enable 4th read port
   )
   port map (
     -- global control --
     clk_i  => clk_i,     -- global clock, rising edge
+    rstn_i => rstn_i,    -- global reset, low-active, async
     ctrl_i => ctrl,      -- main control bus
     -- data input --
     alu_i  => alu_res,   -- ALU result

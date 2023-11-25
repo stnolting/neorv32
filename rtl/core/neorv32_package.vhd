@@ -44,9 +44,6 @@ package neorv32_package is
 
   -- Architecture Configuration -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- if register x0 is implemented as a *physical register* it has to be explicitly set to zero by the CPU hardware --
-  constant reset_x0_c : boolean := true; -- has to be 'true' for the default register file rtl description (BRAM-based)
-
   -- max response time for processor-internal bus transactions --
   -- = cycles after which an *unacknowledged* internal bus access will timeout triggering a bus fault exception
   constant bus_timeout_c : natural := 15; -- default = 15
@@ -59,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090105"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090106"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -766,6 +763,7 @@ package neorv32_package is
       -- Tuning Options --
       FAST_MUL_EN                : boolean := false;
       FAST_SHIFT_EN              : boolean := false;
+      REGFILE_HW_RST             : boolean := false;
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS            : natural range 0 to 16 := 0;
       PMP_MIN_GRANULARITY        : natural := 4;

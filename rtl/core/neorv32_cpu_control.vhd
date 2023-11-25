@@ -75,6 +75,7 @@ entity neorv32_cpu_control is
     -- Tuning Options --
     FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN              : boolean; -- use barrel shifter for shift operations
+    REGFILE_HW_RST             : boolean; -- implement full hardware reset for register file
     -- Physical memory protection (PMP) --
     PMP_EN                     : boolean; -- physical memory protection enabled
     -- Hardware Performance Monitors (HPM) --
@@ -611,7 +612,7 @@ begin
       if (execute_engine.ir(instr_funct3_msb_c) = '0') then -- beq / bne
         execute_engine.branch_taken <= cmp_i(cmp_equal_c) xor execute_engine.ir(instr_funct3_lsb_c);
       else -- blt(u) / bge(u)
-        execute_engine.branch_taken <= cmp_i(cmp_less_c)  xor execute_engine.ir(instr_funct3_lsb_c);
+        execute_engine.branch_taken <= cmp_i(cmp_less_c) xor execute_engine.ir(instr_funct3_lsb_c);
       end if;
     else -- unconditional branch
       execute_engine.branch_taken <= '1';
@@ -649,7 +650,7 @@ begin
         execute_engine.pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
       end if;
 
-      -- next PC: address of next logic instruction --
+      -- next PC: address of next instruction --
       case execute_engine.state is
 
         when TRAP_ENTER => -- starting trap environment
@@ -1015,10 +1016,10 @@ begin
       when BRANCHED => -- delay cycle to wait for reset of pipeline front-end (instruction fetch)
       -- ------------------------------------------------------------
         execute_engine.state_nxt <= DISPATCH;
-        -- house keeping: use this state to (re-)initialize the register file's x0/zero register --
-        if (reset_x0_c = true) then -- if x0 is a "real" register that has to be initialized to zero
+        -- house keeping: use this state also to (re-)initialize the register file's x0/zero register --
+        if (REGFILE_HW_RST = false) then -- x0 does not provide a dedicated hardware reset
           ctrl_nxt.rf_mux     <= rf_mux_csr_c; -- this will return 0 since csr.re_nxt is zero
-          ctrl_nxt.rf_zero_we <= '1'; -- allow/force write access to x0
+          ctrl_nxt.rf_zero_we <= '1'; -- force write access to x0
         end if;
 
       when MEM_REQ => -- trigger memory request
@@ -2094,6 +2095,7 @@ begin
         -- misc --
         csr_rdata(20) <= bool_to_ulogic_f(is_simulation_c);            -- is this a simulation?
         -- tuning options --
+        csr_rdata(29) <= bool_to_ulogic_f(REGFILE_HW_RST);             -- full hardware reset of register file
         csr_rdata(30) <= bool_to_ulogic_f(FAST_MUL_EN);                -- DSP-based multiplication (M extensions only)
         csr_rdata(31) <= bool_to_ulogic_f(FAST_SHIFT_EN);              -- parallel logic for shifts (barrel shifters)
 

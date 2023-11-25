@@ -1005,7 +1005,8 @@ discover ISA sub-extensions and CPU configuration options
 | 11    | `CSR_MXISA_SDTRIG`    | r/- | <<_sdtrig_isa_extension>> available
 | 19:12 | -                     | r/- | hardwired to zero
 | 20    | `CSR_MXISA_IS_SIM`    | r/- | set if CPU is being **simulated** (⚠️ not guaranteed)
-| 31:21 | -                     | r/- | hardwired to zero
+| 28:21 | -                     | r/- | hardwired to zero
+| 29    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`REGFILE_HW_RST`)
 | 30    | `CSR_MXISA_FASTMUL`   | r/- | fast multiplication available when set (`FAST_MUL_EN`)
 | 31    | `CSR_MXISA_FASTSHIFT` | r/- | fast shifts available when set (`FAST_SHIFT_EN`)
 |=======================

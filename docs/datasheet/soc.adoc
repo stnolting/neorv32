@@ -183,12 +183,6 @@ If optional modules (like CPU extensions or peripheral devices) are not enabled 
 will not be synthesized at all. Hence, the disabled modules do not increase area and power requirements
 and do not impact timing.
 
-.Configuration Check
-[NOTE]
-Not all configuration combinations are valid. The processor RTL code provides sanity checks to inform the user
-during synthesis/simulation if an invalid combination has been detected. It is recommended to run a quick simulation
-using the provided simulation/GHDL scripts to verify the configuration of the processor generics.
-
 .Table Abbreviations
 [NOTE]
 The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downto y)`".
@@ -219,9 +213,10 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `CPU_EXTENSION_RISCV_Zihpm`  | boolean | false | Enable <<_zihpm_isa_extension>> (hardware performance monitors).
 | `CPU_EXTENSION_RISCV_Zmmul`  | boolean | false | Enable <<_zmmul_isa_extension>> (hardware-based integer multiplication).
 | `CPU_EXTENSION_RISCV_Zxcfu`  | boolean | false | Enable NEORV32-specific <<_zxcfu_isa_extension>> (custom RISC-V instructions).
-4+^| **CPU Tuning Options**
-| `FAST_MUL_EN`           | boolean   | false      | Implement fast (but large) full-parallel multipliers (trying to infer DSP blocks).
-| `FAST_SHIFT_EN`         | boolean   | false      | Implement fast (but large) full-parallel barrel shifters.
+4+^| **CPU <<_architecture>> Tuning Options**
+| `FAST_MUL_EN`           | boolean   | false      | Implement fast but large full-parallel multipliers (trying to infer DSP blocks); see section <<_cpu_arithmetic_logic_unit>>.
+| `FAST_SHIFT_EN`         | boolean   | false      | Implement fast but large full-parallel barrel shifters; see section <<_cpu_arithmetic_logic_unit>>.
+| `REGFILE_HW_RST`        | boolean   | false      | Implement full hardware reset for register file (prevent inferring of BRAM); see section <<_cpu_register_file>>.
 4+^| **Physical Memory Protection (<<_pmp_isa_extension>>)**
 | `PMP_NUM_REGIONS`       | natural   | 0          | Number of implemented PMP regions (0..16).
 | `PMP_MIN_GRANULARITY`   | natural   | 4          | Minimal region granularity in bytes. Has to be a power of two, min 4.
