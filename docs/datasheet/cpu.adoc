@@ -87,43 +87,65 @@ caused by speculative execution (like Spectre or Meltdown).
 :sectnums:
 ==== CPU Register File
 
-The data register file contains the general purpose "`x`" architecture registers. For the `rv32i` ISA there are 32 32-bit registers
-and for the `rv32e` ISA there are 16 32-bit registers. Register zero (`x0`/`zero`) always read as zero and any write access to it
-is discarded.
+The data register file contains the general purpose architecture registers `x0` to `x31`. For the `rv32e` ISA only the lower
+16 registers are implemented. Register zero (`x0`/`zero`) always read as zero and any write access to it has no effect.
+Up to four individual synchronous read ports allow to fetch up to 4 register operands at once. The write and read accesses
+are mutually exclusive as they happen in separate cycles. Hence, there is no need to consider things like "read-during-write"
+behavior.
 
-The register file is implemented as synchronous memory with synchronous read and write accesses. Register `zero` is also mapped to
-a _physical memory location_ in the register file. By this, there is no need to add a further multiplexer to "insert" zero if reading
-from register `zero` reducing logic requirements and shortening the critical path. Furthermore, the whole register file can be mapped
-entirely to FPGA block RAM.
+The register file provides two different implementation options configured via the top's `REGFILE_HW_RST` generic.
 
-The memory of the register file uses two access ports: a read-only port for reading register `rs2` (second source operand) and a
-read/write port for reading register `rs1` (first source operand) or for writing processing results to register `rd` (destination register).
-Hence, a simple dual-port RAM can be used to implement the entire register file. From a functional point of view, read and write accesses to
-the register file do never occur in the same clock cycle, so no bypass logic is required at all.
+* `REGFILE_HW_RST = false` (default): In this configuration the register file is implemented as plain memory array without a
+dictated hardware reset. This architecture allows to infer FPGA block RAM for the entire register file resulting in minimal
+logic utilization and optimal timing.
+* `REGFILE_HW_RST = true`: This configuration is based on individual FFs that do provide a dedicated hardware reset.
+Hence, the register cannot be mapped to FPGA block RAM. This optional should only be selected if the application requires a
+reset of the register file (e.g. for security reasons) or if the design shall be synthesized for an **ASIC** implementation.
 
-.Register File Reset
-[IMPORTANT]
-The CPU register file does **not** provide any reset capabilities (in order to allow mapping to block RAM).
-Hence, all integer registers (`x1` to `x15`/`x31`) have unknown values after a hardware reset and can still contain
-sensitive data like encryption keys.
+The state of this configuration generic can be checked by software via the <<_mxisa>> CSR.
+
+.FPGA Implementation
+[WARNING]
+Enabling the `REGFILE_HW_RST` option for FPGA implementation is not recommended as this will massively increase the amount
+of required logic resources.
+
+.Implementation of the `zero` Register within FPGA Block RAM
+[NOTE]
+Register `zero` is also mapped to a _physical memory location_ within the register file's block RAM. By this, there is no need
+to add a further multiplexer to "insert" zero if reading from register `zero` reducing logic requirements and shortening the
+critical path. However, this also requires that the physical storage bits of register `zero` are explicitly initialized (set
+to zero) by the hardware. This is done transparently by the CPU control requiring no additional processing overhead.
+
+.Block RAM Ports
+[NOTE]
+The default register file configuration uses two access ports: a read-only port for reading register `rs2` (second source operand)
+and a read/write port for reading register `rs1` (first source operand) and for writing processing results to register `rd`
+(destination register). Hence, a simple dual-port RAM can be used to implement the entire register file. From a functional point
+of view, read and write accesses to the register file do never occur in the same clock cycle, so no bypass logic is required at all.
 
 
 :sectnums:
 ==== CPU Arithmetic Logic Unit
 
-The arithmetic/logic unit (ALU) is used for processing data from the register file and also for memory and branch address computations.
-All simple <<_i_isa_extension>> processing operations (`add`, `and`, ...) are implemented as combinatorial logic requiring only a single cycle to
-complete. More sophisticated instructions (shift operations from the base ISA and all further ISA extensions) are processed by so-called
-"ALU co-processors".
+The arithmetic/logic unit (ALU) is used for actual data processing as well as generating memory and branch addresses.
+All "simple" <<_i_isa_extension>> computational instructions (like `add` and `or`) are implemented as plain combinatorial logic
+requiring only a single cycle to complete. More sophisticated instructions like shift operations or multiplications are processed
+by so-called "ALU co-processors".
 
-The co-processors are implemented as iterative units that require several cycles to complete processing. Besides the base ISA's shift instructions,
-the co-processors are used to implement all further processing-based ISA extensions (e.g. <<_m_isa_extension>> and
-<<_b_isa_extension>>).
+The co-processors are implemented as iterative units that require several cycles to complete processing. Besides the base ISA's
+shift instructions, the co-processors are used to implement all further processing-based ISA extensions (e.g. <<_m_isa_extension>>
+and <<_b_isa_extension>>).
 
 .Multi-Cycle Execution Monitor
 [NOTE]
 The CPU control will raise an illegal instruction exception if a multi-cycle functional unit (like the <<_custom_functions_unit_cfu>>)
 does not complete processing in a bound amount of time (configured via the package's `monitor_mc_tmo_c` constant; default = 512 clock cycles).
+
+.Tuning Options
+[TIP]
+The ALU architecture can be tuned for an application-specific area-vs-performance trade-off. The `FAST_MUL_EN` and `FAST_SHIFT_EN`
+generics can be used to implement performance-optimized barrel shifters and DSP blocks, respectively. See sections <<_i_isa_extension>>,
+<<_b_isa_extension>> and <<_m_isa_extension>> for specific examples.
 
 
 :sectnums:
@@ -494,6 +516,11 @@ the following sub-extensions:
 | Carry-less multiply | `clmul` `clmulh` `clmulr`                                                                         | 36
 |=======================
 
+.Barrel Shifter
+[TIP]
+Shift operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_SHIFT_EN`
+configuration option that will replace the (time-variant) bit-serial shifter by a (time-constant) barrel shifter.
+
 
 ==== `C` ISA Extension
 
@@ -561,6 +588,11 @@ will clear/flush the data cache and resynchronize it with main memory.
 The `wfi` instruction is used to enter <<_sleep_mode>>. Executing the `wfi` instruction in user-mode
 will raise an illegal instruction exception if the `TW` bit of <<_mstatus>> is set.
 
+.Barrel Shifter
+[TIP]
+Shift operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_SHIFT_EN`
+configuration option that will replace the (time-variant) bit-serial shifter by a (time-constant) barrel shifter.
+
 
 ==== `M` ISA Extension
 
@@ -574,6 +606,11 @@ Hardware-accelerated integer multiplication and division operations are availabl
 | Multiplication | `mul` `mulh` `mulhsu` `mulhu` | 36; FAST_MUL: 4
 | Division       | `div` `divu` `rem` `remu`     | 36
 |=======================
+
+.DSP Blocks
+[TIP]
+Multiplication operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_MUL_EN`
+configuration option that will replace the (time-variant) bit-serial multiplier by (time-constant) FPGA DSP blocks.
 
 
 ==== `U` ISA Extension
@@ -852,10 +889,10 @@ defined by the NEORV32 core library (the runtime environment _RTE_) and can be u
 with the pre-defined RTE function. The <<_mcause>>, <<_mepc>>, <<_mtval>> and <<_mtinst>> columns show the value being
 written to the according CSRs when a trap is triggered:
 
-* **I-PC** - address of interrupted instruction (instruction has _not_ been executed yet)
+* **I-PC** - address of intercepted instruction (instruction has _not_ been executed yet)
 * **PC** - address of instruction that caused the trap (instruction has been executed)
 * **ADR** - bad data memory access address that caused the trap
-* **INS** - the (decompressed) instruction word that caused the trap
+* **INS** - the transformed/decompressed instruction word that caused the trap
 * **0** - zero
 
 .NEORV32 Trap Listing
