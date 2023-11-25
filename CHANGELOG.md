@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 25.11.2023 | 1.9.1.7 | cleanup/update assertions and auto-adjusting of invalid generic configurations; [#738](https://github.com/stnolting/neorv32/pull/738) |
 | 25.11.2023 | 1.9.1.6 | :sparkles: add option for "ASIC style" register file that provides a full/dedicated hardware reset; [#736](https://github.com/stnolting/neorv32/pull/736) |
 | 23.11.2023 | 1.9.1.5 | clean-up & rework CPU branch logic; [#735](https://github.com/stnolting/neorv32/pull/735) |
 | 21.11.2023 | 1.9.1.4 | :bug: fix bug in handling of "misaligned instruction exception"; [#734](https://github.com/stnolting/neorv32/pull/734) |
