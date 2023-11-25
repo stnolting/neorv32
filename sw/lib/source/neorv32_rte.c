@@ -327,7 +327,7 @@ static void __neorv32_rte_debug_handler(void) {
   }
 
   // intro
-  neorv32_uart0_puts("<RTE> ");
+  neorv32_uart0_puts("<NEORV32-RTE> ");
 
   // privilege level of the CPU when the trap occurred
   if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3 << CSR_MSTATUS_MPP_L)) {
@@ -391,7 +391,7 @@ static void __neorv32_rte_debug_handler(void) {
 
   // halt if fatal exception
   if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_I_MISALIGNED)) {
-    neorv32_uart0_puts(" [FATAL EXCEPTION!] Halting CPU. </RTE>\n");
+    neorv32_uart0_puts(" !!FATAL EXCEPTION!! Halting CPU. </NEORV32-RTE>\n");
     neorv32_cpu_csr_write(CSR_MIE, 0);
     while(1) {
       asm volatile ("wfi");
@@ -399,7 +399,7 @@ static void __neorv32_rte_debug_handler(void) {
   }
 
   // outro
-  neorv32_uart0_puts(" </RTE>\n");
+  neorv32_uart0_puts(" </NEORV32-RTE>\n");
 }
 
 
