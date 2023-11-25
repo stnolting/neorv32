@@ -670,7 +670,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_reservation_set is
   generic (
-    GRANULARITY : natural -- reservation set granularity in bytes; has to be power of 2, min 4
+    GRANULARITY : natural range 4 to natural'high -- reservation set granularity in bytes; has to be power of 2, min 4
   );
   port (
     -- global control --
@@ -691,8 +691,12 @@ end neorv32_bus_reservation_set;
 
 architecture neorv32_bus_reservation_set_rtl of neorv32_bus_reservation_set is
 
+  -- auto-configuration --
+  constant granularity_valid_c : boolean := is_power_of_two_f(GRANULARITY);
+  constant granularity_c       : natural := cond_sel_natural_f(granularity_valid_c, GRANULARITY, 2**index_size_f(GRANULARITY));
+
   -- reservation set granularity address boundary bit --
-  constant abb_c : natural := index_size_f(GRANULARITY);
+  constant abb_c : natural := index_size_f(granularity_c);
 
   -- reservation set --
   type rsvs_t is record
@@ -710,10 +714,8 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (is_power_of_two_f(GRANULARITY) = false) report
-    "NEORV32 PROCESSOR CONFIG ERROR: Reservation set granularity has to be a power of 2." severity error;
-  assert not (GRANULARITY < 4) report
-    "NEORV32 PROCESSOR CONFIG ERROR: Reservation set granularity has to be at least 4 bytes wide." severity error;
+  assert not (granularity_valid_c = false) report
+    "[NEORV32] Auto-adjusting invalid reservation set granularity configuration." severity warning;
 
 
   -- Reservation Set Control ----------------------------------------------------------------
