@@ -239,6 +239,7 @@ begin
     -- Extension Options --
     FAST_MUL_EN                  => false,         -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN                => false,         -- use barrel shifter for shift operations
+    REGFILE_HW_RST               => true,          -- full hardware reset
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              => 5,             -- number of regions (0..16)
     PMP_MIN_GRANULARITY          => 4,             -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
