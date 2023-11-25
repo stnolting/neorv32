@@ -42,7 +42,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_pmp is
   generic (
     NUM_REGIONS : natural range 0 to 16; -- number of regions (0..16)
-    GRANULARITY : natural  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    GRANULARITY : natural range 4 to natural'high -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
   );
   port (
     -- global control --
@@ -65,6 +65,10 @@ end neorv32_cpu_pmp;
 
 architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
+  -- auto-configuration --
+  constant granularity_valid_c : boolean := is_power_of_two_f(GRANULARITY);
+  constant granularity_c       : natural := cond_sel_natural_f(granularity_valid_c, GRANULARITY, 2**index_size_f(GRANULARITY));
+
   -- PMP configuration register bits --
   constant cfg_r_c  : natural := 0; -- read permit
   constant cfg_w_c  : natural := 1; -- write permit
@@ -82,7 +86,7 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   constant mode_napot_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
 
   -- PMP helpers --
-  constant pmp_lsb_c : natural := index_size_f(GRANULARITY); -- min = 2
+  constant pmp_lsb_c : natural := index_size_f(granularity_c); -- min = 2
 
   -- PMP CSRs --
   type csr_cfg_t      is array (0 to NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
@@ -133,10 +137,8 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (is_power_of_two_f(GRANULARITY) = false) report
-    "NEORV32 CPU CONFIG ERROR! PMP granularity has to be a power of two." severity error;
-  assert not (GRANULARITY < 4) report
-    "NEORV32 CPU CONFIG ERROR! PMP granularity has to be at least 4 bytes." severity error;
+  assert not (granularity_valid_c = false) report
+    "[NEORV32] Auto-adjusting invalid PMP granularity configuration." severity warning;
 
 
   -- CSR Write Access -----------------------------------------------------------------------
@@ -170,7 +172,7 @@ begin
           csr.cfg(i)(cfg_r_c) <= csr_wdata_i((i mod 4)*8+0); -- R (read)
           csr.cfg(i)(cfg_w_c) <= csr_wdata_i((i mod 4)*8+1); -- W (write)
           csr.cfg(i)(cfg_x_c) <= csr_wdata_i((i mod 4)*8+2); -- X (execute)
-          if (GRANULARITY > 4) and (csr_wdata_i((i mod 4)*8+4 downto (i mod 4)*8+3) = mode_na4_c) then
+          if (granularity_c > 4) and (csr_wdata_i((i mod 4)*8+4 downto (i mod 4)*8+3) = mode_na4_c) then
             csr.cfg(i)(cfg_ah_c downto cfg_al_c) <= mode_off_c; -- NA4 not available, fall back to OFF
           else
             csr.cfg(i)(cfg_ah_c downto cfg_al_c) <= csr_wdata_i((i mod 4)*8+4 downto (i mod 4)*8+3); -- A (mode)
@@ -221,11 +223,11 @@ begin
     begin
       addr_rd(i) <= (others => '0');
       addr_rd(i)(XLEN-1 downto pmp_lsb_c-2) <= csr.addr(i)(XLEN-1 downto pmp_lsb_c-2);
-      if (GRANULARITY = 8) then -- bit G-1 reads as zero in TOR or OFF mode
+      if (granularity_c = 8) then -- bit G-1 reads as zero in TOR or OFF mode
         if (csr.cfg(i)(cfg_ah_c) = '0') then -- TOR/OFF mode
           addr_rd(i)(pmp_lsb_c) <= '0';
         end if;
-      elsif (GRANULARITY > 8) then
+      elsif (granularity_c > 8) then
         addr_rd(i)(pmp_lsb_c-2 downto 0) <= (others => '1'); -- in NAPOT mode bits G-2:0 must read as one
         if (csr.cfg(i)(cfg_ah_c) = '0') then -- TOR/OFF mode
           addr_rd(i)(pmp_lsb_c-1 downto 0) <= (others => '0'); -- in TOR or OFF mode bits G-1:0 must read as zero
