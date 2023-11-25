@@ -72,6 +72,7 @@ entity neorv32_top is
     -- Tuning Options --
     FAST_MUL_EN                : boolean := false;                              -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN              : boolean := false;                              -- use barrel shifter for shift operations
+    REGFILE_HW_RST             : boolean := false;                              -- implement full hardware reset for register file
 
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS            : natural range 0 to 16 := 0;                    -- number of regions (0..16)
@@ -506,6 +507,7 @@ begin
       -- Tuning Options --
       FAST_MUL_EN                => FAST_MUL_EN,
       FAST_SHIFT_EN              => FAST_SHIFT_EN,
+      REGFILE_HW_RST             => REGFILE_HW_RST,
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS            => PMP_NUM_REGIONS,
       PMP_MIN_GRANULARITY        => PMP_MIN_GRANULARITY,
