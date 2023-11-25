@@ -481,12 +481,9 @@ void neorv32_rte_print_hw_config(void) {
 
   // CPU tuning options
   neorv32_uart0_printf("\nTuning options:      ");
-  if (tmp & (1<<CSR_MXISA_FASTMUL)) {
-    neorv32_uart0_printf("FAST_MUL ");
-  }
-  if (tmp & (1<<CSR_MXISA_FASTSHIFT)) {
-    neorv32_uart0_printf("FAST_SHIFT ");
-  }
+  if (tmp & (1<<CSR_MXISA_FASTMUL))   { neorv32_uart0_printf("fast_mul ");   }
+  if (tmp & (1<<CSR_MXISA_FASTSHIFT)) { neorv32_uart0_printf("fast_shift "); }
+  if (tmp & (1<<CSR_MXISA_RFHWRST))   { neorv32_uart0_printf("rf_hw_rst ");  }
 
   // check physical memory protection
   neorv32_uart0_printf("\nPhys. Mem. Prot.:    ");
