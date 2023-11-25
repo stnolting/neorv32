@@ -386,6 +386,7 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_IS_SIM    = 20, /**< CPU mxisa CSR (20): this might be a simulation when set (r/-)*/
 
   // Tuning options
+  CSR_MXISA_RFHWRST   = 29, /**< CPU mxisa CSR (29): Register file has full hardware reset (r/-)*/
   CSR_MXISA_FASTMUL   = 30, /**< CPU mxisa CSR (30): DSP-based multiplication (M extensions only) (r/-)*/
   CSR_MXISA_FASTSHIFT = 31  /**< CPU mxisa CSR (31): parallel logic for shifts (barrel shifters) (r/-)*/
 };
