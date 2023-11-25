@@ -171,7 +171,7 @@ begin
   -- Sub-Extension Configuration ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-    "NEORV32 CPU: Implementing bit-manipulation (B) sub-extensions " &
+    "[NEORV32] Implementing bit-manipulation (B) sub-extensions " &
     cond_sel_string_f(zba_en_c, "Zba ", "") &
     cond_sel_string_f(zbb_en_c, "Zbb ", "") &
     cond_sel_string_f(zbc_en_c, "Zbc ", "") &
