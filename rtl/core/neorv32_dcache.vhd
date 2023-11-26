@@ -61,8 +61,17 @@ end neorv32_dcache;
 
 architecture neorv32_dcache_rtl of neorv32_dcache is
 
+  -- make sure caches sizes are a power of two --
+  constant nblocks_valid_c : boolean := is_power_of_two_f(DCACHE_NUM_BLOCKS);
+  constant nblocks_pow2_c  : natural := 2**index_size_f(DCACHE_NUM_BLOCKS);
+  constant nblocks_c       : natural := cond_sel_natural_f(nblocks_valid_c, DCACHE_NUM_BLOCKS, nblocks_pow2_c);
+  --
+  constant block_size_valid_c : boolean := is_power_of_two_f(DCACHE_BLOCK_SIZE);
+  constant block_size_pow2_c  : natural := 2**index_size_f(DCACHE_BLOCK_SIZE);
+  constant block_size_c       : natural := cond_sel_natural_f(block_size_valid_c, DCACHE_BLOCK_SIZE, block_size_pow2_c);
+
   -- cache layout --
-  constant cache_offset_size_c : natural := index_size_f(DCACHE_BLOCK_SIZE/4); -- offset addresses full 32-bit words
+  constant cache_offset_size_c : natural := index_size_f(block_size_c/4); -- offset addresses full 32-bit words
 
   -- cache memory --
   component neorv32_dcache_memory
@@ -124,10 +133,8 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (is_power_of_two_f(DCACHE_NUM_BLOCKS) = false) report
-    "NEORV32 PROCESSOR CONFIG ERROR! d-cache number of blocks <DCACHE_NUM_BLOCKS> has to be a power of 2." severity error;
-  assert not (is_power_of_two_f(DCACHE_BLOCK_SIZE) = false) report
-    "NEORV32 PROCESSOR CONFIG ERROR! d-cache block size <DCACHE_BLOCK_SIZE> has to be a power of 2." severity error;
+  assert not ((nblocks_valid_c = false) or (block_size_valid_c = false)) report
+    "[NEORV32] Auto-adjusting invalid d-cache size configuration(s)." severity warning;
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------
@@ -314,8 +321,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_dcache_memory_inst: neorv32_dcache_memory
   generic map (
-    DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
-    DCACHE_BLOCK_SIZE => DCACHE_BLOCK_SIZE
+    DCACHE_NUM_BLOCKS => nblocks_c,
+    DCACHE_BLOCK_SIZE => block_size_c
   )
   port map (
     -- global control --

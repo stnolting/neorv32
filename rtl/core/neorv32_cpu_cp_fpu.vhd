@@ -279,7 +279,7 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-    "[Zfinx] The NEORV32 floating-point unit is still in experimental state." severity warning;
+    "[NEORV32] The floating-point unit (Zfinx) is still in experimental state." severity warning;
 
 
 -- ****************************************************************************************************************************

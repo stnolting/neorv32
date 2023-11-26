@@ -141,7 +141,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- CPU ISA configuration --
   assert false report
-    "NEORV32 CPU Configuration: rv32" &
+    "[NEORV32] CPU ISA: rv32" &
     cond_sel_string_f(CPU_EXTENSION_RISCV_E,      "e",         "i") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_M,      "m",         "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_A,      "a",         "" ) &
@@ -160,9 +160,17 @@ begin
     cond_sel_string_f(pmp_enable_c,               "_smpmp",    "" )
     severity note;
 
+  -- CPU tuning options --
+  assert false report
+    "[NEORV32] CPU tuning options: " &
+    cond_sel_string_f(FAST_MUL_EN,    "fast_mul ",   "") &
+    cond_sel_string_f(FAST_SHIFT_EN,  "fast_shift ", "" ) &
+    cond_sel_string_f(REGFILE_HW_RST, "rf_hw_rst",   "" )
+    severity note;
+
   -- simulation notifier --
   assert not (is_simulation_c = true) report
-    "NEORV32 CPU WARNING! Assuming this is a simulation." severity warning;
+    "[NEORV32] Assuming this is a simulation." severity warning;
 
 
   -- Control Unit ---------------------------------------------------------------------------

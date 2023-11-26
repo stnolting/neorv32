@@ -348,7 +348,7 @@ begin
 
     -- show module configuration --
     assert false report
-      "NEORV32 Processor Configuration: " &
+      "[NEORV32] Processor Configuration: " &
       cond_sel_string_f(MEM_INT_IMEM_EN,     "IMEM ",     "") &
       cond_sel_string_f(MEM_INT_DMEM_EN,     "DMEM ",     "") &
       cond_sel_string_f(INT_BOOTLOADER_EN,   "BOOTROM ",  "") &
@@ -381,13 +381,11 @@ begin
 
     -- IMEM size --
     assert not ((imem_size_valid_c = false) and (MEM_INT_IMEM_EN = true)) report
-      "NEORV32 PROCESSOR CONFIG WARNING: Configured internal IMEM size (" & natural'image(MEM_INT_IMEM_SIZE) & " bytes) is not a power of two. " &
-      "Auto-adjusting memory size to the next power of two (" & natural'image(imem_size_c) & " bytes)" severity warning;
+      "[NEORV32] Auto-adjusting invalid IMEM size configuration." severity warning;
 
     -- DMEM size --
     assert not ((dmem_size_valid_c = false) and (MEM_INT_DMEM_EN = true)) report
-      "NEORV32 PROCESSOR CONFIG WARNING: Configured internal DMEM size (" & natural'image(MEM_INT_DMEM_SIZE) & " bytes) is not a power of two. " &
-      "Auto-adjusting memory size to the next power of two (" & natural'image(dmem_size_c) & " bytes)" severity warning;
+      "[NEORV32] Auto-adjusting invalid DMEM size configuration." severity warning;
 
   end generate; -- /sanity_checks
 

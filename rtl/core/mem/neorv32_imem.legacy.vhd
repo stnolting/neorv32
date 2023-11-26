@@ -71,11 +71,11 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-    "NEORV32 PROCESSOR CONFIG NOTE: Implementing LEGACY processor-internal IMEM as " &
+    "[NEORV32] Implementing LEGACY processor-internal IMEM as " &
     cond_sel_string_f(IMEM_AS_IROM, "pre-initialized ROM.", "blank RAM.") severity note;
 
   assert not ((IMEM_AS_IROM = true) and (imem_app_size_c > IMEM_SIZE)) report
-    "NEORV32 PROCESSOR CONFIG ERROR: Application (image = " & natural'image(imem_app_size_c) &
+    "[NEORV32] Application (image = " & natural'image(imem_app_size_c) &
     " bytes) does not fit into processor-internal IMEM (ROM = " & natural'image(IMEM_SIZE) & " bytes)!" severity error;
 
 
