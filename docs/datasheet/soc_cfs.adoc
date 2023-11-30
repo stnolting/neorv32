@@ -61,7 +61,7 @@ int temp = (int)NEORV32_CFS->REG[20]; // read from CFS register 20
 **CFS Interrupt**
 
 The CFS provides a single high-level-triggered interrupt request signal mapped to the CPU's fast interrupt channel 1.
-Once triggered, the interrupt becomes pending (if enabled in the `mis` CSR) and has to be explicitly cleared again by
+Once triggered, the interrupt becomes pending (if enabled in the <<_mie>> CSR) and has to be explicitly cleared again by
 writing zero to the according <<_mip>> CSR bit. See section <<_processor_interrupts>> for more information.
 
 
