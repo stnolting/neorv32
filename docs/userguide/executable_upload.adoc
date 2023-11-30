@@ -89,6 +89,10 @@ Awaiting neorv32_exe.bin...
 When using TeraTerm, select the "binary" option in the send file dialog.
 . If everything went fine, OK will appear in your terminal:
 
+[IMPORTANT]
+Make sure to upload the NEORV32 executable `neorv32_exe.bin`. Uploading any other file (like `main.bin`)
+will cause an `ERR_EXE` bootloader error (see https://stnolting.github.io/neorv32/#_bootloader_error_codes).
+
 [source,bash]
 ----
 CMD:> u

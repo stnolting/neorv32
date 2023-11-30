@@ -159,6 +159,11 @@ executed via the `e` command. To store the recently uploaded executable to an at
 directly load an executable from the SPI flash press `l`. The bootloader and the auto-boot sequence can be
 manually restarted via the `r` command.
 
+.Executable Upload
+[IMPORTANT]
+Make sure to upload the NEORV32 executable `neorv32_exe.bin`. Uploading any other file (like `main.bin`)
+will cause an `ERR_EXE` bootloader error (see <<_bootloader_error_codes>>).
+
 .Booting via XIP
 [NOTE]
 The bootloader allows to execute an application right from flash using the <<_execute_in_place_module_xip>> module.
