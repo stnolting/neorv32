@@ -657,27 +657,40 @@ return to the address stored in `dpc` by automatically moving `dpc` to the progr
 :sectnums:
 === Trigger Module
 
-The RISC-V `Sdtrig` ISA extension adds a programmable _trigger module_ to the processor when enabled
-(via the <<_sdtrig_isa_extension>>). The NEORV32 trigger module implements a subset of the features
-described in the "RISC-V Debug Specification / Trigger Module".
-
-The trigger module only provides a _single_ trigger supporting only the "instruction address match" type. This limitation
-is granted by the RISC-V specs. and is sufficient to **debug code executed from read-only memory (ROM)**.
 "Normal" _software_ breakpoints (using GDB's `b`/`break` command) are implemented by temporarily replacing the according
-instruction word by an `ebreak` instruction. This is not possible when debugging code that is executed from read-only memory
-(for example when debugging programs that are executed via the <<_execute_in_place_module_xip>>).
-Therefore, the NEORV32 trigger module provides a single "instruction address match" trigger to enter debug mode when
-executing the instruction at a programmable address. These "hardware-assisted breakpoints" are used by GDB's `hb`/`hbreak` commands.
+instruction word by an `[c.]ebreak` instruction. However, this is not possible when debugging code that is executed from
+read-only memory (for example when debugging programs that are executed via the <<_execute_in_place_module_xip>>).
+To circumvent this limitation a hardware trigger logic allows to (re-)enter debug-mode when instruction execution
+reaches a programmable address. These "hardware-assisted breakpoints" are used by GDB's `hb`/`hbreak` commands.
 
-The trigger module can also be used independently of the CPU debug-mode. Machine-mode software can use the trigger module
-to raise a breakpoint exception when the instruction at the programmed address gets executed.
+The RISC-V `Sdtrig` ISA extension adds a programmable _trigger module_ to the CPU core that is enabled via the
+<<_sdtrig_isa_extension>> generic. The trigger module implements a subset of the features described in the
+"RISC-V Debug Specification / Trigger Module" and complies to version v1.0 of the `Sdtrig` spec.
+
+The NEORV32 trigger module features only a _single_ trigger implementing a "type 6 - instruction address match" trigger.
+This limitation is granted by the RISC-V debug spec and is sufficient to **debug code executed from read-only memory (ROM)**.
+The trigger module can also be used independently of the CPU debug-mode / `Sdext` ISA extension.
+Machine-mode software can use the trigger module to raise a breakpoint exception when instruction execution
+reaches a programmed address.
+
+.Trigger Timing
+[NOTE]
+When enabled the address match trigger will fire **BEFORE** the instruction at the programmed address gets executed.
+
+.MEPC & DPC CSRs
+[WARNING]
+The breakpoint exception when raised by the trigger module behaves different then the "normal" trapping (see
+<<_neorv32_trap_listing>>): <<_mepc>> / <<_dpc>> is set to the address of the next instruction that needs to be
+executed to preserve the program flow. A "normal" breakpoint exception would set <<_mepc>> / <<_dpc>> to the address
+of the actual `ebreak` instruction itself.
+
 
 :sectnums:
 ==== Trigger Module CSRs
 
-The `Sdtrig` ISA extension add 8 additional CSRs, which are accessible in debug-mode and also in machine-mode.
-Machine-level accesses can be ignore by setting <<_tdata1>> ´.dmode´. This is automatically done by GDB if it uses the trigger module
-for implementing a "hardware breakpoint"
+The `Sdtrig` ISA extension adds 4 additional CSRs that are accessible from debug-mode and also from machine-mode.
+Machine-mode write accesses can be ignored by setting ´dmode´ in <<_tdata1>>. This is automatically done by the debugger
+if it uses the trigger module for implementing a "hardware breakpoint"
 
 :sectnums!:
 ===== **`tselect`**
@@ -699,12 +712,11 @@ for implementing a "hardware breakpoint"
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
 |=======================
-| Name        | Trigger data register 1 / match control register
+| Name        | Trigger data register 1, visible as trigger "type 6 match control" (`mcontrol6`)
 | Address     | `0x7a1`
-| Reset value | `0x20040040`
+| Reset value | `0x60000048`
 | ISA         | `Zicsr` & `Sdtrig`
-| Description | This CSR is used to configure the address match trigger. Only one bit is writable, the remaining bits are hardwired (see table below).
-Write attempts to the hardwired bits are ignored.
+| Description | This CSR is used to configure the address match trigger using the "type 6" format.
 |=======================
 
 .Match Control CSR (`tdata1`) Bits
@@ -712,21 +724,24 @@ Write attempts to the hardwired bits are ignored.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [RISC-V] | R/W | Description
-| 31:28 | `type`        | r/- | `0010` - address match trigger
-| 27    | `dmode`       | r/w | set to ignore `tdata*` CSR accesses from machine-mode
-| 26:21 | `maskmax`     | r/- | `000000` - only exact values
-| 20    | `hit`         | r/- | `0` - feature not supported
-| 19    | `select`      | r/- | `0` - fire trigger on address match
-| 18    | `timing`      | r/- | `1` - trigger **after** executing the triggering instruction
-| 17:16 | `sizelo`      | r/- | `00` - match against an access of any size
-| 15:12 | `action`      | r/w | `0001` = enter debug-mode on trigger fire; `0000` = normal m-mode break exception on trigger fire
-| 11    | `chain`       | r/- | `0` - chaining is not supported - there is only one trigger
-| 10:6  | `match`       | r/- | `0000` - only full-address match
+| 31:28 | `type`        | r/- | `0100` - address match trigger type 6
+| 27    | `dmode`       | r/w | set to ignore write accesses to <<_tdata1>> and <<_tdata2>> from machine-mode; writable from debug-mode only
+| 26    | `uncertain`   | r/- | `0` - trigger satisfies the configured conditions
+| 25    | `hit1`        | r/- | `0` - hardwired to zero, only `hit0` is used
+| 24    | `vs`          | r/- | `0` - VS-mode not supported
+| 23    | `vu`          | r/- | `0` - VU-mode not supported
+| 22    | `hit0`        | r/c | set when trigger has fired (**BEFORE** executing the triggering address); must be explicitly cleared by writing zero
+| 21    | `select`      | r/- | `0` - only address matching is supported
+| 20:19 | reserved      | r/- | `00` - hardwired to zero
+| 18:16 | `size`        | r/- | `000` -  match accesses of any size
+| 15:12 | `action`      | r/w | `0000` = breakpoint exception on trigger match, `0001` = enter debug-mode on trigger match
+| 11    | `chain`       | r/- | `0` - chaining is not supported as there is only one trigger
+| 10:6  | `match`       | r/- | `0000` - equal-match only
 | 6     | `m`           | r/- | `1` - trigger enabled when in machine-mode
-| 5     | `h`           | r/- | `0` - hypervisor-mode not supported
+| 5     | `uncertainen` | r/- | `0` - feature not supported, hardwired to zero
 | 4     | `s`           | r/- | `0` - supervisor-mode not supported
-| 3     | `u`           | r/- | trigger enabled when in user-mode, set when `U` ISA extension is enabled
-| 2     | `exe`         | r/w | set to enable trigger
+| 3     | `u`           | r/- | `0`/`1` - trigger enabled when in user-mode, set if `U` ISA extension is enabled
+| 2     | `execute`     | r/w | set to enable trigger matching on instruction address
 | 1     | `store`       | r/- | `0` - store address/data matching not supported
 | 0     | `load`        | r/- | `0` - load address/data matching not supported
 |=======================
@@ -743,20 +758,7 @@ Write attempts to the hardwired bits are ignored.
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `Sdtrig`
 | Description | Since only the "address match trigger" type is supported, this r/w CSR is used to configure the address of the triggering instruction.
-|=======================
-
-
-:sectnums!:
-===== **`tdata3`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | Trigger data register 3
-| Address     | `0x7a3`
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` & `Sdtrig`
-| Description | This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
+Note that the trigger module will fire **before** the instruction at the programmed address gets executed.
 |=======================
 
 
@@ -768,21 +770,17 @@ Write attempts to the hardwired bits are ignored.
 |=======================
 | Name        | Trigger information register
 | Address     | `0x7a4`
-| Reset value | `0x00000004`
+| Reset value | `0x01000006`
 | ISA         | `Zicsr` & `Sdtrig`
-| Description | This CSR is hardwired to "4" indicating there is only an "address match trigger" available. Any write access is ignored.
+| Description | The CSR shows global trigger information (see below). Any write access is ignored.
 |=======================
 
-
-:sectnums!:
-===== **`tcontrol`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
+.Trigger Info CSR (`tinfo`) Bits
+[cols="^1,^2,^1,<8"]
+[options="header",grid="rows"]
 |=======================
-| Name        | Trigger control register
-| Address     | `0x7a5`
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` & `Sdtrig`
-| Description | This CSR is not required for the NEORV32 trigger module. Hence, it is hardwired to zero and any write access is ignored.
+| Bit   | Name [RISC-V] | R/W | Description
+| 31:24 | `version`     | r/- | `0x01` - compatible to spec. version v1.0
+| 23:15 | reserved      | r/- | `0x00` - hardwired to zero
+| 15:0  | `info`        | r/- | `0x0006` - only type 6 trigger is supported
 |=======================
