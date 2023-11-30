@@ -46,11 +46,7 @@ bits can actually be modified.
 | 0x7a0 | <<_tselect>>  | `CSR_TSELECT`  | MRW | Trigger select register
 | 0x7a1 | <<_tdata1>>   | `CSR_TDATA1`   | MRW | Trigger data register 1
 | 0x7a2 | <<_tdata2>>   | `CSR_TDATA2`   | MRW | Trigger data register 2
-| 0x7a3 | <<_tdata3>>   | `CSR_TDATA3`   | MRW | Trigger data register 3
 | 0x7a4 | <<_tinfo>>    | `CSR_TINFO`    | MRW | Trigger information register
-| 0x7a5 | <<_tcontrol>> | `CSR_TCONTROL` | MRW | Trigger control register
-| 0x7a8 | <<_mcontext>> | `CSR_MCONTEXT` | MRW | Machine context register
-| 0x7aa | <<_scontext>> | `CSR_SCONTEXT` | MRW | Supervisor context register
 5+^| **<<_cpu_debug_mode_csrs>>**
 | 0x7b0 | <<_dcsr>>      | - | DRW | Debug control and status register
 | 0x7b1 | <<_dpc>>       | - | DRW | Debug program counter
