@@ -36,6 +36,9 @@ by resolving the trap cause.
 
 ==== Using the RTE
 
+[IMPORTANT]
+All provided RTE functions can be called only from machine-mode code.
+
 The NEORV32 is part of the default NEORV32 software framework. However, it has to explicitly enabled by calling
 the RTE's setup function:
 
@@ -47,6 +50,10 @@ void neorv32_rte_setup(void);
 
 [NOTE]
 The RTE should be enabled right at the beginning of the application's `main` function.
+
+[IMPORTANT]
+It is recommended to not use the <<_mscratch>> CSR when using the RTE as this register is used to provide services
+for <<_application_context_handling>> (i.e. modifying the registers of application code that caused a trap).
 
 As mentioned above, all traps will just trigger execution of the RTE's <<_default_rte_trap_handlers>> at first.
 To use application-specific handlers, which actually "handle" a trap, the default handlers can be overridden
@@ -141,6 +148,9 @@ RISC-V machine timer (MTIME) interrupt:
 ----
 neorv32_rte_handler_uninstall(RTE_TRAP_MTI);
 ----
+
+[TIP]
+The current RTE configuration can be printed via UART0 via the `neorv32_rte_info` function.
 
 
 ==== Default RTE Trap Handlers

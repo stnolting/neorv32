@@ -93,6 +93,7 @@ int      neorv32_rte_handler_install(int id, void (*handler)(void));
 int      neorv32_rte_handler_uninstall(int id);
 uint32_t neorv32_rte_context_get(int x);
 void     neorv32_rte_context_put(int x, uint32_t data);
+void     neorv32_rte_print_info(void);
 
 void neorv32_rte_print_hw_config(void);
 void neorv32_rte_print_hw_version(void);

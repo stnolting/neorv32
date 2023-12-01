@@ -48,7 +48,7 @@
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment (RTE).
+ * NEORV32 runtime environment (RTE):
  * The >private< trap vector look-up table of the NEORV32 RTE.
  **************************************************************************/
 static uint32_t __neorv32_rte_vector_lut[NEORV32_RTE_NUM_TRAPS] __attribute__((unused)); // trap handler vector table
@@ -61,14 +61,19 @@ static void __neorv32_rte_print_hex_word(uint32_t num);
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment (RTE).
+ * NEORV32 runtime environment (RTE):
  * Setup RTE.
  *
  * @note This function installs a debug handler for ALL trap sources, which
  * gives detailed information about the trap. Actual handlers can be installed afterwards
  * via neorv32_rte_handler_install(uint8_t id, void (*handler)(void)).
+ *
+ * @warning This function can be called from machine-mode only.
  **************************************************************************/
 void neorv32_rte_setup(void) {
+
+  // raise an exception if we're not in machine-mode
+  asm volatile ("csrr x0, mhartid");
 
   // clear mstatus, set previous privilege level to machine-mode
   neorv32_cpu_csr_write(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
@@ -91,14 +96,19 @@ void neorv32_rte_setup(void) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment (RTE).
+ * NEORV32 runtime environment (RTE):
  * Install trap handler function (second-level trap handler).
  *
  * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
  * @param[in] handler The actual handler function for the specified trap (function MUST be of type "void function(void);").
  * @return 0 if success, -1 if error (invalid id or targeted trap not supported).
+ *
+ * @warning This function can be called from machine-mode only.
  **************************************************************************/
 int neorv32_rte_handler_install(int id, void (*handler)(void)) {
+
+  // raise an exception if we're not in machine-mode
+  asm volatile ("csrr x0, mhartid");
 
   // id valid?
   if ((id >= (int)RTE_TRAP_I_MISALIGNED) && (id <= (int)RTE_TRAP_FIRQ_15)) {
@@ -110,14 +120,19 @@ int neorv32_rte_handler_install(int id, void (*handler)(void)) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment (RTE).
+ * NEORV32 runtime environment (RTE):
  * Uninstall trap handler function from NEORV32 runtime environment, which was
  * previously installed via neorv32_rte_handler_install(uint8_t id, void (*handler)(void)).
  *
  * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
  * @return 0 if success, -1 if error (invalid id or targeted trap not supported).
+ *
+ * @warning This function can be called from machine-mode only.
  **************************************************************************/
 int neorv32_rte_handler_uninstall(int id) {
+
+  // raise an exception if we're not in machine-mode
+  asm volatile ("csrr x0, mhartid");
 
   // id valid?
   if ((id >= (int)RTE_TRAP_I_MISALIGNED) && (id <= (int)RTE_TRAP_FIRQ_15)) {
@@ -129,15 +144,20 @@ int neorv32_rte_handler_uninstall(int id) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment (RTE).
+ * NEORV32 runtime environment (RTE):
  * This is the core of the NEORV32 RTE (first-level trap handler, executed in machine mode).
  **************************************************************************/
 static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
 
   // save context
-	asm volatile (
+  asm volatile (
     "csrw mscratch, sp  \n" // backup original stack pointer
+
+#ifndef __riscv_32e
     "addi sp, sp, -32*4 \n"
+#else
+    "addi sp, sp, -16*4 \n"
+#endif
 
     "sw x0, 0*4(sp) \n"
     "sw x1, 1*4(sp) \n"
@@ -241,6 +261,7 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
   asm volatile (
 //  "lw x0,   0*4(sp) \n"
     "lw x1,   1*4(sp) \n"
+//   restore 2x at the very end
     "lw x3,   3*4(sp) \n"
     "lw x4,   4*4(sp) \n"
     "lw x5,   5*4(sp) \n"
@@ -279,8 +300,10 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment:
+ * NEORV32 runtime environment (RTE):
  * Read register from application context.
+ *
+ * @warning This function can be called from machine-mode only.
  *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
  * @return Content of register x.
@@ -298,8 +321,10 @@ uint32_t neorv32_rte_context_get(int x) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment:
+ * NEORV32 runtime environment (RTE):
  * Write register in application context.
+ *
+ * @warning This function can be called from machine-mode only.
  *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
  * @param[in] data Data to be written to register x.
@@ -317,8 +342,8 @@ void neorv32_rte_context_put(int x, uint32_t data) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment (RTE).
- * Debug trap handler, printing various information via UART.
+ * NEORV32 runtime environment (RTE):
+ * Debug trap handler, printing various information via UART0.
  **************************************************************************/
 static void __neorv32_rte_debug_handler(void) {
 
@@ -403,16 +428,86 @@ static void __neorv32_rte_debug_handler(void) {
 }
 
 
+/**********************************************************************//**
+ * NEORV32 runtime environment (RTE):
+ * Print current RTE configuration via UART0.
+ *
+ * @warning This function can be called from machine-mode only.
+ **************************************************************************/
+void neorv32_rte_print_info(void) {
+
+  // raise an exception if we're not in machine-mode
+  asm volatile ("csrr x0, mhartid");
+
+  const char trap_name[NEORV32_RTE_NUM_TRAPS][13] = {
+    "I_MISALIGNED",
+    "I_ACCESS    ",
+    "I_ILLEGAL   ",
+    "BREAKPOINT  ",
+    "L_MISALIGNED",
+    "L_ACCESS    ",
+    "S_MISALIGNED",
+    "S_ACCESS    ",
+    "UENV_CALL   ",
+    "MENV_CALL   ",
+    "MSI         ",
+    "MTI         ",
+    "MEI         ",
+    "FIRQ_0      ",
+    "FIRQ_1      ",
+    "FIRQ_2      ",
+    "FIRQ_3      ",
+    "FIRQ_4      ",
+    "FIRQ_5      ",
+    "FIRQ_6      ",
+    "FIRQ_7      ",
+    "FIRQ_8      ",
+    "FIRQ_9      ",
+    "FIRQ_10     ",
+    "FIRQ_11     ",
+    "FIRQ_12     ",
+    "FIRQ_13     ",
+    "FIRQ_14     ",
+    "FIRQ_15     "
+  };
+
+  neorv32_uart0_puts("\n\n<< NEORV32 Runtime Environment (RTE) Configuration >>\n\n");
+
+  // header
+  neorv32_uart0_puts("---------------------------------\n");
+  neorv32_uart0_puts("Trap Name [ID]         Handler\n");
+  neorv32_uart0_puts("---------------------------------\n");
+
+  uint32_t i;
+  for (i=0; i<NEORV32_RTE_NUM_TRAPS; i++) {
+    neorv32_uart0_puts("RTE_TRAP_");
+    neorv32_uart0_puts(trap_name[i]);
+    neorv32_uart0_puts("  ");
+    __neorv32_rte_print_hex_word(__neorv32_rte_vector_lut[i]);
+    neorv32_uart0_puts("\n");
+  }
+
+  // footer
+  neorv32_uart0_puts("---------------------------------\n");
+  neorv32_uart0_puts("\n");
+}
+
+
 // #################################################################################################
 // RTE Hardware Analysis Helpers
 // #################################################################################################
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment:
+ * NEORV32 runtime environment (RTE):
  * Print hardware configuration information via UART0.
+ *
+ * @warning This function can be called from machine-mode only.
  **************************************************************************/
 void neorv32_rte_print_hw_config(void) {
+
+  // raise an exception if we're not in machine-mode
+  asm volatile ("csrr x0, mhartid");
 
   if (neorv32_uart0_available() == 0) {
     return; // cannot output anything if UART0 is not implemented
@@ -618,7 +713,7 @@ void neorv32_rte_print_hw_config(void) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment:
+ * NEORV32 runtime environment (RTE):
  * Private function to print true or false via UART0.
  *
  * @param[in] state Print 'true' when !=0, print 'false' when 0
@@ -635,7 +730,7 @@ static void __neorv32_rte_print_true_false(int state) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment:
+ * NEORV32 runtime environment (RTE):
  * Private function to print 32-bit number as 8-digit hexadecimal value (with "0x" suffix).
  *
  * @param[in] num Number to print as hexadecimal via UART0.
@@ -660,8 +755,10 @@ void __neorv32_rte_print_hex_word(uint32_t num) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment:
+ * NEORV32 runtime environment (RTE):
  * Print the processor version in human-readable format via UART0.
+ *
+ * @warning This function can be called from machine-mode only.
  **************************************************************************/
 void neorv32_rte_print_hw_version(void) {
 
@@ -695,7 +792,7 @@ void neorv32_rte_print_hw_version(void) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment:
+ * NEORV32 runtime environment (RTE):
  * Print project credits via UART0.
  **************************************************************************/
 void neorv32_rte_print_credits(void) {
@@ -710,7 +807,7 @@ void neorv32_rte_print_credits(void) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment:
+ * NEORV32 runtime environment (RTE):
  * Print project logo via UART0.
  **************************************************************************/
 void neorv32_rte_print_logo(void) {
@@ -754,7 +851,7 @@ void neorv32_rte_print_logo(void) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment:
+ * NEORV32 runtime environment (RTE):
  * Print project license via UART0.
  **************************************************************************/
 void neorv32_rte_print_license(void) {
@@ -799,7 +896,7 @@ void neorv32_rte_print_license(void) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment:
+ * NEORV32 runtime environment (RTE):
  * Get MISA CSR value according to *compiler/toolchain configuration*.
  *
  * @return MISA content according to compiler configuration.
@@ -851,8 +948,10 @@ uint32_t neorv32_rte_get_compiler_isa(void) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment:
+ * NEORV32 runtime environment (RTE):
  * Check required ISA extensions (via compiler flags) against available ISA extensions (via MISA csr).
+ *
+ * @warning This function can be called from machine-mode only.
  *
  * @param[in] silent Show error message (via UART0) if isa_sw > isa_hw when = 0.
  * @return MISA content according to compiler configuration.
