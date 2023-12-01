@@ -39,6 +39,9 @@ bits can actually be modified.
 | 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW | Machine trap value
 | 0x344 | <<_mip>>      | `CSR_MIP`      | MRW | Machine interrupt pending register
 | 0x34a | <<_mtinst>>   | `CSR_MTINST`   | MRW | Machine trap instruction
+5+^| **<<_machine_configuration_csrs>>**
+| 0x30a | <<_menvcfg>>  | `CSR_MENVCFG`  | MRW | Machine environment configuration register - low word
+| 0x31a | <<_menvcfgh>> | `CSR_MENVCFGH` | MRW | Machine environment configuration register - high word
 5+^| **<<_machine_physical_memory_protection_csrs>>**
 | 0x3a0 .. 0x303 | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg3`>>      | `CSR_PMPCFG0` .. `CSR_PMPCFG3`    | MRW | Physical memory protection configuration registers
 | 0x3b0 .. 0x3bf | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr15`>> | `CSR_PMPADDR0` .. `CSR_PMPADDR15` | MRW | Physical memory protection address registers
@@ -480,6 +483,42 @@ The RISC-V priv. spec. suggests that the instruction word written to `mtinst` by
 However, the NEORV32 `mtinst` CSR uses a simplified transformation scheme: if the trap-causing instruction is a
 standard 32-bit instruction, `mtinst` contains the exact instruction word that caused the trap. If the trap-causing
 instruction is a compressed instruction, `mtinst` contains the de-compressed 32-bit equivalent with bit 1 being cleared.
+
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+==== Machine Configuration CSRs
+
+[discrete]
+===== **`menvcfg`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Machine environment configuration register - low word
+| Address     | `0x30a`
+| Reset value | `0x00000000`
+| ISA         | `Zicsr` & `U`
+| Description | Currently, the features of this CSR are not supported. Hence, the entire register is hardwired to all-zero.
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`menvcfgh`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Machine environment configuration register - high word
+| Address     | `0x31a`
+| Reset value | `0x00000000`
+| ISA         | `Zicsr` & `U`
+| Description | Currently, the features of this CSR are not supported. Hence, the entire register is hardwired to all-zero.
+|=======================
+
 
 
 <<<
