@@ -32,6 +32,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 01.12.2023 | [**:rocket:1.9.2**](https://github.com/stnolting/neorv32/releases/tag/v1.9.2) | **New release** | |
 | 01.12.2023 | 1.9.1.9 | add `menvcfg[h]` CSRs | [#741](https://github.com/stnolting/neorv32/pull/741) |
 | 30.11.2023 | 1.9.1.8 | :sparkles: :bug: upgrade RISC-V hardware trigger module (`Sdtrig` ISA extension) to spec. version v1.0 (fixing several minor bugs) | [#739](https://github.com/stnolting/neorv32/pull/739) |
 | 25.11.2023 | 1.9.1.7 | cleanup/update assertions and auto-adjusting of invalid generic configurations | [#738](https://github.com/stnolting/neorv32/pull/738) |
