@@ -1168,7 +1168,8 @@ begin
         csr_reg_valid <= '1'; -- always available (but CSR might be hardwired)
 
       -- machine-controlled user-mode CSRs --
-      when csr_mcounteren_c | csr_mcyclecfg_c | csr_minstretcfg_c | csr_mcyclecfgh_c | csr_minstretcfgh_c =>
+      when csr_mcounteren_c | csr_menvcfg_c     | csr_menvcfgh_c   |
+           csr_mcyclecfg_c  | csr_minstretcfg_c | csr_mcyclecfgh_c | csr_minstretcfgh_c =>
         csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- available if U-mode implemented
 
       -- physical memory protection (PMP) --
@@ -1967,6 +1968,11 @@ begin
             csr_rdata(15 downto 3) <= (others => csr.mcounteren); -- hpmcounter
           end if;
         end if;
+
+      -- machine configuration --
+      -- --------------------------------------------------------------------
+--    when csr_menvcfg_c  => csr_rdata <= (others => '0'); -- hardwired to zero
+--    when csr_menvcfgh_c => csr_rdata <= (others => '0'); -- hardwired to zero
 
       -- machine trap handling --
       -- --------------------------------------------------------------------
