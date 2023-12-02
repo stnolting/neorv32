@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090200"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090201"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width, do not change!
 
@@ -522,7 +522,7 @@ package neorv32_package is
     alu_opa_mux  : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
     alu_opb_mux  : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
     alu_unsigned : std_ulogic;                     -- is unsigned ALU operation
-    alu_cp_trig  : std_ulogic_vector(04 downto 0); -- co-processor trigger (one-hot)
+    alu_cp_trig  : std_ulogic_vector(05 downto 0); -- co-processor trigger (one-hot)
     -- load/store unit --
     lsu_req      : std_ulogic;                     -- trigger memory access request
     lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
@@ -582,6 +582,7 @@ package neorv32_package is
   constant cp_sel_bitmanip_c : natural := 2; -- CP2: bit manipulation ('B' extensions)
   constant cp_sel_fpu_c      : natural := 3; -- CP3: floating-point unit ('Zfinx' extension)
   constant cp_sel_cfu_c      : natural := 4; -- CP4: custom instructions CFU ('Zxcfu' extension)
+  constant cp_sel_cond_c     : natural := 5; -- CP5: conditional operations ('Zicond' extension)
 
   -- ALU Function Codes [DO NOT CHANGE ENCODING!] -------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -758,6 +759,7 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_U      : boolean := false;
       CPU_EXTENSION_RISCV_Zfinx  : boolean := false;
       CPU_EXTENSION_RISCV_Zicntr : boolean := true;
+      CPU_EXTENSION_RISCV_Zicond : boolean := false;
       CPU_EXTENSION_RISCV_Zihpm  : boolean := false;
       CPU_EXTENSION_RISCV_Zmmul  : boolean := false;
       CPU_EXTENSION_RISCV_Zxcfu  : boolean := false;
