@@ -44,14 +44,15 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_alu is
   generic (
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_B     : boolean; -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_M     : boolean; -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zmmul : boolean; -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zfinx : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zxcfu : boolean; -- implement custom (instr.) functions unit?
+    CPU_EXTENSION_RISCV_B      : boolean; -- implement bit-manipulation extension?
+    CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_Zicond : boolean; -- implement integer conditional operations?
+    CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
     -- Tuning Options --
-    FAST_MUL_EN               : boolean; -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN             : boolean  -- use barrel shifter for shift operations
+    FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN              : boolean  -- use barrel shifter for shift operations
   );
   port (
     -- global control --
@@ -95,10 +96,11 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal cp_res     : std_ulogic_vector(XLEN-1 downto 0);
 
   -- co-processor interface --
-  type cp_data_t  is array (0 to 4) of std_ulogic_vector(XLEN-1 downto 0);
+  type cp_data_t  is array (0 to 5) of std_ulogic_vector(XLEN-1 downto 0);
   signal cp_result : cp_data_t; -- co-processor result
-  signal cp_start  : std_ulogic_vector(4 downto 0); -- co-processor trigger
-  signal cp_valid  : std_ulogic_vector(4 downto 0); -- co-processor done
+  signal cp_start  : std_ulogic_vector(5 downto 0); -- co-processor trigger
+  signal cp_valid  : std_ulogic_vector(5 downto 0); -- co-processor done
+  signal cp_shamt  : std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
 
   -- CSR read-backs --
   signal csr_rdata_fpu, csr_rdata_cfu : std_ulogic_vector(XLEN-1 downto 0);
@@ -161,15 +163,18 @@ begin
 
   -- multi-cycle co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
-  cp_done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4);
+  cp_done_o <= cp_valid(5) or cp_valid(4) or cp_valid(3) or cp_valid(2) or cp_valid(1) or cp_valid(0);
 
   -- co-processor result --
   -- > "cp_result" data has to be always zero unless the specific co-processor has been actually triggered
-  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4);
+  cp_res <= cp_result(5) or cp_result(4) or cp_result(3) or cp_result(2) or cp_result(1) or cp_result(0);
 
   -- co-processor CSR read-back --
   -- > "csr_rdata_*" data has to be always zero unless the specific co-processor is actually being accessed
   csr_rdata_o <= csr_rdata_fpu or csr_rdata_cfu;
+
+  -- shift amount --
+  cp_shamt <= opb(index_size_f(XLEN)-1 downto 0);
 
 
   -- Co-Processor 0: Shifter Unit (Base ISA) ------------------------------------------------
@@ -186,7 +191,7 @@ begin
     start_i => cp_start(0),  -- trigger operation
     -- data input --
     rs1_i   => rs1_i,        -- rf source 1
-    shamt_i => opb(index_size_f(XLEN)-1 downto 0), -- shift amount
+    shamt_i => cp_shamt,     -- shift amount
     -- result and status --
     res_o   => cp_result(0), -- operation result
     valid_o => cp_valid(0)   -- data output valid
@@ -196,7 +201,7 @@ begin
   -- Co-Processor 1: Integer Multiplication/Division Unit ('M' ISA Extension) ---------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_muldiv_inst_true:
-  if (CPU_EXTENSION_RISCV_M = true) or (CPU_EXTENSION_RISCV_Zmmul = true) generate
+  if CPU_EXTENSION_RISCV_M or CPU_EXTENSION_RISCV_Zmmul generate
     neorv32_cpu_cp_muldiv_inst: entity neorv32.neorv32_cpu_cp_muldiv
     generic map (
       FAST_MUL_EN => FAST_MUL_EN,          -- use DSPs for faster multiplication
@@ -218,7 +223,7 @@ begin
   end generate;
 
   neorv32_cpu_cp_muldiv_inst_false:
-  if (CPU_EXTENSION_RISCV_M = false) and (CPU_EXTENSION_RISCV_Zmmul = false) generate
+  if (not CPU_EXTENSION_RISCV_M) and (not CPU_EXTENSION_RISCV_Zmmul) generate
     cp_result(1) <= (others => '0');
     cp_valid(1)  <= '0';
   end generate;
@@ -227,7 +232,7 @@ begin
   -- Co-Processor 2: Bit-Manipulation Unit ('B' ISA Extension) ------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_bitmanip_inst_true:
-  if (CPU_EXTENSION_RISCV_B = true) generate
+  if CPU_EXTENSION_RISCV_B generate
     neorv32_cpu_cp_bitmanip_inst: entity neorv32.neorv32_cpu_cp_bitmanip
     generic map (
       FAST_SHIFT_EN => FAST_SHIFT_EN -- use barrel shifter for shift operations
@@ -242,7 +247,7 @@ begin
       cmp_i   => cmp,          -- comparator status
       rs1_i   => rs1_i,        -- rf source 1
       rs2_i   => rs2_i,        -- rf source 2
-      shamt_i => opb(index_size_f(XLEN)-1 downto 0), -- shift amount
+      shamt_i => cp_shamt,     -- shift amount
       -- result and status --
       res_o   => cp_result(2), -- operation result
       valid_o => cp_valid(2)   -- data output valid
@@ -250,7 +255,7 @@ begin
   end generate;
 
   neorv32_cpu_cp_bitmanip_inst_false:
-  if (CPU_EXTENSION_RISCV_B = false) generate
+  if not CPU_EXTENSION_RISCV_B generate
     cp_result(2) <= (others => '0');
     cp_valid(2)  <= '0';
   end generate;
@@ -259,7 +264,7 @@ begin
   -- Co-Processor 3: Single-Precision Floating-Point Unit ('Zfinx' ISA Extension) -----------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_fpu_inst_true:
-  if (CPU_EXTENSION_RISCV_Zfinx = true) generate
+  if CPU_EXTENSION_RISCV_Zfinx generate
     neorv32_cpu_cp_fpu_inst: entity neorv32.neorv32_cpu_cp_fpu
     port map (
       -- global control --
@@ -284,7 +289,7 @@ begin
   end generate;
 
   neorv32_cpu_cp_fpu_inst_false:
-  if (CPU_EXTENSION_RISCV_Zfinx = false) generate
+  if not CPU_EXTENSION_RISCV_Zfinx generate
     csr_rdata_fpu <= (others => '0');
     cp_result(3)  <= (others => '0');
     cp_valid(3)   <= '0';
@@ -294,7 +299,7 @@ begin
   -- Co-Processor 4: Custom (Instructions) Functions Unit ('Zxcfu' ISA Extension) -----------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_cfu_inst_true:
-  if (CPU_EXTENSION_RISCV_Zxcfu = true) generate
+  if CPU_EXTENSION_RISCV_Zxcfu generate
     neorv32_cpu_cp_cfu_inst: entity neorv32.neorv32_cpu_cp_cfu
     port map (
       -- global control --
@@ -319,10 +324,37 @@ begin
   end generate;
 
   neorv32_cpu_cp_cfu_inst_false:
-  if (CPU_EXTENSION_RISCV_Zxcfu = false) generate
+  if not CPU_EXTENSION_RISCV_Zxcfu generate
     csr_rdata_cfu <= (others => '0');
     cp_result(4)  <= (others => '0');
     cp_valid(4)   <= '0';
+  end generate;
+
+
+  -- Co-Processor 5: Integer Conditional Operations Unit ('Zicond' ISA Extension) -----------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_cpu_cp_cond_inst_true:
+  if CPU_EXTENSION_RISCV_Zicond generate
+    neorv32_cpu_cp_cond_inst: entity neorv32.neorv32_cpu_cp_cond
+    port map (
+      -- global control --
+      clk_i   => clk_i,        -- global clock, rising edge
+      rstn_i  => rstn_i,       -- global reset, low-active, async
+      ctrl_i  => ctrl_i,       -- main control bus
+      start_i => cp_start(5),  -- trigger operation
+      -- data input --
+      rs1_i   => rs1_i,        -- rf source 1
+      rs2_i   => rs2_i,        -- rf source 2
+      -- result and status --
+      res_o   => cp_result(5), -- operation result
+      valid_o => cp_valid(5)   -- data output valid
+    );
+  end generate;
+
+  neorv32_cpu_cp_cond_inst_false:
+  if not CPU_EXTENSION_RISCV_Zicond generate
+    cp_result(5) <= (others => '0');
+    cp_valid(5)  <= '0';
   end generate;
 
 

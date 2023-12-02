@@ -210,6 +210,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `CPU_EXTENSION_RISCV_U`      | boolean | false | Enable <<_u_isa_extension>> (less-privileged user mode).
 | `CPU_EXTENSION_RISCV_Zfinx`  | boolean | false | Enable <<_zfinx_isa_extension>> (single-precision floating-point unit).
 | `CPU_EXTENSION_RISCV_Zicntr` | boolean | true  | Enable <<_zicntr_isa_extension>> (CPU base counters).
+| `CPU_EXTENSION_RISCV_Zicond` | boolean | false | Enable <<_zicond_isa_extension>> (integer conditional operations).
 | `CPU_EXTENSION_RISCV_Zihpm`  | boolean | false | Enable <<_zihpm_isa_extension>> (hardware performance monitors).
 | `CPU_EXTENSION_RISCV_Zmmul`  | boolean | false | Enable <<_zmmul_isa_extension>> (hardware-based integer multiplication).
 | `CPU_EXTENSION_RISCV_Zxcfu`  | boolean | false | Enable NEORV32-specific <<_zxcfu_isa_extension>> (custom RISC-V instructions).

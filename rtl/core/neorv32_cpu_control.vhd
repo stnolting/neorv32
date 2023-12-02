@@ -67,17 +67,17 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_U      : boolean; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT regs)
     CPU_EXTENSION_RISCV_Zicntr : boolean; -- implement base counters?
+    CPU_EXTENSION_RISCV_Zicond : boolean; -- implement integer conditional operations?
     CPU_EXTENSION_RISCV_Zihpm  : boolean; -- implement hardware performance monitors?
     CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  : boolean; -- implement external debug mode extension?
     CPU_EXTENSION_RISCV_Sdtrig : boolean; -- implement trigger module extension?
+    CPU_EXTENSION_RISCV_Smpmp  : boolean; -- implement physical memory protection?
     -- Tuning Options --
     FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN              : boolean; -- use barrel shifter for shift operations
     REGFILE_HW_RST             : boolean; -- implement full hardware reset for register file
-    -- Physical memory protection (PMP) --
-    PMP_EN                     : boolean; -- physical memory protection enabled
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS               : natural range 0 to 13; -- number of implemented HPM counters (0..13)
     HPM_CNT_WIDTH              : natural range 0 to 64  -- total size of HPM counters (0..64)
@@ -171,16 +171,17 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction decoding helper logic --
   type decode_aux_t is record
-    opcode   : std_ulogic_vector(6 downto 0);
-    is_a_lr  : std_ulogic;
-    is_a_sc  : std_ulogic;
-    is_f_op  : std_ulogic;
-    is_m_mul : std_ulogic;
-    is_m_div : std_ulogic;
-    is_b_imm : std_ulogic;
-    is_b_reg : std_ulogic;
-    rs1_zero : std_ulogic;
-    rd_zero  : std_ulogic;
+    opcode    : std_ulogic_vector(6 downto 0);
+    is_a_lr   : std_ulogic;
+    is_a_sc   : std_ulogic;
+    is_f_op   : std_ulogic;
+    is_m_mul  : std_ulogic;
+    is_m_div  : std_ulogic;
+    is_b_imm  : std_ulogic;
+    is_b_reg  : std_ulogic;
+    is_zicond : std_ulogic;
+    rs1_zero  : std_ulogic;
+    rd_zero   : std_ulogic;
   end record;
   signal decode_aux : decode_aux_t;
 
@@ -714,13 +715,14 @@ begin
   decode_helper: process(execute_engine)
   begin
     -- defaults --
-    decode_aux.is_f_op  <= '0';
-    decode_aux.is_a_lr  <= '0';
-    decode_aux.is_a_sc  <= '0';
-    decode_aux.is_m_mul <= '0';
-    decode_aux.is_m_div <= '0';
-    decode_aux.is_b_imm <= '0';
-    decode_aux.is_b_reg <= '0';
+    decode_aux.is_f_op   <= '0';
+    decode_aux.is_a_lr   <= '0';
+    decode_aux.is_a_sc   <= '0';
+    decode_aux.is_m_mul  <= '0';
+    decode_aux.is_m_div  <= '0';
+    decode_aux.is_b_imm  <= '0';
+    decode_aux.is_b_reg  <= '0';
+    decode_aux.is_zicond <= '0';
 
     -- is ATOMIC operation? --
     if (CPU_EXTENSION_RISCV_A = true) and -- ATOMIC implemented at all?
@@ -795,6 +797,12 @@ begin
       if (CPU_EXTENSION_RISCV_M = true) and (execute_engine.ir(instr_funct3_msb_c) = '1') then
         decode_aux.is_m_div <= '1';
       end if;
+    end if;
+
+    -- conditional operations (Zicond) --
+    if (CPU_EXTENSION_RISCV_Zicond = true) and (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000111") and
+       (execute_engine.ir(instr_funct3_msb_c) = '1') and (execute_engine.ir(instr_funct3_lsb_c) = '1') then
+      decode_aux.is_zicond <= '1';
     end if;
   end process decode_helper;
 
@@ -941,6 +949,11 @@ begin
                    ((execute_engine.ir(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
               ctrl_nxt.alu_cp_trig(cp_sel_bitmanip_c) <= '1'; -- trigger BITMANIP CP
               execute_engine.state_nxt                <= ALU_WAIT;
+            -- EXT: co-processor CONDITIONAL operations (multi-cycle) --
+            elsif (CPU_EXTENSION_RISCV_Zicond = true) and (decode_aux.is_zicond = '1') and
+                  (execute_engine.ir(instr_opcode_lsb_c+5) = opcode_alu_c(5)) then
+              ctrl_nxt.alu_cp_trig(cp_sel_cond_c) <= '1'; -- trigger COND CP
+              execute_engine.state_nxt            <= ALU_WAIT;
             -- BASE: co-processor SHIFT operation (multi-cycle) --
             elsif (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or
                   (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) then
@@ -1178,7 +1191,7 @@ begin
            csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  | -- address
            csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c |
            csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c =>
-        csr_reg_valid <= bool_to_ulogic_f(PMP_EN); -- available if PMP implemented
+        csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Smpmp); -- available if PMP implemented
 
       -- hardware performance monitors (HPM) --
       when csr_hpmcounter3_c    | csr_hpmcounter4_c    | csr_hpmcounter5_c    | csr_hpmcounter6_c    | csr_hpmcounter7_c    |
@@ -1306,7 +1319,8 @@ begin
               (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000"))) or -- valid base ALU instruction?
            (((CPU_EXTENSION_RISCV_M = true) or (CPU_EXTENSION_RISCV_Zmmul = true)) and (decode_aux.is_m_mul = '1')) or -- valid MUL instruction?
            ((CPU_EXTENSION_RISCV_M = true) and (decode_aux.is_m_div = '1')) or -- valid DIV instruction?
-           ((CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_b_reg = '1')) then -- valid BITMANIP register instruction?
+           ((CPU_EXTENSION_RISCV_B = true) and (decode_aux.is_b_reg = '1')) or -- valid BITMANIP register instruction?
+           ((CPU_EXTENSION_RISCV_Zicond = true) and (decode_aux.is_zicond = '1')) then -- valid CONDITIONAL instruction?
           illegal_cmd <= '0';
         else
           illegal_cmd <= '1';
@@ -2113,9 +2127,9 @@ begin
         csr_rdata(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);  -- Zxcfu: custom RISC-V instructions
         csr_rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);      -- Smcntrpmf: counter privilege mode filtering (enabled if U implemented)
         csr_rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);  -- Zfinx: FPU using x registers
---      csr_rdata(06) <= '0'; -- reserved
+        csr_rdata(06) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicond); -- Zicond: integer conditional operations
         csr_rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr); -- Zicntr: base counters
-        csr_rdata(08) <= bool_to_ulogic_f(PMP_EN);                     -- PMP: physical memory protection (Smpmp)
+        csr_rdata(08) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Smpmp);  -- Smpmp: physical memory protection
         csr_rdata(09) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm);  -- Zihpm: hardware performance monitors
         csr_rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdext);  -- Sdext: RISC-V (external) debug mode
         csr_rdata(11) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdtrig); -- Sdtrig: trigger module

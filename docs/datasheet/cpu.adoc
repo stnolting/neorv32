@@ -401,36 +401,37 @@ The NEORV32 CPU provides several optional RISC-V and custom ISA extensions. The 
 via the according <<_processor_top_entity_generics>>. This chapter gives a brief overview of the different ISA extensions.
 
 .NEORV32 Instruction Set Extensions
-[cols="<2,<6,<2"]
+[cols="<2,<5,<3"]
 [options="header",grid="rows"]
 |=======================
-| Name | Description | Note
-| <<_a_isa_extension,`A`>> | Atomic memory access instructions |
-| <<_b_isa_extension,`B`>> | Bit-manipulation instructions |
-| <<_c_isa_extension,`C`>> | Compressed (16-bit) instructions |
-| <<_e_isa_extension,`E`>> | Embedded CPU extension (reduced register file size) |
-| <<_i_isa_extension,`I`>> | Integer instructions | Base ISA
-| <<_m_isa_extension,`M`>> | Integer multiplication and division instructions |
-| <<_u_isa_extension,`U`>> | Less-privileged _user_ mode extension |
-| <<_x_isa_extension,`X`>> | Platform-specific / NEORV32-specific extension | **Always enabled**
-| <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction | **Always enabled**
-| <<_zfinx_isa_extension,`Zfinx`>> | Floating-point instructions using integer registers | `F` alternative
-| <<_zicntr_isa_extension,`Zicntr`>> | Base counters extension |
-| <<_zicsr_isa_extension,`Zicsr`>> | Control and status register access instructions | **Always enabled**
-| <<_zihpm_isa_extension,`Zihpm`>> | Hardware performance monitors extension |
-| <<_zmmul_isa_extension,`Zmmul`>> | Integer multiplication-only instruction | `M` alternative)
-| <<_zcfu_isa_extension,`Zcfu`>> | Custom / user-defined instructions |
-| <<_pmp_isa_extension,`PMP`>> | Physical memory protection extension |
-| <<_smcntrpmf_isa_extension,`Smcntrpmf`>> | Counter privilege mode filtering extension |
-| <<_sdext_isa_extension,`Sdext`>> | External debug support extension | For on-chip debugger
-| <<_sdtrig_isa_extension,`Sdtrig`>> | Trigger module extension | For on-chip debugger
+| Name | Description | <<_processor_top_entity_generics, Enabled by Generic>>
+| <<_a_isa_extension,`A`>> | Atomic memory access instructions | `CPU_EXTENSION_RISCV_A`
+| <<_b_isa_extension,`B`>> | Bit-manipulation instructions | `CPU_EXTENSION_RISCV_B`
+| <<_c_isa_extension,`C`>> | Compressed (16-bit) instructions | `CPU_EXTENSION_RISCV_C`
+| <<_e_isa_extension,`E`>> | Embedded CPU extension (reduced register file size) | `CPU_EXTENSION_RISCV_E`
+| <<_i_isa_extension,`I`>> | Integer base ISA | Enabled if `CPU_EXTENSION_RISCV_E` is **not** enabled
+| <<_m_isa_extension,`M`>> | Integer multiplication and division instructions | `CPU_EXTENSION_RISCV_M`
+| <<_u_isa_extension,`U`>> | Less-privileged _user_ mode extension | `CPU_EXTENSION_RISCV_U`
+| <<_x_isa_extension,`X`>> | Platform-specific / NEORV32-specific extension | Always enabled
+| <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction | Always enabled
+| <<_zfinx_isa_extension,`Zfinx`>> | Floating-point instructions using integer registers | `CPU_EXTENSION_RISCV_Zfinx`
+| <<_zicntr_isa_extension,`Zicntr`>> | Base counters extension | `CPU_EXTENSION_RISCV_Zicntr`
+| <<_zicond_isa_extension,`Zicond`>> | Integer conditional operations | `CPU_EXTENSION_RISCV_Zicond` 
+| <<_zicsr_isa_extension,`Zicsr`>> | Control and status register access instructions | Always enabled
+| <<_zihpm_isa_extension,`Zihpm`>> | Hardware performance monitors extension | `CPU_EXTENSION_RISCV_Zihpm`
+| <<_zmmul_isa_extension,`Zmmul`>> | Integer multiplication-only instruction | `CPU_EXTENSION_RISCV_Zmmul`
+| <<_zcfu_isa_extension,`Zcfu`>> | Custom / user-defined instructions | `CPU_EXTENSION_RISCV_Zxcfu`
+| <<_pmp_isa_extension,`PMP`>> | Physical memory protection extension | `PMP_NUM_REGIONS`
+| <<_smcntrpmf_isa_extension,`Smcntrpmf`>> | Counter privilege mode filtering extension | `CPU_EXTENSION_RISCV_U`
+| <<_sdext_isa_extension,`Sdext`>> | External debug support extension | `ON_CHIP_DEBUGGER_EN`
+| <<_sdtrig_isa_extension,`Sdtrig`>> | Trigger module extension | `ON_CHIP_DEBUGGER_EN`
 |=======================
 
 .RISC-V ISA Specifications
 [TIP]
 For more information regarding the RISC-V ISA extensions please refer to the "RISC-V Instruction Set Manual - Volume
-I: Unprivileged ISA" and "The RISC-V Instruction Set Manual Volume II: Privileged Architecture", which are also
-available in the projects `docs/references` folder.
+I: Unprivileged ISA" and "The RISC-V Instruction Set Manual Volume II: Privileged Architecture" Acopy of all currently
+implemented ISA extensions can be found in the projects `docs/references` folder.
 
 .Discovering ISA Extensions
 [TIP]
@@ -494,8 +495,9 @@ to maintain data cache coherency (e.g. by using the `fence` instruction).
 
 ==== `B` ISA Extension
 
-The `B` ISA extension adds instructions for bit-manipulation operations. The NEORV32 `B` ISA extension includes
-the following sub-extensions:
+The `B` ISA extension adds instructions for bit-manipulation operations.
+This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+The NEORV32 `B` ISA extension includes the following sub-extensions:
 
 * `Zba` - Address-generation instructions
 * `Zbb` - Basic bit-manipulation instructions
@@ -590,13 +592,15 @@ will raise an illegal instruction exception if the `TW` bit of <<_mstatus>> is s
 
 .Barrel Shifter
 [TIP]
-Shift operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_SHIFT_EN`
+The shift operations are implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_shifter.vhd`).
+These operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_SHIFT_EN`
 configuration option that will replace the (time-variant) bit-serial shifter by a (time-constant) barrel shifter.
 
 
 ==== `M` ISA Extension
 
 Hardware-accelerated integer multiplication and division operations are available via the RISC-V `M` ISA extension.
+This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_muldiv.vhd`).
 
 .Instructions and Timing
 [cols="<2,<4,<3"]
@@ -657,6 +661,7 @@ instead of a dedicated floating-point register file. Thus, the `Zfinx` extension
 less hardware resources and features faster context changes. This also implies that there are NO dedicated `f`
 register file-related load/store or move instructions. The `Zfinx` extension'S floating-point unit is controlled
 via dedicated <<_floating_point_csrs>>.
+This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_fpu.vhd`).
 
 .Fused Multiply-Add and Division Instructions
 [WARNING]
@@ -695,6 +700,21 @@ retrieve system time from the <<_machine_system_timer_mtime>>.
 [NOTE]
 This extensions is stated as _mandatory_ by the RISC-V spec. However, area-constrained setups may remove
 support for these counters. 
+
+
+==== `Zicond` ISA Extension
+
+The `Zicond` ISA extension adds integer conditional move primitives that allow to implement branch-less
+control flows. It is enabled by the top's `CPU_EXTENSION_RISCV_Zicond` generic.
+This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_cond.vhd`).
+
+.Instructions and Timing
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| Conditional | `czero.eqz` `czero.nez` | 3
+|=======================
 
 
 ==== `Zicsr` ISA Extension

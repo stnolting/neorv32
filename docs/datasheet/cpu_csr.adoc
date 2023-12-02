@@ -1032,7 +1032,7 @@ discover ISA sub-extensions and CPU configuration options
 |  3    | `CSR_MXISA_ZXCFU`     | r/- | <<_zxcfu_isa_extension>> available
 |  4    | `CSR_MXISA_SMCNTRPMF` | r/- | <<_smcntrpmf_isa_extension>> available
 |  5    | `CSR_MXISA_ZFINX`     | r/- | <<_zfinx_isa_extension>> available
-|  6    | -                     | r/- | hardwired to zero
+|  6    | `CSR_MXISA_ZICOND`    | r/- | <<_zicond_isa_extension>> available
 |  7    | `CSR_MXISA_ZICNTR`    | r/- | <<_zicntr_isa_extension>> available
 |  8    | `CSR_MXISA_PMP`       | r/- | <<_pmp_isa_extension>> available
 |  9    | `CSR_MXISA_ZIHPM`     | r/- | <<_zihpm_isa_extension>> available
