@@ -1,13 +1,11 @@
 ## Project Change Log
 
-The most recent version of the project can be found at the top of this list.
-Releases are linked and highlighted. The latest release is
-[![release](https://img.shields.io/github/v/release/stnolting/neorv32)](https://github.com/stnolting/neorv32/releases).
-A list of all releases can be found [here](https://github.com/stnolting/neorv32/releases).
+[![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
+![commits-since-latest-release](https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat-square&logo=GitHub)
 
 This project uses [semantic versioning](https://semver.org).
 The **version identifier** uses an additional custom element (`MAJOR.MINOR.PATCH.custom`)
-to track individual changes. The identifier is incremented by every core RTL modification
+to track individual changes. The identifier is incremented by every core hardware modification
 and also by major software/project changes.
 
 The version identifier is globally defined by the `hw_version_c` constant in the main VHDL
