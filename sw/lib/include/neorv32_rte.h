@@ -100,9 +100,6 @@ void neorv32_rte_print_hw_version(void);
 void neorv32_rte_print_credits(void);
 void neorv32_rte_print_logo(void);
 void neorv32_rte_print_license(void);
-
-uint32_t neorv32_rte_get_compiler_isa(void);
-int      neorv32_rte_check_isa(int silent);
 /**@}*/
 
 

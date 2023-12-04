@@ -72,9 +72,6 @@ static void __neorv32_rte_print_hex_word(uint32_t num);
  **************************************************************************/
 void neorv32_rte_setup(void) {
 
-  // raise an exception if we're not in machine-mode
-  asm volatile ("csrr x0, mhartid");
-
   // clear mstatus, set previous privilege level to machine-mode
   neorv32_cpu_csr_write(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
 
@@ -88,8 +85,8 @@ void neorv32_rte_setup(void) {
   neorv32_cpu_csr_write(CSR_MIP, 0);
 
   // install debug handler for all trap sources
-  uint8_t id;
-  for (id = 0; id < (sizeof(__neorv32_rte_vector_lut)/sizeof(__neorv32_rte_vector_lut[0])); id++) {
+  int id;
+  for (id = 0; id < ((int)NEORV32_RTE_NUM_TRAPS); id++) {
     neorv32_rte_handler_uninstall(id); // this will configure the debug handler
   }
 }
@@ -111,8 +108,9 @@ int neorv32_rte_handler_install(int id, void (*handler)(void)) {
   asm volatile ("csrr x0, mhartid");
 
   // id valid?
-  if ((id >= (int)RTE_TRAP_I_MISALIGNED) && (id <= (int)RTE_TRAP_FIRQ_15)) {
-    __neorv32_rte_vector_lut[id] = (uint32_t)handler; // install handler
+  uint32_t index = (uint32_t)id;
+  if (index < ((uint32_t)NEORV32_RTE_NUM_TRAPS)) {
+    __neorv32_rte_vector_lut[index] = (uint32_t)handler; // install handler
     return 0;
   }
   return -1;
@@ -135,8 +133,9 @@ int neorv32_rte_handler_uninstall(int id) {
   asm volatile ("csrr x0, mhartid");
 
   // id valid?
-  if ((id >= (int)RTE_TRAP_I_MISALIGNED) && (id <= (int)RTE_TRAP_FIRQ_15)) {
-    __neorv32_rte_vector_lut[id] = (uint32_t)(&__neorv32_rte_debug_handler); // use dummy handler in case the trap is accidentally triggered
+  uint32_t index = (uint32_t)id;
+  if (index < ((uint32_t)NEORV32_RTE_NUM_TRAPS)) {
+    __neorv32_rte_vector_lut[index] = (uint32_t)(&__neorv32_rte_debug_handler); // use dummy handler in case the trap is accidentally triggered
     return 0;
   }
   return -1;
@@ -202,35 +201,35 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
   uint32_t handler_base;
   switch (neorv32_cpu_csr_read(CSR_MCAUSE)) {
     case TRAP_CODE_I_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_MISALIGNED]; break;
-    case TRAP_CODE_I_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ACCESS]; break;
-    case TRAP_CODE_I_ILLEGAL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ILLEGAL]; break;
-    case TRAP_CODE_BREAKPOINT:   handler_base = __neorv32_rte_vector_lut[RTE_TRAP_BREAKPOINT]; break;
+    case TRAP_CODE_I_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ACCESS];     break;
+    case TRAP_CODE_I_ILLEGAL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ILLEGAL];    break;
+    case TRAP_CODE_BREAKPOINT:   handler_base = __neorv32_rte_vector_lut[RTE_TRAP_BREAKPOINT];   break;
     case TRAP_CODE_L_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_L_MISALIGNED]; break;
-    case TRAP_CODE_L_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_L_ACCESS]; break;
+    case TRAP_CODE_L_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_L_ACCESS];     break;
     case TRAP_CODE_S_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_S_MISALIGNED]; break;
-    case TRAP_CODE_S_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_S_ACCESS]; break;
-    case TRAP_CODE_UENV_CALL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_UENV_CALL]; break;
-    case TRAP_CODE_MENV_CALL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MENV_CALL]; break;
-    case TRAP_CODE_MSI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MSI]; break;
-    case TRAP_CODE_MTI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MTI]; break;
-    case TRAP_CODE_MEI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MEI]; break;
-    case TRAP_CODE_FIRQ_0:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_0]; break;
-    case TRAP_CODE_FIRQ_1:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_1]; break;
-    case TRAP_CODE_FIRQ_2:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_2]; break;
-    case TRAP_CODE_FIRQ_3:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_3]; break;
-    case TRAP_CODE_FIRQ_4:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_4]; break;
-    case TRAP_CODE_FIRQ_5:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_5]; break;
-    case TRAP_CODE_FIRQ_6:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_6]; break;
-    case TRAP_CODE_FIRQ_7:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_7]; break;
-    case TRAP_CODE_FIRQ_8:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_8]; break;
-    case TRAP_CODE_FIRQ_9:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_9]; break;
-    case TRAP_CODE_FIRQ_10:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_10]; break;
-    case TRAP_CODE_FIRQ_11:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_11]; break;
-    case TRAP_CODE_FIRQ_12:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_12]; break;
-    case TRAP_CODE_FIRQ_13:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_13]; break;
-    case TRAP_CODE_FIRQ_14:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_14]; break;
-    case TRAP_CODE_FIRQ_15:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_15]; break;
-    default:                     handler_base = (uint32_t)(&__neorv32_rte_debug_handler); break;
+    case TRAP_CODE_S_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_S_ACCESS];     break;
+    case TRAP_CODE_UENV_CALL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_UENV_CALL];    break;
+    case TRAP_CODE_MENV_CALL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MENV_CALL];    break;
+    case TRAP_CODE_MSI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MSI];          break;
+    case TRAP_CODE_MTI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MTI];          break;
+    case TRAP_CODE_MEI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MEI];          break;
+    case TRAP_CODE_FIRQ_0:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_0];       break;
+    case TRAP_CODE_FIRQ_1:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_1];       break;
+    case TRAP_CODE_FIRQ_2:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_2];       break;
+    case TRAP_CODE_FIRQ_3:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_3];       break;
+    case TRAP_CODE_FIRQ_4:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_4];       break;
+    case TRAP_CODE_FIRQ_5:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_5];       break;
+    case TRAP_CODE_FIRQ_6:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_6];       break;
+    case TRAP_CODE_FIRQ_7:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_7];       break;
+    case TRAP_CODE_FIRQ_8:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_8];       break;
+    case TRAP_CODE_FIRQ_9:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_9];       break;
+    case TRAP_CODE_FIRQ_10:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_10];      break;
+    case TRAP_CODE_FIRQ_11:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_11];      break;
+    case TRAP_CODE_FIRQ_12:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_12];      break;
+    case TRAP_CODE_FIRQ_13:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_13];      break;
+    case TRAP_CODE_FIRQ_14:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_14];      break;
+    case TRAP_CODE_FIRQ_15:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_15];      break;
+    default:                     handler_base = (uint32_t)(&__neorv32_rte_debug_handler);        break;
   }
 
   // execute handler
@@ -261,7 +260,7 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
   asm volatile (
 //  "lw x0,   0*4(sp) \n"
     "lw x1,   1*4(sp) \n"
-//   restore 2x at the very end
+//  restore 2x at the very end
     "lw x3,   3*4(sp) \n"
     "lw x4,   4*4(sp) \n"
     "lw x5,   5*4(sp) \n"
@@ -515,7 +514,6 @@ void neorv32_rte_print_hw_config(void) {
 
   uint32_t tmp;
   int i;
-  char c;
 
   neorv32_uart0_printf("\n\n<< NEORV32 Processor Configuration >>\n\n");
 
@@ -554,27 +552,25 @@ void neorv32_rte_print_hw_config(void) {
   tmp = neorv32_cpu_csr_read(CSR_MISA);
   for (i=0; i<26; i++) {
     if (tmp & (1 << i)) {
-      c = (char)('A' + i);
-      neorv32_uart0_putc(c);
+      neorv32_uart0_putc((char)('A' + i));
       neorv32_uart0_putc(' ');
     }
   }
 
   // CPU sub-extensions
   tmp = neorv32_cpu_csr_read(CSR_MXISA);
-  if (tmp & (1<<CSR_MXISA_ZICSR))     { neorv32_uart0_printf("Zicsr ");     }
+  if (tmp & (1<<CSR_MXISA_ZFINX))     { neorv32_uart0_printf("Zfinx ");     }
   if (tmp & (1<<CSR_MXISA_ZICNTR))    { neorv32_uart0_printf("Zicntr ");    }
   if (tmp & (1<<CSR_MXISA_ZICOND))    { neorv32_uart0_printf("Zicond ");    }
+  if (tmp & (1<<CSR_MXISA_ZICSR))     { neorv32_uart0_printf("Zicsr ");     }
   if (tmp & (1<<CSR_MXISA_ZIFENCEI))  { neorv32_uart0_printf("Zifencei ");  }
-  if (tmp & (1<<CSR_MXISA_ZFINX))     { neorv32_uart0_printf("Zfinx ");     }
   if (tmp & (1<<CSR_MXISA_ZIHPM))     { neorv32_uart0_printf("Zihpm ");     }
   if (tmp & (1<<CSR_MXISA_ZMMUL))     { neorv32_uart0_printf("Zmmul ");     }
   if (tmp & (1<<CSR_MXISA_ZXCFU))     { neorv32_uart0_printf("Zxcfu ");     }
   if (tmp & (1<<CSR_MXISA_SDEXT))     { neorv32_uart0_printf("Sdext ");     }
   if (tmp & (1<<CSR_MXISA_SDTRIG))    { neorv32_uart0_printf("Sdtrig ");    }
-  if (tmp & (1<<CSR_MXISA_PMP))       { neorv32_uart0_printf("Smpmp ");     }
   if (tmp & (1<<CSR_MXISA_SMCNTRPMF)) { neorv32_uart0_printf("Smcntrpmf "); }
-
+  if (tmp & (1<<CSR_MXISA_PMP))       { neorv32_uart0_printf("Smpmp ");     }
   // CPU tuning options
   neorv32_uart0_printf("\nTuning options:      ");
   if (tmp & (1<<CSR_MXISA_FASTMUL))   { neorv32_uart0_printf("fast_mul ");   }
@@ -582,7 +578,7 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_RFHWRST))   { neorv32_uart0_printf("rf_hw_rst ");  }
 
   // check physical memory protection
-  neorv32_uart0_printf("\nPhys. Mem. Prot.:    ");
+  neorv32_uart0_printf("\nPhys. Memory Prot.:  ");
   uint32_t pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
   if (pmp_num_regions != 0)  {
     neorv32_uart0_printf("%u region(s), %u bytes granularity", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
@@ -673,17 +669,27 @@ void neorv32_rte_print_hw_config(void) {
 
   // reservation set granularity --
   neorv32_uart0_printf("Reservation set:     ");
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << 0)) {
     neorv32_uart0_printf("%u bytes granularity\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_RVSG]) & 0xFFFFFFFCUL);
+  }
+  else {
+    neorv32_uart0_printf("none\n");
+  }
 
   // external bus interface
   neorv32_uart0_printf("Ext. bus interface:  ");
-  __neorv32_rte_print_true_false(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_EXT));
-  neorv32_uart0_printf("Ext. bus endianness: ");
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_EXT_ENDIAN)) {
-    neorv32_uart0_printf("big\n");
+  tmp = NEORV32_SYSINFO->SOC;
+  if (tmp & (1 << SYSINFO_SOC_MEM_EXT)) {
+    neorv32_uart0_printf("Wishbone b4 ");
+    if (tmp & (1 << SYSINFO_SOC_MEM_EXT_ENDIAN)) {
+      neorv32_uart0_printf("big-endian\n");
+    }
+    else {
+      neorv32_uart0_printf("little-endian\n");
+    }
   }
   else {
-    neorv32_uart0_printf("little\n");
+    neorv32_uart0_printf("none\n");
   }
 
   // peripherals
@@ -738,19 +744,17 @@ static void __neorv32_rte_print_true_false(int state) {
  **************************************************************************/
 void __neorv32_rte_print_hex_word(uint32_t num) {
 
-  if (neorv32_uart0_available() == 0) {
-    return; // cannot output anything if UART0 is not implemented
-  }
-
+  int i;
   static const char hex_symbols[16] = "0123456789ABCDEF";
 
-  neorv32_uart0_putc('0');
-  neorv32_uart0_putc('x');
+  if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
+    neorv32_uart0_putc('0');
+    neorv32_uart0_putc('x');
 
-  int i;
-  for (i=0; i<8; i++) {
-    uint32_t index = (num >> (28 - 4*i)) & 0xF;
-    neorv32_uart0_putc(hex_symbols[index]);
+    for (i=0; i<8; i++) {
+      uint32_t index = (num >> (28 - 4*i)) & 0xF;
+      neorv32_uart0_putc(hex_symbols[index]);
+    }
   }
 }
 
@@ -766,27 +770,25 @@ void neorv32_rte_print_hw_version(void) {
   uint32_t i;
   char tmp, cnt;
 
-  if (neorv32_uart0_available() == 0) {
-    return; // cannot output anything if UART0 is not implemented
-  }
+  if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
+    for (i=0; i<4; i++) {
 
-  for (i=0; i<4; i++) {
+      tmp = (char)(neorv32_cpu_csr_read(CSR_MIMPID) >> (24 - 8*i));
 
-    tmp = (char)(neorv32_cpu_csr_read(CSR_MIMPID) >> (24 - 8*i));
+      // serial division
+      cnt = 0;
+      while (tmp >= 16) {
+        tmp = tmp - 16;
+        cnt++;
+      }
 
-    // serial division
-    cnt = 0;
-    while (tmp >= 16) {
-      tmp = tmp - 16;
-      cnt++;
-    }
-
-    if (cnt) {
-      neorv32_uart0_putc('0' + cnt);
-    }
-    neorv32_uart0_putc('0' + tmp);
-    if (i < 3) {
-      neorv32_uart0_putc('.');
+      if (cnt) {
+        neorv32_uart0_putc('0' + cnt);
+      }
+      neorv32_uart0_putc('0' + tmp);
+      if (i < 3) {
+        neorv32_uart0_putc('.');
+      }
     }
   }
 }
@@ -798,12 +800,10 @@ void neorv32_rte_print_hw_version(void) {
  **************************************************************************/
 void neorv32_rte_print_credits(void) {
 
-  if (neorv32_uart0_available() == 0) {
-    return; // cannot output anything if UART0 is not implemented
+  if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
+    neorv32_uart0_puts("The NEORV32 RISC-V Processor, github.com/stnolting/neorv32\n"
+                       "(c) 2023 by Dipl.-Ing. Stephan Nolting, BSD 3-Clause License\n");
   }
-
-  neorv32_uart0_puts("The NEORV32 RISC-V Processor, github.com/stnolting/neorv32\n"
-                     "(c) 2023 by Dipl.-Ing. Stephan Nolting, BSD 3-Clause License\n");
 }
 
 
@@ -829,25 +829,23 @@ void neorv32_rte_print_logo(void) {
   uint16_t tmp;
   char c;
 
-  if (neorv32_uart0_available() == 0) {
-    return; // cannot output anything if UART0 is not implemented
-  }
-
-  for (u=0; u<9; u++) {
-    neorv32_uart0_puts("\n");
-    for (v=0; v<7; v++) {
-      tmp = logo_data_c[u][v];
-      for (w=0; w<16; w++){
-        c = ' ';
-        if (((int16_t)tmp) < 0) { // check MSB
-          c = '#';
+  if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
+    for (u=0; u<9; u++) {
+      neorv32_uart0_puts("\n");
+      for (v=0; v<7; v++) {
+        tmp = logo_data_c[u][v];
+        for (w=0; w<16; w++){
+          c = ' ';
+          if (((int16_t)tmp) < 0) { // check MSB
+            c = '#';
+          }
+          neorv32_uart0_putc(c);
+          tmp <<= 1;
         }
-        neorv32_uart0_putc(c);
-        tmp <<= 1;
       }
     }
+    neorv32_uart0_puts("\n");
   }
-  neorv32_uart0_puts("\n");
 }
 
 
@@ -857,124 +855,38 @@ void neorv32_rte_print_logo(void) {
  **************************************************************************/
 void neorv32_rte_print_license(void) {
 
-  if (neorv32_uart0_available() == 0) {
-    return; // cannot output anything if UART0 is not implemented
-  }
-
-  neorv32_uart0_puts(
-    "\n"
-    "BSD 3-Clause License\n"
-    "\n"
-    "Copyright (c) 2023, Stephan Nolting. All rights reserved.\n"
-    "\n"
-    "Redistribution and use in source and binary forms, with or without modification, are\n"
-    "permitted provided that the following conditions are met:\n"
-    "\n"
-    "1. Redistributions of source code must retain the above copyright notice, this list of\n"
-    "   conditions and the following disclaimer.\n"
-    "\n"
-    "2. Redistributions in binary form must reproduce the above copyright notice, this list of\n"
-    "   conditions and the following disclaimer in the documentation and/or other materials\n"
-    "   provided with the distribution.\n"
-    "\n"
-    "3. Neither the name of the copyright holder nor the names of its contributors may be used to\n"
-    "   endorse or promote products derived from this software without specific prior written\n"
-    "   permission.\n"
-    "\n"
-    "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS\n"
-    "OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n"
-    "MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE\n"
-    "COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,\n"
-    "EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE\n"
-    "GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED\n"
-    "AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\n"
-    "NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED\n"
-    "OF THE POSSIBILITY OF SUCH DAMAGE.\n"
-    "\n"
-    "\n"
-  );
-}
-
-
-/**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * Get MISA CSR value according to *compiler/toolchain configuration*.
- *
- * @return MISA content according to compiler configuration.
- **************************************************************************/
-uint32_t neorv32_rte_get_compiler_isa(void) {
-
-  uint32_t misa_cc = 0;
-
-#if defined __riscv_atomic || defined __riscv_a
-  misa_cc |= 1 << CSR_MISA_A;
-#endif
-
-#ifdef __riscv_b
-  misa_cc |= 1 << CSR_MISA_B;
-#endif
-
-#if defined __riscv_compressed || defined __riscv_c
-  misa_cc |= 1 << CSR_MISA_C;
-#endif
-
-#if (__riscv_flen == 64) || defined __riscv_d
-  misa_cc |= 1 << CSR_MISA_D;
-#endif
-
-#ifdef __riscv_32e
-  misa_cc |= 1 << CSR_MISA_E;
-#else
-  misa_cc |= 1 << CSR_MISA_I;
-#endif
-
-#if (__riscv_flen == 32) || defined __riscv_f
-  misa_cc |= 1 << CSR_MISA_F;
-#endif
-
-#if defined __riscv_mul || defined __riscv_m
-  misa_cc |= 1 << CSR_MISA_M;
-#endif
-
-#if (__riscv_xlen == 32)
-  misa_cc |= 1 << CSR_MISA_MXL_LO;
-#elif (__riscv_xlen == 64)
-  misa_cc |= 2 << CSR_MISA_MXL_LO;
-#else
-  misa_cc |= 3 << CSR_MISA_MXL_LO;
-#endif
-
-  return misa_cc;
-}
-
-
-/**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * Check required ISA extensions (via compiler flags) against available ISA extensions (via MISA csr).
- *
- * @warning This function can be called from machine-mode only.
- *
- * @param[in] silent Show error message (via UART0) if isa_sw > isa_hw when = 0.
- * @return MISA content according to compiler configuration.
- **************************************************************************/
-int neorv32_rte_check_isa(int silent) {
-
-  uint32_t misa_sw = neorv32_rte_get_compiler_isa();
-  uint32_t misa_hw = neorv32_cpu_csr_read(CSR_MISA);
-
-  // mask hardware features that are not used by software
-  uint32_t check = misa_hw & misa_sw;
-
-  if (check == misa_sw) {
-    return 0;
-  }
-  else {
-    if ((silent == 0) && (neorv32_uart0_available() != 0)) {
-      neorv32_uart0_printf("\nWARNING! SW_ISA (features required) vs HW_ISA (features available) mismatch!\n"
-                          "SW_ISA = 0x%x (compiler flags)\n"
-                          "HW_ISA = 0x%x (misa csr)\n\n", misa_sw, misa_hw);
-    }
-    return 1;
+  if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
+    neorv32_uart0_puts(
+      "\n"
+      "BSD 3-Clause License\n"
+      "\n"
+      "Copyright (c) 2023, Stephan Nolting. All rights reserved.\n"
+      "\n"
+      "Redistribution and use in source and binary forms, with or without modification, are\n"
+      "permitted provided that the following conditions are met:\n"
+      "\n"
+      "1. Redistributions of source code must retain the above copyright notice, this list of\n"
+      "   conditions and the following disclaimer.\n"
+      "\n"
+      "2. Redistributions in binary form must reproduce the above copyright notice, this list of\n"
+      "   conditions and the following disclaimer in the documentation and/or other materials\n"
+      "   provided with the distribution.\n"
+      "\n"
+      "3. Neither the name of the copyright holder nor the names of its contributors may be used to\n"
+      "   endorse or promote products derived from this software without specific prior written\n"
+      "   permission.\n"
+      "\n"
+      "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS\n"
+      "OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF\n"
+      "MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE\n"
+      "COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,\n"
+      "EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE\n"
+      "GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED\n"
+      "AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\n"
+      "NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED\n"
+      "OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+      "\n"
+      "\n"
+    );
   }
 }
-
