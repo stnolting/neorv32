@@ -158,9 +158,6 @@ int main() {
   // clear GPIOs (they are used by the TB to trigger external events)
   neorv32_gpio_port_set(0);
 
-  // check available hardware extensions and compare with compiler flags
-  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
-
   // prepare counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable counter auto increment (ALL counters)
   if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {

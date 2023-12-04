@@ -118,9 +118,6 @@ int main() {
   // capture all exceptions and give debug info via UART
   neorv32_rte_setup();
 
-  // check available hardware extensions and compare with compiler flags
-  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
-
   // check if Zfinx extension is implemented at all
   if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZFINX)) == 0) {
     neorv32_uart0_puts("Error! <Zfinx> extension not synthesized!\n");

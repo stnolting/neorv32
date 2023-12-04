@@ -138,9 +138,6 @@ void portable_init(core_portable *p, int *argc, char *argv[]) {
   // setup UART at default baud rate, no interrupts
   neorv32_uart0_setup(BAUD_RATE, 0);
 
-  // check available hardware extensions and compare with compiler flags
-  neorv32_rte_check_isa(0); // silent = 0 -> show message if isa mismatch
-
   num_hpm_cnts_global = neorv32_cpu_hpm_get_num_counters();
 
   // stop all counters for now
