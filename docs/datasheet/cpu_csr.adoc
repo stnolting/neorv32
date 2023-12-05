@@ -178,7 +178,7 @@ bits can actually be modified.
 |=======================
 | Name        | Machine status register - low word
 | Address     | `0x300`
-| Reset value | `0x00000000`
+| Reset value | `0x00001800`
 | ISA         | `Zicsr`
 | Description | The `mstatus` CSR is used to configure general machine environment parameters.
 |=======================
@@ -190,8 +190,8 @@ bits can actually be modified.
 | Bit | Name [C] | R/W | Function
 | 3     | `CSR_MSTATUS_MIE`  | r/w | **MIE**: Machine-mode interrupt enable flag
 | 7     | `CSR_MSTATUS_MPIE` | r/w | **MPIE**: Previous machine-mode interrupt enable flag state
-| 12:11 | `CSR_MSTATUS_MPP_H` : `CSR_MSTATUS_MPP_L` | r/w | **MPP**: Previous machine privilege mode, 11 = machine (M) mode, 00 = user (U) mode (other values will fall-back to M mode)
-| 17    | `CSR_MSTATUS_MPRV` | r/w | **MPRV**: Effective privilege mode for load/stores in machine mode; use `MPP` as effective privilege mode when set; hardwired to zero if user-mode not implemented
+| 12:11 | `CSR_MSTATUS_MPP_H` : `CSR_MSTATUS_MPP_L` | r/w | **MPP**: Previous machine privilege mode, `11` = machine-mode "M", `00` = user-mode "U"; other values will fall-back to machine-mode
+| 17    | `CSR_MSTATUS_MPRV` | r/w | **MPRV**: Effective privilege mode for load/stores; use `MPP` as effective privilege mode when set; hardwired to zero if user-mode not implemented
 | 21    | `CSR_MSTATUS_TW`   | r/w | **TW**: Trap on execution of `wfi` instruction in user mode when set; hardwired to zero if user-mode not implemented
 |=======================
 

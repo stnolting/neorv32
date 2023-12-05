@@ -253,7 +253,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mstatus_mie      : std_ulogic; -- machine-mode IRQ enable
     mstatus_mpie     : std_ulogic; -- previous machine-mode IRQ enable
     mstatus_mpp      : std_ulogic; -- machine previous privilege mode
-    mstatus_mprv     : std_ulogic; -- effective privilege level for machine-mode load/stores
+    mstatus_mprv     : std_ulogic; -- effective privilege level for load/stores
     mstatus_tw       : std_ulogic; -- do not allow user mode to execute WFI instruction when set
     --
     mie_msi          : std_ulogic; -- machine software interrupt enable
@@ -724,17 +724,16 @@ begin
     decode_aux.is_b_reg  <= '0';
     decode_aux.is_zicond <= '0';
 
-    -- is ATOMIC operation? --
-    if (CPU_EXTENSION_RISCV_A = true) and -- ATOMIC implemented at all?
+    -- ATOMIC instructions --
+    if (CPU_EXTENSION_RISCV_A = true) and -- implemented at all?
        (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and
        (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c+3) = "0001") then
       decode_aux.is_a_lr <= not execute_engine.ir(instr_funct7_lsb_c+2); -- LR.W
       decode_aux.is_a_sc <=     execute_engine.ir(instr_funct7_lsb_c+2); -- SC.W
     end if;
 
-    -- is BITMANIP instruction? --
-    -- pretty complex as we have to check the already-crowded ALU/ALUI instruction space --
-    if (CPU_EXTENSION_RISCV_B = true) then -- BITMANIP implemented at all?
+    -- BITMANIP instruction --
+    if (CPU_EXTENSION_RISCV_B = true) then -- implemented at all?
       -- register-immediate operation --
       if ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001") and (
            (execute_engine.ir(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00000") or -- CLZ
@@ -773,7 +772,7 @@ begin
       end if;
     end if;
 
-    -- floating-point operations (Zfinx) --
+    -- FLOATING-POINT instructions (Zfinx) --
     if (CPU_EXTENSION_RISCV_Zfinx = true) then -- FPU implemented at all?
       if ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c+3) = "0000")) or -- FADD.S / FSUB.S
          ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c+2) = "00010")) or -- FMUL.S
@@ -789,7 +788,7 @@ begin
       end if;
     end if;
 
-    -- integer MUL (M/Zmmul) / DIV (M) operation --
+    -- integer MUL (M/Zmmul) / DIV (M) instruction --
     if (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then
       if ((CPU_EXTENSION_RISCV_M = true) or (CPU_EXTENSION_RISCV_Zmmul = true)) and (execute_engine.ir(instr_funct3_msb_c) = '0') then
         decode_aux.is_m_mul <= '1';
@@ -799,7 +798,7 @@ begin
       end if;
     end if;
 
-    -- conditional operations (Zicond) --
+    -- CONDITIONAL instruction (Zicond) --
     if (CPU_EXTENSION_RISCV_Zicond = true) and (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000111") and
        (execute_engine.ir(instr_funct3_msb_c) = '1') and (execute_engine.ir(instr_funct3_lsb_c) = '1') then
       decode_aux.is_zicond <= '1';
@@ -1629,7 +1628,7 @@ begin
       csr.privilege        <= priv_mode_m_c;
       csr.mstatus_mie      <= '0';
       csr.mstatus_mpie     <= '0';
-      csr.mstatus_mpp      <= '0';
+      csr.mstatus_mpp      <= priv_mode_m_c;
       csr.mstatus_mprv     <= '0';
       csr.mstatus_tw       <= '0';
       csr.mie_msi          <= '0';
