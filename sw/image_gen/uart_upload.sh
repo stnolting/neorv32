@@ -2,14 +2,14 @@
 
 set -e
 
-# Simple script to upload executable to bootloader
+# Simple script to upload executable via bootloader
 
 if [ $# -ne 2 ]
 then
   echo "Upload image via serial port (UART) to the NEORV32 bootloader."
   echo "Reset processor before starting the upload."
-  echo "Usage:   [sudo] sh uart_upload.sh <port> <NEORV32 executable>"
-  echo "Example: sh uart_upload.sh /dev/ttyS6 neorv32_exe.bin"
+  echo "Usage:   [sudo] sh uart_upload.sh <serial port> <NEORV32 executable>"
+  echo "Example: sudo sh uart_upload.sh /dev/ttyS6 path/to/project/neorv32_exe.bin"
   exit
 fi
 
@@ -35,7 +35,7 @@ then
   exit
 fi
 
-# send executable and get repsonse
+# send executable and get response
 echo -n "Uploading... "
 exec 3<$1                              # redirect serial output to fd 3
   cat <&3 > uart_upload.response.dat & # redirect serial output to file
