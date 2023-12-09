@@ -26,10 +26,11 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 * :warning: changes that might impact compatibility with previous versions
 * :lock: security/safety-related
 * :rocket: official release
-* Date format is _dd.mm.yyyy_
+* Date format is "dd.mm.yyyy"
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 09.12.2023 | 1.9.2.4 | minor rtl code cleanups | [#747](https://github.com/stnolting/neorv32/pull/747) |
 | 09.12.2023 | 1.9.2.3 | refine behavior of CPU's sleep state & signal | [#746](https://github.com/stnolting/neorv32/pull/746) |
 | 05.12.2023 | 1.9.2.2 | reset `mstatus.mpp` to "machine-mode" | [#745](https://github.com/stnolting/neorv32/pull/745) |
 | 02.12.2023 | 1.9.2.1 | :sparkles: add RISC-V `Zicond` ISA extension (integer conditional operations) | [#743](https://github.com/stnolting/neorv32/pull/743) |
