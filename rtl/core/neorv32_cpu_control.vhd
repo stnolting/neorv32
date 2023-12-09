@@ -132,14 +132,14 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   constant hpm_cnt_hi_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0)); -- width high word
 
   -- instruction fetch engine --
-  type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING);
+  type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING, IF_PARKED);
   type fetch_engine_t is record
     state      : fetch_engine_state_t;
     state_prev : fetch_engine_state_t;
-    restart    : std_ulogic;
-    unaligned  : std_ulogic;
+    restart    : std_ulogic; -- buffered restart request (after branch)
+    unaligned  : std_ulogic; -- fetching from non-32-bit address
     pc         : std_ulogic_vector(XLEN-1 downto 0);
-    reset      : std_ulogic;
+    reset      : std_ulogic; -- restart request (after branch)
     resp       : std_ulogic; -- bus response
   end record;
   signal fetch_engine : fetch_engine_t;
@@ -391,6 +391,8 @@ begin
         -- ------------------------------------------------------------
           if (ipb.free = "11") then -- wait for free IPB space
             fetch_engine.state <= IF_PENDING;
+          elsif (execute_engine.state = SLEEP) then -- halt request (sleep)?
+            fetch_engine.state <= IF_PARKED;
           end if;
 
         when IF_PENDING => -- wait for bus response and write instruction data to prefetch buffer
@@ -403,6 +405,12 @@ begin
             else -- request next linear instruction word
               fetch_engine.state <= IF_REQUEST;
             end if;
+          end if;
+
+        when IF_PARKED => -- park position: instruction fetch is halted (CPU in sleep mode)
+        -- ------------------------------------------------------------
+          if (execute_engine.state /= SLEEP) then
+            fetch_engine.state <= IF_REQUEST;
           end if;
 
         when others => -- undefined
@@ -421,7 +429,6 @@ begin
   bus_req_o.stb <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
 
   -- instruction bus response --
-  -- [NOTE] PMP and alignment errors will keep pending until the triggered bus access request retires
   fetch_engine.resp <= '1' when (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') else '0';
 
   -- IPB instruction data and status --
@@ -653,6 +660,11 @@ begin
         execute_engine.pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
       end if;
 
+      -- link PC: return address --
+      if (execute_engine.state = BRANCH) then
+        execute_engine.link_pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
+      end if;
+
       -- next PC: address of next instruction --
       case execute_engine.state is
 
@@ -688,11 +700,6 @@ begin
           NULL;
 
       end case;
-
-      -- link PC: return address --
-      if (execute_engine.state = BRANCH) then
-        execute_engine.link_pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
-      end if;
     end if;
   end process execute_engine_fsm_sync;
 
@@ -1027,7 +1034,7 @@ begin
         ctrl_nxt.rf_wb_en <= execute_engine.ir(instr_opcode_lsb_c+2); -- save return address if link operation (will not happen if misaligned)
         if (trap_ctrl.exc_buf(exc_illegal_c) = '0') and (execute_engine.branch_taken = '1') then -- valid taken branch
           fetch_engine.reset       <= '1'; -- reset instruction fetch to restart at modified PC
-          execute_engine.state_nxt <= BRANCHED;
+          execute_engine.state_nxt <= BRANCHED; -- shortcut (faster than going to RESTART)
         else
           execute_engine.state_nxt <= DISPATCH;
         end if;
@@ -1131,7 +1138,7 @@ begin
 
   -- cpu status --
   ctrl_o.cpu_priv     <= csr.privilege_eff;
-  ctrl_o.cpu_sleep    <= '1' when (execute_engine.state = SLEEP) else '0';
+  ctrl_o.cpu_sleep    <= '1' when (execute_engine.state = SLEEP) and (fetch_engine.state = IF_PARKED) else '0';
   ctrl_o.cpu_trap     <= trap_ctrl.env_enter;
   ctrl_o.cpu_debug    <= debug_ctrl.running;
 
@@ -1385,7 +1392,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   trap_ctrl.instr_il <= '1' when ((execute_engine.state = EXECUTE) or (execute_engine.state = ALU_WAIT)) and -- check in execution states only
                                  (
-                                  (monitor.exc = '1') or -- execution monitor exception
+                                  (monitor.exc = '1') or -- execution monitor exception (multi-cycle instruction timeout)
                                   (illegal_cmd = '1') or -- illegal instruction?
                                   (execute_engine.ir(instr_opcode_lsb_c+1 downto instr_opcode_lsb_c) /= "11") -- illegal opcode LSBs?
                                  ) else '0';
