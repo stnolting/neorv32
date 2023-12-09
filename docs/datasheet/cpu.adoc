@@ -207,8 +207,8 @@ simple `nop`.
 In sleep mode all CPU-internal operations are stopped (execution, instruction fetch, counter increments, etc.).
 CPU-external modules like memories, timers and peripheral interfaces are not affected by this. Furthermore, the CPU will
 continue to buffer/enqueue incoming interrupt requests. The CPU will leave sleep mode as soon as any _enabled (via <<_mie>>)
-interrupt source becomes _pending_ or if a debug session is started. As soon as the CPU has halted **all** internal
-operations the `sleep_o` signal becomes high (see <<_cpu_top_entity_signals>>).
+interrupt source becomes _pending_ or if a debug session is started. As soon as the CPU has "parked" in a safe/resumable
+state the `sleep_o` signal becomes high (see <<_cpu_top_entity_signals>>).
 
 
 ==== Full Virtualization
