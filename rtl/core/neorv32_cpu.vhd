@@ -42,36 +42,36 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    HART_ID                      : std_ulogic_vector(31 downto 0); -- hardware thread ID
-    VENDOR_ID                    : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
-    CPU_BOOT_ADDR                : std_ulogic_vector(31 downto 0); -- cpu boot address
-    CPU_DEBUG_PARK_ADDR          : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
-    CPU_DEBUG_EXC_ADDR           : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
+    HART_ID                    : std_ulogic_vector(31 downto 0); -- hardware thread ID
+    VENDOR_ID                  : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
+    CPU_BOOT_ADDR              : std_ulogic_vector(31 downto 0); -- cpu boot address
+    CPU_DEBUG_PARK_ADDR        : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
+    CPU_DEBUG_EXC_ADDR         : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        : boolean; -- implement atomic memory operations extension?
-    CPU_EXTENSION_RISCV_B        : boolean; -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_C        : boolean; -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        : boolean; -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        : boolean; -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U        : boolean; -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zfinx    : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zicntr   : boolean; -- implement base counters?
-    CPU_EXTENSION_RISCV_Zicond   : boolean; -- implement integer conditional operations?
-    CPU_EXTENSION_RISCV_Zihpm    : boolean; -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zmmul    : boolean; -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zxcfu    : boolean; -- implement custom (instr.) functions unit?
-    CPU_EXTENSION_RISCV_Sdext    : boolean; -- implement external debug mode extension?
-    CPU_EXTENSION_RISCV_Sdtrig   : boolean; -- implement trigger module extension?
+    CPU_EXTENSION_RISCV_A      : boolean; -- implement atomic memory operations extension?
+    CPU_EXTENSION_RISCV_B      : boolean; -- implement bit-manipulation extension?
+    CPU_EXTENSION_RISCV_C      : boolean; -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E      : boolean; -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_U      : boolean; -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zicntr : boolean; -- implement base counters?
+    CPU_EXTENSION_RISCV_Zicond : boolean; -- implement integer conditional operations?
+    CPU_EXTENSION_RISCV_Zihpm  : boolean; -- implement hardware performance monitors?
+    CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
+    CPU_EXTENSION_RISCV_Sdext  : boolean; -- implement external debug mode extension?
+    CPU_EXTENSION_RISCV_Sdtrig : boolean; -- implement trigger module extension?
     -- Tuning Options --
-    FAST_MUL_EN                  : boolean; -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN                : boolean; -- use barrel shifter for shift operations
-    REGFILE_HW_RST               : boolean; -- implement full hardware reset for register file
+    FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN              : boolean; -- use barrel shifter for shift operations
+    REGFILE_HW_RST             : boolean; -- implement full hardware reset for register file
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS              : natural range 0 to 16; -- number of regions (0..16)
-    PMP_MIN_GRANULARITY          : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_NUM_REGIONS            : natural range 0 to 16; -- number of regions (0..16)
+    PMP_MIN_GRANULARITY        : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 : natural range 0 to 13; -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH                : natural range 0 to 64  -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS               : natural range 0 to 13; -- number of implemented HPM counters (0..13)
+    HPM_CNT_WIDTH              : natural range 0 to 64  -- total size of HPM counters (0..64)
   );
   port (
     -- global control --
@@ -175,34 +175,34 @@ begin
   neorv32_cpu_control_inst: entity neorv32.neorv32_cpu_control
   generic map (
     -- General --
-    HART_ID                    => HART_ID,                      -- hardware thread ID
-    VENDOR_ID                  => VENDOR_ID,                    -- vendor's JEDEC ID
-    CPU_BOOT_ADDR              => CPU_BOOT_ADDR,                -- cpu boot address
-    CPU_DEBUG_PARK_ADDR        => CPU_DEBUG_PARK_ADDR,          -- cpu debug mode parking loop entry address
-    CPU_DEBUG_EXC_ADDR         => CPU_DEBUG_EXC_ADDR,           -- cpu debug mode exception entry address
+    HART_ID                    => HART_ID,                    -- hardware thread ID
+    VENDOR_ID                  => VENDOR_ID,                  -- vendor's JEDEC ID
+    CPU_BOOT_ADDR              => CPU_BOOT_ADDR,              -- cpu boot address
+    CPU_DEBUG_PARK_ADDR        => CPU_DEBUG_PARK_ADDR,        -- cpu debug mode parking loop entry address
+    CPU_DEBUG_EXC_ADDR         => CPU_DEBUG_EXC_ADDR,         -- cpu debug mode exception entry address
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A      => CPU_EXTENSION_RISCV_A,        -- implement atomic memory operations extension?
-    CPU_EXTENSION_RISCV_B      => CPU_EXTENSION_RISCV_B,        -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_C      => CPU_EXTENSION_RISCV_C,        -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E      => CPU_EXTENSION_RISCV_E,        -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,        -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U      => CPU_EXTENSION_RISCV_U,        -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,    -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr,   -- implement base counters?
-    CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond,   -- implement integer conditional operations?
-    CPU_EXTENSION_RISCV_Zihpm  => CPU_EXTENSION_RISCV_Zihpm,    -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,    -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,    -- implement custom (instr.) functions unit?
-    CPU_EXTENSION_RISCV_Sdext  => CPU_EXTENSION_RISCV_Sdext,    -- implement external debug mode extension?
-    CPU_EXTENSION_RISCV_Sdtrig => CPU_EXTENSION_RISCV_Sdtrig,   -- implement trigger module extension?
-    CPU_EXTENSION_RISCV_Smpmp  => pmp_enable_c,                 -- implement physical memory protection?
+    CPU_EXTENSION_RISCV_A      => CPU_EXTENSION_RISCV_A,      -- implement atomic memory operations extension?
+    CPU_EXTENSION_RISCV_B      => CPU_EXTENSION_RISCV_B,      -- implement bit-manipulation extension?
+    CPU_EXTENSION_RISCV_C      => CPU_EXTENSION_RISCV_C,      -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E      => CPU_EXTENSION_RISCV_E,      -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,      -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_U      => CPU_EXTENSION_RISCV_U,      -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,  -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr, -- implement base counters?
+    CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond, -- implement integer conditional operations?
+    CPU_EXTENSION_RISCV_Zihpm  => CPU_EXTENSION_RISCV_Zihpm,  -- implement hardware performance monitors?
+    CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,  -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
+    CPU_EXTENSION_RISCV_Sdext  => CPU_EXTENSION_RISCV_Sdext,  -- implement external debug mode extension?
+    CPU_EXTENSION_RISCV_Sdtrig => CPU_EXTENSION_RISCV_Sdtrig, -- implement trigger module extension?
+    CPU_EXTENSION_RISCV_Smpmp  => pmp_enable_c,               -- implement physical memory protection?
     -- Tuning Options --
-    FAST_MUL_EN                => FAST_MUL_EN,                  -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN              => FAST_SHIFT_EN,                -- use barrel shifter for shift operations
-    REGFILE_HW_RST             => REGFILE_HW_RST,               -- implement full hardware reset for register file
+    FAST_MUL_EN                => FAST_MUL_EN,                -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN              => FAST_SHIFT_EN,              -- use barrel shifter for shift operations
+    REGFILE_HW_RST             => REGFILE_HW_RST,             -- implement full hardware reset for register file
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS               => HPM_NUM_CNTS,                 -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH              => HPM_CNT_WIDTH                 -- total size of HPM counters
+    HPM_NUM_CNTS               => HPM_NUM_CNTS,               -- number of implemented HPM counters (0..13)
+    HPM_CNT_WIDTH              => HPM_CNT_WIDTH               -- total size of HPM counters
   )
   port map (
     -- global control --
