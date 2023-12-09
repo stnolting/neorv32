@@ -1181,7 +1181,7 @@ begin
            csr_mscratch_c | csr_mepc_c          | csr_mcause_c    | csr_mip_c     | csr_mtval_c  |
            csr_mtinst_c   | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c |
            csr_mhartid_c  | csr_mconfigptr_c    | csr_mxisa_c =>
-        csr_reg_valid <= '1'; -- always available (but CSR might be hardwired)
+        csr_reg_valid <= '1'; -- always implemented
 
       -- machine-controlled user-mode CSRs --
       when csr_mcounteren_c | csr_menvcfg_c     | csr_menvcfgh_c   |

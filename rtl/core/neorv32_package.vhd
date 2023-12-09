@@ -58,7 +58,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090204"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
-  constant XLEN         : natural := 32; -- native data path width, do not change!
+  constant XLEN         : natural := 32; -- native data path width
 
   -- Check if we're inside the Matrix -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
