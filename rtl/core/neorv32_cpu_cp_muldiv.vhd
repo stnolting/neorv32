@@ -191,7 +191,7 @@ begin
   -- Multiplier Core (signed/unsigned) - Full Parallel --------------------------------------
   -- -------------------------------------------------------------------------------------------
   multiplier_core_parallel:
-  if (FAST_MUL_EN = true) generate
+  if FAST_MUL_EN generate
 
     -- direct approach --
     multiplier_core: process(rstn_i, clk_i)
@@ -216,7 +216,7 @@ begin
 
   -- no parallel multiplier --
   multiplier_core_parallel_none:
-  if (FAST_MUL_EN = false) generate
+  if not FAST_MUL_EN generate
     mul.dsp_x <= (others => '0');
     mul.dsp_y <= (others => '0');
     mul.dsp_z <= (others => '0');
@@ -226,7 +226,7 @@ begin
   -- Multiplier Core (signed/unsigned) - Iterative ------------------------------------------
   -- -------------------------------------------------------------------------------------------
   multiplier_core_serial:
-  if (FAST_MUL_EN = false) generate
+  if not FAST_MUL_EN generate
 
     -- shift-and-add algorithm --
     multiplier_core: process(rstn_i, clk_i)
@@ -265,7 +265,7 @@ begin
 
   -- no serial multiplier --
   multiplier_core_serial_none:
-  if (FAST_MUL_EN = true) generate
+  if FAST_MUL_EN generate
     mul.add    <= (others => '0');
     mul.p_sext <= '0';
   end generate;
@@ -274,7 +274,7 @@ begin
   -- Divider Core (unsigned) - Iterative ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   divider_core_serial:
-  if (DIVISION_EN = true) generate
+  if DIVISION_EN generate
 
     -- restoring division algorithm --
     divider_core: process(rstn_i, clk_i)
@@ -312,7 +312,7 @@ begin
 
   -- no divider --
   divider_core_serial_none:
-  if (DIVISION_EN = false) generate
+  if not DIVISION_EN generate
     div.remainder <= (others => '0');
     div.quotient  <= (others => '0');
     div.sub       <= (others => '0');

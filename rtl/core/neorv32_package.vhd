@@ -56,9 +56,9 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090203"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090204"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
-  constant XLEN         : natural := 32; -- native data path width, do not change!
+  constant XLEN         : natural := 32; -- native data path width
 
   -- Check if we're inside the Matrix -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -922,7 +922,7 @@ end neorv32_package;
 package body neorv32_package is
 
 -- ****************************************************************************************************************************
--- Functions
+-- Helper Functions
 -- ****************************************************************************************************************************
 
   -- Minimal required number of bits to represent <input> numbers ---------------------------
@@ -941,7 +941,7 @@ package body neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function cond_sel_int_f(cond : boolean; val_t : integer; val_f : integer) return integer is
   begin
-    if (cond = true) then
+    if cond then
       return val_t;
     else
       return val_f;
@@ -952,7 +952,7 @@ package body neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural is
   begin
-    if (cond = true) then
+    if cond then
       return val_t;
     else
       return val_f;
@@ -963,7 +963,7 @@ package body neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function cond_sel_suv_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector is
   begin
-    if (cond = true) then
+    if cond then
       return val_t;
     else
       return val_f;
@@ -974,7 +974,7 @@ package body neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string is
   begin
-    if (cond = true) then
+    if cond then
       return val_t;
     else
       return val_f;
@@ -985,7 +985,7 @@ package body neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function bool_to_ulogic_f(cond : boolean) return std_ulogic is
   begin
-    if (cond = true) then
+    if cond then
       return '1';
     else
       return '0';
@@ -1068,8 +1068,8 @@ package body neorv32_package is
     variable hex_v : string(1 to 16);
   begin
     hex_v := "0123456789abcdef";
-    if (su_undefined_f(input(3)) = true) or (su_undefined_f(input(2)) = true) or
-       (su_undefined_f(input(1)) = true) or (su_undefined_f(input(0)) = true) then
+    if su_undefined_f(input(3)) or su_undefined_f(input(2)) or
+       su_undefined_f(input(1)) or su_undefined_f(input(0)) then
       return '?';
     else
       return hex_v(to_integer(unsigned(input)) + 1);

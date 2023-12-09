@@ -84,7 +84,7 @@ begin
   -- Serial Shifter (small but slow) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   serial_shifter:
-  if (FAST_SHIFT_EN = false) generate
+  if not FAST_SHIFT_EN generate
 
     serial_shifter_core: process(rstn_i, clk_i)
     begin
@@ -127,7 +127,7 @@ begin
   -- Barrel Shifter (fast but large) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   barrel_shifter:
-  if (FAST_SHIFT_EN = true) generate
+  if FAST_SHIFT_EN generate
 
     -- shifter core --
     barrel_shifter_core: process(rs1_i, shamt_i, ctrl_i, bs_level)
