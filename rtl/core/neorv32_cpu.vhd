@@ -114,10 +114,8 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- local signals --
   signal ctrl         : ctrl_bus_t; -- main control bus
   signal imm          : std_ulogic_vector(XLEN-1 downto 0); -- immediate
-  signal rs1          : std_ulogic_vector(XLEN-1 downto 0); -- source register 1
-  signal rs2          : std_ulogic_vector(XLEN-1 downto 0); -- source register 2
-  signal rs3          : std_ulogic_vector(XLEN-1 downto 0); -- source register 3
-  signal rs4          : std_ulogic_vector(XLEN-1 downto 0); -- source register 4
+  signal rs1, rs2     : std_ulogic_vector(XLEN-1 downto 0); -- source register 1,2
+  signal rs3, rs4     : std_ulogic_vector(XLEN-1 downto 0); -- source register 3,4
   signal alu_res      : std_ulogic_vector(XLEN-1 downto 0); -- alu result
   signal alu_add      : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp      : std_ulogic_vector(1 downto 0); -- comparator result
@@ -141,8 +139,7 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- CPU ISA configuration --
-  assert false report
-    "[NEORV32] CPU ISA: rv32" &
+  assert false report "[NEORV32] CPU ISA: rv32" &
     cond_sel_string_f(CPU_EXTENSION_RISCV_E,      "e",         "i") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_M,      "m",         "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_A,      "a",         "" ) &
@@ -163,16 +160,14 @@ begin
     severity note;
 
   -- CPU tuning options --
-  assert false report
-    "[NEORV32] CPU tuning options: " &
+  assert false report "[NEORV32] CPU tuning options: " &
     cond_sel_string_f(FAST_MUL_EN,    "fast_mul ",   "") &
     cond_sel_string_f(FAST_SHIFT_EN,  "fast_shift ", "" ) &
     cond_sel_string_f(REGFILE_HW_RST, "rf_hw_rst",   "" )
     severity note;
 
   -- simulation notifier --
-  assert not (is_simulation_c = true) report
-    "[NEORV32] Assuming this is a simulation." severity warning;
+  assert not (is_simulation_c = true) report "[NEORV32] Assuming this is a simulation." severity warning;
 
 
   -- Control Unit ---------------------------------------------------------------------------
@@ -363,7 +358,7 @@ begin
   -- Physical Memory Protection -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   pmp_inst_true:
-  if (pmp_enable_c = true) generate
+  if pmp_enable_c generate
     neorv32_cpu_pmp_inst: entity neorv32.neorv32_cpu_pmp
     generic map (
       NUM_REGIONS => PMP_NUM_REGIONS,    -- number of regions (0..16)
@@ -389,7 +384,7 @@ begin
   end generate;
 
   pmp_inst_false:
-  if (pmp_enable_c = false) generate
+  if not pmp_enable_c generate
     xcsr_rdata_pmp <= (others => '0');
     pmp_ex_fault   <= '0';
     pmp_rw_fault   <= '0';

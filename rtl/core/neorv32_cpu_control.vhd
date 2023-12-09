@@ -217,25 +217,25 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- trap controller --
   type trap_ctrl_t is record
-    exc_buf       : std_ulogic_vector(exc_width_c-1 downto 0); -- synchronous exception buffer (one bit per exception)
-    exc_fire      : std_ulogic; -- set if there is a valid source in the exception buffer
-    irq_pnd       : std_ulogic_vector(irq_width_c-1 downto 0); -- pending interrupt
-    irq_buf       : std_ulogic_vector(irq_width_c-1 downto 0); -- asynchronous exception/interrupt buffer (one bit per interrupt source)
-    irq_fire      : std_ulogic; -- set if an interrupt is actually kicking in
-    cause         : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR & debug-mode entry identifier
-    epc           : std_ulogic_vector(XLEN-1 downto 0); -- exception program counter
+    exc_buf     : std_ulogic_vector(exc_width_c-1 downto 0); -- synchronous exception buffer (one bit per exception)
+    exc_fire    : std_ulogic; -- set if there is a valid source in the exception buffer
+    irq_pnd     : std_ulogic_vector(irq_width_c-1 downto 0); -- pending interrupt
+    irq_buf     : std_ulogic_vector(irq_width_c-1 downto 0); -- asynchronous exception/interrupt buffer (one bit per interrupt source)
+    irq_fire    : std_ulogic; -- set if an interrupt is actually kicking in
+    cause       : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR & debug-mode entry identifier
+    epc         : std_ulogic_vector(XLEN-1 downto 0); -- exception program counter
     --
-    env_pending   : std_ulogic; -- start of trap environment if pending
-    env_enter     : std_ulogic; -- enter trap environment
-    env_exit      : std_ulogic; -- leave trap environment
-    wakeup        : std_ulogic; -- wakeup from sleep due to an enabled pending IRQ
+    env_pending : std_ulogic; -- start of trap environment if pending
+    env_enter   : std_ulogic; -- enter trap environment
+    env_exit    : std_ulogic; -- leave trap environment
+    wakeup      : std_ulogic; -- wakeup from sleep due to an enabled pending IRQ
     --
-    instr_be      : std_ulogic; -- instruction fetch bus error
-    instr_ma      : std_ulogic; -- instruction fetch misaligned address
-    instr_il      : std_ulogic; -- illegal instruction
-    ecall         : std_ulogic; -- ecall instruction
-    ebreak        : std_ulogic; -- ebreak instruction
-    hwtrig        : std_ulogic; -- hardware trigger module
+    instr_be    : std_ulogic; -- instruction fetch bus error
+    instr_ma    : std_ulogic; -- instruction fetch misaligned address
+    instr_il    : std_ulogic; -- illegal instruction
+    ecall       : std_ulogic; -- ecall instruction
+    ebreak      : std_ulogic; -- ebreak instruction
+    hwtrig      : std_ulogic; -- hardware trigger module
   end record;
   signal trap_ctrl : trap_ctrl_t;
 
@@ -299,12 +299,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- hpm event configuration CSRs --
   type hpmevent_cfg_t is array (3 to (hpm_num_c+3)-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type hpmevent_rd_t  is array (3 to 15) of std_ulogic_vector(XLEN-1 downto 0);
-  type hpmevent_t is record
-    we  : std_ulogic_vector(15 downto 0);
-    cfg : hpmevent_cfg_t;
-  end record;
-  signal hpmevent    : hpmevent_t;
-  signal hpmevent_rd : hpmevent_rd_t;
+  signal hpmevent_cfg : hpmevent_cfg_t;
+  signal hpmevent_rd  : hpmevent_rd_t;
+  signal hpmevent_we  : std_ulogic_vector(15 downto 0);
 
   -- counter CSRs --
   type cnt_dat_t is array (0 to 2+hpm_num_c) of std_ulogic_vector(XLEN-1 downto 0);
@@ -2263,14 +2260,14 @@ begin
   if (CPU_EXTENSION_RISCV_Zihpm = true) generate
 
     -- write enable decoder --
-    hpmevent_we: process(csr)
+    hpmevent_write: process(csr)
     begin
-      hpmevent.we <= (others => '0');
+      hpmevent_we <= (others => '0');
       -- [NOTE] no need to check bit 4 of the address as it's always zero (checked by illegal CSR logic)
       if (csr.addr(11 downto 5) = csr_mcountinhibit_c(11 downto 5)) and (csr.we = '1') then
-        hpmevent.we(to_integer(unsigned(csr.addr(3 downto 0)))) <= '1';
+        hpmevent_we(to_integer(unsigned(csr.addr(3 downto 0)))) <= '1';
       end if;
-    end process hpmevent_we;
+    end process hpmevent_write;
 
     -- event registers --
     hpmevent_reg_gen:
@@ -2278,17 +2275,17 @@ begin
       hpmevent_reg: process(rstn_i, clk_i)
       begin
         if (rstn_i = '0') then
-          hpmevent.cfg(i) <= (others => '0');
+          hpmevent_cfg(i) <= (others => '0');
         elsif rising_edge(clk_i) then
-          if (hpmevent.we(i) = '1') then
-            hpmevent.cfg(i) <= csr.wdata(hpmcnt_event_size_c-1 downto 0);
+          if (hpmevent_we(i) = '1') then
+            hpmevent_cfg(i) <= csr.wdata(hpmcnt_event_size_c-1 downto 0);
           end if;
-          hpmevent.cfg(i)(hpmcnt_event_tm_c) <= '0'; -- time, unused/reserved
+          hpmevent_cfg(i)(hpmcnt_event_tm_c) <= '0'; -- time, unused/reserved
         end if;
       end process hpmevent_reg;
       -- read-back --
       hpmevent_rd(i)(XLEN-1 downto hpmcnt_event_size_c) <= (others => '0');
-      hpmevent_rd(i)(hpmcnt_event_size_c-1 downto 0)    <= hpmevent.cfg(i);
+      hpmevent_rd(i)(hpmcnt_event_size_c-1 downto 0)    <= hpmevent_cfg(i);
     end generate;
 
     -- terminate unused entries --
@@ -2303,8 +2300,8 @@ begin
   -- no HPMs implemented --
   hpm_gen_disable:
   if (CPU_EXTENSION_RISCV_Zihpm = false) generate
-    hpmevent.we  <= (others => '0');
-    hpmevent.cfg <= (others => (others => '0'));
+    hpmevent_we  <= (others => '0');
+    hpmevent_cfg <= (others => (others => '0'));
     hpmevent_rd  <= (others => (others => '0'));
   end generate;
 
@@ -2322,7 +2319,7 @@ begin
       cnt.inc(2) <= cnt_event(hpmcnt_event_ir_c) and (not csr.mcountinhibit(2)) and (not debug_ctrl.running);
       -- HPM counters --
       for i in 3 to (hpm_num_c+3)-1 loop
-        cnt.inc(i) <= or_reduce_f(cnt_event and hpmevent.cfg(i)) and (not csr.mcountinhibit(i)) and (not debug_ctrl.running);
+        cnt.inc(i) <= or_reduce_f(cnt_event and hpmevent_cfg(i)) and (not csr.mcountinhibit(i)) and (not debug_ctrl.running);
       end loop;
     end if;
   end process counter_event;
