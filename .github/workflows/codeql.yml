@@ -20,6 +20,7 @@ on:
     branches: [ "main" ]
     paths:
     - 'sw/**'
+  workflow_dispatch:
   schedule:
     - cron: '34 2 * * 4'
 
