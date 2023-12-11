@@ -303,18 +303,18 @@ Read-modify-write operations (line an atomic swap / `amoswap.w`) are **not** sup
 <<_core_libraries>> provide an emulation wrapper for those unsupported instructions that is
 based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
 
-The figure below shows three exemplary bus accesses. For easier understanding the current state of the reservation set
-is added as `rvs_valid` signal.
+The figure below shows three exemplary bus accesses (1 to 3 from left to right). The `req` signal record represents
+the CPU-side of the bus interface. For easier understanding the current state of the reservation set is added as `rvs_valid` signal.
 
 [start=1]
-. A load-reservate (LR) instruction using `addr` as address. This instruction returns the loaded data `rdata` and also
-registers a reservation for the address `addr` (`rvs_valid` becomes set).
-. A store-conditional (SC) instruction attempts to write `wdata1` to `addr`. This SC operation **succeeds**, so `wdata1`
-is actually written to `addr`. The successful operation is indicated by a 1 being returned via the `rsp.data` signal
-together with the `ack`. As the LR/SC is completed the registered reservation is invalidated (`rvs_valid` becomes cleared).
-. Another store-conditional (SC) instruction attempts to write `wdata2` to `addr`. As the reservation set is already invalidated
-(`rvs_valid` is `0`) the store access fails, so `wdata2` is **not** written to `addr`. The failed operation is indicated by a 0
-being returned via the `rsp.data` signal together with the `ack`.
+. A load-reservate (LR) instruction using `addr` as address. This instruction returns the loaded data `rdata` via `rsp.data`
+and also registers a reservation for the address `addr` (`rvs_valid` becomes set).
+. A store-conditional (SC) instruction attempts to write `wdata1` to address `addr`. This SC operation **succeeds**, so
+`wdata1` is actually written to address `addr`. The successful operation is indicated by a **0** being returned via
+`rsp.data` together with `ack`. As the LR/SC is completed the registered reservation is invalidated (`rvs_valid` becomes cleared).
+. Another store-conditional (SC) instruction attempts to write `wdata2` to address `addr`. As the reservation set is already
+invalidated (`rvs_valid` is `0`) the store access fails, so `wdata2` is **not** written to address `addr` at all. The failed
+operation is indicated by a **1** being returned via `rsp.data` together with `ack`.
 
 .Three Exemplary LR/SC Bus Transactions
 image::bus_interface_atomic.png[700]
