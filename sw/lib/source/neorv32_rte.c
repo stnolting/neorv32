@@ -240,7 +240,7 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
   // compute return address (for exceptions only)
   // do not alter return address if instruction access exception (fatal?)
   uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  if ((((int32_t)cause) >= 0) && (cause != TRAP_CODE_I_ACCESS)) {
+  if (((cause >> 31) == 0) && (cause != TRAP_CODE_I_ACCESS)) {
 
     uint32_t rte_mepc = neorv32_cpu_csr_read(CSR_MEPC);
     rte_mepc += 4; // default: faulting instruction is uncompressed
