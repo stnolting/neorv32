@@ -510,7 +510,6 @@ The `crt0.S` start-up performs the following operations:
 ** All interrupt sources are disabled by clearing <<_mie>>.
 ** The return value of `main` is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
 ** Call all _destructors_ (if there are any).
-** An optional <<_after_main_handler>> is called (if defined at all).
 ** The CPU enters sleep mode executing the `wfi` instruction in an endless loop.
 
 .Bootloader Start-Up Code
@@ -533,40 +532,6 @@ is **not** determined by loading the instruction from memory. Instead, the trans
 [NOTE]
 The early-trap handler should be replaced by a more capable / informative one as soon as the application software is started
 (for example by using the <<_neorv32_runtime_environment>>).
-
-
-:sectnums:
-===== After-Main Handler
-
-If the application's `main()` function actually returns, an _after main handler_ can be executed. This handler is a "normal" function
-as the C runtime is still available when executed. If this handler uses any kind of peripheral/IO modules make sure these are
-already initialized within the application. Otherwise you have to initialize them _inside_ the handler.
-
-.After-main handler - function prototype
-[source,c]
-----
-void __neorv32_crt0_after_main(int32_t return_code);
-----
-
-The function has exactly one argument (`return_code`) that provides the _return value_ of the application's main function.
-For instance, this variable contains `-1` if the main function returned with `return -1;`. The after-main handler itself does
-not provide a return value.
-
-A simple UART output can be used to inform the user when the application's main function returns
-(this example assumes that UART0 has been already properly configured in the actual application):
-
-.After-main handler - simple example
-[source,c]
-----
-void __neorv32_crt0_after_main(int32_t return_code) {
-
-  neorv32_uart0_printf("\n<RTE> main function returned with exit code %i. </RTE>\n", return_code); <1>
-}
-----
-<1> Use `<RTE>` here to make clear this is a message comes from the runtime environment.
-
-[NOTE]
-The after-main handler is executed _after_ executing all destructor functions (if there are any at all).
 
 
 <<<

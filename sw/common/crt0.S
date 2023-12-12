@@ -192,20 +192,6 @@ __crt0_call_destructors_loop_end:
 
 
 // ************************************************************************************************
-// Call "after main" handler (if there is any) if main really returns
-// ************************************************************************************************
-#ifndef make_bootloader              // after_main handler not supported for bootloader
-__crt0_main_aftermath:
-  .weak    __neorv32_crt0_after_main
-  la   ra, __neorv32_crt0_after_main
-  beqz ra, __crt0_main_aftermath_end // check if an aftermath handler has been specified
-  jalr ra                            // execute handler with main's return code still in a0
-
-__crt0_main_aftermath_end:
-#endif
-
-
-// ************************************************************************************************
 // Go to endless sleep mode
 // ************************************************************************************************
 __crt0_shutdown:
