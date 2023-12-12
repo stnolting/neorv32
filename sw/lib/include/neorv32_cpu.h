@@ -455,15 +455,6 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int csr_id
 // Misc helpers
 // #################################################################################################
 
-
-/**********************************************************************//**
- * Prototype for "after-main handler". This function is called if main() returns.
- *
- * @param[in] return_code Return value of main() function.
- **************************************************************************/
-extern void __attribute__ ((weak)) __neorv32_crt0_after_main(int32_t return_code);
-
-
 /**********************************************************************//**
  * Put CPU into sleep / power-down mode.
  *

@@ -245,16 +245,17 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] PMP setup ", cnt_test);
 
-  // check if PMP is already locked
-  tmp_a = neorv32_cpu_csr_read(CSR_PMPCFG0);
-  tmp_b = ((1 << PMPCFG_L) << 0) | ((1 << PMPCFG_L) << 8) | ((1 << PMPCFG_L) << 16);
-
-  if (tmp_a & tmp_b) {
-    PRINT_CRITICAL("\nERROR! PMP LOCKED!\n");
-    return 1;
-  }
-
   if (pmp_num_regions >= 3) { // sufficient regions for tests
+
+    // check if PMP is already locked
+    tmp_a = neorv32_cpu_csr_read(CSR_PMPCFG0);
+    tmp_b = ((1 << PMPCFG_L) << 0) | ((1 << PMPCFG_L) << 8) | ((1 << PMPCFG_L) << 16);
+
+    if (tmp_a & tmp_b) {
+      PRINT_CRITICAL("\nERROR! PMP LOCKED!\n");
+      return 1;
+    }
+
     cnt_test++;
 
     // set execute permission for u-mode
@@ -2216,7 +2217,15 @@ int main() {
     PRINT_STANDARD("%c[1m[PROCESSOR TEST FAILED!]%c[0m\n", 27, 27);
   }
 
-  return (int)cnt_fail; // return error counter for after-main handler
+  // make sure sim mode is disabled and UARTs are actually enabled
+  NEORV32_UART0->CTRL |=  (1 << UART_CTRL_EN);
+  NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+  NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
+
+  // minimal result report
+  PRINT_CRITICAL("%u/%u\n", (uint32_t)cnt_fail, (uint32_t)cnt_test);
+
+  return 0;
 }
 
 
@@ -2391,21 +2400,4 @@ void test_fail(void) {
 
   PRINT_CRITICAL("%c[1m[fail(%u)]%c[0m\n", 27, cnt_test-1, 27);
   cnt_fail++;
-}
-
-
-/**********************************************************************//**
- * "after-main" handler that is executed after the application's
- * main function returns (called by crt0.S start-up code): Output minimal
- * test report to physical UART
- **************************************************************************/
-void __neorv32_crt0_after_main(int32_t return_code) {
-
-  // make sure sim mode is disabled and UARTs are actually enabled
-  NEORV32_UART0->CTRL |=  (1 << UART_CTRL_EN);
-  NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
-  NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
-
-  // minimal result report
-  PRINT_CRITICAL("%u/%u\n", (uint32_t)return_code, (uint32_t)cnt_test);
 }
