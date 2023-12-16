@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2022, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -38,16 +38,17 @@
 #include <string.h>
 #include <time.h>
 
-
+// executable signature ("magic word")
 const uint32_t signature = 0x4788CAFE;
+
+enum operation_enum {OP_APP_BIN, OP_APP_IMG, OP_BLD_IMG, OP_RAW_HEX, OP_RAW_BIN};
 
 int main(int argc, char *argv[]) {
 
-  if ((argc != 4) && (argc != 5)){
-    printf("<<< NEORV32 executable image generator >>>\n"
-           "by Stephan Nolting\n"
+  if ((argc != 4) && (argc != 5)) {
+    printf("NEORV32 executable image generator\n"
            "Three arguments are required.\n"
-           "1st: Option\n"
+           "1st: Operation\n"
            " -app_bin : Generate application executable binary (binary file, little-endian, with header) \n"
            " -app_img : Generate application raw executable memory image (vhdl package body file, no header)\n"
            " -raw_hex : Generate application raw executable (ASCII hex file, no header)\n"
@@ -55,7 +56,7 @@ int main(int argc, char *argv[]) {
            " -bld_img : Generate bootloader raw executable memory image (vhdl package body file, no header)\n"
            "2nd: Input file (raw binary image)\n"
            "3rd: Output file\n"
-           "4th: Project folder (optional)\n");
+           "4th: Project name or folder (optional)\n");
     return 0;
   }
 
@@ -64,49 +65,51 @@ int main(int argc, char *argv[]) {
   char tmp_string[1024];
   uint32_t tmp = 0, size = 0, checksum = 0;
   unsigned int i = 0;
-  int option = 0;
+  int operation = 0;
   unsigned long raw_exe_size = 0;
 
-  if (strcmp(argv[1], "-app_bin") == 0)
-    option = 1;
-  else if (strcmp(argv[1], "-app_img") == 0)
-    option = 2;
-  else if (strcmp(argv[1], "-bld_img") == 0)
-    option = 3;
-  else if (strcmp(argv[1], "-raw_hex") == 0)
-    option = 4;
-  else if (strcmp(argv[1], "-raw_bin") == 0)
-    option = 5;
+  if      (strcmp(argv[1], "-app_bin") == 0) { operation = OP_APP_BIN; }
+  else if (strcmp(argv[1], "-app_img") == 0) { operation = OP_APP_IMG; }
+  else if (strcmp(argv[1], "-bld_img") == 0) { operation = OP_BLD_IMG; }
+  else if (strcmp(argv[1], "-raw_hex") == 0) { operation = OP_RAW_HEX; }
+  else if (strcmp(argv[1], "-raw_bin") == 0) { operation = OP_RAW_BIN; }
   else {
-    printf("Invalid option!");
-    return 1;
+    printf("Invalid operation!");
+    return -1;
   }
 
   // open input file
   input = fopen(argv[2], "rb");
-  if(input == NULL){
+  if(input == NULL) {
     printf("Input file error!");
-    return 2;
-  }
-
-  // open output file
-  output = fopen(argv[3], "wb");
-  if(output == NULL){
-    printf("Output file error!");
-    return 3;
+    return -2;
   }
 
   // get input file size
   fseek(input, 0L, SEEK_END);
   unsigned int input_size = (unsigned int)ftell(input);
-  rewind(input);
   unsigned int input_words = input_size / 4;
+  rewind(input);
 
+  // input file empty?
+  if(input_size == 0) {
+    printf("Input file is empty!");
+    fclose(input);
+    return -3;
+  }
 
-// ------------------------------------------------------------
-// Try to find out targeted CPU configuration
-// via MARCH environment variable
-// ------------------------------------------------------------
+  // open output file
+  output = fopen(argv[3], "wb");
+  if(output == NULL) {
+    printf("Output file error!");
+    fclose(input);
+    return -4;
+  }
+
+  // --------------------------------------------------------------------------
+  // Try to find out targeted CPU configuration
+  // via MARCH environment variable
+  // --------------------------------------------------------------------------
   char string_march[64] = "default";
   char *envvar_march = "MARCH";
   if (getenv(envvar_march)) {
@@ -116,9 +119,9 @@ int main(int argc, char *argv[]) {
   }
 
 
-// ------------------------------------------------------------
-// Get image's compilation date and time
-// ------------------------------------------------------------
+  // --------------------------------------------------------------------------
+  // Get image's compilation date and time
+  // --------------------------------------------------------------------------
   time_t time_current;
   time(&time_current);
   struct tm *time_local = localtime(&time_current);
@@ -134,9 +137,9 @@ int main(int argc, char *argv[]) {
   );
 
 
-// ------------------------------------------------------------
-// Get size of application (in bytes)
-// ------------------------------------------------------------
+  // --------------------------------------------------------------------------
+  // Get size of application (in bytes)
+  // --------------------------------------------------------------------------
   fseek(input, 0L, SEEK_END);
 
   // get file size (raw executable)
@@ -146,10 +149,10 @@ int main(int argc, char *argv[]) {
   rewind(input);
 
 
-// ------------------------------------------------------------
-// Generate BINARY executable (with header!) for bootloader upload
-// ------------------------------------------------------------
-  if (option == 1) {
+  // --------------------------------------------------------------------------
+  // Generate BINARY executable (with header!) for bootloader upload
+  // --------------------------------------------------------------------------
+  if (operation == OP_APP_BIN) {
 
     // reserve header space for signature
     fputc(0, output);
@@ -168,11 +171,6 @@ int main(int argc, char *argv[]) {
     fputc(0, output);
     fputc(0, output);
     fputc(0, output);
-
-    buffer[0] = 0;
-    buffer[1] = 0;
-    buffer[2] = 0;
-    buffer[3] = 0;
 
     checksum = 0;
     size = 0;
@@ -210,11 +208,11 @@ int main(int argc, char *argv[]) {
   }
 
 
-// ------------------------------------------------------------
-// Generate APPLICATION's executable memory initialization file (no header!)
-// => VHDL package body
-// ------------------------------------------------------------
-  if (option == 2) {
+  // --------------------------------------------------------------------------
+  // Generate APPLICATION's executable memory initialization file (no header!)
+  // => VHDL package body
+  // --------------------------------------------------------------------------
+  if (operation == OP_APP_IMG) {
 
     // header
     sprintf(tmp_string, "-- The NEORV32 RISC-V Processor: https://github.com/stnolting/neorv32\n"
@@ -229,13 +227,7 @@ int main(int argc, char *argv[]) {
                         "constant application_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, string_march, compile_time);
     fputs(tmp_string, output);
 
-    // data
-    buffer[0] = 0;
-    buffer[1] = 0;
-    buffer[2] = 0;
-    buffer[3] = 0;
     i = 0;
-
     while (i < (input_words-1)) {
       if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
         tmp  = (uint32_t)(buffer[0] << 0);
@@ -244,10 +236,6 @@ int main(int argc, char *argv[]) {
         tmp |= (uint32_t)(buffer[3] << 24);
         sprintf(tmp_string, "x\"%08x\",\n", (unsigned int)tmp);
         fputs(tmp_string, output);
-        buffer[0] = 0;
-        buffer[1] = 0;
-        buffer[2] = 0;
-        buffer[3] = 0;
         i++;
       }
       else {
@@ -263,10 +251,6 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[3] << 24);
       sprintf(tmp_string, "x\"%08x\"\n", (unsigned int)tmp);
       fputs(tmp_string, output);
-      buffer[0] = 0;
-      buffer[1] = 0;
-      buffer[2] = 0;
-      buffer[3] = 0;
       i++;
     }
     else {
@@ -281,11 +265,11 @@ int main(int argc, char *argv[]) {
   }
 
 
-// ------------------------------------------------------------
-// Generate BOOTLOADER's executable memory initialization file (no header!)
-// => VHDL package body
-// ------------------------------------------------------------
-  if (option == 3) {
+  // --------------------------------------------------------------------------
+  // Generate BOOTLOADER's executable memory initialization file (no header!)
+  // => VHDL package body
+  // --------------------------------------------------------------------------
+  if (operation == OP_BLD_IMG) {
 
     // header
     sprintf(tmp_string, "-- The NEORV32 RISC-V Processor: https://github.com/stnolting/neorv32\n"
@@ -300,13 +284,7 @@ int main(int argc, char *argv[]) {
                         "constant bootloader_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, string_march, compile_time);
     fputs(tmp_string, output);
 
-    // data
-    buffer[0] = 0;
-    buffer[1] = 0;
-    buffer[2] = 0;
-    buffer[3] = 0;
     i = 0;
-
     while (i < (input_words-1)) {
       if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
         tmp  = (uint32_t)(buffer[0] << 0);
@@ -315,10 +293,6 @@ int main(int argc, char *argv[]) {
         tmp |= (uint32_t)(buffer[3] << 24);
         sprintf(tmp_string, "x\"%08x\",\n", (unsigned int)tmp);
         fputs(tmp_string, output);
-        buffer[0] = 0;
-        buffer[1] = 0;
-        buffer[2] = 0;
-        buffer[3] = 0;
         i++;
       }
       else {
@@ -334,10 +308,6 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[3] << 24);
       sprintf(tmp_string, "x\"%08x\"\n", (unsigned int)tmp);
       fputs(tmp_string, output);
-      buffer[0] = 0;
-      buffer[1] = 0;
-      buffer[2] = 0;
-      buffer[3] = 0;
       i++;
     }
     else {
@@ -352,16 +322,10 @@ int main(int argc, char *argv[]) {
   }
 
 
-// ------------------------------------------------------------
-// Generate raw APPLICATION's executable ASCII hex file (no header!!!)
-// ------------------------------------------------------------
-  if (option == 4) {
-
-    // data
-    buffer[0] = 0;
-    buffer[1] = 0;
-    buffer[2] = 0;
-    buffer[3] = 0;
+  // --------------------------------------------------------------------------
+  // Generate raw APPLICATION's executable ASCII hex file (no header!)
+  // --------------------------------------------------------------------------
+  if (operation == OP_RAW_HEX) {
 
     while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
       tmp  = (uint32_t)(buffer[0] << 0);
@@ -374,33 +338,20 @@ int main(int argc, char *argv[]) {
   }
 
 
-// ------------------------------------------------------------
-// Generate raw APPLICATION's executable binary file (no header!!!)
-// ------------------------------------------------------------
-  if (option == 5) {
+  // --------------------------------------------------------------------------
+  // Generate raw APPLICATION's executable binary file (no header!)
+  // --------------------------------------------------------------------------
+  if (operation == OP_RAW_BIN) {
 
-    // data
-    buffer[0] = 0;
-    buffer[1] = 0;
-    buffer[2] = 0;
-    buffer[3] = 0;
-
-    while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
-      tmp  = (uint32_t)(buffer[0] << 0);
-      tmp |= (uint32_t)(buffer[1] << 8);
-      tmp |= (uint32_t)(buffer[2] << 16);
-      tmp |= (uint32_t)(buffer[3] << 24);
+    while(fread(&buffer, sizeof(unsigned char), 1, input) != 0) {
       fputc(buffer[0], output);
-      fputc(buffer[1], output);
-      fputc(buffer[2], output);
-      fputc(buffer[3], output);
     }
   }
 
 
-// ------------------------------------------------------------
-// Done, clean up
-// ------------------------------------------------------------
+  // --------------------------------------------------------------------------
+  // Done, clean up
+  // --------------------------------------------------------------------------
 
   fclose(input);
   fclose(output);

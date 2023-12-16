@@ -35,6 +35,7 @@
 .file "crt0.S"
 .section .text.crt0
 .balign 4
+.option norvc // only 32-bit instructions
 .global _start
 .global __crt0_entry
 .global __crt0_main_exit
@@ -45,21 +46,14 @@ __crt0_entry:
 .cfi_undefined ra
 
 // ************************************************************************************************
-// We need to ensure interrupts are completely disabled at start. This is required if this code
-// is part of a program uploaded by the on-chip debugger (potentionally taking over control from the
-// bootloader). We setup a new stack pointer here and WE DO NOT WANT TO trap to an outdated trap
-// handler with a modified stack pointer.
-// ************************************************************************************************
-  csrrwi zero, mstatus, 0 // clear mstatus; disable machine-level interrupts
-
-
-// ************************************************************************************************
 // Setup CPU core CSRs
 // ************************************************************************************************
 __crt0_cpu_csr_init:
-  la   x1,    __crt0_trap_handler // configure early-boot trap handler
-  csrw mtvec, x1
-  csrw mie,   zero // disable all interrupt sources
+  li   x1,      0x00001800
+  csrw mstatus, x1 // reset mstatus (e.g. no interrupt in machine-mode)
+  la   x1,      __crt0_trap_handler // configure early-boot trap handler
+  csrw mtvec,   x1
+  csrw mie,     zero // disable all interrupt sources
 
 
 // ************************************************************************************************
@@ -198,20 +192,6 @@ __crt0_call_destructors_loop_end:
 
 
 // ************************************************************************************************
-// Call "after main" handler (if there is any) if main really returns
-// ************************************************************************************************
-#ifndef make_bootloader              // after_main handler not supported for bootloader
-__crt0_main_aftermath:
-  .weak    __neorv32_crt0_after_main
-  la   ra, __neorv32_crt0_after_main
-  beqz ra, __crt0_main_aftermath_end // check if an aftermath handler has been specified
-  jalr ra                            // execute handler with main's return code still in a0
-
-__crt0_main_aftermath_end:
-#endif
-
-
-// ************************************************************************************************
 // Go to endless sleep mode
 // ************************************************************************************************
 __crt0_shutdown:
@@ -228,17 +208,18 @@ __crt0_trap_handler:
   // backup x8
   csrw  mscratch, x8
 
-  // we are done if interrupt
+  // exit if interrupt
   csrr  x8,   mcause
-  bltz  x8,   __crt0_trap_handler_end
+  srli  x8,   x8, 31 // isolate MSB (set for interrupts)
+  bnez  x8,   __crt0_trap_handler_end
 
   // mepc = mepc + 2 (for compressed instruction)
   csrr  x8,   mepc
   addi  x8,   x8, +2
   csrw  mepc, x8
 
-  // we are done if trap-causing instruction is compressed
-  csrr  x8,   mtinst // get transformed trap-causing instruction
+  // exit if exception-causing instruction is compressed
+  csrr  x8,   mtinst // get transformed exception-causing instruction
   andi  x8,   x8,  3 // isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
   addi  x8,   x8, -3 // x8 is zero after this if uncompressed instruction
   beqz  x8,   __crt0_trap_handler_end

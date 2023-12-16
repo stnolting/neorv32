@@ -137,18 +137,10 @@ int main() {
   // NOTE: exit is highly over-sized as it also includes clean-up functions (destructors), which
   // are not required for bare-metal or RTOS applications... better use the simple 'return' or even better
   // make sure main never returns. Anyway, let's check if 'exit' works.
-  neorv32_uart0_printf("<exit> test...");
+  neorv32_uart0_printf("terminating via <exit> ");
   exit(0);
 
-  return 0; // should never be reached
-}
-
-
-/**********************************************************************//**
- * "after-main" handler that is executed after the application's
- * main function returns (called by crt0.S start-up code)
- **************************************************************************/
-void __neorv32_crt0_after_main(int32_t return_code) {
-
-  neorv32_uart0_printf("\n<RTE> main function returned with exit code %i </RTE>\n", return_code);
+  // should never be reached
+  neorv32_uart0_printf("failed!n");
+  return 0;
 }
