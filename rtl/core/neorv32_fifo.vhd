@@ -149,7 +149,7 @@ begin
   -- Read Data ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   fifo_read_async: -- asynchronous read
-  if (FIFO_RSYNC = false) generate
+  if not FIFO_RSYNC generate
     rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0))));
     -- status --
     free_o  <= free;
@@ -158,7 +158,7 @@ begin
   end generate;
 
   fifo_read_sync: -- synchronous read
-  if (FIFO_RSYNC = true) generate
+  if FIFO_RSYNC generate
     sync_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
