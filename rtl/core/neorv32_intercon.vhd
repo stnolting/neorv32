@@ -147,12 +147,12 @@ begin
   x_req_o.src  <= a_req_i.src  when (arbiter.sel = '0') else b_req_i.src;
   x_req_o.rw   <= a_req_i.rw   when (arbiter.sel = '0') else b_req_i.rw;
 
-  x_req_o.data <= b_req_i.data when (PORT_A_READ_ONLY = true) else
-                  a_req_i.data when (PORT_B_READ_ONLY = true) else
-                  a_req_i.data when (arbiter.sel = '0')  else b_req_i.data;
+  x_req_o.data <= b_req_i.data when PORT_A_READ_ONLY    else
+                  a_req_i.data when PORT_B_READ_ONLY    else
+                  a_req_i.data when (arbiter.sel = '0') else b_req_i.data;
 
-  x_req_o.ben  <= b_req_i.ben when (PORT_A_READ_ONLY = true) else
-                  a_req_i.ben when (PORT_B_READ_ONLY = true) else
+  x_req_o.ben  <= b_req_i.ben when PORT_A_READ_ONLY     else
+                  a_req_i.ben when PORT_B_READ_ONLY     else
                   a_req_i.ben when (arbiter.sel = '0')  else b_req_i.ben;
 
   x_req_o.stb  <= arbiter.stb;
@@ -312,11 +312,11 @@ begin
 
   -- Address Section Decoder ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  port_sel(0) <= '1' when (main_req_i.addr(31 downto index_size_f(IMEM_SIZE)) = IMEM_BASE(31 downto index_size_f(IMEM_SIZE))) and (IMEM_ENABLE = true) else '0';
-  port_sel(1) <= '1' when (main_req_i.addr(31 downto index_size_f(DMEM_SIZE)) = DMEM_BASE(31 downto index_size_f(DMEM_SIZE))) and (DMEM_ENABLE = true) else '0';
-  port_sel(2) <= '1' when (main_req_i.addr(31 downto index_size_f(XIP_SIZE))  = XIP_BASE( 31 downto index_size_f(XIP_SIZE)))  and (XIP_ENABLE  = true) else '0';
-  port_sel(3) <= '1' when (main_req_i.addr(31 downto index_size_f(BOOT_SIZE)) = BOOT_BASE(31 downto index_size_f(BOOT_SIZE))) and (BOOT_ENABLE = true) else '0';
-  port_sel(4) <= '1' when (main_req_i.addr(31 downto index_size_f(IO_SIZE))   = IO_BASE(  31 downto index_size_f(IO_SIZE)))   and (IO_ENABLE   = true) else '0';
+  port_sel(0) <= '1' when (main_req_i.addr(31 downto index_size_f(IMEM_SIZE)) = IMEM_BASE(31 downto index_size_f(IMEM_SIZE))) and IMEM_ENABLE else '0';
+  port_sel(1) <= '1' when (main_req_i.addr(31 downto index_size_f(DMEM_SIZE)) = DMEM_BASE(31 downto index_size_f(DMEM_SIZE))) and DMEM_ENABLE else '0';
+  port_sel(2) <= '1' when (main_req_i.addr(31 downto index_size_f(XIP_SIZE))  = XIP_BASE( 31 downto index_size_f(XIP_SIZE)))  and XIP_ENABLE  else '0';
+  port_sel(3) <= '1' when (main_req_i.addr(31 downto index_size_f(BOOT_SIZE)) = BOOT_BASE(31 downto index_size_f(BOOT_SIZE))) and BOOT_ENABLE else '0';
+  port_sel(4) <= '1' when (main_req_i.addr(31 downto index_size_f(IO_SIZE))   = IO_BASE(  31 downto index_size_f(IO_SIZE)))   and IO_ENABLE   else '0';
 
   -- accesses to the "void" are redirected to the external bus interface --
   port_sel(5) <= '1' when ((port_sel(4 downto 0) = "00000") and (EXT_ENABLE = true)) else '0';
@@ -334,7 +334,7 @@ begin
   -- bus request --
   request: process(main_req_i, port_sel)
   begin
-    for i in 0 to 5 loop 
+    for i in 0 to 5 loop
       port_req(i) <= req_terminate_c;
       if (port_en_list_c(i) = true) then
         port_req(i)     <= main_req_i;
@@ -579,7 +579,7 @@ begin
   for i in 0 to (num_devs_physical_c-1) generate
 
     access_gen_enabled:
-    if (dev_en_list_c(i) = true) generate
+    if dev_en_list_c(i) generate
       req_gen: process(main_req_i)
       begin
         dev_req(i) <= main_req_i;
@@ -592,7 +592,7 @@ begin
     end generate;
 
     access_gen_disabled:
-    if (dev_en_list_c(i) = false) generate
+    if not dev_en_list_c(i) generate
       dev_req(i) <= req_terminate_c;
     end generate;
 
@@ -606,7 +606,7 @@ begin
   begin
     tmp_v := rsp_terminate_c; -- start with all-zero
     for i in 0 to (num_devs_physical_c-1) loop -- logical OR of all response signals
-      if (dev_en_list_c(i) = true) then
+      if dev_en_list_c(i) then
         tmp_v.data := tmp_v.data or dev_rsp(i).data;
         tmp_v.ack  := tmp_v.ack  or dev_rsp(i).ack;
         tmp_v.err  := tmp_v.err  or dev_rsp(i).err;
