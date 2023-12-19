@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 19.12.2023 | 1.9.2.7 | minor rtl code cleanups, edits and optimization; :lock: reset `mtvec`, `mepc` and `dpc` CSRs to CPU boot address (`CPU_BOOT_ADDR` CPU generic) | [#755](https://github.com/stnolting/neorv32/pull/755) |
 | 19.12.2023 | 1.9.2.6 | rework FIFO component fixing problems with inferring block RAM | [#754](https://github.com/stnolting/neorv32/pull/754) |
 | 11.12.2023 | 1.9.2.5 | clean-up software framework | [#752](https://github.com/stnolting/neorv32/pull/752) |
 | 09.12.2023 | 1.9.2.4 | minor rtl code cleanups | [#747](https://github.com/stnolting/neorv32/pull/747) |
