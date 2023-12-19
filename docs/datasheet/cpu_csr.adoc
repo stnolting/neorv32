@@ -276,7 +276,7 @@ Machine-mode software can discover available `Z*` _sub-extensions_ (like `Zicsr`
 |=======================
 | Name        | Machine trap-handler base address
 | Address     | `0x305`
-| Reset value | `0x00000000`
+| Reset value | `CPU_BOOT_ADDR`, CPU boot address, 4-byte aligned (see <<_cpu_top_entity_generics>> and <<_address_space>>)
 | ISA         | `Zicsr`
 | Description | The `mtvec` CSR holds the trap vector configuration.
 |=======================
@@ -368,7 +368,7 @@ or entirely denied allowing access to **none** counter CSRs.
 |=======================
 | Name        | Machine exception program counter
 | Address     | `0x341`
-| Reset value | `0x00000000`
+| Reset value | `CPU_BOOT_ADDR`, CPU boot address, 4-byte aligned (see <<_cpu_top_entity_generics>> and <<_address_space>>)
 | ISA         | `Zicsr`
 | Description | The `mepc` CSR provides the instruction address where execution has stopped/failed when
 an instruction is triggered / an exception is raised. See section <<_traps_exceptions_and_interrupts>> for a list of all legal values.

@@ -628,7 +628,7 @@ Cause codes in `dcsr.cause` (highest priority first):
 |=======================
 | Name        | Debug program counter
 | Address     | `0x7b1`
-| Reset value | `0x00000000`
+| Reset value | `CPU_BOOT_ADDR`, CPU boot address, 4-byte aligned (see <<_cpu_top_entity_generics>> and <<_address_space>>)
 | ISA         | `Zicsr` & `Sdext`
 | Description | The register is used to store the current program counter when debug mode is entered. The `dret` instruction will
 return to the address stored in `dpc` by automatically moving `dpc` to the program counter.

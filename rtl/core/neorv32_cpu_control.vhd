@@ -1639,9 +1639,9 @@ begin
       csr.mie_mei          <= '0';
       csr.mie_mti          <= '0';
       csr.mie_firq         <= (others => '0');
-      csr.mtvec            <= (others => '0');
+      csr.mtvec            <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
       csr.mscratch         <= x"19880704";
-      csr.mepc             <= (others => '0');
+      csr.mepc             <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
       csr.mcause           <= (others => '0');
       csr.mtval            <= (others => '0');
       csr.mtinst           <= (others => '0');
@@ -1657,7 +1657,7 @@ begin
       csr.dcsr_step        <= '0';
       csr.dcsr_prv         <= priv_mode_m_c;
       csr.dcsr_cause       <= (others => '0');
-      csr.dpc              <= (others => '0');
+      csr.dpc              <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
       csr.dscratch0        <= (others => '0');
       csr.tdata1_hit_clr   <= '0';
       csr.tdata1_execute   <= '0';
