@@ -54,23 +54,19 @@ end neorv32_mtime;
 
 architecture neorv32_mtime_rtl of neorv32_mtime is
 
-  -- time write access buffer --
-  signal mtime_lo_we : std_ulogic;
-  signal mtime_hi_we : std_ulogic;
+  -- mtime.time write access buffer --
+  signal mtime_we : std_ulogic_vector(1 downto 0);
 
   -- accessible regs --
-  signal mtimecmp_lo   : std_ulogic_vector(31 downto 0);
-  signal mtimecmp_hi   : std_ulogic_vector(31 downto 0);
-  signal mtime_lo      : std_ulogic_vector(31 downto 0);
-  signal mtime_lo_nxt  : std_ulogic_vector(32 downto 0);
-  signal mtime_lo_ovfl : std_ulogic_vector(00 downto 0);
-  signal mtime_hi      : std_ulogic_vector(31 downto 0);
+  signal mtimecmp_lo  : std_ulogic_vector(31 downto 0);
+  signal mtimecmp_hi  : std_ulogic_vector(31 downto 0);
+  signal mtime_lo     : std_ulogic_vector(31 downto 0);
+  signal mtime_lo_nxt : std_ulogic_vector(32 downto 0);
+  signal mtime_lo_cry : std_ulogic_vector(00 downto 0);
+  signal mtime_hi     : std_ulogic_vector(31 downto 0);
 
   -- comparators --
-  signal cmp_lo_ge    : std_ulogic;
-  signal cmp_lo_ge_ff : std_ulogic;
-  signal cmp_hi_eq    : std_ulogic;
-  signal cmp_hi_gt    : std_ulogic;
+  signal cmp_lo_ge, cmp_lo_ge_ff, cmp_hi_eq, cmp_hi_gt : std_ulogic;
 
 begin
 
@@ -81,10 +77,9 @@ begin
     if (rstn_i = '0') then
       mtimecmp_lo    <= (others => '0');
       mtimecmp_hi    <= (others => '0');
-      mtime_lo_we    <= '0';
-      mtime_hi_we    <= '0';
+      mtime_we       <= (others => '0');
       mtime_lo       <= (others => '0');
-      mtime_lo_ovfl  <= (others => '0');
+      mtime_lo_cry   <= (others => '0');
       mtime_hi       <= (others => '0');
       --
       bus_rsp_o.ack  <= '0';
@@ -92,44 +87,38 @@ begin
       bus_rsp_o.data <= (others => '0');
     elsif rising_edge(clk_i) then
       -- mtimecmp --
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.addr(3 downto 2) = "10") then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3) = '1') then
+        if (bus_req_i.addr(2) = '0') then
           mtimecmp_lo <= bus_req_i.data;
-        end if;
-        if (bus_req_i.addr(3 downto 2) = "11") then
+        else
           mtimecmp_hi <= bus_req_i.data;
         end if;
       end if;
 
       -- mtime write access buffer --
-      mtime_lo_we <= '0';
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) = "00") then
-        mtime_lo_we <= '1';
-      end if;
-      --
-      mtime_hi_we <= '0';
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) = "01") then
-        mtime_hi_we <= '1';
-      end if;
+      mtime_we(0) <= bus_req_i.stb and bus_req_i.rw and (not bus_req_i.addr(3)) and (not bus_req_i.addr(2));
+      mtime_we(1) <= bus_req_i.stb and bus_req_i.rw and (not bus_req_i.addr(3)) and (    bus_req_i.addr(2));
 
-      -- mtime low --
-      if (mtime_lo_we = '1') then -- write access
+      -- mtime.low --
+      if (mtime_we(0) = '1') then -- write access
         mtime_lo <= bus_req_i.data;
       else -- auto increment
         mtime_lo <= mtime_lo_nxt(31 downto 0);
       end if;
-      mtime_lo_ovfl(0) <= mtime_lo_nxt(32); -- overflow (carry)
 
-      -- mtime high --
-      if (mtime_hi_we = '1') then -- write access
+      -- low-to-high carry --
+      mtime_lo_cry(0) <= mtime_lo_nxt(32);
+
+      -- mtime.high --
+      if (mtime_we(1) = '1') then -- write access
         mtime_hi <= bus_req_i.data;
       else -- auto increment (if mtime.low overflows)
-        mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + unsigned(mtime_lo_ovfl));
+        mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + unsigned(mtime_lo_cry));
       end if;
 
       -- read access --
       bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
-      bus_rsp_o.err  <= '0';
+      bus_rsp_o.err  <= '0'; -- no access errors
       bus_rsp_o.data <= (others => '0'); -- default
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(3 downto 2) is
