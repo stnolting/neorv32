@@ -132,7 +132,7 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
     fail_rw  : std_ulogic_vector(NUM_REGIONS downto 0);
   end record;
   signal check : check_t;
-  
+
 begin
 
   -- Sanity Checks --------------------------------------------------------------------------
