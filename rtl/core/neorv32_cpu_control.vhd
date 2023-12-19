@@ -1677,6 +1677,7 @@ begin
       if (csr.we = '1') then
         case csr.addr is
 
+          -- --------------------------------------------------------------------
           -- machine trap setup --
           -- --------------------------------------------------------------------
           when csr_mstatus_c => -- machine status register
@@ -1712,6 +1713,7 @@ begin
               end if;
             end if;
 
+          -- --------------------------------------------------------------------
           -- machine trap handling --
           -- --------------------------------------------------------------------
           when csr_mscratch_c => -- machine scratch register
@@ -1729,6 +1731,7 @@ begin
           when csr_mip_c => -- machine interrupt pending
             csr.mip_firq_nclr <= csr.wdata(31 downto 16); -- set low to clear according bit (FIRQs only)
 
+          -- --------------------------------------------------------------------
           -- machine counter setup --
           -- --------------------------------------------------------------------
           when csr_mcountinhibit_c => -- machine counter-inhibit register
@@ -1752,6 +1755,7 @@ begin
               csr.minstretcfg_uinh <= csr.wdata(28);
             end if;
 
+          -- --------------------------------------------------------------------
           -- debug mode CSRs --
           -- --------------------------------------------------------------------
           when csr_dcsr_c => -- debug mode control and status register
@@ -1777,6 +1781,7 @@ begin
               csr.dscratch0 <= csr.wdata;
             end if;
 
+          -- --------------------------------------------------------------------
           -- trigger module CSRs --
           -- --------------------------------------------------------------------
           when csr_tdata1_c => -- match control
@@ -1798,6 +1803,7 @@ begin
               end if;
             end if;
 
+          -- --------------------------------------------------------------------
           -- not implemented (or implemented externally) --
           -- --------------------------------------------------------------------
           when others => NULL;
@@ -1944,6 +1950,7 @@ begin
     csr_rdata <= (others => '0'); -- default
     case csr.raddr is
 
+      -- --------------------------------------------------------------------
       -- machine trap setup --
       -- --------------------------------------------------------------------
       when csr_mstatus_c => -- machine status register - low word
@@ -1986,11 +1993,13 @@ begin
           end if;
         end if;
 
+      -- --------------------------------------------------------------------
       -- machine configuration --
       -- --------------------------------------------------------------------
 --    when csr_menvcfg_c  => csr_rdata <= (others => '0'); -- hardwired to zero
 --    when csr_menvcfgh_c => csr_rdata <= (others => '0'); -- hardwired to zero
 
+      -- --------------------------------------------------------------------
       -- machine trap handling --
       -- --------------------------------------------------------------------
       when csr_mscratch_c => -- machine scratch register
@@ -2015,6 +2024,7 @@ begin
       when csr_mtinst_c => -- machine trap instruction
         csr_rdata <= csr.mtinst;
 
+      -- --------------------------------------------------------------------
       -- machine counter setup --
       -- --------------------------------------------------------------------
       when csr_mcountinhibit_c => -- machine counter-inhibit register
@@ -2058,6 +2068,7 @@ begin
       when csr_mhpmevent14_c => if (hpm_num_c > 11) then csr_rdata <= hpmevent_rd(14); end if;
       when csr_mhpmevent15_c => if (hpm_num_c > 12) then csr_rdata <= hpmevent_rd(15); end if;
 
+      -- --------------------------------------------------------------------
       -- counters and timers --
       -- --------------------------------------------------------------------
       -- low word --
@@ -2094,6 +2105,7 @@ begin
       when csr_mhpmcounter14h_c | csr_hpmcounter14h_c => if (hpm_num_c > 11) then csr_rdata <= cnt_hi_rd(14); end if;
       when csr_mhpmcounter15h_c | csr_hpmcounter15h_c => if (hpm_num_c > 12) then csr_rdata <= cnt_hi_rd(15); end if;
 
+      -- --------------------------------------------------------------------
       -- machine information registers --
       -- --------------------------------------------------------------------
       when csr_mvendorid_c  => csr_rdata <= VENDOR_ID; -- vendor's JEDEC ID
@@ -2102,12 +2114,14 @@ begin
       when csr_mhartid_c    => csr_rdata <= HART_ID; -- hardware thread ID
 --    when csr_mconfigptr_c => csr_rdata <= (others => '0'); -- machine configuration pointer register - hardwired to zero
 
+      -- --------------------------------------------------------------------
       -- debug mode CSRs --
       -- --------------------------------------------------------------------
       when csr_dcsr_c      => if (CPU_EXTENSION_RISCV_Sdext) then csr_rdata <= csr.dcsr_rd;   end if; -- debug mode control and status
       when csr_dpc_c       => if (CPU_EXTENSION_RISCV_Sdext) then csr_rdata <= csr.dpc;       end if; -- debug mode program counter
       when csr_dscratch0_c => if (CPU_EXTENSION_RISCV_Sdext) then csr_rdata <= csr.dscratch0; end if; -- debug mode scratch register 0
 
+      -- --------------------------------------------------------------------
       -- trigger module CSRs --
       -- --------------------------------------------------------------------
 --    when csr_tselect_c => if (CPU_EXTENSION_RISCV_Sdtrig) then csr_rdata <= (others => '0'); end if; -- hardwired to zero = only 1 trigger available
@@ -2119,6 +2133,7 @@ begin
           csr_rdata(15 downto 00) <= x"0006"; -- mcontrol6 type trigger only
         end if;
 
+      -- --------------------------------------------------------------------
       -- NEORV32-specific (RISC-V "custom") read-only CSRs --
       -- --------------------------------------------------------------------
       -- machine extended ISA extensions information --
@@ -2143,6 +2158,7 @@ begin
         csr_rdata(30) <= bool_to_ulogic_f(FAST_MUL_EN);                -- DSP-based multiplication (M extensions only)
         csr_rdata(31) <= bool_to_ulogic_f(FAST_SHIFT_EN);              -- parallel logic for shifts (barrel shifters)
 
+      -- --------------------------------------------------------------------
       -- undefined/unavailable (or implemented externally) --
       -- --------------------------------------------------------------------
       when others => NULL; -- read as zero
