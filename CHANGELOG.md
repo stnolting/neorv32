@@ -137,7 +137,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 17.03.2023 | 1.8.2.4 | re-add VHDL process names | [#555](https://github.com/stnolting/neorv32/pull/555) |
 | 15.03.2023 | 1.8.2.3 | rtl reworks, cleanups and optimizations | [#550](https://github.com/stnolting/neorv32/pull/550) |
 | 11.03.2023 | 1.8.2.2 | :sparkles: add support for RISC-V `Zicond` ISA extension (conditional operations) | [#546](https://github.com/stnolting/neorv32/pull/546) |
-| 10.02.2023 | 1.8.2.1 | rtl code edits, clean-ups and minor optimizations (improve branch prediction) | [#545](https://github.com/stnolting/neorv32/pull/545) |
+| 10.03.2023 | 1.8.2.1 | rtl code edits, clean-ups and minor optimizations (improve branch prediction) | [#545](https://github.com/stnolting/neorv32/pull/545) |
 | 10.03.2023 | [**:rocket:1.8.2**](https://github.com/stnolting/neorv32/releases/tag/v1.8.2) | **New release** | |
 | 09.03.2023 | 1.8.1.10 | :warning: move tri-state drivers (ONEWIRE and TWI) out of the core | [#543](https://github.com/stnolting/neorv32/pull/543) |
 | 08.03.2023 | 1.8.1.9 | reintegrate **UART** RTS/CTS hardware flow-control | [#541](https://github.com/stnolting/neorv32/pull/541) |
