@@ -919,8 +919,8 @@ begin
       -- ------------------------------------------------------------
         case decode_aux.opcode is
 
-          when opcode_alu_c | opcode_alui_c => -- register/immediate ALU operation
-          -- ------------------------------------------------------------
+          -- register/immediate ALU operation --
+          when opcode_alu_c | opcode_alui_c =>
             -- ALU core operation --
             case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is -- actual ALU operation (re-coding)
               when funct3_subadd_c => -- ADD(I), SUB
@@ -968,8 +968,8 @@ begin
               execute_engine.state_nxt <= DISPATCH;
             end if;
 
-          when opcode_lui_c | opcode_auipc_c => -- load upper immediate / add upper immediate to PC
-          -- ------------------------------------------------------------
+          -- load upper immediate / add upper immediate to PC --
+          when opcode_lui_c | opcode_auipc_c => 
             if (execute_engine.ir(instr_opcode_lsb_c+5) = opcode_lui_c(5)) then -- LUI
               ctrl_nxt.alu_op <= alu_op_movb_c; -- pass immediate
             else -- AUIPC
@@ -978,30 +978,30 @@ begin
             ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back
             execute_engine.state_nxt <= DISPATCH;
 
-          when opcode_load_c | opcode_store_c | opcode_amo_c => -- memory access
-          -- ------------------------------------------------------------
+          -- memory access --
+          when opcode_load_c | opcode_store_c | opcode_amo_c =>
             execute_engine.state_nxt <= MEM_REQ;
 
-          when opcode_branch_c | opcode_jal_c | opcode_jalr_c => -- branch / jump and link / with register
-          -- ------------------------------------------------------------
+          -- branch / jump and link / with register --
+          when opcode_branch_c | opcode_jal_c | opcode_jalr_c =>
             execute_engine.state_nxt <= BRANCH;
 
-          when opcode_fence_c => -- memory fence operations
-          -- ------------------------------------------------------------
+          -- memory fence operations --
+          when opcode_fence_c =>
             execute_engine.state_nxt <= FENCE;
 
-          when opcode_fop_c => -- FPU: floating-point operations
-          -- ------------------------------------------------------------
+          -- FPU: floating-point operations --
+          when opcode_fop_c => 
             ctrl_nxt.alu_cp_trig(cp_sel_fpu_c) <= '1'; -- trigger FPU CP
             execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if FPU not implemented
 
-          when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => -- CFU: custom RISC-V instructions
-          -- ------------------------------------------------------------
+          -- CFU: custom RISC-V instructions --
+          when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => 
             ctrl_nxt.alu_cp_trig(cp_sel_cfu_c) <= '1'; -- trigger CFU CP
             execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if CFU not implemented
 
-          when others => -- environment/CSR operation or ILLEGAL opcode
-          -- ------------------------------------------------------------
+          -- environment/CSR operation or ILLEGAL opcode --
+          when others => 
             csr.re_nxt               <= '1';
             execute_engine.state_nxt <= SYSTEM;
 
