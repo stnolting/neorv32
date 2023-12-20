@@ -56,7 +56,7 @@ Disabling the module via the `UART_CTRL_EN` bit will also clear these FIFOs.
 A new TX transmission is started by writing to the `DATA` register. The
 transfer is completed when the `UART_CTRL_TX_BUSY` control register flag returns to zero. RX data is available when
 the `UART_CTRL_RX_NEMPTY` flag becomes set. The `UART_CTRL_RX_OVER` will be set if the RX FIFO overflows. This flag
-is cleared by reading the `DATA` register or by disabling the module.
+is cleared only by disabling the module via `UART_CTRL_EN`.
 
 
 **UART Interrupts**
@@ -136,7 +136,7 @@ Both file are created in the simulation's home folder.
                                   <|`25`    `UART_CTRL_IRQ_TX_EMPTY`            ^| r/w <| fire IRQ if TX FIFO empty
                                   <|`26`    `UART_CTRL_IRQ_TX_NHALF`            ^| r/w <| fire IRQ if TX not at least half full
                                   <|`29:27` -                                   ^| r/- <| _reserved_ read as zero
-                                  <|`30`    `UART_CTRL_RX_OVER`                 ^| r/- <| RX FIFO overflow
+                                  <|`30`    `UART_CTRL_RX_OVER`                 ^| r/- <| RX FIFO overflow; cleared by disabling the module
                                   <|`31`    `UART_CTRL_TX_BUSY`                 ^| r/- <| TX busy or TX FIFO not empty
 .4+<| `0xfffff504` .4+<| `DATA` <|`7:0`   `UART_DATA_RTX_MSB : UART_DATA_RTX_LSB`                   ^| r/w <| receive/transmit data
                                 <|`11:8`  `UART_DATA_RX_FIFO_SIZE_MSB : UART_DATA_RX_FIFO_SIZE_LSB` ^| r/- <| log2(RX FIFO size)

@@ -14,9 +14,9 @@
 -- # SIMULATION MODE:                                                                              #
 -- # When the simulation mode is enabled (setting the ctrl.ctrl_sim_en_c bit) any write            #
 -- # access to the TX register will not trigger any physical UART activity. Instead, the written   #
--- # data is output to the simulation environment. The lowest 8 bits of the TX data are printed    #
--- # as ASCII char to the simulator console. This char is also stored to the file <SIM_LOG_FILE> . #
--- # No interrupts are triggered when in SIMULATION MODE.                                          #
+-- # data is send to the simulation environment. The lowest 8 bits of the TX data are printed      #
+-- # as ASCII character to the simulator console. This character is also stored to the file        #
+-- # <SIM_LOG_FILE>. No interrupts are triggered when in SIMULATION MODE.                          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -386,7 +386,7 @@ begin
         -- ------------------------------------------------------------
           tx_engine.txd <= tx_engine.sreg(0);
           if (uart_clk = '1') then
-            if (or_reduce_f(tx_engine.baudcnt) = '0') then -- bit done?
+            if (tx_engine.baudcnt = "0000000000") then -- bit done?
               tx_engine.baudcnt <= ctrl.baud;
               tx_engine.bitcnt  <= std_ulogic_vector(unsigned(tx_engine.bitcnt) - 1);
               tx_engine.sreg    <= '1' & tx_engine.sreg(tx_engine.sreg'left downto 1);
@@ -394,7 +394,7 @@ begin
               tx_engine.baudcnt <= std_ulogic_vector(unsigned(tx_engine.baudcnt) - 1);
             end if;
           end if;
-          if (or_reduce_f(tx_engine.bitcnt) = '0') then -- all bits send?
+          if (tx_engine.bitcnt = "0000") then -- all bits send?
             tx_engine.done              <= '1';
             tx_engine.state(1 downto 0) <= "00";
           end if;
@@ -451,7 +451,7 @@ begin
         when "11" => -- RECEIVE: sample receive data
         -- ------------------------------------------------------------
           if (uart_clk = '1') then
-            if (or_reduce_f(rx_engine.baudcnt) = '0') then -- bit done
+            if (rx_engine.baudcnt = "0000000000") then -- bit done
               rx_engine.baudcnt <= ctrl.baud;
               rx_engine.bitcnt  <= std_ulogic_vector(unsigned(rx_engine.bitcnt) - 1);
               rx_engine.sreg    <= rx_engine.sync(2) & rx_engine.sreg(rx_engine.sreg'left downto 1);
@@ -459,7 +459,7 @@ begin
               rx_engine.baudcnt <= std_ulogic_vector(unsigned(rx_engine.baudcnt) - 1);
             end if;
           end if;
-          if (or_reduce_f(rx_engine.bitcnt) = '0') then -- all bits received?
+          if (rx_engine.bitcnt = "0000") then -- all bits received?
             rx_engine.done     <= '1'; -- receiving done
             rx_engine.state(0) <= '0';
           end if;
@@ -478,7 +478,7 @@ begin
     if (rstn_i = '0') then
       rx_engine.over <= '0';
     elsif rising_edge(clk_i) then
-      if ((bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1')) or (ctrl.enable = '0') then -- clear when reading data register
+      if (ctrl.enable = '0') then -- clear when disabled
         rx_engine.over <= '0';
       elsif (rx_fifo.we = '1') and (rx_fifo.free = '0') then -- writing to full FIFO
         rx_engine.over <= '1';
@@ -509,7 +509,7 @@ begin
   -- SIMULATION Transmitter -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   simulation_transmitter:
-  if (is_simulation_c = true) generate -- for SIMULATION ONLY!
+  if is_simulation_c generate -- for simulation only!
     sim_tx: process(clk_i)
       file file_out          : text open write_mode is SIM_LOG_FILE;
       variable char_v        : integer;
