@@ -135,6 +135,12 @@ void portable_init(core_portable *p, int *argc, char *argv[]) {
   neorv32_cpu_csr_write(CSR_MIE, 0); // no interrupt, thanks
   neorv32_rte_setup(); // capture all trap and give debug information, no HW flow control
 
+  // abort if CPU base counter not available
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZICNTR)) == 0) {
+    neorv32_uart0_printf("ERROR! No CPU base counters available (Zicntr)!\n");
+    while(1); // halt
+  }
+
   // setup UART at default baud rate, no interrupts
   neorv32_uart0_setup(BAUD_RATE, 0);
 
@@ -143,20 +149,21 @@ void portable_init(core_portable *p, int *argc, char *argv[]) {
   // stop all counters for now
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1);
 
-  // try to setup as many counters/HPMs as possible
   neorv32_cpu_set_mcycle(0);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_CIR);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_WAIT_IF);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_II);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_WAIT_MC);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_LOAD);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_STORE);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_WAIT_LS);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_JUMP);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_BRANCH);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT12, 1 << HPMCNT_EVENT_TBRANCH);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT13, 1 << HPMCNT_EVENT_TRAP);
-  neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT14, 1 << HPMCNT_EVENT_ILLEGAL);
+
+  // try to setup as many HPMs as possible
+  if (num_hpm_cnts_global > 0)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_CIR);     }
+  if (num_hpm_cnts_global > 1)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_WAIT_IF); }
+  if (num_hpm_cnts_global > 2)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_II); }
+  if (num_hpm_cnts_global > 3)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_WAIT_MC); }
+  if (num_hpm_cnts_global > 4)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_LOAD);    }
+  if (num_hpm_cnts_global > 5)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_STORE);   }
+  if (num_hpm_cnts_global > 6)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_WAIT_LS); }
+  if (num_hpm_cnts_global > 7)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_JUMP);    }
+  if (num_hpm_cnts_global > 8)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_BRANCH);  }
+  if (num_hpm_cnts_global > 9)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT12, 1 << HPMCNT_EVENT_TBRANCH); }
+  if (num_hpm_cnts_global > 10) {neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT13, 1 << HPMCNT_EVENT_TRAP);    }
+  if (num_hpm_cnts_global > 11) {neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT14, 1 << HPMCNT_EVENT_ILLEGAL); }
 
   neorv32_uart0_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)NEORV32_SYSINFO->CLK);
   neorv32_uart0_printf("NEORV32: Executing coremark (%u iterations). This may take some time...\n\n", (uint32_t)ITERATIONS);
@@ -190,13 +197,13 @@ void portable_fini(core_portable *p) {
     neorv32_uart0_printf(" > Active clock cycles:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MCYCLE));
     neorv32_uart0_printf(" > Retired instructions:         %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MINSTRET));
     if (num_hpm_cnts_global == 0) {neorv32_uart0_printf("no HPMs available\n"); }
-    if (num_hpm_cnts_global > 0)  {neorv32_uart0_printf(" > Retired compr. instructions:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3)); }
-    if (num_hpm_cnts_global > 1)  {neorv32_uart0_printf(" > Instr.-fetch wait cycles:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4)); }
-    if (num_hpm_cnts_global > 2)  {neorv32_uart0_printf(" > Instr.-issue wait cycles:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5)); }
-    if (num_hpm_cnts_global > 3)  {neorv32_uart0_printf(" > Multi-cycle ALU wait cycles:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6)); }
-    if (num_hpm_cnts_global > 4)  {neorv32_uart0_printf(" > Load operations:              %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7)); }
-    if (num_hpm_cnts_global > 5)  {neorv32_uart0_printf(" > Store operations:             %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8)); }
-    if (num_hpm_cnts_global > 6)  {neorv32_uart0_printf(" > Load/store wait cycles:       %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9)); }
+    if (num_hpm_cnts_global > 0)  {neorv32_uart0_printf(" > Retired compr. instructions:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));  }
+    if (num_hpm_cnts_global > 1)  {neorv32_uart0_printf(" > Instr.-fetch wait cycles:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));  }
+    if (num_hpm_cnts_global > 2)  {neorv32_uart0_printf(" > Instr.-issue wait cycles:     %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));  }
+    if (num_hpm_cnts_global > 3)  {neorv32_uart0_printf(" > Multi-cycle ALU wait cycles:  %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));  }
+    if (num_hpm_cnts_global > 4)  {neorv32_uart0_printf(" > Load operations:              %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));  }
+    if (num_hpm_cnts_global > 5)  {neorv32_uart0_printf(" > Store operations:             %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));  }
+    if (num_hpm_cnts_global > 6)  {neorv32_uart0_printf(" > Load/store wait cycles:       %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));  }
     if (num_hpm_cnts_global > 7)  {neorv32_uart0_printf(" > Unconditional jumps:          %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10)); }
     if (num_hpm_cnts_global > 8)  {neorv32_uart0_printf(" > Conditional branches (all):   %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11)); }
     if (num_hpm_cnts_global > 9)  {neorv32_uart0_printf(" > Conditional branches (taken): %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER12)); }
