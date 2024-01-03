@@ -8,7 +8,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -240,6 +240,9 @@ entity neorv32_top is
 
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_ulogic; -- async serial data line
+
+    -- GPTMR timer capture (available if IO_GPTMR_EN = true) --
+    gptmr_trig_i   : in  std_ulogic := 'L'; -- capture trigger
 
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- IRQ channels
@@ -1375,7 +1378,8 @@ begin
         bus_rsp_o   => iodev_rsp(IODEV_GPTMR),
         clkgen_en_o => cg_en.gptmr,
         clkgen_i    => clk_gen,
-        irq_o       => firq.gptmr
+        irq_o       => firq.gptmr,
+        capture_i   => gptmr_trig_i
       );
     end generate;
 

@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090207"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090208"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -865,7 +865,7 @@ package neorv32_package is
       -- Advanced memory control signals --
       fence_o        : out std_ulogic;
       fencei_o       : out std_ulogic;
-      -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+      -- XIP (execute in-place via SPI) signals (available if IO_XIP_EN = true) --
       xip_csn_o      : out std_ulogic;
       xip_clk_o      : out std_ulogic;
       xip_dat_i      : in  std_ulogic := 'L';
@@ -908,6 +908,8 @@ package neorv32_package is
       cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
       -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
       neoled_o       : out std_ulogic;
+      -- GPTMR timer capture (available if IO_GPTMR_EN = true) --
+      gptmr_trig_i   : in  std_ulogic := 'L';
       -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
       xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');
       -- CPU Interrupts --
