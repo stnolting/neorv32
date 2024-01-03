@@ -22,20 +22,20 @@ You need to make sure the generated toolchain fits the architecture of the NEORV
 ISA extension configurations, it is recommend to compile for `rv32i` only. Please note that this minimal ISA also provides further ISA
 extensions like `m` or `c`. Of course you can use a _multilib_ approach to generate toolchains for several target ISAs at once.
 
-.Configuring GCC build for `rv32i` (minimal ISA)
+.Preparing GCC build for `rv32i` (minimal ISA)
 [source,bash]
 ----
-riscv-gnu-toolchain$ ./configure --prefix=/opt/riscv --with-arch=rv32i --with-abi=ilp32
-riscv-gnu-toolchain$ make
+$ git clone https://github.com/riscv/riscv-gnu-toolchain
+$ cd riscv-gnu-toolchain
+
+$ riscv-gnu-toolchain$ ./configure --prefix=/opt/riscv --with-arch=rv32i --with-abi=ilp32
+$ riscv-gnu-toolchain$ make
 ----
 
 [IMPORTANT]
-Keep in mind that - for instance - a toolchain build with `--with-arch=rv32imc` only provides library code compiled with
-compressed (`C`) and `mul`/`div` instructions (`M`)! Hence, this code cannot be executed (without
-emulation) on an architecture without these extensions!
-
-[IMPORTANT]
-Make sure to use "newlib" as C standard library as the NEORV32 has no native support for Linus-like operating systems.
+Keep in mind that - for instance - a toolchain build with `--with-arch=rv32imc` provides library code (like the C
+standard library) compiled entirely utilizing compressed (`C`) and `mul`/`div` instructions (`M`). Hence, this
+code CANNOT be executed (without emulation) on an architecture that does not support these ISA extensions.
 
 
 :sectnums:
@@ -44,15 +44,12 @@ Make sure to use "newlib" as C standard library as the NEORV32 has no native sup
 Alternatively, you can download a prebuilt toolchain.
 
 :sectnums:
-==== Use The Toolchain I have Build
+==== Use The Pre-Built Toolchains
 
-I have compiled a GCC toolchain on a 64-bit x86 Ubuntu (Ubuntu on Windows, actually) and uploaded it to
+We have compiled several GCC toolchains on a 64-bit x86 Ubuntu (Ubuntu on Windows, actually) and uploaded it to
 GitHub. You can directly download the according toolchain archive as single _zip-file_ within a packed
-release from https://github.com/stnolting/riscv-gcc-prebuilt.
-
-Unpack the downloaded toolchain archive and copy the content to a location in your file system (e.g.
-`/opt/riscv`). More information about downloading and installing my prebuilt toolchains can be found in
-the repository's README.
+release from https://github.com/stnolting/riscv-gcc-prebuilt. More information about downloading and installing
+these prebuilt toolchains can be found in the repository's README.
 
 
 :sectnums:
