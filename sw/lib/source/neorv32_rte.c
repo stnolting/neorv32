@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -802,7 +802,7 @@ void neorv32_rte_print_credits(void) {
 
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     neorv32_uart0_puts("The NEORV32 RISC-V Processor, github.com/stnolting/neorv32\n"
-                       "(c) 2023 by Dipl.-Ing. Stephan Nolting, BSD 3-Clause License\n");
+                       "(c) 2024 by Dipl.-Ing. Stephan Nolting, BSD 3-Clause License\n");
   }
 }
 
@@ -860,7 +860,7 @@ void neorv32_rte_print_license(void) {
       "\n"
       "BSD 3-Clause License\n"
       "\n"
-      "Copyright (c) 2023, Stephan Nolting. All rights reserved.\n"
+      "Copyright (c) 2024, Stephan Nolting. All rights reserved.\n"
       "\n"
       "Redistribution and use in source and binary forms, with or without modification, are\n"
       "permitted provided that the following conditions are met:\n"
