@@ -674,9 +674,39 @@
               <description>Clock prescaler select</description>
             </field>
             <field>
-              <name>GPTMR_CTRL_MODE</name>
+              <name>GPTMR_CTRL_IRQM</name>
               <bitRange>[4:4]</bitRange>
-              <description>Timer mode: 0=single-shot mode, 1=continuous mode</description>
+              <description>Enable interrupt on timer match</description>
+            </field>
+            <field>
+              <name>GPTMR_CTRL_IRQC</name>
+              <bitRange>[5:5]</bitRange>
+              <description>Enable interrupt on capture trigger</description>
+            </field>
+            <field>
+              <name>GPTMR_CTRL_RISE</name>
+              <bitRange>[6:6]</bitRange>
+              <description>Capture on rising edge; capture-mode only</description>
+            </field>
+            <field>
+              <name>GPTMR_CTRL_FALL</name>
+              <bitRange>[7:7]</bitRange>
+              <description>Capture on falling edge; capture-mode only</description>
+            </field>
+            <field>
+              <name>GPTMR_CTRL_FILTER</name>
+              <bitRange>[8:8]</bitRange>
+              <description>Filter capture input; capture-mode only</description>
+            </field>
+            <field>
+              <name>GPTMR_CTRL_TRIGM</name>
+              <bitRange>[30:30]</bitRange>
+              <description>Timer-match has fired, cleared by writing 0</description>
+            </field>
+            <field>
+              <name>GPTMR_CTRL_TRIGC</name>
+              <bitRange>[31:31]</bitRange>
+              <description>Capture-trigger has fired, cleared by writing</description>
             </field>
           </fields>
         </register>
@@ -689,6 +719,12 @@
           <name>COUNT</name>
           <description>Counter register</description>
           <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>CAPTURE</name>
+          <description>Capture register</description>
+          <addressOffset>0x0C</addressOffset>
+          <access>read-only</access>
         </register>
       </registers>
     </peripheral>
