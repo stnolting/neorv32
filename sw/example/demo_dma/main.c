@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -223,8 +223,8 @@ int main() {
 
     // configure GPTMR
     neorv32_gptmr_setup(CLK_PRSC_2, // GPTM clock = 1/2 main clock
-                        0,          // single-shot mode
-                        2000);      // counter to threshold for triggering IRQ
+                        4096,       // counter threshold for triggering IRQ
+                        1);         // enable timer-match interrupt
 
     // configure transfer type
     cmd = DMA_CMD_B2B       | // read source in byte quantities, write destination in byte quantities
@@ -283,5 +283,6 @@ void show_arrays(void) {
 void dma_firq_handler(void) {
 
   neorv32_cpu_csr_clr(CSR_MIP, 1 << DMA_FIRQ_PENDING); // clear/ack pending FIRQ
+  neorv32_gptmr_disable(); // disable GPTMR
   neorv32_uart0_printf("<<DMA interrupt>>\n");
 }

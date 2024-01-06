@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -36,7 +36,7 @@
 /**********************************************************************//**
  * @file demo_gptmr/main.c
  * @author Stephan Nolting
- * @brief Simple GPTMR usage example.
+ * @brief Simple GPTMR timer-match interrupt example.
  **************************************************************************/
 
 #include <neorv32.h>
@@ -63,7 +63,7 @@ void gptmr_firq_handler(void);
  * @return Should not return;
  **************************************************************************/
 int main() {
-  
+
   // setup NEORV32 runtime environment (for trap handling)
   neorv32_rte_setup();
 
@@ -79,7 +79,7 @@ int main() {
 
   // Intro
   neorv32_uart0_puts("General purpose timer (GPTMR) demo Program.\n"
-                     "Toggles GPIO.output(0) at 1Hz using the GPTMR interrupt.\n\n");
+                     "Toggles GPIO.output(0) at 1Hz using the GPTMR timer-match interrupt.\n\n");
 
 
   // clear GPIO output port
@@ -89,8 +89,8 @@ int main() {
   // install GPTMR interrupt handler
   neorv32_rte_handler_install(GPTMR_RTE_ID, gptmr_firq_handler);
 
-  // configure timer for 1Hz ticks in continuous mode (with clock divisor = 8)
-  neorv32_gptmr_setup(CLK_PRSC_8, 1, NEORV32_SYSINFO->CLK / (8 * 2));
+  // configure timer for 1Hz ticks with clock divisor = 8 and enable timer-match interrupt
+  neorv32_gptmr_setup(CLK_PRSC_8, NEORV32_SYSINFO->CLK / (8 * 2), 1);
 
   // enable interrupt
   neorv32_cpu_csr_clr(CSR_MIP, 1 << GPTMR_FIRQ_PENDING);  // make sure there is no GPTMR IRQ pending already

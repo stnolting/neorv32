@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -1555,8 +1555,8 @@ int main() {
     // enable GPTMR FIRQ
     neorv32_cpu_irq_enable(GPTMR_FIRQ_ENABLE);
 
-    // configure timer IRQ for one-shot mode after CLK_PRSC_2*2=4 clock cycles
-    neorv32_gptmr_setup(CLK_PRSC_2, 0, 2);
+    // match-interrupt after CLK_PRSC_2*THRESHOLD = 2*2 = 8 clock cycles
+    neorv32_gptmr_setup(CLK_PRSC_2, 2, 1);
 
     // wait for interrupt
     asm volatile ("nop");
@@ -1564,13 +1564,18 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    // check if IRQ
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == GPTMR_TRAP_CODE) {
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == GPTMR_TRAP_CODE) && // correct interrupt?
+        (neorv32_gptmr_trigger_matched()  == 1) && // IRQ caused by timer match?
+        (neorv32_gptmr_trigger_captured() == 0)) { // no capture trigger?
       test_ok();
     }
     else {
       test_fail();
     }
+
+    // disable GPTMR
+    neorv32_gptmr_disable();
+
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
