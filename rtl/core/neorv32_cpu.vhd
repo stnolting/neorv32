@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -298,7 +298,7 @@ begin
     CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,  -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
     -- Tuning Options --
-    FAST_MUL_EN                => FAST_MUL_EN,               -- use DSPs for M extension's multiplier
+    FAST_MUL_EN                => FAST_MUL_EN,                -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN              => FAST_SHIFT_EN               -- use barrel shifter for shift operations
   )
   port map (

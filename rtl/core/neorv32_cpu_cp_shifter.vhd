@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -44,7 +44,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_shifter is
   generic (
-    FAST_SHIFT_EN : boolean  -- implement fast but large barrel shifter
+    FAST_SHIFT_EN : boolean -- implement fast but large barrel shifter
   );
   port (
     -- global control --
@@ -86,7 +86,7 @@ begin
   serial_shifter:
   if not FAST_SHIFT_EN generate
 
-    serial_shifter_core: process(rstn_i, clk_i)
+    serial_shifter: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
         shifter.busy    <= '0';
@@ -114,7 +114,7 @@ begin
           end if;
         end if;
       end if;
-    end process serial_shifter_core;
+    end process serial_shifter;
 
     -- shift control/output --
     shifter.done <= '1' when (or_reduce_f(shifter.cnt(shifter.cnt'left downto 1)) = '0') else '0';
@@ -130,9 +130,9 @@ begin
   if FAST_SHIFT_EN generate
 
     -- shifter core --
-    barrel_shifter_core: process(rs1_i, shamt_i, ctrl_i, bs_level)
+    barrel_shifter: process(rs1_i, shamt_i, ctrl_i, bs_level)
     begin
-      -- input layer: convert left shifts to right shifts by reversing --
+      -- input layer: convert left shifts to right shifts by bit-reversal --
       if (ctrl_i.ir_funct3(2) = '0') then -- is left shift?
         bs_level(index_size_f(XLEN)) <= bit_rev_f(rs1_i); -- reverse bit order of input operand
       else
@@ -141,13 +141,13 @@ begin
       -- shifter array (right-shifts only) --
       for i in (index_size_f(XLEN)-1) downto 0 loop
         if (shamt_i(i) = '1') then
-          bs_level(i)(XLEN-1 downto XLEN-(2**i)) <= (others => (bs_level(i+1)(XLEN-1) and ctrl_i.ir_funct12(10)));
+          bs_level(i)(XLEN-1 downto XLEN-(2**i)) <= (others => (bs_level(i+1)(XLEN-1) and ctrl_i.ir_funct12(10))); -- arithmetic/logical
           bs_level(i)((XLEN-(2**i))-1 downto 0)  <= bs_level(i+1)(XLEN-1 downto 2**i);
         else
           bs_level(i) <= bs_level(i+1);
         end if;
       end loop;
-    end process barrel_shifter_core;
+    end process barrel_shifter;
 
     -- pipeline register --
     barrel_shifter_buf: process(rstn_i, clk_i)
@@ -162,7 +162,9 @@ begin
     end process barrel_shifter_buf;
 
     -- output layer: output gate and re-convert original left shifts --
-    res_o <= (others => '0') when (bs_start = '0') else bit_rev_f(bs_result) when (ctrl_i.ir_funct3(2) = '0') else bs_result;
+    res_o <= (others => '0') when (bs_start = '0') else
+             bit_rev_f(bs_result) when (ctrl_i.ir_funct3(2) = '0') else
+             bs_result;
 
     -- processing done --
     valid_o <= start_i;
