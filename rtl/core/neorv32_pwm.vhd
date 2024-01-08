@@ -2,11 +2,11 @@
 -- # << NEORV32 - Pulse Width Modulation Controller (PWM) >>                                       #
 -- # ********************************************************************************************* #
 -- # Simple PWM controller with 8 bit resolution for the duty cycle and programmable base          #
--- # frequency. The controller supports up to 60 PWM channels.                                     #
+-- # frequency. The controller supports up to 12 individual PWM channels.                          #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
