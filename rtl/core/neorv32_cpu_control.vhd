@@ -969,7 +969,7 @@ begin
             end if;
 
           -- load upper immediate / add upper immediate to PC --
-          when opcode_lui_c | opcode_auipc_c => 
+          when opcode_lui_c | opcode_auipc_c =>
             if (execute_engine.ir(instr_opcode_lsb_c+5) = opcode_lui_c(5)) then -- LUI
               ctrl_nxt.alu_op <= alu_op_movb_c; -- pass immediate
             else -- AUIPC
@@ -991,17 +991,17 @@ begin
             execute_engine.state_nxt <= FENCE;
 
           -- FPU: floating-point operations --
-          when opcode_fop_c => 
+          when opcode_fop_c =>
             ctrl_nxt.alu_cp_trig(cp_sel_fpu_c) <= '1'; -- trigger FPU CP
             execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if FPU not implemented
 
           -- CFU: custom RISC-V instructions --
-          when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c => 
+          when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c =>
             ctrl_nxt.alu_cp_trig(cp_sel_cfu_c) <= '1'; -- trigger CFU CP
             execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if CFU not implemented
 
           -- environment/CSR operation or ILLEGAL opcode --
-          when others => 
+          when others =>
             csr.re_nxt               <= '1';
             execute_engine.state_nxt <= SYSTEM;
 

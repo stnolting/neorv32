@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -244,10 +244,10 @@ begin
   end generate;
 
   -- pack configuration read-back --
-  cfg_rd32(0) <= cfg_rd(03) & cfg_rd(02) & cfg_rd(01) & cfg_rd(00);
-  cfg_rd32(1) <= cfg_rd(07) & cfg_rd(06) & cfg_rd(05) & cfg_rd(04);
-  cfg_rd32(2) <= cfg_rd(11) & cfg_rd(10) & cfg_rd(09) & cfg_rd(08);
-  cfg_rd32(3) <= cfg_rd(15) & cfg_rd(14) & cfg_rd(13) & cfg_rd(12);
+  csr_read_back_pack:
+  for i in 0 to 3 generate
+    cfg_rd32(i) <= cfg_rd(i*4+3) & cfg_rd(i*4+2) & cfg_rd(i*4+1) & cfg_rd(i*4+0);
+  end generate;
 
 
   -- Region Access Logic --------------------------------------------------------------------

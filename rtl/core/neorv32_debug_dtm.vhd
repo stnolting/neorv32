@@ -2,11 +2,11 @@
 -- # << NEORV32 - RISC-V Debug Transport Module (DTM) >>                                           #
 -- # ********************************************************************************************* #
 -- # Provides a JTAG-compatible TAP to access the DMI register interface.                          #
--- # Compatible to the RISC-V debug specification version 1.0.                                     #
+-- # Compatible to the RISC-V debug specification version 0.13 and 1.0.                            #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -298,7 +298,6 @@ begin
       dmi_ctrl.wdata        <= (others => '0');
       dmi_ctrl.addr         <= (others => '0');
     elsif rising_edge(clk_i) then
-
       -- DMI reset control --
       if (dr_trigger.valid = '1') and (tap_reg.ireg = addr_dtmcs_c) then
         dmi_ctrl.dmireset     <= tap_reg.dtmcs(16);
@@ -318,7 +317,6 @@ begin
       -- DMI interface arbiter --
       dmi_ctrl.op <= dmi_req_nop_c; -- default
       if (dmi_ctrl.busy = '0') then -- idle: waiting for new request
-
         if (dmi_ctrl.dmihardreset = '0') then -- no DMI hard reset
           if (dr_trigger.valid = '1') and (tap_reg.ireg = addr_dmi_c) then
             dmi_ctrl.addr  <= tap_reg.dmi(40 downto 34);
@@ -329,14 +327,11 @@ begin
             end if;
           end if;
         end if;
-
-        else -- busy: read/write access in progress
-
-          dmi_ctrl.rdata <= dmi_rsp_i.data;
-          if (dmi_rsp_i.ack = '1') then
-            dmi_ctrl.busy <= '0';
-          end if;
-
+      else -- busy: read/write access in progress
+        dmi_ctrl.rdata <= dmi_rsp_i.data;
+        if (dmi_rsp_i.ack = '1') then
+          dmi_ctrl.busy <= '0';
+        end if;
       end if;
     end if;
   end process dmi_controller;
