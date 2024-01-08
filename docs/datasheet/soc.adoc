@@ -680,9 +680,6 @@ providing an initialized external memory that contains the actual application to
 :sectnums:
 === Processor-Internal Modules
 
-The NEORV32 processor is a SoC (system-on-chip) consisting of the NEORV32 CPU, peripheral/IO devices, embedded
-memories, an external memory interface and a bus infrastructure to interconnect all modules.
-
 .Module Address Space Mapping
 [IMPORTANT]
 The base address of each component/module has to be aligned to the total size of the module's occupied address space.

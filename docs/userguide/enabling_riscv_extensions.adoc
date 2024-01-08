@@ -40,7 +40,3 @@ You can also override the default `MARCH` and `MABI` configurations from the mak
 ----
 $ make MARCH=rv32ic clean_all all
 ----
-
-[NOTE]
-The RISC-V ISA string for `MARCH` follows a certain _canonical_ structure:
-`rev32[i/e][m][a][f][d][g][q][c][b][v][n]...` For example `rv32imac` is valid while `rv32icma` is not.
