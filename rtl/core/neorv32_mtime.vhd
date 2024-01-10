@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -135,8 +135,9 @@ begin
   -- mtime.time_LO increment --
   mtime_lo_nxt <= std_ulogic_vector(unsigned('0' & mtime_lo) + 1);
 
-  -- system time output for cpu --
+  -- system time output --
   time_o <= mtime_hi & mtime_lo; -- NOTE: low and high words are not synchronized here!
+
 
   -- Comparator -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
