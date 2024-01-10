@@ -241,6 +241,9 @@ entity neorv32_top is
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_ulogic; -- async serial data line
 
+    -- System time (available if IO_MTIME_EN = true) --
+    mtime_o        : out std_ulogic_vector(63 downto 0); -- current system time
+
     -- GPTMR timer capture (available if IO_GPTMR_EN = true) --
     gptmr_trig_i   : in  std_ulogic := 'L'; -- capture trigger
 
@@ -335,6 +338,9 @@ architecture neorv32_top_rtl of neorv32_top is
   end record;
   signal firq      : irq_t;
   signal mtime_irq : std_ulogic;
+
+  -- misc --
+  signal mtime_time : std_ulogic_vector(63 downto 0);
 
 begin
 
@@ -1109,6 +1115,7 @@ begin
         rstn_i    => rstn_sys,
         bus_req_i => iodev_req(IODEV_MTIME),
         bus_rsp_o => iodev_rsp(IODEV_MTIME),
+        time_o    => mtime_time,
         irq_o     => mtime_irq
       );
     end generate;
@@ -1119,6 +1126,24 @@ begin
       mtime_irq              <= mtime_irq_i;
     end generate;
 
+    -- system time output LO --
+    mtime_sync: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        -- buffer low word one clock cycle to compensate for MTIME's 1-cycle delay
+        -- when overflowing from low-word to high-word -> only relevant for processor-external devices
+        -- processor-internal devices (= the CPU) do not care about this delay offset as 64-bit MTIME.TIME
+        -- cannot be accessed within a single cycle
+        if (IO_MTIME_EN = true) then
+          mtime_o(31 downto 0) <= mtime_time(31 downto 0);
+        else
+          mtime_o(31 downto 0) <= (others => '0');
+        end if;
+      end if;
+    end process mtime_sync;
+
+    -- system time output HI --
+    mtime_o(63 downto 32) <= mtime_time(63 downto 32) when (IO_MTIME_EN = true) else (others => '0');
 
     -- Primary Universal Asynchronous Receiver/Transmitter (UART0) ----------------------------
     -- -------------------------------------------------------------------------------------------
