@@ -86,7 +86,7 @@ begin
   serial_shifter:
   if not FAST_SHIFT_EN generate
 
-    serial_shifter: process(rstn_i, clk_i)
+    serial_shifter_core: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
         shifter.busy    <= '0';
@@ -114,7 +114,7 @@ begin
           end if;
         end if;
       end if;
-    end process serial_shifter;
+    end process serial_shifter_core;
 
     -- shift control/output --
     shifter.done <= '1' when (or_reduce_f(shifter.cnt(shifter.cnt'left downto 1)) = '0') else '0';
@@ -130,7 +130,7 @@ begin
   if FAST_SHIFT_EN generate
 
     -- shifter core --
-    barrel_shifter: process(rs1_i, shamt_i, ctrl_i, bs_level)
+    barrel_shifter_core: process(rs1_i, shamt_i, ctrl_i, bs_level)
     begin
       -- input layer: convert left shifts to right shifts by bit-reversal --
       if (ctrl_i.ir_funct3(2) = '0') then -- is left shift?
@@ -147,7 +147,7 @@ begin
           bs_level(i) <= bs_level(i+1);
         end if;
       end loop;
-    end process barrel_shifter;
+    end process barrel_shifter_core;
 
     -- pipeline register --
     barrel_shifter_buf: process(rstn_i, clk_i)
