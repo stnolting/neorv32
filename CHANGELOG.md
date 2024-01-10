@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 10.01.2024 | 1.9.2.10 | re-add MTIME system time output to processor top (`mtime_time_o`) | [#762](https://github.com/stnolting/neorv32/pull/762) |
 | 08.01.2024 | 1.9.2.9 | minor rtl code cleanups | [#760](https://github.com/stnolting/neorv32/pull/760) |
 | 06.01.2024 | 1.9.2.8 | :sparkles: add timer-capture mode to General Purpose Timer (GPTMR); :warning: remove "single-shot" mode, change control register layout | [#759](https://github.com/stnolting/neorv32/pull/759) |
 | 19.12.2023 | 1.9.2.7 | minor rtl code cleanups, edits and optimization; :lock: reset `mtvec`, `mepc` and `dpc` CSRs to CPU boot address (`CPU_BOOT_ADDR` CPU generic) | [#755](https://github.com/stnolting/neorv32/pull/755) |
