@@ -150,6 +150,8 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 | `cfs_out_o`      | 32 | out | custom CFS output signal conduit
 4+^| **<<_smart_led_interface_neoled>>**
 | `neoled_o`       |  1 | out | asynchronous serial data output
+4+^| **<<_machine_system_timer_mtime>>**
+| `mtime_time_o`   | 64 | out | MTIME system time output
 4+^| **<<_general_purpose_timer_gptmr>>**
 | `gptmr_trig_i`   |  1 |  in | timer capture input
 4+^| **<<_external_interrupt_controller_xirq>>**

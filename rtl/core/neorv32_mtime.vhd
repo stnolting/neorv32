@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -48,6 +48,7 @@ entity neorv32_mtime is
     rstn_i    : in  std_ulogic; -- global reset line, low-active, async
     bus_req_i : in  bus_req_t;  -- bus request
     bus_rsp_o : out bus_rsp_t;  -- bus response
+    time_o    : out std_ulogic_vector(63 downto 0); -- current system time
     irq_o     : out std_ulogic  -- interrupt request
   );
 end neorv32_mtime;
@@ -133,6 +134,9 @@ begin
 
   -- mtime.time_LO increment --
   mtime_lo_nxt <= std_ulogic_vector(unsigned('0' & mtime_lo) + 1);
+
+  -- system time output --
+  time_o <= mtime_hi & mtime_lo; -- NOTE: low and high words are not synchronized here!
 
 
   -- Comparator -----------------------------------------------------------------------------

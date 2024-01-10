@@ -5,31 +5,32 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_mtime.vhd | 
+| Hardware source file(s): | neorv32_mtime.vhd |
 | Software driver file(s): | neorv32_mtime.c |
 |                          | neorv32_mtime.h |
-| Top entity port:         | `mtime_irq_i` | RISC-V machine timer IRQ if internal one is **not** implemented
+| Top entity port:         | `mtime_irq_i`  | RISC-V machine timer IRQ if internal one is **not** implemented
+|                          | `mtime_time_o` | Current system time (`TIME` register)
 | Configuration generics:  | `IO_MTIME_EN` | implement machine timer when `true`
 | CPU interrupts:          | `MTI` | machine timer interrupt (see <<_processor_interrupts>>)
 |=======================
 
-The MTIME module implements a memory-mapped MTIME machine system timer that is compatible to the RISC-V
-privileged specifications. The 64-bit system time is accessed via the  memory-mapped `TIME_LO` and
-`TIME_HI` registers. A 64-bit time compare register, which is accessible via the memory-mapped `TIMECMP_LO`
-and `TIMECMP_HI` registers, can be used to configure the CPU's `MTI` (machine timer interrupt). The interrupt
+The MTIME module implements a memory-mapped machine system timer that is compatible to the RISC-V
+privileged specifications. The 64-bit system time is accessed via individual `TIME_LO` and
+`TIME_HI` registers. A 64-bit time compare register, which is accessible via individual `TIMECMP_LO`
+and `TIMECMP_HI` registers, can be used to configure the CPU's machine timer interrupt (`MTI`)). The interrupt
 is triggered whenever `TIME` (high & low part) is greater than or equal to `TIMECMP` (high & low part).
-The interrupt remains active (=pending) until `TIME` becomes less `TIMECMP` again (either by modifying
-`TIME` or `TIMECMP`).
+The interrupt remains active (=pending) until `TIME` becomes less than `TIMECMP` again (either by modifying
+`TIME` or `TIMECMP`). The current system time is available for other SoC modules via the top's `mtime_time_o` signal.
 
-.Reset
+.Hardware Reset
 [NOTE]
 After a hardware reset the `TIME` and `TIMECMP` register are reset to all-zero.
 
 .External MTIME Interrupt
-[IMPORTANT]
-If the internal MTIME module is disabled (`IO_MTIME_EN` = `false`) the machine timer interrupt becomes available as external signal.
-The `mtime_irq_i` signal is level-triggered and high-active. Once set the signal has to stay high until
-the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register).
+[NOTE]
+If the internal MTIME module is disabled (`IO_MTIME_EN` = `false`) the machine timer interrupt becomes available
+as external signal. The `mtime_irq_i` signal is level-triggered and high-active. Once set the signal has to stay
+high until the interrupt request is explicitly acknowledged (e.g. writing to a user-defined memory-mapped register).
 
 
 **Register Map**
@@ -39,8 +40,8 @@ the interrupt request is explicitly acknowledged (e.g. writing to a memory-mappe
 [options="header",grid="all"]
 |=======================
 | Address      | Name [C]     | Bits | R/W | Function
-| `0xfffff400` | `TIME_LO`    | 31:0 | r/w | machine system time, low word
-| `0xfffff404` | `TIME_HI`    | 31:0 | r/w | machine system time, high word
+| `0xfffff400` | `TIME_LO`    | 31:0 | r/w | system time, low word
+| `0xfffff404` | `TIME_HI`    | 31:0 | r/w | system time, high word
 | `0xfffff408` | `TIMECMP_LO` | 31:0 | r/w | time compare, low word
 | `0xfffff40c` | `TIMECMP_HI` | 31:0 | r/w | time compare, high word
 |=======================

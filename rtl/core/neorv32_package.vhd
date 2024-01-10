@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090209"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090210"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -908,6 +908,8 @@ package neorv32_package is
       cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
       -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
       neoled_o       : out std_ulogic;
+      -- Machine timer system time (available if IO_MTIME_EN = true) --
+      mtime_time_o   : out std_ulogic_vector(63 downto 0);
       -- GPTMR timer capture (available if IO_GPTMR_EN = true) --
       gptmr_trig_i   : in  std_ulogic := 'L';
       -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
