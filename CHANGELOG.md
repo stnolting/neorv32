@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 11.01.2024 | [**:rocket:1.9.3**](https://github.com/stnolting/neorv32/releases/tag/v1.9.3) | **New release** | |
 | 10.01.2024 | 1.9.2.11 | minor HDL fix (introduced in v1.9.2.9) | [#763](https://github.com/stnolting/neorv32/pull/763) |
 | 10.01.2024 | 1.9.2.10 | re-add MTIME system time output to processor top (`mtime_time_o`) | [#762](https://github.com/stnolting/neorv32/pull/762) |
 | 08.01.2024 | 1.9.2.9 | minor rtl code cleanups | [#760](https://github.com/stnolting/neorv32/pull/760) |
