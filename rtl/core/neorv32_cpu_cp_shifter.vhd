@@ -102,10 +102,10 @@ begin
           shifter.busy <= '0';
         end if;
         -- shift register --
-        if (start_i = '1') then -- trigger new shift
+        if (start_i = '1') then -- trigger new operation
           shifter.cnt  <= shamt_i;
           shifter.sreg <= rs1_i;
-        elsif (or_reduce_f(shifter.cnt) = '1') then -- running shift (cnt != 0)
+        elsif (shifter.busy = '1') then -- operation in progress
           shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 1);
           if (ctrl_i.ir_funct3(2) = '0') then -- SLL: shift left logical
             shifter.sreg <= shifter.sreg(shifter.sreg'left-1 downto 0) & '0';
