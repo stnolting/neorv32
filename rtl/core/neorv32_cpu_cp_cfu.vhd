@@ -1,13 +1,13 @@
 -- #################################################################################################
 -- # << NEORV32 CPU - Co-Processor: Custom (Instructions) Functions Unit >>                        #
 -- # ********************************************************************************************* #
--- # For user-defined custom RISC-V instructions (R3-type, R4-type and R5-type formats).           #
--- # See the CPU's documentation for more information.                                             #
--- # Also take a look at the "software-counterpart" of this CFU example in 'sw/example/demo_cfu'.  #
+-- # For custom/user-defined RISC-V instructions (R3-type, R4-type and R5-type formats). See the   #
+-- # CPU's documentation for more information. Also take a look at the "software-counterpart" of   #
+-- # this default CFU hardware in 'sw/example/demo_cfu'.                                           #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -51,18 +51,18 @@ entity neorv32_cpu_cp_cfu is
     ctrl_i      : in  ctrl_bus_t; -- main control bus
     start_i     : in  std_ulogic; -- trigger operation
     -- CSR interface --
-    csr_we_i    : in  std_ulogic; -- global write enable
-    csr_addr_i  : in  std_ulogic_vector(11 downto 0); -- address
+    csr_we_i    : in  std_ulogic; -- write enable
+    csr_addr_i  : in  std_ulogic_vector(1 downto 0); -- address
     csr_wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
-    csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
+    csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0) := (others => '0'); -- read data
     -- data input --
     rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     rs3_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
     rs4_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 4
     -- result and status --
-    res_o       : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-    valid_o     : out std_ulogic -- data output valid
+    res_o       : out std_ulogic_vector(XLEN-1 downto 0) := (others => '0'); -- operation result
+    valid_o     : out std_ulogic := '0' -- data output valid
   );
 end neorv32_cpu_cp_cfu;
 
@@ -86,18 +86,6 @@ architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
   constant r5typeA_c : std_ulogic_vector(1 downto 0) := "10"; -- R5-type instruction A (custom-2 opcode)
   constant r5typeB_c : std_ulogic_vector(1 downto 0) := "11"; -- R5-type instruction B (custom-3 opcode)
 
-  -- valid CSR access --
-  signal cfu_csr : std_ulogic;
-
-  -- control and status register interface --
-  type csr_t is record
-    we    : std_ulogic;
-    addr  : std_ulogic_vector(1 downto 0);
-    wdata : std_ulogic_vector(XLEN-1 downto 0);
-    rdata : std_ulogic_vector(XLEN-1 downto 0);
-  end record;
-  signal csr : csr_t;
-
 
   -- User-Defined Logic --------------------------------------
   -- ------------------------------------------------------------
@@ -119,9 +107,9 @@ architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
 
 begin
 
--- ****************************************************************************************************************************
--- This controller / proxy-logic is required to handle the CFU <-> CPU interface. Do not modify!
--- ****************************************************************************************************************************
+  -- **************************************************************************************************************************
+  -- This controller is required to handle the CFU <-> CPU interface. Do not modify!
+  -- **************************************************************************************************************************
 
   -- CFU Controller -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -154,17 +142,10 @@ begin
   control.funct3 <= ctrl_i.ir_funct3;
   control.funct7 <= ctrl_i.ir_funct12(11 downto 5);
 
-  -- CSR proxy logic --
-  cfu_csr     <= '1' when (csr_addr_i(11 downto 2) = csr_cfureg0_c(11 downto 2)) else '0';
-  csr.we      <= cfu_csr and csr_we_i;
-  csr.addr    <= csr_addr_i(1 downto 0);
-  csr.wdata   <= csr_wdata_i;
-  csr_rdata_o <= csr.rdata when (cfu_csr = '1') else (others => '0');
 
-
--- ****************************************************************************************************************************
--- CFU Hardware Documentation
--- ****************************************************************************************************************************
+  -- **************************************************************************************************************************
+  -- CFU Interface Documentation
+  -- **************************************************************************************************************************
 
   -- ----------------------------------------------------------------------------------------
   -- CFU Instruction Formats
@@ -246,23 +227,23 @@ begin
   -- ----------------------------------------------------------------------------------------
   -- CFU-Internal Control and Status Registers (CFU-CSRs)
   -- ----------------------------------------------------------------------------------------
-  -- > csr.we    (input,   1-bit): set to indicate a valid CFU CSR write access
-  -- > csr.addr  (input,   2-bit): CSR address
-  -- > csr.wdata (input,  32-bit): CSR write data, valid when <csr.we> is set
-  -- > csr.rdata (output, 32-bit): CSR read data, hardwire to all-zero if no CSRs are used
+  -- > csr_we_i    (input,   1-bit): set to indicate a valid CFU CSR write access
+  -- > csr_addr_i  (input,   2-bit): CSR address
+  -- > csr_wdata_i (input,  32-bit): CSR write data
+  -- > csr_rdata_i (output, 32-bit): CSR read data
   --
   -- The NEORV32 provides four directly accessible CSRs for custom use inside the CFU. These registers can be used to pass
   -- further operands, to check the unit's status or to configure operation modes. For instance, a 128-bit wide key could be
-  -- passed to an encryption system. These CFU-CSRs are accessed via an _indirect access mechanism_ from the CPU.
+  -- passed to an encryption system.
   --
   -- If more than four CFU-internal CSRs are required the designer can implement an "indirect access mechanism" based on just
-  -- two of the default CSRs: one CSR is used to configure the index while the other is used as alias to exchange data with
+  -- two of the default CSRs: one CSR is used to configure the index while the other is used as an alias to exchange data with
   -- the indexed CFU-internal CSR - this concept is similar to the RISC-V Indirect CSR Access Extension Specification (Smcsrind).
 
 
--- ****************************************************************************************************************************
--- Actual CFU User Logic Example - replace this with your custom logic
--- ****************************************************************************************************************************
+  -- **************************************************************************************************************************
+  -- Actual CFU User Logic Example - replace this with your custom logic
+  -- **************************************************************************************************************************
 
   -- CFU-Internal Control and Status Registers (CFU-CSRs) -----------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -273,23 +254,23 @@ begin
       cfu_csr_0 <= (others => '0');
       cfu_csr_1 <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (csr.we = '1') and (csr.addr(1 downto 0) = "00") then
-        cfu_csr_0 <= csr.wdata;
+      if (csr_we_i = '1') and (csr_addr_i = "00") then
+        cfu_csr_0 <= csr_wdata_i;
       end if;
-      if (csr.we = '1') and (csr.addr(1 downto 0) = "01") then
-        cfu_csr_1 <= csr.wdata;
+      if (csr_we_i = '1') and (csr_addr_i = "01") then
+        cfu_csr_1 <= csr_wdata_i;
       end if;
     end if;
   end process csr_write_access;
 
   -- asynchronous read access --
-  csr_read_access: process(csr.addr, cfu_csr_0, cfu_csr_1)
+  csr_read_access: process(csr_addr_i, cfu_csr_0, cfu_csr_1)
   begin
-    case csr.addr(1 downto 0) is
-      when "00"   => csr.rdata <= cfu_csr_0;       -- CSR0: simple read/write register
-      when "01"   => csr.rdata <= cfu_csr_1;       -- CSR1: simple read/write register
-      when "10"   => csr.rdata <= x"1234abcd";     -- CSR2: hardwired/read-only register
-      when others => csr.rdata <= (others => '0'); -- CSR3: not implemented
+    case csr_addr_i is
+      when "00"   => csr_rdata_o <= cfu_csr_0;       -- CSR0: simple read/write register
+      when "01"   => csr_rdata_o <= cfu_csr_1;       -- CSR1: simple read/write register
+      when "10"   => csr_rdata_o <= x"1234abcd";     -- CSR2: hardwired/read-only register
+      when others => csr_rdata_o <= (others => '0'); -- CSR3: not implemented
     end case;
   end process csr_read_access;
 
@@ -391,7 +372,7 @@ begin
         -- No function/immediate bit-fields are available for this instruction type.
         -- Hence, there is just one operation that can be implemented.
         control.result <= rs1_i xor rs2_i xor rs3_i xor rs4_i; -- XOR-all
-        control.done   <= '1'; -- set high to prevent permanent CPU stall
+        control.done   <= '1'; -- pure-combinatorial, so we are done "immediately"
 
       when others => -- undefined
       -- ----------------------------------------------------------------------
