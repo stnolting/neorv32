@@ -155,9 +155,9 @@ begin
       if (rstn_i = '0') then
         bs_start  <= '0';
         bs_result <= (others => '0');
-      elsif rising_edge(clk_i) then
+      elsif rising_edge(clk_i) then -- this register stage can be moved by the register balancing
         bs_start  <= start_i;
-        bs_result <= bs_level(0); -- this register can be moved by the register balancing
+        bs_result <= bs_level(0);
       end if;
     end process barrel_shifter_buf;
 

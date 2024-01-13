@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -319,7 +319,7 @@ begin
   port_sel(4) <= '1' when (main_req_i.addr(31 downto index_size_f(IO_SIZE))   = IO_BASE(  31 downto index_size_f(IO_SIZE)))   and IO_ENABLE   else '0';
 
   -- accesses to the "void" are redirected to the external bus interface --
-  port_sel(5) <= '1' when ((port_sel(4 downto 0) = "00000") and (EXT_ENABLE = true)) else '0';
+  port_sel(5) <= '1' when ((port_sel(4 downto 0) = "00000") and EXT_ENABLE) else '0';
 
 
   -- Gateway Ports --------------------------------------------------------------------------
@@ -336,7 +336,7 @@ begin
   begin
     for i in 0 to 5 loop
       port_req(i) <= req_terminate_c;
-      if (port_en_list_c(i) = true) then
+      if port_en_list_c(i) then
         port_req(i)     <= main_req_i;
         port_req(i).stb <= main_req_i.stb and port_sel(i);
       end if;
@@ -348,8 +348,8 @@ begin
     variable tmp_v : bus_rsp_t;
   begin
     tmp_v := rsp_terminate_c; -- start with all-zero
-    for i in 0 to 5 loop -- logical OR of all response signals
-      if (port_en_list_c(i) = true) then
+    for i in 0 to 5 loop -- OR all response signals
+      if port_en_list_c(i) then
         tmp_v.data := tmp_v.data or port_rsp(i).data;
         tmp_v.ack  := tmp_v.ack  or port_rsp(i).ack;
         tmp_v.err  := tmp_v.err  or port_rsp(i).err;
