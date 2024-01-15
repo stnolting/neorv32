@@ -14,7 +14,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -137,7 +137,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     state      : fetch_engine_state_t;
     state_prev : fetch_engine_state_t;
     restart    : std_ulogic; -- buffered restart request (after branch)
-    unaligned  : std_ulogic; -- fetching from non-32-bit address
     pc         : std_ulogic_vector(XLEN-1 downto 0);
     reset      : std_ulogic; -- restart request (after branch)
     resp       : std_ulogic; -- bus response
@@ -362,7 +361,6 @@ begin
       fetch_engine.state      <= IF_RESTART;
       fetch_engine.state_prev <= IF_RESTART;
       fetch_engine.restart    <= '1'; -- set to reset IPB
-      fetch_engine.unaligned  <= '0';
       fetch_engine.pc         <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
     elsif rising_edge(clk_i) then
       -- previous state (for HPMs only) --
@@ -378,13 +376,7 @@ begin
       -- fsm --
       case fetch_engine.state is
 
-        when IF_RESTART => -- set new fetch start address
-        -- ------------------------------------------------------------
-          fetch_engine.pc        <= execute_engine.next_pc(XLEN-1 downto 2) & "00"; -- initialize with logical PC, word aligned
-          fetch_engine.unaligned <= execute_engine.next_pc(1);
-          fetch_engine.state     <= IF_REQUEST;
-
-        when IF_REQUEST => -- request new 32-bit-aligned instruction word
+        when IF_REQUEST => -- request next 32-bit-aligned instruction word
         -- ------------------------------------------------------------
           if (ipb.free = "11") then -- wait for free IPB space
             fetch_engine.state <= IF_PENDING;
@@ -395,32 +387,33 @@ begin
         when IF_PENDING => -- wait for bus response and write instruction data to prefetch buffer
         -- ------------------------------------------------------------
           if (fetch_engine.resp = '1') then -- wait for bus response
-            fetch_engine.pc        <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4); -- next word
-            fetch_engine.unaligned <= '0';
-            if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request (fast) due to branch
+            fetch_engine.pc    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4); -- next word
+            fetch_engine.pc(1) <= '0'; -- (re-)align to 32-bit
+            if (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request due to branch
               fetch_engine.state <= IF_RESTART;
             else -- request next linear instruction word
               fetch_engine.state <= IF_REQUEST;
             end if;
           end if;
 
-        when IF_PARKED => -- park position: instruction fetch is halted (CPU in sleep mode)
+        when IF_PARKED => -- park position: instruction fetch is halted for sleep mode
         -- ------------------------------------------------------------
           if (execute_engine.state /= SLEEP) then
             fetch_engine.state <= IF_REQUEST;
           end if;
 
-        when others => -- undefined
+        when others => -- IF_RESTART: set new start address
         -- ------------------------------------------------------------
-          fetch_engine.state <= IF_RESTART;
+          fetch_engine.pc    <= execute_engine.next_pc(XLEN-1 downto 1) & '0'; -- initialize from PC incl. 16-bit-alignment bit
+          fetch_engine.state <= IF_REQUEST;
 
       end case;
     end if;
   end process fetch_engine_fsm;
 
   -- PC output for instruction fetch --
-  bus_req_o.addr <= fetch_engine.pc; -- word aligned
-  fetch_pc_o     <= fetch_engine.pc; -- word aligned
+  bus_req_o.addr <= fetch_engine.pc(XLEN-1 downto 2) & "00"; -- word aligned
+  fetch_pc_o     <= fetch_engine.pc(XLEN-1 downto 2) & "00"; -- word aligned
 
   -- instruction fetch (read) request if IPB not full --
   bus_req_o.stb <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
@@ -434,7 +427,7 @@ begin
 
   -- IPB write enable --
   ipb.we(0) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') and
-                        ((fetch_engine.unaligned = '0') or (CPU_EXTENSION_RISCV_C = false)) else '0';
+                        ((fetch_engine.pc(1) = '0') or (CPU_EXTENSION_RISCV_C = false)) else '0';
   ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
 
   -- bus access type --

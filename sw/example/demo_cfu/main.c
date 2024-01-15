@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -231,7 +231,7 @@ int main() {
   neorv32_uart0_printf("CFU-CSR 0 = 0x%x\n", neorv32_cpu_csr_read(CSR_CFUREG0)); // read-back data from CSR
 
   neorv32_cpu_csr_write(CSR_CFUREG1, 0x12345678);
-  neorv32_uart0_printf("CFU-CSR 1 = 0x%x\n", neorv32_cpu_csr_read(CSR_CFUREG0));
+  neorv32_uart0_printf("CFU-CSR 1 = 0x%x\n", neorv32_cpu_csr_read(CSR_CFUREG1));
 
   neorv32_cpu_csr_write(CSR_CFUREG2, 0x22334455);
   neorv32_uart0_printf("CFU-CSR 2 = 0x%x\n", neorv32_cpu_csr_read(CSR_CFUREG2));

@@ -102,10 +102,10 @@ begin
           shifter.busy <= '0';
         end if;
         -- shift register --
-        if (start_i = '1') then -- trigger new shift
+        if (start_i = '1') then -- trigger new operation
           shifter.cnt  <= shamt_i;
           shifter.sreg <= rs1_i;
-        elsif (or_reduce_f(shifter.cnt) = '1') then -- running shift (cnt != 0)
+        elsif (or_reduce_f(shifter.cnt) = '1') then -- operation in progress
           shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 1);
           if (ctrl_i.ir_funct3(2) = '0') then -- SLL: shift left logical
             shifter.sreg <= shifter.sreg(shifter.sreg'left-1 downto 0) & '0';
@@ -155,9 +155,9 @@ begin
       if (rstn_i = '0') then
         bs_start  <= '0';
         bs_result <= (others => '0');
-      elsif rising_edge(clk_i) then
+      elsif rising_edge(clk_i) then -- this register stage can be moved by the register balancing
         bs_start  <= start_i;
-        bs_result <= bs_level(0); -- this register can be moved by the register balancing
+        bs_result <= bs_level(0);
       end if;
     end process barrel_shifter_buf;
 

@@ -3,7 +3,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -41,10 +41,11 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_fifo is
   generic (
-    FIFO_DEPTH : natural; -- number of fifo entries; has to be a power of two; min 1
-    FIFO_WIDTH : natural; -- size of data elements in fifo
-    FIFO_RSYNC : boolean; -- false = async read; true = sync read
-    FIFO_SAFE  : boolean  -- true = allow read/write only if entry available
+    FIFO_DEPTH : natural := 4;     -- number of fifo entries; has to be a power of two; min 1
+    FIFO_WIDTH : natural := 32;    -- size of data elements in fifo
+    FIFO_RSYNC : boolean := false; -- false = async read; true = sync read
+    FIFO_SAFE  : boolean := false; -- true = allow read/write only if data available
+    FULL_RESET : boolean := false  -- true = reset all memory cells (cannot be mapped to BRAM)
   );
   port (
     -- control --
@@ -136,14 +137,31 @@ begin
 
   -- Write Data -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fifo_write: process(clk_i)
-  begin
-    if rising_edge(clk_i) then -- no reset to infer block RAM
-      if (we = '1') then
-        fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
+  memory_full_reset: -- cannot be mapped to block RAM!
+  if FULL_RESET generate
+    fifo_write: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        fifo_mem <= (others => (others => '0')); -- full reset of memory cells
+      elsif rising_edge(clk_i) then
+        if (we = '1') then
+          fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
+        end if;
       end if;
-    end if;
-  end process fifo_write;
+    end process fifo_write;
+  end generate;
+
+  memory_no_reset: -- no reset to infer block RAM
+  if not FULL_RESET generate
+    fifo_write: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        if (we = '1') then
+          fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
+        end if;
+      end if;
+    end process fifo_write;
+  end generate;
 
 
   -- Read Data ------------------------------------------------------------------------------

@@ -19,7 +19,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -63,8 +63,8 @@ entity neorv32_cpu_cp_fpu is
     ctrl_i      : in  ctrl_bus_t; -- main control bus
     start_i     : in  std_ulogic; -- trigger operation
     -- CSR interface --
-    csr_we_i    : in  std_ulogic; -- global write enable
-    csr_addr_i  : in  std_ulogic_vector(11 downto 0); -- address
+    csr_we_i    : in  std_ulogic; -- write enable
+    csr_addr_i  : in  std_ulogic_vector(1 downto 0); -- address
     csr_wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
     csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- data input --
@@ -297,20 +297,18 @@ begin
       csr_fflags <= (others => '0');
     elsif rising_edge(clk_i) then
       if (csr_we_i = '1') then
-        if (csr_addr_i(11 downto 2) = csr_fflags_c(11 downto 2)) then
-          -- exception flags --
-          if (csr_addr_i(1 downto 0) = csr_fflags_c(1 downto 0)) then
-            csr_fflags <= csr_wdata_i(4 downto 0);
-          end if;
-          -- rounding mode --
-          if (csr_addr_i(1 downto 0) = csr_frm_c(1 downto 0)) then
-            csr_frm <= csr_wdata_i(2 downto 0);
-          end if;
-          -- control/status (frm & fflags) --
-          if (csr_addr_i(1 downto 0) = csr_fcsr_c(1 downto 0)) then
-            csr_frm    <= csr_wdata_i(7 downto 5);
-            csr_fflags <= csr_wdata_i(4 downto 0);
-          end if;
+        -- exception flags --
+        if (csr_addr_i = csr_fflags_c(1 downto 0)) then
+          csr_fflags <= csr_wdata_i(4 downto 0);
+        end if;
+        -- rounding mode --
+        if (csr_addr_i = csr_frm_c(1 downto 0)) then
+          csr_frm <= csr_wdata_i(2 downto 0);
+        end if;
+        -- control/status (frm & fflags) --
+        if (csr_addr_i = csr_fcsr_c(1 downto 0)) then
+          csr_frm    <= csr_wdata_i(7 downto 5);
+          csr_fflags <= csr_wdata_i(4 downto 0);
         end if;
       else -- auto-update ("accumulate" flags)
         csr_fflags <= csr_fflags or fflags;
@@ -323,10 +321,10 @@ begin
   begin
     csr_rdata_o <= (others => '0'); -- default
     case csr_addr_i is
-      when csr_fflags_c => csr_rdata_o(4 downto 0) <= csr_fflags; -- exception flags
-      when csr_frm_c    => csr_rdata_o(2 downto 0) <= csr_frm; -- rounding mode
-      when csr_fcsr_c   => csr_rdata_o(7 downto 0) <= csr_frm & csr_fflags; -- control/status (frm & fflags)
-      when others       => NULL;
+      when "01"   => csr_rdata_o(4 downto 0) <= csr_fflags; -- fflags: exception flags
+      when "10"   => csr_rdata_o(2 downto 0) <= csr_frm; -- frm: rounding mode
+      when "11"   => csr_rdata_o(7 downto 0) <= csr_frm & csr_fflags; -- fcsr: control/status (frm & fflags)
+      when others => NULL;
     end case;
   end process csr_read;
 
