@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -481,6 +481,13 @@ void start_app(int boot_xip) {
   PRINT_TEXT("Booting from ");
   PRINT_XNUM(app_base);
   PRINT_TEXT("...\n\n");
+
+#if (STATUS_LED_EN != 0)
+  // shut down heart beat LED
+  if (neorv32_gpio_available()) {
+    neorv32_gpio_port_set(0);
+  }
+#endif
 
   // wait for UART0 to finish transmitting
   while (neorv32_uart0_tx_busy());
