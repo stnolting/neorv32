@@ -3,9 +3,9 @@
 -- # ********************************************************************************************* #
 -- # CPU operations are controlled by several "engines" (modules). These engines operate in        #
 -- # parallel to implement a simple 2-stage pipeline:                                              #
--- #  + Fetch engine:    Fetches 32-bit chunks of instruction words                                #
+-- #  + Fetch engine:    Fetches 32-bit chunks of instruction words (1st pipeline stage)           #
 -- #  + Issue engine:    Decodes compressed instructions, aligns and queues instruction words      #
--- #  + Execute engine:  Multi-cycle execution of instructions (generate control signals)          #
+-- #  + Execute engine:  Multi-cycle execution of instructions (2nd pipeline stage)                #
 -- #  + Trap controller: Handles interrupts and exceptions                                         #
 -- #  + CSR module:      Read/write access to control and status registers                         #
 -- #  + CPU counters:    Base and HPM counters                                                     #
@@ -524,20 +524,20 @@ begin
         if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed
           issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
           issue_engine.valid(0)  <= ipb.avail(0);
-          issue_engine.data      <= ipb.rdata(0)(16) & '1' & issue_engine.ci_i32;
+          issue_engine.data      <= '1' & ipb.rdata(0)(16) & issue_engine.ci_i32;
         else -- aligned uncompressed; use IPB(0) status flags only
           issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-          issue_engine.data  <= ipb.rdata(0)(16) & '0' & ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
+          issue_engine.data  <= '0' & ipb.rdata(0)(16) & ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
         end if;
       -- start with HIGH half-word --
       else
         if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed
           issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
           issue_engine.valid(1)  <= ipb.avail(1);
-          issue_engine.data      <= ipb.rdata(1)(16) & '1' & issue_engine.ci_i32;
+          issue_engine.data      <= '1' & ipb.rdata(1)(16) & issue_engine.ci_i32;
         else -- unaligned uncompressed; use IPB(0) status flags only
           issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-          issue_engine.data  <= ipb.rdata(0)(16) & '0' & ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
+          issue_engine.data  <= '0' & ipb.rdata(0)(16) & ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
         end if;
       end if;
     end process issue_engine_fsm_comb;
@@ -547,7 +547,7 @@ begin
   issue_engine_disabled: -- use IPB(0) status flags only
   if (CPU_EXTENSION_RISCV_C = false) generate
     issue_engine.valid <= (others => ipb.avail(0));
-    issue_engine.data  <= ipb.rdata(0)(16) & '0' & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
+    issue_engine.data  <= '0' & ipb.rdata(0)(16) & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
   end generate; -- /issue_engine_disabled
 
   -- update IPB FIFOs --
@@ -566,7 +566,7 @@ begin
     if (rstn_i = '0') then
       imm_o <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- default = I-immediate: ALU-immediate, load, jump-and-link with register --
+      -- default I-immediate: ALU-immediate, load, jump-and-link with register --
       imm_o(XLEN-1 downto 11) <= (others => execute_engine.ir(31)); -- sign extension
       imm_o(10 downto 01)     <= execute_engine.ir(30 downto 21);
       imm_o(00)               <= execute_engine.ir(20);
@@ -833,11 +833,8 @@ begin
     --
     csr.we_nxt               <= '0';
     csr.re_nxt               <= '0';
-
-    -- control defaults --
-    ctrl_nxt        <= ctrl_bus_zero_c; -- all zero by default
-    ctrl_nxt.alu_op <= alu_op_add_c; -- default ALU operation: ADD
-    ctrl_nxt.rf_mux <= rf_mux_alu_c; -- default RF input: ALU
+    --
+    ctrl_nxt                 <= ctrl_bus_zero_c; -- all zero/off by default, default ALU operation = ADD, default RF input = ALU
 
     -- ALU sign control --
     if (execute_engine.ir(instr_opcode_lsb_c+4) = '1') then -- ALU ops
@@ -856,8 +853,7 @@ begin
 
     -- ALU operand B: is immediate? --
     case decode_aux.opcode is
-      when opcode_alui_c | opcode_lui_c    | opcode_auipc_c | opcode_load_c | opcode_store_c |
-           opcode_amo_c  | opcode_branch_c | opcode_jal_c   | opcode_jalr_c =>
+      when opcode_alui_c | opcode_lui_c | opcode_auipc_c | opcode_load_c | opcode_store_c | opcode_amo_c | opcode_branch_c | opcode_jal_c | opcode_jalr_c =>
         ctrl_nxt.alu_opb_mux <= '1';
       when others =>
         ctrl_nxt.alu_opb_mux <= '0';
@@ -883,8 +879,8 @@ begin
           execute_engine.state_nxt <= TRAP_ENTER;
         elsif (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- new instruction word available
           issue_engine.ack         <= '1';
-          trap_ctrl.instr_be       <= issue_engine.data(33); -- bus access fault during instruction fetch
-          execute_engine.is_ci_nxt <= issue_engine.data(32); -- this is a de-compressed instruction
+          trap_ctrl.instr_be       <= issue_engine.data(32); -- bus access fault during instruction fetch
+          execute_engine.is_ci_nxt <= issue_engine.data(33); -- this is a de-compressed instruction
           execute_engine.ir_nxt    <= issue_engine.data(31 downto 0); -- instruction word
           execute_engine.pc_we     <= '1'; -- pc <= next_pc
           execute_engine.state_nxt <= EXECUTE;
@@ -1013,8 +1009,8 @@ begin
         if (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- abort if illegal instruction
           execute_engine.state_nxt <= DISPATCH;
         else
-          ctrl_nxt.lsu_fence       <= not execute_engine.ir(instr_funct3_lsb_c); -- data: fence
-          ctrl_nxt.lsu_fencei      <=     execute_engine.ir(instr_funct3_lsb_c); -- instruction: fence.i
+          ctrl_nxt.lsu_fence       <= not execute_engine.ir(instr_funct3_lsb_c); -- data fence
+          ctrl_nxt.lsu_fencei      <=     execute_engine.ir(instr_funct3_lsb_c); -- instruction fence
           execute_engine.state_nxt <= RESTART; -- reset instruction fetch + IPB (only required for fence.i)
         end if;
 
@@ -1095,9 +1091,9 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- register file --
-  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and -- inhibit write-back only for specific exc. that must not retire
+  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and -- inhibit write-back only for rd-writing exceptions that must not retire
                          (not trap_ctrl.exc_buf(exc_iaccess_c)) and (not trap_ctrl.exc_buf(exc_illegal_c)) and (not trap_ctrl.exc_buf(exc_ialign_c)) and
-                         (not trap_ctrl.exc_buf(exc_salign_c))  and (not trap_ctrl.exc_buf(exc_lalign_c )) and
+                         (not trap_ctrl.exc_buf(exc_salign_c))  and (not trap_ctrl.exc_buf(exc_lalign_c))  and
                          (not trap_ctrl.exc_buf(exc_saccess_c)) and (not trap_ctrl.exc_buf(exc_laccess_c));
   ctrl_o.rf_rs1       <= execute_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c);
   ctrl_o.rf_rs2       <= execute_engine.ir(instr_rs2_msb_c downto instr_rs2_lsb_c);
@@ -1128,7 +1124,7 @@ begin
 
   -- cpu status --
   ctrl_o.cpu_priv     <= csr.privilege_eff;
-  ctrl_o.cpu_sleep    <= '1' when (execute_engine.state = SLEEP) and (fetch_engine.state = IF_PARKED) else '0';
+  ctrl_o.cpu_sleep    <= '1' when (execute_engine.state = SLEEP) and (fetch_engine.state = IF_PARKED) else '0'; -- set only if fully halted
   ctrl_o.cpu_trap     <= trap_ctrl.env_enter;
   ctrl_o.cpu_debug    <= debug_ctrl.running;
 
@@ -1137,7 +1133,7 @@ begin
 -- Illegal Instruction Detection
 -- ****************************************************************************************************************************
 
-  -- Instruction Execution Monitor ----------------------------------------------------------
+  -- Instruction Execution Monitor (trap if multi-cycle instruction does not retire) --------
   -- -------------------------------------------------------------------------------------------
   multi_cycle_monitor: process(rstn_i, clk_i)
   begin
@@ -1264,7 +1260,7 @@ begin
 
   -- Illegal Instruction Check --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  illegal_instruction_check: process(execute_engine, decode_aux, csr, csr_reg_valid, csr_rw_valid, csr_priv_valid, debug_ctrl)
+  illegal_check: process(execute_engine, decode_aux, csr, csr_reg_valid, csr_rw_valid, csr_priv_valid, debug_ctrl)
   begin
     illegal_cmd <= '0'; -- default
     case decode_aux.opcode is
@@ -1341,7 +1337,7 @@ begin
 
       when opcode_fence_c =>
         case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when funct3_fence_c | funct3_fencei_c => illegal_cmd <= '0'; -- FENCE[.I]
+          when funct3_fence_c | funct3_fencei_c => illegal_cmd <= '0'; -- fence[.i]
           when others                           => illegal_cmd <= '1';
         end case;
 
@@ -1349,10 +1345,10 @@ begin
         if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system environment
           if (decode_aux.rs1_zero = '1') and (decode_aux.rd_zero = '1') then
             case execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c) is
-              when funct12_ecall_c | funct12_ebreak_c => illegal_cmd <= '0'; -- ECALL, EBREAK
-              when funct12_mret_c                     => illegal_cmd <= (not csr.privilege) or debug_ctrl.running; -- MRET allowed in M-mode only
-              when funct12_dret_c                     => illegal_cmd <= not debug_ctrl.running; -- DRET allowed in debug mode only
-              when funct12_wfi_c                      => illegal_cmd <= (not csr.privilege) and csr.mstatus_tw; -- WFI allowed in M-mode or if TW is zero
+              when funct12_ecall_c | funct12_ebreak_c => illegal_cmd <= '0'; -- ecall, ebreak
+              when funct12_mret_c                     => illegal_cmd <= (not csr.privilege) or debug_ctrl.running; -- mret allowed in M-mode only
+              when funct12_dret_c                     => illegal_cmd <= not debug_ctrl.running; -- dret allowed in debug mode only
+              when funct12_wfi_c                      => illegal_cmd <= (not csr.privilege) and csr.mstatus_tw; -- wfi allowed in M-mode or if TW is zero
               when others => illegal_cmd <= '1';
             end case;
           else
@@ -1375,17 +1371,15 @@ begin
         illegal_cmd <= '1'; -- undefined/illegal opcode
 
     end case;
-  end process illegal_instruction_check;
+  end process illegal_check;
 
 
   -- Illegal Operation Check ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   trap_ctrl.instr_il <= '1' when ((execute_engine.state = EXECUTE) or (execute_engine.state = ALU_WAIT)) and -- check in execution states only
-                                 (
-                                  (monitor.exc = '1') or -- execution monitor exception (multi-cycle instruction timeout)
+                                 ((monitor.exc = '1') or -- execution monitor exception (multi-cycle instruction timeout)
                                   (illegal_cmd = '1') or -- illegal instruction?
-                                  (execute_engine.ir(instr_opcode_lsb_c+1 downto instr_opcode_lsb_c) /= "11") -- illegal opcode LSBs?
-                                 ) else '0';
+                                  (execute_engine.ir(instr_opcode_lsb_c+1 downto instr_opcode_lsb_c) /= "11")) else '0'; -- illegal opcode LSBs?
 
 
 -- ****************************************************************************************************************************
@@ -1499,15 +1493,15 @@ begin
       trap_ctrl.cause <= (others => '0');
     elsif rising_edge(clk_i) then
       -- standard RISC-V exceptions --
-      if    (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c;  -- instruction address misaligned
-      elsif (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c;  -- instruction access fault
-      elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c;  -- illegal instruction
+      if    (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c; -- instruction address misaligned
+      elsif (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
+      elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c; -- illegal instruction
       elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & csr.privilege & csr.privilege; -- environment call (U/M)
-      elsif (trap_ctrl.exc_buf(exc_ebreak_c)   = '1') then trap_ctrl.cause <= trap_brk_c;  -- breakpoint
-      elsif (trap_ctrl.exc_buf(exc_salign_c)   = '1') then trap_ctrl.cause <= trap_sma_c;  -- store address misaligned
-      elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c;  -- load address misaligned
-      elsif (trap_ctrl.exc_buf(exc_saccess_c)  = '1') then trap_ctrl.cause <= trap_saf_c;  -- store access fault
-      elsif (trap_ctrl.exc_buf(exc_laccess_c)  = '1') then trap_ctrl.cause <= trap_laf_c;  -- load access fault
+      elsif (trap_ctrl.exc_buf(exc_ebreak_c)   = '1') then trap_ctrl.cause <= trap_brk_c; -- breakpoint
+      elsif (trap_ctrl.exc_buf(exc_salign_c)   = '1') then trap_ctrl.cause <= trap_sma_c; -- store address misaligned
+      elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c; -- load address misaligned
+      elsif (trap_ctrl.exc_buf(exc_saccess_c)  = '1') then trap_ctrl.cause <= trap_saf_c; -- store access fault
+      elsif (trap_ctrl.exc_buf(exc_laccess_c)  = '1') then trap_ctrl.cause <= trap_laf_c; -- load access fault
       -- standard RISC-V debug mode exceptions and interrupts --
       elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request (async)
       elsif (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') then trap_ctrl.cause <= trap_db_trig_c;  -- hardware trigger (sync)
@@ -1572,7 +1566,7 @@ begin
     (trap_ctrl.irq_buf(irq_db_step_c) = '1') or -- debug-mode single-step IRQ
     (trap_ctrl.irq_buf(irq_db_halt_c) = '1') else '0'; -- debug-mode halt IRQ
 
-  -- exception program counter (for updating xPC CSR) --
+  -- exception program counter (for updating xPC CSRs) --
   trap_ctrl.epc <= execute_engine.next_pc when (trap_ctrl.cause(trap_ctrl.cause'left) = '1') else execute_engine.pc;
 
 
