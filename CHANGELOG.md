@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 20.01.2024 | 1.9.3.2 | optimize bus switch; minor RTL and comment edits | [#769](https://github.com/stnolting/neorv32/pull/769) |
 | 14.01.2024 | 1.9.3.1 | minor rtl cleanups and optimizations | [#764](https://github.com/stnolting/neorv32/pull/764) |
 | 11.01.2024 | [**:rocket:1.9.3**](https://github.com/stnolting/neorv32/releases/tag/v1.9.3) | **New release** | |
 | 10.01.2024 | 1.9.2.11 | minor HDL fix (introduced in v1.9.2.9) | [#763](https://github.com/stnolting/neorv32/pull/763) |

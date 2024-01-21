@@ -7,7 +7,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -118,11 +118,11 @@ begin
   coprocessor_ctrl: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl.state    <= S_IDLE;
-      ctrl.rs2_abs  <= (others => '0');
-      ctrl.cnt      <= (others => '0');
-      ctrl.out_en   <= '0';
-      div.sign_mod  <= '0';
+      ctrl.state   <= S_IDLE;
+      ctrl.rs2_abs <= (others => '0');
+      ctrl.cnt     <= (others => '0');
+      ctrl.out_en  <= '0';
+      div.sign_mod <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
       ctrl.out_en <= '0';

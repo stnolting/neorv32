@@ -62,19 +62,17 @@ end neorv32_bus_switch;
 architecture neorv32_bus_switch_rtl of neorv32_bus_switch is
 
   -- access arbiter --
-  type arbiter_state_t is (IDLE, BUSY_A, BUSY_B);
   type arbiter_t is record
-    state     : arbiter_state_t;
-    state_nxt : arbiter_state_t;
-    a_req     : std_ulogic;
-    b_req     : std_ulogic;
-    sel       : std_ulogic;
-    stb       : std_ulogic;
+    state, state_nxt : std_ulogic_vector(1 downto 0);
+    a_req, b_req     : std_ulogic;
+    sel,   stb       : std_ulogic;
   end record;
   signal arbiter : arbiter_t;
 
-  -- internal bus lines --
-  signal a_bus_ack, b_bus_ack, a_bus_err, b_bus_err : std_ulogic;
+  -- FSM states --
+  constant IDLE   : std_ulogic_vector(1 downto 0) := "00";
+  constant BUSY_A : std_ulogic_vector(1 downto 0) := "01";
+  constant BUSY_B : std_ulogic_vector(1 downto 0) := "10";
 
 begin
 
@@ -88,34 +86,21 @@ begin
       arbiter.b_req <= '0';
     elsif rising_edge(clk_i) then
       arbiter.state <= arbiter.state_nxt;
-      -- set on STB, clear on ACK or ERR --
-      arbiter.a_req <= (arbiter.a_req or a_req_i.stb) and (a_bus_err nor a_bus_ack);
-      arbiter.b_req <= (arbiter.b_req or b_req_i.stb) and (b_bus_err nor b_bus_ack);
+      arbiter.a_req <= (arbiter.a_req or a_req_i.stb) and (not arbiter.state(0)); -- clear STB buffer in BUSY_A
+      arbiter.b_req <= (arbiter.b_req or b_req_i.stb) and (not arbiter.state(1)); -- clear STB buffer in BUSY_B
     end if;
   end process arbiter_sync;
 
   -- fsm --
   arbiter_comb: process(arbiter, a_req_i, b_req_i, x_rsp_i)
   begin
-    -- arbiter defaults --
+    -- defaults --
     arbiter.state_nxt <= arbiter.state;
     arbiter.sel       <= '0';
     arbiter.stb       <= '0';
 
     -- state machine --
     case arbiter.state is
-
-      when IDLE => -- wait for requests
-      -- ------------------------------------------------------------
-        if (a_req_i.stb = '1') or (arbiter.a_req = '1') then -- any request from port A (prioritized)?
-          arbiter.sel       <= '0';
-          arbiter.stb       <= '1';
-          arbiter.state_nxt <= BUSY_A;
-        elsif (b_req_i.stb = '1') or (arbiter.b_req = '1') then -- any request from port B?
-          arbiter.sel       <= '1';
-          arbiter.stb       <= '1';
-          arbiter.state_nxt <= BUSY_B;
-        end if;
 
       when BUSY_A => -- port A access in progress
       -- ------------------------------------------------------------
@@ -131,9 +116,17 @@ begin
           arbiter.state_nxt <= IDLE;
         end if;
 
-      when others => -- undefined
+      when others => -- IDLE: wait for requests
       -- ------------------------------------------------------------
-        arbiter.state_nxt <= IDLE;
+        if (a_req_i.stb = '1') or (arbiter.a_req = '1') then -- request from port A (prioritized)?
+          arbiter.sel       <= '0';
+          arbiter.stb       <= '1';
+          arbiter.state_nxt <= BUSY_A;
+        elsif (b_req_i.stb = '1') or (arbiter.b_req = '1') then -- request from port B?
+          arbiter.sel       <= '1';
+          arbiter.stb       <= '1';
+          arbiter.state_nxt <= BUSY_B;
+        end if;
 
     end case;
   end process arbiter_comb;
@@ -161,17 +154,12 @@ begin
   -- Response Switch ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   a_rsp_o.data <= x_rsp_i.data;
+  a_rsp_o.ack  <= x_rsp_i.ack when (arbiter.sel = '0') else '0';
+  a_rsp_o.err  <= x_rsp_i.err when (arbiter.sel = '0') else '0';
+
   b_rsp_o.data <= x_rsp_i.data;
-
-  a_bus_ack    <= x_rsp_i.ack when (arbiter.sel = '0') else '0';
-  b_bus_ack    <= x_rsp_i.ack when (arbiter.sel = '1') else '0';
-  a_rsp_o.ack  <= a_bus_ack;
-  b_rsp_o.ack  <= b_bus_ack;
-
-  a_bus_err    <= x_rsp_i.err when (arbiter.sel = '0') else '0';
-  b_bus_err    <= x_rsp_i.err when (arbiter.sel = '1') else '0';
-  a_rsp_o.err  <= a_bus_err;
-  b_rsp_o.err  <= b_bus_err;
+  b_rsp_o.ack  <= x_rsp_i.ack when (arbiter.sel = '1') else '0';
+  b_rsp_o.err  <= x_rsp_i.err when (arbiter.sel = '1') else '0';
 
 
 end neorv32_bus_switch_rtl;
@@ -196,7 +184,7 @@ end neorv32_bus_switch_rtl;
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -406,7 +394,7 @@ end neorv32_bus_gateway_rtl;
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -632,7 +620,7 @@ end neorv32_bus_io_switch_rtl;
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #

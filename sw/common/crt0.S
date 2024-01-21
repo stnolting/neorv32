@@ -3,7 +3,7 @@
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
-/* # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     # */
+/* # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
 /* # permitted provided that the following conditions are met:                                     # */
@@ -205,7 +205,7 @@ __crt0_shutdown:
 .balign 4 // the trap handler has to be 32-bit aligned
 __crt0_trap_handler:
 
-  // backup x8
+  // backup x8 in mscratch - no need to use the stack
   csrw  mscratch, x8
 
   // exit if interrupt
