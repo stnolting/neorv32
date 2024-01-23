@@ -638,6 +638,10 @@ int main() {
 
   {
     asm volatile (".align 4");
+    if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
+      asm volatile (".half 0x0000"); // canonical compressed illegal
+      asm volatile (".half 0x66aa"); // c.flwsp (illegal since F is not supported)
+    }
     asm volatile (".word 0x0e00202f"); // amoswap.w x0, x0, (x0)
     asm volatile (".word 0x34004073"); // illegal CSR access funct3 (using mscratch)
     asm volatile (".word 0x30200077"); // mret with illegal opcode
@@ -651,11 +655,19 @@ int main() {
     asm volatile (".align 4");
   }
 
-  tmp_b = trap_cnt; // number of traps we are expecting
+  // number of traps we are expecting
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
+    tmp_a += 12;
+  }
+  else { // C extension disabled
+    tmp_a += 10;
+  }
+
+  tmp_b = trap_cnt; // number of traps we have seen
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) && // illegal instruction exception
       (neorv32_cpu_csr_read(CSR_MTINST) == 0xfe002fe3) && // instruction word of last illegal instruction
-      ((tmp_a + 10) == tmp_b)) { // right amount of illegal instruction exceptions
+      (tmp_a == tmp_b)) { // right amount of illegal instruction exceptions
     test_ok();
   }
   else {
