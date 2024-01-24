@@ -6,7 +6,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -43,9 +43,6 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_decompressor is
-  generic (
-    FPU_ENABLE : boolean -- floating-point instruction enabled
-  );
   port (
     ci_instr16_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction
     ci_instr32_o : out std_ulogic_vector(31 downto 0)  -- decompressed instruction
@@ -125,41 +122,7 @@ begin
       when "00" => -- C0: Register-Based Loads and Stores
         case ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) is
 
-          when "010" | "011" => -- C.LW / C.FLW (integer and float are identical as the FPU implements the Zfinx ISA extension)
-          -- ----------------------------------------------------------------------------------------------------------
-            decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_c;
-            decoded(21 downto 20)                                 <= "00";
-            decoded(22)                                           <= ci_instr16_i(6);
-            decoded(23)                                           <= ci_instr16_i(10);
-            decoded(24)                                           <= ci_instr16_i(11);
-            decoded(25)                                           <= ci_instr16_i(12);
-            decoded(26)                                           <= ci_instr16_i(5);
-            decoded(31 downto 27)                                 <= (others => '0');
-            decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_lw_c;
-            decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
-            decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & ci_instr16_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);   -- x8 - x15
-            if (ci_instr16_i(ci_funct3_lsb_c) = '1') and (FPU_ENABLE = false) then -- C.FLW
-              illegal <= '1';
-            end if;
-
-          when "110" | "111" => -- C.SW / C.FSW (integer and float are identical as the FPU implements the Zfinx ISA extension)
-          -- ----------------------------------------------------------------------------------------------------------
-            decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_c;
-            decoded(08 downto 07)                                 <= "00";
-            decoded(09)                                           <= ci_instr16_i(6);
-            decoded(10)                                           <= ci_instr16_i(10);
-            decoded(11)                                           <= ci_instr16_i(11);
-            decoded(25)                                           <= ci_instr16_i(12);
-            decoded(26)                                           <= ci_instr16_i(5);
-            decoded(31 downto 27)                                 <= (others => '0');
-            decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sw_c;
-            decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
-            decoded(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= "01" & ci_instr16_i(ci_rs2_3_msb_c downto ci_rs2_3_lsb_c); -- x8 - x15
-            if (ci_instr16_i(ci_funct3_lsb_c) = '1') and (FPU_ENABLE = false) then -- C.FSW
-              illegal <= '1';
-            end if;
-
-          when others => -- "000": Illegal_instruction, C.ADDI4SPN; others: illegal
+          when "000" => -- Illegal_instruction, C.ADDI4SPN
           -- ----------------------------------------------------------------------------------------------------------
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
             decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
@@ -176,13 +139,41 @@ begin
             decoded(instr_imm12_lsb_c + 7)                        <= ci_instr16_i(8);
             decoded(instr_imm12_lsb_c + 8)                        <= ci_instr16_i(9);
             decoded(instr_imm12_lsb_c + 9)                        <= ci_instr16_i(10);
-            --
-            if (ci_instr16_i(12 downto 5) = "00000000") or -- canonical illegal C instruction or C.ADDI4SPN with nzuimm = 0
-               (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "001") or -- C.FLS / C.LQ
-               (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "100") or -- reserved
-               (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "101") then -- C.FSD / C.SQ
+            if (ci_instr16_i(12 downto 5) = "00000000") then -- canonical illegal C instruction or C.ADDI4SPN with nzuimm = 0
               illegal <= '1';
             end if;
+
+          when "010" => -- C.LW
+          -- ----------------------------------------------------------------------------------------------------------
+            decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_c;
+            decoded(21 downto 20)                                 <= "00";
+            decoded(22)                                           <= ci_instr16_i(6);
+            decoded(23)                                           <= ci_instr16_i(10);
+            decoded(24)                                           <= ci_instr16_i(11);
+            decoded(25)                                           <= ci_instr16_i(12);
+            decoded(26)                                           <= ci_instr16_i(5);
+            decoded(31 downto 27)                                 <= (others => '0');
+            decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_lw_c;
+            decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
+            decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & ci_instr16_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);   -- x8 - x15
+
+          when "110" => -- C.SW
+          -- ----------------------------------------------------------------------------------------------------------
+            decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_c;
+            decoded(08 downto 07)                                 <= "00";
+            decoded(09)                                           <= ci_instr16_i(6);
+            decoded(10)                                           <= ci_instr16_i(10);
+            decoded(11)                                           <= ci_instr16_i(11);
+            decoded(25)                                           <= ci_instr16_i(12);
+            decoded(26)                                           <= ci_instr16_i(5);
+            decoded(31 downto 27)                                 <= (others => '0');
+            decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sw_c;
+            decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
+            decoded(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= "01" & ci_instr16_i(ci_rs2_3_msb_c downto ci_rs2_3_lsb_c); -- x8 - x15
+
+          when others => -- "011": C.FLW, "111": C.FSW, "001": C.FLS / C.LQ, "100": reserved, "101": C.FSD / C.SQ
+          -- ----------------------------------------------------------------------------------------------------------
+            illegal <= '1';
 
         end case;
 
@@ -350,7 +341,7 @@ begin
               illegal <= '1';
             end if;
 
-          when "010" | "011" => -- C.LWSP / C.FLWSP (integer and float are identical as the FPU implements the Zfinx ISA extension)
+          when "010" | "011" => -- C.LWSP / C.FLWSP
           -- ----------------------------------------------------------------------------------------------------------
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_c;
             decoded(21 downto 20)                                 <= "00";
@@ -364,11 +355,11 @@ begin
             decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_lw_c;
             decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
             decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= ci_instr16_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
-            if (ci_instr16_i(ci_funct3_lsb_c) = '1') and (FPU_ENABLE = false) then -- C.FLWSP
+            if (ci_instr16_i(ci_funct3_lsb_c) = '1') then -- C.FLWSP is illegal
               illegal <= '1';
             end if;
 
-          when "110" | "111" => -- C.SWSP / C.FSWSP (integer and float are identical as the FPU implements the Zfinx ISA extension)
+          when "110" | "111" => -- C.SWSP / C.FSWSP
           -- ----------------------------------------------------------------------------------------------------------
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_c;
             decoded(08 downto 07)                                 <= "00";
@@ -382,7 +373,7 @@ begin
             decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sw_c;
             decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
             decoded(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= ci_instr16_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c);
-            if (ci_instr16_i(ci_funct3_lsb_c) = '1') and (FPU_ENABLE = false) then -- C.FSWSP
+            if (ci_instr16_i(ci_funct3_lsb_c) = '1') then -- C.FSWSP is illegal
               illegal <= '1';
             end if;
 

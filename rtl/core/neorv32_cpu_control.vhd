@@ -477,9 +477,6 @@ begin
   neorv32_cpu_decompressor_inst_true:
   if (CPU_EXTENSION_RISCV_C = true) generate
     neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
-    generic map (
-      FPU_ENABLE => CPU_EXTENSION_RISCV_Zfinx -- floating-point instructions
-    )
     port map (
       ci_instr16_i => issue_engine.ci_i16, -- compressed instruction
       ci_instr32_o => issue_engine.ci_i32  -- decompressed instruction
