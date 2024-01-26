@@ -56,7 +56,6 @@ static uint32_t __neorv32_rte_vector_lut[NEORV32_RTE_NUM_TRAPS] __attribute__((u
 // private functions
 static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void);
 static void __neorv32_rte_debug_handler(void);
-static void __neorv32_rte_print_true_false(int state);
 static void __neorv32_rte_print_hex_word(uint32_t num);
 
 
@@ -518,9 +517,19 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\n\n<< NEORV32 Processor Configuration >>\n\n");
 
   // general
-  neorv32_uart0_printf("Is simulation:       "); __neorv32_rte_print_true_false(neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM));
+  neorv32_uart0_printf("Is simulation:       ");
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) { neorv32_uart0_printf("yes\n"); }
+  else { neorv32_uart0_printf("no\n"); }
+
   neorv32_uart0_printf("Clock speed:         %u Hz\n", NEORV32_SYSINFO->CLK);
-  neorv32_uart0_printf("On-chip debugger:    "); __neorv32_rte_print_true_false(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD));
+
+  neorv32_uart0_printf("Clock gating:        ");
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_CLOCK_GATING)) { neorv32_uart0_printf("enabled\n"); }
+  else { neorv32_uart0_printf("disabled\n"); }
+
+  neorv32_uart0_printf("On-chip debugger:    ");
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD)) { neorv32_uart0_printf("enabled\n"); }
+  else { neorv32_uart0_printf("disabled\n"); }
 
   // IDs
   neorv32_uart0_printf("Hart ID:             0x%x\n"
@@ -716,23 +725,6 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1 << SYSINFO_SOC_IO_CRC))     { neorv32_uart0_printf("CRC ");     }
 
   neorv32_uart0_printf("\n\n");
-}
-
-
-/**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * Private function to print true or false via UART0.
- *
- * @param[in] state Print 'true' when !=0, print 'false' when 0
- **************************************************************************/
-static void __neorv32_rte_print_true_false(int state) {
-
-  if (state) {
-    neorv32_uart0_puts("true\n");
-  }
-  else {
-    neorv32_uart0_puts("false\n");
-  }
 }
 
 
