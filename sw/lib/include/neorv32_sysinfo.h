@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -73,8 +73,9 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_MEM_EXT_ENDIAN =  4, /**< SYSINFO_SOC  (4) (r/-): External bus interface uses BIG-endian byte-order when 1 (via MEM_EXT_BIG_ENDIAN generic) */
   SYSINFO_SOC_ICACHE         =  5, /**< SYSINFO_SOC  (5) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
   SYSINFO_SOC_DCACHE         =  6, /**< SYSINFO_SOC  (6) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
+  SYSINFO_SOC_CLOCK_GATING   =  7, /**< SYSINFO_SOC  (7) (r/-): Clock gating enabled when 1 (via CLOCK_GATING_EN generic) */
 
-  SYSINFO_SOC_IO_CRC         = 12, /**< SYSINFO_SOC (12) (r/-):Cyclic redundancy check unit implemented when 1 (via IO_CRC_EN generic) */
+  SYSINFO_SOC_IO_CRC         = 12, /**< SYSINFO_SOC (12) (r/-): Cyclic redundancy check unit implemented when 1 (via IO_CRC_EN generic) */
   SYSINFO_SOC_IO_SLINK       = 13, /**< SYSINFO_SOC (13) (r/-): Stream link interface implemented when 1 (via IO_SLINK_EN generic) */
   SYSINFO_SOC_IO_DMA         = 14, /**< SYSINFO_SOC (14) (r/-): Direct memory access controller implemented when 1 (via IO_DMA_EN generic) */
   SYSINFO_SOC_IO_GPIO        = 15, /**< SYSINFO_SOC (15) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
