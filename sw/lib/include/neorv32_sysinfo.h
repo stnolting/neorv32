@@ -72,7 +72,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_MEM_INT_DMEM   =  3, /**< SYSINFO_SOC  (3) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_EN generic) */
   SYSINFO_SOC_MEM_EXT_ENDIAN =  4, /**< SYSINFO_SOC  (4) (r/-): External bus interface uses BIG-endian byte-order when 1 (via MEM_EXT_BIG_ENDIAN generic) */
   SYSINFO_SOC_ICACHE         =  5, /**< SYSINFO_SOC  (5) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
-  SYSINFO_SOC_DCACHE         =  6, /**< SYSINFO_SOC  (6) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
+  SYSINFO_SOC_DCACHE         =  6, /**< SYSINFO_SOC  (6) (r/-): Processor-internal instruction cache implemented when 1 (via DCACHE_EN generic) */
   SYSINFO_SOC_CLOCK_GATING   =  7, /**< SYSINFO_SOC  (7) (r/-): Clock gating enabled when 1 (via CLOCK_GATING_EN generic) */
 
   SYSINFO_SOC_IO_CRC         = 12, /**< SYSINFO_SOC (12) (r/-): Cyclic redundancy check unit implemented when 1 (via IO_CRC_EN generic) */
