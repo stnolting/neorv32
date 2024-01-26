@@ -75,7 +75,8 @@ entity neorv32_cpu is
   );
   port (
     -- global control --
-    clk_i      : in  std_ulogic; -- global clock, rising edge
+    clk_i      : in  std_ulogic; -- switchable global clock, rising edge
+    clk_aux_i  : in  std_ulogic; -- always-on clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     sleep_o    : out std_ulogic; -- cpu is in sleep mode when set
     debug_o    : out std_ulogic; -- cpu is in debug mode when set
@@ -162,8 +163,8 @@ begin
   -- CPU tuning options --
   assert false report "[NEORV32] CPU tuning options: " &
     cond_sel_string_f(FAST_MUL_EN,    "fast_mul ",   "") &
-    cond_sel_string_f(FAST_SHIFT_EN,  "fast_shift ", "" ) &
-    cond_sel_string_f(REGFILE_HW_RST, "rf_hw_rst",   "" )
+    cond_sel_string_f(FAST_SHIFT_EN,  "fast_shift ", "") &
+    cond_sel_string_f(REGFILE_HW_RST, "rf_hw_rst ",  "") 
     severity note;
 
   -- simulation notifier --
@@ -207,6 +208,7 @@ begin
   port map (
     -- global control --
     clk_i         => clk_i,          -- global clock, rising edge
+    clk_aux_i     => clk_aux_i,      -- always-on clock, rising edge
     rstn_i        => rstn_i,         -- global reset, low-active, async
     ctrl_o        => ctrl,           -- main control bus
     -- instruction fetch interface --
