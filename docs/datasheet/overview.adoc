@@ -174,7 +174,7 @@ of the entire processor including all the required configuration generics is `ne
 .Compile Order
 [IMPORTANT]
 Most of the RTL sources use **entity instantiation**. Hence, the RTL compile order might be relevant.
-The list below shows the hierarchical compile order srarting at the top.
+The list below shows the hierarchical compile order starting at the top.
 
 .VHDL Library
 [IMPORTANT]
@@ -182,6 +182,7 @@ All core VHDL files from the list below have to be assigned to a **new library**
 
 ...................................
 ┌-neorv32_package.vhd              - Processor/CPU main VHDL package file
+├-neorv32_clockgate.vhd            - Generic clock gating switch
 ├-neorv32_fifo.vhd                 - Generic FIFO component
 │
 │   ┌-neorv32_cpu_cp_bitmanip.vhd  - Bit-manipulation co-processor (B ext.)
