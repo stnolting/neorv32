@@ -85,6 +85,7 @@ entity neorv32_cpu_control is
   port (
     -- global control --
     clk_i         : in  std_ulogic; -- global clock, rising edge
+    clk_aux_i     : in  std_ulogic; -- always-on clock, rising edge
     rstn_i        : in  std_ulogic; -- global reset, low-active, async
     ctrl_o        : out ctrl_bus_t; -- main control bus
     -- instruction fetch interface --
@@ -132,7 +133,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   constant hpm_cnt_hi_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0)); -- width high word
 
   -- instruction fetch engine --
-  type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING, IF_PARKED);
+  type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING);
   type fetch_engine_t is record
     state      : fetch_engine_state_t;
     state_prev : fetch_engine_state_t;
@@ -213,6 +214,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     exc     : std_ulogic;
   end record;
   signal monitor : monitor_t;
+
+  -- CPU sleep-mode --
+  signal sleep_mode : std_ulogic;
 
   -- trap controller --
   type trap_ctrl_t is record
@@ -324,12 +328,11 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- debug mode controller --
   type debug_ctrl_t is record
-    running      : std_ulogic; -- CPU is in debug mode
-    trig_hw      : std_ulogic; -- hardware trigger
-    trig_break   : std_ulogic; -- ebreak instruction trigger
-    trig_halt    : std_ulogic; -- external request trigger
-    trig_step    : std_ulogic; -- single-stepping mode trigger
-    ext_halt_req : std_ulogic; -- external halt request buffer
+    running    : std_ulogic; -- CPU is in debug mode
+    trig_hw    : std_ulogic; -- hardware trigger
+    trig_break : std_ulogic; -- ebreak instruction trigger
+    trig_halt  : std_ulogic; -- external request trigger
+    trig_step  : std_ulogic; -- single-stepping mode trigger
   end record;
   signal debug_ctrl : debug_ctrl_t;
 
@@ -380,8 +383,6 @@ begin
         -- ------------------------------------------------------------
           if (ipb.free = "11") then -- wait for free IPB space
             fetch_engine.state <= IF_PENDING;
-          elsif (execute_engine.state = SLEEP) then -- halt request (sleep)?
-            fetch_engine.state <= IF_PARKED;
           end if;
 
         when IF_PENDING => -- wait for bus response and write instruction data to prefetch buffer
@@ -394,12 +395,6 @@ begin
             else -- request next linear instruction word
               fetch_engine.state <= IF_REQUEST;
             end if;
-          end if;
-
-        when IF_PARKED => -- park position: instruction fetch is halted for sleep mode
-        -- ------------------------------------------------------------
-          if (execute_engine.state /= SLEEP) then
-            fetch_engine.state <= IF_REQUEST;
           end if;
 
         when others => -- IF_RESTART: set new start address
@@ -1053,9 +1048,9 @@ begin
           execute_engine.state_nxt <= DISPATCH;
         end if;
 
-      when SLEEP => -- sleep mode; no sleep during debugging; wakeup on pending IRQ
+      when SLEEP => -- sleep mode
       -- ------------------------------------------------------------
-        if (debug_ctrl.running = '1') or (csr.dcsr_step = '1') or (trap_ctrl.wakeup = '1') then
+        if (trap_ctrl.wakeup = '1') then
           execute_engine.state_nxt <= DISPATCH;
         end if;
 
@@ -1082,6 +1077,24 @@ begin
 
     end case;
   end process execute_engine_fsm_comb;
+
+
+  -- CPU Sleep Mode Control -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  sleep_control: process(rstn_i, clk_aux_i) -- always-on clock domain
+  begin
+    if (rstn_i = '0') then
+      sleep_mode <= '0';
+    elsif rising_edge(clk_aux_i) then
+      if (execute_engine.state = SLEEP) and -- instruction execution has halted
+         (ipb.free /= "11") and -- instruction fetch has halted
+         (trap_ctrl.wakeup = '0') then -- no wake-up request
+        sleep_mode <= '1';
+      else
+        sleep_mode <= '0';
+      end if;
+    end if;
+  end process sleep_control;
 
 
   -- CPU Control Bus Output -----------------------------------------------------------------
@@ -1121,7 +1134,7 @@ begin
 
   -- cpu status --
   ctrl_o.cpu_priv     <= csr.privilege_eff;
-  ctrl_o.cpu_sleep    <= '1' when (execute_engine.state = SLEEP) and (fetch_engine.state = IF_PARKED) else '0'; -- set only if fully halted
+  ctrl_o.cpu_sleep    <= '0';-- sleep_mode;
   ctrl_o.cpu_trap     <= trap_ctrl.env_enter;
   ctrl_o.cpu_debug    <= debug_ctrl.running;
 
@@ -1383,14 +1396,12 @@ begin
 -- Trap Controller
 -- ****************************************************************************************************************************
 
-  -- Trap Buffer ----------------------------------------------------------------------------
+  -- Exception Buffer -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trap_buffer: process(rstn_i, clk_i)
+  exception_buffer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       trap_ctrl.exc_buf <= (others => '0');
-      trap_ctrl.irq_pnd <= (others => '0');
-      trap_ctrl.irq_buf <= (others => '0');
     elsif rising_edge(clk_i) then
 
       -- Exception Buffer -----------------------------------------------------
@@ -1432,6 +1443,18 @@ begin
         trap_ctrl.exc_buf(exc_db_break_c) <= '0';
         trap_ctrl.exc_buf(exc_db_hw_c)    <= '0';
       end if;
+    end if;
+  end process exception_buffer;
+
+
+  -- Interrupt Buffer -----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  interrupt_buffer: process(rstn_i, clk_aux_i) -- always-on clock domain
+  begin
+    if (rstn_i = '0') then
+      trap_ctrl.irq_pnd <= (others => '0');
+      trap_ctrl.irq_buf <= (others => '0');
+    elsif rising_edge(clk_aux_i) then
 
       -- Interrupt-Pending Buffer ---------------------------------------------
       -- Once triggered the fast interrupt requests stay active until
@@ -1477,9 +1500,8 @@ begin
         trap_ctrl.irq_buf(irq_db_halt_c) <= '0';
         trap_ctrl.irq_buf(irq_db_step_c) <= '0';
       end if;
-
     end if;
-  end process trap_buffer;
+  end process interrupt_buffer;
 
 
   -- Trap Priority Logic --------------------------------------------------------------------
@@ -1535,10 +1557,8 @@ begin
   trap_controller: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      trap_ctrl.wakeup      <= '0';
       trap_ctrl.env_pending <= '0';
     elsif rising_edge(clk_i) then
-      trap_ctrl.wakeup <= or_reduce_f(trap_ctrl.irq_buf); -- wakeup from sleep on any (enabled! #583) pending IRQ (including debug IRQs)
       if (trap_ctrl.env_pending = '0') then -- no pending trap environment yet
         -- trigger IRQ only in EXECUTE states to *continue execution* even if there are permanent interrupt requests
         if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and (execute_engine.state = EXECUTE)) then
@@ -1549,6 +1569,9 @@ begin
       end if;
     end if;
   end process trap_controller;
+
+  -- wake-up from / do not enter sleep mode: during debugging or on pending IRQ --
+  trap_ctrl.wakeup <= or_reduce_f(trap_ctrl.irq_buf) or debug_ctrl.running or csr.dcsr_step;
 
   -- any exception? --
   trap_ctrl.exc_fire <= '1' when (or_reduce_f(trap_ctrl.exc_buf) = '1') else '0'; -- sync. exceptions CANNOT be masked
@@ -2366,10 +2389,8 @@ begin
     debug_control: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        debug_ctrl.ext_halt_req <= '0';
-        debug_ctrl.running      <= '0';
+        debug_ctrl.running <= '0';
       elsif rising_edge(clk_i) then
-        debug_ctrl.ext_halt_req <= db_halt_req_i; -- external halt request (from Debug Module)
         if (debug_ctrl.running = '0') then -- debug mode OFFLINE
           if (trap_ctrl.env_enter = '1') and (trap_ctrl.cause(5) = '1') then -- waiting for entry event
             debug_ctrl.running <= '1';
@@ -2387,7 +2408,7 @@ begin
     debug_ctrl.trig_break <= trap_ctrl.ebreak and (debug_ctrl.running or   -- re-enter debug mode
                              ((    csr.privilege) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
                              ((not csr.privilege) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
-    debug_ctrl.trig_halt  <= debug_ctrl.ext_halt_req and (not debug_ctrl.running); -- external halt request (if not halted already)
+    debug_ctrl.trig_halt  <= db_halt_req_i and (not debug_ctrl.running); -- external halt request (if not halted already)
     debug_ctrl.trig_step  <= csr.dcsr_step and (not debug_ctrl.running); -- single-step mode (trigger when NOT CURRENTLY in debug mode)
 
   end generate;
@@ -2395,12 +2416,11 @@ begin
   -- Sdext ISA extension not enabled --
   debug_mode_disable:
   if not CPU_EXTENSION_RISCV_Sdext generate
-    debug_ctrl.ext_halt_req <= '0';
-    debug_ctrl.running      <= '0';
-    debug_ctrl.trig_hw      <= '0';
-    debug_ctrl.trig_break   <= '0';
-    debug_ctrl.trig_halt    <= '0';
-    debug_ctrl.trig_step    <= '0';
+    debug_ctrl.running    <= '0';
+    debug_ctrl.trig_hw    <= '0';
+    debug_ctrl.trig_break <= '0';
+    debug_ctrl.trig_halt  <= '0';
+    debug_ctrl.trig_step  <= '0';
   end generate;
 
 
