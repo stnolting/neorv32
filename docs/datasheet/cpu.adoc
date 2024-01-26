@@ -221,6 +221,12 @@ Optionally, the sleep mode can also be used to shut down the CPU's main clock to
 by halting the core's clock tree. This clock gating mode is enabled by the `CLOCK_GATING_EN` generic
 (<<_processor_top_entity_generics>>).
 
+.Clock Switch Hardware
+[NOTE]
+By default, a generic clock gate is used (`rtl/core/neorv32_clockgate.vhd`) to shut down the CPU clock.
+Especially for FPGA setups it is highly recommended to replace this default version by a technology-specific primitive
+or macro wrapper to improve efficiency (clock skew, global clock tree usage, etc.).
+
 
 ==== Full Virtualization
 
