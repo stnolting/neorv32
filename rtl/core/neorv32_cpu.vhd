@@ -164,7 +164,7 @@ begin
   assert false report "[NEORV32] CPU tuning options: " &
     cond_sel_string_f(FAST_MUL_EN,    "fast_mul ",   "") &
     cond_sel_string_f(FAST_SHIFT_EN,  "fast_shift ", "") &
-    cond_sel_string_f(REGFILE_HW_RST, "rf_hw_rst ",  "") 
+    cond_sel_string_f(REGFILE_HW_RST, "rf_hw_rst ",  "")
     severity note;
 
   -- simulation notifier --

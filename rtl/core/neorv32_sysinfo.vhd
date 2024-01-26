@@ -113,7 +113,7 @@ begin
 
   -- Construct Info ROM ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- SYSINFO(0): Processor Clock Frequency --
+  -- SYSINFO(0): Processor Clock Frequency in Hz --
   sysinfo(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
 
   -- SYSINFO(1): Internal Memory Configuration (sizes)
@@ -123,7 +123,6 @@ begin
   sysinfo(1)(31 downto 24) <= std_ulogic_vector(to_unsigned(index_size_f(AMO_RVS_GRANULARITY), 8)); -- log2(reservation set granularity)
 
   -- SYSINFO(2): SoC Configuration --
-  -- System --
   sysinfo(2)(00) <= '1' when INT_BOOTLOADER_EN   else '0'; -- processor-internal bootloader implemented?
   sysinfo(2)(01) <= '1' when MEM_EXT_EN          else '0'; -- external memory bus interface implemented?
   sysinfo(2)(02) <= '1' when int_imem_en_c       else '0'; -- processor-internal instruction memory implemented?
@@ -132,12 +131,10 @@ begin
   sysinfo(2)(05) <= '1' when ICACHE_EN           else '0'; -- processor-internal instruction cache implemented?
   sysinfo(2)(06) <= '1' when DCACHE_EN           else '0'; -- processor-internal data cache implemented?
   sysinfo(2)(07) <= '1' when CLOCK_GATING_EN     else '0'; -- enable clock gating when in sleep mode
-  -- reserved --
-  sysinfo(2)(08) <= '0';
-  sysinfo(2)(09) <= '0';
-  sysinfo(2)(10) <= '0';
-  sysinfo(2)(11) <= '0';
-  -- Peripherals/IO --
+  sysinfo(2)(08) <= '0'; -- reserved
+  sysinfo(2)(09) <= '0'; -- reserved
+  sysinfo(2)(10) <= '0'; -- reserved
+  sysinfo(2)(11) <= '0'; -- reserved
   sysinfo(2)(12) <= '1' when IO_CRC_EN           else '0'; -- cyclic redundancy check unit (CRC) implemented?
   sysinfo(2)(13) <= '1' when IO_SLINK_EN         else '0'; -- stream link interface (SLINK) implemented?
   sysinfo(2)(14) <= '1' when IO_DMA_EN           else '0'; -- direct memory access controller (DMA) implemented?
