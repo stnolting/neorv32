@@ -1134,7 +1134,7 @@ begin
 
   -- cpu status --
   ctrl_o.cpu_priv     <= csr.privilege_eff;
-  ctrl_o.cpu_sleep    <= '0';-- sleep_mode;
+  ctrl_o.cpu_sleep    <= sleep_mode;
   ctrl_o.cpu_trap     <= trap_ctrl.env_enter;
   ctrl_o.cpu_debug    <= debug_ctrl.running;
 
