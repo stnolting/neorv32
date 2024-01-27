@@ -19,7 +19,7 @@ which provides **SoC setups** for various FPGAs, boards and toolchains.
 * <<_application_program_compilation, compile>> an application and <<_uploading_and_starting_of_a_binary_executable_image_via_uart, upload>> it or making it
 <<_installing_an_executable_directly_into_memory, persistent>> in internal memory
 * setup a new <<_setup_of_a_new_application_program_project, application project>>
-* configure <<_enabling_risc_v_cpu_extensions, RISC-V ISA extensions>> and <<_application_specific_processor_configuration, optimizing>> the core for your application
+* <<_application_specific_processor_configuration, optimizing>> the core for your application
 * add <<_adding_custom_hardware_modules, custom hardware extensions>> and <<_customizing_the_internal_bootloader, customizing the bootloader>>
 * <<_programming_an_external_spi_flash_via_the_bootloader, program>> an external SPI flash for persistent application storage
 * generate a Xilinx Vivado <<_packaging_the_processor_as_ip_block_for_xilinx_vivado_block_designer, IP block>>
@@ -43,8 +43,6 @@ include::executable_upload.adoc[]
 include::installing_an_executable.adoc[]
 
 include::new_application_project.adoc[]
-
-include::enabling_riscv_extensions.adoc[]
 
 include::application_specific_configuration.adoc[]
 
