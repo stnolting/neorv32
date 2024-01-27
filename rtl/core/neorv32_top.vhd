@@ -48,6 +48,7 @@ entity neorv32_top is
   generic (
     -- General --
     CLOCK_FREQUENCY            : natural;                                       -- clock frequency of clk_i in Hz
+    CLOCK_GATING_EN            : boolean := false;                              -- enable clock gating when in sleep mode
     HART_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
     VENDOR_ID                  : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
     INT_BOOTLOADER_EN          : boolean := false;                              -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
@@ -282,6 +283,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal rst_cause                    : std_ulogic_vector(1 downto 0);
 
   -- clock generator --
+  signal clk_cpu                   : std_ulogic; -- CPU core clock, can be switched off
   signal clk_div, clk_div_ff       : std_ulogic_vector(11 downto 0);
   signal clk_gen                   : std_ulogic_vector(07 downto 0);
   signal clk_gen_en, clk_gen_en_ff : std_ulogic;
@@ -352,11 +354,11 @@ begin
 
     -- say hello --
     assert false report
-      "The NEORV32 RISC-V Processor by Stephan Nolting, " &
+      "The NEORV32 RISC-V Processor, " &
       "version 0x" & to_hstring32_f(hw_version_c) & ", " &
       "github.com/stnolting/neorv32" severity note;
 
-    -- show module configuration --
+    -- show main SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: " &
       cond_sel_string_f(MEM_INT_IMEM_EN,     "IMEM ",     "") &
@@ -479,6 +481,25 @@ begin
     clk_gen_en <= cg_en.wdt or cg_en.uart0  or cg_en.uart1 or cg_en.spi or cg_en.twi or cg_en.pwm or
                   cg_en.cfs or cg_en.neoled or cg_en.gptmr or cg_en.xip or cg_en.onewire;
 
+
+    -- Clock Gating ---------------------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_clockgate_inst_true:
+    if (CLOCK_GATING_EN = true) generate
+      neorv32_clockgate_inst: entity neorv32.neorv32_clockgate
+      port map (
+        clk_i  => clk_i,
+        rstn_i => rstn_sys,
+        halt_i => cpu_sleep,
+        clk_o  => clk_cpu
+      );
+    end generate;
+
+    neorv32_clockgate_inst_false:
+    if (CLOCK_GATING_EN = false) generate
+      clk_cpu <= clk_i;
+    end generate;
+
   end generate; -- /generators
 
 
@@ -526,7 +547,8 @@ begin
     )
     port map (
       -- global control --
-      clk_i      => clk_i,
+      clk_i      => clk_cpu,
+      clk_aux_i  => clk_i,
       rstn_i     => rstn_sys,
       sleep_o    => cpu_sleep,
       debug_o    => cpu_debug,
@@ -1502,8 +1524,9 @@ begin
     generic map (
       -- General --
       CLOCK_FREQUENCY      => CLOCK_FREQUENCY,
+      CLOCK_GATING_EN      => CLOCK_GATING_EN,
       INT_BOOTLOADER_EN    => INT_BOOTLOADER_EN,
-      -- internal Instruction memory --
+      -- Internal Instruction memory --
       MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,
       MEM_INT_IMEM_SIZE    => imem_size_c,
       -- Internal Data memory --

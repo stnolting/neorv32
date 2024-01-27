@@ -196,19 +196,31 @@ includes the <<_control_and_status_registers_csrs>> as well as the trap controll
 
 ==== Sleep Mode
 
-The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing dynamic
-power consumption. Sleep mode is entered by executing the `wfi` ("wait for interrupt") instruction.
+The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing
+dynamic power consumption. Sleep mode is entered by executing the `wfi` ("wait for interrupt") instruction.
 
 [NOTE]
 The `wfi` instruction will raise an illegal instruction exception when executed in user-mode
-and `TW` in <<_mstatus>> is set. When executed in debug-mode or during single-stepping `wfi` will behave as
-simple `nop`.
+if `TW` in <<_mstatus>> is set. When executed in debug-mode or during single-stepping `wfi` will behave as
+simple `nop` without entering sleep mode.
 
-In sleep mode all CPU-internal operations are stopped (execution, instruction fetch, counter increments, etc.).
+After executing the `wfi` instruction the CPU's `sleep_o` signal (<<_cpu_top_entity_signals>>) will become set
+as soon as the CPU has fully halted ("CPU is sleeping"):
+
+[start=1]
+.The front-end (instruction fetch) is stopped. There is no pending instruction fetch bus access.
+.The back-end (instruction execution) is stopped. There is no pending data bus access.
+.There is not enabled interrupt pending.
+
 CPU-external modules like memories, timers and peripheral interfaces are not affected by this. Furthermore, the CPU will
-continue to buffer/enqueue incoming interrupt requests. The CPU will leave sleep mode as soon as any _enabled (via <<_mie>>)
-interrupt source becomes _pending_ or if a debug session is started. As soon as the CPU has "parked" in a safe/resumable
-state the `sleep_o` signal becomes high (see <<_cpu_top_entity_signals>>).
+continue to buffer/enqueue incoming interrupt. The CPU will leave sleep mode as soon as any _enabled (via <<_mie>>)
+interrupt source becomes _pending_ or if a debug session is started.
+
+===== Power-Down Mode
+
+Optionally, the sleep mode can also be used to shut down the CPU's main clock to further reduce power consumption
+by halting the core's clock tree. This clock gating mode is enabled by the `CLOCK_GATING_EN` generic
+(<<_processor_top_entity_generics>>).  See section <<_processor_clocking>> for more information.
 
 
 ==== Full Virtualization
@@ -339,7 +351,8 @@ direction as seen from the CPU.
 |=======================
 | Signal | Width/Type | Dir | Description
 4+^| **Global Signals**
-| `clk_i`      |           1 | in  | Global clock line, all registers triggering on rising edge
+| `clk_i`      |           1 | in  | Global clock line, all registers triggering on rising edge, this clock can be switched off during <<_sleep_mode>>
+| `clk_aux_i`  |           1 | in  | Always-on clock, used to keep the the sleep control active when `clk_i` is switched off
 | `rstn_i`     |           1 | in  | Global reset, low-active
 | `sleep_o`    |           1 | out | CPU is in <<_sleep_mode>> when set
 | `debug_o`    |           1 | out | CPU is in <<_cpu_debug_mode,debug mode>> when set
