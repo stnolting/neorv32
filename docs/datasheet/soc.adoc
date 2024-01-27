@@ -199,7 +199,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | Name | Type | Default | Description
 4+^| **General**
 | `CLOCK_FREQUENCY`   | natural   | -          | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
-| `CLOCK_GATING_EN`   | boolean   | false      | Enable clock gating when CPU is in sleep mode (see section <<_sleep_mode>>).
+| `CLOCK_GATING_EN`   | boolean   | false      | Enable clock gating when CPU is in sleep mode (see sections <<_sleep_mode>> and <<_processor_clocking>>).
 | `INT_BOOTLOADER_EN` | boolean   | false      | Implement the processor-internal <<_bootloader_rom_bootrom>>, pre-initialized with the default <<_bootloader>> image.
 | `HART_ID`           | suv(31:0) | 0x00000000 | The hart thread ID of the CPU (passed to <<_mhartid>> CSR).
 | `VENDOR_ID`         | suv(31:0) | 0x00000000 | JEDEC ID (passed to <<_mvendorid>> CSR).
@@ -299,19 +299,39 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 
 The processor is implemented as fully-synchronous logic design using a single clock domain that is driven entirely by the
 top's `clk_i` signal. This clock signal is used by all internal registers and memories, which trigger on the rising edge of
-this clock signal. External "clocks" like the OCD's JTAG clock or the TWI's serial clock are synchronized into the
-processor's clock domain before being further processed.
+this clock signal - except for the <<_processor_reset>> and the clock switching gate that trigger on a falling edge.
+External "clocks" like the OCD's JTAG clock or the SDI's serial clock are synchronized into the processor's clock domain
+before being further processed.
 
+==== Clock Gating
+
+The single clock domain of the processor can be split into an always-on clock domain and a switchable clock domain.
+The switchable clock domain is used to clock the CPU core. This domain can be deactivated at runtime to reduce power
+consumption. The always-on clock domain is used to clock all other processor modules like peripherals, memories and IO
+devices. Hence, these modules can continue operation (e.g. a timer keeps running) even if the CPU is shut down.
+
+The splitting into two clock domain is enabled by the `CLOCK_GATING_EN` generic (<<_processor_top_entity_generics>>).
+When enabled, a generic clock switching gate is added to decouple the switchable clock from the always-on clock domain
+(VHDL file `neorv32_clockgate.vhd`). Whenever the CPU enters <<_sleep_mode>> the CPU clock domain ist shut down.
+
+.Clock Switch Hardware
 [NOTE]
-Only the registers of the <<_processor_reset>> system trigger on a _falling_ clock edge.
+By default, a generic clock gate is used (`rtl/core/neorv32_clockgate.vhd`) to shut down the CPU clock.
+Especially for FPGA setups it is highly recommended to replace this default version by a technology-specific primitive
+or macro wrapper to improve efficiency (clock skew, global clock tree usage, etc.).
 
-Many processor modules like the UARTs or the timers require a programmable time base for operations. In order to simplify
-the hardware, the processor implements a global "clock generator" that provides _clock enables_ for certain frequencies.
-These clock enable signals are synchronous to the system's main clock and will be high for only a single cycle. Hence,
-processor modules can use these enables for sub-main-clock operations while still having a single clock domain only.
+
+
+==== Peripheral Clocks
+
+Many processor modules like the UARTs or the timers provide a programmable time base for operations. In order to simplify
+the hardware, the processor implements a global "clock generator" that provides _clock enables_ for certain frequencies that
+are derived from the man clock. Hence, these clock enable signals are synchronous to the system's main clock and will be high
+for only a single cycle. The processor modules can use these enables for sub-main-clock operations while still providing a single
+clock domain only.
 
 In total, 8 sub-main-clock signals are available. All processor modules, which feature a time-based configuration, provide a
-programmable three-bit prescaler select in their according control register to select one of the 8 available clocks. The
+programmable three-bit prescaler select in their control register to select one of the 8 available clocks. The
 mapping of the prescaler select bits to the according clock source is shown in the table below. Here, _f_ represents the
 processor main clock from the top entity's `clk_i` signal.
 
@@ -322,28 +342,11 @@ processor main clock from the top entity's `clk_i` signal.
 | Resulting clock: | _f/2_   | _f/4_   | _f/8_   | _f/64_  | _f/128_ | _f/1024_| _f/2048_| _f/4096_
 |=======================
 
-The software framework provides pre-defined aliases for the prescaler select bits:
-
-.Prescaler Aliases from `neorv32.h`
-[source,c]
---------------------------
-enum NEORV32_CLOCK_PRSC_enum {
-  CLK_PRSC_2    = 0, /**< CPU_CLK (from clk_i top signal) / 2 */
-  CLK_PRSC_4    = 1, /**< CPU_CLK (from clk_i top signal) / 4 */
-  CLK_PRSC_8    = 2, /**< CPU_CLK (from clk_i top signal) / 8 */
-  CLK_PRSC_64   = 3, /**< CPU_CLK (from clk_i top signal) / 64 */
-  CLK_PRSC_128  = 4, /**< CPU_CLK (from clk_i top signal) / 128 */
-  CLK_PRSC_1024 = 5, /**< CPU_CLK (from clk_i top signal) / 1024 */
-  CLK_PRSC_2048 = 6, /**< CPU_CLK (from clk_i top signal) / 2048 */
-  CLK_PRSC_4096 = 7  /**< CPU_CLK (from clk_i top signal) / 4096 */
-};
---------------------------
-
-.Power-Down Mode
+.Power Saving
 [TIP]
-If no peripheral modules requires a clock signal from the internal generator (all available modules disabled by clearing the
-enable bit in the according module's control register) the generator is automatically deactivated to reduce dynamic power consumption.
-
+If no peripheral modules requires a clock signal from the internal clock generator (all according modules are disabled by
+clearing the enable bit in the according module's control register) the generator is automatically deactivated to reduce
+dynamic power consumption.
 
 
 <<<

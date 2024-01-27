@@ -205,27 +205,22 @@ if `TW` in <<_mstatus>> is set. When executed in debug-mode or during single-ste
 simple `nop` without entering sleep mode.
 
 After executing the `wfi` instruction the CPU's `sleep_o` signal (<<_cpu_top_entity_signals>>) will become set
-as soon as the front-end (instruction fetch) and back-end (instruction execution) have halted. In this state there
-are no pending bus accesses so other bus controllers like the DMA have full access to the bus system.
+as soon as the CPU has fully halted ("CPU is sleeping"):
 
-In sleep mode all CPU-internal operations are stopped (execution, instruction fetch, counter increments, etc.).
+[start=1]
+.The front-end (instruction fetch) is stopped. There is no pending instruction fetch bus access.
+.The back-end (instruction execution) is stopped. There is no pending data bus access.
+.There is not enabled interrupt pending.
+
 CPU-external modules like memories, timers and peripheral interfaces are not affected by this. Furthermore, the CPU will
-continue to buffer/enqueue incoming interrupt.
-
-The CPU will leave sleep mode as soon as any _enabled (via <<_mie>>) interrupt source becomes _pending_ or if a debug
-session is started.
+continue to buffer/enqueue incoming interrupt. The CPU will leave sleep mode as soon as any _enabled (via <<_mie>>)
+interrupt source becomes _pending_ or if a debug session is started.
 
 ===== Power-Down Mode
 
 Optionally, the sleep mode can also be used to shut down the CPU's main clock to further reduce power consumption
 by halting the core's clock tree. This clock gating mode is enabled by the `CLOCK_GATING_EN` generic
-(<<_processor_top_entity_generics>>).
-
-.Clock Switch Hardware
-[NOTE]
-By default, a generic clock gate is used (`rtl/core/neorv32_clockgate.vhd`) to shut down the CPU clock.
-Especially for FPGA setups it is highly recommended to replace this default version by a technology-specific primitive
-or macro wrapper to improve efficiency (clock skew, global clock tree usage, etc.).
+(<<_processor_top_entity_generics>>).  See section <<_processor_clocking>> for more information.
 
 
 ==== Full Virtualization
