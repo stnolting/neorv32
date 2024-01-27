@@ -383,6 +383,8 @@ begin
         -- ------------------------------------------------------------
           if (ipb.free = "11") then -- wait for free IPB space
             fetch_engine.state <= IF_PENDING;
+          elsif (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request due to branch
+            fetch_engine.state <= IF_RESTART;
           end if;
 
         when IF_PENDING => -- wait for bus response and write instruction data to prefetch buffer
