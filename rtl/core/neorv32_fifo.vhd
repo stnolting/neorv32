@@ -145,9 +145,7 @@ begin
         fifo_mem <= (others => (others => '0')); -- full reset of memory cells
       elsif rising_edge(clk_i) then
         if (we = '1') then
-          -- Added fifo_depth check to the read out path to preven a NULL assertion for
-          -- fifo_depth_c of 1.
-          if (fifo_depth_c > 1) then 
+          if (fifo_depth_c > 1) then -- prevent a NULL assertion for fifo_depth_c of 1
             fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
           else
             fifo_mem(0) <= wdata_i;
@@ -163,7 +161,7 @@ begin
     begin
       if rising_edge(clk_i) then
         if (we = '1') then
-          if (fifo_depth_c > 1) then 
+          if (fifo_depth_c > 1) then-- prevent a NULL assertion for fifo_depth_c of 1
             fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
           else
             fifo_mem(0) <= wdata_i;
@@ -178,8 +176,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   fifo_read_async: -- asynchronous read
   if not FIFO_RSYNC generate
-    -- Added fifo_depth check to the read out path to preven a NULL assertion for
-    -- fifo_depth_c of 1.
+    -- prevent a NULL assertion for fifo_depth_c of 1 --
     rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0)))) when (fifo_depth_c > 1) else fifo_mem(0);
     -- status --
     free_o  <= free;
@@ -192,9 +189,7 @@ begin
     sync_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        -- Added fifo_depth check to the read out path to preven a NULL assertion for
-        -- fifo_depth_c of 1.
-        if (fifo_depth_c > 1) then 
+        if (fifo_depth_c > 1) then -- prevent a NULL assertion for fifo_depth_c of 1
           rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0))));
         else
           rdata_o <= fifo_mem(0);
