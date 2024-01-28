@@ -34,7 +34,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 27.01.2024 | 1.9.3.6 | improve CPU's front end (instruction fetch) increasing overall performance | [#777](https://github.com/stnolting/neorv32/pull/777) |
 | 27.01.2024 | 1.9.3.5 | :bug: fix typo that renders the clock gating (added in v1.9.3.4) useless: CPU sleep output stuck at zero | [#776](https://github.com/stnolting/neorv32/pull/776) |
 | 24.01.2024 | 1.9.3.4 | :sparkles: add optional CPU clock gating (via new generic `CLOCK_GATING_EN`): shut down the CPU clock during sleep mode; :warning: add new HDL design file for the clock gate (`neorv32_clockgate.vhd`) | [#775](https://github.com/stnolting/neorv32/pull/775) |
-| 23.01.2024 | 1.9.3.3 | :bug: remove compressed floating point load/store operations as they are **not** supported by `Zfinx` | [#](https://github.com/stnolting/neorv32/pull/771) |
+| 23.01.2024 | 1.9.3.3 | :bug: remove compressed floating point load/store operations as they are **not** supported by `Zfinx` | [#771](https://github.com/stnolting/neorv32/pull/771) |
 | 20.01.2024 | 1.9.3.2 | optimize bus switch; minor RTL and comment edits | [#769](https://github.com/stnolting/neorv32/pull/769) |
 | 14.01.2024 | 1.9.3.1 | minor rtl cleanups and optimizations | [#764](https://github.com/stnolting/neorv32/pull/764) |
 | 11.01.2024 | [**:rocket:1.9.3**](https://github.com/stnolting/neorv32/releases/tag/v1.9.3) | **New release** | |
