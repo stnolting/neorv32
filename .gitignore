@@ -4,7 +4,7 @@
 # python
 __pycache__
 
-# generated application files
+# generated app files
 *.bin
 *.o
 *.elf
@@ -13,18 +13,19 @@ __pycache__
 *.hex
 *_image.vhd
 
-# GDB logs
-*.gdb_history
-
 # keep default VHDL memory images
 !rtl/core/*_image.vhd
+
+# GDB logs
+*.gdb_history
 
 # host executables
 sw/image_gen/image_gen
 sw/image_gen/image_gen.exe
 
-# temporary/legacy files/folders
+# temporary/legacy files and folders
 *.tmp
+*.temp
 ~*
 
 # generated documentation stuff
@@ -35,4 +36,3 @@ sw/image_gen/image_gen.exe
 
 # compiled ghdl stuff
 *.cf
-*.o
