@@ -145,7 +145,11 @@ begin
         fifo_mem <= (others => (others => '0')); -- full reset of memory cells
       elsif rising_edge(clk_i) then
         if (we = '1') then
-          fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
+          if (fifo_depth_c > 1) then -- prevent a NULL assertion for fifo_depth_c of 1
+            fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
+          else
+            fifo_mem(0) <= wdata_i;
+          end if;
         end if;
       end if;
     end process fifo_write;
@@ -157,7 +161,11 @@ begin
     begin
       if rising_edge(clk_i) then
         if (we = '1') then
-          fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
+          if (fifo_depth_c > 1) then-- prevent a NULL assertion for fifo_depth_c of 1
+            fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
+          else
+            fifo_mem(0) <= wdata_i;
+          end if;
         end if;
       end if;
     end process fifo_write;
@@ -168,7 +176,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   fifo_read_async: -- asynchronous read
   if not FIFO_RSYNC generate
-    rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0))));
+    -- prevent a NULL assertion for fifo_depth_c of 1 --
+    rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0)))) when (fifo_depth_c > 1) else fifo_mem(0);
     -- status --
     free_o  <= free;
     avail_o <= avail;
@@ -180,7 +189,11 @@ begin
     sync_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0))));
+        if (fifo_depth_c > 1) then -- prevent a NULL assertion for fifo_depth_c of 1
+          rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0))));
+        else
+          rdata_o <= fifo_mem(0);
+        end if;
       end if;
     end process sync_read;
     -- status --
