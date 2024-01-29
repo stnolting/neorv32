@@ -8,6 +8,7 @@
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
+-- # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
 -- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
@@ -33,8 +34,6 @@
 -- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
 -- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 -- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
--- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
 -- #################################################################################################
 
 library ieee;
@@ -158,16 +157,16 @@ entity neorv32_top is
     rstn_i         : in  std_ulogic; -- global reset, low-active, async
 
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_trst_i    : in  std_ulogic := 'U'; -- low-active TAP reset (optional)
-    jtag_tck_i     : in  std_ulogic := 'U'; -- serial clock
-    jtag_tdi_i     : in  std_ulogic := 'U'; -- serial data input
+    jtag_trst_i    : in  std_ulogic := 'L'; -- low-active TAP reset (optional)
+    jtag_tck_i     : in  std_ulogic := 'L'; -- serial clock
+    jtag_tdi_i     : in  std_ulogic := 'L'; -- serial data input
     jtag_tdo_o     : out std_ulogic;        -- serial data output
-    jtag_tms_i     : in  std_ulogic := 'U'; -- mode select
+    jtag_tms_i     : in  std_ulogic := 'L'; -- mode select
 
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
     wb_tag_o       : out std_ulogic_vector(02 downto 0); -- request tag
     wb_adr_o       : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => 'U'); -- read data
+    wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- read data
     wb_dat_o       : out std_ulogic_vector(31 downto 0); -- write data
     wb_we_o        : out std_ulogic; -- read/write
     wb_sel_o       : out std_ulogic_vector(03 downto 0); -- byte enable
@@ -177,7 +176,7 @@ entity neorv32_top is
     wb_err_i       : in  std_ulogic := 'L'; -- transfer error
 
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
-    slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'U'); -- RX input data
+    slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- RX input data
     slink_rx_val_i : in  std_ulogic := 'L'; -- RX valid input
     slink_rx_rdy_o : out std_ulogic; -- RX ready to receive
     slink_tx_dat_o : out std_ulogic_vector(31 downto 0); -- TX output data
@@ -196,30 +195,30 @@ entity neorv32_top is
 
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
-    gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'U'); -- parallel input
+    gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'L'); -- parallel input
 
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic; -- UART0 send data
-    uart0_rxd_i    : in  std_ulogic := 'U'; -- UART0 receive data
+    uart0_rxd_i    : in  std_ulogic := 'L'; -- UART0 receive data
     uart0_rts_o    : out std_ulogic; -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
     uart0_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic; -- UART1 send data
-    uart1_rxd_i    : in  std_ulogic := 'U'; -- UART1 receive data
+    uart1_rxd_i    : in  std_ulogic := 'L'; -- UART1 receive data
     uart1_rts_o    : out std_ulogic; -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
     uart1_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      : out std_ulogic; -- SPI serial clock
     spi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
-    spi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
+    spi_dat_i      : in  std_ulogic := 'L'; -- controller data in, peripheral data out
     spi_csn_o      : out std_ulogic_vector(07 downto 0); -- chip-select
 
     -- SDI (available if IO_SDI_EN = true) --
-    sdi_clk_i      : in  std_ulogic := 'U'; -- SDI serial clock
+    sdi_clk_i      : in  std_ulogic := 'L'; -- SDI serial clock
     sdi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
-    sdi_dat_i      : in  std_ulogic := 'U'; -- controller data in, peripheral data out
+    sdi_dat_i      : in  std_ulogic := 'L'; -- controller data in, peripheral data out
     sdi_csn_i      : in  std_ulogic := 'H'; -- chip-select
 
     -- TWI (available if IO_TWI_EN = true) --
@@ -236,7 +235,7 @@ entity neorv32_top is
     pwm_o          : out std_ulogic_vector(11 downto 0); -- pwm channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => 'U'); -- custom CFS inputs conduit
+    cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => 'L'); -- custom CFS inputs conduit
     cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
 
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --

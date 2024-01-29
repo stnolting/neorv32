@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 29.01.2024 | 1.9.3.8 | top entity input ports now have default values `'L'` or `'h'` modeling a pull-down or pull-resistor in case they are not explicitly assigned during instantiation | [#779](https://github.com/stnolting/neorv32/pull/779) |
 | 28.01.2024 | 1.9.3.7 | FIFO module _NULL assertion_ fix | [#778](https://github.com/stnolting/neorv32/pull/778) |
 | 27.01.2024 | 1.9.3.6 | improve CPU's front end (instruction fetch) increasing overall performance | [#777](https://github.com/stnolting/neorv32/pull/777) |
 | 27.01.2024 | 1.9.3.5 | :bug: fix typo that renders the clock gating (added in v1.9.3.4) useless: CPU sleep output stuck at zero | [#776](https://github.com/stnolting/neorv32/pull/776) |
