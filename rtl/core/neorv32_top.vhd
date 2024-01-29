@@ -602,7 +602,7 @@ begin
         ICACHE_UC_PBEGIN  => uncached_begin_c(31 downto 28)
       )
       port map (
-        clk_i     => clk_i,
+        clk_i     => clk_cpu,
         rstn_i    => rstn_sys,
         clear_i   => i_fence,
         cpu_req_i => cpu_i_req,
@@ -630,7 +630,7 @@ begin
         DCACHE_UC_PBEGIN  => uncached_begin_c(31 downto 28)
       )
       port map (
-        clk_i     => clk_i,
+        clk_i     => clk_cpu,
         rstn_i    => rstn_sys,
         clear_i   => d_fence,
         cpu_req_i => cpu_d_req,
@@ -655,7 +655,7 @@ begin
       PORT_B_READ_ONLY => true -- i-fetch is read-only
     )
     port map (
-      clk_i   => clk_i,
+      clk_i   => clk_cpu,
       rstn_i  => rstn_sys,
       a_req_i => dcache_req, -- prioritized
       a_rsp_o => dcache_rsp,

@@ -311,9 +311,10 @@ before being further processed.
 ==== Clock Gating
 
 The single clock domain of the processor can be split into an always-on clock domain and a switchable clock domain.
-The switchable clock domain is used to clock the CPU core. This domain can be deactivated at runtime to reduce power
-consumption. The always-on clock domain is used to clock all other processor modules like peripherals, memories and IO
-devices. Hence, these modules can continue operation (e.g. a timer keeps running) even if the CPU is shut down.
+The switchable clock domain is used to clock the CPU core, the CPU's bus switch and - if implemented - the caches.
+This domain can be deactivated to reduce power consumption. The always-on clock domain is used to clock all other
+processor modules like peripherals, memories and IO devices. Hence, these modules can continue operation (e.g. a
+timer keeps running) even if the CPU is shut down.
 
 The splitting into two clock domain is enabled by the `CLOCK_GATING_EN` generic (<<_processor_top_entity_generics>>).
 When enabled, a generic clock switching gate is added to decouple the switchable clock from the always-on clock domain
