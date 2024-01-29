@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090307"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090308"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -840,15 +840,15 @@ package neorv32_package is
       clk_i          : in  std_ulogic;
       rstn_i         : in  std_ulogic;
       -- JTAG on-chip debugger interface --
-      jtag_trst_i    : in  std_ulogic := 'U';
-      jtag_tck_i     : in  std_ulogic := 'U';
-      jtag_tdi_i     : in  std_ulogic := 'U';
+      jtag_trst_i    : in  std_ulogic := 'L';
+      jtag_tck_i     : in  std_ulogic := 'L';
+      jtag_tdi_i     : in  std_ulogic := 'L';
       jtag_tdo_o     : out std_ulogic;
-      jtag_tms_i     : in  std_ulogic := 'U';
+      jtag_tms_i     : in  std_ulogic := 'L';
       -- Wishbone bus interface (available if MEM_EXT_EN = true) --
       wb_tag_o       : out std_ulogic_vector(02 downto 0);
       wb_adr_o       : out std_ulogic_vector(31 downto 0);
-      wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => 'U');
+      wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => 'L');
       wb_dat_o       : out std_ulogic_vector(31 downto 0);
       wb_we_o        : out std_ulogic;
       wb_sel_o       : out std_ulogic_vector(03 downto 0);
@@ -857,7 +857,7 @@ package neorv32_package is
       wb_ack_i       : in  std_ulogic := 'L';
       wb_err_i       : in  std_ulogic := 'L';
       -- Stream Link Interface (available if IO_SLINK_EN = true) --
-      slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'U');
+      slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');
       slink_rx_val_i : in  std_ulogic := 'L';
       slink_rx_rdy_o : out std_ulogic;
       slink_tx_dat_o : out std_ulogic_vector(31 downto 0);
@@ -873,26 +873,26 @@ package neorv32_package is
       xip_dat_o      : out std_ulogic;
       -- GPIO (available if IO_GPIO_NUM > 0) --
       gpio_o         : out std_ulogic_vector(63 downto 0);
-      gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'U');
+      gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'L');
       -- primary UART0 (available if IO_UART0_EN = true) --
       uart0_txd_o    : out std_ulogic;
-      uart0_rxd_i    : in  std_ulogic := 'U';
+      uart0_rxd_i    : in  std_ulogic := 'L';
       uart0_rts_o    : out std_ulogic;
       uart0_cts_i    : in  std_ulogic := 'L';
       -- secondary UART1 (available if IO_UART1_EN = true) --
       uart1_txd_o    : out std_ulogic;
-      uart1_rxd_i    : in  std_ulogic := 'U'; -- UART1 receive data
+      uart1_rxd_i    : in  std_ulogic := 'L'; -- UART1 receive data
       uart1_rts_o    : out std_ulogic;
       uart1_cts_i    : in  std_ulogic := 'L';
       -- SPI (available if IO_SPI_EN = true) --
       spi_clk_o      : out std_ulogic;
       spi_dat_o      : out std_ulogic;
-      spi_dat_i      : in  std_ulogic := 'U';
+      spi_dat_i      : in  std_ulogic := 'L';
       spi_csn_o      : out std_ulogic_vector(07 downto 0); -- SPI CS
       -- SDI (available if IO_SDI_EN = true) --
-      sdi_clk_i      : in  std_ulogic := 'U';
+      sdi_clk_i      : in  std_ulogic := 'L';
       sdi_dat_o      : out std_ulogic;
-      sdi_dat_i      : in  std_ulogic := 'U';
+      sdi_dat_i      : in  std_ulogic := 'L';
       sdi_csn_i      : in  std_ulogic := 'H';
       -- TWI (available if IO_TWI_EN = true) --
       twi_sda_i      : in  std_ulogic := 'H';
@@ -905,7 +905,7 @@ package neorv32_package is
       -- PWM (available if IO_PWM_NUM_CH > 0) --
       pwm_o          : out std_ulogic_vector(11 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
-      cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => 'U');
+      cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => 'L');
       cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
       -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
       neoled_o       : out std_ulogic;
