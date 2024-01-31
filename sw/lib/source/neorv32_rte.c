@@ -66,8 +66,6 @@ static void __neorv32_rte_print_hex_word(uint32_t num);
  * @note This function installs a debug handler for ALL trap sources, which
  * gives detailed information about the trap. Actual handlers can be installed afterwards
  * via neorv32_rte_handler_install(uint8_t id, void (*handler)(void)).
- *
- * @warning This function can be called from machine-mode only.
  **************************************************************************/
 void neorv32_rte_setup(void) {
 
@@ -98,13 +96,8 @@ void neorv32_rte_setup(void) {
  * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
  * @param[in] handler The actual handler function for the specified trap (function MUST be of type "void function(void);").
  * @return 0 if success, -1 if error (invalid id or targeted trap not supported).
- *
- * @warning This function can be called from machine-mode only.
  **************************************************************************/
 int neorv32_rte_handler_install(int id, void (*handler)(void)) {
-
-  // raise an exception if we're not in machine-mode
-  asm volatile ("csrr x0, mhartid");
 
   // id valid?
   uint32_t index = (uint32_t)id;
@@ -123,13 +116,8 @@ int neorv32_rte_handler_install(int id, void (*handler)(void)) {
  *
  * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
  * @return 0 if success, -1 if error (invalid id or targeted trap not supported).
- *
- * @warning This function can be called from machine-mode only.
  **************************************************************************/
 int neorv32_rte_handler_uninstall(int id) {
-
-  // raise an exception if we're not in machine-mode
-  asm volatile ("csrr x0, mhartid");
 
   // id valid?
   uint32_t index = (uint32_t)id;
@@ -199,9 +187,9 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
   // find according trap handler base address
   uint32_t handler_base;
   switch (neorv32_cpu_csr_read(CSR_MCAUSE)) {
-    case TRAP_CODE_I_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_MISALIGNED]; break;
     case TRAP_CODE_I_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ACCESS];     break;
     case TRAP_CODE_I_ILLEGAL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ILLEGAL];    break;
+    case TRAP_CODE_I_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_MISALIGNED]; break;
     case TRAP_CODE_BREAKPOINT:   handler_base = __neorv32_rte_vector_lut[RTE_TRAP_BREAKPOINT];   break;
     case TRAP_CODE_L_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_L_MISALIGNED]; break;
     case TRAP_CODE_L_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_L_ACCESS];     break;
@@ -301,8 +289,6 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
  * NEORV32 runtime environment (RTE):
  * Read register from application context.
  *
- * @warning This function can be called from machine-mode only.
- *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
  * @return Content of register x.
  **************************************************************************/
@@ -321,8 +307,6 @@ uint32_t neorv32_rte_context_get(int x) {
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
  * Write register in application context.
- *
- * @warning This function can be called from machine-mode only.
  *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
  * @param[in] data Data to be written to register x.
@@ -363,9 +347,9 @@ static void __neorv32_rte_debug_handler(void) {
   // cause
   uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
   switch (trap_cause) {
-    case TRAP_CODE_I_MISALIGNED: neorv32_uart0_puts("Instruction address misaligned"); break;
     case TRAP_CODE_I_ACCESS:     neorv32_uart0_puts("Instruction access fault"); break;
     case TRAP_CODE_I_ILLEGAL:    neorv32_uart0_puts("Illegal instruction"); break;
+    case TRAP_CODE_I_MISALIGNED: neorv32_uart0_puts("Instruction address misaligned"); break;
     case TRAP_CODE_BREAKPOINT:   neorv32_uart0_puts("Breakpoint"); break;
     case TRAP_CODE_L_MISALIGNED: neorv32_uart0_puts("Load address misaligned"); break;
     case TRAP_CODE_L_ACCESS:     neorv32_uart0_puts("Load access fault"); break;
@@ -429,18 +413,13 @@ static void __neorv32_rte_debug_handler(void) {
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
  * Print current RTE configuration via UART0.
- *
- * @warning This function can be called from machine-mode only.
  **************************************************************************/
 void neorv32_rte_print_info(void) {
 
-  // raise an exception if we're not in machine-mode
-  asm volatile ("csrr x0, mhartid");
-
   const char trap_name[NEORV32_RTE_NUM_TRAPS][13] = {
-    "I_MISALIGNED",
     "I_ACCESS    ",
     "I_ILLEGAL   ",
+    "I_MISALIGNED",
     "BREAKPOINT  ",
     "L_MISALIGNED",
     "L_ACCESS    ",
@@ -469,7 +448,11 @@ void neorv32_rte_print_info(void) {
     "FIRQ_15     "
   };
 
-  neorv32_uart0_puts("\n\n<< NEORV32 Runtime Environment (RTE) Configuration >>\n\n");
+  if (neorv32_uart0_available() == 0) {
+    return; // cannot output anything if UART0 is not implemented
+  }
+
+  neorv32_uart0_puts("\n\n<< NEORV32 RTE Configuration >>\n\n");
 
   // header
   neorv32_uart0_puts("---------------------------------\n");
@@ -499,13 +482,8 @@ void neorv32_rte_print_info(void) {
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
  * Print hardware configuration information via UART0.
- *
- * @warning This function can be called from machine-mode only.
  **************************************************************************/
 void neorv32_rte_print_hw_config(void) {
-
-  // raise an exception if we're not in machine-mode
-  asm volatile ("csrr x0, mhartid");
 
   if (neorv32_uart0_available() == 0) {
     return; // cannot output anything if UART0 is not implemented
@@ -754,8 +732,6 @@ void __neorv32_rte_print_hex_word(uint32_t num) {
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
  * Print the processor version in human-readable format via UART0.
- *
- * @warning This function can be called from machine-mode only.
  **************************************************************************/
 void neorv32_rte_print_hw_version(void) {
 

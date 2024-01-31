@@ -935,16 +935,16 @@ written to the according CSRs when a trap is triggered:
 |=======================
 | Prio. | `mcause`     | RTE Trap ID              | Cause                                | `mepc` | `mtval` | `mtinst`
 7+^| **Exceptions** (_synchronous_ to instruction execution)                                                 
-| 1     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned       | PC     | 0       | INS
-| 2     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction bus access fault         | I-PC   | 0       | INS
-| 3     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                  | PC     | 0       | INS
+| 1     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction access fault             | I-PC   | 0       | INS
+| 2     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                  | PC     | 0       | INS
+| 3     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned       | PC     | 0       | INS
 | 4     | `0x0000000b` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode         | PC     | 0       | INS
 | 5     | `0x00000008` | `TRAP_CODE_UENV_CALL`    | environment call from U-mode         | PC     | 0       | INS
 | 6     | `0x00000003` | `TRAP_CODE_BREAKPOINT`   | software breakpoint / trigger firing | PC     | 0       | INS
 | 7     | `0x00000006` | `TRAP_CODE_S_MISALIGNED` | store address misaligned             | PC     | ADR     | INS
 | 8     | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned              | PC     | ADR     | INS
-| 9     | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store bus access fault               | PC     | ADR     | INS
-| 10    | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load bus access fault                | PC     | ADR     | INS
+| 9     | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store access fault                   | PC     | ADR     | INS
+| 10    | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load access fault                    | PC     | ADR     | INS
 7+^| **Interrupts** (_asynchronous_ to instruction execution)                                                
 | 11    | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0     | I-PC   | 0       | 0
 | 12    | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1     | I-PC   | 0       | 0
