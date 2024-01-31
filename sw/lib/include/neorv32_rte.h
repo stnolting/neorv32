@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -52,14 +52,14 @@
  * NEORV32 runtime environment trap IDs.
  **************************************************************************/
 enum NEORV32_RTE_TRAP_enum {
-  RTE_TRAP_I_MISALIGNED =  0, /**< Instruction address misaligned */
-  RTE_TRAP_I_ACCESS     =  1, /**< Instruction (bus) access fault */
-  RTE_TRAP_I_ILLEGAL    =  2, /**< Illegal instruction */
+  RTE_TRAP_I_ACCESS     =  0, /**< Instruction access fault */
+  RTE_TRAP_I_ILLEGAL    =  1, /**< Illegal instruction */
+  RTE_TRAP_I_MISALIGNED =  2, /**< Instruction address misaligned */
   RTE_TRAP_BREAKPOINT   =  3, /**< Breakpoint (EBREAK instruction) */
   RTE_TRAP_L_MISALIGNED =  4, /**< Load address misaligned */
-  RTE_TRAP_L_ACCESS     =  5, /**< Load (bus) access fault */
+  RTE_TRAP_L_ACCESS     =  5, /**< Load access fault */
   RTE_TRAP_S_MISALIGNED =  6, /**< Store address misaligned */
-  RTE_TRAP_S_ACCESS     =  7, /**< Store (bus) access fault */
+  RTE_TRAP_S_ACCESS     =  7, /**< Store access fault */
   RTE_TRAP_UENV_CALL    =  8, /**< Environment call from user mode (ECALL instruction) */
   RTE_TRAP_MENV_CALL    =  9, /**< Environment call from machine mode (ECALL instruction) */
   RTE_TRAP_MSI          = 10, /**< Machine software interrupt */
