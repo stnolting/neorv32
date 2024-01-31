@@ -448,6 +448,10 @@ void neorv32_rte_print_info(void) {
     "FIRQ_15     "
   };
 
+  if (neorv32_uart0_available() == 0) {
+    return; // cannot output anything if UART0 is not implemented
+  }
+
   neorv32_uart0_puts("\n\n<< NEORV32 RTE Configuration >>\n\n");
 
   // header
