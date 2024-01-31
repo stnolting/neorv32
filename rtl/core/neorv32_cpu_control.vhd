@@ -471,7 +471,7 @@ begin
   -- Compressed Instructions Decoder --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_decompressor_inst_true:
-  if (CPU_EXTENSION_RISCV_C = true) generate
+  if CPU_EXTENSION_RISCV_C generate
     neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
     port map (
       ci_instr16_i => issue_engine.ci_i16, -- compressed instruction
@@ -480,7 +480,7 @@ begin
   end generate;
 
   neorv32_cpu_decompressor_inst_false:
-  if (CPU_EXTENSION_RISCV_C = false) generate
+  if not CPU_EXTENSION_RISCV_C generate
     issue_engine.ci_i32 <= (others => '0');
   end generate;
 
@@ -491,7 +491,7 @@ begin
   -- Issue Engine FSM (required if C extension is enabled) ----------------------------------
   -- -------------------------------------------------------------------------------------------
   issue_engine_enabled:
-  if (CPU_EXTENSION_RISCV_C = true) generate
+  if CPU_EXTENSION_RISCV_C generate
 
     issue_engine_fsm_sync: process(rstn_i, clk_i)
     begin
@@ -538,7 +538,7 @@ begin
   end generate; -- /issue_engine_enabled
 
   issue_engine_disabled: -- use IPB(0) status flags only
-  if (CPU_EXTENSION_RISCV_C = false) generate
+  if not CPU_EXTENSION_RISCV_C generate
     issue_engine.valid <= (others => ipb.avail(0));
     issue_engine.data  <= '0' & ipb.rdata(0)(16) & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
   end generate; -- /issue_engine_disabled
@@ -974,12 +974,12 @@ begin
 
           -- FPU: floating-point operations --
           when opcode_fop_c =>
-            ctrl_nxt.alu_cp_trig(cp_sel_fpu_c) <= '1'; -- trigger FPU CP
+            ctrl_nxt.alu_cp_trig(cp_sel_fpu_c) <= '1'; -- trigger FPU co-processor
             execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if FPU not implemented
 
           -- CFU: custom RISC-V instructions --
           when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c =>
-            ctrl_nxt.alu_cp_trig(cp_sel_cfu_c) <= '1'; -- trigger CFU CP
+            ctrl_nxt.alu_cp_trig(cp_sel_cfu_c) <= '1'; -- trigger CFU co-processor
             execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if CFU not implemented
 
           -- environment/CSR operation or ILLEGAL opcode --
@@ -1211,7 +1211,7 @@ begin
            csr_mhpmcounter13h_c | csr_mhpmcounter14h_c | csr_mhpmcounter15h_c | -- machine counters HIGH
            csr_mhpmevent3_c     | csr_mhpmevent4_c     | csr_mhpmevent5_c     | csr_mhpmevent6_c     | csr_mhpmevent7_c     |
            csr_mhpmevent8_c     | csr_mhpmevent9_c     | csr_mhpmevent10_c    | csr_mhpmevent11_c    | csr_mhpmevent12_c    |
-           csr_mhpmevent13_c    | csr_mhpmevent14_c    | csr_mhpmevent15_c => -- event configuration
+           csr_mhpmevent13_c    | csr_mhpmevent14_c    | csr_mhpmevent15_c => -- machine event configuration
         csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm); -- available if Zihpm implemented
 
       -- counter and timer CSRs --
@@ -1360,7 +1360,7 @@ begin
               when funct12_mret_c                     => illegal_cmd <= (not csr.privilege) or debug_ctrl.running; -- mret allowed in M-mode only
               when funct12_dret_c                     => illegal_cmd <= not debug_ctrl.running; -- dret allowed in debug mode only
               when funct12_wfi_c                      => illegal_cmd <= (not csr.privilege) and csr.mstatus_tw; -- wfi allowed in M-mode or if TW is zero
-              when others => illegal_cmd <= '1';
+              when others                             => illegal_cmd <= '1';
             end case;
           else
             illegal_cmd <= '1';
@@ -1517,7 +1517,7 @@ begin
       elsif (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
       elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c; -- illegal instruction
       elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & csr.privilege & csr.privilege; -- environment call (U/M)
-      elsif (trap_ctrl.exc_buf(exc_ebreak_c)   = '1') then trap_ctrl.cause <= trap_brk_c; -- breakpoint
+      elsif (trap_ctrl.exc_buf(exc_ebreak_c)   = '1') then trap_ctrl.cause <= trap_brk_c; -- environment breakpoint
       elsif (trap_ctrl.exc_buf(exc_salign_c)   = '1') then trap_ctrl.cause <= trap_sma_c; -- store address misaligned
       elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c; -- load address misaligned
       elsif (trap_ctrl.exc_buf(exc_saccess_c)  = '1') then trap_ctrl.cause <= trap_saf_c; -- store access fault
@@ -1525,7 +1525,7 @@ begin
       -- standard RISC-V debug mode exceptions and interrupts --
       elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request (async)
       elsif (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') then trap_ctrl.cause <= trap_db_trig_c;  -- hardware trigger (sync)
-      elsif (trap_ctrl.exc_buf(exc_db_break_c) = '1') then trap_ctrl.cause <= trap_db_break_c; -- break instruction (sync)
+      elsif (trap_ctrl.exc_buf(exc_db_break_c) = '1') then trap_ctrl.cause <= trap_db_break_c; -- breakpoint (sync)
       elsif (trap_ctrl.irq_buf(irq_db_step_c)  = '1') then trap_ctrl.cause <= trap_db_step_c;  -- single stepping (async)
       -- NEORV32-specific fast interrupts --
       elsif (trap_ctrl.irq_buf(irq_firq_0_c)   = '1') then trap_ctrl.cause <= trap_firq0_c;  -- fast interrupt channel 0
@@ -1548,6 +1548,7 @@ begin
       elsif (trap_ctrl.irq_buf(irq_mei_irq_c)  = '1') then trap_ctrl.cause <= trap_mei_c; -- machine external interrupt (MEI)
       elsif (trap_ctrl.irq_buf(irq_msi_irq_c)  = '1') then trap_ctrl.cause <= trap_msi_c; -- machine software interrupt (MSI)
       elsif (trap_ctrl.irq_buf(irq_mti_irq_c)  = '1') then trap_ctrl.cause <= trap_mti_c; -- machine timer interrupt (MTI)
+      --
       else trap_ctrl.cause <= trap_mti_c; end if; -- don't care
     end if;
   end process trap_priority;
@@ -2281,7 +2282,7 @@ begin
   -- Hardware Performance Monitors (HPM) - Counter Event Configuration CSRs -----------------
   -- -------------------------------------------------------------------------------------------
   hpmevent_gen_enable:
-  if (CPU_EXTENSION_RISCV_Zihpm = true) generate
+  if CPU_EXTENSION_RISCV_Zihpm generate
 
     -- write enable decoder --
     hpmevent_write: process(csr)
@@ -2323,7 +2324,7 @@ begin
 
   -- no HPMs implemented --
   hpm_gen_disable:
-  if (CPU_EXTENSION_RISCV_Zihpm = false) generate
+  if not CPU_EXTENSION_RISCV_Zihpm generate
     hpmevent_we  <= (others => '0');
     hpmevent_cfg <= (others => (others => '0'));
     hpmevent_rd  <= (others => (others => '0'));
