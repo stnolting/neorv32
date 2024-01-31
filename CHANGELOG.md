@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 31.01.2024 | 1.9.4.1 | fix trap priority | [#784](https://github.com/stnolting/neorv32/pull/784) |
 | 31.01.2024 | [**:rocket:1.9.4**](https://github.com/stnolting/neorv32/releases/tag/v1.9.4) | **New release** | |
 | 31.01.2024 | 1.9.3.10 | close illegal compressed instruction decoding loophole | [#783](https://github.com/stnolting/neorv32/pull/783) |
 | 29.01.2024 | 1.9.3.9 | :test_tube: extend switchable clock domain (CPU bus switch, i-cache, d-cache) | [#780](https://github.com/stnolting/neorv32/pull/780) |
