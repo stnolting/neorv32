@@ -317,6 +317,9 @@ begin
                     decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_and_c;
                     decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000000";
                 end case;
+                if (ci_instr16_i(12) = '1') then -- reserved instruction space.
+                  illegal <= '1';
+                end if;
             end case;
 
         end case;
