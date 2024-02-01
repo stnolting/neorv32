@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090401"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090402"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -616,6 +616,9 @@ package neorv32_package is
   constant trap_sma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00110"; -- 6: store address misaligned
   constant trap_saf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00111"; -- 7: store access fault
   constant trap_env_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "010UU"; -- 8..11: environment call from u/s/h/m
+  constant trap_ipf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01100"; -- 12: instruction page fault
+  constant trap_lpf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01101"; -- 13: load page fault
+  constant trap_spf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01111"; -- 15: store page fault
   -- RISC-V compliant asynchronous exceptions (interrupts) --
   constant trap_msi_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00011"; -- 3:  machine software interrupt
   constant trap_mti_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00111"; -- 7:  machine timer interrupt
@@ -655,11 +658,14 @@ package neorv32_package is
   constant exc_lalign_c   : natural :=  6; -- load address misaligned
   constant exc_saccess_c  : natural :=  7; -- store access fault
   constant exc_laccess_c  : natural :=  8; -- load access fault
+  constant exc_ipage_c    : natural :=  9; -- instruction page fault
+  constant exc_lpage_c    : natural := 10; -- load page fault
+  constant exc_spage_c    : natural := 11; -- store page fault
   -- for debug mode only --
-  constant exc_db_break_c : natural :=  9; -- enter debug mode via ebreak instruction
-  constant exc_db_hw_c    : natural := 10; -- enter debug mode via hw trigger
+  constant exc_db_break_c : natural := 12; -- enter debug mode via ebreak instruction
+  constant exc_db_hw_c    : natural := 13; -- enter debug mode via hw trigger
   --
-  constant exc_width_c    : natural := 11; -- length of this list in bits
+  constant exc_width_c    : natural := 14; -- length of this list in bits
   -- interrupt source bits --
   constant irq_msi_irq_c  : natural :=  0; -- machine software interrupt
   constant irq_mti_irq_c  : natural :=  1; -- machine timer interrupt
