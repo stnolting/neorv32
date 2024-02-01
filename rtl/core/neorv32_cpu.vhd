@@ -211,18 +211,15 @@ begin
     rstn_i         => rstn_i,         -- global reset, low-active, async
     ctrl_o         => ctrl,           -- main control bus
     -- instruction fetch interface --
-    bus_req_o      => ibus_req_o,     -- request
-    bus_rsp_i      => ibus_rsp_i,     -- response
-    -- status input --
     i_page_fault_i => '0',            -- instruction fetch page fault
     i_pmp_fault_i  => pmp_ex_fault,   -- instruction fetch pmp fault
+    bus_req_o      => ibus_req_o,     -- request
+    bus_rsp_i      => ibus_rsp_i,     -- response
+    -- data path interface --
     alu_cp_done_i  => cp_done,        -- ALU iterative operation done
-    lsu_wait_i     => lsu_wait,       -- wait for data bus
     cmp_i          => alu_cmp,        -- comparator status
-    -- data input --
     alu_add_i      => alu_add,        -- ALU address result
     rs1_i          => rs1,            -- rf source 1
-    -- data output --
     imm_o          => imm,            -- immediate
     fetch_pc_o     => fetch_pc,       -- instruction fetch address
     curr_pc_o      => curr_pc,        -- current PC (corresponding to current instruction)
@@ -233,15 +230,14 @@ begin
     xcsr_addr_o    => xcsr_addr,      -- address
     xcsr_wdata_o   => xcsr_wdata,     -- write data
     xcsr_rdata_i   => xcsr_rdata_res, -- read data
-    -- debug mode (halt) request --
-    db_halt_req_i  => dbi_i,
-    -- interrupts (risc-v compliant) --
+    -- interrupts --
+    db_halt_req_i  => dbi_i,          -- debug mode (halt) request
     msi_i          => msi_i,          -- machine software interrupt
     mei_i          => mei_i,          -- machine external interrupt
     mti_i          => mti_i,          -- machine timer interrupt
-    -- fast interrupts (custom) --
-    firq_i         => firq_i,         -- fast interrupt trigger
-    -- bus access exceptions --
+    firq_i         => firq_i,         -- fast interrupts
+    -- data access interface --
+    lsu_wait_i     => lsu_wait,       -- wait for data bus
     mar_i          => mar,            -- memory address register
     ma_load_i      => ma_load,        -- misaligned load data address
     ma_store_i     => ma_store,       -- misaligned store data address

@@ -88,18 +88,15 @@ entity neorv32_cpu_control is
     rstn_i         : in  std_ulogic; -- global reset, low-active, async
     ctrl_o         : out ctrl_bus_t; -- main control bus
     -- instruction fetch interface --
-    bus_req_o      : out bus_req_t;  -- request
-    bus_rsp_i      : in  bus_rsp_t;  -- response
-    -- status input --
     i_page_fault_i : in  std_ulogic; -- instruction fetch page fault
     i_pmp_fault_i  : in  std_ulogic; -- instruction fetch pmp fault
+    bus_req_o      : out bus_req_t;  -- request
+    bus_rsp_i      : in  bus_rsp_t;  -- response
+    -- data path interface --
     alu_cp_done_i  : in  std_ulogic; -- ALU iterative operation done
-    lsu_wait_i     : in  std_ulogic; -- wait for data bus
     cmp_i          : in  std_ulogic_vector(1 downto 0); -- comparator status
-    -- data input --
     alu_add_i      : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU address result
     rs1_i          : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    -- data output --
     imm_o          : out std_ulogic_vector(XLEN-1 downto 0); -- immediate
     fetch_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- instruction fetch address
     curr_pc_o      : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
@@ -116,7 +113,8 @@ entity neorv32_cpu_control is
     mei_i          : in  std_ulogic; -- machine external interrupt
     mti_i          : in  std_ulogic; -- machine timer interrupt
     firq_i         : in  std_ulogic_vector(15 downto 0); -- fast interrupts
-    -- bus access exceptions --
+    -- data access interface --
+    lsu_wait_i     : in  std_ulogic; -- wait for data bus
     mar_i          : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
     ma_load_i      : in  std_ulogic; -- misaligned load data address
     ma_store_i     : in  std_ulogic; -- misaligned store data address
