@@ -923,27 +923,82 @@ begin
         if (fpu_operands.rs1(31) = fpu_operands.rs2(31)) then -- identical signs
           addsub.res_sign <= fpu_operands.rs1(31);
         else -- different signs
-          if (addsub.exp_comp(1) = '1') then -- exp are equal (also check relation of mantissas)
-            addsub.res_sign <= fpu_operands.rs1(31) xor (not addsub.man_comp);
-          else
-            addsub.res_sign <= fpu_operands.rs1(31) xor addsub.exp_comp(0);
+          -- if the result is not 0.0 set the sign normally
+          if ((to_integer(unsigned(addsub.add_stage))) /= 0 ) then
+            if (addsub.exp_comp(1) = '1') then -- exp are equal (also check relation of mantissas)
+              addsub.res_sign <= fpu_operands.rs1(31) xor (not addsub.man_comp);
+            else
+              addsub.res_sign <= fpu_operands.rs1(31) xor addsub.exp_comp(0);
+            end if;
+          else 
+            --  roundTowardNegative; under that attribute, the sign of an exact zero sum (or difference) shall be −0
+            if (fpu_operands.frm = "010") then -- round down (towards -infinity)
+              addsub.res_sign <= '1'; -- set the sign to 0 to generate a +0.0 result
+            else
+              addsub.res_sign <= '0'; -- set the sign to 0 to generate a +0.0 result
+            end if;
           end if;
         end if;
       else -- sub
-        if (fpu_operands.rs1(31) = fpu_operands.rs2(31)) then -- identical signs
-          if (addsub.exp_comp(1) = '1') then -- exp are equal (also check relation of mantissas)
-            addsub.res_sign <= fpu_operands.rs1(31) xor (not addsub.man_comp);
-          else
-            addsub.res_sign <= fpu_operands.rs1(31) xor addsub.exp_comp(0);
+        -- identical signs
+        -- if the result is not 0.0 set the sign normally
+        if (fpu_operands.rs1(31) = fpu_operands.rs2(31)) then
+          if ((to_integer(unsigned(addsub.add_stage))) /= 0 ) then
+            if (addsub.exp_comp(1) = '1') then -- exp are equal (also check relation of mantissas)
+              addsub.res_sign <= fpu_operands.rs1(31) xor (not addsub.man_comp);
+            else
+              addsub.res_sign <= fpu_operands.rs1(31) xor addsub.exp_comp(0);
+            end if;
+          else 
+            --  roundTowardNegative; under that attribute, the sign of an exact zero sum (or difference) shall be −0
+            if (fpu_operands.frm = "010") then -- round down (towards -infinity)
+              addsub.res_sign <= '1'; -- set the sign to 0 to generate a +0.0 result
+            else
+              addsub.res_sign <= '0'; -- set the sign to 0 to generate a +0.0 result
+            end if;
           end if;
         else -- different signs
           addsub.res_sign <= fpu_operands.rs1(31);
         end if;
       end if;
 
-      -- exception flags --
-      addsub.flags(fp_exc_nv_c) <= ((fpu_operands.rs1_class(fp_class_pos_inf_c) or fpu_operands.rs1_class(fp_class_neg_inf_c)) and
-                                    (fpu_operands.rs2_class(fp_class_pos_inf_c) or fpu_operands.rs2_class(fp_class_neg_inf_c))); -- +/-inf +/- +/-inf
+      -- Infinities decoder ring
+      -- fadd:
+      -- Rs1 \ Rs2 | +inf | -inf | <- Rs2
+      -- --------------------------------
+      --      +inf | +inf |  NV  |
+      -- --------------------------------
+      --      -inf |  NV  | -inf |
+      -- --------------------------------
+      --     ^
+      --     |
+      --    Rs1
+      --
+      -- fsub:
+      -- Rs1 \ Rs2 | +inf | -inf | <- Rs2
+      -- --------------------------------
+      --      +inf |  NV  | +inf |
+      -- --------------------------------
+      --      -inf | -inf |  NV  |
+      -- --------------------------------
+      --     ^
+      --     |
+      --    Rs1
+      -- Assume the operation is valid
+      addsub.flags(fp_exc_nv_c) <= '0';
+      if (ctrl_i.ir_funct12(7) = '0') then -- add
+        -- Do we have 2 infinities of opposite sign?
+        if (((fpu_operands.rs1_class(fp_class_pos_inf_c) and fpu_operands.rs2_class(fp_class_neg_inf_c))         or 
+             (fpu_operands.rs1_class(fp_class_neg_inf_c) and fpu_operands.rs2_class(fp_class_pos_inf_c))) = '1') then
+          addsub.flags(fp_exc_nv_c) <= '1';
+        end if;
+      else -- sub
+        -- Do we have 2 infinities of same sign?
+        if (((fpu_operands.rs1_class(fp_class_pos_inf_c) and fpu_operands.rs2_class(fp_class_pos_inf_c))         or 
+             (fpu_operands.rs1_class(fp_class_neg_inf_c) and fpu_operands.rs2_class(fp_class_neg_inf_c))) = '1') then
+          addsub.flags(fp_exc_nv_c) <= '1';
+        end if;
+      end if;
     end if;
   end process adder_subtractor_core;
 
@@ -1497,6 +1552,9 @@ begin
           sreg.upper(31 downto 02) <= (others => '0');
           sreg.upper(01 downto 00) <= round.output(24 downto 23);
           sreg.lower <= round.output(22 downto 00);
+          -- If after the first shift we get a bit in any of the guard bitsthen independent of rounding mode
+          -- the end result will be inexact as we are truncating away information
+          ctrl.flags(fp_exc_nx_c) <= sreg.ext_g or sreg.ext_r or sreg.ext_s;
           sreg.ext_g <= '0';
           sreg.ext_r <= '0';
           sreg.ext_s <= '0';
@@ -1506,12 +1564,28 @@ begin
         -- ------------------------------------------------------------
           if (ctrl.cnt_uf = '1') then -- underflow
             ctrl.flags(fp_exc_uf_c) <= '1';
+            -- As is defined in '754, under default exception handling, underflow is 
+            -- only signalled when the result is tiny and inexact. In such a case, 
+            -- both the underflow and inexact flags are raised.
+            ctrl.flags(fp_exc_nx_c) <= '1';
           elsif (ctrl.cnt_of = '1') then -- overflow
             ctrl.flags(fp_exc_of_c) <= '1';
+            -- As is defined in '754, under default exception handling, overflow is 
+            -- only signalled when the result is large and inexact. In such a case, 
+            -- both the underflow and inexact flags are raised.
+            ctrl.flags(fp_exc_nx_c) <= '1';
           elsif (ctrl.cnt(7 downto 0) = x"00") then -- subnormal
             ctrl.flags(fp_exc_uf_c) <= '1';
+            -- As is defined in '754, under default exception handling, underflow is 
+            -- only signalled when the result is tiny and inexact. In such a case, 
+            -- both the underflow and inexact flags are raised.
+            ctrl.flags(fp_exc_nx_c) <= '1';
           elsif (ctrl.cnt(7 downto 0) = x"FF") then -- infinity
             ctrl.flags(fp_exc_of_c) <= '1';
+            -- As is defined in '754, under default exception handling, overflow is 
+            -- only signalled when the result is large and inexact. In such a case, 
+            -- both the underflow and inexact flags are raised.
+            ctrl.flags(fp_exc_nx_c) <= '1';
           end if;
           ctrl.state <= S_FINALIZE;
 
