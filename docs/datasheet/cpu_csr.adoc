@@ -8,12 +8,13 @@ The "Name [C]" column lists the name aliases that are defined by the NEORV32 cor
 The "Access" column shows the minimal required privilege mode required for accessing the according CSR (`M` = machine-mode,
 `U` = user-mode, `D` = debug-mode) and the read/write capabilities (`RW` = read-write, `RO` = read-only)
 
-.Unused, Reserved and Unimplemented CSRs and CSR Bits (WARL Behavior)
-[NOTE]
-All CSR bits that are not listed in the table below are _unimplemented_ and are _hardwired to zero_. Any access to such a
-CSR will raise an illegal instruction exception when being accessed. All writable CSRs provide **WARL** behavior (write all
-values; read only legal values). Application software should always read back a CSR after writing to check if the targeted
-bits can actually be modified. 
+.Unused, Reserved, Unimplemented and Disabled CSRs
+[IMPORTANT]
+All CSRs and CSR bits that are not listed in the table below are _unimplemented_ and are _hardwired to zero_. Additionally,
+CSRs that are unavailable ("disabled") because the according ISA extension is not enabled are also considered _unimplemented_
+and are also hardwired to zero. Any access to such a CSR will raise an illegal instruction exception. All writable CSRs provide
+**WARL** behavior (write all values; read only legal values). Application software should always read back a CSR after writing
+to check if the targeted bits can actually be modified. 
 
 
 .NEORV32 Control and Status Registers (CSRs)
