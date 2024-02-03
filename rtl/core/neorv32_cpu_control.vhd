@@ -1044,9 +1044,9 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt.rf_mux <= rf_mux_mem_c; -- RF input = memory read data
         if (lsu_wait_i = '0') or -- bus system has completed the transaction
-           (trap_ctrl.exc_buf(exc_salign_c) = '1') or (trap_ctrl.exc_buf(exc_saccess_c) = '1') or -- store exception
-           (trap_ctrl.exc_buf(exc_lalign_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- load exception
-           (trap_ctrl.exc_buf(exc_lpage_c)  = '1') or (trap_ctrl.exc_buf(exc_spage_c)   = '1') then -- page exception
+           (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
+           (trap_ctrl.exc_buf(exc_salign_c) = '1')  or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
+           (trap_ctrl.exc_buf(exc_spage_c)  = '1')  or (trap_ctrl.exc_buf(exc_lpage_c)   = '1') then -- page exception
           if ((CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2))) or -- atomic operation
              (execute_engine.ir(instr_opcode_msb_c-1) = '0') then -- normal load
             ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file (won't happen in case of exception)
@@ -1844,7 +1844,7 @@ begin
           csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- trap type & identifier
           csr.mepc   <= trap_ctrl.epc(XLEN-1 downto 1) & '0'; -- trap PC
           -- trap value --
-          if (trap_ctrl.cause(6) = '0') and (trap_ctrl.cause(2) = '1') then -- load/store misaligned/access/(fetch)page fault
+          if (trap_ctrl.cause(6) = '0') and (trap_ctrl.cause(2) = '1') then -- load/store misaligned/access/(fetch)page fault [hacky!]
             csr.mtval <= mar_i; -- faulting data access address
           else -- everything else including all interrupts
             csr.mtval <= (others => '0');
