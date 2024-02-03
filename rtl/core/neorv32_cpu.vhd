@@ -103,12 +103,16 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant regfile_rs4_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu; -- 4th register file read port (rs4)
   constant pmp_enable_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
 
+  -- bus requests --
+  signal ibus_req, dbus_req : bus_req_t;
+
   -- external CSR interface --
   signal xcsr_we        : std_ulogic;
   signal xcsr_addr      : std_ulogic_vector(11 downto 0);
   signal xcsr_wdata     : std_ulogic_vector(XLEN-1 downto 0);
-  signal xcsr_rdata_pmp : std_ulogic_vector(XLEN-1 downto 0);
   signal xcsr_rdata_alu : std_ulogic_vector(XLEN-1 downto 0);
+  signal xcsr_rdata_pmp : std_ulogic_vector(XLEN-1 downto 0);
+  signal xcsr_rdata_mmu : std_ulogic_vector(XLEN-1 downto 0);
   signal xcsr_rdata_res : std_ulogic_vector(XLEN-1 downto 0);
 
   -- local signals --
@@ -216,7 +220,7 @@ begin
     -- instruction fetch interface --
     i_page_fault_i => i_page_fault,   -- instruction fetch page fault
     i_pmp_fault_i  => pmp_ex_fault,   -- instruction fetch pmp fault
-    bus_req_o      => ibus_req_o,     -- request
+    bus_req_o      => ibus_req,       -- request
     bus_rsp_i      => ibus_rsp_i,     -- response
     -- data path interface --
     alu_cp_done_i  => cp_done,        -- ALU iterative operation done
@@ -251,7 +255,7 @@ begin
   );
 
   -- external CSR read-back --
-  xcsr_rdata_res <= xcsr_rdata_pmp or xcsr_rdata_alu;
+  xcsr_rdata_res <= xcsr_rdata_alu or xcsr_rdata_pmp or xcsr_rdata_mmu;
 
   -- CPU state --
   sleep_o <= ctrl.cpu_sleep; -- set when CPU is sleeping (after WFI)
@@ -353,7 +357,7 @@ begin
     be_store_o  => be_store,     -- bus error on store data access
     pmp_fault_i => pmp_rw_fault, -- PMP read/write access fault
     -- data bus --
-    bus_req_o   => dbus_req_o,   -- request
+    bus_req_o   => dbus_req,     -- request
     bus_rsp_i   => dbus_rsp_i    -- response
   );
 
@@ -394,12 +398,44 @@ begin
   end generate;
 
 
-  -- Memory Management/Paging Unit ----------------------------------------------------------
+  -- Memory Management Unit -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- nothing to see here yet --
-  i_page_fault <= '0'; -- instruction page fault
-  l_page_fault <= '0'; -- load page fault
-  s_page_fault <= '0'; -- store page fault
+  mmu_inst_true:
+  if true generate
+    neorv32_cpu_mmu_inst: entity neorv32.neorv32_cpu_mmu
+    generic map (
+      MMU_TLB_SIZE => 4 -- number of TLB entries, has to be a power of 2
+    )
+    port map (
+      -- global control --
+      clk_i       => clk_i,          -- global clock, rising edge
+      rstn_i      => rstn_i,         -- global reset, low-active, async
+      -- CSR interface --
+      csr_we_i    => xcsr_we,        -- global write enable
+      csr_addr_i  => xcsr_addr,      -- address
+      csr_wdata_i => xcsr_wdata,     -- write data
+      csr_rdata_o => xcsr_rdata_mmu, -- read data
+      -- bus interfaces --
+      ibus_req_i  => ibus_req,       -- virtual instruction access request
+      dbus_req_i  => dbus_req,       -- virtual data access request
+      ibus_req_o  => ibus_req_o,     -- physical instruction access request
+      dbus_req_o  => dbus_req_o,     -- physical data access request
+      -- page faults --
+      fault_i_o   => i_page_fault,   -- instruction page fault
+      fault_l_o   => l_page_fault,   -- load page fault
+      fault_s_o   => s_page_fault    -- store page fault
+    );
+  end generate;
+
+  mmu_inst_false:
+  if not true generate
+    ibus_req_o     <= ibus_req;
+    dbus_req_o     <= dbus_req;
+    xcsr_rdata_mmu <= (others => '0');
+    i_page_fault   <= '0';
+    l_page_fault   <= '0';
+    s_page_fault   <= '0';
+  end generate;
 
 
 end neorv32_cpu_rtl;
