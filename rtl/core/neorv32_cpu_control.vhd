@@ -429,7 +429,7 @@ begin
   ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
 
   -- bus access type --
-  bus_req_o.priv <= ctrl.cpu_priv; -- current privilege mode
+  bus_req_o.priv <= csr.privilege_eff; -- current effective privilege level
   bus_req_o.data <= (others => '0'); -- read-only
   bus_req_o.ben  <= (others => '0'); -- read-only
   bus_req_o.rw   <= '0'; -- read-only
@@ -1045,8 +1045,8 @@ begin
         ctrl_nxt.rf_mux <= rf_mux_mem_c; -- RF input = memory read data
         if (lsu_wait_i = '0') or -- bus system has completed the transaction
            (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
-           (trap_ctrl.exc_buf(exc_salign_c) = '1')  or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
-           (trap_ctrl.exc_buf(exc_spage_c)  = '1')  or (trap_ctrl.exc_buf(exc_lpage_c)   = '1') then -- page exception
+           (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
+           (trap_ctrl.exc_buf(exc_spage_c)   = '1') or (trap_ctrl.exc_buf(exc_lpage_c)   = '1') then -- page exception
           if ((CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2))) or -- atomic operation
              (execute_engine.ir(instr_opcode_msb_c-1) = '0') then -- normal load
             ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file (won't happen in case of exception)

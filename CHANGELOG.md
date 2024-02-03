@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 03.02.2024 | 1.9.4.3 | :bug: fix minor bug: CPU instruction bus privilege signal was hardwired to "user-mode" | [#790](https://github.com/stnolting/neorv32/pull/790) |
 | 01.02.2024 | 1.9.4.2 | :sparkles: add support for page fault exceptions (yet unused) | [#786](https://github.com/stnolting/neorv32/pull/786) |
 | 31.01.2024 | 1.9.4.1 | fix trap priority | [#784](https://github.com/stnolting/neorv32/pull/784) |
 | 31.01.2024 | [**:rocket:1.9.4**](https://github.com/stnolting/neorv32/releases/tag/v1.9.4) | **New release** | |
