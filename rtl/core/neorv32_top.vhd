@@ -157,7 +157,7 @@ entity neorv32_top is
     rstn_i         : in  std_ulogic; -- global reset, low-active, async
 
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_trst_i    : in  std_ulogic := 'L'; -- low-active TAP reset (optional)
+    jtag_trst_i    : in  std_ulogic := 'H'; -- low-active TAP reset (optional)
     jtag_tck_i     : in  std_ulogic := 'L'; -- serial clock
     jtag_tdi_i     : in  std_ulogic := 'L'; -- serial data input
     jtag_tdo_o     : out std_ulogic;        -- serial data output
