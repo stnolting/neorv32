@@ -111,6 +111,7 @@ architecture neorv32_cpu_mmu_rtl of neorv32_cpu_mmu is
     vtg : std_ulogic_vector(mmu_vtg_size_c-1 downto 0); -- virtual page number tag
     ppn : std_ulogic_vector(19 downto 0); -- physical page number
     att : std_ulogic_vector(7 downto 0); -- page attributes / flags
+    leg : std_ulogic; -- legal page attribute configuration
     hit : std_ulogic; -- TLB hit
   end record;
   signal i_lookup, d_lookup : lookup_t;
@@ -215,6 +216,9 @@ begin
   i_lookup.ppn <= i_tlb_ppn(to_integer(unsigned(i_lookup.idx))); -- translated physical page number
   i_lookup.att <= i_tlb_att(to_integer(unsigned(i_lookup.idx))); -- PTE attributes
   i_lookup.hit <= '1' when (i_tlb_vtg(to_integer(unsigned(i_lookup.idx))) = i_lookup.vtg) else '0'; -- PTE available?
+  i_lookup.leg <= '0' when ((i_lookup.att(att_x_c downto att_r_c) = "000") or -- PTE pointer
+                            (i_lookup.att(att_x_c downto att_r_c) = "010") or -- reserved (write-only)
+                            (i_lookup.att(att_x_c downto att_r_c) = "110")) else '1'; -- reserved (execute-write)
 
   -- data access lookup --
   d_lookup.idx <= dbus_req_i.addr(adr_vtg_lsb_c-1 downto 12); -- virtual page number index
@@ -222,11 +226,15 @@ begin
   d_lookup.ppn <= d_tlb_ppn(to_integer(unsigned(d_lookup.idx))); -- translated physical page number
   d_lookup.att <= d_tlb_att(to_integer(unsigned(d_lookup.idx))); -- PTE attributes
   d_lookup.hit <= '1' when (d_tlb_vtg(to_integer(unsigned(d_lookup.idx))) = d_lookup.vtg) else '0'; -- PTE available?
+  d_lookup.leg <= '0' when ((d_lookup.att(att_x_c downto att_r_c) = "000") or -- PTE pointer
+                            (d_lookup.att(att_x_c downto att_r_c) = "010") or -- reserved (write-only)
+                            (d_lookup.att(att_x_c downto att_r_c) = "110")) else '1'; -- reserved (execute-write)
 
   -- instruction page fault --
   i_fault <= '1' when (ibus_req_i.priv /= priv_mode_m_c) and -- non-machine-mode access
                       (
                        (i_lookup.hit          = '0') or -- page miss
+                       (i_lookup.leg          = '0') or -- illegal attribute configuration
                        (i_lookup.att(att_v_c) = '0') or -- entry is invalid
                        (i_lookup.att(att_x_c) = '0') or -- no execute permission
                        (i_lookup.att(att_a_c) = '0') or -- page not accessed yet
@@ -238,6 +246,7 @@ begin
                       (dbus_req_i.rw = '0') and -- is read access
                       (
                        (d_lookup.hit          = '0') or -- page miss
+                       (d_lookup.leg          = '0') or -- illegal attribute configuration
                        (d_lookup.att(att_v_c) = '0') or -- entry is invalid
                        (d_lookup.att(att_r_c) = '0') or -- no read permission
                        (d_lookup.att(att_a_c) = '0') or -- page not accessed yet
@@ -249,6 +258,7 @@ begin
                       (dbus_req_i.rw = '1') and -- is write access
                       (
                        (d_lookup.hit          = '0') or -- page miss
+                       (d_lookup.leg          = '0') or -- illegal attribute configuration
                        (d_lookup.att(att_v_c) = '0') or -- entry is invalid
                        (d_lookup.att(att_w_c) = '0') or -- no write permission
                        (d_lookup.att(att_d_c) = '0') or -- page not dirty yet
