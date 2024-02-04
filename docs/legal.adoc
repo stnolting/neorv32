@@ -36,7 +36,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **The NEORV32 RISC-V Processor** +
 https://github.com/stnolting/neorv32 +
 Dipl.-Ing. (M.Sc.) Stephan Nolting +
-European Union, Germany +
+🇪🇺 European Union, Germany +
 stnolting@gmail.com
 ==========================
 
@@ -60,16 +60,12 @@ stnolting@gmail.com
 * "Segger Embedded Studio" and "J-Link" are trademarks of Segger Microcontroller Systems GmbH.
 * All further/unreferenced products belong to their according copyright holders.
 
-PDF icons from https://www.flaticon.com and made by
-link:https://www.freepik.com[Freepik], link:https://www.flaticon.com/authors/good-ware[Good Ware],
-link:https://www.flaticon.com/authors/pixel-perfect[Pixel perfect] and link:https://www.flaticon.com/authors/vectors-market[Vectors Market].
-
 
 :sectnums!:
 === Disclaimer
 
-This project is released under the BSD 3-Clause license. No copyright infringement
-intended. Other implied or used projects might have different licensing – see their documentation to get more information.
+This project is released under the BSD 3-Clause license. No copyright infringement intended.
+Other implied or used projects/sources might have different licensing – see their documentation to get more information.
 
 
 :sectnums!:
