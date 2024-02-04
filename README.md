@@ -298,4 +298,5 @@ Please cite it appropriately. :+1:
 
 ---------------------------------------
 
-**:heart: A big shout-out to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors), who helped improving this project!**
+**:heart: A big shout-out to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors)!
+This project would not be where it is without them.
