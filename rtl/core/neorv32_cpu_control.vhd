@@ -141,6 +141,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc         : std_ulogic_vector(XLEN-1 downto 0);
     reset      : std_ulogic; -- restart request (after branch)
     resp       : std_ulogic; -- bus response
+    priv       : std_ulogic; -- fetch privilege level
   end record;
   signal fetch_engine : fetch_engine_t;
 
@@ -366,6 +367,7 @@ begin
       fetch_engine.state_prev <= IF_RESTART;
       fetch_engine.restart    <= '1'; -- set to reset IPB
       fetch_engine.pc         <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
+      fetch_engine.priv       <= priv_mode_m_c; -- start in machine mode
     elsif rising_edge(clk_i) then
       -- previous state (for HPMs only) --
       fetch_engine.state_prev <= fetch_engine.state;
@@ -403,6 +405,7 @@ begin
         when others => -- IF_RESTART: set new start address
         -- ------------------------------------------------------------
           fetch_engine.pc    <= execute_engine.next_pc(XLEN-1 downto 1) & '0'; -- initialize from PC incl. 16-bit-alignment bit
+          fetch_engine.priv  <= csr.privilege_eff; -- set new privilege level
           fetch_engine.state <= IF_REQUEST;
 
       end case;
@@ -429,7 +432,7 @@ begin
   ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
 
   -- bus access type --
-  bus_req_o.priv <= csr.privilege_eff; -- current effective privilege level
+  bus_req_o.priv <= fetch_engine.priv; -- current effective privilege level
   bus_req_o.data <= (others => '0'); -- read-only
   bus_req_o.ben  <= (others => '0'); -- read-only
   bus_req_o.rw   <= '0'; -- read-only
@@ -1364,7 +1367,7 @@ begin
           if (decode_aux.rs1_zero = '1') and (decode_aux.rd_zero = '1') then
             case execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c) is
               when funct12_ecall_c | funct12_ebreak_c => illegal_cmd <= '0'; -- ecall, ebreak
-              when funct12_mret_c                     => illegal_cmd <= (not csr.privilege) or debug_ctrl.running; -- mret allowed in M-mode only
+              when funct12_mret_c                     => illegal_cmd <= (not csr.privilege) or debug_ctrl.running; -- mret allowed in (real/non-debug) M-mode only
               when funct12_dret_c                     => illegal_cmd <= not debug_ctrl.running; -- dret allowed in debug mode only
               when funct12_wfi_c                      => illegal_cmd <= (not csr.privilege) and csr.mstatus_tw; -- wfi allowed in M-mode or if TW is zero
               when others                             => illegal_cmd <= '1';
