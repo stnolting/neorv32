@@ -68,6 +68,7 @@
  **************************************************************************/
 /**@{*/
 int neorv32_cpu_mmu_available(void);
+void neorv32_cpu_mmu_init(void);
 void neorv32_cpu_mmu_atp_enable(void);
 void neorv32_cpu_mmu_atp_disable(void);
 int neorv32_cpu_mmu_tlb_size(void);

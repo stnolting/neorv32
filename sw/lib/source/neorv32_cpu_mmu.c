@@ -60,6 +60,24 @@ int neorv32_cpu_mmu_available(void) {
 
 
 /**********************************************************************//**
+ * Initialize (reset) MMU.
+ *
+ * @warning This function has to be called before enabling the MMU.
+ **************************************************************************/
+void neorv32_cpu_mmu_init(void) {
+
+  int num_pte = neorv32_cpu_mmu_tlb_size();
+
+  // set all entires to all-zero
+  int index;
+  for (index=0; index<num_pte; index++) {
+    neorv32_cpu_mmu_pte_configure(0, (uint32_t)index, 0, 0); // instruction TLB entry
+    neorv32_cpu_mmu_pte_configure(1, (uint32_t)index, 0, 0); // data TLB entry
+  }
+}
+
+
+/**********************************************************************//**
  * Enable MMU address translation and protection.
  **************************************************************************/
 void neorv32_cpu_mmu_atp_enable(void) {
@@ -111,7 +129,7 @@ int neorv32_cpu_mmu_pte_configure(int id_sel, uint32_t vpn, uint32_t ppn, uint8_
 
   // select indexed TLB entry
   uint32_t sel = index;
-  sel |= (uint32_t)(id_sel) << 31;
+  sel |= (uint32_t)(id_sel) << 31; // instruction / data TLB
   neorv32_cpu_csr_write(CSR_MXMMUSEL, sel);
 
   // align
@@ -119,7 +137,7 @@ int neorv32_cpu_mmu_pte_configure(int id_sel, uint32_t vpn, uint32_t ppn, uint8_
   uint32_t p = ppn << 10;
   uint32_t f = (uint32_t)(att);
 
-  // update entry
+  // write PTE
   neorv32_cpu_csr_write(CSR_MXMMUVPN, v);
   neorv32_cpu_csr_write(CSR_MXMMUPTE, p | f);
 
