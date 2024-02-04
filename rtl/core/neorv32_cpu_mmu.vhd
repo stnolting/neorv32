@@ -146,8 +146,8 @@ begin
           atp_en <= csr_wdata_i(31);
         end if;
         if (csr_addr_i(1 downto 0) = csr_mxmmusel_c(1 downto 0)) then -- page table entry select
-          mmu_id_sel <= csr_wdata_i(31);
           mmu_index  <= csr_wdata_i(mmu_index'range);
+          mmu_id_sel <= csr_wdata_i(31);
         end if;
         if (csr_addr_i(1 downto 0) = csr_mxmmuvpn_c(1 downto 0)) then -- virtual page number
           mmu_i_we(0) <= not mmu_id_sel;
@@ -259,8 +259,6 @@ begin
 
   -- Bus Output -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- register stage --
   output_buffer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -282,7 +280,7 @@ begin
     end if;
   end process output_buffer;
 
-  -- override bus requests --
+  -- issue bus requests --
   bus_output: process(ibus_req_i, dbus_req_i, i_ppn_ff, i_stb_ff, d_ppn_ff, d_stb_ff)
   begin
     -- default: non-translated / pass-through --
