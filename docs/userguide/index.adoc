@@ -1,4 +1,4 @@
-= The NEORV32 RISC-V Processor: User Guide
+= The NEORV32 RISC-V Processor - User Guide
 include::../attrs.adoc[]
 :title: [User Guide] The NEORV32 RISC-V Processor
 :icons: font
@@ -7,9 +7,9 @@ include::../attrs.adoc[]
 :title-logo-image: neorv32_logo_riscv.png[pdfwidth=6.25in,align=center]
 :favicon: ../img/icon.png
 
-image::neorv32_logo.png[align=center]
+image::neorv32_logo.png[align=center,link="https://github.com/stnolting/neorv32"]
 
-image::riscv_logo.png[width=350,align=center]
+image::riscv_logo.png[width=350,align=center,link="https://riscv.org/"]
 
 [.text-center]
 https://github.com/stnolting/neorv32[image:https://img.shields.io/badge/GitHub-stnolting%2Fneorv32-ffbd00?style=flat-square&logo=github&[title='homepage']]
