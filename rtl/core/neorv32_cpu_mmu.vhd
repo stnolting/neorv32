@@ -100,9 +100,10 @@ architecture neorv32_cpu_mmu_rtl of neorv32_cpu_mmu is
   -- MMU CSR interface --
   signal csr_en     : std_ulogic; -- access to MMU CSRs
   signal csr_wdata  : std_ulogic_vector(XLEN-1 downto 0); -- write data buffer
-  signal mmu_we     : std_ulogic_vector(1 downto 0); -- MMU table write enable
+  signal mmu_i_we   : std_ulogic_vector(1 downto 0); -- instruction TLB write enable
+  signal mmu_d_we   : std_ulogic_vector(1 downto 0); -- data TLB table write enable
   signal mmu_id_sel : std_ulogic; -- instruction/data TLB select
-  signal mmu_index  : std_ulogic_vector(index_size_f(num_ptes_c)-1 downto 0); -- PTE select
+  signal mmu_index  : std_ulogic_vector(index_size_f(num_ptes_c)-1 downto 0); -- TLB index / PTE select
 
   -- table lookup --
   type lookup_t is record
@@ -110,7 +111,7 @@ architecture neorv32_cpu_mmu_rtl of neorv32_cpu_mmu is
     vtg : std_ulogic_vector(mmu_vtg_size_c-1 downto 0); -- virtual page number tag
     ppn : std_ulogic_vector(19 downto 0); -- physical page number
     att : std_ulogic_vector(7 downto 0); -- page attributes / flags
-    hit : std_ulogic; -- PTE hit
+    hit : std_ulogic; -- TLB hit
   end record;
   signal i_lookup, d_lookup : lookup_t;
 
@@ -130,13 +131,15 @@ begin
   csr_write: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      atp_en     <= '0';
-      mmu_we     <= (others => '0');
+      mmu_i_we   <= "00";
+      mmu_d_we   <= "00";
       csr_wdata  <= (others => '0');
+      atp_en     <= '0';
       mmu_id_sel <= '0';
       mmu_index  <= (others => '0');
     elsif rising_edge(clk_i) then
-      mmu_we <= (others => '0');
+      mmu_i_we <= "00";
+      mmu_d_we <= "00";
       if (csr_we_i = '1') and (csr_en = '1') then
         csr_wdata <= csr_wdata_i; -- buffer write data for indirect PTE access
         if (csr_addr_i(1 downto 0) = csr_mxmmuatp_c(1 downto 0)) then -- address translation and protection
@@ -147,10 +150,12 @@ begin
           mmu_index  <= csr_wdata_i(mmu_index'range);
         end if;
         if (csr_addr_i(1 downto 0) = csr_mxmmuvpn_c(1 downto 0)) then -- virtual page number
-          mmu_we(0) <= '1';
+          mmu_i_we(0) <= not mmu_id_sel;
+          mmu_d_we(0) <=     mmu_id_sel;
         end if;
         if (csr_addr_i(1 downto 0) = csr_mxmmupte_c(1 downto 0)) then -- page table entry
-          mmu_we(1) <= '1';
+          mmu_i_we(1) <= not mmu_id_sel;
+          mmu_d_we(1) <=     mmu_id_sel;
         end if;
       end if;
     end if;
@@ -161,15 +166,12 @@ begin
   begin
     csr_rdata_o <= (others => '0'); -- default
     if (csr_en = '1') then
-      case csr_addr_i(1 downto 0) is
-        when "00" => -- address translation and protection
-          csr_rdata_o(31) <= atp_en;
-        when "01" => -- virtual page number
-          csr_rdata_o(mmu_index'range) <= mmu_index;
-          csr_rdata_o(31)              <= mmu_id_sel;
-        when others => -- undefined
-          csr_rdata_o <= (others => '0');
-      end case;
+      if (csr_addr_i(0) = '0') then -- address translation and protection
+        csr_rdata_o(31) <= atp_en;
+      else -- virtual page number
+        csr_rdata_o(mmu_index'range) <= mmu_index;
+        csr_rdata_o(31)              <= mmu_id_sel;
+      end if;
     end if;
   end process csr_read;
 
@@ -179,36 +181,26 @@ begin
 
   -- MMU Table (TLB Storage) ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mmu_update: process(rstn_i, clk_i)
+  mmu_update: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      i_tlb_vtg <= (others => (others => '0'));
-      i_tlb_ppn <= (others => (others => '0'));
-      i_tlb_att <= (others => (others => '0'));
-      d_tlb_vtg <= (others => (others => '0'));
-      d_tlb_ppn <= (others => (others => '0'));
-      d_tlb_att <= (others => (others => '0'));
-    elsif rising_edge(clk_i) then
-      if (mmu_id_sel = '0') then -- instruction TLB
-        -- update virtual page number --
-        if (mmu_we(0) = '1') then
-          i_tlb_vtg(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto csr_vtg_lsb_c);
-        end if;
-        -- update actual TLB entry --
-        if (mmu_we(1) = '1') then
-          i_tlb_ppn(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto 10);
-          i_tlb_att(to_integer(unsigned(mmu_index))) <= csr_wdata(07 downto 00);
-        end if;
-      else -- data TLB
-        -- update virtual page number --
-        if (mmu_we(0) = '1') then
-          d_tlb_vtg(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto csr_vtg_lsb_c);
-        end if;
-        -- update actual TLB entry --
-        if (mmu_we(1) = '1') then
-          d_tlb_ppn(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto 10);
-          d_tlb_att(to_integer(unsigned(mmu_index))) <= csr_wdata(07 downto 00);
-        end if;
+    if rising_edge(clk_i) then
+      -- instruction TLB: update virtual page number --
+      if (mmu_i_we(0) = '1') then
+        i_tlb_vtg(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto csr_vtg_lsb_c);
+      end if;
+      -- instruction TLB: update physical page number and attributes --
+      if (mmu_i_we(1) = '1') then
+        i_tlb_ppn(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto 10);
+        i_tlb_att(to_integer(unsigned(mmu_index))) <= csr_wdata(7 downto 0);
+      end if;
+      -- data TLB: update virtual page number --
+      if (mmu_d_we(0) = '1') then
+        d_tlb_vtg(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto csr_vtg_lsb_c);
+      end if;
+      -- data TLB: update physical page number and attributes --
+      if (mmu_d_we(1) = '1') then
+        d_tlb_ppn(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto 10);
+        d_tlb_att(to_integer(unsigned(mmu_index))) <= csr_wdata(7 downto 0);
       end if;
     end if;
   end process mmu_update;
@@ -281,12 +273,12 @@ begin
       fault_s_o <= '0';
     elsif rising_edge(clk_i) then
       i_ppn_ff  <= i_lookup.ppn;
-      i_stb_ff  <= ibus_req_i.stb and (not i_fault); -- request only if no page fault
+      i_stb_ff  <= ibus_req_i.stb and (not i_fault); -- issue translated request only if no page fault
       d_ppn_ff  <= d_lookup.ppn;
-      d_stb_ff  <= dbus_req_i.stb and (not l_fault) and (not s_fault); -- request only if no page fault
-      fault_i_o <= atp_en and ibus_req_i.stb and i_fault; -- valid instruction page fault
-      fault_l_o <= atp_en and dbus_req_i.stb and l_fault; -- valid load page fault
-      fault_s_o <= atp_en and dbus_req_i.stb and s_fault; -- valid store page fault
+      d_stb_ff  <= dbus_req_i.stb and (not l_fault) and (not s_fault); -- issue translated request only if no page fault
+      fault_i_o <= atp_en and ibus_req_i.stb and i_fault; -- instruction page fault
+      fault_l_o <= atp_en and dbus_req_i.stb and l_fault; -- load page fault
+      fault_s_o <= atp_en and dbus_req_i.stb and s_fault; -- store page fault
     end if;
   end process output_buffer;
 
