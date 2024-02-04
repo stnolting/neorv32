@@ -3,8 +3,8 @@
 -- # ********************************************************************************************* #
 -- # Providing *minimal* memory protection, memory virtualization and memory paging support. The   #
 -- # page table entry layout is compatible to the RISC-V "Sv32" specification. The PTE table       #
--- # (translation look-aside buffer, TLB) uses a cache-like direct-mapped architecture.            #
--- # Note that this MMU does NOT support any kind of hardware page walking.                        #
+-- # (translation look-aside buffer, TLB) uses separated, direct-mapped TLBs for instruction and   #
+-- # data accesses. Note that this MMU does NOT support any kind of hardware page walking.         #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -86,13 +86,13 @@ architecture neorv32_cpu_mmu_rtl of neorv32_cpu_mmu is
   constant att_a_c : natural := 6; -- entry has been accessed
   constant att_d_c : natural := 7; -- entry is dirty
 
-  -- translation table --
-  type pte_vtg_t is array (0 to num_ptes_c-1) of std_ulogic_vector(mmu_vtg_size_c-1 downto 0);
-  type pte_ppn_t is array (0 to num_ptes_c-1) of std_ulogic_vector(19 downto 0);
-  type pte_att_t is array (0 to num_ptes_c-1) of std_ulogic_vector(7 downto 0);
-  signal pte_vtg : pte_vtg_t; -- PTE virtual page number tag
-  signal pte_ppn : pte_ppn_t; -- PTE physical page number
-  signal pte_att : pte_att_t; -- PTE attributes/flags
+  -- translation tables (TLBs) --
+  type tlb_vtg_t is array (0 to num_ptes_c-1) of std_ulogic_vector(mmu_vtg_size_c-1 downto 0);
+  type tlb_ppn_t is array (0 to num_ptes_c-1) of std_ulogic_vector(19 downto 0);
+  type tlb_att_t is array (0 to num_ptes_c-1) of std_ulogic_vector(7 downto 0);
+  signal i_tlb_vtg, d_tlb_vtg : tlb_vtg_t; -- PTE virtual page number tag
+  signal i_tlb_ppn, d_tlb_ppn : tlb_ppn_t; -- PTE physical page number
+  signal i_tlb_att, d_tlb_att : tlb_att_t; -- PTE attributes/flags
 
   -- MMU enable --
   signal atp_en : std_ulogic;
@@ -101,6 +101,7 @@ architecture neorv32_cpu_mmu_rtl of neorv32_cpu_mmu is
   signal csr_en     : std_ulogic; -- access to MMU CSRs
   signal csr_wdata  : std_ulogic_vector(XLEN-1 downto 0); -- write data buffer
   signal mmu_we     : std_ulogic_vector(1 downto 0); -- MMU table write enable
+  signal mmu_id_sel : std_ulogic; -- instruction/data TLB select
   signal mmu_index  : std_ulogic_vector(index_size_f(num_ptes_c)-1 downto 0); -- PTE select
   signal mmu_vpn_rd : std_ulogic_vector(XLEN-1 downto 0); -- VPN read-back
   signal mmu_pte_rd : std_ulogic_vector(XLEN-1 downto 0); -- PTE read-back
@@ -131,10 +132,11 @@ begin
   csr_write: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      atp_en    <= '0';
-      mmu_we    <= (others => '0');
-      csr_wdata <= (others => '0');
-      mmu_index <= (others => '0');
+      atp_en     <= '0';
+      mmu_we     <= (others => '0');
+      csr_wdata  <= (others => '0');
+      mmu_id_sel <= '0';
+      mmu_index  <= (others => '0');
     elsif rising_edge(clk_i) then
       mmu_we <= (others => '0');
       if (csr_we_i = '1') and (csr_en = '1') then
@@ -143,7 +145,8 @@ begin
           atp_en <= csr_wdata_i(31);
         end if;
         if (csr_addr_i(1 downto 0) = csr_mxmmusel_c(1 downto 0)) then -- page table entry select
-          mmu_index <= csr_wdata_i(mmu_index'range);
+          mmu_id_sel <= csr_wdata_i(31);
+          mmu_index  <= csr_wdata_i(mmu_index'range);
         end if;
         if (csr_addr_i(1 downto 0) = csr_mxmmuvpn_c(1 downto 0)) then -- virtual page number
           mmu_we(0) <= '1';
@@ -156,7 +159,7 @@ begin
   end process csr_write;
 
   -- read access --
-  csr_read: process(csr_en, csr_addr_i, atp_en, mmu_index, mmu_vpn_rd, mmu_pte_rd)
+  csr_read: process(csr_en, csr_addr_i, atp_en, mmu_index, mmu_id_sel, mmu_vpn_rd, mmu_pte_rd)
   begin
     csr_rdata_o <= (others => '0'); -- default
     if (csr_en = '1') then
@@ -165,6 +168,7 @@ begin
           csr_rdata_o(31) <= atp_en;
         when "01" => -- virtual page number
           csr_rdata_o(mmu_index'range) <= mmu_index;
+          csr_rdata_o(31)              <= mmu_id_sel;
         when "10" => -- virtual page number
           csr_rdata_o <= mmu_vpn_rd;
         when "11" => -- page table entry
@@ -184,18 +188,33 @@ begin
   mmu_update: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      pte_vtg <= (others => (others => '0'));
-      pte_ppn <= (others => (others => '0'));
-      pte_att <= (others => (others => '0'));
+      i_tlb_vtg <= (others => (others => '0'));
+      i_tlb_ppn <= (others => (others => '0'));
+      i_tlb_att <= (others => (others => '0'));
+      d_tlb_vtg <= (others => (others => '0'));
+      d_tlb_ppn <= (others => (others => '0'));
+      d_tlb_att <= (others => (others => '0'));
     elsif rising_edge(clk_i) then
-      -- update virtual page number --
-      if (mmu_we(0) = '1') then
-        pte_vtg(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto csr_vtg_lsb_c);
-      end if;
-      -- update actual TLB entry --
-      if (mmu_we(1) = '1') then
-        pte_ppn(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto 10);
-        pte_att(to_integer(unsigned(mmu_index))) <= csr_wdata(07 downto 00);
+      if (mmu_id_sel = '0') then -- instruction TLB
+        -- update virtual page number --
+        if (mmu_we(0) = '1') then
+          i_tlb_vtg(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto csr_vtg_lsb_c);
+        end if;
+        -- update actual TLB entry --
+        if (mmu_we(1) = '1') then
+          i_tlb_ppn(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto 10);
+          i_tlb_att(to_integer(unsigned(mmu_index))) <= csr_wdata(07 downto 00);
+        end if;
+      else -- data TLB
+        -- update virtual page number --
+        if (mmu_we(0) = '1') then
+          d_tlb_vtg(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto csr_vtg_lsb_c);
+        end if;
+        -- update actual TLB entry --
+        if (mmu_we(1) = '1') then
+          d_tlb_ppn(to_integer(unsigned(mmu_index))) <= csr_wdata(29 downto 10);
+          d_tlb_att(to_integer(unsigned(mmu_index))) <= csr_wdata(07 downto 00);
+        end if;
       end if;
     end if;
   end process mmu_update;
@@ -207,16 +226,29 @@ begin
       mmu_vpn_rd <= (others => '0');
       mmu_pte_rd <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- virtual page number --
-      mmu_vpn_rd(XLEN-1 downto 30)          <= (others => '0'); -- 32-bit physical address space only
-      mmu_vpn_rd(29 downto csr_vtg_lsb_c)   <= pte_vtg(to_integer(unsigned(mmu_index))); -- page number MSBs (tag)
-      mmu_vpn_rd(csr_vtg_lsb_c-1 downto 10) <= mmu_index; -- page number LSBs (index)
-      mmu_vpn_rd(9 downto 0)                <= (others => '0'); -- unused
-      -- page table entry --
-      mmu_pte_rd(XLEN-1 downto 30) <= (others => '0'); -- 32-bit physical address space only
-      mmu_pte_rd(29 downto 10)     <= pte_ppn(to_integer(unsigned(mmu_index))); -- physical page number
-      mmu_pte_rd(9 downto 8)       <= "00"; -- RSW: reserved
-      mmu_pte_rd(7 downto 0)       <= pte_att(to_integer(unsigned(mmu_index)));
+      if (mmu_id_sel = '0') then -- instruction TLB
+        -- virtual page number --
+        mmu_vpn_rd(XLEN-1 downto 30)          <= (others => '0'); -- 32-bit physical address space only
+        mmu_vpn_rd(29 downto csr_vtg_lsb_c)   <= i_tlb_vtg(to_integer(unsigned(mmu_index))); -- page number MSBs (tag)
+        mmu_vpn_rd(csr_vtg_lsb_c-1 downto 10) <= mmu_index; -- page number LSBs (index)
+        mmu_vpn_rd(9 downto 0)                <= (others => '0'); -- unused
+        -- page table entry --
+        mmu_pte_rd(XLEN-1 downto 30)          <= (others => '0'); -- 32-bit physical address space only
+        mmu_pte_rd(29 downto 10)              <= i_tlb_ppn(to_integer(unsigned(mmu_index))); -- physical page number
+        mmu_pte_rd(9 downto 8)                <= "00"; -- RSW: reserved
+        mmu_pte_rd(7 downto 0)                <= i_tlb_att(to_integer(unsigned(mmu_index)));
+      else -- data TLB
+        -- virtual page number --
+        mmu_vpn_rd(XLEN-1 downto 30)          <= (others => '0'); -- 32-bit physical address space only
+        mmu_vpn_rd(29 downto csr_vtg_lsb_c)   <= d_tlb_vtg(to_integer(unsigned(mmu_index))); -- page number MSBs (tag)
+        mmu_vpn_rd(csr_vtg_lsb_c-1 downto 10) <= mmu_index; -- page number LSBs (index)
+        mmu_vpn_rd(9 downto 0)                <= (others => '0'); -- unused
+        -- page table entry --
+        mmu_pte_rd(XLEN-1 downto 30)          <= (others => '0'); -- 32-bit physical address space only
+        mmu_pte_rd(29 downto 10)              <= d_tlb_ppn(to_integer(unsigned(mmu_index))); -- physical page number
+        mmu_pte_rd(9 downto 8)                <= "00"; -- RSW: reserved
+        mmu_pte_rd(7 downto 0)                <= d_tlb_att(to_integer(unsigned(mmu_index)));
+      end if;
     end if;
   end process mmu_readback;
 
@@ -227,16 +259,16 @@ begin
   -- instruction fetch lookup --
   i_lookup.idx <= ibus_req_i.addr(adr_vtg_lsb_c-1 downto 12); -- virtual page number index
   i_lookup.vtg <= ibus_req_i.addr(31 downto adr_vtg_lsb_c); -- virtual page number tag
-  i_lookup.ppn <= pte_ppn(to_integer(unsigned(i_lookup.idx))); -- translated physical page number
-  i_lookup.att <= pte_att(to_integer(unsigned(i_lookup.idx))); -- PTE attributes
-  i_lookup.hit <= '1' when (pte_vtg(to_integer(unsigned(i_lookup.idx))) = i_lookup.vtg) else '0'; -- PTE available?
+  i_lookup.ppn <= i_tlb_ppn(to_integer(unsigned(i_lookup.idx))); -- translated physical page number
+  i_lookup.att <= i_tlb_att(to_integer(unsigned(i_lookup.idx))); -- PTE attributes
+  i_lookup.hit <= '1' when (i_tlb_vtg(to_integer(unsigned(i_lookup.idx))) = i_lookup.vtg) else '0'; -- PTE available?
 
   -- data access lookup --
   d_lookup.idx <= dbus_req_i.addr(adr_vtg_lsb_c-1 downto 12); -- virtual page number index
   d_lookup.vtg <= dbus_req_i.addr(31 downto adr_vtg_lsb_c); -- virtual page number tag
-  d_lookup.ppn <= pte_ppn(to_integer(unsigned(d_lookup.idx))); -- translated physical page number
-  d_lookup.att <= pte_att(to_integer(unsigned(d_lookup.idx))); -- PTE attributes
-  d_lookup.hit <= '1' when (pte_vtg(to_integer(unsigned(d_lookup.idx))) = d_lookup.vtg) else '0'; -- PTE available?
+  d_lookup.ppn <= d_tlb_ppn(to_integer(unsigned(d_lookup.idx))); -- translated physical page number
+  d_lookup.att <= d_tlb_att(to_integer(unsigned(d_lookup.idx))); -- PTE attributes
+  d_lookup.hit <= '1' when (d_tlb_vtg(to_integer(unsigned(d_lookup.idx))) = d_lookup.vtg) else '0'; -- PTE available?
 
   -- instruction page fault --
   i_fault <= '1' when (ibus_req_i.priv /= priv_mode_m_c) and -- non-machine-mode access
@@ -290,7 +322,7 @@ begin
       i_ppn_ff  <= i_lookup.ppn;
       i_stb_ff  <= ibus_req_i.stb and (not i_fault); -- request only if no page fault
       d_ppn_ff  <= d_lookup.ppn;
-      d_stb_ff  <= ibus_req_i.stb and (not l_fault) and (not s_fault); -- request only if no page fault
+      d_stb_ff  <= dbus_req_i.stb and (not l_fault) and (not s_fault); -- request only if no page fault
       fault_i_o <= atp_en and ibus_req_i.stb and i_fault; -- valid instruction page fault
       fault_l_o <= atp_en and dbus_req_i.stb and l_fault; -- valid load page fault
       fault_s_o <= atp_en and dbus_req_i.stb and s_fault; -- valid store page fault
