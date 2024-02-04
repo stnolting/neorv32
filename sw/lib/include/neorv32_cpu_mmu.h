@@ -49,16 +49,6 @@
 
 
 /**********************************************************************//**
- * MMU Page Table Entry
- **************************************************************************/
-typedef struct {
-  uint32_t vpn; // virtual page number, 20-bit, LSB-aligned
-  uint32_t ppn; // physical page number, 20-bit, LSB-aligned
-  uint8_t  att; // attributes and configuration flags, see #NEORV32_CPU_MMU_ATT_enum
-} neorv32_mmu_pte_t;
-
-
-/**********************************************************************//**
  * PTE Attribute Masks
  **************************************************************************/
 /**@{*/
@@ -81,9 +71,7 @@ int neorv32_cpu_mmu_available(void);
 void neorv32_cpu_mmu_atp_enable(void);
 void neorv32_cpu_mmu_atp_disable(void);
 int neorv32_cpu_mmu_tlb_size(void);
-void noerv32_cpu_mmu_pte_set(int index, neorv32_mmu_pte_t pte);
-neorv32_mmu_pte_t noerv32_cpu_mmu_pte_get(int index);
-int neorv32_cpu_mmu_addr2index(uint32_t vaddr);
+int neorv32_cpu_mmu_pte_configure(int id_sel, uint32_t vpn, uint32_t ppn, uint8_t att);
 /**@}*/
 
 

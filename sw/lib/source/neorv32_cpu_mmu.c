@@ -49,7 +49,7 @@
  **************************************************************************/
 int neorv32_cpu_mmu_available(void) {
 
-//if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << ?)) {
+//if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZXMMU)) {
 //  return 1;
 //}
 //else {
@@ -78,82 +78,50 @@ void neorv32_cpu_mmu_atp_disable(void) {
 
 
 /**********************************************************************//**
- * Get number of available page table entries in MMU TLB.
+ * Get number of available page table entries in MMU TLBs.
  *
  * @return 0 if MMU was not synthesized, 1 if MMU is available.
  **************************************************************************/
 int neorv32_cpu_mmu_tlb_size(void) {
 
   // try to set all select bits
-  neorv32_cpu_csr_write(CSR_MXMMUSEL, 0xffffffff);
+  neorv32_cpu_csr_write(CSR_MXMMUSEL, 0x000000ff); // clear I/D select bit (31)
   uint32_t tmp = neorv32_cpu_csr_read(CSR_MXMMUSEL);
 
-  return (int)(1 << tmp);
+  return (int)(tmp + 1);
 }
 
 
 /**********************************************************************//**
  * Configure page table entry.
  *
- * @param[in] index TLB entry select.
- * @param[in] pte Page table entry struct (#neorv32_mmu_pte_t).
+ * @param[in] id_sel Instruction (0) or data (1) TLB select.
+ * @param[in] vpn Virtual page number, 20-bit, LSB-aligned.
+ * @param[in] ppn Physical page number, 20-bit, LSB-aligned.
+ * @param[in] att PTE attributes.
+ *
+ * @return Returns the TLB entry index that is used for the updated PTE.
  **************************************************************************/
-void noerv32_cpu_mmu_pte_set(int index, neorv32_mmu_pte_t pte) {
+int neorv32_cpu_mmu_pte_configure(int id_sel, uint32_t vpn, uint32_t ppn, uint8_t att) {
+
+  // compute index according to the virtual address
+  neorv32_cpu_csr_write(CSR_MXMMUSEL, 0x000000ff); // clear I/D select bit (31)
+  uint32_t mask = neorv32_cpu_csr_read(CSR_MXMMUSEL);
+  uint32_t index = vpn & mask;
 
   // select indexed TLB entry
-  neorv32_cpu_csr_write(CSR_MXMMUSEL, (uint32_t)index);
+  uint32_t sel = index;
+  sel |= (uint32_t)(id_sel) << 31;
+  neorv32_cpu_csr_write(CSR_MXMMUSEL, sel);
 
   // align
-  uint32_t v = pte.vpn << 10;
-  uint32_t p = pte.ppn << 10;
-  uint32_t f = (uint32_t)(pte.att);
+  uint32_t v = vpn << 10;
+  uint32_t p = ppn << 10;
+  uint32_t f = (uint32_t)(att);
 
   // update entry
   neorv32_cpu_csr_write(CSR_MXMMUVPN, v);
   neorv32_cpu_csr_write(CSR_MXMMUPTE, p | f);
-}
 
-
-/**********************************************************************//**
- * Read page table entry.
- *
- * @param[in] index TLB entry select.
- *
- * @return PTE configuration struct (#neorv32_mmu_pte_t).
- **************************************************************************/
-neorv32_mmu_pte_t noerv32_cpu_mmu_pte_get(int index) {
-
-  // select indexed TLB entry
-  neorv32_cpu_csr_write(CSR_MXMMUSEL, (uint32_t)index);
-
-  uint32_t v = neorv32_cpu_csr_read(CSR_MXMMUVPN);
-  uint32_t p = neorv32_cpu_csr_read(CSR_MXMMUPTE);
-
-  neorv32_mmu_pte_t pte;
-
-  pte.vpn = v >> 10;
-  pte.ppn = p >> 10;
-  pte.att = (uint8_t)(p & 0xff);
-
-  return pte;
-}
-
-
-/**********************************************************************//**
- * Convert virtual address to TLB index.
- *
- * @param[in] vaddr Virtual 32-bit address.
- *
- * @return According TLB index.
- **************************************************************************/
-int neorv32_cpu_mmu_addr2index(uint32_t vaddr) {
-
-  // remove offset
-  uint32_t tmp = vaddr >> 12;
-
-  // masking
-  neorv32_cpu_csr_write(CSR_MXMMUSEL, 0xffffffff);
-  uint32_t mask = neorv32_cpu_csr_read(CSR_MXMMUSEL);
-
-  return (int)(tmp & mask);
+  return (int)index;
 }
