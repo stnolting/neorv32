@@ -133,7 +133,6 @@ neorv32               - Project home folder
 ├docs                 - Project documentation
 │├datasheet           - AsciiDoc sources for the NEORV32 data sheet
 │├figures             - Figures and logos
-│├icons               - Misc. symbols
 │├references          - Data sheets and RISC-V specs
 │├sources             - Sources for the images in 'figures/'
 │└userguide           - AsciiDoc sources for the NEORV32 user guide

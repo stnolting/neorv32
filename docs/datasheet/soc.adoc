@@ -432,7 +432,7 @@ The mapping of the 16 FIRQ channels to the according processor-internal modules 
 table (the channel number also corresponds to the according FIRQ priority: 0 = highest, 15 = lowest):
 
 .NEORV32 Fast Interrupt Request (FIRQ) Mapping
-[cols="^2,<8,<7"]
+[cols="^2,<2,<6"]
 [options="header",grid="rows"]
 |=======================
 | Channel | Source | Description
