@@ -2,9 +2,9 @@
 -- # << NEORV32 CPU - Memory Management Unit >>                                                    #
 -- # ********************************************************************************************* #
 -- # Providing *minimal* memory protection, memory virtualization and memory paging support. The   #
--- # page table entry layout is compatible to the RISC-V "Sv32" specification. The PTE table       #
--- # (translation look-aside buffer, TLB) uses separated, direct-mapped TLBs for instruction and   #
--- # data accesses. Note that this MMU does NOT support any kind of hardware page walking.         #
+-- # page table entry layout is compatible to the RISC-V "Sv32" virtual memory specification. The  #
+-- # MMU's PTE storage uses separated direct-mapped TLBs for instruction and data translations.    #
+-- # Note that this MMU does NOT support any kind of hardware page walking.                        #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -45,7 +45,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_mmu is
   generic (
-    MMU_TLB_SIZE : natural range 2 to 16 -- number of TLB entries, has to be a power of 2
+    MMU_TLB_SIZE : natural range 2 to 1024 -- number of TLB entries, has to be a power of 2, min 2
   );
   port (
     -- global control --
@@ -104,6 +104,8 @@ architecture neorv32_cpu_mmu_rtl of neorv32_cpu_mmu is
   signal mmu_d_we   : std_ulogic_vector(1 downto 0); -- data TLB table write enable
   signal mmu_id_sel : std_ulogic; -- instruction/data TLB select
   signal mmu_index  : std_ulogic_vector(index_size_f(num_ptes_c)-1 downto 0); -- TLB index / PTE select
+  signal mmu_vpn_rd : std_ulogic_vector(XLEN-1 downto 0); -- VPN read-back
+  signal mmu_pte_rd : std_ulogic_vector(XLEN-1 downto 0); -- PTE read-back
 
   -- table lookup --
   type lookup_t is record
@@ -163,16 +165,21 @@ begin
   end process csr_write;
 
   -- read access --
-  csr_read: process(csr_en, csr_addr_i, atp_en, mmu_index, mmu_id_sel)
+  csr_read: process(csr_en, csr_addr_i, atp_en, mmu_index, mmu_id_sel, mmu_vpn_rd, mmu_pte_rd)
   begin
     csr_rdata_o <= (others => '0'); -- default
     if (csr_en = '1') then
-      if (csr_addr_i(0) = '0') then -- address translation and protection
-        csr_rdata_o(31) <= atp_en;
-      else -- virtual page number
-        csr_rdata_o(mmu_index'range) <= mmu_index;
-        csr_rdata_o(31)              <= mmu_id_sel;
-      end if;
+      case csr_addr_i(1 downto 0) is
+        when "00" => -- address translation and protection
+          csr_rdata_o(31) <= atp_en;
+        when "01" => -- page table entry select
+          csr_rdata_o(mmu_index'range) <= mmu_index;
+          csr_rdata_o(31)              <= mmu_id_sel;
+        when "10" => -- virtual page number
+          csr_rdata_o <= mmu_vpn_rd;
+        when others => -- page table entry
+          csr_rdata_o <= mmu_pte_rd;
+      end case;
     end if;
   end process csr_read;
 
@@ -205,6 +212,40 @@ begin
       end if;
     end if;
   end process mmu_update;
+
+
+  -- read-back --
+  mmu_readback: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      mmu_vpn_rd <= (others => '0');
+      mmu_pte_rd <= (others => '0');
+    elsif rising_edge(clk_i) then
+      if (mmu_id_sel = '0') then -- instruction TLB
+        -- virtual page number --
+        mmu_vpn_rd(XLEN-1 downto 30)          <= (others => '0'); -- 32-bit physical address space only
+        mmu_vpn_rd(29 downto csr_vtg_lsb_c)   <= i_tlb_vtg(to_integer(unsigned(mmu_index))); -- page number MSBs (tag)
+        mmu_vpn_rd(csr_vtg_lsb_c-1 downto 10) <= mmu_index; -- page number LSBs (index)
+        mmu_vpn_rd(9 downto 0)                <= (others => '0'); -- unused
+        -- page table entry --
+        mmu_pte_rd(XLEN-1 downto 30)          <= (others => '0'); -- 32-bit physical address space only
+        mmu_pte_rd(29 downto 10)              <= i_tlb_ppn(to_integer(unsigned(mmu_index))); -- physical page number
+        mmu_pte_rd(9 downto 8)                <= "00"; -- RSW: reserved
+        mmu_pte_rd(7 downto 0)                <= i_tlb_att(to_integer(unsigned(mmu_index)));
+      else -- data TLB
+        -- virtual page number --
+        mmu_vpn_rd(XLEN-1 downto 30)          <= (others => '0'); -- 32-bit physical address space only
+        mmu_vpn_rd(29 downto csr_vtg_lsb_c)   <= d_tlb_vtg(to_integer(unsigned(mmu_index))); -- page number MSBs (tag)
+        mmu_vpn_rd(csr_vtg_lsb_c-1 downto 10) <= mmu_index; -- page number LSBs (index)
+        mmu_vpn_rd(9 downto 0)                <= (others => '0'); -- unused
+        -- page table entry --
+        mmu_pte_rd(XLEN-1 downto 30)          <= (others => '0'); -- 32-bit physical address space only
+        mmu_pte_rd(29 downto 10)              <= d_tlb_ppn(to_integer(unsigned(mmu_index))); -- physical page number
+        mmu_pte_rd(9 downto 8)                <= "00"; -- RSW: reserved
+        mmu_pte_rd(7 downto 0)                <= d_tlb_att(to_integer(unsigned(mmu_index)));
+      end if;
+    end if;
+  end process mmu_readback;
 
 
   -- TLB Lookup -----------------------------------------------------------------------------
@@ -298,12 +339,12 @@ begin
     dbus_req_o <= dbus_req_i;
     if (atp_en = '1') then -- address translation and protection enabled
       -- instruction fetch --
-      if (ibus_req_i.priv /= priv_mode_m_c) then -- translate only when not in machine-mode
+      if (ibus_req_i.priv /= priv_mode_m_c) then -- translate only when not in (effective) machine-mode
         ibus_req_o.addr(31 downto 12) <= i_ppn_ff;
         ibus_req_o.stb                <= i_stb_ff;
       end if;
       -- data access --
-      if (dbus_req_i.priv /= priv_mode_m_c) then -- translate only when not in machine-mode
+      if (dbus_req_i.priv /= priv_mode_m_c) then -- translate only when not in (effective) machine-mode
         dbus_req_o.addr(31 downto 12) <= d_ppn_ff;
         dbus_req_o.stb                <= d_stb_ff;
       end if;
