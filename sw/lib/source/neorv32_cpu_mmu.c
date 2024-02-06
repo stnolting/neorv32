@@ -62,7 +62,7 @@ int neorv32_cpu_mmu_available(void) {
 /**********************************************************************//**
  * Initialize (reset) MMU.
  *
- * @warning This function has to be called before enabling the MMU.
+ * @warning This function has to be called once before enabling the MMU.
  **************************************************************************/
 void neorv32_cpu_mmu_init(void) {
 
@@ -128,9 +128,8 @@ int neorv32_cpu_mmu_pte_configure(int id_sel, uint32_t vpn, uint32_t ppn, uint8_
   uint32_t index = vpn & mask;
 
   // select indexed TLB entry
-  uint32_t sel = index;
-  sel |= (uint32_t)(id_sel) << 31; // instruction / data TLB
-  neorv32_cpu_csr_write(CSR_MXMMUSEL, sel);
+  index |= (uint32_t)(id_sel) << 31; // instruction / data TLB
+  neorv32_cpu_csr_write(CSR_MXMMUSEL, index);
 
   // align
   uint32_t v = vpn << 10;
@@ -142,4 +141,37 @@ int neorv32_cpu_mmu_pte_configure(int id_sel, uint32_t vpn, uint32_t ppn, uint8_
   neorv32_cpu_csr_write(CSR_MXMMUPTE, p | f);
 
   return (int)index;
+}
+
+
+/**********************************************************************//**
+ * Read PTE from MMU TLB.
+ *
+ * @param[in] id_sel Instruction (0) or data (1) TLB select.
+ * @param[in] vaddr Virtual address according to the requested PTE.
+ * @param[inm,out] pte Pointer for returning PTE.
+ *
+ * @return Returns -1 if no matching PTE is found, return 0 on success.
+ **************************************************************************/
+int neorv32_cpu_mmu_pet_get(int id_sel, uint32_t vaddr, uint32_t* pte) {
+
+  // compute index according to the virtual address
+  neorv32_cpu_csr_write(CSR_MXMMUSEL, 0x000000ff); // clear I/D select bit (31)
+  uint32_t mask = neorv32_cpu_csr_read(CSR_MXMMUSEL);
+  uint32_t index = (vaddr >> 12) & mask;
+
+  // select indexed TLB entry
+  index |= (uint32_t)(id_sel) << 31; // instruction / data TLB
+  neorv32_cpu_csr_write(CSR_MXMMUSEL, index);
+
+  uint32_t vpn = neorv32_cpu_csr_read(CSR_MXMMUVPN) >> 10;
+  uint32_t tmp = vaddr >> 12;
+
+  // check if PTE according to vaddr is present in TLB
+  if (vpn != tmp) {
+    return -1; // entry not found
+  }
+
+  *pte = neorv32_cpu_csr_read(CSR_MXMMUPTE);
+  return 0;
 }

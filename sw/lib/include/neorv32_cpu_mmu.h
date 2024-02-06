@@ -73,6 +73,7 @@ void neorv32_cpu_mmu_atp_enable(void);
 void neorv32_cpu_mmu_atp_disable(void);
 int neorv32_cpu_mmu_tlb_size(void);
 int neorv32_cpu_mmu_pte_configure(int id_sel, uint32_t vpn, uint32_t ppn, uint8_t att);
+int neorv32_cpu_mmu_pet_get(int id_sel, uint32_t vaddr, uint32_t* pte);
 /**@}*/
 
 
