@@ -647,8 +647,6 @@ begin
   -- -> done in "float_comparator"
 
   -- exceptions --
-  fu_compare.flags <= (others => '0'); -- does not generate exceptions here, but normalizer can generate exceptions
-
 
   -- Min/Max Select (FMIN/FMAX) -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
