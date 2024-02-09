@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -51,7 +51,7 @@
  **************************************************************************/
 int neorv32_xip_available(void) {
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_XIP)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XIP)) {
     return 1;
   }
   else {
@@ -177,26 +177,6 @@ uint32_t neorv32_xip_get_clock_speed(void) {
   }
 
   return NEORV32_SYSINFO->CLK / tmp;
-}
-
-
-/**********************************************************************//**
- * Enable XIP burst mode (incremental reads).
- *
- * @note Make sure your flash supports this feature (most flash chips do so).
- **************************************************************************/
-void neorv32_xip_burst_mode_enable(void) {
-
-  NEORV32_XIP->CTRL |= 1 << XIP_CTRL_BURST_EN;
-}
-
-
-/**********************************************************************//**
- * Disable XIP burst mode.
- **************************************************************************/
-void neorv32_xip_burst_mode_disable(void) {
-
-  NEORV32_XIP->CTRL &= ~(1 << XIP_CTRL_BURST_EN);
 }
 
 

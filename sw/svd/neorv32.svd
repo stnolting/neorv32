@@ -605,14 +605,15 @@
               <description>SPI high-speed mode enable (ignoring XIP_CTRL_PRSC)</description>
             </field>
             <field>
-              <name>XIP_CTRL_BURST_EN</name>
-              <bitRange>[23:23]</bitRange>
-              <description>Enable burst mode (for XIP accesses)</description>
+              <name>XIP_CTRL_CDIV</name>
+              <bitRange>[23:26]</bitRange>
+              <description>SPI clock divider</description>
             </field>
             <field>
-              <name>XIP_CTRL_CDIV</name>
-              <bitRange>[24:27]</bitRange>
-              <description>SPI clock divider</description>
+              <name>XIP_CTRL_BURST_EN</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>Busr mode enabled (when cache is implemented)</description>
             </field>
             <field>
               <name>XIP_CTRL_PHY_BUSY</name>
@@ -1609,7 +1610,7 @@
             <field><name>SYSINFO_SOC_IO_NEOLED</name><bitRange>[26:26]</bitRange><description>NeoPixel-compatible smart LED interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_XIRQ</name><bitRange>[27:27]</bitRange><description>External interrupt controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPTMR</name><bitRange>[28:28]</bitRange><description>General purpose timer implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_XIP</name><bitRange>[29:29]</bitRange><description>Execute in place module implemented</description></field>
+            <field><name>SYSINFO_SOC_XIP</name><bitRange>[29:29]</bitRange><description>Execute in place module implemented</description></field>
             <field><name>SYSINFO_SOC_IO_ONEWIRE</name><bitRange>[30:30]</bitRange><description>1-wire interface controller implemented</description></field>
             <field><name>SYSINFO_SOC_OCD</name><bitRange>[31:31]</bitRange><description>On-chip debugger implemented</description></field>
           </fields>
