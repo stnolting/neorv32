@@ -324,10 +324,11 @@ begin
   irq_o <= engine.done and config.enable; -- no interrupt if transfer was aborted
 
   -- bus output --
-  dma_req_o.priv <= priv_mode_m_c; -- privileged access
-  dma_req_o.src  <= '0'; -- source = data access
-  dma_req_o.addr <= engine.src_addr when (engine.state = S_READ) else engine.dst_addr;
-  dma_req_o.rvso <= '0'; -- no reservation set operation possible
+  dma_req_o.priv  <= priv_mode_m_c; -- privileged access
+  dma_req_o.src   <= '0'; -- source = data access
+  dma_req_o.addr  <= engine.src_addr when (engine.state = S_READ) else engine.dst_addr;
+  dma_req_o.rvso  <= '0'; -- no reservation set operation possible
+  dma_req_o.fence <= '0'; -- DMA cannot trigger a fence
 
   -- address increment --
   address_inc: process(config.qsel)
