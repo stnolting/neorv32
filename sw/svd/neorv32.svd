@@ -605,14 +605,15 @@
               <description>SPI high-speed mode enable (ignoring XIP_CTRL_PRSC)</description>
             </field>
             <field>
-              <name>XIP_CTRL_BURST_EN</name>
-              <bitRange>[23:23]</bitRange>
-              <description>Enable burst mode (for XIP accesses)</description>
+              <name>XIP_CTRL_CDIV</name>
+              <bitRange>[23:26]</bitRange>
+              <description>SPI clock divider</description>
             </field>
             <field>
-              <name>XIP_CTRL_CDIV</name>
-              <bitRange>[24:27]</bitRange>
-              <description>SPI clock divider</description>
+              <name>XIP_CTRL_BURST_EN</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>Busr mode enabled (when cache is implemented)</description>
             </field>
             <field>
               <name>XIP_CTRL_PHY_BUSY</name>
