@@ -27,12 +27,11 @@ set-associative) generics. If the cache associativity is greater than one the LR
 used) is used.
 
 
-**Cached/Unached Accesses**
+**Cached/Uncached Accesses**
 
 The data cache provides direct accesses (= uncached) to memory in order to access memory-mapped IO (like the
 processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
 will not be cached at all (see section <<_address_space>>).
-
 
 .Caching Internal Memories
 [NOTE]
@@ -42,8 +41,7 @@ when using only processor-internal data and instruction memories.
 
 .Manual Cache Clear/Reload
 [NOTE]
-By executing the `fence.i` instruction (<<_zifencei_isa_extension>>) the cache is cleared and a reload from
-main memory is triggered. This also allows to implement self-modifying code.
+By executing the `fence(.i)` instruction the cache is cleared and a reload from main memory is triggered.
 
 .Retrieve Cache Configuration from Software
 [TIP]
