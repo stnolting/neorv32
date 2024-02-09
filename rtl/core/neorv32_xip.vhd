@@ -279,8 +279,8 @@ begin
       bus_req_o => xip_req,
       bus_rsp_i => xip_rsp
     );
-    -- clear cache when entire module or XIP-mode is disabled --
-    cache_clear <= '1' when (ctrl(ctrl_enable_c) = '0') or (ctrl(ctrl_xip_enable_c) = '0') else '0';
+    -- clear cache when entire module or XIP-mode is disabled or on global FENCE operation --
+    cache_clear <= '1' when (ctrl(ctrl_enable_c) = '0') or (ctrl(ctrl_xip_enable_c) = '0') or (xip_req_i.fence = '1') else '0';
   end generate;
 
   neorv32_xip_cache_inst_false:
