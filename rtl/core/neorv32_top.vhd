@@ -489,7 +489,7 @@ begin
     -- Clock Gating ---------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_clockgate_inst_true:
-    if (CLOCK_GATING_EN = true) generate
+    if CLOCK_GATING_EN generate
       neorv32_clockgate_inst: entity neorv32.neorv32_clockgate
       port map (
         clk_i  => clk_i,
@@ -500,7 +500,7 @@ begin
     end generate;
 
     neorv32_clockgate_inst_false:
-    if (CLOCK_GATING_EN = false) generate
+    if not CLOCK_GATING_EN generate
       clk_cpu <= clk_i;
     end generate;
 
@@ -598,7 +598,7 @@ begin
     -- CPU Instruction Cache ------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_icache_inst_true:
-    if (ICACHE_EN = true) generate
+    if ICACHE_EN generate
       neorv32_icache_inst: entity neorv32.neorv32_icache
       generic map (
         ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
@@ -618,7 +618,7 @@ begin
     end generate;
 
     neorv32_icache_inst_false:
-    if (ICACHE_EN = false) generate
+    if not ICACHE_EN generate
       icache_req <= cpu_i_req;
       cpu_i_rsp  <= icache_rsp;
     end generate;
@@ -627,7 +627,7 @@ begin
     -- CPU Data Cache -------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_dcache_inst_true:
-    if (DCACHE_EN = true) generate
+    if DCACHE_EN generate
       neorv32_dcache_inst: entity neorv32.neorv32_dcache
       generic map (
         DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
@@ -646,7 +646,7 @@ begin
     end generate;
 
     neorv32_dcache_inst_false:
-    if (DCACHE_EN = false) generate
+    if not DCACHE_EN generate
       dcache_req <= cpu_d_req;
       cpu_d_rsp  <= dcache_rsp;
     end generate;
@@ -677,7 +677,7 @@ begin
   -- Direct Memory Access Controller (DMA) Complex
   -- **************************************************************************************************************************
   neorv32_dma_complex_true:
-  if (IO_DMA_EN = true) generate
+  if IO_DMA_EN generate
 
     -- DMA Controller -------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -715,7 +715,7 @@ begin
   end generate; -- /neorv32_dma_complex_true
 
   neorv32_dma_complex_false:
-  if (IO_DMA_EN = false) generate
+  if not IO_DMA_EN generate
     iodev_rsp(IODEV_DMA) <= rsp_terminate_c;
     main_req             <= core_req;
     core_rsp             <= main_rsp;
@@ -727,7 +727,7 @@ begin
   -- Reservation Set Controller (for atomic LR/SC memory accesses)
   -- **************************************************************************************************************************
   neorv32_bus_reservation_set_true:
-  if (CPU_EXTENSION_RISCV_A = true) generate
+  if CPU_EXTENSION_RISCV_A generate
     neorv32_bus_reservation_set_inst: entity neorv32.neorv32_bus_reservation_set
     generic map (
       GRANULARITY => AMO_RVS_GRANULARITY
@@ -746,7 +746,7 @@ begin
   end generate;
 
   neorv32_bus_reservation_set_false:
-  if (CPU_EXTENSION_RISCV_A = false) generate
+  if not CPU_EXTENSION_RISCV_A generate
     main2_req <= main_req;
     main_rsp  <= main2_rsp;
   end generate;
@@ -858,7 +858,7 @@ begin
     -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_boot_rom_inst_true:
-    if (INT_BOOTLOADER_EN = true) generate
+    if INT_BOOTLOADER_EN generate
       neorv32_boot_rom_inst: entity neorv32.neorv32_boot_rom
       port map (
         clk_i     => clk_i,
@@ -869,7 +869,7 @@ begin
     end generate;
 
     neorv32_boot_rom_inst_false:
-    if (INT_BOOTLOADER_EN = false) generate
+    if not INT_BOOTLOADER_EN generate
       boot_rsp <= rsp_terminate_c;
     end generate;
 
@@ -877,7 +877,7 @@ begin
     -- Execute In Place Module (XIP) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_xip_inst_true:
-    if (XIP_EN = true) generate
+    if XIP_EN generate
       neorv32_xip_inst: entity neorv32.neorv32_xip
       generic map (
         XIP_CACHE_EN         => XIP_CACHE_EN,
@@ -902,7 +902,7 @@ begin
     end generate;
 
     neorv32_xip_inst_false:
-    if (XIP_EN = false) generate
+    if not XIP_EN generate
       iodev_rsp(IODEV_XIP) <= rsp_terminate_c;
       xip_rsp              <= rsp_terminate_c;
       cg_en.xip            <= '0';
@@ -915,7 +915,7 @@ begin
     -- External Wishbone Gateway (WISHBONE) ---------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_wishbone_inst_true:
-    if (MEM_EXT_EN = true) generate
+    if MEM_EXT_EN generate
       neorv32_wishbone_inst: entity neorv32.neorv32_wishbone
       generic map (
         BUS_TIMEOUT => MEM_EXT_TIMEOUT,
@@ -944,7 +944,7 @@ begin
     end generate;
 
     neorv32_wishbone_inst_false:
-    if (MEM_EXT_EN = false) generate
+    if not MEM_EXT_EN generate
       xbus_rsp <= rsp_terminate_c;
       wb_adr_o <= (others => '0');
       wb_dat_o <= (others => '0');
@@ -1024,7 +1024,7 @@ begin
     -- Custom Functions Subsystem (CFS) -------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_cfs_inst_true:
-    if (IO_CFS_EN = true) generate
+    if IO_CFS_EN generate
       neorv32_cfs_inst: entity neorv32.neorv32_cfs
       generic map (
         CFS_CONFIG   => IO_CFS_CONFIG,
@@ -1045,7 +1045,7 @@ begin
     end generate;
 
     neorv32_cfs_inst_false:
-    if (IO_CFS_EN = false) generate
+    if not IO_CFS_EN generate
       iodev_rsp(IODEV_CFS) <= rsp_terminate_c;
       cg_en.cfs            <= '0';
       firq.cfs             <= '0';
@@ -1056,7 +1056,7 @@ begin
     -- Serial Data Interface (SDI) ------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_sdi_inst_true:
-    if (IO_SDI_EN = true) generate
+    if IO_SDI_EN generate
       neorv32_sdi_inst: entity neorv32.neorv32_sdi
       generic map (
         RTX_FIFO => IO_SDI_FIFO
@@ -1075,7 +1075,7 @@ begin
     end generate;
 
     neorv32_sdi_inst_false:
-    if (IO_SDI_EN = false) generate
+    if not IO_SDI_EN generate
       iodev_rsp(IODEV_SDI) <= rsp_terminate_c;
       sdi_dat_o            <= '0';
       firq.sdi             <= '0';
@@ -1085,7 +1085,7 @@ begin
     -- General Purpose Input/Output Port (GPIO) -----------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_gpio_inst_true:
-    if (io_gpio_en_c = true) generate
+    if io_gpio_en_c generate
       neorv32_gpio_inst: entity neorv32.neorv32_gpio
       generic map (
         GPIO_NUM => IO_GPIO_NUM
@@ -1101,7 +1101,7 @@ begin
     end generate;
 
     neorv32_gpio_inst_false:
-    if (io_gpio_en_c = false) generate
+    if not io_gpio_en_c generate
       iodev_rsp(IODEV_GPIO) <= rsp_terminate_c;
       gpio_o                <= (others => '0');
     end generate;
@@ -1110,7 +1110,7 @@ begin
     -- Watch Dog Timer (WDT) ------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_wdt_inst_true:
-    if (IO_WDT_EN = true) generate
+    if IO_WDT_EN generate
       neorv32_wdt_inst: entity neorv32.neorv32_wdt
       port map (
         clk_i       => clk_i,
@@ -1128,7 +1128,7 @@ begin
     end generate;
 
     neorv32_wdt_inst_false:
-    if (IO_WDT_EN = false) generate
+    if not IO_WDT_EN generate
       iodev_rsp(IODEV_WDT) <= rsp_terminate_c;
       firq.wdt             <= '0';
       rstn_wdt             <= '1';
@@ -1139,7 +1139,7 @@ begin
     -- Machine System Timer (MTIME) -----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_mtime_inst_true:
-    if (IO_MTIME_EN = true) generate
+    if IO_MTIME_EN generate
       neorv32_mtime_inst: entity neorv32.neorv32_mtime
       port map (
         clk_i     => clk_i,
@@ -1166,7 +1166,7 @@ begin
     end generate;
 
     neorv32_mtime_inst_false:
-    if (IO_MTIME_EN = false) generate
+    if not IO_MTIME_EN generate
       iodev_rsp(IODEV_MTIME) <= rsp_terminate_c;
       mtime_irq              <= mtime_irq_i;
       mtime_time_o           <= (others => '0');
@@ -1176,7 +1176,7 @@ begin
     -- Primary Universal Asynchronous Receiver/Transmitter (UART0) ----------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_uart0_inst_true:
-    if (IO_UART0_EN = true) generate
+    if IO_UART0_EN generate
       neorv32_uart0_inst: entity neorv32.neorv32_uart
       generic map (
         SIM_LOG_FILE => "neorv32.uart0.sim_mode.text.out",
@@ -1200,7 +1200,7 @@ begin
     end generate;
 
     neorv32_uart0_inst_false:
-    if (IO_UART0_EN = false) generate
+    if not IO_UART0_EN generate
       iodev_rsp(IODEV_UART0) <= rsp_terminate_c;
       uart0_txd_o            <= '0';
       uart0_rts_o            <= '1';
@@ -1213,7 +1213,7 @@ begin
     -- Secondary Universal Asynchronous Receiver/Transmitter (UART1) --------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_uart1_inst_true:
-    if (IO_UART1_EN = true) generate
+    if IO_UART1_EN generate
       neorv32_uart1_inst: entity neorv32.neorv32_uart
       generic map (
         SIM_LOG_FILE => "neorv32.uart1.sim_mode.text.out",
@@ -1237,7 +1237,7 @@ begin
     end generate;
 
     neorv32_uart1_inst_false:
-    if (IO_UART1_EN = false) generate
+    if not IO_UART1_EN generate
       iodev_rsp(IODEV_UART1) <= rsp_terminate_c;
       uart1_txd_o            <= '0';
       uart1_rts_o            <= '1';
@@ -1250,7 +1250,7 @@ begin
     -- Serial Peripheral Interface (SPI) ------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_spi_inst_true:
-    if (IO_SPI_EN = true) generate
+    if IO_SPI_EN generate
       neorv32_spi_inst: entity neorv32.neorv32_spi
       generic map (
         IO_SPI_FIFO => IO_SPI_FIFO
@@ -1271,7 +1271,7 @@ begin
     end generate;
 
     neorv32_spi_inst_false:
-    if (IO_SPI_EN = false) generate
+    if not IO_SPI_EN generate
       iodev_rsp(IODEV_SPI) <= rsp_terminate_c;
       spi_clk_o            <= '0';
       spi_dat_o            <= '0';
@@ -1284,7 +1284,7 @@ begin
     -- Two-Wire Interface (TWI) ---------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_twi_inst_true:
-    if (IO_TWI_EN = true) generate
+    if IO_TWI_EN generate
       neorv32_twi_inst: entity neorv32.neorv32_twi
       port map (
         clk_i       => clk_i,
@@ -1302,7 +1302,7 @@ begin
     end generate;
 
     neorv32_twi_inst_false:
-    if (IO_TWI_EN = false) generate
+    if not IO_TWI_EN generate
       iodev_rsp(IODEV_TWI) <= rsp_terminate_c;
       twi_sda_o            <= '1';
       twi_scl_o            <= '1';
@@ -1314,7 +1314,7 @@ begin
     -- Pulse-Width Modulation Controller (PWM) ------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_pwm_inst_true:
-    if (io_pwm_en_c = true) generate
+    if io_pwm_en_c generate
       neorv32_pwm_inst: entity neorv32.neorv32_pwm
       generic map (
         NUM_CHANNELS => IO_PWM_NUM_CH
@@ -1331,7 +1331,7 @@ begin
     end generate;
 
     neorv32_pwm_inst_false:
-    if (io_pwm_en_c = false) generate
+    if not io_pwm_en_c generate
       iodev_rsp(IODEV_PWM) <= rsp_terminate_c;
       cg_en.pwm            <= '0';
       pwm_o                <= (others => '0');
@@ -1341,7 +1341,7 @@ begin
     -- True Random Number Generator (TRNG) ----------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_trng_inst_true:
-    if (IO_TRNG_EN = true) generate
+    if IO_TRNG_EN generate
       neorv32_trng_inst: entity neorv32.neorv32_trng
       generic map (
         IO_TRNG_FIFO => IO_TRNG_FIFO
@@ -1356,7 +1356,7 @@ begin
     end generate;
 
     neorv32_trng_inst_false:
-    if (IO_TRNG_EN = false) generate
+    if not IO_TRNG_EN generate
       iodev_rsp(IODEV_TRNG) <= rsp_terminate_c;
       firq.trng             <= '0';
     end generate;
@@ -1365,7 +1365,7 @@ begin
     -- Smart LED (WS2811/WS2812) Interface (NEOLED) -------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_neoled_inst_true:
-    if (IO_NEOLED_EN = true) generate
+    if IO_NEOLED_EN generate
       neorv32_neoled_inst: entity neorv32.neorv32_neoled
       generic map (
         FIFO_DEPTH => IO_NEOLED_TX_FIFO
@@ -1383,7 +1383,7 @@ begin
     end generate;
 
     neorv32_neoled_inst_false:
-    if (IO_NEOLED_EN = false) generate
+    if not IO_NEOLED_EN generate
       iodev_rsp(IODEV_NEOLED) <= rsp_terminate_c;
       cg_en.neoled            <= '0';
       firq.neoled             <= '0';
@@ -1394,7 +1394,7 @@ begin
     -- External Interrupt Controller (XIRQ) ---------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_xirq_inst_true:
-    if (io_xirq_en_c = true) generate
+    if io_xirq_en_c generate
       neorv32_xirq_inst: entity neorv32.neorv32_xirq
       generic map (
         XIRQ_NUM_CH           => XIRQ_NUM_CH,
@@ -1413,7 +1413,7 @@ begin
     end generate;
 
     neorv32_xirq_inst_false:
-    if (io_xirq_en_c = false) generate
+    if not io_xirq_en_c generate
       iodev_rsp(IODEV_XIRQ) <= rsp_terminate_c;
       firq.xirq             <= '0';
     end generate;
@@ -1422,7 +1422,7 @@ begin
     -- General Purpose Timer (GPTMR) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_gptmr_inst_true:
-    if (IO_GPTMR_EN = true) generate
+    if IO_GPTMR_EN generate
       neorv32_gptmr_inst: entity neorv32.neorv32_gptmr
       port map (
         clk_i       => clk_i,
@@ -1437,7 +1437,7 @@ begin
     end generate;
 
     neorv32_gptmr_inst_false:
-    if (IO_GPTMR_EN = false) generate
+    if not IO_GPTMR_EN generate
       iodev_rsp(IODEV_GPTMR) <= rsp_terminate_c;
       cg_en.gptmr            <= '0';
       firq.gptmr             <= '0';
@@ -1447,7 +1447,7 @@ begin
     -- 1-Wire Interface Controller (ONEWIRE) --------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_onewire_inst_true:
-    if (IO_ONEWIRE_EN = true) generate
+    if IO_ONEWIRE_EN generate
       neorv32_onewire_inst: entity neorv32.neorv32_onewire
       port map (
         clk_i       => clk_i,
@@ -1463,7 +1463,7 @@ begin
     end generate;
 
     neorv32_onewire_inst_false:
-    if (IO_ONEWIRE_EN = false) generate
+    if not IO_ONEWIRE_EN generate
       iodev_rsp(IODEV_ONEWIRE) <= rsp_terminate_c;
       onewire_o                <= '1';
       cg_en.onewire            <= '0';
@@ -1474,7 +1474,7 @@ begin
     -- Stream Link Interface (SLINK) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_slink_inst_true:
-    if (IO_SLINK_EN = true) generate
+    if IO_SLINK_EN generate
       neorv32_slink_inst: entity neorv32.neorv32_slink
       generic map (
         SLINK_RX_FIFO => IO_SLINK_RX_FIFO,
@@ -1499,7 +1499,7 @@ begin
     end generate;
 
     neorv32_slink_inst_false:
-    if (IO_SLINK_EN = false) generate
+    if not IO_SLINK_EN generate
       iodev_rsp(IODEV_SLINK) <= rsp_terminate_c;
       firq.slink             <= '0';
       slink_rx_rdy_o         <= '0';
@@ -1511,7 +1511,7 @@ begin
     -- Cyclic Redundancy Check Unit (CRC) -----------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_crc_inst_true:
-    if (IO_CRC_EN = true) generate
+    if IO_CRC_EN generate
       neorv32_crc_inst: entity neorv32.neorv32_crc
         port map (
         clk_i     => clk_i,
@@ -1522,7 +1522,7 @@ begin
     end generate;
 
     neorv32_crc_inst_false:
-    if (IO_CRC_EN = false) generate
+    if not IO_CRC_EN generate
       iodev_rsp(IODEV_CRC) <= rsp_terminate_c;
     end generate;
 
@@ -1592,7 +1592,7 @@ begin
   -- On-Chip Debugger Complex
   -- **************************************************************************************************************************
   neorv32_neorv32_ocd_inst_true:
-  if (ON_CHIP_DEBUGGER_EN = true) generate
+  if ON_CHIP_DEBUGGER_EN generate
 
     -- On-Chip Debugger - Debug Transport Module (DTM) ----------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1643,7 +1643,7 @@ begin
   end generate;
 
   neorv32_debug_ocd_inst_false:
-  if (ON_CHIP_DEBUGGER_EN = false) generate
+  if not ON_CHIP_DEBUGGER_EN generate
     iodev_rsp(IODEV_OCD) <= rsp_terminate_c;
     jtag_tdo_o           <= jtag_tdi_i; -- JTAG feed-through
     dci_ndmrstn          <= '1';
