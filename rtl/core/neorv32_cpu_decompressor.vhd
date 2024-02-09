@@ -1,8 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 CPU - Compressed Instructions Decoder (RISC-V "C" Extension) >>                    #
 -- # ********************************************************************************************* #
--- # Compressed instructions decoder compatible to the RISC-V C ISA extensions. Illegal compressed #
--- # instructions are output "as-is".                                                              #
+-- # Compressed instructions decoder compatible to the RISC-V C ISA extension. Illegal compressed  #
+-- # instructions are converted to "as-is".                                                        #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -288,7 +288,7 @@ begin
                 decoded(instr_imm12_lsb_c + 2)                        <= ci_instr16_i(4);
                 decoded(instr_imm12_lsb_c + 3)                        <= ci_instr16_i(5);
                 decoded(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(6);
-                if (ci_instr16_i(12) = '1') then -- nzuimm[5] = 1 -> RV32 custom
+                if ((ci_instr16_i(12) or or_reduce_f(ci_instr16_i(6 downto 2))) = '0') then -- nzuimm = 0 -> RV32 custom / illegal
                   illegal <= '1';
                 end if;
               when "10" => -- C.ANDI
@@ -357,7 +357,8 @@ begin
             decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_lw_c;
             decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
             decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= ci_instr16_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
-            if (ci_instr16_i(ci_funct3_lsb_c) = '1') then -- C.FLWSP is illegal
+            if (ci_instr16_i(ci_funct3_lsb_c) = '1') or -- C.FLWSP -> illegal
+               (ci_instr16_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c) = "00000") then -- rd = 0 -> reserved
               illegal <= '1';
             end if;
 
@@ -375,23 +376,30 @@ begin
             decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sw_c;
             decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
             decoded(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= ci_instr16_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c);
-            if (ci_instr16_i(ci_funct3_lsb_c) = '1') then -- C.FSWSP is illegal
+            if (ci_instr16_i(ci_funct3_lsb_c) = '1') then -- C.FSWSP -> illegal
               illegal <= '1';
             end if;
 
-          when others => -- "100": C.JR, C.JALR, C.MV, C.EBREAK, C.ADD; others: undefined
+          when "100" => -- "100": C.JR, C.JALR, C.MV, C.EBREAK, C.ADD
           -- ----------------------------------------------------------------------------------------------------------
             if (ci_instr16_i(12) = '0') then -- C.JR, C.MV
               if (ci_instr16_i(6 downto 2) = "00000") then -- C.JR
                 decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_jalr_c;
                 decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= ci_instr16_i(ci_rs1_5_msb_c downto ci_rs1_5_lsb_c);
                 decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= "00000"; -- discard return address
+                if (ci_instr16_i(ci_rs1_5_msb_c downto ci_rs1_5_lsb_c) = "00000") or -- rs1 = 0 -> reserved
+                   (ci_instr16_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c) /= "00000") then -- rs2 != 0 -> illegal
+                  illegal <= '1';
+                end if;
               else -- C.MV
                 decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alu_c;
                 decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= "000";
                 decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= ci_instr16_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
                 decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00000"; -- x0
                 decoded(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= ci_instr16_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c);
+                if (ci_instr16_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c) = "00000") then -- rs2 = 0 -> reserved
+                  illegal <= '1';
+                end if;
               end if;
             else -- C.EBREAK, C.JALR, C.ADD
               if (ci_instr16_i(6 downto 2) = "00000") then -- C.EBREAK, C.JALR
@@ -411,11 +419,10 @@ begin
                 decoded(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= ci_instr16_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c);
               end if;
             end if;
-            --
-            if (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "001") or -- C.FLDSP / C.LQSP
-               (ci_instr16_i(ci_funct3_msb_c downto ci_funct3_lsb_c) = "101") then -- C.FSDSP / C.SQSP
-              illegal <= '1';
-            end if;
+
+          when others => -- "001"/"101": C.FLDSP / C.LQSP, C.FSDSP / C.SQSP -> illegal
+          -- ----------------------------------------------------------------------------------------------------------
+            illegal <= '1';
 
         end case;
 
