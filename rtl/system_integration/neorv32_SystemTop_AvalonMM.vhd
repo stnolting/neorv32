@@ -1,12 +1,12 @@
 -- #################################################################################################
--- # << NEORV32 - Processor Top Entity with AvalonMM Compatible Master Interface >>                #
+-- # << NEORV32 - Processor Top Entity with AvalonMM Compatible Host Interface >>                  #
 -- # ********************************************************************************************* #
--- # (c) "AvalonMM", "NIOS-2", "Qsys", "MegaWizard"  and "Platform Designer"                       #
--- # are trademarks of Intel                                                                       #
+-- # (c) "AvalonMM", "Qsys", "MegaWizard" and "Platform Designer" are trademarks of Intel corp.    #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+-- # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
+-- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 -- #                                                                                               #
 -- # Redistribution and use in source and binary forms, with or without modification, are          #
 -- # permitted provided that the following conditions are met:                                     #
@@ -31,8 +31,6 @@
 -- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
 -- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 -- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
--- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
 -- #################################################################################################
 
 library ieee;
@@ -96,6 +94,12 @@ entity neorv32_top_avalonmm is
     DCACHE_NUM_BLOCKS            : natural := 4;      -- d-cache: number of blocks (min 1), has to be a power of 2
     DCACHE_BLOCK_SIZE            : natural := 64;     -- d-cache: block size in bytes (min 4), has to be a power of 2
 
+    -- Execute in-place module (XIP) --
+    XIP_EN                       : boolean := false;  -- implement execute in place module (XIP)?
+    XIP_CACHE_EN                 : boolean := false;  -- implement XIP cache?
+    XIP_CACHE_NUM_BLOCKS         : natural range 1 to 256 := 8;     -- number of blocks (min 1), has to be a power of 2
+    XIP_CACHE_BLOCK_SIZE         : natural range 1 to 2**16 := 256; -- block size in bytes (min 4), has to be a power of 2
+
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  : natural := 0;      -- number of external IRQ channels (0..32)
     XIRQ_TRIGGER_TYPE            : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger type: 0=level, 1=edge
@@ -124,7 +128,6 @@ entity neorv32_top_avalonmm is
     IO_NEOLED_EN                 : boolean := false;  -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            : natural := 1;      -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  : boolean := false;  -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN                    : boolean := false;  -- implement execute in place module (XIP)?
     IO_ONEWIRE_EN                : boolean := false   -- implement 1-wire interface (ONEWIRE)?
   );
   port (
@@ -287,6 +290,12 @@ begin
     MEM_EXT_ASYNC_RX => false,
     MEM_EXT_ASYNC_TX => false,
 
+    -- Execute in-place module (XIP) --
+    XIP_EN => XIP_EN,
+    XIP_CACHE_EN => XIP_CACHE_EN,
+    XIP_CACHE_NUM_BLOCKS => XIP_CACHE_NUM_BLOCKS,
+    XIP_CACHE_BLOCK_SIZE => XIP_CACHE_BLOCK_SIZE,
+
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH => XIRQ_NUM_CH,
     XIRQ_TRIGGER_TYPE => XIRQ_TRIGGER_TYPE,
@@ -315,7 +324,6 @@ begin
     IO_NEOLED_EN => IO_NEOLED_EN,
     IO_NEOLED_TX_FIFO => IO_NEOLED_TX_FIFO,
     IO_GPTMR_EN => IO_GPTMR_EN,
-    IO_XIP_EN => IO_XIP_EN,
     IO_ONEWIRE_EN => IO_ONEWIRE_EN
     )
   port map (

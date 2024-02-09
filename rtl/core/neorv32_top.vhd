@@ -47,71 +47,77 @@ entity neorv32_top is
   generic (
     -- General --
     CLOCK_FREQUENCY            : natural;                                       -- clock frequency of clk_i in Hz
-    CLOCK_GATING_EN            : boolean := false;                              -- enable clock gating when in sleep mode
+    CLOCK_GATING_EN            : boolean                        := false;       -- enable clock gating when in sleep mode
     HART_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
     VENDOR_ID                  : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
-    INT_BOOTLOADER_EN          : boolean := false;                              -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    INT_BOOTLOADER_EN          : boolean                        := false;       -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN        : boolean := false;                              -- implement on-chip debugger
-    DM_LEGACY_MODE             : boolean := false;                              -- debug module spec version: false = v1.0, true = v0.13
+    ON_CHIP_DEBUGGER_EN        : boolean                        := false;       -- implement on-chip debugger
+    DM_LEGACY_MODE             : boolean                        := false;       -- debug module spec version: false = v1.0, true = v0.13
 
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A      : boolean := false;                              -- implement atomic memory operations extension?
-    CPU_EXTENSION_RISCV_B      : boolean := false;                              -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_C      : boolean := false;                              -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E      : boolean := false;                              -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M      : boolean := false;                              -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U      : boolean := false;                              -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zfinx  : boolean := false;                              -- implement 32-bit floating-point extension (using INT regs!)
-    CPU_EXTENSION_RISCV_Zicntr : boolean := true;                               -- implement base counters?
-    CPU_EXTENSION_RISCV_Zicond : boolean := false;                              -- implement integer conditional operations?
-    CPU_EXTENSION_RISCV_Zihpm  : boolean := false;                              -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zmmul  : boolean := false;                              -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zxcfu  : boolean := false;                              -- implement custom (instr.) functions unit?
+    CPU_EXTENSION_RISCV_A      : boolean                        := false;       -- implement atomic memory operations extension?
+    CPU_EXTENSION_RISCV_B      : boolean                        := false;       -- implement bit-manipulation extension?
+    CPU_EXTENSION_RISCV_C      : boolean                        := false;       -- implement compressed extension?
+    CPU_EXTENSION_RISCV_E      : boolean                        := false;       -- implement embedded RF extension?
+    CPU_EXTENSION_RISCV_M      : boolean                        := false;       -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_U      : boolean                        := false;       -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zfinx  : boolean                        := false;       -- implement 32-bit floating-point extension (using INT regs!)
+    CPU_EXTENSION_RISCV_Zicntr : boolean                        := true;        -- implement base counters?
+    CPU_EXTENSION_RISCV_Zicond : boolean                        := false;       -- implement integer conditional operations?
+    CPU_EXTENSION_RISCV_Zihpm  : boolean                        := false;       -- implement hardware performance monitors?
+    CPU_EXTENSION_RISCV_Zmmul  : boolean                        := false;       -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu  : boolean                        := false;       -- implement custom (instr.) functions unit?
 
     -- Tuning Options --
-    FAST_MUL_EN                : boolean := false;                              -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN              : boolean := false;                              -- use barrel shifter for shift operations
-    REGFILE_HW_RST             : boolean := false;                              -- implement full hardware reset for register file
+    FAST_MUL_EN                : boolean                        := false;       -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN              : boolean                        := false;       -- use barrel shifter for shift operations
+    REGFILE_HW_RST             : boolean                        := false;       -- implement full hardware reset for register file
 
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS            : natural range 0 to 16 := 0;                    -- number of regions (0..16)
-    PMP_MIN_GRANULARITY        : natural := 4;                                  -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_NUM_REGIONS            : natural range 0 to 16          := 0;           -- number of regions (0..16)
+    PMP_MIN_GRANULARITY        : natural                        := 4;           -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
 
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS               : natural range 0 to 13 := 0;                    -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH              : natural range 0 to 64 := 40;                   -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS               : natural range 0 to 13          := 0;           -- number of implemented HPM counters (0..13)
+    HPM_CNT_WIDTH              : natural range 0 to 64          := 40;          -- total size of HPM counters (0..64)
 
     -- Atomic Memory Access - Reservation Set Granularity --
-    AMO_RVS_GRANULARITY        : natural := 4;                                  -- size in bytes, has to be a power of 2, min 4
+    AMO_RVS_GRANULARITY        : natural                        := 4;           -- size in bytes, has to be a power of 2, min 4
 
     -- Internal Instruction memory (IMEM) --
-    MEM_INT_IMEM_EN            : boolean := false;                              -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE          : natural := 16*1024;                            -- size of processor-internal instruction memory in bytes (use a power of 2)
+    MEM_INT_IMEM_EN            : boolean                        := false;       -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE          : natural                        := 16*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
 
     -- Internal Data memory (DMEM) --
-    MEM_INT_DMEM_EN            : boolean := false;                              -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE          : natural := 8*1024;                             -- size of processor-internal data memory in bytes (use a power of 2)
+    MEM_INT_DMEM_EN            : boolean                        := false;       -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE          : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
 
     -- Internal Instruction Cache (iCACHE) --
-    ICACHE_EN                  : boolean                  := false;             -- implement instruction cache
-    ICACHE_NUM_BLOCKS          : natural range 1 to 256   := 4;                 -- i-cache: number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE          : natural range 4 to 2**16 := 64;                -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY       : natural range 1 to 2     := 1;                 -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
+    ICACHE_EN                  : boolean                        := false;       -- implement instruction cache
+    ICACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;           -- i-cache: number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;          -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_ASSOCIATIVITY       : natural range 1 to 2           := 1;           -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
     -- Internal Data Cache (dCACHE) --
-    DCACHE_EN                  : boolean                  := false;             -- implement data cache
-    DCACHE_NUM_BLOCKS          : natural range 1 to 256   := 4;                 -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE          : natural range 4 to 2**16 := 64;                -- d-cache: block size in bytes (min 4), has to be a power of 2
+    DCACHE_EN                  : boolean                        := false;       -- implement data cache
+    DCACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;           -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;          -- d-cache: block size in bytes (min 4), has to be a power of 2
 
     -- External memory interface (WISHBONE) --
-    MEM_EXT_EN                 : boolean := false;                              -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT            : natural := 255;                                -- cycles after a pending bus access auto-terminates (0 = disabled)
-    MEM_EXT_PIPE_MODE          : boolean := false;                              -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    MEM_EXT_BIG_ENDIAN         : boolean := false;                              -- byte order: true=big-endian, false=little-endian
-    MEM_EXT_ASYNC_RX           : boolean := false;                              -- use register buffer for RX data when false
-    MEM_EXT_ASYNC_TX           : boolean := false;                              -- use register buffer for TX data when false
+    MEM_EXT_EN                 : boolean                        := false;       -- implement external memory bus interface?
+    MEM_EXT_TIMEOUT            : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
+    MEM_EXT_PIPE_MODE          : boolean                        := false;       -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    MEM_EXT_BIG_ENDIAN         : boolean                        := false;       -- byte order: true=big-endian, false=little-endian
+    MEM_EXT_ASYNC_RX           : boolean                        := false;       -- use register buffer for RX data when false
+    MEM_EXT_ASYNC_TX           : boolean                        := false;       -- use register buffer for TX data when false
+
+    -- Execute in-place module (XIP) --
+    XIP_EN                     : boolean                        := false;       -- implement execute in place module (XIP)?
+    XIP_CACHE_EN               : boolean                        := false;       -- implement XIP cache?
+    XIP_CACHE_NUM_BLOCKS       : natural range 1 to 256         := 8;           -- number of blocks (min 1), has to be a power of 2
+    XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16       := 256;         -- block size in bytes (min 4), has to be a power of 2
 
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                : natural range 0 to 32          := 0;           -- number of external IRQ channels (0..32)
@@ -143,7 +149,6 @@ entity neorv32_top is
     IO_NEOLED_EN               : boolean                        := false;       -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO          : natural range 1 to 2**15       := 1;           -- NEOLED FIFO depth, has to be a power of two, min 1
     IO_GPTMR_EN                : boolean                        := false;       -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN                  : boolean                        := false;       -- implement execute in place module (XIP)?
     IO_ONEWIRE_EN              : boolean                        := false;       -- implement 1-wire interface (ONEWIRE)?
     IO_DMA_EN                  : boolean                        := false;       -- implement direct memory access controller (DMA)?
     IO_SLINK_EN                : boolean                        := false;       -- implement stream link interface (SLINK)?
@@ -187,7 +192,7 @@ entity neorv32_top is
     fence_o        : out std_ulogic; -- indicates an executed FENCE operation
     fencei_o       : out std_ulogic; -- indicates an executed FENCEI operation
 
-    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+    -- XIP (execute in place via SPI) signals (available if XIP_EN = true) --
     xip_csn_o      : out std_ulogic; -- chip-select, low-active
     xip_clk_o      : out std_ulogic; -- serial clock
     xip_dat_i      : in  std_ulogic := 'L'; -- device data input
@@ -380,7 +385,7 @@ begin
       cond_sel_string_f(IO_NEOLED_EN,        "NEOLED ",   "") &
       cond_sel_string_f(io_xirq_en_c,        "XIRQ ",     "") &
       cond_sel_string_f(IO_GPTMR_EN,         "GPTMR ",    "") &
-      cond_sel_string_f(IO_XIP_EN,           "XIP ",      "") &
+      cond_sel_string_f(XIP_EN,              "XIP ",      "") &
       cond_sel_string_f(IO_ONEWIRE_EN,       "ONEWIRE ",  "") &
       cond_sel_string_f(IO_DMA_EN,           "DMA ",      "") &
       cond_sel_string_f(IO_SLINK_EN,         "SLINK ",    "") &
@@ -762,7 +767,7 @@ begin
     DMEM_BASE   => mem_dmem_base_c,
     DMEM_SIZE   => dmem_size_c,
     -- XIP port --
-    XIP_ENABLE  => IO_XIP_EN,
+    XIP_ENABLE  => XIP_EN,
     XIP_BASE    => mem_xip_base_c,
     XIP_SIZE    => mem_xip_size_c,
     -- BOOT ROM port --
@@ -872,8 +877,13 @@ begin
     -- Execute In Place Module (XIP) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_xip_inst_true:
-    if (IO_XIP_EN = true) generate
+    if (XIP_EN = true) generate
       neorv32_xip_inst: entity neorv32.neorv32_xip
+      generic map (
+        XIP_CACHE_EN         => XIP_CACHE_EN,
+        XIP_CACHE_NUM_BLOCKS => XIP_CACHE_NUM_BLOCKS,
+        XIP_CACHE_BLOCK_SIZE => XIP_CACHE_BLOCK_SIZE
+      )
       port map (
         -- global control --
         clk_i       => clk_i,
@@ -892,7 +902,7 @@ begin
     end generate;
 
     neorv32_xip_inst_false:
-    if (IO_XIP_EN = false) generate
+    if (XIP_EN = false) generate
       iodev_rsp(IODEV_XIP) <= rsp_terminate_c;
       xip_rsp              <= rsp_terminate_c;
       cg_en.xip            <= '0';
@@ -976,7 +986,7 @@ begin
       DEV_13_EN => IO_ONEWIRE_EN,       DEV_13_BASE => base_io_onewire_c,
       DEV_14_EN => IO_GPTMR_EN,         DEV_14_BASE => base_io_gptmr_c,
       DEV_15_EN => io_pwm_en_c,         DEV_15_BASE => base_io_pwm_c,
-      DEV_16_EN => IO_XIP_EN,           DEV_16_BASE => base_io_xip_c,
+      DEV_16_EN => XIP_EN,              DEV_16_BASE => base_io_xip_c,
       DEV_17_EN => IO_CRC_EN,           DEV_17_BASE => base_io_crc_c,
       DEV_18_EN => IO_DMA_EN,           DEV_18_BASE => base_io_dma_c,
       DEV_19_EN => IO_SLINK_EN,         DEV_19_BASE => base_io_slink_c,
@@ -1047,7 +1057,7 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_sdi_inst_true:
     if (IO_SDI_EN = true) generate
-      neorv32_SDI_inst: entity neorv32.neorv32_sdi
+      neorv32_sdi_inst: entity neorv32.neorv32_sdi
       generic map (
         RTX_FIFO => IO_SDI_FIFO
       )
@@ -1562,7 +1572,7 @@ begin
       IO_NEOLED_EN         => IO_NEOLED_EN,
       IO_XIRQ_EN           => io_xirq_en_c,
       IO_GPTMR_EN          => IO_GPTMR_EN,
-      IO_XIP_EN            => IO_XIP_EN,
+      XIP_EN               => XIP_EN,
       IO_ONEWIRE_EN        => IO_ONEWIRE_EN,
       IO_DMA_EN            => IO_DMA_EN,
       IO_SLINK_EN          => IO_SLINK_EN,

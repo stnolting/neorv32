@@ -750,60 +750,65 @@ package neorv32_package is
     generic (
       -- General --
       CLOCK_FREQUENCY            : natural;
-      CLOCK_GATING_EN            : boolean := false;
+      CLOCK_GATING_EN            : boolean                        := false;
       HART_ID                    : std_ulogic_vector(31 downto 0) := x"00000000";
       VENDOR_ID                  : std_ulogic_vector(31 downto 0) := x"00000000";
-      INT_BOOTLOADER_EN          : boolean := false;
+      INT_BOOTLOADER_EN          : boolean                        := false;
       -- On-Chip Debugger (OCD) --
-      ON_CHIP_DEBUGGER_EN        : boolean := false;
-      DM_LEGACY_MODE             : boolean := false;
+      ON_CHIP_DEBUGGER_EN        : boolean                        := false;
+      DM_LEGACY_MODE             : boolean                        := false;
       -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_A      : boolean := false;
-      CPU_EXTENSION_RISCV_B      : boolean := false;
-      CPU_EXTENSION_RISCV_C      : boolean := false;
-      CPU_EXTENSION_RISCV_E      : boolean := false;
-      CPU_EXTENSION_RISCV_M      : boolean := false;
-      CPU_EXTENSION_RISCV_U      : boolean := false;
-      CPU_EXTENSION_RISCV_Zfinx  : boolean := false;
-      CPU_EXTENSION_RISCV_Zicntr : boolean := true;
-      CPU_EXTENSION_RISCV_Zicond : boolean := false;
-      CPU_EXTENSION_RISCV_Zihpm  : boolean := false;
-      CPU_EXTENSION_RISCV_Zmmul  : boolean := false;
-      CPU_EXTENSION_RISCV_Zxcfu  : boolean := false;
+      CPU_EXTENSION_RISCV_A      : boolean                        := false;
+      CPU_EXTENSION_RISCV_B      : boolean                        := false;
+      CPU_EXTENSION_RISCV_C      : boolean                        := false;
+      CPU_EXTENSION_RISCV_E      : boolean                        := false;
+      CPU_EXTENSION_RISCV_M      : boolean                        := false;
+      CPU_EXTENSION_RISCV_U      : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zfinx  : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zicntr : boolean                        := true;
+      CPU_EXTENSION_RISCV_Zicond : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zihpm  : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zmmul  : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zxcfu  : boolean                        := false;
       -- Tuning Options --
-      FAST_MUL_EN                : boolean := false;
-      FAST_SHIFT_EN              : boolean := false;
-      REGFILE_HW_RST             : boolean := false;
+      FAST_MUL_EN                : boolean                        := false;
+      FAST_SHIFT_EN              : boolean                        := false;
+      REGFILE_HW_RST             : boolean                        := false;
       -- Physical Memory Protection (PMP) --
-      PMP_NUM_REGIONS            : natural range 0 to 16 := 0;
-      PMP_MIN_GRANULARITY        : natural := 4;
+      PMP_NUM_REGIONS            : natural range 0 to 16          := 0;
+      PMP_MIN_GRANULARITY        : natural                        := 4;
       -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS               : natural range 0 to 13 := 0;
-      HPM_CNT_WIDTH              : natural range 0 to 64 := 40;
+      HPM_NUM_CNTS               : natural range 0 to 13          := 0;
+      HPM_CNT_WIDTH              : natural range 0 to 64          := 40;
       -- Atomic Memory Access - Reservation Set Granularity --
-      AMO_RVS_GRANULARITY        : natural := 4;
+      AMO_RVS_GRANULARITY        : natural                        := 4;
       -- Internal Instruction memory (IMEM) --
-      MEM_INT_IMEM_EN            : boolean := false;
-      MEM_INT_IMEM_SIZE          : natural := 16*1024;
+      MEM_INT_IMEM_EN            : boolean                        := false;
+      MEM_INT_IMEM_SIZE          : natural                        := 16*1024;
       -- Internal Data memory (DMEM) --
-      MEM_INT_DMEM_EN            : boolean := false;
-      MEM_INT_DMEM_SIZE          : natural := 8*1024;
+      MEM_INT_DMEM_EN            : boolean                        := false;
+      MEM_INT_DMEM_SIZE          : natural                        := 8*1024;
       -- Internal Instruction Cache (iCACHE) --
-      ICACHE_EN                  : boolean                  := false;
-      ICACHE_NUM_BLOCKS          : natural range 1 to 256   := 4;
-      ICACHE_BLOCK_SIZE          : natural range 4 to 2**16 := 64;
-      ICACHE_ASSOCIATIVITY       : natural range 1 to 2     := 1;
+      ICACHE_EN                  : boolean                        := false;
+      ICACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
+      ICACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
+      ICACHE_ASSOCIATIVITY       : natural range 1 to 2           := 1;
       -- Internal Data Cache (dCACHE) --
-      DCACHE_EN                  : boolean                  := false;
-      DCACHE_NUM_BLOCKS          : natural range 1 to 256   := 4;
-      DCACHE_BLOCK_SIZE          : natural range 4 to 2**16 := 64;
+      DCACHE_EN                  : boolean                        := false;
+      DCACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
+      DCACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
       -- External memory interface (WISHBONE) --
-      MEM_EXT_EN                 : boolean := false;
-      MEM_EXT_TIMEOUT            : natural := 255;
-      MEM_EXT_PIPE_MODE          : boolean := false;
-      MEM_EXT_BIG_ENDIAN         : boolean := false;
-      MEM_EXT_ASYNC_RX           : boolean := false;
-      MEM_EXT_ASYNC_TX           : boolean := false;
+      MEM_EXT_EN                 : boolean                        := false;
+      MEM_EXT_TIMEOUT            : natural                        := 255;
+      MEM_EXT_PIPE_MODE          : boolean                        := false;
+      MEM_EXT_BIG_ENDIAN         : boolean                        := false;
+      MEM_EXT_ASYNC_RX           : boolean                        := false;
+      MEM_EXT_ASYNC_TX           : boolean                        := false;
+      -- Execute in-place module (XIP) --
+      XIP_EN                     : boolean                        := false;
+      XIP_CACHE_EN               : boolean                        := false;
+      XIP_CACHE_NUM_BLOCKS       : natural range 1 to 256         := 8;
+      XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16       := 256;
       -- External Interrupts Controller (XIRQ) --
       XIRQ_NUM_CH                : natural range 0 to 32          := 0;
       XIRQ_TRIGGER_TYPE          : std_ulogic_vector(31 downto 0) := x"ffffffff";
@@ -833,7 +838,6 @@ package neorv32_package is
       IO_NEOLED_EN               : boolean                        := false;
       IO_NEOLED_TX_FIFO          : natural range 1 to 2**15       := 1;
       IO_GPTMR_EN                : boolean                        := false;
-      IO_XIP_EN                  : boolean                        := false;
       IO_ONEWIRE_EN              : boolean                        := false;
       IO_DMA_EN                  : boolean                        := false;
       IO_SLINK_EN                : boolean                        := false;
@@ -872,7 +876,7 @@ package neorv32_package is
       -- Advanced memory control signals --
       fence_o        : out std_ulogic;
       fencei_o       : out std_ulogic;
-      -- XIP (execute in-place via SPI) signals (available if IO_XIP_EN = true) --
+      -- XIP (execute in-place via SPI) signals (available if XIP_EN = true) --
       xip_csn_o      : out std_ulogic;
       xip_clk_o      : out std_ulogic;
       xip_dat_i      : in  std_ulogic := 'L';
