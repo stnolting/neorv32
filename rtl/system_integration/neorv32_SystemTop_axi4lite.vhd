@@ -458,9 +458,6 @@ begin
     slink_tx_dat_o => s0_axis_tdata_int,  -- TX output data
     slink_tx_val_o => s0_axis_tvalid_int, -- TX valid output
     slink_tx_rdy_i => s0_axis_tready_int, -- TX ready to send
-    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
-    fence_o        => open,            -- indicates an executed FENCE operation
-    fencei_o       => open,            -- indicates an executed FENCEI operation
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o      => xip_csn_o_int,   -- chip-select, low-active
     xip_clk_o      => xip_clk_o_int,   -- serial clock

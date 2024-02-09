@@ -186,11 +186,7 @@ entity neorv32_top is
     slink_rx_rdy_o : out std_ulogic; -- RX ready to receive
     slink_tx_dat_o : out std_ulogic_vector(31 downto 0); -- TX output data
     slink_tx_val_o : out std_ulogic; -- TX valid output
-    slink_tx_rdy_i : in  std_ulogic := 'L';  -- TX ready to send
-
-    -- Advanced memory control signals --
-    fence_o        : out std_ulogic; -- indicates an executed FENCE operation
-    fencei_o       : out std_ulogic; -- indicates an executed FENCEI operation
+    slink_tx_rdy_i : in  std_ulogic := 'L'; -- TX ready to send
 
     -- XIP (execute in place via SPI) signals (available if XIP_EN = true) --
     xip_csn_o      : out std_ulogic; -- chip-select, low-active
@@ -298,10 +294,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cg_en : cg_en_t;
 
   -- CPU status --
-  signal cpu_debug : std_ulogic; -- cpu is in debug mode
-  signal cpu_sleep : std_ulogic; -- cpu is in sleep mode
-  signal i_fence   : std_ulogic; -- instruction fence
-  signal d_fence   : std_ulogic; -- data fence
+  signal cpu_debug, cpu_sleep : std_ulogic; -- cpu is in debug/sleep mode
 
   -- debug module interface (DMI) --
   signal dmi_req : dmi_req_t;
@@ -358,8 +351,8 @@ begin
 
     -- say hello --
     assert false report
-      "The NEORV32 RISC-V Processor, " &
-      "version 0x" & to_hstring32_f(hw_version_c) & ", " &
+      "[NEORV32] The NEORV32 RISC-V Processor " &
+      "(version 0x" & to_hstring32_f(hw_version_c) & "), " &
       "github.com/stnolting/neorv32" severity note;
 
     -- show main SoC configuration --
@@ -556,8 +549,6 @@ begin
       rstn_i     => rstn_sys,
       sleep_o    => cpu_sleep,
       debug_o    => cpu_debug,
-      ifence_o   => i_fence,
-      dfence_o   => d_fence,
       -- interrupts --
       msi_i      => msw_irq_i,
       mei_i      => mext_irq_i,
@@ -571,10 +562,6 @@ begin
       dbus_req_o => cpu_d_req,
       dbus_rsp_i => cpu_d_rsp
     );
-
-    -- advanced memory control --
-    fence_o  <= d_fence;
-    fencei_o <= i_fence;
 
     -- fast interrupt requests (FIRQs) --
     cpu_firq(00) <= firq.wdt; -- highest priority
@@ -609,7 +596,6 @@ begin
       port map (
         clk_i     => clk_cpu,
         rstn_i    => rstn_sys,
-        clear_i   => i_fence,
         cpu_req_i => cpu_i_req,
         cpu_rsp_o => cpu_i_rsp,
         bus_req_o => icache_req,
@@ -637,7 +623,6 @@ begin
       port map (
         clk_i     => clk_cpu,
         rstn_i    => rstn_sys,
-        clear_i   => d_fence,
         cpu_req_i => cpu_d_req,
         cpu_rsp_o => cpu_d_rsp,
         bus_req_o => dcache_req,
