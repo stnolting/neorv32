@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -125,9 +125,9 @@ int main() {
                        "Flash address bytes: %u\n", (uint32_t)FLASH_BASE, (uint32_t)XIP_MEM_BASE_ADDRESS, (uint32_t)FLASH_ABYTES);
 
 
-  // warning if i-cache is not implemented
-  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_ICACHE)) == 0) {
-    neorv32_uart0_printf("WARNING! No instruction cache implemented! The XIP program might run very slow...\n");
+  // warning if XIP cache is not implemented
+  if ((NEORV32_XIP->CTRL & (1 << XIP_CTRL_BURST_EN)) == 0) {
+    neorv32_uart0_printf("WARNING! No XIP cache implemented! The XIP program might run very slow...\n");
   }
 
 
@@ -145,10 +145,10 @@ int main() {
   // ----------------------------------------------------------
   // Get executable for flash
   // ----------------------------------------------------------
-  neorv32_uart0_printf("Compile a program for the XIP flash: \n"
+  neorv32_uart0_printf("Compile a program for the XIP flash:\n"
                        "\n"
                        " Navigate to any example program folder (like 'neorv32/sw/example/hello_word').\n"
-                       " Compile the program but relocate the instruction to the beginning of the Flash:\n"
+                       " Compile the program but relocate the executable to the beginning of the XIP flash:\n"
                        " make MARCH=rv32i_zicsr_zifencei USER_FLAGS+=\"-Wl,--defsym,__neorv32_rom_base=0x%x\" clean_all exe\n\n",
                        (uint32_t)(XIP_MEM_BASE_ADDRESS + FLASH_BASE));
 
@@ -191,12 +191,6 @@ int main() {
   // ----------------------------------------------------------
   // Prepare XIP execution
   // ----------------------------------------------------------
-
-  // Most SPI flash memories support "incremental read" operations - the read command and the start address
-  // is only transferred once and after that consecutive data is sampled with each new transferred byte.
-  // This can be sued by the XIP burst mode, which accelerates data fetch by up to 50%.
-  neorv32_uart0_printf("Enabling XIP burst mode...\n");
-  neorv32_xip_burst_mode_enable(); // this has to be called right before starting the XIP mode by neorv32_xip_start()
 
   // configure and enable the actual XIP mode
   // * configure FLASH_ABYTES address bytes send to the SPI flash for addressing
