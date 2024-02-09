@@ -163,7 +163,7 @@ of the SPI access latency.
 
 **XIP Cache**
 
-Since every single instruction fetch request from the CPU is translated into serial SPI transmission the access latency is
+Since every single instruction fetch request from the CPU is translated into serial SPI transmissions the access latency is
 very high resulting in a low throughput. In order to improve performance, the XIP module provides an optional cache that
 allows to buffer recently-accessed data. The cache is implemented as a simple direct-mapped read-only cache with a configurable
 cache layout:
@@ -171,7 +171,7 @@ cache layout:
 * `XIP_CACHE_EN`: when set to `true` the CIP cache is implemented
 * `XIP_CACHE_NUM_BLOCKS` defines the number of cache blocks (or lines)
 * `XIP_CACHE_BLOCK_SIZE` defines the size in bytes of each cache block
-       
+
 When the cache is implemented, the XIP module operates in **burst mode** utilizing the flash's _incremental read_ capabilities.
 Thus, several bytes (= `XIP_CACHE_BLOCK_SIZE`) are read consecutively from the flash using a single read command.
 
@@ -192,7 +192,7 @@ Thus, several bytes (= `XIP_CACHE_BLOCK_SIZE`) are read consecutively from the f
                                   <|`12:11` `XIP_CTRL_XIP_ABYTES_MSB : XIP_CTRL_XIP_ABYTES_LSB` ^| r/w <| Number of address bytes for XIP flash (minus 1)
                                   <|`20:13` `XIP_CTRL_RD_CMD_MSB : XIP_CTRL_RD_CMD_LSB`         ^| r/w <| Flash read command
                                   <|`21`    `XIP_CTRL_SPI_CSEN`                                 ^| r/w <| Allow SPI chip-select to be actually asserted when set
-                                  <|`22`    `XIP_CTRL_HIGHSPEED`                                ^| r/w <| enable SPI high-speed mode (ignoring _XIP_CTRL_PRSC_)
+                                  <|`22`    `XIP_CTRL_HIGHSPEED`                                ^| r/w <| enable SPI high-speed mode (ignoring `XIP_CTRL_PRSCx`)
                                   <|`23:26` `XIP_CTRL_CDIV3 : XIP_CTRL_CDIV0`                   ^| r/- <| 4-bit clock divider for fine-tuning
                                   <|`27:28` -                                                   ^| r/- <| _reserved_, read as zero
                                   <|`29`    `XIP_CTRL_BURST_EN`                                 ^| r/- <| XIP burst mode enabled (if XIP cache is implemented)
