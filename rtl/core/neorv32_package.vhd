@@ -873,9 +873,6 @@ package neorv32_package is
       slink_tx_dat_o : out std_ulogic_vector(31 downto 0);
       slink_tx_val_o : out std_ulogic;
       slink_tx_rdy_i : in  std_ulogic := 'L';
-      -- Advanced memory control signals --
-      fence_o        : out std_ulogic;
-      fencei_o       : out std_ulogic;
       -- XIP (execute in-place via SPI) signals (available if XIP_EN = true) --
       xip_csn_o      : out std_ulogic;
       xip_clk_o      : out std_ulogic;
