@@ -151,10 +151,6 @@ entity neorv32_top_avalonmm is
     writedata_o    : out std_logic_vector(31 downto 0);
     readdata_i     : in  std_logic_vector(31 downto 0) := (others => '0');
 
-    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
-    fence_o        : out std_ulogic; -- indicates an executed FENCE operation
-    fencei_o       : out std_ulogic; -- indicates an executed FENCEI operation
-
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o      : out std_ulogic; -- chip-select, low-active
     xip_clk_o      : out std_ulogic; -- serial clock
@@ -349,10 +345,6 @@ begin
     wb_cyc_o => wb_cyc_o,
     wb_ack_i => wb_ack_i,
     wb_err_i => wb_err_i,
-
-    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
-    fence_o => fence_o,
-    fencei_o => fencei_o,
 
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o => xip_csn_o,

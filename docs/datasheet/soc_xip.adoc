@@ -175,6 +175,9 @@ cache layout:
 When the cache is implemented, the XIP module operates in **burst mode** utilizing the flash's _incremental read_ capabilities.
 Thus, several bytes (= `XIP_CACHE_BLOCK_SIZE`) are read consecutively from the flash using a single read command.
 
+The XIP cache is cleared when the XIP module is disabled (`XIP_CTRL_EN = 0`), when XIP mode is disabled
+(`XIP_CTRL_XIP_EN = 0`) or when the CPU issues a `fence(.i)` instruction.
+
 
 **Register Map**
 

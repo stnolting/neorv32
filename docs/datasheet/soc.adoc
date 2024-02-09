@@ -105,9 +105,6 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 | `slink_tx_dat_o` | 32 | out |   -   | TX data
 | `slink_tx_val_o` |  1 | out |   -   | TX data valid
 | `slink_tx_rdy_i` |  1 |  in | `'L'` | TX allowed to send
-5+^| **Advanced Memory Control Signals**
-| `fence_o`        |  1 | out |   -   | set if `fence` instruction is being executed
-| `fencei_o`       |  1 | out |   -   | set if `fence.i` instruction is being executed
 5+^| **<<_execute_in_place_module_xip>>**
 | `xip_csn_o`      |  1 | out |   -   | chip select, low-active
 | `xip_clk_o`      |  1 | out |   -   | serial clock

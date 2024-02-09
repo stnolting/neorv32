@@ -284,9 +284,6 @@ begin
     slink_tx_dat_o => slink_dat,       -- TX output data
     slink_tx_val_o => slink_val,       -- TX valid output
     slink_tx_rdy_i => slink_rdy,       -- TX ready to send
-    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
-    fence_o        => open,            -- indicates an executed FENCE operation
-    fencei_o       => open,            -- indicates an executed FENCEI operation
     -- XIP (execute in place via SPI) signals (available if XIP_EN = true) --
     xip_csn_o      => open,            -- chip-select, low-active
     xip_clk_o      => open,            -- serial clock
