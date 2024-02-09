@@ -432,12 +432,13 @@ begin
   ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
 
   -- bus access type --
-  bus_req_o.priv <= fetch_engine.priv; -- current effective privilege level
-  bus_req_o.data <= (others => '0'); -- read-only
-  bus_req_o.ben  <= (others => '0'); -- read-only
-  bus_req_o.rw   <= '0'; -- read-only
-  bus_req_o.src  <= '1'; -- source = instruction fetch
-  bus_req_o.rvso <= '0'; -- cannot be a reservation set operation
+  bus_req_o.priv  <= fetch_engine.priv; -- current effective privilege level
+  bus_req_o.data  <= (others => '0'); -- read-only
+  bus_req_o.ben   <= (others => '0'); -- read-only
+  bus_req_o.rw    <= '0'; -- read-only
+  bus_req_o.src   <= '1'; -- source = instruction fetch
+  bus_req_o.rvso  <= '0'; -- cannot be a reservation set operation
+  bus_req_o.fence <= ctrl.lsu_fence; -- fence(.i) operation
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
@@ -1009,9 +1010,8 @@ begin
         if (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- abort if illegal instruction
           execute_engine.state_nxt <= DISPATCH;
         else
-          ctrl_nxt.lsu_fence       <= not execute_engine.ir(instr_funct3_lsb_c); -- data fence
-          ctrl_nxt.lsu_fencei      <=     execute_engine.ir(instr_funct3_lsb_c); -- instruction fence
-          execute_engine.state_nxt <= RESTART; -- reset instruction fetch + IPB (only required for fence.i)
+          ctrl_nxt.lsu_fence       <= '1'; -- NOTE: fence == fence.i
+          execute_engine.state_nxt <= RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
         end if;
 
       when BRANCH => -- update next_PC on taken branches and jumps
@@ -1134,8 +1134,7 @@ begin
   ctrl_o.lsu_req      <= ctrl.lsu_req;
   ctrl_o.lsu_rw       <= ctrl.lsu_rw;
   ctrl_o.lsu_mo_we    <= '1' when (execute_engine.state = MEM_REQ) else '0'; -- write memory output registers (data & address)
-  ctrl_o.lsu_fence    <= ctrl.lsu_fence;
-  ctrl_o.lsu_fencei   <= ctrl.lsu_fencei;
+  ctrl_o.lsu_fence    <= ctrl.lsu_fence; -- fence(.i)
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
 
   -- instruction word bit fields --

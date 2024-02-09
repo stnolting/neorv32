@@ -79,8 +79,6 @@ entity neorv32_cpu is
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     sleep_o    : out std_ulogic; -- cpu is in sleep mode when set
     debug_o    : out std_ulogic; -- cpu is in debug mode when set
-    ifence_o   : out std_ulogic; -- instruction fence
-    dfence_o   : out std_ulogic; -- data fence
     -- interrupts --
     msi_i      : in  std_ulogic; -- risc-v machine software interrupt
     mei_i      : in  std_ulogic; -- risc-v machine external interrupt
@@ -256,10 +254,6 @@ begin
   -- CPU state --
   sleep_o <= ctrl.cpu_sleep; -- set when CPU is sleeping (after WFI)
   debug_o <= ctrl.cpu_debug; -- set when CPU is in debug mode
-
-  -- instruction/data fence --
-  ifence_o <= ctrl.lsu_fencei;
-  dfence_o <= ctrl.lsu_fence;
 
 
   -- Register File --------------------------------------------------------------------------

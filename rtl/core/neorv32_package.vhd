@@ -56,7 +56,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090406"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090407"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -152,14 +152,15 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- bus request --
   type bus_req_t is record
-    addr : std_ulogic_vector(31 downto 0); -- access address
-    data : std_ulogic_vector(31 downto 0); -- write data
-    ben  : std_ulogic_vector(03 downto 0); -- byte enable
-    stb  : std_ulogic; -- request strobe (single-shot)
-    rw   : std_ulogic; -- 0=read, 1=write
-    src  : std_ulogic; -- access source (1=instruction fetch, 0=data access)
-    priv : std_ulogic; -- set if privileged (machine-mode) access
-    rvso : std_ulogic; -- set if reservation set operation (atomic LR/SC)
+    addr  : std_ulogic_vector(31 downto 0); -- access address
+    data  : std_ulogic_vector(31 downto 0); -- write data
+    ben   : std_ulogic_vector(03 downto 0); -- byte enable
+    stb   : std_ulogic; -- request strobe (single-shot)
+    rw    : std_ulogic; -- 0=read, 1=write
+    src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
+    priv  : std_ulogic; -- set if privileged (machine-mode) access
+    rvso  : std_ulogic; -- set if reservation set operation (atomic LR/SC)
+    fence : std_ulogic; -- fence(.i) operation, independent of STB
   end record;
 
   -- bus response --
@@ -171,14 +172,15 @@ package neorv32_package is
 
   -- source (request) termination --
   constant req_terminate_c : bus_req_t := (
-    addr => (others => '0'),
-    data => (others => '0'),
-    ben  => (others => '0'),
-    stb  => '0',
-    rw   => '0',
-    src  => '0',
-    priv => '0',
-    rvso => '0'
+    addr  => (others => '0'),
+    data  => (others => '0'),
+    ben   => (others => '0'),
+    stb   => '0',
+    rw    => '0',
+    src   => '0',
+    priv  => '0',
+    rvso  => '0',
+    fence => '0'
   );
 
   -- endpoint (response) termination --
@@ -527,8 +529,7 @@ package neorv32_package is
     lsu_req      : std_ulogic;                     -- trigger memory access request
     lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
     lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
-    lsu_fence    : std_ulogic;                     -- fence operation
-    lsu_fencei   : std_ulogic;                     -- fence.i operation
+    lsu_fence    : std_ulogic;                     -- fence(.i) operation
     lsu_priv     : std_ulogic;                     -- effective privilege level for load/store
     -- instruction word --
     ir_funct3    : std_ulogic_vector(02 downto 0); -- funct3 bit field
@@ -559,7 +560,6 @@ package neorv32_package is
     lsu_rw       => '0',
     lsu_mo_we    => '0',
     lsu_fence    => '0',
-    lsu_fencei   => '0',
     lsu_priv     => '0',
     ir_funct3    => (others => '0'),
     ir_funct12   => (others => '0'),
