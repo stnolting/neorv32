@@ -165,7 +165,7 @@ entity neorv32_top is
     jtag_trst_i    : in  std_ulogic := 'H'; -- low-active TAP reset (optional)
     jtag_tck_i     : in  std_ulogic := 'L'; -- serial clock
     jtag_tdi_i     : in  std_ulogic := 'L'; -- serial data input
-    jtag_tdo_o     : out std_ulogic;        -- serial data output
+    jtag_tdo_o     : out std_ulogic; -- serial data output
     jtag_tms_i     : in  std_ulogic := 'L'; -- mode select
 
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
