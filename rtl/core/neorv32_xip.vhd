@@ -808,27 +808,28 @@ begin
   ctrl_engine_fsm_comb: process(state, addr_reg, cache, clear_i, cpu_req_i, bus_rsp_i)
   begin
     -- control defaults --
-    state_nxt      <= state;
-    addr_reg_nxt   <= addr_reg;
+    state_nxt       <= state;
+    addr_reg_nxt    <= addr_reg;
 
     -- cache defaults --
-    cache.ctrl_en  <= '0';
-    cache.ctrl_we  <= '0';
+    cache.ctrl_en   <= '0';
+    cache.ctrl_we   <= '0';
 
     -- host response defaults --
-    cpu_rsp_o.ack  <= '0';
-    cpu_rsp_o.err  <= '0';
-    cpu_rsp_o.data <= (others => '0');
+    cpu_rsp_o.ack   <= '0';
+    cpu_rsp_o.err   <= '0';
+    cpu_rsp_o.data  <= (others => '0');
 
     -- bus interface defaults --
-    bus_req_o.data <= (others => '0');
-    bus_req_o.ben  <= (others => '0');
-    bus_req_o.src  <= cpu_req_i.src;
-    bus_req_o.priv <= cpu_req_i.priv;
-    bus_req_o.addr <= addr_reg;
-    bus_req_o.rw   <= '0'; -- read-only
-    bus_req_o.stb  <= '0';
-    bus_req_o.rvso <= cpu_req_i.rvso;
+    bus_req_o.data  <= (others => '0');
+    bus_req_o.ben   <= (others => '0');
+    bus_req_o.src   <= cpu_req_i.src;
+    bus_req_o.priv  <= cpu_req_i.priv;
+    bus_req_o.addr  <= addr_reg;
+    bus_req_o.rw    <= '0'; -- read-only
+    bus_req_o.stb   <= '0';
+    bus_req_o.rvso  <= cpu_req_i.rvso;
+    bus_req_o.fence <= cpu_req_i.fence;
 
     -- fsm --
     case state is
