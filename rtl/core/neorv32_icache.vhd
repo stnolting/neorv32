@@ -189,6 +189,7 @@ begin
     bus_req_o.rw       <= '0'; -- read-only
     bus_req_o.stb      <= '0';
     bus_req_o.rvso     <= cpu_req_i.rvso;
+    bus_req_o.fence    <= cpu_req_i.fence;
 
     -- fsm --
     case ctrl.state is
