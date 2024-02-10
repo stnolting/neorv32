@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 10.02.2024 | 1.9.4.8 | :bug: fix missing fence pass-through in caches | [#802](https://github.com/stnolting/neorv32/pull/802) |
 | 09.02.2024 | 1.9.4.7 | :warning: integrate fence signal into CPU bus, remove top entity's fence signals | (#800)[https://github.com/stnolting/neorv32/pull/800] |
 | 09.02.2024 | 1.9.4.6 | :sparkles: add configurable XIP cache | [#799](https://github.com/stnolting/neorv32/pull/799) |
 | 09.02.2024 | 1.9.4.5 | :bug: close further illegal compressed instruction encoding loopholes | [#797](https://github.com/stnolting/neorv32/pull/797) |
