@@ -30,6 +30,9 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 09.02.2024 | 1.9.4.7 | :warning: integrate fence signal into CPU bus, remove top entity's fence signals | (#800)[https://github.com/stnolting/neorv32/pull/800] |
+| 09.02.2024 | 1.9.4.6 | :sparkles: add configurable XIP cache | [#799](https://github.com/stnolting/neorv32/pull/799) |
+| 09.02.2024 | 1.9.4.5 | :bug: close further illegal compressed instruction encoding loopholes | [#797](https://github.com/stnolting/neorv32/pull/797) |
 | 04.02.2024 | 1.9.4.4 | :bug: fix minor bug: CPU instruction bus privilege signal did not remain stable during the entire request | [#792](https://github.com/stnolting/neorv32/pull/792) |
 | 03.02.2024 | 1.9.4.3 | :bug: fix minor bug: CPU instruction bus privilege signal was hardwired to "user-mode" | [#790](https://github.com/stnolting/neorv32/pull/790) |
 | 01.02.2024 | 1.9.4.2 | :sparkles: add support for page fault exceptions (yet unused) | [#786](https://github.com/stnolting/neorv32/pull/786) |

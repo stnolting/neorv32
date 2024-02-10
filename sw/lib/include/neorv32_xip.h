@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -75,13 +75,13 @@ enum NEORV32_XIP_CTRL_enum {
   XIP_CTRL_RD_CMD_MSB     = 20, /**< XIP control register(20) (r/w): SPI flash read command, MSB */
   XIP_CTRL_SPI_CSEN       = 21, /**< XIP control register(21) (r/w): SPI chip-select enable */
   XIP_CTRL_HIGHSPEED      = 22, /**< XIP control register(22) (r/w): SPI high-speed mode enable (ignoring XIP_CTRL_PRSC) */
-  XIP_CTRL_BURST_EN       = 23, /**< XIP control register(23) (r/w): Enable XIP burst mode */
-  XIP_CTRL_CDIV0          = 24, /**< XIP control register(24) (r/w): Clock divider bit 0 */
-  XIP_CTRL_CDIV1          = 25, /**< XIP control register(25) (r/w): Clock divider bit 1 */
-  XIP_CTRL_CDIV2          = 26, /**< XIP control register(26) (r/w): Clock divider bit 2 */
-  XIP_CTRL_CDIV3          = 27, /**< XIP control register(27) (r/w): Clock divider bit 3 */
+  XIP_CTRL_CDIV0          = 23, /**< XIP control register(23) (r/w): Clock divider bit 0 */
+  XIP_CTRL_CDIV1          = 24, /**< XIP control register(24) (r/w): Clock divider bit 1 */
+  XIP_CTRL_CDIV2          = 25, /**< XIP control register(25) (r/w): Clock divider bit 2 */
+  XIP_CTRL_CDIV3          = 26, /**< XIP control register(26) (r/w): Clock divider bit 3 */
 
-  XIP_CTRL_PHY_BUSY       = 30, /**< XIP control register(20) (r/-): SPI PHY is busy */
+  XIP_CTRL_BURST_EN       = 29, /**< XIP control register(29) (r/-): Burst mode enabled (set if XIP cache is implemented) */
+  XIP_CTRL_PHY_BUSY       = 30, /**< XIP control register(30) (r/-): SPI PHY is busy */
   XIP_CTRL_XIP_BUSY       = 31  /**< XIP control register(31) (r/-): XIP access in progress */
 };
 /**@}*/
@@ -97,8 +97,6 @@ int  neorv32_xip_start(int abytes);
 void neorv32_xip_highspeed_enable(void);
 void neorv32_xip_highspeed_disable(void);
 uint32_t neorv32_xip_get_clock_speed(void);
-void neorv32_xip_burst_mode_enable(void);
-void neorv32_xip_burst_mode_disable(void);
 void neorv32_xip_spi_trans(int nbytes, uint64_t *rtx_data);
 /**@}*/
 

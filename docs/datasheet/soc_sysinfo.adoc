@@ -86,7 +86,7 @@ Bit fields in this register are set to all-zero if the according cache is not im
 | `26`    | `SYSINFO_SOC_IO_NEOLED`      | set if the NEOLED is implemented (via top's `IO_NEOLED_EN` generic)
 | `27`    | `SYSINFO_SOC_IO_XIRQ`        | set if the XIRQ is implemented (via top's `XIRQ_NUM_CH` generic)
 | `28`    | `SYSINFO_SOC_IO_GPTMR`       | set if the GPTMR is implemented (via top's `IO_GPTMR_EN` generic)
-| `29`    | `SYSINFO_SOC_IO_XIP`         | set if the XIP module is implemented (via top's `IO_XIP_EN` generic)
+| `29`    | `SYSINFO_SOC_XIP`            | set if the XIP module is implemented (via top's `XIP_EN` generic)
 | `30`    | `SYSINFO_SOC_IO_ONEWIRE`     | set if the ONEWIRE interface is implemented (via top's `IO_ONEWIRE_EN` generic)
 | `31`    | `SYSINFO_SOC_OCD`            | set if on-chip debugger is implemented (via top's `ON_CHIP_DEBUGGER_EN` generic)
 |=======================

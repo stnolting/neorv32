@@ -133,21 +133,22 @@ begin
 
   -- Request Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  x_req_o.addr <= a_req_i.addr when (arbiter.sel = '0') else b_req_i.addr;
-  x_req_o.rvso <= a_req_i.rvso when (arbiter.sel = '0') else b_req_i.rvso;
-  x_req_o.priv <= a_req_i.priv when (arbiter.sel = '0') else b_req_i.priv;
-  x_req_o.src  <= a_req_i.src  when (arbiter.sel = '0') else b_req_i.src;
-  x_req_o.rw   <= a_req_i.rw   when (arbiter.sel = '0') else b_req_i.rw;
+  x_req_o.addr  <= a_req_i.addr when (arbiter.sel = '0') else b_req_i.addr;
+  x_req_o.rvso  <= a_req_i.rvso when (arbiter.sel = '0') else b_req_i.rvso;
+  x_req_o.priv  <= a_req_i.priv when (arbiter.sel = '0') else b_req_i.priv;
+  x_req_o.src   <= a_req_i.src  when (arbiter.sel = '0') else b_req_i.src;
+  x_req_o.rw    <= a_req_i.rw   when (arbiter.sel = '0') else b_req_i.rw;
+  x_req_o.fence <= a_req_i.fence or b_req_i.fence; -- propagate any fence operations
 
-  x_req_o.data <= b_req_i.data when PORT_A_READ_ONLY    else
-                  a_req_i.data when PORT_B_READ_ONLY    else
-                  a_req_i.data when (arbiter.sel = '0') else b_req_i.data;
-
-  x_req_o.ben  <= b_req_i.ben when PORT_A_READ_ONLY     else
-                  a_req_i.ben when PORT_B_READ_ONLY     else
-                  a_req_i.ben when (arbiter.sel = '0')  else b_req_i.ben;
-
-  x_req_o.stb  <= arbiter.stb;
+  x_req_o.data  <= b_req_i.data when PORT_A_READ_ONLY    else
+                   a_req_i.data when PORT_B_READ_ONLY    else
+                   a_req_i.data when (arbiter.sel = '0') else b_req_i.data;
+                
+  x_req_o.ben   <= b_req_i.ben when PORT_A_READ_ONLY     else
+                   a_req_i.ben when PORT_B_READ_ONLY     else
+                   a_req_i.ben when (arbiter.sel = '0')  else b_req_i.ben;
+                
+  x_req_o.stb   <= arbiter.stb;
 
 
   -- Response Switch ------------------------------------------------------------------------
