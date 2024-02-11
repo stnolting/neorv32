@@ -733,7 +733,7 @@ begin
 
   -- Sign-Injection (FSGNJ) -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sign_injector: process(ctrl_i, fpu_operands)
+  sign_injector: process(ctrl_i, fpu_operands, rs1_i)
   begin
     case ctrl_i.ir_funct3(1 downto 0) is
       when "00"   => fu_sign_inject.result(31) <= fpu_operands.rs2(31); -- FSGNJ
