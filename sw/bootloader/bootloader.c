@@ -424,7 +424,12 @@ int main(void) {
     }
 #if (XIP_EN != 0)
     else if (c == 'x') { // boot from SPI flash via XIP
-      start_app(1);
+      if (neorv32_xip_available()) { // XIP module really implemented?
+        start_app(1);
+      }
+      else {
+        PRINT_TEXT("Invalid CMD");
+      }
     }
 #endif
     else if (c == '?') {

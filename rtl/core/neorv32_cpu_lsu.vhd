@@ -125,7 +125,7 @@ begin
   bus_req_o.src <= '0'; -- 0 = data access
 
   -- data/instruction fence(.i)
-  bus_req_o.fence <= ctrl_i.lsu_fence;
+  bus_req_o.fence <= ctrl_i.lsu_fence; -- this is valid even without STB being set
 
 
   -- Data Output - Alignment and Byte Enable ------------------------------------------------
