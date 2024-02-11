@@ -438,7 +438,7 @@ begin
   bus_req_o.rw    <= '0'; -- read-only
   bus_req_o.src   <= '1'; -- source = instruction fetch
   bus_req_o.rvso  <= '0'; -- cannot be a reservation set operation
-  bus_req_o.fence <= ctrl.lsu_fence; -- fence(.i) operation
+  bus_req_o.fence <= ctrl.lsu_fence; -- fence(.i) operation, valid without STB being set
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
