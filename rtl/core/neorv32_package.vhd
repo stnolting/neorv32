@@ -45,18 +45,15 @@ package neorv32_package is
   -- Architecture Configuration -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- max response time for processor-internal bus transactions --
-  -- = cycles after which an *unacknowledged* internal bus access will timeout triggering a bus fault exception
+  -- cycles after which an unacknowledged internal bus access will timeout raising a bus fault exception
   constant bus_timeout_c : natural := 15; -- default = 15
 
-  -- instruction prefetch buffer depth --
-  constant ipb_depth_c : natural := 2; -- hast to be a power of two, min 2, default 2
-
   -- instruction monitor: raise exception if multi-cycle operation times out --
-  constant monitor_mc_tmo_c : natural := 9; -- = log2 of max execution cycles (default = 512 cycles)
+  constant monitor_mc_tmo_c : natural := 9; -- = log2 of max execution cycles; default = 2^9 = 512 cycles
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090409"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090410"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
