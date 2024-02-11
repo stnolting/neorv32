@@ -447,7 +447,7 @@ begin
   for i in 0 to 1 generate -- low half-word + high half-word (incl. status bits)
     prefetch_buffer_inst: entity neorv32.neorv32_fifo
     generic map (
-      FIFO_DEPTH => ipb_depth_c,         -- number of fifo entries; has to be a power of two
+      FIFO_DEPTH => 2,                   -- number of fifo entries; has to be a power of two, min 2
       FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in fifo
       FIFO_RSYNC => false,               -- we NEED to read data asynchronously
       FIFO_SAFE  => false                -- no safe access required (ensured by FIFO-external logic)
@@ -2333,7 +2333,8 @@ begin
     -- terminate unused entries --
     hpmevent_terminate_gen:
     for i in hpm_num_c+3 to 15 generate
-      hpmevent_rd(i) <= (others => '0');
+      hpmevent_cfg(i) <= (others => '0');
+      hpmevent_rd(i)  <= (others => '0');
     end generate;
 
   end generate;
