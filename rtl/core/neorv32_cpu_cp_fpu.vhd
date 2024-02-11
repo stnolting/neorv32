@@ -378,7 +378,7 @@ begin
 
   -- O Classifier ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  number_classifier: process(op_data)
+  number_classifier: process(op_data, rs1_i, rs2_i)
     variable op_m_all_zero_v, op_e_all_zero_v, op_e_all_one_v       : std_ulogic;
     variable op_is_zero_v, op_is_inf_v, op_is_denorm_v, op_is_nan_v : std_ulogic;
   begin
@@ -2386,7 +2386,7 @@ begin
 
   -- Rounding -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rounding_unit_ctrl: process(rmode_i, sreg)
+  rounding_unit_ctrl: process(rmode_i, sreg, sign_i)
   begin
     -- defaults --
     round.en  <= '0';
