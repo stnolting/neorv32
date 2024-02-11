@@ -799,8 +799,8 @@ uint32_t __attribute__ ((noinline)) riscv_emulate_fles(float rs1, float rs2) {
  **************************************************************************/
 float __attribute__ ((noinline)) riscv_emulate_fsgnjs(float rs1, float rs2) {
 
-  float opa = subnormal_flush(rs1);
-  float opb = subnormal_flush(rs2);
+  float opa = rs1;
+  float opb = rs2;
 
   int sign_1 = (int)signbit(opa);
   int sign_2 = (int)signbit(opb);
@@ -836,8 +836,8 @@ float __attribute__ ((noinline)) riscv_emulate_fsgnjs(float rs1, float rs2) {
  **************************************************************************/
 float __attribute__ ((noinline)) riscv_emulate_fsgnjns(float rs1, float rs2) {
 
-  float opa = subnormal_flush(rs1);
-  float opb = subnormal_flush(rs2);
+  float opa = rs1;
+  float opb = rs2;
 
   int sign_1 = (int)signbit(opa);
   int sign_2 = (int)signbit(opb);
@@ -873,8 +873,8 @@ float __attribute__ ((noinline)) riscv_emulate_fsgnjns(float rs1, float rs2) {
  **************************************************************************/
 float __attribute__ ((noinline)) riscv_emulate_fsgnjxs(float rs1, float rs2) {
 
-  float opa = subnormal_flush(rs1);
-  float opb = subnormal_flush(rs2);
+  float opa = rs1;
+  float opb = rs2;
 
   int sign_1 = (int)signbit(opa);
   int sign_2 = (int)signbit(opb);
@@ -909,7 +909,7 @@ float __attribute__ ((noinline)) riscv_emulate_fsgnjxs(float rs1, float rs2) {
  **************************************************************************/
 uint32_t __attribute__ ((noinline)) riscv_emulate_fclasss(float rs1) {
 
-  float opa = subnormal_flush(rs1);
+  float opa = rs1;
 
   union {
     uint32_t binary_value; /**< Access as native float */
