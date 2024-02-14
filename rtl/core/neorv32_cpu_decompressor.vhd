@@ -288,7 +288,7 @@ begin
                 decoded(instr_imm12_lsb_c + 2)                        <= ci_instr16_i(4);
                 decoded(instr_imm12_lsb_c + 3)                        <= ci_instr16_i(5);
                 decoded(instr_imm12_lsb_c + 4)                        <= ci_instr16_i(6);
-                if ((ci_instr16_i(12) or or_reduce_f(ci_instr16_i(6 downto 2))) = '0') then -- nzuimm = 0 -> RV32 custom / illegal
+                if (ci_instr16_i(12) = '1') then -- nzuimm[5] = 1 -> RV32 custom / illegal
                   illegal <= '1';
                 end if;
               when "10" => -- C.ANDI
