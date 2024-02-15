@@ -30,11 +30,12 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 14.02.2024 | 1.9.4.12 | :bug: close another illegal compressed instruction encoding loophole | [#806](https://github.com/stnolting/neorv32/pull/806) |
 | 11.02.2024 | 1.9.4.11 | :bug: fix several FPU bugs and design flaws | [#794](https://github.com/stnolting/neorv32/pull/794) |
 | 11.02.2024 | 1.9.4.10 | minor additions to previous version (1.9.4.9): fix HPM configuration read-back | [#804](https://github.com/stnolting/neorv32/pull/804) |
 | 10.02.2024 | 1.9.4.9 | fixing HPM configuration's null range assertions | [#803](https://github.com/stnolting/neorv32/pull/803) |
 | 10.02.2024 | 1.9.4.8 | :bug: fix missing fence pass-through in caches | [#802](https://github.com/stnolting/neorv32/pull/802) |
-| 09.02.2024 | 1.9.4.7 | :warning: integrate fence signal into CPU bus, remove top entity's fence signals | (#800)[https://github.com/stnolting/neorv32/pull/800] |
+| 09.02.2024 | 1.9.4.7 | :warning: integrate fence signal into CPU bus, remove top entity's fence signals | [#800](https://github.com/stnolting/neorv32/pull/800) |
 | 09.02.2024 | 1.9.4.6 | :sparkles: add configurable XIP cache | [#799](https://github.com/stnolting/neorv32/pull/799) |
 | 09.02.2024 | 1.9.4.5 | :bug: close further illegal compressed instruction encoding loopholes | [#797](https://github.com/stnolting/neorv32/pull/797) |
 | 04.02.2024 | 1.9.4.4 | :bug: fix minor bug: CPU instruction bus privilege signal did not remain stable during the entire request | [#792](https://github.com/stnolting/neorv32/pull/792) |
