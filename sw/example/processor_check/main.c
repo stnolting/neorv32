@@ -1470,8 +1470,9 @@ int main() {
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_DMA)) {
     cnt_test++;
 
-    // enable DMA and according FIRQ channel
+    // enable DMA, auto-fencing and according FIRQ channel
     neorv32_dma_enable();
+    neorv32_dma_fence_enable();
     neorv32_cpu_irq_enable(DMA_FIRQ_ENABLE);
 
     // setup source data
