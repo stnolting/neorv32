@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -62,6 +62,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 enum NEORV32_DMA_CTRL_enum {
   DMA_CTRL_EN            =  0, /**< DMA control register(0) (r/w): DMA enable */
   DMA_CTRL_AUTO          =  1, /**< DMA control register(1) (r/w): Automatic trigger mode enable */
+  DMA_CTRL_FENCE         =  2, /**< DMA control register(2) (r/w): Issue FENCE downstream operation when DMA transfer is completed */
 
   DMA_CTRL_ERROR_RD      =  8, /**< DMA control register(8)  (r/-): Error during read access; SRC_BASE shows the faulting address */
   DMA_CTRL_ERROR_WR      =  9, /**< DMA control register(9)  (r/-): Error during write access; DST_BASE shows the faulting address */
@@ -123,6 +124,8 @@ enum NEORV32_DMA_STATUS_enum {
 int  neorv32_dma_available(void);
 void neorv32_dma_enable(void);
 void neorv32_dma_disable(void);
+void neorv32_dma_fence_enable(void);
+void neorv32_dma_fence_disable(void);
 void neorv32_dma_transfer(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config);
 void neorv32_dma_transfer_auto(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config, uint32_t firq_mask);
 int  neorv32_dma_status(void);
