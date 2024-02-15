@@ -23,13 +23,17 @@
 **Overview**
 
 The execute in-place (XIP) module allows to execute code (and read constant data) directly from an external SPI flash memory.
-The standard serial peripheral interface (SPI) is used as transfer protocol.
+The standard serial peripheral interface (SPI) is used as transfer protocol. All bus requests issued by the CPU
+are converted transparently into SPI flash access commands. Hence, the external XIP flash behaves like a simple on-chip ROM.
 
 From the CPU side, the modules provides two independent interfaces: one for transparently accessing the XIP flash and another
-one for accessing the module's control and status registers. The first interface provides a _transparent_
-gateway to the SPI flash, so the CPU can directly fetch and execute instructions (and/or read constant _data_).
+one for accessing the module's control and status registers. The first interface provides the _transparent_
+gateway to the SPI flash, so the CPU can directly fetch and execute instructions and/or read constant data.
 Note that this interface is read-only. Any write access will raise a bus error exception. The second interface is
-mapped to the processor's IO space and allows accesses to the XIP module's configuration registers.
+mapped to the processor's IO space and allows accesses to the XIP module's configuration registers as well as
+conducting individual SPI transfers.
+
+The XIP module provides an optional configurable cache to accelerate SPI flash accesses.
 
 .XIP Address Mapping
 [NOTE]
