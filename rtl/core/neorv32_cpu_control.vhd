@@ -2,7 +2,7 @@
 -- # << NEORV32 CPU - Central Operation Control Unit >>                                            #
 -- # ********************************************************************************************* #
 -- # CPU operations are controlled by several "engines" (modules). These engines operate in        #
--- # parallel to implement a simple 2-stage pipeline:                                              #
+-- # parallel to implement a tiny 2-stage pipeline:                                                #
 -- #  + Fetch engine:    Fetches 32-bit chunks of instruction words (1st pipeline stage)           #
 -- #  + Issue engine:    Decodes compressed instructions, aligns and queues instruction words      #
 -- #  + Execute engine:  Multi-cycle execution of instructions (2nd pipeline stage)                #
@@ -83,45 +83,42 @@ entity neorv32_cpu_control is
   );
   port (
     -- global control --
-    clk_i          : in  std_ulogic; -- global clock, rising edge
-    clk_aux_i      : in  std_ulogic; -- always-on clock, rising edge
-    rstn_i         : in  std_ulogic; -- global reset, low-active, async
-    ctrl_o         : out ctrl_bus_t; -- main control bus
+    clk_i         : in  std_ulogic; -- global clock, rising edge
+    clk_aux_i     : in  std_ulogic; -- always-on clock, rising edge
+    rstn_i        : in  std_ulogic; -- global reset, low-active, async
+    ctrl_o        : out ctrl_bus_t; -- main control bus
     -- instruction fetch interface --
-    i_page_fault_i : in  std_ulogic; -- instruction fetch page fault
-    i_pmp_fault_i  : in  std_ulogic; -- instruction fetch pmp fault
-    bus_req_o      : out bus_req_t;  -- request
-    bus_rsp_i      : in  bus_rsp_t;  -- response
+    i_pmp_fault_i : in  std_ulogic; -- instruction fetch pmp fault
+    bus_req_o     : out bus_req_t;  -- request
+    bus_rsp_i     : in  bus_rsp_t;  -- response
     -- data path interface --
-    alu_cp_done_i  : in  std_ulogic; -- ALU iterative operation done
-    cmp_i          : in  std_ulogic_vector(1 downto 0); -- comparator status
-    alu_add_i      : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU address result
-    rs1_i          : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    imm_o          : out std_ulogic_vector(XLEN-1 downto 0); -- immediate
-    fetch_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- instruction fetch address
-    curr_pc_o      : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
-    link_pc_o      : out std_ulogic_vector(XLEN-1 downto 0); -- link PC (return address)
-    csr_rdata_o    : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
+    alu_cp_done_i : in  std_ulogic; -- ALU iterative operation done
+    cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
+    alu_add_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU address result
+    rs1_i         : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
+    imm_o         : out std_ulogic_vector(XLEN-1 downto 0); -- immediate
+    fetch_pc_o    : out std_ulogic_vector(XLEN-1 downto 0); -- instruction fetch address
+    curr_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
+    link_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- link PC (return address)
+    csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
     -- external CSR interface --
-    xcsr_we_o      : out std_ulogic; -- global write enable
-    xcsr_addr_o    : out std_ulogic_vector(11 downto 0); -- address
-    xcsr_wdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- write data
-    xcsr_rdata_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- read data
+    xcsr_we_o     : out std_ulogic; -- global write enable
+    xcsr_addr_o   : out std_ulogic_vector(11 downto 0); -- address
+    xcsr_wdata_o  : out std_ulogic_vector(XLEN-1 downto 0); -- write data
+    xcsr_rdata_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- interrupts --
-    db_halt_req_i  : in  std_ulogic; -- debug mode (halt) request
-    msi_i          : in  std_ulogic; -- machine software interrupt
-    mei_i          : in  std_ulogic; -- machine external interrupt
-    mti_i          : in  std_ulogic; -- machine timer interrupt
-    firq_i         : in  std_ulogic_vector(15 downto 0); -- fast interrupts
+    db_halt_req_i : in  std_ulogic; -- debug mode (halt) request
+    msi_i         : in  std_ulogic; -- machine software interrupt
+    mei_i         : in  std_ulogic; -- machine external interrupt
+    mti_i         : in  std_ulogic; -- machine timer interrupt
+    firq_i        : in  std_ulogic_vector(15 downto 0); -- fast interrupts
     -- data access interface --
-    lsu_wait_i     : in  std_ulogic; -- wait for data bus
-    mar_i          : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-    ma_load_i      : in  std_ulogic; -- misaligned load data address
-    ma_store_i     : in  std_ulogic; -- misaligned store data address
-    be_load_i      : in  std_ulogic; -- bus error on load data access
-    be_store_i     : in  std_ulogic; -- bus error on store data access
-    l_page_fault_i : in  std_ulogic; -- load page fault
-    s_page_fault_i : in  std_ulogic  -- store page fault
+    lsu_wait_i    : in  std_ulogic; -- wait for data bus
+    mar_i         : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
+    ma_load_i     : in  std_ulogic; -- misaligned load data address
+    ma_store_i    : in  std_ulogic; -- misaligned store data address
+    be_load_i     : in  std_ulogic; -- bus error on load data access
+    be_store_i    : in  std_ulogic  -- bus error on store data access
   );
 end neorv32_cpu_control;
 
@@ -146,7 +143,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal fetch_engine : fetch_engine_t;
 
   -- instruction prefetch buffer (FIFO) interface --
-  type ipb_data_t is array (0 to 1) of std_ulogic_vector(17 downto 0); -- page fault & bus_error & 16-bit instruction
+  type ipb_data_t is array (0 to 1) of std_ulogic_vector(16 downto 0); -- bus_error & 16-bit instruction
   type ipb_t is record
     wdata : ipb_data_t;
     we    : std_ulogic_vector(1 downto 0); -- trigger write
@@ -164,7 +161,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     align_clr : std_ulogic;
     ci_i16    : std_ulogic_vector(15 downto 0);
     ci_i32    : std_ulogic_vector(31 downto 0);
-    data      : std_ulogic_vector((3+32)-1 downto 0); -- 3-bit status + 32-bit instruction
+    data      : std_ulogic_vector((2+32)-1 downto 0); -- is_compressed & bus_error & 32-bit instruction
     valid     : std_ulogic_vector(1 downto 0); -- data word is valid
     ack       : std_ulogic;
   end record;
@@ -237,7 +234,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     instr_be    : std_ulogic; -- instruction fetch bus error
     instr_ma    : std_ulogic; -- instruction fetch misaligned address
     instr_il    : std_ulogic; -- illegal instruction
-    instr_pf    : std_ulogic; -- instruction page fault
     ecall       : std_ulogic; -- ecall instruction
     ebreak      : std_ulogic; -- ebreak instruction
     hwtrig      : std_ulogic; -- hardware trigger module
@@ -420,11 +416,11 @@ begin
   bus_req_o.stb <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
 
   -- instruction bus response --
-  fetch_engine.resp <= bus_rsp_i.ack or bus_rsp_i.err or i_page_fault_i;
+  fetch_engine.resp <= bus_rsp_i.ack or bus_rsp_i.err;
 
   -- IPB instruction data and status --
-  ipb.wdata(0) <= i_page_fault_i & (bus_rsp_i.err or i_pmp_fault_i) & bus_rsp_i.data(15 downto 00);
-  ipb.wdata(1) <= i_page_fault_i & (bus_rsp_i.err or i_pmp_fault_i) & bus_rsp_i.data(31 downto 16);
+  ipb.wdata(0) <= (bus_rsp_i.err or i_pmp_fault_i) & bus_rsp_i.data(15 downto 00);
+  ipb.wdata(1) <= (bus_rsp_i.err or i_pmp_fault_i) & bus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
   ipb.we(0) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') and
@@ -523,20 +519,20 @@ begin
         if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, use IPB(0) entry
           issue_engine.align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
           issue_engine.valid(0)  <= ipb.avail(0);
-          issue_engine.data      <= '1' & ipb.rdata(0)(17) & ipb.rdata(0)(16) & issue_engine.ci_i32;
+          issue_engine.data      <= '1' & ipb.rdata(0)(16) & issue_engine.ci_i32;
         else -- aligned uncompressed; use IPB(0) status flags only
           issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-          issue_engine.data  <= '0' & ipb.rdata(0)(17) & ipb.rdata(0)(16) & ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
+          issue_engine.data  <= '0' & ipb.rdata(0)(16) & ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
         end if;
       -- start with HIGH half-word --
       else
         if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, use IPB(1) entry
           issue_engine.align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
           issue_engine.valid(1)  <= ipb.avail(1);
-          issue_engine.data      <= '1' & ipb.rdata(1)(17) & ipb.rdata(1)(16) & issue_engine.ci_i32;
+          issue_engine.data      <= '1' & ipb.rdata(1)(16) & issue_engine.ci_i32;
         else -- unaligned uncompressed; use IPB(0) status flags only
           issue_engine.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-          issue_engine.data  <= '0' & ipb.rdata(0)(17) & ipb.rdata(0)(16) & ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
+          issue_engine.data  <= '0' & ipb.rdata(0)(16) & ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
         end if;
       end if;
     end process issue_engine_fsm_comb;
@@ -546,7 +542,7 @@ begin
   issue_engine_disabled: -- use IPB(0) status flags only
   if not CPU_EXTENSION_RISCV_C generate
     issue_engine.valid <= (others => ipb.avail(0));
-    issue_engine.data  <= '0' & ipb.rdata(0)(17) & ipb.rdata(0)(16) & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
+    issue_engine.data  <= '0' & ipb.rdata(0)(16) & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
   end generate; -- /issue_engine_disabled
 
   -- update IPB FIFOs --
@@ -826,7 +822,6 @@ begin
     trap_ctrl.env_enter      <= '0';
     trap_ctrl.env_exit       <= '0';
     trap_ctrl.instr_be       <= '0';
-    trap_ctrl.instr_pf       <= '0';
     trap_ctrl.ecall          <= '0';
     trap_ctrl.ebreak         <= '0';
     trap_ctrl.hwtrig         <= '0';
@@ -880,8 +875,7 @@ begin
         elsif (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- new instruction word available
           issue_engine.ack         <= '1';
           trap_ctrl.instr_be       <= issue_engine.data(32); -- access fault during instruction fetch
-          trap_ctrl.instr_pf       <= issue_engine.data(33); -- page fault during instruction fetch
-          execute_engine.is_ci_nxt <= issue_engine.data(34); -- this is a de-compressed instruction
+          execute_engine.is_ci_nxt <= issue_engine.data(33); -- this is a de-compressed instruction
           execute_engine.ir_nxt    <= issue_engine.data(31 downto 0); -- instruction word
           execute_engine.pc_we     <= '1'; -- pc <= next_pc
           execute_engine.state_nxt <= EXECUTE;
@@ -1048,8 +1042,7 @@ begin
         ctrl_nxt.rf_mux <= rf_mux_mem_c; -- RF input = memory read data
         if (lsu_wait_i = '0') or -- bus system has completed the transaction
            (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
-           (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
-           (trap_ctrl.exc_buf(exc_spage_c)   = '1') or (trap_ctrl.exc_buf(exc_lpage_c)   = '1') then -- page exception
+           (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') then -- alignment exception
           if ((CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2))) or -- atomic operation
              (execute_engine.ir(instr_opcode_msb_c-1) = '0') then -- normal load
             ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file (won't happen in case of exception)
@@ -1111,11 +1104,9 @@ begin
 
   -- register file --
   ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and -- inhibit write-back only for rd-updating exceptions that must not retire
-                         (not trap_ctrl.exc_buf(exc_iaccess_c)) and (not trap_ctrl.exc_buf(exc_illegal_c)) and
-                         (not trap_ctrl.exc_buf(exc_ialign_c))  and (not trap_ctrl.exc_buf(exc_ipage_c))   and
-                         (not trap_ctrl.exc_buf(exc_salign_c))  and (not trap_ctrl.exc_buf(exc_lalign_c))  and
-                         (not trap_ctrl.exc_buf(exc_saccess_c)) and (not trap_ctrl.exc_buf(exc_laccess_c)) and
-                         (not trap_ctrl.exc_buf(exc_spage_c))   and (not trap_ctrl.exc_buf(exc_lpage_c));
+                         (not trap_ctrl.exc_buf(exc_illegal_c)) and
+                         (not trap_ctrl.exc_buf(exc_ialign_c))  and (not trap_ctrl.exc_buf(exc_salign_c))  and (not trap_ctrl.exc_buf(exc_lalign_c)) and
+                         (not trap_ctrl.exc_buf(exc_iaccess_c)) and (not trap_ctrl.exc_buf(exc_saccess_c)) and (not trap_ctrl.exc_buf(exc_laccess_c));
   ctrl_o.rf_rs1       <= execute_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c);
   ctrl_o.rf_rs2       <= execute_engine.ir(instr_rs2_msb_c downto instr_rs2_lsb_c);
   ctrl_o.rf_rs3       <= execute_engine.ir(instr_rs3_msb_c downto instr_rs3_lsb_c);
@@ -1431,11 +1422,6 @@ begin
       trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or be_store_i)         and (not trap_ctrl.env_enter);
       trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_enter);
 
-      -- load/store/instruction page fault --
-      trap_ctrl.exc_buf(exc_lpage_c) <= (trap_ctrl.exc_buf(exc_lpage_c) or l_page_fault_i)     and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_spage_c) <= (trap_ctrl.exc_buf(exc_spage_c) or s_page_fault_i)     and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_ipage_c) <= (trap_ctrl.exc_buf(exc_ipage_c) or trap_ctrl.instr_pf) and (not trap_ctrl.env_enter);
-
       -- illegal instruction & environment call --
       trap_ctrl.exc_buf(exc_ecall_c)   <= (trap_ctrl.exc_buf(exc_ecall_c)   or trap_ctrl.ecall)    and (not trap_ctrl.env_enter);
       trap_ctrl.exc_buf(exc_illegal_c) <= (trap_ctrl.exc_buf(exc_illegal_c) or trap_ctrl.instr_il) and (not trap_ctrl.env_enter);
@@ -1527,16 +1513,13 @@ begin
       trap_ctrl.cause <= (others => '0');
     elsif rising_edge(clk_i) then
       -- standard RISC-V exceptions --
-      if    (trap_ctrl.exc_buf(exc_ipage_c)    = '1') then trap_ctrl.cause <= trap_ipf_c; -- instruction page fault
-      elsif (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
+      if    (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
       elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c; -- illegal instruction
       elsif (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c; -- instruction address misaligned
       elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & csr.privilege & csr.privilege; -- environment call (U/M)
       elsif (trap_ctrl.exc_buf(exc_ebreak_c)   = '1') then trap_ctrl.cause <= trap_brk_c; -- environment breakpoint
       elsif (trap_ctrl.exc_buf(exc_salign_c)   = '1') then trap_ctrl.cause <= trap_sma_c; -- store address misaligned
       elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c; -- load address misaligned
-      elsif (trap_ctrl.exc_buf(exc_spage_c)    = '1') then trap_ctrl.cause <= trap_spf_c; -- store page fault
-      elsif (trap_ctrl.exc_buf(exc_lpage_c)    = '1') then trap_ctrl.cause <= trap_lpf_c; -- load page fault
       elsif (trap_ctrl.exc_buf(exc_saccess_c)  = '1') then trap_ctrl.cause <= trap_saf_c; -- store access fault
       elsif (trap_ctrl.exc_buf(exc_laccess_c)  = '1') then trap_ctrl.cause <= trap_laf_c; -- load access fault
       -- standard RISC-V debug mode exceptions and interrupts --
@@ -1846,7 +1829,7 @@ begin
           csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- trap type & identifier
           csr.mepc   <= trap_ctrl.epc(XLEN-1 downto 1) & '0'; -- trap PC
           -- trap value --
-          if (trap_ctrl.cause(6) = '0') and (trap_ctrl.cause(2) = '1') then -- load/store misaligned/access/(fetch)page fault [hacky!]
+          if (trap_ctrl.cause(6) = '0') and (trap_ctrl.cause(2) = '1') then -- load/store misaligned/access faults [hacky!]
             csr.mtval <= mar_i; -- faulting data access address
           else -- everything else including all interrupts
             csr.mtval <= (others => '0');

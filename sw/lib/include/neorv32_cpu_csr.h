@@ -455,9 +455,6 @@ enum NEORV32_EXCEPTION_CODES_enum {
   TRAP_CODE_S_ACCESS     = 0x00000007U, /**< 0.7:  Store (bus) access fault */
   TRAP_CODE_UENV_CALL    = 0x00000008U, /**< 0.8:  Environment call from user mode (ECALL instruction) */
   TRAP_CODE_MENV_CALL    = 0x0000000bU, /**< 0.11: Environment call from machine mode (ECALL instruction) */
-  TRAP_CODE_I_PAGE       = 0x0000000cU, /**< 0.12: Instruction page fault */
-  TRAP_CODE_L_PAGE       = 0x0000000dU, /**< 0.13: Load page fault */
-  TRAP_CODE_S_PAGE       = 0x0000000fU, /**< 0.15: Store page fault */
   TRAP_CODE_MSI          = 0x80000003U, /**< 1.3:  Machine software interrupt */
   TRAP_CODE_MTI          = 0x80000007U, /**< 1.7:  Machine timer interrupt */
   TRAP_CODE_MEI          = 0x8000000bU, /**< 1.11: Machine external interrupt */
