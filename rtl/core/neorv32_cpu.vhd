@@ -68,6 +68,8 @@ entity neorv32_cpu is
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS            : natural range 0 to 16; -- number of regions (0..16)
     PMP_MIN_GRANULARITY        : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_TOR_MODE_EN            : boolean; -- implement TOR mode
+    PMP_NAP_MODE_EN            : boolean; -- implement NAPOT/NA4 modes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS               : natural range 0 to 13; -- number of implemented HPM counters (0..13)
     HPM_CNT_WIDTH              : natural range 0 to 64  -- total size of HPM counters (0..64)
@@ -101,7 +103,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant regfile_rs4_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu; -- 4th register file read port (rs4)
   constant pmp_enable_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
 
-  -- external CSR interface --
+  -- control-unit-external CSR interface --
   signal xcsr_we        : std_ulogic;
   signal xcsr_addr      : std_ulogic_vector(11 downto 0);
   signal xcsr_wdata     : std_ulogic_vector(XLEN-1 downto 0);
@@ -358,8 +360,10 @@ begin
   if pmp_enable_c generate
     neorv32_cpu_pmp_inst: entity neorv32.neorv32_cpu_pmp
     generic map (
-      NUM_REGIONS => PMP_NUM_REGIONS,    -- number of regions (0..16)
-      GRANULARITY => PMP_MIN_GRANULARITY -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+      NUM_REGIONS => PMP_NUM_REGIONS,     -- number of regions (0..16)
+      GRANULARITY => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+      TOR_EN      => PMP_TOR_MODE_EN,     -- implement TOR mode
+      NAP_EN      => PMP_NAP_MODE_EN      -- implement NAPOT/NA4 modes
     )
     port map (
       -- global control --
