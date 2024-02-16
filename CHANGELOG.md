@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 16.02.2024 | 1.9.5.1 | :sparkles: add two new generics to exclude certain PMP modes from synthesis | [#808](https://github.com/stnolting/neorv32/pull/808) |
 | 16.02.2024 | [**:rocket:1.9.5**](https://github.com/stnolting/neorv32/releases/tag/v1.9.5) | **New release** | |
 | 15.02.2023 | 1.9.4.13 | allow the DMA to issue a FENCE operation | [#807](https://github.com/stnolting/neorv32/pull/807) |
 | 14.02.2024 | 1.9.4.12 | :bug: close another illegal compressed instruction encoding loophole | [#806](https://github.com/stnolting/neorv32/pull/806) |
