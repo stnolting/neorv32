@@ -187,17 +187,14 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
   // find according trap handler base address
   uint32_t handler_base;
   switch (neorv32_cpu_csr_read(CSR_MCAUSE)) {
-    case TRAP_CODE_I_PAGE:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_PAGE];       break;
     case TRAP_CODE_I_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ACCESS];     break;
     case TRAP_CODE_I_ILLEGAL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ILLEGAL];    break;
     case TRAP_CODE_I_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_MISALIGNED]; break;
     case TRAP_CODE_BREAKPOINT:   handler_base = __neorv32_rte_vector_lut[RTE_TRAP_BREAKPOINT];   break;
     case TRAP_CODE_L_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_L_MISALIGNED]; break;
     case TRAP_CODE_L_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_L_ACCESS];     break;
-    case TRAP_CODE_L_PAGE:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_L_PAGE];       break;
     case TRAP_CODE_S_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_S_MISALIGNED]; break;
     case TRAP_CODE_S_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_S_ACCESS];     break;
-    case TRAP_CODE_S_PAGE:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_S_PAGE];       break;
     case TRAP_CODE_UENV_CALL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_UENV_CALL];    break;
     case TRAP_CODE_MENV_CALL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MENV_CALL];    break;
     case TRAP_CODE_MSI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MSI];          break;
@@ -350,17 +347,14 @@ static void __neorv32_rte_debug_handler(void) {
   // cause
   uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
   switch (trap_cause) {
-    case TRAP_CODE_I_PAGE:       neorv32_uart0_puts("Instruction page fault"); break;
     case TRAP_CODE_I_ACCESS:     neorv32_uart0_puts("Instruction access fault"); break;
     case TRAP_CODE_I_ILLEGAL:    neorv32_uart0_puts("Illegal instruction"); break;
     case TRAP_CODE_I_MISALIGNED: neorv32_uart0_puts("Instruction address misaligned"); break;
     case TRAP_CODE_BREAKPOINT:   neorv32_uart0_puts("Environment breakpoint"); break;
     case TRAP_CODE_L_MISALIGNED: neorv32_uart0_puts("Load address misaligned"); break;
     case TRAP_CODE_L_ACCESS:     neorv32_uart0_puts("Load access fault"); break;
-    case TRAP_CODE_L_PAGE:       neorv32_uart0_puts("Load page fault"); break;
     case TRAP_CODE_S_MISALIGNED: neorv32_uart0_puts("Store address misaligned"); break;
     case TRAP_CODE_S_ACCESS:     neorv32_uart0_puts("Store access fault"); break;
-    case TRAP_CODE_S_PAGE:       neorv32_uart0_puts("Store page fault"); break;
     case TRAP_CODE_UENV_CALL:    neorv32_uart0_puts("Environment call from U-mode"); break;
     case TRAP_CODE_MENV_CALL:    neorv32_uart0_puts("Environment call from M-mode"); break;
     case TRAP_CODE_MSI:          neorv32_uart0_puts("Machine software IRQ"); break;
@@ -422,39 +416,36 @@ static void __neorv32_rte_debug_handler(void) {
  **************************************************************************/
 void neorv32_rte_print_info(void) {
 
-  const char trap_name[NEORV32_RTE_NUM_TRAPS][13] = {
-    "I_PAGE      ",
-    "I_ACCESS    ",
-    "I_ILLEGAL   ",
-    "I_MISALIGNED",
-    "BREAKPOINT  ",
-    "L_MISALIGNED",
-    "L_ACCESS    ",
-    "L_PAGE      ",
-    "S_MISALIGNED",
-    "S_ACCESS    ",
-    "S_PAGE      ",
-    "UENV_CALL   ",
-    "MENV_CALL   ",
-    "MSI         ",
-    "MTI         ",
-    "MEI         ",
-    "FIRQ_0      ",
-    "FIRQ_1      ",
-    "FIRQ_2      ",
-    "FIRQ_3      ",
-    "FIRQ_4      ",
-    "FIRQ_5      ",
-    "FIRQ_6      ",
-    "FIRQ_7      ",
-    "FIRQ_8      ",
-    "FIRQ_9      ",
-    "FIRQ_10     ",
-    "FIRQ_11     ",
-    "FIRQ_12     ",
-    "FIRQ_13     ",
-    "FIRQ_14     ",
-    "FIRQ_15     "
+  const char trap_name[NEORV32_RTE_NUM_TRAPS][11] = {
+    "I_ACCESS  ",
+    "I_ILLEGAL ",
+    "I_MISALIGN",
+    "BREAKPOINT",
+    "L_MISALIGN",
+    "L_ACCESS  ",
+    "S_MISALIGN",
+    "S_ACCESS  ",
+    "UENV_CALL ",
+    "MENV_CALL ",
+    "MSI       ",
+    "MTI       ",
+    "MEI       ",
+    "FIRQ_0    ",
+    "FIRQ_1    ",
+    "FIRQ_2    ",
+    "FIRQ_3    ",
+    "FIRQ_4    ",
+    "FIRQ_5    ",
+    "FIRQ_6    ",
+    "FIRQ_7    ",
+    "FIRQ_8    ",
+    "FIRQ_9    ",
+    "FIRQ_10   ",
+    "FIRQ_11   ",
+    "FIRQ_12   ",
+    "FIRQ_13   ",
+    "FIRQ_14   ",
+    "FIRQ_15   "
   };
 
   if (neorv32_uart0_available() == 0) {
@@ -464,9 +455,9 @@ void neorv32_rte_print_info(void) {
   neorv32_uart0_puts("\n\n<< NEORV32 RTE Configuration >>\n\n");
 
   // header
-  neorv32_uart0_puts("---------------------------------\n");
-  neorv32_uart0_puts("Trap Name [ID]         Handler\n");
-  neorv32_uart0_puts("---------------------------------\n");
+  neorv32_uart0_puts("-------------------------------\n");
+  neorv32_uart0_puts("Trap Name [ID]       Handler\n");
+  neorv32_uart0_puts("-------------------------------\n");
 
   uint32_t i;
   for (i=0; i<NEORV32_RTE_NUM_TRAPS; i++) {
@@ -478,7 +469,7 @@ void neorv32_rte_print_info(void) {
   }
 
   // footer
-  neorv32_uart0_puts("---------------------------------\n");
+  neorv32_uart0_puts("-------------------------------\n");
   neorv32_uart0_puts("\n");
 }
 

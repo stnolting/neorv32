@@ -133,9 +133,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal link_pc      : std_ulogic_vector(XLEN-1 downto 0); -- link pc (return address)
   signal pmp_ex_fault : std_ulogic; -- PMP instruction fetch fault
   signal pmp_rw_fault : std_ulogic; -- PMP read/write access fault
-  signal i_page_fault : std_ulogic; -- instruction page fault
-  signal l_page_fault : std_ulogic; -- load page fault
-  signal s_page_fault : std_ulogic; -- store page fault
 
 begin
 
@@ -209,45 +206,42 @@ begin
   )
   port map (
     -- global control --
-    clk_i          => clk_i,          -- global clock, rising edge
-    clk_aux_i      => clk_aux_i,      -- always-on clock, rising edge
-    rstn_i         => rstn_i,         -- global reset, low-active, async
-    ctrl_o         => ctrl,           -- main control bus
+    clk_i         => clk_i,          -- global clock, rising edge
+    clk_aux_i     => clk_aux_i,      -- always-on clock, rising edge
+    rstn_i        => rstn_i,         -- global reset, low-active, async
+    ctrl_o        => ctrl,           -- main control bus
     -- instruction fetch interface --
-    i_page_fault_i => i_page_fault,   -- instruction fetch page fault
-    i_pmp_fault_i  => pmp_ex_fault,   -- instruction fetch pmp fault
-    bus_req_o      => ibus_req_o,     -- request
-    bus_rsp_i      => ibus_rsp_i,     -- response
+    i_pmp_fault_i => pmp_ex_fault,   -- instruction fetch pmp fault
+    bus_req_o     => ibus_req_o,     -- request
+    bus_rsp_i     => ibus_rsp_i,     -- response
     -- data path interface --
-    alu_cp_done_i  => cp_done,        -- ALU iterative operation done
-    cmp_i          => alu_cmp,        -- comparator status
-    alu_add_i      => alu_add,        -- ALU address result
-    rs1_i          => rs1,            -- rf source 1
-    imm_o          => imm,            -- immediate
-    fetch_pc_o     => fetch_pc,       -- instruction fetch address
-    curr_pc_o      => curr_pc,        -- current PC (corresponding to current instruction)
-    link_pc_o      => link_pc,        -- link PC (return address)
-    csr_rdata_o    => csr_rdata,      -- CSR read data
+    alu_cp_done_i => cp_done,        -- ALU iterative operation done
+    cmp_i         => alu_cmp,        -- comparator status
+    alu_add_i     => alu_add,        -- ALU address result
+    rs1_i         => rs1,            -- rf source 1
+    imm_o         => imm,            -- immediate
+    fetch_pc_o    => fetch_pc,       -- instruction fetch address
+    curr_pc_o     => curr_pc,        -- current PC (corresponding to current instruction)
+    link_pc_o     => link_pc,        -- link PC (return address)
+    csr_rdata_o   => csr_rdata,      -- CSR read data
     -- external CSR interface --
-    xcsr_we_o      => xcsr_we,        -- global write enable
-    xcsr_addr_o    => xcsr_addr,      -- address
-    xcsr_wdata_o   => xcsr_wdata,     -- write data
-    xcsr_rdata_i   => xcsr_rdata_res, -- read data
+    xcsr_we_o     => xcsr_we,        -- global write enable
+    xcsr_addr_o   => xcsr_addr,      -- address
+    xcsr_wdata_o  => xcsr_wdata,     -- write data
+    xcsr_rdata_i  => xcsr_rdata_res, -- read data
     -- interrupts --
-    db_halt_req_i  => dbi_i,          -- debug mode (halt) request
-    msi_i          => msi_i,          -- machine software interrupt
-    mei_i          => mei_i,          -- machine external interrupt
-    mti_i          => mti_i,          -- machine timer interrupt
-    firq_i         => firq_i,         -- fast interrupts
+    db_halt_req_i => dbi_i,          -- debug mode (halt) request
+    msi_i         => msi_i,          -- machine software interrupt
+    mei_i         => mei_i,          -- machine external interrupt
+    mti_i         => mti_i,          -- machine timer interrupt
+    firq_i        => firq_i,         -- fast interrupts
     -- data access interface --
-    lsu_wait_i     => lsu_wait,       -- wait for data bus
-    mar_i          => mar,            -- memory address register
-    ma_load_i      => ma_load,        -- misaligned load data address
-    ma_store_i     => ma_store,       -- misaligned store data address
-    be_load_i      => be_load,        -- bus error on load data access
-    be_store_i     => be_store,       -- bus error on store data access
-    l_page_fault_i => l_page_fault,   -- load page fault
-    s_page_fault_i => s_page_fault    -- store page fault
+    lsu_wait_i    => lsu_wait,       -- wait for data bus
+    mar_i         => mar,            -- memory address register
+    ma_load_i     => ma_load,        -- misaligned load data address
+    ma_store_i    => ma_store,       -- misaligned store data address
+    be_load_i     => be_load,        -- bus error on load data access
+    be_store_i    => be_store        -- bus error on store data access
   );
 
   -- external CSR read-back --
@@ -390,14 +384,6 @@ begin
     pmp_ex_fault   <= '0';
     pmp_rw_fault   <= '0';
   end generate;
-
-
-  -- Memory Management/Paging Unit ----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- nothing to see here yet --
-  i_page_fault <= '0'; -- instruction page fault
-  l_page_fault <= '0'; -- load page fault
-  s_page_fault <= '0'; -- store page fault
 
 
 end neorv32_cpu_rtl;
