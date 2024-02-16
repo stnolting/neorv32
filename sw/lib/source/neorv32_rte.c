@@ -491,6 +491,8 @@ void neorv32_rte_print_info(void) {
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
  * Print hardware configuration information via UART0.
+ *
+ * @warning This function overrides several CSR, CNT and HPM CSRs!
  **************************************************************************/
 void neorv32_rte_print_hw_config(void) {
 
@@ -577,7 +579,22 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\nPhys. Memory Prot.:  ");
   uint32_t pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
   if (pmp_num_regions != 0)  {
-    neorv32_uart0_printf("%u region(s), %u bytes granularity", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
+    neorv32_uart0_printf("%u region(s), %u bytes granularity, modes={OFF", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
+    // check implemented modes
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_TOR << PMPCFG_A_LSB)); // try to set mode "TOR"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) == (PMP_TOR << PMPCFG_A_LSB)) {
+      neorv32_uart0_printf(",TOR");
+    }
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NA4 << PMPCFG_A_LSB)); // try to set mode "NA4"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) == (PMP_NA4 << PMPCFG_A_LSB)) {
+      neorv32_uart0_printf(",NA4");
+    }
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NAPOT << PMPCFG_A_LSB)); // try to set mode "NAPOT"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) == (PMP_NAPOT << PMPCFG_A_LSB)) {
+      neorv32_uart0_printf(",NAPOT");
+    }
+    neorv32_uart0_putc('}');
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0); // disable PMP entry again
   }
   else {
     neorv32_uart0_printf("none");
