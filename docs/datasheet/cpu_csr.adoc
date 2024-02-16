@@ -561,6 +561,11 @@ See section <<_pmp_isa_extension>> for more information.
 | 7   | `PMPCFG_L`     | r/w | **L**: Lock bit, prevents further write accesses, also enforces access rights in machine-mode, can only be cleared by CPU reset
 |=======================
 
+.Implemented Modes
+[NOTE]
+In order to reduce the CPU size certain PMP modes (`A` bits) can be excluded from synthesis.
+Use the `PMP_TOR_MODE_EN` and `PMP_NAP_MODE_EN` <<_processor_top_entity_generics>> to control
+implementation of the according modes.
 
 {empty} +
 [discrete]
@@ -592,12 +597,6 @@ The `pmpaddr*` CSRs are used to configure the region's address boundaries.
 | ISA         | `Zicsr` & `PMP`
 | Description | Region address configuration. The two MSBs of each CSR are hardwired to zero (= bits 33:32 of the physical address).
 |=======================
-
-.Address Register Update Latency
-[IMPORTANT]
-After writing a `pmpaddr` CSR the hardware requires up to 32 clock cycles to compute the according
-address masks. Make sure to wait for this time before completing the PMP region configuration
-(only relevant for `NA4` and `NAPOT` modes).
 
 
 <<<

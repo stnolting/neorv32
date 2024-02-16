@@ -78,6 +78,8 @@ entity neorv32_top is
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS            : natural range 0 to 16          := 0;           -- number of regions (0..16)
     PMP_MIN_GRANULARITY        : natural                        := 4;           -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_TOR_MODE_EN            : boolean                        := true;        -- implement TOR mode
+    PMP_NAP_MODE_EN            : boolean                        := true;        -- implement NAPOT/NA4 modes
 
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS               : natural range 0 to 13          := 0;           -- number of implemented HPM counters (0..13)
@@ -538,6 +540,8 @@ begin
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS            => PMP_NUM_REGIONS,
       PMP_MIN_GRANULARITY        => PMP_MIN_GRANULARITY,
+      PMP_TOR_MODE_EN            => PMP_TOR_MODE_EN,
+      PMP_NAP_MODE_EN            => PMP_NAP_MODE_EN,
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS               => HPM_NUM_CNTS,
       HPM_CNT_WIDTH              => HPM_CNT_WIDTH

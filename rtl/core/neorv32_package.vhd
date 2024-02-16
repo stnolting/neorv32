@@ -53,7 +53,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090500"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090501"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -776,6 +776,8 @@ package neorv32_package is
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS            : natural range 0 to 16          := 0;
       PMP_MIN_GRANULARITY        : natural                        := 4;
+      PMP_TOR_MODE_EN            : boolean                        := true;
+      PMP_NAP_MODE_EN            : boolean                        := true;
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS               : natural range 0 to 13          := 0;
       HPM_CNT_WIDTH              : natural range 0 to 64          := 40;
