@@ -188,6 +188,8 @@ begin
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              => 5,             -- number of regions (0..16)
     PMP_MIN_GRANULARITY          => 4,             -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_TOR_MODE_EN              => true,          -- implement TOR mode
+    PMP_NAP_MODE_EN              => true,          -- implement NAPOT/NA4 mode
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 => 12,            -- number of implemented HPM counters (0..29)
     HPM_CNT_WIDTH                => 40,            -- total size of HPM counters (0..64)
