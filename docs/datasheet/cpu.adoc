@@ -11,8 +11,9 @@ RISC-V _User_ and _Privileged Architecture_ specifications.
 
 **Section Structure**
 
-* <<_architecture>>, <<_full_virtualization>> and <<_risc_v_compatibility>>
+* <<_risc_v_compatibility>>
 * <<_cpu_top_entity_signals>> and <<_cpu_top_entity_generics>>
+* <<_architecture>> and <<_full_virtualization>>
 * <<_instruction_sets_and_extensions>> and <<_custom_functions_unit_cfu>>
 * <<_control_and_status_registers_csrs>>
 * <<_traps_exceptions_and_interrupts>>
@@ -54,6 +55,74 @@ The NEORV32 <<_a_isa_extension>> only supports the load-reservate (LR) and store
 The remaining read-modify-write operations are not supported. However, these missing instructions can
 be emulated. The NEORV32 <<_core_libraries>> provide an emulation wrapper for the missing AMO/read-modify-write
 instructions that is based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== CPU Top Entity - Signals
+
+The following table shows all interface signals of the CPU top entity `rtl/core/neorv32_cpu.vhd`. The
+type of all signals is _std_ulogic_ or _std_ulogic_vector_, respectively. The "Dir." column shows the signal
+direction as seen from the CPU.
+
+.NEORV32 CPU Signal List
+[cols="<3,^3,^1,<5"]
+[options="header", grid="rows"]
+|=======================
+| Signal | Width/Type | Dir | Description
+4+^| **Global Signals**
+| `clk_i`      |           1 | in  | Global clock line, all registers triggering on rising edge, this clock can be switched off during <<_sleep_mode>>
+| `clk_aux_i`  |           1 | in  | Always-on clock, used to keep the the sleep control active when `clk_i` is switched off
+| `rstn_i`     |           1 | in  | Global reset, low-active
+| `sleep_o`    |           1 | out | CPU is in <<_sleep_mode>> when set
+| `debug_o`    |           1 | out | CPU is in <<_cpu_debug_mode,debug mode>> when set
+4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
+| `msi_i`      |           1 | in  | RISC-V machine software interrupt
+| `mei_i`      |           1 | in  | RISC-V machine external interrupt
+| `mti_i`      |           1 | in  | RISC-V machine timer interrupt
+| `firq_i`     |          16 | in  | Custom fast interrupt request signals
+| `dbi_i`      |           1 | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>)
+4+^| **Instruction <<_bus_interface>>**
+| `ibus_req_o` | `bus_req_t` | out | Instruction fetch bus request
+| `ibus_rsp_i` | `bus_rsp_t` | in  | Instruction fetch bus response
+4+^| **Data <<_bus_interface>>**
+| `dbus_req_o` | `bus_req_t` | out | Data access (load/store) bus request
+| `dbus_rsp_i` | `bus_rsp_t` | in  | Data access (load/store) bus response
+|=======================
+
+.Bus Interface Protocol
+[TIP]
+See section <<_bus_interface>> for the instruction fetch and data access interface protocol and the
+according interface types (`bus_req_t` and `bus_rsp_t`).
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== CPU Top Entity - Generics
+
+Most of the CPU configuration generics are a subset of the actual Processor configuration generics
+(see section <<_processor_top_entity_generics>>). and are not listed here. However, the CPU provides
+some _specific_ generics that are used to configure the CPU for the NEORV32 processor setup. These generics
+are assigned by the processor setup only and are not available for user defined configuration.
+The specific generics are listed below.
+
+.Table Abbreviations
+[NOTE]
+The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
+
+.NEORV32 CPU-Exclusive Generic List
+[cols="<4,^2,<8"]
+[options="header",grid="rows"]
+|=======================
+| Name | Type | Description
+| `CPU_BOOT_ADDR`              | suv(31:0) | CPU reset address. See section <<_address_space>>.
+| `CPU_DEBUG_PARK_ADDR`        | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
+| `CPU_DEBUG_EXC_ADDR`         | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
+| `CPU_EXTENSION_RISCV_Sdext`  | boolean   | Implement RISC-V-compatible "debug" CPU operation mode required for the <<_on_chip_debugger_ocd>>.
+| `CPU_EXTENSION_RISCV_Sdtrig` | boolean   | Implement RISC-V-compatible trigger module. See section <<_on_chip_debugger_ocd>>.
+|=======================
 
 
 <<<
@@ -252,15 +321,16 @@ is driven by the _accessed_ device or bus system (i.e. a processor-internal memo
 [cols="^1,^1,<6"]
 [options="header",grid="rows"]
 |=======================
-| Signal | Width | Description
-| `addr` |    32 | Access address (byte addressing)
-| `data` |    32 | Write data
-| `ben`  |     4 | Byte-enable for each byte in `data`
-| `stb`  |     1 | Request trigger ("strobe", single-shot)
-| `rw`   |     1 | Access direction (`0` = read, `1` = write)
-| `src`  |     1 | Access source (`0` = instruction fetch, `1` = load/store)
-| `priv` |     1 | Set if privileged (M-mode) access
-| `rvso` |     1 | Set if current access is a reservation-set operation (atomic `lr` or `sc` instruction)
+| Signal  | Width | Description
+| `addr`  |    32 | Access address (byte addressing)
+| `data`  |    32 | Write data
+| `ben`   |     4 | Byte-enable for each byte in `data`
+| `stb`   |     1 | Request trigger ("strobe", single-shot)
+| `rw`    |     1 | Access direction (`0` = read, `1` = write)
+| `src`   |     1 | Access source (`0` = instruction fetch, `1` = load/store)
+| `priv`  |     1 | Set if privileged (M-mode) access
+| `rvso`  |     1 | Set if current access is a reservation-set operation (atomic `lr` or `sc` instruction)
+| `fence` |     1 | Data/instruction fence operation; valid without `stb` being set
 |=======================
 
 .Bus Interface - Response Bus (`bus_rsp_t`)
@@ -334,76 +404,6 @@ image::bus_interface_atomic.png[700]
 .SC Status
 [NOTE]
 The "normal" load data mechanism is used to return success/failure of the `sc.w` instruction to the CPU (via the LSB of `rsp.data`).
-
-
-<<<
-// ####################################################################################################################
-:sectnums:
-=== CPU Top Entity - Signals
-
-The following table shows all interface signals of the CPU top entity `rtl/core/neorv32_cpu.vhd`. The
-type of all signals is _std_ulogic_ or _std_ulogic_vector_, respectively. The "Dir." column shows the signal
-direction as seen from the CPU.
-
-.NEORV32 CPU Signal List
-[cols="<3,^3,^1,<5"]
-[options="header", grid="rows"]
-|=======================
-| Signal | Width/Type | Dir | Description
-4+^| **Global Signals**
-| `clk_i`      |           1 | in  | Global clock line, all registers triggering on rising edge, this clock can be switched off during <<_sleep_mode>>
-| `clk_aux_i`  |           1 | in  | Always-on clock, used to keep the the sleep control active when `clk_i` is switched off
-| `rstn_i`     |           1 | in  | Global reset, low-active
-| `sleep_o`    |           1 | out | CPU is in <<_sleep_mode>> when set
-| `debug_o`    |           1 | out | CPU is in <<_cpu_debug_mode,debug mode>> when set
-| `ifence_o`   |           1 | out | instruction fence (`fence.i` instruction )
-| `dfence_o`   |           1 | out | data fence (`fence` instruction )
-4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
-| `msi_i`      |           1 | in  | RISC-V machine software interrupt
-| `mei_i`      |           1 | in  | RISC-V machine external interrupt
-| `mti_i`      |           1 | in  | RISC-V machine timer interrupt
-| `firq_i`     |          16 | in  | Custom fast interrupt request signals
-| `dbi_i`      |           1 | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>)
-4+^| **Instruction <<_bus_interface>>**
-| `ibus_req_o` | `bus_req_t` | out | Instruction fetch bus request
-| `ibus_rsp_i` | `bus_rsp_t` | in  | Instruction fetch bus response
-4+^| **Data <<_bus_interface>>**
-| `dbus_req_o` | `bus_req_t` | out | Data access (load/store) bus request
-| `dbus_rsp_i` | `bus_rsp_t` | in  | Data access (load/store) bus response
-|=======================
-
-.Bus Interface Protocol
-[TIP]
-See section <<_bus_interface>> for the instruction fetch and data access interface protocol and the
-according interface types (`bus_req_t` and `bus_rsp_t`).
-
-
-<<<
-// ####################################################################################################################
-:sectnums:
-=== CPU Top Entity - Generics
-
-Most of the CPU configuration generics are a subset of the actual Processor configuration generics
-(see section <<_processor_top_entity_generics>>). and are not listed here. However, the CPU provides
-some _specific_ generics that are used to configure the CPU for the NEORV32 processor setup. These generics
-are assigned by the processor setup only and are not available for user defined configuration.
-The specific generics are listed below.
-
-.Table Abbreviations
-[NOTE]
-The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
-
-.NEORV32 CPU-Exclusive Generic List
-[cols="<4,^2,<8"]
-[options="header",grid="rows"]
-|=======================
-| Name | Type | Description
-| `CPU_BOOT_ADDR`              | suv(31:0) | CPU reset address. See section <<_address_space>>.
-| `CPU_DEBUG_PARK_ADDR`        | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
-| `CPU_DEBUG_EXC_ADDR`         | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
-| `CPU_EXTENSION_RISCV_Sdext`  | boolean   | Implement RISC-V-compatible "debug" CPU operation mode required for the <<_on_chip_debugger_ocd>>.
-| `CPU_EXTENSION_RISCV_Sdtrig` | boolean   | Implement RISC-V-compatible trigger module. See section <<_on_chip_debugger_ocd>>.
-|=======================
 
 
 <<<
@@ -586,18 +586,11 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Illegal inst. | -                                                                         | 3
 |=======================
 
-.`fence` Instruction - Predecessor and Successor Bits
+.`fence` Instruction
 [NOTE]
 The `fence` instruction word's _predecessor_ and _successor_ bits (used for memory ordering) are not evaluated
-by the hardware at all.
-
-.`fence` Instruction - How it works
-[NOTE]
-CPU-internally, the `fence` instruction does not perform any operation inside the CPU. It only sets the
-top's `d_bus_fence_o` signal high for one cycle to inform the memory system a `fence` instruction has been
-executed. Any flags within the `fence` instruction word are ignore by the hardware. However, the `d_bus_fence_o`
-signal is connected to the <<_processor_internal_data_cache_dcache>>. Hence, executing the `fence` instruction
-will clear/flush the data cache and resynchronize it with main memory.
+by the hardware at all. For the NEORV32 the `fence` instruction behaves exactly like the `fence.i` instruction
+(see <<_zifencei_isa_extension>>).
 
 .`wfi` Instruction
 [NOTE]
@@ -653,10 +646,11 @@ RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 
 The `Zifencei` CPU extension allows manual synchronization of the instruction stream. This extension is always enabled.
 
-The `fence.i` instruction resets the CPU's front-end (instruction fetch) and flushes the prefetch buffer.
-This allows a clean re-fetch of modified instructions from memory. Also, the top's `i_bus_fencei_o` signal is set
-high for one cycle to inform the memory system (like the <<_processor_internal_instruction_cache_icache>> to perform a flush/reload.
-Any additional flags within the `fence.i` instruction word are ignored by the hardware.
+.NEORV32 Fence Instructions
+[NOTE]
+The NEORV32 treats both fence instructions (`fence` = data fence, `fence.i` = instruction fence) in exactly the same way.
+Both instructions cause a flush of the CPU's instruction prefetch buffer and also send a fence request via the system
+bus (see <<_bus_interface>>). This system bus fence operation will, for example, clear/flush all downstream caches.
 
 .Instructions and Timing
 [cols="<2,<4,<3"]
@@ -790,13 +784,19 @@ The NEORV32 PMP is fully compatible to the RISC-V Privileged Architecture Specif
 **grant permissions to user mode**, which by default has none, and can **revoke permissions from M-mode**, which
 by default has full permissions. The PMP is configured via the <<_machine_physical_memory_protection_csrs>>.
 
+Several <<_processor_top_entity_generics>> are provided to fine-tune the CPU's PMP capabilities:
+* `PMP_NUM_REGIONS` defines the number of implemented PMP region
+* `PMP_MIN_GRANULARITY` defines the minimal granularity of each region
+* `PMP_TOR_MODE_EN` controls the implementation of the top-of-region (TOR) mode
+* `PMP_NAP_MODE_EN` controls the implementation of the naturally-aligned-power-of-two (NA4 and NAPOT) modes
+
 .PMP Rules when in Debug Mode
 [NOTE]
 When in debug-mode all PMP rules are ignored making the debugger have maximum access rights.
 
 [IMPORTANT]
 Instruction fetches are also triggered when denied by a certain PMP rule. However, the fetched instruction(s)
-will not be executed and will not change CPU core state to preserve memory access protection. 
+will not be executed and will not change CPU core state.
 
 
 ==== `Smcntrpmf` - ISA Extension

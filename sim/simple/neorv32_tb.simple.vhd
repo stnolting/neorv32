@@ -188,6 +188,8 @@ begin
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              => 5,             -- number of regions (0..16)
     PMP_MIN_GRANULARITY          => 4,             -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_TOR_MODE_EN              => true,          -- implement TOR mode
+    PMP_NAP_MODE_EN              => true,          -- implement NAPOT/NA4 mode
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS                 => 12,            -- number of implemented HPM counters (0..29)
     HPM_CNT_WIDTH                => 40,            -- total size of HPM counters (0..64)
@@ -215,6 +217,11 @@ begin
     MEM_EXT_BIG_ENDIAN           => false,         -- byte order: true=big-endian, false=little-endian
     MEM_EXT_ASYNC_RX             => false,         -- use register buffer for RX data when false
     MEM_EXT_ASYNC_TX             => false,         -- use register buffer for TX data when false
+    -- Execute in-place module (XIP) --
+    XIP_EN                       => true,          -- implement execute in place module (XIP)?
+    XIP_CACHE_EN                 => true,          -- implement XIP cache?
+    XIP_CACHE_NUM_BLOCKS         => 4,             -- number of blocks (min 1), has to be a power of 2
+    XIP_CACHE_BLOCK_SIZE         => 256,           -- block size in bytes (min 4), has to be a power of 2
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  => 32,            -- number of external IRQ channels (0..32)
     XIRQ_TRIGGER_TYPE            => (others => '1'), -- trigger type: 0=level, 1=edge
@@ -244,7 +251,6 @@ begin
     IO_NEOLED_EN                 => true,          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_NEOLED_TX_FIFO            => 8,             -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
     IO_GPTMR_EN                  => true,          -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN                    => true,          -- implement execute in place module (XIP)?
     IO_ONEWIRE_EN                => true,          -- implement 1-wire interface (ONEWIRE)?
     IO_DMA_EN                    => true,          -- implement direct memory access controller (DMA)?
     IO_SLINK_EN                  => true,          -- implement stream link interface (SLINK)?
@@ -280,10 +286,7 @@ begin
     slink_tx_dat_o => slink_dat,       -- TX output data
     slink_tx_val_o => slink_val,       -- TX valid output
     slink_tx_rdy_i => slink_rdy,       -- TX ready to send
-    -- Advanced memory control signals (available if MEM_EXT_EN = true) --
-    fence_o        => open,            -- indicates an executed FENCE operation
-    fencei_o       => open,            -- indicates an executed FENCEI operation
-    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
+    -- XIP (execute in place via SPI) signals (available if XIP_EN = true) --
     xip_csn_o      => open,            -- chip-select, low-active
     xip_clk_o      => open,            -- serial clock
     xip_dat_i      => '0',             -- device data input

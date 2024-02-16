@@ -302,7 +302,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal csr : csr_t;
 
   -- hpm event configuration CSRs --
-  type hpmevent_cfg_t is array (3 to (hpm_num_c+3)-1) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
+  type hpmevent_cfg_t is array (3 to 15) of std_ulogic_vector(hpmcnt_event_size_c-1 downto 0);
   type hpmevent_rd_t  is array (3 to 15) of std_ulogic_vector(XLEN-1 downto 0);
   signal hpmevent_cfg : hpmevent_cfg_t;
   signal hpmevent_rd  : hpmevent_rd_t;
@@ -432,12 +432,13 @@ begin
   ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
 
   -- bus access type --
-  bus_req_o.priv <= fetch_engine.priv; -- current effective privilege level
-  bus_req_o.data <= (others => '0'); -- read-only
-  bus_req_o.ben  <= (others => '0'); -- read-only
-  bus_req_o.rw   <= '0'; -- read-only
-  bus_req_o.src  <= '1'; -- source = instruction fetch
-  bus_req_o.rvso <= '0'; -- cannot be a reservation set operation
+  bus_req_o.priv  <= fetch_engine.priv; -- current effective privilege level
+  bus_req_o.data  <= (others => '0'); -- read-only
+  bus_req_o.ben   <= (others => '0'); -- read-only
+  bus_req_o.rw    <= '0'; -- read-only
+  bus_req_o.src   <= '1'; -- source = instruction fetch
+  bus_req_o.rvso  <= '0'; -- cannot be a reservation set operation
+  bus_req_o.fence <= ctrl.lsu_fence; -- fence(.i) operation, valid without STB being set
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
@@ -446,7 +447,7 @@ begin
   for i in 0 to 1 generate -- low half-word + high half-word (incl. status bits)
     prefetch_buffer_inst: entity neorv32.neorv32_fifo
     generic map (
-      FIFO_DEPTH => ipb_depth_c,         -- number of fifo entries; has to be a power of two
+      FIFO_DEPTH => 2,                   -- number of fifo entries; has to be a power of two, min 2
       FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in fifo
       FIFO_RSYNC => false,               -- we NEED to read data asynchronously
       FIFO_SAFE  => false                -- no safe access required (ensured by FIFO-external logic)
@@ -1009,9 +1010,8 @@ begin
         if (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- abort if illegal instruction
           execute_engine.state_nxt <= DISPATCH;
         else
-          ctrl_nxt.lsu_fence       <= not execute_engine.ir(instr_funct3_lsb_c); -- data fence
-          ctrl_nxt.lsu_fencei      <=     execute_engine.ir(instr_funct3_lsb_c); -- instruction fence
-          execute_engine.state_nxt <= RESTART; -- reset instruction fetch + IPB (only required for fence.i)
+          ctrl_nxt.lsu_fence       <= '1'; -- NOTE: fence == fence.i
+          execute_engine.state_nxt <= RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
         end if;
 
       when BRANCH => -- update next_PC on taken branches and jumps
@@ -1134,8 +1134,7 @@ begin
   ctrl_o.lsu_req      <= ctrl.lsu_req;
   ctrl_o.lsu_rw       <= ctrl.lsu_rw;
   ctrl_o.lsu_mo_we    <= '1' when (execute_engine.state = MEM_REQ) else '0'; -- write memory output registers (data & address)
-  ctrl_o.lsu_fence    <= ctrl.lsu_fence;
-  ctrl_o.lsu_fencei   <= ctrl.lsu_fencei;
+  ctrl_o.lsu_fence    <= ctrl.lsu_fence; -- fence(.i)
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
 
   -- instruction word bit fields --
@@ -2284,7 +2283,7 @@ begin
       cnt_hi_rd(2) <= cnt.hi(2); -- instreth
     end if;
     -- hpm counters --
-    if (CPU_EXTENSION_RISCV_Zihpm = true) then
+    if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then
       for i in 3 to (hpm_num_c+3)-1 loop
         if (hpm_cnt_lo_width_c > 0) then -- constrain low word size
           cnt_lo_rd(i)(hpm_cnt_lo_width_c-1 downto 0) <= cnt.lo(i)(hpm_cnt_lo_width_c-1 downto 0);
@@ -2300,7 +2299,7 @@ begin
   -- Hardware Performance Monitors (HPM) - Counter Event Configuration CSRs -----------------
   -- -------------------------------------------------------------------------------------------
   hpmevent_gen_enable:
-  if CPU_EXTENSION_RISCV_Zihpm generate
+  if CPU_EXTENSION_RISCV_Zihpm and (hpm_num_c > 0) generate
 
     -- write enable decoder --
     hpmevent_write: process(csr)
@@ -2334,16 +2333,16 @@ begin
     -- terminate unused entries --
     hpmevent_terminate_gen:
     for i in hpm_num_c+3 to 15 generate
-      hpmevent_rd(i) <= (others => '0');
+      hpmevent_cfg(i) <= (others => '0');
+      hpmevent_rd(i)  <= (others => '0');
     end generate;
 
   end generate;
 
 
   -- no HPMs implemented --
-  hpm_gen_disable:
-  if not CPU_EXTENSION_RISCV_Zihpm generate
-    hpmevent_we  <= (others => '0');
+  hpmevent_gen_disable:
+  if (not CPU_EXTENSION_RISCV_Zihpm) or (hpm_num_c = 0) generate
     hpmevent_cfg <= (others => (others => '0'));
     hpmevent_rd  <= (others => (others => '0'));
   end generate;
@@ -2358,12 +2357,16 @@ begin
     elsif rising_edge(clk_i) then
       cnt.inc <= (others => '0'); -- default
       -- base counters --
-      cnt.inc(0) <= cnt_event(hpmcnt_event_cy_c) and (not csr.mcountinhibit(0)) and (not debug_ctrl.running);
-      cnt.inc(2) <= cnt_event(hpmcnt_event_ir_c) and (not csr.mcountinhibit(2)) and (not debug_ctrl.running);
-      -- HPM counters --
-      for i in 3 to (hpm_num_c+3)-1 loop
-        cnt.inc(i) <= or_reduce_f(cnt_event and hpmevent_cfg(i)) and (not csr.mcountinhibit(i)) and (not debug_ctrl.running);
-      end loop;
+      if (CPU_EXTENSION_RISCV_Zicntr = true) then
+        cnt.inc(0) <= cnt_event(hpmcnt_event_cy_c) and (not csr.mcountinhibit(0)) and (not debug_ctrl.running);
+        cnt.inc(2) <= cnt_event(hpmcnt_event_ir_c) and (not csr.mcountinhibit(2)) and (not debug_ctrl.running);
+      end if;
+      -- hpm counters --
+      if (CPU_EXTENSION_RISCV_Zihpm = true) and (hpm_num_c > 0) then
+        for i in 3 to (hpm_num_c+3)-1 loop
+          cnt.inc(i) <= or_reduce_f(cnt_event and hpmevent_cfg(i)) and (not csr.mcountinhibit(i)) and (not debug_ctrl.running);
+        end loop;
+      end if;
     end if;
   end process counter_event;
 

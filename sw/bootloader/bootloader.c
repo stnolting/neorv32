@@ -293,10 +293,9 @@ int main(void) {
 #endif
 
 #if (XIP_EN != 0)
-  // setup XIP: clock divider 0, clock mode 0, bursts enabled
+  // setup XIP: clock divider 0, clock mode 0
   if (neorv32_xip_available()) {
     neorv32_xip_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0, SPI_FLASH_CMD_READ);
-    neorv32_xip_burst_mode_enable();
     neorv32_xip_start(SPI_FLASH_ADDR_BYTES);
   }
 #endif
@@ -425,7 +424,12 @@ int main(void) {
     }
 #if (XIP_EN != 0)
     else if (c == 'x') { // boot from SPI flash via XIP
-      start_app(1);
+      if (neorv32_xip_available()) { // XIP module really implemented?
+        start_app(1);
+      }
+      else {
+        PRINT_TEXT("Invalid CMD");
+      }
     }
 #endif
     else if (c == '?') {

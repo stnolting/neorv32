@@ -51,7 +51,6 @@ entity neorv32_icache is
   port (
     clk_i     : in  std_ulogic; -- global clock, rising edge
     rstn_i    : in  std_ulogic; -- global reset, low-active, async
-    clear_i   : in  std_ulogic; -- cache clear
     cpu_req_i : in  bus_req_t;  -- request bus
     cpu_rsp_o : out bus_rsp_t;  -- response bus
     bus_req_o : out bus_req_t;  -- request bus
@@ -158,13 +157,13 @@ begin
 
   -- Control Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_engine_fsm_comb: process(ctrl, cache, clear_i, cpu_req_i, bus_rsp_i)
+  ctrl_engine_fsm_comb: process(ctrl, cache, cpu_req_i, bus_rsp_i)
   begin
     -- control defaults --
     ctrl.state_nxt     <= ctrl.state;
     ctrl.addr_reg_nxt  <= ctrl.addr_reg;
     ctrl.req_buf_nxt   <= ctrl.req_buf or cpu_req_i.stb;
-    ctrl.clear_buf_nxt <= ctrl.clear_buf or clear_i; -- buffer clear request from CPU
+    ctrl.clear_buf_nxt <= ctrl.clear_buf or cpu_req_i.fence;
 
     -- cache defaults --
     cache.clear        <= '0';
@@ -190,6 +189,7 @@ begin
     bus_req_o.rw       <= '0'; -- read-only
     bus_req_o.stb      <= '0';
     bus_req_o.rvso     <= cpu_req_i.rvso;
+    bus_req_o.fence    <= cpu_req_i.fence;
 
     -- fsm --
     case ctrl.state is

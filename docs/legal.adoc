@@ -36,7 +36,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 **The NEORV32 RISC-V Processor** +
 https://github.com/stnolting/neorv32 +
 Dipl.-Ing. (M.Sc.) Stephan Nolting +
-European Union, Germany +
+🇪🇺 European Union, Germany +
 stnolting@gmail.com
 ==========================
 
@@ -58,19 +58,13 @@ stnolting@gmail.com
 * Timing diagrams made with _WaveDrom Editor_.
 * Documentation made with `asciidoctor`.
 * "Segger Embedded Studio" and "J-Link" are trademarks of Segger Microcontroller Systems GmbH.
-* All further/unreferenced products belong to their according copyright holders.
-
-PDF icons from https://www.flaticon.com and made by
-link:https://www.freepik.com[Freepik], link:https://www.flaticon.com/authors/good-ware[Good Ware],
-link:https://www.flaticon.com/authors/pixel-perfect[Pixel perfect] and link:https://www.flaticon.com/authors/vectors-market[Vectors Market].
-
+* All further/unreferenced projects/products/brands belong to their according copyright holders.
 
 :sectnums!:
 === Disclaimer
 
-This project is released under the BSD 3-Clause license. No copyright infringement
-intended. Other implied or used projects might have different licensing – see their documentation to get more information.
-
+This project is released under the BSD 3-Clause license. No copyright infringement intended.
+Other implied or used projects/sources might have different licensing – see their documentation to get more information.
 
 :sectnums!:
 === Limitation of Liability for External Links
@@ -80,7 +74,6 @@ is not under our control, we cannot assume any liability for such external conte
 information of the linked websites is liable for the content and accuracy of the information provided. At the
 point in time when the links were placed, no infringements of the law were recognizable to us. As soon as an
 infringement of the law becomes known to us, we will immediately remove the link in question.
-
 
 :sectnums!:
 === Citing
@@ -98,7 +91,6 @@ This project would not be where it is without them.
 [TIP]
 This project also provides a _digital object identifier_ provided by https://zenodo.org[zenodo]:
 https://doi.org/10.5281/zenodo.5018888[image:https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg[title='zenodo']]
-
 
 :sectnums!:
 === Acknowledgments

@@ -96,6 +96,10 @@ int main() {
   // enable DMA
   neorv32_dma_enable();
 
+  // issue a FENCE operation when the DMA transfer completes (without errors); this
+  // will re-sync /flush and reload) all downstream caches
+  neorv32_dma_fence_enable();
+
   // initialize and data arrays
   dma_src[0] = 0x66778899UL;
   dma_src[1] = 0x22334455UL;
@@ -107,7 +111,7 @@ int main() {
   dma_dst[2] = 0;
   dma_dst[3] = 0;
 
-  asm volatile ("fence"); // make sure main memory is sync with d-cache
+  asm volatile ("fence"); // re-sync caches
 
 
   // ----------------------------------------------------------
@@ -264,7 +268,7 @@ int main() {
  **************************************************************************/
 void show_arrays(void) {
 
-  asm volatile ("fence"); // make sure main memory is sync with d-cache
+  asm volatile ("fence"); // re-sync caches
   neorv32_uart0_printf("---------------------------\n");
   neorv32_uart0_printf("     SRC         DST\n");
   neorv32_uart0_printf("[0]  0x%x  0x%x\n", dma_src[0], dma_dst[0]);

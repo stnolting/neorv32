@@ -69,6 +69,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
   -- control and status register bits --
   constant ctrl_en_c            : natural :=  0; -- r/w: DMA enable
   constant ctrl_auto_c          : natural :=  1; -- r/w: enable FIRQ-triggered transfer
+  constant ctrl_fence_c         : natural :=  3; -- r/w: issue FENCE operation when DMA is done
   --
   constant ctrl_error_rd_c      : natural :=  8; -- r/-: error during read transfer
   constant ctrl_error_wr_c      : natural :=  9; -- r/-: error during write transfer
@@ -88,6 +89,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
   type config_t is record
     enable    : std_ulogic; -- DMA enabled when set
     auto      : std_ulogic; -- FIRQ-driven auto transfer
+    fence     : std_ulogic; -- issue FENCE operation when DMA is done
     firq_mask : std_ulogic_vector(15 downto 0); -- FIRQ trigger mask
     src_base  : std_ulogic_vector(31 downto 0); -- source base address
     dst_base  : std_ulogic_vector(31 downto 0); -- destination base address
@@ -139,6 +141,7 @@ begin
       bus_rsp_o.data   <= (others => '0');
       config.enable    <= '0';
       config.auto      <= '0';
+      config.fence     <= '0';
       config.firq_mask <= (others => '0');
       config.src_base  <= (others => '0');
       config.dst_base  <= (others => '0');
@@ -166,6 +169,7 @@ begin
           if (bus_req_i.addr(3 downto 2) = "00") then -- control and status register
             config.enable    <= bus_req_i.data(ctrl_en_c);
             config.auto      <= bus_req_i.data(ctrl_auto_c);
+            config.fence     <= bus_req_i.data(ctrl_fence_c);
             config.done      <= '0'; -- clear on write access
             config.firq_mask <= bus_req_i.data(ctrl_firq_mask_msb_c downto ctrl_firq_mask_lsb_c);
           end if;
@@ -190,6 +194,7 @@ begin
             when "00" => -- control and status register
               bus_rsp_o.data(ctrl_en_c)       <= config.enable;
               bus_rsp_o.data(ctrl_auto_c)     <= config.auto;
+              bus_rsp_o.data(ctrl_fence_c)    <= config.fence;
               bus_rsp_o.data(ctrl_error_rd_c) <= engine.err_rd;
               bus_rsp_o.data(ctrl_error_wr_c) <= engine.err_wr;
               bus_rsp_o.data(ctrl_busy_c)     <= engine.busy;
@@ -324,10 +329,11 @@ begin
   irq_o <= engine.done and config.enable; -- no interrupt if transfer was aborted
 
   -- bus output --
-  dma_req_o.priv <= priv_mode_m_c; -- privileged access
-  dma_req_o.src  <= '0'; -- source = data access
-  dma_req_o.addr <= engine.src_addr when (engine.state = S_READ) else engine.dst_addr;
-  dma_req_o.rvso <= '0'; -- no reservation set operation possible
+  dma_req_o.priv  <= priv_mode_m_c; -- privileged access
+  dma_req_o.src   <= '0'; -- source = data access
+  dma_req_o.addr  <= engine.src_addr when (engine.state = S_READ) else engine.dst_addr;
+  dma_req_o.rvso  <= '0'; -- no reservation set operation possible
+  dma_req_o.fence <= config.enable and config.fence and engine.done; -- issue FENCE operation when transfer is done
 
   -- address increment --
   address_inc: process(config.qsel)

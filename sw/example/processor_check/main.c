@@ -256,6 +256,19 @@ int main() {
       return 1;
     }
 
+    // check if NAPOT and TOR modes are supported
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_TOR << PMPCFG_A_LSB)); // try to set mode "TOR"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) != (PMP_TOR << PMPCFG_A_LSB)) {
+      PRINT_CRITICAL("\nERROR! PMP TOR mode not supported!\n");
+      return 1;
+    }
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NAPOT << PMPCFG_A_LSB)); // try to set mode "NAPOT"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) != (PMP_NAPOT << PMPCFG_A_LSB)) {
+      PRINT_CRITICAL("\nERROR! PMP NAPOT mode not supported!\n");
+      return 1;
+    }
+    neorv32_cpu_csr_write(CSR_PMPCFG0, 0); // disable test entry again
+
     cnt_test++;
 
     // set execute permission for u-mode
@@ -1470,8 +1483,9 @@ int main() {
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_DMA)) {
     cnt_test++;
 
-    // enable DMA and according FIRQ channel
+    // enable DMA, auto-fencing and according FIRQ channel
     neorv32_dma_enable();
+    neorv32_dma_fence_enable();
     neorv32_cpu_irq_enable(DMA_FIRQ_ENABLE);
 
     // setup source data

@@ -105,9 +105,6 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 | `slink_tx_dat_o` | 32 | out |   -   | TX data
 | `slink_tx_val_o` |  1 | out |   -   | TX data valid
 | `slink_tx_rdy_i` |  1 |  in | `'L'` | TX allowed to send
-5+^| **Advanced Memory Control Signals**
-| `fence_o`        |  1 | out |   -   | set if `fence` instruction is being executed
-| `fencei_o`       |  1 | out |   -   | set if `fence.i` instruction is being executed
 5+^| **<<_execute_in_place_module_xip>>**
 | `xip_csn_o`      |  1 | out |   -   | chip select, low-active
 | `xip_clk_o`      |  1 | out |   -   | serial clock
@@ -231,6 +228,8 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 4+^| **Physical Memory Protection (<<_pmp_isa_extension>>)**
 | `PMP_NUM_REGIONS`       | natural   | 0          | Number of implemented PMP regions (0..16).
 | `PMP_MIN_GRANULARITY`   | natural   | 4          | Minimal region granularity in bytes. Has to be a power of two, min 4.
+| `PMP_TOR_MODE_EN`       | boolean   | true       | Implement support for top-of-region (TOR) mode.
+| `PMP_NAP_MODE_EN`       | boolean   | true       | Implement support for naturally-aligned power-of-two (NAPOT & NA4) modes.
 4+^| **Hardware Performance Monitors (<<_zihpm_isa_extension>>)**
 | `HPM_NUM_CNTS`          | natural   | 0          | Number of implemented hardware performance monitor counters (0..13).
 | `HPM_CNT_WIDTH`         | natural   | 40         | Total LSB-aligned size of each HPM counter. Min 0, max 64.
@@ -249,7 +248,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `ICACHE_ASSOCIATIVITY`  | natural   | 1          | Associativity (number of sets). Allowed configurations: `1` = 1 set, direct mapped; `2` = 2-way set-associative.
 4+^| **<<_processor_internal_data_cache_dcache>>**
 | `DCACHE_EN`             | boolean   | false      | Implement the data cache.
-| `DCACHE_NUM_BLOCKS`     | natural   | 4          | Number of blocks ("pages" or "lines") Has to be a power of two.
+| `DCACHE_NUM_BLOCKS`     | natural   | 4          | Number of blocks ("pages" or "lines"). Has to be a power of two.
 | `DCACHE_BLOCK_SIZE`     | natural   | 64         | Size in bytes of each block. Has to be a power of two.
 4+^| **<<_processor_external_memory_interface_wishbone>>**
 | `MEM_EXT_EN`            | boolean   | false      | Implement the external bus interface.
@@ -258,6 +257,11 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `MEM_EXT_BIG_ENDIAN`    | boolean   | false      | Use BIG endian data order interface for external bus.
 | `MEM_EXT_ASYNC_RX`      | boolean   | false      | Disable input registers when true.
 | `MEM_EXT_ASYNC_TX`      | boolean   | false      | Disable output registers when true.
+4+^| **<<_execute_in_place_module_xip>>**
+| `XIP_EN`                | boolean   | false      | Implement the execute in-place module.
+| `XIP_CACHE_EN`          | boolean   | false      | Implement XIP cache.
+| `XIP_CACHE_NUM_BLOCKS`  | natural   | 8          | Number of blocks in XIP cache. Has to be a power of two.
+| `XIP_CACHE_BLOCK_SIZE`  | natural   | 256        | Number of bytes per XIP cache block. Has to be a power of two, min 4.
 4+^| **<<_external_interrupt_controller_xirq>>**
 | `XIRQ_NUM_CH`           | natural   | 0          | Number of channels of the external interrupt controller. Valid values are 0..32.
 | `XIRQ_TRIGGER_TYPE`     | suv(31:0) | 0xFFFFFFFF | Trigger type (one bit per channel): `0` = level-triggered, '1' = edge triggered.
@@ -287,7 +291,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_NEOLED_EN`          | boolean   | false      | Implement the <<_smart_led_interface_neoled>>.
 | `IO_NEOLED_TX_FIFO`     | natural   | 1          | TX FIFO depth of the the <<_smart_led_interface_neoled>>. Has to be a power of two, min 1, max 32768.
 | `IO_GPTMR_EN`           | boolean   | false      | Implement the <<_general_purpose_timer_gptmr>>.
-| `IO_XIP_EN`             | boolean   | false      | Implement the <<_execute_in_place_module_xip>>.
 | `IO_ONEWIRE_EN`         | boolean   | false      | Implement the <<_one_wire_serial_interface_controller_onewire>>.
 | `IO_DMA_EN`             | boolean   | false      | Implement the <<_direct_memory_access_controller_dma>>.
 | `IO_SLINK_EN`           | boolean   | false      | Implement the <<_stream_link_interface_slink>>.
@@ -432,7 +435,7 @@ The mapping of the 16 FIRQ channels to the according processor-internal modules 
 table (the channel number also corresponds to the according FIRQ priority: 0 = highest, 15 = lowest):
 
 .NEORV32 Fast Interrupt Request (FIRQ) Mapping
-[cols="^2,<8,<7"]
+[cols="^2,<2,<6"]
 [options="header",grid="rows"]
 |=======================
 | Channel | Source | Description

@@ -84,7 +84,7 @@ entity neorv32_sysinfo is
     IO_NEOLED_EN         : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
     IO_XIRQ_EN           : boolean; -- implement external interrupts controller (XIRQ)?
     IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?
-    IO_XIP_EN            : boolean; -- implement execute in place module (XIP)?
+    XIP_EN               : boolean; -- implement execute in place module (XIP)?
     IO_ONEWIRE_EN        : boolean; -- implement 1-wire interface (ONEWIRE)?
     IO_DMA_EN            : boolean; -- implement direct memory access controller (DMA)?
     IO_SLINK_EN          : boolean; -- implement stream link interface (SLINK)?
@@ -151,7 +151,7 @@ begin
   sysinfo(2)(26) <= '1' when IO_NEOLED_EN        else '0'; -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
   sysinfo(2)(27) <= '1' when IO_XIRQ_EN          else '0'; -- external interrupt controller (XIRQ) implemented?
   sysinfo(2)(28) <= '1' when IO_GPTMR_EN         else '0'; -- general purpose timer (GPTMR) implemented?
-  sysinfo(2)(29) <= '1' when IO_XIP_EN           else '0'; -- execute in place module (XIP) implemented?
+  sysinfo(2)(29) <= '1' when XIP_EN              else '0'; -- execute in place module (XIP) implemented?
   sysinfo(2)(30) <= '1' when IO_ONEWIRE_EN       else '0'; -- 1-wire interface (ONEWIRE) implemented?
   sysinfo(2)(31) <= '1' when ON_CHIP_DEBUGGER_EN else '0'; -- on-chip debugger implemented?
 

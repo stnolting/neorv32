@@ -45,18 +45,15 @@ package neorv32_package is
   -- Architecture Configuration -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- max response time for processor-internal bus transactions --
-  -- = cycles after which an *unacknowledged* internal bus access will timeout triggering a bus fault exception
+  -- cycles after which an unacknowledged internal bus access will timeout raising a bus fault exception
   constant bus_timeout_c : natural := 15; -- default = 15
 
-  -- instruction prefetch buffer depth --
-  constant ipb_depth_c : natural := 2; -- hast to be a power of two, min 2, default 2
-
   -- instruction monitor: raise exception if multi-cycle operation times out --
-  constant monitor_mc_tmo_c : natural := 9; -- = log2 of max execution cycles (default = 512 cycles)
+  constant monitor_mc_tmo_c : natural := 9; -- = log2 of max execution cycles; default = 2^9 = 512 cycles
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090404"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090501"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -152,14 +149,15 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- bus request --
   type bus_req_t is record
-    addr : std_ulogic_vector(31 downto 0); -- access address
-    data : std_ulogic_vector(31 downto 0); -- write data
-    ben  : std_ulogic_vector(03 downto 0); -- byte enable
-    stb  : std_ulogic; -- request strobe (single-shot)
-    rw   : std_ulogic; -- 0=read, 1=write
-    src  : std_ulogic; -- access source (1=instruction fetch, 0=data access)
-    priv : std_ulogic; -- set if privileged (machine-mode) access
-    rvso : std_ulogic; -- set if reservation set operation (atomic LR/SC)
+    addr  : std_ulogic_vector(31 downto 0); -- access address
+    data  : std_ulogic_vector(31 downto 0); -- write data
+    ben   : std_ulogic_vector(03 downto 0); -- byte enable
+    stb   : std_ulogic; -- request strobe (single-shot)
+    rw    : std_ulogic; -- 0=read, 1=write
+    src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
+    priv  : std_ulogic; -- set if privileged (machine-mode) access
+    rvso  : std_ulogic; -- set if reservation set operation (atomic LR/SC)
+    fence : std_ulogic; -- fence(.i) operation, independent of STB
   end record;
 
   -- bus response --
@@ -171,14 +169,15 @@ package neorv32_package is
 
   -- source (request) termination --
   constant req_terminate_c : bus_req_t := (
-    addr => (others => '0'),
-    data => (others => '0'),
-    ben  => (others => '0'),
-    stb  => '0',
-    rw   => '0',
-    src  => '0',
-    priv => '0',
-    rvso => '0'
+    addr  => (others => '0'),
+    data  => (others => '0'),
+    ben   => (others => '0'),
+    stb   => '0',
+    rw    => '0',
+    src   => '0',
+    priv  => '0',
+    rvso  => '0',
+    fence => '0'
   );
 
   -- endpoint (response) termination --
@@ -341,6 +340,8 @@ package neorv32_package is
   -- special values (single-precision) --
   constant fp_single_qnan_c     : std_ulogic_vector(31 downto 0) := x"7fc00000"; -- quiet NaN
   constant fp_single_snan_c     : std_ulogic_vector(31 downto 0) := x"7fa00000"; -- signaling NaN
+  constant fp_single_pos_max_c  : std_ulogic_vector(31 downto 0) := x"7f7FFFFF"; -- positive max
+  constant fp_single_neg_max_c  : std_ulogic_vector(31 downto 0) := x"Ff7FFFFF"; -- negative max                         
   constant fp_single_pos_inf_c  : std_ulogic_vector(31 downto 0) := x"7f800000"; -- positive infinity
   constant fp_single_neg_inf_c  : std_ulogic_vector(31 downto 0) := x"ff800000"; -- negative infinity
   constant fp_single_pos_zero_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- positive zero
@@ -420,7 +421,7 @@ package neorv32_package is
   constant csr_dcsr_c           : std_ulogic_vector(11 downto 0) := x"7b0";
   constant csr_dpc_c            : std_ulogic_vector(11 downto 0) := x"7b1";
   constant csr_dscratch0_c      : std_ulogic_vector(11 downto 0) := x"7b2";
-  -- NEORV32-specific (user-mode) registers --
+  -- NEORV32-specific user-mode registers --
   constant csr_cfureg0_c        : std_ulogic_vector(11 downto 0) := x"800";
   constant csr_cfureg1_c        : std_ulogic_vector(11 downto 0) := x"801";
   constant csr_cfureg2_c        : std_ulogic_vector(11 downto 0) := x"802";
@@ -499,7 +500,7 @@ package neorv32_package is
   constant csr_mimpid_c         : std_ulogic_vector(11 downto 0) := x"f13";
   constant csr_mhartid_c        : std_ulogic_vector(11 downto 0) := x"f14";
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
-  -- NEORV32-specific (machine-mode) registers --
+  -- NEORV32-specific machine-mode registers --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
 
 -- ****************************************************************************************************************************
@@ -527,8 +528,7 @@ package neorv32_package is
     lsu_req      : std_ulogic;                     -- trigger memory access request
     lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
     lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
-    lsu_fence    : std_ulogic;                     -- fence operation
-    lsu_fencei   : std_ulogic;                     -- fence.i operation
+    lsu_fence    : std_ulogic;                     -- fence(.i) operation
     lsu_priv     : std_ulogic;                     -- effective privilege level for load/store
     -- instruction word --
     ir_funct3    : std_ulogic_vector(02 downto 0); -- funct3 bit field
@@ -559,7 +559,6 @@ package neorv32_package is
     lsu_rw       => '0',
     lsu_mo_we    => '0',
     lsu_fence    => '0',
-    lsu_fencei   => '0',
     lsu_priv     => '0',
     ir_funct3    => (others => '0'),
     ir_funct12   => (others => '0'),
@@ -750,60 +749,67 @@ package neorv32_package is
     generic (
       -- General --
       CLOCK_FREQUENCY            : natural;
-      CLOCK_GATING_EN            : boolean := false;
+      CLOCK_GATING_EN            : boolean                        := false;
       HART_ID                    : std_ulogic_vector(31 downto 0) := x"00000000";
       VENDOR_ID                  : std_ulogic_vector(31 downto 0) := x"00000000";
-      INT_BOOTLOADER_EN          : boolean := false;
+      INT_BOOTLOADER_EN          : boolean                        := false;
       -- On-Chip Debugger (OCD) --
-      ON_CHIP_DEBUGGER_EN        : boolean := false;
-      DM_LEGACY_MODE             : boolean := false;
+      ON_CHIP_DEBUGGER_EN        : boolean                        := false;
+      DM_LEGACY_MODE             : boolean                        := false;
       -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_A      : boolean := false;
-      CPU_EXTENSION_RISCV_B      : boolean := false;
-      CPU_EXTENSION_RISCV_C      : boolean := false;
-      CPU_EXTENSION_RISCV_E      : boolean := false;
-      CPU_EXTENSION_RISCV_M      : boolean := false;
-      CPU_EXTENSION_RISCV_U      : boolean := false;
-      CPU_EXTENSION_RISCV_Zfinx  : boolean := false;
-      CPU_EXTENSION_RISCV_Zicntr : boolean := true;
-      CPU_EXTENSION_RISCV_Zicond : boolean := false;
-      CPU_EXTENSION_RISCV_Zihpm  : boolean := false;
-      CPU_EXTENSION_RISCV_Zmmul  : boolean := false;
-      CPU_EXTENSION_RISCV_Zxcfu  : boolean := false;
+      CPU_EXTENSION_RISCV_A      : boolean                        := false;
+      CPU_EXTENSION_RISCV_B      : boolean                        := false;
+      CPU_EXTENSION_RISCV_C      : boolean                        := false;
+      CPU_EXTENSION_RISCV_E      : boolean                        := false;
+      CPU_EXTENSION_RISCV_M      : boolean                        := false;
+      CPU_EXTENSION_RISCV_U      : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zfinx  : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zicntr : boolean                        := true;
+      CPU_EXTENSION_RISCV_Zicond : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zihpm  : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zmmul  : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zxcfu  : boolean                        := false;
       -- Tuning Options --
-      FAST_MUL_EN                : boolean := false;
-      FAST_SHIFT_EN              : boolean := false;
-      REGFILE_HW_RST             : boolean := false;
+      FAST_MUL_EN                : boolean                        := false;
+      FAST_SHIFT_EN              : boolean                        := false;
+      REGFILE_HW_RST             : boolean                        := false;
       -- Physical Memory Protection (PMP) --
-      PMP_NUM_REGIONS            : natural range 0 to 16 := 0;
-      PMP_MIN_GRANULARITY        : natural := 4;
+      PMP_NUM_REGIONS            : natural range 0 to 16          := 0;
+      PMP_MIN_GRANULARITY        : natural                        := 4;
+      PMP_TOR_MODE_EN            : boolean                        := true;
+      PMP_NAP_MODE_EN            : boolean                        := true;
       -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS               : natural range 0 to 13 := 0;
-      HPM_CNT_WIDTH              : natural range 0 to 64 := 40;
+      HPM_NUM_CNTS               : natural range 0 to 13          := 0;
+      HPM_CNT_WIDTH              : natural range 0 to 64          := 40;
       -- Atomic Memory Access - Reservation Set Granularity --
-      AMO_RVS_GRANULARITY        : natural := 4;
+      AMO_RVS_GRANULARITY        : natural                        := 4;
       -- Internal Instruction memory (IMEM) --
-      MEM_INT_IMEM_EN            : boolean := false;
-      MEM_INT_IMEM_SIZE          : natural := 16*1024;
+      MEM_INT_IMEM_EN            : boolean                        := false;
+      MEM_INT_IMEM_SIZE          : natural                        := 16*1024;
       -- Internal Data memory (DMEM) --
-      MEM_INT_DMEM_EN            : boolean := false;
-      MEM_INT_DMEM_SIZE          : natural := 8*1024;
+      MEM_INT_DMEM_EN            : boolean                        := false;
+      MEM_INT_DMEM_SIZE          : natural                        := 8*1024;
       -- Internal Instruction Cache (iCACHE) --
-      ICACHE_EN                  : boolean                  := false;
-      ICACHE_NUM_BLOCKS          : natural range 1 to 256   := 4;
-      ICACHE_BLOCK_SIZE          : natural range 4 to 2**16 := 64;
-      ICACHE_ASSOCIATIVITY       : natural range 1 to 2     := 1;
+      ICACHE_EN                  : boolean                        := false;
+      ICACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
+      ICACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
+      ICACHE_ASSOCIATIVITY       : natural range 1 to 2           := 1;
       -- Internal Data Cache (dCACHE) --
-      DCACHE_EN                  : boolean                  := false;
-      DCACHE_NUM_BLOCKS          : natural range 1 to 256   := 4;
-      DCACHE_BLOCK_SIZE          : natural range 4 to 2**16 := 64;
+      DCACHE_EN                  : boolean                        := false;
+      DCACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
+      DCACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
       -- External memory interface (WISHBONE) --
-      MEM_EXT_EN                 : boolean := false;
-      MEM_EXT_TIMEOUT            : natural := 255;
-      MEM_EXT_PIPE_MODE          : boolean := false;
-      MEM_EXT_BIG_ENDIAN         : boolean := false;
-      MEM_EXT_ASYNC_RX           : boolean := false;
-      MEM_EXT_ASYNC_TX           : boolean := false;
+      MEM_EXT_EN                 : boolean                        := false;
+      MEM_EXT_TIMEOUT            : natural                        := 255;
+      MEM_EXT_PIPE_MODE          : boolean                        := false;
+      MEM_EXT_BIG_ENDIAN         : boolean                        := false;
+      MEM_EXT_ASYNC_RX           : boolean                        := false;
+      MEM_EXT_ASYNC_TX           : boolean                        := false;
+      -- Execute in-place module (XIP) --
+      XIP_EN                     : boolean                        := false;
+      XIP_CACHE_EN               : boolean                        := false;
+      XIP_CACHE_NUM_BLOCKS       : natural range 1 to 256         := 8;
+      XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16       := 256;
       -- External Interrupts Controller (XIRQ) --
       XIRQ_NUM_CH                : natural range 0 to 32          := 0;
       XIRQ_TRIGGER_TYPE          : std_ulogic_vector(31 downto 0) := x"ffffffff";
@@ -833,7 +839,6 @@ package neorv32_package is
       IO_NEOLED_EN               : boolean                        := false;
       IO_NEOLED_TX_FIFO          : natural range 1 to 2**15       := 1;
       IO_GPTMR_EN                : boolean                        := false;
-      IO_XIP_EN                  : boolean                        := false;
       IO_ONEWIRE_EN              : boolean                        := false;
       IO_DMA_EN                  : boolean                        := false;
       IO_SLINK_EN                : boolean                        := false;
@@ -869,10 +874,7 @@ package neorv32_package is
       slink_tx_dat_o : out std_ulogic_vector(31 downto 0);
       slink_tx_val_o : out std_ulogic;
       slink_tx_rdy_i : in  std_ulogic := 'L';
-      -- Advanced memory control signals --
-      fence_o        : out std_ulogic;
-      fencei_o       : out std_ulogic;
-      -- XIP (execute in-place via SPI) signals (available if IO_XIP_EN = true) --
+      -- XIP (execute in-place via SPI) signals (available if XIP_EN = true) --
       xip_csn_o      : out std_ulogic;
       xip_clk_o      : out std_ulogic;
       xip_dat_i      : in  std_ulogic := 'L';

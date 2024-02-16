@@ -92,7 +92,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_NEOLED      = 26, /**< SYSINFO_SOC (26) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
   SYSINFO_SOC_IO_XIRQ        = 27, /**< SYSINFO_SOC (27) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
   SYSINFO_SOC_IO_GPTMR       = 28, /**< SYSINFO_SOC (28) (r/-): General purpose timer implemented when 1 (via IO_GPTMR_EN generic) */
-  SYSINFO_SOC_IO_XIP         = 29, /**< SYSINFO_SOC (29) (r/-): Execute in place module implemented when 1 (via IO_XIP_EN generic) */
+  SYSINFO_SOC_XIP            = 29, /**< SYSINFO_SOC (29) (r/-): Execute in-place module implemented when 1 (via XIP_EN generic) */
   SYSINFO_SOC_IO_ONEWIRE     = 30, /**< SYSINFO_SOC (30) (r/-): 1-wire interface controller implemented when 1 (via IO_ONEWIRE_EN generic) */
   SYSINFO_SOC_OCD            = 31  /**< SYSINFO_SOC (31) (r/-): On-chip debugger implemented when 1 (via ON_CHIP_DEBUGGER_EN generic) */
 };

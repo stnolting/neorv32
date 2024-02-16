@@ -68,6 +68,8 @@ entity neorv32_cpu is
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS            : natural range 0 to 16; -- number of regions (0..16)
     PMP_MIN_GRANULARITY        : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_TOR_MODE_EN            : boolean; -- implement TOR mode
+    PMP_NAP_MODE_EN            : boolean; -- implement NAPOT/NA4 modes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS               : natural range 0 to 13; -- number of implemented HPM counters (0..13)
     HPM_CNT_WIDTH              : natural range 0 to 64  -- total size of HPM counters (0..64)
@@ -79,8 +81,6 @@ entity neorv32_cpu is
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     sleep_o    : out std_ulogic; -- cpu is in sleep mode when set
     debug_o    : out std_ulogic; -- cpu is in debug mode when set
-    ifence_o   : out std_ulogic; -- instruction fence
-    dfence_o   : out std_ulogic; -- data fence
     -- interrupts --
     msi_i      : in  std_ulogic; -- risc-v machine software interrupt
     mei_i      : in  std_ulogic; -- risc-v machine external interrupt
@@ -106,7 +106,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- bus requests --
   signal ibus_req, dbus_req : bus_req_t;
 
-  -- external CSR interface --
+  -- control-unit-external CSR interface --
   signal xcsr_we        : std_ulogic;
   signal xcsr_addr      : std_ulogic_vector(11 downto 0);
   signal xcsr_wdata     : std_ulogic_vector(XLEN-1 downto 0);
@@ -261,10 +261,6 @@ begin
   sleep_o <= ctrl.cpu_sleep; -- set when CPU is sleeping (after WFI)
   debug_o <= ctrl.cpu_debug; -- set when CPU is in debug mode
 
-  -- instruction/data fence --
-  ifence_o <= ctrl.lsu_fencei;
-  dfence_o <= ctrl.lsu_fence;
-
 
   -- Register File --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -368,8 +364,10 @@ begin
   if pmp_enable_c generate
     neorv32_cpu_pmp_inst: entity neorv32.neorv32_cpu_pmp
     generic map (
-      NUM_REGIONS => PMP_NUM_REGIONS,    -- number of regions (0..16)
-      GRANULARITY => PMP_MIN_GRANULARITY -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+      NUM_REGIONS => PMP_NUM_REGIONS,     -- number of regions (0..16)
+      GRANULARITY => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+      TOR_EN      => PMP_TOR_MODE_EN,     -- implement TOR mode
+      NAP_EN      => PMP_NAP_MODE_EN      -- implement NAPOT/NA4 modes
     )
     port map (
       -- global control --
