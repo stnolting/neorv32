@@ -53,7 +53,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090502"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090503"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -688,25 +688,24 @@ package neorv32_package is
   constant priv_mode_m_c : std_ulogic := '1'; -- machine mode
   constant priv_mode_u_c : std_ulogic := '0'; -- user mode
 
-  -- HPM Event System -----------------------------------------------------------------------
+  -- HPM Events -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hpmcnt_event_cy_c      : natural := 0;  -- Active cycle
-  constant hpmcnt_event_tm_c      : natural := 1;  -- Time (unused/reserved)
-  constant hpmcnt_event_ir_c      : natural := 2;  -- Retired instruction
-  constant hpmcnt_event_cir_c     : natural := 3;  -- Retired compressed instruction
-  constant hpmcnt_event_wait_if_c : natural := 4;  -- Instruction fetch memory wait cycle
-  constant hpmcnt_event_wait_ii_c : natural := 5;  -- Instruction issue wait cycle
-  constant hpmcnt_event_wait_mc_c : natural := 6;  -- Multi-cycle ALU-operation wait cycle
-  constant hpmcnt_event_load_c    : natural := 7;  -- Load operation
-  constant hpmcnt_event_store_c   : natural := 8;  -- Store operation
-  constant hpmcnt_event_wait_ls_c : natural := 9;  -- Load/store memory wait cycle
-  constant hpmcnt_event_jump_c    : natural := 10; -- Unconditional jump
-  constant hpmcnt_event_branch_c  : natural := 11; -- Conditional branch (taken or not taken)
-  constant hpmcnt_event_tbranch_c : natural := 12; -- Conditional taken branch
-  constant hpmcnt_event_trap_c    : natural := 13; -- Entered trap
-  constant hpmcnt_event_illegal_c : natural := 14; -- Illegal instruction exception
+  -- RISC-V-compliant --
+  constant hpmcnt_event_cy_c       : natural := 0;  -- active cycle
+  constant hpmcnt_event_tm_c       : natural := 1;  -- time (unused/reserved)
+  constant hpmcnt_event_ir_c       : natural := 2;  -- retired instruction
+  -- NEORV32-specific --
+  constant hpmcnt_event_compr_c    : natural := 3;  -- executed compressed instruction
+  constant hpmcnt_event_wait_dis_c : natural := 4;  -- instruction dispatch wait cycle
+  constant hpmcnt_event_wait_alu_c : natural := 5;  -- multi-cycle ALU co-processor wait cycle
+  constant hpmcnt_event_branch_c   : natural := 6;  -- executed branch instruction
+  constant hpmcnt_event_branched_c : natural := 7;  -- control flow transfer
+  constant hpmcnt_event_load_c     : natural := 8;  -- load operation
+  constant hpmcnt_event_store_c    : natural := 9;  -- store operation
+  constant hpmcnt_event_wait_lsu_c : natural := 10; -- load-store unit memory wait cycle
+  constant hpmcnt_event_trap_c     : natural := 11; -- entered trap
   --
-  constant hpmcnt_event_size_c    : natural := 15; -- length of this list
+  constant hpmcnt_event_size_c     : natural := 12; -- length of this list
 
 -- ****************************************************************************************************************************
 -- Helper Functions
