@@ -29,7 +29,7 @@ jobs:
         doxyfile-path: 'docs/Doxyfile'
 
     - name: '📤 Upload Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: NEORV32-Doxygen
         path: doxygen_build/html
@@ -53,7 +53,7 @@ jobs:
       run: ./do.py Documentation container
 
     - name: '📤 Upload Artifact: HTML'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: NEORV32
         path: docs/public

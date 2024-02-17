@@ -62,7 +62,7 @@ jobs:
           all
 
     - name: '📤 Archive Processor Check application image'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: application
         path: rtl/core/neorv32_application_image.vhd
