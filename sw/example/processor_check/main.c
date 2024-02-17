@@ -211,18 +211,15 @@ int main() {
   if (num_hpm_cnts_global != 0) {
     cnt_test++;
 
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_CIR);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_WAIT_IF);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_II);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_WAIT_MC);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_LOAD);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_STORE);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_WAIT_LS);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_JUMP);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_BRANCH);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT12, 1 << HPMCNT_EVENT_TBRANCH);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT13, 1 << HPMCNT_EVENT_TRAP);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT14, 1 << HPMCNT_EVENT_ILLEGAL);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_COMPR);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_WAIT_DIS);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_ALU);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_BRANCH);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_BRANCHED);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_LOAD);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_STORE);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_WAIT_LSU);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_TRAP);
 
     // make sure there was no exception
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
@@ -647,7 +644,7 @@ int main() {
   // disable machine-mode interrupts
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
-  tmp_a = trap_cnt; // current amount of illegal instruction exception
+  tmp_a = trap_cnt; // current number of traps
 
   {
     asm volatile (".align 4");
@@ -676,7 +673,7 @@ int main() {
     tmp_a += 10;
   }
 
-  tmp_b = trap_cnt; // number of traps we have seen
+  tmp_b = trap_cnt; // number of traps we have seen here
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) && // illegal instruction exception
       (neorv32_cpu_csr_read(CSR_MTINST) == 0xfe002fe3) && // instruction word of last illegal instruction
@@ -2203,22 +2200,19 @@ int main() {
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIHPM)) {
     PRINT_STANDARD(
       "\n\nHPMs:\n"
-      "#00 Instr.   : %u\n"
-      "#02 Clocks   : %u\n"
-      "#03 C instr. : %u\n"
-      "#04 IF wait  : %u\n"
-      "#05 II wait  : %u\n"
-      "#06 ALU wait : %u\n"
-      "#07 MEM LD   : %u\n"
-      "#08 MEM ST   : %u\n"
-      "#09 MEM wait : %u\n"
-      "#10 Jumps    : %u\n"
-      "#11 Branches : %u\n"
-      "#12 >taken   : %u\n"
-      "#13 Traps    : %u\n"
-      "#14 Illegals : %u\n",
-      neorv32_cpu_csr_read(CSR_INSTRET),
+      "#00 clock cycles  : %u\n"
+      "#02 instructions  : %u\n"
+      "#03 compr. instr. : %u\n"
+      "#04 DISP waits    : %u\n"
+      "#05 ALU waits     : %u\n"
+      "#06 branch instr. : %u\n"
+      "#07 ctrl flow tr. : %u\n"
+      "#08 MEM loads     : %u\n"
+      "#09 MEM stores    : %u\n"
+      "#10 MEM waits     : %u\n"
+      "#11 traps         : %u\n",
       neorv32_cpu_csr_read(CSR_CYCLE),
+      neorv32_cpu_csr_read(CSR_INSTRET),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER3),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER4),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER5),
@@ -2227,10 +2221,7 @@ int main() {
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER8),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER9),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER10),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER11),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER12),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER13),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER14)
+      neorv32_cpu_csr_read(CSR_MHPMCOUNTER11)
     );
   }
 
