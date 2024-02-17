@@ -132,13 +132,12 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- instruction fetch engine --
   type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING);
   type fetch_engine_t is record
-    state      : fetch_engine_state_t;
-    state_prev : fetch_engine_state_t;
-    restart    : std_ulogic; -- buffered restart request (after branch)
-    pc         : std_ulogic_vector(XLEN-1 downto 0);
-    reset      : std_ulogic; -- restart request (after branch)
-    resp       : std_ulogic; -- bus response
-    priv       : std_ulogic; -- fetch privilege level
+    state   : fetch_engine_state_t;
+    restart : std_ulogic; -- buffered restart request (after branch)
+    pc      : std_ulogic_vector(XLEN-1 downto 0);
+    reset   : std_ulogic; -- restart request (after branch)
+    resp    : std_ulogic; -- bus response
+    priv    : std_ulogic; -- fetch privilege level
   end record;
   signal fetch_engine : fetch_engine_t;
 
@@ -190,8 +189,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
-    state_prev   : execute_engine_state_t;
-    state_prev2  : execute_engine_state_t;
     ir           : std_ulogic_vector(31 downto 0);
     ir_nxt       : std_ulogic_vector(31 downto 0);
     is_ci        : std_ulogic; -- current instruction is de-compressed instruction
@@ -359,15 +356,11 @@ begin
   fetch_engine_fsm: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      fetch_engine.state      <= IF_RESTART;
-      fetch_engine.state_prev <= IF_RESTART;
-      fetch_engine.restart    <= '1'; -- set to reset IPB
-      fetch_engine.pc         <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
-      fetch_engine.priv       <= priv_mode_m_c; -- start in machine mode
+      fetch_engine.state   <= IF_RESTART;
+      fetch_engine.restart <= '1'; -- set to reset IPB
+      fetch_engine.pc      <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
+      fetch_engine.priv    <= priv_mode_m_c; -- start in machine mode
     elsif rising_edge(clk_i) then
-      -- previous state (for HPMs only) --
-      fetch_engine.state_prev <= fetch_engine.state;
-
       -- restart request --
       if (fetch_engine.state = IF_RESTART) then -- restart done
         fetch_engine.restart <= '0';
@@ -620,25 +613,21 @@ begin
   execute_engine_fsm_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl                       <= ctrl_bus_zero_c;
-      execute_engine.state       <= RESTART;
-      execute_engine.state_prev  <= RESTART;
-      execute_engine.state_prev2 <= RESTART;
-      execute_engine.ir          <= (others => '0');
-      execute_engine.is_ci       <= '0';
-      execute_engine.pc          <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
-      execute_engine.next_pc     <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
-      execute_engine.link_pc     <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
+      ctrl                   <= ctrl_bus_zero_c;
+      execute_engine.state   <= RESTART;
+      execute_engine.ir      <= (others => '0');
+      execute_engine.is_ci   <= '0';
+      execute_engine.pc      <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
+      execute_engine.next_pc <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
+      execute_engine.link_pc <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
     elsif rising_edge(clk_i) then
       -- control bus --
       ctrl <= ctrl_nxt;
 
       -- execute engine arbiter --
-      execute_engine.state       <= execute_engine.state_nxt;
-      execute_engine.state_prev  <= execute_engine.state;
-      execute_engine.state_prev2 <= execute_engine.state_prev;
-      execute_engine.ir          <= execute_engine.ir_nxt;
-      execute_engine.is_ci       <= execute_engine.is_ci_nxt;
+      execute_engine.state <= execute_engine.state_nxt;
+      execute_engine.ir    <= execute_engine.ir_nxt;
+      execute_engine.is_ci <= execute_engine.is_ci_nxt;
 
       -- current PC: address of instruction being executed --
       if (execute_engine.pc_we = '1') then
@@ -2358,29 +2347,25 @@ begin
                                             ((csr.privilege = priv_mode_m_c) and (csr.mcyclecfg_minh = '0')) or -- not inhibited when in machine-mode
                                             ((csr.privilege = priv_mode_u_c) and (csr.mcyclecfg_uinh = '0')) -- not inhibited when in user-mode
                                            ) else '0';
-  cnt_event(hpmcnt_event_ir_c) <= '1' when (execute_engine.state = EXECUTE) and ( -- retired (=executed) instruction
+  cnt_event(hpmcnt_event_tm_c) <= '0'; -- unused/reserved (time)
+  cnt_event(hpmcnt_event_ir_c) <= '1' when (execute_engine.state = EXECUTE) and ( -- retired (==executed) instruction
                                             ((csr.privilege = priv_mode_m_c) and (csr.minstretcfg_minh = '0')) or -- not inhibited when in machine-mode
                                             ((csr.privilege = priv_mode_u_c) and (csr.minstretcfg_uinh = '0')) -- not inhibited when in user-mode
                                            ) else '0';
-  cnt_event(hpmcnt_event_tm_c) <= '0'; -- unused/reserved (time)
 
   -- NEORV32-specific counter events (for HPM counters only) --
-  cnt_event(hpmcnt_event_cir_c)     <= '1' when (execute_engine.state = EXECUTE)    and (execute_engine.is_ci      = '1')        else '0'; -- executed compressed instruction
-  cnt_event(hpmcnt_event_wait_if_c) <= '1' when (fetch_engine.state   = IF_PENDING) and (fetch_engine.state_prev   = IF_PENDING) else '0'; -- instruction fetch memory wait cycle
-  cnt_event(hpmcnt_event_wait_ii_c) <= '1' when (execute_engine.state = DISPATCH)   and (execute_engine.state_prev = DISPATCH)   else '0'; -- instruction issue wait cycle
-  cnt_event(hpmcnt_event_wait_mc_c) <= '1' when (execute_engine.state = ALU_WAIT)                                                else '0'; -- multi-cycle alu-operation wait cycle
+  cnt_event(hpmcnt_event_compr_c)    <= '1' when (execute_engine.state = EXECUTE)  and (execute_engine.is_ci = '1')  else '0'; -- executed compressed instruction
+  cnt_event(hpmcnt_event_wait_dis_c) <= '1' when (execute_engine.state = DISPATCH) and (issue_engine.valid   = "00") else '0'; -- instruction dispatch wait cycle
+  cnt_event(hpmcnt_event_wait_alu_c) <= '1' when (execute_engine.state = ALU_WAIT)                                   else '0'; -- multi-cycle ALU co-processor wait cycle
 
-  cnt_event(hpmcnt_event_load_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '0')                                  else '0'; -- load operation
-  cnt_event(hpmcnt_event_store_c)   <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '1')                                  else '0'; -- store operation
-  cnt_event(hpmcnt_event_wait_ls_c) <= '1' when (execute_engine.state = MEM_WAIT) and (execute_engine.state_prev2 = MEM_WAIT) else '0'; -- load/store memory wait cycle
+  cnt_event(hpmcnt_event_branch_c)   <= '1' when (execute_engine.state = BRANCH)   else '0'; -- executed branch instruction
+  cnt_event(hpmcnt_event_branched_c) <= '1' when (execute_engine.state = BRANCHED) else '0'; -- control flow transfer
 
-  cnt_event(hpmcnt_event_jump_c)    <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.ir(instr_opcode_lsb_c+2) = '1') else '0'; -- jump (unconditional)
-  cnt_event(hpmcnt_event_branch_c)  <= '1' when (execute_engine.state = BRANCH)   and (execute_engine.ir(instr_opcode_lsb_c+2) = '0') else '0'; -- branch (conditional, taken or not taken)
-  cnt_event(hpmcnt_event_tbranch_c) <= '1' when (execute_engine.state = BRANCHED) and (execute_engine.state_prev = BRANCH) and
-                                                                                      (execute_engine.ir(instr_opcode_lsb_c+2) = '0') else '0'; -- taken branch (conditional)
+  cnt_event(hpmcnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '0')               else '0'; -- executed load operation
+  cnt_event(hpmcnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '1')               else '0'; -- executed store operation
+  cnt_event(hpmcnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (execute_engine.state = MEM_WAIT) else '0'; -- load/store unit memory wait cycle
 
-  cnt_event(hpmcnt_event_trap_c)    <= '1' when (trap_ctrl.env_enter = '1')                                    else '0'; -- entered trap
-  cnt_event(hpmcnt_event_illegal_c) <= '1' when (trap_ctrl.env_enter = '1') and (trap_ctrl.cause = trap_iil_c) else '0'; -- illegal operation
+  cnt_event(hpmcnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1') else '0'; -- entered trap
 
 
 -- ****************************************************************************************************************************

@@ -398,23 +398,18 @@ enum NEORV32_CSR_XISA_enum {
  * CPU <b>mhpmevent</b> hardware performance monitor events
  **************************************************************************/
 enum NEORV32_HPMCNT_EVENT_enum {
-  HPMCNT_EVENT_CY      = 0,  /**< CPU mhpmevent CSR (0):  Active cycle */
-  HPMCNT_EVENT_IR      = 2,  /**< CPU mhpmevent CSR (2):  Retired instruction */
-
-  HPMCNT_EVENT_CIR     = 3,  /**< CPU mhpmevent CSR (3):  Retired compressed instruction */
-  HPMCNT_EVENT_WAIT_IF = 4,  /**< CPU mhpmevent CSR (4):  Instruction fetch memory wait cycle */
-  HPMCNT_EVENT_WAIT_II = 5,  /**< CPU mhpmevent CSR (5):  Instruction issue wait cycle */
-  HPMCNT_EVENT_WAIT_MC = 6,  /**< CPU mhpmevent CSR (6):  Multi-cycle ALU-operation wait cycle */
-  HPMCNT_EVENT_LOAD    = 7,  /**< CPU mhpmevent CSR (7):  Load operation */
-  HPMCNT_EVENT_STORE   = 8,  /**< CPU mhpmevent CSR (8):  Store operation */
-  HPMCNT_EVENT_WAIT_LS = 9,  /**< CPU mhpmevent CSR (9):  Load/store memory wait cycle */
-
-  HPMCNT_EVENT_JUMP    = 10, /**< CPU mhpmevent CSR (10): Unconditional jump */
-  HPMCNT_EVENT_BRANCH  = 11, /**< CPU mhpmevent CSR (11): Conditional branch (taken or not taken) */
-  HPMCNT_EVENT_TBRANCH = 12, /**< CPU mhpmevent CSR (12): Conditional taken branch */
-
-  HPMCNT_EVENT_TRAP    = 13, /**< CPU mhpmevent CSR (13): Entered trap */
-  HPMCNT_EVENT_ILLEGAL = 14  /**< CPU mhpmevent CSR (14): Illegal instruction exception */
+  HPMCNT_EVENT_CY       = 0,  /**< CPU mhpmevent CSR (0):  Active cycle */
+  HPMCNT_EVENT_TM       = 1,  /**< CPU mhpmevent CSR (1):  Reserved */
+  HPMCNT_EVENT_IR       = 2,  /**< CPU mhpmevent CSR (2):  Retired instruction */
+  HPMCNT_EVENT_COMPR    = 3,  /**< CPU mhpmevent CSR (3):  Executed compressed instruction */
+  HPMCNT_EVENT_WAIT_DIS = 4,  /**< CPU mhpmevent CSR (4):  Instruction dispatch wait cycle */
+  HPMCNT_EVENT_WAIT_ALU = 5,  /**< CPU mhpmevent CSR (5):  Multi-cycle ALU co-processor wait cycle */
+  HPMCNT_EVENT_BRANCH   = 6,  /**< CPU mhpmevent CSR (6):  Executed branch instruction */
+  HPMCNT_EVENT_BRANCHED = 7,  /**< CPU mhpmevent CSR (7):  Control flow transfer */
+  HPMCNT_EVENT_LOAD     = 8,  /**< CPU mhpmevent CSR (8):  Executed load operation */
+  HPMCNT_EVENT_STORE    = 9,  /**< CPU mhpmevent CSR (9):  Executed store operation */
+  HPMCNT_EVENT_WAIT_LSU = 10, /**< CPU mhpmevent CSR (10): Load-store unit memory wait cycle */
+  HPMCNT_EVENT_TRAP     = 11  /**< CPU mhpmevent CSR (11): Entered trap */
 };
 
 
