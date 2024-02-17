@@ -3,6 +3,7 @@
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
+/* # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            # */
 /* # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
@@ -28,8 +29,6 @@
 /* # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     # */
 /* # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  # */
 /* # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            # */
-/* # ********************************************************************************************* # */
-/* # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting # */
 /* ################################################################################################# */
 
 .file "crt0.S"
@@ -49,11 +48,11 @@ __crt0_entry:
 // Setup CPU core CSRs
 // ************************************************************************************************
 __crt0_cpu_csr_init:
-  li   x1,      0x00001800
-  csrw mstatus, x1 // reset mstatus (e.g. no interrupt in machine-mode)
+  li   x1,      0x00001800          // mstatus.mpp = machine-mode
+  csrw mstatus, x1
   la   x1,      __crt0_trap_handler // configure early-boot trap handler
   csrw mtvec,   x1
-  csrw mie,     zero // disable all interrupt sources
+  csrw mie,     zero                // disable all interrupt sources
 
 
 // ************************************************************************************************
@@ -62,9 +61,11 @@ __crt0_cpu_csr_init:
 __crt0_pointer_init:
   .option push
   .option norelax
-  // Setup pointers using linker script symbols
-  la sp, __crt0_stack_begin // stack pointer
-  la gp, __global_pointer$  // global pointer
+  // setup pointers using linker script symbols
+  la   x4, __crt0_stack_end  // stack pointer
+  andi sp, x4, 0xfffffffc    // word-aligned
+  la   x5, __global_pointer$ // global pointer
+  andi gp, x5, 0xfffffffc    // word-aligned
   .option pop
 
 __crt0_reg_file_init:
@@ -72,8 +73,8 @@ __crt0_reg_file_init:
 //addi  x1, x0, 0 // implicitly initialized within crt0
 //addi  x2, x0, 0 // stack pointer sp
 //addi  x3, x0, 0 // global pointer gp
-  addi  x4, x0, 0
-  addi  x5, x0, 0
+//addi  x4, x0, 0 // implicitly initialized within crt0
+//addi  x5, x0, 0 // implicitly initialized within crt0
   addi  x6, x0, 0
   addi  x7, x0, 0
   addi  x8, x0, 0
@@ -213,20 +214,20 @@ __crt0_trap_handler:
   srli  x8,   x8, 31 // isolate MSB (set for interrupts)
   bnez  x8,   __crt0_trap_handler_end
 
-  // mepc = mepc + 2 (for compressed instruction)
+  // mepc = mepc + 4 (for UNCOMPRESSED instruction)
   csrr  x8,   mepc
-  addi  x8,   x8, +2
+  addi  x8,   x8, +4
   csrw  mepc, x8
 
-  // exit if exception-causing instruction is compressed
+  // exit if exception-causing instruction is uncompressed
   csrr  x8,   mtinst // get transformed exception-causing instruction
   andi  x8,   x8,  3 // isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
   addi  x8,   x8, -3 // x8 is zero after this if uncompressed instruction
   beqz  x8,   __crt0_trap_handler_end
 
-  // mepc = mepc + 2 (another time; for uncompressed instruction)
+  // mepc = mepc - 2 (making mepc_new = mepc_old + 2 for COMPRESSED instruction)
   csrr  x8,   mepc
-  addi  x8,   x8, +2
+  addi  x8,   x8, -2
   csrw  mepc, x8
 
   // restore x8
