@@ -3,7 +3,8 @@
 /* # ********************************************************************************************* # */
 /* # BSD 3-Clause License                                                                          # */
 /* #                                                                                               # */
-/* # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     # */
+/* # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            # */
+/* # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     # */
 /* #                                                                                               # */
 /* # Redistribution and use in source and binary forms, with or without modification, are          # */
 /* # permitted provided that the following conditions are met:                                     # */
@@ -28,8 +29,6 @@
 /* # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     # */
 /* # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  # */
 /* # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            # */
-/* # ********************************************************************************************* # */
-/* # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting # */
 /* ################################################################################################# */
 
 /* Copyright (C) 2014-2020 Free Software Foundation, Inc.
@@ -310,7 +309,7 @@ SECTIONS
   PROVIDE(__crt0_max_heap            = __neorv32_heap_size);
   PROVIDE(__crt0_imem_begin          = ORIGIN(rom));
   PROVIDE(__crt0_dmem_begin          = ORIGIN(ram));
-  PROVIDE(__crt0_stack_begin         = (ORIGIN(ram) + LENGTH(ram)) - 4);
+  PROVIDE(__crt0_stack_end           = (ORIGIN(ram) + LENGTH(ram)) - 1);
   PROVIDE(__crt0_bss_start           = __BSS_START__);
   PROVIDE(__crt0_bss_end             = __BSS_END__);
   PROVIDE(__crt0_copy_data_src_begin = LOADADDR(.data));
