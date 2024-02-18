@@ -87,15 +87,14 @@ chip-internal extension options:
 [cols="<1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
-|                                 | Custom Functions Unit | Custom Functions Subsystem | External Bus Interface
-| **SoC location**                | CPU-internal          | processor-internal         | processor-external
-| **HW complexity/size**          | small                 | medium                     | large
-| **CPU-independent operation**   | no                    | yes                        | yes
-| **CPU interface**               | register-file access  | memory-mapped              | memory-mapped
-| **Low-level access mechanism**  | custom instructions   | load/store                 | load/store
-| **Arbitrary accesses**          | yes                   | yes                        | yes
-| **Access latency**              | minimal               | low                        | medium to high
-| **Buffered access (e.g. FIFO)** | no                    | user-defined               | user-defined
-| **External IO interfaces**      | no                    | yes, but limited           | yes
-| **Interrupt-capable**           | no                    | yes                        | user-defined
+|                                | Custom Functions Unit (CFU) | Custom Functions Subsystem (CFS) | External Bus Interface
+| **RTL location**               | CPU-internal                | processor-internal               | processor-external
+| **HW complexity/size**         | small                       | medium                           | large
+| **CPU-independent operation**  | no                          | yes                              | yes
+| **CPU interface**              | register file access        | memory-mapped                    | memory-mapped
+| **Low-level access mechanism** | custom instructions         | load/store                       | load/store
+| **Access latency**             | minimal                     | low                              | medium to high
+| **External IO interfaces**     | not supported               | yes, but limited                 | yes, user-defined
+| **Exception capability**       | yes                         | no                               | no
+| **Interrupt capability**       | no                          | yes                              | user-defined
 |=======================

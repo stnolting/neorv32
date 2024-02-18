@@ -430,7 +430,7 @@ via the according <<_processor_top_entity_generics>>. This chapter gives a brief
 | <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction | Always enabled
 | <<_zfinx_isa_extension,`Zfinx`>> | Floating-point instructions using integer registers | `CPU_EXTENSION_RISCV_Zfinx`
 | <<_zicntr_isa_extension,`Zicntr`>> | Base counters extension | `CPU_EXTENSION_RISCV_Zicntr`
-| <<_zicond_isa_extension,`Zicond`>> | Integer conditional operations | `CPU_EXTENSION_RISCV_Zicond` 
+| <<_zicond_isa_extension,`Zicond`>> | Integer conditional operations | `CPU_EXTENSION_RISCV_Zicond`
 | <<_zicsr_isa_extension,`Zicsr`>> | Control and status register access instructions | Always enabled
 | <<_zihpm_isa_extension,`Zihpm`>> | Hardware performance monitors extension | `CPU_EXTENSION_RISCV_Zihpm`
 | <<_zmmul_isa_extension,`Zmmul`>> | Integer multiplication-only instruction | `CPU_EXTENSION_RISCV_Zmmul`
@@ -471,7 +471,7 @@ based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
 
 Atomic instructions allow to notify an application if a certain memory location has been altered by another instance
 (like another process running on the same CPU or a DMA access). Hence, they can be used to implement synchronization
-mechanisms like mutexes and semaphores). 
+mechanisms like mutexes and semaphores).
 
 The NEORV32 `A` extension is enabled via the `CPU_EXTENSION_RISCV_A` generic (see <<_processor_top_entity_generics>>).
 When enabled the following additional instructions are available.
@@ -503,7 +503,7 @@ sets can be found in section <<_reservation_set_controller>>.
 
 .Cache Coherency
 [IMPORTANT]
-Atomic operations **always bypass** the cache using direct/uncached accesses. Care must be taken
+Atomic operations **always bypass** the CPU caches using direct/uncached accesses. Care must be taken
 to maintain data cache coherency (e.g. by using the `fence` instruction).
 
 
@@ -590,7 +590,8 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 [NOTE]
 The `fence` instruction word's _predecessor_ and _successor_ bits (used for memory ordering) are not evaluated
 by the hardware at all. For the NEORV32 the `fence` instruction behaves exactly like the `fence.i` instruction
-(see <<_zifencei_isa_extension>>).
+(see <<_zifencei_isa_extension>>). However, software should still use distinct `fence` and `fence.i` to provide
+platform-compatibility and to indicate the actual intention of the according fence instruction(s).
 
 .`wfi` Instruction
 [NOTE]
@@ -707,7 +708,7 @@ retrieve system time from the <<_machine_system_timer_mtime>>.
 
 [NOTE]
 This extensions is stated as _mandatory_ by the RISC-V spec. However, area-constrained setups may remove
-support for these counters. 
+support for these counters.
 
 
 ==== `Zicond` ISA Extension
@@ -934,7 +935,7 @@ written to the according CSRs when a trap is triggered:
 [options="header",grid="rows"]
 |=======================
 | Prio. | `mcause`     | RTE Trap ID              | Cause                                | `mepc` | `mtval` | `mtinst`
-7+^| **Exceptions** (_synchronous_ to instruction execution)                                                 
+7+^| **Exceptions** (_synchronous_ to instruction execution)
 | 1     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction access fault             | I-PC   | 0       | INS
 | 2     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                  | PC     | 0       | INS
 | 3     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned       | PC     | 0       | INS
@@ -945,7 +946,7 @@ written to the according CSRs when a trap is triggered:
 | 8     | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned              | PC     | ADR     | INS
 | 9     | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store access fault                   | PC     | ADR     | INS
 | 10    | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load access fault                    | PC     | ADR     | INS
-7+^| **Interrupts** (_asynchronous_ to instruction execution)                                                
+7+^| **Interrupts** (_asynchronous_ to instruction execution)
 | 11    | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0     | I-PC   | 0       | 0
 | 12    | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1     | I-PC   | 0       | 0
 | 13    | `0x80000012` | `TRAP_CODE_FIRQ_2`       | fast interrupt request channel 2     | I-PC   | 0       | 0
