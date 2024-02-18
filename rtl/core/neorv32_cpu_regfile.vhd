@@ -177,9 +177,9 @@ begin
   end generate;
 
 
-  -- Additional Read Ports ------------------------------------------------------------------
+  -- Optional 3rd Read Port (rs3) -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rs3_enable: -- optional 3rd read port
+  rs3_enable:
   if RS3_EN generate
     rs3_read: process(clk_i)
     begin
@@ -195,7 +195,9 @@ begin
   end generate;
 
 
-  rs4_enable: -- optional 4th read port
+  -- Optional 4th Read Port (rs4) -----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  rs4_enable:
   if RS4_EN generate
     rs4_read: process(clk_i)
     begin
@@ -203,7 +205,7 @@ begin
         rs4_o <= reg_file(to_integer(unsigned(rs4_addr(addr_bits_c-1 downto 0))));
       end if;
     end process rs4_read;
-    rs4_addr <= ctrl_i.ir_funct12(6 downto 5) & ctrl_i.ir_funct3; -- rs4: [26:25] & [14:12]; not RISC-V-standard!
+    rs4_addr <= ctrl_i.ir_funct12(6 downto 5) & ctrl_i.ir_funct3; -- rs4 = [26:25] & [14:12]; not RISC-V-standard!
   end generate;
 
   rs4_disable:

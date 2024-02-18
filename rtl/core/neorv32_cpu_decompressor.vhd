@@ -2,7 +2,7 @@
 -- # << NEORV32 CPU - Compressed Instructions Decoder (RISC-V "C" Extension) >>                    #
 -- # ********************************************************************************************* #
 -- # Compressed instructions decoder compatible to the RISC-V C ISA extension. Illegal compressed  #
--- # instructions are converted to "as-is".                                                        #
+-- # instructions are otuput "as-is".                                                              #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #

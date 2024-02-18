@@ -222,7 +222,7 @@ begin
   -- wait for bus response --
   wait_o <= not bus_rsp_i.ack;
 
-  -- output data access/alignment errors to control unit --
+  -- output access/alignment errors to control unit --
   ma_load_o  <= arbiter_req and (not ctrl_i.lsu_rw) and misaligned;
   be_load_o  <= arbiter_req and (not ctrl_i.lsu_rw) and arbiter_err;
   ma_store_o <= arbiter_req and (    ctrl_i.lsu_rw) and misaligned;
