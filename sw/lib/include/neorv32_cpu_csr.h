@@ -59,8 +59,6 @@ enum NEORV32_CSR_enum {
   CSR_MCOUNTEREN     = 0x306, /**< 0x305 - mcounteren:    Machine counter enable register */
   CSR_MSTATUSH       = 0x310, /**< 0x310 - mstatush:      Machine status register - high word */
   CSR_MCOUNTINHIBIT  = 0x320, /**< 0x320 - mcountinhibit: Machine counter-inhibit register */
-  CSR_MCYCLECFG      = 0x321, /**< 0x321 - mcyclecfg:     Machine cycle counter privilege mode filtering - low word */
-  CSR_MINSTRETCFG    = 0x322, /**< 0x322 - minstretcfg:   Machine instret counter privilege mode filtering - low word */
 
   /* machine configuration */
   CSR_MENVCFG        = 0x30a, /**< 0x30a - menvcfg:  Machine environment configuration register - low word */
@@ -111,10 +109,6 @@ enum NEORV32_CSR_enum {
   CSR_PMPADDR13      = 0x3bd, /**< 0x3bd - pmpaddr13: Physical memory protection address register 13 */
   CSR_PMPADDR14      = 0x3be, /**< 0x3be - pmpaddr14: Physical memory protection address register 14 */
   CSR_PMPADDR15      = 0x3bf, /**< 0x3bf - pmpaddr15: Physical memory protection address register 15 */
-
-  /* machine control and status - continued */
-  CSR_MCYCLECFGH     = 0x721, /**< 0x721 - mcyclecfgh:   Machine cycle counter privilege mode filtering - high word */
-  CSR_MINSTRETCFGH   = 0x722, /**< 0x722 - minstretcfgh: Machine instret counter privilege mode filtering - high word */
 
   /* on-chip debugger - hardware trigger module */
   CSR_TSELECT        = 0x7a0, /**< 0x7a0 - tselect:  Trigger select */
@@ -274,24 +268,6 @@ enum NEORV32_CSR_MCOUNTINHIBIT_enum {
 
 
 /**********************************************************************//**
- * CPU <b>mcyclecfgh</b> CSR (r/w): Machine cycle counter privilege mode filtering
- **************************************************************************/
-enum NEORV32_CSR_MCYCLECFGH_enum {
-  CSR_MCYCLECFGH_UINH = 28, /**< CPU mcyclecfgh CSR (28): UINH - Inhibit cycle counter when in user-mode when set (r/w) */
-  CSR_MCYCLECFGH_MINH = 30  /**< CPU mcyclecfgh CSR (30): MINH - Inhibit cycle counter when in machine-mode when set (r/w) */
-};
-
-
-/**********************************************************************//**
- * CPU <b>minstretcfgh</b> CSR (r/w): Machine instret counter privilege mode filtering
- **************************************************************************/
-enum NEORV32_CSR_MINSTRETCFGH_enum {
-  CSR_MINSTRETCFGH_UINH = 28, /**< CPU minstretcfgh CSR (28): UINH - Inhibit instret counter when in user-mode when set (r/w) */
-  CSR_MINSTRETCFGH_MINH = 30  /**< CPU minstretcfgh CSR (30): MINH - Inhibit instret counter when in machine-mode when set (r/w) */
-};
-
-
-/**********************************************************************//**
  * CPU <b>mie</b> CSR (r/w): Machine interrupt enable
  **************************************************************************/
 enum NEORV32_CSR_MIE_enum {
@@ -375,7 +351,7 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_ZIFENCEI  =  1, /**< CPU mxisa CSR  (1): instruction stream sync (r/-)*/
   CSR_MXISA_ZMMUL     =  2, /**< CPU mxisa CSR  (2): hardware mul/div (r/-)*/
   CSR_MXISA_ZXCFU     =  3, /**< CPU mxisa CSR  (3): custom RISC-V instructions (r/-)*/
-  CSR_MXISA_SMCNTRPMF =  4, /**< CPU mxisa CSR  (4): counter privilege mode filtering (r/-)*/
+
   CSR_MXISA_ZFINX     =  5, /**< CPU mxisa CSR  (5): FPU using x registers (r/-)*/
   CSR_MXISA_ZICOND    =  6, /**< CPU mxisa CSR  (6): integer conditional operations (r/-)*/
   CSR_MXISA_ZICNTR    =  7, /**< CPU mxisa CSR  (7): standard instruction, cycle and time counter CSRs (r/-)*/

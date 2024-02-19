@@ -53,7 +53,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090503"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090504"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -365,8 +365,6 @@ package neorv32_package is
   constant csr_menvcfgh_c       : std_ulogic_vector(11 downto 0) := x"31a";
   -- machine counter setup --
   constant csr_mcountinhibit_c  : std_ulogic_vector(11 downto 0) := x"320";
-  constant csr_mcyclecfg_c      : std_ulogic_vector(11 downto 0) := x"321";
-  constant csr_minstretcfg_c    : std_ulogic_vector(11 downto 0) := x"322";
   constant csr_mhpmevent3_c     : std_ulogic_vector(11 downto 0) := x"323";
   constant csr_mhpmevent4_c     : std_ulogic_vector(11 downto 0) := x"324";
   constant csr_mhpmevent5_c     : std_ulogic_vector(11 downto 0) := x"325";
@@ -409,9 +407,6 @@ package neorv32_package is
   constant csr_pmpaddr13_c      : std_ulogic_vector(11 downto 0) := x"3bd";
   constant csr_pmpaddr14_c      : std_ulogic_vector(11 downto 0) := x"3be";
   constant csr_pmpaddr15_c      : std_ulogic_vector(11 downto 0) := x"3bf";
-  -- machine counter setup - continued --
-  constant csr_mcyclecfgh_c     : std_ulogic_vector(11 downto 0) := x"721";
-  constant csr_minstretcfgh_c   : std_ulogic_vector(11 downto 0) := x"722";
   -- trigger module registers --
   constant csr_tselect_c        : std_ulogic_vector(11 downto 0) := x"7a0";
   constant csr_tdata1_c         : std_ulogic_vector(11 downto 0) := x"7a1";

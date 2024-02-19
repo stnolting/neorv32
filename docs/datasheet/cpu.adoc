@@ -436,7 +436,6 @@ via the according <<_processor_top_entity_generics>>. This chapter gives a brief
 | <<_zmmul_isa_extension,`Zmmul`>> | Integer multiplication-only instruction | `CPU_EXTENSION_RISCV_Zmmul`
 | <<_zcfu_isa_extension,`Zcfu`>> | Custom / user-defined instructions | `CPU_EXTENSION_RISCV_Zxcfu`
 | <<_pmp_isa_extension,`PMP`>> | Physical memory protection extension | `PMP_NUM_REGIONS`
-| <<_smcntrpmf_isa_extension,`Smcntrpmf`>> | Counter privilege mode filtering extension | `CPU_EXTENSION_RISCV_U`
 | <<_sdext_isa_extension,`Sdext`>> | External debug support extension | `ON_CHIP_DEBUGGER_EN`
 | <<_sdtrig_isa_extension,`Sdtrig`>> | Trigger module extension | `ON_CHIP_DEBUGGER_EN`
 |=======================
@@ -798,23 +797,6 @@ When in debug-mode all PMP rules are ignored making the debugger have maximum ac
 [IMPORTANT]
 Instruction fetches are also triggered when denied by a certain PMP rule. However, the fetched instruction(s)
 will not be executed and will not change CPU core state.
-
-
-==== `Smcntrpmf` - ISA Extension
-
-[IMPORTANT]
-The `Smcntrpmf` ISA extension is frozen but not ratified yet.
-
-The _counter privilege mode filtering_ `Smcntrpmf` ISA extension allows to halt the standard cycle ([m]cycle[h])
-and instructions-retired (`[m]instret[h]`) counters if the CPU is in a specific privilege mode (machine oder user).
-This ISA extension is automatically enabled if the <<_Zicntr_isa_extension>> is enabled.
-
-Four additional CSRs are provided by this extensions:
-
-* <<_mcyclecfgh, `mcyclecfg`>>
-* <<_mcyclecfgh, `mcyclecfgh`>>
-* <<_minstretcfgh, `minstretcfg`>>
-* <<_minstretcfgh, `minstretcfgh`>>
 
 
 ==== `Sdext` ISA Extension

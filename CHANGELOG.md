@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 19.02.2024 | 1.9.5.4 | :warning: remove support of `Smcntrpmf` ISA extension (counter privilege mode filtering) | [#814](https://github.com/stnolting/neorv32/pull/814) |
 | 17.02.2024 | 1.9.5.3 | :warning: reworked CPU's hardware performance monitor (HPMs) events | [#811](https://github.com/stnolting/neorv32/pull/811) |
 | 16.02.2024 | 1.9.5.2 | :warning: **revert** support for page faults (keep that in mmu branch for now) | [#809](https://github.com/stnolting/neorv32/pull/809) |
 | 16.02.2024 | 1.9.5.1 | :sparkles: add two new generics to exclude certain PMP modes from synthesis | [#808](https://github.com/stnolting/neorv32/pull/808) |
