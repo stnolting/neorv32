@@ -144,12 +144,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- instruction prefetch buffer (FIFO) interface --
   type ipb_data_t is array (0 to 1) of std_ulogic_vector(16 downto 0); -- bus_error & 16-bit instruction
   type ipb_t is record
-    wdata : ipb_data_t;
-    we    : std_ulogic_vector(1 downto 0); -- trigger write
-    free  : std_ulogic_vector(1 downto 0); -- free entry available?
-    rdata : ipb_data_t;
-    re    : std_ulogic_vector(1 downto 0); -- read enable
-    avail : std_ulogic_vector(1 downto 0); -- data available?
+    wdata, rdata : ipb_data_t;
+    we,    re    : std_ulogic_vector(1 downto 0);
+    free,  avail : std_ulogic_vector(1 downto 0);
   end record;
   signal ipb : ipb_t;
 
@@ -242,55 +239,51 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- control and status registers (CSRs) --
   type csr_t is record
-    addr             : std_ulogic_vector(11 downto 0); -- csr address
-    raddr            : std_ulogic_vector(11 downto 0); -- simplified csr read address
-    we, we_nxt       : std_ulogic; -- csr write enable
-    re, re_nxt       : std_ulogic; -- csr read enable
-    wdata, rdata     : std_ulogic_vector(XLEN-1 downto 0); -- csr write/read data
+    addr           : std_ulogic_vector(11 downto 0); -- csr address
+    raddr          : std_ulogic_vector(11 downto 0); -- simplified csr read address
+    we, we_nxt     : std_ulogic; -- csr write enable
+    re, re_nxt     : std_ulogic; -- csr read enable
+    wdata, rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr write/read data
     --
-    mstatus_mie      : std_ulogic; -- machine-mode IRQ enable
-    mstatus_mpie     : std_ulogic; -- previous machine-mode IRQ enable
-    mstatus_mpp      : std_ulogic; -- machine previous privilege mode
-    mstatus_mprv     : std_ulogic; -- effective privilege level for load/stores
-    mstatus_tw       : std_ulogic; -- do not allow user mode to execute WFI instruction when set
+    mstatus_mie    : std_ulogic; -- machine-mode IRQ enable
+    mstatus_mpie   : std_ulogic; -- previous machine-mode IRQ enable
+    mstatus_mpp    : std_ulogic; -- machine previous privilege mode
+    mstatus_mprv   : std_ulogic; -- effective privilege level for load/stores
+    mstatus_tw     : std_ulogic; -- do not allow user mode to execute WFI instruction when set
     --
-    mie_msi          : std_ulogic; -- machine software interrupt enable
-    mie_mei          : std_ulogic; -- machine external interrupt enable
-    mie_mti          : std_ulogic; -- machine timer interrupt enable
-    mie_firq         : std_ulogic_vector(15 downto 0); -- fast interrupt enable
-    mip_firq_nclr    : std_ulogic_vector(15 downto 0); -- clear pending FIRQ (active-low)
+    mie_msi        : std_ulogic; -- machine software interrupt enable
+    mie_mei        : std_ulogic; -- machine external interrupt enable
+    mie_mti        : std_ulogic; -- machine timer interrupt enable
+    mie_firq       : std_ulogic_vector(15 downto 0); -- fast interrupt enable
+    mip_firq_nclr  : std_ulogic_vector(15 downto 0); -- clear pending FIRQ (active-low)
     --
-    privilege        : std_ulogic; -- current privilege mode
-    privilege_eff    : std_ulogic; -- current *effective* privilege mode
+    privilege      : std_ulogic; -- current privilege mode
+    privilege_eff  : std_ulogic; -- current *effective* privilege mode
     --
-    mepc             : std_ulogic_vector(XLEN-1 downto 0); -- machine exception PC
-    mcause           : std_ulogic_vector(5 downto 0); -- machine trap cause
-    mtvec            : std_ulogic_vector(XLEN-1 downto 0); -- machine trap-handler base address
-    mtval            : std_ulogic_vector(XLEN-1 downto 0); -- machine bad address or instruction
-    mtinst           : std_ulogic_vector(XLEN-1 downto 0); -- machine trap instruction
-    mscratch         : std_ulogic_vector(XLEN-1 downto 0); -- machine scratch register
-    mcounteren       : std_ulogic; -- machine counter access enable (from user-mode) for ALL counters
-    mcountinhibit    : std_ulogic_vector(15 downto 0); -- inhibit counter auto-increment
-    mcyclecfg_minh   : std_ulogic; -- inhibit cycle counter when in machine-mode
-    mcyclecfg_uinh   : std_ulogic; -- inhibit cycle counter when in user-mode
-    minstretcfg_minh : std_ulogic; -- inhibit instret counter when in machine-mode
-    minstretcfg_uinh : std_ulogic; -- inhibit instret counter when in user-mode
+    mepc           : std_ulogic_vector(XLEN-1 downto 0); -- machine exception PC
+    mcause         : std_ulogic_vector(5 downto 0); -- machine trap cause
+    mtvec          : std_ulogic_vector(XLEN-1 downto 0); -- machine trap-handler base address
+    mtval          : std_ulogic_vector(XLEN-1 downto 0); -- machine bad address or instruction
+    mtinst         : std_ulogic_vector(XLEN-1 downto 0); -- machine trap instruction
+    mscratch       : std_ulogic_vector(XLEN-1 downto 0); -- machine scratch register
+    mcounteren     : std_ulogic; -- machine counter access enable (from user-mode) for ALL counters
+    mcountinhibit  : std_ulogic_vector(15 downto 0); -- inhibit counter auto-increment
     --
-    dcsr_ebreakm     : std_ulogic; -- behavior of ebreak instruction in m-mode
-    dcsr_ebreaku     : std_ulogic; -- behavior of ebreak instruction in u-mode
-    dcsr_step        : std_ulogic; -- single-step mode
-    dcsr_prv         : std_ulogic; -- current privilege level when entering debug mode
-    dcsr_cause       : std_ulogic_vector(2 downto 0); -- why was debug mode entered
-    dcsr_rd          : std_ulogic_vector(XLEN-1 downto 0); -- debug mode control and status register
-    dpc              : std_ulogic_vector(XLEN-1 downto 0); -- mode program counter
-    dscratch0        : std_ulogic_vector(XLEN-1 downto 0); -- debug mode scratch register 0
+    dcsr_ebreakm   : std_ulogic; -- behavior of ebreak instruction in m-mode
+    dcsr_ebreaku   : std_ulogic; -- behavior of ebreak instruction in u-mode
+    dcsr_step      : std_ulogic; -- single-step mode
+    dcsr_prv       : std_ulogic; -- current privilege level when entering debug mode
+    dcsr_cause     : std_ulogic_vector(2 downto 0); -- why was debug mode entered
+    dcsr_rd        : std_ulogic_vector(XLEN-1 downto 0); -- debug mode control and status register
+    dpc            : std_ulogic_vector(XLEN-1 downto 0); -- mode program counter
+    dscratch0      : std_ulogic_vector(XLEN-1 downto 0); -- debug mode scratch register 0
     --
-    tdata1_hit_clr   : std_ulogic; -- set to manually clear mcontrol6.hit0
-    tdata1_execute   : std_ulogic; -- enable instruction address match trigger
-    tdata1_action    : std_ulogic; -- enter debug mode / ebreak exception when trigger fires
-    tdata1_dmode     : std_ulogic; -- set to ignore tdata* CSR access from machine-mode
-    tdata1_rd        : std_ulogic_vector(XLEN-1 downto 0); -- trigger register read-back
-    tdata2           : std_ulogic_vector(XLEN-1 downto 0); -- address-match register
+    tdata1_hit_clr : std_ulogic; -- set to manually clear mcontrol6.hit0
+    tdata1_execute : std_ulogic; -- enable instruction address match trigger
+    tdata1_action  : std_ulogic; -- enter debug mode / ebreak exception when trigger fires
+    tdata1_dmode   : std_ulogic; -- set to ignore tdata* CSR access from machine-mode
+    tdata1_rd      : std_ulogic_vector(XLEN-1 downto 0); -- trigger register read-back
+    tdata2         : std_ulogic_vector(XLEN-1 downto 0); -- address-match register
   end record;
   signal csr : csr_t;
 
@@ -1092,7 +1085,7 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- register file --
-  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and -- inhibit write-back only for rd-updating exceptions that must not retire
+  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and -- inhibit write-back only for rd-updating exceptions that must not commit
                          (not trap_ctrl.exc_buf(exc_illegal_c)) and
                          (not trap_ctrl.exc_buf(exc_ialign_c))  and (not trap_ctrl.exc_buf(exc_salign_c))  and (not trap_ctrl.exc_buf(exc_lalign_c)) and
                          (not trap_ctrl.exc_buf(exc_iaccess_c)) and (not trap_ctrl.exc_buf(exc_saccess_c)) and (not trap_ctrl.exc_buf(exc_laccess_c));
@@ -1133,7 +1126,7 @@ begin
 -- Illegal Instruction Detection
 -- ****************************************************************************************************************************
 
-  -- Instruction Execution Monitor (trap if multi-cycle instruction does not retire) --------
+  -- Instruction Execution Monitor (trap if multi-cycle instruction does not complete) ------
   -- -------------------------------------------------------------------------------------------
   multi_cycle_monitor: process(rstn_i, clk_i)
   begin
@@ -1173,8 +1166,7 @@ begin
         csr_reg_valid <= '1'; -- always implemented
 
       -- machine-controlled user-mode CSRs --
-      when csr_mcounteren_c | csr_menvcfg_c     | csr_menvcfgh_c   |
-           csr_mcyclecfg_c  | csr_minstretcfg_c | csr_mcyclecfgh_c | csr_minstretcfgh_c =>
+      when csr_mcounteren_c | csr_menvcfg_c | csr_menvcfgh_c =>
         csr_reg_valid <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U); -- available if U-mode implemented
 
       -- physical memory protection (PMP) --
@@ -1626,42 +1618,38 @@ begin
   csr_write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      csr.we               <= '0';
-      csr.privilege        <= priv_mode_m_c;
-      csr.mstatus_mie      <= '0';
-      csr.mstatus_mpie     <= '0';
-      csr.mstatus_mpp      <= priv_mode_m_c;
-      csr.mstatus_mprv     <= '0';
-      csr.mstatus_tw       <= '0';
-      csr.mie_msi          <= '0';
-      csr.mie_mei          <= '0';
-      csr.mie_mti          <= '0';
-      csr.mie_firq         <= (others => '0');
-      csr.mtvec            <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
-      csr.mscratch         <= x"19880704";
-      csr.mepc             <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
-      csr.mcause           <= (others => '0');
-      csr.mtval            <= (others => '0');
-      csr.mtinst           <= (others => '0');
-      csr.mcounteren       <= '0';
-      csr.mcountinhibit    <= (others => '0');
-      csr.mcyclecfg_minh   <= '0';
-      csr.mcyclecfg_uinh   <= '0';
-      csr.minstretcfg_minh <= '0';
-      csr.minstretcfg_uinh <= '0';
-      csr.mip_firq_nclr    <= (others => '0');
-      csr.dcsr_ebreakm     <= '0';
-      csr.dcsr_ebreaku     <= '0';
-      csr.dcsr_step        <= '0';
-      csr.dcsr_prv         <= priv_mode_m_c;
-      csr.dcsr_cause       <= (others => '0');
-      csr.dpc              <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
-      csr.dscratch0        <= (others => '0');
-      csr.tdata1_hit_clr   <= '0';
-      csr.tdata1_execute   <= '0';
-      csr.tdata1_action    <= '0';
-      csr.tdata1_dmode     <= '0';
-      csr.tdata2           <= (others => '0');
+      csr.we             <= '0';
+      csr.privilege      <= priv_mode_m_c;
+      csr.mstatus_mie    <= '0';
+      csr.mstatus_mpie   <= '0';
+      csr.mstatus_mpp    <= priv_mode_m_c;
+      csr.mstatus_mprv   <= '0';
+      csr.mstatus_tw     <= '0';
+      csr.mie_msi        <= '0';
+      csr.mie_mei        <= '0';
+      csr.mie_mti        <= '0';
+      csr.mie_firq       <= (others => '0');
+      csr.mtvec          <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
+      csr.mscratch       <= x"19880704";
+      csr.mepc           <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
+      csr.mcause         <= (others => '0');
+      csr.mtval          <= (others => '0');
+      csr.mtinst         <= (others => '0');
+      csr.mcounteren     <= '0';
+      csr.mcountinhibit  <= (others => '0');
+      csr.mip_firq_nclr  <= (others => '0');
+      csr.dcsr_ebreakm   <= '0';
+      csr.dcsr_ebreaku   <= '0';
+      csr.dcsr_step      <= '0';
+      csr.dcsr_prv       <= priv_mode_m_c;
+      csr.dcsr_cause     <= (others => '0');
+      csr.dpc            <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
+      csr.dscratch0      <= (others => '0');
+      csr.tdata1_hit_clr <= '0';
+      csr.tdata1_execute <= '0';
+      csr.tdata1_action  <= '0';
+      csr.tdata1_dmode   <= '0';
+      csr.tdata2         <= (others => '0');
     elsif rising_edge(clk_i) then
 
       -- defaults --
@@ -1739,18 +1727,6 @@ begin
             end if;
             if (CPU_EXTENSION_RISCV_Zihpm = true) then
               csr.mcountinhibit(15 downto 3) <= csr.wdata(15 downto 3);
-            end if;
-
-          when csr_mcyclecfgh_c => -- machine cycle counter privilege mode filtering
-            if (CPU_EXTENSION_RISCV_Zicntr = true) then
-              csr.mcyclecfg_minh <= csr.wdata(30);
-              csr.mcyclecfg_uinh <= csr.wdata(28);
-            end if;
-
-          when csr_minstretcfgh_c => -- machine instret counter privilege mode filtering
-            if (CPU_EXTENSION_RISCV_Zicntr = true) then
-              csr.minstretcfg_minh <= csr.wdata(30);
-              csr.minstretcfg_uinh <= csr.wdata(28);
             end if;
 
           -- --------------------------------------------------------------------
@@ -1888,10 +1864,6 @@ begin
       -- no base counters --
       if (CPU_EXTENSION_RISCV_Zicntr = false) then
         csr.mcountinhibit(2 downto 0) <= (others => '0');
-        csr.mcyclecfg_minh   <= '0';
-        csr.mcyclecfg_uinh   <= '0';
-        csr.minstretcfg_minh <= '0';
-        csr.minstretcfg_uinh <= '0';
       end if;
 
       -- no hardware performance monitors --
@@ -2036,22 +2008,7 @@ begin
           end loop;
         end if;
 
---    when csr_mcyclecfg_c   => csr_rdata <= (others => '0'); -- hardwired to zero
---    when csr_minstretcfg_c => csr_rdata <= (others => '0'); -- hardwired to zero
-
-      when csr_mcyclecfgh_c => -- machine cycle counter privilege mode filtering
-        if (CPU_EXTENSION_RISCV_Zicntr = true) then
-          csr_rdata(30) <= csr.mcyclecfg_minh;
-          csr_rdata(28) <= csr.mcyclecfg_uinh;
-        end if;
-
-      when csr_minstretcfgh_c => -- machine instret counter privilege mode filtering
-        if (CPU_EXTENSION_RISCV_Zicntr = true) then
-          csr_rdata(30) <= csr.minstretcfg_minh;
-          csr_rdata(28) <= csr.minstretcfg_uinh;
-        end if;
-
-      -- HPM event select --
+      -- HPM event configuration --
       when csr_mhpmevent3_c  => if (hpm_num_c > 00) then csr_rdata <= hpmevent_rd(03); end if;
       when csr_mhpmevent4_c  => if (hpm_num_c > 01) then csr_rdata <= hpmevent_rd(04); end if;
       when csr_mhpmevent5_c  => if (hpm_num_c > 02) then csr_rdata <= hpmevent_rd(05); end if;
@@ -2141,7 +2098,7 @@ begin
         csr_rdata(01) <= '1';                                          -- Zifencei: instruction stream sync. (always enabled)
         csr_rdata(02) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);  -- Zmmul: mul/div
         csr_rdata(03) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);  -- Zxcfu: custom RISC-V instructions
-        csr_rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_U);      -- Smcntrpmf: counter privilege mode filtering (enabled if U implemented)
+        csr_rdata(04) <= '0';                                          -- reserved
         csr_rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);  -- Zfinx: FPU using x registers
         csr_rdata(06) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicond); -- Zicond: integer conditional operations
         csr_rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr); -- Zicntr: base counters
@@ -2343,15 +2300,9 @@ begin
   end process counter_event;
 
   -- RISC-V-specific base counter events (for HPM and base counters) --
-  cnt_event(hpmcnt_event_cy_c) <= '1' when (execute_engine.state /= SLEEP) and ( -- active cycle
-                                            ((csr.privilege = priv_mode_m_c) and (csr.mcyclecfg_minh = '0')) or -- not inhibited when in machine-mode
-                                            ((csr.privilege = priv_mode_u_c) and (csr.mcyclecfg_uinh = '0')) -- not inhibited when in user-mode
-                                           ) else '0';
-  cnt_event(hpmcnt_event_tm_c) <= '0'; -- unused/reserved (time)
-  cnt_event(hpmcnt_event_ir_c) <= '1' when (execute_engine.state = EXECUTE) and ( -- retired (==executed) instruction
-                                            ((csr.privilege = priv_mode_m_c) and (csr.minstretcfg_minh = '0')) or -- not inhibited when in machine-mode
-                                            ((csr.privilege = priv_mode_u_c) and (csr.minstretcfg_uinh = '0')) -- not inhibited when in user-mode
-                                           ) else '0';
+  cnt_event(hpmcnt_event_cy_c) <= '1' when (sleep_mode = '0')               else '0'; -- cycle: active cycle
+  cnt_event(hpmcnt_event_tm_c) <=                                                '0'; -- time: unused/reserved
+  cnt_event(hpmcnt_event_ir_c) <= '1' when (execute_engine.state = EXECUTE) else '0'; -- instret: retired (==executed) instruction
 
   -- NEORV32-specific counter events (for HPM counters only) --
   cnt_event(hpmcnt_event_compr_c)    <= '1' when (execute_engine.state = EXECUTE)  and (execute_engine.is_ci = '1')  else '0'; -- executed compressed instruction
