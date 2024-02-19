@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -158,6 +158,11 @@ void spi_cs(uint32_t type) {
 
   char terminal_buffer[2];
   uint8_t channel;
+
+  if (spi_configured == 0) {
+    neorv32_uart0_printf("SPI module not configured yet! Use 'setup' to configure SPI module.\n");
+    return;
+  }
 
   if (type) {
     neorv32_uart0_printf("Chip-select line to ENABLE (set low) [0..7]: ");
