@@ -1498,6 +1498,7 @@ begin
       slink_rx_rdy_o         <= '0';
       slink_tx_dat_o         <= (others => '0');
       slink_tx_val_o         <= '0';
+      slink_tx_lst_o         <= '0';
     end generate;
 
 
