@@ -185,9 +185,11 @@ entity neorv32_top is
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- RX input data
     slink_rx_val_i : in  std_ulogic := 'L'; -- RX valid input
+    slink_rx_lst_i : in  std_ulogic := 'L'; -- last element of stream
     slink_rx_rdy_o : out std_ulogic; -- RX ready to receive
     slink_tx_dat_o : out std_ulogic_vector(31 downto 0); -- TX output data
     slink_tx_val_o : out std_ulogic; -- TX valid output
+    slink_tx_lst_o : out std_ulogic; -- last element of stream
     slink_tx_rdy_i : in  std_ulogic := 'L'; -- TX ready to send
 
     -- XIP (execute in place via SPI) signals (available if XIP_EN = true) --
@@ -1479,10 +1481,12 @@ begin
         -- RX stream interface --
         slink_rx_data_i  => slink_rx_dat_i,
         slink_rx_valid_i => slink_rx_val_i,
+        slink_rx_last_i  => slink_rx_lst_i,
         slink_rx_ready_o => slink_rx_rdy_o,
         -- TX stream interface --
         slink_tx_data_o  => slink_tx_dat_o,
         slink_tx_valid_o => slink_tx_val_o,
+        slink_tx_last_o  => slink_tx_lst_o,
         slink_tx_ready_i => slink_tx_rdy_i
       );
     end generate;

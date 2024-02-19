@@ -53,7 +53,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090504"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090505"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -856,9 +856,11 @@ package neorv32_package is
       -- Stream Link Interface (available if IO_SLINK_EN = true) --
       slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');
       slink_rx_val_i : in  std_ulogic := 'L';
+      slink_rx_lst_i : in  std_ulogic := 'L';
       slink_rx_rdy_o : out std_ulogic;
       slink_tx_dat_o : out std_ulogic_vector(31 downto 0);
       slink_tx_val_o : out std_ulogic;
+      slink_tx_lst_o : out std_ulogic;
       slink_tx_rdy_i : in  std_ulogic := 'L';
       -- XIP (execute in-place via SPI) signals (available if XIP_EN = true) --
       xip_csn_o      : out std_ulogic;

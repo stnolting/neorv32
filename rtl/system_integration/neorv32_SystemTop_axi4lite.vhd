@@ -1,7 +1,7 @@
 -- #################################################################################################
 -- # << NEORV32 - Processor Top Entity with AXI4-Lite Compatible Host Interface >>                 #
 -- # ********************************************************************************************* #
--- # (c) "AXI", "AXI4" and "AXI4-Lite" are trademarks of ARM Holdings plc.                         #
+-- # (c) "AXI", "AXI4", "AXI4-Lite" and "AXI-Stream" are trademarks of ARM Holdings plc.           #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -169,10 +169,12 @@ entity neorv32_SystemTop_axi4lite is
     -- Source --
     s0_axis_tdata  : out std_logic_vector(31 downto 0);
     s0_axis_tvalid : out std_logic;
+    s0_axis_tlast  : out std_logic;
     s0_axis_tready : in  std_logic;
     -- Sink --
     s1_axis_tdata  : in  std_logic_vector(31 downto 0);
     s1_axis_tvalid : in  std_logic;
+    s1_axis_tlast  : in  std_logic;
     s1_axis_tready : out std_logic;
     -- ------------------------------------------------------------
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
@@ -246,12 +248,14 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   --
   signal clk_i_int          : std_ulogic;
   signal rstn_i_int         : std_ulogic;
-  -- 
+  --
   signal s0_axis_tdata_int  : std_ulogic_vector(31 downto 0);
   signal s0_axis_tvalid_int : std_ulogic;
+  signal s0_axis_tlast_int  : std_ulogic;
   signal s0_axis_tready_int : std_ulogic;
   signal s1_axis_tdata_int  : std_ulogic_vector(31 downto 0);
   signal s1_axis_tvalid_int : std_ulogic;
+  signal s1_axis_tlast_int : std_ulogic;
   signal s1_axis_tready_int : std_ulogic;
   --
   signal jtag_trst_i_int    : std_ulogic;
@@ -454,9 +458,11 @@ begin
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i => s1_axis_tdata_int,  -- RX input data
     slink_rx_val_i => s1_axis_tvalid_int, -- RX valid input
+    slink_rx_lst_i => s1_axis_tlast_int,  -- last element of stream
     slink_rx_rdy_o => s1_axis_tready_int, -- RX ready to receive
     slink_tx_dat_o => s0_axis_tdata_int,  -- TX output data
     slink_tx_val_o => s0_axis_tvalid_int, -- TX valid output
+    slink_tx_lst_o => s0_axis_tlast_int,  -- last element of stream
     slink_tx_rdy_i => s0_axis_tready_int, -- TX ready to send
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o      => xip_csn_o_int,   -- chip-select, low-active
@@ -507,9 +513,11 @@ begin
   -- type conversion --
   s0_axis_tdata      <= std_logic_vector(s0_axis_tdata_int);
   s0_axis_tvalid     <= std_logic(s0_axis_tvalid_int);
+  s0_axis_tlast      <= std_logic(s0_axis_tlast_int);
   s0_axis_tready_int <= std_ulogic(s0_axis_tready);
   s1_axis_tdata_int  <= std_ulogic_vector(s1_axis_tdata);
   s1_axis_tvalid_int <= std_ulogic(s1_axis_tvalid);
+  s1_axis_tvalid_int <= std_ulogic(s1_axis_tlast);
   s1_axis_tready     <= std_logic(s1_axis_tready_int);
 
   xip_csn_o          <= std_logic(xip_csn_o_int);
