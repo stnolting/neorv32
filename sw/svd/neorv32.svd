@@ -226,7 +226,7 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x08</size>
+        <size>0x10</size>
         <usage>registers</usage>
       </addressBlock>
 
@@ -250,6 +250,11 @@
               <name>SLINK_CTRL_TX_CLR</name>
               <bitRange>[2:2]</bitRange>
               <description>Clear TX FIFO (auto-clears)</description>
+            </field>
+            <field>
+              <name>SLINK_CTRL_RX_LAST</name>
+              <bitRange>[4:4]</bitRange>
+              <description>RX link end-of-stream delimiter</description>
             </field>
             <field>
               <name>SLINK_CTRL_RX_EMPTY</name>
@@ -332,9 +337,20 @@
           </fields>
         </register>
         <register>
-          <name>DATA</name>
-          <description>RX/TX data</description>
+          <name>RX_DATA</name>
+          <description>RX link receive data</description>
+           <access>read-only</access>
           <addressOffset>0x04</addressOffset>
+        </register>
+        <register>
+          <name>TX_DATA</name>
+          <description>TX link transmit data</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>TX_DATA_LAST</name>
+          <description>TX link transmit data (plus end-of-stream delimiter)</description>
+          <addressOffset>0x0c</addressOffset>
         </register>
       </registers>
     </peripheral>

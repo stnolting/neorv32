@@ -123,7 +123,21 @@ int neorv32_slink_get_tx_fifo_depth(void) {
  **************************************************************************/
 inline uint32_t __attribute__((always_inline)) neorv32_slink_get(void) {
 
-  return NEORV32_SLINK->DATA;
+  return NEORV32_SLINK->RX_DATA;
+}
+
+
+/**********************************************************************//**
+ * Check if last RX word has "end-of-stream" delimiter.
+ *
+ * @note This needs has to be called AFTER reading the actual data word
+ * using #neorv32_slink_get(void).
+ *
+ * @return 0 if not end of stream, !=0 if end of stream.
+ **************************************************************************/
+inline uint32_t __attribute__((always_inline)) neorv32_slink_check_last(void) {
+
+  return NEORV32_SLINK->CTRL & (1 << SLINK_CTRL_RX_LAST);
 }
 
 
@@ -134,7 +148,19 @@ inline uint32_t __attribute__((always_inline)) neorv32_slink_get(void) {
  **************************************************************************/
 inline void __attribute__((always_inline)) neorv32_slink_put(uint32_t tx_data) {
 
-  NEORV32_SLINK->DATA = tx_data;
+  NEORV32_SLINK->TX_DATA = tx_data;
+}
+
+
+/**********************************************************************//**
+ * Write data to TX link (non-blocking) and set "last" (end-of-stream)
+ * delimiter.
+ *
+ * @param[in] tx_data Data to send to link.
+ **************************************************************************/
+inline void __attribute__((always_inline)) neorv32_slink_put_last(uint32_t tx_data) {
+
+  NEORV32_SLINK->TX_DATA_LAST = tx_data;
 }
 
 
