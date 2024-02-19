@@ -14,7 +14,7 @@ All CSRs and CSR bits that are not listed in the table below are _unimplemented_
 CSRs that are unavailable ("disabled") because the according ISA extension is not enabled are also considered _unimplemented_
 and are also hardwired to zero. Any access to such a CSR will raise an illegal instruction exception. All writable CSRs provide
 **WARL** behavior (write all values; read only legal values). Application software should always read back a CSR after writing
-to check if the targeted bits can actually be modified. 
+to check if the targeted bits can actually be modified.
 
 
 .NEORV32 Control and Status Registers (CSRs)
@@ -33,6 +33,11 @@ to check if the targeted bits can actually be modified.
 | 0x305 | <<_mtvec>>      | `CSR_MTVEC`      | MRW | Machine trap-handler base address for ALL traps
 | 0x306 | <<_mcounteren>> | `CSR_MCOUNTEREN` | MRW | Machine counter-enable register
 | 0x310 | <<_mstatush>>   | `CSR_MSTATUSH`   | MRW | Machine status register - high word
+5+^| **<<_machine_configuration_csrs>>**
+| 0x30a | <<_menvcfg>>  | `CSR_MENVCFG`  | MRW | Machine environment configuration register - low word
+| 0x31a | <<_menvcfgh>> | `CSR_MENVCFGH` | MRW | Machine environment configuration register - high word
+5+^| **<<_machine_counter_setup_csrs>>**
+| 0x320 | <<_mcountinhibit>> | `CSR_MCOUNTINHIBIT` | MRW | Machine counter-inhibit register
 5+^| **<<_machine_trap_handling_csrs>>**
 | 0x340 | <<_mscratch>> | `CSR_MSCRATCH` | MRW | Machine scratch register
 | 0x341 | <<_mepc>>     | `CSR_MEPC`     | MRW | Machine exception program counter
@@ -40,9 +45,6 @@ to check if the targeted bits can actually be modified.
 | 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW | Machine trap value
 | 0x344 | <<_mip>>      | `CSR_MIP`      | MRW | Machine interrupt pending register
 | 0x34a | <<_mtinst>>   | `CSR_MTINST`   | MRW | Machine trap instruction
-5+^| **<<_machine_configuration_csrs>>**
-| 0x30a | <<_menvcfg>>  | `CSR_MENVCFG`  | MRW | Machine environment configuration register - low word
-| 0x31a | <<_menvcfgh>> | `CSR_MENVCFGH` | MRW | Machine environment configuration register - high word
 5+^| **<<_machine_physical_memory_protection_csrs>>**
 | 0x3a0 .. 0x303 | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg3`>>      | `CSR_PMPCFG0` .. `CSR_PMPCFG3`    | MRW | Physical memory protection configuration registers
 | 0x3b0 .. 0x3bf | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr15`>> | `CSR_PMPADDR0` .. `CSR_PMPADDR15` | MRW | Physical memory protection address registers
@@ -72,12 +74,6 @@ to check if the targeted bits can actually be modified.
 | 0xb83 .. 0xb8f | <<_mhpmcounterh, `mhpmcounter3h`>> .. <<_mhpmcounterh, `mhpmcounter15h`>> | `CSR_MHPMCOUNTER3H` .. `CSR_MHPMCOUNTER15H` | MRW | Machine performance-monitoring counter 3..15 high word
 | 0xc03 .. 0xc0f | <<_hpmcounterh, `hpmcounter3`>> .. <<_hpmcounterh, `hpmcounter15`>>       | `CSR_HPMCOUNTER3`  .. `CSR_HPMCOUNTER15H`   | URO | User performance-monitoring counter 3..15 low word
 | 0xc83 .. 0xc8f | <<_hpmcounterh, `hpmcounter3h`>> .. <<_hpmcounterh, `hpmcounter15h`>>     | `CSR_HPMCOUNTER3H` .. `CSR_HPMCOUNTER15H`   | URO | User performance-monitoring counter 3..15 high word
-5+^| **<<_machine_counter_setup_csrs>>**
-| 0x320 | <<_mcountinhibit>>                | `CSR_MCOUNTINHIBIT` | MRW | Machine counter-inhibit register
-| 0x321 | <<_mcyclecfgh, `mcyclecfg`>>      | `CSR_MCYCLECFG`     | MRW | Machine cycle counter privilege mode filtering - low word
-| 0x322 | <<_minstretcfgh, `minstretcfg`>>  | `CSR_MINSTRETCFG`   | MRW | Machine instret counter privilege mode filtering - low word
-| 0x721 | <<_mcyclecfgh, `mcyclecfgh`>>     | `CSR_MCYCLECFGH`    | MRW | Machine cycle counter privilege mode filtering - high word
-| 0x722 | <<_minstretcfgh, `minstretcfgh`>> | `CSR_MINSTRETCFGH`  | MRW | Machine instret counter privilege mode filtering - high word
 5+^| **<<_machine_information_csrs>>**
 | 0xf11 | <<_mvendorid>>  | `CSR_MVENDORID`  | MRO | Machine vendor ID
 | 0xf12 | <<_marchid>>    | `CSR_MARCHID`    | MRO | Machine architecture ID
@@ -323,7 +319,7 @@ The vectored `mtvec` mode is useful for reducing the time between interrupt requ
 [IMPORTANT]
 Physically, the NEORV32's `mcounteren` CSR is implemented as a **single 1-bit register**. Setting _any_ bit of
 the CSR will result in all bits being set. Hence, user-mode access can either be granted for **all** counter CSRs
-or entirely denied allowing access to **none** counter CSRs. 
+or entirely denied allowing access to **none** counter CSRs.
 
 
 {empty} +
@@ -869,56 +865,6 @@ counter CSRs are read-only. Any write access will raise an illegal instruction e
 |=======================
 
 
-{empty} +
-[discrete]
-===== **`mcyclecfg[h]`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | Machine cycle counter privilege mode filtering
-| Address     | `0x321` (`mcyclecfg`)
-|             | `0x721` (`mcyclecfgh`)
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` & `Zicntr` & `U` (<<_smcntrpmf_isa_extension>>)
-| Description | Halt cycle counter when the CPU is in a specific privilege mode. Note that `mcyclecfg` is hardwired to all-zero.
-|=======================
-
-.`mcyclecfgh` CSR Bits
-[cols="^1,^3,^1,<9"]
-[options="header",grid="rows"]
-|=======================
-| Bit | Name [C] | R/W | Description
-| 28  | `CSR_MCYCLECFGH_UINH` | r/w | **UINH**: Set to `1` to halt `[m]cycle[h]` counter when CPU is in user-mode
-| 30  | `CSR_MCYCLECFGH_MINH` | r/w | **MINH**: Set to `1` to halt `[m]cycle[h]` counter when CPU is in machine-mode
-|=======================
-
-
-{empty} +
-[discrete]
-===== **`minstretcfg[h]`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | Machine instret counter privilege mode filtering
-| Address     | `0x322` (`minstretcfg`)
-|             | `0x722` (`minstretcfgh`)
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` & `Zicntr` & `U` (<<_smcntrpmf_isa_extension>>)
-| Description | Halt instret counter when the CPU is in a specific privilege mode. Note that `minstretcfg` is hardwired to all-zero.
-|=======================
-
-.`minstretcfgh` CSR Bits
-[cols="^1,^3,^1,<9"]
-[options="header",grid="rows"]
-|=======================
-| Bit | Name [C] | R/W | Description
-| 28  | `CSR_MINSTRETCFGH_UINH` | r/w | **UINH**: Set to `1` to halt `[m]instret[h]` counter when CPU is in user-mode
-| 30  | `CSR_MINSTRETCFGH_MINH` | r/w | **MINH**: Set to `1` to halt `[m]instret[h]` counter when CPU is in machine-mode
-|=======================
-
-
 <<<
 // ####################################################################################################################
 :sectnums:
@@ -1035,7 +981,7 @@ discover ISA sub-extensions and CPU configuration options
 |  1    | `CSR_MXISA_ZIFENCEI`  | r/- | <<_zifencei_isa_extension>> available
 |  2    | `CSR_MXISA_ZMMUL`     | r/- | <<_zmmul_isa_extension>> available
 |  3    | `CSR_MXISA_ZXCFU`     | r/- | <<_zxcfu_isa_extension>> available
-|  4    | `CSR_MXISA_SMCNTRPMF` | r/- | <<_smcntrpmf_isa_extension>> available
+|  4    | -                     | r/- | _reserved_, hardwired to zero
 |  5    | `CSR_MXISA_ZFINX`     | r/- | <<_zfinx_isa_extension>> available
 |  6    | `CSR_MXISA_ZICOND`    | r/- | <<_zicond_isa_extension>> available
 |  7    | `CSR_MXISA_ZICNTR`    | r/- | <<_zicntr_isa_extension>> available
