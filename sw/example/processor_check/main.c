@@ -411,47 +411,6 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test mcyclecfg: counter privilege mode filtering
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] mcyclecfg CSR ", cnt_test);
-
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_SMCNTRPMF)) {
-    cnt_test++;
-
-    neorv32_cpu_csr_write(CSR_MCYCLECFGH, 1<<CSR_MCYCLECFGH_UINH); // inhibit when in user-mode
-
-    tmp_a = neorv32_cpu_csr_read(CSR_CYCLE);
-    asm volatile ("nop");
-    asm volatile ("nop");
-    tmp_a = neorv32_cpu_csr_read(CSR_CYCLE) - tmp_a; // delta machine-mode
-
-    // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
-    {
-      tmp_b = neorv32_cpu_csr_read(CSR_CYCLE);
-      asm volatile ("nop");
-      asm volatile ("nop");
-      tmp_b = neorv32_cpu_csr_read(CSR_CYCLE) - tmp_b; // delta user-mode
-      asm volatile ("ecall"); // leave user-mode
-    }
-
-    if ((tmp_a != 0) && (tmp_b == 0)) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-
-    // re-enable base counters for all privilege modes
-    neorv32_cpu_csr_write(CSR_MCYCLECFGH, 0);
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
-
-
-  // ----------------------------------------------------------
   // Execute MRET in U-mode (has to trap!)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
