@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -102,17 +102,23 @@ int main() {
   // TX demo
   neorv32_uart0_printf("-------- TX Demo --------\n");
 
-  for (i=0; i<(rx_depth+tx_depth+1); i++) {
+  for (i=0; i<(rx_depth+tx_depth); i++) {
     slink_data = xorshift32();
     neorv32_uart0_printf("[%i] Sending 0x%x... ", i, slink_data);
 
     slink_rc = neorv32_slink_tx_status();
     if (slink_rc == SLINK_FIFO_FULL) {
-      neorv32_uart0_printf("FAILED! TX FIFO full!\n");
+      neorv32_uart0_printf("ERROR! TX FIFO full!\n");
       break;
     }
     else {
-      neorv32_slink_put(slink_data);
+      if (i == ((rx_depth+tx_depth)-1)) { // very last transmission?
+        neorv32_slink_put_last(slink_data); // set tlast
+        neorv32_uart0_printf("(last) ");
+      }
+      else {
+        neorv32_slink_put(slink_data);
+      }
       neorv32_uart0_printf("ok\n");
     }
   }
@@ -126,11 +132,15 @@ int main() {
 
     slink_rc = neorv32_slink_rx_status();
     if (slink_rc == SLINK_FIFO_EMPTY) {
-      neorv32_uart0_printf("FAILED! RX FIFO empty!\n");
+      neorv32_uart0_printf("ERROR! RX FIFO empty!\n");
       break;
     }
     else {
-      neorv32_uart0_printf("0x%x\n", neorv32_slink_get());
+      neorv32_uart0_printf("0x%x", neorv32_slink_get());
+      if (neorv32_slink_check_last()) {
+        neorv32_uart0_printf(" (LAST)");
+      }
+      neorv32_uart0_printf("\n");
     }
   }
 
