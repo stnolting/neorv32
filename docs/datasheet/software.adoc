@@ -255,6 +255,10 @@ GDB_ARGS ?= -ex "target extended-remote localhost:3333"
 The following default compiler flags are used for compiling an application. These flags are defined via the
 `CC_OPTS` variable.
 
+[TIP]
+The makefile's `CC_OPTS` is exported as **define** to be available within a C program; for example
+`neorv32_uart0_printf("%s\n", CC_OPTS);`.
+
 [cols="<3,<9"]
 [grid="none"]
 |=======================
@@ -268,7 +272,7 @@ The following default compiler flags are used for compiling an application. Thes
 | `-mno-fdiv`           | Use built-in software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
 | `-g`                  | Include debugging information/symbols in ELF.
 | `-mstrict-align`      | Unaligned memory accesses cannot be resolved by the hardware and require emulation.
-| `-mbranch-cost=...`   | Branches cost a lot cycles on a multi-cycle architecture.
+| `-mbranch-cost=10`    | Branching costs a lot of cycles.
 |=======================
 
 :sectnums:
@@ -341,7 +345,7 @@ __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x800000
 
 The region size and base address configuration can be edited by the user - either by explicitly
 changing the default values in the linker script or by overriding them when invoking `make`:
- 
+
 .Overriding default `rom` size configuration (configuring 4096 bytes)
 [source, bash]
 ----

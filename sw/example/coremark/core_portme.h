@@ -33,7 +33,7 @@ Original Author: Shay Gal-on
 /************************/
 #define BAUD_RATE  (19200)
 #define ITERATIONS (2000)
-#define FLAGS_STR  "see makefile"
+#define FLAGS_STR  CC_OPTS
 
 /************************/
 /* Data types and settings */

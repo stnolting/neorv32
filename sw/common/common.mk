@@ -3,7 +3,8 @@
 # ********************************************************************************************* #
 # BSD 3-Clause License                                                                          #
 #                                                                                               #
-# Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+# The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
+# Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 #                                                                                               #
 # Redistribution and use in source and binary forms, with or without modification, are          #
 # permitted provided that the following conditions are met:                                     #
@@ -28,8 +29,6 @@
 # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
-# ********************************************************************************************* #
-# The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
 #################################################################################################
 
 
@@ -125,8 +124,8 @@ OBJCOPY = $(RISCV_PREFIX)objcopy
 SIZE    = $(RISCV_PREFIX)size
 GDB     = $(RISCV_PREFIX)gdb
 
-# Host native compiler
-CC_X86 = gcc -Wall -O -g
+# Host's native compiler
+CC_HOST = gcc -Wall -O -g
 
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
@@ -137,6 +136,12 @@ CC_OPTS += -mstrict-align -mbranch-cost=10 -g -Wl,--gc-sections
 CC_OPTS += $(USER_FLAGS)
 LD_LIBS =  -lm -lc -lgcc
 LD_LIBS += $(USER_LIBS)
+
+# Actual flags passed to the compiler
+CC_FLAGS = $(CC_OPTS)
+
+# Export compiler flags as define string
+CC_FLAGS += -DCC_OPTS="\"$(CC_OPTS)\""
 
 
 # -----------------------------------------------------------------------------
@@ -169,7 +174,7 @@ target bl_image:   CC_OPTS += -Wl,--defsym=make_bootloader=1 -Dmake_bootloader -
 # install/compile tools
 $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 	@echo Compiling $(IMAGE_GEN)
-	@$(CC_X86) $< -o $(IMAGE_GEN)
+	@$(CC_HOST) $< -o $(IMAGE_GEN)
 
 
 # -----------------------------------------------------------------------------
@@ -177,23 +182,23 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 # -----------------------------------------------------------------------------
 # Compile app *.s sources (assembly)
 %.s.o: %.s
-	@$(CC) -c $(CC_OPTS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
+	@$(CC) -c $(CC_FLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
 
 # Compile app *.S sources (assembly + C pre-processor)
 %.S.o: %.S
-	@$(CC) -c $(CC_OPTS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
+	@$(CC) -c $(CC_FLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
 
 # Compile app *.c sources
 %.c.o: %.c
-	@$(CC) -c $(CC_OPTS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+	@$(CC) -c $(CC_FLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Compile app *.cpp sources
 %.cpp.o: %.cpp
-	@$(CC) -c $(CC_OPTS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+	@$(CC) -c $(CC_FLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Link object files and show memory utilization
 $(APP_ELF): $(OBJ)
-	@$(CC) $(CC_OPTS) -T $(LD_SCRIPT) $(OBJ) $(LD_LIBS) -o $@
+	@$(CC) $(CC_FLAGS) -T $(LD_SCRIPT) $(OBJ) $(LD_LIBS) -o $@
 	@echo "Memory utilization:"
 	@$(SIZE) $(APP_ELF)
 
@@ -282,8 +287,8 @@ endif
 	@$(SIZE) -V
 	@echo "---------------- Check: NEORV32 image_gen ----------------"
 	@$(IMAGE_GEN) -help
-	@echo "---------------- Check: Native GCC ----------------"
-	@$(CC_X86) -v
+	@echo "---------------- Check: Host's native GCC ----------------"
+	@$(CC_HOST) -v
 	@echo
 	@echo "Toolchain check OK"
 
