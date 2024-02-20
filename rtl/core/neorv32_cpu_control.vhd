@@ -255,7 +255,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mie_mei        : std_ulogic; -- machine external interrupt enable
     mie_mti        : std_ulogic; -- machine timer interrupt enable
     mie_firq       : std_ulogic_vector(15 downto 0); -- fast interrupt enable
-    mip_firq_nclr  : std_ulogic_vector(15 downto 0); -- clear pending FIRQ (active-low)
+    mip_firq_wdata : std_ulogic_vector(15 downto 0); -- fast interrupt pending write data
+    mip_firq_we    : std_ulogic; -- fast interrupt pending write enable
     --
     privilege      : std_ulogic; -- current privilege mode
     privilege_eff  : std_ulogic; -- current *effective* privilege mode
@@ -1451,7 +1452,11 @@ begin
 
       -- NEORV32-specific fast interrupts --
       for i in 0 to 15 loop
-        trap_ctrl.irq_pnd(irq_firq_0_c+i) <= (trap_ctrl.irq_pnd(irq_firq_0_c+i) and csr.mip_firq_nclr(i)) or firq_i(i);
+        if (csr.mip_firq_we = '1') then -- write access to MIP(.FIRQ) CSR
+          trap_ctrl.irq_pnd(irq_firq_0_c+i) <= firq_i(i) or csr.mip_firq_wdata(i); -- keep buffering incoming FIRQs
+        else
+          trap_ctrl.irq_pnd(irq_firq_0_c+i) <= firq_i(i) or trap_ctrl.irq_pnd(irq_firq_0_c+i); -- keep pending FIRQs alive
+        end if;
       end loop;
 
       -- debug-mode entry --
@@ -1637,7 +1642,8 @@ begin
       csr.mtinst         <= (others => '0');
       csr.mcounteren     <= '0';
       csr.mcountinhibit  <= (others => '0');
-      csr.mip_firq_nclr  <= (others => '0');
+      csr.mip_firq_wdata <= (others => '0');
+      csr.mip_firq_we    <= '0';
       csr.dcsr_ebreakm   <= '0';
       csr.dcsr_ebreaku   <= '0';
       csr.dcsr_step      <= '0';
@@ -1654,7 +1660,7 @@ begin
 
       -- defaults --
       csr.we             <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_illegal_c)); -- write if not an illegal instruction
-      csr.mip_firq_nclr  <= (others => '1'); -- inactive FIRQ clear (active low)
+      csr.mip_firq_we    <= '0'; -- no write to MIP.FIRQ by default
       csr.tdata1_hit_clr <= '0';
 
       -- ********************************************************************************
@@ -1715,7 +1721,8 @@ begin
             csr.mcause <= csr.wdata(31) & csr.wdata(4 downto 0); -- type (exception/interrupt) & identifier
 
           when csr_mip_c => -- machine interrupt pending
-            csr.mip_firq_nclr <= csr.wdata(31 downto 16); -- set low to clear according bit (FIRQs only)
+            csr.mip_firq_wdata <= csr.wdata(31 downto 16);
+            csr.mip_firq_we    <= '1'; -- trigger MIP.FIRQ write
 
           -- --------------------------------------------------------------------
           -- machine counter setup --
