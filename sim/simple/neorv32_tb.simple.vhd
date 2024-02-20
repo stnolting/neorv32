@@ -117,6 +117,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   -- SLINK echo --
   signal slink_dat : std_ulogic_vector(31 downto 0);
   signal slink_val : std_ulogic;
+  signal slink_lst : std_ulogic;
   signal slink_rdy : std_ulogic;
 
   -- Wishbone bus --
@@ -282,9 +283,11 @@ begin
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i => slink_dat,       -- RX input data
     slink_rx_val_i => slink_val,       -- RX valid input
+    slink_rx_lst_i => slink_lst,       -- last element of stream
     slink_rx_rdy_o => slink_rdy,       -- RX ready to receive
     slink_tx_dat_o => slink_dat,       -- TX output data
     slink_tx_val_o => slink_val,       -- TX valid output
+    slink_tx_lst_o => slink_lst,       -- last element of stream
     slink_tx_rdy_i => slink_rdy,       -- TX ready to send
     -- XIP (execute in place via SPI) signals (available if XIP_EN = true) --
     xip_csn_o      => open,            -- chip-select, low-active

@@ -56,20 +56,30 @@ entity neorv32_slink is
     -- RX stream interface --
     slink_rx_data_i  : in  std_ulogic_vector(31 downto 0); -- input data
     slink_rx_valid_i : in  std_ulogic; -- valid input
+    slink_rx_last_i  : in  std_ulogic; -- end of stream
     slink_rx_ready_o : out std_ulogic; -- ready to receive
     -- TX stream interface --
     slink_tx_data_o  : out std_ulogic_vector(31 downto 0); -- output data
     slink_tx_valid_o : out std_ulogic; -- valid output
+    slink_tx_last_o  : out std_ulogic; -- end of stream
     slink_tx_ready_i : in  std_ulogic  -- ready to send
   );
 end neorv32_slink;
 
 architecture neorv32_slink_rtl of neorv32_slink is
 
+  -- memory-mapped interface registers --
+  constant addr_ctrl_c    : std_ulogic_vector(1 downto 0) := "00"; -- control register
+  constant addr_rx_c      : std_ulogic_vector(1 downto 0) := "01"; -- RX data
+  constant addr_tx_c      : std_ulogic_vector(1 downto 0) := "10"; -- TX data
+  constant addr_tx_last_c : std_ulogic_vector(1 downto 0) := "11"; -- TY data + last-delimiter
+
   -- control register --
   constant ctrl_en_c            : natural :=  0; -- r/w: Global module enable
   constant ctrl_rx_clr_c        : natural :=  1; -- -/w: Clear RX FIFO, auto-clears
   constant ctrl_tx_clr_c        : natural :=  2; -- -/w: Clear TX FIFO, auto-clears
+  --
+  constant ctrl_rx_last_c       : natural :=  4; -- r/-: RX end-of-stream (according to prev. read RX data)
   --
   constant ctrl_rx_empty_c      : natural :=  8; -- r/-: RX FIFO empty
   constant ctrl_rx_half_c       : natural :=  9; -- r/-: RX FIFO at least half full
@@ -94,7 +104,7 @@ architecture neorv32_slink_rtl of neorv32_slink is
   constant ctrl_tx_fifo_size2_c : natural := 30; -- r/-: log2(TX fifo size), bit 2
   constant ctrl_tx_fifo_size3_c : natural := 31; -- r/-: log2(TX fifo size), bit 3 (msb)
 
-  -- control register (see bit definitions above) --
+  -- control register --
   type ctrl_t is record
     enable        : std_ulogic;
     rx_clr        : std_ulogic;
@@ -108,13 +118,16 @@ architecture neorv32_slink_rtl of neorv32_slink is
   end record;
   signal ctrl : ctrl_t;
 
+  -- RX last indicator --
+  signal rx_last : std_ulogic;
+
   -- FIFO interface --
   type fifo_t is record
     we    : std_ulogic; -- write enable
     re    : std_ulogic; -- read enable
     clear : std_ulogic; -- sync reset, high-active
-    wdata : std_ulogic_vector(31 downto 0); -- write data
-    rdata : std_ulogic_vector(31 downto 0); -- read data
+    wdata : std_ulogic_vector(32 downto 0); -- write data + last-flag
+    rdata : std_ulogic_vector(32 downto 0); -- read data + last-flag
     avail : std_ulogic; -- data available?
     free  : std_ulogic; -- free entry available?
     half  : std_ulogic; -- half full
@@ -151,10 +164,9 @@ begin
       ctrl.tx_clr <= '0'; -- auto-clear
 
       if (bus_req_i.stb = '1') then
-
         -- write access --
         if (bus_req_i.rw = '1') then
-          if (bus_req_i.addr(2) = '0') then -- control register
+          if (bus_req_i.addr(3 downto 2) = addr_ctrl_c) then -- control register
             ctrl.enable <= bus_req_i.data(ctrl_en_c);
             ctrl.rx_clr <= bus_req_i.data(ctrl_rx_clr_c);
             ctrl.tx_clr <= bus_req_i.data(ctrl_tx_clr_c);
@@ -166,11 +178,12 @@ begin
             ctrl.irq_tx_nhalf  <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
             ctrl.irq_tx_nfull  <= bus_req_i.data(ctrl_irq_tx_nfull_c);
           end if;
-
         -- read access --
         else
-          if (bus_req_i.addr(2) = '0') then -- control register
+          if (bus_req_i.addr(3 downto 2) = addr_ctrl_c) then -- control register
             bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
+            --
+            bus_rsp_o.data(ctrl_rx_last_c) <= rx_last;
             --
             bus_rsp_o.data(ctrl_rx_empty_c) <= not rx_fifo.avail;
             bus_rsp_o.data(ctrl_rx_half_c)  <= rx_fifo.half;
@@ -188,11 +201,10 @@ begin
             --
             bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_RX_FIFO), 4));
             bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_TX_FIFO), 4));
-          else -- RX/TX data register
+          else -- RX (TX) data register
             bus_rsp_o.data <= rx_fifo.rdata(31 downto 0);
           end if;
         end if;
-
       end if;
     end if;
   end process bus_access;
@@ -203,7 +215,7 @@ begin
   rx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => SLINK_RX_FIFO,
-    FIFO_WIDTH => 32,
+    FIFO_WIDTH => 32+1, -- data + last-flag
     FIFO_RSYNC => true, -- sync read
     FIFO_SAFE  => true  -- safe access
   )
@@ -224,11 +236,26 @@ begin
   );
 
   rx_fifo.clear <= (not ctrl.enable) or ctrl.rx_clr;
-  rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
+  rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3 downto 2) = addr_rx_c) else '0';
 
-  rx_fifo.we       <= slink_rx_valid_i;
-  rx_fifo.wdata    <= slink_rx_data_i;
-  slink_rx_ready_o <= rx_fifo.free;
+  rx_fifo.we                 <= slink_rx_valid_i;
+  rx_fifo.wdata(31 downto 0) <= slink_rx_data_i;
+  rx_fifo.wdata(32)          <= slink_rx_last_i;
+  slink_rx_ready_o           <= rx_fifo.free;
+
+  -- backup current RX last indicator for current access --
+  rx_last_flag: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      rx_last <= '0';
+    elsif rising_edge(clk_i) then
+      if (rx_fifo.clear = '1') then
+        rx_last <= '0';
+      elsif (rx_fifo.re = '1') then
+        rx_last <= rx_fifo.rdata(32);
+      end if;
+    end if;
+  end process rx_last_flag;
 
 
   -- TX Data FIFO ---------------------------------------------------------------------------
@@ -236,7 +263,7 @@ begin
   tx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => SLINK_TX_FIFO,
-    FIFO_WIDTH => 32,
+    FIFO_WIDTH => 32+1, -- data + last-flag
     FIFO_RSYNC => true, -- sync read
     FIFO_SAFE  => true  -- safe access
   )
@@ -257,11 +284,12 @@ begin
   );
 
   tx_fifo.clear <= (not ctrl.enable) or ctrl.tx_clr;
-  tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
-  tx_fifo.wdata <= bus_req_i.data;
+  tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3) = '1') else '0';
+  tx_fifo.wdata <= bus_req_i.addr(2) & bus_req_i.data; -- last-flag is set implicitly via access address (TX/TX_LAST register)
 
   tx_fifo.re       <= slink_tx_ready_i;
-  slink_tx_data_o  <= tx_fifo.rdata;
+  slink_tx_data_o  <= tx_fifo.rdata(31 downto 0);
+  slink_tx_last_o  <= tx_fifo.rdata(32) and tx_fifo.avail;
   slink_tx_valid_o <= tx_fifo.avail;
 
 

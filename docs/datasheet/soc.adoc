@@ -101,9 +101,11 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 5+^| **<<_stream_link_interface_slink>>**
 | `slink_rx_dat_i` | 32 |  in | `'L'` | RX data
 | `slink_rx_val_i` |  1 |  in | `'L'` | RX data valid
+| `slink_rx_lst_i` |  1 |  in | `'L'` | RX last element of stream
 | `slink_rx_rdy_o` |  1 | out |   -   | RX ready to receive
 | `slink_tx_dat_o` | 32 | out |   -   | TX data
 | `slink_tx_val_o` |  1 | out |   -   | TX data valid
+| `slink_tx_lst_o` |  1 | out |   -   | TX last element of stream
 | `slink_tx_rdy_i` |  1 |  in | `'L'` | TX allowed to send
 5+^| **<<_execute_in_place_module_xip>>**
 | `xip_csn_o`      |  1 | out |   -   | chip select, low-active

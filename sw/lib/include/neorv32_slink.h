@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -47,8 +47,10 @@
 /**@{*/
 /** SLINK module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_SLINK_CTRL_enum) */
-  uint32_t DATA;  /**< offset 4: data register */
+  uint32_t CTRL;         /**< offset 0: control register (#NEORV32_SLINK_CTRL_enum) */
+  uint32_t RX_DATA;      /**< offset 4: rx data register */
+  uint32_t TX_DATA;      /**< offset 8: rx data register */
+  uint32_t TX_DATA_LAST; /**< offset 12: rx data register + end-of-stream delimiter */
 } neorv32_slink_t;
 
 /** SLINK module hardware access (#neorv32_slink_t) */
@@ -59,6 +61,8 @@ enum NEORV32_SLINK_CTRL_enum {
   SLINK_CTRL_EN            =  0, /**< SLINK control register(0)  (r/w): SLINK unit enable */
   SLINK_CTRL_RX_CLR        =  1, /**< SLINK control register(1)  (-/w): Clear RX FIFO, auto-clears */
   SLINK_CTRL_TX_CLR        =  2, /**< SLINK control register(2)  (-/w): Clear TX FIFO, auto-clears */
+
+  SLINK_CTRL_RX_LAST       =  4, /**< SLINK control register(4)  (r/-): RX end-of-stream delimiter */
 
   SLINK_CTRL_RX_EMPTY      =  8, /**< SLINK control register(8)  (r/-): RX FIFO empty */
   SLINK_CTRL_RX_HALF       =  9, /**< SLINK control register(9)  (r/-): RX FIFO at least half full */
@@ -99,7 +103,9 @@ void     neorv32_slink_tx_clear(void);
 int      neorv32_slink_get_rx_fifo_depth(void);
 int      neorv32_slink_get_tx_fifo_depth(void);
 uint32_t neorv32_slink_get(void);
+uint32_t neorv32_slink_check_last(void);
 void     neorv32_slink_put(uint32_t tx_data);
+void     neorv32_slink_put_last(uint32_t tx_data);
 int      neorv32_slink_rx_status(void);
 int      neorv32_slink_tx_status(void);
 /**@}*/

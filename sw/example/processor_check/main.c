@@ -1616,8 +1616,8 @@ int main() {
     // configure RX data available interrupt
     neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_NEMPTY);
 
-    // send data word
-    neorv32_slink_put(0xAABBCCDD);
+    // send data word and mark as end-of-stream
+    neorv32_slink_put_last(0xAABBCCDD);
 
     // wait for interrupt
     asm volatile ("nop");
@@ -1626,8 +1626,9 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
     // check if IRQ
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == SLINK_TRAP_CODE) &&
-        (neorv32_slink_get() == 0xAABBCCDD)) {
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == SLINK_TRAP_CODE) && // correct trap code
+        (neorv32_slink_get() == 0xAABBCCDD) && // correct RX data
+        (neorv32_slink_check_last() != 0)) { // is marked as "end of stream"
       test_ok();
     }
     else {
