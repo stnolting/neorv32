@@ -30,6 +30,11 @@ A plain-VHDL (no third-party libraries) testbench (`sim/simple/neorv32_tb.simple
 testing the processor.
 This testbench features a 100MHz clock and enables all optional peripheral and CPU extensions except for the `E`.
 
+[IMPORTANT]
+In the simple testbench several optional extensions are disabled, such as C or E.
+If software is compiled using instructions corresponding to disabled extensions, the whole processor will hang in an eternal exception loop and, therefore, the simulation will timeout.
+The `MARCH` must be a subset of the extensions enabled in the testbench.
+
 .True Random Number Generator
 [NOTE]
 The NEORV32 TRNG will be set to "simulation mode" when enabled for simulation (replacing the ring-oscillators
