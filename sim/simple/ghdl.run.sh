@@ -41,6 +41,3 @@ if [ -n "$GHDL_DEVNULL" ]; then
 else
   $runcmd
 fi
-
-# verify results of processor check: sw/example/processor_check
-cat neorv32.uart0.sim_mode.text.out | grep "PROCESSOR TEST COMPLETED SUCCESSFULLY!"
