@@ -154,7 +154,7 @@ Blinking LED demo program
 
 To do a quick test of the NEORV32 make sure to have https://github.com/ghdl/ghdl[GHDL] and a
 https://github.com/stnolting/riscv-gcc-prebuilt[RISC-V gcc toolchain] installed.
-Navigate to the project's `sw/example/hello_world` folder and run `make USER_FLAGS+=-DUART0_SIM_MODE MARCH=rv32im clean_all sim`:
+Navigate to the project's `sw/example/hello_world` folder and run `make USER_FLAGS+=-DUART0_SIM_MODE clean_all sim`:
 
 [TIP]
 The simulator will output some _sanity check_ notes (and warnings or even errors if something is ill-configured)
@@ -162,7 +162,7 @@ right at the beginning of the simulation to give a brief overview of the actual 
 
 [source, bash]
 ----
-stnolting@Einstein:/mnt/n/Projects/neorv32/sw/example/hello_world$ make USER_FLAGS+=-DUART0_SIM_MODE MARCH=rv32im clean_all sim
+stnolting@Einstein:/mnt/n/Projects/neorv32/sw/example/hello_world$ make USER_FLAGS+=-DUART0_SIM_MODE clean_all sim
 ../../../sw/lib/source/neorv32_uart.c: In function 'neorv32_uart0_setup':
 ../../../sw/lib/source/neorv32_uart.c:301:4: warning: #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only! [-Wcpp]
   301 |   #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only! <1>
@@ -178,7 +178,7 @@ Using simulation runtime args: --stop-time=10ms <5>
 ../rtl/core/neorv32_top.vhd:347:3:@0ms:(assertion note): NEORV32 PROCESSOR IO Configuration: GPIO MTIME UART0 UART1 SPI TWI PWM WDT CFS NEOLED XIRQ <6>
 ../rtl/core/neorv32_top.vhd:370:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Boot configuration: Direct boot from memory (processor-internal IMEM).
 ../rtl/core/neorv32_top.vhd:394:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Implementing on-chip debugger (OCD).
-../rtl/core/neorv32_cpu.vhd:169:3:@0ms:(assertion note): NEORV32 CPU ISA Configuration (MARCH): RV32IMU_Zbb_Zicsr_Zifencei_Zfinx_Debug
+../rtl/core/neorv32_cpu.vhd:169:3:@0ms:(assertion note): NEORV32 CPU ISA Configuration (MARCH): RV32U_Zbb_Zicsr_Zifencei_Zfinx_Debug
 ../rtl/core/neorv32_imem.vhd:107:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal IMEM as ROM (16384 bytes), pre-initialized with application (4612 bytes).
 ../rtl/core/neorv32_dmem.vhd:89:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: Implementing processor-internal DMEM (RAM, 8192 bytes).
 ../rtl/core/neorv32_wishbone.vhd:136:3:@0ms:(assertion note): NEORV32 PROCESSOR CONFIG NOTE: External Bus Interface - Implementing STANDARD Wishbone protocol.
