@@ -39,6 +39,12 @@ jobs:
   Simple:
     runs-on: ubuntu-latest
     name: 'Simple testbench'
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - processor_check
+          - hello_world
 
     steps:
 
@@ -50,7 +56,7 @@ jobs:
       # Redirect UART0 TX to text.io simulation output via <UARTx_SIM_MODE> user flags
       with:
         args: >-
-          make -C sw/example/processor_check
+          make -C sw/example/${{ matrix.example }}
           clean_all
           USER_FLAGS+="-DUART0_SIM_MODE -DUART1_SIM_MODE -flto"
           EFFORT=-Os
