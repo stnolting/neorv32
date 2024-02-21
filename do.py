@@ -15,7 +15,7 @@ DOIT_CONFIG = {"verbosity": 2, "action_string_formatting": "both"}
 ROOT = Path(__file__).parent
 
 
-def task_BuildAndInstallSoftwareFrameworkTests():
+def task_SoftwareFrameworkTests():
     return {
         "actions": [
             # Check toolchain
@@ -24,11 +24,8 @@ def task_BuildAndInstallSoftwareFrameworkTests():
             "make -C sw/example clean_all exe",
             # Compile and install bootloader
             "make -C sw/bootloader clean_all info bootloader",
-            # Compile and install test application, redirect UART0 TX to text.io simulation output via <UARTx_SIM_MODE> user flags
-            "echo 'Compiling and installing CPU/Processor test application'",
-            "make -C sw/example/processor_check clean_all USER_FLAGS+=-DUART0_SIM_MODE USER_FLAGS+=-DUART1_SIM_MODE USER_FLAGS+=-flto EFFORT=-Os MARCH=rv32ima_zicsr_zifencei info all",
         ],
-        "doc": "Build all sw/example/*; install bootloader and processor check",
+        "doc": "Build all sw/example/*; install bootloader",
     }
 
 
