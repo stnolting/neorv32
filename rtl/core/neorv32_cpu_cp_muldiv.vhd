@@ -65,14 +65,14 @@ end neorv32_cpu_cp_muldiv;
 architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
 
   -- operations --
-  constant cp_op_mul_c    : std_ulogic_vector(2 downto 0) := "000"; -- mul
-  constant cp_op_mulh_c   : std_ulogic_vector(2 downto 0) := "001"; -- mulh
-  constant cp_op_mulhsu_c : std_ulogic_vector(2 downto 0) := "010"; -- mulhsu
-  constant cp_op_mulhu_c  : std_ulogic_vector(2 downto 0) := "011"; -- mulhu
-  constant cp_op_div_c    : std_ulogic_vector(2 downto 0) := "100"; -- div
-  constant cp_op_divu_c   : std_ulogic_vector(2 downto 0) := "101"; -- divu
-  constant cp_op_rem_c    : std_ulogic_vector(2 downto 0) := "110"; -- rem
-  constant cp_op_remu_c   : std_ulogic_vector(2 downto 0) := "111"; -- remu
+  constant op_mul_c    : std_ulogic_vector(2 downto 0) := "000"; -- mul
+  constant op_mulh_c   : std_ulogic_vector(2 downto 0) := "001"; -- mulh
+  constant op_mulhsu_c : std_ulogic_vector(2 downto 0) := "010"; -- mulhsu
+  constant op_mulhu_c  : std_ulogic_vector(2 downto 0) := "011"; -- mulhu
+  constant op_div_c    : std_ulogic_vector(2 downto 0) := "100"; -- div
+  constant op_divu_c   : std_ulogic_vector(2 downto 0) := "101"; -- divu
+  constant op_rem_c    : std_ulogic_vector(2 downto 0) := "110"; -- rem
+  constant op_remu_c   : std_ulogic_vector(2 downto 0) := "111"; -- remu
 
   -- controller --
   type state_t is (S_IDLE, S_BUSY, S_DONE);
@@ -114,7 +114,7 @@ begin
 
   -- Co-Processor Controller ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  coprocessor_ctrl: process(rstn_i, clk_i)
+  control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl.state   <= S_IDLE;
@@ -134,9 +134,9 @@ begin
           if (start_i = '1') then -- trigger new operation
             if (DIVISION_EN = true) then
               -- DIV: check relevant input signs for result sign compensation --
-              if (ctrl_i.ir_funct3(1 downto 0) = cp_op_div_c(1 downto 0)) then -- signed div operation
+              if (ctrl_i.ir_funct3(1 downto 0) = op_div_c(1 downto 0)) then -- signed div operation
                 div.sign_mod <= (rs1_i(rs1_i'left) xor rs2_i(rs2_i'left)) and or_reduce_f(rs2_i); -- different signs AND divisor not zero
-              elsif (ctrl_i.ir_funct3(1 downto 0) = cp_op_rem_c(1 downto 0)) then -- signed rem operation
+              elsif (ctrl_i.ir_funct3(1 downto 0) = op_rem_c(1 downto 0)) then -- signed rem operation
                 div.sign_mod <= rs1_i(rs1_i'left);
               else
                 div.sign_mod <= '0';
@@ -171,16 +171,16 @@ begin
 
       end case;
     end if;
-  end process coprocessor_ctrl;
+  end process control;
 
   -- done? assert one cycle before actual data output --
   valid_o <= '1' when (ctrl.state = S_DONE) else '0';
 
   -- input operands treated as signed? --
-  ctrl.rs1_is_signed <= '1' when (ctrl_i.ir_funct3 = cp_op_mulh_c) or (ctrl_i.ir_funct3 = cp_op_mulhsu_c) or
-                                 (ctrl_i.ir_funct3 = cp_op_div_c)  or (ctrl_i.ir_funct3 = cp_op_rem_c) else '0';
-  ctrl.rs2_is_signed <= '1' when (ctrl_i.ir_funct3 = cp_op_mulh_c) or
-                                 (ctrl_i.ir_funct3 = cp_op_div_c)  or (ctrl_i.ir_funct3 = cp_op_rem_c) else '0';
+  ctrl.rs1_is_signed <= '1' when (ctrl_i.ir_funct3 = op_mulh_c) or (ctrl_i.ir_funct3 = op_mulhsu_c) or
+                                 (ctrl_i.ir_funct3 = op_div_c)  or (ctrl_i.ir_funct3 = op_rem_c) else '0';
+  ctrl.rs2_is_signed <= '1' when (ctrl_i.ir_funct3 = op_mulh_c) or
+                                 (ctrl_i.ir_funct3 = op_div_c)  or (ctrl_i.ir_funct3 = op_rem_c) else '0';
 
   -- start operation (do it fast!) --
   mul.start <= '1' when (start_i = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
@@ -304,7 +304,7 @@ begin
     div.sub <= std_ulogic_vector(unsigned('0' & div.remainder(30 downto 0) & div.quotient(31)) - unsigned('0' & ctrl.rs2_abs));
 
     -- result and sign compensation --
-    div.res_u <= div.quotient when (ctrl_i.ir_funct3 = cp_op_div_c) or (ctrl_i.ir_funct3 = cp_op_divu_c) else div.remainder;
+    div.res_u <= div.quotient when (ctrl_i.ir_funct3 = op_div_c) or (ctrl_i.ir_funct3 = op_divu_c) else div.remainder;
     div.res   <= std_ulogic_vector(0 - unsigned(div.res_u)) when (div.sign_mod = '1') else div.res_u;
 
   end generate; -- /divider_core_serial
@@ -327,11 +327,11 @@ begin
     res_o <= (others => '0'); -- default
     if (ctrl.out_en = '1') then
       case ctrl_i.ir_funct3 is
-        when cp_op_mul_c =>
+        when op_mul_c =>
           res_o <= mul.prod(31 downto 00);
-        when cp_op_mulh_c | cp_op_mulhsu_c | cp_op_mulhu_c =>
+        when op_mulh_c | op_mulhsu_c | op_mulhu_c =>
           res_o <= mul.prod(63 downto 32);
-        when others => -- cp_op_div_c | cp_op_rem_c | cp_op_divu_c | cp_op_remu_c
+        when others => -- op_div_c | op_rem_c | op_divu_c | op_remu_c
           res_o <= div.res;
       end case;
     end if;
