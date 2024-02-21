@@ -432,10 +432,7 @@ However, any write-access will be ignored and will not cause an exception to mai
 | Address     | `0x344`
 | Reset value | `0x00000000`
 | ISA         | `Zicsr`
-| Description | The `mip` CSR shows currently _pending_ machine-mode interrupt requests. The bits for the standard RISC-V
-machine-mode interrupts (`MEIP`, `MTIP`, `MSIP`) are read-only. Hence, these interrupts cannot be
-cleared/set using the `mip` register. These interrupts are cleared/acknowledged by mechanism that are
-specific for the interrupt-causing modules. the according interrupt-generating device.
+| Description | The `mip` CSR shows currently _pending_ machine-mode interrupt requests.
 |=======================
 
 .`mip` CSR bits
@@ -446,13 +443,16 @@ specific for the interrupt-causing modules. the according interrupt-generating d
 | 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending; _cleared by platform-defined mechanism_
 | 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending; _cleared by platform-defined mechanism_
 | 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending; _cleared by platform-defined mechanism_
-| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/c | **FIRQxP**: Fast interrupt channel 15..0 pending; has to be cleared manually by writing zero
+| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/w | **FIRQxP**: Fast interrupt channel 15..0 pending; has to be cleared manually by writing zero
 |=======================
 
 .FIRQ Channel Mapping
 [TIP]
 See section <<_neorv32_specific_fast_interrupt_requests>> for the mapping of the FIRQ channels and the according
 interrupt-triggering processor module.
+
+[NOTE]
+The FIRQ channels can be triggered manually by software by writing `1` to the according `mip` bit.
 
 
 {empty} +
