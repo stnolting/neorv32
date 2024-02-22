@@ -255,7 +255,7 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
   signal s0_axis_tready_int : std_ulogic;
   signal s1_axis_tdata_int  : std_ulogic_vector(31 downto 0);
   signal s1_axis_tvalid_int : std_ulogic;
-  signal s1_axis_tlast_int : std_ulogic;
+  signal s1_axis_tlast_int  : std_ulogic;
   signal s1_axis_tready_int : std_ulogic;
   --
   signal jtag_trst_i_int    : std_ulogic;
@@ -517,7 +517,7 @@ begin
   s0_axis_tready_int <= std_ulogic(s0_axis_tready);
   s1_axis_tdata_int  <= std_ulogic_vector(s1_axis_tdata);
   s1_axis_tvalid_int <= std_ulogic(s1_axis_tvalid);
-  s1_axis_tvalid_int <= std_ulogic(s1_axis_tlast);
+  s1_axis_tlast_int  <= std_ulogic(s1_axis_tlast);
   s1_axis_tready     <= std_logic(s1_axis_tready_int);
 
   xip_csn_o          <= std_logic(xip_csn_o_int);
