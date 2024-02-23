@@ -217,7 +217,8 @@ begin
     FIFO_DEPTH => SLINK_RX_FIFO,
     FIFO_WIDTH => 32+1, -- data + last-flag
     FIFO_RSYNC => true, -- sync read
-    FIFO_SAFE  => true  -- safe access
+    FIFO_SAFE  => true, -- safe access
+    FULL_RESET => false -- no HW reset, try to infer BRAM
   )
   port map (
     -- control --
@@ -265,7 +266,8 @@ begin
     FIFO_DEPTH => SLINK_TX_FIFO,
     FIFO_WIDTH => 32+1, -- data + last-flag
     FIFO_RSYNC => true, -- sync read
-    FIFO_SAFE  => true  -- safe access
+    FIFO_SAFE  => true, -- safe access
+    FULL_RESET => false -- no HW reset, try to infer BRAM
   )
   port map (
     -- control --
