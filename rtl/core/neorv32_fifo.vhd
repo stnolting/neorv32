@@ -76,6 +76,10 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
   -- FIFO control --
   signal we,    re    : std_ulogic; -- write-/read-enable
   signal w_pnt, r_pnt : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0); -- write/read pointer
+  signal w_nxt, r_nxt : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0);
+
+  -- read access pointer register for async. read --
+  signal r_pnt_ff : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0);
 
   -- status --
   signal match, empty, full, half, free, avail : std_ulogic;
@@ -99,20 +103,18 @@ begin
       w_pnt <= (others => '0');
       r_pnt <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- write port --
-      if (clear_i = '1') then
-        w_pnt <= (others => '0');
-      elsif (we = '1') then
-        w_pnt <= std_ulogic_vector(unsigned(w_pnt) + 1);
-      end if;
-      -- read port --
-      if (clear_i = '1') then
-        r_pnt <= (others => '0');
-      elsif (re = '1') then
-        r_pnt <= std_ulogic_vector(unsigned(r_pnt) + 1);
-      end if;
+      w_pnt <= w_nxt;
+      r_pnt <= r_nxt;
     end if;
   end process pointer_update;
+
+  -- async pointer update --
+  w_nxt <= (others => '0') when (clear_i = '1') else std_ulogic_vector(unsigned(w_pnt) + 1) when (we = '1') else w_pnt;
+  r_nxt <= (others => '0') when (clear_i = '1') else std_ulogic_vector(unsigned(r_pnt) + 1) when (re = '1') else r_pnt;
+
+
+  -- Status ---------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
 
   -- more than 1 FIFO entries --
   check_large:
@@ -137,68 +139,137 @@ begin
   avail <= not empty;
 
 
-  -- Write Access ---------------------------------------------------------------------------
+  -- Write Access (with Reset) --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  memory_full_reset: -- cannot be mapped to block RAM!
+  memory_full_reset: -- cannot be mapped to memory primitives
   if FULL_RESET generate
-    fifo_write_rst: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        fifo_mem <= (others => (others => '0'));
-        fifo_reg <= (others => '0');
-      elsif rising_edge(clk_i) then
-        if (we = '1') then
-          if (fifo_depth_c > 1) then
-            fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
-          else
+
+    -- just 1 FIFO entry --
+    fifo_write_reset_small:
+    if (fifo_depth_c = 1) generate
+      write_reset_small: process(rstn_i, clk_i)
+      begin
+        if (rstn_i = '0') then
+          fifo_reg <= (others => '0');
+        elsif rising_edge(clk_i) then
+          if (we = '1') then
             fifo_reg <= wdata_i;
           end if;
         end if;
-      end if;
-    end process fifo_write_rst;
-  end generate;
+      end process write_reset_small;
+    end generate;
 
-  memory_no_reset: -- no reset to infer block RAM
-  if not FULL_RESET generate
-    fifo_write: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        if (we = '1') then
-          if (fifo_depth_c > 1) then
+    -- more than 1 FIFO entries --
+    fifo_write_reset_large:
+    if (fifo_depth_c > 1) generate
+      write_reset_large: process(rstn_i, clk_i)
+      begin
+        if (rstn_i = '0') then
+          fifo_mem <= (others => (others => '0'));
+        elsif rising_edge(clk_i) then
+          if (we = '1') then
             fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
-          else
-            fifo_reg <= wdata_i;
           end if;
         end if;
-      end if;
-    end process fifo_write;
+      end process write_reset_large;
+    end generate;
+
   end generate;
 
 
-  -- Read Access ----------------------------------------------------------------------------
+  -- Write Access (without Reset) -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fifo_read_async: -- asynchronous read
+  memory_no_reset: -- no reset to infer memory primitives
+  if not FULL_RESET generate
+
+    -- just 1 FIFO entry --
+    fifo_write_noreset_small:
+    if (fifo_depth_c = 1) generate
+      write_small: process(clk_i)
+      begin
+        if rising_edge(clk_i) then
+          if (we = '1') then
+            fifo_reg <= wdata_i;
+          end if;
+        end if;
+      end process write_small;
+    end generate;
+
+    -- more than 1 FIFO entries --
+    fifo_write_noreset_large:
+    if (fifo_depth_c > 1) generate
+      write_large: process(clk_i)
+      begin
+        if rising_edge(clk_i) then
+          if (we = '1') then
+            fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
+          end if;
+        end if;
+      end process write_large;
+    end generate;
+
+  end generate;
+
+
+  -- Asynchronous Read Access ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  fifo_read_async:
   if not FIFO_RSYNC generate
-    rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0)))) when (fifo_depth_c > 1) else fifo_reg;
+
+    -- just 1 FIFO entry --
+    fifo_read_async_small:
+    if (fifo_depth_c = 1) generate
+      rdata_o <= fifo_reg;
+    end generate;
+
+    -- more than 1 FIFO entries --
+    fifo_read_async_large:
+    if (fifo_depth_c > 1) generate
+      async_r_pnt_reg: process(clk_i)
+      begin
+        if rising_edge(clk_i) then
+          r_pnt_ff <= r_nxt; -- individual read address register; allows mapping "async" FIFOs to memory primitives
+        end if;
+      end process async_r_pnt_reg;
+      rdata_o <= fifo_mem(to_integer(unsigned(r_pnt_ff(r_pnt_ff'left-1 downto 0))));
+    end generate;
+
     -- status --
     free_o  <= free;
     avail_o <= avail;
     half_o  <= half;
+
   end generate;
 
-  fifo_read_sync: -- synchronous read
+
+  -- Synchronous Read Access ----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  fifo_read_sync:
   if FIFO_RSYNC generate
-    sync_read: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        if (fifo_depth_c > 1) then
-          rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0))));
-        else
+
+    -- just 1 FIFO entry --
+    fifo_read_sync_small:
+    if (fifo_depth_c = 1) generate
+      sync_read_small: process(clk_i)
+      begin
+        if rising_edge(clk_i) then
           rdata_o <= fifo_reg;
         end if;
-      end if;
-    end process sync_read;
-    -- status --
+      end process sync_read_small;
+    end generate;
+
+    -- more than 1 FIFO entries --
+    fifo_read_sync_large:
+    if (fifo_depth_c > 1) generate
+      sync_read_large: process(clk_i)
+      begin
+        if rising_edge(clk_i) then
+          rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0))));
+        end if;
+      end process sync_read_large;
+    end generate;
+
+    -- registered status --
     sync_status: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
@@ -211,6 +282,7 @@ begin
         half_o  <= half;
       end if;
     end process sync_status;
+
   end generate;
 
 
