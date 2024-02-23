@@ -730,7 +730,7 @@ if it uses the trigger module for implementing a "hardware breakpoint"
 | 25    | `hit1`        | r/- | `0` - hardwired to zero, only `hit0` is used
 | 24    | `vs`          | r/- | `0` - VS-mode not supported
 | 23    | `vu`          | r/- | `0` - VU-mode not supported
-| 22    | `hit0`        | r/c | set when trigger has fired (**BEFORE** executing the triggering address); must be explicitly cleared by writing zero
+| 22    | `hit0`        | r/c | set when trigger has fired (**BEFORE** executing the triggering address); must be explicitly cleared by writing zero; writing 1 has no effect
 | 21    | `select`      | r/- | `0` - only address matching is supported
 | 20:19 | reserved      | r/- | `00` - hardwired to zero
 | 18:16 | `size`        | r/- | `000` -  match accesses of any size
