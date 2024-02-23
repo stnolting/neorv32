@@ -215,10 +215,10 @@ begin
   rx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => SLINK_RX_FIFO,
-    FIFO_WIDTH => 32+1, -- data + last-flag
-    FIFO_RSYNC => true, -- sync read
-    FIFO_SAFE  => true, -- safe access
-    FULL_RESET => false -- no HW reset, try to infer BRAM
+    FIFO_WIDTH => 32+1,  -- data + last-flag
+    FIFO_RSYNC => false, -- "async" read - update FIFO status RIGHT after write access (for slink_rx_ready_o)
+    FIFO_SAFE  => true,  -- safe access
+    FULL_RESET => false  -- no HW reset, try to infer BRAM
   )
   port map (
     -- control --
@@ -264,10 +264,10 @@ begin
   tx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => SLINK_TX_FIFO,
-    FIFO_WIDTH => 32+1, -- data + last-flag
-    FIFO_RSYNC => true, -- sync read
-    FIFO_SAFE  => true, -- safe access
-    FULL_RESET => false -- no HW reset, try to infer BRAM
+    FIFO_WIDTH => 32+1,  -- data + last-flag
+    FIFO_RSYNC => false, -- "async" read - update FIFO status RIGHT after read access (for slink_tx_valid_o)
+    FIFO_SAFE  => true,  -- safe access
+    FULL_RESET => false  -- no HW reset, try to infer BRAM
   )
   port map (
     -- control --
