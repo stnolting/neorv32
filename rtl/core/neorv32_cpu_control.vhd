@@ -433,7 +433,8 @@ begin
       FIFO_DEPTH => 2,                   -- number of fifo entries; has to be a power of two, min 2
       FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in fifo
       FIFO_RSYNC => false,               -- we NEED to read data asynchronously
-      FIFO_SAFE  => false                -- no safe access required (ensured by FIFO-external logic)
+      FIFO_SAFE  => false,               -- no safe access required (ensured by FIFO-external logic)
+      FULL_RESET => false                -- no HW reset, try to infer BRAM
     )
     port map (
       -- control --

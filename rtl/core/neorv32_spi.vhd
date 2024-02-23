@@ -234,7 +234,8 @@ begin
     FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,           -- size of data elements in fifo
     FIFO_RSYNC => true,        -- sync read
-    FIFO_SAFE  => true         -- safe access
+    FIFO_SAFE  => true,        -- safe access
+    FULL_RESET => false        -- no HW reset, try to infer BRAM
   )
   port map (
     -- control --
@@ -264,7 +265,8 @@ begin
     FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,           -- size of data elements in fifo
     FIFO_RSYNC => true,        -- sync read
-    FIFO_SAFE  => true         -- safe access
+    FIFO_SAFE  => true,        -- safe access
+    FULL_RESET => false        -- no HW reset, try to infer BRAM
   )
   port map (
     -- control --

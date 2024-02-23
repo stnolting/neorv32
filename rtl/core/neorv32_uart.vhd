@@ -267,7 +267,8 @@ begin
     FIFO_DEPTH => UART_TX_FIFO,
     FIFO_WIDTH => 8,
     FIFO_RSYNC => true,
-    FIFO_SAFE  => true
+    FIFO_SAFE  => true,
+    FULL_RESET => false
   )
   port map (
     -- control --
@@ -308,7 +309,8 @@ begin
     FIFO_DEPTH => UART_RX_FIFO,
     FIFO_WIDTH => 8,
     FIFO_RSYNC => true,
-    FIFO_SAFE  => true
+    FIFO_SAFE  => true,
+    FULL_RESET => false
   )
   port map (
     clk_i   => clk_i,

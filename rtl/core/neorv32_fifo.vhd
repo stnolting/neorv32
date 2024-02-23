@@ -70,7 +70,8 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
 
   -- FIFO storage --
   type fifo_mem_t is array (0 to fifo_depth_c-1) of std_ulogic_vector(FIFO_WIDTH-1 downto 0);
-  signal fifo_mem : fifo_mem_t;
+  signal fifo_mem : fifo_mem_t; -- for fifo_depth_c > 1
+  signal fifo_reg : std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- for fifo_depth_c = 1
 
   -- FIFO control --
   signal we,    re    : std_ulogic; -- write-/read-enable
@@ -113,6 +114,7 @@ begin
     end if;
   end process pointer_update;
 
+  -- more than 1 FIFO entries --
   check_large:
   if (fifo_depth_c > 1) generate
     match <= '1' when (r_pnt(r_pnt'left-1 downto 0) = w_pnt(w_pnt'left-1 downto 0)) else '0';
@@ -122,6 +124,7 @@ begin
     half  <= diff(diff'left-1) or full;
   end generate;
 
+  -- just 1 FIFO entry --
   check_small:
   if (fifo_depth_c = 1) generate
     match <= '1' when (r_pnt(0) = w_pnt(0)) else '0';
@@ -138,20 +141,21 @@ begin
   -- -------------------------------------------------------------------------------------------
   memory_full_reset: -- cannot be mapped to block RAM!
   if FULL_RESET generate
-    fifo_write: process(rstn_i, clk_i)
+    fifo_write_rst: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        fifo_mem <= (others => (others => '0')); -- full reset of memory cells
+        fifo_mem <= (others => (others => '0'));
+        fifo_reg <= (others => '0');
       elsif rising_edge(clk_i) then
         if (we = '1') then
-          if (fifo_depth_c > 1) then -- prevent a NULL assertion for fifo_depth_c of 1
+          if (fifo_depth_c > 1) then
             fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
           else
-            fifo_mem(0) <= wdata_i;
+            fifo_reg <= wdata_i;
           end if;
         end if;
       end if;
-    end process fifo_write;
+    end process fifo_write_rst;
   end generate;
 
   memory_no_reset: -- no reset to infer block RAM
@@ -160,10 +164,10 @@ begin
     begin
       if rising_edge(clk_i) then
         if (we = '1') then
-          if (fifo_depth_c > 1) then-- prevent a NULL assertion for fifo_depth_c of 1
+          if (fifo_depth_c > 1) then
             fifo_mem(to_integer(unsigned(w_pnt(w_pnt'left-1 downto 0)))) <= wdata_i;
           else
-            fifo_mem(0) <= wdata_i;
+            fifo_reg <= wdata_i;
           end if;
         end if;
       end if;
@@ -175,8 +179,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   fifo_read_async: -- asynchronous read
   if not FIFO_RSYNC generate
-    -- prevent a NULL assertion for fifo_depth_c of 1 --
-    rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0)))) when (fifo_depth_c > 1) else fifo_mem(0);
+    rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0)))) when (fifo_depth_c > 1) else fifo_reg;
     -- status --
     free_o  <= free;
     avail_o <= avail;
@@ -188,15 +191,15 @@ begin
     sync_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        if (fifo_depth_c > 1) then -- prevent a NULL assertion for fifo_depth_c of 1
+        if (fifo_depth_c > 1) then
           rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0))));
         else
-          rdata_o <= fifo_mem(0);
+          rdata_o <= fifo_reg;
         end if;
       end if;
     end process sync_read;
     -- status --
-    sync_status_flags: process(rstn_i, clk_i)
+    sync_status: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
         free_o  <= '0';
@@ -207,7 +210,7 @@ begin
         avail_o <= avail;
         half_o  <= half;
       end if;
-    end process sync_status_flags;
+    end process sync_status;
   end generate;
 
 
