@@ -892,6 +892,9 @@ As a custom extension, the NEORV32 CPU features 16 fast interrupt request (FIRQ)
 entity signals. These interrupts have custom configuration and status flags in the <<_mie>> and <<_mip>> CSRs and also
 provide custom trap codes in <<_mcause>>. These FIRQs are reserved for NEORV32 processor-internal usage only.
 
+Once triggered, the according FIRQ bits in <<_mip>> has to be cleared _manually_ by the FIRQ interrupt handler
+to clear/acknowledge the fast interrupt request.
+
 
 :sectnums:
 ===== NEORV32 Trap Listing
