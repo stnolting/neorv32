@@ -12,9 +12,9 @@ That is used for running the RISC-V architecture tests, in order to guarantee co
 On the other hand, http://vunit.github.io/[VUnit] and http://vunit.github.io/verification_components/user_guide.html[Verification Components]
 are used for verifying the functionality of the various peripherals from a hardware point of view.
 
-.Xilinx Vivado / ISIM
+.AMD Vivado / ISIM
 [IMPORTANT]
-When using Xilinx Vivado (ISIM for simulation) make sure to **turn of** "incremental compilation" (_Project Setting_
+When using AMD Vivado (ISIM for simulation) make sure to **turn of** "incremental compilation" (_Project Setting_
 -> _Simulation_ -> _Advanced_ -> _Enable incremental compilation). This will slow down simulation relaunch but will
 ensure that all application images (`*_image.vhd`) are reanalyzed when recompiling the NEORV32 application or bootloader
 

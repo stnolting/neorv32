@@ -618,7 +618,7 @@ begin
   -- AXI4-Lite Read Address Channel --
   m_axi_araddr  <= std_logic_vector(wb_core.adr);
   m_axi_arvalid <= std_logic((wb_core.cyc and (not wb_core.we)) and (not ctrl.radr_received));
---m_axi_arprot  <= "000"; -- recommended by Xilinx
+--m_axi_arprot  <= "000"; -- recommended by AMD
   m_axi_arprot(0) <= wb_core.tag(0); -- 0:unprivileged access, 1:privileged access
   m_axi_arprot(1) <= wb_core.tag(1); -- 0:secure access, 1:non-secure access
   m_axi_arprot(2) <= wb_core.tag(2); -- 0:data access, 1:instruction access
@@ -632,7 +632,7 @@ begin
   -- AXI4-Lite Write Address Channel --
   m_axi_awaddr  <= std_logic_vector(wb_core.adr);
   m_axi_awvalid <= std_logic((wb_core.cyc and wb_core.we) and (not ctrl.wadr_received));
---m_axi_awprot  <= "000"; -- recommended by Xilinx
+--m_axi_awprot  <= "000"; -- recommended by AMD
   m_axi_awprot(0) <= wb_core.tag(0); -- 0:unprivileged access, 1:privileged access
   m_axi_awprot(1) <= wb_core.tag(1); -- 0:secure access, 1:non-secure access
   m_axi_awprot(2) <= wb_core.tag(2); -- 0:data access, 1:instruction access

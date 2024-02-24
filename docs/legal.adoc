@@ -46,7 +46,7 @@ stnolting@gmail.com
 === Proprietary Notice
 
 * "GitHub" is a Subsidiary of Microsoft Corporation.
-* "Vivado" and "Artix" are trademarks of Xilinx Inc.
+* "Vivado" and "Artix" are trademarks of AMD Inc.
 * "AXI", "AXI4-Lite" and "AXI4-Stream" are trademarks of Arm Holdings plc.
 * "ModelSim" is a trademark of Mentor Graphics – A Siemens Business.
 * "Quartus Prime" and "Cyclone" are trademarks of Intel Corporation.
