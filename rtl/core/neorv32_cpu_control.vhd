@@ -241,9 +241,11 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type csr_t is record
     addr           : std_ulogic_vector(11 downto 0); -- csr address
     raddr          : std_ulogic_vector(11 downto 0); -- simplified csr read address
+    cmd            : std_ulogic_vector(2 downto 0); -- CSR access command
     we, we_nxt     : std_ulogic; -- csr write enable
     re, re_nxt     : std_ulogic; -- csr read enable
     wdata, rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr write/read data
+    wmask          : std_ulogic_vector(XLEN-1 downto 0); -- csr write data (mask)
     --
     mstatus_mie    : std_ulogic; -- machine-mode IRQ enable
     mstatus_mpie   : std_ulogic; -- previous machine-mode IRQ enable
@@ -255,7 +257,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mie_mei        : std_ulogic; -- machine external interrupt enable
     mie_mti        : std_ulogic; -- machine timer interrupt enable
     mie_firq       : std_ulogic_vector(15 downto 0); -- fast interrupt enable
-    mip_firq_wdata : std_ulogic_vector(15 downto 0); -- fast interrupt pending write data
     mip_firq_we    : std_ulogic; -- fast interrupt pending write enable
     --
     privilege      : std_ulogic; -- current privilege mode
@@ -279,7 +280,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     dpc            : std_ulogic_vector(XLEN-1 downto 0); -- mode program counter
     dscratch0      : std_ulogic_vector(XLEN-1 downto 0); -- debug mode scratch register 0
     --
-    tdata1_hit_clr : std_ulogic; -- set to manually clear mcontrol6.hit0
+    tdata1_hit_we  : std_ulogic; -- mcontrol6.hit0 write access
     tdata1_execute : std_ulogic; -- enable instruction address match trigger
     tdata1_action  : std_ulogic; -- enter debug mode / ebreak exception when trigger fires
     tdata1_dmode   : std_ulogic; -- set to ignore tdata* CSR access from machine-mode
@@ -1453,10 +1454,10 @@ begin
 
       -- NEORV32-specific fast interrupts --
       for i in 0 to 15 loop
-        if (csr.mip_firq_we = '1') then -- write access to MIP(.FIRQ) CSR
-          trap_ctrl.irq_pnd(irq_firq_0_c+i) <= firq_i(i) or csr.mip_firq_wdata(i); -- keep buffering incoming FIRQs
-        else
-          trap_ctrl.irq_pnd(irq_firq_0_c+i) <= firq_i(i) or trap_ctrl.irq_pnd(irq_firq_0_c+i); -- keep pending FIRQs alive
+        if (firq_i(i) = '1') then -- new incoming FIRQs have priority
+          trap_ctrl.irq_pnd(irq_firq_0_c+i) <= '1';
+        elsif (csr.mip_firq_we = '1') and (csr.wmask(16+i) = '0') then -- clear-only
+          trap_ctrl.irq_pnd(irq_firq_0_c+i) <= '0';
         end if;
       end loop;
 
@@ -1592,23 +1593,32 @@ begin
 
   -- CSR Write Data -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_write_data: process(execute_engine.ir, csr.rdata, rs1_i)
-    variable tmp_v : std_ulogic_vector(XLEN-1 downto 0);
+  csr.cmd <= execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c); -- access type
+
+  -- compute the write-data update mask --
+  csr_write_mask: process(csr.cmd, execute_engine.ir, rs1_i)
+    variable src_v : std_ulogic_vector(XLEN-1 downto 0);
   begin
-    -- immediate/register operand --
-    if (execute_engine.ir(instr_funct3_msb_c) = '1') then
-      tmp_v := (others => '0');
-      tmp_v(4 downto 0) := execute_engine.ir(19 downto 15); -- uimm5
-    else
-      tmp_v := rs1_i;
+    -- CSR operand --
+    if (csr.cmd(2) = '1') then -- immediate source
+      src_v := (others => '0');
+      src_v(4 downto 0) := execute_engine.ir(19 downto 15); -- uimm5
+    else -- register source
+      src_v := rs1_i;
     end if;
-    -- tiny ALU to compute CSR write data --
-    case execute_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) is
-      when "10"   => csr.wdata <= csr.rdata or tmp_v; -- set
-      when "11"   => csr.wdata <= csr.rdata and (not tmp_v); -- clear
-      when others => csr.wdata <= tmp_v; -- write
-    end case;
-  end process csr_write_data;
+    -- actual write mask --
+    if (csr.cmd(1 downto 0) = "11") then -- csrrc[i]: clear
+      csr.wmask <= not src_v;
+    else
+      csr.wmask <= src_v;
+    end if;
+  end process csr_write_mask;
+
+  -- tiny ALU to compute CSR write data --
+  with csr.cmd(1 downto 0) select csr.wdata <=
+    csr.rdata or  csr.wmask when "10",   -- csrrs[i]: set
+    csr.rdata and csr.wmask when "11",   -- csrrc[i]: clear
+                  csr.wmask when others; -- csrrw[i]: write
 
 
   -- External CSR Interface -----------------------------------------------------------------
@@ -1643,8 +1653,6 @@ begin
       csr.mtinst         <= (others => '0');
       csr.mcounteren     <= '0';
       csr.mcountinhibit  <= (others => '0');
-      csr.mip_firq_wdata <= (others => '0');
-      csr.mip_firq_we    <= '0';
       csr.dcsr_ebreakm   <= '0';
       csr.dcsr_ebreaku   <= '0';
       csr.dcsr_step      <= '0';
@@ -1652,17 +1660,14 @@ begin
       csr.dcsr_cause     <= (others => '0');
       csr.dpc            <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
       csr.dscratch0      <= (others => '0');
-      csr.tdata1_hit_clr <= '0';
       csr.tdata1_execute <= '0';
       csr.tdata1_action  <= '0';
       csr.tdata1_dmode   <= '0';
       csr.tdata2         <= (others => '0');
     elsif rising_edge(clk_i) then
 
-      -- defaults --
-      csr.we             <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_illegal_c)); -- write if not an illegal instruction
-      csr.mip_firq_we    <= '0'; -- no write to MIP.FIRQ by default
-      csr.tdata1_hit_clr <= '0';
+      -- write if not an illegal instruction --
+      csr.we <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_illegal_c));
 
       -- ********************************************************************************
       -- CSR access by application software
@@ -1721,9 +1726,8 @@ begin
           when csr_mcause_c => -- machine trap cause
             csr.mcause <= csr.wdata(31) & csr.wdata(4 downto 0); -- type (exception/interrupt) & identifier
 
-          when csr_mip_c => -- machine interrupt pending
-            csr.mip_firq_wdata <= csr.wdata(31 downto 16);
-            csr.mip_firq_we    <= '1'; -- trigger MIP.FIRQ write
+--        when csr_mip_c => -- machine interrupt pending
+            -- only the FIRQs are writable (clear-only); the actual mip.firq write logic is in <interrupt_buffer>
 
           -- --------------------------------------------------------------------
           -- machine counter setup --
@@ -1771,7 +1775,6 @@ begin
               if (csr.tdata1_dmode = '0') or (debug_ctrl.running = '1') then -- write access from debug-mode only?
                 csr.tdata1_execute <= csr.wdata(2);
                 csr.tdata1_action  <= csr.wdata(12);
-                csr.tdata1_hit_clr <= not csr.wdata(22);
               end if;
               if (debug_ctrl.running = '1') then -- writable from debug-mode only
                 csr.tdata1_dmode <= csr.wdata(27);
@@ -1916,6 +1919,10 @@ begin
 
     end if;
   end process csr_write_access;
+
+  -- out-of-process CSR write access --
+  csr.mip_firq_we   <= '1' when (csr.we = '1') and (csr.cmd(0) = '1') and (csr.addr = csr_mip_c)    else '0'; -- mip.firq: write/clear only
+  csr.tdata1_hit_we <= '1' when (csr.we = '1') and (csr.cmd(0) = '1') and (csr.addr = csr_tdata1_c) else '0'; -- tdata1.hit: write/clear only
 
   -- effective privilege mode is MACHINE when in debug mode --
   csr.privilege_eff <= priv_mode_m_c when (debug_ctrl.running = '1') else csr.privilege;
@@ -2413,7 +2420,7 @@ begin
       elsif rising_edge(clk_i) then
         if (hw_trigger_match = '1') and (trap_ctrl.exc_buf(exc_ebreak_c) = '1') then -- trigger has fired and breakpoint exception is pending
           hw_trigger_fired <= '1';
-        elsif (csr.tdata1_hit_clr = '1') then
+        elsif (csr.tdata1_hit_we = '1') and (csr.wmask(22) = '0') then -- clear-only
           hw_trigger_fired <= '0';
         end if;
       end if;
