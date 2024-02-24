@@ -30,6 +30,15 @@ footnote:[Seems like Vivado has problem evaluating design source files that have
 If the TRNG is not needed, you can disable it by double-clicking on the module's block and de-selecting
 "IO_TRNG_EN" after inserting the module.
 
+.SLINK AXI4-Stream Interfaces
+[IMPORTANT]
+The SLINK peripheral's input and output streams are exposed as AXI4-Stream compatible interfaces in the
+`rtl/system_integration/neorv32_top_axi4lite.vhd` top-level module. These interfaces provide clock inputs for
+each of the streams, so that they can be connected to an appropriate clock source to satisfy Vivado's
+validation for compatible clocks on each end of the stream connection. However, these clock inputs are not presently
+used internally to the core, and using streams clocked on a clock domain other than that connected to m_axi_aclk is NOT
+presently supported - doing this will result in timing failures or improper operation.
+
 **Combinatorial Loops DRC error**
 If the TRNG is enabled it is recommended to add the following commands to the project's constraints file in order
 to prevent DRC errors during bitstream generation:

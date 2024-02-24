@@ -171,11 +171,13 @@ entity neorv32_SystemTop_axi4lite is
     s0_axis_tvalid : out std_logic;
     s0_axis_tlast  : out std_logic;
     s0_axis_tready : in  std_logic;
+    s0_axis_aclk   : in  std_logic; -- present to satisfy Vivado, not used!
     -- Sink --
     s1_axis_tdata  : in  std_logic_vector(31 downto 0);
     s1_axis_tvalid : in  std_logic;
     s1_axis_tlast  : in  std_logic;
     s1_axis_tready : out std_logic;
+    s1_axis_aclk   : in  std_logic; -- present to satisfy Vivado, not used!
     -- ------------------------------------------------------------
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
     -- ------------------------------------------------------------
