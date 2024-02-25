@@ -545,7 +545,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
     // trigger two FIRQs
-    neorv32_gptmr_setup(CLK_PRSC_2, 1, -1); // fire GPTMR FIRQ
+    neorv32_gptmr_setup(CLK_PRSC_2, 0, -1); // fire GPTMR FIRQ
     neorv32_spi_setup(CLK_PRSC_2, 0, 0, 0, -1); // fire SPI FIRQ
     neorv32_gptmr_disable();
     neorv32_spi_disable();

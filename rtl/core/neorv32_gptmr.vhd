@@ -207,7 +207,7 @@ begin
   end process counter_core;
 
   -- counter = threshold? --
-  timer.match <= '1' when (timer.count = timer.thres) else '0';
+  timer.match <= '1' when (timer.count = timer.thres) and (ctrl(ctrl_en_c) = '1') else '0';
 
   -- match edge detector --
   timer.trigger <= '1' when (timer.match_ff = '0') and (timer.match = '1') else '0';
