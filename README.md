@@ -67,7 +67,7 @@ not working as expected. See how to [contribute](https://github.com/stnolting/ne
 ### Project Status
 
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
-![commits-since-latest-release](https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat-square&logo=GitHub)
+[![commits-since-latest-release](https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/activity)
 
 | Task / Subproject | Repository | CI Status |
 |:------------------|:-----------|:----------|

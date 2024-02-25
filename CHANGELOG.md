@@ -1,17 +1,17 @@
 ## Project Change Log
 
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
-![commits-since-latest-release](https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat-square&logo=GitHub)
+[![commits-since-latest-release](https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/activity)
 
 This project uses [semantic versioning](https://semver.org).
 The **version identifier** uses an additional custom element (`MAJOR.MINOR.PATCH.custom`)
 to track individual changes. The identifier is incremented by every core hardware modification
-and also by major software/project changes.
+and also by major software and/or general project changes.
 
 The version identifier is globally defined by the `hw_version_c` constant in the main VHDL
 [package file](https://github.com/stnolting/neorv32/blob/main/rtl/core/neorv32_package.vhd).
-Software can determine this version by reading the RISC-V-compatible `mimpid` CSR, which uses
-a 8x4-bit BCD (binary-coded decimal) representation. Example:
+Software can determine the version by reading the RISC-V-compatible `mimpid` CSR, which uses
+a 8x4-bit BCD (binary-coded decimal) format to represent the current version. Example:
 
 ```
 mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
