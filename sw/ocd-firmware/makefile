@@ -242,7 +242,6 @@ info:
 	@echo "MARCH:      $(MARCH)"
 	@echo "MABI:       $(MABI)"
 	@echo "---------------- Info: Toolchain ----------------"
-	@echo "Toolchain:  $(RISCV_TOLLCHAIN)"
 	@echo "CC:         $(CC)"
 	@echo "OBJDUMP:    $(OBJDUMP)"
 	@echo "OBJCOPY:    $(OBJCOPY)"

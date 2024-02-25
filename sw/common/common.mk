@@ -358,7 +358,6 @@ info:
 	@echo "------------------------------------------------------"
 	@echo "-- Toolchain"
 	@echo "------------------------------------------------------"
-	@echo "Toolchain:      $(RISCV_TOLLCHAIN)"
 	@echo "CC:             $(CC)"
 	@echo "OBJDUMP:        $(OBJDUMP)"
 	@echo "OBJCOPY:        $(OBJCOPY)"
