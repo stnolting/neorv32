@@ -30,14 +30,14 @@ Awaiting neorv32_exe.bin...
 
 [start=4]
 . Send the binary in raw binary via your terminal program. When the upload is completed and "OK"
-appears, press `p` to trigger the programming of the flash (do not execute the image via the `e`
+appears, press `s` to trigger the programming of the flash (do not execute the image via the `e`
 command as this might corrupt the image):
 
 [source]
 ----
 CMD:> u
 Awaiting neorv32_exe.bin... OK
-CMD:> p
+CMD:> s
 Write 0x000013FC bytes to SPI flash @ 0x02000000? (y/n)
 ----
 
@@ -54,7 +54,7 @@ to specify the base address of the executable inside the SPI flash.
 ----
 CMD:> u
 Awaiting neorv32_exe.bin... OK
-CMD:> p
+CMD:> s
 Write 0x000013FC bytes to SPI flash @ 0x02000000? (y/n) y
 Flashing... OK
 CMD:>
