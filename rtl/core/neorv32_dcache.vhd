@@ -316,7 +316,7 @@ begin
   end process ctrl_engine_comb;
 
 
-	-- Cache Memory ---------------------------------------------------------------------------
+  -- Cache Memory ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_dcache_memory_inst: neorv32_dcache_memory
   generic map (
@@ -456,7 +456,7 @@ architecture neorv32_dcache_memory_rtl of neorv32_dcache_memory is
 
 begin
 
-	-- Access Address Decomposition -----------------------------------------------------------
+  -- Access Address Decomposition -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   host_acc_addr.tag    <= host_addr_i(31 downto 31-(cache_tag_size_c-1));
   host_acc_addr.index  <= host_addr_i(31-cache_tag_size_c downto 2+cache_offset_size_c);
@@ -467,7 +467,7 @@ begin
   ctrl_acc_addr.offset <= ctrl_addr_i(2+(cache_offset_size_c-1) downto 2); -- discard byte offset
 
 
-	-- Status Flag Memory ---------------------------------------------------------------------
+  -- Status Flag Memory ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   status_memory: process(rstn_i, clk_i)
   begin
@@ -487,7 +487,7 @@ begin
   end process status_memory;
 
 
-	-- Tag Memory -----------------------------------------------------------------------------
+  -- Tag Memory -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   tag_memory: process(clk_i)
   begin
@@ -504,7 +504,7 @@ begin
   hit_o <= '1' when (host_acc_addr.tag = tag) and (valid = '1') else '0';
 
 
-	-- Cache Data Memory ----------------------------------------------------------------------
+  -- Cache Data Memory ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   cache_mem_access: process(clk_i)
   begin

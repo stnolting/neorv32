@@ -143,11 +143,11 @@ begin
   x_req_o.data  <= b_req_i.data when PORT_A_READ_ONLY    else
                    a_req_i.data when PORT_B_READ_ONLY    else
                    a_req_i.data when (arbiter.sel = '0') else b_req_i.data;
-                
+
   x_req_o.ben   <= b_req_i.ben when PORT_A_READ_ONLY     else
                    a_req_i.ben when PORT_B_READ_ONLY     else
                    a_req_i.ben when (arbiter.sel = '0')  else b_req_i.ben;
-                
+
   x_req_o.stb   <= arbiter.stb;
 
 
