@@ -1454,9 +1454,9 @@ begin
 
       -- NEORV32-specific fast interrupts --
       for i in 0 to 15 loop
-        if (firq_i(i) = '1') then -- new incoming FIRQs have priority
+        if (firq_i(i) = '1') then -- new incoming FIRQs have highest priority
           trap_ctrl.irq_pnd(irq_firq_0_c+i) <= '1';
-        elsif (csr.mip_firq_we = '1') and (csr.wmask(16+i) = '0') then -- clear-only
+        elsif (csr.mip_firq_we = '1') and (csr.wmask(16+i) = '0') then -- clear-only mip access
           trap_ctrl.irq_pnd(irq_firq_0_c+i) <= '0';
         end if;
       end loop;
