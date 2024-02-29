@@ -1973,6 +1973,7 @@ int main() {
     neorv32_cpu_invalidate_reservations(); // invalidate all current reservations
 
     amo_var = 0x00cafe00; // initialize
+    asm volatile ("fence"); // flush/reload d-cache
 
     tmp_a = neorv32_cpu_load_reservate_word((uint32_t)&amo_var);
     amo_var = 0x10cafe00; // break reservation
@@ -2015,6 +2016,7 @@ int main() {
     neorv32_cpu_invalidate_reservations(); // invalidate all current reservations
 
     amo_var = 0x00abba00; // initialize
+    asm volatile ("fence"); // flush/reload d-cache
 
     tmp_a = neorv32_cpu_load_reservate_word((uint32_t)&amo_var);
     asm volatile ("fence"); // flush/reload d-cache
