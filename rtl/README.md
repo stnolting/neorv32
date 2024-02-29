@@ -12,12 +12,6 @@ contains the _platform-agnostic_ VHDL architectures of the processor-internal me
 Make sure to add _one_ of these modules for each memory to the project's HDL file list. These default
 files can also be replaced by optimized platform-specific memory modules.
 
-### [`legacy`](https://github.com/stnolting/neorv32/tree/main/rtl/legacy)
-
-This folder contains RTL modules that were used in older versions of the processor and have
-been deprecated or were never actually used. However, they might still be useful for building
-custom processor setups.
-
 ### [`processor_templates`](https://github.com/stnolting/neorv32/tree/main/rtl/processor_templates)
 
 Contains pre-configured "SoC" templates that instantiate the processor's top entity from `core`.

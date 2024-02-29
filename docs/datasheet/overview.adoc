@@ -140,7 +140,6 @@ neorv32               - Project home folder
 ├rtl                  - VHDL sources
 │├core                - Core sources of the CPU & SoC
 ││└mem                - SoC-internal memories (default architectures)
-│├legacy              - Deprecated/legacy HDL modules
 │├processor_templates - Pre-configured SoC wrappers
 │├system_integration  - System wrappers for advanced connectivity
 │└test_setups         - Minimal test setup "SoCs" used in the User Guide
