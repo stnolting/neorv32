@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 01.03.2024 | [**:rocket:1.9.6**](https://github.com/stnolting/neorv32/releases/tag/v1.9.6) | **New release** | |
 | 25.02.2024 | 1.9.5.10 | :bug: fix minor GPTMR threshold configuration issue | [#834](https://github.com/stnolting/neorv32/pull/834) |
 | 23.02.2024 | 1.9.5.9 | :bug: fix atomic write/clear/set accesses of clear-only CSR bits (re-fix of v1.9.5.6) | [#829](https://github.com/stnolting/neorv32/pull/829) |
 | 23.02.2024 | 1.9.5.8 | optimize FIFO component to improve technology mapping (inferring blockRAM for "async read" configuration); :bug: fix SLINK status flag delay | [#828](https://github.com/stnolting/neorv32/pull/828) |
