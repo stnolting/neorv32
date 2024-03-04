@@ -285,27 +285,6 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test fence instructions
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FENCEs ", cnt_test);
-
-  cnt_test++;
-
-  asm volatile ("fence"); // flush/reload d-cache
-  asm volatile ("fence.i"); // clear instruction prefetch buffer and clear i-cache
-  asm volatile ("fence");
-  asm volatile ("fence.i");
-
-  if (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) {
-    test_ok();
-  }
-  else {
-    test_fail();
-  }
-
-
-  // ----------------------------------------------------------
   // Test standard RISC-V counters
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
@@ -1499,8 +1478,11 @@ int main() {
     // setup source data
     dma_src = 0x7788ee11;
 
+    // flush/reload d-cache
+    asm volatile ("fence");
+
     // setup CRC unit
-    neorv32_crc_setup(CRC_MODE32, 0x4C11DB7, 0xFFFFFFFF);
+    neorv32_crc_setup(CRC_MODE32, 0x04C11DB7, 0xFFFFFFFF);
 
     // configure and trigger DMA transfer
     tmp_a = DMA_CMD_B2UW | DMA_CMD_SRC_INC | DMA_CMD_DST_CONST | DMA_CMD_ENDIAN;
