@@ -297,7 +297,7 @@ endif
 # In-console simulation using default/simple testbench and GHDL
 # -----------------------------------------------------------------------------
 sim: $(APP_IMG) install
-	@echo "Simulating $(APP_IMG)..."
+	@echo "Simulating processor using simple testbench..."
 	@sh $(NEORV32_SIM_PATH)/simple/ghdl.sh $(GHDL_RUN_FLAGS)
 
 
