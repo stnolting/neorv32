@@ -7,15 +7,15 @@ The possible instructions to test are:
 - rem  : rem, remu
 
 The number of instructions run can be tuned by setting the following command line parameters:
-`USER_FLAGS+=-DinstLoop=1`    This tunes the number loops run, default 1
-`USER_FLAGS+=-DinstCalls=256` This tunes the number of instructions called per inner loop, default 256.
+- `USER_FLAGS+=-DinstLoop=1`    This tunes the number loops run, default 1
+- `USER_FLAGS+=-DinstCalls=256` This tunes the number of instructions called per inner loop, default 256.
 The instCalls variable impacts memory, as each instruction instance takes up memory.
 
 The limit the performance image size which instructions that can be tested can be controlled the following comand line parameters. The name of the parameter matches the list of instruction groups above:
-`USER_FLAGS+=-Drv32I_mult`
-`USER_FLAGS+=-Drv32I_div`
-`USER_FLAGS+=-Drv32I_rem`
-`USER_FLAGS+=-Drv32I_all` Run all instruction tests, the image will be large
+- `USER_FLAGS+=-Drv32I_mult`
+- `USER_FLAGS+=-Drv32I_div`
+- `USER_FLAGS+=-Drv32I_rem`
+- `USER_FLAGS+=-Drv32I_all` Run all instruction tests, the image will be large
 
 For less verbose output `USER_FLAGS+=-DSILENT_MODE=1` can be applied
 
