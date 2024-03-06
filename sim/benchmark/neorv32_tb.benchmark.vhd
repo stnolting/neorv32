@@ -175,7 +175,7 @@ begin
     CPU_EXTENSION_RISCV_C        => false,         -- implement compressed extension?
     CPU_EXTENSION_RISCV_E        => false,         -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M        => true,          -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U        => true,          -- implement user mode extension?
+    CPU_EXTENSION_RISCV_U        => false,          -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zfinx    => true,          -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr   => true,          -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond   => true,          -- implement integer conditional operations?
