@@ -234,7 +234,7 @@ int main() {
   #define bneBackInst __asm__ ("nop\n\tbne a1, a2, .-8\n\t") //Branch with branch instruction
   #define bltNoInst   __asm__ ("blt a1, a2, .+4\n\t") //Branch with no branch instruction
   #define bltInst     __asm__ ("blt a1, a2, .+8\n\tnop\n\t") //Branch with branch instruction
-  #define bltBackInst __asm__ ("nop\n\tnop\n\tblt a1, a2, .-8\n\t") //Branch with branch instruction
+  #define bltBackInst __asm__ ("nop\n\tblt a1, a2, .-8\n\t") //Branch with branch instruction
   #define bgeNoInst   __asm__ ("bge a1, a2, .+4\n\t") //Branch with no branch instruction
   #define bgeInst     __asm__ ("bge a1, a2, .+8\n\tnop\n\t") //Branch with branch instruction
   #define bgeBackInst __asm__ ("nop\n\tbge a1, a2, .-8\n\t") //Branch with branch instruction
