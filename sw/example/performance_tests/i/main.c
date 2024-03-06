@@ -1816,31 +1816,31 @@ int main() {
       #if instCalls == 16
         __asm__ ("jal .+132\n\t");
         __asm__ ("jal .+132\n\t");
-        cpy_16(bltuInst);
+        cpy_16(bltuBackInst);
       #elif instCalls == 32
         __asm__ ("jal .+260\n\t"); // jump to first beq
         __asm__ ("jal .+260\n\t"); // jump to loop end
-        cpy_32(bltuInst);
+        cpy_32(bltuBackInst);
       #elif instCalls == 64
         __asm__ ("jal .+516\n\t"); // jump to first beq
         __asm__ ("jal .+516\n\t"); // jump to loop end
-        cpy_64(bltuInst);
+        cpy_64(bltuBackInst);
       #elif instCalls == 128
         __asm__ ("jal .+1028\n\t"); // jump to first beq
         __asm__ ("jal .+1028\n\t"); // jump to loop end
-        cpy_128(bltuInst);
+        cpy_128(bltuBackInst);
       #elif instCalls == 256
         __asm__ ("jal .+2052\n\t"); // jump to first beq
         __asm__ ("jal .+2052\n\t"); // jump to loop end
-        cpy_256(bltuInst);
+        cpy_256(bltuBackInst);
       #elif instCalls == 512
         __asm__ ("jal .+4100\n\t"); // jump to first beq
         __asm__ ("jal .+4100\n\t"); // jump to first beq
-        cpy_512(bltuInst);
+        cpy_512(bltuBackInst);
       #else
         __asm__ ("jal .+8196\n\t"); // jump to first beq
         __asm__ ("jal .+8196\n\t"); // jump to first beq
-        cpy_1024(bltuInst);
+        cpy_1024(bltuBackInst);
       #endif
     }
     stopTime = neorv32_cpu_csr_read(CSR_MCYCLE);
