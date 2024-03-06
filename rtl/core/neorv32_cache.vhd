@@ -70,6 +70,7 @@ entity neorv32_cache is
     NUM_BLOCKS : natural range 1 to 256;        -- number of cache blocks (min 1), has to be a power of 2
     BLOCK_SIZE : natural range 4 to 2**16;      -- cache block size in bytes (min 4), has to be a power of 2
     UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (page number / 4 MSBs)
+    UC_ENABLE  : boolean;                       -- enable uncached accesses
     VSPLIT_EN  : boolean                        -- enable virtual instruction/data splitting
   );
   port (
@@ -210,28 +211,40 @@ begin
   -- request switch --
   dir_acc_switch: process(host_req_i, dir_acc_d)
   begin
-    cache_req     <= host_req_i;
-    dir_req_d     <= host_req_i;
+    -- default: pass-through of all bus signals --
+    cache_req <= host_req_i;
+    dir_req_d <= host_req_i;
+    -- direct access --
+    dir_req_d.stb   <= host_req_i.stb and dir_acc_d;
+    dir_req_d.fence <= '0'; -- no fence requests from this side
+    -- cached access --
     cache_req.stb <= host_req_i.stb and (not dir_acc_d);
-    dir_req_d.stb <= host_req_i.stb and dir_acc_d;
   end process dir_acc_switch;
 
-  -- direct/uncached access path pipeline stage --
-  bus_buffer: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      dir_acc_q <= '0';
-      dir_req_q <= req_terminate_c;
-      dir_rsp_q <= rsp_terminate_c;
-    elsif rising_edge(clk_i) then
-      dir_acc_q <= dir_acc_d;
-      dir_req_q <= dir_req_d;
-      dir_rsp_q <= dir_rsp_d;
-    end if;
-  end process bus_buffer;
+  direct_accesses_enable:
+  if UC_ENABLE generate
+    -- direct/uncached access path pipeline stage --
+    bus_buffer: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        dir_acc_q <= '0';
+        dir_req_q <= req_terminate_c;
+        dir_rsp_q <= rsp_terminate_c;
+      elsif rising_edge(clk_i) then
+        dir_acc_q <= dir_acc_d;
+        dir_req_q <= dir_req_d;
+        dir_rsp_q <= dir_rsp_d;
+      end if;
+    end process bus_buffer;
 
-  -- response switch --
-  host_rsp_o <= cache_rsp when (dir_acc_q = '0') else dir_rsp_q;
+    -- response switch --
+    host_rsp_o <= cache_rsp when (dir_acc_q = '0') else dir_rsp_q;
+  end generate;
+
+  direct_accesses_disable:
+  if not UC_ENABLE generate
+    host_rsp_o <= cache_rsp;
+  end generate;
 
 
   -- Host Access Arbiter (Handle CPU Memory Accesses) ---------------------------------------
@@ -334,7 +347,7 @@ begin
   );
 
   -- simple bus multiplexer (as there won't be simultaneous access requests) --
-  bus_req_o <= bus_req when (cmd_busy = '1') else dir_req_q;
+  bus_req_o <= bus_req when (cmd_busy = '1') or (UC_ENABLE = false) else dir_req_q;
   dir_rsp_d <= bus_rsp_i;
   bus_rsp   <= bus_rsp_i;
 
