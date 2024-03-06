@@ -100,7 +100,7 @@ int main() {
     #define rv32I_sync   1
     #define rv32I_env    0 // Not supported
     #define rv32I_csr    1
-    #define rv32I_mret   1
+    #define rv32I_mret   0 // being debugged
   #endif
   #ifndef rv32I_arith
     #define rv32I_arith  0
@@ -254,9 +254,9 @@ int main() {
   #define lhuInst    __asm__ ("lhu a0, 0(zero)\n\t")
   #define lwInst     __asm__ ("lw a0, 0(zero)\n\t")
   // Store
-  #define sbInst     __asm__ ("sb a0, 0(zero)\n\t")
-  #define shInst     __asm__ ("sh a0, 0(zero)\n\t")
-  #define swInst     __asm__ ("sw a0, 0(zero)\n\t")
+  #define sbInst     __asm__ ("sb a0, 4(sp)\n\t")
+  #define shInst     __asm__ ("sh a0, 4(sp)\n\t")
+  #define swInst     __asm__ ("sw a0, 4(sp)\n\t")
   // CSR
   #define csrrwInst  __asm__ ("csrrw a0, mscratch, a1\n\t")
   #define csrrsInst  __asm__ ("csrrs a0, mscratch, a1\n\t")
