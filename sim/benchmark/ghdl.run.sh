@@ -21,7 +21,7 @@ done
 GHDL="${GHDL:-ghdl}"
 
 #$GHDL -m --work=neorv32 --workdir=build neorv32_tb_simple
-$GHDL -m --work=neorv32 --workdir=build neorv32_tb_benchmark
+$GHDL -m --std=08 --work=neorv32 --workdir=build neorv32_tb_benchmark
 
 if [ -z "$1" ]
   then
@@ -32,7 +32,7 @@ fi
 
 echo "Using simulation run arguments: $GHDL_RUN_ARGS";
 
-runcmd="$GHDL -r --work=neorv32 --workdir=build neorv32_tb_benchmark \
+runcmd="$GHDL -r --std=08 --work=neorv32 --workdir=build neorv32_tb_benchmark \
   --max-stack-alloc=0 \
   --ieee-asserts=disable \
   --assert-level=error $GHDL_RUN_ARGS"
