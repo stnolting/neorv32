@@ -597,5 +597,13 @@ begin
     end if;
   end process irq_trigger;
 
+  -- Exit simulation ------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  wait_for_sim_exit: process(gpio)
+  begin
+    if (gpio(32) = '1') then
+      finish;
+    end if;
+  end process wait_for_sim_exit;
 
 end neorv32_tb_benchmark_rtl;
