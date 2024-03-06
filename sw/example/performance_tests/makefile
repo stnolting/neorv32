@@ -1,0 +1,2 @@
+default:
+	cd I && $(MAKE)
