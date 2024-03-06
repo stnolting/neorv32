@@ -1169,4 +1169,8 @@ int main() {
   neorv32_uart0_printf("\ntotal %d cycles\n", totalTime);
   neorv32_uart0_printf("\navg. inst. execute cyles %d.%d\n", avgInstCycles, remainingFraction);
 
+  // Stop simulation
+  if (neorv32_gpio_available()) {
+    neorv32_gpio_pin_set(32);
+  }
 }
