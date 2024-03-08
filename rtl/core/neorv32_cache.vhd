@@ -5,17 +5,19 @@
 -- # (write modified blocks to main memory when the block is about to get replaced) and            #
 -- # "write-allocate" (load entire block from main memory on cache write miss) strategies.         #
 -- #                                                                                               #
--- # All requests targeting the "uncached address space page" (4 MSBs of address) or higher as     #
--- # well as all atomic memory accesses will always **bypass** the cache ("direct accesses").      #
+-- # All requests targeting the "uncached address space page" (or higher), defined by the 4 most   #
+-- # significant address bits, well as all atomic (reservation set) operations will always         #
+-- # **bypass** the cache resulting in "direct accesses".                                          #
 -- #                                                                                               #
 -- # The cache memory allows a "virtual splitting" (VSPLIT_EN) that separates the cache into       #
 -- # data-only (lower-half) and instructions-only (upper-half) blocks mimicking separate data and  #
 -- # instruction caches (basically, a 2-way cache where the first set is reserved for instructions #
 -- # only and the second set is reserved for data only).                                           #
 -- #                                                                                               #
--- # A fence request will flush the data cache (write back changes to main memory) and will also   #
--- # invalidate the entire cache so new data is fetched from main memory on demand. After this     #
--- # synchronization is completed the fence request is forwarded to the downstream memory system.  #
+-- # A fence request will first flush the data cache (write back modified blocks to main memory)   #
+-- # before invalidating all cache blocks to force a re-fetch from main memory to provide a full   #
+-- # synchronization between main memory and cache.memory on demand. After this, the fence request #
+-- # is forwarded to the downstream memory system.                                                 #
 -- #                                                                                               #
 -- # Simplified cache architecture ("-->" = flow of memory access requests):                       #
 -- #                                                                                               #
@@ -67,8 +69,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cache is
   generic (
-    NUM_BLOCKS : natural range 1 to 256;        -- number of cache blocks (min 1), has to be a power of 2
-    BLOCK_SIZE : natural range 4 to 2**16;      -- cache block size in bytes (min 4), has to be a power of 2
+    NUM_BLOCKS : natural range 2 to 4096;       -- number of cache blocks (min 2), has to be a power of 2
+    BLOCK_SIZE : natural range 4 to 4096;       -- cache block size in bytes (min 4), has to be a power of 2
     UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (page number / 4 MSBs)
     UC_ENABLE  : boolean;                       -- enable uncached accesses
     VSPLIT_EN  : boolean                        -- enable virtual instruction/data splitting
@@ -88,23 +90,23 @@ architecture neorv32_cache_rtl of neorv32_cache is
   -- host access arbiter (handle CPU accesses to cache) --
   component neorv32_cache_host
   port (
-    rstn_i      : in  std_ulogic;
-    clk_i       : in  std_ulogic;
-    req_i       : in  bus_req_t;
-    rsp_o       : out bus_rsp_t;
-    bus_flush_o : out std_ulogic;
-    bus_miss_o  : out std_ulogic;
-    bus_busy_i  : in  std_ulogic;
-    dirty_o     : out std_ulogic;
-    hit_i       : in  std_ulogic;
-    src_o       : out std_ulogic;
-    addr_o      : out std_ulogic_vector(31 downto 0);
-    we_o        : out std_ulogic_vector(3 downto 0);
-    swe_o       : out std_ulogic;
-    wdata_o     : out std_ulogic_vector(31 downto 0);
-    wstat_o     : out std_ulogic;
-    rdata_i     : in  std_ulogic_vector(31 downto 0);
-    rstat_i     : in  std_ulogic
+    rstn_i     : in  std_ulogic;
+    clk_i      : in  std_ulogic;
+    req_i      : in  bus_req_t;
+    rsp_o      : out bus_rsp_t;
+    bus_sync_o : out std_ulogic;
+    bus_miss_o : out std_ulogic;
+    bus_busy_i : in  std_ulogic;
+    dirty_o    : out std_ulogic;
+    hit_i      : in  std_ulogic;
+    src_o      : out std_ulogic;
+    addr_o     : out std_ulogic_vector(31 downto 0);
+    we_o       : out std_ulogic_vector(3 downto 0);
+    swe_o      : out std_ulogic;
+    wdata_o    : out std_ulogic_vector(31 downto 0);
+    wstat_o    : out std_ulogic;
+    rdata_i    : in  std_ulogic_vector(31 downto 0);
+    rstat_i    : in  std_ulogic
   );
   end component;
 
@@ -142,25 +144,25 @@ architecture neorv32_cache_rtl of neorv32_cache is
     BLOCK_SIZE : natural
   );
   port (
-    rstn_i      : in  std_ulogic;
-    clk_i       : in  std_ulogic;
-    host_req_i  : in  bus_req_t;
-    bus_req_o   : out bus_req_t;
-    bus_rsp_i   : in  bus_rsp_t;
-    cmd_flush_i : in  std_ulogic;
-    cmd_miss_i  : in  std_ulogic;
-    cmd_busy_o  : out std_ulogic;
-    inval_o     : out std_ulogic;
-    new_o       : out std_ulogic;
-    dirty_i     : in  std_ulogic;
-    base_i      : in  std_ulogic_vector(31 downto 0);
-    src_o       : out std_ulogic;
-    addr_o      : out std_ulogic_vector(31 downto 0);
-    we_o        : out std_ulogic_vector(3 downto 0);
-    swe_o       : out std_ulogic;
-    wdata_o     : out std_ulogic_vector(31 downto 0);
-    wstat_o     : out std_ulogic;
-    rdata_i     : in  std_ulogic_vector(31 downto 0)
+    rstn_i     : in  std_ulogic;
+    clk_i      : in  std_ulogic;
+    host_req_i : in  bus_req_t;
+    bus_req_o  : out bus_req_t;
+    bus_rsp_i  : in  bus_rsp_t;
+    cmd_sync_i : in  std_ulogic;
+    cmd_miss_i : in  std_ulogic;
+    cmd_busy_o : out std_ulogic;
+    inval_o    : out std_ulogic;
+    new_o      : out std_ulogic;
+    dirty_i    : in  std_ulogic;
+    base_i     : in  std_ulogic_vector(31 downto 0);
+    src_o      : out std_ulogic;
+    addr_o     : out std_ulogic_vector(31 downto 0);
+    we_o       : out std_ulogic_vector(3 downto 0);
+    swe_o      : out std_ulogic;
+    wdata_o    : out std_ulogic_vector(31 downto 0);
+    wstat_o    : out std_ulogic;
+    rdata_i    : in  std_ulogic_vector(31 downto 0)
   );
   end component;
 
@@ -200,13 +202,14 @@ architecture neorv32_cache_rtl of neorv32_cache is
   signal cache_cmd_inval, cache_cmd_new, cache_cmd_dirty : std_ulogic;
 
   -- bus arbiter commands --
-  signal cmd_flush, cmd_miss, cmd_busy : std_ulogic;
+  signal cmd_sync, cmd_miss, cmd_busy : std_ulogic;
 
 begin
 
   -- Check if Direct/Uncached Access --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dir_acc_d <= '1' when (host_req_i.addr(31 downto 28) = UC_BEGIN) or (host_req_i.rvso = '1') else '0';
+  dir_acc_d <= '1' when (host_req_i.addr(31 downto 28) = UC_BEGIN) or -- uncached memory page
+                        (host_req_i.rvso = '1') else '0'; -- atomic )reservation set) operation
 
   -- request switch --
   dir_acc_switch: process(host_req_i, dir_acc_d)
@@ -247,32 +250,32 @@ begin
   end generate;
 
 
-  -- Host Access Arbiter (Handle CPU Memory Accesses) ---------------------------------------
+  -- Host Access Arbiter (Handle *Cached* CPU Bus Requests) ---------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_host_inst: neorv32_cache_host
   port map (
     -- global control --
-    rstn_i      => rstn_i,               -- global reset, async, low-active
-    clk_i       => clk_i,                -- global clock, rising edge
+    rstn_i     => rstn_i,               -- global reset, async, low-active
+    clk_i      => clk_i,                -- global clock, rising edge
     -- host access port --
-    req_i       => cache_req,            -- request
-    rsp_o       => cache_rsp,            -- response
+    req_i      => cache_req,            -- request
+    rsp_o      => cache_rsp,            -- response
     -- bus unit interface --
-    bus_flush_o => cmd_flush,            -- flush
-    bus_miss_o  => cmd_miss,             -- cache miss
-    bus_busy_i  => cmd_busy,             -- bus operation in progress
+    bus_sync_o => cmd_sync,             -- sync cache and main memory
+    bus_miss_o => cmd_miss,             -- cache miss
+    bus_busy_i => cmd_busy,             -- bus operation in progress
     -- cache status interface --
-    dirty_o     => cache_cmd_dirty,      -- make accessed block dirty
-    hit_i       => cache_stat_hit,       -- cache hit
+    dirty_o    => cache_cmd_dirty,      -- make accessed block dirty
+    hit_i      => cache_stat_hit,       -- cache hit
     -- cache data interface --
-    src_o       => cache_in_host.src,    -- 0=data / 1=instruction access
-    addr_o      => cache_in_host.addr,   -- access address
-    we_o        => cache_in_host.we,     -- byte-wide data write enable
-    swe_o       => cache_in_host.swe,    -- status write enable
-    wdata_o     => cache_in_host.wdata,  -- write data
-    wstat_o     => cache_in_host.wstat,  -- write status
-    rdata_i     => cache_out_main.rdata, -- read data
-    rstat_i     => cache_out_main.rstat  -- read status
+    src_o      => cache_in_host.src,    -- 0=data / 1=instruction access
+    addr_o     => cache_in_host.addr,   -- access address
+    we_o       => cache_in_host.we,     -- byte-wide data write enable
+    swe_o      => cache_in_host.swe,    -- status write enable
+    wdata_o    => cache_in_host.wdata,  -- write data
+    wstat_o    => cache_in_host.wstat,  -- write status
+    rdata_i    => cache_out_main.rdata, -- read data
+    rstat_i    => cache_out_main.rstat  -- read status
   );
 
 
@@ -280,7 +283,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_memory_inst: neorv32_cache_memory
   generic map (
-    NUM_BLOCKS => block_num_c,  -- number of blocks (min 1), has to be a power of 2
+    NUM_BLOCKS => block_num_c,  -- number of blocks (min 2), has to be a power of 2
     BLOCK_SIZE => block_size_c, -- block size in bytes (min 4), has to be a power of 2
     VSPLIT_EN  => VSPLIT_EN     -- enable virtual instruction/data splitting
   )
@@ -315,35 +318,35 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_bus_inst: neorv32_cache_bus
   generic map (
-    NUM_BLOCKS => block_num_c, -- number of blocks (min 1), has to be a power of 2
+    NUM_BLOCKS => block_num_c, -- number of blocks (min 2), has to be a power of 2
     BLOCK_SIZE => block_size_c -- block size in bytes (min 4), has to be a power of 2
   )
   port map (
     -- global control --
-    rstn_i      => rstn_i,              -- global reset, async, low-active
-    clk_i       => clk_i,               -- global clock, rising edge
+    rstn_i     => rstn_i,              -- global reset, async, low-active
+    clk_i      => clk_i,               -- global clock, rising edge
     -- host access port --
-    host_req_i  => host_req_i,          -- request
+    host_req_i => host_req_i,          -- request
     -- bus access port --
-    bus_req_o   => bus_req,             -- request
-    bus_rsp_i   => bus_rsp,             -- response
+    bus_req_o  => bus_req,             -- request
+    bus_rsp_i  => bus_rsp,             -- response
     -- operation interface --
-    cmd_flush_i => cmd_flush,           -- flush
-    cmd_miss_i  => cmd_miss,            -- cache miss
-    cmd_busy_o  => cmd_busy,            -- bus operation in progress
+    cmd_sync_i => cmd_sync,            -- sync cache and main memory
+    cmd_miss_i => cmd_miss,            -- cache miss
+    cmd_busy_o => cmd_busy,            -- bus operation in progress
     -- cache status interface --
-    inval_o     => cache_cmd_inval,     -- invalidate accessed block
-    new_o       => cache_cmd_new,       -- set new cache entry
-    dirty_i     => cache_stat_dirty,    -- accessed block is dirty
-    base_i      => cache_stat_base,     -- base address of accessed block
+    inval_o    => cache_cmd_inval,     -- invalidate accessed block
+    new_o      => cache_cmd_new,       -- set new cache entry
+    dirty_i    => cache_stat_dirty,    -- accessed block is dirty
+    base_i     => cache_stat_base,     -- base address of accessed block
     -- cache data interface --
-    src_o       => cache_in_bus.src,    -- 0=data / 1=instruction access
-    addr_o      => cache_in_bus.addr,   -- access address
-    we_o        => cache_in_bus.we,     -- byte-wide data write enable
-    swe_o       => cache_in_bus.swe,    -- status write enable
-    wdata_o     => cache_in_bus.wdata,  -- write data
-    wstat_o     => cache_in_bus.wstat,  -- write status
-    rdata_i     => cache_out_main.rdata -- read data
+    src_o      => cache_in_bus.src,    -- 0=data / 1=instruction access
+    addr_o     => cache_in_bus.addr,   -- access address
+    we_o       => cache_in_bus.we,     -- byte-wide data write enable
+    swe_o      => cache_in_bus.swe,    -- status write enable
+    wdata_o    => cache_in_bus.wdata,  -- write data
+    wstat_o    => cache_in_bus.wstat,  -- write status
+    rdata_i    => cache_out_main.rdata -- read data
   );
 
   -- simple bus multiplexer (as there won't be simultaneous access requests) --
@@ -363,7 +366,7 @@ end neorv32_cache_rtl;
 -- # << NEORV32 - Generic Cache: Host Access Controller >>                                         #
 -- # ********************************************************************************************* #
 -- # Handle host accesses to the cache (check for hit/miss) or bypass cache if direct/uncached     #
--- # access. If a cache miss occurs or a flush request is received an according command is sent to #
+-- # access. If a cache miss occurs or a fence request is received an according command is sent to #
 -- # the bus interface unit.                                                                       #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
@@ -406,34 +409,34 @@ use neorv32.neorv32_package.all;
 entity neorv32_cache_host is
   port (
     -- global control --
-    rstn_i      : in  std_ulogic;                     -- global reset, async, low-active
-    clk_i       : in  std_ulogic;                     -- global clock, rising edge
+    rstn_i     : in  std_ulogic;                     -- global reset, async, low-active
+    clk_i      : in  std_ulogic;                     -- global clock, rising edge
     -- host access port --
-    req_i       : in  bus_req_t;                      -- request
-    rsp_o       : out bus_rsp_t;                      -- response
+    req_i      : in  bus_req_t;                      -- request
+    rsp_o      : out bus_rsp_t;                      -- response
     -- bus unit interface --
-    bus_flush_o : out std_ulogic;                     -- flush
-    bus_miss_o  : out std_ulogic;                     -- cache miss
-    bus_busy_i  : in  std_ulogic;                     -- bus operation in progress
+    bus_sync_o : out std_ulogic;                     -- sync cache and main memory
+    bus_miss_o : out std_ulogic;                     -- cache miss
+    bus_busy_i : in  std_ulogic;                     -- bus operation in progress
     -- cache status interface --
-    dirty_o     : out std_ulogic;                     -- make accessed block dirty
-    hit_i       : in  std_ulogic;                     -- cache hit
+    dirty_o    : out std_ulogic;                     -- make accessed block dirty
+    hit_i      : in  std_ulogic;                     -- cache hit
     -- cache data interface --
-    src_o       : out std_ulogic;                     -- 0=data / 1=instruction access
-    addr_o      : out std_ulogic_vector(31 downto 0); -- access address
-    we_o        : out std_ulogic_vector(3 downto 0);  -- byte-wide data write enable
-    swe_o       : out std_ulogic;                     -- status write enable
-    wdata_o     : out std_ulogic_vector(31 downto 0); -- write data
-    wstat_o     : out std_ulogic;                     -- write status
-    rdata_i     : in  std_ulogic_vector(31 downto 0); -- read data
-    rstat_i     : in  std_ulogic                      -- read status
+    src_o      : out std_ulogic;                     -- 0=data / 1=instruction access
+    addr_o     : out std_ulogic_vector(31 downto 0); -- access address
+    we_o       : out std_ulogic_vector(3 downto 0);  -- byte-wide data write enable
+    swe_o      : out std_ulogic;                     -- status write enable
+    wdata_o    : out std_ulogic_vector(31 downto 0); -- write data
+    wstat_o    : out std_ulogic;                     -- write status
+    rdata_i    : in  std_ulogic_vector(31 downto 0); -- read data
+    rstat_i    : in  std_ulogic                      -- read status
   );
 end neorv32_cache_host;
 
 architecture neorv32_cache_host_rtl of neorv32_cache_host is
 
   -- control engine --
-  type ctrl_state_t is (S_IDLE, S_CHECK, S_WAIT_MISS, S_WAIT_FLUSH);
+  type ctrl_state_t is (S_IDLE, S_CHECK, S_WAIT_MISS, S_WAIT_SYNC);
   type ctrl_t is record
     state,    state_nxt    : ctrl_state_t; -- FSM state
     req_buf,  req_buf_nxt  : std_ulogic; -- access request buffer
@@ -478,8 +481,8 @@ begin
     wstat_o <= '0'; -- host cannot alter status bits
 
     -- bus unit interface defaults --
-    bus_flush_o <= '0';
-    bus_miss_o  <= '0';
+    bus_sync_o <= '0';
+    bus_miss_o <= '0';
 
     -- host interface defaults --
     rsp_o <= rsp_terminate_c;
@@ -490,8 +493,8 @@ begin
       when S_IDLE => -- wait for host request
       -- ------------------------------------------------------------
         if (ctrl.sync_buf = '1') then -- flush and reload cache (sync with main memory)
-          bus_flush_o    <= '1'; -- trigger bus unit: flush operation
-          ctrl.state_nxt <= S_WAIT_FLUSH;
+          bus_sync_o     <= '1'; -- trigger bus unit: sync operation
+          ctrl.state_nxt <= S_WAIT_SYNC;
         elsif (req_i.stb = '1') or (ctrl.req_buf = '1') then -- (pending) access request
           ctrl.state_nxt <= S_CHECK;
         end if;
@@ -505,15 +508,15 @@ begin
             dirty_o <= '1'; -- cache block is dirty now
             we_o    <= req_i.ben; -- finalize write access
           end if;
-          rsp_o.ack      <= not rstat_i; -- data word is fine
-          rsp_o.err      <= rstat_i; -- data word is marked as faulty
+          rsp_o.ack      <= not rstat_i; -- data word fine?
+          rsp_o.err      <= rstat_i; -- data word faulty?
           ctrl.state_nxt <= S_IDLE;
         else -- cache miss
           bus_miss_o     <= '1'; -- trigger bus unit: cache miss
           ctrl.state_nxt <= S_WAIT_MISS;
         end if;
 
-      when S_WAIT_FLUSH => -- wait for bus engine to handle cache flush
+      when S_WAIT_SYNC => -- wait for bus engine to handle cache sync
       -- ------------------------------------------------------------
         ctrl.sync_buf_nxt <= '0'; -- sync operation has been issued
         if (bus_busy_i = '0') then
@@ -523,7 +526,7 @@ begin
       when S_WAIT_MISS => -- wait for bus engine to handle cache miss
       -- ------------------------------------------------------------
         if (bus_busy_i = '0') then
-          ctrl.state_nxt <= S_CHECK; -- redo cache look-up
+          ctrl.state_nxt <= S_CHECK; -- redo cache access
         end if;
 
       when others => -- undefined
@@ -587,7 +590,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cache_memory is
   generic (
-    NUM_BLOCKS : natural; -- number of blocks (min 1), has to be a power of 2
+    NUM_BLOCKS : natural; -- number of blocks (min 2), has to be a power of 2
     BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
     VSPLIT_EN  : boolean  -- enable virtual instruction/data splitting
   );
@@ -693,17 +696,16 @@ begin
       valid_mem <= (others => '0');
       dirty_mem <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- block valid --
-      if (new_i = '1') then -- make current block valid
-        valid_mem(to_integer(unsigned(acc_pid))) <= '1';
-      elsif (inval_i = '1') then -- invalidate current block
-        valid_mem(to_integer(unsigned(acc_pid))) <= '0';
-      end if;
-      -- block dirty --
-      if (new_i = '1') then -- make current block valid
-        dirty_mem(to_integer(unsigned(acc_pid))) <= '0';
-      elsif (dirty_i = '1') then -- make current block dirty
-        dirty_mem(to_integer(unsigned(acc_pid))) <= '1';
+      if (new_i = '1') then -- set new block
+        valid_mem(to_integer(unsigned(acc_pid))) <= '1'; -- valid
+        dirty_mem(to_integer(unsigned(acc_pid))) <= '0'; -- clean
+      else
+        if (inval_i = '1') then -- invalidate current block
+          valid_mem(to_integer(unsigned(acc_pid))) <= '0';
+        end if;
+        if (dirty_i = '1') then -- make current block dirty
+          dirty_mem(to_integer(unsigned(acc_pid))) <= '1';
+        end if;
       end if;
       -- sync read --
       valid_mem_rd <= valid_mem(to_integer(unsigned(acc_pid)));
@@ -725,10 +727,10 @@ begin
   end process tag_memory;
 
 
-	-- Access Status (1 Cycle Latency!) -------------------------------------------------------
+	-- Access Status (1 Cycle Latency) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  hit_o   <= '1' when (acc_tag_ff = tag_mem_rd) and (valid_mem_rd = '1') else '0'; -- cache access hit
-  dirty_o <= '1' when (dirty_mem_rd = '1') and (valid_mem_rd = '1') else '0'; -- accessed block is dirty
+  hit_o   <= '1' when (valid_mem_rd = '1') and (acc_tag_ff = tag_mem_rd) else '0'; -- cache access hit
+  dirty_o <= '1' when (valid_mem_rd = '1') and (dirty_mem_rd = '1') else '0'; -- accessed block is dirty
 
   -- base address of accessed block --
   base_o(31 downto 31-(tag_size_c-1))          <= tag_mem_rd;
@@ -824,7 +826,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cache_bus is
   generic (
-    NUM_BLOCKS : natural; -- number of blocks (min 1), has to be a power of 2
+    NUM_BLOCKS : natural; -- number of blocks (min 2), has to be a power of 2
     BLOCK_SIZE : natural  -- block size in bytes (min 4), has to be a power of 2
   );
   port (
@@ -837,7 +839,7 @@ entity neorv32_cache_bus is
     bus_req_o   : out bus_req_t;                      -- request
     bus_rsp_i   : in  bus_rsp_t;                      -- response
     -- operation interface --
-    cmd_flush_i : in  std_ulogic;                     -- flush
+    cmd_sync_i  : in  std_ulogic;                     -- sync cache and main memory
     cmd_miss_i  : in  std_ulogic;                     -- cache miss
     cmd_busy_o  : out std_ulogic;                     -- bus operation in progress
     -- cache status interface --
@@ -904,7 +906,7 @@ begin
 
   -- Control Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_engine_comb: process(ctrl, hreq, host_req_i, bus_rsp_i, cmd_flush_i, cmd_miss_i, rdata_i, dirty_i, base_i)
+  ctrl_engine_comb: process(ctrl, hreq, host_req_i, bus_rsp_i, cmd_sync_i, cmd_miss_i, rdata_i, dirty_i, base_i)
   begin
     -- control defaults --
     ctrl.state_nxt <= ctrl.state;
@@ -942,7 +944,7 @@ begin
         ctrl.addr_nxt(31 downto offset_size_c)  <= host_req_i.addr(31 downto offset_size_c); -- buffer original tag + index for cache look-up
         ctrl.addr_nxt(offset_size_c-1 downto 0) <= (others => '0'); -- align block base address
         ctrl.bcnt_nxt                           <= (others => '0'); -- reset block counter
-        if (cmd_flush_i = '1') then -- cache flush
+        if (cmd_sync_i = '1') then -- cache sync
           ctrl.src_nxt   <= '0'; -- data-only
           ctrl.state_nxt <= S_FLUSH_0;
         elsif (cmd_miss_i = '1') then -- cache miss
@@ -955,12 +957,12 @@ begin
 
       when S_CHECK => -- check if accessed block is dirty
       -- ------------------------------------------------------------
-        ctrl.upret_nxt <= S_DOWNLOAD_REQ; -- got straight to S_DOWNLOAD_REQ after S_UPLOAD_GET is completed (if executed)
+        ctrl.upret_nxt <= S_DOWNLOAD_REQ; -- go straight to S_DOWNLOAD_REQ after S_UPLOAD_GET is completed (if executed)
         if (dirty_i = '1') then -- block is dirty, upload first
-          ctrl.addr_nxt(31 downto offset_size_c) <= base_i(31 downto offset_size_c); -- base address of dirty block
+          ctrl.addr_nxt(31 downto offset_size_c) <= base_i(31 downto offset_size_c); -- base address of accessed block
           ctrl.state_nxt                         <= S_UPLOAD_GET;
-        else -- cache is clean, download new block
-          ctrl.addr_nxt(31 downto offset_size_c) <= host_req_i.addr(31 downto offset_size_c); -- base address of accessed block
+        else -- block is clean, download new block and override
+          ctrl.addr_nxt(31 downto offset_size_c) <= host_req_i.addr(31 downto offset_size_c); -- base address of requested block
           ctrl.state_nxt                         <= S_DOWNLOAD_REQ;
         end if;
 
@@ -1017,7 +1019,7 @@ begin
         ctrl.addr_nxt(tag_lsb_c-1 downto offset_size_c) <= ctrl.bcnt; -- current block to check if dirty
         ctrl.state_nxt                                  <= S_FLUSH_1;
 
-      when S_FLUSH_1 => -- cache status read latency cycle
+      when S_FLUSH_1 => -- sync. cache memory read latency cycle
       -- ------------------------------------------------------------
         ctrl.state_nxt <= S_FLUSH_2;
 
@@ -1032,7 +1034,7 @@ begin
         else -- go to next block
           ctrl.bcnt_nxt <= std_ulogic_vector(unsigned(ctrl.bcnt) + 1);
           if (and_reduce_f(ctrl.bcnt) = '1') then -- all blocks done?
-            bus_req_o.fence <= '1'; -- forward flush to downstream memories
+            bus_req_o.fence <= '1'; -- forward fence (sync) to downstream memories
             ctrl.state_nxt  <= S_IDLE;
           else -- go to next block
             ctrl.state_nxt <= S_FLUSH_0;
