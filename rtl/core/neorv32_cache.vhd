@@ -9,11 +9,6 @@
 -- # significant address bits, well as all atomic (reservation set) operations will always         #
 -- # **bypass** the cache resulting in "direct accesses".                                          #
 -- #                                                                                               #
--- # The cache memory allows a "virtual splitting" (VSPLIT_EN) that separates the cache into       #
--- # data-only (lower-half) and instructions-only (upper-half) blocks mimicking separate data and  #
--- # instruction caches (basically, a 2-way cache where the first set is reserved for instructions #
--- # only and the second set is reserved for data only).                                           #
--- #                                                                                               #
 -- # A fence request will first flush the data cache (write back modified blocks to main memory)   #
 -- # before invalidating all cache blocks to force a re-fetch from main memory to allow a full     #
 -- # synchronization between main memory and cache memory. After this, the fence request is        #
@@ -72,8 +67,7 @@ entity neorv32_cache is
     NUM_BLOCKS : natural range 2 to 4096;       -- number of cache blocks (min 2), has to be a power of 2
     BLOCK_SIZE : natural range 4 to 4096;       -- cache block size in bytes (min 4), has to be a power of 2
     UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (page number / 4 MSBs)
-    UC_ENABLE  : boolean;                       -- enable uncached accesses
-    VSPLIT_EN  : boolean                        -- enable virtual instruction/data splitting
+    UC_ENABLE  : boolean                        -- enable uncached accesses
   );
   port (
     clk_i      : in  std_ulogic; -- global clock, rising edge
@@ -99,7 +93,6 @@ architecture neorv32_cache_rtl of neorv32_cache is
     bus_busy_i : in  std_ulogic;
     dirty_o    : out std_ulogic;
     hit_i      : in  std_ulogic;
-    src_o      : out std_ulogic;
     addr_o     : out std_ulogic_vector(31 downto 0);
     we_o       : out std_ulogic_vector(3 downto 0);
     swe_o      : out std_ulogic;
@@ -114,8 +107,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   component neorv32_cache_memory
   generic (
     NUM_BLOCKS : natural;
-    BLOCK_SIZE : natural;
-    VSPLIT_EN  : boolean
+    BLOCK_SIZE : natural
   );
   port (
     rstn_i   : in  std_ulogic;
@@ -126,7 +118,6 @@ architecture neorv32_cache_rtl of neorv32_cache is
     hit_o    : out std_ulogic;
     dirty_o  : out std_ulogic;
     base_o   : out std_ulogic_vector(31 downto 0);
-    src_i    : in  std_ulogic;
     addr_i   : in  std_ulogic_vector(31 downto 0);
     we_i     : in  std_ulogic_vector(3 downto 0);
     swe_i    : in  std_ulogic;
@@ -156,7 +147,6 @@ architecture neorv32_cache_rtl of neorv32_cache is
     new_o      : out std_ulogic;
     dirty_i    : in  std_ulogic;
     base_i     : in  std_ulogic_vector(31 downto 0);
-    src_o      : out std_ulogic;
     addr_o     : out std_ulogic_vector(31 downto 0);
     we_o       : out std_ulogic_vector(3 downto 0);
     swe_o      : out std_ulogic;
@@ -179,20 +169,19 @@ architecture neorv32_cache_rtl of neorv32_cache is
 
   -- cache memory module interface --
   type cache_in_t is record
-    src   : std_ulogic;
     addr  : std_ulogic_vector(31 downto 0);
     we    : std_ulogic_vector(03 downto 0);
     swe   : std_ulogic;
     wdata : std_ulogic_vector(31 downto 0);
     wstat : std_ulogic;
   end record;
-  signal cache_in_host, cache_in_bus, cache_in_main : cache_in_t;
+  signal cache_in_host, cache_in_bus, cache_in : cache_in_t;
   --
   type cache_out_t is record
     rdata : std_ulogic_vector(31 downto 0);
     rstat : std_ulogic;
   end record;
-  signal cache_out_main : cache_out_t;
+  signal cache_out : cache_out_t;
 
   -- cache status --
   signal cache_stat_dirty, cache_stat_hit : std_ulogic;
@@ -272,14 +261,13 @@ begin
     dirty_o    => cache_cmd_dirty,      -- make accessed block dirty
     hit_i      => cache_stat_hit,       -- cache hit
     -- cache data interface --
-    src_o      => cache_in_host.src,    -- 0=data / 1=instruction access
     addr_o     => cache_in_host.addr,   -- access address
     we_o       => cache_in_host.we,     -- byte-wide data write enable
     swe_o      => cache_in_host.swe,    -- status write enable
     wdata_o    => cache_in_host.wdata,  -- write data
     wstat_o    => cache_in_host.wstat,  -- write status
-    rdata_i    => cache_out_main.rdata, -- read data
-    rstat_i    => cache_out_main.rstat  -- read status
+    rdata_i    => cache_out.rdata,      -- read data
+    rstat_i    => cache_out.rstat       -- read status
   );
 
 
@@ -287,35 +275,33 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_memory_inst: neorv32_cache_memory
   generic map (
-    NUM_BLOCKS => block_num_c,  -- number of blocks (min 2), has to be a power of 2
-    BLOCK_SIZE => block_size_c, -- block size in bytes (min 4), has to be a power of 2
-    VSPLIT_EN  => VSPLIT_EN     -- enable virtual instruction/data splitting
+    NUM_BLOCKS => block_num_c, -- number of blocks (min 2), has to be a power of 2
+    BLOCK_SIZE => block_size_c -- block size in bytes (min 4), has to be a power of 2
   )
   port map (
     -- global control --
-    rstn_i   => rstn_i,               -- global reset, async, low-active
-    clk_i    => clk_i,                -- global clock, rising edge
+    rstn_i   => rstn_i,           -- global reset, async, low-active
+    clk_i    => clk_i,            -- global clock, rising edge
     -- management --
-    inval_i  => cache_cmd_inval,      -- make accessed block invalid
-    new_i    => cache_cmd_new,        -- make accessed block valid, clean and set tag
-    dirty_i  => cache_cmd_dirty,      -- make accessed block dirty
+    inval_i  => cache_cmd_inval,  -- make accessed block invalid
+    new_i    => cache_cmd_new,    -- make accessed block valid, clean and set tag
+    dirty_i  => cache_cmd_dirty,  -- make accessed block dirty
     -- status --
-    hit_o    => cache_stat_hit,       -- cache hit
-    dirty_o  => cache_stat_dirty,     -- accessed block is dirty
-    base_o   => cache_stat_base,      -- base address of current block
+    hit_o    => cache_stat_hit,   -- cache hit
+    dirty_o  => cache_stat_dirty, -- accessed block is dirty
+    base_o   => cache_stat_base,  -- base address of current block
     -- cache access --
-    src_i    => cache_in_main.src,    -- 0=data / 1=instruction access
-    addr_i   => cache_in_main.addr,   -- access address
-    we_i     => cache_in_main.we,     -- byte-wide data write enable
-    swe_i    => cache_in_main.swe,    -- status write enable
-    wdata_i  => cache_in_main.wdata,  -- write data
-    wstat_i  => cache_in_main.wstat,  -- write status
-    rdata_o  => cache_out_main.rdata, -- read data
-    rstat_o  => cache_out_main.rstat  -- read status
+    addr_i   => cache_in.addr,    -- access address
+    we_i     => cache_in.we,      -- byte-wide data write enable
+    swe_i    => cache_in.swe,     -- status write enable
+    wdata_i  => cache_in.wdata,   -- write data
+    wstat_i  => cache_in.wstat,   -- write status
+    rdata_o  => cache_out.rdata,  -- read data
+    rstat_o  => cache_out.rstat   -- read status
   );
 
   -- cache access switch --
-  cache_in_main <= cache_in_host when (cmd_busy = '0') else cache_in_bus;
+  cache_in <= cache_in_host when (cmd_busy = '0') else cache_in_bus;
 
 
   -- Bus Access Arbiter (Handle Cache Miss and Flush/Reload)---------------------------------
@@ -344,13 +330,12 @@ begin
     dirty_i    => cache_stat_dirty,    -- accessed block is dirty
     base_i     => cache_stat_base,     -- base address of accessed block
     -- cache data interface --
-    src_o      => cache_in_bus.src,    -- 0=data / 1=instruction access
     addr_o     => cache_in_bus.addr,   -- access address
     we_o       => cache_in_bus.we,     -- byte-wide data write enable
     swe_o      => cache_in_bus.swe,    -- status write enable
     wdata_o    => cache_in_bus.wdata,  -- write data
     wstat_o    => cache_in_bus.wstat,  -- write status
-    rdata_i    => cache_out_main.rdata -- read data
+    rdata_i    => cache_out.rdata      -- read data
   );
 
   -- simple bus multiplexer (as there won't be simultaneous access requests) --
@@ -426,7 +411,6 @@ entity neorv32_cache_host is
     dirty_o    : out std_ulogic;                     -- make accessed block dirty
     hit_i      : in  std_ulogic;                     -- cache hit
     -- cache data interface --
-    src_o      : out std_ulogic;                     -- 0=data / 1=instruction access
     addr_o     : out std_ulogic_vector(31 downto 0); -- access address
     we_o       : out std_ulogic_vector(3 downto 0);  -- byte-wide data write enable
     swe_o      : out std_ulogic;                     -- status write enable
@@ -477,7 +461,6 @@ begin
 
     -- cache defaults --
     dirty_o <= '0';
-    src_o   <= req_i.src;
     addr_o  <= req_i.addr;
     we_o    <= (others => '0');
     swe_o   <= '0'; -- host cannot alter status bits
@@ -551,10 +534,6 @@ end neorv32_cache_host_rtl;
 -- #################################################################################################
 -- # << NEORV32 - Generic Cache: Data and Status Memory (direct-mapped) >>                         #
 -- # ********************************************************************************************* #
--- # The cache memory allows a "virtual splitting" (VSPLIT_EN) that separates the cache into       #
--- # data-only (lower-half) and instructions-only (upper-half) blocks mimicking separate data and  #
--- # instruction caches.                                                                           #
--- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
 -- # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
@@ -595,8 +574,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cache_memory is
   generic (
     NUM_BLOCKS : natural; -- number of blocks (min 2), has to be a power of 2
-    BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
-    VSPLIT_EN  : boolean  -- enable virtual instruction/data splitting
+    BLOCK_SIZE : natural  -- block size in bytes (min 4), has to be a power of 2
   );
   port (
     -- global control --
@@ -611,7 +589,6 @@ entity neorv32_cache_memory is
     dirty_o  : out std_ulogic;                     -- accessed block is dirty
     base_o   : out std_ulogic_vector(31 downto 0); -- base address of current block
     -- cache access --
-    src_i    : in  std_ulogic;                     -- 0=data / 1=instruction access
     addr_i   : in  std_ulogic_vector(31 downto 0); -- access address
     we_i     : in  std_ulogic_vector(3 downto 0);  -- byte-wide data write enable
     swe_i    : in  std_ulogic;                     -- status write enable
@@ -624,13 +601,9 @@ end neorv32_cache_memory;
 
 architecture neorv32_cache_memory_rtl of neorv32_cache_memory is
 
-  -- virtual cache splitting: lower-half for data, upper-half for instructions --
-  constant vsplit_en_c : natural := cond_sel_natural_f(VSPLIT_EN, 1, 0); -- additional index bit
-  constant l_blocks_c  : natural := cond_sel_natural_f(VSPLIT_EN, NUM_BLOCKS/2, NUM_BLOCKS); -- number of logical blocks
-
   -- cache layout --
   constant offset_size_c : natural := index_size_f(BLOCK_SIZE/4); -- offset addresses full 32-bit words
-  constant index_size_c  : natural := index_size_f(l_blocks_c); -- logical index size
+  constant index_size_c  : natural := index_size_f(NUM_BLOCKS); -- index size
   constant tag_size_c    : natural := 32 - (offset_size_c + index_size_c + 2); -- 2 additional bits for byte offset
 
   -- status flag memory --
@@ -653,10 +626,9 @@ architecture neorv32_cache_memory_rtl of neorv32_cache_memory is
 
   -- access address decomposition --
   signal acc_tag, acc_tag_ff : std_ulogic_vector(tag_size_c-1 downto 0);
-  signal acc_idx, acc_idx_ff : std_ulogic_vector(index_size_c-1 downto 0); -- logical index
-  signal acc_pid : std_ulogic_vector((index_size_c+vsplit_en_c)-1 downto 0); -- physical index
+  signal acc_idx, acc_idx_ff : std_ulogic_vector(index_size_c-1 downto 0);
   signal acc_off : std_ulogic_vector(offset_size_c-1 downto 0);
-  signal acc_adr : std_ulogic_vector((index_size_c+vsplit_en_c+offset_size_c)-1 downto 0);
+  signal acc_adr : std_ulogic_vector((index_size_c+offset_size_c)-1 downto 0);
 
 begin
 
@@ -665,19 +637,7 @@ begin
   acc_tag <= addr_i(31 downto 31-(tag_size_c-1));
   acc_idx <= addr_i(31-tag_size_c downto 2+offset_size_c);
   acc_off <= addr_i(2+(offset_size_c-1) downto 2);
-
-  -- virtual cache-splitting (individual block for instructions and data) --
-  vsplit_enable:
-  if VSPLIT_EN generate
-    acc_pid <= src_i & acc_idx; -- physical index = logical + I/D select (virtual)
-  end generate;
-  vsplit_disable:
-  if not VSPLIT_EN generate
-    acc_pid <= acc_idx; -- physical index = logical (non-virtual)
-  end generate;
-
-  -- physical cache block ram address --
-  acc_adr <= acc_pid & acc_off;
+  acc_adr <= acc_idx & acc_off;
 
   -- access buffer (tag + index) --
   access_buffer: process(rstn_i, clk_i)
@@ -701,19 +661,19 @@ begin
       dirty_mem <= (others => '0');
     elsif rising_edge(clk_i) then
       if (new_i = '1') then -- set new block
-        valid_mem(to_integer(unsigned(acc_pid))) <= '1'; -- valid
-        dirty_mem(to_integer(unsigned(acc_pid))) <= '0'; -- clean
+        valid_mem(to_integer(unsigned(acc_idx))) <= '1'; -- valid
+        dirty_mem(to_integer(unsigned(acc_idx))) <= '0'; -- clean
       else
         if (inval_i = '1') then -- invalidate current block
-          valid_mem(to_integer(unsigned(acc_pid))) <= '0';
+          valid_mem(to_integer(unsigned(acc_idx))) <= '0';
         end if;
         if (dirty_i = '1') then -- make current block dirty
-          dirty_mem(to_integer(unsigned(acc_pid))) <= '1';
+          dirty_mem(to_integer(unsigned(acc_idx))) <= '1';
         end if;
       end if;
       -- sync read --
-      valid_mem_rd <= valid_mem(to_integer(unsigned(acc_pid)));
-      dirty_mem_rd <= dirty_mem(to_integer(unsigned(acc_pid)));
+      valid_mem_rd <= valid_mem(to_integer(unsigned(acc_idx)));
+      dirty_mem_rd <= dirty_mem(to_integer(unsigned(acc_idx)));
     end if;
   end process status_memory;
 
@@ -724,9 +684,9 @@ begin
   begin
     if rising_edge(clk_i) then
       if (new_i = '1') then -- set new cache entry
-        tag_mem(to_integer(unsigned(acc_pid))) <= acc_tag;
+        tag_mem(to_integer(unsigned(acc_idx))) <= acc_tag;
       end if;
-      tag_mem_rd <= tag_mem(to_integer(unsigned(acc_pid)));
+      tag_mem_rd <= tag_mem(to_integer(unsigned(acc_idx)));
     end if;
   end process tag_memory;
 
@@ -852,7 +812,6 @@ entity neorv32_cache_bus is
     dirty_i     : in  std_ulogic;                     -- accessed block is dirty
     base_i      : in  std_ulogic_vector(31 downto 0); -- base address of accessed block
     -- cache data interface --
-    src_o       : out std_ulogic;                     -- 0=data / 1=instruction access
     addr_o      : out std_ulogic_vector(31 downto 0); -- access address
     we_o        : out std_ulogic_vector(3 downto 0);  -- byte-wide data write enable
     swe_o       : out std_ulogic;                     -- status write enable
@@ -879,7 +838,6 @@ architecture neorv32_cache_bus_rtl of neorv32_cache_bus is
     state, state_nxt : ctrl_state_t; -- FSM state
     upret, upret_nxt : ctrl_state_t; -- upload-done return state
     addr,  addr_nxt  : std_ulogic_vector(31 downto 0); -- address generator
-    src,   src_nxt   : std_ulogic; -- cache access source type
     bcnt,  bcnt_nxt  : std_ulogic_vector(index_size_c-1 downto 0); -- block counter
   end record;
   signal ctrl : ctrl_t;
@@ -894,14 +852,12 @@ begin
       ctrl.state <= S_IDLE;
       ctrl.upret <= S_IDLE;
       ctrl.addr  <= (others => '0');
-      ctrl.src   <= '0';
       ctrl.bcnt  <= (others => '0');
       hreq       <= req_terminate_c;
     elsif rising_edge(clk_i) then
       ctrl.state <= ctrl.state_nxt;
       ctrl.upret <= ctrl.upret_nxt;
       ctrl.addr  <= ctrl.addr_nxt;
-      ctrl.src   <= ctrl.src_nxt;
       ctrl.bcnt  <= ctrl.bcnt_nxt;
       hreq       <= host_req_i;
     end if;
@@ -916,11 +872,9 @@ begin
     ctrl.state_nxt <= ctrl.state;
     ctrl.upret_nxt <= ctrl.upret;
     ctrl.addr_nxt  <= ctrl.addr;
-    ctrl.src_nxt   <= ctrl.src;
     ctrl.bcnt_nxt  <= ctrl.bcnt;
 
     -- cache defaults --
-    src_o   <= ctrl.src;
     addr_o  <= ctrl.addr;
     we_o    <= (others => '0');
     swe_o   <= '0';
@@ -936,7 +890,6 @@ begin
     bus_req_o.addr <= ctrl.addr(31 downto 2) & "00"; -- always word-aligned
     bus_req_o.data <= rdata_i;
     bus_req_o.ben  <= (others => '1'); -- full-word writes only
-    bus_req_o.src  <= hreq.src; -- keep original source type
     bus_req_o.priv <= hreq.priv; -- keep original privilege level
 
     -- fsm --
@@ -947,10 +900,8 @@ begin
         ctrl.addr_nxt(offset_size_c-1 downto 0) <= (others => '0'); -- align block base address
         ctrl.bcnt_nxt                           <= (others => '0'); -- reset block counter
         if (cmd_sync_i = '1') then -- cache sync
-          ctrl.src_nxt   <= '0'; -- data-only
           ctrl.state_nxt <= S_FLUSH_0;
         elsif (cmd_miss_i = '1') then -- cache miss
-          ctrl.src_nxt                           <= host_req_i.src; -- buffer original access source/type (for VSPLIT option)
           ctrl.addr_nxt(31 downto offset_size_c) <= host_req_i.addr(31 downto offset_size_c); -- buffer original tag + index for cache look-up
           ctrl.state_nxt                         <= S_CHECK_PRE;
         end if;
