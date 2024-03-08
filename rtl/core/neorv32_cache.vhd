@@ -10,18 +10,17 @@
 -- # **bypass** the cache resulting in "direct accesses".                                          #
 -- #                                                                                               #
 -- # A fence request will first flush the data cache (write back modified blocks to main memory)   #
--- # before invalidating all cache blocks to force a re-fetch from main memory to allow a full     #
--- # synchronization between main memory and cache memory. After this, the fence request is        #
--- # forwarded to the downstream memory system.                                                    #
+-- # before invalidating all cache blocks to force a re-fetch from main memory. After this, the    #
+-- # fence request is forwarded to the downstream memory system.                                   #
 -- #                                                                                               #
 -- # Simplified cache architecture ("-->" = direction of access requests):                         #
 -- #                                                                                               #
 -- #                   Direct Access          +----------+                                         #
--- #             /|-------------------------->| Register |-------------------------->|\            #
--- #            | |                           +----------+                           | |           #
--- #  Host ---->| |                                                                  | |----> Bus  #
--- #            | |    +--------------+     +--------------+     +-------------+     | |           #
--- #             \|--->| Host Arbiter |---->| Cache Memory |<----| Bus Arbiter |---->|/            #
+-- #             /|-------------------------->| Register |------------------------->|\             #
+-- #            | |                           +----------+                          | |            #
+-- #  Host ---->| |                                                                 | |----> Bus   #
+-- #            | |    +--------------+     +--------------+     +-------------+    | |            #
+-- #             \|--->| Host Arbiter |---->| Cache Memory |<----| Bus Arbiter |--->|/             #
 -- #                   +--------------+     +--------------+     +-------------+                   #
 -- #                                                                                               #
 -- # ********************************************************************************************* #
@@ -64,10 +63,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cache is
   generic (
-    NUM_BLOCKS : natural range 2 to 4096;       -- number of cache blocks (min 2), has to be a power of 2
-    BLOCK_SIZE : natural range 4 to 4096;       -- cache block size in bytes (min 4), has to be a power of 2
-    UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (page number / 4 MSBs)
-    UC_ENABLE  : boolean                        -- enable uncached accesses
+    NUM_BLOCKS : natural range 2 to 4096;      -- number of cache blocks (min 2), has to be a power of 2
+    BLOCK_SIZE : natural range 4 to 4096;      -- cache block size in bytes (min 4), has to be a power of 2
+    UC_BEGIN   : std_ulogic_vector(3 downto 0) -- begin of uncached address space (page number / 4 MSBs)
   );
   port (
     clk_i      : in  std_ulogic; -- global clock, rising edge
@@ -213,34 +211,26 @@ begin
     cache_req.stb <= host_req_i.stb and (not dir_acc_d);
   end process req_splitter;
 
-  direct_accesses_enable:
-  if UC_ENABLE generate
-    -- direct/uncached access path pipeline stage --
-    bus_buffer: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
+  -- direct/uncached access path pipeline stage --
+  bus_buffer: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      dir_acc_q <= '0';
+      dir_req_q <= req_terminate_c;
+      dir_rsp_q <= rsp_terminate_c;
+    elsif rising_edge(clk_i) then
+      if (dir_acc_q = '0') and (host_req_i.stb = '1') and (dir_acc_d = '1') then
+        dir_acc_q <= '1';
+      elsif (dir_acc_q = '1') and ((dir_rsp_q.ack = '1') or (dir_rsp_q.err = '1')) then
         dir_acc_q <= '0';
-        dir_req_q <= req_terminate_c;
-        dir_rsp_q <= rsp_terminate_c;
-      elsif rising_edge(clk_i) then
-        if (dir_acc_q = '0') and (host_req_i.stb = '1') and (dir_acc_d = '1') then
-          dir_acc_q <= '1';
-        elsif (dir_acc_q = '1') and ((dir_rsp_q.ack = '1') or (dir_rsp_q.err = '1')) then
-          dir_acc_q <= '0';
-        end if;
-        dir_req_q <= dir_req_d;
-        dir_rsp_q <= dir_rsp_d;
       end if;
-    end process bus_buffer;
+      dir_req_q <= dir_req_d;
+      dir_rsp_q <= dir_rsp_d;
+    end if;
+  end process bus_buffer;
 
-    -- response switch --
-    host_rsp_o <= cache_rsp when (dir_acc_q = '0') else dir_rsp_q;
-  end generate;
-
-  direct_accesses_disable:
-  if not UC_ENABLE generate
-    host_rsp_o <= cache_rsp;
-  end generate;
+  -- response switch --
+  host_rsp_o <= cache_rsp when (dir_acc_q = '0') else dir_rsp_q;
 
 
   -- Host Access Arbiter (Handle *Cached* CPU Bus Requests) ---------------------------------
@@ -339,7 +329,7 @@ begin
   );
 
   -- simple bus multiplexer (as there won't be simultaneous access requests) --
-  bus_req_o <= bus_req when (cmd_busy = '1') or (UC_ENABLE = false) else dir_req_q;
+  bus_req_o <= bus_req when (cmd_busy = '1') else dir_req_q;
   dir_rsp_d <= bus_rsp_i;
   bus_rsp   <= bus_rsp_i;
 
@@ -746,10 +736,6 @@ end neorv32_cache_memory_rtl;
 
 -- #################################################################################################
 -- # << NEORV32 - Generic Cache: Bus Interface Unit >>                                             #
--- # ********************************************************************************************* #
--- # Handles cache misses (write-allocate if write-miss, write-back if to-be-updated cache block   #
--- # is dirty) and synchronization requests ("fence", upload all modified block to main memory,    #
--- # invalidate all cache blocks to force reload from main memoy)                                  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
