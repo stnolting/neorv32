@@ -15,11 +15,11 @@
 -- # only and the second set is reserved for data only).                                           #
 -- #                                                                                               #
 -- # A fence request will first flush the data cache (write back modified blocks to main memory)   #
--- # before invalidating all cache blocks to force a re-fetch from main memory to provide a full   #
--- # synchronization between main memory and cache.memory on demand. After this, the fence request #
--- # is forwarded to the downstream memory system.                                                 #
+-- # before invalidating all cache blocks to force a re-fetch from main memory to allow a full     #
+-- # synchronization between main memory and cache memory. After this, the fence request is        #
+-- # forwarded to the downstream memory system.                                                    #
 -- #                                                                                               #
--- # Simplified cache architecture ("-->" = flow of memory access requests):                       #
+-- # Simplified cache architecture ("-->" = direction of access requests):                         #
 -- #                                                                                               #
 -- #                   Direct Access          +----------+                                         #
 -- #             /|-------------------------->| Register |-------------------------->|\            #
@@ -211,8 +211,8 @@ begin
   dir_acc_d <= '1' when (host_req_i.addr(31 downto 28) = UC_BEGIN) or -- uncached memory page
                         (host_req_i.rvso = '1') else '0'; -- atomic )reservation set) operation
 
-  -- request switch --
-  dir_acc_switch: process(host_req_i, dir_acc_d)
+  -- request splitter: cached or direct access --
+  req_splitter: process(host_req_i, dir_acc_d)
   begin
     -- default: pass-through of all bus signals --
     cache_req <= host_req_i;
@@ -222,7 +222,7 @@ begin
     dir_req_d.fence <= '0'; -- no fence requests from this side
     -- cached access --
     cache_req.stb <= host_req_i.stb and (not dir_acc_d);
-  end process dir_acc_switch;
+  end process req_splitter;
 
   direct_accesses_enable:
   if UC_ENABLE generate
@@ -234,7 +234,11 @@ begin
         dir_req_q <= req_terminate_c;
         dir_rsp_q <= rsp_terminate_c;
       elsif rising_edge(clk_i) then
-        dir_acc_q <= dir_acc_d;
+        if (dir_acc_q = '0') and (host_req_i.stb = '1') and (dir_acc_d = '1') then
+          dir_acc_q <= '1';
+        elsif (dir_acc_q = '1') and ((dir_rsp_q.ack = '1') or (dir_rsp_q.err = '1')) then
+          dir_acc_q <= '0';
+        end if;
         dir_req_q <= dir_req_d;
         dir_rsp_q <= dir_rsp_d;
       end if;
@@ -501,8 +505,8 @@ begin
 
       when S_CHECK => -- check if cache hit
       -- ------------------------------------------------------------
-        ctrl.req_buf_nxt <= '0'; -- access completed
         rsp_o.data       <= rdata_i; -- output read data
+        ctrl.req_buf_nxt <= '0'; -- access request completed
         if (hit_i = '1') then
           if (req_i.rw = '1') then -- write access
             dirty_o <= '1'; -- cache block is dirty now
@@ -940,15 +944,15 @@ begin
 
       when S_IDLE => -- wait for request
       -- ------------------------------------------------------------
-        ctrl.src_nxt                            <= host_req_i.src; -- buffer original access source/type (for VSPLIT option)
-        ctrl.addr_nxt(31 downto offset_size_c)  <= host_req_i.addr(31 downto offset_size_c); -- buffer original tag + index for cache look-up
         ctrl.addr_nxt(offset_size_c-1 downto 0) <= (others => '0'); -- align block base address
         ctrl.bcnt_nxt                           <= (others => '0'); -- reset block counter
         if (cmd_sync_i = '1') then -- cache sync
           ctrl.src_nxt   <= '0'; -- data-only
           ctrl.state_nxt <= S_FLUSH_0;
         elsif (cmd_miss_i = '1') then -- cache miss
-          ctrl.state_nxt <= S_CHECK_PRE;
+          ctrl.src_nxt                           <= host_req_i.src; -- buffer original access source/type (for VSPLIT option)
+          ctrl.addr_nxt(31 downto offset_size_c) <= host_req_i.addr(31 downto offset_size_c); -- buffer original tag + index for cache look-up
+          ctrl.state_nxt                         <= S_CHECK_PRE;
         end if;
 
       when S_CHECK_PRE => -- cache memory access latency
@@ -1026,12 +1030,12 @@ begin
       when S_FLUSH_2 => -- check if currently indexed block is dirty
       -- ------------------------------------------------------------
         ctrl.upret_nxt                         <= S_FLUSH_2; -- come back here after upload
-        ctrl.addr_nxt(31 downto offset_size_c) <= base_i(31 downto offset_size_c); -- tag + index of current checked block
-        inval_o                                <= '1'; -- invalidate current block
-        -- check if dirty --
+        inval_o                                <= '1'; -- invalidate currently checked block
+        ctrl.addr_nxt(31 downto offset_size_c) <= base_i(31 downto offset_size_c); -- tag + index of currently checked block
+        -- check if dirty / upload required --
         if (dirty_i = '1') then -- upload dirty block to main memory
           ctrl.state_nxt <= S_UPLOAD_GET;
-        else -- go to next block
+        else -- move on to next block
           ctrl.bcnt_nxt <= std_ulogic_vector(unsigned(ctrl.bcnt) + 1);
           if (and_reduce_f(ctrl.bcnt) = '1') then -- all blocks done?
             bus_req_o.fence <= '1'; -- forward fence (sync) to downstream memories
