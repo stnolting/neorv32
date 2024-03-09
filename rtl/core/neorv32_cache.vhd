@@ -195,7 +195,7 @@ begin
 
   -- Check if Direct/Uncached Access --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dir_acc_d <= '1' when (host_req_i.addr(31 downto 28) = UC_BEGIN) or -- uncached memory page
+  dir_acc_d <= '1' when (host_req_i.addr(31 downto 28) >= UC_BEGIN) or -- uncached memory page
                         (host_req_i.rvso = '1') else '0'; -- atomic (reservation set) operation
 
   -- request splitter: cached or direct access --
@@ -294,7 +294,7 @@ begin
   cache_in <= cache_in_host when (cmd_busy = '0') else cache_in_bus;
 
 
-  -- Bus Access Arbiter (Handle Cache Miss and Flush/Reload)---------------------------------
+  -- Bus Access Arbiter (Handle Cache Miss and Flush/Reload) --------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_bus_inst: neorv32_cache_bus
   generic map (
@@ -328,10 +328,26 @@ begin
     rdata_i    => cache_out.rdata      -- read data
   );
 
-  -- simple bus multiplexer (as there won't be simultaneous access requests) --
-  bus_req_o <= bus_req when (cmd_busy = '1') else dir_req_q;
-  dir_rsp_d <= bus_rsp_i;
-  bus_rsp   <= bus_rsp_i;
+
+  -- Bus Access Switch ----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- Use a real switch here to buffer direct access requests
+  -- during out-of-band cache operation (fence / cache flush).
+  neorv32_cache_bus_switch: entity neorv32.neorv32_bus_switch
+  generic map (
+    PORT_A_READ_ONLY => false,
+    PORT_B_READ_ONLY => false
+  )
+  port map (
+    clk_i   => clk_i,
+    rstn_i  => rstn_i,
+    a_req_i => bus_req,
+    a_rsp_o => bus_rsp,
+    b_req_i => dir_req_q,
+    b_rsp_o => dir_rsp_d,
+    x_req_o => bus_req_o,
+    x_rsp_i => bus_rsp_i
+  );
 
 
 end neorv32_cache_rtl;
