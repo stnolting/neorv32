@@ -85,11 +85,11 @@
 void sim_irq_trigger(uint32_t sel);
 void global_trap_handler(void);
 void rte_service_handler(void);
-void vectored_irq_table(void) __attribute__((naked, aligned(128)));
-void vectored_global_handler(void) __attribute__((interrupt("machine")));
-void vectored_mei_handler(void) __attribute__((interrupt("machine")));
-void __attribute__ ((interrupt)) hw_breakpoint_handler(void);
-void __attribute__ ((noinline)) trigger_module_dummy(void);
+void vectored_irq_table(void);
+void vectored_global_handler(void);
+void vectored_mei_handler(void);
+void hw_breakpoint_handler(void);
+void trigger_module_dummy(void);
 void xirq_trap_handler0(void);
 void xirq_trap_handler1(void);
 void test_ok(void);
@@ -2306,7 +2306,7 @@ void rte_service_handler(void) {
 /**********************************************************************//**
  * Vectored mtvec mode jump table.
  **************************************************************************/
-void vectored_irq_table(void) {
+void __attribute__((naked, aligned(128))) vectored_irq_table(void) {
   asm volatile(
     ".org  vectored_irq_table + 0*4  \n"
     "jal   zero, %[glb]              \n" // 0
@@ -2341,7 +2341,7 @@ void vectored_irq_table(void) {
 /**********************************************************************//**
  * Vectored trap handler for ALL exceptions/interrupts.
  **************************************************************************/
-void vectored_global_handler(void) {
+void __attribute__((interrupt("machine"))) vectored_global_handler(void) {
 
   // Call the default trap handler, cannot be put into the vector table directly
   // as all function in the table must have the gcc attribute "interrupt".
@@ -2352,7 +2352,7 @@ void vectored_global_handler(void) {
 /**********************************************************************//**
  * Machine external interrupt handler.
  **************************************************************************/
-void vectored_mei_handler(void) {
+void __attribute__((interrupt("machine"))) vectored_mei_handler(void) {
 
   vectored_mei_handler_ack = 1; // successfully called
 }
@@ -2361,7 +2361,7 @@ void vectored_mei_handler(void) {
 /**********************************************************************//**
  * Hardware-breakpoint trap handler
  **************************************************************************/
-void __attribute__ ((interrupt)) hw_breakpoint_handler(void) {
+void __attribute__ ((interrupt("machine"),aligned(4))) hw_breakpoint_handler(void) {
 
   // make sure mscratch has not been updated yet
   if (neorv32_cpu_csr_read(CSR_MSCRATCH) == 0) {
@@ -2376,7 +2376,7 @@ void __attribute__ ((interrupt)) hw_breakpoint_handler(void) {
 /**********************************************************************//**
  * Test function for the trigger module
  **************************************************************************/
-void __attribute__ ((noinline,naked)) trigger_module_dummy(void) {
+void __attribute__ ((noinline,naked,aligned(4))) trigger_module_dummy(void) {
 
   asm volatile ("csrwi mscratch, 4 \n" // hardware breakpoint should trigger before executing this
                 "ret               \n");
