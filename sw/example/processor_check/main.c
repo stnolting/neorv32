@@ -990,7 +990,8 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
     neorv32_mtime_set_timecmp(0); // force interrupt
 
-    int test_cnt = 0;
+    volatile int test_cnt = 0;
+
     while(test_cnt < 3) {
       test_cnt++;
     }
