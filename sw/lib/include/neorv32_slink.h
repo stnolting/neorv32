@@ -49,8 +49,8 @@
 typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;         /**< offset 0: control register (#NEORV32_SLINK_CTRL_enum) */
   uint32_t RX_DATA;      /**< offset 4: rx data register */
-  uint32_t TX_DATA;      /**< offset 8: rx data register */
-  uint32_t TX_DATA_LAST; /**< offset 12: rx data register + end-of-stream delimiter */
+  uint32_t TX_DATA;      /**< offset 8: tx data register */
+  uint32_t TX_DATA_LAST; /**< offset 12: tx data register + end-of-stream delimiter */
 } neorv32_slink_t;
 
 /** SLINK module hardware access (#neorv32_slink_t) */
