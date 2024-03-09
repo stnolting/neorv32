@@ -16,7 +16,7 @@ limitations under the License.
 Original Author: Shay Gal-on
 */
 
-/* Adjusted for the NEORV32 RISC-V Processor by Stephan Nolting */
+/* Ported to the NEORV32 RISC-V Processor by Stephan Nolting, 2024 */
 
 #include "coremark.h"
 #include "core_portme.h"
@@ -194,14 +194,14 @@ void portable_fini(core_portable *p) {
     neorv32_uart0_printf(" > Active clock cycles          : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MCYCLE));
     neorv32_uart0_printf(" > Retired instructions         : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MINSTRET));
     if (num_hpm_cnts_global == 0) {neorv32_uart0_printf("no HPMs available\n"); }
-    if (num_hpm_cnts_global > 0)  {neorv32_uart0_printf(" > Compressed instructions)     : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));  }
-    if (num_hpm_cnts_global > 1)  {neorv32_uart0_printf(" > Instr. dispatch wait cycles) : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));  }
-    if (num_hpm_cnts_global > 2)  {neorv32_uart0_printf(" > ALU wait cycles)             : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));  }
-    if (num_hpm_cnts_global > 3)  {neorv32_uart0_printf(" > Branch instructions)         : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));  }
-    if (num_hpm_cnts_global > 4)  {neorv32_uart0_printf(" > Control flow transfers)      : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));  }
-    if (num_hpm_cnts_global > 5)  {neorv32_uart0_printf(" > Load instructions)           : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));  }
-    if (num_hpm_cnts_global > 6)  {neorv32_uart0_printf(" > Store instructions)          : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));  }
-    if (num_hpm_cnts_global > 7)  {neorv32_uart0_printf(" > Load/store wait cycles)      : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10)); }
-    if (num_hpm_cnts_global > 8)  {neorv32_uart0_printf(" > Entered traps)               : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11)); }
+    if (num_hpm_cnts_global > 0)  {neorv32_uart0_printf(" > Compressed instructions     : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));  }
+    if (num_hpm_cnts_global > 1)  {neorv32_uart0_printf(" > Instr. dispatch wait cycles : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));  }
+    if (num_hpm_cnts_global > 2)  {neorv32_uart0_printf(" > ALU wait cycles             : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));  }
+    if (num_hpm_cnts_global > 3)  {neorv32_uart0_printf(" > Branch instructions         : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));  }
+    if (num_hpm_cnts_global > 4)  {neorv32_uart0_printf(" > Control flow transfers      : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));  }
+    if (num_hpm_cnts_global > 5)  {neorv32_uart0_printf(" > Load instructions           : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));  }
+    if (num_hpm_cnts_global > 6)  {neorv32_uart0_printf(" > Store instructions          : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));  }
+    if (num_hpm_cnts_global > 7)  {neorv32_uart0_printf(" > Load/store wait cycles      : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10)); }
+    if (num_hpm_cnts_global > 8)  {neorv32_uart0_printf(" > Entered traps               : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11)); }
     neorv32_uart0_printf("\n");
 }
