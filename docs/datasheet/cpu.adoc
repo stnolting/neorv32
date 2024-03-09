@@ -367,6 +367,11 @@ The figure below shows three exemplary bus accesses:
 .Three Exemplary Bus Transactions
 image::bus_interface.png[700]
 
+.Adding Register Stages
+[TIP]
+Arbitrary pipeline stages can be added to the request and response buses at any point to relax timing (at the cost of
+additional latency). However, _all_ bus signals (request and response) need to be registered.
+
 
 :sectnums:
 ==== Atomic Accesses
