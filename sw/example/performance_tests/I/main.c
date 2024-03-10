@@ -83,7 +83,7 @@ int main() {
   int instToTest = 0;
 
   // Determine which instructions to test
-  #ifdef rv32I_all
+  #ifdef rv32_all
     #define rv32I_arith  1
     #define rv32I_shift  1
     #define rv32I_logic  1
