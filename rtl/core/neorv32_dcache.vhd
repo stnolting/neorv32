@@ -342,6 +342,7 @@ begin
     ctrl_rdata_o => cache.ctrl_rdata
   );
 
+
 end neorv32_dcache_rtl;
 
 
@@ -460,11 +461,11 @@ begin
   -- -------------------------------------------------------------------------------------------
   host_acc_addr.tag    <= host_addr_i(31 downto 31-(cache_tag_size_c-1));
   host_acc_addr.index  <= host_addr_i(31-cache_tag_size_c downto 2+cache_offset_size_c);
-  host_acc_addr.offset <= host_addr_i(2+(cache_offset_size_c-1) downto 2); -- discard byte offset
+  host_acc_addr.offset <= host_addr_i(2+(cache_offset_size_c-1) downto 2); -- word offset
 
   ctrl_acc_addr.tag    <= ctrl_addr_i(31 downto 31-(cache_tag_size_c-1));
   ctrl_acc_addr.index  <= ctrl_addr_i(31-cache_tag_size_c downto 2+cache_offset_size_c);
-  ctrl_acc_addr.offset <= ctrl_addr_i(2+(cache_offset_size_c-1) downto 2); -- discard byte offset
+  ctrl_acc_addr.offset <= ctrl_addr_i(2+(cache_offset_size_c-1) downto 2); -- word offset
 
 
   -- Status Flag Memory ---------------------------------------------------------------------
