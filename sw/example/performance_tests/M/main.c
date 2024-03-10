@@ -80,7 +80,7 @@ int main() {
   int instToTest = 0;
 
   // Determine which instructions to test
-  #ifdef rv32M_all
+  #ifdef rv32_all
     #define rv32M_mult  1
     #define rv32M_div  1
     #define rv32M_rem  1
