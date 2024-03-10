@@ -368,9 +368,9 @@ begin
 
         when IF_REQUEST => -- request next 32-bit-aligned instruction word
         -- ------------------------------------------------------------
-          if (ipb.free = "11") then -- wait for free IPB space
+          if (ipb.free = "11") then -- free IPB space?
             fetch_engine.state <= IF_PENDING;
-          elsif (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart request due to branch
+          elsif (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart because of branch
             fetch_engine.state <= IF_RESTART;
           end if;
 
@@ -849,14 +849,14 @@ begin
     -- state machine --
     case execute_engine.state is
 
-      when DISPATCH => -- Wait for ISSUE ENGINE to emit valid instruction word
+      when DISPATCH => -- Wait for ISSUE ENGINE to emit a valid instruction word
       -- ------------------------------------------------------------
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           execute_engine.state_nxt <= TRAP_ENTER;
         elsif (CPU_EXTENSION_RISCV_Sdtrig = true) and (hw_trigger_match = '1') then -- hardware breakpoint
           execute_engine.pc_we     <= '1'; -- pc <= next_pc
           trap_ctrl.hwtrig         <= '1';
-          execute_engine.state_nxt <= TRAP_ENTER;
+          execute_engine.state_nxt <= DISPATCH; -- stay here another round until trap_ctrl.hwtrig arrives in trap_ctrl.env_pending
         elsif (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- new instruction word available
           issue_engine.ack         <= '1';
           trap_ctrl.instr_be       <= issue_engine.data(32); -- access fault during instruction fetch
@@ -1413,7 +1413,7 @@ begin
       -- break point --
       if (CPU_EXTENSION_RISCV_Sdext = true) then
         trap_ctrl.exc_buf(exc_ebreak_c) <= (not trap_ctrl.env_enter) and (trap_ctrl.exc_buf(exc_ebreak_c) or
-          (trap_ctrl.hwtrig and (not csr.tdata1_action)) or -- trigger module fires and enter-debug is disabled
+          (trap_ctrl.hwtrig and (not csr.tdata1_action)) or -- trigger module fires and enter-debug-action is disabled
           (trap_ctrl.ebreak and (    csr.privilege) and (not csr.dcsr_ebreakm) and (not debug_ctrl.running)) or -- enter M-mode handler on ebreak in M-mode
           (trap_ctrl.ebreak and (not csr.privilege) and (not csr.dcsr_ebreaku) and (not debug_ctrl.running)));  -- enter M-mode handler on ebreak in U-mode
       else
@@ -1550,7 +1550,7 @@ begin
       trap_ctrl.env_pending <= '0';
     elsif rising_edge(clk_i) then
       if (trap_ctrl.env_pending = '0') then -- no pending trap environment yet
-        -- trigger IRQ only in EXECUTE states to *continue execution* even if there are permanent interrupt requests
+        -- trigger IRQ only in EXECUTE state --
         if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and (execute_engine.state = EXECUTE)) then
           trap_ctrl.env_pending <= '1'; -- now execute engine can start trap handling
         end if;
