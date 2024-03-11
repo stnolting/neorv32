@@ -321,7 +321,6 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
     cyc : std_ulogic; -- valid cycle
     ack : std_ulogic; -- transfer acknowledge
     err : std_ulogic; -- transfer error
-    tag : std_ulogic_vector(02 downto 0); -- tag
   end record;
   signal wb_core : wb_bus_t;
 
@@ -447,7 +446,6 @@ begin
     jtag_tdo_o     => jtag_tdo_o_int,  -- serial data output
     jtag_tms_i     => jtag_tms_i_int,  -- mode select
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o       => wb_core.tag,     -- tag
     wb_adr_o       => wb_core.adr,     -- address
     wb_dat_i       => wb_core.di,      -- read data
     wb_dat_o       => wb_core.do,      -- write data
@@ -618,10 +616,7 @@ begin
   -- AXI4-Lite Read Address Channel --
   m_axi_araddr  <= std_logic_vector(wb_core.adr);
   m_axi_arvalid <= std_logic((wb_core.cyc and (not wb_core.we)) and (not ctrl.radr_received));
---m_axi_arprot  <= "000"; -- recommended by AMD
-  m_axi_arprot(0) <= wb_core.tag(0); -- 0:unprivileged access, 1:privileged access
-  m_axi_arprot(1) <= wb_core.tag(1); -- 0:secure access, 1:non-secure access
-  m_axi_arprot(2) <= wb_core.tag(2); -- 0:data access, 1:instruction access
+  m_axi_arprot  <= "000"; -- recommended by AMD
 
   -- AXI4-Lite Read Data Channel --
   m_axi_rready <= std_logic(wb_core.cyc and (not wb_core.we));
@@ -632,10 +627,7 @@ begin
   -- AXI4-Lite Write Address Channel --
   m_axi_awaddr  <= std_logic_vector(wb_core.adr);
   m_axi_awvalid <= std_logic((wb_core.cyc and wb_core.we) and (not ctrl.wadr_received));
---m_axi_awprot  <= "000"; -- recommended by AMD
-  m_axi_awprot(0) <= wb_core.tag(0); -- 0:unprivileged access, 1:privileged access
-  m_axi_awprot(1) <= wb_core.tag(1); -- 0:secure access, 1:non-secure access
-  m_axi_awprot(2) <= wb_core.tag(2); -- 0:data access, 1:instruction access
+  m_axi_awprot  <= "000"; -- recommended by AMD
 
   -- AXI4-Lite Write Data Channel --
   m_axi_wdata  <= std_logic_vector(wb_core.do);

@@ -140,7 +140,6 @@ architecture neorv32_tb_rtl of neorv32_tb is
     cyc   : std_ulogic; -- valid cycle
     ack   : std_ulogic; -- transfer acknowledge
     err   : std_ulogic; -- transfer error
-    tag   : std_ulogic_vector(02 downto 0); -- request tag
   end record;
   signal wb_cpu, wb_mem_a, wb_mem_b, wb_mem_c, wb_irq : wishbone_t;
 
@@ -322,7 +321,6 @@ begin
     jtag_tdo_o     => open,            -- serial data output
     jtag_tms_i     => '0',             -- mode select
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o       => wb_cpu.tag,      -- request tag
     wb_adr_o       => wb_cpu.addr,     -- address
     wb_dat_i       => wb_cpu.rdata,    -- read data
     wb_dat_o       => wb_cpu.wdata,    -- write data
@@ -439,28 +437,24 @@ begin
   wb_mem_a.wdata <= wb_cpu.wdata;
   wb_mem_a.we    <= wb_cpu.we;
   wb_mem_a.sel   <= wb_cpu.sel;
-  wb_mem_a.tag   <= wb_cpu.tag;
   wb_mem_a.cyc   <= wb_cpu.cyc;
 
   wb_mem_b.addr  <= wb_cpu.addr;
   wb_mem_b.wdata <= wb_cpu.wdata;
   wb_mem_b.we    <= wb_cpu.we;
   wb_mem_b.sel   <= wb_cpu.sel;
-  wb_mem_b.tag   <= wb_cpu.tag;
   wb_mem_b.cyc   <= wb_cpu.cyc;
 
   wb_mem_c.addr  <= wb_cpu.addr;
   wb_mem_c.wdata <= wb_cpu.wdata;
   wb_mem_c.we    <= wb_cpu.we;
   wb_mem_c.sel   <= wb_cpu.sel;
-  wb_mem_c.tag   <= wb_cpu.tag;
   wb_mem_c.cyc   <= wb_cpu.cyc;
 
   wb_irq.addr    <= wb_cpu.addr;
   wb_irq.wdata   <= wb_cpu.wdata;
   wb_irq.we      <= wb_cpu.we;
   wb_irq.sel     <= wb_cpu.sel;
-  wb_irq.tag     <= wb_cpu.tag;
   wb_irq.cyc     <= wb_cpu.cyc;
 
   -- CPU read-back signals (no mux here since peripherals have "output gates") --

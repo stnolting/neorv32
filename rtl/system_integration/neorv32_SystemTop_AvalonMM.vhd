@@ -212,7 +212,6 @@ end neorv32_top_avalonmm;
 architecture neorv32_top_avalonmm_rtl of neorv32_top_avalonmm is
 
   -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-  signal wb_tag_o : std_ulogic_vector(02 downto 0); -- request tag
   signal wb_adr_o : std_ulogic_vector(31 downto 0); -- address
   signal wb_dat_i : std_ulogic_vector(31 downto 0) := (others => 'U'); -- read data
   signal wb_dat_o : std_ulogic_vector(31 downto 0); -- write data
@@ -335,7 +334,6 @@ begin
     jtag_tms_i => jtag_tms_i,
 
     -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o => wb_tag_o,
     wb_adr_o => wb_adr_o,
     wb_dat_i => wb_dat_i,
     wb_dat_o => wb_dat_o,
