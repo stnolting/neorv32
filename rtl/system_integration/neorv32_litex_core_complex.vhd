@@ -217,7 +217,6 @@ begin
     jtag_tdo_o  => jtag_tdo_o,  -- serial data output
     jtag_tms_i  => jtag_tms_i,  -- mode select
     -- Wishbone bus interface --
-    wb_tag_o    => open,        -- request tag
     wb_adr_o    => wb_adr_o,    -- address
     wb_dat_i    => wb_dat_i,    -- read data
     wb_dat_o    => wb_dat_o,    -- write data

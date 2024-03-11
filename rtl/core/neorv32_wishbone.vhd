@@ -60,7 +60,6 @@ entity neorv32_wishbone is
     bus_req_i : in  bus_req_t;  -- bus request
     bus_rsp_o : out bus_rsp_t;  -- bus response
     --
-    wb_tag_o  : out std_ulogic_vector(02 downto 0); -- request tag
     wb_adr_o  : out std_ulogic_vector(31 downto 0); -- address
     wb_dat_i  : in  std_ulogic_vector(31 downto 0); -- read data
     wb_dat_o  : out std_ulogic_vector(31 downto 0); -- write data
@@ -93,8 +92,6 @@ architecture neorv32_wishbone_rtl of neorv32_wishbone is
     ack      : std_ulogic;
     err      : std_ulogic;
     timeout  : std_ulogic_vector(index_size_f(BUS_TIMEOUT) downto 0);
-    src      : std_ulogic;
-    priv     : std_ulogic;
   end record;
   signal ctrl    : ctrl_t;
   signal stb_int : std_ulogic;
@@ -147,8 +144,6 @@ begin
       ctrl.timeout  <= (others => '0');
       ctrl.ack      <= '0';
       ctrl.err      <= '0';
-      ctrl.src      <= '0';
-      ctrl.priv     <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
       ctrl.state_ff <= ctrl.state;
@@ -164,8 +159,6 @@ begin
           -- buffer (and gate) all outgoing signals --
           ctrl.we    <= bus_req_i.rw;
           ctrl.adr   <= bus_req_i.addr;
-          ctrl.src   <= bus_req_i.src;
-          ctrl.priv  <= bus_req_i.priv;
           ctrl.wdat  <= end_wdata;
           ctrl.sel   <= end_byteen;
           ctrl.state <= '1';
@@ -204,11 +197,6 @@ begin
   bus_rsp_o.data <= rdata when (BIG_ENDIAN = false) else bswap32_f(rdata); -- endianness conversion
   bus_rsp_o.ack  <= ctrl.ack when (async_rx_c = false) else ack_gated;
   bus_rsp_o.err  <= ctrl.err when (async_rx_c = false) else err_gated;
-
-  -- wishbone interface --
-  wb_tag_o(0) <= bus_req_i.priv when (ASYNC_TX = true) else ctrl.priv; -- 0 = unprivileged (U-mode), 1 = privileged (M-mode)
-  wb_tag_o(1) <= '0'; -- 0 = secure, 1 = non-secure
-  wb_tag_o(2) <= bus_req_i.src when (ASYNC_TX = true) else ctrl.src; -- 0 = data access, 1 = instruction access
 
   stb_int <=  bus_req_i.stb                when (ASYNC_TX = true) else (ctrl.state and (not ctrl.state_ff));
   cyc_int <= (bus_req_i.stb or ctrl.state) when (ASYNC_TX = true) else  ctrl.state;

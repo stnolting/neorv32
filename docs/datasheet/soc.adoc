@@ -71,7 +71,6 @@ bits/channels are hardwired to zero.
 [NOTE]
 Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in the designs top module.
 
-
 .NEORV32 Processor Signal List
 [cols="<3,^1,^1,^1,<8"]
 [options="header",grid="rows"]
@@ -87,7 +86,6 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 | `jtag_tdo_o`     |  1 | out |   -   | serial data output
 | `jtag_tms_i`     |  1 |  in | `'L'` | mode select
 5+^| **<<_processor_external_memory_interface_wishbone>>**
-| `wb_tag_o`       |  3 | out |   -   |  tag (access type identifier)
 | `wb_adr_o`       | 32 | out |   -   |  destination address
 | `wb_dat_i`       | 32 |  in | `'L'` |  write data
 | `wb_dat_o`       | 32 | out |   -   |  read data

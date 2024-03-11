@@ -830,18 +830,16 @@ architecture neorv32_cache_bus_rtl of neorv32_cache_bus is
   constant index_size_c  : natural := index_size_f(NUM_BLOCKS);
   constant tag_size_c    : natural := 32 - (offset_size_c + index_size_c + 2);
 
-  -- host request buffer --
-  signal hreq : bus_req_t;
-
   -- control fsm --
-  type state_t is (S_IDLE, S_CHECK, S_DOWNLOAD_REQ, S_DOWNLOAD_RSP, S_UPLOAD_GET, S_UPLOAD_REQ, S_UPLOAD_RSP, S_FLUSH_START, S_FLUSH_READ, S_FLUSH_CHECK);
+  type state_t is (S_IDLE, S_CHECK, S_DOWNLOAD_REQ, S_DOWNLOAD_RSP, S_UPLOAD_GET,
+                   S_UPLOAD_REQ, S_UPLOAD_RSP, S_FLUSH_START, S_FLUSH_READ, S_FLUSH_CHECK);
   signal state, upret, state_nxt, upret_nxt: state_t;
 
   -- address generator --
   type addr_t is record
     tag : std_ulogic_vector(tag_size_c-1 downto 0);
-    ind : std_ulogic_vector(index_size_c-1 downto 0);
-    off : std_ulogic_vector(offset_size_c-1 downto 0); -- WORD offset!
+    idx : std_ulogic_vector(index_size_c-1 downto 0);
+    ofs : std_ulogic_vector(offset_size_c-1 downto 0); -- WORD offset!
   end record;
   signal haddr, baddr, addr, addr_nxt : addr_t;
 
@@ -851,13 +849,13 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- base address of original host access --
   haddr.tag <= host_req_i.addr(31 downto (32-tag_size_c));
-  haddr.ind <= host_req_i.addr((offset_size_c+2+index_size_c)-1 downto offset_size_c+2);
-  haddr.off <= (others => '0'); -- unused
+  haddr.idx <= (others => '0'); -- unused
+  haddr.ofs <= (others => '0'); -- unused
 
   -- base address of indexed cache block --
   baddr.tag <= base_i(31 downto (32-tag_size_c));
-  baddr.ind <= base_i((offset_size_c+2+index_size_c)-1 downto offset_size_c+2);
-  baddr.off <= (others => '0'); -- unused
+  baddr.idx <= base_i((offset_size_c+2+index_size_c)-1 downto offset_size_c+2);
+  baddr.ofs <= (others => '0'); -- unused
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------
@@ -868,21 +866,19 @@ begin
       state    <= S_IDLE;
       upret    <= S_IDLE;
       addr.tag <= (others => '0');
-      addr.ind <= (others => '0');
-      addr.off <= (others => '0');
-      hreq     <= req_terminate_c;
+      addr.idx <= (others => '0');
+      addr.ofs <= (others => '0');
     elsif rising_edge(clk_i) then
       state <= state_nxt;
       upret <= upret_nxt;
       addr  <= addr_nxt;
-      hreq  <= host_req_i;
     end if;
   end process ctrl_engine_sync;
 
 
   -- Control Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_engine_comb: process(state, upret, addr, hreq, haddr, baddr, bus_rsp_i, cmd_sync_i, cmd_miss_i, rdata_i, dirty_i)
+  ctrl_engine_comb: process(state, upret, addr, haddr, baddr, bus_rsp_i, cmd_sync_i, cmd_miss_i, rdata_i, dirty_i)
   begin
     -- control engine defaults --
     state_nxt <= state;
@@ -890,7 +886,7 @@ begin
     addr_nxt  <= addr;
 
     -- cache defaults --
-    addr_o  <= addr.tag & addr.ind & addr.off & "00"; -- always word-aligned
+    addr_o  <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
     we_o    <= (others => '0');
     swe_o   <= '0';
     wdata_o <= bus_rsp_i.data;
@@ -902,17 +898,18 @@ begin
 
     -- bus interface defaults --
     bus_req_o      <= req_terminate_c; -- all-zero
-    bus_req_o.addr <= addr.tag & addr.ind & addr.off & "00"; -- always word-aligned
+    bus_req_o.addr <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
     bus_req_o.data <= rdata_i;
     bus_req_o.ben  <= (others => '1'); -- full-word writes only
-    bus_req_o.priv <= hreq.priv; -- keep original privilege level
+    bus_req_o.src  <= '0'; -- cache accesses are always "data" accesses
+    bus_req_o.priv <= '0'; -- cache accesses are always "unprivileged" accesses
 
     -- fsm --
     case state is
 
       when S_IDLE => -- wait for request
       -- ------------------------------------------------------------
-        addr_nxt.off <= (others => '0'); -- align block base address for upload/download (and flush)
+        addr_nxt.ofs <= (others => '0'); -- align block base address for upload/download (and flush)
         if (cmd_sync_i = '1') then -- cache sync
           state_nxt <= S_FLUSH_START;
         elsif (cmd_miss_i = '1') then -- cache miss
@@ -921,14 +918,13 @@ begin
 
       when S_CHECK => -- check if accessed block is dirty (cache address is still applied by host controller!)
       -- ------------------------------------------------------------
-        upret_nxt <= S_DOWNLOAD_REQ; -- go straight to S_DOWNLOAD_REQ when S_UPLOAD_GET has completed (if executed)
+        upret_nxt    <= S_DOWNLOAD_REQ; -- go straight to S_DOWNLOAD_REQ when S_UPLOAD_GET has completed (if executed)
+        addr_nxt.idx <= baddr.idx; -- index of reference cache block
         if (dirty_i = '1') then -- block is dirty, upload first
           addr_nxt.tag <= baddr.tag; -- base address (tag + index) of accessed block
-          addr_nxt.ind <= baddr.ind;
           state_nxt    <= S_UPLOAD_GET;
-        else -- block is clean, download new block and override
+        else -- block is clean, download new block
           addr_nxt.tag <= haddr.tag; -- base address (tag + index) of requested block
-          addr_nxt.ind <= haddr.ind;
           state_nxt    <= S_DOWNLOAD_REQ;
         end if;
 
@@ -946,8 +942,8 @@ begin
         swe_o        <= '1'; -- cache: write status bit (bus error response)
         new_o        <= '1'; -- set new block (set tag, make valid, make clean)
         if (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') then -- wait for response
-          addr_nxt.off <= std_ulogic_vector(unsigned(addr.off) + 1);
-          if (and_reduce_f(addr.off) = '1') then -- block completed? offset will be all-zero again after block completion
+          addr_nxt.ofs <= std_ulogic_vector(unsigned(addr.ofs) + 1);
+          if (and_reduce_f(addr.ofs) = '1') then -- block completed? offset will be all-zero again after block completion
             state_nxt <= S_IDLE;
           else -- get next word
             state_nxt <= S_DOWNLOAD_REQ;
@@ -971,8 +967,8 @@ begin
         bus_req_o.rw <= '1'; -- write access
         new_o        <= '1'; -- set new block (set tag, make valid, make clean)
         if (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') then -- wait for response
-          addr_nxt.off <= std_ulogic_vector(unsigned(addr.off) + 1);
-          if (and_reduce_f(addr.off) = '1') then -- block completed? offset will be all-zero again after block completion
+          addr_nxt.ofs <= std_ulogic_vector(unsigned(addr.ofs) + 1);
+          if (and_reduce_f(addr.ofs) = '1') then -- block completed? offset will be all-zero again after block completion
             state_nxt <= upret; -- go back to "upload-done return state"
           else -- get next word
             state_nxt <= S_UPLOAD_GET;
@@ -982,7 +978,7 @@ begin
 
       when S_FLUSH_START => -- start checking for dirty blocks
       -- ------------------------------------------------------------
-        addr_nxt.ind <= (others => '0'); -- start with index 0
+        addr_nxt.idx <= (others => '0'); -- start with index 0
         upret_nxt    <= S_FLUSH_CHECK; -- come back to S_FLUSH_CHECK after block upload
         state_nxt    <= S_FLUSH_READ;
 
@@ -997,8 +993,8 @@ begin
         if (dirty_i = '1') then -- block dirty?
           state_nxt    <= S_UPLOAD_GET;
         else -- move on to next block
-          addr_nxt.ind <= std_ulogic_vector(unsigned(addr.ind) + 1);
-          if (and_reduce_f(addr.ind) = '1') then -- all blocks done?
+          addr_nxt.idx <= std_ulogic_vector(unsigned(addr.idx) + 1);
+          if (and_reduce_f(addr.idx) = '1') then -- all blocks done?
             bus_req_o.fence <= '1'; -- forward fence request to downstream memories
             state_nxt       <= S_IDLE;
           else -- go to next block

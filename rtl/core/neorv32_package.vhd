@@ -53,7 +53,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090602"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090603"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -843,7 +843,6 @@ package neorv32_package is
       jtag_tdo_o     : out std_ulogic;
       jtag_tms_i     : in  std_ulogic := 'L';
       -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-      wb_tag_o       : out std_ulogic_vector(02 downto 0);
       wb_adr_o       : out std_ulogic_vector(31 downto 0);
       wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => 'L');
       wb_dat_o       : out std_ulogic_vector(31 downto 0);

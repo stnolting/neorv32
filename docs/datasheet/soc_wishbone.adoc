@@ -7,8 +7,7 @@
 |=======================
 | Hardware source file(s): | neorv32_wishbone.vhd |
 | Software driver file(s): | none                 | _implicitly used_
-| Top entity port:         | `wb_tag_o`  | request tag output (3-bit)
-|                          | `wb_adr_o`  | address output (32-bit)
+| Top entity port:         | `wb_adr_o`  | address output (32-bit)
 |                          | `wb_dat_i`  | data input (32-bit)
 |                          | `wb_dat_o`  | data output (32-bit)
 |                          | `wb_we_o`   | write enable (1-bit)
@@ -17,14 +16,12 @@
 |                          | `wb_cyc_o`  | valid cycle (1-bit)
 |                          | `wb_ack_i`  | acknowledge (1-bit)
 |                          | `wb_err_i`  | bus error (1-bit)
-|                          | `fence_o`   | an executed `fence` instruction
-|                          | `fencei_o`  | an executed `fence.i` instruction
 | Configuration generics:  | `MEM_EXT_EN`         | enable external memory interface when `true`
 |                          | `MEM_EXT_TIMEOUT`    | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
 |                          | `MEM_EXT_PIPE_MODE`  | when `false` (default): classic/standard Wishbone protocol; when `true`: pipelined Wishbone protocol
 |                          | `MEM_EXT_BIG_ENDIAN` | byte-order (Endianness) of external memory interface; `true`=BIG, `false`=little (default)
 |                          | `MEM_EXT_ASYNC_RX`   | use registered RX path when `false` (default); use async/direct RX path when `true`
-|                          | `MEM_EXT_ASYNC_TX_`  | use registered TX path when `false` (default); use async/direct TX path when `true`
+|                          | `MEM_EXT_ASYNC_TX`   | use registered TX path when `false` (default); use async/direct TX path when `true`
 | CPU interrupts:          | none |
 |=======================
 
@@ -83,15 +80,6 @@ When `MEM_EXT_TIMEOUT` is greater than zero, the Wishbone gateway starts an inte
 accesses an address via the external memory interface. If the accessed device does not acknowledge (via `wb_ack_i`)
 or terminate (via `wb_err_i`) the transfer within `MEM_EXT_TIMEOUT` clock cycles, the bus access is automatically canceled
 setting `wb_cyc_o` low again and a CPU load/store/instruction fetch bus access fault exception is raised.
-
-
-**Wishbone Tag**
-
-The 3-bit wishbone `wb_tag_o` signal provides additional information regarding the access type:
-
-* `wb_tag_o(0)`: `1` = privileged access (CPU is in machine mode); `0` = unprivileged access (CPU is not in machine mode)
-* `wb_tag_o(1)`: always zero
-* `wb_tag_o(2)`: `1` = instruction fetch access, `0` = data access
 
 
 **Endianness**
