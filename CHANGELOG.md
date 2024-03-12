@@ -30,6 +30,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 12.03.2024 | 1.9.6.4 | :warning: :warning: rename external bus/memory interface and according generics ("WISHBONE/MEM_EXT" -> "XBUS"); also rename bus interface ports (`wb_* -> xbus_*`) | [#846](https://github.com/stnolting/neorv32/pull/846) |
 | 11.03.2024 | 1.9.6.3 | :warning: remove Wishbone tag signal; minor rtl edits and optimizations | [#845](https://github.com/stnolting/neorv32/pull/845) |
 | 10.03.2024 | 1.9.6.2 | minor rtl clean-ups, optimizations and fixes | [#843](https://github.com/stnolting/neorv32/pull/843) |
 | 09.03.2024 | 1.9.6.1 | add generic cache module (not used yet) | [#842](https://github.com/stnolting/neorv32/pull/842) |
