@@ -45,7 +45,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_wishbone is
+entity neorv32_xbus is
   generic (
     -- Wishbone Interface Configuration --
     BUS_TIMEOUT : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
@@ -55,24 +55,24 @@ entity neorv32_wishbone is
     ASYNC_TX    : boolean  -- use register buffer for TX data when false
   );
   port (
-    clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- global reset line, low-active
-    bus_req_i : in  bus_req_t;  -- bus request
-    bus_rsp_o : out bus_rsp_t;  -- bus response
+    clk_i       : in  std_ulogic; -- global clock line
+    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    bus_req_i   : in  bus_req_t;  -- bus request
+    bus_rsp_o   : out bus_rsp_t;  -- bus response
     --
-    wb_adr_o  : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i  : in  std_ulogic_vector(31 downto 0); -- read data
-    wb_dat_o  : out std_ulogic_vector(31 downto 0); -- write data
-    wb_we_o   : out std_ulogic; -- read/write
-    wb_sel_o  : out std_ulogic_vector(03 downto 0); -- byte enable
-    wb_stb_o  : out std_ulogic; -- strobe
-    wb_cyc_o  : out std_ulogic; -- valid cycle
-    wb_ack_i  : in  std_ulogic; -- transfer acknowledge
-    wb_err_i  : in  std_ulogic  -- transfer error
+    xbus_adr_o  : out std_ulogic_vector(31 downto 0); -- address
+    xbus_dat_i  : in  std_ulogic_vector(31 downto 0); -- read data
+    xbus_dat_o  : out std_ulogic_vector(31 downto 0); -- write data
+    xbus_we_o   : out std_ulogic; -- read/write
+    xbus_sel_o  : out std_ulogic_vector(03 downto 0); -- byte enable
+    xbus_stb_o  : out std_ulogic; -- strobe
+    xbus_cyc_o  : out std_ulogic; -- valid cycle
+    xbus_ack_i  : in  std_ulogic; -- transfer acknowledge
+    xbus_err_i  : in  std_ulogic  -- transfer error
   );
-end neorv32_wishbone;
+end neorv32_xbus;
 
-architecture neorv32_wishbone_rtl of neorv32_wishbone is
+architecture neorv32_xbus_rtl of neorv32_xbus is
 
   -- auto-configuration --
   constant async_rx_c : boolean := ASYNC_RX and PIPE_MODE; -- classic mode requires a sync RX path for the inter-cycle pause
@@ -151,7 +151,6 @@ begin
       ctrl.ack      <= '0';
       ctrl.err      <= '0';
       ctrl.timeout  <= std_ulogic_vector(to_unsigned(BUS_TIMEOUT, index_size_f(BUS_TIMEOUT)+1));
-
       -- state machine --
       if (ctrl.state = '0') then -- IDLE, waiting for host request
         -- ------------------------------------------------------------
@@ -163,16 +162,15 @@ begin
           ctrl.sel   <= end_byteen;
           ctrl.state <= '1';
         end if;
-
       else -- BUSY, transfer in progress
         -- ------------------------------------------------------------
         if (ctrl.we = '0') then -- sync output gate (keep output zero if write access)
-          ctrl.rdat <= wb_dat_i;
+          ctrl.rdat <= xbus_dat_i;
         end if;
-        if (wb_ack_i = '1') then -- normal bus termination
+        if (xbus_ack_i = '1') then -- normal bus termination
           ctrl.ack   <= '1';
           ctrl.state <= '0';
-        elsif (wb_err_i = '1') or ((timeout_en_c = true) and (or_reduce_f(ctrl.timeout) = '0')) then -- bus error or timeout
+        elsif (xbus_err_i = '1') or ((timeout_en_c = true) and (or_reduce_f(ctrl.timeout) = '0')) then -- bus error or timeout
           ctrl.err   <= '1';
           ctrl.state <= '0';
         end if;
@@ -189,9 +187,9 @@ begin
   end_byteen <= bit_rev_f(bus_req_i.ben)  when (BIG_ENDIAN = true) else bus_req_i.ben;
 
   -- host access --
-  ack_gated   <= wb_ack_i when (ctrl.state = '1') else '0'; -- CPU ACK gate for "async" RX
-  err_gated   <= wb_err_i when (ctrl.state = '1') else '0'; -- CPU ERR gate for "async" RX
-  rdata_gated <= wb_dat_i when (ctrl.state = '1') and (ctrl.we = '0') else (others => '0'); -- async output gate
+  ack_gated   <= xbus_ack_i when (ctrl.state = '1') else '0'; -- CPU ACK gate for "async" RX
+  err_gated   <= xbus_err_i when (ctrl.state = '1') else '0'; -- CPU ERR gate for "async" RX
+  rdata_gated <= xbus_dat_i when (ctrl.state = '1') and (ctrl.we = '0') else (others => '0'); -- async output gate
 
   rdata          <= ctrl.rdat when (async_rx_c = false) else rdata_gated;
   bus_rsp_o.data <= rdata when (BIG_ENDIAN = false) else bswap32_f(rdata); -- endianness conversion
@@ -201,12 +199,12 @@ begin
   stb_int <=  bus_req_i.stb                when (ASYNC_TX = true) else (ctrl.state and (not ctrl.state_ff));
   cyc_int <= (bus_req_i.stb or ctrl.state) when (ASYNC_TX = true) else  ctrl.state;
 
-  wb_adr_o <= bus_req_i.addr when (ASYNC_TX = true) else ctrl.adr;
-  wb_dat_o <= bus_req_i.data when (ASYNC_TX = true) else ctrl.wdat;
-  wb_we_o  <= bus_req_i.rw   when (ASYNC_TX = true) else ctrl.we;
-  wb_sel_o <= end_byteen when (ASYNC_TX = true) else ctrl.sel;
-  wb_stb_o <= stb_int    when (PIPE_MODE = true) else cyc_int;
-  wb_cyc_o <= cyc_int;
+  xbus_adr_o <= bus_req_i.addr when (ASYNC_TX = true) else ctrl.adr;
+  xbus_dat_o <= bus_req_i.data when (ASYNC_TX = true) else ctrl.wdat;
+  xbus_we_o  <= bus_req_i.rw   when (ASYNC_TX = true) else ctrl.we;
+  xbus_sel_o <= end_byteen when (ASYNC_TX = true) else ctrl.sel;
+  xbus_stb_o <= stb_int    when (PIPE_MODE = true) else cyc_int;
+  xbus_cyc_o <= cyc_int;
 
 
-end neorv32_wishbone_rtl;
+end neorv32_xbus_rtl;

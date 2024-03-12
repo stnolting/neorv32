@@ -211,7 +211,7 @@ end neorv32_top_avalonmm;
 
 architecture neorv32_top_avalonmm_rtl of neorv32_top_avalonmm is
 
-  -- Wishbone bus interface (available if MEM_EXT_EN = true) --
+  -- Wishbone bus interface (available if XBUS_EN = true) --
   signal wb_adr_o : std_ulogic_vector(31 downto 0); -- address
   signal wb_dat_i : std_ulogic_vector(31 downto 0) := (others => 'U'); -- read data
   signal wb_dat_o : std_ulogic_vector(31 downto 0); -- write data
@@ -277,13 +277,13 @@ begin
     DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
     DCACHE_BLOCK_SIZE => DCACHE_BLOCK_SIZE,
 
-    -- External memory interface (WISHBONE) --
-    MEM_EXT_EN => true,
-    MEM_EXT_TIMEOUT => 0,
-    MEM_EXT_PIPE_MODE => false,
-    MEM_EXT_BIG_ENDIAN => false,
-    MEM_EXT_ASYNC_RX => false,
-    MEM_EXT_ASYNC_TX => false,
+    -- External bus interface (XBUS) --
+    XBUS_EN => true,
+    XBUS_TIMEOUT => 0,
+    XBUS_PIPE_MODE => false,
+    XBUS_BIG_ENDIAN => false,
+    XBUS_ASYNC_RX => false,
+    XBUS_ASYNC_TX => false,
 
     -- Execute in-place module (XIP) --
     XIP_EN => XIP_EN,
@@ -333,16 +333,16 @@ begin
     jtag_tdo_o => jtag_tdo_o,
     jtag_tms_i => jtag_tms_i,
 
-    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_adr_o => wb_adr_o,
-    wb_dat_i => wb_dat_i,
-    wb_dat_o => wb_dat_o,
-    wb_we_o => wb_we_o,
-    wb_sel_o => wb_sel_o,
-    wb_stb_o => wb_stb_o,
-    wb_cyc_o => wb_cyc_o,
-    wb_ack_i => wb_ack_i,
-    wb_err_i => wb_err_i,
+    -- External bus interface (available if XBUS_EN = true) --
+    xbus_adr_o => wb_adr_o,
+    xbus_dat_i => wb_dat_i,
+    xbus_dat_o => wb_dat_o,
+    xbus_we_o  => wb_we_o,
+    xbus_sel_o => wb_sel_o,
+    xbus_stb_o => wb_stb_o,
+    xbus_cyc_o => wb_cyc_o,
+    xbus_ack_i => wb_ack_i,
+    xbus_err_i => wb_err_i,
 
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
     xip_csn_o => xip_csn_o,

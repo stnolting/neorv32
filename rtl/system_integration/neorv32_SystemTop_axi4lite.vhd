@@ -387,13 +387,13 @@ begin
     DCACHE_EN                    => DCACHE_EN,          -- implement data cache
     DCACHE_NUM_BLOCKS            => DCACHE_NUM_BLOCKS,  -- d-cache: number of blocks (min 1), has to be a power of 2
     DCACHE_BLOCK_SIZE            => DCACHE_BLOCK_SIZE,  -- d-cache: block size in bytes (min 4), has to be a power of 2
-    -- External memory interface --
-    MEM_EXT_EN                   => true,               -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT              => 0,                  -- cycles after a pending bus access auto-terminates (0 = disabled)
-    MEM_EXT_PIPE_MODE            => false,              -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    MEM_EXT_BIG_ENDIAN           => false,              -- byte order: true=big-endian, false=little-endian
-    MEM_EXT_ASYNC_RX             => false,              -- use register buffer for RX data when false
-    MEM_EXT_ASYNC_TX             => false,              -- use register buffer for TX data when false
+    -- External bus interface --
+    XBUS_EN                      => true,               -- implement external memory bus interface?
+    XBUS_TIMEOUT                 => 0,                  -- cycles after a pending bus access auto-terminates (0 = disabled)
+    XBUS_PIPE_MODE               => false,              -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    XBUS_BIG_ENDIAN              => false,              -- byte order: true=big-endian, false=little-endian
+    XBUS_ASYNC_RX                => false,              -- use register buffer for RX data when false
+    XBUS_ASYNC_TX                => false,              -- use register buffer for TX data when false
     -- Execute in-place module (XIP) --
     XIP_EN                       => XIP_EN,             -- implement execute in place module (XIP)?
     XIP_CACHE_EN                 => XIP_CACHE_EN,       -- implement XIP cache?
@@ -445,16 +445,16 @@ begin
     jtag_tdi_i     => jtag_tdi_i_int,  -- serial data input
     jtag_tdo_o     => jtag_tdo_o_int,  -- serial data output
     jtag_tms_i     => jtag_tms_i_int,  -- mode select
-    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_adr_o       => wb_core.adr,     -- address
-    wb_dat_i       => wb_core.di,      -- read data
-    wb_dat_o       => wb_core.do,      -- write data
-    wb_we_o        => wb_core.we,      -- read/write
-    wb_sel_o       => wb_core.sel,     -- byte enable
-    wb_stb_o       => wb_core.stb,     -- strobe
-    wb_cyc_o       => wb_core.cyc,     -- valid cycle
-    wb_ack_i       => wb_core.ack,     -- transfer acknowledge
-    wb_err_i       => wb_core.err,     -- transfer error
+    -- External bus interface (available if XBUS_EN = true) --
+    xbus_adr_o     => wb_core.adr,     -- address
+    xbus_dat_i     => wb_core.di,      -- read data
+    xbus_dat_o     => wb_core.do,      -- write data
+    xbus_we_o      => wb_core.we,      -- read/write
+    xbus_sel_o     => wb_core.sel,     -- byte enable
+    xbus_stb_o     => wb_core.stb,     -- strobe
+    xbus_cyc_o     => wb_core.cyc,     -- valid cycle
+    xbus_ack_i     => wb_core.ack,     -- transfer acknowledge
+    xbus_err_i     => wb_core.err,     -- transfer error
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i => s1_axis_tdata_int,  -- RX input data
     slink_rx_val_i => s1_axis_tvalid_int, -- RX valid input
