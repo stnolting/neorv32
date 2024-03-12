@@ -67,10 +67,10 @@ enum NEORV32_SYSINFO_MEM_enum {
 /** NEORV32_SYSINFO->SOC (r/-): Implemented processor devices/features */
 enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_BOOTLOADER     =  0, /**< SYSINFO_SOC  (0) (r/-): Bootloader implemented when 1 (via INT_BOOTLOADER_EN generic) */
-  SYSINFO_SOC_MEM_EXT        =  1, /**< SYSINFO_SOC  (1) (r/-): External bus interface implemented when 1 (via MEM_EXT_EN generic) */
+  SYSINFO_SOC_XBUS           =  1, /**< SYSINFO_SOC  (1) (r/-): External bus interface implemented when 1 (via XBUS_EN generic) */
   SYSINFO_SOC_MEM_INT_IMEM   =  2, /**< SYSINFO_SOC  (2) (r/-): Processor-internal instruction memory implemented when 1 (via MEM_INT_IMEM_EN generic) */
   SYSINFO_SOC_MEM_INT_DMEM   =  3, /**< SYSINFO_SOC  (3) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_EN generic) */
-  SYSINFO_SOC_MEM_EXT_ENDIAN =  4, /**< SYSINFO_SOC  (4) (r/-): External bus interface uses BIG-endian byte-order when 1 (via MEM_EXT_BIG_ENDIAN generic) */
+  SYSINFO_SOC_XBUS_ENDIAN    =  4, /**< SYSINFO_SOC  (4) (r/-): External bus interface uses BIG-endian byte-order when 1 (via XBUS_BIG_ENDIAN generic) */
   SYSINFO_SOC_ICACHE         =  5, /**< SYSINFO_SOC  (5) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
   SYSINFO_SOC_DCACHE         =  6, /**< SYSINFO_SOC  (6) (r/-): Processor-internal instruction cache implemented when 1 (via DCACHE_EN generic) */
   SYSINFO_SOC_CLOCK_GATING   =  7, /**< SYSINFO_SOC  (7) (r/-): Clock gating enabled when 1 (via CLOCK_GATING_EN generic) */

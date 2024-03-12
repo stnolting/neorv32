@@ -682,9 +682,9 @@ void neorv32_rte_print_hw_config(void) {
   // external bus interface
   neorv32_uart0_printf("Ext. bus interface:  ");
   tmp = NEORV32_SYSINFO->SOC;
-  if (tmp & (1 << SYSINFO_SOC_MEM_EXT)) {
+  if (tmp & (1 << SYSINFO_SOC_XBUS)) {
     neorv32_uart0_printf("Wishbone b4 ");
-    if (tmp & (1 << SYSINFO_SOC_MEM_EXT_ENDIAN)) {
+    if (tmp & (1 << SYSINFO_SOC_XBUS_ENDIAN)) {
       neorv32_uart0_printf("big-endian\n");
     }
     else {
