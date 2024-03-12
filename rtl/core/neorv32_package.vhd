@@ -53,7 +53,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090603"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090604"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -784,13 +784,13 @@ package neorv32_package is
       DCACHE_EN                  : boolean                        := false;
       DCACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
       DCACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
-      -- External memory interface (WISHBONE) --
-      MEM_EXT_EN                 : boolean                        := false;
-      MEM_EXT_TIMEOUT            : natural                        := 255;
-      MEM_EXT_PIPE_MODE          : boolean                        := false;
-      MEM_EXT_BIG_ENDIAN         : boolean                        := false;
-      MEM_EXT_ASYNC_RX           : boolean                        := false;
-      MEM_EXT_ASYNC_TX           : boolean                        := false;
+      -- External bus interface (XBUS) --
+      XBUS_EN                    : boolean                        := false;
+      XBUS_TIMEOUT               : natural                        := 255;
+      XBUS_PIPE_MODE             : boolean                        := false;
+      XBUS_BIG_ENDIAN            : boolean                        := false;
+      XBUS_ASYNC_RX              : boolean                        := false;
+      XBUS_ASYNC_TX              : boolean                        := false;
       -- Execute in-place module (XIP) --
       XIP_EN                     : boolean                        := false;
       XIP_CACHE_EN               : boolean                        := false;
@@ -842,16 +842,16 @@ package neorv32_package is
       jtag_tdi_i     : in  std_ulogic := 'L';
       jtag_tdo_o     : out std_ulogic;
       jtag_tms_i     : in  std_ulogic := 'L';
-      -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-      wb_adr_o       : out std_ulogic_vector(31 downto 0);
-      wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => 'L');
-      wb_dat_o       : out std_ulogic_vector(31 downto 0);
-      wb_we_o        : out std_ulogic;
-      wb_sel_o       : out std_ulogic_vector(03 downto 0);
-      wb_stb_o       : out std_ulogic;
-      wb_cyc_o       : out std_ulogic;
-      wb_ack_i       : in  std_ulogic := 'L';
-      wb_err_i       : in  std_ulogic := 'L';
+      -- External bus interface (available if XBUS_EN = true) --
+      xbus_adr_o     : out std_ulogic_vector(31 downto 0);
+      xbus_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => 'L');
+      xbus_dat_o     : out std_ulogic_vector(31 downto 0);
+      xbus_we_o      : out std_ulogic;
+      xbus_sel_o     : out std_ulogic_vector(03 downto 0);
+      xbus_stb_o     : out std_ulogic;
+      xbus_cyc_o     : out std_ulogic;
+      xbus_ack_i     : in  std_ulogic := 'L';
+      xbus_err_i     : in  std_ulogic := 'L';
       -- Stream Link Interface (available if IO_SLINK_EN = true) --
       slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');
       slink_rx_val_i : in  std_ulogic := 'L';
