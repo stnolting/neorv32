@@ -61,10 +61,10 @@ Bit fields in this register are set to all-zero if the according cache is not im
 |=======================
 | Bit | Name [C] | Function
 | `0`     | `SYSINFO_SOC_BOOTLOADER`     | set if the processor-internal bootloader is implemented (via top's `INT_BOOTLOADER_EN` generic)
-| `1`     | `SYSINFO_SOC_MEM_EXT`        | set if the external Wishbone bus interface is implemented (via top's `MEM_EXT_EN` generic)
+| `1`     | `SYSINFO_SOC_XBUS`           | set if the external Wishbone bus interface is implemented (via top's `XBUS_EN` generic)
 | `2`     | `SYSINFO_SOC_MEM_INT_IMEM`   | set if the processor-internal DMEM implemented (via top's `MEM_INT_DMEM_EN` generic)
 | `3`     | `SYSINFO_SOC_MEM_INT_DMEM`   | set if the processor-internal IMEM is implemented (via top's `MEM_INT_IMEM_EN` generic)
-| `4`     | `SYSINFO_SOC_MEM_EXT_ENDIAN` | set if external bus interface uses BIG-endian byte-order (via top's `MEM_EXT_BIG_ENDIAN` generic)
+| `4`     | `SYSINFO_SOC_XBUS_ENDIAN`    | set if external bus interface uses BIG-endian byte-order (via top's `XBUS_BIG_ENDIAN` generic)
 | `5`     | `SYSINFO_SOC_ICACHE`         | set if processor-internal instruction cache is implemented (via top's `ICACHE_EN` generic)
 | `6`     | `SYSINFO_SOC_DCACHE`         | set if processor-internal data cache is implemented (via top's `DCACHE_EN` generic)
 | `7`     | `SYSINFO_SOC_CLOCK_GATING`   | set if CPU clock gating is implemented (via top's `CLOCK_GATING_EN` generic)

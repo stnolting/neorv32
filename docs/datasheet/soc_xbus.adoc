@@ -1,0 +1,112 @@
+<<<
+:sectnums:
+==== Processor-External Bus Interface (XBUS)
+
+[cols="<3,<3,<4"]
+[frame="topbot",grid="none"]
+|=======================
+| Hardware source file(s): | neorv32_xbus.vhd  |
+| Software driver file(s): | none              | _implicitly used_
+| Top entity port:         | `xbus_adr_o`      | address output (32-bit)
+|                          | `xbus_dat_i`      | data input (32-bit)
+|                          | `xbus_dat_o`      | data output (32-bit)
+|                          | `xbus_we_o`       | write enable (1-bit)
+|                          | `xbus_sel_o`      | byte enable (4-bit)
+|                          | `xbus_stb_o`      | strobe (1-bit)
+|                          | `xbus_cyc_o`      | valid cycle (1-bit)
+|                          | `xbus_ack_i`      | acknowledge (1-bit)
+|                          | `xbus_err_i`      | bus error (1-bit)
+| Configuration generics:  | `XBUS_EN`         | enable external bus interface when `true`
+|                          | `XBUS_TIMEOUT`    | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
+|                          | `XBUS_PIPE_MODE`  | when `false` (default): classic/standard Wishbone protocol; when `true`: pipelined Wishbone protocol
+|                          | `XBUS_BIG_ENDIAN` | byte-order (Endianness) of external bus interface; `true`=BIG, `false`=little (default)
+|                          | `XBUS_ASYNC_RX`   | use registered RX path when `false` (default); use async/direct RX path when `true`
+|                          | `XBUS_ASYNC_TX`   | use registered TX path when `false` (default); use async/direct TX path when `true`
+| CPU interrupts:          | none |
+|=======================
+
+
+The external bus interface provides a Wishbone b4-compatible on-chip bus interface that is
+implemented if the `XBUS_EN` generic is `true`. This bus interface can be used to attach external memories,
+custom hardware accelerators, additional peripheral devices or all other kinds of IP blocks.
+
+The external interface is **not** mapped to a specific address space. Instead, all CPU memory accesses that
+do not target a specific (and actually implemented) processor-internal address region (hence, accessing the "void";
+see section <<_address_space>>) are redirected to the external bus interface.
+
+
+**Wishbone Bus Protocol**
+
+The external bus interface either uses the **standard** (also called "classic") Wishbone protocol (default) or
+**pipelined** Wishbone protocol. The protocol to be used is configured via the `XBUS_PIPE_MODE` generic:
+
+* If `XBUS_PIPE_MODE` is `false`, all bus control signals including `wb_stb_o` are active and remain stable until the
+transfer is acknowledged/terminated.
+* If `XBUS_PIPE_MODE` is `true`, all bus control except `wb_stb_o` are active and remain until the transfer is
+acknowledged/terminated. In this case, `wb_stb_o` is asserted only during the very first bus clock cycle.
+
+.Exemplary Wishbone bus accesses using "classic" and "pipelined" protocol
+[cols="^2,^2"]
+[grid="none"]
+|=======================
+a| image::wishbone_classic_read.png[700,300]
+a| image::wishbone_pipelined_write.png[700,300]
+| **Classic** Wishbone read access | **Pipelined** Wishbone write access
+|=======================
+
+[WARNING]
+If the Wishbone interface is configured to operate in classic/standard mode (`XBUS_PIPE_MODE` = false) a
+**sync** RX path (`XBUS_ASYNC_RX` = false) is required for the inter-cycle pause. If `XBUS_ASYNC_RX` is
+enabled while `XBUS_PIPE_MODE` is disabled the module will automatically disable the asynchronous RX option.
+
+.Wishbone Specs.
+[TIP]
+A detailed description of the implemented Wishbone bus protocol and the according interface signals
+can be found in the data sheet "Wishbone B4 - WISHBONE System-on-Chip (SoC) Interconnection
+Architecture for Portable IP Cores". A copy of this document can be found in the `docs` folder of this
+project.
+
+
+**Bus Access**
+
+The NEORV32 XBUS interface does not support burst transfers yet, so there is always just a single transfer "in fly".
+Hence, the Wishbone `STALL` signal is not implemented. An accessed Wishbone device does not have to respond immediately to a bus
+request by sending an ACK. Instead, there is a _time window_ where the device has to acknowledge the transfer. This time window
+is configured by the `XBUS_TIMEOUT` generic that defines the maximum time (in clock cycles) a bus access can be pending
+before it is automatically terminated with an error condition. If `XBUS_TIMEOUT` is set to zero, the timeout is disabled
+and a bus access can take an arbitrary number of cycles to complete (this is not recommended!).
+
+When `XBUS_TIMEOUT` is greater than zero, the Wishbone gateway starts an internal countdown whenever the CPU
+accesses an address via the external memory interface. If the accessed device does not acknowledge (via `wb_ack_i`)
+or terminate (via `wb_err_i`) the transfer within `XBUS_TIMEOUT` clock cycles, the bus access is automatically canceled
+setting `wb_cyc_o` low again and a CPU load/store/instruction fetch bus access fault exception is raised.
+
+
+**Bus Endianness**
+
+The NEORV32 CPU and the entire Processor setup use a *little-endian* layout. To allow direct connection
+to a big-endian memory system the external bus interface provides an Endianness configuration. The
+Endianness of the external memory interface can be configured via the `XBUS_BIG_ENDIAN` generic.
+By default, the external memory interface uses little-endian byte-order.
+
+Application software can check the Endianness configuration of the external bus interface via the
+SYSINFO module (see section <<_system_configuration_information_memory_sysinfo>> for more information).
+
+
+**Access Latency**
+
+By default, the XBUS gateway introduces two additional latency cycles: processor-outgoing (`*_o`) and
+processor-incoming (`*_i`) signals are fully registered. Thus, any access from the CPU to a processor-external devices
+via Wishbone requires 2 additional clock cycles. This can ease timing closure when using large (combinatorial) Wishbone
+interconnection networks.
+
+Optionally, the latency of the XBUS gateway can be reduced by removing the input and output register stages.
+Enabling the `XBUS_ASYNC_RX` option will remove the input register stage; enabling `XBUS_ASYNC_TX` option will
+remove the output register stages. Each enabled option reduces access latency by 1 cycle.
+
+.Output Gating
+[NOTE]
+All outgoing Wishbone signals use a "gating mechanism" so they only change if there is a actual XBUS transaction being in
+progress. This can reduce dynamic switching activity in the external bus system and also simplifies simulation-based
+inspection of the Wishbone transactions. Note that this output gating is only available if the output register buffer is not
+disabled (`XBUS_ASYNC_TX` = `false`).
