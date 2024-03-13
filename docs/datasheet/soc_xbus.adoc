@@ -42,7 +42,7 @@ The external bus interface either uses the **standard** (also called "classic") 
 
 * If `XBUS_PIPE_MODE` is `false`, all bus control signals including `wb_stb_o` are active and remain stable until the
 transfer is acknowledged/terminated.
-* If `XBUS_PIPE_MODE` is `true`, all bus control except `wb_stb_o` are active and remain until the transfer is
+* If `XBUS_PIPE_MODE` is `true`, all bus control except `xbus_stb_o` are active and remain until the transfer is
 acknowledged/terminated. In this case, `xbus_stb_o` is asserted only during the very first bus clock cycle.
 
 .Exemplary Wishbone bus accesses using "classic" and "pipelined" protocol
