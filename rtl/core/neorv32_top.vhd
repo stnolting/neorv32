@@ -107,13 +107,13 @@ entity neorv32_top is
     DCACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;           -- d-cache: number of blocks (min 1), has to be a power of 2
     DCACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;          -- d-cache: block size in bytes (min 4), has to be a power of 2
 
-    -- External memory interface (WISHBONE) --
-    MEM_EXT_EN                 : boolean                        := false;       -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT            : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
-    MEM_EXT_PIPE_MODE          : boolean                        := false;       -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    MEM_EXT_BIG_ENDIAN         : boolean                        := false;       -- byte order: true=big-endian, false=little-endian
-    MEM_EXT_ASYNC_RX           : boolean                        := false;       -- use register buffer for RX data when false
-    MEM_EXT_ASYNC_TX           : boolean                        := false;       -- use register buffer for TX data when false
+    -- External bus interface (XBUS) --
+    XBUS_EN                    : boolean                        := false;       -- implement external memory bus interface?
+    XBUS_TIMEOUT               : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
+    XBUS_PIPE_MODE             : boolean                        := false;       -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    XBUS_BIG_ENDIAN            : boolean                        := false;       -- byte order: true=big-endian, false=little-endian
+    XBUS_ASYNC_RX              : boolean                        := false;       -- use register buffer for RX data when false
+    XBUS_ASYNC_TX              : boolean                        := false;       -- use register buffer for TX data when false
 
     -- Execute in-place module (XIP) --
     XIP_EN                     : boolean                        := false;       -- implement execute in place module (XIP)?
@@ -170,16 +170,16 @@ entity neorv32_top is
     jtag_tdo_o     : out std_ulogic; -- serial data output
     jtag_tms_i     : in  std_ulogic := 'L'; -- mode select
 
-    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_adr_o       : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- read data
-    wb_dat_o       : out std_ulogic_vector(31 downto 0); -- write data
-    wb_we_o        : out std_ulogic; -- read/write
-    wb_sel_o       : out std_ulogic_vector(03 downto 0); -- byte enable
-    wb_stb_o       : out std_ulogic; -- strobe
-    wb_cyc_o       : out std_ulogic; -- valid cycle
-    wb_ack_i       : in  std_ulogic := 'L'; -- transfer acknowledge
-    wb_err_i       : in  std_ulogic := 'L'; -- transfer error
+    -- External bus interface (available if XBUS_EN = true) --
+    xbus_adr_o     : out std_ulogic_vector(31 downto 0); -- address
+    xbus_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- read data
+    xbus_dat_o     : out std_ulogic_vector(31 downto 0); -- write data
+    xbus_we_o      : out std_ulogic; -- read/write
+    xbus_sel_o     : out std_ulogic_vector(03 downto 0); -- byte enable
+    xbus_stb_o     : out std_ulogic; -- strobe
+    xbus_cyc_o     : out std_ulogic; -- valid cycle
+    xbus_ack_i     : in  std_ulogic := 'L'; -- transfer acknowledge
+    xbus_err_i     : in  std_ulogic := 'L'; -- transfer error
 
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- RX input data
@@ -369,7 +369,7 @@ begin
       cond_sel_string_f(INT_BOOTLOADER_EN,   "BOOTROM ",  "") &
       cond_sel_string_f(ICACHE_EN,           "I-CACHE ",  "") &
       cond_sel_string_f(DCACHE_EN,           "D-CACHE ",  "") &
-      cond_sel_string_f(MEM_EXT_EN,          "WISHBONE ", "") &
+      cond_sel_string_f(XBUS_EN,             "XBUS ",     "") &
       cond_sel_string_f(io_gpio_en_c,        "GPIO ",     "") &
       cond_sel_string_f(IO_MTIME_EN,         "MTIME ",    "") &
       cond_sel_string_f(IO_UART0_EN,         "UART0 ",    "") &
@@ -773,7 +773,7 @@ begin
     IO_BASE     => mem_io_base_c,
     IO_SIZE     => mem_io_size_c,
     -- EXT port --
-    EXT_ENABLE  => MEM_EXT_EN
+    EXT_ENABLE  => XBUS_EN
   )
   port map (
     -- global control --
@@ -905,45 +905,45 @@ begin
     end generate;
 
 
-    -- External Bus (WISHBONE) ----------------------------------------------------------------
+    -- External Bus Interface (XBUS) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_wishbone_inst_true:
-    if MEM_EXT_EN generate
-      neorv32_wishbone_inst: entity neorv32.neorv32_wishbone
+    neorv32_xbus_inst_true:
+    if XBUS_EN generate
+      neorv32_xbus_inst: entity neorv32.neorv32_xbus
       generic map (
-        BUS_TIMEOUT => MEM_EXT_TIMEOUT,
-        PIPE_MODE   => MEM_EXT_PIPE_MODE,
-        BIG_ENDIAN  => MEM_EXT_BIG_ENDIAN,
-        ASYNC_RX    => MEM_EXT_ASYNC_RX,
-        ASYNC_TX    => MEM_EXT_ASYNC_TX
+        BUS_TIMEOUT => XBUS_TIMEOUT,
+        PIPE_MODE   => XBUS_PIPE_MODE,
+        BIG_ENDIAN  => XBUS_BIG_ENDIAN,
+        ASYNC_RX    => XBUS_ASYNC_RX,
+        ASYNC_TX    => XBUS_ASYNC_TX
       )
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => xbus_req,
-        bus_rsp_o => xbus_rsp,
+        clk_i       => clk_i,
+        rstn_i      => rstn_sys,
+        bus_req_i   => xbus_req,
+        bus_rsp_o   => xbus_rsp,
         --
-        wb_adr_o  => wb_adr_o,
-        wb_dat_i  => wb_dat_i,
-        wb_dat_o  => wb_dat_o,
-        wb_we_o   => wb_we_o,
-        wb_sel_o  => wb_sel_o,
-        wb_stb_o  => wb_stb_o,
-        wb_cyc_o  => wb_cyc_o,
-        wb_ack_i  => wb_ack_i,
-        wb_err_i  => wb_err_i
+        xbus_adr_o  => xbus_adr_o,
+        xbus_dat_i  => xbus_dat_i,
+        xbus_dat_o  => xbus_dat_o,
+        xbus_we_o   => xbus_we_o,
+        xbus_sel_o  => xbus_sel_o,
+        xbus_stb_o  => xbus_stb_o,
+        xbus_cyc_o  => xbus_cyc_o,
+        xbus_ack_i  => xbus_ack_i,
+        xbus_err_i  => xbus_err_i
       );
     end generate;
 
-    neorv32_wishbone_inst_false:
-    if not MEM_EXT_EN generate
-      xbus_rsp <= rsp_terminate_c;
-      wb_adr_o <= (others => '0');
-      wb_dat_o <= (others => '0');
-      wb_we_o  <= '0';
-      wb_sel_o <= (others => '0');
-      wb_stb_o <= '0';
-      wb_cyc_o <= '0';
+    neorv32_xbus_inst_false:
+    if not XBUS_EN generate
+      xbus_rsp   <= rsp_terminate_c;
+      xbus_adr_o <= (others => '0');
+      xbus_dat_o <= (others => '0');
+      xbus_we_o  <= '0';
+      xbus_sel_o <= (others => '0');
+      xbus_stb_o <= '0';
+      xbus_cyc_o <= '0';
     end generate;
 
   end generate; -- /memory_system
@@ -1546,9 +1546,9 @@ begin
       DCACHE_EN            => DCACHE_EN,
       DCACHE_NUM_BLOCKS    => DCACHE_NUM_BLOCKS,
       DCACHE_BLOCK_SIZE    => DCACHE_BLOCK_SIZE,
-      -- External memory interface --
-      MEM_EXT_EN           => MEM_EXT_EN,
-      MEM_EXT_BIG_ENDIAN   => MEM_EXT_BIG_ENDIAN,
+      -- External bus interface --
+      XBUS_EN              => XBUS_EN,
+      XBUS_BIG_ENDIAN      => XBUS_BIG_ENDIAN,
       -- On-Chip Debugger --
       ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,
       -- Processor peripherals --

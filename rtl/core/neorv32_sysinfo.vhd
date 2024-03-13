@@ -64,9 +64,9 @@ entity neorv32_sysinfo is
     DCACHE_EN            : boolean; -- implement data cache
     DCACHE_NUM_BLOCKS    : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
     DCACHE_BLOCK_SIZE    : natural; -- d-cache: block size in bytes (min 4), has to be a power of 2
-    -- External memory interface --
-    MEM_EXT_EN           : boolean; -- implement external memory bus interface?
-    MEM_EXT_BIG_ENDIAN   : boolean; -- byte order: true=big-endian, false=little-endian
+    -- External bus interface --
+    XBUS_EN              : boolean; -- implement external memory bus interface?
+    XBUS_BIG_ENDIAN      : boolean; -- byte order: true=big-endian, false=little-endian
     -- On-chip debugger --
     ON_CHIP_DEBUGGER_EN  : boolean; -- implement OCD?
     -- Processor peripherals --
@@ -123,10 +123,10 @@ begin
 
   -- SYSINFO(2): SoC Configuration --
   sysinfo(2)(00) <= '1' when INT_BOOTLOADER_EN   else '0'; -- processor-internal bootloader implemented?
-  sysinfo(2)(01) <= '1' when MEM_EXT_EN          else '0'; -- external memory bus interface implemented?
+  sysinfo(2)(01) <= '1' when XBUS_EN             else '0'; -- external memory bus interface implemented?
   sysinfo(2)(02) <= '1' when int_imem_en_c       else '0'; -- processor-internal instruction memory implemented?
   sysinfo(2)(03) <= '1' when int_dmem_en_c       else '0'; -- processor-internal data memory implemented?
-  sysinfo(2)(04) <= '1' when MEM_EXT_BIG_ENDIAN  else '0'; -- is external memory bus interface using BIG-endian byte-order?
+  sysinfo(2)(04) <= '1' when XBUS_BIG_ENDIAN     else '0'; -- is external memory bus interface using BIG-endian byte-order?
   sysinfo(2)(05) <= '1' when ICACHE_EN           else '0'; -- processor-internal instruction cache implemented?
   sysinfo(2)(06) <= '1' when DCACHE_EN           else '0'; -- processor-internal data cache implemented?
   sysinfo(2)(07) <= '1' when CLOCK_GATING_EN     else '0'; -- enable clock gating when in sleep mode

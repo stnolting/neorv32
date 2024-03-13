@@ -112,7 +112,7 @@ The NEORV32 processor is designed to ease customization and extensibility and pr
 application-specific custom hardware modules and accelerators. The three most common options for adding custom
 on-chip modules are listed below.
 
-* <<_processor_external_memory_interface_wishbone>> to attach processor-external IP modules
+* <<_processor_external_bus_interface_xbus>> to attach processor-external IP modules (memories and peripherals)
 * <<_custom_functions_subsystem_cfs>> for tightly-coupled processor-internal co-processors
 * <<_custom_functions_unit_cfu>> for custom RISC-V instructions
 

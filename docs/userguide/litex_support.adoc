@@ -10,7 +10,7 @@ The default microcontroller-like NEORV32 processor is not directly supported as 
 Instead, the LiteX port uses a _core complex wrapper_ that only includes the actual NEORV32 CPU, the instruction cache (optional),
 the RISC-V machine system timer (optional), the on-chip debugger (optional) and the internal bus infrastructure.
 The specific implementation of optional modules as well as RISC-V ISA configuration and performance optimization options are
-controlled by a single _CONFIGURATION_ option wrapped in the LiteX build flow. The Wishbone interface is used to with the
+controlled by a single _CONFIGURATION_ option wrapped in the LiteX build flow. The external bus interface is used to connect to
 other LiteX SoC parts.
 
 .Core Complex Wrapper

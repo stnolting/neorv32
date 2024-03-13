@@ -29,7 +29,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ 8-bit serial data device interface (<<_serial_data_interface_controller_spi,**SDI**>>)
 * _optional_ two wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
 * _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 64xOut, 64xIn
-* _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_memory_interface_wishbone,**WISHBONE**>>)
+* _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_bus_interface_xbus,**XBUS**>>)
 * _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
 * _optional_ PWM controller with up to 12 channels & 8-bit duty cycle resolution (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
 * _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**>>)
@@ -85,17 +85,16 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 | `jtag_tdi_i`     |  1 |  in | `'L'` | serial data input
 | `jtag_tdo_o`     |  1 | out |   -   | serial data output
 | `jtag_tms_i`     |  1 |  in | `'L'` | mode select
-5+^| **<<_processor_external_memory_interface_wishbone>>**
-| `wb_adr_o`       | 32 | out |   -   |  destination address
-| `wb_dat_i`       | 32 |  in | `'L'` |  write data
-| `wb_dat_o`       | 32 | out |   -   |  read data
-| `wb_we_o`        |  1 | out |   -   |  write enable ('0' = read transfer)
-| `wb_sel_o`       |  4 | out |   -   |  byte enable
-| `wb_stb_o`       |  1 | out |   -   |  strobe
-| `wb_cyc_o`       |  1 | out |   -   |  valid cycle
-| `wb_lock_o`      |  1 | out |   -   |  exclusive access request
-| `wb_ack_i`       |  1 |  in | `'L'` |  transfer acknowledge
-| `wb_err_i`       |  1 |  in | `'L'` |  transfer error
+5+^| **<<_processor_external_bus_interface_xbus>>**
+| `xbus_adr_o`     | 32 | out |   -   |  destination address
+| `xbus_dat_i`     | 32 |  in | `'L'` |  write data
+| `xbus_dat_o`     | 32 | out |   -   |  read data
+| `xbus_we_o`      |  1 | out |   -   |  write enable ('0' = read transfer)
+| `xbus_sel_o`     |  4 | out |   -   |  byte enable
+| `xbus_stb_o`     |  1 | out |   -   |  strobe
+| `xbus_cyc_o`     |  1 | out |   -   |  valid cycle
+| `xbus_ack_i`     |  1 |  in | `'L'` |  transfer acknowledge
+| `xbus_err_i`     |  1 |  in | `'L'` |  transfer error
 5+^| **<<_stream_link_interface_slink>>**
 | `slink_rx_dat_i` | 32 |  in | `'L'` | RX data
 | `slink_rx_val_i` |  1 |  in | `'L'` | RX data valid
@@ -250,13 +249,13 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `DCACHE_EN`             | boolean   | false      | Implement the data cache.
 | `DCACHE_NUM_BLOCKS`     | natural   | 4          | Number of blocks ("pages" or "lines"). Has to be a power of two.
 | `DCACHE_BLOCK_SIZE`     | natural   | 64         | Size in bytes of each block. Has to be a power of two.
-4+^| **<<_processor_external_memory_interface_wishbone>>**
-| `MEM_EXT_EN`            | boolean   | false      | Implement the external bus interface.
-| `MEM_EXT_TIMEOUT`       | natural   | 255        | Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.
-| `MEM_EXT_PIPE_MODE`     | boolean   | false      | Use _standard_ ("classic") Wishbone protocol when false. Use _pipelined_ Wishbone protocol when true.
-| `MEM_EXT_BIG_ENDIAN`    | boolean   | false      | Use BIG endian data order interface for external bus.
-| `MEM_EXT_ASYNC_RX`      | boolean   | false      | Disable input registers when true.
-| `MEM_EXT_ASYNC_TX`      | boolean   | false      | Disable output registers when true.
+4+^| **<<_processor_external_bus_interface_xbus>> (Wishbone b4 protocol)**
+| `XBUS_EN`               | boolean   | false      | Implement the external bus interface.
+| `XBUS_TIMEOUT`          | natural   | 255        | Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.
+| `XBUS_PIPE_MODE`        | boolean   | false      | Use _standard_ ("classic") Wishbone protocol when false. Use _pipelined_ Wishbone protocol when true.
+| `XBUS_BIG_ENDIAN`       | boolean   | false      | Use BIG endian data order interface for external bus.
+| `XBUS_ASYNC_RX`         | boolean   | false      | Disable input registers when true.
+| `XBUS_ASYNC_TX`         | boolean   | false      | Disable output registers when true.
 4+^| **<<_execute_in_place_module_xip>>**
 | `XIP_EN`                | boolean   | false      | Implement the execute in-place module.
 | `XIP_CACHE_EN`          | boolean   | false      | Implement XIP cache.
@@ -486,7 +485,7 @@ image::address_space.png[900]
 | 3 | Memory-mapped XIP flash     | `r-xac` | Memory-mapped access to the <<_execute_in_place_module_xip>> SPI flash.
 | 4 | Bootloader address space    | `r-xa-` | Read-only memory for the internal <<_bootloader_rom_bootrom>> containing the default <<_bootloader>>.
 | 5 | IO/peripheral address space | `rwxa-` | Processor-internal peripherals / IO devices.
-| 6 | The "**void**"              | `rwxac` | Unmapped address space. All accesses to this region(s) are redirected to the <<_processor_external_memory_interface_wishbone>> (if implemented).
+| 6 | The "**void**"              | `rwxac` | Unmapped address space. All accesses to this region(s) are redirected to the <<_processor_external_bus_interface_xbus>> (if implemented).
 |=======================
 
 .Custom PMAs
@@ -556,7 +555,7 @@ Accesses to the memory-mapped XIP flash (via the <<_execute_in_place_module_xip>
 .External Bus Interface Timeout
 [NOTE]
 Accesses that are delegated to the external bus interface have a different maximum timeout value that is defined by an
-explicit specific processor generic. See section <<_processor_external_memory_interface_wishbone>> for more information.
+explicit specific processor generic. See section <<_processor_external_bus_interface_xbus>> for more information.
 
 
 
@@ -736,7 +735,7 @@ include::soc_dcache.adoc[]
 
 include::soc_dma.adoc[]
 
-include::soc_wishbone.adoc[]
+include::soc_xbus.adoc[]
 
 include::soc_slink.adoc[]
 
