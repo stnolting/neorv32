@@ -79,7 +79,7 @@ and a bus access can take an arbitrary number of cycles to complete (this is not
 When `XBUS_TIMEOUT` is greater than zero, the Wishbone gateway starts an internal countdown whenever the CPU
 accesses an address via the external memory interface. If the accessed device does not acknowledge (via `xbus_ack_i`)
 or terminate (via `xbus_err_i`) the transfer within `XBUS_TIMEOUT` clock cycles, the bus access is automatically canceled
-setting `wb_cyc_o` low again and a CPU load/store/instruction fetch bus access fault exception is raised.
+setting `xbus_cyc_o` low again and a CPU load/store/instruction fetch bus access fault exception is raised.
 
 
 **Bus Endianness**
