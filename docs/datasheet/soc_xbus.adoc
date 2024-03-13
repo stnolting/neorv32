@@ -40,7 +40,7 @@ see section <<_address_space>>) are redirected to the external bus interface.
 The external bus interface either uses the **standard** (also called "classic") Wishbone protocol (default) or
 **pipelined** Wishbone protocol. The protocol to be used is configured via the `XBUS_PIPE_MODE` generic:
 
-* If `XBUS_PIPE_MODE` is `false`, all bus control signals including `wb_stb_o` are active and remain stable until the
+* If `XBUS_PIPE_MODE` is `false`, all bus control signals including `xbus_stb_o` are active and remain stable until the
 transfer is acknowledged/terminated.
 * If `XBUS_PIPE_MODE` is `true`, all bus control except `xbus_stb_o` are active and remain until the transfer is
 acknowledged/terminated. In this case, `xbus_stb_o` is asserted only during the very first bus clock cycle.
