@@ -210,6 +210,7 @@ All core VHDL files from the list below have to be assigned to a **new library**
 │
 ├neorv32_cfs.vhd                 - Custom functions subsystem
 ├neorv32_crc.vhd                 - Cyclic redundancy check unit
+├neorv32_cache.vhd               - Generic cache module
 ├neorv32_dcache.vhd              - Processor-internal data cache
 ├neorv32_debug_dm.vhd            - on-chip debugger: debug module
 ├neorv32_debug_dtm.vhd           - on-chip debugger: debug transfer module
@@ -231,7 +232,7 @@ All core VHDL files from the list below have to be assigned to a **new library**
 ├neorv32_twi.vhd                 - Two wire serial interface controller
 ├neorv32_uart.vhd                - Universal async. receiver/transmitter
 ├neorv32_wdt.vhd                 - Watchdog timer
-├neorv32_wishbone.vhd            - External (Wishbone) bus interface
+├neorv32_xbus.vhd                - External (Wishbone) bus interface gateways
 ├neorv32_xip.vhd                 - Execute in place module
 ├neorv32_xirq.vhd                - External interrupt controller
 │
