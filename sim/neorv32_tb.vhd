@@ -269,6 +269,13 @@ begin
     XBUS_BIG_ENDIAN              => false,         -- byte order: true=big-endian, false=little-endian
     XBUS_ASYNC_RX                => true,          -- use register buffer for RX data when false
     XBUS_ASYNC_TX                => true,          -- use register buffer for TX data when false
+    XBUS_CACHE_EN                => true,          -- enable external bus cache (x-cache)
+    XBUS_CACHE_NUM_BLOCKS        => 4,             -- x-cache: number of blocks (min 1), has to be a power of 2
+    XBUS_CACHE_BLOCK_SIZE        => 32,            -- x-cache: block size in bytes (min 4), has to be a power of 2
+    -- External bus cache (XCACHE) --
+    XCACHE_EN                    => true,          -- enable external bus cache
+    XCACHE_NUM_BLOCKS            => 4,             -- x-cache: number of blocks (min 1), has to be a power of 2
+    XCACHE_BLOCK_SIZE            => 32,            -- x-cache: block size in bytes (min 4), has to be a power of 2
     -- Execute in-place module (XIP) --
     XIP_EN                       => true,          -- implement execute in place module (XIP)?
     XIP_CACHE_EN                 => true,          -- implement XIP cache?
