@@ -114,6 +114,9 @@ entity neorv32_top is
     XBUS_BIG_ENDIAN            : boolean                        := false;       -- byte order: true=big-endian, false=little-endian
     XBUS_ASYNC_RX              : boolean                        := false;       -- use register buffer for RX data when false
     XBUS_ASYNC_TX              : boolean                        := false;       -- use register buffer for TX data when false
+    XBUS_CACHE_EN              : boolean                        := false;       -- enable external bus cache (x-cache)
+    XBUS_CACHE_NUM_BLOCKS      : natural                        := 64;          -- x-cache: number of blocks (min 1), has to be a power of 2
+    XBUS_CACHE_BLOCK_SIZE      : natural                        := 32;          -- x-cache: block size in bytes (min 4), has to be a power of 2
 
     -- Execute in-place module (XIP) --
     XIP_EN                     : boolean                        := false;       -- implement execute in place module (XIP)?
@@ -320,8 +323,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal main_rsp, main2_rsp, dma_rsp : bus_rsp_t; -- core complex (CPU + caches + DMA)
 
   -- bus: main sections --
-  signal imem_req, dmem_req, xip_req, boot_req, io_req, xbus_req : bus_req_t;
-  signal imem_rsp, dmem_rsp, xip_rsp, boot_rsp, io_rsp, xbus_rsp : bus_rsp_t;
+  signal imem_req, dmem_req, xip_req, boot_req, io_req, xcache_req, xbus_req : bus_req_t;
+  signal imem_rsp, dmem_rsp, xip_rsp, boot_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
 
   -- bus: IO devices --
   type io_devices_enum_t is (
@@ -364,33 +367,34 @@ begin
     -- show main SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: " &
-      cond_sel_string_f(MEM_INT_IMEM_EN,     "IMEM ",     "") &
-      cond_sel_string_f(MEM_INT_DMEM_EN,     "DMEM ",     "") &
-      cond_sel_string_f(INT_BOOTLOADER_EN,   "BOOTROM ",  "") &
-      cond_sel_string_f(ICACHE_EN,           "I-CACHE ",  "") &
-      cond_sel_string_f(DCACHE_EN,           "D-CACHE ",  "") &
-      cond_sel_string_f(XBUS_EN,             "XBUS ",     "") &
-      cond_sel_string_f(io_gpio_en_c,        "GPIO ",     "") &
-      cond_sel_string_f(IO_MTIME_EN,         "MTIME ",    "") &
-      cond_sel_string_f(IO_UART0_EN,         "UART0 ",    "") &
-      cond_sel_string_f(IO_UART1_EN,         "UART1 ",    "") &
-      cond_sel_string_f(IO_SPI_EN,           "SPI ",      "") &
-      cond_sel_string_f(IO_SDI_EN,           "SDI ",      "") &
-      cond_sel_string_f(IO_TWI_EN,           "TWI ",      "") &
-      cond_sel_string_f(io_pwm_en_c,         "PWM ",      "") &
-      cond_sel_string_f(IO_WDT_EN,           "WDT ",      "") &
-      cond_sel_string_f(IO_TRNG_EN,          "TRNG ",     "") &
-      cond_sel_string_f(IO_CFS_EN,           "CFS ",      "") &
-      cond_sel_string_f(IO_NEOLED_EN,        "NEOLED ",   "") &
-      cond_sel_string_f(io_xirq_en_c,        "XIRQ ",     "") &
-      cond_sel_string_f(IO_GPTMR_EN,         "GPTMR ",    "") &
-      cond_sel_string_f(XIP_EN,              "XIP ",      "") &
-      cond_sel_string_f(IO_ONEWIRE_EN,       "ONEWIRE ",  "") &
-      cond_sel_string_f(IO_DMA_EN,           "DMA ",      "") &
-      cond_sel_string_f(IO_SLINK_EN,         "SLINK ",    "") &
-      cond_sel_string_f(IO_CRC_EN,           "CRC ",      "") &
-      cond_sel_string_f(true,                "SYSINFO ",  "") & -- always enabled
-      cond_sel_string_f(ON_CHIP_DEBUGGER_EN, "OCD ",      "") &
+      cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",     "") &
+      cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",     "") &
+      cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",  "") &
+      cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",  "") &
+      cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",  "") &
+      cond_sel_string_f(XBUS_EN,                   "XBUS ",     "") &
+      cond_sel_string_f(XBUS_EN and XBUS_CACHE_EN, "XCACHE ",   "") &
+      cond_sel_string_f(io_gpio_en_c,              "GPIO ",     "") &
+      cond_sel_string_f(IO_MTIME_EN,               "MTIME ",    "") &
+      cond_sel_string_f(IO_UART0_EN,               "UART0 ",    "") &
+      cond_sel_string_f(IO_UART1_EN,               "UART1 ",    "") &
+      cond_sel_string_f(IO_SPI_EN,                 "SPI ",      "") &
+      cond_sel_string_f(IO_SDI_EN,                 "SDI ",      "") &
+      cond_sel_string_f(IO_TWI_EN,                 "TWI ",      "") &
+      cond_sel_string_f(io_pwm_en_c,               "PWM ",      "") &
+      cond_sel_string_f(IO_WDT_EN,                 "WDT ",      "") &
+      cond_sel_string_f(IO_TRNG_EN,                "TRNG ",     "") &
+      cond_sel_string_f(IO_CFS_EN,                 "CFS ",      "") &
+      cond_sel_string_f(IO_NEOLED_EN,              "NEOLED ",   "") &
+      cond_sel_string_f(io_xirq_en_c,              "XIRQ ",     "") &
+      cond_sel_string_f(IO_GPTMR_EN,               "GPTMR ",    "") &
+      cond_sel_string_f(XIP_EN,                    "XIP ",      "") &
+      cond_sel_string_f(IO_ONEWIRE_EN,             "ONEWIRE ",  "") &
+      cond_sel_string_f(IO_DMA_EN,                 "DMA ",      "") &
+      cond_sel_string_f(IO_SLINK_EN,               "SLINK ",    "") &
+      cond_sel_string_f(IO_CRC_EN,                 "CRC ",      "") &
+      cond_sel_string_f(true,                      "SYSINFO ",  "") & -- always enabled
+      cond_sel_string_f(ON_CHIP_DEBUGGER_EN,       "OCD ",      "") &
       ""
       severity note;
 
@@ -909,6 +913,8 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_xbus_inst_true:
     if XBUS_EN generate
+
+      -- bus gateway (Wishbone) --
       neorv32_xbus_inst: entity neorv32.neorv32_xbus
       generic map (
         BUS_TIMEOUT => XBUS_TIMEOUT,
@@ -920,8 +926,8 @@ begin
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_sys,
-        bus_req_i   => xbus_req,
-        bus_rsp_o   => xbus_rsp,
+        bus_req_i   => xcache_req,
+        bus_rsp_o   => xcache_rsp,
         --
         xbus_adr_o  => xbus_adr_o,
         xbus_dat_i  => xbus_dat_i,
@@ -933,7 +939,33 @@ begin
         xbus_ack_i  => xbus_ack_i,
         xbus_err_i  => xbus_err_i
       );
-    end generate;
+
+      -- external bus cache (XCACHE) --
+      neorv32_xcache_inst_true:
+      if XBUS_CACHE_EN generate
+        neorv32_xcache_inst: entity neorv32.neorv32_cache
+        generic map (
+          NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
+          BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
+          UC_BEGIN   => uncached_begin_c(31 downto 28)
+        )
+        port map (
+          clk_i      => clk_i,
+          rstn_i     => rstn_sys,
+          host_req_i => xbus_req,
+          host_rsp_o => xbus_rsp,
+          bus_req_o  => xcache_req,
+          bus_rsp_i  => xcache_rsp
+        );
+      end generate;
+
+      neorv32_xcache_inst_false:
+      if not XBUS_CACHE_EN generate
+        xcache_req <= xbus_req;
+        xbus_rsp   <= xcache_rsp;
+      end generate;
+
+    end generate; -- /neorv32_xbus_inst_true
 
     neorv32_xbus_inst_false:
     if not XBUS_EN generate
@@ -1529,29 +1561,22 @@ begin
       CLOCK_FREQUENCY      => CLOCK_FREQUENCY,
       CLOCK_GATING_EN      => CLOCK_GATING_EN,
       INT_BOOTLOADER_EN    => INT_BOOTLOADER_EN,
-      -- Internal Instruction memory --
       MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,
       MEM_INT_IMEM_SIZE    => imem_size_c,
-      -- Internal Data memory --
       MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,
       MEM_INT_DMEM_SIZE    => dmem_size_c,
-      -- Reservation Set Granularity --
       AMO_RVS_GRANULARITY  => AMO_RVS_GRANULARITY,
-      -- Instruction cache --
       ICACHE_EN            => ICACHE_EN,
       ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS,
       ICACHE_BLOCK_SIZE    => ICACHE_BLOCK_SIZE,
       ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY,
-      -- Data cache --
       DCACHE_EN            => DCACHE_EN,
       DCACHE_NUM_BLOCKS    => DCACHE_NUM_BLOCKS,
       DCACHE_BLOCK_SIZE    => DCACHE_BLOCK_SIZE,
-      -- External bus interface --
       XBUS_EN              => XBUS_EN,
       XBUS_BIG_ENDIAN      => XBUS_BIG_ENDIAN,
-      -- On-Chip Debugger --
+      XBUS_CACHE_EN        => XBUS_CACHE_EN,
       ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,
-      -- Processor peripherals --
       IO_GPIO_EN           => io_gpio_en_c,
       IO_MTIME_EN          => IO_MTIME_EN,
       IO_UART0_EN          => IO_UART0_EN,

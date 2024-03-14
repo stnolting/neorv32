@@ -5,23 +5,27 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_xbus.vhd  |
-| Software driver file(s): | none              | _implicitly used_
-| Top entity port:         | `xbus_adr_o`      | address output (32-bit)
-|                          | `xbus_dat_i`      | data input (32-bit)
-|                          | `xbus_dat_o`      | data output (32-bit)
-|                          | `xbus_we_o`       | write enable (1-bit)
-|                          | `xbus_sel_o`      | byte enable (4-bit)
-|                          | `xbus_stb_o`      | strobe (1-bit)
-|                          | `xbus_cyc_o`      | valid cycle (1-bit)
-|                          | `xbus_ack_i`      | acknowledge (1-bit)
-|                          | `xbus_err_i`      | bus error (1-bit)
-| Configuration generics:  | `XBUS_EN`         | enable external bus interface when `true`
-|                          | `XBUS_TIMEOUT`    | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
-|                          | `XBUS_PIPE_MODE`  | when `false` (default): classic/standard Wishbone protocol; when `true`: pipelined Wishbone protocol
-|                          | `XBUS_BIG_ENDIAN` | byte-order (Endianness) of external bus interface; `true`=BIG, `false`=little (default)
-|                          | `XBUS_ASYNC_RX`   | use registered RX path when `false` (default); use async/direct RX path when `true`
-|                          | `XBUS_ASYNC_TX`   | use registered TX path when `false` (default); use async/direct TX path when `true`
+| Hardware source file(s): | neorv32_xbus.vhd        | External bus gateway
+|                          | neorv32_cache.vhd       | External bus cache instance
+| Software driver file(s): | none                    | _implicitly used_
+| Top entity port(s):      | `xbus_adr_o`            | address output (32-bit)
+|                          | `xbus_dat_i`            | data input (32-bit)
+|                          | `xbus_dat_o`            | data output (32-bit)
+|                          | `xbus_we_o`             | write enable (1-bit)
+|                          | `xbus_sel_o`            | byte enable (4-bit)
+|                          | `xbus_stb_o`            | strobe (1-bit)
+|                          | `xbus_cyc_o`            | valid cycle (1-bit)
+|                          | `xbus_ack_i`            | acknowledge (1-bit)
+|                          | `xbus_err_i`            | bus error (1-bit)
+| Configuration generics:  | `XBUS_EN`               | enable external bus interface when `true`
+|                          | `XBUS_TIMEOUT`          | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
+|                          | `XBUS_PIPE_MODE`        | when `false` (default): classic/standard Wishbone protocol; when `true`: pipelined Wishbone protocol
+|                          | `XBUS_BIG_ENDIAN`       | byte-order (Endianness) of external bus interface; `true`=BIG, `false`=little (default)
+|                          | `XBUS_ASYNC_RX`         | use registered RX path when `false` (default); use async/direct RX path when `true`
+|                          | `XBUS_ASYNC_TX`         | use registered TX path when `false` (default); use async/direct TX path when `true`
+|                          | `XBUS_CACHE_EN`         | implement the external bus cache
+|                          | `XBUS_CACHE_NUM_BLOCKS` | number of blocks ("lines"), has to be a power of two.
+|                          | `XBUS_CACHE_BLOCK_SIZE` | size in bytes of each block, has to be a power of two.
 | CPU interrupts:          | none |
 |=======================
 
@@ -29,6 +33,7 @@
 The external bus interface provides a Wishbone b4-compatible on-chip bus interface that is
 implemented if the `XBUS_EN` generic is `true`. This bus interface can be used to attach external memories,
 custom hardware accelerators, additional peripheral devices or all other kinds of IP blocks.
+An optional cache module ("XCACHE") can be enabled to improve memory access latency.
 
 The external interface is **not** mapped to a specific address space. Instead, all CPU memory accesses that
 do not target a specific (and actually implemented) processor-internal address region (hence, accessing the "void";
@@ -95,14 +100,14 @@ SYSINFO module (see section <<_system_configuration_information_memory_sysinfo>>
 
 **Access Latency**
 
-By default, the XBUS gateway introduces two additional latency cycles: processor-outgoing (`*_o`) and
+By default, the XBUS gateway introduces two additional latency cycles since processor-outgoing (`*_o`) and
 processor-incoming (`*_i`) signals are fully registered. Thus, any access from the CPU to a processor-external devices
-via Wishbone requires 2 additional clock cycles. This can ease timing closure when using large (combinatorial) Wishbone
-interconnection networks.
+via the XBUS interface requires 2 additional clock cycles. This can ease timing closure when using large (combinatorial)
+processor-external interconnection networks.
 
-Optionally, the latency of the XBUS gateway can be reduced by removing the input and output register stages.
+Optionally, the latency of the XBUS gateway can be reduced by removing the input and/or output register stages.
 Enabling the `XBUS_ASYNC_RX` option will remove the input register stage; enabling `XBUS_ASYNC_TX` option will
-remove the output register stages. Each enabled option reduces access latency by 1 cycle.
+remove the output register stages. Note that using those "async" options might impact timing closure.
 
 .Output Gating
 [NOTE]
@@ -110,3 +115,36 @@ All outgoing Wishbone signals use a "gating mechanism" so they only change if th
 progress. This can reduce dynamic switching activity in the external bus system and also simplifies simulation-based
 inspection of the Wishbone transactions. Note that this output gating is only available if the output register buffer is not
 disabled (`XBUS_ASYNC_TX` = `false`).
+
+
+**External Bus Cache (X-CACHE)**
+
+[source,asciiart]
+---------------------------------------
+Simplified cache architecture ("->" = direction of access requests):                      
+
+                 Direct Access          +----------+                                      
+           /|-------------------------->| Register |------------------------->|\          
+          | |                           +----------+                          | |         
+Core ---->| |                                                                 | |----> XBUS
+          | |    +--------------+     +--------------+     +-------------+    | |         
+           \|--->| Host Arbiter |---->| Cache Memory |<----| Bus Arbiter |--->|/          
+                 +--------------+     +--------------+     +-------------+                
+---------------------------------------
+
+The XBUS interface provides an optional cache module that can be used to buffer and improve processor-external accesses.
+The cache uses a direct-mapped architecture that implements "write-allocate" and "write-back" strategies.
+
+The **write-allocate** strategy will fetch the entire referenced block from main memory when encountering
+a cache write-miss. The **write-back** strategy will gather all writes locally inside the cache until the according
+cache block is about to be replaced. In this case, the entire modified cache block is written back to main memory.
+
+The x-cache is enabled via the `XBUS_CACHE_EN` generic. The total size of the cache is split into the number of cache lines
+or cache blocks (`XBUS_CACHE_NUM_BLOCKS` generic) and the line or block size in bytes (`XBUS_CACHE_BLOCK_SIZE` generic).
+
+The x-cache also provides "direct accesses" that bypass the cache. For example, this can be used to access processor-external
+memory-mapped IO. All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF` will always bypass the cache
+(see section <<_address_space>>). Furthermore, load-reservate and store conditional <<_atomic_accesses>> will also always bypass the
+cache **regardless of the accessed address**.
+
+

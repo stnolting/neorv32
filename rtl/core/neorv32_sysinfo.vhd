@@ -1,8 +1,8 @@
 -- #################################################################################################
 -- # << NEORV32 - System/Processor Configuration Information Memory (SYSINFO) >>                   #
 -- # ********************************************************************************************* #
--- # This unit provides information regarding the NEORV32 processor system configuration -         #
--- # mostly derived from the top's configuration generics.                                         #
+-- # This unit provides information regarding the NEORV32 processor system configuration derived   #
+-- # mainly from the top's configuration generics.                                                 #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -43,33 +43,25 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_sysinfo is
   generic (
-    -- General --
     CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
     CLOCK_GATING_EN      : boolean; -- enable clock gating when in sleep mode
     INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-    -- Internal instruction memory --
     MEM_INT_IMEM_EN      : boolean; -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE    : natural; -- size of processor-internal instruction memory in bytes
-    -- Internal data memory --
     MEM_INT_DMEM_EN      : boolean; -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE    : natural; -- size of processor-internal data memory in bytes
-    -- Reservation Set Granularity --
     AMO_RVS_GRANULARITY  : natural; -- size in bytes, has to be a power of 2, min 4
-    -- Instruction cache --
     ICACHE_EN            : boolean; -- implement instruction cache
     ICACHE_NUM_BLOCKS    : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE    : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY : natural; -- i-cache: associativity (min 1), has to be a power 2
-    -- Data cache --
     DCACHE_EN            : boolean; -- implement data cache
     DCACHE_NUM_BLOCKS    : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
     DCACHE_BLOCK_SIZE    : natural; -- d-cache: block size in bytes (min 4), has to be a power of 2
-    -- External bus interface --
     XBUS_EN              : boolean; -- implement external memory bus interface?
     XBUS_BIG_ENDIAN      : boolean; -- byte order: true=big-endian, false=little-endian
-    -- On-chip debugger --
+    XBUS_CACHE_EN        : boolean; -- implement external bus cache
     ON_CHIP_DEBUGGER_EN  : boolean; -- implement OCD?
-    -- Processor peripherals --
     IO_GPIO_EN           : boolean; -- implement general purpose IO port (GPIO)?
     IO_MTIME_EN          : boolean; -- implement machine system timer (MTIME)?
     IO_UART0_EN          : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
@@ -103,6 +95,7 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   -- helpers --
   constant int_imem_en_c : boolean := MEM_INT_IMEM_EN and boolean(MEM_INT_IMEM_SIZE > 0);
   constant int_dmem_en_c : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
+  constant xcache_en_c   : boolean := XBUS_EN and XBUS_CACHE_EN;
 
   -- system information ROM --
   type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
@@ -123,14 +116,14 @@ begin
 
   -- SYSINFO(2): SoC Configuration --
   sysinfo(2)(00) <= '1' when INT_BOOTLOADER_EN   else '0'; -- processor-internal bootloader implemented?
-  sysinfo(2)(01) <= '1' when XBUS_EN             else '0'; -- external memory bus interface implemented?
+  sysinfo(2)(01) <= '1' when XBUS_EN             else '0'; -- external bus interface implemented?
   sysinfo(2)(02) <= '1' when int_imem_en_c       else '0'; -- processor-internal instruction memory implemented?
   sysinfo(2)(03) <= '1' when int_dmem_en_c       else '0'; -- processor-internal data memory implemented?
   sysinfo(2)(04) <= '1' when XBUS_BIG_ENDIAN     else '0'; -- is external memory bus interface using BIG-endian byte-order?
   sysinfo(2)(05) <= '1' when ICACHE_EN           else '0'; -- processor-internal instruction cache implemented?
   sysinfo(2)(06) <= '1' when DCACHE_EN           else '0'; -- processor-internal data cache implemented?
   sysinfo(2)(07) <= '1' when CLOCK_GATING_EN     else '0'; -- enable clock gating when in sleep mode
-  sysinfo(2)(08) <= '0'; -- reserved
+  sysinfo(2)(08) <= '1' when xcache_en_c         else '0'; -- external bus interface cache implemented?
   sysinfo(2)(09) <= '0'; -- reserved
   sysinfo(2)(10) <= '0'; -- reserved
   sysinfo(2)(11) <= '0'; -- reserved

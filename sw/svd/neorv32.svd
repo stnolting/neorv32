@@ -1614,6 +1614,7 @@
             <field><name>SYSINFO_SOC_ICACHE</name><bitRange>[5:5]</bitRange><description>Processor-internal instruction cache implemented</description></field>
             <field><name>SYSINFO_SOC_DCACHE</name><bitRange>[6:6]</bitRange><description>Processor-internal data cache implemented</description></field>
             <field><name>SYSINFO_SOC_CLOCK_GATING</name><bitRange>[7:7]</bitRange><description>Clock gating implemented</description></field>
+            <field><name>SYSINFO_XBUS_CACHE_EN</name><bitRange>[8:8]</bitRange><description>External bus cache implemented</description></field>
             <field><name>SYSINFO_SOC_IO_CRC</name><bitRange>[12:12]</bitRange><description>Cyclic redundancy check unit implemented</description></field>
             <field><name>SYSINFO_SOC_IO_SLINK</name><bitRange>[13:13]</bitRange><description>Stream link interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[14:14]</bitRange><description>Direct memory access controller implemented</description></field>
