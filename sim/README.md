@@ -1,9 +1,8 @@
 # Simulation Sources
 
+## [`simple`](simple) testbench
 
-## [simple](simple)
-
-Simple testbench for the NEORV32 Processor and script for simulation using GHDL.
+"Simple" testbench for the NEORV32 Processor and script for simulation using GHDL.
 
 - [`ghdl.setup.sh`](simple/ghdl.setup.sh)
 - [`ghdl.run.sh`](simple/ghdl.run.sh)
@@ -12,9 +11,10 @@ Simple testbench for the NEORV32 Processor and script for simulation using GHDL.
 - [`uart_rx.simple.vhd`](simple/uart_rx.simple.vhd)
 
 
-## VUnit testbench
+## VUnit testbench (this folder)
 
 VUnit testbench for the NEORV32 Processor.
+**:warning: This testbench requires VHDL-2008 (or newer) as standard! :warning:**
 
 - [`run.py`](run.py)
 - [`neorv32_tb.vhd`](neorv32_tb.vhd)
