@@ -684,12 +684,6 @@ void neorv32_rte_print_hw_config(void) {
   tmp = NEORV32_SYSINFO->SOC;
   if (tmp & (1 << SYSINFO_SOC_XBUS)) {
     neorv32_uart0_printf("Wishbone-b4 ");
-    if (tmp & (1 << SYSINFO_SOC_XBUS_ENDIAN)) {
-      neorv32_uart0_printf("big-endian");
-    }
-    else {
-      neorv32_uart0_printf("little-endian");
-    }
     if (tmp & (1 << SYSINFO_SOC_XBUS_CACHE)) {
       neorv32_uart0_printf(" x-cache\n");
     }
