@@ -1610,13 +1610,12 @@
             <field><name>SYSINFO_SOC_XBUS</name><bitRange>[1:1]</bitRange><description>External bus interface implemented</description></field>
             <field><name>SYSINFO_SOC_MEM_INT_IMEM</name><bitRange>[2:2]</bitRange><description>Processor-internal instruction memory implemented</description></field>
             <field><name>SYSINFO_SOC_MEM_INT_DMEM</name><bitRange>[3:3]</bitRange><description>Processor-internal data memory implemented</description></field>
-            <field><name>SYSINFO_SOC_XBUS_ENDIAN</name><bitRange>[4:4]</bitRange><description>External bus interface uses BIG-endian byte-order</description></field>
+            <field><name>SYSINFO_SOC_OCD</name><bitRange>[4:4]</bitRange><description>On-chip debugger implemented</description></field>
             <field><name>SYSINFO_SOC_ICACHE</name><bitRange>[5:5]</bitRange><description>Processor-internal instruction cache implemented</description></field>
             <field><name>SYSINFO_SOC_DCACHE</name><bitRange>[6:6]</bitRange><description>Processor-internal data cache implemented</description></field>
             <field><name>SYSINFO_SOC_CLOCK_GATING</name><bitRange>[7:7]</bitRange><description>Clock gating implemented</description></field>
-            <field><name>SYSINFO_XBUS_CACHE_EN</name><bitRange>[8:8]</bitRange><description>External bus cache implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_CRC</name><bitRange>[12:12]</bitRange><description>Cyclic redundancy check unit implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_SLINK</name><bitRange>[13:13]</bitRange><description>Stream link interface implemented</description></field>
+            <field><name>SYSINFO_SOC_XBUS_CACHE</name><bitRange>[8:8]</bitRange><description>External bus cache implemented</description></field>
+            <field><name>SYSINFO_SOC_XIP</name><bitRange>[9:9]</bitRange><description>Execute in place module implemented</description></field>
             <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[14:14]</bitRange><description>Direct memory access controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[15:15]</bitRange><description>General purpose input/output port unit implemented</description></field>
             <field><name>SYSINFO_SOC_IO_MTIME</name><bitRange>[16:16]</bitRange><description>Machine system timer implemented</description></field>
@@ -1632,9 +1631,9 @@
             <field><name>SYSINFO_SOC_IO_NEOLED</name><bitRange>[26:26]</bitRange><description>NeoPixel-compatible smart LED interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_XIRQ</name><bitRange>[27:27]</bitRange><description>External interrupt controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPTMR</name><bitRange>[28:28]</bitRange><description>General purpose timer implemented</description></field>
-            <field><name>SYSINFO_SOC_XIP</name><bitRange>[29:29]</bitRange><description>Execute in place module implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_SLINK</name><bitRange>[29:29]</bitRange><description>Stream link interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_ONEWIRE</name><bitRange>[30:30]</bitRange><description>1-wire interface controller implemented</description></field>
-            <field><name>SYSINFO_SOC_OCD</name><bitRange>[31:31]</bitRange><description>On-chip debugger implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_CRC</name><bitRange>[31:31]</bitRange><description>Cyclic redundancy check unit implemented</description></field>
           </fields>
         </register>
         <register>

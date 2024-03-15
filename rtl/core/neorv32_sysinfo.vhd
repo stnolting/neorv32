@@ -118,16 +118,16 @@ begin
   sysinfo(2)(01) <= '1' when XBUS_EN             else '0'; -- external bus interface implemented?
   sysinfo(2)(02) <= '1' when int_imem_en_c       else '0'; -- processor-internal instruction memory implemented?
   sysinfo(2)(03) <= '1' when int_dmem_en_c       else '0'; -- processor-internal data memory implemented?
-  sysinfo(2)(04) <= '0'; -- reserved
+  sysinfo(2)(04) <= '1' when ON_CHIP_DEBUGGER_EN else '0'; -- on-chip debugger implemented?
   sysinfo(2)(05) <= '1' when ICACHE_EN           else '0'; -- processor-internal instruction cache implemented?
   sysinfo(2)(06) <= '1' when DCACHE_EN           else '0'; -- processor-internal data cache implemented?
   sysinfo(2)(07) <= '1' when CLOCK_GATING_EN     else '0'; -- enable clock gating when in sleep mode
   sysinfo(2)(08) <= '1' when xcache_en_c         else '0'; -- external bus interface cache implemented?
-  sysinfo(2)(09) <= '0'; -- reserved
+  sysinfo(2)(09) <= '1' when XIP_EN              else '0'; -- execute in place module (XIP) implemented?
   sysinfo(2)(10) <= '0'; -- reserved
   sysinfo(2)(11) <= '0'; -- reserved
-  sysinfo(2)(12) <= '1' when IO_CRC_EN           else '0'; -- cyclic redundancy check unit (CRC) implemented?
-  sysinfo(2)(13) <= '1' when IO_SLINK_EN         else '0'; -- stream link interface (SLINK) implemented?
+  sysinfo(2)(12) <= '0'; -- reserved
+  sysinfo(2)(13) <= '0'; -- reserved
   sysinfo(2)(14) <= '1' when IO_DMA_EN           else '0'; -- direct memory access controller (DMA) implemented?
   sysinfo(2)(15) <= '1' when IO_GPIO_EN          else '0'; -- general purpose input/output port unit (GPIO) implemented?
   sysinfo(2)(16) <= '1' when IO_MTIME_EN         else '0'; -- machine system timer (MTIME) implemented?
@@ -143,9 +143,9 @@ begin
   sysinfo(2)(26) <= '1' when IO_NEOLED_EN        else '0'; -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
   sysinfo(2)(27) <= '1' when IO_XIRQ_EN          else '0'; -- external interrupt controller (XIRQ) implemented?
   sysinfo(2)(28) <= '1' when IO_GPTMR_EN         else '0'; -- general purpose timer (GPTMR) implemented?
-  sysinfo(2)(29) <= '1' when XIP_EN              else '0'; -- execute in place module (XIP) implemented?
+  sysinfo(2)(29) <= '1' when IO_SLINK_EN         else '0'; -- stream link interface (SLINK) implemented?
   sysinfo(2)(30) <= '1' when IO_ONEWIRE_EN       else '0'; -- 1-wire interface (ONEWIRE) implemented?
-  sysinfo(2)(31) <= '1' when ON_CHIP_DEBUGGER_EN else '0'; -- on-chip debugger implemented?
+  sysinfo(2)(31) <= '1' when IO_CRC_EN           else '0'; -- cyclic redundancy check unit (CRC) implemented?
 
   -- SYSINFO(3): Cache Configuration --
   sysinfo(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE),    4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(block_size_in_bytes)
