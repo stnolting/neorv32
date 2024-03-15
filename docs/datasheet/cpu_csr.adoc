@@ -877,7 +877,7 @@ counter CSRs are read-only. Any write access will raise an illegal instruction e
 | Address     | `0xf11`
 | Reset value | `DEFINED`
 | ISA         | `Zicsr`
-| Description | Vendor ID (JEDEC identifier), assigned via the `VENDOR_ID` top generic (<<_processor_top_entity_generics>>).
+| Description | Vendor ID (JEDEC identifier, lowest 11 bits), assigned via the `JEDEC_ID` top generic (<<_processor_top_entity_generics>>).
 |=======================
 
 

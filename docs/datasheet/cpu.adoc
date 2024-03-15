@@ -117,6 +117,7 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 [options="header",grid="rows"]
 |=======================
 | Name | Type | Description
+| `VENDOR_ID`                  | suv(31:0) | Value for the <<_mvendorid>> CSR.
 | `CPU_BOOT_ADDR`              | suv(31:0) | CPU reset address. See section <<_address_space>>.
 | `CPU_DEBUG_PARK_ADDR`        | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
 | `CPU_DEBUG_EXC_ADDR`         | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
