@@ -110,12 +110,11 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
 
   -- identifiers --
   constant hart_id_c  : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID ("core ID")
-  constant jedec_id_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC manufacturer ID
+  constant jedec_id_c : std_ulogic_vector(10 downto 0) := "00000000000"; -- vendor's JEDEC manufacturer ID
 
   -- advanced configuration --
   constant num_configs_c : natural := 4;     -- number of pre-defined configurations
   constant wb_timeout_c  : natural := 4096;  -- external bus interface timeout cycles
-  constant big_endian_c  : boolean := false; -- external bus interface endianness; default is little-endian
 
   -- helpers --
   type bool_t is array (0 to num_configs_c-1) of boolean;
@@ -169,7 +168,7 @@ begin
     -- General --
     CLOCK_FREQUENCY            => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
     HART_ID                    => hart_id_c,                      -- hardware thread ID
-    VENDOR_ID                  => jedec_id_c,                     -- vendor's JEDEC ID
+    JEDEC_ID                   => jedec_id_c,                     -- vendor's JEDEC ID
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN        => DEBUG,                          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
@@ -199,8 +198,7 @@ begin
     -- External bus interface (XBUS) --
     XBUS_EN                    => true,                           -- implement external memory bus interface?
     XBUS_TIMEOUT               => wb_timeout_c,                   -- cycles after a pending bus access auto-terminates (0 = disabled)
-    XBUS_PIPE_MODE             => false,                           -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    XBUS_BIG_ENDIAN            => big_endian_c,                   -- byte order: true=big-endian, false=little-endian
+    XBUS_PIPE_MODE             => false,                          -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
     XBUS_ASYNC_RX              => true,                           -- use register buffer for RX data when false
     XBUS_ASYNC_TX              => true,                           -- use register buffer for TX data when false
     -- Processor peripherals --

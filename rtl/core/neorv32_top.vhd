@@ -49,7 +49,7 @@ entity neorv32_top is
     CLOCK_FREQUENCY            : natural;                                       -- clock frequency of clk_i in Hz
     CLOCK_GATING_EN            : boolean                        := false;       -- enable clock gating when in sleep mode
     HART_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
-    VENDOR_ID                  : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
+    JEDEC_ID                   : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
     INT_BOOTLOADER_EN          : boolean                        := false;       -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
     -- On-Chip Debugger (OCD) --
@@ -111,7 +111,6 @@ entity neorv32_top is
     XBUS_EN                    : boolean                        := false;       -- implement external memory bus interface?
     XBUS_TIMEOUT               : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_PIPE_MODE             : boolean                        := false;       -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    XBUS_BIG_ENDIAN            : boolean                        := false;       -- byte order: true=big-endian, false=little-endian
     XBUS_ASYNC_RX              : boolean                        := false;       -- use register buffer for RX data when false
     XBUS_ASYNC_TX              : boolean                        := false;       -- use register buffer for TX data when false
     XBUS_CACHE_EN              : boolean                        := false;       -- enable external bus cache (x-cache)
@@ -272,6 +271,9 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
   constant io_xirq_en_c    : boolean := boolean(XIRQ_NUM_CH > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
+
+  -- convert JEDEC ID to mvendor CSR --
+  constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_valid_c : boolean := is_power_of_two_f(MEM_INT_IMEM_SIZE);
@@ -523,7 +525,7 @@ begin
     generic map (
       -- General --
       HART_ID                    => HART_ID,
-      VENDOR_ID                  => VENDOR_ID,
+      VENDOR_ID                  => vendorid_c,
       CPU_BOOT_ADDR              => cpu_boot_addr_c,
       CPU_DEBUG_PARK_ADDR        => dm_park_entry_c,
       CPU_DEBUG_EXC_ADDR         => dm_exc_entry_c,
@@ -919,7 +921,6 @@ begin
       generic map (
         BUS_TIMEOUT => XBUS_TIMEOUT,
         PIPE_MODE   => XBUS_PIPE_MODE,
-        BIG_ENDIAN  => XBUS_BIG_ENDIAN,
         ASYNC_RX    => XBUS_ASYNC_RX,
         ASYNC_TX    => XBUS_ASYNC_TX
       )
@@ -1574,7 +1575,6 @@ begin
       DCACHE_NUM_BLOCKS    => DCACHE_NUM_BLOCKS,
       DCACHE_BLOCK_SIZE    => DCACHE_BLOCK_SIZE,
       XBUS_EN              => XBUS_EN,
-      XBUS_BIG_ENDIAN      => XBUS_BIG_ENDIAN,
       XBUS_CACHE_EN        => XBUS_CACHE_EN,
       ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,
       IO_GPIO_EN           => io_gpio_en_c,
@@ -1617,9 +1617,9 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_debug_dtm_inst: entity neorv32.neorv32_debug_dtm
     generic map (
-      IDCODE_VERSION => (others => '0'),
-      IDCODE_PARTID  => (others => '0'),
-      IDCODE_MANID   => (others => '0')
+      IDCODE_VERSION => (others => '0'), -- always zero
+      IDCODE_PARTID  => (others => '0'), -- always zero
+      IDCODE_MANID   => JEDEC_ID
     )
     port map (
       -- global control --

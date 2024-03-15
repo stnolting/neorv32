@@ -45,7 +45,7 @@ entity neorv32_top_avalonmm is
     -- General --
     CLOCK_FREQUENCY              : natural;           -- clock frequency of clk_i in Hz
     HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
-    VENDOR_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
+    JEDEC_ID                     : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
     INT_BOOTLOADER_EN            : boolean := false;  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
     -- On-Chip Debugger (OCD) --
@@ -229,7 +229,7 @@ begin
     -- General --
     CLOCK_FREQUENCY => CLOCK_FREQUENCY,
     HART_ID => HART_ID,
-    VENDOR_ID => VENDOR_ID,
+    JEDEC_ID => JEDEC_ID,
 
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN => ON_CHIP_DEBUGGER_EN,
@@ -281,7 +281,6 @@ begin
     XBUS_EN => true,
     XBUS_TIMEOUT => 0,
     XBUS_PIPE_MODE => false,
-    XBUS_BIG_ENDIAN => false,
     XBUS_ASYNC_RX => false,
     XBUS_ASYNC_TX => false,
 
