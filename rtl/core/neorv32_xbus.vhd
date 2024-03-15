@@ -50,7 +50,6 @@ entity neorv32_xbus is
     -- Wishbone Interface Configuration --
     BUS_TIMEOUT : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
     PIPE_MODE   : boolean; -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    BIG_ENDIAN  : boolean; -- byte order: true=big-endian, false=little-endian
     ASYNC_RX    : boolean; -- use register buffer for RX data when false
     ASYNC_TX    : boolean  -- use register buffer for TX data when false
   );
@@ -96,11 +95,6 @@ architecture neorv32_xbus_rtl of neorv32_xbus is
   signal ctrl    : ctrl_t;
   signal stb_int : std_ulogic;
   signal cyc_int : std_ulogic;
-  signal rdata   : std_ulogic_vector(31 downto 0);
-
-  -- endianness conversion --
-  signal end_wdata  : std_ulogic_vector(31 downto 0);
-  signal end_byteen : std_ulogic_vector(03 downto 0);
 
   -- async RX gating --
   signal ack_gated   : std_ulogic;
@@ -115,7 +109,6 @@ begin
     "[NEORV32] External Bus Interface (XBUS) - " &
     cond_sel_string_f(PIPE_MODE, "PIPELINED", "CLASSIC/STANDARD") & " Wishbone b4 protocol, " &
     cond_sel_string_f(boolean(BUS_TIMEOUT /= 0), "auto-timeout, ", "NO auto-timeout, ") &
-    cond_sel_string_f(BIG_ENDIAN, "BIG", "LITTLE") & "-endian byte order, " &
     cond_sel_string_f(async_rx_c, "ASYNC ", "registered ") & "RX, " &
     cond_sel_string_f(ASYNC_TX, "ASYNC ", "registered ") & "TX"
     severity note;
@@ -158,8 +151,8 @@ begin
           -- buffer (and gate) all outgoing signals --
           ctrl.we    <= bus_req_i.rw;
           ctrl.adr   <= bus_req_i.addr;
-          ctrl.wdat  <= end_wdata;
-          ctrl.sel   <= end_byteen;
+          ctrl.wdat  <= bus_req_i.data;
+          ctrl.sel   <= bus_req_i.ben;
           ctrl.state <= '1';
         end if;
       else -- BUSY, transfer in progress
@@ -182,29 +175,25 @@ begin
     end if;
   end process bus_arbiter;
 
-  -- endianness conversion --
-  end_wdata  <= bswap32_f(bus_req_i.data) when (BIG_ENDIAN = true) else bus_req_i.data;
-  end_byteen <= bit_rev_f(bus_req_i.ben)  when (BIG_ENDIAN = true) else bus_req_i.ben;
-
   -- host access --
+  stb_int <=  bus_req_i.stb                when (ASYNC_TX = true) else (ctrl.state and (not ctrl.state_ff));
+  cyc_int <= (bus_req_i.stb or ctrl.state) when (ASYNC_TX = true) else  ctrl.state;
+
+  xbus_adr_o <= bus_req_i.addr when (ASYNC_TX  = true) else ctrl.adr;
+  xbus_dat_o <= bus_req_i.data when (ASYNC_TX  = true) else ctrl.wdat;
+  xbus_we_o  <= bus_req_i.rw   when (ASYNC_TX  = true) else ctrl.we;
+  xbus_sel_o <= bus_req_i.ben  when (ASYNC_TX  = true) else ctrl.sel;
+  xbus_stb_o <= stb_int        when (PIPE_MODE = true) else cyc_int;
+  xbus_cyc_o <= cyc_int;
+
+  -- device response --
   ack_gated   <= xbus_ack_i when (ctrl.state = '1') else '0'; -- CPU ACK gate for "async" RX
   err_gated   <= xbus_err_i when (ctrl.state = '1') else '0'; -- CPU ERR gate for "async" RX
   rdata_gated <= xbus_dat_i when (ctrl.state = '1') and (ctrl.we = '0') else (others => '0'); -- async output gate
 
-  rdata          <= ctrl.rdat when (async_rx_c = false) else rdata_gated;
-  bus_rsp_o.data <= rdata when (BIG_ENDIAN = false) else bswap32_f(rdata); -- endianness conversion
-  bus_rsp_o.ack  <= ctrl.ack when (async_rx_c = false) else ack_gated;
-  bus_rsp_o.err  <= ctrl.err when (async_rx_c = false) else err_gated;
-
-  stb_int <=  bus_req_i.stb                when (ASYNC_TX = true) else (ctrl.state and (not ctrl.state_ff));
-  cyc_int <= (bus_req_i.stb or ctrl.state) when (ASYNC_TX = true) else  ctrl.state;
-
-  xbus_adr_o <= bus_req_i.addr when (ASYNC_TX = true) else ctrl.adr;
-  xbus_dat_o <= bus_req_i.data when (ASYNC_TX = true) else ctrl.wdat;
-  xbus_we_o  <= bus_req_i.rw   when (ASYNC_TX = true) else ctrl.we;
-  xbus_sel_o <= end_byteen when (ASYNC_TX = true) else ctrl.sel;
-  xbus_stb_o <= stb_int    when (PIPE_MODE = true) else cyc_int;
-  xbus_cyc_o <= cyc_int;
+  bus_rsp_o.data <= ctrl.rdat when (async_rx_c = false) else rdata_gated;
+  bus_rsp_o.ack  <= ctrl.ack  when (async_rx_c = false) else ack_gated;
+  bus_rsp_o.err  <= ctrl.err  when (async_rx_c = false) else err_gated;
 
 
 end neorv32_xbus_rtl;
