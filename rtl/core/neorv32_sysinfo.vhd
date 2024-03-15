@@ -59,7 +59,6 @@ entity neorv32_sysinfo is
     DCACHE_NUM_BLOCKS    : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
     DCACHE_BLOCK_SIZE    : natural; -- d-cache: block size in bytes (min 4), has to be a power of 2
     XBUS_EN              : boolean; -- implement external memory bus interface?
-    XBUS_BIG_ENDIAN      : boolean; -- byte order: true=big-endian, false=little-endian
     XBUS_CACHE_EN        : boolean; -- implement external bus cache
     ON_CHIP_DEBUGGER_EN  : boolean; -- implement OCD?
     IO_GPIO_EN           : boolean; -- implement general purpose IO port (GPIO)?
@@ -119,7 +118,7 @@ begin
   sysinfo(2)(01) <= '1' when XBUS_EN             else '0'; -- external bus interface implemented?
   sysinfo(2)(02) <= '1' when int_imem_en_c       else '0'; -- processor-internal instruction memory implemented?
   sysinfo(2)(03) <= '1' when int_dmem_en_c       else '0'; -- processor-internal data memory implemented?
-  sysinfo(2)(04) <= '1' when XBUS_BIG_ENDIAN     else '0'; -- is external memory bus interface using BIG-endian byte-order?
+  sysinfo(2)(04) <= '0'; -- reserved
   sysinfo(2)(05) <= '1' when ICACHE_EN           else '0'; -- processor-internal instruction cache implemented?
   sysinfo(2)(06) <= '1' when DCACHE_EN           else '0'; -- processor-internal data cache implemented?
   sysinfo(2)(07) <= '1' when CLOCK_GATING_EN     else '0'; -- enable clock gating when in sleep mode
