@@ -70,7 +70,7 @@ user guide section https://stnolting.github.io/neorv32/ug/#_software_toolchain_s
 
 The NEORV32 project provides a set of pre-defined C libraries that allow an easy integration of the processor/CPU features
 (also called "HAL" - hardware abstraction layer). All driver and runtime-related files are located in
-`sw/lib`. These are automatically included and linked by adding the following include statement:
+`sw/lib`. These library files are automatically included and linked by adding the following include statement:
 
 [source,c]
 ----
@@ -311,25 +311,29 @@ and packed into a final executable.
 ==== Linker Script
 
 After all the application sources have been compiled, they need to be _linked_.
-For this purpose the makefile uses the NEORV32-specific linker script `sw/common/neorv32.ld` for
-linking all object files that were generated during compilation. In general, the linker script defines
-two final memory sections: `rom` and `ram`.
+For this purpose the makefile uses the NEORV32-specific linker scThe linker script defines several sections
+for the final executable (compare with <<_address_space>>). However, only the `ram` and `rom` sections are
+relevant for the executable itself; the raining sections are just listed fro completeness.
 
 .Linker script - memory sections
 [cols="<2,<8"]
 [options="header",grid="rows"]
 |=======================
 | Memory section  | Description
-| `ram`           | Data memory address space (processor-internal/external DMEM)
-| `rom`           | Instruction memory address space (processor-internal/external IMEM) _or_ internal bootloader ROM
+| `ram`           | Data memory address space (processor-internal <<_instruction_memory_imem>> and/or external memory)
+| `rom`           | Instruction memory address space (processor-internal <<_data_memory_dmem>> and/or external memory)
+| `xip`           | Address space for the <<_execute_in_place_module_xip>> (accessing an external SPI flash)
+| `boot`          | Address space for the processor-internal <<_bootloader_rom_bootrom>>
+| `io`            | Address space for the processor-internal IO/peripheral devices
 |=======================
 
 [NOTE]
-The `rom` section is automatically re-mapped to the processor-internal <<_bootloader_rom_bootrom>> when (re-)compiling the
-bootloader
+The `rom` section is automatically re-mapped to the processor-internal <<_bootloader_rom_bootrom>> when compiling the
+bootloader sources.
 
 Each section has two main attributes: `ORIGIN` and `LENGTH`. `ORIGIN` defines the base address of the according section
-while `LENGTH` defines its size in bytes. The attributes are configured indirectly via variables that provide default values.
+while `LENGTH` defines its size in bytes. For the `ram` and `rom` sections these attributes are configured indirectly
+via variables that provide default values.
 
 .Linker script - section configuration
 [source]

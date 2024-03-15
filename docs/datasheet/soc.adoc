@@ -199,11 +199,11 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 |=======================
 | Name | Type | Default | Description
 4+^| **General**
-| `CLOCK_FREQUENCY`   | natural   | -          | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
-| `CLOCK_GATING_EN`   | boolean   | false      | Enable clock gating when CPU is in sleep mode (see sections <<_sleep_mode>> and <<_processor_clocking>>).
-| `INT_BOOTLOADER_EN` | boolean   | false      | Implement the processor-internal <<_bootloader_rom_bootrom>>, pre-initialized with the default <<_bootloader>> image.
-| `HART_ID`           | suv(31:0) | 0x00000000 | The hart thread ID of the CPU (passed to <<_mhartid>> CSR).
-| `VENDOR_ID`         | suv(31:0) | 0x00000000 | JEDEC ID (passed to <<_mvendorid>> CSR).
+| `CLOCK_FREQUENCY`   | natural   | -           | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
+| `CLOCK_GATING_EN`   | boolean   | false       | Enable clock gating when CPU is in sleep mode (see sections <<_sleep_mode>> and <<_processor_clocking>>).
+| `INT_BOOTLOADER_EN` | boolean   | false       | Implement the processor-internal <<_bootloader_rom_bootrom>>, pre-initialized with the default <<_bootloader>> image.
+| `HART_ID`           | suv(31:0) | 0x00000000  | The hart thread ID of the CPU (passed to <<_mhartid>> CSR).
+| `JEDEC_ID`          | suv(10:0) | 00000000000 | JEDEC ID; continuation codes plus vendor ID (passed to <<_mvendorid>> CSR and to the <<_debug_transport_module_dtm>>).
 4+^| **<<_on_chip_debugger_ocd>>**
 | `ON_CHIP_DEBUGGER_EN` | boolean | false | Implement the on-chip debugger and the CPU debug mode.
 | `DM_LEGACY_MODE`      | boolean | false | Debug module spec. version: `false` = v1.0, `true` = v0.13 (legacy mode).
@@ -224,7 +224,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `FAST_MUL_EN`           | boolean   | false      | Implement fast but large full-parallel multipliers (trying to infer DSP blocks); see section <<_cpu_arithmetic_logic_unit>>.
 | `FAST_SHIFT_EN`         | boolean   | false      | Implement fast but large full-parallel barrel shifters; see section <<_cpu_arithmetic_logic_unit>>.
 | `REGFILE_HW_RST`        | boolean   | false      | Implement full hardware reset for register file (prevent inferring of BRAM); see section <<_cpu_register_file>>.
-4+^| **Physical Memory Protection (<<_pmp_isa_extension>>)**
+4+^| **Physical Memory Protection (<<_smpmp_isa_extension>>)**
 | `PMP_NUM_REGIONS`       | natural   | 0          | Number of implemented PMP regions (0..16).
 | `PMP_MIN_GRANULARITY`   | natural   | 4          | Minimal region granularity in bytes. Has to be a power of two, min 4.
 | `PMP_TOR_MODE_EN`       | boolean   | true       | Implement support for top-of-region (TOR) mode.
@@ -253,7 +253,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `XBUS_EN`               | boolean   | false      | Implement the external bus interface.
 | `XBUS_TIMEOUT`          | natural   | 255        | Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.
 | `XBUS_PIPE_MODE`        | boolean   | false      | Use _standard_ ("classic") Wishbone protocol when false. Use _pipelined_ Wishbone protocol when true.
-| `XBUS_BIG_ENDIAN`       | boolean   | false      | Use BIG endian data order interface for external bus.
 | `XBUS_ASYNC_RX`         | boolean   | false      | Disable input registers when true.
 | `XBUS_ASYNC_TX`         | boolean   | false      | Disable output registers when true.
 | `XBUS_CACHE_EN`         | boolean   | false      | Implement the external bus cache.
@@ -493,7 +492,7 @@ image::address_space.png[900]
 
 .Custom PMAs
 [NOTE]
-Physical memory attributes can be customized (constrained) using the CPU's <<_pmp_isa_extension>>.
+Physical memory attributes can be customized (constrained) using the CPU's <<_smpmp_isa_extension>>.
 
 The CPU can access all of the 32-bit address space from the instruction fetch interface and also from the data access
 interface. Both interfaces can be equipped with optional caches (<<_processor_internal_data_cache_dcache>> and

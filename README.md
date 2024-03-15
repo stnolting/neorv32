@@ -118,7 +118,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 [[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_isa_extension)]
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_isa_extension)]
 [[`Zxcfu`](https://stnolting.github.io/neorv32/#_zxcfu_isa_extension)]
-[[`PMP`](https://stnolting.github.io/neorv32/#_pmp_isa_extension)]
+[[`Smpmp`](https://stnolting.github.io/neorv32/#_smpmp_isa_extension)]
 [[`Sdext`](https://stnolting.github.io/neorv32/#_sdext_isa_extension)]
 [[`Sdtrig`](https://stnolting.github.io/neorv32/#_sdtrig_isa_extension)]
 * compatible to subsets of the RISC-V

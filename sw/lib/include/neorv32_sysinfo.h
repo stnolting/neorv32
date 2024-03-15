@@ -70,14 +70,13 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_XBUS           =  1, /**< SYSINFO_SOC  (1) (r/-): External bus interface implemented when 1 (via XBUS_EN generic) */
   SYSINFO_SOC_MEM_INT_IMEM   =  2, /**< SYSINFO_SOC  (2) (r/-): Processor-internal instruction memory implemented when 1 (via MEM_INT_IMEM_EN generic) */
   SYSINFO_SOC_MEM_INT_DMEM   =  3, /**< SYSINFO_SOC  (3) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_EN generic) */
-  SYSINFO_SOC_XBUS_ENDIAN    =  4, /**< SYSINFO_SOC  (4) (r/-): External bus interface uses BIG-endian byte-order when 1 (via XBUS_BIG_ENDIAN generic) */
+  SYSINFO_SOC_OCD            =  4, /**< SYSINFO_SOC  (4) (r/-): On-chip debugger implemented when 1 (via ON_CHIP_DEBUGGER_EN generic) */
   SYSINFO_SOC_ICACHE         =  5, /**< SYSINFO_SOC  (5) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
   SYSINFO_SOC_DCACHE         =  6, /**< SYSINFO_SOC  (6) (r/-): Processor-internal instruction cache implemented when 1 (via DCACHE_EN generic) */
   SYSINFO_SOC_CLOCK_GATING   =  7, /**< SYSINFO_SOC  (7) (r/-): Clock gating implemented when 1 (via CLOCK_GATING_EN generic) */
   SYSINFO_SOC_XBUS_CACHE     =  8, /**< SYSINFO_SOC  (8) (r/-): External bus cache implemented when 1 (via XBUS_CACHE_EN generic) */
+  SYSINFO_SOC_XIP            =  9, /**< SYSINFO_SO C (9) (r/-): Execute in-place module implemented when 1 (via XIP_EN generic) */
 
-  SYSINFO_SOC_IO_CRC         = 12, /**< SYSINFO_SOC (12) (r/-): Cyclic redundancy check unit implemented when 1 (via IO_CRC_EN generic) */
-  SYSINFO_SOC_IO_SLINK       = 13, /**< SYSINFO_SOC (13) (r/-): Stream link interface implemented when 1 (via IO_SLINK_EN generic) */
   SYSINFO_SOC_IO_DMA         = 14, /**< SYSINFO_SOC (14) (r/-): Direct memory access controller implemented when 1 (via IO_DMA_EN generic) */
   SYSINFO_SOC_IO_GPIO        = 15, /**< SYSINFO_SOC (15) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
   SYSINFO_SOC_IO_MTIME       = 16, /**< SYSINFO_SOC (16) (r/-): Machine system timer implemented when 1 (via IO_MTIME_EN generic) */
@@ -93,9 +92,9 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_NEOLED      = 26, /**< SYSINFO_SOC (26) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
   SYSINFO_SOC_IO_XIRQ        = 27, /**< SYSINFO_SOC (27) (r/-): External interrupt controller implemented when 1 (via XIRQ_NUM_IO generic) */
   SYSINFO_SOC_IO_GPTMR       = 28, /**< SYSINFO_SOC (28) (r/-): General purpose timer implemented when 1 (via IO_GPTMR_EN generic) */
-  SYSINFO_SOC_XIP            = 29, /**< SYSINFO_SOC (29) (r/-): Execute in-place module implemented when 1 (via XIP_EN generic) */
+  SYSINFO_SOC_IO_SLINK       = 29, /**< SYSINFO_SOC (29) (r/-): Stream link interface implemented when 1 (via IO_SLINK_EN generic) */
   SYSINFO_SOC_IO_ONEWIRE     = 30, /**< SYSINFO_SOC (30) (r/-): 1-wire interface controller implemented when 1 (via IO_ONEWIRE_EN generic) */
-  SYSINFO_SOC_OCD            = 31  /**< SYSINFO_SOC (31) (r/-): On-chip debugger implemented when 1 (via ON_CHIP_DEBUGGER_EN generic) */
+  SYSINFO_SOC_IO_CRC         = 31  /**< SYSINFO_SOC (31) (r/-): Cyclic redundancy check unit implemented when 1 (via IO_CRC_EN generic) */
 };
 
 /** NEORV32_SYSINFO->CACHE (r/-): Cache configuration */
