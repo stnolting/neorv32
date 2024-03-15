@@ -5,11 +5,11 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_sysinfo.vhd | 
+| Hardware source file(s): | neorv32_sysinfo.vhd |
 | Software driver file(s): | neorv32_sysinfo.h |
-| Top entity port:         | none | 
+| Top entity port:         | none |
 | Configuration generics:  | * | most of the top's configuration generics
-| CPU interrupts:          | none | 
+| CPU interrupts:          | none |
 |=======================
 
 
