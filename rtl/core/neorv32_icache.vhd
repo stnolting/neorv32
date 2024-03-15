@@ -188,8 +188,8 @@ begin
     bus_req_o.addr     <= ctrl.addr_reg;
     bus_req_o.rw       <= '0'; -- read-only
     bus_req_o.stb      <= '0';
-    bus_req_o.rvso     <= cpu_req_i.rvso;
-    bus_req_o.fence    <= cpu_req_i.fence;
+    bus_req_o.rvso     <= '0'; -- no reservation set operations
+    bus_req_o.fence    <= '0';
 
     -- fsm --
     case ctrl.state is
@@ -268,6 +268,7 @@ begin
       -- ------------------------------------------------------------
         ctrl.clear_buf_nxt <= '0';
         cache.clear        <= '1';
+        bus_req_o.fence    <= '1'; -- send sync request to downstream memories
         ctrl.state_nxt     <= S_IDLE;
 
       when others => -- undefined
