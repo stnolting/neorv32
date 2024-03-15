@@ -61,7 +61,7 @@ automatically cleared when writing the `CTRL` register.
 .DMA Access Privilege Level
 [WARNING]
 Transactions performed by the DMA are executed as bus transactions with elevated **machine-mode** privilege level.
-Additionally, all physical memory protection rules (<<_pmp_isa_extension>>) defined by the CPU are **bypassed**.
+Additionally, all physical memory protection rules (<<_smpmp_isa_extension>>) defined by the CPU are **bypassed**.
 
 
 **Transfer Configuration**

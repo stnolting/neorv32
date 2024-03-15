@@ -123,6 +123,7 @@ The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
 | `CPU_DEBUG_EXC_ADDR`         | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
 | `CPU_EXTENSION_RISCV_Sdext`  | boolean   | Implement RISC-V-compatible "debug" CPU operation mode required for the <<_on_chip_debugger_ocd>>.
 | `CPU_EXTENSION_RISCV_Sdtrig` | boolean   | Implement RISC-V-compatible trigger module. See section <<_on_chip_debugger_ocd>>.
+| `CPU_EXTENSION_RISCV_Smpmp`  | boolean   | Implement RISC-V-compatible physical memory protection (PMP). See section <<_smpmp_isa_extension>>.
 |=======================
 
 
@@ -223,7 +224,7 @@ generics can be used to implement performance-optimized barrel shifters and DSP 
 
 The bus unit takes care of handling data memory accesses via load and store instructions. It handles data adjustment when accessing
 sub-word data quantities (16-bit or 8-bit) and performs sign-extension for singed load operations. The bus unit also includes the optional
-<<_pmp_isa_extension>> that performs permission checks for all data and instruction accesses.
+<<_smpmp_isa_extension>> that performs permission checks for all data and instruction accesses.
 
 A list of the bus interface signals and a detailed description of the protocol can be found in section <<_bus_interface>>.
 All bus interface signals are driven/buffered by registers; so even a complex SoC interconnection bus network will not
@@ -441,7 +442,7 @@ via the according <<_processor_top_entity_generics>>. This chapter gives a brief
 | <<_zihpm_isa_extension,`Zihpm`>> | Hardware performance monitors extension | `CPU_EXTENSION_RISCV_Zihpm`
 | <<_zmmul_isa_extension,`Zmmul`>> | Integer multiplication-only instruction | `CPU_EXTENSION_RISCV_Zmmul`
 | <<_zcfu_isa_extension,`Zcfu`>> | Custom / user-defined instructions | `CPU_EXTENSION_RISCV_Zxcfu`
-| <<_pmp_isa_extension,`PMP`>> | Physical memory protection extension | `PMP_NUM_REGIONS`
+| <<_smpmp_isa_extension,`Smpmp`>> | Physical memory protection (PMP) extension | `CPU_EXTENSION_RISCV_Smpmp`
 | <<_sdext_isa_extension,`Sdext`>> | External debug support extension | `ON_CHIP_DEBUGGER_EN`
 | <<_sdtrig_isa_extension,`Sdtrig`>> | Trigger module extension | `ON_CHIP_DEBUGGER_EN`
 |=======================
@@ -782,9 +783,9 @@ Software can utilize the custom instructions by using _intrinsics_, which are ba
 behave like regular C functions but that evaluate to a single custom instruction word (no calling overhead at all).
 
 
-==== `PMP` ISA Extension
+==== `Smpmp` ISA Extension
 
-The NEORV32 physical memory protection (PMP, also known as `Smpmp` ISA extension) provides an elementary memory
+The NEORV32 physical memory protection (PMP) provides an elementary memory
 protection mechanism that can be used to constrain read, write and execute rights of arbitrary memory regions.
 The NEORV32 PMP is fully compatible to the RISC-V Privileged Architecture Specifications. In general, the PMP can
 **grant permissions to user mode**, which by default has none, and can **revoke permissions from M-mode**, which
@@ -964,7 +965,7 @@ written to the according CSRs when a trap is triggered:
 [options="header",grid="rows"]
 |=======================
 | Trap ID [C] | Triggered when ...
-| `TRAP_CODE_I_ACCESS`     | bus timeout, bus access error or <<_pmp_isa_extension,PMP>> rule violation during instruction fetch
+| `TRAP_CODE_I_ACCESS`     | bus timeout, bus access error or <<_smpmp_isa_extension,PMP>> rule violation during instruction fetch
 | `TRAP_CODE_I_ILLEGAL`    | trying to execute an invalid instruction word (malformed or not supported) or on a privilege violation
 | `TRAP_CODE_I_MISALIGNED` | fetching a 32-bit instruction word that is not 32-bit-aligned (see note below)
 | `TRAP_CODE_MENV_CALL`    | executing `ecall` instruction in machine-mode
@@ -972,8 +973,8 @@ written to the according CSRs when a trap is triggered:
 | `TRAP_CODE_BREAKPOINT`   | executing `ebreak` instruction or if <<_trigger_module>> fires
 | `TRAP_CODE_S_MISALIGNED` | storing data to an address that is not naturally aligned to the data size (half/word)
 | `TRAP_CODE_L_MISALIGNED` | loading data from an address that is not naturally aligned to the data size  (half/word)
-| `TRAP_CODE_S_ACCESS`     | bus timeout, bus access error or <<_pmp_isa_extension,PMP>> rule violation during load data operation
-| `TRAP_CODE_L_ACCESS`     | bus timeout, bus access error or <<_pmp_isa_extension,PMP>> rule violation during store data operation
+| `TRAP_CODE_S_ACCESS`     | bus timeout, bus access error or <<_smpmp_isa_extension,PMP>> rule violation during load data operation
+| `TRAP_CODE_L_ACCESS`     | bus timeout, bus access error or <<_smpmp_isa_extension,PMP>> rule violation during store data operation
 | `TRAP_CODE_FIRQ_*`       | caused by interrupt-condition of **processor-internal modules**, see <<_neorv32_specific_fast_interrupt_requests>>
 | `TRAP_CODE_MEI`          | machine external interrupt (via dedicated <<_processor_top_entity_signals>>)
 | `TRAP_CODE_MSI`          | machine software interrupt (via dedicated <<_processor_top_entity_signals>>)

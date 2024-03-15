@@ -224,7 +224,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `FAST_MUL_EN`           | boolean   | false      | Implement fast but large full-parallel multipliers (trying to infer DSP blocks); see section <<_cpu_arithmetic_logic_unit>>.
 | `FAST_SHIFT_EN`         | boolean   | false      | Implement fast but large full-parallel barrel shifters; see section <<_cpu_arithmetic_logic_unit>>.
 | `REGFILE_HW_RST`        | boolean   | false      | Implement full hardware reset for register file (prevent inferring of BRAM); see section <<_cpu_register_file>>.
-4+^| **Physical Memory Protection (<<_pmp_isa_extension>>)**
+4+^| **Physical Memory Protection (<<_smpmp_isa_extension>>)**
 | `PMP_NUM_REGIONS`       | natural   | 0          | Number of implemented PMP regions (0..16).
 | `PMP_MIN_GRANULARITY`   | natural   | 4          | Minimal region granularity in bytes. Has to be a power of two, min 4.
 | `PMP_TOR_MODE_EN`       | boolean   | true       | Implement support for top-of-region (TOR) mode.
@@ -492,7 +492,7 @@ image::address_space.png[900]
 
 .Custom PMAs
 [NOTE]
-Physical memory attributes can be customized (constrained) using the CPU's <<_pmp_isa_extension>>.
+Physical memory attributes can be customized (constrained) using the CPU's <<_smpmp_isa_extension>>.
 
 The CPU can access all of the 32-bit address space from the instruction fetch interface and also from the data access
 interface. Both interfaces can be equipped with optional caches (<<_processor_internal_data_cache_dcache>> and
