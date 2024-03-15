@@ -271,6 +271,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
   constant io_xirq_en_c    : boolean := boolean(XIRQ_NUM_CH > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
+  constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
 
   -- convert JEDEC ID to mvendor CSR --
   constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
@@ -544,6 +545,7 @@ begin
       CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,
       CPU_EXTENSION_RISCV_Sdext  => ON_CHIP_DEBUGGER_EN,
       CPU_EXTENSION_RISCV_Sdtrig => ON_CHIP_DEBUGGER_EN,
+      CPU_EXTENSION_RISCV_Smpmp  => cpu_smpmp_c,
       -- Tuning Options --
       FAST_MUL_EN                => FAST_MUL_EN,
       FAST_SHIFT_EN              => FAST_SHIFT_EN,
