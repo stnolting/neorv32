@@ -100,7 +100,6 @@ entity neorv32_top is
     ICACHE_EN                  : boolean                        := false;       -- implement instruction cache
     ICACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;           -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;          -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY       : natural range 1 to 2           := 1;           -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
     -- Internal Data Cache (dCACHE) --
     DCACHE_EN                  : boolean                        := false;       -- implement data cache
@@ -326,8 +325,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal main_rsp, main2_rsp, dma_rsp : bus_rsp_t; -- core complex (CPU + caches + DMA)
 
   -- bus: main sections --
-  signal imem_req, dmem_req, xip_req, boot_req, io_req, xcache_req, xbus_req : bus_req_t;
-  signal imem_rsp, dmem_rsp, xip_rsp, boot_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
+  signal imem_req, dmem_req, xipcache_req, xip_req, boot_req, io_req, xcache_req, xbus_req : bus_req_t;
+  signal imem_rsp, dmem_rsp, xipcache_rsp, xip_rsp, boot_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
 
   -- bus: IO devices --
   type io_devices_enum_t is (
@@ -370,34 +369,35 @@ begin
     -- show main SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: " &
-      cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",     "") &
-      cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",     "") &
-      cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",  "") &
-      cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",  "") &
-      cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",  "") &
-      cond_sel_string_f(XBUS_EN,                   "XBUS ",     "") &
-      cond_sel_string_f(XBUS_EN and XBUS_CACHE_EN, "XCACHE ",   "") &
-      cond_sel_string_f(io_gpio_en_c,              "GPIO ",     "") &
-      cond_sel_string_f(IO_MTIME_EN,               "MTIME ",    "") &
-      cond_sel_string_f(IO_UART0_EN,               "UART0 ",    "") &
-      cond_sel_string_f(IO_UART1_EN,               "UART1 ",    "") &
-      cond_sel_string_f(IO_SPI_EN,                 "SPI ",      "") &
-      cond_sel_string_f(IO_SDI_EN,                 "SDI ",      "") &
-      cond_sel_string_f(IO_TWI_EN,                 "TWI ",      "") &
-      cond_sel_string_f(io_pwm_en_c,               "PWM ",      "") &
-      cond_sel_string_f(IO_WDT_EN,                 "WDT ",      "") &
-      cond_sel_string_f(IO_TRNG_EN,                "TRNG ",     "") &
-      cond_sel_string_f(IO_CFS_EN,                 "CFS ",      "") &
-      cond_sel_string_f(IO_NEOLED_EN,              "NEOLED ",   "") &
-      cond_sel_string_f(io_xirq_en_c,              "XIRQ ",     "") &
-      cond_sel_string_f(IO_GPTMR_EN,               "GPTMR ",    "") &
-      cond_sel_string_f(XIP_EN,                    "XIP ",      "") &
-      cond_sel_string_f(IO_ONEWIRE_EN,             "ONEWIRE ",  "") &
-      cond_sel_string_f(IO_DMA_EN,                 "DMA ",      "") &
-      cond_sel_string_f(IO_SLINK_EN,               "SLINK ",    "") &
-      cond_sel_string_f(IO_CRC_EN,                 "CRC ",      "") &
-      cond_sel_string_f(true,                      "SYSINFO ",  "") & -- always enabled
-      cond_sel_string_f(ON_CHIP_DEBUGGER_EN,       "OCD ",      "") &
+      cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",      "") &
+      cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",      "") &
+      cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",   "") &
+      cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",   "") &
+      cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",   "") &
+      cond_sel_string_f(XBUS_EN,                   "XBUS ",      "") &
+      cond_sel_string_f(XBUS_EN and XBUS_CACHE_EN, "X-CACHE ",   "") &
+      cond_sel_string_f(XIP_EN,                    "XIP ",       "") &
+      cond_sel_string_f(XIP_EN and XIP_CACHE_EN,   "XIP-CACHE ", "") &
+      cond_sel_string_f(io_gpio_en_c,              "GPIO ",      "") &
+      cond_sel_string_f(IO_MTIME_EN,               "MTIME ",     "") &
+      cond_sel_string_f(IO_UART0_EN,               "UART0 ",     "") &
+      cond_sel_string_f(IO_UART1_EN,               "UART1 ",     "") &
+      cond_sel_string_f(IO_SPI_EN,                 "SPI ",       "") &
+      cond_sel_string_f(IO_SDI_EN,                 "SDI ",       "") &
+      cond_sel_string_f(IO_TWI_EN,                 "TWI ",       "") &
+      cond_sel_string_f(io_pwm_en_c,               "PWM ",       "") &
+      cond_sel_string_f(IO_WDT_EN,                 "WDT ",       "") &
+      cond_sel_string_f(IO_TRNG_EN,                "TRNG ",      "") &
+      cond_sel_string_f(IO_CFS_EN,                 "CFS ",       "") &
+      cond_sel_string_f(IO_NEOLED_EN,              "NEOLED ",    "") &
+      cond_sel_string_f(io_xirq_en_c,              "XIRQ ",      "") &
+      cond_sel_string_f(IO_GPTMR_EN,               "GPTMR ",     "") &
+      cond_sel_string_f(IO_ONEWIRE_EN,             "ONEWIRE ",   "") &
+      cond_sel_string_f(IO_DMA_EN,                 "DMA ",       "") &
+      cond_sel_string_f(IO_SLINK_EN,               "SLINK ",     "") &
+      cond_sel_string_f(IO_CRC_EN,                 "CRC ",       "") &
+      cond_sel_string_f(true,                      "SYSINFO ",   "") & -- always enabled
+      cond_sel_string_f(ON_CHIP_DEBUGGER_EN,       "OCD ",       "") &
       ""
       severity note;
 
@@ -603,20 +603,21 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_icache_inst_true:
     if ICACHE_EN generate
-      neorv32_icache_inst: entity neorv32.neorv32_icache
+      neorv32_icache_inst: entity neorv32.neorv32_cache
       generic map (
-        ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
-        ICACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE,
-        ICACHE_NUM_SETS   => ICACHE_ASSOCIATIVITY,
-        ICACHE_UC_PBEGIN  => uncached_begin_c(31 downto 28)
+        NUM_BLOCKS => ICACHE_NUM_BLOCKS,
+        BLOCK_SIZE => ICACHE_BLOCK_SIZE,
+        UC_BEGIN   => uncached_begin_c(31 downto 28),
+        UC_ENABLE  => true,
+        READ_ONLY  => true
       )
       port map (
-        clk_i     => clk_cpu,
-        rstn_i    => rstn_sys,
-        cpu_req_i => cpu_i_req,
-        cpu_rsp_o => cpu_i_rsp,
-        bus_req_o => icache_req,
-        bus_rsp_i => icache_rsp
+        clk_i      => clk_cpu,
+        rstn_i     => rstn_sys,
+        host_req_i => cpu_i_req,
+        host_rsp_o => cpu_i_rsp,
+        bus_req_o  => icache_req,
+        bus_rsp_i  => icache_rsp
       );
     end generate;
 
@@ -631,19 +632,21 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_dcache_inst_true:
     if DCACHE_EN generate
-      neorv32_dcache_inst: entity neorv32.neorv32_dcache
+      neorv32_dcache_inst: entity neorv32.neorv32_cache
       generic map (
-        DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
-        DCACHE_BLOCK_SIZE => DCACHE_BLOCK_SIZE,
-        DCACHE_UC_PBEGIN  => uncached_begin_c(31 downto 28)
+        NUM_BLOCKS => DCACHE_NUM_BLOCKS,
+        BLOCK_SIZE => DCACHE_BLOCK_SIZE,
+        UC_BEGIN   => uncached_begin_c(31 downto 28),
+        UC_ENABLE  => true,
+        READ_ONLY  => false
       )
       port map (
-        clk_i     => clk_cpu,
-        rstn_i    => rstn_sys,
-        cpu_req_i => cpu_d_req,
-        cpu_rsp_o => cpu_d_rsp,
-        bus_req_o => dcache_req,
-        bus_rsp_i => dcache_rsp
+        clk_i      => clk_cpu,
+        rstn_i     => rstn_sys,
+        host_req_i => cpu_d_req,
+        host_rsp_o => cpu_d_rsp,
+        bus_req_o  => dcache_req,
+        bus_rsp_i  => dcache_rsp
       );
     end generate;
 
@@ -876,23 +879,23 @@ begin
     end generate;
 
 
-    -- Execute In Place Module (XIP) ----------------------------------------------------------
+    -- Execute In-Place Module (XIP) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_xip_inst_true:
     if XIP_EN generate
+
+      -- XIP interface --
       neorv32_xip_inst: entity neorv32.neorv32_xip
       generic map (
-        XIP_CACHE_EN         => XIP_CACHE_EN,
-        XIP_CACHE_NUM_BLOCKS => XIP_CACHE_NUM_BLOCKS,
-        XIP_CACHE_BLOCK_SIZE => XIP_CACHE_BLOCK_SIZE
+        XIP_CACHE_EN => XIP_CACHE_EN
       )
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_XIP),
         bus_rsp_o   => iodev_rsp(IODEV_XIP),
-        xip_req_i   => xip_req,
-        xip_rsp_o   => xip_rsp,
+        xip_req_i   => xipcache_req,
+        xip_rsp_o   => xipcache_rsp,
         clkgen_en_o => cg_en(CG_XIP),
         clkgen_i    => clk_gen,
         spi_csn_o   => xip_csn_o,
@@ -900,7 +903,35 @@ begin
         spi_dat_i   => xip_dat_i,
         spi_dat_o   => xip_dat_o
       );
-    end generate;
+
+      -- XIP cache (XIPCACHE) --
+      neorv32_xipcache_inst_true:
+      if XIP_CACHE_EN generate
+        neorv32_xcache_inst: entity neorv32.neorv32_cache
+        generic map (
+          NUM_BLOCKS => XIP_CACHE_NUM_BLOCKS,
+          BLOCK_SIZE => XIP_CACHE_BLOCK_SIZE,
+          UC_BEGIN   => (others => '-'),
+          UC_ENABLE  => false,
+          READ_ONLY  => true
+        )
+        port map (
+          clk_i      => clk_i,
+          rstn_i     => rstn_sys,
+          host_req_i => xip_req,
+          host_rsp_o => xip_rsp,
+          bus_req_o  => xipcache_req,
+          bus_rsp_i  => xipcache_rsp
+        );
+      end generate;
+
+      neorv32_xipcache_inst_false:
+      if not XIP_CACHE_EN generate
+        xipcache_req <= xip_req;
+        xip_rsp      <= xipcache_rsp;
+      end generate;
+
+    end generate; -- /neorv32_xip_inst_true
 
     neorv32_xip_inst_false:
     if not XIP_EN generate
@@ -1563,43 +1594,47 @@ begin
     neorv32_sysinfo_inst: entity neorv32.neorv32_sysinfo
     generic map (
       -- General --
-      CLOCK_FREQUENCY      => CLOCK_FREQUENCY,
-      CLOCK_GATING_EN      => CLOCK_GATING_EN,
-      INT_BOOTLOADER_EN    => INT_BOOTLOADER_EN,
-      MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,
-      MEM_INT_IMEM_SIZE    => imem_size_c,
-      MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,
-      MEM_INT_DMEM_SIZE    => dmem_size_c,
-      AMO_RVS_GRANULARITY  => AMO_RVS_GRANULARITY,
-      ICACHE_EN            => ICACHE_EN,
-      ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS,
-      ICACHE_BLOCK_SIZE    => ICACHE_BLOCK_SIZE,
-      ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY,
-      DCACHE_EN            => DCACHE_EN,
-      DCACHE_NUM_BLOCKS    => DCACHE_NUM_BLOCKS,
-      DCACHE_BLOCK_SIZE    => DCACHE_BLOCK_SIZE,
-      XBUS_EN              => XBUS_EN,
-      XBUS_CACHE_EN        => XBUS_CACHE_EN,
-      ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,
-      IO_GPIO_EN           => io_gpio_en_c,
-      IO_MTIME_EN          => IO_MTIME_EN,
-      IO_UART0_EN          => IO_UART0_EN,
-      IO_UART1_EN          => IO_UART1_EN,
-      IO_SPI_EN            => IO_SPI_EN,
-      IO_SDI_EN            => IO_SDI_EN,
-      IO_TWI_EN            => IO_TWI_EN,
-      IO_PWM_EN            => io_pwm_en_c,
-      IO_WDT_EN            => IO_WDT_EN,
-      IO_TRNG_EN           => IO_TRNG_EN,
-      IO_CFS_EN            => IO_CFS_EN,
-      IO_NEOLED_EN         => IO_NEOLED_EN,
-      IO_XIRQ_EN           => io_xirq_en_c,
-      IO_GPTMR_EN          => IO_GPTMR_EN,
-      XIP_EN               => XIP_EN,
-      IO_ONEWIRE_EN        => IO_ONEWIRE_EN,
-      IO_DMA_EN            => IO_DMA_EN,
-      IO_SLINK_EN          => IO_SLINK_EN,
-      IO_CRC_EN            => IO_CRC_EN
+      CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
+      CLOCK_GATING_EN       => CLOCK_GATING_EN,
+      INT_BOOTLOADER_EN     => INT_BOOTLOADER_EN,
+      MEM_INT_IMEM_EN       => MEM_INT_IMEM_EN,
+      MEM_INT_IMEM_SIZE     => imem_size_c,
+      MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
+      MEM_INT_DMEM_SIZE     => dmem_size_c,
+      AMO_RVS_GRANULARITY   => AMO_RVS_GRANULARITY,
+      ICACHE_EN             => ICACHE_EN,
+      ICACHE_NUM_BLOCKS     => ICACHE_NUM_BLOCKS,
+      ICACHE_BLOCK_SIZE     => ICACHE_BLOCK_SIZE,
+      DCACHE_EN             => DCACHE_EN,
+      DCACHE_NUM_BLOCKS     => DCACHE_NUM_BLOCKS,
+      DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
+      XBUS_EN               => XBUS_EN,
+      XBUS_CACHE_EN         => XBUS_CACHE_EN,
+      XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
+      XBUS_CACHE_BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
+      XIP_EN                => XIP_EN,
+      XIP_CACHE_EN          => XIP_CACHE_EN,
+      XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
+      XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
+      ON_CHIP_DEBUGGER_EN   => ON_CHIP_DEBUGGER_EN,
+      IO_GPIO_EN            => io_gpio_en_c,
+      IO_MTIME_EN           => IO_MTIME_EN,
+      IO_UART0_EN           => IO_UART0_EN,
+      IO_UART1_EN           => IO_UART1_EN,
+      IO_SPI_EN             => IO_SPI_EN,
+      IO_SDI_EN             => IO_SDI_EN,
+      IO_TWI_EN             => IO_TWI_EN,
+      IO_PWM_EN             => io_pwm_en_c,
+      IO_WDT_EN             => IO_WDT_EN,
+      IO_TRNG_EN            => IO_TRNG_EN,
+      IO_CFS_EN             => IO_CFS_EN,
+      IO_NEOLED_EN          => IO_NEOLED_EN,
+      IO_XIRQ_EN            => io_xirq_en_c,
+      IO_GPTMR_EN           => IO_GPTMR_EN,
+      IO_ONEWIRE_EN         => IO_ONEWIRE_EN,
+      IO_DMA_EN             => IO_DMA_EN,
+      IO_SLINK_EN           => IO_SLINK_EN,
+      IO_CRC_EN             => IO_CRC_EN
     )
     port map (
       clk_i     => clk_i,
