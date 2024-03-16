@@ -1,16 +1,17 @@
-# Contributing
+## Contributing
 
 Any kind of help is highly appreciated! So if you have any questions, bug reports, ideas or if you want to
 give some kind of feedback, feel free to [open a new issue](https://github.com/stnolting/neorv32/issues/new/choose)
 or start a new [discussion](https://github.com/stnolting/neorv32/discussions). Also look out for issues and pull requests labeled with
 [![help-wanted](https://img.shields.io/badge/-help%20wanted-brightgreen)](https://github.com/stnolting/neorv32/labels/help%20wanted) and
 [![good-first-issue](https://img.shields.io/badge/-good%20first%20issue-purple)](https://github.com/stnolting/neorv32/labels/good%20first%20issue);
-the latter one might be a good starting point for newcomers and beginners.
+the latter one might be a good starting point for newcomers and beginners
 
-Please note that we have a [Code of Conduct](https://github.com/stnolting/neorv32/blob/main/CODE_OF_CONDUCT.md).
+> [!NOTE]
+> Please note that we have a [Code of Conduct](https://github.com/stnolting/neorv32/blob/main/CODE_OF_CONDUCT.md).
 Please follow it in all your interactions with this project.
 
-## Contributing Process
+### Contributing Process
 
 Here is a simple guide line if you'd like to contribute code modifications to this project:
 
