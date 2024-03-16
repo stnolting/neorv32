@@ -7,7 +7,8 @@ When creating a new synthesis/simulation project make sure that all `*.vhd` file
 folder are added to a **new design library** called `neorv32`. The processor's top entity
 is [`neorv32_top.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/core/neorv32_top.vhd).
 
-:warning: The sub-folder [`core/mem`](https://github.com/stnolting/neorv32/tree/main/rtl/core/mem)
+> [!IMPORTANT]
+> The sub-folder [`core/mem`](https://github.com/stnolting/neorv32/tree/main/rtl/core/mem)
 contains the _platform-agnostic_ VHDL architectures of the processor-internal memories (IMEM & DMEM).
 Make sure to add _one_ of these modules for each memory to the project's HDL file list. These default
 files can also be replaced by optimized platform-specific memory modules.
