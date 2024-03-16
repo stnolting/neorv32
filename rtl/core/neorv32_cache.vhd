@@ -509,7 +509,7 @@ begin
     ctrl.req_buf_nxt  <= ctrl.req_buf or req_i.stb;
     ctrl.sync_buf_nxt <= ctrl.sync_buf or req_i.fence;
 
-    -- cache defaults --
+    -- cache access defaults --
     dirty_o <= '0';
     addr_o  <= req_i.addr;
     we_o    <= (others => '0');
@@ -517,7 +517,7 @@ begin
     wdata_o <= req_i.data;
     wstat_o <= '0'; -- host cannot alter status bits
 
-    -- bus unit interface defaults --
+    -- bus unit command defaults --
     bus_sync_o <= '0';
     bus_miss_o <= '0';
 
@@ -940,7 +940,7 @@ begin
     upret_nxt <= upret;
     addr_nxt  <= addr;
 
-    -- cache defaults --
+    -- cache access defaults --
     addr_o  <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
     we_o    <= (others => '0');
     swe_o   <= '0';
@@ -1058,7 +1058,7 @@ begin
         addr_nxt.tag <= baddr.tag; -- tag of currently index block
         inval_o      <= '1'; -- invalidate currently index block
         if (dirty_i = '1') and (READ_ONLY = false) then -- block dirty?
-          state_nxt    <= S_UPLOAD_GET;
+          state_nxt <= S_UPLOAD_GET;
         else -- move on to next block
           addr_nxt.idx <= std_ulogic_vector(unsigned(addr.idx) + 1);
           if (and_reduce_f(addr.idx) = '1') then -- all blocks done?
@@ -1077,7 +1077,7 @@ begin
     end case;
   end process ctrl_engine_comb;
 
-  -- bus arbiter operation in progress (host keeps allying cache address while bud unit reports idle state) --
+  -- bus arbiter operation in progress (host keeps allying cache address while bus unit reports idle state) --
   cmd_busy_o <= '0' when (state = S_IDLE) or (state = S_CHECK) else '1';
 
 
