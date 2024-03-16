@@ -46,9 +46,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_xip is
   generic (
-    XIP_CACHE_EN         : boolean;                 -- implement XIP cache?
-    XIP_CACHE_NUM_BLOCKS : natural range 1 to 256;  -- number of blocks (min 1), has to be a power of 2
-    XIP_CACHE_BLOCK_SIZE : natural range 1 to 2**16 -- block size in bytes (min 4), has to be a power of 2
+    XIP_CACHE_EN : boolean -- external XIP cache is enabled
   );
   port (
     clk_i       : in  std_ulogic; -- global clock line
@@ -89,7 +87,6 @@ architecture neorv32_xip_rtl of neorv32_xip is
   constant ctrl_cdiv2_c       : natural := 25; -- r/w: clock divider bit 2
   constant ctrl_cdiv3_c       : natural := 26; -- r/w: clock divider bit 3
   --
-  constant ctrl_burst_en_c    : natural := 29; -- r/-: XIP burst mode enable (when cache is implemented)
   constant ctrl_phy_busy_c    : natural := 30; -- r/-: SPI PHY is busy when set
   constant ctrl_xip_busy_c    : natural := 31; -- r/-: XIP access in progress
   --
@@ -116,31 +113,9 @@ architecture neorv32_xip_rtl of neorv32_xip is
   end record;
   signal arbiter : arbiter_t;
 
-  -- cache access --
-  signal cache_clear : std_ulogic;
-  signal xip_req     : bus_req_t;
-  signal xip_rsp     : bus_rsp_t;
-
   -- Clock generator --
   signal cdiv_cnt   : std_ulogic_vector(3 downto 0);
   signal spi_clk_en : std_ulogic;
-
-  -- Component: XIP cache --
-  component neorv32_xip_cache
-    generic (
-      CACHE_NUM_BLOCKS : natural range 1 to 256;  -- number of blocks (min 1), has to be a power of 2
-      CACHE_BLOCK_SIZE : natural range 1 to 2**16 -- block size in bytes (min 4), has to be a power of 2
-    );
-    port (
-      clk_i     : in  std_ulogic; -- global clock, rising edge
-      rstn_i    : in  std_ulogic; -- global reset, low-active, async
-      clear_i   : in  std_ulogic; -- cache clear
-      cpu_req_i : in  bus_req_t;  -- request bus
-      cpu_rsp_o : out bus_rsp_t;  -- response bus
-      bus_req_o : out bus_req_t;  -- request bus
-      bus_rsp_i : in  bus_rsp_t   -- response bus
-    );
-  end component;
 
   -- Component: SPI PHY --
   component neorv32_xip_phy
@@ -246,7 +221,6 @@ begin
               bus_rsp_o.data(ctrl_highspeed_c)                             <= ctrl(ctrl_highspeed_c);
               bus_rsp_o.data(ctrl_cdiv3_c downto ctrl_cdiv0_c)             <= ctrl(ctrl_cdiv3_c downto ctrl_cdiv0_c);
               --
-              bus_rsp_o.data(ctrl_burst_en_c) <= bool_to_ulogic_f(XIP_CACHE_EN);
               bus_rsp_o.data(ctrl_phy_busy_c) <= phy_if.busy;
               bus_rsp_o.data(ctrl_xip_busy_c) <= arbiter.busy;
             when "10" => -- 'xip_data_lo_addr_c' - SPI direct data access register lo
@@ -259,35 +233,6 @@ begin
       end if;
     end if;
   end process ctrl_bus_access;
-
-
-  -- XIP Cache ------------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  neorv32_xip_cache_inst_true:
-  if XIP_CACHE_EN generate
-    neorv32_xip_cache_inst: neorv32_xip_cache
-    generic map (
-      CACHE_NUM_BLOCKS => XIP_CACHE_NUM_BLOCKS,
-      CACHE_BLOCK_SIZE => XIP_CACHE_BLOCK_SIZE
-    )
-    port map (
-      clk_i     => clk_i,
-      rstn_i    => rstn_i,
-      clear_i   => cache_clear,
-      cpu_req_i => xip_req_i,
-      cpu_rsp_o => xip_rsp_o,
-      bus_req_o => xip_req,
-      bus_rsp_i => xip_rsp
-    );
-    -- clear cache when entire module or XIP-mode is disabled or on global FENCE operation --
-    cache_clear <= '1' when (ctrl(ctrl_enable_c) = '0') or (ctrl(ctrl_xip_enable_c) = '0') or (xip_req_i.fence = '1') else '0';
-  end generate;
-
-  neorv32_xip_cache_inst_false:
-  if not XIP_CACHE_EN generate
-    xip_req   <= xip_req_i;
-    xip_rsp_o <= xip_rsp;
-  end generate;
 
 
   -- XIP Address Computation Logic ----------------------------------------------------------
@@ -325,13 +270,13 @@ begin
         arbiter.state <= arbiter.state_nxt;
       end if;
       -- address look-ahead --
-      if (xip_req.stb = '1') and (xip_req.rw = '0') then
-        arbiter.addr <= xip_req.addr; -- buffer address (reducing fan-out on CPU's address net)
+      if (xip_req_i.stb = '1') and (xip_req_i.rw = '0') then
+        arbiter.addr <= xip_req_i.addr; -- buffer address (reducing fan-out on CPU's address net)
       end if;
       arbiter.addr_lookahead <= std_ulogic_vector(unsigned(arbiter.addr) + 4); -- prefetch address of *next* linear access
       -- XIP access error? --
       if (arbiter.state = S_DIRECT) then
-        arbiter.xip_acc_err <= xip_req.stb;
+        arbiter.xip_acc_err <= xip_req_i.stb;
       else
         arbiter.xip_acc_err <= '0';
       end if;
@@ -346,15 +291,15 @@ begin
 
 
   -- FSM - combinatorial part --
-  arbiter_comb: process(arbiter, ctrl, xip_addr, phy_if, xip_req, spi_data_hi, spi_data_lo, spi_trigger)
+  arbiter_comb: process(arbiter, ctrl, xip_addr, phy_if, xip_req_i, spi_data_hi, spi_data_lo, spi_trigger)
   begin
     -- arbiter defaults --
     arbiter.state_nxt <= arbiter.state;
 
     -- bus interface defaults --
-    xip_rsp.data <= (others => '0');
-    xip_rsp.ack  <= '0';
-    xip_rsp.err  <= arbiter.xip_acc_err;
+    xip_rsp_o.data <= (others => '0');
+    xip_rsp_o.ack  <= '0';
+    xip_rsp_o.err  <= arbiter.xip_acc_err;
 
     -- SPI PHY interface defaults --
     phy_if.start <= '0';
@@ -373,8 +318,8 @@ begin
 
       when S_IDLE => -- wait for new bus request
       -- ------------------------------------------------------------
-        if (xip_req.stb = '1') then
-          if (xip_req.rw = '0') then
+        if (xip_req_i.stb = '1') then
+          if (xip_req_i.rw = '0') then
             arbiter.state_nxt <= S_CHECK;
           else
             arbiter.state_nxt <= S_ERROR;
@@ -399,15 +344,15 @@ begin
 
       when S_BUSY => -- wait for PHY to complete operation
       -- ------------------------------------------------------------
-        xip_rsp.data <= bswap32_f(phy_if.rdata); -- convert incrementing byte-read to little-endian
+        xip_rsp_o.data <= bswap32_f(phy_if.rdata); -- convert incrementing byte-read to little-endian
         if (phy_if.busy = '0') then
-          xip_rsp.ack       <= '1';
+          xip_rsp_o.ack     <= '1';
           arbiter.state_nxt <= S_IDLE;
         end if;
 
       when S_ERROR => -- access error
       -- ------------------------------------------------------------
-        xip_rsp.err       <= '1';
+        xip_rsp_o.err     <= '1';
         arbiter.state_nxt <= S_IDLE;
 
       when others => -- undefined
@@ -673,277 +618,3 @@ begin
 
 
 end neorv32_xip_phy_rtl;
-
-
--- ############################################################################################################################
--- ############################################################################################################################
-
-
--- #################################################################################################
--- # << NEORV32 - XIP Cache >>                                                                     #
--- # ********************************************************************************************* #
--- # Simple directed-mapped read-only cache to accelerate XIP (SPI) flash accesses.                #
--- # ********************************************************************************************* #
--- # BSD 3-Clause License                                                                          #
--- #                                                                                               #
--- # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
--- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
--- #                                                                                               #
--- # Redistribution and use in source and binary forms, with or without modification, are          #
--- # permitted provided that the following conditions are met:                                     #
--- #                                                                                               #
--- # 1. Redistributions of source code must retain the above copyright notice, this list of        #
--- #    conditions and the following disclaimer.                                                   #
--- #                                                                                               #
--- # 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
--- #    conditions and the following disclaimer in the documentation and/or other materials        #
--- #    provided with the distribution.                                                            #
--- #                                                                                               #
--- # 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
--- #    endorse or promote products derived from this software without specific prior written      #
--- #    permission.                                                                                #
--- #                                                                                               #
--- # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
--- # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
--- # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
--- # COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
--- # EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
--- # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
--- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
--- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
--- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
--- #################################################################################################
-
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-
-library neorv32;
-use neorv32.neorv32_package.all;
-
-entity neorv32_xip_cache is
-  generic (
-    CACHE_NUM_BLOCKS : natural range 1 to 256;  -- number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE : natural range 1 to 2**16 -- block size in bytes (min 4), has to be a power of 2
-  );
-  port (
-    clk_i     : in  std_ulogic; -- global clock, rising edge
-    rstn_i    : in  std_ulogic; -- global reset, low-active, async
-    clear_i   : in  std_ulogic; -- cache clear
-    cpu_req_i : in  bus_req_t;  -- request bus
-    cpu_rsp_o : out bus_rsp_t;  -- response bus
-    bus_req_o : out bus_req_t;  -- request bus
-    bus_rsp_i : in  bus_rsp_t   -- response bus
-  );
-end neorv32_xip_cache;
-
-architecture neorv32_xip_cache_rtl of neorv32_xip_cache is
-
-  -- auto configuration --
-  constant block_num_c   : natural := cond_sel_natural_f(is_power_of_two_f(CACHE_NUM_BLOCKS), CACHE_NUM_BLOCKS, 2**index_size_f(CACHE_NUM_BLOCKS));
-  constant block_size_c  : natural := cond_sel_natural_f(is_power_of_two_f(CACHE_BLOCK_SIZE), CACHE_BLOCK_SIZE, 2**index_size_f(CACHE_BLOCK_SIZE));
-  constant offset_size_c : natural := index_size_f(block_size_c/4); -- offset addresses full 32-bit words
-
-  -- cache layout --
-  constant index_size_c : natural := index_size_f(block_num_c);
-  constant tag_size_c   : natural := 32 - (offset_size_c + index_size_c + 2); -- 2 additional bits for byte offset
-  constant entries_c    : natural := block_num_c * (block_size_c/4); -- number of 32-bit entries (per set)
-
-  -- cache interface --
-  type cache_if_t is record
-    host_rdata : std_ulogic_vector(31 downto 0); -- cpu read data
-    host_rderr : std_ulogic; -- cpu read error
-    hit        : std_ulogic; -- hit access
-    ctrl_en    : std_ulogic; -- control access enable
-    ctrl_we    : std_ulogic; -- control write enable
-  end record;
-  signal cache : cache_if_t;
-
-  -- control engine --
-  type ctrl_engine_state_t is (S_IDLE, S_CHECK, S_DOWNLOAD_REQ, S_DOWNLOAD_GET, S_RESYNC, S_ERROR);
-  signal state,    state_nxt    : ctrl_engine_state_t; -- FSM state
-  signal addr_reg, addr_reg_nxt : std_ulogic_vector(31 downto 0); -- address register for block download
-
-  -- cache memory --
-  type tag_mem_t is array (0 to block_num_c-1) of std_ulogic_vector(tag_size_c-1 downto 0);
-  type data_mem_t is array (0 to entries_c-1) of std_ulogic_vector(31+1 downto 0); -- data word + ERR status
-  signal tag_mem   : tag_mem_t;
-  signal data_mem  : data_mem_t;
-  signal tag_rd    : std_ulogic_vector(tag_size_c-1 downto 0); -- tag read data
-  signal data_rd   : std_ulogic_vector(31+1 downto 0); -- data word + ERR status
-  signal valid_mem : std_ulogic_vector(block_num_c-1 downto 0);
-  signal valid_rd  : std_ulogic; -- valid flag read data
-
-  -- access address decomposition --
-  type acc_addr_t is record
-    tag    : std_ulogic_vector(tag_size_c-1 downto 0);
-    index  : std_ulogic_vector(index_size_c-1 downto 0);
-    offset : std_ulogic_vector(offset_size_c-1 downto 0);
-  end record;
-  signal host_acc, ctrl_acc : acc_addr_t;
-
-  -- cache data memory access --
-  signal cache_index  : std_ulogic_vector(index_size_c-1 downto 0);
-  signal cache_offset : std_ulogic_vector(offset_size_c-1 downto 0);
-  signal cache_addr   : std_ulogic_vector((index_size_c+offset_size_c)-1 downto 0); -- index & offset
-
-begin
-
-  -- Control Engine FSM Sync ----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  ctrl_engine_fsm_sync: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      state    <= S_IDLE;
-      addr_reg <= (others => '0');
-    elsif rising_edge(clk_i) then
-      state    <= state_nxt;
-      addr_reg <= addr_reg_nxt;
-    end if;
-  end process ctrl_engine_fsm_sync;
-
-
-  -- Control Engine FSM Comb ----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  ctrl_engine_fsm_comb: process(state, addr_reg, cache, clear_i, cpu_req_i, bus_rsp_i)
-  begin
-    -- control defaults --
-    state_nxt       <= state;
-    addr_reg_nxt    <= addr_reg;
-
-    -- cache defaults --
-    cache.ctrl_en   <= '0';
-    cache.ctrl_we   <= '0';
-
-    -- host response defaults --
-    cpu_rsp_o.ack   <= '0';
-    cpu_rsp_o.err   <= '0';
-    cpu_rsp_o.data  <= (others => '0');
-
-    -- bus interface defaults --
-    bus_req_o.data  <= (others => '0');
-    bus_req_o.ben   <= (others => '0');
-    bus_req_o.src   <= cpu_req_i.src;
-    bus_req_o.priv  <= cpu_req_i.priv;
-    bus_req_o.addr  <= addr_reg;
-    bus_req_o.rw    <= '0'; -- read-only
-    bus_req_o.stb   <= '0';
-    bus_req_o.rvso  <= cpu_req_i.rvso;
-    bus_req_o.fence <= cpu_req_i.fence;
-
-    -- fsm --
-    case state is
-
-      when S_IDLE => -- wait for host access request or cache control operation
-      -- ------------------------------------------------------------
-        if (cpu_req_i.stb = '1') then
-          if (cpu_req_i.rw = '1') or (clear_i = '1') then -- write access or cache being cleared
-            state_nxt <= S_ERROR;
-          else -- actual cache access
-            state_nxt <= S_CHECK;
-          end if;
-        end if;
-
-      when S_CHECK => -- finalize host access if cache hit
-      -- ------------------------------------------------------------
-        -- calculate block base address in case we need to download it --
-        addr_reg_nxt                               <= cpu_req_i.addr;
-        addr_reg_nxt((offset_size_c+2)-1 downto 0) <= (others => '0'); -- block-aligned
-        --
-        cpu_rsp_o.data <= cache.host_rdata; -- output read data in case we have a hit
-        if (cache.hit = '1') then -- cache HIT
-          cpu_rsp_o.err <=     cache.host_rderr;
-          cpu_rsp_o.ack <= not cache.host_rderr;
-          state_nxt     <= S_IDLE;
-        else -- cache MISS
-          state_nxt <= S_DOWNLOAD_REQ;
-        end if;
-
-      when S_DOWNLOAD_REQ => -- download new cache block: request new word
-      -- ------------------------------------------------------------
-        bus_req_o.stb <= '1'; -- request new read transfer
-        state_nxt     <= S_DOWNLOAD_GET;
-
-      when S_DOWNLOAD_GET => -- download new cache block: wait for bus response
-      -- ------------------------------------------------------------
-        cache.ctrl_en <= '1'; -- cache update operation
-        if (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') then -- ACK or ERROR = write to cache and get next word (store ERROR flag in cache)
-          cache.ctrl_we <= '1'; -- write to cache
-          if (and_reduce_f(addr_reg((offset_size_c+2)-1 downto 2)) = '1') then -- block complete?
-            state_nxt <= S_RESYNC;
-          else -- get next word
-            addr_reg_nxt <= std_ulogic_vector(unsigned(addr_reg) + 4);
-            state_nxt    <= S_DOWNLOAD_REQ;
-          end if;
-        end if;
-
-      when S_RESYNC => -- re-sync host/cache access: cache read-latency dummy cycle
-      -- ------------------------------------------------------------
-        state_nxt <= S_CHECK;
-
-      when others => -- S_ERROR: error
-      -- ------------------------------------------------------------
-        cpu_rsp_o.err <= '1';
-        state_nxt     <= S_IDLE;
-
-    end case;
-  end process ctrl_engine_fsm_comb;
-
-
-  -- Access Address Decomposition -----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  host_acc.tag    <= cpu_req_i.addr(31 downto 31-(tag_size_c-1));
-  host_acc.index  <= cpu_req_i.addr(31-tag_size_c downto 2+offset_size_c);
-  host_acc.offset <= cpu_req_i.addr(2+(offset_size_c-1) downto 2); -- discard byte offset
-
-  ctrl_acc.tag    <= addr_reg(31 downto 31-(tag_size_c-1));
-  ctrl_acc.index  <= addr_reg(31-tag_size_c downto 2+offset_size_c);
-  ctrl_acc.offset <= addr_reg(2+(offset_size_c-1) downto 2); -- discard byte offset
-
-
-  -- Status Flag Memory ---------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  status_memory: process(rstn_i, clk_i) -- single-port RAM
-  begin
-    if (rstn_i = '0') then
-      valid_mem <= (others => '0');
-      valid_rd  <= '0';
-    elsif rising_edge(clk_i) then
-      if (clear_i = '1') then -- invalidate cache
-        valid_mem <= (others => '0');
-      elsif (cache.ctrl_we = '1') then -- make current block valid
-        valid_mem(to_integer(unsigned(cache_index))) <= '1';
-      end if;
-      valid_rd <= valid_mem(to_integer(unsigned(cache_index)));
-    end if;
-  end process status_memory;
-
-
-  -- Cache Data Memory ----------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  cache_memory: process(clk_i) -- single-port RAM
-  begin
-    if rising_edge(clk_i) then -- no reset to allow mapping to blockRAM
-      if (cache.ctrl_we = '1') then -- update cache block
-        data_mem(to_integer(unsigned(cache_addr))) <= bus_rsp_i.err & bus_rsp_i.data;
-        tag_mem(to_integer(unsigned(cache_index))) <= ctrl_acc.tag;
-      end if;
-      data_rd <= data_mem(to_integer(unsigned(cache_addr)));
-      tag_rd  <= tag_mem(to_integer(unsigned(cache_index)));
-    end if;
-  end process cache_memory;
-
-  -- cache access select --
-  cache_index  <= host_acc.index  when (cache.ctrl_en = '0') else ctrl_acc.index;
-  cache_offset <= host_acc.offset when (cache.ctrl_en = '0') else ctrl_acc.offset;
-  cache_addr   <= cache_index & cache_offset; -- resulting ram access address
-
-  -- hit = tag match and valid entry --
-  cache.hit <= '1' when (host_acc.tag = tag_rd) and (valid_rd = '1') else '0';
-
-  -- data output --
-  cache.host_rdata <= data_rd(31 downto 0);
-  cache.host_rderr <= data_rd(32);
-
-
-end neorv32_xip_cache_rtl;
