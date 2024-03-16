@@ -1028,7 +1028,6 @@ begin
     neorv32_bus_io_switch_inst: entity neorv32.neorv32_bus_io_switch
     generic map (
       DEV_SIZE  => iodev_size_c, -- size of a single IO device
-      -- device port enable and base address --
       DEV_00_EN => ON_CHIP_DEBUGGER_EN, DEV_00_BASE => base_io_dm_c,
       DEV_01_EN => true,                DEV_01_BASE => base_io_sysinfo_c, -- always enabled (mandatory core module)
       DEV_02_EN => IO_NEOLED_EN,        DEV_02_BASE => base_io_neoled_c,
@@ -1052,10 +1051,8 @@ begin
       DEV_20_EN => IO_CFS_EN,           DEV_20_BASE => base_io_cfs_c
     )
     port map (
-      -- host port --
       main_req_i   => io_req,
       main_rsp_o   => io_rsp,
-      -- device ports --
       dev_00_req_o => iodev_req(IODEV_OCD),     dev_00_rsp_i => iodev_rsp(IODEV_OCD),
       dev_01_req_o => iodev_req(IODEV_SYSINFO), dev_01_rsp_i => iodev_rsp(IODEV_SYSINFO),
       dev_02_req_o => iodev_req(IODEV_NEOLED),  dev_02_rsp_i => iodev_rsp(IODEV_NEOLED),
@@ -1461,7 +1458,6 @@ begin
         XIRQ_TRIGGER_POLARITY => XIRQ_TRIGGER_POLARITY
       )
       port map (
-        -- host access --
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
         bus_req_i => iodev_req(IODEV_XIRQ),
@@ -1540,18 +1536,15 @@ begin
         SLINK_TX_FIFO => IO_SLINK_TX_FIFO
       )
       port map (
-        -- Host access --
         clk_i            => clk_i,
         rstn_i           => rstn_sys,
         bus_req_i        => iodev_req(IODEV_SLINK),
         bus_rsp_o        => iodev_rsp(IODEV_SLINK),
         irq_o            => firq(FIRQ_SLINK),
-        -- RX stream interface --
         slink_rx_data_i  => slink_rx_dat_i,
         slink_rx_valid_i => slink_rx_val_i,
         slink_rx_last_i  => slink_rx_lst_i,
         slink_rx_ready_o => slink_rx_rdy_o,
-        -- TX stream interface --
         slink_tx_data_o  => slink_tx_dat_o,
         slink_tx_valid_o => slink_tx_val_o,
         slink_tx_last_o  => slink_tx_lst_o,
@@ -1593,7 +1586,6 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_sysinfo_inst: entity neorv32.neorv32_sysinfo
     generic map (
-      -- General --
       CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
       CLOCK_GATING_EN       => CLOCK_GATING_EN,
       INT_BOOTLOADER_EN     => INT_BOOTLOADER_EN,
@@ -1661,16 +1653,13 @@ begin
       IDCODE_MANID   => JEDEC_ID
     )
     port map (
-      -- global control --
       clk_i        => clk_i,
       rstn_i       => rstn_ext,
-      -- jtag connection --
       jtag_trst_i  => jtag_trst_i,
       jtag_tck_i   => jtag_tck_i,
       jtag_tdi_i   => jtag_tdi_i,
       jtag_tdo_o   => jtag_tdo_o,
       jtag_tms_i   => jtag_tms_i,
-      -- debug module interface (DMI) --
       dmi_req_o    => dmi_req,
       dmi_rsp_i    => dmi_rsp
     );
@@ -1683,17 +1672,13 @@ begin
       LEGACY_MODE   => DM_LEGACY_MODE
     )
     port map (
-      -- global control --
       clk_i          => clk_i,
       rstn_i         => rstn_ext,
       cpu_debug_i    => cpu_debug,
-      -- debug module interface (DMI) --
       dmi_req_i      => dmi_req,
       dmi_rsp_o      => dmi_rsp,
-      -- CPU bus access --
       bus_req_i      => iodev_req(IODEV_OCD),
       bus_rsp_o      => iodev_rsp(IODEV_OCD),
-      -- CPU control --
       cpu_ndmrstn_o  => dci_ndmrstn,
       cpu_halt_req_o => dci_halt_req
     );
@@ -1703,7 +1688,7 @@ begin
   neorv32_debug_ocd_inst_false:
   if not ON_CHIP_DEBUGGER_EN generate
     iodev_rsp(IODEV_OCD) <= rsp_terminate_c;
-    jtag_tdo_o           <= jtag_tdi_i; -- JTAG feed-through
+    jtag_tdo_o           <= jtag_tdi_i; -- JTAG pass-through
     dci_ndmrstn          <= '1';
     dci_halt_req         <= '0';
   end generate;
