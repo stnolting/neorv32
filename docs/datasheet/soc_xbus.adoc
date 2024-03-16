@@ -6,7 +6,7 @@
 [frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_xbus.vhd        | External bus gateway
-|                          | neorv32_cache.vhd       | External bus cache instance
+|                          | neorv32_cache.vhd       | Generic cache module
 | Software driver file(s): | none                    | _implicitly used_
 | Top entity port(s):      | `xbus_adr_o`            | address output (32-bit)
 |                          | `xbus_dat_i`            | data input (32-bit)
