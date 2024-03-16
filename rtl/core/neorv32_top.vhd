@@ -950,7 +950,9 @@ begin
         generic map (
           NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
           BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
-          UC_BEGIN   => uncached_begin_c(31 downto 28)
+          UC_BEGIN   => uncached_begin_c(31 downto 28),
+          UC_ENABLE  => true,
+          READ_ONLY  => false
         )
         port map (
           clk_i      => clk_i,
