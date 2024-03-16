@@ -17,7 +17,7 @@
 -- # This wrapper provides four pre-configured core complex configurations: "minimal", "lite",     #
 -- # "standard" and "full". See the 'configs_c' table for more details which RISC-V ISA extensions #
 -- # and module parameters are used by each of the these configurations. All configurations can be #
--- # used with the RISC-V-compatible on-chip debugger.                                             #
+-- # used with the RISC-V-compatible on-chip debugger ("DEBUG").                                   #
 -- #                                                                                               #
 -- # === Bus Interface ===                                                                         #
 -- # This wrappers uses the "pipelined" Wishbone b4 protocol for the bus interface. See the        #
@@ -113,8 +113,8 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
   constant jedec_id_c : std_ulogic_vector(10 downto 0) := "00000000000"; -- vendor's JEDEC manufacturer ID
 
   -- advanced configuration --
-  constant num_configs_c : natural := 4;     -- number of pre-defined configurations
-  constant wb_timeout_c  : natural := 4096;  -- external bus interface timeout cycles
+  constant num_configs_c : natural := 4;    -- number of pre-defined configurations
+  constant wb_timeout_c  : natural := 1024; -- external bus interface timeout cycles
 
   -- helpers --
   type bool_t is array (0 to num_configs_c-1) of boolean;
@@ -126,15 +126,11 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     riscv_zicntr : bool_t;
     riscv_zihpm  : bool_t;
     fast_ops     : bool_t;
-    pmp_nr       : natural_t;
-    hpm_nr       : natural_t;
-    icache_en    : bool_t;
-    icache_nb    : natural_t;
-    icache_bs    : natural_t;
-    icache_as    : natural_t;
-    dcache_en    : bool_t;
-    dcache_nb    : natural_t;
-    dcache_bs    : natural_t;
+    pmp_num      : natural_t;
+    hpm_num      : natural_t;
+    xcache_en    : bool_t;
+    xcache_nb    : natural_t;
+    xcache_bs    : natural_t;
     mtime        : bool_t;
   end record;
 
@@ -143,20 +139,16 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     --               minimal   lite    standard  full
     riscv_c      => ( false,   true,    true,    true  ), -- RISC-V compressed instructions 'C'
     riscv_m      => ( false,   true,    true,    true  ), -- RISC-V hardware mul/div 'M'
-    riscv_u      => ( false,   false,   false,   true  ), -- RISC-V user mode 'U'
+    riscv_u      => ( false,   false,   true,    true  ), -- RISC-V user mode 'U'
     riscv_zicntr => ( false,   false,   true,    true  ), -- RISC-V standard CPU counters 'Zicntr'
     riscv_zihpm  => ( false,   false,   false,   true  ), -- RISC-V hardware performance monitors 'Zihpm'
     fast_ops     => ( false,   false,   true,    true  ), -- use DSPs and barrel-shifters
-    pmp_nr       => ( 0,       0,       0,       8     ), -- number of PMP regions (0..16)
-    hpm_nr       => ( 0,       0,       0,       8     ), -- number of HPM counters (0..29)
-    icache_en    => ( false,   false,   true,    true  ), -- instruction cache enabled
-    icache_nb    => ( 0,       0,       8,       8     ), -- number of cache blocks (lines), power of two
-    icache_bs    => ( 0,       0,       64,      256   ), -- size of cache clock (lines) in bytes, power of two
-    icache_as    => ( 1,       1,       1,       2     ), -- associativity (1 or 2)
-    dcache_en    => ( false,   false,   true,    true  ), -- data cache enabled
-    dcache_nb    => ( 0,       0,       8,       8     ), -- number of cache blocks (lines), power of two
-    dcache_bs    => ( 0,       0,       64,      256   ), -- size of cache clock (lines) in bytes, power of two
-    mtime        => ( false,   true,    true,    true  )  -- RISC-V machine system timers
+    pmp_num      => ( 0,       0,       0,       8     ), -- number of PMP regions (0..16)
+    hpm_num      => ( 0,       0,       0,       8     ), -- number of HPM counters (0..29)
+    xcache_en    => ( false,   false,   true,    true  ), -- external bus cache enabled
+    xcache_nb    => ( 0,       0,       32,      64    ), -- number of cache blocks (lines), power of two
+    xcache_bs    => ( 0,       0,       32,      32    ), -- size of cache clock (lines) in bytes, power of two
+    mtime        => ( false,   true,    true,    true  )  -- RISC-V machine system timer
   );
 
 begin
@@ -181,26 +173,20 @@ begin
     FAST_MUL_EN                => configs_c.fast_ops(CONFIG),     -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN              => configs_c.fast_ops(CONFIG),     -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS            => configs_c.pmp_nr(CONFIG),       -- number of regions (0..16)
+    PMP_NUM_REGIONS            => configs_c.pmp_num(CONFIG),      -- number of regions (0..16)
     PMP_MIN_GRANULARITY        => 4,                              -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS               => configs_c.hpm_nr(CONFIG),       -- number of implemented HPM counters (0..29)
+    HPM_NUM_CNTS               => configs_c.hpm_num(CONFIG),      -- number of implemented HPM counters (0..29)
     HPM_CNT_WIDTH              => 64,                             -- total size of HPM counters (0..64)
-    -- Internal Instruction Cache (iCACHE) --
-    ICACHE_EN                  => configs_c.icache_en(CONFIG),    -- implement instruction cache
-    ICACHE_NUM_BLOCKS          => configs_c.icache_nb(CONFIG),    -- i-cache: number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE          => configs_c.icache_bs(CONFIG),    -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY       => configs_c.icache_as(CONFIG),    -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
-    -- Internal Data Cache (dCACHE) --
-    DCACHE_EN                  => configs_c.dcache_en(CONFIG),    -- implement data cache
-    DCACHE_NUM_BLOCKS          => configs_c.dcache_nb(CONFIG),    -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE          => configs_c.dcache_bs(CONFIG),    -- d-cache: block size in bytes (min 4), has to be a power of 2
     -- External bus interface (XBUS) --
     XBUS_EN                    => true,                           -- implement external memory bus interface?
     XBUS_TIMEOUT               => wb_timeout_c,                   -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_PIPE_MODE             => false,                          -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
     XBUS_ASYNC_RX              => true,                           -- use register buffer for RX data when false
     XBUS_ASYNC_TX              => true,                           -- use register buffer for TX data when false
+    XBUS_CACHE_EN              => configs_c.xcache_en(CONFIG),    -- enable external bus cache (x-cache)
+    XBUS_CACHE_NUM_BLOCKS      => configs_c.xcache_nb(CONFIG),    -- x-cache: number of blocks (min 1), has to be a power of 2
+    XBUS_CACHE_BLOCK_SIZE      => configs_c.xcache_bs(CONFIG),    -- x-cache: block size in bytes (min 4), has to be a power of 2
     -- Processor peripherals --
     IO_MTIME_EN                => configs_c.mtime(CONFIG)         -- implement machine system timer (MTIME)?
   )
