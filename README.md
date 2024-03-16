@@ -46,7 +46,8 @@ targeting various FPGA boards and toolchains to get started.
 [*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started setting up _your_ NEORV32 processor!
 * :interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
 
-:bulb: Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
+> [!NOTE]
+> Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
 [discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or if something is
 not working as expected. See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
 
@@ -200,8 +201,8 @@ using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimizatio
 | `rv32i_Zicsr_Zicntr`   | 1578 |  773 | 1024 | 0 | 130 MHz |
 | `rv32imc_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 130 MHz |
 
-:bulb: An incremental list of CPU extensions and processor modules can be found in the
-[Data Sheet: FPGA Implementation Results](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
+> [!TIP]
+> An incremental list of CPU extensions and processor modules can be found in the[Data Sheet: FPGA Implementation Results](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
 
 [[_back to top_](#the-neorv32-risc-v-processor)]
 
@@ -219,7 +220,8 @@ The following table shows the performance results (scores and average CPI) for e
 | _medium_ (`rv32imc_Zicsr_Zifencei`)                      | 62.50 |
 | _performance_ (`rv32imc_Zicsr_Zifencei` + perf. options) | 95.23 |
 
-:bulb: More information regarding the CPU performance can be found in the
+> [!TIP]
+> More information regarding the CPU performance can be found in the
 [Data Sheet: CPU Performance](https://stnolting.github.io/neorv32/#_cpu_performance).
 The CPU & SoC provide further "tuning" options to optimize the design for maximum performance,
 maximum clock speed, minimal area or minimal power consumption:
