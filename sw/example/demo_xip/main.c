@@ -126,7 +126,7 @@ int main() {
 
 
   // warning if XIP cache is not implemented
-  if ((NEORV32_XIP->CTRL & (1 << XIP_CTRL_BURST_EN)) == 0) {
+  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XIP_CACHE)) == 0) {
     neorv32_uart0_printf("WARNING! No XIP cache implemented! The XIP program might run very slow...\n");
   }
 

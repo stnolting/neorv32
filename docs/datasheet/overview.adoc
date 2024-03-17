@@ -211,14 +211,12 @@ All core VHDL files from the list below have to be assigned to a **new library**
 ├neorv32_cfs.vhd                 - Custom functions subsystem
 ├neorv32_crc.vhd                 - Cyclic redundancy check unit
 ├neorv32_cache.vhd               - Generic cache module
-├neorv32_dcache.vhd              - Processor-internal data cache
 ├neorv32_debug_dm.vhd            - on-chip debugger: debug module
 ├neorv32_debug_dtm.vhd           - on-chip debugger: debug transfer module
 ├neorv32_dma.vhd                 - Direct memory access controller
 ├neorv32_dmem.entity.vhd         - Processor-internal data memory (entity-only!)
 ├neorv32_gpio.vhd                - General purpose input/output port unit
 ├neorv32_gptmr.vhd               - General purpose 32-bit timer
-├neorv32_icache.vhd              - Processor-internal instruction cache
 ├neorv32_intercon.vhd            - SoC bus infrastructure
 ├neorv32_mtime.vhd               - Machine system timer
 ├neorv32_neoled.vhd              - NeoPixel (TM) compatible smart LED interface
