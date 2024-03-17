@@ -17,7 +17,6 @@ a 8x4-bit BCD (binary-coded decimal) format to represent the current version. Ex
 mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 ```
 
-
 ### Version History
 
 * :bug: bug-fix
@@ -30,6 +29,11 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 16.03.2024 | 1.9.6.7 | cache optimizations: add read-only option, add option to disable direct/uncached accesses | [#851](https://github.com/stnolting/neorv32/pull/851) |
+| 15.03.2024 | 1.9.6.6 | :warning: clean-up configuration generics (remove XBUS endianness configuration; refine JEDED/VENDORID configuration); rearrange SYSINFO.SOC bits | [#850](https://github.com/stnolting/neorv32/pull/850) |
+| 14.03.2024 | 1.9.6.5 | :sparkles: add optional external bus interface cache (XCACHE) | [#]846(https://github.com/stnolting/neorv32/pull/849) |
+| 12.03.2024 | 1.9.6.4 | :warning: :warning: rename external bus/memory interface and according generics ("WISHBONE/MEM_EXT" -> "XBUS"); also rename bus interface ports (`wb_* -> xbus_*`) | [#846](https://github.com/stnolting/neorv32/pull/846) |
+| 11.03.2024 | 1.9.6.3 | :warning: remove Wishbone tag signal; minor rtl edits and optimizations | [#845](https://github.com/stnolting/neorv32/pull/845) |
 | 10.03.2024 | 1.9.6.2 | minor rtl clean-ups, optimizations and fixes | [#843](https://github.com/stnolting/neorv32/pull/843) |
 | 09.03.2024 | 1.9.6.1 | add generic cache module (not used yet) | [#842](https://github.com/stnolting/neorv32/pull/842) |
 | 01.03.2024 | [**:rocket:1.9.6**](https://github.com/stnolting/neorv32/releases/tag/v1.9.6) | **New release** | |
@@ -45,14 +49,14 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 16.02.2024 | 1.9.5.1 | :sparkles: add two new generics to exclude certain PMP modes from synthesis | [#808](https://github.com/stnolting/neorv32/pull/808) |
 | 16.02.2024 | [**:rocket:1.9.5**](https://github.com/stnolting/neorv32/releases/tag/v1.9.5) | **New release** | |
 | 15.02.2023 | 1.9.4.13 | allow the DMA to issue a FENCE operation | [#807](https://github.com/stnolting/neorv32/pull/807) |
-| 14.02.2024 | 1.9.4.12 | :bug: close another illegal compressed instruction encoding loophole | [#806](https://github.com/stnolting/neorv32/pull/806) |
+| 14.02.2024 | 1.9.4.12 | :lock: close another illegal compressed instruction encoding loophole | [#806](https://github.com/stnolting/neorv32/pull/806) |
 | 11.02.2024 | 1.9.4.11 | :bug: fix several FPU bugs and design flaws | [#794](https://github.com/stnolting/neorv32/pull/794) |
 | 11.02.2024 | 1.9.4.10 | minor additions to previous version (1.9.4.9): fix HPM configuration read-back | [#804](https://github.com/stnolting/neorv32/pull/804) |
 | 10.02.2024 | 1.9.4.9 | fixing HPM configuration's null range assertions | [#803](https://github.com/stnolting/neorv32/pull/803) |
 | 10.02.2024 | 1.9.4.8 | :bug: fix missing fence pass-through in caches | [#802](https://github.com/stnolting/neorv32/pull/802) |
 | 09.02.2024 | 1.9.4.7 | :warning: integrate fence signal into CPU bus, remove top entity's fence signals | [#800](https://github.com/stnolting/neorv32/pull/800) |
 | 09.02.2024 | 1.9.4.6 | :sparkles: add configurable XIP cache | [#799](https://github.com/stnolting/neorv32/pull/799) |
-| 09.02.2024 | 1.9.4.5 | :bug: close further illegal compressed instruction encoding loopholes | [#797](https://github.com/stnolting/neorv32/pull/797) |
+| 09.02.2024 | 1.9.4.5 | :lock: close further illegal compressed instruction encoding loopholes | [#797](https://github.com/stnolting/neorv32/pull/797) |
 | 04.02.2024 | 1.9.4.4 | :bug: fix minor bug: CPU instruction bus privilege signal did not remain stable during the entire request | [#792](https://github.com/stnolting/neorv32/pull/792) |
 | 03.02.2024 | 1.9.4.3 | :bug: fix minor bug: CPU instruction bus privilege signal was hardwired to "user-mode" | [#790](https://github.com/stnolting/neorv32/pull/790) |
 | 01.02.2024 | 1.9.4.2 | :sparkles: add support for page fault exceptions (yet unused) | [#786](https://github.com/stnolting/neorv32/pull/786) |
@@ -437,7 +441,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 11.09.2021 | [**:rocket:1.6.0**](https://github.com/stnolting/neorv32/releases/tag/v1.6.0) | **New release** |
 | 11.09.2021 | 1.5.9.9 | removed `mstatus.SD` flag (is always 0 for `Zfinx` extension as the current state is already defined entirely by the `x` register file); tied `mstatus.fs` as it must not affect trapping of `Zfinx` instructions (according to RISC-V specs.) |
 | 09.09.2021 | 1.5.9.8 | added flags to `SYSINFO` module to determine configuration of `FAST_MUL_EN` and `FAST_SHIFT_EN` generics by software |
-| 09.09.2021 | 1.5.9.7 | `FAST_SHIFT_EN` option will now also implement full-parallel computation logic (like barel shifters) for _all_ `Zbb` shift-related instructions (population count, count leading/trailing zeros, circular shifts) |
+| 09.09.2021 | 1.5.9.7 | `FAST_SHIFT_EN` option will now also implement full-parallel computation logic (like barrel shifters) for _all_ `Zbb` shift-related instructions (population count, count leading/trailing zeros, circular shifts) |
 | 08.09.2021 | 1.5.9.6 | :sparkles: added support for RISC-V `Zbb` CPU extension (**basic bit-manipulation operations**), enabled via new top generic `CPU_EXTENSION_RISCV_Zbb`; added example software project providing a `Zbb` "intrinsic" library |
 | 08.09.2021 | 1.5.9.5 | :bug: fixed missing `flash_sdi_i` in Radiant-related example setups and processor wrappers |
 | 19.08.2021 | 1.5.9.4 | :warning: removed custom `mzext` CPU CSR, moved all information flags to new `SYSINFO_CPU` register in the system information memory module (`SYSINFO`) |

@@ -73,7 +73,7 @@ In order to optimize for a minimal critical path (= maximum clock speed) the fol
 * Large carry chains (>32-bit) should be avoided (i.e. constrain the HPM counter sizes via `HPM_CNT_WIDTH`).
 * If the target FPGA provides sufficient DSP resources, CPU multiplication operations can be mapped to DSP slices (`FAST_MUL_EN => true`)
 reducing LUT usage and critical path impact while also increasing overall performance.
-* Use the synchronous (registered) RX path configuration of the external memory interface (`MEM_EXT_ASYNC_RX => false`).
+* Use the synchronous (registered) RX path configuration of the external bus interface (`XBUS_ASYNC_RX => false`).
 * _To be continued..._
 
 [NOTE]

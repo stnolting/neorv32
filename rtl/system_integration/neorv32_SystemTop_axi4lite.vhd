@@ -48,7 +48,7 @@ entity neorv32_SystemTop_axi4lite is
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
-    VENDOR_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
+    JEDEC_ID                     : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
     INT_BOOTLOADER_EN            : boolean := true;   -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
@@ -321,7 +321,6 @@ architecture neorv32_SystemTop_axi4lite_rtl of neorv32_SystemTop_axi4lite is
     cyc : std_ulogic; -- valid cycle
     ack : std_ulogic; -- transfer acknowledge
     err : std_ulogic; -- transfer error
-    tag : std_ulogic_vector(02 downto 0); -- tag
   end record;
   signal wb_core : wb_bus_t;
 
@@ -345,7 +344,7 @@ begin
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,    -- clock frequency of clk_i in Hz
     HART_ID                      => HART_ID,            -- hardware thread ID
-    VENDOR_ID                    => VENDOR_ID,          -- vendor's JEDEC ID
+    JEDEC_ID                     => JEDEC_ID,           -- vendor's JEDEC ID
     INT_BOOTLOADER_EN            => INT_BOOTLOADER_EN,  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          => ON_CHIP_DEBUGGER_EN, -- implement on-chip debugger
@@ -388,13 +387,12 @@ begin
     DCACHE_EN                    => DCACHE_EN,          -- implement data cache
     DCACHE_NUM_BLOCKS            => DCACHE_NUM_BLOCKS,  -- d-cache: number of blocks (min 1), has to be a power of 2
     DCACHE_BLOCK_SIZE            => DCACHE_BLOCK_SIZE,  -- d-cache: block size in bytes (min 4), has to be a power of 2
-    -- External memory interface --
-    MEM_EXT_EN                   => true,               -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT              => 0,                  -- cycles after a pending bus access auto-terminates (0 = disabled)
-    MEM_EXT_PIPE_MODE            => false,              -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    MEM_EXT_BIG_ENDIAN           => false,              -- byte order: true=big-endian, false=little-endian
-    MEM_EXT_ASYNC_RX             => false,              -- use register buffer for RX data when false
-    MEM_EXT_ASYNC_TX             => false,              -- use register buffer for TX data when false
+    -- External bus interface --
+    XBUS_EN                      => true,               -- implement external memory bus interface?
+    XBUS_TIMEOUT                 => 0,                  -- cycles after a pending bus access auto-terminates (0 = disabled)
+    XBUS_PIPE_MODE               => false,              -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    XBUS_ASYNC_RX                => false,              -- use register buffer for RX data when false
+    XBUS_ASYNC_TX                => false,              -- use register buffer for TX data when false
     -- Execute in-place module (XIP) --
     XIP_EN                       => XIP_EN,             -- implement execute in place module (XIP)?
     XIP_CACHE_EN                 => XIP_CACHE_EN,       -- implement XIP cache?
@@ -446,17 +444,16 @@ begin
     jtag_tdi_i     => jtag_tdi_i_int,  -- serial data input
     jtag_tdo_o     => jtag_tdo_o_int,  -- serial data output
     jtag_tms_i     => jtag_tms_i_int,  -- mode select
-    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o       => wb_core.tag,     -- tag
-    wb_adr_o       => wb_core.adr,     -- address
-    wb_dat_i       => wb_core.di,      -- read data
-    wb_dat_o       => wb_core.do,      -- write data
-    wb_we_o        => wb_core.we,      -- read/write
-    wb_sel_o       => wb_core.sel,     -- byte enable
-    wb_stb_o       => wb_core.stb,     -- strobe
-    wb_cyc_o       => wb_core.cyc,     -- valid cycle
-    wb_ack_i       => wb_core.ack,     -- transfer acknowledge
-    wb_err_i       => wb_core.err,     -- transfer error
+    -- External bus interface (available if XBUS_EN = true) --
+    xbus_adr_o     => wb_core.adr,     -- address
+    xbus_dat_i     => wb_core.di,      -- read data
+    xbus_dat_o     => wb_core.do,      -- write data
+    xbus_we_o      => wb_core.we,      -- read/write
+    xbus_sel_o     => wb_core.sel,     -- byte enable
+    xbus_stb_o     => wb_core.stb,     -- strobe
+    xbus_cyc_o     => wb_core.cyc,     -- valid cycle
+    xbus_ack_i     => wb_core.ack,     -- transfer acknowledge
+    xbus_err_i     => wb_core.err,     -- transfer error
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i => s1_axis_tdata_int,  -- RX input data
     slink_rx_val_i => s1_axis_tvalid_int, -- RX valid input
@@ -618,10 +615,7 @@ begin
   -- AXI4-Lite Read Address Channel --
   m_axi_araddr  <= std_logic_vector(wb_core.adr);
   m_axi_arvalid <= std_logic((wb_core.cyc and (not wb_core.we)) and (not ctrl.radr_received));
---m_axi_arprot  <= "000"; -- recommended by AMD
-  m_axi_arprot(0) <= wb_core.tag(0); -- 0:unprivileged access, 1:privileged access
-  m_axi_arprot(1) <= wb_core.tag(1); -- 0:secure access, 1:non-secure access
-  m_axi_arprot(2) <= wb_core.tag(2); -- 0:data access, 1:instruction access
+  m_axi_arprot  <= "000"; -- recommended by AMD
 
   -- AXI4-Lite Read Data Channel --
   m_axi_rready <= std_logic(wb_core.cyc and (not wb_core.we));
@@ -632,10 +626,7 @@ begin
   -- AXI4-Lite Write Address Channel --
   m_axi_awaddr  <= std_logic_vector(wb_core.adr);
   m_axi_awvalid <= std_logic((wb_core.cyc and wb_core.we) and (not ctrl.wadr_received));
---m_axi_awprot  <= "000"; -- recommended by AMD
-  m_axi_awprot(0) <= wb_core.tag(0); -- 0:unprivileged access, 1:privileged access
-  m_axi_awprot(1) <= wb_core.tag(1); -- 0:secure access, 1:non-secure access
-  m_axi_awprot(2) <= wb_core.tag(2); -- 0:data access, 1:instruction access
+  m_axi_awprot  <= "000"; -- recommended by AMD
 
   -- AXI4-Lite Write Data Channel --
   m_axi_wdata  <= std_logic_vector(wb_core.do);

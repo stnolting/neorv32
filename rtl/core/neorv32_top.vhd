@@ -49,7 +49,7 @@ entity neorv32_top is
     CLOCK_FREQUENCY            : natural;                                       -- clock frequency of clk_i in Hz
     CLOCK_GATING_EN            : boolean                        := false;       -- enable clock gating when in sleep mode
     HART_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
-    VENDOR_ID                  : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
+    JEDEC_ID                   : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
     INT_BOOTLOADER_EN          : boolean                        := false;       -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
     -- On-Chip Debugger (OCD) --
@@ -107,13 +107,15 @@ entity neorv32_top is
     DCACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;           -- d-cache: number of blocks (min 1), has to be a power of 2
     DCACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;          -- d-cache: block size in bytes (min 4), has to be a power of 2
 
-    -- External memory interface (WISHBONE) --
-    MEM_EXT_EN                 : boolean                        := false;       -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT            : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
-    MEM_EXT_PIPE_MODE          : boolean                        := false;       -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    MEM_EXT_BIG_ENDIAN         : boolean                        := false;       -- byte order: true=big-endian, false=little-endian
-    MEM_EXT_ASYNC_RX           : boolean                        := false;       -- use register buffer for RX data when false
-    MEM_EXT_ASYNC_TX           : boolean                        := false;       -- use register buffer for TX data when false
+    -- External bus interface (XBUS) --
+    XBUS_EN                    : boolean                        := false;       -- implement external memory bus interface?
+    XBUS_TIMEOUT               : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
+    XBUS_PIPE_MODE             : boolean                        := false;       -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    XBUS_ASYNC_RX              : boolean                        := false;       -- use register buffer for RX data when false
+    XBUS_ASYNC_TX              : boolean                        := false;       -- use register buffer for TX data when false
+    XBUS_CACHE_EN              : boolean                        := false;       -- enable external bus cache (x-cache)
+    XBUS_CACHE_NUM_BLOCKS      : natural                        := 64;          -- x-cache: number of blocks (min 1), has to be a power of 2
+    XBUS_CACHE_BLOCK_SIZE      : natural                        := 32;          -- x-cache: block size in bytes (min 4), has to be a power of 2
 
     -- Execute in-place module (XIP) --
     XIP_EN                     : boolean                        := false;       -- implement execute in place module (XIP)?
@@ -170,17 +172,16 @@ entity neorv32_top is
     jtag_tdo_o     : out std_ulogic; -- serial data output
     jtag_tms_i     : in  std_ulogic := 'L'; -- mode select
 
-    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o       : out std_ulogic_vector(02 downto 0); -- request tag
-    wb_adr_o       : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i       : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- read data
-    wb_dat_o       : out std_ulogic_vector(31 downto 0); -- write data
-    wb_we_o        : out std_ulogic; -- read/write
-    wb_sel_o       : out std_ulogic_vector(03 downto 0); -- byte enable
-    wb_stb_o       : out std_ulogic; -- strobe
-    wb_cyc_o       : out std_ulogic; -- valid cycle
-    wb_ack_i       : in  std_ulogic := 'L'; -- transfer acknowledge
-    wb_err_i       : in  std_ulogic := 'L'; -- transfer error
+    -- External bus interface (available if XBUS_EN = true) --
+    xbus_adr_o     : out std_ulogic_vector(31 downto 0); -- address
+    xbus_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- read data
+    xbus_dat_o     : out std_ulogic_vector(31 downto 0); -- write data
+    xbus_we_o      : out std_ulogic; -- read/write
+    xbus_sel_o     : out std_ulogic_vector(03 downto 0); -- byte enable
+    xbus_stb_o     : out std_ulogic; -- strobe
+    xbus_cyc_o     : out std_ulogic; -- valid cycle
+    xbus_ack_i     : in  std_ulogic := 'L'; -- transfer acknowledge
+    xbus_err_i     : in  std_ulogic := 'L'; -- transfer error
 
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- RX input data
@@ -270,6 +271,10 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
   constant io_xirq_en_c    : boolean := boolean(XIRQ_NUM_CH > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
+  constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
+
+  -- convert JEDEC ID to mvendor CSR --
+  constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_valid_c : boolean := is_power_of_two_f(MEM_INT_IMEM_SIZE);
@@ -292,9 +297,10 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clk_gen                   : std_ulogic_vector(07 downto 0);
   signal clk_gen_en, clk_gen_en_ff : std_ulogic;
   --
-  type cg_en_t is record
-    wdt, uart0, uart1, spi, twi, pwm, cfs, neoled, gptmr, xip, onewire : std_ulogic;
-  end record;
+  type cg_en_enum_t is (
+    CG_CFS, CG_UART0, CG_UART1, CG_SPI, CG_TWI, CG_PWM, CG_WDT, CG_NEOLED, CG_GPTMR, CG_XIP, CG_ONEWIRE
+  );
+  type cg_en_t is array (cg_en_enum_t) of std_ulogic;
   signal cg_en : cg_en_t;
 
   -- CPU status --
@@ -320,26 +326,28 @@ architecture neorv32_top_rtl of neorv32_top is
   signal main_rsp, main2_rsp, dma_rsp : bus_rsp_t; -- core complex (CPU + caches + DMA)
 
   -- bus: main sections --
-  signal imem_req, dmem_req, xip_req, boot_req, io_req, xbus_req : bus_req_t;
-  signal imem_rsp, dmem_rsp, xip_rsp, boot_rsp, io_rsp, xbus_rsp : bus_rsp_t;
+  signal imem_req, dmem_req, xip_req, boot_req, io_req, xcache_req, xbus_req : bus_req_t;
+  signal imem_rsp, dmem_rsp, xip_rsp, boot_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
 
   -- bus: IO devices --
-  type io_devices_t is (
+  type io_devices_enum_t is (
     IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG, IODEV_TWI,
     IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_MTIME, IODEV_XIRQ, IODEV_ONEWIRE,
     IODEV_GPTMR, IODEV_PWM, IODEV_XIP, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS
   );
-  type iodev_req_t is array (io_devices_t) of bus_req_t;
-  type iodev_rsp_t is array (io_devices_t) of bus_rsp_t;
+  type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
+  type iodev_rsp_t is array (io_devices_enum_t) of bus_rsp_t;
   signal iodev_req : iodev_req_t;
   signal iodev_rsp : iodev_rsp_t;
 
   -- IRQs --
-  signal cpu_firq : std_ulogic_vector(15 downto 0);
-  type irq_t is record
-    wdt, uart0_rx, uart0_tx, uart1_rx, uart1_tx, spi, sdi, twi, cfs, neoled, xirq, gptmr, onewire, dma, trng, slink : std_ulogic;
-  end record;
-  signal firq      : irq_t;
+  type firq_enum_t is (
+    FIRQ_WDT, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
+    FIRQ_CFS, FIRQ_NEOLED, FIRQ_XIRQ, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_TRNG, FIRQ_SLINK
+  );
+  type firq_t is array (firq_enum_t) of std_ulogic;
+  signal firq      : firq_t;
+  signal cpu_firq  : std_ulogic_vector(15 downto 0);
   signal mtime_irq : std_ulogic;
 
   -- misc --
@@ -362,33 +370,34 @@ begin
     -- show main SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: " &
-      cond_sel_string_f(MEM_INT_IMEM_EN,     "IMEM ",     "") &
-      cond_sel_string_f(MEM_INT_DMEM_EN,     "DMEM ",     "") &
-      cond_sel_string_f(INT_BOOTLOADER_EN,   "BOOTROM ",  "") &
-      cond_sel_string_f(ICACHE_EN,           "I-CACHE ",  "") &
-      cond_sel_string_f(DCACHE_EN,           "D-CACHE ",  "") &
-      cond_sel_string_f(MEM_EXT_EN,          "WISHBONE ", "") &
-      cond_sel_string_f(io_gpio_en_c,        "GPIO ",     "") &
-      cond_sel_string_f(IO_MTIME_EN,         "MTIME ",    "") &
-      cond_sel_string_f(IO_UART0_EN,         "UART0 ",    "") &
-      cond_sel_string_f(IO_UART1_EN,         "UART1 ",    "") &
-      cond_sel_string_f(IO_SPI_EN,           "SPI ",      "") &
-      cond_sel_string_f(IO_SDI_EN,           "SDI ",      "") &
-      cond_sel_string_f(IO_TWI_EN,           "TWI ",      "") &
-      cond_sel_string_f(io_pwm_en_c,         "PWM ",      "") &
-      cond_sel_string_f(IO_WDT_EN,           "WDT ",      "") &
-      cond_sel_string_f(IO_TRNG_EN,          "TRNG ",     "") &
-      cond_sel_string_f(IO_CFS_EN,           "CFS ",      "") &
-      cond_sel_string_f(IO_NEOLED_EN,        "NEOLED ",   "") &
-      cond_sel_string_f(io_xirq_en_c,        "XIRQ ",     "") &
-      cond_sel_string_f(IO_GPTMR_EN,         "GPTMR ",    "") &
-      cond_sel_string_f(XIP_EN,              "XIP ",      "") &
-      cond_sel_string_f(IO_ONEWIRE_EN,       "ONEWIRE ",  "") &
-      cond_sel_string_f(IO_DMA_EN,           "DMA ",      "") &
-      cond_sel_string_f(IO_SLINK_EN,         "SLINK ",    "") &
-      cond_sel_string_f(IO_CRC_EN,           "CRC ",      "") &
-      cond_sel_string_f(true,                "SYSINFO ",  "") & -- always enabled
-      cond_sel_string_f(ON_CHIP_DEBUGGER_EN, "OCD ",      "") &
+      cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",     "") &
+      cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",     "") &
+      cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",  "") &
+      cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",  "") &
+      cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",  "") &
+      cond_sel_string_f(XBUS_EN,                   "XBUS ",     "") &
+      cond_sel_string_f(XBUS_EN and XBUS_CACHE_EN, "XCACHE ",   "") &
+      cond_sel_string_f(io_gpio_en_c,              "GPIO ",     "") &
+      cond_sel_string_f(IO_MTIME_EN,               "MTIME ",    "") &
+      cond_sel_string_f(IO_UART0_EN,               "UART0 ",    "") &
+      cond_sel_string_f(IO_UART1_EN,               "UART1 ",    "") &
+      cond_sel_string_f(IO_SPI_EN,                 "SPI ",      "") &
+      cond_sel_string_f(IO_SDI_EN,                 "SDI ",      "") &
+      cond_sel_string_f(IO_TWI_EN,                 "TWI ",      "") &
+      cond_sel_string_f(io_pwm_en_c,               "PWM ",      "") &
+      cond_sel_string_f(IO_WDT_EN,                 "WDT ",      "") &
+      cond_sel_string_f(IO_TRNG_EN,                "TRNG ",     "") &
+      cond_sel_string_f(IO_CFS_EN,                 "CFS ",      "") &
+      cond_sel_string_f(IO_NEOLED_EN,              "NEOLED ",   "") &
+      cond_sel_string_f(io_xirq_en_c,              "XIRQ ",     "") &
+      cond_sel_string_f(IO_GPTMR_EN,               "GPTMR ",    "") &
+      cond_sel_string_f(XIP_EN,                    "XIP ",      "") &
+      cond_sel_string_f(IO_ONEWIRE_EN,             "ONEWIRE ",  "") &
+      cond_sel_string_f(IO_DMA_EN,                 "DMA ",      "") &
+      cond_sel_string_f(IO_SLINK_EN,               "SLINK ",    "") &
+      cond_sel_string_f(IO_CRC_EN,                 "CRC ",      "") &
+      cond_sel_string_f(true,                      "SYSINFO ",  "") & -- always enabled
+      cond_sel_string_f(ON_CHIP_DEBUGGER_EN,       "OCD ",      "") &
       ""
       severity note;
 
@@ -479,8 +488,9 @@ begin
     clk_gen(clk_div4096_c) <= clk_div(11) and (not clk_div_ff(11)); -- clk/4096
 
     -- fresh clocks anyone? --
-    clk_gen_en <= cg_en.wdt or cg_en.uart0  or cg_en.uart1 or cg_en.spi or cg_en.twi or cg_en.pwm or
-                  cg_en.cfs or cg_en.neoled or cg_en.gptmr or cg_en.xip or cg_en.onewire;
+    clk_gen_en <= cg_en(CG_WDT)   or cg_en(CG_UART0) or cg_en(CG_UART1) or cg_en(CG_SPI)    or
+                  cg_en(CG_TWI)   or cg_en(CG_PWM)   or cg_en(CG_WDT)   or cg_en(CG_NEOLED) or
+                  cg_en(CG_GPTMR) or cg_en(CG_XIP)   or cg_en(CG_ONEWIRE);
 
 
     -- Clock Gating ---------------------------------------------------------------------------
@@ -516,7 +526,7 @@ begin
     generic map (
       -- General --
       HART_ID                    => HART_ID,
-      VENDOR_ID                  => VENDOR_ID,
+      VENDOR_ID                  => vendorid_c,
       CPU_BOOT_ADDR              => cpu_boot_addr_c,
       CPU_DEBUG_PARK_ADDR        => dm_park_entry_c,
       CPU_DEBUG_EXC_ADDR         => dm_exc_entry_c,
@@ -535,6 +545,7 @@ begin
       CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,
       CPU_EXTENSION_RISCV_Sdext  => ON_CHIP_DEBUGGER_EN,
       CPU_EXTENSION_RISCV_Sdtrig => ON_CHIP_DEBUGGER_EN,
+      CPU_EXTENSION_RISCV_Smpmp  => cpu_smpmp_c,
       -- Tuning Options --
       FAST_MUL_EN                => FAST_MUL_EN,
       FAST_SHIFT_EN              => FAST_SHIFT_EN,
@@ -570,22 +581,22 @@ begin
     );
 
     -- fast interrupt requests (FIRQs) --
-    cpu_firq(00) <= firq.wdt; -- highest priority
-    cpu_firq(01) <= firq.cfs;
-    cpu_firq(02) <= firq.uart0_rx;
-    cpu_firq(03) <= firq.uart0_tx;
-    cpu_firq(04) <= firq.uart1_rx;
-    cpu_firq(05) <= firq.uart1_tx;
-    cpu_firq(06) <= firq.spi;
-    cpu_firq(07) <= firq.twi;
-    cpu_firq(08) <= firq.xirq;
-    cpu_firq(09) <= firq.neoled;
-    cpu_firq(10) <= firq.dma;
-    cpu_firq(11) <= firq.sdi;
-    cpu_firq(12) <= firq.gptmr;
-    cpu_firq(13) <= firq.onewire;
-    cpu_firq(14) <= firq.slink;
-    cpu_firq(15) <= firq.trng; -- lowest priority
+    cpu_firq(00) <= firq(FIRQ_WDT); -- highest priority
+    cpu_firq(01) <= firq(FIRQ_CFS);
+    cpu_firq(02) <= firq(FIRQ_UART0_RX);
+    cpu_firq(03) <= firq(FIRQ_UART0_TX);
+    cpu_firq(04) <= firq(FIRQ_UART1_RX);
+    cpu_firq(05) <= firq(FIRQ_UART1_TX);
+    cpu_firq(06) <= firq(FIRQ_SPI);
+    cpu_firq(07) <= firq(FIRQ_TWI);
+    cpu_firq(08) <= firq(FIRQ_XIRQ);
+    cpu_firq(09) <= firq(FIRQ_NEOLED);
+    cpu_firq(10) <= firq(FIRQ_DMA);
+    cpu_firq(11) <= firq(FIRQ_SDI);
+    cpu_firq(12) <= firq(FIRQ_GPTMR);
+    cpu_firq(13) <= firq(FIRQ_ONEWIRE);
+    cpu_firq(14) <= firq(FIRQ_SLINK);
+    cpu_firq(15) <= firq(FIRQ_TRNG); -- lowest priority
 
 
     -- CPU Instruction Cache ------------------------------------------------------------------
@@ -681,7 +692,7 @@ begin
       dma_req_o => dma_req,
       dma_rsp_i => dma_rsp,
       firq_i    => cpu_firq,
-      irq_o     => firq.dma
+      irq_o     => firq(FIRQ_DMA)
     );
 
 
@@ -710,7 +721,7 @@ begin
     iodev_rsp(IODEV_DMA) <= rsp_terminate_c;
     main_req             <= core_req;
     core_rsp             <= main_rsp;
-    firq.dma             <= '0';
+    firq(FIRQ_DMA)       <= '0';
   end generate;
 
 
@@ -770,7 +781,7 @@ begin
     IO_BASE     => mem_io_base_c,
     IO_SIZE     => mem_io_size_c,
     -- EXT port --
-    EXT_ENABLE  => MEM_EXT_EN
+    EXT_ENABLE  => XBUS_EN
   )
   port map (
     -- global control --
@@ -876,14 +887,13 @@ begin
         XIP_CACHE_BLOCK_SIZE => XIP_CACHE_BLOCK_SIZE
       )
       port map (
-        -- global control --
         clk_i       => clk_i,
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_XIP),
         bus_rsp_o   => iodev_rsp(IODEV_XIP),
         xip_req_i   => xip_req,
         xip_rsp_o   => xip_rsp,
-        clkgen_en_o => cg_en.xip,
+        clkgen_en_o => cg_en(CG_XIP),
         clkgen_i    => clk_gen,
         spi_csn_o   => xip_csn_o,
         spi_clk_o   => xip_clk_o,
@@ -896,54 +906,81 @@ begin
     if not XIP_EN generate
       iodev_rsp(IODEV_XIP) <= rsp_terminate_c;
       xip_rsp              <= rsp_terminate_c;
-      cg_en.xip            <= '0';
+      cg_en(CG_XIP)        <= '0';
       xip_csn_o            <= '1';
       xip_clk_o            <= '0';
       xip_dat_o            <= '0';
     end generate;
 
 
-    -- External Wishbone Gateway (WISHBONE) ---------------------------------------------------
+    -- External Bus Interface (XBUS) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_wishbone_inst_true:
-    if MEM_EXT_EN generate
-      neorv32_wishbone_inst: entity neorv32.neorv32_wishbone
+    neorv32_xbus_inst_true:
+    if XBUS_EN generate
+
+      -- bus gateway (Wishbone) --
+      neorv32_xbus_inst: entity neorv32.neorv32_xbus
       generic map (
-        BUS_TIMEOUT => MEM_EXT_TIMEOUT,
-        PIPE_MODE   => MEM_EXT_PIPE_MODE,
-        BIG_ENDIAN  => MEM_EXT_BIG_ENDIAN,
-        ASYNC_RX    => MEM_EXT_ASYNC_RX,
-        ASYNC_TX    => MEM_EXT_ASYNC_TX
+        BUS_TIMEOUT => XBUS_TIMEOUT,
+        PIPE_MODE   => XBUS_PIPE_MODE,
+        ASYNC_RX    => XBUS_ASYNC_RX,
+        ASYNC_TX    => XBUS_ASYNC_TX
       )
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => xbus_req,
-        bus_rsp_o => xbus_rsp,
+        clk_i       => clk_i,
+        rstn_i      => rstn_sys,
+        bus_req_i   => xcache_req,
+        bus_rsp_o   => xcache_rsp,
         --
-        wb_tag_o  => wb_tag_o,
-        wb_adr_o  => wb_adr_o,
-        wb_dat_i  => wb_dat_i,
-        wb_dat_o  => wb_dat_o,
-        wb_we_o   => wb_we_o,
-        wb_sel_o  => wb_sel_o,
-        wb_stb_o  => wb_stb_o,
-        wb_cyc_o  => wb_cyc_o,
-        wb_ack_i  => wb_ack_i,
-        wb_err_i  => wb_err_i
+        xbus_adr_o  => xbus_adr_o,
+        xbus_dat_i  => xbus_dat_i,
+        xbus_dat_o  => xbus_dat_o,
+        xbus_we_o   => xbus_we_o,
+        xbus_sel_o  => xbus_sel_o,
+        xbus_stb_o  => xbus_stb_o,
+        xbus_cyc_o  => xbus_cyc_o,
+        xbus_ack_i  => xbus_ack_i,
+        xbus_err_i  => xbus_err_i
       );
-    end generate;
 
-    neorv32_wishbone_inst_false:
-    if not MEM_EXT_EN generate
-      xbus_rsp <= rsp_terminate_c;
-      wb_adr_o <= (others => '0');
-      wb_dat_o <= (others => '0');
-      wb_we_o  <= '0';
-      wb_sel_o <= (others => '0');
-      wb_stb_o <= '0';
-      wb_cyc_o <= '0';
-      wb_tag_o <= (others => '0');
+      -- external bus cache (XCACHE) --
+      neorv32_xcache_inst_true:
+      if XBUS_CACHE_EN generate
+        neorv32_xcache_inst: entity neorv32.neorv32_cache
+        generic map (
+          NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
+          BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
+          UC_BEGIN   => uncached_begin_c(31 downto 28),
+          UC_ENABLE  => true,
+          READ_ONLY  => false
+        )
+        port map (
+          clk_i      => clk_i,
+          rstn_i     => rstn_sys,
+          host_req_i => xbus_req,
+          host_rsp_o => xbus_rsp,
+          bus_req_o  => xcache_req,
+          bus_rsp_i  => xcache_rsp
+        );
+      end generate;
+
+      neorv32_xcache_inst_false:
+      if not XBUS_CACHE_EN generate
+        xcache_req <= xbus_req;
+        xbus_rsp   <= xcache_rsp;
+      end generate;
+
+    end generate; -- /neorv32_xbus_inst_true
+
+    neorv32_xbus_inst_false:
+    if not XBUS_EN generate
+      xbus_rsp   <= rsp_terminate_c;
+      xbus_adr_o <= (others => '0');
+      xbus_dat_o <= (others => '0');
+      xbus_we_o  <= '0';
+      xbus_sel_o <= (others => '0');
+      xbus_stb_o <= '0';
+      xbus_cyc_o <= '0';
     end generate;
 
   end generate; -- /memory_system
@@ -1027,9 +1064,9 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_CFS),
         bus_rsp_o   => iodev_rsp(IODEV_CFS),
-        clkgen_en_o => cg_en.cfs,
+        clkgen_en_o => cg_en(CG_CFS),
         clkgen_i    => clk_gen,
-        irq_o       => firq.cfs,
+        irq_o       => firq(FIRQ_CFS),
         cfs_in_i    => cfs_in_i,
         cfs_out_o   => cfs_out_o
       );
@@ -1038,8 +1075,8 @@ begin
     neorv32_cfs_inst_false:
     if not IO_CFS_EN generate
       iodev_rsp(IODEV_CFS) <= rsp_terminate_c;
-      cg_en.cfs            <= '0';
-      firq.cfs             <= '0';
+      cg_en(CG_CFS)        <= '0';
+      firq(FIRQ_CFS)       <= '0';
       cfs_out_o            <= (others => '0');
     end generate;
 
@@ -1061,7 +1098,7 @@ begin
         sdi_clk_i => sdi_clk_i,
         sdi_dat_i => sdi_dat_i,
         sdi_dat_o => sdi_dat_o,
-        irq_o     => firq.sdi
+        irq_o     => firq(FIRQ_SDI)
       );
     end generate;
 
@@ -1069,7 +1106,7 @@ begin
     if not IO_SDI_EN generate
       iodev_rsp(IODEV_SDI) <= rsp_terminate_c;
       sdi_dat_o            <= '0';
-      firq.sdi             <= '0';
+      firq(FIRQ_SDI)       <= '0';
     end generate;
 
 
@@ -1111,9 +1148,9 @@ begin
         bus_rsp_o   => iodev_rsp(IODEV_WDT),
         cpu_debug_i => cpu_debug,
         cpu_sleep_i => cpu_sleep,
-        clkgen_en_o => cg_en.wdt,
+        clkgen_en_o => cg_en(CG_WDT),
         clkgen_i    => clk_gen,
-        irq_o       => firq.wdt,
+        irq_o       => firq(FIRQ_WDT),
         rstn_o      => rstn_wdt
       );
     end generate;
@@ -1121,9 +1158,9 @@ begin
     neorv32_wdt_inst_false:
     if not IO_WDT_EN generate
       iodev_rsp(IODEV_WDT) <= rsp_terminate_c;
-      firq.wdt             <= '0';
+      firq(FIRQ_WDT)       <= '0';
+      cg_en(CG_WDT)        <= '0';
       rstn_wdt             <= '1';
-      cg_en.wdt            <= '0';
     end generate;
 
 
@@ -1179,14 +1216,14 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_UART0),
         bus_rsp_o   => iodev_rsp(IODEV_UART0),
-        clkgen_en_o => cg_en.uart0,
+        clkgen_en_o => cg_en(CG_UART0),
         clkgen_i    => clk_gen,
         uart_txd_o  => uart0_txd_o,
         uart_rxd_i  => uart0_rxd_i,
         uart_rts_o  => uart0_rts_o,
         uart_cts_i  => uart0_cts_i,
-        irq_rx_o    => firq.uart0_rx,
-        irq_tx_o    => firq.uart0_tx
+        irq_rx_o    => firq(FIRQ_UART0_RX),
+        irq_tx_o    => firq(FIRQ_UART0_TX)
       );
     end generate;
 
@@ -1195,9 +1232,9 @@ begin
       iodev_rsp(IODEV_UART0) <= rsp_terminate_c;
       uart0_txd_o            <= '0';
       uart0_rts_o            <= '1';
-      cg_en.uart0            <= '0';
-      firq.uart0_rx          <= '0';
-      firq.uart0_tx          <= '0';
+      cg_en(CG_UART0)        <= '0';
+      firq(FIRQ_UART0_RX)    <= '0';
+      firq(FIRQ_UART0_TX)    <= '0';
     end generate;
 
 
@@ -1216,14 +1253,14 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_UART1),
         bus_rsp_o   => iodev_rsp(IODEV_UART1),
-        clkgen_en_o => cg_en.uart1,
+        clkgen_en_o => cg_en(CG_UART1),
         clkgen_i    => clk_gen,
         uart_txd_o  => uart1_txd_o,
         uart_rxd_i  => uart1_rxd_i,
         uart_rts_o  => uart1_rts_o,
         uart_cts_i  => uart1_cts_i,
-        irq_rx_o    => firq.uart1_rx,
-        irq_tx_o    => firq.uart1_tx
+        irq_rx_o    => firq(FIRQ_UART1_RX),
+        irq_tx_o    => firq(FIRQ_UART1_TX)
       );
     end generate;
 
@@ -1232,9 +1269,9 @@ begin
       iodev_rsp(IODEV_UART1) <= rsp_terminate_c;
       uart1_txd_o            <= '0';
       uart1_rts_o            <= '1';
-      cg_en.uart1            <= '0';
-      firq.uart1_rx          <= '0';
-      firq.uart1_tx          <= '0';
+      cg_en(CG_UART1)        <= '0';
+      firq(FIRQ_UART1_RX)    <= '0';
+      firq(FIRQ_UART1_TX)    <= '0';
     end generate;
 
 
@@ -1251,13 +1288,13 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_SPI),
         bus_rsp_o   => iodev_rsp(IODEV_SPI),
-        clkgen_en_o => cg_en.spi,
+        clkgen_en_o => cg_en(CG_SPI),
         clkgen_i    => clk_gen,
         spi_clk_o   => spi_clk_o,
         spi_dat_o   => spi_dat_o,
         spi_dat_i   => spi_dat_i,
         spi_csn_o   => spi_csn_o,
-        irq_o       => firq.spi
+        irq_o       => firq(FIRQ_SPI)
       );
     end generate;
 
@@ -1267,8 +1304,8 @@ begin
       spi_clk_o            <= '0';
       spi_dat_o            <= '0';
       spi_csn_o            <= (others => '1');
-      cg_en.spi            <= '0';
-      firq.spi             <= '0';
+      cg_en(CG_SPI)        <= '0';
+      firq(FIRQ_SPI)       <= '0';
     end generate;
 
 
@@ -1282,13 +1319,13 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_TWI),
         bus_rsp_o   => iodev_rsp(IODEV_TWI),
-        clkgen_en_o => cg_en.twi,
+        clkgen_en_o => cg_en(CG_TWI),
         clkgen_i    => clk_gen,
         twi_sda_i   => twi_sda_i,
         twi_sda_o   => twi_sda_o,
         twi_scl_i   => twi_scl_i,
         twi_scl_o   => twi_scl_o,
-        irq_o       => firq.twi
+        irq_o       => firq(FIRQ_TWI)
       );
     end generate;
 
@@ -1297,8 +1334,8 @@ begin
       iodev_rsp(IODEV_TWI) <= rsp_terminate_c;
       twi_sda_o            <= '1';
       twi_scl_o            <= '1';
-      cg_en.twi            <= '0';
-      firq.twi             <= '0';
+      cg_en(CG_TWI)        <= '0';
+      firq(FIRQ_TWI)       <= '0';
     end generate;
 
 
@@ -1315,7 +1352,7 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_PWM),
         bus_rsp_o   => iodev_rsp(IODEV_PWM),
-        clkgen_en_o => cg_en.pwm,
+        clkgen_en_o => cg_en(CG_PWM),
         clkgen_i    => clk_gen,
         pwm_o       => pwm_o
       );
@@ -1324,7 +1361,7 @@ begin
     neorv32_pwm_inst_false:
     if not io_pwm_en_c generate
       iodev_rsp(IODEV_PWM) <= rsp_terminate_c;
-      cg_en.pwm            <= '0';
+      cg_en(CG_PWM)        <= '0';
       pwm_o                <= (others => '0');
     end generate;
 
@@ -1342,14 +1379,14 @@ begin
         rstn_i    => rstn_sys,
         bus_req_i => iodev_req(IODEV_TRNG),
         bus_rsp_o => iodev_rsp(IODEV_TRNG),
-        irq_o     => firq.trng
+        irq_o     => firq(FIRQ_TRNG)
       );
     end generate;
 
     neorv32_trng_inst_false:
     if not IO_TRNG_EN generate
       iodev_rsp(IODEV_TRNG) <= rsp_terminate_c;
-      firq.trng             <= '0';
+      firq(FIRQ_TRNG)       <= '0';
     end generate;
 
 
@@ -1366,9 +1403,9 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_NEOLED),
         bus_rsp_o   => iodev_rsp(IODEV_NEOLED),
-        clkgen_en_o => cg_en.neoled,
+        clkgen_en_o => cg_en(CG_NEOLED),
         clkgen_i    => clk_gen,
-        irq_o       => firq.neoled,
+        irq_o       => firq(FIRQ_NEOLED),
         neoled_o    => neoled_o
       );
     end generate;
@@ -1376,8 +1413,8 @@ begin
     neorv32_neoled_inst_false:
     if not IO_NEOLED_EN generate
       iodev_rsp(IODEV_NEOLED) <= rsp_terminate_c;
-      cg_en.neoled            <= '0';
-      firq.neoled             <= '0';
+      cg_en(CG_NEOLED)        <= '0';
+      firq(FIRQ_NEOLED)       <= '0';
       neoled_o                <= '0';
     end generate;
 
@@ -1399,14 +1436,14 @@ begin
         bus_req_i => iodev_req(IODEV_XIRQ),
         bus_rsp_o => iodev_rsp(IODEV_XIRQ),
         xirq_i    => xirq_i,
-        cpu_irq_o => firq.xirq
+        cpu_irq_o => firq(FIRQ_XIRQ)
       );
     end generate;
 
     neorv32_xirq_inst_false:
     if not io_xirq_en_c generate
       iodev_rsp(IODEV_XIRQ) <= rsp_terminate_c;
-      firq.xirq             <= '0';
+      firq(FIRQ_XIRQ)       <= '0';
     end generate;
 
 
@@ -1420,9 +1457,9 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_GPTMR),
         bus_rsp_o   => iodev_rsp(IODEV_GPTMR),
-        clkgen_en_o => cg_en.gptmr,
+        clkgen_en_o => cg_en(CG_GPTMR),
         clkgen_i    => clk_gen,
-        irq_o       => firq.gptmr,
+        irq_o       => firq(FIRQ_GPTMR),
         capture_i   => gptmr_trig_i
       );
     end generate;
@@ -1430,8 +1467,8 @@ begin
     neorv32_gptmr_inst_false:
     if not IO_GPTMR_EN generate
       iodev_rsp(IODEV_GPTMR) <= rsp_terminate_c;
-      cg_en.gptmr            <= '0';
-      firq.gptmr             <= '0';
+      cg_en(CG_GPTMR)        <= '0';
+      firq(FIRQ_GPTMR)       <= '0';
     end generate;
 
 
@@ -1445,11 +1482,11 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_ONEWIRE),
         bus_rsp_o   => iodev_rsp(IODEV_ONEWIRE),
-        clkgen_en_o => cg_en.onewire,
+        clkgen_en_o => cg_en(CG_ONEWIRE),
         clkgen_i    => clk_gen,
         onewire_i   => onewire_i,
         onewire_o   => onewire_o,
-        irq_o       => firq.onewire
+        irq_o       => firq(FIRQ_ONEWIRE)
       );
     end generate;
 
@@ -1457,8 +1494,8 @@ begin
     if not IO_ONEWIRE_EN generate
       iodev_rsp(IODEV_ONEWIRE) <= rsp_terminate_c;
       onewire_o                <= '1';
-      cg_en.onewire            <= '0';
-      firq.onewire             <= '0';
+      cg_en(CG_ONEWIRE)        <= '0';
+      firq(FIRQ_ONEWIRE)       <= '0';
     end generate;
 
 
@@ -1477,7 +1514,7 @@ begin
         rstn_i           => rstn_sys,
         bus_req_i        => iodev_req(IODEV_SLINK),
         bus_rsp_o        => iodev_rsp(IODEV_SLINK),
-        irq_o            => firq.slink,
+        irq_o            => firq(FIRQ_SLINK),
         -- RX stream interface --
         slink_rx_data_i  => slink_rx_dat_i,
         slink_rx_valid_i => slink_rx_val_i,
@@ -1494,7 +1531,7 @@ begin
     neorv32_slink_inst_false:
     if not IO_SLINK_EN generate
       iodev_rsp(IODEV_SLINK) <= rsp_terminate_c;
-      firq.slink             <= '0';
+      firq(FIRQ_SLINK)       <= '0';
       slink_rx_rdy_o         <= '0';
       slink_tx_dat_o         <= (others => '0');
       slink_tx_val_o         <= '0';
@@ -1529,29 +1566,21 @@ begin
       CLOCK_FREQUENCY      => CLOCK_FREQUENCY,
       CLOCK_GATING_EN      => CLOCK_GATING_EN,
       INT_BOOTLOADER_EN    => INT_BOOTLOADER_EN,
-      -- Internal Instruction memory --
       MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,
       MEM_INT_IMEM_SIZE    => imem_size_c,
-      -- Internal Data memory --
       MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,
       MEM_INT_DMEM_SIZE    => dmem_size_c,
-      -- Reservation Set Granularity --
       AMO_RVS_GRANULARITY  => AMO_RVS_GRANULARITY,
-      -- Instruction cache --
       ICACHE_EN            => ICACHE_EN,
       ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS,
       ICACHE_BLOCK_SIZE    => ICACHE_BLOCK_SIZE,
       ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY,
-      -- Data cache --
       DCACHE_EN            => DCACHE_EN,
       DCACHE_NUM_BLOCKS    => DCACHE_NUM_BLOCKS,
       DCACHE_BLOCK_SIZE    => DCACHE_BLOCK_SIZE,
-      -- External memory interface --
-      MEM_EXT_EN           => MEM_EXT_EN,
-      MEM_EXT_BIG_ENDIAN   => MEM_EXT_BIG_ENDIAN,
-      -- On-Chip Debugger --
+      XBUS_EN              => XBUS_EN,
+      XBUS_CACHE_EN        => XBUS_CACHE_EN,
       ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,
-      -- Processor peripherals --
       IO_GPIO_EN           => io_gpio_en_c,
       IO_MTIME_EN          => IO_MTIME_EN,
       IO_UART0_EN          => IO_UART0_EN,
@@ -1592,9 +1621,9 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_debug_dtm_inst: entity neorv32.neorv32_debug_dtm
     generic map (
-      IDCODE_VERSION => (others => '0'),
-      IDCODE_PARTID  => (others => '0'),
-      IDCODE_MANID   => (others => '0')
+      IDCODE_VERSION => (others => '0'), -- always zero
+      IDCODE_PARTID  => (others => '0'), -- always zero
+      IDCODE_MANID   => JEDEC_ID
     )
     port map (
       -- global control --

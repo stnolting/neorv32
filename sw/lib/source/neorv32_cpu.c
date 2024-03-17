@@ -283,7 +283,7 @@ uint32_t neorv32_cpu_get_clk_from_prsc(int prsc) {
 uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 
   // PMP implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_PMP)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_SMPMP)) == 0) {
     return 0;
   }
 
@@ -328,7 +328,7 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
 uint32_t neorv32_cpu_pmp_get_granularity(void) {
 
   // PMP implemented at all?
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_PMP)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_SMPMP)) == 0) {
     return 0;
   }
 
@@ -369,7 +369,7 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
  **************************************************************************/
 int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
 
-  if ((index > 15) || ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_PMP)) == 0)) {
+  if ((index > 15) || ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_SMPMP)) == 0)) {
     return -1;
   }
 

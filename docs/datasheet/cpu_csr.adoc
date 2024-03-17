@@ -524,7 +524,7 @@ The physical memory protection system is configured via the `PMP_NUM_REGIONS` an
 generics. `PMP_NUM_REGIONS` defines the total number of implemented regions. Note that the maximum number of regions
 is constrained to 16. If trying to access a PMP-related CSR beyond `PMP_NUM_REGIONS` **no illegal instruction exception**
 is triggered. The according CSRs are read-only (writes are ignored) and always return zero.
-See section <<_pmp_isa_extension>> for more information.
+See section <<_smpmp_isa_extension>> for more information.
 
 [discrete]
 ===== **`pmpcfg`**
@@ -877,7 +877,7 @@ counter CSRs are read-only. Any write access will raise an illegal instruction e
 | Address     | `0xf11`
 | Reset value | `DEFINED`
 | ISA         | `Zicsr`
-| Description | Vendor ID (JEDEC identifier), assigned via the `VENDOR_ID` top generic (<<_processor_top_entity_generics>>).
+| Description | Vendor ID (JEDEC identifier, lowest 11 bits), assigned via the `JEDEC_ID` top generic (<<_processor_top_entity_generics>>).
 |=======================
 
 
@@ -982,7 +982,7 @@ discover ISA sub-extensions and CPU configuration options
 |  5    | `CSR_MXISA_ZFINX`     | r/- | <<_zfinx_isa_extension>> available
 |  6    | `CSR_MXISA_ZICOND`    | r/- | <<_zicond_isa_extension>> available
 |  7    | `CSR_MXISA_ZICNTR`    | r/- | <<_zicntr_isa_extension>> available
-|  8    | `CSR_MXISA_PMP`       | r/- | <<_pmp_isa_extension>> available
+|  8    | `CSR_MXISA_SMPMP`     | r/- | <<_smpmp_isa_extension>> available
 |  9    | `CSR_MXISA_ZIHPM`     | r/- | <<_zihpm_isa_extension>> available
 | 10    | `CSR_MXISA_SDEXT`     | r/- | <<_sdext_isa_extension>> available
 | 11    | `CSR_MXISA_SDTRIG`    | r/- | <<_sdtrig_isa_extension>> available

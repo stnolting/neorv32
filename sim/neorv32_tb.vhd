@@ -140,7 +140,6 @@ architecture neorv32_tb_rtl of neorv32_tb is
     cyc   : std_ulogic; -- valid cycle
     ack   : std_ulogic; -- transfer acknowledge
     err   : std_ulogic; -- transfer error
-    tag   : std_ulogic_vector(02 downto 0); -- request tag
   end record;
   signal wb_cpu, wb_mem_a, wb_mem_b, wb_mem_c, wb_irq : wishbone_t;
 
@@ -222,7 +221,7 @@ begin
     CLOCK_FREQUENCY              => f_clock_c,     -- clock frequency of clk_i in Hz
     CLOCK_GATING_EN              => true,          -- enable clock gating when in sleep mode
     HART_ID                      => x"00000000",   -- hardware thread ID
-    VENDOR_ID                    => x"00000000",   -- vendor's JEDEC ID
+    JEDEC_ID                     => "00000000000", -- vendor's JEDEC ID
     INT_BOOTLOADER_EN            => false,         -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          => true,          -- implement on-chip debugger
@@ -263,13 +262,15 @@ begin
     ICACHE_EN                    => false,         -- implement instruction cache
     -- Internal Data Cache (dCACHE) --
     DCACHE_EN                    => false,         -- implement data cache
-    -- External memory interface --
-    MEM_EXT_EN                   => true,          -- implement external memory bus interface?
-    MEM_EXT_TIMEOUT              => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)
-    MEM_EXT_PIPE_MODE            => false,         -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    MEM_EXT_BIG_ENDIAN           => false,         -- byte order: true=big-endian, false=little-endian
-    MEM_EXT_ASYNC_RX             => true,          -- use register buffer for RX data when false
-    MEM_EXT_ASYNC_TX             => true,          -- use register buffer for TX data when false
+    -- External bus interface --
+    XBUS_EN                      => true,          -- implement external memory bus interface?
+    XBUS_TIMEOUT                 => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)
+    XBUS_PIPE_MODE               => false,         -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
+    XBUS_ASYNC_RX                => true,          -- use register buffer for RX data when false
+    XBUS_ASYNC_TX                => true,          -- use register buffer for TX data when false
+    XBUS_CACHE_EN                => true,          -- enable external bus cache (x-cache)
+    XBUS_CACHE_NUM_BLOCKS        => 64,            -- x-cache: number of blocks (min 1), has to be a power of 2
+    XBUS_CACHE_BLOCK_SIZE        => 32,            -- x-cache: block size in bytes (min 4), has to be a power of 2
     -- Execute in-place module (XIP) --
     XIP_EN                       => true,          -- implement execute in place module (XIP)?
     XIP_CACHE_EN                 => true,          -- implement XIP cache?
@@ -321,17 +322,16 @@ begin
     jtag_tdi_i     => '0',             -- serial data input
     jtag_tdo_o     => open,            -- serial data output
     jtag_tms_i     => '0',             -- mode select
-    -- Wishbone bus interface (available if MEM_EXT_EN = true) --
-    wb_tag_o       => wb_cpu.tag,      -- request tag
-    wb_adr_o       => wb_cpu.addr,     -- address
-    wb_dat_i       => wb_cpu.rdata,    -- read data
-    wb_dat_o       => wb_cpu.wdata,    -- write data
-    wb_we_o        => wb_cpu.we,       -- read/write
-    wb_sel_o       => wb_cpu.sel,      -- byte enable
-    wb_stb_o       => wb_cpu.stb,      -- strobe
-    wb_cyc_o       => wb_cpu.cyc,      -- valid cycle
-    wb_ack_i       => wb_cpu.ack,      -- transfer acknowledge
-    wb_err_i       => wb_cpu.err,      -- transfer error
+    -- External bus interface (available if XBUS_EN = true) --
+    xbus_adr_o     => wb_cpu.addr,     -- address
+    xbus_dat_i     => wb_cpu.rdata,    -- read data
+    xbus_dat_o     => wb_cpu.wdata,    -- write data
+    xbus_we_o      => wb_cpu.we,       -- read/write
+    xbus_sel_o     => wb_cpu.sel,      -- byte enable
+    xbus_stb_o     => wb_cpu.stb,      -- strobe
+    xbus_cyc_o     => wb_cpu.cyc,      -- valid cycle
+    xbus_ack_i     => wb_cpu.ack,      -- transfer acknowledge
+    xbus_err_i     => wb_cpu.err,      -- transfer error
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i => slink_dat,       -- RX input data
     slink_rx_val_i => slink_val,       -- RX valid input
@@ -439,28 +439,24 @@ begin
   wb_mem_a.wdata <= wb_cpu.wdata;
   wb_mem_a.we    <= wb_cpu.we;
   wb_mem_a.sel   <= wb_cpu.sel;
-  wb_mem_a.tag   <= wb_cpu.tag;
   wb_mem_a.cyc   <= wb_cpu.cyc;
 
   wb_mem_b.addr  <= wb_cpu.addr;
   wb_mem_b.wdata <= wb_cpu.wdata;
   wb_mem_b.we    <= wb_cpu.we;
   wb_mem_b.sel   <= wb_cpu.sel;
-  wb_mem_b.tag   <= wb_cpu.tag;
   wb_mem_b.cyc   <= wb_cpu.cyc;
 
   wb_mem_c.addr  <= wb_cpu.addr;
   wb_mem_c.wdata <= wb_cpu.wdata;
   wb_mem_c.we    <= wb_cpu.we;
   wb_mem_c.sel   <= wb_cpu.sel;
-  wb_mem_c.tag   <= wb_cpu.tag;
   wb_mem_c.cyc   <= wb_cpu.cyc;
 
   wb_irq.addr    <= wb_cpu.addr;
   wb_irq.wdata   <= wb_cpu.wdata;
   wb_irq.we      <= wb_cpu.we;
   wb_irq.sel     <= wb_cpu.sel;
-  wb_irq.tag     <= wb_cpu.tag;
   wb_irq.cyc     <= wb_cpu.cyc;
 
   -- CPU read-back signals (no mux here since peripherals have "output gates") --

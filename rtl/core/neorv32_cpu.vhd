@@ -61,6 +61,7 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  : boolean; -- implement external debug mode extension?
     CPU_EXTENSION_RISCV_Sdtrig : boolean; -- implement trigger module extension?
+    CPU_EXTENSION_RISCV_Smpmp  : boolean; -- implement physical memory protection?
     -- Tuning Options --
     FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN              : boolean; -- use barrel shifter for shift operations
@@ -101,7 +102,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- auto-configuration --
   constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port (rs3)
   constant regfile_rs4_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu; -- 4th register file read port (rs4)
-  constant pmp_enable_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
 
   -- control-unit-external CSR interface --
   signal xcsr_we        : std_ulogic;
@@ -156,7 +156,7 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,  "_zxcfu",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,  "_sdext",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Sdtrig, "_sdtrig",   "" ) &
-    cond_sel_string_f(pmp_enable_c,               "_smpmp",    "" )
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Smpmp,  "_smpmp",    "" )
     severity note;
 
   -- CPU tuning options --
@@ -195,7 +195,7 @@ begin
     CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  => CPU_EXTENSION_RISCV_Sdext,  -- implement external debug mode extension?
     CPU_EXTENSION_RISCV_Sdtrig => CPU_EXTENSION_RISCV_Sdtrig, -- implement trigger module extension?
-    CPU_EXTENSION_RISCV_Smpmp  => pmp_enable_c,               -- implement physical memory protection?
+    CPU_EXTENSION_RISCV_Smpmp  => CPU_EXTENSION_RISCV_Smpmp,  -- implement physical memory protection?
     -- Tuning Options --
     FAST_MUL_EN                => FAST_MUL_EN,                -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN              => FAST_SHIFT_EN,              -- use barrel shifter for shift operations
@@ -351,7 +351,7 @@ begin
   -- Physical Memory Protection -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   pmp_inst_true:
-  if pmp_enable_c generate
+  if CPU_EXTENSION_RISCV_Smpmp generate
     neorv32_cpu_pmp_inst: entity neorv32.neorv32_cpu_pmp
     generic map (
       NUM_REGIONS => PMP_NUM_REGIONS,     -- number of regions (0..16)
@@ -379,7 +379,7 @@ begin
   end generate;
 
   pmp_inst_false:
-  if not pmp_enable_c generate
+  if not CPU_EXTENSION_RISCV_Smpmp generate
     xcsr_rdata_pmp <= (others => '0');
     pmp_ex_fault   <= '0';
     pmp_rw_fault   <= '0';

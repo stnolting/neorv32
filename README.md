@@ -46,7 +46,8 @@ targeting various FPGA boards and toolchains to get started.
 [*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started setting up _your_ NEORV32 processor!
 * :interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
 
-:bulb: Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
+> [!NOTE]
+> Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
 [discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or if something is
 not working as expected. See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
 
@@ -118,7 +119,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 [[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_isa_extension)]
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_isa_extension)]
 [[`Zxcfu`](https://stnolting.github.io/neorv32/#_zxcfu_isa_extension)]
-[[`PMP`](https://stnolting.github.io/neorv32/#_pmp_isa_extension)]
+[[`Smpmp`](https://stnolting.github.io/neorv32/#_smpmp_isa_extension)]
 [[`Sdext`](https://stnolting.github.io/neorv32/#_sdext_isa_extension)]
 [[`Sdtrig`](https://stnolting.github.io/neorv32/#_sdtrig_isa_extension)]
 * compatible to subsets of the RISC-V
@@ -149,7 +150,7 @@ allows booting application code via UART or from external SPI flash
 
 * standard serial interfaces
 ([UART](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0),
-[SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi) (host),
+[SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi) (SPI host),
 [SDI](https://stnolting.github.io/neorv32/#_serial_data_interface_controller_sdi) (SPI device),
 [TWI/I²C](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi),
 [ONEWIRE/1-Wire](https://stnolting.github.io/neorv32/#_one_wire_serial_interface_controller_onewire))
@@ -160,7 +161,7 @@ allows booting application code via UART or from external SPI flash
 **SoC Connectivity**
 
 * 32-bit external bus interface - Wishbone b4 compatible
-([WISHBONE](https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone));
+([XBUS](https://stnolting.github.io/neorv32/#_processor_external_bus_interface_xbus)) with optional cache (XCACHE);
 [wrappers](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration) for AXI4-Lite and Avalon-MM host interfaces
 * stream link interface with independent RX and TX channels - AXI4-Stream compatible
 ([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink))
@@ -200,8 +201,8 @@ using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimizatio
 | `rv32i_Zicsr_Zicntr`   | 1578 |  773 | 1024 | 0 | 130 MHz |
 | `rv32imc_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 130 MHz |
 
-:bulb: An incremental list of CPU extensions and processor modules can be found in the
-[Data Sheet: FPGA Implementation Results](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
+> [!TIP]
+> An incremental list of CPU extensions and processor modules can be found in the[Data Sheet: FPGA Implementation Results](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
 
 [[_back to top_](#the-neorv32-risc-v-processor)]
 
@@ -219,7 +220,8 @@ The following table shows the performance results (scores and average CPI) for e
 | _medium_ (`rv32imc_Zicsr_Zifencei`)                      | 62.50 |
 | _performance_ (`rv32imc_Zicsr_Zifencei` + perf. options) | 95.23 |
 
-:bulb: More information regarding the CPU performance can be found in the
+> [!TIP]
+> More information regarding the CPU performance can be found in the
 [Data Sheet: CPU Performance](https://stnolting.github.io/neorv32/#_cpu_performance).
 The CPU & SoC provide further "tuning" options to optimize the design for maximum performance,
 maximum clock speed, minimal area or minimal power consumption:

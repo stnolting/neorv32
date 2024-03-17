@@ -423,7 +423,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Ext. memory (@0x%x) ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_EXT)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) {
     cnt_test++;
 
     // clear scratch CSR

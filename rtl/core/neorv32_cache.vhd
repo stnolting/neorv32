@@ -13,6 +13,9 @@
 -- # before invalidating all cache blocks to force a re-fetch from main memory. After this, the    #
 -- # fence request is forwarded to the downstream memory system.                                   #
 -- #                                                                                               #
+-- # Optionally, the cache can be configured as fully-cached disabling any direct/uncached         #
+-- # accesses. Furthermore, the cache can be entirely read-only removing any write-related logic.  #
+-- #                                                                                               #
 -- # Simplified cache architecture ("-->" = direction of access requests):                         #
 -- #                                                                                               #
 -- #                   Direct Access          +----------+                                         #
@@ -63,9 +66,11 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cache is
   generic (
-    NUM_BLOCKS : natural range 2 to 4096;      -- number of cache blocks (min 2), has to be a power of 2
-    BLOCK_SIZE : natural range 4 to 4096;      -- cache block size in bytes (min 4), has to be a power of 2
-    UC_BEGIN   : std_ulogic_vector(3 downto 0) -- begin of uncached address space (page number / 4 MSBs)
+    NUM_BLOCKS : natural range 2 to 4096;       -- number of cache blocks (min 2), has to be a power of 2
+    BLOCK_SIZE : natural range 4 to 4096;       -- cache block size in bytes (min 4), has to be a power of 2
+    UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (page number / 4 MSBs of address)
+    UC_ENABLE  : boolean;                       -- enable direct/uncached accesses
+    READ_ONLY  : boolean                        -- read-only accesses for host
   );
   port (
     clk_i      : in  std_ulogic; -- global clock, rising edge
@@ -81,6 +86,9 @@ architecture neorv32_cache_rtl of neorv32_cache is
 
   -- host access arbiter (handle CPU accesses to cache) --
   component neorv32_cache_host
+  generic (
+    READ_ONLY : boolean
+  );
   port (
     rstn_i     : in  std_ulogic;
     clk_i      : in  std_ulogic;
@@ -105,7 +113,8 @@ architecture neorv32_cache_rtl of neorv32_cache is
   component neorv32_cache_memory
   generic (
     NUM_BLOCKS : natural;
-    BLOCK_SIZE : natural
+    BLOCK_SIZE : natural;
+    READ_ONLY  : boolean
   );
   port (
     rstn_i   : in  std_ulogic;
@@ -130,7 +139,8 @@ architecture neorv32_cache_rtl of neorv32_cache is
   component neorv32_cache_bus
   generic (
     NUM_BLOCKS : natural;
-    BLOCK_SIZE : natural
+    BLOCK_SIZE : natural;
+    READ_ONLY  : boolean
   );
   port (
     rstn_i     : in  std_ulogic;
@@ -163,7 +173,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
 
   -- internal bus system --
   signal bus_req, dir_req_d, dir_req_q, cache_req : bus_req_t;
-  signal bus_rsp, dir_rsp_d, dir_rsp_q, cache_rsp: bus_rsp_t;
+  signal bus_rsp, dir_rsp_d, dir_rsp_q, cache_rsp : bus_rsp_t;
 
   -- cache memory module interface --
   type cache_in_t is record
@@ -185,18 +195,16 @@ architecture neorv32_cache_rtl of neorv32_cache is
   signal cache_stat_dirty, cache_stat_hit : std_ulogic;
   signal cache_stat_base : std_ulogic_vector(31 downto 0);
 
-  -- cache commands --
-  signal cache_cmd_inval, cache_cmd_new, cache_cmd_dirty : std_ulogic;
-
-  -- bus arbiter commands --
-  signal cmd_sync, cmd_miss, cmd_busy : std_ulogic;
+  -- operation commands --
+  signal cache_cmd_inval, cache_cmd_new, cache_cmd_dirty, bus_cmd_sync, bus_cmd_miss, bus_cmd_busy : std_ulogic;
 
 begin
 
   -- Check if Direct/Uncached Access --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dir_acc_d <= '1' when (host_req_i.addr(31 downto 28) >= UC_BEGIN) or -- uncached memory page
-                        (host_req_i.rvso = '1') else '0'; -- atomic (reservation set) operation
+  dir_acc_d <= '1' when (UC_ENABLE = true) and -- direct accesses implemented
+                        ((host_req_i.addr(31 downto 28) >= UC_BEGIN) or -- uncached memory page
+                         (host_req_i.rvso = '1')) else '0'; -- atomic (reservation set) operation
 
   -- request splitter: cached or direct access --
   req_splitter: process(host_req_i, dir_acc_d)
@@ -212,30 +220,52 @@ begin
   end process req_splitter;
 
   -- direct/uncached access path pipeline stage --
-  bus_buffer: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      dir_acc_q <= '0';
-      dir_req_q <= req_terminate_c;
-      dir_rsp_q <= rsp_terminate_c;
-    elsif rising_edge(clk_i) then
-      if (dir_acc_q = '0') and (host_req_i.stb = '1') and (dir_acc_d = '1') then
-        dir_acc_q <= '1';
-      elsif (dir_acc_q = '1') and ((dir_rsp_q.ack = '1') or (dir_rsp_q.err = '1')) then
+  direct_acc_enable:
+  if UC_ENABLE generate
+    bus_buffer: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
         dir_acc_q <= '0';
+        dir_req_q <= req_terminate_c;
+        dir_rsp_q <= rsp_terminate_c;
+      elsif rising_edge(clk_i) then
+        if (dir_acc_q = '0') and (host_req_i.stb = '1') and (dir_acc_d = '1') then
+          dir_acc_q <= '1';
+        elsif (dir_acc_q = '1') and ((dir_rsp_q.ack = '1') or (dir_rsp_q.err = '1')) then
+          dir_acc_q <= '0';
+        end if;
+        if (READ_ONLY = true) then -- do not propagate STB on write access, issue ERR instead
+          dir_req_q     <= dir_req_d;
+          dir_req_q.stb <= dir_req_d.stb and (not dir_req_d.rw); -- read accesses only
+          dir_rsp_q     <= dir_rsp_d;
+          dir_rsp_q.err <= dir_rsp_d.err or (dir_req_d.stb and dir_req_d.rw); -- error on write access
+        else
+          dir_req_q <= dir_req_d;
+          dir_rsp_q <= dir_rsp_d;
+        end if;
       end if;
-      dir_req_q <= dir_req_d;
-      dir_rsp_q <= dir_rsp_d;
-    end if;
-  end process bus_buffer;
+    end process bus_buffer;
 
-  -- response switch --
-  host_rsp_o <= cache_rsp when (dir_acc_q = '0') else dir_rsp_q;
+    -- internal response switch --
+    host_rsp_o <= cache_rsp when (dir_acc_q = '0') else dir_rsp_q;
+  end generate;
+
+  -- direct accesses not implemented --
+  direct_acc_disable:
+  if not UC_ENABLE generate
+    dir_acc_q  <= '0';
+    dir_req_q  <= req_terminate_c;
+    dir_rsp_q  <= rsp_terminate_c;
+    host_rsp_o <= cache_rsp;
+  end generate;
 
 
   -- Host Access Arbiter (Handle *Cached* CPU Bus Requests) ---------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_host_inst: neorv32_cache_host
+  generic map (
+    READ_ONLY => READ_ONLY -- host accesses are read-only
+  )
   port map (
     -- global control --
     rstn_i     => rstn_i,               -- global reset, async, low-active
@@ -244,9 +274,9 @@ begin
     req_i      => cache_req,            -- request
     rsp_o      => cache_rsp,            -- response
     -- bus unit interface --
-    bus_sync_o => cmd_sync,             -- sync cache and main memory
-    bus_miss_o => cmd_miss,             -- cache miss
-    bus_busy_i => cmd_busy,             -- bus operation in progress
+    bus_sync_o => bus_cmd_sync,         -- sync cache and main memory
+    bus_miss_o => bus_cmd_miss,         -- cache miss
+    bus_busy_i => bus_cmd_busy,         -- bus operation in progress
     -- cache status interface --
     dirty_o    => cache_cmd_dirty,      -- make accessed block dirty
     hit_i      => cache_stat_hit,       -- cache hit
@@ -265,8 +295,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_memory_inst: neorv32_cache_memory
   generic map (
-    NUM_BLOCKS => block_num_c, -- number of blocks (min 2), has to be a power of 2
-    BLOCK_SIZE => block_size_c -- block size in bytes (min 4), has to be a power of 2
+    NUM_BLOCKS => block_num_c,  -- number of blocks (min 2), has to be a power of 2
+    BLOCK_SIZE => block_size_c, -- block size in bytes (min 4), has to be a power of 2
+    READ_ONLY  => READ_ONLY     -- cache is read-only (for host)
   )
   port map (
     -- global control --
@@ -291,15 +322,16 @@ begin
   );
 
   -- cache access switch --
-  cache_in <= cache_in_host when (cmd_busy = '0') else cache_in_bus;
+  cache_in <= cache_in_host when (bus_cmd_busy = '0') else cache_in_bus;
 
 
   -- Bus Access Arbiter (Handle Cache Miss and Flush/Reload) --------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_bus_inst: neorv32_cache_bus
   generic map (
-    NUM_BLOCKS => block_num_c, -- number of blocks (min 2), has to be a power of 2
-    BLOCK_SIZE => block_size_c -- block size in bytes (min 4), has to be a power of 2
+    NUM_BLOCKS => block_num_c,  -- number of blocks (min 2), has to be a power of 2
+    BLOCK_SIZE => block_size_c, -- block size in bytes (min 4), has to be a power of 2
+    READ_ONLY  => READ_ONLY     -- read-only bus accesses
   )
   port map (
     -- global control --
@@ -311,9 +343,9 @@ begin
     bus_req_o  => bus_req,             -- request
     bus_rsp_i  => bus_rsp,             -- response
     -- operation interface --
-    cmd_sync_i => cmd_sync,            -- sync cache and main memory
-    cmd_miss_i => cmd_miss,            -- cache miss
-    cmd_busy_o => cmd_busy,            -- bus operation in progress
+    cmd_sync_i => bus_cmd_sync,        -- sync cache and main memory
+    cmd_miss_i => bus_cmd_miss,        -- cache miss
+    cmd_busy_o => bus_cmd_busy,        -- bus operation in progress
     -- cache status interface --
     inval_o    => cache_cmd_inval,     -- invalidate accessed block
     new_o      => cache_cmd_new,       -- set new cache entry
@@ -331,23 +363,32 @@ begin
 
   -- Bus Access Switch ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- Use a real switch here to buffer direct access requests
-  -- during out-of-band cache operation (fence / cache flush).
-  neorv32_cache_bus_switch: entity neorv32.neorv32_bus_switch
-  generic map (
-    PORT_A_READ_ONLY => false,
-    PORT_B_READ_ONLY => false
-  )
-  port map (
-    clk_i   => clk_i,
-    rstn_i  => rstn_i,
-    a_req_i => bus_req,
-    a_rsp_o => bus_rsp,
-    b_req_i => dir_req_q,
-    b_rsp_o => dir_rsp_d,
-    x_req_o => bus_req_o,
-    x_rsp_i => bus_rsp_i
-  );
+  bus_switch_enable:
+  if UC_ENABLE generate
+    -- Use a real switch here to buffer direct access requests during
+    -- out-of-band cache operations (downstream memory synchronization).
+    neorv32_cache_bus_switch: entity neorv32.neorv32_bus_switch
+    generic map (
+      PORT_A_READ_ONLY => READ_ONLY,
+      PORT_B_READ_ONLY => READ_ONLY
+    )
+    port map (
+      clk_i   => clk_i,
+      rstn_i  => rstn_i,
+      a_req_i => bus_req,
+      a_rsp_o => bus_rsp,
+      b_req_i => dir_req_q,
+      b_rsp_o => dir_rsp_d,
+      x_req_o => bus_req_o,
+      x_rsp_i => bus_rsp_i
+    );
+  end generate;
+
+  bus_switch_disable:
+  if not UC_ENABLE generate
+    bus_req_o <= bus_req;
+    bus_rsp   <= bus_rsp_i;
+  end generate;
 
 
 end neorv32_cache_rtl;
@@ -402,6 +443,9 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cache_host is
+  generic (
+    READ_ONLY : boolean -- host accesses are read-only
+  );
   port (
     -- global control --
     rstn_i     : in  std_ulogic;                     -- global reset, async, low-active
@@ -430,7 +474,7 @@ end neorv32_cache_host;
 architecture neorv32_cache_host_rtl of neorv32_cache_host is
 
   -- control engine --
-  type ctrl_state_t is (S_IDLE, S_CHECK, S_WAIT_MISS, S_WAIT_SYNC);
+  type ctrl_state_t is (S_IDLE, S_CHECK, S_WAIT_MISS, S_WAIT_SYNC, S_ERROR);
   type ctrl_t is record
     state,    state_nxt    : ctrl_state_t; -- FSM state
     req_buf,  req_buf_nxt  : std_ulogic; -- access request buffer
@@ -465,7 +509,7 @@ begin
     ctrl.req_buf_nxt  <= ctrl.req_buf or req_i.stb;
     ctrl.sync_buf_nxt <= ctrl.sync_buf or req_i.fence;
 
-    -- cache defaults --
+    -- cache access defaults --
     dirty_o <= '0';
     addr_o  <= req_i.addr;
     we_o    <= (others => '0');
@@ -473,7 +517,7 @@ begin
     wdata_o <= req_i.data;
     wstat_o <= '0'; -- host cannot alter status bits
 
-    -- bus unit interface defaults --
+    -- bus unit command defaults --
     bus_sync_o <= '0';
     bus_miss_o <= '0';
 
@@ -489,7 +533,11 @@ begin
           bus_sync_o     <= '1'; -- trigger bus unit: sync operation
           ctrl.state_nxt <= S_WAIT_SYNC;
         elsif (req_i.stb = '1') or (ctrl.req_buf = '1') then -- (pending) access request
-          ctrl.state_nxt <= S_CHECK;
+          if (req_i.rw = '1') and (READ_ONLY = true) then -- invalid write access?
+            ctrl.state_nxt <= S_ERROR;
+          else
+            ctrl.state_nxt <= S_CHECK;
+          end if;
         end if;
 
       when S_CHECK => -- check if cache hit
@@ -497,7 +545,7 @@ begin
         rsp_o.data       <= rdata_i; -- output read data
         ctrl.req_buf_nxt <= '0'; -- access request completed
         if (hit_i = '1') then
-          if (req_i.rw = '1') then -- write access
+          if (req_i.rw = '1') and (READ_ONLY = false) then -- write access
             dirty_o <= '1'; -- cache block is dirty now
             we_o    <= req_i.ben; -- finalize write access
           end if;
@@ -521,6 +569,11 @@ begin
         if (bus_busy_i = '0') then
           ctrl.state_nxt <= S_CHECK; -- redo cache access
         end if;
+
+      when S_ERROR => -- access error
+      -- ------------------------------------------------------------
+        rsp_o.err      <= '1';
+        ctrl.state_nxt <= S_IDLE;
 
       when others => -- undefined
       -- ------------------------------------------------------------
@@ -580,7 +633,8 @@ use neorv32.neorv32_package.all;
 entity neorv32_cache_memory is
   generic (
     NUM_BLOCKS : natural; -- number of blocks (min 2), has to be a power of 2
-    BLOCK_SIZE : natural  -- block size in bytes (min 4), has to be a power of 2
+    BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
+    READ_ONLY  : boolean  -- cache is read-only (for host)
   );
   port (
     -- global control --
@@ -700,7 +754,7 @@ begin
 	-- Access Status (1 Cycle Latency) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   hit_o   <= '1' when (valid_mem_rd = '1') and (acc_tag_ff = tag_mem_rd) else '0'; -- cache access hit
-  dirty_o <= '1' when (valid_mem_rd = '1') and (dirty_mem_rd = '1') else '0'; -- accessed block is dirty
+  dirty_o <= '1' when (valid_mem_rd = '1') and (dirty_mem_rd = '1') and (READ_ONLY = false) else '0'; -- accessed block is dirty
 
   -- base address of accessed block --
   base_o(31 downto 31-(tag_size_c-1))          <= tag_mem_rd;
@@ -793,7 +847,8 @@ use neorv32.neorv32_package.all;
 entity neorv32_cache_bus is
   generic (
     NUM_BLOCKS : natural; -- number of blocks (min 2), has to be a power of 2
-    BLOCK_SIZE : natural  -- block size in bytes (min 4), has to be a power of 2
+    BLOCK_SIZE : natural; -- block size in bytes (min 4), has to be a power of 2
+    READ_ONLY  : boolean  -- read-only bus accesses
   );
   port (
     -- global control --
@@ -830,18 +885,16 @@ architecture neorv32_cache_bus_rtl of neorv32_cache_bus is
   constant index_size_c  : natural := index_size_f(NUM_BLOCKS);
   constant tag_size_c    : natural := 32 - (offset_size_c + index_size_c + 2);
 
-  -- host request buffer --
-  signal hreq : bus_req_t;
-
   -- control fsm --
-  type state_t is (S_IDLE, S_CHECK, S_DOWNLOAD_REQ, S_DOWNLOAD_RSP, S_UPLOAD_GET, S_UPLOAD_REQ, S_UPLOAD_RSP, S_FLUSH_START, S_FLUSH_READ, S_FLUSH_CHECK);
+  type state_t is (S_IDLE, S_CHECK, S_DOWNLOAD_REQ, S_DOWNLOAD_RSP, S_UPLOAD_GET,
+                   S_UPLOAD_REQ, S_UPLOAD_RSP, S_FLUSH_START, S_FLUSH_READ, S_FLUSH_CHECK);
   signal state, upret, state_nxt, upret_nxt: state_t;
 
   -- address generator --
   type addr_t is record
     tag : std_ulogic_vector(tag_size_c-1 downto 0);
-    ind : std_ulogic_vector(index_size_c-1 downto 0);
-    off : std_ulogic_vector(offset_size_c-1 downto 0); -- WORD offset!
+    idx : std_ulogic_vector(index_size_c-1 downto 0);
+    ofs : std_ulogic_vector(offset_size_c-1 downto 0); -- WORD offset!
   end record;
   signal haddr, baddr, addr, addr_nxt : addr_t;
 
@@ -851,13 +904,13 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- base address of original host access --
   haddr.tag <= host_req_i.addr(31 downto (32-tag_size_c));
-  haddr.ind <= host_req_i.addr((offset_size_c+2+index_size_c)-1 downto offset_size_c+2);
-  haddr.off <= (others => '0'); -- unused
+  haddr.idx <= (others => '0'); -- unused
+  haddr.ofs <= (others => '0'); -- unused
 
   -- base address of indexed cache block --
   baddr.tag <= base_i(31 downto (32-tag_size_c));
-  baddr.ind <= base_i((offset_size_c+2+index_size_c)-1 downto offset_size_c+2);
-  baddr.off <= (others => '0'); -- unused
+  baddr.idx <= base_i((offset_size_c+2+index_size_c)-1 downto offset_size_c+2);
+  baddr.ofs <= (others => '0'); -- unused
 
 
   -- Control Engine FSM Sync ----------------------------------------------------------------
@@ -868,29 +921,27 @@ begin
       state    <= S_IDLE;
       upret    <= S_IDLE;
       addr.tag <= (others => '0');
-      addr.ind <= (others => '0');
-      addr.off <= (others => '0');
-      hreq     <= req_terminate_c;
+      addr.idx <= (others => '0');
+      addr.ofs <= (others => '0');
     elsif rising_edge(clk_i) then
       state <= state_nxt;
       upret <= upret_nxt;
       addr  <= addr_nxt;
-      hreq  <= host_req_i;
     end if;
   end process ctrl_engine_sync;
 
 
   -- Control Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_engine_comb: process(state, upret, addr, hreq, haddr, baddr, bus_rsp_i, cmd_sync_i, cmd_miss_i, rdata_i, dirty_i)
+  ctrl_engine_comb: process(state, upret, addr, haddr, baddr, bus_rsp_i, cmd_sync_i, cmd_miss_i, rdata_i, dirty_i)
   begin
     -- control engine defaults --
     state_nxt <= state;
     upret_nxt <= upret;
     addr_nxt  <= addr;
 
-    -- cache defaults --
-    addr_o  <= addr.tag & addr.ind & addr.off & "00"; -- always word-aligned
+    -- cache access defaults --
+    addr_o  <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
     we_o    <= (others => '0');
     swe_o   <= '0';
     wdata_o <= bus_rsp_i.data;
@@ -902,17 +953,18 @@ begin
 
     -- bus interface defaults --
     bus_req_o      <= req_terminate_c; -- all-zero
-    bus_req_o.addr <= addr.tag & addr.ind & addr.off & "00"; -- always word-aligned
+    bus_req_o.addr <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
     bus_req_o.data <= rdata_i;
     bus_req_o.ben  <= (others => '1'); -- full-word writes only
-    bus_req_o.priv <= hreq.priv; -- keep original privilege level
+    bus_req_o.src  <= '0'; -- cache accesses are always "data" accesses
+    bus_req_o.priv <= '0'; -- cache accesses are always "unprivileged" accesses
 
     -- fsm --
     case state is
 
       when S_IDLE => -- wait for request
       -- ------------------------------------------------------------
-        addr_nxt.off <= (others => '0'); -- align block base address for upload/download (and flush)
+        addr_nxt.ofs <= (others => '0'); -- align block base address for upload/download (and flush)
         if (cmd_sync_i = '1') then -- cache sync
           state_nxt <= S_FLUSH_START;
         elsif (cmd_miss_i = '1') then -- cache miss
@@ -921,14 +973,13 @@ begin
 
       when S_CHECK => -- check if accessed block is dirty (cache address is still applied by host controller!)
       -- ------------------------------------------------------------
-        upret_nxt <= S_DOWNLOAD_REQ; -- go straight to S_DOWNLOAD_REQ when S_UPLOAD_GET has completed (if executed)
-        if (dirty_i = '1') then -- block is dirty, upload first
+        upret_nxt    <= S_DOWNLOAD_REQ; -- go straight to S_DOWNLOAD_REQ when S_UPLOAD_GET has completed (if executed)
+        addr_nxt.idx <= baddr.idx; -- index of reference cache block
+        if (dirty_i = '1') and (READ_ONLY = false) then -- block is dirty, upload first
           addr_nxt.tag <= baddr.tag; -- base address (tag + index) of accessed block
-          addr_nxt.ind <= baddr.ind;
           state_nxt    <= S_UPLOAD_GET;
-        else -- block is clean, download new block and override
+        else -- block is clean, download new block
           addr_nxt.tag <= haddr.tag; -- base address (tag + index) of requested block
-          addr_nxt.ind <= haddr.ind;
           state_nxt    <= S_DOWNLOAD_REQ;
         end if;
 
@@ -946,8 +997,8 @@ begin
         swe_o        <= '1'; -- cache: write status bit (bus error response)
         new_o        <= '1'; -- set new block (set tag, make valid, make clean)
         if (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') then -- wait for response
-          addr_nxt.off <= std_ulogic_vector(unsigned(addr.off) + 1);
-          if (and_reduce_f(addr.off) = '1') then -- block completed? offset will be all-zero again after block completion
+          addr_nxt.ofs <= std_ulogic_vector(unsigned(addr.ofs) + 1);
+          if (and_reduce_f(addr.ofs) = '1') then -- block completed? offset will be all-zero again after block completion
             state_nxt <= S_IDLE;
           else -- get next word
             state_nxt <= S_DOWNLOAD_REQ;
@@ -957,32 +1008,44 @@ begin
 
       when S_UPLOAD_GET => -- upload dirty cache block: read word from cache
       -- ------------------------------------------------------------
-        bus_req_o.rw <= '1'; -- write access
-        state_nxt    <= S_UPLOAD_REQ;
+        if (READ_ONLY = true) then
+          state_nxt <= S_IDLE;
+        else
+          bus_req_o.rw <= '1'; -- write access
+          state_nxt    <= S_UPLOAD_REQ;
+        end if;
 
       when S_UPLOAD_REQ => -- upload dirty cache block: request bus write
       -- ------------------------------------------------------------
-        bus_req_o.rw  <= '1'; -- write access
-        bus_req_o.stb <= '1'; -- request new transfer
-        state_nxt     <= S_UPLOAD_RSP;
+        if (READ_ONLY = true) then
+          state_nxt <= S_IDLE;
+        else
+          bus_req_o.rw  <= '1'; -- write access
+          bus_req_o.stb <= '1'; -- request new transfer
+          state_nxt     <= S_UPLOAD_RSP;
+        end if;
 
       when S_UPLOAD_RSP => -- upload dirty cache block: wait for bus response
       -- ------------------------------------------------------------
-        bus_req_o.rw <= '1'; -- write access
-        new_o        <= '1'; -- set new block (set tag, make valid, make clean)
-        if (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') then -- wait for response
-          addr_nxt.off <= std_ulogic_vector(unsigned(addr.off) + 1);
-          if (and_reduce_f(addr.off) = '1') then -- block completed? offset will be all-zero again after block completion
-            state_nxt <= upret; -- go back to "upload-done return state"
-          else -- get next word
-            state_nxt <= S_UPLOAD_GET;
+        if (READ_ONLY = true) then
+          state_nxt <= S_IDLE;
+        else
+          bus_req_o.rw <= '1'; -- write access
+          new_o        <= '1'; -- set new block (set tag, make valid, make clean)
+          if (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') then -- wait for response
+            addr_nxt.ofs <= std_ulogic_vector(unsigned(addr.ofs) + 1);
+            if (and_reduce_f(addr.ofs) = '1') then -- block completed? offset will be all-zero again after block completion
+              state_nxt <= upret; -- go back to "upload-done return state"
+            else -- get next word
+              state_nxt <= S_UPLOAD_GET;
+            end if;
           end if;
         end if;
 
 
       when S_FLUSH_START => -- start checking for dirty blocks
       -- ------------------------------------------------------------
-        addr_nxt.ind <= (others => '0'); -- start with index 0
+        addr_nxt.idx <= (others => '0'); -- start with index 0
         upret_nxt    <= S_FLUSH_CHECK; -- come back to S_FLUSH_CHECK after block upload
         state_nxt    <= S_FLUSH_READ;
 
@@ -994,11 +1057,11 @@ begin
       -- ------------------------------------------------------------
         addr_nxt.tag <= baddr.tag; -- tag of currently index block
         inval_o      <= '1'; -- invalidate currently index block
-        if (dirty_i = '1') then -- block dirty?
-          state_nxt    <= S_UPLOAD_GET;
+        if (dirty_i = '1') and (READ_ONLY = false) then -- block dirty?
+          state_nxt <= S_UPLOAD_GET;
         else -- move on to next block
-          addr_nxt.ind <= std_ulogic_vector(unsigned(addr.ind) + 1);
-          if (and_reduce_f(addr.ind) = '1') then -- all blocks done?
+          addr_nxt.idx <= std_ulogic_vector(unsigned(addr.idx) + 1);
+          if (and_reduce_f(addr.idx) = '1') then -- all blocks done?
             bus_req_o.fence <= '1'; -- forward fence request to downstream memories
             state_nxt       <= S_IDLE;
           else -- go to next block
@@ -1014,7 +1077,7 @@ begin
     end case;
   end process ctrl_engine_comb;
 
-  -- bus arbiter operation in progress (host keeps allying cache address while bud unit reports idle state) --
+  -- bus arbiter operation in progress (host keeps allying cache address while bus unit reports idle state) --
   cmd_busy_o <= '0' when (state = S_IDLE) or (state = S_CHECK) else '1';
 
 
