@@ -1742,7 +1742,7 @@ int main() {
       neorv32_uart0_printf("\nbge - branch backward - tot. %d cyc\n", stopTime - startTime);
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
-    neorv32_uart0_printf("\nbge rs1,rs2,imm inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
+    neorv32_uart0_printf("\nbge rs1,rs2,imm branch backward inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
   #endif
 
   #if rv32I_branch_bltu == 1

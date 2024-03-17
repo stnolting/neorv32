@@ -6,4 +6,5 @@ set -e
 cd $(dirname "$0")
 
 ./ghdl.setup.sh
-./ghdl.run.sh $1
+# We want to be able to pass down more than 1 parameter to GHDL
+./ghdl.run.sh $@
