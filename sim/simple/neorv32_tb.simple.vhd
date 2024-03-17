@@ -49,36 +49,53 @@ use std.textio.all;
 
 entity neorv32_tb_simple is
   generic (
-    FAST_MUL_ENABLE    : boolean := true;    -- control D$ enablement, default is true
-    FAST_SHIFT_ENBABLE : boolean := true;    -- set the size of IMEM, default is 32kB
-    DCACHE_ENABLE      : boolean := true;    -- control D$ enablement, default is true
-    IMEM_SIZE          : natural := 32*1024; -- set the size of IMEM, default is 32kB
-    ICACHE_ENABLE      : boolean := true     -- control I$ enablement, default is true
+    PERFORMANCE_OPTION : natural := 0     -- Set core options for performance measurements
   );
 end neorv32_tb_simple;
 
 architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
 
+  -- advanced configuration --
+  constant num_configs_c : natural := 3;    -- number of pre-defined configurations
+
+  -- helpers --
+  type bool_t is array (0 to num_configs_c-1) of boolean;
+  type natural_t is array (0 to num_configs_c-1) of natural;
+  type performance_options_type_t is record
+    fast_mul_en_c       : bool_t;
+    fast_shift_en_c     : bool_t;
+    imem_size_c         : natural_t;
+    icache_en_c         : bool_t;
+    icache_block_size_c : natural_t;
+    dcache_en_c         : bool_t;
+    dcache_block_size_c : natural_t;
+  end record;
+
+
   -- User Configuration ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- core performance optionss --
+  constant performance_options_c : performance_options_type_t := (
+    --                       default  fast core  area core  
+    fast_mul_en_c       => (    true,      true,     false), -- Fast multiplication, more area
+    fast_shift_en_c     => (    true,      true,     false), -- Fast shifting, more area
+    imem_size_c         => ( 32*1024,  128*1024,  128*1024), -- Instruction memory size min. 128kB for performance tests
+    icache_en_c         => (    true,     false,     false), -- I$ disabled for performance tests
+    icache_block_size_c => (      64,        64,        64), -- I$ block size
+    dcache_en_c         => (    true,     false,     false), -- D$ disabled for performance tests
+    dcache_block_size_c => (      64,        64,        64)  -- D$ block size
+  );
+
   -- general --
   constant int_imem_c              : boolean := true; -- true: use proc-internal IMEM, false: use external simulated IMEM (ext. mem A)
   constant int_dmem_c              : boolean := true; -- true: use proc-internal DMEM, false: use external simulated DMEM (ext. mem B)
-  constant imem_size_c             : natural := IMEM_SIZE; -- size in bytes of processor-internal IMEM / external mem A
   constant dmem_size_c             : natural := 8*1024; -- size in bytes of processor-internal DMEM / external mem B
   constant f_clock_c               : natural := 100000000; -- main clock in Hz
   constant baud0_rate_c            : natural := 19200; -- simulation UART0 (primary UART) baud rate
   constant baud1_rate_c            : natural := 19200; -- simulation UART1 (secondary UART) baud rate
-  constant dcache_en_c             : boolean := DCACHE_ENABLE; -- implement d-cache
-  constant dcache_block_size_c     : natural := 64; -- d-cache block size in bytes
-  constant icache_en_c             : boolean := ICACHE_ENABLE; -- implement i-cache
-  constant icache_block_size_c     : natural := 64; -- i-cache block size in bytes
-  -- performance --
-  constant fast_mul_en_c           : boolean := FAST_MUL_ENABLE; -- true: enable single cycle integer multiplication
-  constant fast_shift_en_c         : boolean := FAST_SHIFT_ENBABLE; -- true: enable single cycle integer shift
   -- simulated external Wishbone memory A (can be used as external IMEM) --
   constant ext_mem_a_base_addr_c   : std_ulogic_vector(31 downto 0) := x"00000000"; -- wishbone memory base address (external IMEM base)
-  constant ext_mem_a_size_c        : natural := imem_size_c; -- wishbone memory size in bytes
+  constant ext_mem_a_size_c        : natural := performance_options_c.imem_size_c(PERFORMANCE_OPTION); -- wishbone memory size in bytes
   constant ext_mem_a_latency_c     : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulated external Wishbone memory B (can be used as external DMEM) --
   constant ext_mem_b_base_addr_c   : std_ulogic_vector(31 downto 0) := x"80000000"; -- wishbone memory base address (external DMEM base)
@@ -86,7 +103,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   constant ext_mem_b_latency_c     : natural := 8; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulated external Wishbone memory C (can be used to simulate external IO access) --
   constant ext_mem_c_base_addr_c   : std_ulogic_vector(31 downto 0) := x"F0000000"; -- wishbone memory base address (default begin of EXTERNAL IO area)
-  constant ext_mem_c_size_c        : natural := icache_block_size_c/2; -- wishbone memory size in bytes, should be smaller than an iCACHE block
+  constant ext_mem_c_size_c        : natural := performance_options_c.icache_block_size_c(PERFORMANCE_OPTION)/2; -- wishbone memory size in bytes, should be smaller than an iCACHE block
   constant ext_mem_c_latency_c     : natural := 128; -- latency in clock cycles (min 1, max 255), plus 1 cycle initial delay
   -- simulation interrupt trigger --
   constant irq_trigger_base_addr_c : std_ulogic_vector(31 downto 0) := x"FF000000";
@@ -194,8 +211,8 @@ begin
     CPU_EXTENSION_RISCV_Zmmul    => false,         -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu    => true,          -- implement custom (instr.) functions unit?
     -- Extension Options --
-    FAST_MUL_EN                  => fast_mul_en_c, -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN                => fast_shift_en_c, -- use barrel shifter for shift operations
+    FAST_MUL_EN                  => performance_options_c.fast_mul_en_c(PERFORMANCE_OPTION), -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN                => performance_options_c.fast_shift_en_c(PERFORMANCE_OPTION), -- use barrel shifter for shift operations
     REGFILE_HW_RST               => false,         -- no hardware reset
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS              => 5,             -- number of regions (0..16)
@@ -209,19 +226,19 @@ begin
     AMO_RVS_GRANULARITY          => 4,             -- size in bytes, has to be a power of 2, min 4
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN              => int_imem_c ,   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            => imem_size_c,   -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_SIZE            => performance_options_c.imem_size_c(PERFORMANCE_OPTION),   -- size of processor-internal instruction memory in bytes
     -- Internal Data memory --
     MEM_INT_DMEM_EN              => int_dmem_c,    -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => dmem_size_c,   -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_EN                    => icache_en_c,   -- implement instruction cache
+    ICACHE_EN                    => performance_options_c.icache_en_c(PERFORMANCE_OPTION),   -- implement instruction cache
     ICACHE_NUM_BLOCKS            => 8,             -- i-cache: number of blocks (min 2), has to be a power of 2
-    ICACHE_BLOCK_SIZE            => icache_block_size_c, -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_BLOCK_SIZE            => performance_options_c.icache_block_size_c(PERFORMANCE_OPTION), -- i-cache: block size in bytes (min 4), has to be a power of 2
     ICACHE_ASSOCIATIVITY         => 2,             -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
     -- Internal Data Cache (dCACHE) --
-    DCACHE_EN                    => dcache_en_c,   -- implement data cache
+    DCACHE_EN                    => performance_options_c.dcache_en_c(PERFORMANCE_OPTION),   -- implement data cache
     DCACHE_NUM_BLOCKS            => 8,             -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE            => dcache_block_size_c, -- d-cache: block size in bytes (min 4), has to be a power of 2
+    DCACHE_BLOCK_SIZE            => performance_options_c.dcache_block_size_c(PERFORMANCE_OPTION), -- d-cache: block size in bytes (min 4), has to be a power of 2
     -- External bus interface --
     XBUS_EN                      => true,          -- implement external memory bus interface?
     XBUS_TIMEOUT                 => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)
