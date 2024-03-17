@@ -232,11 +232,11 @@ begin
     MEM_INT_DMEM_SIZE            => dmem_size_c,   -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
     ICACHE_EN                    => performance_options_c.icache_en_c(PERFORMANCE_OPTION),   -- implement instruction cache
-    ICACHE_NUM_BLOCKS            => 8,             -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_NUM_BLOCKS            => 64,            -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE            => performance_options_c.icache_block_size_c(PERFORMANCE_OPTION), -- i-cache: block size in bytes (min 4), has to be a power of 2
     -- Internal Data Cache (dCACHE) --
     DCACHE_EN                    => performance_options_c.dcache_en_c(PERFORMANCE_OPTION),   -- implement data cache
-    DCACHE_NUM_BLOCKS            => 8,             -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_NUM_BLOCKS            => 32,            -- d-cache: number of blocks (min 1), has to be a power of 2
     DCACHE_BLOCK_SIZE            => performance_options_c.dcache_block_size_c(PERFORMANCE_OPTION), -- d-cache: block size in bytes (min 4), has to be a power of 2
     -- External bus interface --
     XBUS_EN                      => true,          -- implement external memory bus interface?
