@@ -81,7 +81,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
     fast_shift_en_c     => (    true,      true,     false), -- Fast shifting, more area
     imem_size_c         => ( 32*1024,  128*1024,  128*1024), -- Instruction memory size min. 128kB for performance tests
     icache_en_c         => (    true,     false,     false), -- I$ disabled for performance tests
-    icache_block_size_c => (      64,        64,        64), -- I$ block size
+    icache_block_size_c => (      32,        32,        32), -- I$ block size
     dcache_en_c         => (    true,     false,     false), -- D$ disabled for performance tests
     dcache_block_size_c => (      64,        64,        64)  -- D$ block size
   );
