@@ -179,7 +179,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
 
 begin
 
-  -- Clock/Reset Generator ------------------------------------------------------------------
+  -- Clock/Reset Generator ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   clk_gen <= not clk_gen after (t_clock_c/2);
   rst_gen <= '0', '1' after 60*(t_clock_c/2);
