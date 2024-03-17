@@ -626,51 +626,71 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("none\n");
   }
 
-  // internal i-cache
-  neorv32_uart0_printf("Internal i-cache:    ");
+  // CPU i-cache
+  neorv32_uart0_printf("CPU I-cache:         ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_ICACHE)) {
 
-    uint32_t ic_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_IC_BLOCK_SIZE_0) & 0x0F;
+    uint32_t ic_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_INST_BLOCK_SIZE_0) & 0x0F;
     ic_block_size = 1 << ic_block_size;
 
-    uint32_t ic_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_IC_NUM_BLOCKS_0) & 0x0F;
+    uint32_t ic_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_INST_NUM_BLOCKS_0) & 0x0F;
     ic_num_blocks = 1 << ic_num_blocks;
 
-    uint32_t ic_associativity = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_IC_ASSOCIATIVITY_0) & 0x0F;
-    ic_associativity = 1 << ic_associativity;
-
-    neorv32_uart0_printf("%u bytes, %u set(s), %u block(s) per set, %u bytes per block", ic_associativity*ic_num_blocks*ic_block_size, ic_associativity, ic_num_blocks, ic_block_size);
-    if (ic_associativity == 1) {
-      neorv32_uart0_printf(" (direct-mapped)\n");
-    }
-    else if (((NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_IC_REPLACEMENT_0) & 0x0F) == 1) {
-      neorv32_uart0_printf(" (LRU)\n");
-    }
-    else {
-      neorv32_uart0_printf("\n");
-    }
+    neorv32_uart0_printf("%u bytes (%ux%u)\n", ic_num_blocks*ic_block_size, ic_num_blocks, ic_block_size);
   }
   else {
     neorv32_uart0_printf("none\n");
   }
 
-  // internal d-cache
-  neorv32_uart0_printf("Internal d-cache:    ");
+  // CPU d-cache
+  neorv32_uart0_printf("CPU D-cache:         ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_DCACHE)) {
 
-    uint32_t dc_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_DC_BLOCK_SIZE_0) & 0x0F;
+    uint32_t dc_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_DATA_BLOCK_SIZE_0) & 0x0F;
     dc_block_size = 1 << dc_block_size;
 
-    uint32_t dc_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_DC_NUM_BLOCKS_0) & 0x0F;
+    uint32_t dc_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_DATA_NUM_BLOCKS_0) & 0x0F;
     dc_num_blocks = 1 << dc_num_blocks;
 
-    neorv32_uart0_printf("%u bytes, %u block(s), %u bytes per block, direct-mapped, write-through\n", dc_num_blocks*dc_block_size, dc_num_blocks, dc_block_size);
+    neorv32_uart0_printf("%u bytes (%ux%u)\n", dc_num_blocks*dc_block_size, dc_num_blocks, dc_block_size);
   }
   else {
     neorv32_uart0_printf("none\n");
   }
 
-  // reservation set granularity --
+  // XIP-cache
+  neorv32_uart0_printf("XIP-cache:           ");
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XIP_CACHE)) {
+
+    uint32_t xip_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_XIP_BLOCK_SIZE_0) & 0x0F;
+    xip_block_size = 1 << xip_block_size;
+
+    uint32_t xip_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_XIP_NUM_BLOCKS_0) & 0x0F;
+    xip_num_blocks = 1 << xip_num_blocks;
+
+    neorv32_uart0_printf("%u bytes (%ux%u)\n", xip_num_blocks*xip_block_size, xip_num_blocks, xip_block_size);
+  }
+  else {
+    neorv32_uart0_printf("none\n");
+  }
+
+  // XBUS-cache
+  neorv32_uart0_printf("XBUS-cache:          ");
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS_CACHE)) {
+
+    uint32_t xbus_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_XBUS_BLOCK_SIZE_0) & 0x0F;
+    xbus_block_size = 1 << xbus_block_size;
+
+    uint32_t xbus_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_XBUS_NUM_BLOCKS_0) & 0x0F;
+    xbus_num_blocks = 1 << xbus_num_blocks;
+
+    neorv32_uart0_printf("%u bytes (%ux%u)\n", xbus_num_blocks*xbus_block_size, xbus_num_blocks, xbus_block_size);
+  }
+  else {
+    neorv32_uart0_printf("none\n");
+  }
+
+  // reservation set granularity
   neorv32_uart0_printf("Reservation set:     ");
   if (neorv32_cpu_csr_read(CSR_MISA) & (1 << 0)) {
     neorv32_uart0_printf("%u bytes granularity\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_RVSG]) & 0xFFFFFFFCUL);
@@ -698,25 +718,25 @@ void neorv32_rte_print_hw_config(void) {
   // peripherals
   neorv32_uart0_printf("Peripherals:         ");
   tmp = NEORV32_SYSINFO->SOC;
+  if (tmp & (1 << SYSINFO_SOC_IO_CFS))     { neorv32_uart0_printf("CFS ");     }
+  if (tmp & (1 << SYSINFO_SOC_IO_CRC))     { neorv32_uart0_printf("CRC ");     }
+  if (tmp & (1 << SYSINFO_SOC_IO_DMA))     { neorv32_uart0_printf("DMA ");     }
   if (tmp & (1 << SYSINFO_SOC_IO_GPIO))    { neorv32_uart0_printf("GPIO ");    }
+  if (tmp & (1 << SYSINFO_SOC_IO_GPTMR))   { neorv32_uart0_printf("GPTMR ");   }
   if (tmp & (1 << SYSINFO_SOC_IO_MTIME))   { neorv32_uart0_printf("MTIME ");   }
+  if (tmp & (1 << SYSINFO_SOC_IO_NEOLED))  { neorv32_uart0_printf("NEOLED ");  }
+  if (tmp & (1 << SYSINFO_SOC_IO_ONEWIRE)) { neorv32_uart0_printf("ONEWIRE "); }
+  if (tmp & (1 << SYSINFO_SOC_IO_PWM))     { neorv32_uart0_printf("PWM ");     }
+  if (tmp & (1 << SYSINFO_SOC_IO_SDI))     { neorv32_uart0_printf("SDI ");     }
+  if (tmp & (1 << SYSINFO_SOC_IO_SLINK))   { neorv32_uart0_printf("SLINK ");   }
+  if (tmp & (1 << SYSINFO_SOC_IO_SPI))     { neorv32_uart0_printf("SPI ");     }
+  if (tmp & (1 << SYSINFO_SOC_IO_TRNG))    { neorv32_uart0_printf("TRNG ");    }
+  if (tmp & (1 << SYSINFO_SOC_IO_TWI))     { neorv32_uart0_printf("TWI ");     }
   if (tmp & (1 << SYSINFO_SOC_IO_UART0))   { neorv32_uart0_printf("UART0 ");   }
   if (tmp & (1 << SYSINFO_SOC_IO_UART1))   { neorv32_uart0_printf("UART1 ");   }
-  if (tmp & (1 << SYSINFO_SOC_IO_SPI))     { neorv32_uart0_printf("SPI ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_SDI))     { neorv32_uart0_printf("SDI ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_TWI))     { neorv32_uart0_printf("TWI ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_PWM))     { neorv32_uart0_printf("PWM ");     }
   if (tmp & (1 << SYSINFO_SOC_IO_WDT))     { neorv32_uart0_printf("WDT ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_TRNG))    { neorv32_uart0_printf("TRNG ");    }
-  if (tmp & (1 << SYSINFO_SOC_IO_CFS))     { neorv32_uart0_printf("CFS ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_NEOLED))  { neorv32_uart0_printf("NEOLED ");  }
-  if (tmp & (1 << SYSINFO_SOC_IO_XIRQ))    { neorv32_uart0_printf("XIRQ ");    }
-  if (tmp & (1 << SYSINFO_SOC_IO_GPTMR))   { neorv32_uart0_printf("GPTMR ");   }
   if (tmp & (1 << SYSINFO_SOC_XIP))        { neorv32_uart0_printf("XIP ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_ONEWIRE)) { neorv32_uart0_printf("ONEWIRE "); }
-  if (tmp & (1 << SYSINFO_SOC_IO_DMA))     { neorv32_uart0_printf("DMA ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_SLINK))   { neorv32_uart0_printf("SLINK ");   }
-  if (tmp & (1 << SYSINFO_SOC_IO_CRC))     { neorv32_uart0_printf("CRC ");     }
+  if (tmp & (1 << SYSINFO_SOC_IO_XIRQ))    { neorv32_uart0_printf("XIRQ ");    }
 
   neorv32_uart0_printf("\n\n");
 }

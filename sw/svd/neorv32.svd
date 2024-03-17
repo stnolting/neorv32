@@ -631,12 +631,6 @@
               <description>SPI clock divider</description>
             </field>
             <field>
-              <name>XIP_CTRL_BURST_EN</name>
-              <bitRange>[29:29]</bitRange>
-              <access>read-only</access>
-              <description>Busr mode enabled (when cache is implemented)</description>
-            </field>
-            <field>
               <name>XIP_CTRL_PHY_BUSY</name>
               <bitRange>[30:30]</bitRange>
               <access>read-only</access>
@@ -1616,6 +1610,7 @@
             <field><name>SYSINFO_SOC_CLOCK_GATING</name><bitRange>[7:7]</bitRange><description>Clock gating implemented</description></field>
             <field><name>SYSINFO_SOC_XBUS_CACHE</name><bitRange>[8:8]</bitRange><description>External bus cache implemented</description></field>
             <field><name>SYSINFO_SOC_XIP</name><bitRange>[9:9]</bitRange><description>Execute in place module implemented</description></field>
+            <field><name>SYSINFO_SOC_XIP_CACHE</name><bitRange>[10:10]</bitRange><description>Execute in place cache implemented</description></field>
             <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[14:14]</bitRange><description>Direct memory access controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[15:15]</bitRange><description>General purpose input/output port unit implemented</description></field>
             <field><name>SYSINFO_SOC_IO_MTIME</name><bitRange>[16:16]</bitRange><description>Machine system timer implemented</description></field>
@@ -1642,10 +1637,14 @@
           <addressOffset>0x0C</addressOffset>
           <access>read-only</access>
           <fields>
-            <field><name>SYSINFO_CACHE_IC_BLOCK_SIZE</name><bitRange>[3:0]</bitRange><description>i-cache: log2(Block size in bytes)</description></field>
-            <field><name>SYSINFO_CACHE_IC_NUM_BLOCKS</name><bitRange>[7:4]</bitRange><description>i-cache: log2(Number of cache blocks/pages/lines)</description></field>
-            <field><name>SYSINFO_CACHE_IC_ASSOCIATIVITY</name><bitRange>[11:8]</bitRange><description>i-cache: log2(associativity)</description></field>
-            <field><name>SYSINFO_CACHE_IC_REPLACEMENT</name><bitRange>[15:12]</bitRange><description>i-cache: replacement policy (0001 = LRU if associativity > 0)</description></field>
+            <field><name>SYSINFO_CACHE_INST_BLOCK_SIZE</name><bitRange>[3:0]</bitRange><description>i-cache: log2(Block size in bytes)</description></field>
+            <field><name>SYSINFO_CACHE_INST_NUM_BLOCKS</name><bitRange>[7:4]</bitRange><description>i-cache: log2(Number of cache blocks)</description></field>
+            <field><name>SYSINFO_CACHE_DATA_BLOCK_SIZE</name><bitRange>[11:8]</bitRange><description>d-cache: log2(Block size in bytes)</description></field>
+            <field><name>SYSINFO_CACHE_DATA_NUM_BLOCKS</name><bitRange>[15:12]</bitRange><description>d-cache: log2(Number of cache blocks)</description></field>
+            <field><name>SYSINFO_CACHE_XIP_BLOCK_SIZE</name><bitRange>[19:16]</bitRange><description>xip-cache: log2(Block size in bytes)</description></field>
+            <field><name>SYSINFO_CACHE_XIP_NUM_BLOCKS</name><bitRange>[23:20]</bitRange><description>xip-cache: log2(Number of cache blocks)</description></field>
+            <field><name>SYSINFO_CACHE_XBUS_BLOCK_SIZE</name><bitRange>[27:24]</bitRange><description>xbus-cache: log2(Block size in bytes)</description></field>
+            <field><name>SYSINFO_CACHE_XBUS_NUM_BLOCKS</name><bitRange>[31:28]</bitRange><description>xbus-cache: log2(Number of cache blocks)</description></field>
           </fields>
         </register>
       </registers>
