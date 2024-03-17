@@ -70,7 +70,8 @@ Bit fields in this register are set to all-zero if the according cache is not im
 | `7`     | `SYSINFO_SOC_CLOCK_GATING`   | set if CPU clock gating is implemented (via top's `CLOCK_GATING_EN` generic)
 | `8`     | `SYSINFO_SOC_XBUS_CACHE`     | set if external bus interface cache is implemented (via top's `XBUS_CACHE_EN` generic)
 | `9`     | `SYSINFO_SOC_XIP`            | set if XIP module is implemented (via top's `XIP_EN` generic)
-| `13:10` | -                            | _reserved_, read as zero
+| `10`    | `SYSINFO_SOC_XIP_CACHE`      | set if XIP cache is implemented (via top's `XIP_CACHE_EN` generic)
+| `13:11` | -                            | _reserved_, read as zero
 | `14`    | `SYSINFO_SOC_IO_DMA`         | set if direct memory access controller is implemented (via top's `IO_DMA_EN` generic)
 | `15`    | `SYSINFO_SOC_IO_GPIO`        | set if GPIO is implemented (via top's `IO_GPIO_EN` generic)
 | `16`    | `SYSINFO_SOC_IO_MTIME`       | set if MTIME is implemented (via top's `IO_MTIME_EN` generic)
@@ -102,12 +103,12 @@ Bit fields in this register are set to all-zero if the according cache is not im
 [options="header",grid="all"]
 |=======================
 | Bit     | Name [C] | Function
-| `3:0`   | `SYSINFO_CACHE_IC_BLOCK_SIZE_3 : SYSINFO_CACHE_IC_BLOCK_SIZE_0`       | _log2_(i-cache block size in bytes), via top's `ICACHE_BLOCK_SIZE` generic
-| `7:4`   | `SYSINFO_CACHE_IC_NUM_BLOCKS_3 : SYSINFO_CACHE_IC_NUM_BLOCKS_0`       | _log2_(i-cache number of cache blocks), via top's `ICACHE_NUM_BLOCKS` generic
-| `11:9`  | `SYSINFO_CACHE_IC_ASSOCIATIVITY_3 : SYSINFO_CACHE_IC_ASSOCIATIVITY_0` | _log2_(i-cache associativity), via top's `ICACHE_ASSOCIATIVITY` generic
-| `15:12` | `SYSINFO_CACHE_IC_REPLACEMENT_3 : SYSINFO_CACHE_IC_REPLACEMENT_0`     | i-cache replacement policy (`0001` = LRU if associativity > 0)
-| `19:16` | `SYSINFO_CACHE_DC_BLOCK_SIZE_3 : SYSINFO_CACHE_DC_BLOCK_SIZE_0`       | _log2_(d-cache block size in bytes), via top's `DCACHE_BLOCK_SIZE` generic
-| `23:20` | `SYSINFO_CACHE_DC_NUM_BLOCKS_3 : SYSINFO_CACHE_DC_NUM_BLOCKS_0`       | _log2_(d-cache number of cache blocks), via top's `DCACHE_NUM_BLOCKS` generic
-| `27:24` | `SYSINFO_CACHE_DC_ASSOCIATIVITY_3 : SYSINFO_CACHE_DC_ASSOCIATIVITY_0` | always zero
-| `31:28` | `SYSINFO_CACHE_DC_REPLACEMENT_3 : SYSINFO_CACHE_DC_REPLACEMENT_0`     | always zero
+| `3:0`   | `SYSINFO_CACHE_INST_BLOCK_SIZE_3 : SYSINFO_CACHE_INST_BLOCK_SIZE_0` | _log2_(i-cache block size in bytes), via top's `ICACHE_BLOCK_SIZE` generic
+| `7:4`   | `SYSINFO_CACHE_INST_NUM_BLOCKS_3 : SYSINFO_CACHE_INST_NUM_BLOCKS_0` | _log2_(i-cache number of cache blocks), via top's `ICACHE_NUM_BLOCKS` generic
+| `11:8`  | `SYSINFO_CACHE_DATA_BLOCK_SIZE_3 : SYSINFO_CACHE_DATA_BLOCK_SIZE_0` | _log2_(d-cache block size in bytes), via top's `DCACHE_BLOCK_SIZE` generic
+| `15:12` | `SYSINFO_CACHE_DATA_NUM_BLOCKS_3 : SYSINFO_CACHE_DATA_NUM_BLOCKS_0` | _log2_(d-cache number of cache blocks), via top's `DCACHE_NUM_BLOCKS` generic
+| `19:16` | `SYSINFO_CACHE_XIP_BLOCK_SIZE_3 : SYSINFO_CACHE_XIP_BLOCK_SIZE_0`   | _log2_(xip-cache block size in bytes), via top's `XIP_CACHE_BLOCK_SIZE` generic
+| `23:20` | `SYSINFO_CACHE_XIP_NUM_BLOCKS_3 : SYSINFO_CACHE_XIP_NUM_BLOCKS_0`   | _log2_(xip-cache number of cache blocks), via top's `XIP_CACHE_NUM_BLOCKS` generic
+| `27:24` | `SYSINFO_CACHE_XBUS_BLOCK_SIZE_3 : SYSINFO_CACHE_XBUS_BLOCK_SIZE_0` | _log2_(xbus-cache block size in bytes), via top's `XBUS_CACHE_BLOCK_SIZE` generic
+| `31:28` | `SYSINFO_CACHE_XBUS_NUM_BLOCKS_3 : SYSINFO_CACHE_XBUS_NUM_BLOCKS_0` | _log2_(xbus-cache number of cache blocks), via top's `XBUS_CACHE_NUM_BLOCKS` generic
 |=======================

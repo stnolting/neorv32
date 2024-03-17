@@ -5,18 +5,19 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_xip.vhd |
-| Software driver file(s): | neorv32_xip.c |
-|                          | neorv32_xip.h |
-| Top entity port:         | `xip_csn_o` | 1-bit chip select, low-active
-|                          | `xip_clk_o` | 1-bit serial clock output
-|                          | `xip_dat_i` | 1-bit serial data input
-|                          | `xip_dat_o` | 1-bit serial data output
+| Hardware source file(s): | neorv32_xip.vhd        | XIP module
+|                          | neorv32_cache.vhd      | Generic cache module
+| Software driver file(s): | neorv32_xip.c          |
+|                          | neorv32_xip.h          |
+| Top entity port:         | `xip_csn_o`            | 1-bit chip select, low-active
+|                          | `xip_clk_o`            | 1-bit serial clock output
+|                          | `xip_dat_i`            | 1-bit serial data input
+|                          | `xip_dat_o`            | 1-bit serial data output
 | Configuration generics:  | `XIP_EN`               | implement XIP module when `true`
 |                          | `XIP_CACHE_EN`         | implement XIP cache when `true`
 |                          | `XIP_CACHE_NUM_BLOCKS` | number of blocks in XIP cache; has to be a power of two
 |                          | `XIP_CACHE_BLOCK_SIZE` | number of bytes per XIP cache block; has to be a power of two, min 4
-| CPU interrupts:          | none |
+| CPU interrupts:          | none                   |
 |=======================
 
 
@@ -190,7 +191,7 @@ The XIP cache is cleared when the XIP module is disabled (`XIP_CTRL_EN = 0`), wh
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.15+<| `0xffffff40` .15+<| `CTRL` <|`0`     `XIP_CTRL_EN`                                       ^| r/w <| XIP module enable
+.14+<| `0xffffff40` .14+<| `CTRL` <|`0`     `XIP_CTRL_EN`                                       ^| r/w <| XIP module enable
                                   <|`3:1`   `XIP_CTRL_PRSC2 : XIP_CTRL_PRSC0`                   ^| r/w <| 3-bit SPI clock prescaler select
                                   <|`4`     `XIP_CTRL_CPOL`                                     ^| r/w <| SPI clock polarity
                                   <|`5`     `XIP_CTRL_CPHA`                                     ^| r/w <| SPI clock phase
@@ -200,9 +201,8 @@ The XIP cache is cleared when the XIP module is disabled (`XIP_CTRL_EN = 0`), wh
                                   <|`20:13` `XIP_CTRL_RD_CMD_MSB : XIP_CTRL_RD_CMD_LSB`         ^| r/w <| Flash read command
                                   <|`21`    `XIP_CTRL_SPI_CSEN`                                 ^| r/w <| Allow SPI chip-select to be actually asserted when set
                                   <|`22`    `XIP_CTRL_HIGHSPEED`                                ^| r/w <| enable SPI high-speed mode (ignoring `XIP_CTRL_PRSCx`)
-                                  <|`23:26` `XIP_CTRL_CDIV3 : XIP_CTRL_CDIV0`                   ^| r/- <| 4-bit clock divider for fine-tuning
-                                  <|`27:28` -                                                   ^| r/- <| _reserved_, read as zero
-                                  <|`29`    `XIP_CTRL_BURST_EN`                                 ^| r/- <| XIP burst mode enabled (if XIP cache is implemented)
+                                  <|`26:23` `XIP_CTRL_CDIV3 : XIP_CTRL_CDIV0`                   ^| r/- <| 4-bit clock divider for fine-tuning
+                                  <|`29:27` -                                                   ^| r/- <| _reserved_, read as zero
                                   <|`30`    `XIP_CTRL_PHY_BUSY`                                 ^| r/- <| SPI PHY busy when set
                                   <|`31`    `XIP_CTRL_XIP_BUSY`                                 ^| r/- <| XIP access in progress when set
 | `0xffffff44` | _reserved_ |`31:0` | r/- | _reserved_, read as zero

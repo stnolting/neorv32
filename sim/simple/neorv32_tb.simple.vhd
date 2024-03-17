@@ -63,7 +63,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   constant baud0_rate_c            : natural := 19200; -- simulation UART0 (primary UART) baud rate
   constant baud1_rate_c            : natural := 19200; -- simulation UART1 (secondary UART) baud rate
   constant icache_en_c             : boolean := true; -- implement i-cache
-  constant icache_block_size_c     : natural := 64; -- i-cache block size in bytes
+  constant icache_block_size_c     : natural := 32; -- i-cache block size in bytes
   -- simulated external Wishbone memory A (can be used as external IMEM) --
   constant ext_mem_a_base_addr_c   : std_ulogic_vector(31 downto 0) := x"00000000"; -- wishbone memory base address (external IMEM base)
   constant ext_mem_a_size_c        : natural := imem_size_c; -- wishbone memory size in bytes
@@ -203,13 +203,12 @@ begin
     MEM_INT_DMEM_SIZE            => dmem_size_c,   -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
     ICACHE_EN                    => icache_en_c,   -- implement instruction cache
-    ICACHE_NUM_BLOCKS            => 8,             -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_NUM_BLOCKS            => 64,            -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE            => icache_block_size_c, -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY         => 2,             -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
     -- Internal Data Cache (dCACHE) --
     DCACHE_EN                    => true,          -- implement data cache
-    DCACHE_NUM_BLOCKS            => 8,             -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE            => 64,            -- d-cache: block size in bytes (min 4), has to be a power of 2
+    DCACHE_NUM_BLOCKS            => 32,            -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE            => 32,            -- d-cache: block size in bytes (min 4), has to be a power of 2
     -- External bus interface --
     XBUS_EN                      => true,          -- implement external memory bus interface?
     XBUS_TIMEOUT                 => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)

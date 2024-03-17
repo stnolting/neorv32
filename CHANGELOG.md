@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 16.03.2024 | 1.9.6.8 | rework cache system: L1 + L2 caches, all based on the generic cache component | [#853](https://github.com/stnolting/neorv32/pull/853) |
 | 16.03.2024 | 1.9.6.7 | cache optimizations: add read-only option, add option to disable direct/uncached accesses | [#851](https://github.com/stnolting/neorv32/pull/851) |
 | 15.03.2024 | 1.9.6.6 | :warning: clean-up configuration generics (remove XBUS endianness configuration; refine JEDED/VENDORID configuration); rearrange SYSINFO.SOC bits | [#850](https://github.com/stnolting/neorv32/pull/850) |
 | 14.03.2024 | 1.9.6.5 | :sparkles: add optional external bus interface cache (XCACHE) | [#]846(https://github.com/stnolting/neorv32/pull/849) |

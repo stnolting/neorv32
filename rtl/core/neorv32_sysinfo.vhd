@@ -43,43 +43,47 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_sysinfo is
   generic (
-    CLOCK_FREQUENCY      : natural; -- clock frequency of clk_i in Hz
-    CLOCK_GATING_EN      : boolean; -- enable clock gating when in sleep mode
-    INT_BOOTLOADER_EN    : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-    MEM_INT_IMEM_EN      : boolean; -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE    : natural; -- size of processor-internal instruction memory in bytes
-    MEM_INT_DMEM_EN      : boolean; -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE    : natural; -- size of processor-internal data memory in bytes
-    AMO_RVS_GRANULARITY  : natural; -- size in bytes, has to be a power of 2, min 4
-    ICACHE_EN            : boolean; -- implement instruction cache
-    ICACHE_NUM_BLOCKS    : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
-    ICACHE_BLOCK_SIZE    : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY : natural; -- i-cache: associativity (min 1), has to be a power 2
-    DCACHE_EN            : boolean; -- implement data cache
-    DCACHE_NUM_BLOCKS    : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
-    DCACHE_BLOCK_SIZE    : natural; -- d-cache: block size in bytes (min 4), has to be a power of 2
-    XBUS_EN              : boolean; -- implement external memory bus interface?
-    XBUS_CACHE_EN        : boolean; -- implement external bus cache
-    ON_CHIP_DEBUGGER_EN  : boolean; -- implement OCD?
-    IO_GPIO_EN           : boolean; -- implement general purpose IO port (GPIO)?
-    IO_MTIME_EN          : boolean; -- implement machine system timer (MTIME)?
-    IO_UART0_EN          : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART1_EN          : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-    IO_SPI_EN            : boolean; -- implement serial peripheral interface (SPI)?
-    IO_SDI_EN            : boolean; -- implement serial data interface (SDI)?
-    IO_TWI_EN            : boolean; -- implement two-wire interface (TWI)?
-    IO_PWM_EN            : boolean; -- implement pulse-width modulation controller (PWM)?
-    IO_WDT_EN            : boolean; -- implement watch dog timer (WDT)?
-    IO_TRNG_EN           : boolean; -- implement true random number generator (TRNG)?
-    IO_CFS_EN            : boolean; -- implement custom functions subsystem (CFS)?
-    IO_NEOLED_EN         : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_XIRQ_EN           : boolean; -- implement external interrupts controller (XIRQ)?
-    IO_GPTMR_EN          : boolean; -- implement general purpose timer (GPTMR)?
-    XIP_EN               : boolean; -- implement execute in place module (XIP)?
-    IO_ONEWIRE_EN        : boolean; -- implement 1-wire interface (ONEWIRE)?
-    IO_DMA_EN            : boolean; -- implement direct memory access controller (DMA)?
-    IO_SLINK_EN          : boolean; -- implement stream link interface (SLINK)?
-    IO_CRC_EN            : boolean  -- implement cyclic redundancy check unit (CRC)?
+    CLOCK_FREQUENCY       : natural; -- clock frequency of clk_i in Hz
+    CLOCK_GATING_EN       : boolean; -- enable clock gating when in sleep mode
+    INT_BOOTLOADER_EN     : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    MEM_INT_IMEM_EN       : boolean; -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE     : natural; -- size of processor-internal instruction memory in bytes
+    MEM_INT_DMEM_EN       : boolean; -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE     : natural; -- size of processor-internal data memory in bytes
+    AMO_RVS_GRANULARITY   : natural; -- size in bytes, has to be a power of 2, min 4
+    ICACHE_EN             : boolean; -- implement instruction cache
+    ICACHE_NUM_BLOCKS     : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_BLOCK_SIZE     : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
+    DCACHE_EN             : boolean; -- implement data cache
+    DCACHE_NUM_BLOCKS     : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
+    DCACHE_BLOCK_SIZE     : natural; -- d-cache: block size in bytes (min 4), has to be a power of 2
+    XBUS_EN               : boolean; -- implement external memory bus interface?
+    XBUS_CACHE_EN         : boolean; -- implement external bus cache
+    XBUS_CACHE_NUM_BLOCKS : natural; -- x-cache: number of blocks (min 1), has to be a power of 2
+    XBUS_CACHE_BLOCK_SIZE : natural; -- x-cache: block size in bytes (min 4), has to be a power of 2
+    XIP_EN                : boolean; -- implement execute in place module (XIP)?
+    XIP_CACHE_EN          : boolean; -- implement execute in place cache?
+    XIP_CACHE_NUM_BLOCKS  : natural; -- number of blocks (min 1), has to be a power of 2
+    XIP_CACHE_BLOCK_SIZE  : natural; -- block size in bytes (min 4), has to be a power of 2
+    ON_CHIP_DEBUGGER_EN   : boolean; -- implement OCD?
+    IO_GPIO_EN            : boolean; -- implement general purpose IO port (GPIO)?
+    IO_MTIME_EN           : boolean; -- implement machine system timer (MTIME)?
+    IO_UART0_EN           : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART1_EN           : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_SPI_EN             : boolean; -- implement serial peripheral interface (SPI)?
+    IO_SDI_EN             : boolean; -- implement serial data interface (SDI)?
+    IO_TWI_EN             : boolean; -- implement two-wire interface (TWI)?
+    IO_PWM_EN             : boolean; -- implement pulse-width modulation controller (PWM)?
+    IO_WDT_EN             : boolean; -- implement watch dog timer (WDT)?
+    IO_TRNG_EN            : boolean; -- implement true random number generator (TRNG)?
+    IO_CFS_EN             : boolean; -- implement custom functions subsystem (CFS)?
+    IO_NEOLED_EN          : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_XIRQ_EN            : boolean; -- implement external interrupts controller (XIRQ)?
+    IO_GPTMR_EN           : boolean; -- implement general purpose timer (GPTMR)?
+    IO_ONEWIRE_EN         : boolean; -- implement 1-wire interface (ONEWIRE)?
+    IO_DMA_EN             : boolean; -- implement direct memory access controller (DMA)?
+    IO_SLINK_EN           : boolean; -- implement stream link interface (SLINK)?
+    IO_CRC_EN             : boolean  -- implement cyclic redundancy check unit (CRC)?
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -92,9 +96,10 @@ end neorv32_sysinfo;
 architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
 
   -- helpers --
-  constant int_imem_en_c : boolean := MEM_INT_IMEM_EN and boolean(MEM_INT_IMEM_SIZE > 0);
-  constant int_dmem_en_c : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
-  constant xcache_en_c   : boolean := XBUS_EN and XBUS_CACHE_EN;
+  constant int_imem_en_c  : boolean := MEM_INT_IMEM_EN and boolean(MEM_INT_IMEM_SIZE > 0);
+  constant int_dmem_en_c  : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
+  constant xcache_en_c    : boolean := XBUS_EN and XBUS_CACHE_EN;
+  constant xip_cache_en_c : boolean := XIP_EN and XIP_CACHE_EN;
 
   -- system information ROM --
   type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
@@ -123,8 +128,8 @@ begin
   sysinfo(2)(06) <= '1' when DCACHE_EN           else '0'; -- processor-internal data cache implemented?
   sysinfo(2)(07) <= '1' when CLOCK_GATING_EN     else '0'; -- enable clock gating when in sleep mode
   sysinfo(2)(08) <= '1' when xcache_en_c         else '0'; -- external bus interface cache implemented?
-  sysinfo(2)(09) <= '1' when XIP_EN              else '0'; -- execute in place module (XIP) implemented?
-  sysinfo(2)(10) <= '0'; -- reserved
+  sysinfo(2)(09) <= '1' when XIP_EN              else '0'; -- execute in place module implemented?
+  sysinfo(2)(10) <= '1' when xip_cache_en_c      else '0'; -- execute in place cache implemented?
   sysinfo(2)(11) <= '0'; -- reserved
   sysinfo(2)(12) <= '0'; -- reserved
   sysinfo(2)(13) <= '0'; -- reserved
@@ -148,15 +153,17 @@ begin
   sysinfo(2)(31) <= '1' when IO_CRC_EN           else '0'; -- cyclic redundancy check unit (CRC) implemented?
 
   -- SYSINFO(3): Cache Configuration --
-  sysinfo(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE),    4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(block_size_in_bytes)
-  sysinfo(3)(07 downto 04) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_NUM_BLOCKS),    4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(number_of_block)
-  sysinfo(3)(11 downto 08) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_ASSOCIATIVITY), 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(associativity)
-  sysinfo(3)(15 downto 12) <= "0001" when (ICACHE_ASSOCIATIVITY > 1) and ICACHE_EN else (others => '0'); -- i-cache: replacement strategy (LRU only (yet))
+  sysinfo(3)(03 downto 00) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE), 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(block_size_in_bytes)
+  sysinfo(3)(07 downto 04) <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_NUM_BLOCKS), 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(number_of_block)
   --
-  sysinfo(3)(19 downto 16) <= std_ulogic_vector(to_unsigned(index_size_f(DCACHE_BLOCK_SIZE), 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(block_size)
-  sysinfo(3)(23 downto 20) <= std_ulogic_vector(to_unsigned(index_size_f(DCACHE_NUM_BLOCKS), 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(num_blocks)
-  sysinfo(3)(27 downto 24) <= (others => '0'); -- d-cache: log2(associativity)
-  sysinfo(3)(31 downto 28) <= (others => '0'); -- d-cache: replacement strategy
+  sysinfo(3)(11 downto 08) <= std_ulogic_vector(to_unsigned(index_size_f(DCACHE_BLOCK_SIZE), 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(block_size)
+  sysinfo(3)(15 downto 12) <= std_ulogic_vector(to_unsigned(index_size_f(DCACHE_NUM_BLOCKS), 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(num_blocks)
+  --
+  sysinfo(3)(19 downto 16) <= std_ulogic_vector(to_unsigned(index_size_f(XIP_CACHE_BLOCK_SIZE), 4)) when xip_cache_en_c else (others => '0'); -- xip-cache: log2(block_size_in_bytes)
+  sysinfo(3)(23 downto 20) <= std_ulogic_vector(to_unsigned(index_size_f(XIP_CACHE_NUM_BLOCKS), 4)) when xip_cache_en_c else (others => '0'); -- xip-cache: log2(number_of_block)
+  --
+  sysinfo(3)(27 downto 24) <= std_ulogic_vector(to_unsigned(index_size_f(XBUS_CACHE_BLOCK_SIZE), 4)) when xcache_en_c else (others => '0'); -- xbus-cache: log2(block_size_in_bytes)
+  sysinfo(3)(31 downto 28) <= std_ulogic_vector(to_unsigned(index_size_f(XBUS_CACHE_NUM_BLOCKS), 4)) when xcache_en_c else (others => '0'); -- xbus-cache: log2(number_of_block)
 
 
   -- Bus Access -----------------------------------------------------------------------------

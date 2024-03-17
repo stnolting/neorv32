@@ -75,7 +75,8 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_DCACHE         =  6, /**< SYSINFO_SOC  (6) (r/-): Processor-internal instruction cache implemented when 1 (via DCACHE_EN generic) */
   SYSINFO_SOC_CLOCK_GATING   =  7, /**< SYSINFO_SOC  (7) (r/-): Clock gating implemented when 1 (via CLOCK_GATING_EN generic) */
   SYSINFO_SOC_XBUS_CACHE     =  8, /**< SYSINFO_SOC  (8) (r/-): External bus cache implemented when 1 (via XBUS_CACHE_EN generic) */
-  SYSINFO_SOC_XIP            =  9, /**< SYSINFO_SO C (9) (r/-): Execute in-place module implemented when 1 (via XIP_EN generic) */
+  SYSINFO_SOC_XIP            =  9, /**< SYSINFO_SOC  (9) (r/-): Execute in-place module implemented when 1 (via XIP_EN generic) */
+  SYSINFO_SOC_XIP_CACHE      = 10, /**< SYSINFO_S C (10) (r/-): Execute in-place cache implemented when 1 (via XIP_CACHE_EN generic) */
 
   SYSINFO_SOC_IO_DMA         = 14, /**< SYSINFO_SOC (14) (r/-): Direct memory access controller implemented when 1 (via IO_DMA_EN generic) */
   SYSINFO_SOC_IO_GPIO        = 15, /**< SYSINFO_SOC (15) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
@@ -99,45 +100,25 @@ enum NEORV32_SYSINFO_SOC_enum {
 
 /** NEORV32_SYSINFO->CACHE (r/-): Cache configuration */
  enum NEORV32_SYSINFO_CACHE_enum {
-  SYSINFO_CACHE_IC_BLOCK_SIZE_0    =  0, /**< SYSINFO_CACHE  (0) (r/-): i-cache: log2(Block size in bytes), bit 0 (via ICACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_IC_BLOCK_SIZE_1    =  1, /**< SYSINFO_CACHE  (1) (r/-): i-cache: log2(Block size in bytes), bit 1 (via ICACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_IC_BLOCK_SIZE_2    =  2, /**< SYSINFO_CACHE  (2) (r/-): i-cache: log2(Block size in bytes), bit 2 (via ICACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_IC_BLOCK_SIZE_3    =  3, /**< SYSINFO_CACHE  (3) (r/-): i-cache: log2(Block size in bytes), bit 3 (via ICACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_INST_BLOCK_SIZE_0 =  0, /**< SYSINFO_CACHE  (0) (r/-): i-cache: log2(Block size in bytes), bit 0 (via ICACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_INST_BLOCK_SIZE_3 =  3, /**< SYSINFO_CACHE  (3) (r/-): i-cache: log2(Block size in bytes), bit 3 (via ICACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_INST_NUM_BLOCKS_0 =  4, /**< SYSINFO_CACHE  (4) (r/-): i-cache: log2(Number of cache blocks), bit 0 (via ICACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_INST_NUM_BLOCKS_3 =  7, /**< SYSINFO_CACHE  (7) (r/-): i-cache: log2(Number of cache blocks), bit 3 (via ICACHE_NUM_BLOCKS generic) */
 
-  SYSINFO_CACHE_IC_NUM_BLOCKS_0    =  4, /**< SYSINFO_CACHE  (4) (r/-): i-cache: log2(Number of cache blocks/pages/lines), bit 0 (via ICACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_IC_NUM_BLOCKS_1    =  5, /**< SYSINFO_CACHE  (5) (r/-): i-cache: log2(Number of cache blocks/pages/lines), bit 1 (via ICACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_IC_NUM_BLOCKS_2    =  6, /**< SYSINFO_CACHE  (6) (r/-): i-cache: log2(Number of cache blocks/pages/lines), bit 2 (via ICACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_IC_NUM_BLOCKS_3    =  7, /**< SYSINFO_CACHE  (7) (r/-): i-cache: log2(Number of cache blocks/pages/lines), bit 3 (via ICACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_DATA_BLOCK_SIZE_0 =  8, /**< SYSINFO_CACHE  (8) (r/-): d-cache: log2(Block size in bytes), bit 0 (via DCACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_DATA_BLOCK_SIZE_3 = 11, /**< SYSINFO_CACHE (11) (r/-): d-cache: log2(Block size in bytes), bit 3 (via DCACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_DATA_NUM_BLOCKS_0 = 12, /**< SYSINFO_CACHE (12) (r/-): d-cache: log2(Number of cache blocks), bit 0 (via DCACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_DATA_NUM_BLOCKS_3 = 15, /**< SYSINFO_CACHE (15) (r/-): d-cache: log2(Number of cache blocks), bit 3 (via DCACHE_NUM_BLOCKS generic) */
 
-  SYSINFO_CACHE_IC_ASSOCIATIVITY_0 =  8, /**< SYSINFO_CACHE  (8) (r/-): i-cache: log2(associativity), bit 0 (via ICACHE_ASSOCIATIVITY generic) */
-  SYSINFO_CACHE_IC_ASSOCIATIVITY_1 =  9, /**< SYSINFO_CACHE  (9) (r/-): i-cache: log2(associativity), bit 1 (via ICACHE_ASSOCIATIVITY generic) */
-  SYSINFO_CACHE_IC_ASSOCIATIVITY_2 = 10, /**< SYSINFO_CACHE (10) (r/-): i-cache: log2(associativity), bit 2 (via ICACHE_ASSOCIATIVITY generic) */
-  SYSINFO_CACHE_IC_ASSOCIATIVITY_3 = 11, /**< SYSINFO_CACHE (11) (r/-): i-cache: log2(associativity), bit 3 (via ICACHE_ASSOCIATIVITY generic) */
+  SYSINFO_CACHE_XIP_BLOCK_SIZE_0  = 16, /**< SYSINFO_CACHE (16) (r/-): xip-cache: log2(Block size in bytes), bit 0 (via XIP_CACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_XIP_BLOCK_SIZE_3  = 19, /**< SYSINFO_CACHE (19) (r/-): xip-cache: log2(Block size in bytes), bit 3 (via XIP_CACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_XIP_NUM_BLOCKS_0  = 20, /**< SYSINFO_CACHE (20) (r/-): xip-cache: log2(Number of cache blocks), bit 0 (via XIP_CACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_XIP_NUM_BLOCKS_3  = 23, /**< SYSINFO_CACHE (23) (r/-): xip-cache: log2(Number of cache blocks), bit 3 (via XIP_CACHE_NUM_BLOCKS generic) */
 
-  SYSINFO_CACHE_IC_REPLACEMENT_0   = 12, /**< SYSINFO_CACHE (12) (r/-): i-cache: replacement policy (0001 = LRU if associativity > 0), bit 0 */
-  SYSINFO_CACHE_IC_REPLACEMENT_1   = 13, /**< SYSINFO_CACHE (13) (r/-): i-cache: replacement policy (0001 = LRU if associativity > 0), bit 1 */
-  SYSINFO_CACHE_IC_REPLACEMENT_2   = 14, /**< SYSINFO_CACHE (14) (r/-): i-cache: replacement policy (0001 = LRU if associativity > 0), bit 2 */
-  SYSINFO_CACHE_IC_REPLACEMENT_3   = 15, /**< SYSINFO_CACHE (15) (r/-): i-cache: replacement policy (0001 = LRU if associativity > 0), bit 3 */
-
-  SYSINFO_CACHE_DC_BLOCK_SIZE_0    = 16, /**< SYSINFO_CACHE (16) (r/-): d-cache: log2(Block size in bytes), bit 0 (via DCACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_DC_BLOCK_SIZE_1    = 17, /**< SYSINFO_CACHE (17) (r/-): d-cache: log2(Block size in bytes), bit 1 (via DCACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_DC_BLOCK_SIZE_2    = 18, /**< SYSINFO_CACHE (18) (r/-): d-cache: log2(Block size in bytes), bit 2 (via DCACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_DC_BLOCK_SIZE_3    = 19, /**< SYSINFO_CACHE (19) (r/-): d-cache: log2(Block size in bytes), bit 3 (via DCACHE_BLOCK_SIZE generic) */
-
-  SYSINFO_CACHE_DC_NUM_BLOCKS_0    = 20, /**< SYSINFO_CACHE (20) (r/-): d-cache: log2(Number of cache blocks/pages/lines), bit 0 (via DCACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_DC_NUM_BLOCKS_1    = 21, /**< SYSINFO_CACHE (21) (r/-): d-cache: log2(Number of cache blocks/pages/lines), bit 1 (via DCACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_DC_NUM_BLOCKS_2    = 22, /**< SYSINFO_CACHE (22) (r/-): d-cache: log2(Number of cache blocks/pages/lines), bit 2 (via DCACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_DC_NUM_BLOCKS_3    = 23, /**< SYSINFO_CACHE (23) (r/-): d-cache: log2(Number of cache blocks/pages/lines), bit 3 (via DCACHE_NUM_BLOCKS generic) */
-
-  SYSINFO_CACHE_DC_ASSOCIATIVITY_0 = 24, /**< SYSINFO_CACHE (24) (r/-): d-cache: log2(associativity), bit 0 */
-  SYSINFO_CACHE_DC_ASSOCIATIVITY_1 = 25, /**< SYSINFO_CACHE (25) (r/-): d-cache: log2(associativity), bit 1 */
-  SYSINFO_CACHE_DC_ASSOCIATIVITY_2 = 26, /**< SYSINFO_CACHE (26) (r/-): d-cache: log2(associativity), bit 2 */
-  SYSINFO_CACHE_DC_ASSOCIATIVITY_3 = 27, /**< SYSINFO_CACHE (27) (r/-): d-cache: log2(associativity), bit 3 */
-
-  SYSINFO_CACHE_DC_REPLACEMENT_0   = 28, /**< SYSINFO_CACHE (28) (r/-): d-cache: replacement policy, bit 0 */
-  SYSINFO_CACHE_DC_REPLACEMENT_1   = 29, /**< SYSINFO_CACHE (29) (r/-): d-cache: replacement policy, bit 1 */
-  SYSINFO_CACHE_DC_REPLACEMENT_2   = 30, /**< SYSINFO_CACHE (30) (r/-): d-cache: replacement policy, bit 2 */
-  SYSINFO_CACHE_DC_REPLACEMENT_3   = 31, /**< SYSINFO_CACHE (31) (r/-): d-cache: replacement policy, bit 3 */
+  SYSINFO_CACHE_XBUS_BLOCK_SIZE_0 = 24, /**< SYSINFO_CACHE (24) (r/-): xbus-cache: log2(Block size in bytes), bit 0 (via XBUS_CACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_XBUS_BLOCK_SIZE_3 = 27, /**< SYSINFO_CACHE (27) (r/-): xbus-cache: log2(Block size in bytes), bit 3 (via XBUS_CACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_XBUS_NUM_BLOCKS_0 = 28, /**< SYSINFO_CACHE (28) (r/-): xbus-cache: log2(Number of cache blocks), bit 0 (via XBUS_CACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_XBUS_NUM_BLOCKS_3 = 31  /**< SYSINFO_CACHE (31) (r/-): xbus-cache: log2(Number of cache blocks), bit 3 (via XBUS_CACHE_NUM_BLOCKS generic) */
 };
 /**@}*/
 
