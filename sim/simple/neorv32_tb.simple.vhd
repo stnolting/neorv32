@@ -63,7 +63,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
   constant baud0_rate_c            : natural := 19200; -- simulation UART0 (primary UART) baud rate
   constant baud1_rate_c            : natural := 19200; -- simulation UART1 (secondary UART) baud rate
   constant icache_en_c             : boolean := true; -- implement i-cache
-  constant icache_block_size_c     : natural := 64; -- i-cache block size in bytes
+  constant icache_block_size_c     : natural := 32; -- i-cache block size in bytes
   -- simulated external Wishbone memory A (can be used as external IMEM) --
   constant ext_mem_a_base_addr_c   : std_ulogic_vector(31 downto 0) := x"00000000"; -- wishbone memory base address (external IMEM base)
   constant ext_mem_a_size_c        : natural := imem_size_c; -- wishbone memory size in bytes
@@ -164,7 +164,7 @@ begin
     CLOCK_FREQUENCY              => f_clock_c,     -- clock frequency of clk_i in Hz
     CLOCK_GATING_EN              => true,          -- enable clock gating when in sleep mode
     HART_ID                      => x"00000000",   -- hardware thread ID
-    VENDOR_ID                    => x"00000000",   -- vendor's JEDEC ID
+    JEDEC_ID                     => "00000000000", -- vendor's JEDEC ID
     INT_BOOTLOADER_EN            => false,         -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          => true,          -- implement on-chip debugger
@@ -203,18 +203,16 @@ begin
     MEM_INT_DMEM_SIZE            => dmem_size_c,   -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
     ICACHE_EN                    => icache_en_c,   -- implement instruction cache
-    ICACHE_NUM_BLOCKS            => 8,             -- i-cache: number of blocks (min 2), has to be a power of 2
+    ICACHE_NUM_BLOCKS            => 64,            -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE            => icache_block_size_c, -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY         => 2,             -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
     -- Internal Data Cache (dCACHE) --
     DCACHE_EN                    => true,          -- implement data cache
-    DCACHE_NUM_BLOCKS            => 8,             -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE            => 64,            -- d-cache: block size in bytes (min 4), has to be a power of 2
+    DCACHE_NUM_BLOCKS            => 32,            -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE            => 32,            -- d-cache: block size in bytes (min 4), has to be a power of 2
     -- External bus interface --
     XBUS_EN                      => true,          -- implement external memory bus interface?
     XBUS_TIMEOUT                 => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_PIPE_MODE               => true,          -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    XBUS_BIG_ENDIAN              => false,         -- byte order: true=big-endian, false=little-endian
     XBUS_ASYNC_RX                => false,         -- use register buffer for RX data when false
     XBUS_ASYNC_TX                => false,         -- use register buffer for TX data when false
     XBUS_CACHE_EN                => true,          -- enable external bus cache (x-cache)

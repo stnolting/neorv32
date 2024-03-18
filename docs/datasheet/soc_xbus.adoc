@@ -6,7 +6,7 @@
 [frame="topbot",grid="none"]
 |=======================
 | Hardware source file(s): | neorv32_xbus.vhd        | External bus gateway
-|                          | neorv32_cache.vhd       | External bus cache instance
+|                          | neorv32_cache.vhd       | Generic cache module
 | Software driver file(s): | none                    | _implicitly used_
 | Top entity port(s):      | `xbus_adr_o`            | address output (32-bit)
 |                          | `xbus_dat_i`            | data input (32-bit)
@@ -20,7 +20,6 @@
 | Configuration generics:  | `XBUS_EN`               | enable external bus interface when `true`
 |                          | `XBUS_TIMEOUT`          | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
 |                          | `XBUS_PIPE_MODE`        | when `false` (default): classic/standard Wishbone protocol; when `true`: pipelined Wishbone protocol
-|                          | `XBUS_BIG_ENDIAN`       | byte-order (Endianness) of external bus interface; `true`=BIG, `false`=little (default)
 |                          | `XBUS_ASYNC_RX`         | use registered RX path when `false` (default); use async/direct RX path when `true`
 |                          | `XBUS_ASYNC_TX`         | use registered TX path when `false` (default); use async/direct TX path when `true`
 |                          | `XBUS_CACHE_EN`         | implement the external bus cache
@@ -71,6 +70,10 @@ can be found in the data sheet "Wishbone B4 - WISHBONE System-on-Chip (SoC) Inte
 Architecture for Portable IP Cores". A copy of this document can be found in the `docs` folder of this
 project.
 
+.Endianness
+[NOTE]
+Just like the processor itself the XBUS interface uses **little-endian** byte order.
+
 
 **Bus Access**
 
@@ -85,17 +88,6 @@ When `XBUS_TIMEOUT` is greater than zero, the Wishbone gateway starts an interna
 accesses an address via the external memory interface. If the accessed device does not acknowledge (via `xbus_ack_i`)
 or terminate (via `xbus_err_i`) the transfer within `XBUS_TIMEOUT` clock cycles, the bus access is automatically canceled
 setting `xbus_cyc_o` low again and a CPU load/store/instruction fetch bus access fault exception is raised.
-
-
-**Bus Endianness**
-
-The NEORV32 CPU and the entire Processor setup use a *little-endian* layout. To allow direct connection
-to a big-endian memory system the external bus interface provides an Endianness configuration. The
-Endianness of the external memory interface can be configured via the `XBUS_BIG_ENDIAN` generic.
-By default, the external memory interface uses little-endian byte-order.
-
-Application software can check the Endianness configuration of the external bus interface via the
-SYSINFO module (see section <<_system_configuration_information_memory_sysinfo>> for more information).
 
 
 **Access Latency**

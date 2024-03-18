@@ -5,40 +5,33 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_dcache.vhd  | 
+| Hardware source file(s): | neorv32_cache.vhd   | Generic cache module
 | Software driver file(s): | none                | _implicitly used_
-| Top entity port:         | none                | 
+| Top entity port:         | none                |
 | Configuration generics:  | `DCACHE_EN`         | implement processor-internal data cache when `true`
 |                          | `DCACHE_NUM_BLOCKS` | number of cache blocks (pages/lines)
 |                          | `DCACHE_BLOCK_SIZE` | size of a cache block in bytes
-| CPU interrupts:          | none | 
+| CPU interrupts:          | none |
 |=======================
 
 The processor features an optional data cache to improve performance when using memories with high
-access latencies. The cache is directly connected to the CPU's data access interface and provides
-full-transparent buffering.
+access latencies. The cache is connected directly to the CPU's data access interface and provides
+full-transparent accesses. The cache is direct-mapped and uses "write-allocate" and "write-back" strategies.
 
-The cache is implemented if the `DCACHE_EN` generic is `true`. The size of the cache memory is defined via the
-`DCACHE_BLOCK_SIZE` (the size of a single cache block/page/line in bytes; has to be a power of two and greater than or
-equal to 4 bytes) and `DCACHE_NUM_BLOCKS` (the total amount of cache blocks; has to be a power of two and greater than or
-equal to 1) generics. The data cache provides only a single set, hence it is direct-mapped.
-
-
-**Cached/Uncached Accesses**
-
+.Cached/Uncached Accesses
+[NOTE]
 The data cache provides direct accesses (= uncached) to memory in order to access memory-mapped IO (like the
 processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
 will not be cached at all (see section <<_address_space>>).
 
 .Caching Internal Memories
 [NOTE]
-The data cache is intended to accelerate data access to **processor-external** memories
-(via the external bus interface or via the XIP module). The cache(s) should not be implemented
-when using only processor-internal data and instruction memories.
+The data cache is intended to accelerate data access to **processor-external** memories.
+The CPU cache(s) should not be implemented when using only processor-internal data and instruction memories.
 
-.Manual Cache Clear/Reload
+.Manual Cache Flush/Clear/Reload
 [NOTE]
-By executing the `fence(.i)` instruction the cache is cleared and a reload from main memory is triggered.
+By executing the `fence(.i)` instruction the cache is flushed, cleared and a reload from main memory is triggered.
 
 .Retrieve Cache Configuration from Software
 [TIP]

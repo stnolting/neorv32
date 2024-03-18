@@ -4,6 +4,19 @@
 
 // ####################################################################################################################
 :sectnums!:
+=== About
+
+==========================
+**The NEORV32 RISC-V Processor** +
+https://github.com/stnolting/neorv32 +
+Dipl.-Ing. (M.Sc.) Stephan Nolting +
+🇪🇺 European Union, Germany +
+stnolting@gmail.com
+==========================
+
+
+// ####################################################################################################################
+:sectnums!:
 === License
 
 **BSD 3-Clause License**
@@ -32,13 +45,6 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 
-==========================
-**The NEORV32 RISC-V Processor** +
-https://github.com/stnolting/neorv32 +
-Dipl.-Ing. (M.Sc.) Stephan Nolting +
-🇪🇺 European Union, Germany +
-stnolting@gmail.com
-==========================
 
 <<<
 // ####################################################################################################################
@@ -58,7 +64,9 @@ stnolting@gmail.com
 * Timing diagrams made with _WaveDrom Editor_.
 * Documentation made with `asciidoctor`.
 * "Segger Embedded Studio" and "J-Link" are trademarks of Segger Microcontroller Systems GmbH.
-* All further/unreferenced projects/products/brands belong to their according copyright holders.
+
+All further/unreferenced projects/products/brands belong to their according copyright holders.
+No copyright infringement intended.
 
 :sectnums!:
 === Disclaimer
@@ -82,21 +90,21 @@ infringement of the law becomes known to us, we will immediately remove the link
 This is an open-source project that is free of charge. Use this project in any way you like
 (as long as it complies to the permissive license). Please cite it appropriately. 👍
 
-.Contributors ❤️
+.Contributors & Community 🤝
 [NOTE]
 Please add as many https://github.com/stnolting/neorv32/graphs/contributors[contributors] as possible to the `author` field. +
 This project would not be where it is without them.
 
 .DOI
 [TIP]
-This project also provides a _digital object identifier_ provided by https://zenodo.org[zenodo]:
+This project provides a _digital object identifier_ provided by https://zenodo.org[zenodo]:
 https://doi.org/10.5281/zenodo.5018888[image:https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg[title='zenodo']]
 
 :sectnums!:
 === Acknowledgments
 
-**A big shout-out to the community and all https://github.com/stnolting/neorv32/graphs/contributors[contributors],
-who helped improving this project! ❤️**
+**A big shout-out to the community and all the https://github.com/stnolting/neorv32/graphs/contributors[contributors],
+who helped improving this project! This project would not be where it is without them. ❤️**
 
 https://riscv.org[RISC-V] - instruction sets want to be free!
 

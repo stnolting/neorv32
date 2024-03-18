@@ -2,7 +2,7 @@
 -- Auto-generated memory initialization file (for BOOTLOADER) from source file <bootloader/main.bin>
 -- Size: 4056 bytes
 -- MARCH: default
--- Built: 17.02.2024 21:23:07
+-- Built: 15.03.2024 17:32:22
 
 -- prototype defined in 'neorv32_package.vhd'
 package body neorv32_bootloader_image is
@@ -112,8 +112,8 @@ x"80002023",
 x"10100793",
 x"80f02023",
 x"e0802783",
-x"00279713",
-x"06075463",
+x"2007f793",
+x"06078463",
 x"fffff7b7",
 x"f007a023",
 x"f007a423",
@@ -394,8 +394,8 @@ x"ffffd7b7",
 x"f1878513",
 x"ea1ff06f",
 x"e0802783",
-x"00279713",
-x"00074663",
+x"2007f793",
+x"00079663",
 x"f28a8513",
 x"e8dff06f",
 x"00100513",
@@ -886,9 +886,9 @@ x"6f6c746f",
 x"72656461",
 x"0a3e3e20",
 x"444c420a",
-x"46203a56",
-x"31206265",
-x"30322037",
+x"4d203a56",
+x"31207261",
+x"30322035",
 x"480a3432",
 x"203a5657",
 x"00000020",

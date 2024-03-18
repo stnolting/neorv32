@@ -48,7 +48,7 @@ entity neorv32_SystemTop_axi4lite is
     -- General --
     CLOCK_FREQUENCY              : natural := 0;      -- clock frequency of clk_i in Hz
     HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
-    VENDOR_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
+    JEDEC_ID                     : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
     INT_BOOTLOADER_EN            : boolean := true;   -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          : boolean := false;  -- implement on-chip debugger
@@ -86,7 +86,6 @@ entity neorv32_SystemTop_axi4lite is
     ICACHE_EN                    : boolean := false;  -- implement instruction cache
     ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
     -- Internal Data Cache (dCACHE) --
     DCACHE_EN                    : boolean := false;  -- implement data cache
     DCACHE_NUM_BLOCKS            : natural := 4;      -- d-cache: number of blocks (min 1), has to be a power of 2
@@ -344,7 +343,7 @@ begin
     -- General --
     CLOCK_FREQUENCY              => CLOCK_FREQUENCY,    -- clock frequency of clk_i in Hz
     HART_ID                      => HART_ID,            -- hardware thread ID
-    VENDOR_ID                    => VENDOR_ID,          -- vendor's JEDEC ID
+    JEDEC_ID                     => JEDEC_ID,           -- vendor's JEDEC ID
     INT_BOOTLOADER_EN            => INT_BOOTLOADER_EN,  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN          => ON_CHIP_DEBUGGER_EN, -- implement on-chip debugger
@@ -382,7 +381,6 @@ begin
     ICACHE_EN                    => ICACHE_EN,          -- implement instruction cache
     ICACHE_NUM_BLOCKS            => ICACHE_NUM_BLOCKS,  -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            => ICACHE_BLOCK_SIZE,  -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY         => ICACHE_ASSOCIATIVITY, -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
     -- Internal Data Cache (dCACHE) --
     DCACHE_EN                    => DCACHE_EN,          -- implement data cache
     DCACHE_NUM_BLOCKS            => DCACHE_NUM_BLOCKS,  -- d-cache: number of blocks (min 1), has to be a power of 2
@@ -391,7 +389,6 @@ begin
     XBUS_EN                      => true,               -- implement external memory bus interface?
     XBUS_TIMEOUT                 => 0,                  -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_PIPE_MODE               => false,              -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    XBUS_BIG_ENDIAN              => false,              -- byte order: true=big-endian, false=little-endian
     XBUS_ASYNC_RX                => false,              -- use register buffer for RX data when false
     XBUS_ASYNC_TX                => false,              -- use register buffer for TX data when false
     -- Execute in-place module (XIP) --

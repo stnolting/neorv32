@@ -49,7 +49,7 @@ entity neorv32_top is
     CLOCK_FREQUENCY            : natural;                                       -- clock frequency of clk_i in Hz
     CLOCK_GATING_EN            : boolean                        := false;       -- enable clock gating when in sleep mode
     HART_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
-    VENDOR_ID                  : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
+    JEDEC_ID                   : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
     INT_BOOTLOADER_EN          : boolean                        := false;       -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
     -- On-Chip Debugger (OCD) --
@@ -100,7 +100,6 @@ entity neorv32_top is
     ICACHE_EN                  : boolean                        := false;       -- implement instruction cache
     ICACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;           -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;          -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY       : natural range 1 to 2           := 1;           -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
     -- Internal Data Cache (dCACHE) --
     DCACHE_EN                  : boolean                        := false;       -- implement data cache
@@ -111,7 +110,6 @@ entity neorv32_top is
     XBUS_EN                    : boolean                        := false;       -- implement external memory bus interface?
     XBUS_TIMEOUT               : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_PIPE_MODE             : boolean                        := false;       -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    XBUS_BIG_ENDIAN            : boolean                        := false;       -- byte order: true=big-endian, false=little-endian
     XBUS_ASYNC_RX              : boolean                        := false;       -- use register buffer for RX data when false
     XBUS_ASYNC_TX              : boolean                        := false;       -- use register buffer for TX data when false
     XBUS_CACHE_EN              : boolean                        := false;       -- enable external bus cache (x-cache)
@@ -272,6 +270,10 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
   constant io_xirq_en_c    : boolean := boolean(XIRQ_NUM_CH > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
+  constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
+
+  -- convert JEDEC ID to mvendor CSR --
+  constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_valid_c : boolean := is_power_of_two_f(MEM_INT_IMEM_SIZE);
@@ -323,8 +325,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal main_rsp, main2_rsp, dma_rsp : bus_rsp_t; -- core complex (CPU + caches + DMA)
 
   -- bus: main sections --
-  signal imem_req, dmem_req, xip_req, boot_req, io_req, xcache_req, xbus_req : bus_req_t;
-  signal imem_rsp, dmem_rsp, xip_rsp, boot_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
+  signal imem_req, dmem_req, xipcache_req, xip_req, boot_req, io_req, xcache_req, xbus_req : bus_req_t;
+  signal imem_rsp, dmem_rsp, xipcache_rsp, xip_rsp, boot_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
 
   -- bus: IO devices --
   type io_devices_enum_t is (
@@ -367,34 +369,35 @@ begin
     -- show main SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: " &
-      cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",     "") &
-      cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",     "") &
-      cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",  "") &
-      cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",  "") &
-      cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",  "") &
-      cond_sel_string_f(XBUS_EN,                   "XBUS ",     "") &
-      cond_sel_string_f(XBUS_EN and XBUS_CACHE_EN, "XCACHE ",   "") &
-      cond_sel_string_f(io_gpio_en_c,              "GPIO ",     "") &
-      cond_sel_string_f(IO_MTIME_EN,               "MTIME ",    "") &
-      cond_sel_string_f(IO_UART0_EN,               "UART0 ",    "") &
-      cond_sel_string_f(IO_UART1_EN,               "UART1 ",    "") &
-      cond_sel_string_f(IO_SPI_EN,                 "SPI ",      "") &
-      cond_sel_string_f(IO_SDI_EN,                 "SDI ",      "") &
-      cond_sel_string_f(IO_TWI_EN,                 "TWI ",      "") &
-      cond_sel_string_f(io_pwm_en_c,               "PWM ",      "") &
-      cond_sel_string_f(IO_WDT_EN,                 "WDT ",      "") &
-      cond_sel_string_f(IO_TRNG_EN,                "TRNG ",     "") &
-      cond_sel_string_f(IO_CFS_EN,                 "CFS ",      "") &
-      cond_sel_string_f(IO_NEOLED_EN,              "NEOLED ",   "") &
-      cond_sel_string_f(io_xirq_en_c,              "XIRQ ",     "") &
-      cond_sel_string_f(IO_GPTMR_EN,               "GPTMR ",    "") &
-      cond_sel_string_f(XIP_EN,                    "XIP ",      "") &
-      cond_sel_string_f(IO_ONEWIRE_EN,             "ONEWIRE ",  "") &
-      cond_sel_string_f(IO_DMA_EN,                 "DMA ",      "") &
-      cond_sel_string_f(IO_SLINK_EN,               "SLINK ",    "") &
-      cond_sel_string_f(IO_CRC_EN,                 "CRC ",      "") &
-      cond_sel_string_f(true,                      "SYSINFO ",  "") & -- always enabled
-      cond_sel_string_f(ON_CHIP_DEBUGGER_EN,       "OCD ",      "") &
+      cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",      "") &
+      cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",      "") &
+      cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",   "") &
+      cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",   "") &
+      cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",   "") &
+      cond_sel_string_f(XBUS_EN,                   "XBUS ",      "") &
+      cond_sel_string_f(XBUS_EN and XBUS_CACHE_EN, "X-CACHE ",   "") &
+      cond_sel_string_f(XIP_EN,                    "XIP ",       "") &
+      cond_sel_string_f(XIP_EN and XIP_CACHE_EN,   "XIP-CACHE ", "") &
+      cond_sel_string_f(io_gpio_en_c,              "GPIO ",      "") &
+      cond_sel_string_f(IO_MTIME_EN,               "MTIME ",     "") &
+      cond_sel_string_f(IO_UART0_EN,               "UART0 ",     "") &
+      cond_sel_string_f(IO_UART1_EN,               "UART1 ",     "") &
+      cond_sel_string_f(IO_SPI_EN,                 "SPI ",       "") &
+      cond_sel_string_f(IO_SDI_EN,                 "SDI ",       "") &
+      cond_sel_string_f(IO_TWI_EN,                 "TWI ",       "") &
+      cond_sel_string_f(io_pwm_en_c,               "PWM ",       "") &
+      cond_sel_string_f(IO_WDT_EN,                 "WDT ",       "") &
+      cond_sel_string_f(IO_TRNG_EN,                "TRNG ",      "") &
+      cond_sel_string_f(IO_CFS_EN,                 "CFS ",       "") &
+      cond_sel_string_f(IO_NEOLED_EN,              "NEOLED ",    "") &
+      cond_sel_string_f(io_xirq_en_c,              "XIRQ ",      "") &
+      cond_sel_string_f(IO_GPTMR_EN,               "GPTMR ",     "") &
+      cond_sel_string_f(IO_ONEWIRE_EN,             "ONEWIRE ",   "") &
+      cond_sel_string_f(IO_DMA_EN,                 "DMA ",       "") &
+      cond_sel_string_f(IO_SLINK_EN,               "SLINK ",     "") &
+      cond_sel_string_f(IO_CRC_EN,                 "CRC ",       "") &
+      cond_sel_string_f(true,                      "SYSINFO ",   "") & -- always enabled
+      cond_sel_string_f(ON_CHIP_DEBUGGER_EN,       "OCD ",       "") &
       ""
       severity note;
 
@@ -523,7 +526,7 @@ begin
     generic map (
       -- General --
       HART_ID                    => HART_ID,
-      VENDOR_ID                  => VENDOR_ID,
+      VENDOR_ID                  => vendorid_c,
       CPU_BOOT_ADDR              => cpu_boot_addr_c,
       CPU_DEBUG_PARK_ADDR        => dm_park_entry_c,
       CPU_DEBUG_EXC_ADDR         => dm_exc_entry_c,
@@ -542,6 +545,7 @@ begin
       CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,
       CPU_EXTENSION_RISCV_Sdext  => ON_CHIP_DEBUGGER_EN,
       CPU_EXTENSION_RISCV_Sdtrig => ON_CHIP_DEBUGGER_EN,
+      CPU_EXTENSION_RISCV_Smpmp  => cpu_smpmp_c,
       -- Tuning Options --
       FAST_MUL_EN                => FAST_MUL_EN,
       FAST_SHIFT_EN              => FAST_SHIFT_EN,
@@ -599,20 +603,21 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_icache_inst_true:
     if ICACHE_EN generate
-      neorv32_icache_inst: entity neorv32.neorv32_icache
+      neorv32_icache_inst: entity neorv32.neorv32_cache
       generic map (
-        ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
-        ICACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE,
-        ICACHE_NUM_SETS   => ICACHE_ASSOCIATIVITY,
-        ICACHE_UC_PBEGIN  => uncached_begin_c(31 downto 28)
+        NUM_BLOCKS => ICACHE_NUM_BLOCKS,
+        BLOCK_SIZE => ICACHE_BLOCK_SIZE,
+        UC_BEGIN   => uncached_begin_c(31 downto 28),
+        UC_ENABLE  => true,
+        READ_ONLY  => true
       )
       port map (
-        clk_i     => clk_cpu,
-        rstn_i    => rstn_sys,
-        cpu_req_i => cpu_i_req,
-        cpu_rsp_o => cpu_i_rsp,
-        bus_req_o => icache_req,
-        bus_rsp_i => icache_rsp
+        clk_i      => clk_cpu,
+        rstn_i     => rstn_sys,
+        host_req_i => cpu_i_req,
+        host_rsp_o => cpu_i_rsp,
+        bus_req_o  => icache_req,
+        bus_rsp_i  => icache_rsp
       );
     end generate;
 
@@ -627,19 +632,21 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_dcache_inst_true:
     if DCACHE_EN generate
-      neorv32_dcache_inst: entity neorv32.neorv32_dcache
+      neorv32_dcache_inst: entity neorv32.neorv32_cache
       generic map (
-        DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
-        DCACHE_BLOCK_SIZE => DCACHE_BLOCK_SIZE,
-        DCACHE_UC_PBEGIN  => uncached_begin_c(31 downto 28)
+        NUM_BLOCKS => DCACHE_NUM_BLOCKS,
+        BLOCK_SIZE => DCACHE_BLOCK_SIZE,
+        UC_BEGIN   => uncached_begin_c(31 downto 28),
+        UC_ENABLE  => true,
+        READ_ONLY  => false
       )
       port map (
-        clk_i     => clk_cpu,
-        rstn_i    => rstn_sys,
-        cpu_req_i => cpu_d_req,
-        cpu_rsp_o => cpu_d_rsp,
-        bus_req_o => dcache_req,
-        bus_rsp_i => dcache_rsp
+        clk_i      => clk_cpu,
+        rstn_i     => rstn_sys,
+        host_req_i => cpu_d_req,
+        host_rsp_o => cpu_d_rsp,
+        bus_req_o  => dcache_req,
+        bus_rsp_i  => dcache_rsp
       );
     end generate;
 
@@ -872,23 +879,23 @@ begin
     end generate;
 
 
-    -- Execute In Place Module (XIP) ----------------------------------------------------------
+    -- Execute In-Place Module (XIP) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_xip_inst_true:
     if XIP_EN generate
+
+      -- XIP interface --
       neorv32_xip_inst: entity neorv32.neorv32_xip
       generic map (
-        XIP_CACHE_EN         => XIP_CACHE_EN,
-        XIP_CACHE_NUM_BLOCKS => XIP_CACHE_NUM_BLOCKS,
-        XIP_CACHE_BLOCK_SIZE => XIP_CACHE_BLOCK_SIZE
+        XIP_CACHE_EN => XIP_CACHE_EN
       )
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_XIP),
         bus_rsp_o   => iodev_rsp(IODEV_XIP),
-        xip_req_i   => xip_req,
-        xip_rsp_o   => xip_rsp,
+        xip_req_i   => xipcache_req,
+        xip_rsp_o   => xipcache_rsp,
         clkgen_en_o => cg_en(CG_XIP),
         clkgen_i    => clk_gen,
         spi_csn_o   => xip_csn_o,
@@ -896,7 +903,35 @@ begin
         spi_dat_i   => xip_dat_i,
         spi_dat_o   => xip_dat_o
       );
-    end generate;
+
+      -- XIP cache (XIPCACHE) --
+      neorv32_xipcache_inst_true:
+      if XIP_CACHE_EN generate
+        neorv32_xcache_inst: entity neorv32.neorv32_cache
+        generic map (
+          NUM_BLOCKS => XIP_CACHE_NUM_BLOCKS,
+          BLOCK_SIZE => XIP_CACHE_BLOCK_SIZE,
+          UC_BEGIN   => (others => '-'),
+          UC_ENABLE  => false,
+          READ_ONLY  => true
+        )
+        port map (
+          clk_i      => clk_i,
+          rstn_i     => rstn_sys,
+          host_req_i => xip_req,
+          host_rsp_o => xip_rsp,
+          bus_req_o  => xipcache_req,
+          bus_rsp_i  => xipcache_rsp
+        );
+      end generate;
+
+      neorv32_xipcache_inst_false:
+      if not XIP_CACHE_EN generate
+        xipcache_req <= xip_req;
+        xip_rsp      <= xipcache_rsp;
+      end generate;
+
+    end generate; -- /neorv32_xip_inst_true
 
     neorv32_xip_inst_false:
     if not XIP_EN generate
@@ -919,7 +954,6 @@ begin
       generic map (
         BUS_TIMEOUT => XBUS_TIMEOUT,
         PIPE_MODE   => XBUS_PIPE_MODE,
-        BIG_ENDIAN  => XBUS_BIG_ENDIAN,
         ASYNC_RX    => XBUS_ASYNC_RX,
         ASYNC_TX    => XBUS_ASYNC_TX
       )
@@ -947,7 +981,9 @@ begin
         generic map (
           NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
           BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
-          UC_BEGIN   => uncached_begin_c(31 downto 28)
+          UC_BEGIN   => uncached_begin_c(31 downto 28),
+          UC_ENABLE  => true,
+          READ_ONLY  => false
         )
         port map (
           clk_i      => clk_i,
@@ -992,7 +1028,6 @@ begin
     neorv32_bus_io_switch_inst: entity neorv32.neorv32_bus_io_switch
     generic map (
       DEV_SIZE  => iodev_size_c, -- size of a single IO device
-      -- device port enable and base address --
       DEV_00_EN => ON_CHIP_DEBUGGER_EN, DEV_00_BASE => base_io_dm_c,
       DEV_01_EN => true,                DEV_01_BASE => base_io_sysinfo_c, -- always enabled (mandatory core module)
       DEV_02_EN => IO_NEOLED_EN,        DEV_02_BASE => base_io_neoled_c,
@@ -1016,10 +1051,8 @@ begin
       DEV_20_EN => IO_CFS_EN,           DEV_20_BASE => base_io_cfs_c
     )
     port map (
-      -- host port --
       main_req_i   => io_req,
       main_rsp_o   => io_rsp,
-      -- device ports --
       dev_00_req_o => iodev_req(IODEV_OCD),     dev_00_rsp_i => iodev_rsp(IODEV_OCD),
       dev_01_req_o => iodev_req(IODEV_SYSINFO), dev_01_rsp_i => iodev_rsp(IODEV_SYSINFO),
       dev_02_req_o => iodev_req(IODEV_NEOLED),  dev_02_rsp_i => iodev_rsp(IODEV_NEOLED),
@@ -1425,7 +1458,6 @@ begin
         XIRQ_TRIGGER_POLARITY => XIRQ_TRIGGER_POLARITY
       )
       port map (
-        -- host access --
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
         bus_req_i => iodev_req(IODEV_XIRQ),
@@ -1504,18 +1536,15 @@ begin
         SLINK_TX_FIFO => IO_SLINK_TX_FIFO
       )
       port map (
-        -- Host access --
         clk_i            => clk_i,
         rstn_i           => rstn_sys,
         bus_req_i        => iodev_req(IODEV_SLINK),
         bus_rsp_o        => iodev_rsp(IODEV_SLINK),
         irq_o            => firq(FIRQ_SLINK),
-        -- RX stream interface --
         slink_rx_data_i  => slink_rx_dat_i,
         slink_rx_valid_i => slink_rx_val_i,
         slink_rx_last_i  => slink_rx_lst_i,
         slink_rx_ready_o => slink_rx_rdy_o,
-        -- TX stream interface --
         slink_tx_data_o  => slink_tx_dat_o,
         slink_tx_valid_o => slink_tx_val_o,
         slink_tx_last_o  => slink_tx_lst_o,
@@ -1557,45 +1586,47 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_sysinfo_inst: entity neorv32.neorv32_sysinfo
     generic map (
-      -- General --
-      CLOCK_FREQUENCY      => CLOCK_FREQUENCY,
-      CLOCK_GATING_EN      => CLOCK_GATING_EN,
-      INT_BOOTLOADER_EN    => INT_BOOTLOADER_EN,
-      MEM_INT_IMEM_EN      => MEM_INT_IMEM_EN,
-      MEM_INT_IMEM_SIZE    => imem_size_c,
-      MEM_INT_DMEM_EN      => MEM_INT_DMEM_EN,
-      MEM_INT_DMEM_SIZE    => dmem_size_c,
-      AMO_RVS_GRANULARITY  => AMO_RVS_GRANULARITY,
-      ICACHE_EN            => ICACHE_EN,
-      ICACHE_NUM_BLOCKS    => ICACHE_NUM_BLOCKS,
-      ICACHE_BLOCK_SIZE    => ICACHE_BLOCK_SIZE,
-      ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY,
-      DCACHE_EN            => DCACHE_EN,
-      DCACHE_NUM_BLOCKS    => DCACHE_NUM_BLOCKS,
-      DCACHE_BLOCK_SIZE    => DCACHE_BLOCK_SIZE,
-      XBUS_EN              => XBUS_EN,
-      XBUS_BIG_ENDIAN      => XBUS_BIG_ENDIAN,
-      XBUS_CACHE_EN        => XBUS_CACHE_EN,
-      ON_CHIP_DEBUGGER_EN  => ON_CHIP_DEBUGGER_EN,
-      IO_GPIO_EN           => io_gpio_en_c,
-      IO_MTIME_EN          => IO_MTIME_EN,
-      IO_UART0_EN          => IO_UART0_EN,
-      IO_UART1_EN          => IO_UART1_EN,
-      IO_SPI_EN            => IO_SPI_EN,
-      IO_SDI_EN            => IO_SDI_EN,
-      IO_TWI_EN            => IO_TWI_EN,
-      IO_PWM_EN            => io_pwm_en_c,
-      IO_WDT_EN            => IO_WDT_EN,
-      IO_TRNG_EN           => IO_TRNG_EN,
-      IO_CFS_EN            => IO_CFS_EN,
-      IO_NEOLED_EN         => IO_NEOLED_EN,
-      IO_XIRQ_EN           => io_xirq_en_c,
-      IO_GPTMR_EN          => IO_GPTMR_EN,
-      XIP_EN               => XIP_EN,
-      IO_ONEWIRE_EN        => IO_ONEWIRE_EN,
-      IO_DMA_EN            => IO_DMA_EN,
-      IO_SLINK_EN          => IO_SLINK_EN,
-      IO_CRC_EN            => IO_CRC_EN
+      CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
+      CLOCK_GATING_EN       => CLOCK_GATING_EN,
+      INT_BOOTLOADER_EN     => INT_BOOTLOADER_EN,
+      MEM_INT_IMEM_EN       => MEM_INT_IMEM_EN,
+      MEM_INT_IMEM_SIZE     => imem_size_c,
+      MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
+      MEM_INT_DMEM_SIZE     => dmem_size_c,
+      AMO_RVS_GRANULARITY   => AMO_RVS_GRANULARITY,
+      ICACHE_EN             => ICACHE_EN,
+      ICACHE_NUM_BLOCKS     => ICACHE_NUM_BLOCKS,
+      ICACHE_BLOCK_SIZE     => ICACHE_BLOCK_SIZE,
+      DCACHE_EN             => DCACHE_EN,
+      DCACHE_NUM_BLOCKS     => DCACHE_NUM_BLOCKS,
+      DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
+      XBUS_EN               => XBUS_EN,
+      XBUS_CACHE_EN         => XBUS_CACHE_EN,
+      XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
+      XBUS_CACHE_BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
+      XIP_EN                => XIP_EN,
+      XIP_CACHE_EN          => XIP_CACHE_EN,
+      XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
+      XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
+      ON_CHIP_DEBUGGER_EN   => ON_CHIP_DEBUGGER_EN,
+      IO_GPIO_EN            => io_gpio_en_c,
+      IO_MTIME_EN           => IO_MTIME_EN,
+      IO_UART0_EN           => IO_UART0_EN,
+      IO_UART1_EN           => IO_UART1_EN,
+      IO_SPI_EN             => IO_SPI_EN,
+      IO_SDI_EN             => IO_SDI_EN,
+      IO_TWI_EN             => IO_TWI_EN,
+      IO_PWM_EN             => io_pwm_en_c,
+      IO_WDT_EN             => IO_WDT_EN,
+      IO_TRNG_EN            => IO_TRNG_EN,
+      IO_CFS_EN             => IO_CFS_EN,
+      IO_NEOLED_EN          => IO_NEOLED_EN,
+      IO_XIRQ_EN            => io_xirq_en_c,
+      IO_GPTMR_EN           => IO_GPTMR_EN,
+      IO_ONEWIRE_EN         => IO_ONEWIRE_EN,
+      IO_DMA_EN             => IO_DMA_EN,
+      IO_SLINK_EN           => IO_SLINK_EN,
+      IO_CRC_EN             => IO_CRC_EN
     )
     port map (
       clk_i     => clk_i,
@@ -1617,21 +1648,18 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_debug_dtm_inst: entity neorv32.neorv32_debug_dtm
     generic map (
-      IDCODE_VERSION => (others => '0'),
-      IDCODE_PARTID  => (others => '0'),
-      IDCODE_MANID   => (others => '0')
+      IDCODE_VERSION => (others => '0'), -- always zero
+      IDCODE_PARTID  => (others => '0'), -- always zero
+      IDCODE_MANID   => JEDEC_ID
     )
     port map (
-      -- global control --
       clk_i        => clk_i,
       rstn_i       => rstn_ext,
-      -- jtag connection --
       jtag_trst_i  => jtag_trst_i,
       jtag_tck_i   => jtag_tck_i,
       jtag_tdi_i   => jtag_tdi_i,
       jtag_tdo_o   => jtag_tdo_o,
       jtag_tms_i   => jtag_tms_i,
-      -- debug module interface (DMI) --
       dmi_req_o    => dmi_req,
       dmi_rsp_i    => dmi_rsp
     );
@@ -1644,17 +1672,13 @@ begin
       LEGACY_MODE   => DM_LEGACY_MODE
     )
     port map (
-      -- global control --
       clk_i          => clk_i,
       rstn_i         => rstn_ext,
       cpu_debug_i    => cpu_debug,
-      -- debug module interface (DMI) --
       dmi_req_i      => dmi_req,
       dmi_rsp_o      => dmi_rsp,
-      -- CPU bus access --
       bus_req_i      => iodev_req(IODEV_OCD),
       bus_rsp_o      => iodev_rsp(IODEV_OCD),
-      -- CPU control --
       cpu_ndmrstn_o  => dci_ndmrstn,
       cpu_halt_req_o => dci_halt_req
     );
@@ -1664,7 +1688,7 @@ begin
   neorv32_debug_ocd_inst_false:
   if not ON_CHIP_DEBUGGER_EN generate
     iodev_rsp(IODEV_OCD) <= rsp_terminate_c;
-    jtag_tdo_o           <= jtag_tdi_i; -- JTAG feed-through
+    jtag_tdo_o           <= jtag_tdi_i; -- JTAG pass-through
     dci_ndmrstn          <= '1';
     dci_halt_req         <= '0';
   end generate;

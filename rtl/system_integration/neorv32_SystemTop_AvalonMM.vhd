@@ -45,7 +45,7 @@ entity neorv32_top_avalonmm is
     -- General --
     CLOCK_FREQUENCY              : natural;           -- clock frequency of clk_i in Hz
     HART_ID                      : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
-    VENDOR_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- vendor's JEDEC ID
+    JEDEC_ID                     : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
     INT_BOOTLOADER_EN            : boolean := false;  -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
     -- On-Chip Debugger (OCD) --
@@ -87,7 +87,6 @@ entity neorv32_top_avalonmm is
     ICACHE_EN                    : boolean := false;  -- implement instruction cache
     ICACHE_NUM_BLOCKS            : natural := 4;      -- i-cache: number of blocks (min 1), has to be a power of 2
     ICACHE_BLOCK_SIZE            : natural := 64;     -- i-cache: block size in bytes (min 4), has to be a power of 2
-    ICACHE_ASSOCIATIVITY         : natural := 1;      -- i-cache: associativity / number of sets (1=direct_mapped), has to be a power of 2
 
     -- Internal Data Cache (dCACHE) --
     DCACHE_EN                    : boolean := false;  -- implement data cache
@@ -229,7 +228,7 @@ begin
     -- General --
     CLOCK_FREQUENCY => CLOCK_FREQUENCY,
     HART_ID => HART_ID,
-    VENDOR_ID => VENDOR_ID,
+    JEDEC_ID => JEDEC_ID,
 
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN => ON_CHIP_DEBUGGER_EN,
@@ -270,7 +269,6 @@ begin
     ICACHE_EN => ICACHE_EN,
     ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
     ICACHE_BLOCK_SIZE => ICACHE_BLOCK_SIZE,
-    ICACHE_ASSOCIATIVITY => ICACHE_ASSOCIATIVITY,
 
     -- Internal Data Cache (dCACHE) --
     DCACHE_EN => DCACHE_EN,
@@ -281,7 +279,6 @@ begin
     XBUS_EN => true,
     XBUS_TIMEOUT => 0,
     XBUS_PIPE_MODE => false,
-    XBUS_BIG_ENDIAN => false,
     XBUS_ASYNC_RX => false,
     XBUS_ASYNC_TX => false,
 
