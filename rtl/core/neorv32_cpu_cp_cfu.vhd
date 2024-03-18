@@ -1,5 +1,5 @@
 -- #################################################################################################
--- # << NEORV32 CPU - Co-Processor: Custom (Instructions) Functions Unit >>                        #
+-- # << NEORV32 CPU - Co-Processor: Custom (RISC-V Instructions) Functions Unit (CFU) >>           #
 -- # ********************************************************************************************* #
 -- # For custom/user-defined RISC-V instructions (R3-type, R4-type and R5-type formats). See the   #
 -- # CPU's documentation for more information. Also take a look at the "software-counterpart" of   #
@@ -67,7 +67,7 @@ end neorv32_cpu_cp_cfu;
 
 architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
 
-  -- CFU Control - do not modify! ----------------------------
+  -- CFU Control ---------------------------------------------
   -- ------------------------------------------------------------
   type control_t is record
     busy   : std_ulogic; -- CFU is busy
@@ -85,29 +85,39 @@ architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
   constant r5typeA_c : std_ulogic_vector(1 downto 0) := "10"; -- R5-type instruction A (custom-2 opcode)
   constant r5typeB_c : std_ulogic_vector(1 downto 0) := "11"; -- R5-type instruction B (custom-3 opcode)
 
-
   -- User-Defined Logic --------------------------------------
   -- ------------------------------------------------------------
-  -- multiply-add unit (r4-type instruction example) --
-  type madd_t is record
-    sreg : std_ulogic_vector(2 downto 0); -- 3 cycles latency = 3 bits in arbitration shift register
-    done : std_ulogic;
-    --
-    opa  : std_ulogic_vector(XLEN-1 downto 0);
-    opb  : std_ulogic_vector(XLEN-1 downto 0);
-    opc  : std_ulogic_vector(XLEN-1 downto 0);
-    mul  : std_ulogic_vector(2*XLEN-1 downto 0);
-    res  : std_ulogic_vector(2*XLEN-1 downto 0);
-  end record;
-  signal madd : madd_t;
+  -- xtea instructions (funct3 bit-field) --
+  constant xtea_enc_v0_c : std_ulogic_vector(2 downto 0) := "000";
+  constant xtea_enc_v1_c : std_ulogic_vector(2 downto 0) := "001";
+  constant xtea_dec_v0_c : std_ulogic_vector(2 downto 0) := "010";
+  constant xtea_dec_v1_c : std_ulogic_vector(2 downto 0) := "011";
+  constant xtea_init_c   : std_ulogic_vector(2 downto 0) := "100";
 
-  -- custom control and status registers (CSRs) --
-  signal cfu_csr_0, cfu_csr_1 : std_ulogic_vector(XLEN-1 downto 0);
+  -- xtea round-key adjusting --
+  constant xtea_delta_c : std_ulogic_vector(31 downto 0) := x"9e3779b9";
+
+  -- xtea key storage (accessed via CFU CSRs) --
+  type key_mem_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
+  signal key_mem : key_mem_t;
+
+  -- xtea processing logic --
+  type xtea_t is record
+    done : std_ulogic_vector(1 downto 0);  -- multi-cycle operation SREG
+    opa  : std_ulogic_vector(31 downto 0); -- input operand a
+    opb  : std_ulogic_vector(31 downto 0); -- input operand b
+    sum  : std_ulogic_vector(31 downto 0); -- round key buffer
+    res  : std_ulogic_vector(31 downto 0); -- operation results
+  end record;
+  signal xtea : xtea_t;
+
+  -- xtea helper --
+  signal tmp_a, tmp_b, tmp_x, tmp_y, tmp_z, tmp_r : std_ulogic_vector(31 downto 0);
 
 begin
 
   -- **************************************************************************************************************************
-  -- This controller is required to handle the CFU <-> CPU interface. Do not modify!
+  -- This controller is required to handle the CFU <-> CPU interface.
   -- **************************************************************************************************************************
 
   -- CFU Controller -------------------------------------------------------------------------
@@ -122,13 +132,13 @@ begin
       control.busy <= '0';
     elsif rising_edge(clk_i) then
       res_o <= (others => '0'); -- default; all CPU co-processor outputs are logically OR-ed
-      if (control.busy = '0') then -- idle
-        if (start_i = '1') then -- trigger new CFU operation
-          control.busy <= '1';
+      if (control.busy = '0') then -- CFU is idle
+        control.busy <= start_i; -- trigger new CFU operation
+      else -- CFU operation in progress
+        res_o <= control.result; -- output result only if CFU is processing; has to be all-zero otherwise
+        if (control.done = '1') or (ctrl_i.cpu_trap = '1') then -- operation done or abort if trap (exception)
+          control.busy <= '0';
         end if;
-      elsif (control.done = '1') or (ctrl_i.cpu_trap = '1') then -- operation done? abort if trap (exception)
-        res_o        <= control.result; -- output result for just one cycle, CFU output has to be all-zero otherwise
-        control.busy <= '0';
       end if;
     end if;
   end process cfu_control;
@@ -143,7 +153,7 @@ begin
 
 
   -- **************************************************************************************************************************
-  -- CFU Interface Documentation
+  -- CFU Hardware Documentation
   -- **************************************************************************************************************************
 
   -- ----------------------------------------------------------------------------------------
@@ -221,7 +231,6 @@ begin
   --
   -- [NOTE] If the <control.done> signal is not set within a bound time window (default = 512 cycles) the CFU operation is
   --        automatically terminated by the hardware and an illegal instruction exception is raised. This feature can also be
-  --        be used to implement custom CFU exceptions (for example to indicate invalid CFU operations).
 
   -- ----------------------------------------------------------------------------------------
   -- CFU-Internal Control and Status Registers (CFU-CSRs)
@@ -241,145 +250,130 @@ begin
 
 
   -- **************************************************************************************************************************
-  -- Actual CFU User Logic Example - replace this with your custom logic
+  -- Actual CFU User Logic Example: XTEA - Extended Tiny Encryption Algorithm (replace this with your custom logic)
   -- **************************************************************************************************************************
 
-  -- CFU-Internal Control and Status Registers (CFU-CSRs) -----------------------------------
+  -- This CFU example implements the Extended Tiny Encryption Algorithm (XTEA).
+  -- The CFU provides 5 custom instructions to accelerate encryption and decryption using dedicated hardware.
+  -- The RTL code is not optimized (not for area, not for clock speed, not for performance) and was
+  -- implemented according to a software C reference (https://de.wikipedia.org/wiki/Extended_Tiny_Encryption_Algorithm).
+
+
+  -- CFU-Internal Control and Status Registers (CFU-CSRs): 128-Bit Key Storage --------------
   -- -------------------------------------------------------------------------------------------
   -- synchronous write access --
   csr_write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cfu_csr_0 <= (others => '0');
-      cfu_csr_1 <= (others => '0');
+      key_mem <= (others => (others => '0'));
     elsif rising_edge(clk_i) then
-      if (csr_we_i = '1') and (csr_addr_i = "00") then
-        cfu_csr_0 <= csr_wdata_i;
-      end if;
-      if (csr_we_i = '1') and (csr_addr_i = "01") then
-        cfu_csr_1 <= csr_wdata_i;
+      if (csr_we_i = '1') then
+        key_mem(to_integer(unsigned(csr_addr_i))) <= csr_wdata_i;
       end if;
     end if;
   end process csr_write_access;
 
   -- asynchronous read access --
-  csr_read_access: process(csr_addr_i, cfu_csr_0, cfu_csr_1)
-  begin
-    case csr_addr_i is
-      when "00"   => csr_rdata_o <= cfu_csr_0;       -- CSR0: simple read/write register
-      when "01"   => csr_rdata_o <= cfu_csr_1;       -- CSR1: simple read/write register
-      when "10"   => csr_rdata_o <= x"1234abcd";     -- CSR2: hardwired/read-only register
-      when others => csr_rdata_o <= (others => '0'); -- CSR3: not implemented
-    end case;
-  end process csr_read_access;
+  csr_rdata_o <= key_mem(to_integer(unsigned(csr_addr_i)));
 
 
-  -- Iterative Multiply-Add Unit ------------------------------------------------------------
+  -- XTEA Processing Core ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- iteration control --
-  madd_control: process(rstn_i, clk_i)
+  xtea_core: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      madd.sreg <= (others => '0');
+      xtea.done <= (others => '0');
+      xtea.opa  <= (others => '0');
+      xtea.opb  <= (others => '0');
+      xtea.sum  <= (others => '0');
+      xtea.res  <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- operation trigger --
-      if (control.busy = '0') and -- CFU is idle (ready for next operation)
-         (start_i = '1') and -- CFU is actually triggered by a custom instruction word
-         (control.rtype = r4type_c) and -- this is a R4-type instruction
-         (control.funct3(2 downto 1) = "00") then -- trigger only for specific funct3 values
-        madd.sreg(0) <= '1';
-      else
-        madd.sreg(0) <= '0';
+
+      -- shift register for computation delay --
+      xtea.done(0) <= '0'; -- default
+      xtea.done(1) <= xtea.done(0);
+
+      -- trigger new operation --
+      if (start_i = '1') and (control.rtype = r3type_c) then -- execution trigger and correct instruction type
+        xtea.opa     <= rs1_i; -- buffer input operand rs1 (for improved physical timing)
+        xtea.opb     <= rs2_i; -- buffer input operand rs2 (for improved physical timing)
+        xtea.done(0) <= '1';   -- result is available in the 2nd cycle
       end if;
-      -- simple shift register for tracking operation --
-      madd.sreg(madd.sreg'left downto 1) <= madd.sreg(madd.sreg'left-1 downto 0); -- shift left
+
+      -- data processing --
+      if (xtea.done(0) = '1') then -- second-stage execution trigger
+        -- update "sum" round key --
+        if (control.funct3(2) = '1') then -- initialize
+          xtea.sum <= xtea.opa; -- set initial round key
+        elsif (control.funct3(1 downto 0) = xtea_enc_v0_c(1 downto 0)) then -- encrypt v0
+          xtea.sum <= std_ulogic_vector(unsigned(xtea.sum) + unsigned(xtea_delta_c));
+        elsif (control.funct3(1 downto 0) = xtea_dec_v1_c(1 downto 0)) then -- decrypt v1
+          xtea.sum <= std_ulogic_vector(unsigned(xtea.sum) - unsigned(xtea_delta_c));
+        end if;
+        -- process "v" operands --
+        if (control.funct3(1) = '0') then -- encrypt
+          xtea.res <= std_ulogic_vector(unsigned(tmp_b) + unsigned(tmp_r));
+        else -- decrypt
+          xtea.res <= std_ulogic_vector(unsigned(tmp_b) - unsigned(tmp_r));
+        end if;
+      end if;
+
     end if;
-  end process madd_control;
+  end process xtea_core;
 
-  -- processing has reached last stage (= done) when sreg's MSB is set --
-  madd.done <= madd.sreg(madd.sreg'left);
-
-  -- arithmetic core --
-  madd_core: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      madd.opa <= (others => '0');
-      madd.opb <= (others => '0');
-      madd.opc <= (others => '0');
-      madd.mul <= (others => '0');
-      madd.res <= (others => '0');
-    elsif rising_edge(clk_i) then
-      -- stage 0: buffer input operands --
-      madd.opa <= rs1_i;
-      madd.opb <= rs2_i;
-      madd.opc <= rs3_i;
-      -- stage 1: multiply rs1 and rs2 --
-      madd.mul <= std_ulogic_vector(unsigned(madd.opa) * unsigned(madd.opb));
-      -- stage 2: add rs3 to multiplication result --
-      madd.res <= std_ulogic_vector(unsigned(madd.mul) + unsigned(madd.opc));
-    end if;
-  end process madd_core;
+  -- helpers --
+  tmp_a <= xtea.opb when (control.funct3(0) = '0') else xtea.opa; -- v1 / v0 select
+  tmp_b <= xtea.opa when (control.funct3(0) = '0') else xtea.opb; -- v0 / v1 select
+  tmp_x <= xtea.opb(27 downto 0) & "0000"  when (control.funct3(0) = '0') else xtea.opa(27 downto 0) & "0000";  -- v << 4
+  tmp_y <= "00000" & xtea.opb(31 downto 5) when (control.funct3(0) = '0') else "00000" & xtea.opa(31 downto 5); -- v >> 5
+  tmp_z <= key_mem(to_integer(unsigned(xtea.sum(1 downto 0)))) when (control.funct3(0) = '0') else -- key[sum & 3]
+           key_mem(to_integer(unsigned(xtea.sum(12 downto 11)))); -- key[(sum >> 11) & 3]
+  tmp_r <= std_ulogic_vector(unsigned(tmp_x xor tmp_y) + unsigned(tmp_a)) xor std_ulogic_vector(unsigned(xtea.sum) + unsigned(tmp_z));
 
 
-  -- Output select --------------------------------------------------------------------------
+  -- Function Result Select -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  out_select: process(control, rs1_i, rs2_i, rs3_i, rs4_i, madd)
+  result_select: process(control, xtea)
   begin
     case control.rtype is
 
-      when r3type_c => -- R3-type instructions
+      when r3type_c => -- R3-type instructions; function select via "funct7" and "funct3"
       -- ----------------------------------------------------------------------
-        -- This is a simple ALU that implements four pure-combinatorial instructions.
-        -- The actual function is selected by the "funct3" bit-field.
-        case control.funct3 is
-          when "000" => -- funct3 = "000": bit-reversal of rs1
-            control.result <= bit_rev_f(rs1_i);
+        case control.funct3 is -- Just check "funct3" here; "funct7" bit-field is ignored
+          when xtea_enc_v0_c | xtea_enc_v1_c | xtea_dec_v0_c | xtea_dec_v1_c => -- encryption/decryption
+            control.result <= xtea.res; -- processing result
+            control.done   <= xtea.done(xtea.done'left); -- multi-cycle processing done when set
+          when others => -- initialization and all further unspecified operations
+            control.result <= (others => '0'); -- just output zero
             control.done   <= '1'; -- pure-combinatorial, so we are done "immediately"
-          when "001" => -- funct3 = "001": XNOR input operands
-            control.result <= not (rs1_i xor rs2_i);
-            control.done   <= '1'; -- pure-combinatorial, so we are done "immediately"
-          when others => -- not implemented
-            control.result <= (others => '0');
-            control.done   <= '0'; -- this will cause an illegal instruction exception after timeout
         end case;
 
-      when r4type_c => -- R4-type instructions
+      when r4type_c => -- R4-type instructions; function select via "funct3"
       -- ----------------------------------------------------------------------
-        -- This is an iterative multiply-and-add unit that requires several cycles for processing.
-        -- The actual function is selected by the lowest bit of the "funct3" bit-field.
-        case control.funct3 is
-          when "000" => -- funct3 = "000": multiply-add low-part result: rs1*rs2+r3 [31:0]
-            control.result <= madd.res(31 downto 0);
-            control.done   <= madd.done; -- iterative, wait for unit to finish
-          when "001" => -- funct3 = "001": multiply-add high-part result: rs1*rs2+r3 [63:32]
-            control.result <= madd.res(63 downto 32);
-            control.done   <= madd.done; -- iterative, wait for unit to finish
-          when others => -- not implemented
-            control.result <= (others => '0');
-            control.done   <= '0'; -- this will cause an illegal instruction exception after timeout
-        end case;
+        control.result <= (others => '0'); -- no logic implemented
+        control.done   <= '0'; -- this will cause an illegal instruction exception after timeout
 
       when r5typeA_c => -- R5-type instruction A
       -- ----------------------------------------------------------------------
         -- No function/immediate bit-fields are available for this instruction type.
         -- Hence, there is just one operation that can be implemented.
-        control.result <= rs1_i and rs2_i and rs3_i and rs4_i; -- AND-all
-        control.done   <= '1'; -- pure-combinatorial, so we are done "immediately"
+        control.result <= (others => '0'); -- no logic implemented
+        control.done   <= '0'; -- this will cause an illegal instruction exception after timeout
 
       when r5typeB_c => -- R5-type instruction B
       -- ----------------------------------------------------------------------
         -- No function/immediate bit-fields are available for this instruction type.
         -- Hence, there is just one operation that can be implemented.
-        control.result <= rs1_i xor rs2_i xor rs3_i xor rs4_i; -- XOR-all
-        control.done   <= '1'; -- pure-combinatorial, so we are done "immediately"
+        control.result <= (others => '0'); -- no logic implemented
+        control.done   <= '0'; -- this will cause an illegal instruction exception after timeout
 
       when others => -- undefined
       -- ----------------------------------------------------------------------
-        control.result <= (others => '0');
-        control.done   <= '0';
+        control.result <= (others => '0'); -- no logic implemented
+        control.done   <= '0'; -- this will cause an illegal instruction exception after timeout
 
     end case;
-  end process out_select;
+  end process result_select;
 
 
 end neorv32_cpu_cp_cfu_rtl;
