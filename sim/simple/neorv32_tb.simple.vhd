@@ -49,14 +49,14 @@ use std.textio.all;
 
 entity neorv32_tb_simple is
   generic (
-    PERFORMANCE_OPTION : natural := 0     -- Set core options for performance measurements
+    PERFORMANCE_OPTION : natural := 0 -- Set core options for performance measurements
   );
 end neorv32_tb_simple;
 
 architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
 
   -- advanced configuration --
-  constant num_configs_c : natural := 3;    -- number of pre-defined configurations
+  constant num_configs_c : natural := 3; -- number of pre-defined configurations
 
   -- helpers --
   type bool_t is array (0 to num_configs_c-1) of boolean;
@@ -74,16 +74,16 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
 
   -- User Configuration ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- core performance optionss --
+  -- core performance options --
   constant performance_options_c : performance_options_type_t := (
     --                       default  fast core  area core  
     fast_mul_en_c       => (    true,      true,     false), -- Fast multiplication, more area
     fast_shift_en_c     => (    true,      true,     false), -- Fast shifting, more area
     imem_size_c         => ( 32*1024,  128*1024,  128*1024), -- Instruction memory size min. 128kB for performance tests
     icache_en_c         => (    true,     false,     false), -- I$ disabled for performance tests
-    icache_block_size_c => (      64,        64,        64), -- I$ block size
+    icache_block_size_c => (      32,        32,        32), -- I$ block size
     dcache_en_c         => (    true,     false,     false), -- D$ disabled for performance tests
-    dcache_block_size_c => (      64,        64,        64)  -- D$ block size
+    dcache_block_size_c => (      32,        32,        32)  -- D$ block size
   );
 
   -- general --
@@ -179,7 +179,7 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
 
 begin
 
-  -- Clock/Reset Generator ---------------------------------------------------------------------
+  -- Clock/Reset Generator ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   clk_gen <= not clk_gen after (t_clock_c/2);
   rst_gen <= '0', '1' after 60*(t_clock_c/2);
