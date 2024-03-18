@@ -138,7 +138,12 @@ begin
     twi_scl_i   => con_twi_scl_i, -- serial clock line sense input
     twi_scl_o   => con_twi_scl_o, -- serial clock line output (pull low only)
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o       => con_pwm_o      -- pwm channels
+    pwm_o       => con_pwm_o,      -- pwm channels
+	-- SPI (available if IO_SPI_EN = true) --
+    spi_clk_o   => con_spi_sck,	   -- SPI clock
+    spi_dat_o   => con_spi_sdo,    -- SPI Data out (MOSI)
+    spi_dat_i   => con_spi_sdi,    -- SPI Data in (MISO)
+    spi_csn_o   => con_spi_csn     -- SPI CSn
   );
 
   -- SPI: on-board flash --
