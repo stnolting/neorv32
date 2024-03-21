@@ -380,7 +380,8 @@ additional latency). However, _all_ bus signals (request and response) need to b
 
 The load-reservate (`lr.w`) and store-conditional (`sc.w`) instructions from the <<_a_isa_extension>> execute as standard
 load/store bus transactions but with the `rvso` ("reservation set operation") signal being set. It is the task of the
-<<_reservation_set_controller>> to handle these LR/SC bus transactions accordingly.
+<<_reservation_set_controller>> to handle these LR/SC bus transactions accordingly. Note that these reservation set operations
+are intended for processor-internal usage only (i.e. the reservation state is not available for processor-external modules yet).
 
 .Reservation Set Controller
 [NOTE]
@@ -388,7 +389,7 @@ See section <<_address_space>> / <<_reservation_set_controller>> for more inform
 
 .Read-Modify-Write Operations
 [IMPORTANT]
-Read-modify-write operations (line an atomic swap / `amoswap.w`) are **not** supported. However, the NEORV32
+Read-modify-write operations (like an atomic swap / `amoswap.w`) are **not** supported yet. However, the NEORV32
 <<_core_libraries>> provide an emulation wrapper for those unsupported instructions that is
 based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
 
