@@ -88,8 +88,6 @@ and FreeRTOS and can be synthesized for _any_ target technology - [tested](https
 on Intel, AMD and Lattice FPGAs. The conversion into a plain-Verilog netlist module is automatically checked by the
 [neorv32-verilog](https://github.com/stnolting/neorv32-verilog) repository.
 
-[[_back to top_](#the-neorv32-risc-v-processor)]
-
 
 ## 2. Features
 
@@ -187,8 +185,6 @@ data integrity (CRC8/16/32)
 * compatible with **OpenOCD**, **GDB** and **Segger Embedded Studio**
 * RISC-V [trigger module](https://stnolting.github.io/neorv32/#_trigger_module) for hardware-assisted breakpoints
 
-[[_back to top_](#the-neorv32-risc-v-processor)]
-
 
 ## 3. FPGA Implementation Results
 
@@ -203,8 +199,6 @@ using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimizatio
 
 > [!TIP]
 > An incremental list of CPU extensions and processor modules can be found in the[Data Sheet: FPGA Implementation Results](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
-
-[[_back to top_](#the-neorv32-risc-v-processor)]
 
 
 ## 4. Performance
@@ -226,8 +220,6 @@ The following table shows the performance results (scores and average CPI) for e
 The CPU & SoC provide further "tuning" options to optimize the design for maximum performance,
 maximum clock speed, minimal area or minimal power consumption:
 [User Guide: Application-Specific Processor Configuration](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration)
-
-[[_back to top_](#the-neorv32-risc-v-processor)]
 
 
 ## 5. Getting Started
@@ -299,8 +291,6 @@ Please cite it appropriately. :+1:
 Please use GitHub [Issues](https://github.com/stnolting/neorv32/issues) and [Discussions](https://github.com/stnolting/neorv32/discussions)
 for all kind of requests, issues, ideas, questions, etc. If you would like to contact [me](https://github.com/stnolting) directly
 check out the [About](https://stnolting.github.io/neorv32/#_about) section.
-
-[[_back to top_](#the-neorv32-risc-v-processor)]
 
 
 ---------------------------------------
