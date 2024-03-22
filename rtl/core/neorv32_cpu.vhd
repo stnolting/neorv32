@@ -114,8 +114,9 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- local signals --
   signal ctrl         : ctrl_bus_t; -- main control bus
   signal imm          : std_ulogic_vector(XLEN-1 downto 0); -- immediate
-  signal rs1, rs2     : std_ulogic_vector(XLEN-1 downto 0); -- source register 1,2
-  signal rs3, rs4     : std_ulogic_vector(XLEN-1 downto 0); -- source register 3,4
+  signal rf_wdata     : std_ulogic_vector(XLEN-1 downto 0); -- register file write data
+  signal rs1, rs2     : std_ulogic_vector(XLEN-1 downto 0); -- source registers 1 and 2
+  signal rs3, rs4     : std_ulogic_vector(XLEN-1 downto 0); -- source registers 3 and 4 (optional)
   signal alu_res      : std_ulogic_vector(XLEN-1 downto 0); -- alu result
   signal alu_add      : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp      : std_ulogic_vector(1 downto 0); -- comparator result
@@ -266,17 +267,16 @@ begin
     clk_i  => clk_i,     -- global clock, rising edge
     rstn_i => rstn_i,    -- global reset, low-active, async
     ctrl_i => ctrl,      -- main control bus
-    -- data input --
-    alu_i  => alu_res,   -- ALU result
-    mem_i  => mem_rdata, -- memory read data
-    csr_i  => csr_rdata, -- CSR read data
-    ret_i  => link_pc,   -- return address
-    -- data output --
-    rs1_o  => rs1,       -- rs1
-    rs2_o  => rs2,       -- rs2
-    rs3_o  => rs3,       -- rs3
-    rs4_o  => rs4        -- rs4
+    -- operands --
+    rd_i   => rf_wdata,  -- destination operand rd
+    rs1_o  => rs1,       -- source operand rs1
+    rs2_o  => rs2,       -- source operand rs2
+    rs3_o  => rs3,       -- source operand rs3
+    rs4_o  => rs4        -- source operand rs4
   );
+
+  -- all buses are zero unless there is an according operation --
+  rf_wdata <= alu_res or mem_rdata or csr_rdata or link_pc;
 
 
   -- ALU (Arithmetic/Logic Unit) and ALU Co-Processors --------------------------------------
