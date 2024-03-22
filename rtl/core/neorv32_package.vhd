@@ -52,7 +52,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090700"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090701"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -222,8 +222,6 @@ package neorv32_package is
   constant instr_rs1_msb_c     : natural := 19; -- source register 1 address bit 4
   constant instr_rs2_lsb_c     : natural := 20; -- source register 2 address bit 0
   constant instr_rs2_msb_c     : natural := 24; -- source register 2 address bit 4
-  constant instr_rs3_lsb_c     : natural := 27; -- source register 3 address bit 0
-  constant instr_rs3_msb_c     : natural := 31; -- source register 3 address bit 4
   constant instr_funct7_lsb_c  : natural := 25; -- funct7 bit 0
   constant instr_funct7_msb_c  : natural := 31; -- funct7 bit 6
   constant instr_funct12_lsb_c : natural := 20; -- funct12 bit 0
@@ -508,12 +506,11 @@ package neorv32_package is
     rf_wb_en     : std_ulogic; -- write back enable
     rf_rs1       : std_ulogic_vector(04 downto 0); -- source register 1 address
     rf_rs2       : std_ulogic_vector(04 downto 0); -- source register 2 address
-    rf_rs3       : std_ulogic_vector(04 downto 0); -- source register 3 address
     rf_rd        : std_ulogic_vector(04 downto 0); -- destination register address
-    rf_mux       : std_ulogic_vector(01 downto 0); -- input source select
     rf_zero_we   : std_ulogic;                     -- allow/force write access to x0
     -- alu --
-    alu_op       : std_ulogic_vector(02 downto 0); -- ALU operation select
+    alu_op       : std_ulogic_vector(02 downto 0); -- operation select
+    alu_sub      : std_ulogic;                     -- addition/subtraction control
     alu_opa_mux  : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
     alu_opb_mux  : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
     alu_unsigned : std_ulogic;                     -- is unsigned ALU operation
@@ -523,7 +520,7 @@ package neorv32_package is
     lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
     lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
     lsu_fence    : std_ulogic;                     -- fence(.i) operation
-    lsu_priv     : std_ulogic;                     -- effective privilege level for load/store
+    lsu_priv     : std_ulogic;                     -- effective privilege mode for load/store
     -- instruction word --
     ir_funct3    : std_ulogic_vector(02 downto 0); -- funct3 bit field
     ir_funct12   : std_ulogic_vector(11 downto 0); -- funct12 bit field
@@ -540,11 +537,10 @@ package neorv32_package is
     rf_wb_en     => '0',
     rf_rs1       => (others => '0'),
     rf_rs2       => (others => '0'),
-    rf_rs3       => (others => '0'),
     rf_rd        => (others => '0'),
-    rf_mux       => (others => '0'),
     rf_zero_we   => '0',
     alu_op       => (others => '0'),
+    alu_sub      => '0',
     alu_opa_mux  => '0',
     alu_opb_mux  => '0',
     alu_unsigned => '0',
@@ -577,10 +573,10 @@ package neorv32_package is
   constant cp_sel_cfu_c      : natural := 4; -- CP4: custom instructions CFU ('Zxcfu' extension)
   constant cp_sel_cond_c     : natural := 5; -- CP5: conditional operations ('Zicond' extension)
 
-  -- ALU Function Codes [DO NOT CHANGE ENCODING!] -------------------------------------------
+  -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant alu_op_add_c  : std_ulogic_vector(2 downto 0) := "000"; -- result <= A + B
-  constant alu_op_sub_c  : std_ulogic_vector(2 downto 0) := "001"; -- result <= A - B
+  constant alu_op_zero_c : std_ulogic_vector(2 downto 0) := "000"; -- result <= 0
+  constant alu_op_add_c  : std_ulogic_vector(2 downto 0) := "001"; -- result <= A + (-)B
   constant alu_op_cp_c   : std_ulogic_vector(2 downto 0) := "010"; -- result <= ALU co-processor
   constant alu_op_slt_c  : std_ulogic_vector(2 downto 0) := "011"; -- result <= A < B
   constant alu_op_movb_c : std_ulogic_vector(2 downto 0) := "100"; -- result <= B

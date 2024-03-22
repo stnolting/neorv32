@@ -684,7 +684,7 @@ begin
 
   -- PC output --
   curr_pc_o <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- current PC
-  link_pc_o <= execute_engine.link_pc(XLEN-1 downto 1) & '0'; -- return address
+  link_pc_o <= (execute_engine.link_pc(XLEN-1 downto 1) & '0') when (execute_engine.state = BRANCHED) else (others => '0'); -- return address
 
 
   -- Decoding Helper Logic ------------------------------------------------------------------
@@ -814,7 +814,7 @@ begin
     csr.we_nxt               <= '0';
     csr.re_nxt               <= '0';
     --
-    ctrl_nxt                 <= ctrl_bus_zero_c; -- all zero/off by default, default ALU operation = ADD, default RF input = ALU
+    ctrl_nxt                 <= ctrl_bus_zero_c; -- all zero/off by default (default ALU operation = ZERO, adder.out = ADD)
 
     -- ALU sign control --
     if (execute_engine.ir(instr_opcode_lsb_c+4) = '1') then -- ALU ops
@@ -890,23 +890,22 @@ begin
 
           -- register/immediate ALU operation --
           when opcode_alu_c | opcode_alui_c =>
+
             -- ALU core operation --
-            case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is -- actual ALU operation (re-coding)
-              when funct3_subadd_c => -- ADD(I), SUB
-                if ((execute_engine.ir(instr_opcode_msb_c-1) = '1') and (execute_engine.ir(instr_funct7_msb_c-1) = '1')) then
-                  ctrl_nxt.alu_op <= alu_op_sub_c; -- SUB if not an immediate op and funct7.6 set
-                else
-                  ctrl_nxt.alu_op <= alu_op_add_c;
-                end if;
-              when funct3_slt_c | funct3_sltu_c => -- SLT(I), SLTU(I)
-                ctrl_nxt.alu_op <= alu_op_slt_c;
-              when funct3_xor_c => -- XOR(I)
-                ctrl_nxt.alu_op <= alu_op_xor_c;
-              when funct3_or_c => -- OR(I)
-                ctrl_nxt.alu_op <= alu_op_or_c;
-              when others => -- AND(I) or multi-cycle / co-processor operation
-                ctrl_nxt.alu_op <= alu_op_and_c;
+            case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is -- operation re-coding
+              when funct3_subadd_c              => ctrl_nxt.alu_op <= alu_op_add_c; -- ADD(I), SUB
+              when funct3_slt_c | funct3_sltu_c => ctrl_nxt.alu_op <= alu_op_slt_c; -- SLT(I), SLTU(I)
+              when funct3_xor_c                 => ctrl_nxt.alu_op <= alu_op_xor_c; -- XOR(I)
+              when funct3_or_c                  => ctrl_nxt.alu_op <= alu_op_or_c; -- OR(I)
+              when others                       => ctrl_nxt.alu_op <= alu_op_and_c; -- AND(I) or multi-cycle / co-processor operation (shifts)
             end case;
+
+            -- addition/subtraction control --
+            if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c+1) = funct3_slt_c(2 downto 1)) or -- SLT(I), SLTU(I)
+               ((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) and
+                (execute_engine.ir(instr_opcode_msb_c-1) = '1') and (execute_engine.ir(instr_funct7_msb_c-1) = '1')) then
+              ctrl_nxt.alu_sub <= '1';
+            end if;
 
             -- EXT: co-processor MULDIV operation (multi-cycle) --
             if ((CPU_EXTENSION_RISCV_M = true) and (execute_engine.ir(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and
@@ -995,7 +994,6 @@ begin
 
       when BRANCH => -- update next_PC on taken branches and jumps
       -- ------------------------------------------------------------
-        ctrl_nxt.rf_mux   <= rf_mux_ret_c; -- return address = link PC
         ctrl_nxt.rf_wb_en <= execute_engine.ir(instr_opcode_lsb_c+2); -- save return address if link operation (will not happen if misaligned)
         if (trap_ctrl.exc_buf(exc_illegal_c) = '0') and (execute_engine.branch_taken = '1') then -- valid taken branch
           fetch_engine.reset       <= '1'; -- reset instruction fetch to restart at modified PC
@@ -1008,10 +1006,7 @@ begin
       -- ------------------------------------------------------------
         execute_engine.state_nxt <= DISPATCH;
         -- house keeping: use this state also to (re-)initialize the register file's x0/zero register --
-        if (REGFILE_HW_RST = false) then -- x0 does not provide a dedicated hardware reset
-          ctrl_nxt.rf_mux     <= rf_mux_csr_c; -- this will return 0 since csr.re_nxt is zero
-          ctrl_nxt.rf_zero_we <= '1'; -- force write access to x0
-        end if;
+        ctrl_nxt.rf_zero_we <= not bool_to_ulogic_f(REGFILE_HW_RST); -- force write access to x0 if it is a physical register
 
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
@@ -1024,7 +1019,6 @@ begin
 
       when MEM_WAIT => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
-        ctrl_nxt.rf_mux <= rf_mux_mem_c; -- RF input = memory read data
         if (lsu_wait_i = '0') or -- bus system has completed the transaction
            (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
            (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') then -- alignment exception
@@ -1044,7 +1038,6 @@ begin
       when others => -- SYSTEM - system environment operation; no effect if illegal instruction
       -- ------------------------------------------------------------
         execute_engine.state_nxt <= DISPATCH; -- default
-        ctrl_nxt.rf_mux          <= rf_mux_csr_c; -- CSR read data
         if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and -- ENVIRONMENT
            (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- not an illegal instruction
           case execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c) is
@@ -1094,13 +1087,12 @@ begin
                          (not trap_ctrl.exc_buf(exc_iaccess_c)) and (not trap_ctrl.exc_buf(exc_saccess_c)) and (not trap_ctrl.exc_buf(exc_laccess_c));
   ctrl_o.rf_rs1       <= execute_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c);
   ctrl_o.rf_rs2       <= execute_engine.ir(instr_rs2_msb_c downto instr_rs2_lsb_c);
-  ctrl_o.rf_rs3       <= execute_engine.ir(instr_rs3_msb_c downto instr_rs3_lsb_c);
-  ctrl_o.rf_rd        <= execute_engine.ir(instr_rd_msb_c  downto instr_rd_lsb_c);
-  ctrl_o.rf_mux       <= ctrl.rf_mux;
+  ctrl_o.rf_rd        <= execute_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c);
   ctrl_o.rf_zero_we   <= ctrl.rf_zero_we;
 
   -- alu --
   ctrl_o.alu_op       <= ctrl.alu_op;
+  ctrl_o.alu_sub      <= ctrl.alu_sub;
   ctrl_o.alu_opa_mux  <= ctrl.alu_opa_mux;
   ctrl_o.alu_opb_mux  <= ctrl.alu_opb_mux;
   ctrl_o.alu_unsigned <= ctrl.alu_unsigned;
@@ -1114,9 +1106,9 @@ begin
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
 
   -- instruction word bit fields --
-  ctrl_o.ir_funct3    <= execute_engine.ir(instr_funct3_msb_c  downto instr_funct3_lsb_c);
+  ctrl_o.ir_funct3    <= execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
   ctrl_o.ir_funct12   <= execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c);
-  ctrl_o.ir_opcode    <= execute_engine.ir(instr_opcode_msb_c  downto instr_opcode_lsb_c);
+  ctrl_o.ir_opcode    <= execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c);
 
   -- cpu status --
   ctrl_o.cpu_priv     <= csr.privilege_eff;
@@ -1537,7 +1529,7 @@ begin
       elsif (trap_ctrl.irq_buf(irq_msi_irq_c)  = '1') then trap_ctrl.cause <= trap_msi_c; -- machine software interrupt (MSI)
       elsif (trap_ctrl.irq_buf(irq_mti_irq_c)  = '1') then trap_ctrl.cause <= trap_mti_c; -- machine timer interrupt (MTI)
       --
-      else trap_ctrl.cause <= trap_mti_c; end if; -- don't care
+      else trap_ctrl.cause <= (others => '0'); end if;
     end if;
   end process trap_priority;
 
@@ -1550,8 +1542,7 @@ begin
       trap_ctrl.env_pending <= '0';
     elsif rising_edge(clk_i) then
       if (trap_ctrl.env_pending = '0') then -- no pending trap environment yet
-        -- trigger IRQ only in EXECUTE state --
-        if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and (execute_engine.state = EXECUTE)) then
+        if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and (execute_engine.state = EXECUTE)) then -- trigger IRQ only in EXECUTE state
           trap_ctrl.env_pending <= '1'; -- now execute engine can start trap handling
         end if;
       elsif (trap_ctrl.env_enter = '1') then -- start of trap environment acknowledged by execute engine
