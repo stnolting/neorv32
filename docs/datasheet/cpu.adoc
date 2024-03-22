@@ -459,9 +459,12 @@ implemented ISA extensions can be found in the projects `docs/references` folder
 Software can discover available ISA extensions via the <<_misa>> and <<_mxisa>> CSRs or by executing an instruction
 and checking for an illegal instruction exception (i.e. <<_full_virtualization>>).
 
-.ISA Extensions-Specific CSRs
-[NOTE]
-The <<_control_and_status_registers_csrs>> section lists the according ISA extensions for all CSRs.
+.Instruction Cycles
+[TIP]
+This chapter shows the CPI values (cycles per instruction) for each individual instruction/type. Note that
+values reflect _optimal conditions_ (i.e. not additional memory delay, no cache misses, no pipeline waits, etc.).
+To benchmark a certain processor configuration for its setup-specific CPI value please refer to the
+`sw/example/performance_tests` test programs.
 
 
 ==== `A` ISA Extension
