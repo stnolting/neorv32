@@ -26,7 +26,8 @@ if [ -z "$1" ]
   then
     GHDL_RUN_ARGS="${@:---stop-time=10ms}"
   else
-    GHDL_RUN_ARGS=$1
+    # Lets pass down all the parameters to GHDL instead of just 1
+    GHDL_RUN_ARGS=$@
 fi
 
 echo "Using simulation run arguments: $GHDL_RUN_ARGS";

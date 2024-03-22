@@ -81,7 +81,7 @@ NEORV32_EXG_PATH = $(NEORV32_HOME)/sw/image_gen
 # Path to NEORV32 core rtl folder
 NEORV32_RTL_PATH = $(NEORV32_LOCAL_RTL)/core
 # Path to NEORV32 sim folder
-NEORV32_SIM_PATH = $(NEORV32_HOME)/sim
+NEORV32_SIM_PATH = $(NEORV32_HOME)/sim/simple
 # Marker file to check for NEORV32 home folder
 NEORV32_HOME_MARKER = $(NEORV32_INC_PATH)/neorv32.h
 
@@ -298,7 +298,7 @@ endif
 # -----------------------------------------------------------------------------
 sim: $(APP_IMG) install
 	@echo "Simulating processor using simple testbench..."
-	@sh $(NEORV32_SIM_PATH)/simple/ghdl.sh $(GHDL_RUN_FLAGS)
+	@sh $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
 
 
 # -----------------------------------------------------------------------------
