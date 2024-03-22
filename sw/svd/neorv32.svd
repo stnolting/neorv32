@@ -4,7 +4,7 @@
   <vendor>stnolting</vendor>
   <name>neorv32</name>
   <series>RISC-V</series>
-  <version>1.9.6</version>
+  <version>1.9.7</version>
   <description>The NEORV32 RISC-V Processor</description>
 
   <!-- CPU core -->
