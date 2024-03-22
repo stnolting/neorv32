@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -112,12 +112,13 @@ int main() {
     // decode input and execute command
     if (!strcmp(buffer, "help")) {
       neorv32_uart0_printf("Available commands:\n"
-                          " > help  - show this text\n"
-                          " > setup - configure memory access width (byte,half,word)\n"
-                          " > read  - read from address (byte,half,word)\n"
-                          " > write - write to address (byte,half,word)\n"
-                          " > dump  - dump several bytes/halfs/words from base address\n"
-                          " > hex   - hex dump (bytes + ASCII) from base address\n");
+                          " help  - show this text\n"
+                          " setup - configure memory access width (byte,half,word)\n"
+                          " read  - read from address (byte,half,word)\n"
+                          " write - write to address (byte,half,word)\n"
+                          " dump  - dump several bytes/halfs/words from base address\n"
+                          " hex   - hex dump (bytes + ASCII) from base address\n"
+                          " fence - synchronize with main memory\n");
     }
 
     else if (!strcmp(buffer, "setup")) {
@@ -138,6 +139,12 @@ int main() {
 
     else if (!strcmp(buffer, "hex")) {
       hexdump();
+    }
+
+    else if (!strcmp(buffer, "fence")) {
+      neorv32_uart0_printf("Synchronizing...\n");
+      asm volatile ("fence.i");
+      asm volatile ("fence");
     }
 
     else {

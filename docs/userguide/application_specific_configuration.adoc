@@ -2,9 +2,9 @@
 :sectnums:
 == Application-Specific Processor Configuration
 
-Due to the processor's configuration options, which are mainly defined via the top entity VHDL generics, the SoC
-can be tailored to the application-specific requirements. Note that this chapter does not focus on optional
-_SoC features_ like IO/peripheral modules. It rather gives ideas on how to optimize for _overall goals_
+The processor's configuration options, which are mainly defined via the top entity VHDL generics, allow
+to tailor the entire SoC according to the application-specific requirements. Note that this chapter does not focus on optional
+_SoC features_ like IO/peripheral modules - it rather gives ideas on how to optimize for _overall goals_
 like performance and area.
 
 [NOTE]
@@ -67,6 +67,10 @@ logic is also kept at a minimum to prevent timing degrading. If there is a major
 logic (example: many physical memory protection address configuration registers) the VHDL code automatically
 adds additional register stages to maintain critical path length. Obviously, this increases operation latency.
 
+[TIP]
+Enable the "ASIC style" register file option (`REGFILE_HW_RST`) to obtain maximum clock speed for the CPU (at the cost of
+of an increased hardware footprint).
+
 In order to optimize for a minimal critical path (= maximum clock speed) the following points should be considered:
 
 * Complex CPU extensions (in terms of hardware requirements) should be avoided (examples: floating-point unit, physical memory protection).
@@ -90,11 +94,12 @@ energy/instruction ratio) yet. However, a reduced processor area (<<_optimize_fo
 static energy consumption.
 
 To optimize your setup for low-power applications, you can make use of the CPU sleep mode (`wfi` instruction).
-Put the CPU to sleep mode whenever possible. Disable all processor modules that are not actually used (exclude them
-from synthesis if the will be _never_ used; disable the module via it's control register if the module is not
-_currently_ used). When is sleep mode, you can keep a timer module running (MTIME or the watch dog) to wake up
-the CPU again. Since the wake up is triggered by _any_ interrupt, the external interrupt controller can also
-be used to wake up the CPU again. By this, all timers (and all other modules) can be deactivated as well.
+Put the CPU to sleep mode whenever possible. If the clok gating feature is enabled (`CLOCK_GATING_EN`) the entire
+CPU complex will be disconnected from the clock tree while in sleep mode.
+
+Disable all processor modules that are not actually used (exclude them
+from synthesis if the will be _never_ used; disable a module via it's control register if the module is not
+_currently_ used).
 
 .Processor-internal clock generator shutdown
 [TIP]
