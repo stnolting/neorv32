@@ -312,7 +312,7 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 | BOOT ROM          | Bootloader ROM (4kB)                                           |   2 |   2 |    32768 |    0
 | Bus switch (core) | _SoC bus infrastructure_                                       |  28 |  15 |        0 |    0
 | Bus switch (DMA)  | _SoC bus infrastructure_                                       | 159 |   9 |        0 |    0
-| CFS               | Custom functions subsystem footnote:[Resource utilization depends on custom design logic.] | - | - | - | -
+| CFS               | Custom functions subsystem (depends on custom design logic)    |   - |   - |        - |    -
 | CRC               | Cyclic redundancy check unit                                   | 130 | 117 |        0 |    0
 | dCACHE            | Data cache (4 blocks, 64 bytes per block)                      | 300 | 167 |     2112 |    0
 | DM                | On-chip debugger - debug module                                | 377 | 241 |        0 |    0
