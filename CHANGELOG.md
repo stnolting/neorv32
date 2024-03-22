@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 26.03.2024 | 1.9.7.1 | CPU hardware optimization (reduced hardware footprint, shortened critical path) | [#857](https://github.com/stnolting/neorv32/pull/857) |
 | 22.03.2024 | [**:rocket:1.9.7**](https://github.com/stnolting/neorv32/releases/tag/v1.9.7) | **New release** | |
 | 18.03.2024 | 1.9.6.9 | :sparkles: update CFU example: now implementing the Extended Tiny Encryption Algorithm (XTEA) | [#855](https://github.com/stnolting/neorv32/pull/855) |
 | 16.03.2024 | 1.9.6.8 | rework cache system: L1 + L2 caches, all based on the generic cache component | [#853](https://github.com/stnolting/neorv32/pull/853) |
