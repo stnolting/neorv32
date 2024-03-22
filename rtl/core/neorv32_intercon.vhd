@@ -172,15 +172,10 @@ end neorv32_bus_switch_rtl;
 -- #################################################################################################
 -- # << NEORV32 - Processor Bus Infrastructure: Section Gateway >>                                 #
 -- # ********************************************************************************************* #
--- # Bus gateway to distribute the core's access to the processor's main address sections:         #
--- # -> IMEM - internal instruction memory                                                         #
--- # -> DMEM - internal data memory                                                                #
--- # -> XIP  - memory-mapped XIP flash                                                             #
--- # -> BOOT - internal bootloader ROM                                                             #
--- # -> IO   - internal IO devices                                                                 #
--- # All accesses that do not match any of these sections are redirected to the "external" port.   #
--- # The gateway-internal bus monitor ensures that all processor-internal accesses are completed   #
--- # within a fixed time window; a bus error is triggered otherwise.                               #
+-- # Bus gateway to distribute accesses to 5 non-overlapping address sub-spaces (A,B,C,D,E).       #
+-- # All accesses that do not match any of these sections are redirected to the "X" port.          #
+-- # The gateway-internal bus monitor ensures that all accesses are completed within a bound time  #
+-- # window (if *_TMO_EN is true). Otherwise, a bus error is triggered.                            #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -221,50 +216,56 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_gateway is
   generic (
-    TIMEOUT     : natural; -- internal bus timeout cycles
-    -- IMEM port --
-    IMEM_ENABLE : boolean;
-    IMEM_BASE   : std_ulogic_vector(31 downto 0);
-    IMEM_SIZE   : natural;
-    -- DMEM port --
-    DMEM_ENABLE : boolean;
-    DMEM_BASE   : std_ulogic_vector(31 downto 0);
-    DMEM_SIZE   : natural;
-    -- XIP port --
-    XIP_ENABLE  : boolean;
-    XIP_BASE    : std_ulogic_vector(31 downto 0);
-    XIP_SIZE    : natural;
-    -- BOOT ROM port --
-    BOOT_ENABLE : boolean;
-    BOOT_BASE   : std_ulogic_vector(31 downto 0);
-    BOOT_SIZE   : natural;
-    -- IO port --
-    IO_ENABLE   : boolean;
-    IO_BASE     : std_ulogic_vector(31 downto 0);
-    IO_SIZE     : natural;
-    -- EXTERNAL port --
-    EXT_ENABLE  : boolean
+    TIMEOUT  : natural; -- internal bus timeout cycles
+    -- port A --
+    A_ENABLE : boolean; -- port enable
+    A_BASE   : std_ulogic_vector(31 downto 0); -- port address space base address
+    A_SIZE   : natural; -- port address space size in bytes (power of two!)
+    A_TMO_EN : boolean; -- port timeout enable
+    -- port B --
+    B_ENABLE : boolean;
+    B_BASE   : std_ulogic_vector(31 downto 0);
+    B_SIZE   : natural;
+    B_TMO_EN : boolean;
+    -- port C --
+    C_ENABLE : boolean;
+    C_BASE   : std_ulogic_vector(31 downto 0);
+    C_SIZE   : natural;
+    C_TMO_EN : boolean;
+    -- port D --
+    D_ENABLE : boolean;
+    D_BASE   : std_ulogic_vector(31 downto 0);
+    D_SIZE   : natural;
+    D_TMO_EN : boolean;
+    -- port E --
+    E_ENABLE : boolean;
+    E_BASE   : std_ulogic_vector(31 downto 0);
+    E_SIZE   : natural;
+    E_TMO_EN : boolean;
+    -- port X --
+    X_ENABLE : boolean;
+    X_TMO_EN : boolean
   );
   port (
     -- global control --
-    clk_i      : in  std_ulogic; -- global clock, rising edge
-    rstn_i     : in  std_ulogic; -- global reset, low-active, async
+    clk_i   : in  std_ulogic; -- global clock, rising edge
+    rstn_i  : in  std_ulogic; -- global reset, low-active, async
     -- host port --
-    main_req_i : in  bus_req_t;  -- host request
-    main_rsp_o : out bus_rsp_t;  -- host response
+    req_i   : in  bus_req_t;  -- host request
+    rsp_o   : out bus_rsp_t;  -- host response
     -- section ports --
-    imem_req_o : out bus_req_t;
-    imem_rsp_i : in  bus_rsp_t;
-    dmem_req_o : out bus_req_t;
-    dmem_rsp_i : in  bus_rsp_t;
-    xip_req_o  : out bus_req_t;
-    xip_rsp_i  : in  bus_rsp_t;
-    boot_req_o : out bus_req_t;
-    boot_rsp_i : in  bus_rsp_t;
-    io_req_o   : out bus_req_t;
-    io_rsp_i   : in  bus_rsp_t;
-    ext_req_o  : out bus_req_t;
-    ext_rsp_i  : in  bus_rsp_t
+    a_req_o : out bus_req_t;
+    a_rsp_i : in  bus_rsp_t;
+    b_req_o : out bus_req_t;
+    b_rsp_i : in  bus_rsp_t;
+    c_req_o : out bus_req_t;
+    c_rsp_i : in  bus_rsp_t;
+    d_req_o : out bus_req_t;
+    d_rsp_i : in  bus_rsp_t;
+    e_req_o : out bus_req_t;
+    e_rsp_i : in  bus_rsp_t;
+    x_req_o : out bus_req_t;
+    x_rsp_i : in  bus_rsp_t
   );
 end neorv32_bus_gateway;
 
@@ -273,9 +274,19 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   -- port select --
   signal port_sel : std_ulogic_vector(5 downto 0);
 
-  -- list of enabled gateway ports --
+  -- port enable list --
   type port_en_list_t is array (0 to 5) of boolean;
-  constant port_en_list_c : port_en_list_t := (IMEM_ENABLE, DMEM_ENABLE, XIP_ENABLE, BOOT_ENABLE, IO_ENABLE, EXT_ENABLE);
+  constant port_en_list_c : port_en_list_t := (A_ENABLE, B_ENABLE, C_ENABLE, D_ENABLE, E_ENABLE, X_ENABLE);
+
+  -- port timeout enable list --
+  constant tmo_en_list_c : std_ulogic_vector(5 downto 0) := (
+    bool_to_ulogic_f(X_TMO_EN),
+    bool_to_ulogic_f(E_TMO_EN),
+    bool_to_ulogic_f(D_TMO_EN),
+    bool_to_ulogic_f(C_TMO_EN),
+    bool_to_ulogic_f(B_TMO_EN),
+    bool_to_ulogic_f(A_TMO_EN)
+  );
 
   -- gateway ports combined as arrays --
   type port_req_t is array (0 to 5) of bus_req_t;
@@ -299,33 +310,33 @@ begin
 
   -- Address Section Decoder ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  port_sel(0) <= '1' when (main_req_i.addr(31 downto index_size_f(IMEM_SIZE)) = IMEM_BASE(31 downto index_size_f(IMEM_SIZE))) and IMEM_ENABLE else '0';
-  port_sel(1) <= '1' when (main_req_i.addr(31 downto index_size_f(DMEM_SIZE)) = DMEM_BASE(31 downto index_size_f(DMEM_SIZE))) and DMEM_ENABLE else '0';
-  port_sel(2) <= '1' when (main_req_i.addr(31 downto index_size_f(XIP_SIZE))  = XIP_BASE( 31 downto index_size_f(XIP_SIZE)))  and XIP_ENABLE  else '0';
-  port_sel(3) <= '1' when (main_req_i.addr(31 downto index_size_f(BOOT_SIZE)) = BOOT_BASE(31 downto index_size_f(BOOT_SIZE))) and BOOT_ENABLE else '0';
-  port_sel(4) <= '1' when (main_req_i.addr(31 downto index_size_f(IO_SIZE))   = IO_BASE(  31 downto index_size_f(IO_SIZE)))   and IO_ENABLE   else '0';
+  port_sel(0) <= '1' when (req_i.addr(31 downto index_size_f(A_SIZE)) = A_BASE(31 downto index_size_f(A_SIZE))) and A_ENABLE else '0';
+  port_sel(1) <= '1' when (req_i.addr(31 downto index_size_f(B_SIZE)) = B_BASE(31 downto index_size_f(B_SIZE))) and B_ENABLE else '0';
+  port_sel(2) <= '1' when (req_i.addr(31 downto index_size_f(C_SIZE)) = C_BASE(31 downto index_size_f(C_SIZE))) and C_ENABLE else '0';
+  port_sel(3) <= '1' when (req_i.addr(31 downto index_size_f(D_SIZE)) = D_BASE(31 downto index_size_f(D_SIZE))) and D_ENABLE else '0';
+  port_sel(4) <= '1' when (req_i.addr(31 downto index_size_f(E_SIZE)) = E_BASE(31 downto index_size_f(E_SIZE))) and E_ENABLE else '0';
 
-  -- accesses to the "void" are redirected to the external bus interface --
-  port_sel(5) <= '1' when ((port_sel(4 downto 0) = "00000") and EXT_ENABLE) else '0';
+  -- accesses to the "void" are redirected to the X port --
+  port_sel(5) <= '1' when ((port_sel(4 downto 0) = "00000") and X_ENABLE) else '0';
 
 
   -- Gateway Ports --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  imem_req_o <= port_req(0); port_rsp(0) <= imem_rsp_i;
-  dmem_req_o <= port_req(1); port_rsp(1) <= dmem_rsp_i;
-  xip_req_o  <= port_req(2); port_rsp(2) <= xip_rsp_i;
-  boot_req_o <= port_req(3); port_rsp(3) <= boot_rsp_i;
-  io_req_o   <= port_req(4); port_rsp(4) <= io_rsp_i;
-  ext_req_o  <= port_req(5); port_rsp(5) <= ext_rsp_i;
+  a_req_o <= port_req(0); port_rsp(0) <= a_rsp_i;
+  b_req_o <= port_req(1); port_rsp(1) <= b_rsp_i;
+  c_req_o <= port_req(2); port_rsp(2) <= c_rsp_i;
+  d_req_o <= port_req(3); port_rsp(3) <= d_rsp_i;
+  e_req_o <= port_req(4); port_rsp(4) <= e_rsp_i;
+  x_req_o <= port_req(5); port_rsp(5) <= x_rsp_i;
 
   -- bus request --
-  request: process(main_req_i, port_sel)
+  request: process(req_i, port_sel)
   begin
     for i in 0 to 5 loop
       port_req(i) <= req_terminate_c;
       if port_en_list_c(i) then
-        port_req(i)     <= main_req_i;
-        port_req(i).stb <= main_req_i.stb and port_sel(i);
+        port_req(i)     <= req_i;
+        port_req(i).stb <= req_i.stb and port_sel(i);
       end if;
     end loop;
   end process request;
@@ -346,9 +357,9 @@ begin
   end process response;
 
   -- host response --
-  main_rsp_o.data <= int_rsp.data;
-  main_rsp_o.ack  <= int_rsp.ack;
-  main_rsp_o.err  <= keeper.err;
+  rsp_o.data <= int_rsp.data;
+  rsp_o.ack  <= int_rsp.ack;
+  rsp_o.err  <= keeper.err;
 
 
   -- Bus Monitor (aka "the KEEPER") ---------------------------------------------------------
@@ -362,10 +373,10 @@ begin
       keeper.halt <= '0';
     elsif rising_edge(clk_i) then
       keeper.err  <= '0'; -- default
-      keeper.halt <= port_sel(2) or port_sel(5); -- no timeout if XIP or EXTERNAL access
+      keeper.halt <= or_reduce_f(port_sel and (not tmo_en_list_c)); -- no timeout if *_TMO_EN = true
       if (keeper.busy = '0') then -- bus idle
         keeper.cnt  <= std_ulogic_vector(to_unsigned(TIMEOUT, keeper.cnt'length));
-        keeper.busy <= main_req_i.stb;
+        keeper.busy <= req_i.stb;
       else -- bus access in progress
         keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) - 1);
         if (int_rsp.err = '1') or ((or_reduce_f(keeper.cnt) = '0') and (keeper.halt = '0')) then -- bus error or timeout
@@ -389,7 +400,7 @@ end neorv32_bus_gateway_rtl;
 -- #################################################################################################
 -- # << NEORV32 - Processor Bus Infrastructure: IO Switch >>                                       #
 -- # ********************************************************************************************* #
--- # Simple address decoding switch for the processor's internal IO/peripheral devices.            #
+-- # Simple switch for accessing one out of several (IO) devices.                                  #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -559,14 +570,14 @@ begin
   dev_20_req_o <= dev_req(20); dev_rsp(20) <= dev_20_rsp_i;
 
 
-  -- Device Requests ------------------------------------------------------------------------
+  -- Request --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  access_gen:
+  bus_request_gen:
   for i in 0 to (num_devs_physical_c-1) generate
 
-    access_gen_enabled:
+    bus_request_port_enabled:
     if dev_en_list_c(i) generate
-      req_gen: process(main_req_i)
+      bus_request: process(main_req_i)
       begin
         dev_req(i) <= main_req_i;
         if (main_req_i.addr(abb_hi_c downto abb_lo_c) = dev_base_list_c(i)(abb_hi_c downto abb_lo_c)) then
@@ -574,24 +585,24 @@ begin
         else
           dev_req(i).stb <= '0';
         end if;
-      end process req_gen;
+      end process bus_request;
     end generate;
 
-    access_gen_disabled:
+    bus_request_port_disabled:
     if not dev_en_list_c(i) generate
       dev_req(i) <= req_terminate_c;
     end generate;
 
-  end generate;
+  end generate; -- /bus_request_gen
 
 
-  -- Global Response ------------------------------------------------------------------------
+  -- Response -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_response: process(dev_rsp)
     variable tmp_v : bus_rsp_t;
   begin
     tmp_v := rsp_terminate_c; -- start with all-zero
-    for i in 0 to (num_devs_physical_c-1) loop -- logical OR of all response signals
+    for i in 0 to (num_devs_physical_c-1) loop -- logical OR all response signals
       if dev_en_list_c(i) then
         tmp_v.data := tmp_v.data or dev_rsp(i).data;
         tmp_v.ack  := tmp_v.ack  or dev_rsp(i).ack;
