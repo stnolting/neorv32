@@ -217,6 +217,9 @@ begin
     end if;
   end process bus_access;
 
+  -- transfer-done interrupt --
+  irq_o <= engine.done and config.enable; -- no interrupt if transfer was aborted by clearing config.enable
+
 
   -- Automatic Trigger ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -324,9 +327,6 @@ begin
 
   -- transfer in progress? --
   engine.busy <= '0' when (engine.state = S_IDLE) else '1';
-
-  -- transfer-done interrupt --
-  irq_o <= engine.done and config.enable; -- no interrupt if transfer was aborted
 
   -- bus output --
   dma_req_o.priv  <= priv_mode_m_c; -- privileged access

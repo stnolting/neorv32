@@ -112,10 +112,8 @@ is currently claimed.
 
 **TWI Interrupt**
 
-The TWI module provides a single interrupt to signal "transmission done" to the CPU. Whenever the TWI
-module completes the current transmission of one byte the interrupt is triggered. Note the the interrupt
-is **not** triggered when completing a START or STOP condition. Once triggered, the interrupt has to be
-explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
+The TWI module provides a single interrupt to signal "idle condition" (i.e. controller is ready for a new operation) to the CPU.
+Once triggered, the interrupt has to be explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 
 
 **Register Map**
