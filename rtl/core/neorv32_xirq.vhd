@@ -69,9 +69,7 @@ architecture neorv32_xirq_rtl of neorv32_xirq is
   signal irq_source   : std_ulogic_vector(4 downto 0); -- r/w: source IRQ, ACK on write
 
   -- interrupt trigger --
-  signal irq_sync  : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
-  signal irq_sync2 : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
-  signal irq_trig  : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
+  signal irq_sync, irq_sync2, irq_trig : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
 
   -- interrupt buffer --
   signal irq_pending : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
@@ -196,15 +194,12 @@ begin
   irq_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cpu_irq_o  <= '0';
       irq_active <= '0';
       irq_source <= (others => '0');
     elsif rising_edge(clk_i) then
-      cpu_irq_o <= '0';
       if (irq_active = '0') then -- no active IRQ
         irq_source <= irq_source_nxt; -- get IRQ source that has highest priority
         if (irq_fire = '1') then
-          cpu_irq_o  <= '1';
           irq_active <= '1';
         end if;
       elsif (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) = "10") then -- acknowledge on write access
@@ -212,6 +207,9 @@ begin
       end if;
     end if;
   end process irq_arbiter;
+
+  -- CPU interrupt --
+  cpu_irq_o <= irq_active;
 
 
 end neorv32_xirq_rtl;
