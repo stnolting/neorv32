@@ -3,8 +3,8 @@
 -- # ********************************************************************************************* #
 -- # Supports START and STOP conditions, 8 bit data + ACK/NACK transfers and clock stretching.     #
 -- # Supports ACKs by the controller. 8 clock pre-scalers + 4-bit clock divider for bus clock      #
--- # configuration. No multi-controller support and no peripheral mode support yet.                #
--- # Interrupt: "transmission done"                                                                #
+-- # configuration. No multi-controller support and no peripheral mode support yet. The interrupt  #
+-- # is triggered whenever the module is in idle state.                                            #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
 -- #                                                                                               #
@@ -55,7 +55,7 @@ entity neorv32_twi is
     twi_sda_o   : out std_ulogic; -- serial data line output
     twi_scl_i   : in  std_ulogic; -- serial clock line input
     twi_scl_o   : out std_ulogic; -- serial clock line output
-    irq_o       : out std_ulogic -- transfer done IRQ
+    irq_o       : out std_ulogic  -- CPU IRQ
   );
 end neorv32_twi;
 
@@ -90,9 +90,7 @@ architecture neorv32_twi_rtl of neorv32_twi is
   signal ctrl : ctrl_t;
 
   -- operation triggers --
-  signal trig_start : std_ulogic;
-  signal trig_stop  : std_ulogic;
-  signal trig_data  : std_ulogic;
+  signal trig_start, trig_stop, trig_data : std_ulogic;
 
   -- clock generator --
   type clk_gen_t is record
@@ -157,10 +155,9 @@ begin
       trig_stop  <= '0';
       trig_data  <= '0';
 
+      -- read/write access --
       if (bus_req_i.stb = '1') then
-
-        -- write access --
-        if (bus_req_i.rw = '1') then
+        if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(2) = '0') then -- control register
             ctrl.enable <= bus_req_i.data(ctrl_en_c);
             ctrl.mack   <= bus_req_i.data(ctrl_mack_c);
@@ -172,9 +169,7 @@ begin
           else -- data register
             trig_data <= '1'; -- start data transmission
           end if;
-
-        -- read access --
-        else
+        else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
             bus_rsp_o.data(ctrl_mack_c)                      <= ctrl.mack;
@@ -189,7 +184,6 @@ begin
             bus_rsp_o.data(7 downto 0) <= arbiter.rtx_sreg(8 downto 1);
           end if;
         end if;
-
       end if;
     end if;
   end process bus_access;
@@ -252,6 +246,22 @@ begin
   clk_gen.halt <= '1' when (io_con.scl_out = '1') and (io_con.scl_in_ff(1) = '0') and (ctrl.csen = '1') else '0';
 
 
+  -- Interrupt Generator --------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  irq_generator: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      irq_o <= '0';
+    elsif rising_edge(clk_i) then
+      if (arbiter.state = "100") then -- enabled but idle
+        irq_o <= '1';
+      else
+        irq_o <= '0';
+      end if;
+    end if;
+  end process irq_generator;
+
+
   -- TWI Transceiver ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   twi_engine: process(rstn_i, clk_i)
@@ -261,7 +271,6 @@ begin
       io_con.scl_in_ff  <= (others => '0');
       io_con.sda_out    <= '0';
       io_con.scl_out    <= '0';
-      irq_o             <= '0';
       arbiter.state     <= (others => '0');
       arbiter.bitcnt    <= (others => '0');
       arbiter.state_nxt <= (others => '0');
@@ -270,13 +279,6 @@ begin
       -- input synchronizer --
       io_con.sda_in_ff <= io_con.sda_in_ff(0) & io_con.sda_in;
       io_con.scl_in_ff <= io_con.scl_in_ff(0) & io_con.scl_in;
-
-      -- interrupt --
-      if (arbiter.state = "111") and (arbiter.rtx_done = '1') then -- transmission done
-        irq_o <= '1';
-      else
-        irq_o <= '0';
-      end if;
 
       -- serial engine --
       arbiter.state(2) <= ctrl.enable; -- module enabled?
