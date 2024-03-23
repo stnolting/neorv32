@@ -5,13 +5,13 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_trng.vhd | 
+| Hardware source file(s): | neorv32_trng.vhd |
 | Software driver file(s): | neorv32_trng.c |
 |                          | neorv32_trng.h |
-| Top entity port:         | none | 
+| Top entity port:         | none |
 | Configuration generics:  | `IO_TRNG_EN`   | implement TRNG when `true`
 |                          | `IO_TRNG_FIFO` | data FIFO depth, min 1, has to be a power of two
-| CPU interrupts:          | fast IRQ channel 15 | TRNG FIFO level interrupt (see <<_processor_interrupts>>)
+| CPU interrupts:          | - | none
 |=======================
 
 
@@ -20,7 +20,7 @@
 The NEORV32 true random number generator provides _physically_ true random numbers. It is based on free-running
 ring-oscillators that generate **phase noise** when being sampled by a constant clock. This phase noise is
 used as physical entropy source. The TRNG features a platform independent architecture without FPGA-specific
-primitives, macros or attributes so it can be synthesized for _any_ FPGA. 
+primitives, macros or attributes so it can be synthesized for _any_ FPGA.
 
 .In-Depth Documentation
 [TIP]
@@ -53,18 +53,6 @@ of random data in a short time. The random data FIFO can be cleared at any time 
 setting the `TRNG_CTRL_FIFO_CLR` flag. The FIFO depth can be retrieved by software via the `TRNG_CTRL_FIFO_*` bits.
 
 
-**TRNG Interrupt**
-
-The TRNG provides a single interrupt channel that can be programmed to trigger on certain FIFO fill-level conditions.
-This feature can be used to inform the CPU that a certain amount of entropy is available for further processing. Using
-the control register's `TRNG_CTRL_IRQ_*` bits the IRQ can be configured to trigger if the data FIFO is empty
-(`TRNG_CTRL_IRQ_FIFO_NEMPTY`), if the data FIFO is at least half full (`TRNG_CTRL_IRQ_FIFO_HALF`) or if the data FIFO is
-entirely full (`TRNG_CTRL_IRQ_FIFO_NEMPTY`). Note that all enabled interrupt conditions are logically OR-ed.
-
-Once the TRNG interrupt has fired it remains pending until the actual cause of the interrupt is resolved. Furthermore,
-an active TRNG interrupt has to be explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
-
-
 **Register Map**
 
 .TRNG register map (`struct NEORV32_TRNG`)
@@ -72,15 +60,12 @@ an active TRNG interrupt has to be explicitly cleared again by writing zero to t
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.11+<| `0xfffffa00` .11+<| `CTRL` <|`7:0`   `TRNG_CTRL_DATA_MSB : TRNG_CTRL_DATA_MSB` ^| r/- <| 8-bit random data
-                                  <|`15:8`   -                                        ^| r/- <| reserved, read as zero
-                                  <|`19:16` `TRNG_CTRL_FIFO_MSB : TRNG_CTRL_FIFO_MSB` ^| r/- <| FIFO depth, log2(`IO_TRNG_FIFO`)
-                                  <|`25:20`  -                                        ^| r/- <| reserved, read as zero
-                                  <|`26`    `TRNG_CTRL_IRQ_FIFO_NEMPTY`               ^| r/w <| IRQ if data FIFO is not empty
-                                  <|`26`    `TRNG_CTRL_IRQ_FIFO_HALF`                 ^| r/w <| IRQ if data FIFO is at least half full
-                                  <|`27`    `TRNG_CTRL_IRQ_FIFO_FULL`                 ^| r/w <| IRQ if data FIFO is full
-                                  <|`28`    `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set; auto-clears
-                                  <|`29`    `TRNG_CTRL_SIM_MODE`                      ^| r/- <| simulation mode (PRNG!)
-                                  <|`30`    `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
-                                  <|`31`    `TRNG_CTRL_VALID`                         ^| r/- <| random data is valid when set
+.8+<| `0xfffffa00` .8+<| `CTRL` <|`7:0`   `TRNG_CTRL_DATA_MSB : TRNG_CTRL_DATA_MSB` ^| r/- <| 8-bit random data
+                                <|`15:8`   -                                        ^| r/- <| reserved, read as zero
+                                <|`19:16` `TRNG_CTRL_FIFO_MSB : TRNG_CTRL_FIFO_MSB` ^| r/- <| FIFO depth, log2(`IO_TRNG_FIFO`)
+                                <|`27:20`  -                                        ^| r/- <| reserved, read as zero
+                                <|`28`    `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set; auto-clears
+                                <|`29`    `TRNG_CTRL_SIM_MODE`                      ^| r/- <| simulation mode (PRNG!)
+                                <|`30`    `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
+                                <|`31`    `TRNG_CTRL_VALID`                         ^| r/- <| random data is valid when set
 |=======================

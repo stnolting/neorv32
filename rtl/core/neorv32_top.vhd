@@ -341,8 +341,8 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- IRQs --
   type firq_enum_t is (
-    FIRQ_WDT, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
-    FIRQ_CFS, FIRQ_NEOLED, FIRQ_XIRQ, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_TRNG, FIRQ_SLINK
+    FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
+    FIRQ_CFS, FIRQ_NEOLED, FIRQ_XIRQ, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK
   );
   type firq_t is array (firq_enum_t) of std_ulogic;
   signal firq      : firq_t;
@@ -492,8 +492,16 @@ begin
                   cg_en(CG_TWI)   or cg_en(CG_PWM)   or cg_en(CG_WDT)   or cg_en(CG_NEOLED) or
                   cg_en(CG_GPTMR) or cg_en(CG_XIP)   or cg_en(CG_ONEWIRE);
 
+  end generate; -- /generators
 
-    -- Clock Gating ---------------------------------------------------------------------------
+
+  -- **************************************************************************************************************************
+  -- Core Complex
+  -- **************************************************************************************************************************
+  core_complex:
+  if (true) generate
+
+    -- CPU Clock Gating -----------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_clockgate_inst_true:
     if CLOCK_GATING_EN generate
@@ -511,14 +519,6 @@ begin
       clk_cpu <= clk_i;
     end generate;
 
-  end generate; -- /generators
-
-
-  -- **************************************************************************************************************************
-  -- Core Complex
-  -- **************************************************************************************************************************
-  core_complex:
-  if (true) generate
 
     -- CPU Core -------------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -581,7 +581,7 @@ begin
     );
 
     -- fast interrupt requests (FIRQs) --
-    cpu_firq(00) <= firq(FIRQ_WDT); -- highest priority
+    cpu_firq(00) <= '0'; -- reserved
     cpu_firq(01) <= firq(FIRQ_CFS);
     cpu_firq(02) <= firq(FIRQ_UART0_RX);
     cpu_firq(03) <= firq(FIRQ_UART0_TX);
@@ -596,7 +596,7 @@ begin
     cpu_firq(12) <= firq(FIRQ_GPTMR);
     cpu_firq(13) <= firq(FIRQ_ONEWIRE);
     cpu_firq(14) <= firq(FIRQ_SLINK);
-    cpu_firq(15) <= firq(FIRQ_TRNG); -- lowest priority
+    cpu_firq(15) <= '0'; -- reserved
 
 
     -- CPU Instruction Cache ------------------------------------------------------------------
@@ -612,7 +612,7 @@ begin
         READ_ONLY  => true
       )
       port map (
-        clk_i      => clk_cpu,
+        clk_i      => clk_i,
         rstn_i     => rstn_sys,
         host_req_i => cpu_i_req,
         host_rsp_o => cpu_i_rsp,
@@ -641,7 +641,7 @@ begin
         READ_ONLY  => false
       )
       port map (
-        clk_i      => clk_cpu,
+        clk_i      => clk_i,
         rstn_i     => rstn_sys,
         host_req_i => cpu_d_req,
         host_rsp_o => cpu_d_rsp,
@@ -665,7 +665,7 @@ begin
       PORT_B_READ_ONLY => true -- i-fetch is read-only
     )
     port map (
-      clk_i   => clk_cpu,
+      clk_i   => clk_i,
       rstn_i  => rstn_sys,
       a_req_i => dcache_req, -- prioritized
       a_rsp_o => dcache_rsp,
@@ -1184,7 +1184,6 @@ begin
         cpu_sleep_i => cpu_sleep,
         clkgen_en_o => cg_en(CG_WDT),
         clkgen_i    => clk_gen,
-        irq_o       => firq(FIRQ_WDT),
         rstn_o      => rstn_wdt
       );
     end generate;
@@ -1192,7 +1191,6 @@ begin
     neorv32_wdt_inst_false:
     if not IO_WDT_EN generate
       iodev_rsp(IODEV_WDT) <= rsp_terminate_c;
-      firq(FIRQ_WDT)       <= '0';
       cg_en(CG_WDT)        <= '0';
       rstn_wdt             <= '1';
     end generate;
@@ -1412,15 +1410,13 @@ begin
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
         bus_req_i => iodev_req(IODEV_TRNG),
-        bus_rsp_o => iodev_rsp(IODEV_TRNG),
-        irq_o     => firq(FIRQ_TRNG)
+        bus_rsp_o => iodev_rsp(IODEV_TRNG)
       );
     end generate;
 
     neorv32_trng_inst_false:
     if not IO_TRNG_EN generate
       iodev_rsp(IODEV_TRNG) <= rsp_terminate_c;
-      firq(FIRQ_TRNG)       <= '0';
     end generate;
 
 

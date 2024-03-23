@@ -1092,37 +1092,10 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 0 (WDT)
+  // Fast interrupt channel 0
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FIRQ0 (WDT) ", cnt_test);
-
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_WDT)) {
-    cnt_test++;
-
-    // enable fast interrupt
-    neorv32_cpu_irq_enable(WDT_FIRQ_ENABLE);
-
-    // configure WDT:
-    // timeout = 1*4096 cycles, no lock, disable in debug mode, enable in sleep mode, enable strict reset mode
-    neorv32_wdt_setup(1, 0, 0, 1, 1);
-
-    // sleep until interrupt
-    asm volatile ("wfi");
-
-    neorv32_cpu_csr_write(CSR_MIE, 0);
-    NEORV32_WDT->CTRL = 0;
-
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == WDT_TRAP_CODE) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
+  PRINT_STANDARD("[%i] FIRQ0 ", cnt_test);
+  PRINT_STANDARD("[n.a.]\n");
 
 
   // ----------------------------------------------------------
@@ -1676,37 +1649,10 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 15 (TRNG)
+  // Fast interrupt channel 15 
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FIRQ15 (TRNG) ", cnt_test);
-
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
-    cnt_test++;
-
-    // enable TRNG FIRQ
-    neorv32_cpu_irq_enable(TRNG_FIRQ_ENABLE);
-
-    // configure interface
-    NEORV32_TRNG->CTRL = (1 << TRNG_CTRL_EN) |
-                         (1 << TRNG_CTRL_IRQ_FIFO_FULL); // IRQ if FIFO is full
-
-    // sleep until interrupt
-    asm volatile ("wfi");
-
-    neorv32_cpu_csr_write(CSR_MIE, 0);
-
-    // check if IRQ
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRNG_TRAP_CODE) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
+  PRINT_STANDARD("[%i] FIRQ15 ", cnt_test);
+  PRINT_STANDARD("[n.a.]\n");
 
 
   // ----------------------------------------------------------

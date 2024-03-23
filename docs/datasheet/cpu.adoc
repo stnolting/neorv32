@@ -279,9 +279,9 @@ After executing the `wfi` instruction the CPU's `sleep_o` signal (<<_cpu_top_ent
 as soon as the CPU has fully halted ("CPU is sleeping"):
 
 [start=1]
-.The front-end (instruction fetch) is stopped. There is no pending instruction fetch bus access.
-.The back-end (instruction execution) is stopped. There is no pending data bus access.
-.There is not enabled interrupt pending.
+.The front-end (instruction fetch) has stopped. There is no pending instruction fetch bus access.
+.The back-end (instruction execution) has stopped. There is no pending data bus access.
+.There is no enabled interrupt being pending.
 
 CPU-external modules like memories, timers and peripheral interfaces are not affected by this. Furthermore, the CPU will
 continue to buffer/enqueue incoming interrupt. The CPU will leave sleep mode as soon as any _enabled (via <<_mie>>)

@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -62,10 +62,8 @@ int neorv32_trng_available(void) {
 
 /**********************************************************************//**
  * Reset, configure and enable TRNG.
- *
- * @param[in] irq_mask Interrupt configuration mask (CTRL's irq_* bits).
  **************************************************************************/
-void neorv32_trng_enable(uint32_t irq_mask) {
+void neorv32_trng_enable(void) {
 
   int i;
 
@@ -85,12 +83,6 @@ void neorv32_trng_enable(uint32_t irq_mask) {
 
   // flush random data "pool"
   neorv32_trng_fifo_clear();
-
-  // set interrupt mask
-  const uint32_t tmp = (1 << TRNG_CTRL_IRQ_FIFO_NEMPTY) |
-                       (1 << TRNG_CTRL_IRQ_FIFO_HALF) |
-                       (1 << TRNG_CTRL_IRQ_FIFO_FULL);
-  NEORV32_TRNG->CTRL |= irq_mask & tmp;
 }
 
 

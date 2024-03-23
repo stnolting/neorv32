@@ -1302,21 +1302,6 @@
               <description>Log2(FIFO size)</description>
             </field>
             <field>
-              <name>TRNG_CTRL_IRQ_FIFO_NEMPTY</name>
-              <bitRange>[25:25]</bitRange>
-              <description>IRQ if FIFO is not empty</description>
-            </field>
-            <field>
-              <name>TRNG_CTRL_IRQ_FIFO_HALF</name>
-              <bitRange>[26:26]</bitRange>
-              <description>IRQ if FIFO is at least half full</description>
-            </field>
-            <field>
-              <name>TRNG_CTRL_IRQ_FIFO_FULL</name>
-              <bitRange>[27:27]</bitRange>
-              <description>IRQ if FIFO is full</description>
-            </field>
-            <field>
               <name>TRNG_CTRL_FIFO_CLR</name>
               <bitRange>[28:28]</bitRange>
               <description>Clear data FIFO when set (auto clears)</description>
@@ -1350,8 +1335,6 @@
       <description>Watchdog timer</description>
       <groupName>WDT</groupName>
       <baseAddress>0xFFFFFB00</baseAddress>
-
-      <interrupt><name>WDT_FIRQ</name><value>0</value></interrupt>
 
       <addressBlock>
         <offset>0</offset>

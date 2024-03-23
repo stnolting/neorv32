@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -98,7 +98,7 @@ int main(void) {
   // enable TRNG
   neorv32_uart0_printf("\nTRNG FIFO depth: %i\n", neorv32_trng_get_fifo_depth());
   neorv32_uart0_printf("Starting TRNG...\n");
-  neorv32_trng_enable(0); // no interrupts
+  neorv32_trng_enable();
   neorv32_cpu_delay_ms(100); // TRNG "warm up"
 
   while(1) {

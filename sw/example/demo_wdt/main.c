@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -53,17 +53,6 @@
 
 
 /**********************************************************************//**
- * Watchdog FIRQ handler - executed when the WDT has reached half of
- * the configured timeout interval.
- **************************************************************************/
-void wdt_firq_handler(void) {
-
-  neorv32_cpu_csr_clr(CSR_MIP, 1<<WDT_FIRQ_PENDING); // clear/ack pending FIRQ
-  neorv32_uart0_puts("WDT IRQ! Timeout imminent!\n");
-}
-
-
-/**********************************************************************//**
  * Main function
  *
  * @note This program requires the WDT and UART0 to be synthesized.
@@ -109,14 +98,6 @@ int main() {
   }
 
 
-  // configure and enable WDT interrupt
-  // this IRQ will trigger when half of the configured WDT timeout interval has been reached
-  neorv32_uart0_puts("Configuring WDT interrupt...\n");
-  neorv32_rte_handler_install(WDT_RTE_ID, wdt_firq_handler);
-  neorv32_cpu_csr_set(CSR_MIE, 1 << WDT_FIRQ_ENABLE); // enable WDT FIRQ channel
-  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
-
-
   // compute WDT timeout value
   // - the WDT counter increments at f_wdt = f_main / 4096
   uint32_t timeout = WDT_TIMEOUT_S * (NEORV32_SYSINFO->CLK / 4096);
@@ -145,6 +126,7 @@ int main() {
   while(1) {
     neorv32_cpu_sleep();
   }
+
 
   return 0; // will never be reached
 }

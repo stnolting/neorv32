@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -63,9 +63,6 @@ enum NEORV32_TRNG_CTRL_enum {
   TRNG_CTRL_FIFO_LSB        = 16, /**< TRNG data/control register(16) (r/-): log2(FIFO size), LSB */
   TRNG_CTRL_FIFO_MSB        = 19, /**< TRNG data/control register(19) (r/-): log2(FIFO size), MSB */
 
-  TRNG_CTRL_IRQ_FIFO_NEMPTY = 25, /**< TRNG data/control register(25) (r/w): IRQ if FIFO is not empty */
-  TRNG_CTRL_IRQ_FIFO_HALF   = 26, /**< TRNG data/control register(26) (r/w): IRQ if FIFO is at least half-full */
-  TRNG_CTRL_IRQ_FIFO_FULL   = 27, /**< TRNG data/control register(27) (r/w): IRQ if FIFO is full */
   TRNG_CTRL_FIFO_CLR        = 28, /**< TRNG data/control register(28) (-/w): Clear data FIFO (auto clears) */
   TRNG_CTRL_SIM_MODE        = 29, /**< TRNG data/control register(29) (r/-): PRNG mode (simulation mode) */
   TRNG_CTRL_EN              = 30, /**< TRNG data/control register(30) (r/w): TRNG enable */
@@ -79,7 +76,7 @@ enum NEORV32_TRNG_CTRL_enum {
  **************************************************************************/
 /**@{*/
 int  neorv32_trng_available(void);
-void neorv32_trng_enable(uint32_t irq_mask);
+void neorv32_trng_enable(void);
 void neorv32_trng_disable(void);
 void neorv32_trng_fifo_clear(void);
 int  neorv32_trng_get_fifo_depth(void);
