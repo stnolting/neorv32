@@ -5,7 +5,7 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_neoled.vhd | 
+| Hardware source file(s): | neorv32_neoled.vhd |
 | Software driver file(s): | neorv32_neoled.c |
 |                          | neorv32_neoled.h |
 | Top entity port:         | `neoled_o` | 1-bit serial data output
@@ -64,8 +64,8 @@ starting with LSB-first. The intensity for each R, G & B (& W) LED chip (= color
 value. The actual data bits are transferred by modifying the duty cycle of the signal (the timings for the
 WS2812 are shown below). A RESET command is "send" by pulling the data line LOW for at least 50μs.
 
-.WS2812 bit-level protocol - taken from the "Adafruit NeoPixel(TM) Überguide"
-image::neopixel.png[align=center]
+.WS2812 bit-level timing (timing does not scale)
+image::neopixel_timing.png[align=left]
 
 .WS2812 interface timing
 [cols="<2,<2,<6"]

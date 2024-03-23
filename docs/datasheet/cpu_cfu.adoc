@@ -54,7 +54,7 @@ always compile-time-static.
 Example operation: `rd <= rs1 xnor rs2` (bit-wise XNOR)
 
 .CFU R3-type instruction format
-image::cfu_r3type_instruction.png[align=center]
+image::cfu_r3type_instruction.png[align=left]
 
 * `funct7`: 7-bit immediate (further operand data or function select)
 * `rs2`: address of second source register (32-bit source data)
@@ -85,7 +85,7 @@ values are always compile-time-static.
 Example operation: `rd <= (rs1 * rs2 + rs3)[31:0]` (multiply-and-accumulate; "MAC")
 
 .CFU R4-type instruction format
-image::cfu_r4type_instruction.png[align=center]
+image::cfu_r4type_instruction.png[align=left]
 
 * `rs3`: address of third source register (32-bit source data)
 * `rs2`: address of second source register (32-bit source data)
@@ -122,10 +122,10 @@ can be implemented by default.
 Example operation: `rd <= rs1 & rs2 & rs3 & rs4` (bit-wise AND of 4 operands)
 
 .CFU R5-type instruction A format
-image::cfu_r5type_instruction_a.png[align=center]
+image::cfu_r5type_instruction_a.png[align=left]
 
 .CFU R5-type instruction B format
-image::cfu_r5type_instruction_b.png[align=center]
+image::cfu_r5type_instruction_b.png[align=left]
 
 * `rs4.hi` & `rs4.lo`: address of fourth source register (32-bit source data)
 * `rs3`: address of third source register (32-bit source data)
