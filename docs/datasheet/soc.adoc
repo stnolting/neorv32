@@ -427,7 +427,7 @@ the interrupt request is explicitly acknowledged (e.g. writing to a memory-mappe
 ==== NEORV32-Specific Fast Interrupt Requests
 
 As part of the NEORV32-specific CPU extensions, the processor core features 16 fast interrupt request signals
-(`FIRQ0` - `FIRQ15`) providing dedicated bits in the <<_mip>> and <<_mie>> CSRs and custom <<_mcause>> trap codes.
+(`FIRQ0` to `FIRQ15`) providing dedicated bits in the <<_mip>> and <<_mie>> CSRs and custom <<_mcause>> trap codes.
 The FIRQ signals are reserved for _processor-internal_ modules only (for example for the communication
 interfaces to signal "available incoming data" or "ready to send new data").
 
@@ -439,7 +439,7 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 [options="header",grid="rows"]
 |=======================
 | Channel | Source | Description
-| 0       | <<_watchdog_timer_wdt,WDT>> | watchdog timeout interrupt
+| 0       | - | _reserved_
 | 1       | <<_custom_functions_subsystem_cfs,CFS>> | custom functions subsystem (CFS) interrupt (user-defined)
 | 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 RX interrupt
 | 3       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 TX interrupt
@@ -454,7 +454,7 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
 | 13      | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire operation done interrupt
 | 14      | <<_stream_link_interface_slink,SLINK>> | SLINK FIFO level interrupt
-| 15      | <<_true_random_number_generator_trng,TRNG>> | TRNG FIFO level interrupt
+| 15      | - | _reserved_
 |=======================
 
 .Trigger Type
