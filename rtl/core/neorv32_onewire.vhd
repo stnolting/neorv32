@@ -6,7 +6,7 @@
 -- # * generate reset pulse and check for device presence                                          #
 -- # * transfer single bit (read-while-write)                                                      #
 -- # * transfer full byte (read-while-write)                                                       #
--- # After completing any of the operations the interrupt signal is triggered.                     #
+-- # The module's interrupt fires whenever the module is idle (again).                             #
 -- # The base time for bus interactions is configured using a 2-bit clock prescaler and a 8-bit    #
 -- # clock divider. All bus operations are timed using (hardwired) multiples of this base time.    #
 -- # ********************************************************************************************* #
@@ -121,7 +121,6 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
     tick     : std_ulogic;
     tick_ff  : std_ulogic;
     sreg     : std_ulogic_vector(7 downto 0);
-    done     : std_ulogic;
     wire_in  : std_ulogic_vector(1 downto 0);
     wire_lo  : std_ulogic;
     wire_hi  : std_ulogic;
@@ -238,7 +237,6 @@ begin
   begin
     if (rstn_i = '0') then
       serial.wire_in  <= (others => '0');
-      serial.done     <= '0';
       serial.wire_lo  <= '0';
       serial.wire_hi  <= '0';
       serial.state    <= (others => '0');
@@ -259,7 +257,6 @@ begin
       end if;
 
       -- defaults --
-      serial.done    <= '0';
       serial.wire_lo <= '0';
       serial.wire_hi <= '0';
 
@@ -309,7 +306,6 @@ begin
             serial.sreg     <= serial.sample & serial.sreg(7 downto 1); -- new bit; LSB first
             serial.bit_cnt  <= serial.bit_cnt - 1;
             if (serial.bit_cnt = "000") then -- all done
-              serial.done              <= '1'; -- operation done
               serial.state(1 downto 0) <= "00"; -- go back to IDLE
             else -- next bit
               serial.wire_lo <= '1'; -- force bus to low again
@@ -333,7 +329,6 @@ begin
           end if;
           -- end of presence phase --
           if (serial.tick_cnt = t_presence_end_c) then
-            serial.done              <= '1'; -- operation done
             serial.state(1 downto 0) <= "00"; -- go back to IDLE
           end if;
 
@@ -350,8 +345,21 @@ begin
   -- serial engine busy? --
   serial.busy <= '0' when (serial.state(1 downto 0) = "00") else '1';
 
-  -- operation done interrupt --
-  irq_o <= serial.done;
+
+  -- Interrupt Generator --------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  irq_generator: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      irq_o <= '0';
+    elsif rising_edge(clk_i) then
+      if (serial.state = "100") then -- enabled and in idle state
+        irq_o <= '1';
+      else
+        irq_o <= '0';
+      end if;
+    end if;
+  end process irq_generator;
 
 
 end neorv32_onewire_rtl;

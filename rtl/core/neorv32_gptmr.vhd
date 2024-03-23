@@ -58,7 +58,7 @@ end neorv32_gptmr;
 architecture neorv32_gptmr_rtl of neorv32_gptmr is
 
   -- control register --
-  constant ctrl_en_c     : natural := 0; -- r/w: GPTMR enable
+  constant ctrl_en_c     : natural := 0; -- r/w: global enable
   constant ctrl_prsc0_c  : natural := 1; -- r/w: clock prescaler select bit 0
   constant ctrl_prsc1_c  : natural := 2; -- r/w: clock prescaler select bit 1
   constant ctrl_prsc2_c  : natural := 3; -- r/w: clock prescaler select bit 2
@@ -122,25 +122,23 @@ begin
       bus_rsp_o.data <= (others => '0');
       timer.cnt_we   <= '0';
 
-      -- trigger flags --
-      trig_match   <= ctrl(ctrl_en_c) and (trig_match or timer.trigger);
-      trig_capture <= ctrl(ctrl_en_c) and (trig_capture or capture.trigger);
+      -- IRQ trigger --
+      trig_match   <= ctrl(ctrl_en_c) and ctrl(ctrl_irqm_c) and (trig_match or timer.trigger);
+      trig_capture <= ctrl(ctrl_en_c) and ctrl(ctrl_irqc_c) and (trig_capture or capture.trigger);
 
       -- actual bus access --
       if (bus_req_i.stb = '1') then
-
-        -- write access --
-        if (bus_req_i.rw = '1') then
+        if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(3 downto 2) = "00") then -- control register
-            ctrl(ctrl_en_c)      <= bus_req_i.data(ctrl_en_c);
-            ctrl(ctrl_prsc0_c)   <= bus_req_i.data(ctrl_prsc0_c);
-            ctrl(ctrl_prsc1_c)   <= bus_req_i.data(ctrl_prsc1_c);
-            ctrl(ctrl_prsc2_c)   <= bus_req_i.data(ctrl_prsc2_c);
-            ctrl(ctrl_irqm_c)    <= bus_req_i.data(ctrl_irqm_c);
-            ctrl(ctrl_irqc_c)    <= bus_req_i.data(ctrl_irqc_c);
-            ctrl(ctrl_rise_c)    <= bus_req_i.data(ctrl_rise_c);
-            ctrl(ctrl_fall_c)    <= bus_req_i.data(ctrl_fall_c);
-            ctrl(ctrl_filter_c)  <= bus_req_i.data(ctrl_filter_c);
+            ctrl(ctrl_en_c)     <= bus_req_i.data(ctrl_en_c);
+            ctrl(ctrl_prsc0_c)  <= bus_req_i.data(ctrl_prsc0_c);
+            ctrl(ctrl_prsc1_c)  <= bus_req_i.data(ctrl_prsc1_c);
+            ctrl(ctrl_prsc2_c)  <= bus_req_i.data(ctrl_prsc2_c);
+            ctrl(ctrl_irqm_c)   <= bus_req_i.data(ctrl_irqm_c);
+            ctrl(ctrl_irqc_c)   <= bus_req_i.data(ctrl_irqc_c);
+            ctrl(ctrl_rise_c)   <= bus_req_i.data(ctrl_rise_c);
+            ctrl(ctrl_fall_c)   <= bus_req_i.data(ctrl_fall_c);
+            ctrl(ctrl_filter_c) <= bus_req_i.data(ctrl_filter_c);
             if (bus_req_i.data(ctrl_trigm_c) = '0') then -- clear by writing zero
               trig_match <= '0';
             end if;
@@ -154,9 +152,7 @@ begin
           if (bus_req_i.addr(3 downto 2) = "10") then -- counter register
             timer.cnt_we <= '1';
           end if;
-
-        -- read access --
-        else
+        else -- read access
           case bus_req_i.addr(3 downto 2) is
             when "00" => -- control register
               bus_rsp_o.data(ctrl_en_c)     <= ctrl(ctrl_en_c);
@@ -179,10 +175,12 @@ begin
               bus_rsp_o.data <= capture.count;
           end case;
         end if;
-
       end if;
     end if;
   end process bus_access;
+
+  -- interrupt request --
+  irq_o <= trig_match or trig_capture;
 
 
   -- Timer Core -----------------------------------------------------------------------------
@@ -272,20 +270,6 @@ begin
   -- capture trigger --
   capture.trigger <= (ctrl(ctrl_rise_c) and capture.rising) or -- rising-edge trigger
                      (ctrl(ctrl_fall_c) and capture.falling); -- falling-edge trigger
-
-
-  -- Interrupt Generator --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  irq_generator: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
-      irq_o <= ctrl(ctrl_en_c) and
-               ((ctrl(ctrl_irqm_c) and timer.trigger) or -- timer-match interrupt
-                (ctrl(ctrl_irqc_c) and capture.trigger)); -- capture interrupt
-    end if;
-  end process irq_generator;
 
 
 end neorv32_gptmr_rtl;

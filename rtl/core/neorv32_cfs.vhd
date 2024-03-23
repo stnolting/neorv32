@@ -139,9 +139,7 @@ begin
   -- Interrupt ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- The CFS features a single interrupt signal, which is connected to the CPU's "fast interrupt" channel 1 (FIRQ1).
-  -- The interrupt is triggered by a one-cycle high-level. After triggering, the interrupt appears as "pending" in the CPU's
-  -- mip CSR ready to trigger execution of the according interrupt handler. It is the task of the application to programmer
-  -- to enable/clear the CFS interrupt using the CPU's mie and mip registers when required.
+  -- The according CPU interrupt becomes pending as long as <irq_o> is high.
 
   irq_o <= '0'; -- not used for this minimal example
 

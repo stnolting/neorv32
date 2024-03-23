@@ -229,6 +229,7 @@ begin
   -- read access (SDI) --
   tx_fifo.re <= serial.start;
 
+
   -- RX --
   rx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
@@ -260,6 +261,21 @@ begin
   -- read access (CPU) --
   rx_fifo.clear <= (not ctrl.enable) or ctrl.clr_rx;
   rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
+
+
+  -- Interrupt Generator --
+  irq_generator: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      irq_o <= '0';
+    elsif rising_edge(clk_i) then
+      irq_o <= ctrl.enable and (
+               (ctrl.irq_rx_avail and rx_fifo.avail)      or -- RX FIFO not empty
+               (ctrl.irq_rx_half  and rx_fifo.half)       or -- RX FIFO at least half full
+               (ctrl.irq_rx_full  and (not rx_fifo.free)) or -- RX FIFO full
+               (ctrl.irq_tx_empty and (not tx_fifo.avail))); -- TX FIFO empty
+    end if;
+  end process irq_generator;
 
 
   -- Input Synchronizer ---------------------------------------------------------------------
@@ -349,22 +365,6 @@ begin
 
   -- serial data output --
   sdi_dat_o <= serial.sreg(serial.sreg'left);
-
-
-  -- Interrupt Generator --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  irq_generator: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
-      irq_o <= ctrl.enable and (
-               (ctrl.irq_rx_avail and rx_fifo.avail)      or -- RX FIFO not empty
-               (ctrl.irq_rx_half  and rx_fifo.half)       or -- RX FIFO at least half full
-               (ctrl.irq_rx_full  and (not rx_fifo.free)) or -- RX FIFO full
-               (ctrl.irq_tx_empty and (not tx_fifo.avail))); -- TX FIFO empty
-    end if;
-  end process irq_generator;
 
 
 end neorv32_sdi_rtl;

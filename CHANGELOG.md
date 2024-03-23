@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 23.03.2024 | 1.9.7.3 | :warning: **interrupt system rework**: rework ONEWIRE and GPTMR interrupts | [#859](https://github.com/stnolting/neorv32/pull/859) |
 | 23.03.2024 | 1.9.7.2 | :warning: **interrupt system rework**: removed WDT and TRNG interrupts; :bug: fix core complex clocking during sleep mode | [#858](https://github.com/stnolting/neorv32/pull/858) |
 | 23.03.2024 | 1.9.7.1 | CPU hardware optimization (reduced hardware footprint, shortened critical path) | [#857](https://github.com/stnolting/neorv32/pull/857) |
 | 22.03.2024 | [**:rocket:1.9.7**](https://github.com/stnolting/neorv32/releases/tag/v1.9.7) | **New release** | |
