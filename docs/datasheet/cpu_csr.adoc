@@ -432,7 +432,7 @@ However, any write-access will be ignored and will not cause an exception to mai
 | Address     | `0x344`
 | Reset value | `0x00000000`
 | ISA         | `Zicsr`
-| Description | The `mip` CSR shows currently _pending_ machine-mode interrupt requests.
+| Description | The `mip` CSR shows currently _pending_ machine-mode interrupt requests. Any write access to this register is ignored.
 |=======================
 
 .`mip` CSR bits
@@ -443,7 +443,7 @@ However, any write-access will be ignored and will not cause an exception to mai
 | 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending; _cleared by platform-defined mechanism_
 | 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending; _cleared by platform-defined mechanism_
 | 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending; _cleared by platform-defined mechanism_
-| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/c | **FIRQxP**: Fast interrupt channel 15..0 pending; has to be cleared manually by writing zero; writing `1` has no effect
+| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending; _cleared by platform-defined mechanism_
 |=======================
 
 .FIRQ Channel Mapping

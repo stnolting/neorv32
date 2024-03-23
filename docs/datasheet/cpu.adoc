@@ -871,17 +871,13 @@ even if <<_mstatus>>.mie is cleared.
 
 .Interrupt Signal Requirements - Standard RISC-V Interrupts
 [IMPORTANT]
-All standard RISC-V interrupt request signals are **high-active**. A request has to stay at high-level
-until it is explicitly acknowledged by the CPU software (for example by writing to a specific memory-mapped register).
+All interrupt request signals are **high-active**. Once triggered, a interrupt request line should stay high
+until it is explicitly acknowledged by a source-specific mechanism (for example by writing to a specific memory-mapped register).
 
-.Interrupt Signal Requirements - NEORV32-Specific Fast Interrupt Requests
-[IMPORTANT]
-The NEORV32-specific FIRQ request lines are triggered (= becoming pending) by a one-shot high-level.
-
-.Instruction Atomicity
+.Instruction Atomicity and Forward-Progress
 [NOTE]
 All instructions execute as atomic operations - interrupts can only trigger _between_ consecutive instructions.
-Even if there is a permanent interrupt request, exactly one instruction from the interrupted program will be executed before
+Additionally, if there is a permanent interrupt request, exactly one instruction from the interrupted program will be executed before
 another interrupt handler can start. This allows program progress even if there are permanent interrupt requests.
 
 
@@ -902,9 +898,6 @@ instruction exception at all.
 As a custom extension, the NEORV32 CPU features 16 fast interrupt request (FIRQ) lines via the `firq_i` CPU top
 entity signals. These interrupts have custom configuration and status flags in the <<_mie>> and <<_mip>> CSRs and also
 provide custom trap codes in <<_mcause>>. These FIRQs are reserved for NEORV32 processor-internal usage only.
-
-Once triggered, the according FIRQ bits in <<_mip>> has to be cleared _manually_ by the FIRQ interrupt handler
-to clear/acknowledge the fast interrupt request.
 
 
 :sectnums:
