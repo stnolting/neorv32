@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -124,7 +124,7 @@ int main(void) {
     // check if TRNG was synthesized
     if (neorv32_trng_available()) {
       neorv32_uart0_printf("\nTRNG detected. Using TRNG for universe initialization.\n");
-      neorv32_trng_enable(0);
+      neorv32_trng_enable();
       trng_available = 1;
     }
 
