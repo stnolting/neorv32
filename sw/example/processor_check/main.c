@@ -191,7 +191,6 @@ int main() {
 
   // clear all interrupts, enable only where needed
   neorv32_cpu_csr_write(CSR_MIE, 0);
-  neorv32_cpu_csr_write(CSR_MIP, 0);
 
   // enable machine-mode interrupts
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
@@ -506,58 +505,6 @@ int main() {
   }
   else {
     test_fail();
-  }
-
-
-  // ----------------------------------------------------------
-  // Test MIP.FIRQ clear-only bits
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Clear-only CSR (mip.FIRQ) ", cnt_test);
-
-  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SPI)) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPTMR))) {
-    cnt_test++;
-
-    tmp_a = 0; // error counter
-
-    // disable all IRQ sources
-    neorv32_cpu_csr_write(CSR_MIE, 0);
-
-    // trigger two FIRQs
-    neorv32_gptmr_setup(CLK_PRSC_2, 0, -1); // fire GPTMR FIRQ
-    neorv32_spi_setup(CLK_PRSC_2, 0, 0, 0, -1); // fire SPI FIRQ
-    neorv32_gptmr_disable();
-    neorv32_spi_disable();
-
-    // both FIRQs should be pending now
-    if ((neorv32_cpu_csr_read(CSR_MIP) & 0xffff0000) != ((1 << SPI_FIRQ_PENDING) + (1 << GPTMR_FIRQ_PENDING))) {
-      tmp_a++;
-    }
-
-    // test write/set/clear access
-    neorv32_cpu_csr_write(CSR_MIP, 0xffffffff); // should have no effect at all
-    neorv32_cpu_csr_set(CSR_MIP, 0xffffffff); // should have no effect at all
-    neorv32_cpu_csr_clr(CSR_MIP, 1 << SPI_FIRQ_PENDING); // clear SPI FIRQ only
-
-    if ((neorv32_cpu_csr_read(CSR_MIP) & 0xffff0000) != (1 << GPTMR_FIRQ_PENDING)) {
-      tmp_a++;
-    }
-
-    // clear all mip.FIRQ bits
-    neorv32_cpu_csr_write(CSR_MIP, 0);
-    if ((neorv32_cpu_csr_read(CSR_MIP) & 0xffff0000) != 0) {
-      tmp_a++;
-    }
-
-    if (tmp_a == 0) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
   }
 
 
@@ -2211,11 +2158,6 @@ void sim_irq_trigger(uint32_t sel) {
 void global_trap_handler(void) {
 
   uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
-
-  // clear pending FIRQ
-  if (cause & (1<<31)) {
-    neorv32_cpu_csr_write(CSR_MIP, ~(1 << (cause & 0xf)));
-  }
 
   // hack: make "instruction access fault" exception resumable as we *exactly* know how to handle it in this case
   if (cause == TRAP_CODE_I_ACCESS) {
