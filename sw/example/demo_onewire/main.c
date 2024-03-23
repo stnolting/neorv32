@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -63,7 +63,6 @@ void read_byte(void);
 void write_byte(void);
 void scan_bus(void);
 uint32_t hexstr_to_uint(char *buffer, uint8_t length);
-void onewire_firq_handler(void);
 
 
 /**********************************************************************//**
@@ -108,13 +107,6 @@ int main() {
     neorv32_uart0_printf("FAILED! Short circuit? Missing pull-up resistor?\n");
   }
 
-/*
-  // install "ONEWIRE operation done interrupt" - this is optional
-  neorv32_uart0_printf("Installing ONEWIRE 'operation done' interrupt handler...\n");
-  neorv32_rte_handler_install(ONEWIRE_RTE_ID, onewire_firq_handler);
-  neorv32_cpu_irq_enable(ONEWIRE_FIRQ_ENABLE); // enable ONEWIRE FIRQ
-  neorv32_cpu_eint(); // enable global interrupt flag
-*/
 
   neorv32_uart0_printf("Starting interactive user console...\n\n");
 
@@ -326,15 +318,4 @@ uint32_t hexstr_to_uint(char *buffer, uint8_t length) {
   }
 
   return res;
-}
-
-
-/**********************************************************************//**
- * ONEWIRE operation done interrupt handler.
- **************************************************************************/
-void onewire_firq_handler(void) {
-
-  neorv32_cpu_csr_write(CSR_MIP, ~(1 << ONEWIRE_FIRQ_PENDING)); // ack FIRQ
-
-  neorv32_uart0_printf(" <<DONE IRQ>> ");
 }
