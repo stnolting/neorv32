@@ -1,0 +1,7 @@
+{signal: [
+  {name: '0-code', wave: '01...0...1',  node: '.a...b...c' },
+  {name: '1-code', wave: '01....0..1',  node: '.d....e..f' },
+  {name: 'reset',  wave: '10.......1',  node: '.g.......h' },
+],
+ edge: ['a~>b T0H', 'b~>c T0L', 'd~>e T1H', 'e~>f T1L', 'g~>h TRESET']
+}
