@@ -163,10 +163,9 @@ time **T~base~** (and by eventually changing the hardwired timing configuration 
 
 **Interrupt**
 
-A single interrupt is provided by the ONEWIRE module to signal "operation done" condition to the CPU. Whenever the
-controller completes a "generate reset pulse", a "transfer single-bit" or a "transfer full-byte" operation the
-interrupt is triggered. Once triggered, the interrupt has to be _explicitly_ cleared again by writing zero to the
-according <<_mip>> CSR FIRQ bit.
+A single interrupt is provided by the ONEWIRE module to signal "idle" condition to the CPU. Whenever the
+controller is idle (again) the interrupt becomes active. Once triggered, the interrupt has to be _explicitly_
+cleared again by writing zero to the according <<_mip>> CSR FIRQ bit.
 
 
 **Register Map**
