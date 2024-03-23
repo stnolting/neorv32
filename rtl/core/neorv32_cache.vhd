@@ -958,6 +958,7 @@ begin
     bus_req_o.ben  <= (others => '1'); -- full-word writes only
     bus_req_o.src  <= '0'; -- cache accesses are always "data" accesses
     bus_req_o.priv <= '0'; -- cache accesses are always "unprivileged" accesses
+    bus_req_o.rvso <= '0'; -- cache accesses can never be a reservation set operation
 
     -- fsm --
     case state is

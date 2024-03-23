@@ -762,50 +762,56 @@ begin
   -- **************************************************************************************************************************
   neorv32_bus_gateway_inst: entity neorv32.neorv32_bus_gateway
   generic map (
-    TIMEOUT     => bus_timeout_c,
-    -- IMEM port --
-    IMEM_ENABLE => MEM_INT_IMEM_EN,
-    IMEM_BASE   => mem_imem_base_c,
-    IMEM_SIZE   => imem_size_c,
-    -- DMEM port --
-    DMEM_ENABLE => MEM_INT_DMEM_EN,
-    DMEM_BASE   => mem_dmem_base_c,
-    DMEM_SIZE   => dmem_size_c,
-    -- XIP port --
-    XIP_ENABLE  => XIP_EN,
-    XIP_BASE    => mem_xip_base_c,
-    XIP_SIZE    => mem_xip_size_c,
-    -- BOOT ROM port --
-    BOOT_ENABLE => INT_BOOTLOADER_EN,
-    BOOT_BASE   => mem_boot_base_c,
-    BOOT_SIZE   => mem_boot_size_c,
-    -- IO port --
-    IO_ENABLE   => true, -- always enabled (mandatory core module)
-    IO_BASE     => mem_io_base_c,
-    IO_SIZE     => mem_io_size_c,
-    -- EXT port --
-    EXT_ENABLE  => XBUS_EN
+    TIMEOUT  => bus_timeout_c,
+    -- port A: IMEM --
+    A_ENABLE => MEM_INT_IMEM_EN,
+    A_BASE   => mem_imem_base_c,
+    A_SIZE   => imem_size_c,
+    A_TMO_EN => true,
+    -- port B: DMEM --
+    B_ENABLE => MEM_INT_DMEM_EN,
+    B_BASE   => mem_dmem_base_c,
+    B_SIZE   => dmem_size_c,
+    B_TMO_EN => true,
+    -- port C: XIP --
+    C_ENABLE => XIP_EN,
+    C_BASE   => mem_xip_base_c,
+    C_SIZE   => mem_xip_size_c,
+    C_TMO_EN => false, -- not timeout for XIP flash accesses
+    -- port D: BOOT ROM --
+    D_ENABLE => INT_BOOTLOADER_EN,
+    D_BASE   => mem_boot_base_c,
+    D_SIZE   => mem_boot_size_c,
+    D_TMO_EN => true,
+    -- port E: IO --
+    E_ENABLE => true, -- always enabled (mandatory core module)
+    E_BASE   => mem_io_base_c,
+    E_SIZE   => mem_io_size_c,
+    E_TMO_EN => true,
+    -- port X: XBUS --
+    X_ENABLE => XBUS_EN,
+    X_TMO_EN => false -- timeout handled by XBUS gateway
   )
   port map (
     -- global control --
-    clk_i      => clk_i,
-    rstn_i     => rstn_sys,
+    clk_i   => clk_i,
+    rstn_i  => rstn_sys,
     -- host port --
-    main_req_i => main2_req,
-    main_rsp_o => main2_rsp,
+    req_i   => main2_req,
+    rsp_o   => main2_rsp,
     -- section ports --
-    imem_req_o => imem_req,
-    imem_rsp_i => imem_rsp,
-    dmem_req_o => dmem_req,
-    dmem_rsp_i => dmem_rsp,
-    xip_req_o  => xip_req,
-    xip_rsp_i  => xip_rsp,
-    boot_req_o => boot_req,
-    boot_rsp_i => boot_rsp,
-    io_req_o   => io_req,
-    io_rsp_i   => io_rsp,
-    ext_req_o  => xbus_req,
-    ext_rsp_i  => xbus_rsp
+    a_req_o => imem_req,
+    a_rsp_i => imem_rsp,
+    b_req_o => dmem_req,
+    b_rsp_i => dmem_rsp,
+    c_req_o => xip_req,
+    c_rsp_i => xip_rsp,
+    d_req_o => boot_req,
+    d_rsp_i => boot_rsp,
+    e_req_o => io_req,
+    e_rsp_i => io_rsp,
+    x_req_o => xbus_req,
+    x_rsp_i => xbus_rsp
   );
 
 

@@ -197,6 +197,8 @@ begin
           when others => -- word
             rdata_o(XLEN-1 downto 0) <= bus_rsp_i.data(XLEN-1 downto 0);
         end case;
+      else
+        rdata_o <= (others => '0'); -- output zero if there is no memory access
       end if;
     end if;
   end process mem_di_reg;

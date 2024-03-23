@@ -132,7 +132,7 @@ begin
   opa_x <= (opa(opa'left) and (not ctrl_i.alu_unsigned)) & opa; -- sign-extend
   opb_x <= (opb(opb'left) and (not ctrl_i.alu_unsigned)) & opb; -- sign-extend
 
-  addsub_res <= std_ulogic_vector(unsigned(opa_x) - unsigned(opb_x)) when (ctrl_i.alu_op(0) = '1') else
+  addsub_res <= std_ulogic_vector(unsigned(opa_x) - unsigned(opb_x)) when (ctrl_i.alu_sub = '1') else
                 std_ulogic_vector(unsigned(opa_x) + unsigned(opb_x));
 
   add_o <= addsub_res(XLEN-1 downto 0); -- direct output of adder result
@@ -142,17 +142,17 @@ begin
   -- -------------------------------------------------------------------------------------------
   alu_core: process(ctrl_i, addsub_res, cp_res, rs1_i, opb)
   begin
+    res_o <= (others => '0');
     case ctrl_i.alu_op is
+      when alu_op_zero_c => res_o <= (others => '0');
       when alu_op_add_c  => res_o <= addsub_res(XLEN-1 downto 0);
-      when alu_op_sub_c  => res_o <= addsub_res(XLEN-1 downto 0);
       when alu_op_cp_c   => res_o <= cp_res;
-      when alu_op_slt_c  => res_o(XLEN-1 downto 1) <= (others => '0');
-                            res_o(0) <= addsub_res(addsub_res'left); -- carry/borrow
+      when alu_op_slt_c  => res_o(0) <= addsub_res(addsub_res'left); -- carry/borrow
       when alu_op_movb_c => res_o <= opb;
       when alu_op_xor_c  => res_o <= opb xor rs1_i;
       when alu_op_or_c   => res_o <= opb or  rs1_i;
       when alu_op_and_c  => res_o <= opb and rs1_i;
-      when others        => res_o <= addsub_res(XLEN-1 downto 0); -- don't care
+      when others        => res_o <= (others => '0');
     end case;
   end process alu_core;
 
