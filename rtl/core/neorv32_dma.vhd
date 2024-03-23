@@ -218,7 +218,7 @@ begin
   end process bus_access;
 
   -- transfer-done interrupt --
-  irq_o <= engine.done and config.enable; -- no interrupt if transfer was aborted by clearing config.enable
+  irq_o <= config.done;
 
 
   -- Automatic Trigger ----------------------------------------------------------------------
