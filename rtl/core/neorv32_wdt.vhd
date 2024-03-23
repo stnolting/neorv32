@@ -1,10 +1,9 @@
 -- #################################################################################################
 -- # << NEORV32 - Watch Dog Timer (WDT) >>                                                         #
 -- # ********************************************************************************************* #
--- # "Bark and bite" Watchdog. The WDt will trigger a CPU interrupt when the internal 24-bit       #
--- # reaches half of the programmed timeout value ("bark") before generating a system-wide         #
--- # hardware reset  when it finally reaches the full timeout value ("bite"). The internal counter #
--- # increments at 1/4096 of the processor's main clock.                                           #
+-- # The WDT will trigger a system-wide reset when the internal 24-bit counter reached the         #
+-- # programmed timeout value . The internal counter increments at a fixed clock speed of 1/4096   #
+-- # of the processor's main clock.                                                                #
 -- #                                                                                               #
 -- # Access to the control register can be permanently inhibited by setting the lock bit. This bit #
 -- # can only be cleared by a hardware reset.                                                      #
@@ -57,7 +56,6 @@ entity neorv32_wdt is
     cpu_sleep_i : in  std_ulogic; -- CPU is in sleep mode
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(7 downto 0);
-    irq_o       : out std_ulogic; -- timeout IRQ
     rstn_o      : out std_ulogic  -- timeout reset, low_active, sync
   );
 end neorv32_wdt;
@@ -98,7 +96,6 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   signal cnt_started         : std_ulogic;
   signal cnt_inc, cnt_inc_ff : std_ulogic; -- increment counter when set
   signal timeout_rst         : std_ulogic;
-  signal timeout_irq         : std_ulogic;
 
   -- misc --
   signal hw_rst      : std_ulogic;
@@ -200,35 +197,25 @@ begin
                       ((cpu_debug_i = '0') or (ctrl.dben = '1'))  and -- not in debug mode or allowed to run in debug mode
                       ((cpu_sleep_i = '0') or (ctrl.sen = '1')) else '0'; -- not in sleep mode or allowed to run in sleep mode
 
-  -- timeout detection --
-  timeout_irq <= '1' when (cnt_started = '1') and (cnt = ('0' & ctrl.timeout(23 downto 1))) else '0'; -- half timeout value
-  timeout_rst <= '1' when (cnt_started = '1') and (cnt =        ctrl.timeout(23 downto 0))  else '0'; -- full timeout value
+  -- timeout detector --
+  timeout_rst <= '1' when (cnt_started = '1') and (cnt = ctrl.timeout) else '0';
 
 
-  -- Event Generators -----------------------------------------------------------------------
+  -- Reset Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  event_generator: process(rstn_i, clk_i)
+  reset_generator: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      irq_o  <= '0';
       hw_rst <= '0';
     elsif rising_edge(clk_i) then
-      -- defaults --
-      irq_o  <= '0';
       hw_rst <= '0';
-      if (ctrl.enable = '1') then
-        -- interrupt --
-        if (timeout_irq = '1') and (prsc_tick = '1') then
-          irq_o <= '1';
-        end if;
-        -- hardware reset --
-        if ((timeout_rst = '1') and (prsc_tick = '1')) or -- timeout
-           ((ctrl.strict = '1') and (reset_force = '1')) then -- strict mode and incorrect password
-          hw_rst <= '1';
-        end if;
+      if (ctrl.enable = '1') and -- enabled
+         (((timeout_rst = '1') and (prsc_tick = '1')) or -- timeout
+          ((ctrl.strict = '1') and (reset_force = '1'))) then -- strict mode and incorrect password
+        hw_rst <= '1';
       end if;
     end if;
-  end process event_generator;
+  end process reset_generator;
 
   -- system-wide reset --
   rstn_o <= not hw_rst;
