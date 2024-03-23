@@ -59,9 +59,9 @@ the interrupt source register `ESC`. This register provides a 5-bit wide ID (0..
 Writing _any_ value to this register will acknowledge the _current_ XIRQ interrupt (so the XIRQ controller can issue a new CPU interrupt).
 
 In order to acknowledge an XIRQ interrupt, the interrupt handler has to...
-* clear the pending CPU FIRQ by clearing the according <<_mip>> CSR bit
 * clear the pending XIRQ channel by clearing the according `EIP` bit
 * writing _any_ value to `ESC` to acknowledge the XIRQ interrupt
+* clear the pending CPU FIRQ by clearing the according <<_mip>> CSR bit
 
 
 **Register Map**
