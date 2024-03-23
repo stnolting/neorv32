@@ -64,10 +64,12 @@ processor clock) and the signal has to be stable for at lest 4 sample clock in o
 This stabilized signal is then fed to the edge detection logic.
 
 
-.Timer Interrupt
-[NOTE]
-Once triggered, the timer interrupt remains pending within the CPU until it explicitly cleared by writing zero
-to the according <<_mip>> CSR bit.
+**Interrupt**
+
+The GPTRM provides a single interrupt line that can be trigger by a timer-match event and/or by a timer-compare
+event. Once triggered, the interrupt will stay active until explicitly cleared by writing zero to the according
+interrupt flag (`GPTMR_CTRL_TRIGM` or `GPTMR_CTRL_TRIGC`), Additionally, the interrupt has to be also cleared
+again by writing zero to the according <<_mip>> CSR bit(s).
 
 
 **Register Map**
