@@ -5,7 +5,7 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_uart.vhd | 
+| Hardware source file(s): | neorv32_uart.vhd |
 | Software driver file(s): | neorv32_uart.c |
 |                          | neorv32_uart.h |
 | Top entity port:         | `uart0_txd_o` | serial transmitter output
@@ -82,6 +82,7 @@ Furthermore, a pending UART interrupt has to be explicitly cleared again by writ
 Software can retrieve the configured sizes of the RX and TX FIFO via the according `UART_DATA_RX_FIFO_SIZE` and
 `UART_DATA_TX_FIFO_SIZE` bits from the `DATA` register.
 
+
 **RTS/CTS Hardware Flow Control**
 
 The NEORV32 UART supports optional hardware flow control using the standard CTS `uart0_cts_i` ("clear to send") and RTS
@@ -154,7 +155,7 @@ Both file are created in the simulation's home folder.
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_uart.vhd | 
+| Hardware source file(s): | neorv32_uart.vhd |
 | Software driver file(s): | neorv32_uart.c |
 |                          | neorv32_uart.h |
 | Top entity port:         | `uart1_txd_o` | serial transmitter output

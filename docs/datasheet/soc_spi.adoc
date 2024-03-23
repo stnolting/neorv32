@@ -5,7 +5,7 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_spi.vhd | 
+| Hardware source file(s): | neorv32_spi.vhd |
 | Software driver file(s): | neorv32_spi.c |
 |                          | neorv32_spi.h |
 | Top entity port:         | `spi_clk_o` | 1-bit serial clock output
@@ -33,7 +33,6 @@ and a single data register `DATA` for receiving/transmitting data.
 The NEORV32 SPI module only supports _host mode_. Transmission are initiated only by the processor's SPI module
 and not by an external SPI module. If you are looking for a _device-mode_ serial peripheral interface (transactions
 initiated by an external host) check out the <<_serial_data_interface_controller_sdi>>.
-
 
 
 **Theory of Operation**
