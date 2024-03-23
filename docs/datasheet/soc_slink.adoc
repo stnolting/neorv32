@@ -76,9 +76,15 @@ Writing to the TX channel's FIFO while it is _full_ will have no effect. Reading
 is _empty_ will also have no effect and will return the last received data word.
 
 The current status of the RX and TX FIFOs can be determined via the `SLINK_CTRL_RX_*` and `SLINK_CTRL_TX_*` flags.
-A global interrupt can be programmed based on these FIFO status flags via the control register's `SLINK_CTRL_IRQ_*`
-bits. Note that all enabled interrupt conditions are logically OR-ed. Once the SLINK's interrupt has become pending,
-it has to be explicitly cleared again by writing zero to the according <<_mip>> CSR bit(s).
+
+
+**Interrupt**
+
+A single global interrupt can be programmed based on these FIFO status flags via the control register's `SLINK_CTRL_IRQ_*`
+bits. Note that all enabled interrupt conditions are logically OR-ed. If any enable interrupt conditions becomes true the
+interrupt will become pending until the interrupt-causing condition is resolved (e.g. by reading from the RX FIFO).
+Once the SLINK's interrupt has become pending, it has to be also explicitly cleared again by writing zero to the according
+<<_mip>> CSR bit(s).
 
 
 **Register Map**
