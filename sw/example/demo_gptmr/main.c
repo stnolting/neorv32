@@ -93,7 +93,6 @@ int main() {
   neorv32_gptmr_setup(CLK_PRSC_8, NEORV32_SYSINFO->CLK / (8 * 2), 1);
 
   // enable interrupt
-  neorv32_cpu_csr_clr(CSR_MIP, 1 << GPTMR_FIRQ_PENDING);  // make sure there is no GPTMR IRQ pending already
   neorv32_cpu_csr_set(CSR_MIE, 1 << GPTMR_FIRQ_ENABLE);   // enable GPTMR FIRQ channel
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 
@@ -114,7 +113,7 @@ int main() {
  **************************************************************************/
 void gptmr_firq_handler(void) {
 
-  neorv32_cpu_csr_write(CSR_MIP, ~(1<<GPTMR_FIRQ_PENDING)); // clear/ack pending FIRQ
+  neorv32_gptmr_trigger_matched(); // clear timer-match interrupt
 
   neorv32_uart0_putc('.'); // send tick symbol via UART0
   neorv32_gpio_pin_toggle(0); // toggle output port bit 0

@@ -441,18 +441,18 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | Channel | Source | Description
 | 0       | - | _reserved_
 | 1       | <<_custom_functions_subsystem_cfs,CFS>> | custom functions subsystem (CFS) interrupt (user-defined)
-| 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 RX interrupt
-| 3       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 TX interrupt
-| 4       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 RX interrupt
-| 5       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 TX interrupt
-| 6       | <<_serial_peripheral_interface_controller_spi,SPI>> | SPI interrupt
-| 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI transmission done interrupt
+| 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 RX FIFO level interrupt
+| 3       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 TX FIFO level interrupt
+| 4       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 RX FIFO level interrupt
+| 5       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 TX FIFO level interrupt
+| 6       | <<_serial_peripheral_interface_controller_spi,SPI>> | SPI FIFO level interrupt
+| 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI idle interrupt
 | 8       | <<_external_interrupt_controller_xirq,XIRQ>> | External interrupt controller interrupt
-| 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED TX buffer interrupt
+| 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED TX FIFO level interrupt
 | 10      | <<_direct_memory_access_controller_dma,DMA>> | DMA transfer done interrupt
-| 11      | <<_serial_data_interface_controller_sdi,SDI>> | SDI interrupt
+| 11      | <<_serial_data_interface_controller_sdi,SDI>> | SDI FIFO level interrupt
 | 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
-| 13      | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire operation done interrupt
+| 13      | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire idle interrupt
 | 14      | <<_stream_link_interface_slink,SLINK>> | SLINK FIFO level interrupt
 | 15      | - | _reserved_
 |=======================

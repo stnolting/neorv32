@@ -82,7 +82,6 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
     neorv32_spi_cs_dis(); // deselect slave
     self->uint32Total = 0;
     self->uint8IsBusy = 0;
-    neorv32_cpu_csr_clr(CSR_MIP, 1 << SPI_FIRQ_PENDING); // ack/clear pending FIRQ
     return;
   }
 
@@ -91,7 +90,6 @@ void neorv32_spi_isr(t_neorv32_spi *self) {
   for ( ; self->uint32Write<uint32Lim; (self->uint32Write)++ ) {
     NEORV32_SPI->DATA = (uint32_t) (self->ptrSpiBuf)[self->uint32Write]; // next transfer
   }
-  neorv32_cpu_csr_clr(CSR_MIP, 1 << SPI_FIRQ_PENDING); // ack/clear pending FIRQ
   return;
 }
 

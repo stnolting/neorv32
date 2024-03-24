@@ -69,7 +69,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
   -- control and status register bits --
   constant ctrl_en_c            : natural :=  0; -- r/w: DMA enable
   constant ctrl_auto_c          : natural :=  1; -- r/w: enable FIRQ-triggered transfer
-  constant ctrl_fence_c         : natural :=  3; -- r/w: issue FENCE operation when DMA is done
+  constant ctrl_fence_c         : natural :=  2; -- r/w: issue FENCE operation when DMA is done
   --
   constant ctrl_error_rd_c      : natural :=  8; -- r/-: error during read transfer
   constant ctrl_error_wr_c      : natural :=  9; -- r/-: error during write transfer
@@ -163,9 +163,7 @@ begin
       config.done  <= config.enable and (config.done or engine.done); -- set if enabled and transfer done
 
       if (bus_req_i.stb = '1') then
-
-        -- write access --
-        if (bus_req_i.rw = '1') then
+        if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(3 downto 2) = "00") then -- control and status register
             config.enable    <= bus_req_i.data(ctrl_en_c);
             config.auto      <= bus_req_i.data(ctrl_auto_c);
@@ -187,9 +185,7 @@ begin
             config.endian  <= bus_req_i.data(type_endian_c);
             config.start   <= '1'; -- trigger DMA operation
           end if;
-
-        -- read access --
-        else
+        else -- read access
           case bus_req_i.addr(3 downto 2) is
             when "00" => -- control and status register
               bus_rsp_o.data(ctrl_en_c)       <= config.enable;
@@ -212,13 +208,12 @@ begin
               bus_rsp_o.data(type_endian_c)                        <= config.endian;
           end case;
         end if;
-
       end if;
     end if;
   end process bus_access;
 
   -- transfer-done interrupt --
-  irq_o <= engine.done and config.enable; -- no interrupt if transfer was aborted by clearing config.enable
+  irq_o <= config.done;
 
 
   -- Automatic Trigger ----------------------------------------------------------------------

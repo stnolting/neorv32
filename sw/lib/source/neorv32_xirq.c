@@ -241,9 +241,6 @@ static void __neorv32_xirq_core(void) {
   (*handler_pnt)();
 
   NEORV32_XIRQ->ESC = 0; // acknowledge the current XIRQ interrupt
-  asm volatile("nop");
-  asm volatile("nop");
-  neorv32_cpu_csr_write(CSR_MIP, ~(1 << XIRQ_FIRQ_PENDING)); // acknowledge XIRQ FIRQ
 }
 
 

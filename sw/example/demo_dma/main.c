@@ -97,7 +97,7 @@ int main() {
   neorv32_dma_enable();
 
   // issue a FENCE operation when the DMA transfer completes (without errors); this
-  // will re-sync /flush and reload) all downstream caches
+  // will re-sync / flush and reload) all **DOWNSTREAM** caches
   neorv32_dma_fence_enable();
 
   // initialize and data arrays
@@ -144,6 +144,17 @@ int main() {
       break;
     }
   }
+  NEORV32_DMA->CTRL &= ~(1<<DMA_CTRL_DONE); // clear DMA-done flag
+
+  asm volatile ("fence"); // synchronize caches
+
+  // check if transfer was successful
+  if ((dma_dst[0] != 0x99887766) ||
+      (dma_dst[1] != 0x55443322) ||
+      (dma_dst[2] != 0xddccbbaa) ||
+      (dma_dst[3] != 0xffee1100)) {
+    neorv32_uart0_printf("Incorrect DST data!\n");
+  }
 
   show_arrays();
 
@@ -177,6 +188,17 @@ int main() {
       break;
     }
   }
+  NEORV32_DMA->CTRL &= ~(1<<DMA_CTRL_DONE); // clear DMA-done flag
+
+  asm volatile ("fence"); // synchronize caches
+
+  // check if transfer was successful
+  if ((dma_dst[0] != 0x66778899) ||
+      (dma_dst[1] != 0x66778899) ||
+      (dma_dst[2] != 0x66778899) ||
+      (dma_dst[3] != 0x66778899)) {
+    neorv32_uart0_printf("Incorrect DST data!\n");
+  }
 
   show_arrays();
 
@@ -187,7 +209,6 @@ int main() {
   neorv32_uart0_printf("\nExample 3: Manual byte-to-signed-word block transfer using transfer-done interrupt.\n");
 
   // configure DMA interrupt
-  neorv32_cpu_csr_clr(CSR_MIP, 1 << DMA_FIRQ_PENDING); // clear any pending DMA FIRQ
   neorv32_cpu_csr_set(CSR_MIE, 1 << DMA_FIRQ_ENABLE); // enable DMA interrupt source
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 
@@ -205,8 +226,14 @@ int main() {
   // go to sleep mode, wakeup on DMA transfer-done interrupt
   neorv32_cpu_sleep();
 
+  asm volatile ("fence"); // synchronize caches
+
   // check if transfer was successful
-  if (neorv32_dma_status() != DMA_STATUS_IDLE) {
+  if ((neorv32_dma_status() != DMA_STATUS_IDLE) || // DMA is in idle mode without errors
+      (dma_dst[0] != 0xffffff99) ||
+      (dma_dst[1] != 0xffffff88) ||
+      (dma_dst[2] != 0x00000077) ||
+      (dma_dst[3] != 0x00000066)) {
     neorv32_uart0_printf("Transfer failed!\n");
   }
 
@@ -221,7 +248,6 @@ int main() {
   if (neorv32_gptmr_available()) { // only execute if GPTMR is available
 
     // configure DMA interrupt
-    neorv32_cpu_csr_clr(CSR_MIP, 1 << DMA_FIRQ_PENDING); // clear any pending DMA FIRQ
     neorv32_cpu_csr_set(CSR_MIE, 1 << DMA_FIRQ_ENABLE); // enable DMA interrupt source
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 
@@ -245,9 +271,14 @@ int main() {
     // sleep until interrupt (from DMA)
     neorv32_cpu_sleep();
 
-    // transfer successful (and actually executed)?
-    if ((neorv32_dma_done() == 0) || // check if the DMA has actually completed a transfer
-        (neorv32_dma_status() != DMA_STATUS_IDLE)) { // DMA is in idle mode without errors
+    asm volatile ("fence"); // synchronize caches
+
+    // transfer successful?
+    if ((neorv32_dma_status() != DMA_STATUS_IDLE) || // DMA is in idle mode without errors
+        (dma_dst[0] != 0xffffffff) ||
+        (dma_dst[1] != 0xffffffff) ||
+        (dma_dst[2] != 0xffffffff) ||
+        (dma_dst[3] != 0xffffffff)) {
       neorv32_uart0_printf("Transfer failed!\n");
     }
 
@@ -268,7 +299,6 @@ int main() {
  **************************************************************************/
 void show_arrays(void) {
 
-  asm volatile ("fence"); // re-sync caches
   neorv32_uart0_printf("---------------------------\n");
   neorv32_uart0_printf("     SRC         DST\n");
   neorv32_uart0_printf("[0]  0x%x  0x%x\n", dma_src[0], dma_dst[0]);
@@ -286,7 +316,8 @@ void show_arrays(void) {
  **************************************************************************/
 void dma_firq_handler(void) {
 
-  neorv32_cpu_csr_clr(CSR_MIP, 1 << DMA_FIRQ_PENDING); // clear/ack pending FIRQ
+  neorv32_gptmr_trigger_matched(); // clear GPTMR timer-match interrupt
+  NEORV32_DMA->CTRL &= ~(1<<DMA_CTRL_DONE); // clear DMA-done interrupt
   neorv32_gptmr_disable(); // disable GPTMR
   neorv32_uart0_printf("<<DMA interrupt>>\n");
 }

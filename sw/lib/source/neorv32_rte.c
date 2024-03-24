@@ -78,9 +78,6 @@ void neorv32_rte_setup(void) {
   // disable all IRQ channels
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
-  // clear all pending IRQs
-  neorv32_cpu_csr_write(CSR_MIP, 0);
-
   // install debug handler for all trap sources
   int id;
   for (id = 0; id < ((int)NEORV32_RTE_NUM_TRAPS); id++) {
@@ -325,7 +322,7 @@ void neorv32_rte_context_put(int x, uint32_t data) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
- * Debug trap handler, printing various information via UART0.
+ * Debug trap handler, printing information via UART0.
  **************************************************************************/
 static void __neorv32_rte_debug_handler(void) {
 
@@ -379,22 +376,23 @@ static void __neorv32_rte_debug_handler(void) {
     default:                     neorv32_uart0_puts("Unknown trap cause "); __neorv32_rte_print_hex_word(trap_cause); break;
   }
 
-  // check if FIRQ
-  if ((trap_cause >= TRAP_CODE_FIRQ_0) && (trap_cause <= TRAP_CODE_FIRQ_15)) {
-    neorv32_cpu_csr_clr(CSR_MIP, 1 << (CSR_MIP_FIRQ0P + (trap_cause & 0xf))); // clear pending FIRQ
-  }
-
   // instruction address
   neorv32_uart0_puts(" @ PC=");
   __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
 
-  // trap instruction
+  // trapping instruction
   neorv32_uart0_puts(", MTINST=");
   __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTINST));
 
   // trap value
   neorv32_uart0_puts(", MTVAL=");
   __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
+
+  // unhandled IRQ - disable interrupt channel
+  if (trap_cause & (1<<31)) { // is interrupt
+    neorv32_uart0_puts(" Disabling IRQ source\n");
+    neorv32_cpu_csr_clr(CSR_MIE, 1 << (trap_cause & 0x1f));
+  }
 
   // halt if fatal exception
   if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_I_MISALIGNED)) {

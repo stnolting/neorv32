@@ -257,7 +257,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mie_mei        : std_ulogic; -- machine external interrupt enable
     mie_mti        : std_ulogic; -- machine timer interrupt enable
     mie_firq       : std_ulogic_vector(15 downto 0); -- fast interrupt enable
-    mip_firq_we    : std_ulogic; -- fast interrupt pending write enable
     --
     privilege      : std_ulogic; -- current privilege mode
     privilege_eff  : std_ulogic; -- current *effective* privilege mode
@@ -1434,9 +1433,8 @@ begin
     elsif rising_edge(clk_aux_i) then
 
       -- Interrupt-Pending Buffer ---------------------------------------------
-      -- Once triggered the fast interrupt requests stay active until
-      -- explicitly cleared via the MIP CSR. The RISC-V standard interrupts
-      -- have to stay high until cleared by a platform-specific mechanism.
+      -- Once triggered the interrupt line should stay active until explicitly
+      -- cleared by a mechanism specific to the interrupt-causing module.
       -- ----------------------------------------------------------------------
 
       -- RISC-V machine interrupts --
@@ -1445,22 +1443,16 @@ begin
       trap_ctrl.irq_pnd(irq_mti_irq_c) <= mti_i;
 
       -- NEORV32-specific fast interrupts --
-      for i in 0 to 15 loop
-        if (firq_i(i) = '1') then -- new incoming FIRQs have highest priority
-          trap_ctrl.irq_pnd(irq_firq_0_c+i) <= '1';
-        elsif (csr.mip_firq_we = '1') and (csr.wmask(16+i) = '0') then -- clear-only mip access
-          trap_ctrl.irq_pnd(irq_firq_0_c+i) <= '0';
-        end if;
-      end loop;
+      trap_ctrl.irq_pnd(irq_firq_15_c downto irq_firq_0_c) <= firq_i(15 downto 0);
 
       -- debug-mode entry --
       trap_ctrl.irq_pnd(irq_db_halt_c) <= '0'; -- unused
       trap_ctrl.irq_pnd(irq_db_step_c) <= '0'; -- unused
 
-      -- Interrupt (Masking) Buffer -------------------------------------------
-      -- Masking of interrupt request lines. Furthermore, this buffer ensures
-      -- that an *active* interrupt request line *stays* active (even if
-      -- disabled via MIE) if the trap environment is *currently* starting.
+      -- Interrupt-Masking Buffer ---------------------------------------------
+      -- Masking of interrupt request lines. Additionally, this buffer ensures
+      -- that an active interrupt request line stays active (even when
+      -- disabled via MIE) if the trap environment is already starting.
       -- ----------------------------------------------------------------------
 
       -- RISC-V machine interrupts --
@@ -1717,9 +1709,6 @@ begin
           when csr_mcause_c => -- machine trap cause
             csr.mcause <= csr.wdata(31) & csr.wdata(4 downto 0); -- type (exception/interrupt) & identifier
 
---        when csr_mip_c => -- machine interrupt pending
-            -- only the FIRQs are writable (clear-only); the actual mip.firq write logic is in <interrupt_buffer>
-
           -- --------------------------------------------------------------------
           -- machine counter setup --
           -- --------------------------------------------------------------------
@@ -1912,7 +1901,6 @@ begin
   end process csr_write_access;
 
   -- out-of-process CSR write access --
-  csr.mip_firq_we   <= '1' when (csr.we = '1') and (csr.cmd(0) = '1') and (csr.addr = csr_mip_c)    else '0'; -- mip.firq: write/clear only
   csr.tdata1_hit_we <= '1' when (csr.we = '1') and (csr.cmd(0) = '1') and (csr.addr = csr_tdata1_c) else '0'; -- tdata1.hit: write/clear only
 
   -- effective privilege mode is MACHINE when in debug mode --
