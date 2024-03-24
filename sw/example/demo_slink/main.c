@@ -184,8 +184,6 @@ int main() {
 void slink_firq_handler(void) {
 
   neorv32_uart0_printf(" <<RX data: 0x%x>> ", neorv32_slink_get());
-
-  neorv32_cpu_csr_clr(CSR_MIP, 1 << SLINK_FIRQ_PENDING); // ack/clear FIRQ *after* reading RX data
 }
 
 
