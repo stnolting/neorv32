@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -43,7 +43,7 @@
 
 
 /**********************************************************************//**
- * Unavailable extensions warning.
+ * Unavailable extensions warnings.
  **************************************************************************/
 #if defined __riscv_d || (__riscv_flen == 64)
   #error Double-precision floating-point extension <D/Zdinx> is NOT supported!
@@ -60,32 +60,6 @@
 #ifdef __riscv_fsqrt
   #warning Floating-point square root instruction <FSQRT> is NOT supported yet!
 #endif
-
-
-/**********************************************************************//**
- * Enable specific interrupt channel.
- * @note This functions also tries to clear the pending flag of the interrupt.
- *
- * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
- **************************************************************************/
-void neorv32_cpu_irq_enable(int irq_sel) {
-
-  neorv32_cpu_csr_clr(CSR_MIP, 1 << (irq_sel & 0x1f)); // clear pending
-  neorv32_cpu_csr_set(CSR_MIE, 1 << (irq_sel & 0x1f)); // enable
-}
-
-
-/**********************************************************************//**
- * Disable specific interrupt channel.
- * @note This functions also tries to clear the pending flag of the interrupt.
- *
- * @param[in] irq_sel CPU interrupt select. See #NEORV32_CSR_MIE_enum.
- **************************************************************************/
-void neorv32_cpu_irq_disable(int irq_sel) {
-
-  neorv32_cpu_csr_clr(CSR_MIE, 1 << (irq_sel & 0x1f)); // disable
-  neorv32_cpu_csr_clr(CSR_MIP, 1 << (irq_sel & 0x1f)); // clear pending
-}
 
 
 /**********************************************************************//**

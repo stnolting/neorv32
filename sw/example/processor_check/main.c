@@ -1072,7 +1072,7 @@ int main() {
     NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
     // enable fast interrupt
-    neorv32_cpu_irq_enable(UART0_RX_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << UART0_RX_FIRQ_ENABLE);
 
     neorv32_uart0_putc(0);
     while(neorv32_uart0_tx_busy());
@@ -1121,7 +1121,7 @@ int main() {
     while(neorv32_uart0_tx_busy());
 
     // UART0 TX interrupt enable
-    neorv32_cpu_irq_enable(UART0_TX_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << UART0_TX_FIRQ_ENABLE);
 
     // wait for interrupt
     asm volatile ("nop");
@@ -1161,7 +1161,7 @@ int main() {
     NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
 
     // UART1 RX interrupt enable
-    neorv32_cpu_irq_enable(UART1_RX_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << UART1_RX_FIRQ_ENABLE);
 
     neorv32_uart1_putc(0);
     while(neorv32_uart1_tx_busy());
@@ -1207,7 +1207,7 @@ int main() {
     while(neorv32_uart1_tx_busy());
 
     // UART0 TX interrupt enable
-    neorv32_cpu_irq_enable(UART1_TX_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << UART1_TX_FIRQ_ENABLE);
 
     // wait for interrupt
     asm volatile ("nop");
@@ -1243,7 +1243,7 @@ int main() {
     neorv32_spi_setup(CLK_PRSC_8, 0, 0, 0, 1<<SPI_CTRL_IRQ_RX_AVAIL); // IRQ when RX FIFO is not empty
 
     // enable fast interrupt
-    neorv32_cpu_irq_enable(SPI_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << SPI_FIRQ_ENABLE);
 
     // trigger SPI IRQ
     neorv32_spi_trans(0); // blocking
@@ -1279,7 +1279,7 @@ int main() {
     neorv32_twi_setup(CLK_PRSC_2, 0, 0);
 
     // enable TWI FIRQ
-    neorv32_cpu_irq_enable(TWI_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << TWI_FIRQ_ENABLE);
 
     // trigger TWI IRQ
     neorv32_twi_start_trans(0xA5);
@@ -1319,7 +1319,7 @@ int main() {
     xirq_err_cnt += neorv32_xirq_install(1, xirq_trap_handler1); // install XIRQ IRQ handler channel 1
 
     // enable XIRQ FIRQ
-    neorv32_cpu_irq_enable(XIRQ_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << XIRQ_FIRQ_ENABLE);
 
     // trigger XIRQ channel 1 and 0
     neorv32_gpio_port_set(3);
@@ -1355,7 +1355,7 @@ int main() {
     cnt_test++;
 
     // enable fast interrupt
-    neorv32_cpu_irq_enable(NEOLED_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << NEOLED_FIRQ_ENABLE);
 
     // configure NEOLED, IRQ if FIFO  empty
     neorv32_neoled_setup(CLK_PRSC_4, 0, 0, 0, 0);
@@ -1394,7 +1394,7 @@ int main() {
     // enable DMA, auto-fencing and according FIRQ channel
     neorv32_dma_enable();
     neorv32_dma_fence_enable();
-    neorv32_cpu_irq_enable(DMA_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << DMA_FIRQ_ENABLE);
 
     // setup source data
     dma_src = 0x7788ee11;
@@ -1449,7 +1449,7 @@ int main() {
     neorv32_spi_setup(CLK_PRSC_4, 0, 0, 0, 0);
 
     // enable fast interrupt
-    neorv32_cpu_irq_enable(SDI_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << SDI_FIRQ_ENABLE);
 
     // write test data to SDI
     neorv32_sdi_rx_clear();
@@ -1490,7 +1490,7 @@ int main() {
     cnt_test++;
 
     // enable GPTMR FIRQ
-    neorv32_cpu_irq_enable(GPTMR_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << GPTMR_FIRQ_ENABLE);
 
     // match-interrupt after CLK_PRSC_2*THRESHOLD = 2*2 = 8 clock cycles
     neorv32_gptmr_setup(CLK_PRSC_2, 2, 1);
@@ -1529,7 +1529,7 @@ int main() {
     cnt_test++;
 
     // enable ONEWIRE FIRQ
-    neorv32_cpu_irq_enable(ONEWIRE_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << ONEWIRE_FIRQ_ENABLE);
 
     // configure interface for minimal timing
     neorv32_onewire_setup(200); // t_base = 200ns
@@ -1566,7 +1566,7 @@ int main() {
     cnt_test++;
 
     // enable SLINK FIRQ
-    neorv32_cpu_irq_enable(SLINK_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_FIRQ_ENABLE);
 
     // configure RX data available interrupt
     neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_NEMPTY);
