@@ -143,6 +143,12 @@ CC_FLAGS = $(CC_OPTS)
 # Export compiler flags as define string
 CC_FLAGS += -DCC_OPTS="\"$(CC_OPTS)\""
 
+# Allow users to use tool-specific flags
+# Uses naming from https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
+NEO_CFLAGS = $(CC_FLAGS) $(CFLAGS)
+NEO_CXXFLAGS = $(CC_FLAGS) $(CXXFLAGS)
+NEO_LDFLAGS = $(CC_FLAGS) $(LDFLAGS)
+NEO_ASFLAGS = $(CC_FLAGS) $(ASFLAGS)
 
 # -----------------------------------------------------------------------------
 # Application output definitions
@@ -182,23 +188,23 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 # -----------------------------------------------------------------------------
 # Compile app *.s sources (assembly)
 %.s.o: %.s
-	@$(CC) -c $(CC_FLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
+	@$(CC) -c $(NEO_ASFLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
 
 # Compile app *.S sources (assembly + C pre-processor)
 %.S.o: %.S
-	@$(CC) -c $(CC_FLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
+	@$(CC) -c $(NEO_ASFLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
 
 # Compile app *.c sources
 %.c.o: %.c
-	@$(CC) -c $(CC_FLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+	@$(CC) -c $(NEO_CFLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Compile app *.cpp sources
 %.cpp.o: %.cpp
-	@$(CC) -c $(CC_FLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+	@$(CC) -c $(NEO_CXXFLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Link object files and show memory utilization
 $(APP_ELF): $(OBJ)
-	@$(CC) $(CC_FLAGS) -T $(LD_SCRIPT) $(OBJ) $(LD_LIBS) -o $@
+	@$(CC) $(NEO_LDFLAGS) -T $(LD_SCRIPT) $(OBJ) $(LD_LIBS) -o $@
 	@echo "Memory utilization:"
 	@$(SIZE) $(APP_ELF)
 

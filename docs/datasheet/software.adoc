@@ -224,6 +224,14 @@ MABI  ?= ilp32
 USER_FLAGS ?=
 # User libraries (will be included by linker)
 USER_LIBS ?=
+# Language specific compiler flags: C
+CFLAGS ?=
+# C++
+CXXFLAGS ?=
+# Assembly
+ASFLAGS ?=
+# Flags passed only to the linker
+LDFLAGS ?=
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
 # GDB arguments
@@ -244,6 +252,10 @@ GDB_ARGS ?= -ex "target extended-remote localhost:3333"
 | `MABI`           | Application binary interface (default: 32-bit integer ABI `ilp32`)
 | `USER_FLAGS`     | Additional flags that will be forwarded to the compiler tools
 | `USER_LIBS`      | Additional libraries to include during linking (`*.a`)
+| `CFLAGS`         | Additional flags that will be forwarded to the C compiler
+| `CXXFLAGS`       | Additional flags that will be forwarded to the C++ compiler
+| `ASFLAGS`        | Additional flags that will be forwarded to the assembler
+| `LDFLAGS`        | Additional flags that will be forwarded to the linker
 | `NEORV32_HOME`   | Relative or absolute path to the NEORV32 project home folder; adapt this if the makefile/project is not in the project's default `sw/example` folder
 | `GDB_ARGS`       | Default GDB arguments when running the `gdb` target
 | `GHDL_RUN_FLAGS` | GHDL run arguments (e.g. `--stop-time=1ms`)
