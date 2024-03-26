@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 26.03.2024 | 1.9.7.6 | :warning: rework TWI module; add configurable command/data FIFO | [#865](https://github.com/stnolting/neorv32/pull/865) |
 | 24.03.2024 | 1.9.7.5 | :warning: **interrupt system rework**: rework CPU's FIRQ system; `mip` CSR is now read-only ; :bug: fix DMA fence configuration flag | [#864](https://github.com/stnolting/neorv32/pull/864) |
 | 23.03.2024 | 1.9.7.4 | :warning: **interrupt system rework**: rework TWI and XIRQ interrupts | [#860](https://github.com/stnolting/neorv32/pull/860) |
 | 23.03.2024 | 1.9.7.3 | :warning: **interrupt system rework**: rework ONEWIRE and GPTMR interrupts | [#859](https://github.com/stnolting/neorv32/pull/859) |
