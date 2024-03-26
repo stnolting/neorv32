@@ -1275,22 +1275,25 @@ int main() {
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWI)) {
     cnt_test++;
 
-    // configure TWI, fastest clock, no clock stretching
-    neorv32_twi_setup(CLK_PRSC_2, 0, 0);
+    // configure TWI with fastest clock
+    neorv32_twi_setup(CLK_PRSC_2, 0);
+
+    // start 2 TWI operations, after they are done the interrupt will be fired
+    neorv32_twi_send_nonblocking(0xA5, 0);
+    neorv32_twi_send_nonblocking(0x12, 0);
 
     // enable TWI FIRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << TWI_FIRQ_ENABLE);
 
-    // trigger TWI IRQ
-    neorv32_twi_start_trans(0xA5);
-
     // wait for interrupt
-    asm volatile ("nop");
-    asm volatile ("nop");
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TWI_TRAP_CODE) {
+    tmp_a = NEORV32_TWI->CTRL;
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWI_TRAP_CODE) && // interrupt triggered
+        (tmp_a & (1<<TWI_CTRL_RX_AVAIL)) && // RX data is available
+        ((tmp_a & (1<<TWI_CTRL_BUSY)) == 0)) { // module is not busy anymore
       test_ok();
     }
     else {
@@ -1596,7 +1599,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 15 
+  // Fast interrupt channel 15
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] FIRQ15 ", cnt_test);
   PRINT_STANDARD("[n.a.]\n");
