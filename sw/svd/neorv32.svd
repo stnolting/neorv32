@@ -1205,64 +1205,60 @@
               <description>TWI enable flag</description>
             </field>
             <field>
-              <name>TWI_CTRL_START</name>
-              <bitRange>[1:1]</bitRange>
-              <description>Generate START condition, auto-clears</description>
-            </field>
-            <field>
-              <name>TWI_CTRL_STOP</name>
-              <bitRange>[2:2]</bitRange>
-              <description>Generate STOP condition, auto-clears</description>
-            </field>
-            <field>
-              <name>TWI_CTRL_MACK</name>
-              <bitRange>[3:3]</bitRange>
-              <description>Generate ACK by controller for each transmission</description>
-            </field>
-            <field>
-              <name>TWI_CTRL_CSEN</name>
-              <bitRange>[4:4]</bitRange>
-              <description>Allow clock stretching when set</description>
-            </field>
-            <field>
               <name>TWI_CTRL_PRSC</name>
-              <bitRange>[7:5]</bitRange>
+              <bitRange>[3:1]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
               <name>TWI_CTRL_CDIV</name>
-              <bitRange>[11:8]</bitRange>
+              <bitRange>[7:4]</bitRange>
               <description>TWI clock divider</description>
             </field>
             <field>
-              <name>TWI_CTRL_CLAIMED</name>
-              <bitRange>[29:29]</bitRange>
+              <name>TWI_CTRL_FIFO</name>
+              <bitRange>[18:15]</bitRange>
               <access>read-only</access>
-              <description>Set if the TWI bus is currently claimed by any controller</description>
+              <description>log2(TWI FIFO size)</description>
             </field>
             <field>
-              <name>TWI_CTRL_ACK</name>
+              <name>TWI_CTRL_TX_FULL</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO full</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_RX_AVAIL</name>
               <bitRange>[30:30]</bitRange>
               <access>read-only</access>
-              <description>ACK received when set</description>
+              <description>RX FIFO not empty (data available)</description>
             </field>
             <field>
               <name>TWI_CTRL_BUSY</name>
               <bitRange>[31:31]</bitRange>
               <access>read-only</access>
-              <description>Transfer in progress, busy flag</description>
+              <description>Bus engine busy of TX FIFO not empty</description>
             </field>
           </fields>
         </register>
         <register>
-          <name>DATA</name>
-          <description>RX/TX data register</description>
+          <name>DCMD</name>
+          <description>RX/TX data/command register</description>
           <addressOffset>0x04</addressOffset>
           <fields>
             <field>
-              <name>TWI_DATA</name>
+              <name>TWI_DCMD</name>
               <bitRange>[7:0]</bitRange>
               <description>RX/TX data</description>
+            </field>
+            <field>
+              <name>TWI_DCMD_ACK</name>
+              <bitRange>[8:8]</bitRange>
+              <description>RX = ACK/NACK, TX = MACK</description>
+            </field>
+            <field>
+              <name>TWI_DCMD_CMD</name>
+              <bitRange>[10:9]</bitRange>
+              <description>Operation command</description>
             </field>
           </fields>
         </register>
