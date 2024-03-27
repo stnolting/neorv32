@@ -1278,9 +1278,11 @@ int main() {
     // configure TWI with fastest clock
     neorv32_twi_setup(CLK_PRSC_2, 0);
 
-    // start 2 TWI operations, after they are done the interrupt will be fired
+    // issue some TWI operations, after they are done the interrupt will be fired
+    neorv32_twi_generate_start_nonblocking();
     neorv32_twi_send_nonblocking(0xA5, 0);
     neorv32_twi_send_nonblocking(0x12, 0);
+    neorv32_twi_generate_stop_nonblocking();
 
     // enable TWI FIRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << TWI_FIRQ_ENABLE);
