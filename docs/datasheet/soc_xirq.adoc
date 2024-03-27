@@ -61,7 +61,6 @@ Writing _any_ value to this register will acknowledge the _current_ XIRQ interru
 In order to acknowledge an XIRQ interrupt, the interrupt handler has to...
 * clear the pending XIRQ channel by clearing the according `EIP` bit
 * writing _any_ value to `ESC` to acknowledge the XIRQ interrupt
-* clear the pending CPU FIRQ by clearing the according <<_mip>> CSR bit
 
 
 **Register Map**

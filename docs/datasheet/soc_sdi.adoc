@@ -5,7 +5,7 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_sdi.vhd | 
+| Hardware source file(s): | neorv32_sdi.vhd |
 | Software driver file(s): | neorv32_sdi.c |
 |                          | neorv32_sdi.h |
 | Top entity port:         | `sdi_clk_i` | 1-bit serial clock input
@@ -71,8 +71,6 @@ conditions are logically OR-ed so any enabled interrupt source will trigger the 
 
 Once the SDI interrupt has fired it will remain active until the actual cause of the interrupt is resolved; for
 example if just the `SDI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep firing until the RX FIFO is empty again.
-Furthermore, an active SDI interrupt has to be explicitly cleared again by writing zero to the according
-<<_mip>> CSR bit.
 
 
 **Register Map**

@@ -105,8 +105,6 @@ conditions are logically OR-ed so any enabled interrupt source will trigger the 
 
 Once the SPI interrupt has fired it remains pending until the actual cause of the interrupt is resolved; for
 example if just the `SPI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep firing until the RX FIFO is empty again.
-Furthermore, an active SPI interrupt has to be explicitly cleared again by writing zero to the according
-<<_mip>> CSR bit.
 
 
 **Register Map**
