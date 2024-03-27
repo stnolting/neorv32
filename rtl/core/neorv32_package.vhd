@@ -52,7 +52,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090705"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090706"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -810,6 +810,7 @@ package neorv32_package is
       IO_SDI_EN                  : boolean                        := false;
       IO_SDI_FIFO                : natural range 1 to 2**15       := 1;
       IO_TWI_EN                  : boolean                        := false;
+      IO_TWI_FIFO                : natural range 1 to 2**15       := 1;
       IO_PWM_NUM_CH              : natural range 0 to 12          := 0;
       IO_WDT_EN                  : boolean                        := false;
       IO_TRNG_EN                 : boolean                        := false;

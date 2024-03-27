@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -56,13 +56,8 @@
 void scan_twi(void);
 void set_clock(void);
 void send_twi(void);
-void check_claimed(void);
-void toggle_mack(void);
 uint32_t hexstr_to_uint(char *buffer, uint8_t length);
 void print_hex_byte(uint8_t data);
-
-// Global variables
-int bus_claimed;
 
 
 /**********************************************************************//**
@@ -76,7 +71,6 @@ int main() {
 
   char buffer[8];
   int length = 0;
-  bus_claimed = 0;
 
   // check if UART unit is implemented at all
   if (neorv32_uart0_available() == 0) {
@@ -103,13 +97,10 @@ int main() {
 
   // info
   neorv32_uart0_printf("This program allows to create TWI transfers by hand.\n"
-                      "Type 'help' to see the help menu.\n\n");
+                       "Type 'help' to see the help menu.\n\n");
 
-  // configure TWI, second slowest clock, no clock stretching
-  neorv32_twi_setup(CLK_PRSC_2048, 15, 0);
-
-  // no active bus session yet
-  bus_claimed = 0;
+  // configure TWI, second slowest clock
+  neorv32_twi_setup(CLK_PRSC_2048, 15);
 
   // Main menu
   for (;;) {
@@ -124,49 +115,31 @@ int main() {
     if (!strcmp(buffer, "help")) {
       neorv32_uart0_printf("Available commands:\n"
                           " help  - show this text\n"
+                          " setup - configure bus clock (will reset TWI module!)\n"
                           " scan  - scan bus for devices\n"
                           " start - generate START condition\n"
                           " stop  - generate STOP condition\n"
                           " send  - write & read single byte to/from bus\n"
-                          " clock - configure bus clock (will reset TWI module!)\n"
-                          " stat  - check if the TWI bus is currently claimed by any controller\n"
-                          " mack  - enable/disable MASTER-ACK (ACK send by controller)\n\n"
                           "Start a new transmission by generating a START condition. Next, transfer the 7-bit device address\n"
                           "and the R/W flag. After that, transfer your data to be written or send a 0xFF if you want to read\n"
-                          "data from the bus. Finish the transmission by generating a STOP condition.\n\n");
+                          "data from the bus. Finish the transmission by generating a STOP condition.\n");
     }
     else if (!strcmp(buffer, "start")) {
+      neorv32_uart0_printf("Sending START condition...\n");
       neorv32_twi_generate_start(); // generate START condition
-      bus_claimed = 1;
     }
     else if (!strcmp(buffer, "stop")) {
-      if (bus_claimed == 0) {
-        neorv32_uart0_printf("No active I2C transmission.\n");
-        continue;
-      }
+      neorv32_uart0_printf("Sending STOP condition...\n");
       neorv32_twi_generate_stop(); // generate STOP condition
-      bus_claimed = 0;
     }
     else if (!strcmp(buffer, "scan")) {
       scan_twi();
     }
-    else if (!strcmp(buffer, "clock")) {
+    else if (!strcmp(buffer, "setup")) {
       set_clock();
     }
     else if (!strcmp(buffer, "send")) {
-      if (bus_claimed == 0) {
-        neorv32_uart0_printf("No active I2C transmission. Generate a START condition first.\n");
-        continue;
-      }
-      else {
-        send_twi();
-      }
-    }
-    else if (!strcmp(buffer, "stat")) {
-      check_claimed();
-    }
-    else if (!strcmp(buffer, "mack")) {
-      toggle_mack();
+      send_twi();
     }
     else {
       neorv32_uart0_printf("Invalid command. Type 'help' to see all commands.\n");
@@ -198,13 +171,8 @@ void set_clock(void) {
   neorv32_uart0_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
   int cdiv = (int)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
-  neorv32_uart0_printf("\nEnable clock stretching (0=no, 1=yes)? ");
-  neorv32_uart0_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
-  int csen = (int)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
-
   // set new configuration
-  neorv32_twi_setup(prsc, cdiv, csen);
-  bus_claimed = 0;
+  neorv32_twi_setup(prsc, cdiv);
 
   // print new clock frequency
   uint32_t clock = NEORV32_SYSINFO->CLK / (4 * PRSC_LUT[prsc] * (1 + cdiv));
@@ -217,10 +185,15 @@ void set_clock(void) {
  **************************************************************************/
 void scan_twi(void) {
 
+  uint8_t i;
+  int num_devices = 0, twi_ack = 0;
+
   neorv32_uart0_printf("Scanning TWI bus...\n");
-  uint8_t i, num_devices = 0;
+
   for (i=0; i<128; i++) {
-    uint8_t twi_ack = neorv32_twi_start_trans((uint8_t)(2*i+1));
+    neorv32_twi_generate_start();
+    uint8_t tmp = 2*i + 1;
+    twi_ack = neorv32_twi_trans(&tmp, 0);
     neorv32_twi_generate_stop();
 
     if (twi_ack == 0) {
@@ -231,44 +204,11 @@ void scan_twi(void) {
     }
   }
 
-  if (!num_devices) {
+  if (num_devices == 0) {
     neorv32_uart0_printf("No devices found.\n");
   }
-}
-
-
-/**********************************************************************//**
- * Check if the TWI is currently claimed.
- **************************************************************************/
-void check_claimed(void) {
-
-  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_CLAIMED)) {
-    if (bus_claimed == 0) {
-      neorv32_uart0_printf("Bus claimed by another controller.\n");
-    }
-    else {
-      neorv32_uart0_printf("Bus claimed by NEORV32 TWI.\n");
-    }
-  }
   else {
-    neorv32_uart0_printf("Bus is idle.\n");
-  }
-}
-
-
-/**********************************************************************//**
- * Toggle MACK (ACK generated by controller/host)
- **************************************************************************/
-void toggle_mack(void) {
-
-  // toggle MACK flag
-  NEORV32_TWI->CTRL ^= 1 << TWI_CTRL_MACK;
-
-  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_MACK)) {
-    neorv32_uart0_printf("MACK enabled.\n");
-  }
-  else {
-    neorv32_uart0_printf("MACK disabled.\n");
+    neorv32_uart0_printf("Devices found: %i\n", num_devices);
   }
 }
 
@@ -278,21 +218,43 @@ void toggle_mack(void) {
  **************************************************************************/
 void send_twi(void) {
 
-  char terminal_buffer[4];
+  int host_ack, device_ack;
+  uint8_t data;
+  char terminal_buffer[4], tmp;
 
-  // enter data
+  // TX data
   neorv32_uart0_printf("Enter TX data (2 hex chars): ");
   neorv32_uart0_scan(terminal_buffer, 3, 1); // 2 hex chars for address plus '\0'
-  uint8_t tmp = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
-  uint8_t res = neorv32_twi_trans(tmp);
-  neorv32_uart0_printf("\n RX data:  0x");
-  print_hex_byte((uint8_t)neorv32_twi_get_data());
-  neorv32_uart0_printf("\n Response: ");
-  if (res == 0)
-    neorv32_uart0_printf("ACK\n");
-  else
-    neorv32_uart0_printf("NACK\n");
+  data = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
+  // host ACK
+  neorv32_uart0_printf("\nIssue ACK by host (y/n)? ");
+  host_ack = 0;
+  tmp = neorv32_uart0_getc();
+  neorv32_uart0_putc(tmp);
+  if (tmp == 'y') {
+    host_ack = 1;
+  }
+
+  // execute transmission (blocking)
+  device_ack = neorv32_twi_trans(&data, host_ack);
+
+  neorv32_uart0_printf("\n RX data:  0x");
+  print_hex_byte(data);
+
+  // check device response?
+  if (host_ack == 0) {
+    neorv32_uart0_printf("\n Response: ");
+    if (device_ack == 0) {
+      neorv32_uart0_printf("ACK\n");
+    }
+    else {
+      neorv32_uart0_printf("NACK\n");
+    }
+  }
+  else {
+    neorv32_uart0_printf("\n");
+  }
 }
 
 
