@@ -75,7 +75,6 @@ half full. Note that all these programmable conditions are logically OR-ed (inte
 
 Once an UART interrupt has fired it remains pending until the actual cause of the interrupt is resolved; for
 example if just the `UART_CTRL_IRQ_RX_NEMPTY` bit is set, the RX interrupt will keep firing until the RX FIFO is empty again.
-Furthermore, a pending UART interrupt has to be explicitly cleared again by writing zero to the according <<_mip>> CSR bit.
 
 .RX/TX FIFO Size
 [TIP]

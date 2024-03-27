@@ -83,8 +83,6 @@ The current status of the RX and TX FIFOs can be determined via the `SLINK_CTRL_
 A single global interrupt can be programmed based on these FIFO status flags via the control register's `SLINK_CTRL_IRQ_*`
 bits. Note that all enabled interrupt conditions are logically OR-ed. If any enable interrupt conditions becomes true the
 interrupt will become pending until the interrupt-causing condition is resolved (e.g. by reading from the RX FIFO).
-Once the SLINK's interrupt has become pending, it has to be also explicitly cleared again by writing zero to the according
-<<_mip>> CSR bit(s).
 
 
 **Register Map**

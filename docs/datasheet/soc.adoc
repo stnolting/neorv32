@@ -398,6 +398,11 @@ module-internal reset of the remaining logic.
 
 The NEORV32 Processor provides several interrupt request signals (IRQs) for custom platform use.
 
+.Trigger Type
+[IMPORTANT]
+All interrupt request lines are **level-triggered and high-active**. Once set, the signal should remain high until
+the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register).
+
 
 :sectnums:
 ==== RISC-V Standard Interrupts
@@ -415,12 +420,6 @@ specifications. However, bare-metal system can also repurpose these interrupts. 
 | `msw_irq_i`   | Machine software interrupt (`MSI`). This interrupt is used for inter-processor interrupts in multi-core systems. However, it can also be used for any custom purpose.
 | `mext_irq_i`  | Machine external interrupt (`MEI`). This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
 |=======================
-
-.Trigger Type
-[IMPORTANT]
-The RISC-V standard interrupts are **level-triggered and high-active**. Once set, the signal has to remain high until
-the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register). The RISC-V standard interrupts
-**CANNOT** be acknowledged/cleared by writing zero to the according <<_mip>> CSR bit.
 
 
 :sectnums:
@@ -456,11 +455,6 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | 14      | <<_stream_link_interface_slink,SLINK>> | SLINK FIFO level interrupt
 | 15      | - | _reserved_
 |=======================
-
-.Trigger Type
-[IMPORTANT]
-The fast interrupt request channels become pending after being triggering by one-cycle-high signal.
-A pending FIRQ has to be explicitly cleared by writing zero to the according <<_mip>> CSR bit.
 
 
 <<<
