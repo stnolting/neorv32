@@ -1,4 +1,4 @@
-[![NEORV32](https://raw.githubusercontent.com/stnolting/neorv32/main/docs/figures/neorv32_logo_riscv.png)](https://github.com/stnolting/neorv32)
+[![NEORV32](docs/figures/neorv32_logo_riscv.png)](https://github.com/stnolting/neorv32)
 
 # The NEORV32 RISC-V Processor
 
@@ -19,7 +19,7 @@
 
 ## 1. Overview
 
-![neorv32 Overview](https://raw.githubusercontent.com/stnolting/neorv32/main/docs/figures/neorv32_processor.png)
+![neorv32 Overview](docs/figures/neorv32_processor.png)
 
 The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
 [RISC-V](https://riscv.org/) CPU that is written in **platform-independent VHDL**. The processor is intended as auxiliary
