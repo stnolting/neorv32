@@ -72,32 +72,28 @@ int main() {
   char buffer[8];
   int length = 0;
 
+  // capture all exceptions and give debug info via UART
+  // this is not required, but keeps us safe
+  neorv32_rte_setup();
+
   // check if UART unit is implemented at all
   if (neorv32_uart0_available() == 0) {
     return 1;
   }
 
-  // capture all exceptions and give debug info via UART
-  // this is not required, but keeps us safe
-  neorv32_rte_setup();
-
   // setup UART at default baud rate, no interrupts
   neorv32_uart0_setup(BAUD_RATE, 0);
 
-  // intro
-  neorv32_uart0_printf("\n--- TWI Bus Explorer ---\n\n");
-
-
   // check if TWI unit is implemented at all
   if (neorv32_twi_available() == 0) {
-    neorv32_uart0_printf("No TWI unit implemented.");
+    neorv32_uart0_printf("ERROR! TWI controller not available!");
     return 1;
   }
 
-
-  // info
+  // intro
+  neorv32_uart0_printf("\n--- TWI Bus Explorer ---\n\n");
   neorv32_uart0_printf("This program allows to create TWI transfers by hand.\n"
-                       "Type 'help' to see the help menu.\n\n");
+                       "Execute 'help' to see the help menu.\n\n");
 
   // configure TWI, second slowest clock
   neorv32_twi_setup(CLK_PRSC_2048, 15);
@@ -115,11 +111,11 @@ int main() {
     if (!strcmp(buffer, "help")) {
       neorv32_uart0_printf("Available commands:\n"
                           " help  - show this text\n"
-                          " setup - configure bus clock (will reset TWI module!)\n"
+                          " setup - configure bus clock (will reset TWI module)\n"
                           " scan  - scan bus for devices\n"
-                          " start - generate START condition\n"
+                          " start - generate (repeated) START condition\n"
                           " stop  - generate STOP condition\n"
-                          " send  - write & read single byte to/from bus\n"
+                          " send  - write/read single byte to/from bus\n"
                           "Start a new transmission by generating a START condition. Next, transfer the 7-bit device address\n"
                           "and the R/W flag. After that, transfer your data to be written or send a 0xFF if you want to read\n"
                           "data from the bus. Finish the transmission by generating a STOP condition.\n");
@@ -301,4 +297,3 @@ void print_hex_byte(uint8_t data) {
   neorv32_uart0_putc(symbols[(data >> 4) & 15]);
   neorv32_uart0_putc(symbols[(data >> 0) & 15]);
 }
-
