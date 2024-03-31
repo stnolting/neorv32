@@ -123,7 +123,9 @@ This automatic fencing is enabled by the setting the control register's `DMA_CTR
 **DMA Interrupt**
 
 The DMA features a single CPU interrupt that is triggered when the programmed transfer has completed. This
-interrupt is also triggered if the DMA encounters a bus error during operation.
+interrupt is also triggered if the DMA encounters a bus error during operation. The interrupt will remain pending
+until the control register's `DMA_CTRL_DONE` is cleared (this will happen upon any write access to the control
+register).
 
 
 **Register Map**
