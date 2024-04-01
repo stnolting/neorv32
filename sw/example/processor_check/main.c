@@ -1275,8 +1275,8 @@ int main() {
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWI)) {
     cnt_test++;
 
-    // configure TWI with fastest clock
-    neorv32_twi_setup(CLK_PRSC_2, 0);
+    // configure TWI with fastest clock, no clock stretching
+    neorv32_twi_setup(CLK_PRSC_2, 0, 0);
 
     // issue some TWI operations, after they are done the interrupt will be fired
     neorv32_twi_generate_start_nonblocking();
