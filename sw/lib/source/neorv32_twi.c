@@ -64,15 +64,17 @@ int neorv32_twi_available(void) {
  *
  * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
  * @param[in] cdiv Clock divider (0..15).
+ * @param[in] clkstr Enable (allow) clock stretching.
  **************************************************************************/
-void neorv32_twi_setup(int prsc, int cdiv) {
+void neorv32_twi_setup(int prsc, int cdiv, int clkstr) {
 
   NEORV32_TWI->CTRL = 0; // reset
 
   uint32_t ctrl = 0;
-  ctrl |= ((uint32_t)(          1) << TWI_CTRL_EN);
-  ctrl |= ((uint32_t)(prsc & 0x07) << TWI_CTRL_PRSC0);
-  ctrl |= ((uint32_t)(cdiv & 0x0f) << TWI_CTRL_CDIV0);
+  ctrl |= ((uint32_t)(         0x1) << TWI_CTRL_EN);
+  ctrl |= ((uint32_t)(prsc   & 0x7) << TWI_CTRL_PRSC0);
+  ctrl |= ((uint32_t)(cdiv   & 0xf) << TWI_CTRL_CDIV0);
+  ctrl |= ((uint32_t)(clkstr & 0x1) << TWI_CTRL_CLKSTR);
   NEORV32_TWI->CTRL = ctrl;
 }
 

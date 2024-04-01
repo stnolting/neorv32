@@ -65,6 +65,7 @@ enum NEORV32_TWI_CTRL_enum {
   TWI_CTRL_CDIV1    =  5, /**< TWI control register(5)  (r/w): Clock divider bit 1 */
   TWI_CTRL_CDIV2    =  6, /**< TWI control register(6)  (r/w): Clock divider bit 2 */
   TWI_CTRL_CDIV3    =  7, /**< TWI control register(7)  (r/w): Clock divider bit 3 */
+  TWI_CTRL_CLKSTR   =  8, /**< TWI control register(8)  (r/w): Enable/allow clock stretching */
 
   TWI_CTRL_FIFO_LSB = 15, /**< SPI control register(15) (r/-): log2(FIFO size), lsb */
   TWI_CTRL_FIFO_MSB = 18, /**< SPI control register(18) (r/-): log2(FIFO size), msb */
@@ -100,7 +101,7 @@ enum NEORV32_TWI_DCMD_enum {
  **************************************************************************/
 /**@{*/
 int  neorv32_twi_available(void);
-void neorv32_twi_setup(int prsc, int cdiv);
+void neorv32_twi_setup(int prsc, int cdiv, int clkstr);
 int  neorv32_twi_get_fifo_depth(void);
 void neorv32_twi_disable(void);
 void neorv32_twi_enable(void);
