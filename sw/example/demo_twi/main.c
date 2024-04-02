@@ -95,8 +95,8 @@ int main() {
   neorv32_uart0_printf("This program allows to create TWI transfers by hand.\n"
                        "Execute 'help' to see the help menu.\n\n");
 
-  // configure TWI, second slowest clock
-  neorv32_twi_setup(CLK_PRSC_2048, 15);
+  // configure TWI, second slowest clock, no clock stretching allowed
+  neorv32_twi_setup(CLK_PRSC_2048, 15, 0);
 
   // Main menu
   for (;;) {
@@ -147,13 +147,14 @@ int main() {
 
 
 /**********************************************************************//**
- * TWI clock speed menu
+ * TWI clock setup
  **************************************************************************/
 void set_clock(void) {
 
   const uint32_t PRSC_LUT[8] = {2, 4, 8, 64, 128, 1024, 2048, 4096};
   char terminal_buffer[2];
 
+  // clock prescaler
   neorv32_uart0_printf("Select new clock prescaler (0..7; one hex char): ");
   neorv32_uart0_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
   int prsc = (int)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
@@ -163,12 +164,33 @@ void set_clock(void) {
     return;
   }
 
+  // clock divider
   neorv32_uart0_printf("\nSelect new clock divider (0..15; one hex char): ");
   neorv32_uart0_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
   int cdiv = (int)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
 
+  if ((cdiv < 0) || (cdiv > 15)) { // invalid?
+    neorv32_uart0_printf("\nInvalid selection!\n");
+    return;
+  }
+
+  // clock stretching
+  neorv32_uart0_printf("\nEnable clock stretching (y/n)? ");
+  int clkstr = 0;
+  char tmp = neorv32_uart0_getc();
+  neorv32_uart0_putc(tmp);
+
+  if ((tmp != 'y') && (tmp != 'n')) { // invalid?
+    neorv32_uart0_printf("\nInvalid selection!\n");
+    return;
+  }
+
+  if (tmp == 'y') {
+    clkstr = 1;
+  }
+
   // set new configuration
-  neorv32_twi_setup(prsc, cdiv);
+  neorv32_twi_setup(prsc, cdiv, clkstr);
 
   // print new clock frequency
   uint32_t clock = NEORV32_SYSINFO->CLK / (4 * PRSC_LUT[prsc] * (1 + cdiv));

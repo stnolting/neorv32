@@ -30,6 +30,7 @@ for triggering operation: `CTRL` is the control and status register, `DCMD` is t
 Key features:
 
 * Programmable clock speed
+* Optional clock stretching
 * Generate START / repeated-START and STOP conditions
 * Sending & receiving 8 data bits including ACK/NACK
 * Generating a host-ACK (ACK send by the TWI controller)
@@ -73,6 +74,12 @@ _**f~SCL~**_ = _f~main~[Hz]_ / (4 * `clock_prescaler` * (1 + TWI_CTRL_CDIV))
 
 Hence, the maximum TWI clock is f~main~ / 8 and the lowest TWI clock is f~main~ / 262144. The generated TWI clock is
 always symmetric having a duty cycle of exactly 50%.
+
+.Clock Stretching
+[NOTE]
+An accessed peripheral can slow down/halt the controller's bus clock by using clock stretching (= actively keeping the
+SCL line low). The controller will halt operation in this case. Clock stretching is enabled by setting the
+`TWI_CTRL_CLKSTR` bit in the module's control register `CTRL`.
 
 
 **TWI Transfers**
@@ -120,16 +127,17 @@ TWI module is enabled (`TWI_CTRL_EN` = `1`) and the TX FIFO is empty and the TWI
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.9+<| `0xfffff900` .9+<| `CTRL` <|`0`     `TWI_CTRL_EN`                           ^| r/w <| TWI enable, reset if cleared
-                                <|`3:1`   `TWI_CTRL_PRSC2 : TWI_CTRL_PRSC0`       ^| r/w <| 3-bit clock prescaler select
-                                <|`7:4`   `TWI_CTRL_CDIV3 : TWI_CTRL_CDIV0`       ^| r/w <| 4-bit clock divider
-                                <|`14:8`   -                                      ^| r/- <| _reserved_, read as zero
-                                <|`18:15` `TWI_CTRL_FIFO_MSB : TWI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(`IO_TWI_FIFO`)
-                                <|`28:12`  -                                      ^| r/- <| _reserved_, read as zero
-                                <|`29`    `TWI_CTRL_TX_FULL`                      ^| r/- <| set if the TWI bus is claimed by any controller
-                                <|`30`    `TWI_CTRL_RX_AVAIL`                     ^| r/- <| RX FIFO data available
-                                <|`31`    `TWI_CTRL_BUSY`                         ^| r/- <| TWI bus engine busy or TX FIFO not empty
-.3+<| `0xfffff904` .3+<| `DCMD` <|`7:0`   `TWI_DCMD_MSB : TWI_DCMD_LSB`           ^| r/w <| RX/TX data byte
-                                <|`8`     `TWI_DCMD_ACK`                          ^| r/w <| write: ACK bit sent by controller; read: `1` = device NACK, `0` = device ACK
-                                <|`10:9`  `TWI_DCMD_CMD_HI : TWI_DCMD_CMD_LO`     ^| r/w <| TWI operation (`00` = NOP, `01` = START conditions, `10` = STOP condition, `11` = data transmission)
+.10+<| `0xfffff900` .10+<| `CTRL` <|`0`     `TWI_CTRL_EN`                           ^| r/w <| TWI enable, reset if cleared
+                                  <|`3:1`   `TWI_CTRL_PRSC2 : TWI_CTRL_PRSC0`       ^| r/w <| 3-bit clock prescaler select
+                                  <|`7:4`   `TWI_CTRL_CDIV3 : TWI_CTRL_CDIV0`       ^| r/w <| 4-bit clock divider
+                                  <|`8`     `TWI_CTRL_CLKSTR`                       ^| r/w <| Enable (allow) clock stretching
+                                  <|`14:9`   -                                      ^| r/- <| _reserved_, read as zero
+                                  <|`18:15` `TWI_CTRL_FIFO_MSB : TWI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(`IO_TWI_FIFO`)
+                                  <|`28:12`  -                                      ^| r/- <| _reserved_, read as zero
+                                  <|`29`    `TWI_CTRL_TX_FULL`                      ^| r/- <| set if the TWI bus is claimed by any controller
+                                  <|`30`    `TWI_CTRL_RX_AVAIL`                     ^| r/- <| RX FIFO data available
+                                  <|`31`    `TWI_CTRL_BUSY`                         ^| r/- <| TWI bus engine busy or TX FIFO not empty
+.3+<| `0xfffff904` .3+<| `DCMD`   <|`7:0`   `TWI_DCMD_MSB : TWI_DCMD_LSB`           ^| r/w <| RX/TX data byte
+                                  <|`8`     `TWI_DCMD_ACK`                          ^| r/w <| write: ACK bit sent by controller; read: `1` = device NACK, `0` = device ACK
+                                  <|`10:9`  `TWI_DCMD_CMD_HI : TWI_DCMD_CMD_LO`     ^| r/w <| TWI operation (`00` = NOP, `01` = START conditions, `10` = STOP condition, `11` = data transmission)
 |=======================

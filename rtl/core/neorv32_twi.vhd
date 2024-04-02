@@ -75,6 +75,7 @@ architecture neorv32_twi_rtl of neorv32_twi is
   constant ctrl_cdiv1_c      : natural :=  5; -- r/w: clock divider bit 1
   constant ctrl_cdiv2_c      : natural :=  6; -- r/w: clock divider bit 2
   constant ctrl_cdiv3_c      : natural :=  7; -- r/w: clock divider bit 3
+  constant ctrl_clkstr_en_c  : natural :=  8; -- r/w: enable clock stretching
   --
   constant ctrl_fifo_size0_c : natural := 15; -- r/-: log2(fifo size), bit 0 (lsb)
   constant ctrl_fifo_size1_c : natural := 16; -- r/-: log2(fifo size), bit 1
@@ -86,17 +87,18 @@ architecture neorv32_twi_rtl of neorv32_twi is
   constant ctrl_busy_c       : natural := 31; -- r/-: Set if TWI unit is busy
 
   -- data/command register --
-  constant data_lsb_c    : natural :=  0; -- r/w: data byte LSB
-  constant data_msb_c    : natural :=  7; -- r/w: data byte MSB
-  constant data_ack_c    : natural :=  8; -- r/w: ACK/NACK/MACK
-  constant data_cmd_lo_c : natural :=  9; -- -/w: operation command; 00=NOP, 01=START
-  constant data_cmd_hi_c : natural := 10; -- -/w: operation command; 10=STOP, 11=DATA
+  constant dcmd_lsb_c    : natural :=  0; -- r/w: data byte LSB
+  constant dcmd_msb_c    : natural :=  7; -- r/w: data byte MSB
+  constant dcmd_ack_c    : natural :=  8; -- r/w: ACK/NACK/MACK
+  constant dcmd_cmd_lo_c : natural :=  9; -- -/w: operation command; 00=NOP, 01=START
+  constant dcmd_cmd_hi_c : natural := 10; -- -/w: operation command; 10=STOP, 11=DATA
 
   -- control register --
   type ctrl_t is record
     enable : std_ulogic;
     prsc   : std_ulogic_vector(2 downto 0);
     cdiv   : std_ulogic_vector(3 downto 0);
+    clkstr : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
 
@@ -116,6 +118,7 @@ architecture neorv32_twi_rtl of neorv32_twi is
   type clk_gen_t is record
     cnt          : std_ulogic_vector(3 downto 0); -- clock divider
     tick         : std_ulogic; -- actual TWI clock tick
+    halt         : std_ulogic; -- halt clock during clock stretching
     phase_gen    : std_ulogic_vector(3 downto 0); -- clock phase generator
     phase_gen_ff : std_ulogic_vector(3 downto 0);
     phase        : std_ulogic_vector(3 downto 0);
@@ -165,12 +168,14 @@ begin
             ctrl.enable <= bus_req_i.data(ctrl_en_c);
             ctrl.prsc   <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
             ctrl.cdiv   <= bus_req_i.data(ctrl_cdiv3_c downto ctrl_cdiv0_c);
+            ctrl.clkstr <= bus_req_i.data(ctrl_clkstr_en_c);
           end if;
         else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
             bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
             bus_rsp_o.data(ctrl_cdiv3_c downto ctrl_cdiv0_c) <= ctrl.cdiv;
+            bus_rsp_o.data(ctrl_clkstr_en_c)                 <= ctrl.clkstr;
             --
             bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_TWI_FIFO), 4));
             --
@@ -219,7 +224,7 @@ begin
   );
 
   fifo.tx_we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
-  fifo.tx_wdata <= bus_req_i.data(data_cmd_hi_c downto data_lsb_c);
+  fifo.tx_wdata <= bus_req_i.data(dcmd_cmd_hi_c downto dcmd_lsb_c);
   fifo.tx_re    <= '1' when (engine.busy = '0') and (fifo.tx_avail = '1') and (clk_gen.tick = '1') else '0';
 
 
@@ -289,6 +294,9 @@ begin
     end if;
   end process clock_generator;
 
+  -- global clock generator enable --
+  clkgen_en_o <= ctrl.enable;
+
   -- generate four non-overlapping clock phases --
   phase_generator: process(rstn_i, clk_i)
   begin
@@ -299,7 +307,7 @@ begin
       clk_gen.phase_gen_ff <= clk_gen.phase_gen;
       if (ctrl.enable = '0') or (engine.busy = '0') then -- disabled or idle
         clk_gen.phase_gen <= "0001"; -- make sure to start with a new phase beginning
-      elsif (clk_gen.tick = '1') then
+      elsif (clk_gen.tick = '1') and (clk_gen.halt = '0') then -- clock tick and no clock stretching
         clk_gen.phase_gen <= clk_gen.phase_gen(2 downto 0) & clk_gen.phase_gen(3); -- rotate left
       end if;
     end if;
@@ -311,8 +319,9 @@ begin
   clk_gen.phase(2) <= clk_gen.phase_gen_ff(2) and (not clk_gen.phase_gen(2));
   clk_gen.phase(3) <= clk_gen.phase_gen_ff(3) and (not clk_gen.phase_gen(3)); -- last step
 
-  -- global clock generator enable --
-  clkgen_en_o <= ctrl.enable;
+  -- Clock Stretching Detector --
+  -- controller wants to drive SCL high, but SCL is still pulled low by peripheral --
+  clk_gen.halt <= '1' when (io_con.scl_out = '1') and (io_con.scl_in_ff(1) = '0') and (ctrl.clkstr = '1') else '0';
 
 
   -- TWI Bus Engine -------------------------------------------------------------------------
@@ -320,14 +329,14 @@ begin
   twi_engine: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      io_con.sda_in_ff  <= (others => '0');
-      io_con.scl_in_ff  <= (others => '0');
-      io_con.sda_out    <= '0';
-      io_con.scl_out    <= '0';
-      engine.state      <= (others => '0');
-      engine.bitcnt     <= (others => '0');
-      engine.sreg       <= (others => '0');
-      engine.done       <= '0';
+      io_con.sda_in_ff <= (others => '0');
+      io_con.scl_in_ff <= (others => '0');
+      io_con.sda_out   <= '0';
+      io_con.scl_out   <= '0';
+      engine.state     <= (others => '0');
+      engine.bitcnt    <= (others => '0');
+      engine.sreg      <= (others => '0');
+      engine.done      <= '0';
     elsif rising_edge(clk_i) then
       -- input synchronizer --
       io_con.sda_in_ff <= io_con.sda_in_ff(0) & io_con.sda_in;
@@ -343,9 +352,9 @@ begin
         when "100" => -- IDLE: waiting for operation requests
         -- ------------------------------------------------------------
           engine.bitcnt <= (others => '0');
-          engine.sreg   <= fifo.tx_rdata(data_msb_c downto data_lsb_c) & (not fifo.tx_rdata(data_ack_c)); -- data + HOST ACK
+          engine.sreg   <= fifo.tx_rdata(dcmd_msb_c downto dcmd_lsb_c) & (not fifo.tx_rdata(dcmd_ack_c)); -- data + HOST ACK
           if (fifo.tx_avail = '1') and (clk_gen.tick = '1') then -- trigger new operation on next TWI clock pulse
-            engine.state(1 downto 0) <= fifo.tx_rdata(data_cmd_hi_c downto data_cmd_lo_c);
+            engine.state(1 downto 0) <= fifo.tx_rdata(dcmd_cmd_hi_c downto dcmd_cmd_lo_c);
           end if;
 
         when "101" => -- START: generate (repeated) START condition

@@ -1215,6 +1215,11 @@
               <description>TWI clock divider</description>
             </field>
             <field>
+              <name>TWI_CTRL_CLKSTR</name>
+              <bitRange>[8:8]</bitRange>
+              <description>Enable (allow) clock stretching</description>
+            </field>
+            <field>
               <name>TWI_CTRL_FIFO</name>
               <bitRange>[18:15]</bitRange>
               <access>read-only</access>
