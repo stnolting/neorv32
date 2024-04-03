@@ -343,7 +343,7 @@ architecture neorv32_top_rtl of neorv32_top is
   -- IRQs --
   type firq_enum_t is (
     FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
-    FIRQ_CFS, FIRQ_NEOLED, FIRQ_XIRQ, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK
+    FIRQ_CFS, FIRQ_NEOLED, FIRQ_XIRQ, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK_RX, FIRQ_SLINK_TX
   );
   type firq_t is array (firq_enum_t) of std_ulogic;
   signal firq      : firq_t;
@@ -504,9 +504,9 @@ begin
 
     -- CPU Clock Gating -----------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_clockgate_inst_true:
+    neorv32_cpu_clockgate_inst_true:
     if CLOCK_GATING_EN generate
-      neorv32_clockgate_inst: entity neorv32.neorv32_clockgate
+      neorv32_cpu_clockgate_inst: entity neorv32.neorv32_clockgate
       port map (
         clk_i  => clk_i,
         rstn_i => rstn_sys,
@@ -515,7 +515,7 @@ begin
       );
     end generate;
 
-    neorv32_clockgate_inst_false:
+    neorv32_cpu_clockgate_inst_false:
     if not CLOCK_GATING_EN generate
       clk_cpu <= clk_i;
     end generate;
@@ -562,7 +562,7 @@ begin
     )
     port map (
       -- global control --
-      clk_i      => clk_cpu,
+      clk_i      => clk_cpu, -- switchable clock
       clk_aux_i  => clk_i,
       rstn_i     => rstn_sys,
       sleep_o    => cpu_sleep,
@@ -596,11 +596,11 @@ begin
     cpu_firq(11) <= firq(FIRQ_SDI);
     cpu_firq(12) <= firq(FIRQ_GPTMR);
     cpu_firq(13) <= firq(FIRQ_ONEWIRE);
-    cpu_firq(14) <= firq(FIRQ_SLINK);
-    cpu_firq(15) <= '0'; -- reserved
+    cpu_firq(14) <= firq(FIRQ_SLINK_RX);
+    cpu_firq(15) <= firq(FIRQ_SLINK_TX);
 
 
-    -- CPU Instruction Cache ------------------------------------------------------------------
+    -- CPU Instruction Cache (I-Cache) --------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_icache_inst_true:
     if ICACHE_EN generate
@@ -629,7 +629,7 @@ begin
     end generate;
 
 
-    -- CPU Data Cache -------------------------------------------------------------------------
+    -- CPU Data Cache (D-Cache) ---------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_dcache_inst_true:
     if DCACHE_EN generate
@@ -730,7 +730,7 @@ begin
 
 
   -- **************************************************************************************************************************
-  -- Reservation Set Controller (for atomic LR/SC memory accesses)
+  -- Reservation Set Controller (for atomic LR/SC accesses)
   -- **************************************************************************************************************************
   neorv32_bus_reservation_set_true:
   if CPU_EXTENSION_RISCV_A generate
@@ -911,7 +911,7 @@ begin
         spi_dat_o   => xip_dat_o
       );
 
-      -- XIP cache (XIPCACHE) --
+      -- XIP cache (XIP-CACHE) --
       neorv32_xipcache_inst_true:
       if XIP_CACHE_EN generate
         neorv32_xcache_inst: entity neorv32.neorv32_cache
@@ -965,23 +965,23 @@ begin
         ASYNC_TX    => XBUS_ASYNC_TX
       )
       port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => xcache_req,
-        bus_rsp_o   => xcache_rsp,
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        bus_req_i  => xcache_req,
+        bus_rsp_o  => xcache_rsp,
         --
-        xbus_adr_o  => xbus_adr_o,
-        xbus_dat_i  => xbus_dat_i,
-        xbus_dat_o  => xbus_dat_o,
-        xbus_we_o   => xbus_we_o,
-        xbus_sel_o  => xbus_sel_o,
-        xbus_stb_o  => xbus_stb_o,
-        xbus_cyc_o  => xbus_cyc_o,
-        xbus_ack_i  => xbus_ack_i,
-        xbus_err_i  => xbus_err_i
+        xbus_adr_o => xbus_adr_o,
+        xbus_dat_i => xbus_dat_i,
+        xbus_dat_o => xbus_dat_o,
+        xbus_we_o  => xbus_we_o,
+        xbus_sel_o => xbus_sel_o,
+        xbus_stb_o => xbus_stb_o,
+        xbus_cyc_o => xbus_cyc_o,
+        xbus_ack_i => xbus_ack_i,
+        xbus_err_i => xbus_err_i
       );
 
-      -- external bus cache (XCACHE) --
+      -- external bus cache (X-CACHE) --
       neorv32_xcache_inst_true:
       if XBUS_CACHE_EN generate
         neorv32_xcache_inst: entity neorv32.neorv32_cache
@@ -1546,7 +1546,8 @@ begin
         rstn_i           => rstn_sys,
         bus_req_i        => iodev_req(IODEV_SLINK),
         bus_rsp_o        => iodev_rsp(IODEV_SLINK),
-        irq_o            => firq(FIRQ_SLINK),
+        rx_irq_o         => firq(FIRQ_SLINK_RX),
+        tx_irq_o         => firq(FIRQ_SLINK_TX),
         slink_rx_data_i  => slink_rx_dat_i,
         slink_rx_valid_i => slink_rx_val_i,
         slink_rx_last_i  => slink_rx_lst_i,
@@ -1561,7 +1562,8 @@ begin
     neorv32_slink_inst_false:
     if not IO_SLINK_EN generate
       iodev_rsp(IODEV_SLINK) <= rsp_terminate_c;
-      firq(FIRQ_SLINK)       <= '0';
+      firq(FIRQ_SLINK_RX)    <= '0';
+      firq(FIRQ_SLINK_TX)    <= '0';
       slink_rx_rdy_o         <= '0';
       slink_tx_dat_o         <= (others => '0');
       slink_tx_val_o         <= '0';
