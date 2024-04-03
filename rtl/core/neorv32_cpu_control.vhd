@@ -2302,15 +2302,12 @@ begin
   cnt_event(hpmcnt_event_compr_c)    <= '1' when (execute_engine.state = EXECUTE)  and (execute_engine.is_ci = '1')  else '0'; -- executed compressed instruction
   cnt_event(hpmcnt_event_wait_dis_c) <= '1' when (execute_engine.state = DISPATCH) and (issue_engine.valid   = "00") else '0'; -- instruction dispatch wait cycle
   cnt_event(hpmcnt_event_wait_alu_c) <= '1' when (execute_engine.state = ALU_WAIT)                                   else '0'; -- multi-cycle ALU co-processor wait cycle
-
-  cnt_event(hpmcnt_event_branch_c)   <= '1' when (execute_engine.state = BRANCH)   else '0'; -- executed branch instruction
-  cnt_event(hpmcnt_event_branched_c) <= '1' when (execute_engine.state = BRANCHED) else '0'; -- control flow transfer
-
-  cnt_event(hpmcnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '0')               else '0'; -- executed load operation
-  cnt_event(hpmcnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '1')               else '0'; -- executed store operation
-  cnt_event(hpmcnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (execute_engine.state = MEM_WAIT) else '0'; -- load/store unit memory wait cycle
-
-  cnt_event(hpmcnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1') else '0'; -- entered trap
+  cnt_event(hpmcnt_event_branch_c)   <= '1' when (execute_engine.state = BRANCH)                                     else '0'; -- executed branch instruction
+  cnt_event(hpmcnt_event_branched_c) <= '1' when (execute_engine.state = BRANCHED)                                   else '0'; -- control flow transfer
+  cnt_event(hpmcnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '0')                        else '0'; -- executed load operation
+  cnt_event(hpmcnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '1')                        else '0'; -- executed store operation
+  cnt_event(hpmcnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (execute_engine.state = MEM_WAIT)          else '0'; -- load/store unit memory wait cycle
+  cnt_event(hpmcnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1')                                         else '0'; -- entered trap
 
 
 -- ****************************************************************************************************************************

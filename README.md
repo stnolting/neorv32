@@ -197,8 +197,7 @@ using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimizatio
 | `rv32i_Zicsr_Zicntr`   | 1578 |  773 | 1024 | 0 | 130 MHz |
 | `rv32imc_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 130 MHz |
 
-> [!TIP]
-> An incremental list of CPU extensions and processor modules can be found in the[Data Sheet: FPGA Implementation Results](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
+An incremental list of CPU extensions and processor modules can be found in the [Data Sheet: FPGA Implementation Results](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
 
 
 ## 4. Performance
@@ -214,8 +213,7 @@ The following table shows the performance results (scores and average CPI) for e
 | _medium_ (`rv32imc_Zicsr_Zifencei`)                      | 62.50 |
 | _performance_ (`rv32imc_Zicsr_Zifencei` + perf. options) | 95.23 |
 
-> [!TIP]
-> More information regarding the CPU performance can be found in the
+More information regarding the CPU performance can be found in the
 [Data Sheet: CPU Performance](https://stnolting.github.io/neorv32/#_cpu_performance).
 The CPU & SoC provide further "tuning" options to optimize the design for maximum performance,
 maximum clock speed, minimal area or minimal power consumption:
