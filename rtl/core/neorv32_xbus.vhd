@@ -54,20 +54,20 @@ entity neorv32_xbus is
     ASYNC_TX    : boolean  -- use register buffer for TX data when false
   );
   port (
-    clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
-    bus_req_i   : in  bus_req_t;  -- bus request
-    bus_rsp_o   : out bus_rsp_t;  -- bus response
+    clk_i      : in  std_ulogic; -- global clock line
+    rstn_i     : in  std_ulogic; -- global reset line, low-active
+    bus_req_i  : in  bus_req_t;  -- bus request
+    bus_rsp_o  : out bus_rsp_t;  -- bus response
     --
-    xbus_adr_o  : out std_ulogic_vector(31 downto 0); -- address
-    xbus_dat_i  : in  std_ulogic_vector(31 downto 0); -- read data
-    xbus_dat_o  : out std_ulogic_vector(31 downto 0); -- write data
-    xbus_we_o   : out std_ulogic; -- read/write
-    xbus_sel_o  : out std_ulogic_vector(03 downto 0); -- byte enable
-    xbus_stb_o  : out std_ulogic; -- strobe
-    xbus_cyc_o  : out std_ulogic; -- valid cycle
-    xbus_ack_i  : in  std_ulogic; -- transfer acknowledge
-    xbus_err_i  : in  std_ulogic  -- transfer error
+    xbus_adr_o : out std_ulogic_vector(31 downto 0); -- address
+    xbus_dat_i : in  std_ulogic_vector(31 downto 0); -- read data
+    xbus_dat_o : out std_ulogic_vector(31 downto 0); -- write data
+    xbus_we_o  : out std_ulogic; -- read/write
+    xbus_sel_o : out std_ulogic_vector(03 downto 0); -- byte enable
+    xbus_stb_o : out std_ulogic; -- strobe
+    xbus_cyc_o : out std_ulogic; -- valid cycle
+    xbus_ack_i : in  std_ulogic; -- transfer acknowledge
+    xbus_err_i : in  std_ulogic  -- transfer error
   );
 end neorv32_xbus;
 
