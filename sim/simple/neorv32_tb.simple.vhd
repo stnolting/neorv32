@@ -285,8 +285,8 @@ begin
     IO_ONEWIRE_EN                => true,          -- implement 1-wire interface (ONEWIRE)?
     IO_DMA_EN                    => true,          -- implement direct memory access controller (DMA)?
     IO_SLINK_EN                  => true,          -- implement stream link interface (SLINK)?
-    IO_SLINK_RX_FIFO             => 2,             -- RX fifo depth, has to be a power of two, min 1
-    IO_SLINK_TX_FIFO             => 2,             -- TX fifo depth, has to be a power of two, min 1
+    IO_SLINK_RX_FIFO             => 4,             -- RX fifo depth, has to be a power of two, min 1
+    IO_SLINK_TX_FIFO             => 4,             -- TX fifo depth, has to be a power of two, min 1
     IO_CRC_EN                    => true           -- implement cyclic redundancy check unit (CRC)?
   )
   port map (
