@@ -73,16 +73,11 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
   signal fifo_mem : fifo_mem_t; -- for fifo_depth_c > 1
   signal fifo_reg : std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- for fifo_depth_c = 1
 
-  -- FIFO control --
-  signal we,    re    : std_ulogic; -- write-/read-enable
-  signal w_pnt, r_pnt : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0); -- write/read pointer
-  signal w_nxt, r_nxt : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0);
+  -- Fifo control and status --
+  signal we, re, match, empty, full, half, free, avail : std_ulogic;
 
-  -- read access pointer register for async. read --
-  signal r_pnt_ff : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0);
-
-  -- status --
-  signal match, empty, full, half, free, avail : std_ulogic;
+  -- write/read pointer --
+  signal w_pnt, w_nxt, r_pnt, r_nxt, r_pnt_ff : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0); 
 
   -- fill level --
   signal diff : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0);
@@ -97,7 +92,7 @@ begin
 
   -- Pointers -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  pointer_update: process(rstn_i, clk_i)
+  pointer_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       w_pnt <= (others => '0');
@@ -106,7 +101,7 @@ begin
       w_pnt <= w_nxt;
       r_pnt <= r_nxt;
     end if;
-  end process pointer_update;
+  end process pointer_reg;
 
   -- async pointer update --
   w_nxt <= (others => '0') when (clear_i = '1') else std_ulogic_vector(unsigned(w_pnt) + 1) when (we = '1') else w_pnt;
@@ -116,7 +111,7 @@ begin
   -- Status ---------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
-  -- more than 1 FIFO entries --
+  -- more than 1 FIFO entry --
   check_large:
   if (fifo_depth_c > 1) generate
     match <= '1' when (r_pnt(r_pnt'left-1 downto 0) = w_pnt(w_pnt'left-1 downto 0)) else '0';
@@ -159,7 +154,7 @@ begin
       end process write_reset_small;
     end generate;
 
-    -- more than 1 FIFO entries --
+    -- more than 1 FIFO entry --
     fifo_write_reset_large:
     if (fifo_depth_c > 1) generate
       write_reset_large: process(rstn_i, clk_i)
@@ -195,7 +190,7 @@ begin
       end process write_small;
     end generate;
 
-    -- more than 1 FIFO entries --
+    -- more than 1 FIFO entry --
     fifo_write_noreset_large:
     if (fifo_depth_c > 1) generate
       write_large: process(clk_i)
@@ -222,7 +217,7 @@ begin
       rdata_o <= fifo_reg;
     end generate;
 
-    -- more than 1 FIFO entries --
+    -- more than 1 FIFO entry --
     fifo_read_async_large:
     if (fifo_depth_c > 1) generate
       async_r_pnt_reg: process(clk_i)
@@ -258,7 +253,7 @@ begin
       end process sync_read_small;
     end generate;
 
-    -- more than 1 FIFO entries --
+    -- more than 1 FIFO entry --
     fifo_read_sync_large:
     if (fifo_depth_c > 1) generate
       sync_read_large: process(clk_i)
