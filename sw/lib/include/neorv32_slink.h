@@ -81,7 +81,7 @@ enum NEORV32_SLINK_CTRL_enum {
   SLINK_CTRL_RX_FIFO_LSB   = 24, /**< SLINK control register(24) (r/-): log2(RX FIFO size) LSB */
   SLINK_CTRL_RX_FIFO_MSB   = 27, /**< SLINK control register(27) (r/-): log2(RX FIFO size) MSB */
   SLINK_CTRL_TX_FIFO_LSB   = 28, /**< SLINK control register(28) (r/-): log2(TX FIFO size) LSB */
-  SLINK_CTRL_TX_FIFO_MSB   = 31, /**< SLINK control register(31) (r/-): log2(TX FIFO size) MSB */
+  SLINK_CTRL_TX_FIFO_MSB   = 31  /**< SLINK control register(31) (r/-): log2(TX FIFO size) MSB */
 };
 
 enum NEORV32_SLINK_STATUS_enum {
