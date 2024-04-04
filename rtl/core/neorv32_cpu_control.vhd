@@ -785,7 +785,7 @@ begin
   decode_aux.rs1_zero <= '1' when (execute_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") else '0';
   decode_aux.rd_zero  <= '1' when (execute_engine.ir(instr_rd_msb_c  downto instr_rd_lsb_c ) = "00000") else '0';
 
-  -- simplified opcode --
+  -- simplified rv32 opcode --
   decode_aux.opcode <= execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
 
 
