@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -79,7 +79,7 @@ void neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, uint
   tmp |= (uint32_t)(clk_polarity & 0x01) << SPI_CTRL_CPOL;
   tmp |= (uint32_t)(prsc         & 0x07) << SPI_CTRL_PRSC0;
   tmp |= (uint32_t)(cdiv         & 0x0f) << SPI_CTRL_CDIV0;
-  tmp |= (uint32_t)(irq_mask     & (0x07 << SPI_CTRL_IRQ_RX_AVAIL));
+  tmp |= (uint32_t)(irq_mask     & (0x0f << SPI_CTRL_IRQ_RX_AVAIL));
 
   NEORV32_SPI->CTRL = tmp;
 }
@@ -197,7 +197,7 @@ void neorv32_spi_cs_dis(void) {
 uint8_t neorv32_spi_trans(uint8_t tx_data) {
 
   NEORV32_SPI->DATA = (uint32_t)tx_data; // trigger transfer
-  while((NEORV32_SPI->CTRL & (1<<SPI_CTRL_BUSY)) != 0); // wait for current transfer to finish
+  while (neorv32_spi_busy()); // wait for current transfer to finish
 
   return (uint8_t)NEORV32_SPI->DATA;
 }
@@ -210,7 +210,7 @@ uint8_t neorv32_spi_trans(uint8_t tx_data) {
  **************************************************************************/
 void neorv32_spi_put_nonblocking(uint8_t tx_data) {
 
-  NEORV32_SPI->DATA = (uint32_t)tx_data; // trigger transfer
+  NEORV32_SPI->DATA = (uint32_t)tx_data; // put transfer into TX FIFO
 }
 
 
@@ -226,7 +226,7 @@ uint8_t neorv32_spi_get_nonblocking(void) {
 
 
 /**********************************************************************//**
- * Check if SPI transceiver is busy.
+ * Check if SPI transceiver is busy or TX FIFO not empty.
  *
  * @return 0 if idle, 1 if busy
  **************************************************************************/
