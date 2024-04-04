@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -72,7 +72,7 @@ void neorv32_sdi_setup(uint32_t irq_mask) {
 
   uint32_t tmp = 0;
   tmp |= (uint32_t)(1 & 0x01) << SDI_CTRL_EN;
-  tmp |= (uint32_t)(irq_mask & (0x0f << SDI_CTRL_IRQ_RX_AVAIL));
+  tmp |= (uint32_t)(irq_mask & (0x1f << SDI_CTRL_IRQ_RX_AVAIL));
 
   NEORV32_SDI->CTRL = tmp;
 }
