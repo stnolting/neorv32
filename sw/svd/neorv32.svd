@@ -222,7 +222,8 @@
       <groupName>SLINK</groupName>
       <baseAddress>0xFFFFEC00</baseAddress>
 
-      <interrupt><name>SLINK_FIRQ</name><value>14</value></interrupt>
+      <interrupt><name>SLINK_RX_FIRQ</name><value>14</value></interrupt>
+      <interrupt><name>SLINK_TX_FIRQ</name><value>15</value></interrupt>
 
       <addressBlock>
         <offset>0</offset>
@@ -295,32 +296,32 @@
             <field>
               <name>SLINK_CTRL_IRQ_RX_NEMPTY</name>
               <bitRange>[16:16]</bitRange>
-              <description>IRQ if RX FIFO not empty</description>
+              <description>RX interrupt if RX FIFO not empty</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_RX_HALF</name>
               <bitRange>[17:17]</bitRange>
-              <description>IRQ if RX FIFO at least half full</description>
+              <description>RX interrupt if RX FIFO at least half full</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_RX_FULL</name>
               <bitRange>[18:18]</bitRange>
-              <description>IRQ if RX FIFO full</description>
+              <description>RX interrupt if RX FIFO full</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_TX_EMPTY</name>
               <bitRange>[19:19]</bitRange>
-              <description>IRQ if TX FIFO empty</description>
+              <description>TX interrupt if TX FIFO empty</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_TX_NHALF</name>
               <bitRange>[20:20]</bitRange>
-              <description>IRQ if TX FIFO not at least half full</description>
+              <description>TX interrupt if TX FIFO not at least half full</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_TX_NFULL</name>
               <bitRange>[21:21]</bitRange>
-              <description>IRQ if TX FIFO not full</description>
+              <description>TX interrupt if TX FIFO not full</description>
             </field>
             <field>
               <name>SLINK_CTRL_RX_FIFO</name>

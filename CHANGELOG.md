@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 03.04.2024 | 1.9.7.8 | split SLINK interrupt into two individual FIRQs (SLINK RX and SLINK TX) | [#868](https://github.com/stnolting/neorv32/pull/868) |
 | 01.04.2024 | 1.9.7.7 | add back TWI clock stretching option | [#867](https://github.com/stnolting/neorv32/pull/867) |
 | 26.03.2024 | 1.9.7.6 | :warning: rework TWI module; add optional & configurable command/data FIFO | [#865](https://github.com/stnolting/neorv32/pull/865) |
 | 24.03.2024 | 1.9.7.5 | :warning: **interrupt system rework**: rework CPU's FIRQ system; `mip` CSR is now read-only ; :bug: fix DMA fence configuration flag | [#864](https://github.com/stnolting/neorv32/pull/864) |

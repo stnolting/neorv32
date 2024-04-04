@@ -96,8 +96,10 @@ int main() {
                        "TX FIFO depth: %u\n\n",
                        rx_depth, tx_depth);
 
-  // setup SLINK module
-  neorv32_slink_setup(0);
+
+  // setup SLINK module, no interrupts
+  neorv32_slink_setup(0, 0);
+
 
   // TX demo
   neorv32_uart0_printf("-------- TX Demo --------\n");
@@ -149,13 +151,13 @@ int main() {
   neorv32_uart0_printf("\n------ RX IRQ Demo -------\n");
 
   // reconfigure SLINK module
-  neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_NEMPTY); // interrupt if RX data available
+  neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_NEMPTY, 0); // interrupt if RX data available
   neorv32_slink_rx_clear();
   neorv32_slink_tx_clear();
 
   // NEORV32 runtime environment: install SLINK FIRQ handler
-  neorv32_rte_handler_install(SLINK_RTE_ID, slink_firq_handler);
-  neorv32_cpu_csr_set(CSR_MIE, 1 << SLINK_FIRQ_ENABLE); // enable SLINK FIRQ
+  neorv32_rte_handler_install(SLINK_RX_RTE_ID, slink_firq_handler);
+  neorv32_cpu_csr_set(CSR_MIE, 1 << SLINK_RX_FIRQ_ENABLE); // enable SLINK FIRQ
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 
   for (i=0; i<4; i++) {

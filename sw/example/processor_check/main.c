@@ -159,7 +159,7 @@ int main() {
   neorv32_gpio_port_set(0);
 
   // prepare counters
-  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable counter auto increment (ALL counters)
+  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
   if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
     neorv32_cpu_csr_write(CSR_MCOUNTEREN, -1); // allow counter access from user-mode code
   }
@@ -1562,22 +1562,25 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 14 (SLINK)
+  // Fast interrupt channel 14 (SLINK RX)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FIRQ14 (SLINK) ", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ14 (SLINK_RX) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SLINK)) {
     cnt_test++;
 
-    // enable SLINK FIRQ
-    neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_FIRQ_ENABLE);
+    // fire RX interrupt when RX FIFO is at least half full
+    neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_HALF, 0);
+    tmp_a = neorv32_slink_get_rx_fifo_depth();
 
-    // configure RX data available interrupt
-    neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_NEMPTY);
+    // enable SLINK RX FIRQ
+    neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_RX_FIRQ_ENABLE);
 
-    // send data word and mark as end-of-stream
-    neorv32_slink_put_last(0xAABBCCDD);
+    // send RX_FIFO/2 data words
+    for (tmp_b=0; tmp_b<(tmp_a/2); tmp_b++) {
+      neorv32_slink_put_last(0xAABBCCDD); // mark as end-of-stream
+    }
 
     // wait for interrupt
     asm volatile ("nop");
@@ -1586,9 +1589,10 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
     // check if IRQ
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == SLINK_TRAP_CODE) && // correct trap code
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == SLINK_RX_TRAP_CODE) && // correct trap code
+        (neorv32_slink_rx_status() == SLINK_FIFO_HALF) && // RX FIFO is at least half full
         (neorv32_slink_get() == 0xAABBCCDD) && // correct RX data
-        (neorv32_slink_check_last() != 0)) { // is marked as "end of stream"
+        (neorv32_slink_check_last())) { // is marked as "end of stream"
       test_ok();
     }
     else {
@@ -1601,10 +1605,44 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 15
+  // Fast interrupt channel 15 (SLINK TX)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ15 ", cnt_test);
-  PRINT_STANDARD("[n.a.]\n");
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] FIRQ15 (SLINK_TX) ", cnt_test);
+
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SLINK)) {
+    cnt_test++;
+
+    // fire TX interrupt when TX FIFO is empty
+    neorv32_slink_setup(0, 1 << SLINK_CTRL_IRQ_TX_EMPTY);
+    tmp_a = neorv32_slink_get_rx_fifo_depth();
+
+    // enable SLINK TX FIRQ
+    neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_TX_FIRQ_ENABLE);
+
+    // send single data word
+    neorv32_slink_put(0x11223344);
+
+    // wait for interrupt
+    asm volatile ("nop");
+    asm volatile ("nop");
+
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    // check if IRQ
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == SLINK_TX_TRAP_CODE) && // correct trap code
+        (neorv32_slink_tx_status() == SLINK_FIFO_EMPTY) && // TX FIFO is empty
+        (neorv32_slink_get() == 0x11223344) && // correct RX data
+        (neorv32_slink_check_last() == 0)) { // is NOT marked as "end of stream"
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------

@@ -71,17 +71,17 @@ enum NEORV32_SLINK_CTRL_enum {
   SLINK_CTRL_TX_HALF       = 12, /**< SLINK control register(12) (r/-): TX FIFO at least half full */
   SLINK_CTRL_TX_FULL       = 13, /**< SLINK control register(13) (r/-): TX FIFO full */
 
-  SLINK_CTRL_IRQ_RX_NEMPTY = 16, /**< SLINK control register(16) (r/w): IRQ if RX FIFO not empty */
-  SLINK_CTRL_IRQ_RX_HALF   = 17, /**< SLINK control register(17) (r/w): IRQ if RX FIFO at least half full */
-  SLINK_CTRL_IRQ_RX_FULL   = 18, /**< SLINK control register(18) (r/w): IRQ if RX FIFO full */
-  SLINK_CTRL_IRQ_TX_EMPTY  = 19, /**< SLINK control register(19) (r/w): IRQ if TX FIFO empty */
-  SLINK_CTRL_IRQ_TX_NHALF  = 20, /**< SLINK control register(20) (r/w): IRQ if TX FIFO not at least half full */
-  SLINK_CTRL_IRQ_TX_NFULL  = 21, /**< SLINK control register(21) (r/w): IRQ if TX FIFO not full */
+  SLINK_CTRL_IRQ_RX_NEMPTY = 16, /**< SLINK control register(16) (r/w): RX interrupt if RX FIFO not empty */
+  SLINK_CTRL_IRQ_RX_HALF   = 17, /**< SLINK control register(17) (r/w): RX interrupt if RX FIFO at least half full */
+  SLINK_CTRL_IRQ_RX_FULL   = 18, /**< SLINK control register(18) (r/w): RX interrupt if RX FIFO full */
+  SLINK_CTRL_IRQ_TX_EMPTY  = 19, /**< SLINK control register(19) (r/w): TX interrupt if TX FIFO empty */
+  SLINK_CTRL_IRQ_TX_NHALF  = 20, /**< SLINK control register(20) (r/w): TX interrupt if TX FIFO not at least half full */
+  SLINK_CTRL_IRQ_TX_NFULL  = 21, /**< SLINK control register(21) (r/w): TX interrupt if TX FIFO not full */
 
   SLINK_CTRL_RX_FIFO_LSB   = 24, /**< SLINK control register(24) (r/-): log2(RX FIFO size) LSB */
   SLINK_CTRL_RX_FIFO_MSB   = 27, /**< SLINK control register(27) (r/-): log2(RX FIFO size) MSB */
   SLINK_CTRL_TX_FIFO_LSB   = 28, /**< SLINK control register(28) (r/-): log2(TX FIFO size) LSB */
-  SLINK_CTRL_TX_FIFO_MSB   = 31, /**< SLINK control register(31) (r/-): log2(TX FIFO size) MSB */
+  SLINK_CTRL_TX_FIFO_MSB   = 31  /**< SLINK control register(31) (r/-): log2(TX FIFO size) MSB */
 };
 
 enum NEORV32_SLINK_STATUS_enum {
@@ -97,7 +97,7 @@ enum NEORV32_SLINK_STATUS_enum {
  **************************************************************************/
 /**@{*/
 int      neorv32_slink_available(void);
-void     neorv32_slink_setup(uint32_t irq_config);
+void     neorv32_slink_setup(uint32_t rx_irq, uint32_t tx_irq);
 void     neorv32_slink_rx_clear(void);
 void     neorv32_slink_tx_clear(void);
 int      neorv32_slink_get_rx_fifo_depth(void);
