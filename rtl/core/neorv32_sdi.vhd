@@ -70,15 +70,17 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
   constant ctrl_fifo_size2_c   : natural :=  6; -- r/-: log2(FIFO size), bit 2
   constant ctrl_fifo_size3_c   : natural :=  7; -- r/-: log2(FIFO size), bit 3 (msb)
   --
-  constant ctrl_irq_rx_avail_c : natural := 15; -- r/-: RX FIFO not empty
-  constant ctrl_irq_rx_half_c  : natural := 16; -- r/-: RX FIFO at least half full
-  constant ctrl_irq_rx_full_c  : natural := 17; -- r/-: RX FIFO full
-  constant ctrl_irq_tx_empty_c : natural := 18; -- r/-: TX FIFO empty
+  constant ctrl_irq_rx_avail_c : natural := 15; -- r/w: RX FIFO not empty
+  constant ctrl_irq_rx_half_c  : natural := 16; -- r/w: RX FIFO at least half full
+  constant ctrl_irq_rx_full_c  : natural := 17; -- r/w: RX FIFO full
+  constant ctrl_irq_tx_empty_c : natural := 18; -- r/w: TX FIFO empty
+  constant ctrl_irq_tx_nhalf_c : natural := 19; -- r/w: TX FIFO not at least half full
   --
   constant ctrl_rx_avail_c     : natural := 23; -- r/-: RX FIFO not empty
   constant ctrl_rx_half_c      : natural := 24; -- r/-: RX FIFO at least half full
   constant ctrl_rx_full_c      : natural := 25; -- r/-: RX FIFO full
   constant ctrl_tx_empty_c     : natural := 26; -- r/-: TX FIFO empty
+  constant ctrl_tx_nhalf_c     : natural := 27; -- r/-: TX FIFO not at least half-full
   constant ctrl_tx_full_c      : natural := 27; -- r/-: TX FIFO full
 
   -- control register (see bit definitions above) --
@@ -89,6 +91,7 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
     irq_rx_half  : std_ulogic;
     irq_rx_full  : std_ulogic;
     irq_tx_empty : std_ulogic;
+    irq_tx_nhalf : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
 
@@ -143,19 +146,17 @@ begin
       ctrl.irq_rx_half  <= '0';
       ctrl.irq_rx_full  <= '0';
       ctrl.irq_tx_empty <= '0';
+      ctrl.irq_tx_nhalf <= '0';
     elsif rising_edge(clk_i) then
       -- bus handshake --
       bus_rsp_o.ack  <= bus_req_i.stb;
       bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
 
-      -- defaults --
-      ctrl.clr_rx <= '0';
-
+      -- read/write access --
+      ctrl.clr_rx <= '0'; -- default
       if (bus_req_i.stb = '1') then
-
-        -- write access --
-        if (bus_req_i.rw = '1') then
+        if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(2) = '0') then -- control register
             ctrl.enable <= bus_req_i.data(ctrl_en_c);
             ctrl.clr_rx <= bus_req_i.data(ctrl_clr_rx_c);
@@ -164,10 +165,9 @@ begin
             ctrl.irq_rx_half  <= bus_req_i.data(ctrl_irq_rx_half_c);
             ctrl.irq_rx_full  <= bus_req_i.data(ctrl_irq_rx_full_c);
             ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
+            ctrl.irq_tx_nhalf <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
           end if;
-
-        -- read access --
-        else
+        else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
             --
@@ -177,17 +177,18 @@ begin
             bus_rsp_o.data(ctrl_irq_rx_half_c)  <= ctrl.irq_rx_half;
             bus_rsp_o.data(ctrl_irq_rx_full_c)  <= ctrl.irq_rx_full;
             bus_rsp_o.data(ctrl_irq_tx_empty_c) <= ctrl.irq_tx_empty;
+            bus_rsp_o.data(ctrl_irq_tx_nhalf_c) <= ctrl.irq_tx_nhalf;
             --
             bus_rsp_o.data(ctrl_rx_avail_c) <= rx_fifo.avail;
             bus_rsp_o.data(ctrl_rx_half_c)  <= rx_fifo.half;
             bus_rsp_o.data(ctrl_rx_full_c)  <= not rx_fifo.free;
             bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
+            bus_rsp_o.data(ctrl_tx_nhalf_c) <= not tx_fifo.half;
             bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
           else -- data register
             bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
           end if;
         end if;
-
       end if;
     end if;
   end process bus_access;
@@ -270,10 +271,11 @@ begin
       irq_o <= '0';
     elsif rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
-               (ctrl.irq_rx_avail and rx_fifo.avail)      or -- RX FIFO not empty
-               (ctrl.irq_rx_half  and rx_fifo.half)       or -- RX FIFO at least half full
-               (ctrl.irq_rx_full  and (not rx_fifo.free)) or -- RX FIFO full
-               (ctrl.irq_tx_empty and (not tx_fifo.avail))); -- TX FIFO empty
+               (ctrl.irq_rx_avail and      rx_fifo.avail)  or -- RX FIFO not empty
+               (ctrl.irq_rx_half  and      rx_fifo.half)   or -- RX FIFO at least half full
+               (ctrl.irq_rx_full  and (not rx_fifo.free))  or -- RX FIFO full
+               (ctrl.irq_tx_empty and (not tx_fifo.avail)) or -- TX FIFO empty
+               (ctrl.irq_tx_nhalf and (not tx_fifo.half)));   -- TX FIFO not at least half full
     end if;
   end process irq_generator;
 
