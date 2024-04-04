@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 04.04.2024 | 1.9.7.9 | RISC-V `B` ISA extension (bit-manipulation) only contains sub-extensions `Zba+Zbb+Zbs`; :warning: remove support for `Zbc` ISA extension | [#869](https://github.com/stnolting/neorv32/pull/869) |
 | 03.04.2024 | 1.9.7.8 | split SLINK interrupt into two individual FIRQs (SLINK RX and SLINK TX) | [#868](https://github.com/stnolting/neorv32/pull/868) |
 | 01.04.2024 | 1.9.7.7 | add back TWI clock stretching option | [#867](https://github.com/stnolting/neorv32/pull/867) |
 | 26.03.2024 | 1.9.7.6 | :warning: rework TWI module; add optional & configurable command/data FIFO | [#865](https://github.com/stnolting/neorv32/pull/865) |
