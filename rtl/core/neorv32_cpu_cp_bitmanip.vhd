@@ -1,13 +1,12 @@
 -- #################################################################################################
 -- # << NEORV32 CPU - Co-Processor: Bit-Manipulation Co-Processor Unit (RISC-V "B" Extension) >>   #
 -- # ********************************************************************************************* #
--- # Supported B sub-extensions (Zb*):                                                             #
+-- # RISC-V "B" ISA Extension = Zba + Zbb + Zbs                                                    #
 -- # - Zba: Address-generation instructions                                                        #
 -- # - Zbb: Basic bit-manipulation instructions                                                    #
 -- # - Zbs: Single-bit instructions                                                                #
--- # - Zbc: Carry-less multiplication instructions                                                 #
 -- #                                                                                               #
--- # Processor/CPU configuration generic FAST_MUL_EN is also used to enable implementation of fast #
+-- # The CPU tuning option FAST_MUL_EN is also used to enable implementation of fast               #
 -- # (full-parallel) logic for all shift-related B-instructions (ROL, ROR[I], CLZ, CTZ, CPOP).     #
 -- # ********************************************************************************************* #
 -- # BSD 3-Clause License                                                                          #
@@ -70,14 +69,6 @@ end neorv32_cpu_cp_bitmanip;
 
 architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
 
-  -- Sub-extension configuration ----------------------------
-  -- Note that this configurations does NOT effect the CPU's (illegal) instruction decoding logic!
-  constant zbb_en_c : boolean := true;
-  constant zba_en_c : boolean := true;
-  constant zbc_en_c : boolean := true;
-  constant zbs_en_c : boolean := true;
-  -- --------------------------------------------------------
-
   -- Zbb - logic with negate --
   constant op_andn_c   : natural := 0;
   constant op_orn_c    : natural := 1;
@@ -110,15 +101,11 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   constant op_bext_c   : natural := 19;
   constant op_binv_c   : natural := 20;
   constant op_bset_c   : natural := 21;
-  -- Zbc - carry-less multiplication --
-  constant op_clmul_c  : natural := 22;
-  constant op_clmulh_c : natural := 23;
-  constant op_clmulr_c : natural := 24;
   --
-  constant op_width_c  : natural := 25;
+  constant op_width_c  : natural := 22;
 
   -- controller --
-  type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT, S_START_CLMUL, S_BUSY_CLMUL);
+  type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT);
   signal ctrl_state   : ctrl_state_t;
   signal cmd, cmd_buf : std_ulogic_vector(op_width_c-1 downto 0);
   signal valid        : std_ulogic;
@@ -155,70 +142,43 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   -- one-hot decoder --
   signal one_hot_core : std_ulogic_vector(XLEN-1 downto 0);
 
-  -- carry-less multiplier --
-  type clmultiplier_t is record
-    start : std_ulogic;
-    busy  : std_ulogic;
-    rs2   : std_ulogic_vector(XLEN-1 downto 0);
-    cnt   : std_ulogic_vector(index_size_f(XLEN) downto 0);
-    prod  : std_ulogic_vector(2*XLEN-1 downto 0);
-  end record;
-  signal clmul : clmultiplier_t;
-
 begin
-
-  -- Sub-Extension Configuration ------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert false report
-    "[NEORV32] Implementing bit-manipulation (B) sub-extensions " &
-    cond_sel_string_f(zba_en_c, "Zba ", "") &
-    cond_sel_string_f(zbb_en_c, "Zbb ", "") &
-    cond_sel_string_f(zbc_en_c, "Zbc ", "") &
-    cond_sel_string_f(zbs_en_c, "Zbs ", "") &
-    ""
-    severity note;
-
 
   -- Instruction Decoding (One-Hot) ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- A minimal decoding logic is used here just to distinguish between the different B instruction.
+  -- A "minimal" decoding logic is used here just to distinguish between the different B instructions.
   -- A more precise decoding as well as a valid-instruction-check is performed by the CPU control unit.
 
   -- Zbb - Basic bit-manipulation instructions --
-  cmd(op_andn_c)   <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "11") else '0';
-  cmd(op_orn_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "10") else '0';
-  cmd(op_xnor_c)   <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "00") else '0';
+  cmd(op_andn_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "11") else '0';
+  cmd(op_orn_c)    <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "10") else '0';
+  cmd(op_xnor_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "00") else '0';
   --
-  cmd(op_max_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 1) = "11") else '0';
-  cmd(op_min_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 1) = "10") else '0';
-  cmd(op_zexth_c)  <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '0') else '0';
+  cmd(op_max_c)    <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 1) = "11") else '0';
+  cmd(op_min_c)    <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 1) = "10") else '0';
+  cmd(op_zexth_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '0') else '0';
   --
-  cmd(op_orcb_c)   <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2 downto 0) = "101") else '0';
+  cmd(op_orcb_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2 downto 0) = "101") else '0';
   --
-  cmd(op_clz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "000") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
-  cmd(op_ctz_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "001") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
-  cmd(op_cpop_c)   <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "010") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
-  cmd(op_sextb_c)  <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "100") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
-  cmd(op_sexth_c)  <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "101") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
-  cmd(op_rol_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(02 downto 0) = "001") and (ctrl_i.ir_opcode(5) = '1') else '0';
-  cmd(op_ror_c)    <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(02 downto 0) = "101") and                                 (ctrl_i.ir_funct3(2) = '1') else '0';
-  cmd(op_rev8_c)   <= '1' when (zbb_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(02 downto 0) = "101") else '0';
+  cmd(op_clz_c)    <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "000") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_ctz_c)    <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "001") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_cpop_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "010") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_sextb_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "100") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_sexth_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "101") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_rol_c)    <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(02 downto 0) = "001") and (ctrl_i.ir_opcode(5) = '1') else '0';
+  cmd(op_ror_c)    <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(02 downto 0) = "101") and                                 (ctrl_i.ir_funct3(2) = '1') else '0';
+  cmd(op_rev8_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(02 downto 0) = "101") else '0';
 
   -- Zba - Address generation instructions --
-  cmd(op_sh1add_c) <= '1' when (zba_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(2 downto 1) = "01") else '0';
-  cmd(op_sh2add_c) <= '1' when (zba_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(2 downto 1) = "10") else '0';
-  cmd(op_sh3add_c) <= '1' when (zba_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(2 downto 1) = "11") else '0';
+  cmd(op_sh1add_c) <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(2 downto 1) = "01") else '0';
+  cmd(op_sh2add_c) <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(2 downto 1) = "10") else '0';
+  cmd(op_sh3add_c) <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(2 downto 1) = "11") else '0';
 
   -- Zbs - Single-bit instructions --
-  cmd(op_bclr_c)   <= '1' when (zbs_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
-  cmd(op_bext_c)   <= '1' when (zbs_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '1') else '0';
-  cmd(op_binv_c)   <= '1' when (zbs_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
-  cmd(op_bset_c)   <= '1' when (zbs_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
-
-  -- Zbc - Carry-less multiplication instructions --
-  cmd(op_clmul_c)  <= '1' when (zbc_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 0) = "001") else '0';
-  cmd(op_clmulh_c) <= '1' when (zbc_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 0) = "011") else '0';
-  cmd(op_clmulr_c) <= '1' when (zbc_en_c = true) and (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2 downto 0) = "010") else '0';
+  cmd(op_bclr_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_bext_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '1') else '0';
+  cmd(op_binv_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_bset_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
 
 
   -- Co-Processor Controller ----------------------------------------------------------------
@@ -232,13 +192,11 @@ begin
       rs2_reg       <= (others => '0');
       sha_reg       <= (others => '0');
       less_reg      <= '0';
-      clmul.start   <= '0';
       shifter.start <= '0';
       valid         <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
       shifter.start <= '0';
-      clmul.start   <= '0';
       valid         <= '0';
 
       -- operand registers --
@@ -259,9 +217,6 @@ begin
             if (FAST_SHIFT_EN = false) and ((cmd(op_clz_c) or cmd(op_ctz_c) or cmd(op_cpop_c) or cmd(op_ror_c) or cmd(op_rol_c)) = '1') then -- multi-cycle shift operation
               shifter.start <= '1';
               ctrl_state <= S_START_SHIFT;
-            elsif (zbc_en_c = true) and ((cmd(op_clmul_c) or cmd(op_clmulh_c) or cmd(op_clmulr_c)) = '1') then -- multi-cycle clmul operation
-              clmul.start <= '1';
-              ctrl_state  <= S_START_CLMUL;
             else
               valid      <= '1';
               ctrl_state <= S_IDLE;
@@ -275,17 +230,6 @@ begin
         when S_BUSY_SHIFT => -- wait for multi-cycle shift operation to finish
         -- ------------------------------------------------------------
           if (shifter.run = '0') or (ctrl_i.cpu_trap = '1') then -- abort on trap
-            valid      <= '1';
-            ctrl_state <= S_IDLE;
-          end if;
-
-        when S_START_CLMUL => -- one cycle delay to start clmul operation
-        -- ------------------------------------------------------------
-          ctrl_state <= S_BUSY_CLMUL;
-
-        when S_BUSY_CLMUL => -- wait for multi-cycle clmul operation to finish
-        -- ------------------------------------------------------------
-          if (clmul.busy = '0') or (ctrl_i.cpu_trap = '1') then -- abort on trap
             valid      <= '1';
             ctrl_state <= S_IDLE;
           end if;
@@ -422,42 +366,6 @@ begin
   end process shift_one_hot;
 
 
-  -- Carry-Less Multiplication Core ---------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  clmul_core: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      clmul.cnt  <= (others => '0');
-      clmul.prod <= (others => '0');
-    elsif rising_edge(clk_i) then
-      if (clmul.start = '1') then -- start new multiplication
-        clmul.cnt                 <= (others => '0');
-        clmul.cnt(clmul.cnt'left) <= '1';
-        clmul.prod(63 downto 32)  <= (others => '0');
-        if (cmd_buf(op_clmulr_c) = '1') then -- reverse input operands?
-          clmul.prod(31 downto 00) <= bit_rev_f(rs1_reg);
-        else
-          clmul.prod(31 downto 00) <= rs1_reg;
-        end if;
-      elsif (clmul.busy = '1') then -- processing
-        clmul.cnt <= std_ulogic_vector(unsigned(clmul.cnt) - 1);
-        if (clmul.prod(0) = '1') then
-          clmul.prod(62 downto 31) <= clmul.prod(63 downto 32) xor clmul.rs2;
-        else
-          clmul.prod(62 downto 31) <= clmul.prod(63 downto 32);
-        end if;
-        clmul.prod(30 downto 00) <= clmul.prod(31 downto 1);
-      end if;
-    end if;
-  end process clmul_core;
-
-  -- reverse input operands? --
-  clmul.rs2 <= bit_rev_f(rs2_reg) when (cmd_buf(op_clmulr_c) = '1') else rs2_reg;
-
-  -- multiplier busy? --
-  clmul.busy <= '1' when (or_reduce_f(clmul.cnt) = '1') else '0';
-
-
   -- Operation Results ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- logic with negate --
@@ -479,12 +387,12 @@ begin
   res_int(op_max_c) <= (others => '0'); -- unused/redundant
 
   -- sign-extension --
-  res_int(op_sextb_c)(XLEN-1 downto 8) <= (others => rs1_reg(7));
-  res_int(op_sextb_c)(7 downto 0) <= rs1_reg(7 downto 0); -- sign-extend byte
+  res_int(op_sextb_c)(XLEN-1 downto 8)  <= (others => rs1_reg(7));
+  res_int(op_sextb_c)(7 downto 0)       <= rs1_reg(7 downto 0); -- sign-extend byte
   res_int(op_sexth_c)(XLEN-1 downto 16) <= (others => rs1_reg(15));
-  res_int(op_sexth_c)(15 downto 0) <= rs1_reg(15 downto 0); -- sign-extend half-word
+  res_int(op_sexth_c)(15 downto 0)      <= rs1_reg(15 downto 0); -- sign-extend half-word
   res_int(op_zexth_c)(XLEN-1 downto 16) <= (others => '0');
-  res_int(op_zexth_c)(15 downto 0) <= rs1_reg(15 downto 0); -- zero-extend half-word
+  res_int(op_zexth_c)(15 downto 0)      <= rs1_reg(15 downto 0); -- zero-extend half-word
 
   -- rotate right/left --
   res_int(op_ror_c) <= shifter.sreg;
@@ -511,11 +419,6 @@ begin
   res_int(op_binv_c) <= rs1_reg xor one_hot_core;
   res_int(op_bset_c) <= rs1_reg or one_hot_core;
 
-  -- carry-less multiplication instructions --
-  res_int(op_clmul_c)  <= clmul.prod(31 downto 00);
-  res_int(op_clmulh_c) <= clmul.prod(63 downto 32);
-  res_int(op_clmulr_c) <= bit_rev_f(clmul.prod(31 downto 00));
-
 
   -- Output Selector ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -535,7 +438,7 @@ begin
   res_out(op_orcb_c)  <= res_int(op_orcb_c)  when (cmd_buf(op_orcb_c)  = '1') else (others => '0');
   res_out(op_rev8_c)  <= res_int(op_rev8_c)  when (cmd_buf(op_rev8_c)  = '1') else (others => '0');
   --
-  res_out(op_sh1add_c) <= res_int(op_sh1add_c) when ((cmd_buf(op_sh1add_c) or cmd_buf(op_sh2add_c) or cmd_buf(op_sh3add_c))  = '1') else (others => '0');
+  res_out(op_sh1add_c) <= res_int(op_sh1add_c) when ((cmd_buf(op_sh1add_c) or cmd_buf(op_sh2add_c) or cmd_buf(op_sh3add_c)) = '1') else (others => '0');
   res_out(op_sh2add_c) <= (others => '0'); -- unused/redundant
   res_out(op_sh3add_c) <= (others => '0'); -- unused/redundant
   --
@@ -543,10 +446,6 @@ begin
   res_out(op_bext_c) <= res_int(op_bext_c) when (cmd_buf(op_bext_c) = '1') else (others => '0');
   res_out(op_binv_c) <= res_int(op_binv_c) when (cmd_buf(op_binv_c) = '1') else (others => '0');
   res_out(op_bset_c) <= res_int(op_bset_c) when (cmd_buf(op_bset_c) = '1') else (others => '0');
-  --
-  res_out(op_clmul_c)  <= res_int(op_clmul_c)  when (cmd_buf(op_clmul_c)  = '1') else (others => '0');
-  res_out(op_clmulh_c) <= res_int(op_clmulh_c) when (cmd_buf(op_clmulh_c) = '1') else (others => '0');
-  res_out(op_clmulr_c) <= res_int(op_clmulr_c) when (cmd_buf(op_clmulr_c) = '1') else (others => '0');
 
 
   -- Output Gate ----------------------------------------------------------------------------
@@ -558,15 +457,14 @@ begin
     elsif rising_edge(clk_i) then
       res_o <= (others => '0'); -- default
       if (valid = '1') then
-        res_o <= res_out(op_andn_c)   or res_out(op_orn_c)    or res_out(op_xnor_c)  or
-                 res_out(op_clz_c)    or res_out(op_cpop_c)   or -- res_out(op_ctz_c) is unused here
+        res_o <= res_out(op_andn_c)   or res_out(op_orn_c)   or res_out(op_xnor_c)  or
+                 res_out(op_clz_c)    or res_out(op_cpop_c)  or -- res_out(op_ctz_c) is unused here
                  res_out(op_min_c)    or -- res_out(op_max_c) is unused here
-                 res_out(op_sextb_c)  or res_out(op_sexth_c)  or res_out(op_zexth_c) or
-                 res_out(op_ror_c)    or res_out(op_rol_c)    or
-                 res_out(op_orcb_c)   or res_out(op_rev8_c)   or
+                 res_out(op_sextb_c)  or res_out(op_sexth_c) or res_out(op_zexth_c) or
+                 res_out(op_ror_c)    or res_out(op_rol_c)   or
+                 res_out(op_orcb_c)   or res_out(op_rev8_c)  or
                  res_out(op_sh1add_c) or -- res_out(op_sh2add_c) and res_out(op_sh3add_c) are unused here
-                 res_out(op_bclr_c)   or res_out(op_bext_c)   or res_out(op_binv_c)  or res_out(op_bset_c) or
-                 res_out(op_clmul_c)  or res_out(op_clmulh_c) or res_out(op_clmulr_c);
+                 res_out(op_bclr_c)   or res_out(op_bext_c)  or res_out(op_binv_c)  or res_out(op_bset_c);
       end if;
     end if;
   end process output_gate;
