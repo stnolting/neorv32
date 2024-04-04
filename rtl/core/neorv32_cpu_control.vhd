@@ -728,7 +728,7 @@ begin
       end if;
       -- register-register operation --
       if ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- ROR / ROL
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) /= "000")) or -- MIN[U] / MAX[U] / CMUL[H/R]
+         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.ir(instr_funct3_msb_c) = '1')) or -- MIN[U] / MAX[U]
          ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000100") and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")) or -- ZEXTH
          ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- BCLR / BEXT
          ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BINV
