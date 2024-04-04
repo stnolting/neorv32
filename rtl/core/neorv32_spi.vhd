@@ -83,10 +83,11 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant ctrl_irq_rx_avail_c : natural := 20; -- r/w: fire irq if rx fifo data available (fifo not empty)
   constant ctrl_irq_tx_empty_c : natural := 21; -- r/w: fire irq if tx fifo empty
   constant ctrl_irq_tx_nhalf_c : natural := 22; -- r/w: fire irq if tx fifo not at least half full
-  constant ctrl_fifo_size0_c   : natural := 23; -- r/-: log2(fifo size), bit 0 (lsb)
-  constant ctrl_fifo_size1_c   : natural := 24; -- r/-: log2(fifo size), bit 1
-  constant ctrl_fifo_size2_c   : natural := 25; -- r/-: log2(fifo size), bit 2
-  constant ctrl_fifo_size3_c   : natural := 26; -- r/-: log2(fifo size), bit 3 (msb)
+  constant ctrl_irq_idle_c     : natural := 23; -- r/w: fire irq if tx fifo is empty and serial engine is idle
+  constant ctrl_fifo_size0_c   : natural := 24; -- r/-: log2(fifo size), bit 0 (lsb)
+  constant ctrl_fifo_size1_c   : natural := 25; -- r/-: log2(fifo size), bit 1
+  constant ctrl_fifo_size2_c   : natural := 26; -- r/-: log2(fifo size), bit 2
+  constant ctrl_fifo_size3_c   : natural := 27; -- r/-: log2(fifo size), bit 3 (msb)
   --
   constant ctrl_busy_c         : natural := 31; -- r/-: spi phy busy or tx fifo not empty yet
 
@@ -103,6 +104,7 @@ architecture neorv32_spi_rtl of neorv32_spi is
     irq_rx_avail : std_ulogic;
     irq_tx_empty : std_ulogic;
     irq_tx_nhalf : std_ulogic;
+    irq_idle     : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
 
@@ -110,7 +112,7 @@ architecture neorv32_spi_rtl of neorv32_spi is
   signal cdiv_cnt   : std_ulogic_vector(3 downto 0);
   signal spi_clk_en : std_ulogic;
 
-  -- spi transceiver --
+  -- SPI engine --
   type rtx_engine_t is record
     state    : std_ulogic_vector(2 downto 0);
     busy     : std_ulogic;
@@ -156,15 +158,16 @@ begin
       ctrl.irq_rx_avail <= '0';
       ctrl.irq_tx_empty <= '0';
       ctrl.irq_tx_nhalf <= '0';
+      ctrl.irq_idle     <= '0';
     elsif rising_edge(clk_i) then
       -- bus handshake --
       bus_rsp_o.ack  <= bus_req_i.stb;
       bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') then
 
-        -- write access --
-        if (bus_req_i.rw = '1') then
+      -- read/write access --
+      if (bus_req_i.stb = '1') then
+        if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(2) = '0') then -- control register
             ctrl.enable       <= bus_req_i.data(ctrl_en_c);
             ctrl.cpha         <= bus_req_i.data(ctrl_cpha_c);
@@ -177,10 +180,9 @@ begin
             ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
             ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
             ctrl.irq_tx_nhalf <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
+            ctrl.irq_idle     <= bus_req_i.data(ctrl_irq_idle_c);
           end if;
-
-        -- read access --
-        else
+        else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
             bus_rsp_o.data(ctrl_cpha_c)                          <= ctrl.cpha;
@@ -198,6 +200,7 @@ begin
             bus_rsp_o.data(ctrl_irq_rx_avail_c) <= ctrl.irq_rx_avail;
             bus_rsp_o.data(ctrl_irq_tx_empty_c) <= ctrl.irq_tx_empty;
             bus_rsp_o.data(ctrl_irq_tx_nhalf_c) <= ctrl.irq_tx_nhalf;
+            bus_rsp_o.data(ctrl_irq_idle_c)     <= ctrl.irq_idle;
             --
             bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_SPI_FIFO), 4));
             --
@@ -206,7 +209,6 @@ begin
             bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
           end if;
         end if;
-
       end if;
     end if;
   end process bus_access;
@@ -299,7 +301,8 @@ begin
       irq_o <= ctrl.enable and (
                (ctrl.irq_rx_avail and      rx_fifo.avail)  or -- IRQ if RX FIFO is not empty
                (ctrl.irq_tx_empty and (not tx_fifo.avail)) or -- IRQ if TX FIFO is empty
-               (ctrl.irq_tx_nhalf and (not tx_fifo.half)));   -- IRQ if TX buffer is not half full
+               (ctrl.irq_tx_nhalf and (not tx_fifo.half))  or -- IRQ if TX buffer is not half full
+               (ctrl.irq_idle     and (not tx_fifo.avail) and (not rtx_engine.busy))); -- IRQ if TX FIFO is empty and serial engine is idle
     end if;
   end process irq_generator;
 

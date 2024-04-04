@@ -5,16 +5,16 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_spi.vhd |
-| Software driver file(s): | neorv32_spi.c |
-|                          | neorv32_spi.h |
-| Top entity port:         | `spi_clk_o` | 1-bit serial clock output
-|                          | `spi_dat_o` | 1-bit serial data output
-|                          | `spi_dat_i` | 1-bit serial data input
-|                          | `spi_csn_o` | 8-bit dedicated chip select output (low-active)
-| Configuration generics:  | `IO_SPI_EN`   | implement SPI controller when `true`
-|                          | `IO_SPI_FIFO` | FIFO depth, has to be a power of two, min 1
-| CPU interrupts:          | fast IRQ channel 6 | configurable SPI interrupt (see <<_processor_interrupts>>)
+| Hardware source files:  | neorv32_spi.vhd |
+| Software driver files:  | neorv32_spi.c |
+|                         | neorv32_spi.h |
+| Top entity ports:       | `spi_clk_o` | 1-bit serial clock output
+|                         | `spi_dat_o` | 1-bit serial data output
+|                         | `spi_dat_i` | 1-bit serial data input
+|                         | `spi_csn_o` | 8-bit dedicated chip select output (low-active)
+| Configuration generics: | `IO_SPI_EN`   | implement SPI controller when `true`
+|                         | `IO_SPI_FIFO` | FIFO depth, has to be a power of two, min 1
+| CPU interrupts:         | fast IRQ channel 6 | configurable SPI interrupt (see <<_processor_interrupts>>)
 |=======================
 
 
@@ -114,7 +114,7 @@ example if just the `SPI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep 
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.19+<| `0xfffff800` .19+<| `CTRL` <|`0`     `SPI_CTRL_EN`                           ^| r/w <| SPI module enable
+.20+<| `0xfffff800` .20+<| `CTRL` <|`0`     `SPI_CTRL_EN`                           ^| r/w <| SPI module enable
                                   <|`1`     `SPI_CTRL_CPHA`                         ^| r/w <| clock phase
                                   <|`2`     `SPI_CTRL_CPOL`                         ^| r/w <| clock polarity
                                   <|`5:3`   `SPI_CTRL_CS_SEL2 : SPI_CTRL_CS_SEL0`   ^| r/w <| Direct chip-select 0..7
@@ -130,8 +130,9 @@ example if just the `SPI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep 
                                   <|`20`    `SPI_CTRL_IRQ_RX_AVAIL`                 ^| r/w <| Trigger IRQ if RX FIFO not empty
                                   <|`21`    `SPI_CTRL_IRQ_TX_EMPTY`                 ^| r/w <| Trigger IRQ if TX FIFO empty
                                   <|`22`    `SPI_CTRL_IRQ_TX_NHALF`                 ^| r/w <| Trigger IRQ if TX FIFO _not_ at least half full
-                                  <|`26:23` `SPI_CTRL_FIFO_MSB : SPI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(_IO_SPI_FIFO_)
-                                  <|`30:27` _reserved_                              ^| r/- <| reserved, read as zero
+                                  <|`23`    `SPI_CTRL_IRQ_IDLE`                     ^| r/w <| Trigger IRQ if TX FIFO is empty and SPI bus engine is idle
+                                  <|`27:24` `SPI_CTRL_FIFO_MSB : SPI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(_IO_SPI_FIFO_)
+                                  <|`30:28` _reserved_                              ^| r/- <| reserved, read as zero
                                   <|`31`    `SPI_CTRL_BUSY`                         ^| r/- <| SPI module busy when set (serial engine operation in progress and TX FIFO not empty yet)
 | `0xfffff804` | `DATA` |`7:0` | r/w | receive/transmit data (FIFO)
 |=======================

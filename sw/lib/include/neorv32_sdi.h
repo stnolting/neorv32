@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -68,12 +68,14 @@ enum NEORV32_SDI_CTRL_enum {
   SDI_CTRL_IRQ_RX_HALF  = 16, /**< SDI control register(16) (r/w): IRQ when RX FIFO at least half full */
   SDI_CTRL_IRQ_RX_FULL  = 17, /**< SDI control register(17) (r/w): IRQ when RX FIFO full */
   SDI_CTRL_IRQ_TX_EMPTY = 18, /**< SDI control register(18) (r/w): IRQ when TX FIFO empty */
+  SDI_CTRL_IRQ_TX_NHALF = 19, /**< SDI control register(19) (r/w): IRQ when TX FIFO not at least half full */
 
   SDI_CTRL_RX_AVAIL     = 23, /**< SDI control register(23) (r/-): RX FIFO not empty */
   SDI_CTRL_RX_HALF      = 24, /**< SDI control register(24) (r/-): RX FIFO at least half full */
   SDI_CTRL_RX_FULL      = 25, /**< SDI control register(25) (r/-): RX FIFO full */
   SDI_CTRL_TX_EMPTY     = 26, /**< SDI control register(26) (r/-): TX FIFO empty */
-  SDI_CTRL_TX_FULL      = 27  /**< SDI control register(27) (r/-): TX FIFO full */
+  SDI_CTRL_TX_NHALF     = 27, /**< SDI control register(27) (r/-): TX FIFO not at least half full */
+  SDI_CTRL_TX_FULL      = 28  /**< SDI control register(28) (r/-): TX FIFO full */
 };
 /**@}*/
 

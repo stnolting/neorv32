@@ -3,7 +3,7 @@
 // # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
-// # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
+// # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
 // #                                                                                               #
 // # Redistribution and use in source and binary forms, with or without modification, are          #
 // # permitted provided that the following conditions are met:                                     #
@@ -82,9 +82,10 @@ enum NEORV32_SPI_CTRL_enum {
   SPI_CTRL_IRQ_RX_AVAIL = 20, /**< SPI control register(20) (r/w): Fire IRQ if RX FIFO data available (RX FIFO not empty) */
   SPI_CTRL_IRQ_TX_EMPTY = 21, /**< SPI control register(21) (r/w): Fire IRQ if TX FIFO empty */
   SPI_CTRL_IRQ_TX_HALF  = 22, /**< SPI control register(22) (r/w): Fire IRQ if TX FIFO not at least half full */
+  SPI_CTRL_IRQ_IDLE     = 23, /**< SPI control register(23) (r/w): Fire IRQ if TX FIFO is empty and SPI bus engine is idle */
 
-  SPI_CTRL_FIFO_LSB     = 23, /**< SPI control register(23) (r/-): log2(FIFO size), lsb */
-  SPI_CTRL_FIFO_MSB     = 26, /**< SPI control register(26) (r/-): log2(FIFO size), msb */
+  SPI_CTRL_FIFO_LSB     = 24, /**< SPI control register(24) (r/-): log2(FIFO size), lsb */
+  SPI_CTRL_FIFO_MSB     = 27, /**< SPI control register(27) (r/-): log2(FIFO size), msb */
 
   SPI_CTRL_BUSY         = 31  /**< SPI control register(31) (r/-): SPI busy flag */
 };

@@ -175,6 +175,11 @@
               <description>Fire interrupt if TX FIFO is empty</description>
             </field>
             <field>
+              <name>SDI_CTRL_IRQ_TX_NHALF</name>
+              <bitRange>[19:19]</bitRange>
+              <description>Fire interrupt if TX FIFO is not at least half full</description>
+            </field>
+            <field>
               <name>SDI_CTRL_RX_AVAIL</name>
               <bitRange>[23:23]</bitRange>
               <access>read-only</access>
@@ -199,8 +204,14 @@
               <description>TX FIFO empty</description>
             </field>
             <field>
-              <name>SDI_CTRL_TX_FULL</name>
+              <name>SDI_CTRL_TX_NHALF</name>
               <bitRange>[27:27]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO not at least half full</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_TX_FULL</name>
+              <bitRange>[28:28]</bitRange>
               <access>read-only</access>
               <description>TX FIFO full</description>
             </field>
@@ -1157,8 +1168,13 @@
               <description>Fire interrupt if TX FIFO is not at least half full</description>
             </field>
             <field>
+              <name>SPI_CTRL_IRQ_IDLE</name>
+              <bitRange>[23:23]</bitRange>
+              <description>Fire interrupt if TX FIFO is empty and SPI bus engine is idle</description>
+            </field>
+            <field>
               <name>SPI_CTRL_FIFO</name>
-              <bitRange>[26:23]</bitRange>
+              <bitRange>[27:24]</bitRange>
               <access>read-only</access>
               <description>log2(FIFO size)</description>
             </field>
