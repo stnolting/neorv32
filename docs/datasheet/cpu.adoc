@@ -525,7 +525,6 @@ The NEORV32 `B` ISA extension includes the following sub-extensions:
 
 * `Zba` - Address-generation instructions
 * `Zbb` - Basic bit-manipulation instructions
-* `Zbc` - Carry-less multiplication instructions
 * `Zbs` - Single-bit instructions
 
 .Instructions and Timing
@@ -533,16 +532,15 @@ The NEORV32 `B` ISA extension includes the following sub-extensions:
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Arithmetic/logic    | `min[u]` `max[u]` `sext.b` `sext.h` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 4
-| Shifts              | `clz` `ctz`                                                                                       | 3 + 1..32; FAST_SHIFT: 4
-| Shifts              | `cpop`                                                                                            | 36; FAST_SHIFT: 4
-| Shifts              | `rol` `ror[i]`                                                                                    | 4 + _shift_amount_; FAST_SHIFT: 4
-| Shifted-add         | `sh1add` `sh2add` `sh3add`                                                                        | 4
-| Single-bit          | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]`                                                       | 4
-| Carry-less multiply | `clmul` `clmulh` `clmulr`                                                                         | 36
+| Arithmetic/logic | `min[u]` `max[u]` `sext.b` `sext.h` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 4
+| Shifts           | `clz` `ctz`                                                                                       | 3 + 1..32; FAST_SHIFT: 4
+| Shifts           | `cpop`                                                                                            | 36; FAST_SHIFT: 4
+| Shifts           | `rol` `ror[i]`                                                                                    | 4 + _shift_amount_; FAST_SHIFT: 4
+| Shifted-add      | `sh1add` `sh2add` `sh3add`                                                                        | 4
+| Single-bit       | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]`                                                       | 4
 |=======================
 
-.Barrel Shifter
+.Shift Operations
 [TIP]
 Shift operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_SHIFT_EN`
 configuration option that will replace the (time-variant) bit-serial shifter by a (time-constant) barrel shifter.
