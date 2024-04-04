@@ -166,7 +166,7 @@ begin
   cmd(op_sextb_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "100") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
   cmd(op_sexth_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "101") and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct3(2) = '0') else '0';
   cmd(op_rol_c)    <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(02 downto 0) = "001") and (ctrl_i.ir_opcode(5) = '1') else '0';
-  cmd(op_ror_c)    <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(02 downto 0) = "101") and                                 (ctrl_i.ir_funct3(2) = '1') else '0';
+  cmd(op_ror_c)    <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(02 downto 0) = "101") and (ctrl_i.ir_funct3(2) = '1') else '0';
   cmd(op_rev8_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(02 downto 0) = "101") else '0';
 
   -- Zba - Address generation instructions --
