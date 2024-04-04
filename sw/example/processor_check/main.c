@@ -1240,17 +1240,17 @@ int main() {
     cnt_test++;
 
     // configure SPI
-    neorv32_spi_setup(CLK_PRSC_8, 0, 0, 0, 1<<SPI_CTRL_IRQ_RX_AVAIL); // IRQ when RX FIFO is not empty
+    neorv32_spi_setup(CLK_PRSC_8, 0, 0, 0, 1<<SPI_CTRL_IRQ_IDLE); // IRQ when TX FIFO is empty and SPI bus engine is idle
+
+    // trigger SPI transmissions
+    neorv32_spi_put_nonblocking(0xab); // non-blocking
+    neorv32_spi_put_nonblocking(0xcd); // non-blocking
 
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << SPI_FIRQ_ENABLE);
 
-    // trigger SPI IRQ
-    neorv32_spi_trans(0); // blocking
-
     // wait for interrupt
-    asm volatile ("nop");
-    asm volatile ("nop");
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
