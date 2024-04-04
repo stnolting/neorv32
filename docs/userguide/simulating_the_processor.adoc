@@ -181,7 +181,6 @@ Using simulation run arguments: --stop-time=10ms <5>
 ../../rtl/core/neorv32_cpu.vhd:142:3:@0ms:(assertion note): [NEORV32] CPU ISA: rv32imabu_zicsr_zicntr_zicond_zifencei_zfinx_zihpm_zxcfu_sdext_sdtrig_smpmp
 ../../rtl/core/neorv32_cpu.vhd:163:3:@0ms:(assertion note): [NEORV32] CPU tuning options: fast_mul fast_shift
 ../../rtl/core/neorv32_cpu.vhd:170:3:@0ms:(assertion warning): [NEORV32] Assuming this is a simulation.
-../../rtl/core/neorv32_cpu_cp_bitmanip.vhd:172:3:@0ms:(assertion note): [NEORV32] Implementing bit-manipulation (B) sub-extensions Zba Zbb Zbc Zbs
 ../../rtl/core/neorv32_cpu_cp_fpu.vhd:292:3:@0ms:(assertion warning): [NEORV32] The floating-point unit (Zfinx) is still in experimental state.
 ../../rtl/core/mem/neorv32_imem.legacy.vhd:72:3:@0ms:(assertion note): [NEORV32] Implementing LEGACY processor-internal IMEM as pre-initialized ROM.
 ../../rtl/core/neorv32_wishbone.vhd:117:3:@0ms:(assertion note): [NEORV32] Ext. Bus Interface (WISHBONE) - PIPELINED Wishbone protocol, auto-timeout, LITTLE-endian byte order, registered RX, registered TX
