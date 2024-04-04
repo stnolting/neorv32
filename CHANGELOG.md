@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 04.04.2024 | [**:rocket:1.9.8**](https://github.com/stnolting/neorv32/releases/tag/v1.9.8) | **New release** | |
 | 04.04.2024 | 1.9.7.10 | extend SPI and SDI interrupt conditions | [#870](https://github.com/stnolting/neorv32/pull/870) |
 | 04.04.2024 | 1.9.7.9 | RISC-V `B` ISA extension (bit-manipulation) only contains sub-extensions `Zba+Zbb+Zbs`; :warning: remove support for `Zbc` ISA extension | [#869](https://github.com/stnolting/neorv32/pull/869) |
 | 03.04.2024 | 1.9.7.8 | split SLINK interrupt into two individual FIRQs (SLINK RX and SLINK TX) | [#868](https://github.com/stnolting/neorv32/pull/868) |
