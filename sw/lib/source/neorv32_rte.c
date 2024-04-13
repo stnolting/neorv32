@@ -29,7 +29,7 @@
 // # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
 // # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
 // # ********************************************************************************************* #
-// # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
+// # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32                           #
 // #################################################################################################
 
 
@@ -40,11 +40,6 @@
 
 #include "neorv32.h"
 #include "neorv32_rte.h"
-
-
-// #################################################################################################
-// RTE Core
-// #################################################################################################
 
 
 /**********************************************************************//**
@@ -472,11 +467,6 @@ void neorv32_rte_print_info(void) {
 }
 
 
-// #################################################################################################
-// RTE Hardware Analysis Helpers
-// #################################################################################################
-
-
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
  * Print hardware configuration information via UART0.
@@ -862,7 +852,8 @@ void neorv32_rte_print_license(void) {
       "\n"
       "BSD 3-Clause License\n"
       "\n"
-      "Copyright (c) 2024, Stephan Nolting. All rights reserved.\n"
+      "Copyright (c) NEORV32 contributors.\n"
+      "Copyright (c) 2020 - 2024, Stephan Nolting. All rights reserved.\n"
       "\n"
       "Redistribution and use in source and binary forms, with or without modification, are\n"
       "permitted provided that the following conditions are met:\n"
@@ -888,6 +879,7 @@ void neorv32_rte_print_license(void) {
       "NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED\n"
       "OF THE POSSIBILITY OF SUCH DAMAGE.\n"
       "\n"
+      "SPDX-License-Identifier: BSD-3-Clause\n"
       "\n"
     );
   }
