@@ -1,38 +1,15 @@
--- #################################################################################################
--- # << NEORV32 CPU - Co-Processor: Shifter (CPU Base ISA) >>                                      #
--- # ********************************************************************************************* #
--- # FAST_SHIFT_EN = false (default) : Use bit-serial shifter architecture (small but slow)        #
--- # FAST_SHIFT_EN = true            : Use barrel shifter architecture (large but fast)            #
--- # ********************************************************************************************* #
--- # BSD 3-Clause License                                                                          #
--- #                                                                                               #
--- # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
--- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
--- #                                                                                               #
--- # Redistribution and use in source and binary forms, with or without modification, are          #
--- # permitted provided that the following conditions are met:                                     #
--- #                                                                                               #
--- # 1. Redistributions of source code must retain the above copyright notice, this list of        #
--- #    conditions and the following disclaimer.                                                   #
--- #                                                                                               #
--- # 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
--- #    conditions and the following disclaimer in the documentation and/or other materials        #
--- #    provided with the distribution.                                                            #
--- #                                                                                               #
--- # 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
--- #    endorse or promote products derived from this software without specific prior written      #
--- #    permission.                                                                                #
--- #                                                                                               #
--- # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
--- # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
--- # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
--- # COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
--- # EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
--- # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
--- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
--- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
--- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
--- #################################################################################################
+-- ================================================================================ --
+-- NEORV32 CPU - Co-Processor: Shifter (CPU Base ISA)                               --
+-- -------------------------------------------------------------------------------- --
+-- # FAST_SHIFT_EN = false -> Use bit-serial shifter architecture (small but slow)  --
+-- # FAST_SHIFT_EN = true  -> Use barrel shifter architecture (large but fast)      --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -65,6 +42,7 @@ architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
   -- serial shifter --
   type shifter_t is record
     busy    : std_ulogic;
+    run     : std_ulogic;
     done    : std_ulogic;
     done_ff : std_ulogic;
     cnt     : std_ulogic_vector(index_size_f(XLEN)-1 downto 0);
@@ -75,6 +53,7 @@ architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
   -- barrel shifter --
   type bs_level_t is array (index_size_f(XLEN) downto 0) of std_ulogic_vector(XLEN-1 downto 0);
   signal bs_level  : bs_level_t;
+  signal bs_mask   : std_ulogic;
   signal bs_start  : std_ulogic;
   signal bs_result : std_ulogic_vector(XLEN-1 downto 0);
 
@@ -104,7 +83,7 @@ begin
         if (start_i = '1') then -- trigger new operation
           shifter.cnt  <= shamt_i;
           shifter.sreg <= rs1_i;
-        elsif (or_reduce_f(shifter.cnt) = '1') then -- operation in progress
+        elsif (shifter.run = '1') then -- operation in progress
           shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) - 1);
           if (ctrl_i.ir_funct3(2) = '0') then -- SLL: shift left logical
             shifter.sreg <= shifter.sreg(shifter.sreg'left-1 downto 0) & '0';
@@ -115,12 +94,13 @@ begin
       end if;
     end process serial_shifter_core;
 
-    -- shift control/output --
-    shifter.done <= '1' when (or_reduce_f(shifter.cnt(shifter.cnt'left downto 1)) = '0') else '0';
+    -- shift control --
+    shifter.run  <= or_reduce_f(shifter.cnt);
+    shifter.done <= not or_reduce_f(shifter.cnt(shifter.cnt'left downto 1));
     valid_o      <= shifter.busy and shifter.done;
     res_o        <= shifter.sreg when (shifter.done_ff = '1') else (others => '0');
 
-  end generate; -- /serial_shifter
+  end generate;
 
 
   -- Barrel Shifter (fast but large) --------------------------------------------------------
@@ -128,25 +108,16 @@ begin
   barrel_shifter:
   if FAST_SHIFT_EN generate
 
-    -- shifter core --
-    barrel_shifter_core: process(rs1_i, shamt_i, ctrl_i, bs_level)
-    begin
-      -- input layer: convert left shifts to right shifts by bit-reversal --
-      if (ctrl_i.ir_funct3(2) = '0') then -- is left shift?
-        bs_level(index_size_f(XLEN)) <= bit_rev_f(rs1_i); -- reverse bit order of input operand
-      else
-        bs_level(index_size_f(XLEN)) <= rs1_i;
-      end if;
-      -- shifter array (right-shifts only) --
-      for i in (index_size_f(XLEN)-1) downto 0 loop
-        if (shamt_i(i) = '1') then
-          bs_level(i)(XLEN-1 downto XLEN-(2**i)) <= (others => (bs_level(i+1)(XLEN-1) and ctrl_i.ir_funct12(10))); -- arithmetic/logical
-          bs_level(i)((XLEN-(2**i))-1 downto 0)  <= bs_level(i+1)(XLEN-1 downto 2**i);
-        else
-          bs_level(i) <= bs_level(i+1);
-        end if;
-      end loop;
-    end process barrel_shifter_core;
+    -- input layer: convert left shifts to right shifts by bit-reversal --
+    bs_level(index_size_f(XLEN)) <= bit_rev_f(rs1_i) when (ctrl_i.ir_funct3(2) = '0') else rs1_i;
+    bs_mask <= rs1_i(XLEN-1) and ctrl_i.ir_funct12(10); -- MSB mask for arithmetic/logic shifts
+
+    -- shifter layers: right-shifts only --
+    barrel_shifter_core:
+    for i in index_size_f(XLEN)-1 downto 0 generate
+      bs_level(i)(XLEN-1 downto XLEN-(2**i)) <= (others => bs_mask)               when (shamt_i(i) = '1') else bs_level(i+1)(XLEN-1 downto XLEN-(2**i));
+      bs_level(i)((XLEN-(2**i))-1 downto 0)  <= bs_level(i+1)(XLEN-1 downto 2**i) when (shamt_i(i) = '1') else bs_level(i+1)((XLEN-(2**i))-1 downto 0);
+    end generate;
 
     -- pipeline register --
     barrel_shifter_buf: process(rstn_i, clk_i)
@@ -161,14 +132,12 @@ begin
     end process barrel_shifter_buf;
 
     -- output layer: output gate and re-convert original left shifts --
-    res_o <= (others => '0') when (bs_start = '0') else
-             bit_rev_f(bs_result) when (ctrl_i.ir_funct3(2) = '0') else
-             bs_result;
+    res_o <= (others => '0') when (bs_start = '0') else bit_rev_f(bs_result) when (ctrl_i.ir_funct3(2) = '0') else bs_result;
 
     -- processing done --
     valid_o <= start_i;
 
-  end generate; -- /barrel_shifter
+  end generate;
 
 
 end neorv32_cpu_cp_shifter_rtl;
