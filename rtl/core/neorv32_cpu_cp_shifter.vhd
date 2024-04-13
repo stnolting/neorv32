@@ -110,7 +110,7 @@ begin
 
     -- input layer: convert left shifts to right shifts by bit-reversal --
     bs_level(index_size_f(XLEN)) <= bit_rev_f(rs1_i) when (ctrl_i.ir_funct3(2) = '0') else rs1_i;
-    bs_mask <= rs1_i(XLEN-1) and ctrl_i.ir_funct12(10); -- MSB mask for arithmetic/logic shifts
+    bs_mask <= rs1_i(XLEN-1) and ctrl_i.ir_funct12(10); -- MSBs mask for arithmetic/logic shifts
 
     -- shifter layers: right-shifts only --
     barrel_shifter_core:
@@ -132,9 +132,7 @@ begin
     end process barrel_shifter_buf;
 
     -- output layer: output gate and re-convert original left shifts --
-    res_o <= (others => '0') when (bs_start = '0') else bit_rev_f(bs_result) when (ctrl_i.ir_funct3(2) = '0') else bs_result;
-
-    -- processing done --
+    res_o   <= (others => '0') when (bs_start = '0') else bit_rev_f(bs_result) when (ctrl_i.ir_funct3(2) = '0') else bs_result;
     valid_o <= start_i;
 
   end generate;
