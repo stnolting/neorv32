@@ -1,46 +1,23 @@
--- #################################################################################################
--- # << NEORV32 CPU - Central Operation Control Unit >>                                            #
--- # ********************************************************************************************* #
--- # CPU operations are controlled by several "engines" (modules). These engines operate in        #
--- # parallel to implement a tiny 2-stage pipeline:                                                #
--- #  + Fetch engine:    Fetches 32-bit chunks of instruction words (1st pipeline stage)           #
--- #  + Issue engine:    Decodes compressed instructions, aligns and queues instruction words      #
--- #  + Execute engine:  Multi-cycle execution of instructions (2nd pipeline stage)                #
--- #  + Trap controller: Handles interrupts and exceptions                                         #
--- #  + CSR module:      Read/write access to control and status registers                         #
--- #  + CPU counters:    Base and HPM counters                                                     #
--- #  + Debug module:    CPU debug mode handling (on-chip debugger)                                #
--- #  + Trigger module:  Hardware-assisted breakpoints (on-chip debugger)                          #
--- # ********************************************************************************************* #
--- # BSD 3-Clause License                                                                          #
--- #                                                                                               #
--- # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
--- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
--- #                                                                                               #
--- # Redistribution and use in source and binary forms, with or without modification, are          #
--- # permitted provided that the following conditions are met:                                     #
--- #                                                                                               #
--- # 1. Redistributions of source code must retain the above copyright notice, this list of        #
--- #    conditions and the following disclaimer.                                                   #
--- #                                                                                               #
--- # 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
--- #    conditions and the following disclaimer in the documentation and/or other materials        #
--- #    provided with the distribution.                                                            #
--- #                                                                                               #
--- # 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
--- #    endorse or promote products derived from this software without specific prior written      #
--- #    permission.                                                                                #
--- #                                                                                               #
--- # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
--- # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
--- # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
--- # COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
--- # EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
--- # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
--- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
--- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
--- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
--- #################################################################################################
+-- ================================================================================ --
+-- NEORV32 CPU - Central Control Unit                                               --
+-- -------------------------------------------------------------------------------- --
+-- CPU operations are controlled by several "engines" (modules). These engines      --
+-- operate in parallel to implement a tiny 2-stage pipeline:                        --
+-- + Fetch engine:    Fetches 32-bit chunks of instruction words (pipeline stage 1) --
+-- + Issue engine:    Decodes RVC instructions, aligns & queues instruction words   --
+-- + Execute engine:  Multi-cycle execution of instructions (pipeline stage 2)      --
+-- + Trap controller: Handles interrupts and exceptions                             --
+-- + CSR module:      Read/write access to control and status registers             --
+-- + CPU counters:    Base and HPM counters                                         --
+-- + Debug module:    CPU debug mode handling (on-chip debugger)                    --
+-- + Trigger module:  Hardware-assisted breakpoints (on-chip debugger)              --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -241,11 +218,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type csr_t is record
     addr           : std_ulogic_vector(11 downto 0); -- csr address
     raddr          : std_ulogic_vector(11 downto 0); -- simplified csr read address
-    cmd            : std_ulogic_vector(2 downto 0); -- CSR access command
     we, we_nxt     : std_ulogic; -- csr write enable
     re, re_nxt     : std_ulogic; -- csr read enable
     wdata, rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr write/read data
-    wmask          : std_ulogic_vector(XLEN-1 downto 0); -- csr write data (mask)
     --
     mstatus_mie    : std_ulogic; -- machine-mode IRQ enable
     mstatus_mpie   : std_ulogic; -- previous machine-mode IRQ enable
@@ -279,7 +254,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     dpc            : std_ulogic_vector(XLEN-1 downto 0); -- mode program counter
     dscratch0      : std_ulogic_vector(XLEN-1 downto 0); -- debug mode scratch register 0
     --
-    tdata1_hit_we  : std_ulogic; -- mcontrol6.hit0 write access
     tdata1_execute : std_ulogic; -- enable instruction address match trigger
     tdata1_action  : std_ulogic; -- enter debug mode / ebreak exception when trigger fires
     tdata1_dmode   : std_ulogic; -- set to ignore tdata* CSR access from machine-mode
@@ -464,8 +438,8 @@ begin
   if CPU_EXTENSION_RISCV_C generate
     neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
     port map (
-      ci_instr16_i => issue_engine.ci_i16, -- compressed instruction
-      ci_instr32_o => issue_engine.ci_i32  -- decompressed instruction
+      ci_instr16_i => issue_engine.ci_i16,
+      ci_instr32_o => issue_engine.ci_i32
     );
   end generate;
 
@@ -474,7 +448,7 @@ begin
     issue_engine.ci_i32 <= (others => '0');
   end generate;
 
-  -- 16-bit instructions: half-word select --
+  -- half-word select --
   issue_engine.ci_i16 <= ipb.rdata(0)(15 downto 0) when (issue_engine.align = '0') else ipb.rdata(1)(15 downto 0);
 
 
@@ -848,7 +822,7 @@ begin
     -- state machine --
     case execute_engine.state is
 
-      when DISPATCH => -- Wait for ISSUE ENGINE to emit a valid instruction word
+      when DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
       -- ------------------------------------------------------------
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           execute_engine.state_nxt <= TRAP_ENTER;
@@ -865,14 +839,14 @@ begin
           execute_engine.state_nxt <= EXECUTE;
         end if;
 
-      when TRAP_ENTER => -- Enter trap environment and jump to trap vector
+      when TRAP_ENTER => -- enter trap environment and jump to trap vector
       -- ------------------------------------------------------------
         if (trap_ctrl.env_pending = '1') then -- wait for sync. exceptions to become pending
           trap_ctrl.env_enter      <= '1';
           execute_engine.state_nxt <= RESTART;
         end if;
 
-      when TRAP_EXIT => -- Return from trap environment and jump to xEPC
+      when TRAP_EXIT => -- return from trap environment and jump to xEPC
       -- ------------------------------------------------------------
         trap_ctrl.env_exit       <= '1';
         execute_engine.state_nxt <= RESTART;
@@ -882,7 +856,7 @@ begin
         fetch_engine.reset       <= '1';
         execute_engine.state_nxt <= BRANCHED;
 
-      when EXECUTE => -- Decode and execute instruction (control will be here for exactly 1 cycle in any case)
+      when EXECUTE => -- decode and execute instruction (control will be here for exactly 1 cycle in any case)
       -- [NOTE] register file is read in this stage; due to the sync read, data will be available in the _next_ state
       -- ------------------------------------------------------------
         case decode_aux.opcode is
@@ -891,18 +865,18 @@ begin
           when opcode_alu_c | opcode_alui_c =>
 
             -- ALU core operation --
-            case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is -- operation re-coding
+            case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
               when funct3_subadd_c              => ctrl_nxt.alu_op <= alu_op_add_c; -- ADD(I), SUB
               when funct3_slt_c | funct3_sltu_c => ctrl_nxt.alu_op <= alu_op_slt_c; -- SLT(I), SLTU(I)
               when funct3_xor_c                 => ctrl_nxt.alu_op <= alu_op_xor_c; -- XOR(I)
-              when funct3_or_c                  => ctrl_nxt.alu_op <= alu_op_or_c; -- OR(I)
-              when others                       => ctrl_nxt.alu_op <= alu_op_and_c; -- AND(I) or multi-cycle / co-processor operation (shifts)
+              when funct3_or_c                  => ctrl_nxt.alu_op <= alu_op_or_c;  -- OR(I)
+              when others                       => ctrl_nxt.alu_op <= alu_op_and_c; -- AND(I)
             end case;
 
             -- addition/subtraction control --
             if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c+1) = funct3_slt_c(2 downto 1)) or -- SLT(I), SLTU(I)
                ((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) and
-                (execute_engine.ir(instr_opcode_msb_c-1) = '1') and (execute_engine.ir(instr_funct7_msb_c-1) = '1')) then
+                (execute_engine.ir(instr_opcode_msb_c-1) = '1') and (execute_engine.ir(instr_funct7_msb_c-1) = '1')) then -- SUB
               ctrl_nxt.alu_sub <= '1';
             end if;
 
@@ -919,7 +893,7 @@ begin
                    ((execute_engine.ir(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
               ctrl_nxt.alu_cp_trig(cp_sel_bitmanip_c) <= '1'; -- trigger BITMANIP CP
               execute_engine.state_nxt                <= ALU_WAIT;
-            -- EXT: co-processor CONDITIONAL operations (multi-cycle) --
+            -- EXT: co-processor CONDITIONAL operation (multi-cycle) --
             elsif (CPU_EXTENSION_RISCV_Zicond = true) and (decode_aux.is_zicond = '1') and
                   (execute_engine.ir(instr_opcode_lsb_c+5) = opcode_alu_c(5)) then
               ctrl_nxt.alu_cp_trig(cp_sel_cond_c) <= '1'; -- trigger COND CP
@@ -1003,9 +977,8 @@ begin
 
       when BRANCHED => -- delay cycle to wait for reset of pipeline front-end (instruction fetch)
       -- ------------------------------------------------------------
+        ctrl_nxt.rf_zero_we      <= not bool_to_ulogic_f(REGFILE_HW_RST); -- house keeping: force writing zero to x0 if it's a phys. register
         execute_engine.state_nxt <= DISPATCH;
-        -- house keeping: use this state also to (re-)initialize the register file's x0/zero register --
-        ctrl_nxt.rf_zero_we <= not bool_to_ulogic_f(REGFILE_HW_RST); -- force write access to x0 if it is a physical register
 
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
@@ -1056,24 +1029,6 @@ begin
 
     end case;
   end process execute_engine_fsm_comb;
-
-
-  -- CPU Sleep Mode Control -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  sleep_control: process(rstn_i, clk_aux_i) -- always-on clock domain
-  begin
-    if (rstn_i = '0') then
-      sleep_mode <= '0';
-    elsif rising_edge(clk_aux_i) then
-      if (execute_engine.state = SLEEP) and -- instruction execution has halted
-         (ipb.free /= "11") and -- instruction fetch has halted
-         (trap_ctrl.wakeup = '0') then -- no wake-up request
-        sleep_mode <= '1';
-      else
-        sleep_mode <= '0';
-      end if;
-    end if;
-  end process sleep_control;
 
 
   -- CPU Control Bus Output -----------------------------------------------------------------
@@ -1563,6 +1518,24 @@ begin
   trap_ctrl.epc <= execute_engine.next_pc when (trap_ctrl.cause(trap_ctrl.cause'left) = '1') else execute_engine.pc;
 
 
+  -- CPU Sleep Mode Control -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  sleep_control: process(rstn_i, clk_aux_i) -- always-on clock domain
+  begin
+    if (rstn_i = '0') then
+      sleep_mode <= '0';
+    elsif rising_edge(clk_aux_i) then
+      if (execute_engine.state = SLEEP) and -- instruction execution has halted
+         (ipb.free /= "11") and -- instruction fetch has halted
+         (trap_ctrl.wakeup = '0') then -- no wake-up request
+        sleep_mode <= '1';
+      else
+        sleep_mode <= '0';
+      end if;
+    end if;
+  end process sleep_control;
+
+
 -- ****************************************************************************************************************************
 -- Control and Status Registers (CSRs)
 -- ****************************************************************************************************************************
@@ -1576,32 +1549,23 @@ begin
 
   -- CSR Write Data -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr.cmd <= execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c); -- access type
-
-  -- compute the write-data update mask --
-  csr_write_mask: process(csr.cmd, execute_engine.ir, rs1_i)
-    variable src_v : std_ulogic_vector(XLEN-1 downto 0);
+  csr_write_data: process(execute_engine.ir, csr.rdata, rs1_i)
+    variable tmp_v : std_ulogic_vector(XLEN-1 downto 0);
   begin
-    -- CSR operand --
-    if (csr.cmd(2) = '1') then -- immediate source
-      src_v := (others => '0');
-      src_v(4 downto 0) := execute_engine.ir(19 downto 15); -- uimm5
-    else -- register source
-      src_v := rs1_i;
-    end if;
-    -- actual write mask --
-    if (csr.cmd(1 downto 0) = "11") then -- csrrc[i]: clear
-      csr.wmask <= not src_v;
+    -- immediate/register operand --
+    if (execute_engine.ir(instr_funct3_msb_c) = '1') then
+      tmp_v := (others => '0');
+      tmp_v(4 downto 0) := execute_engine.ir(19 downto 15); -- uimm5
     else
-      csr.wmask <= src_v;
+      tmp_v := rs1_i;
     end if;
-  end process csr_write_mask;
-
-  -- tiny ALU to compute CSR write data --
-  with csr.cmd(1 downto 0) select csr.wdata <=
-    csr.rdata or  csr.wmask when "10",   -- csrrs[i]: set
-    csr.rdata and csr.wmask when "11",   -- csrrc[i]: clear
-                  csr.wmask when others; -- csrrw[i]: write
+    -- tiny ALU to compute CSR write data --
+    case execute_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) is
+      when "10"   => csr.wdata <= csr.rdata or tmp_v; -- set
+      when "11"   => csr.wdata <= csr.rdata and (not tmp_v); -- clear
+      when others => csr.wdata <= tmp_v; -- write
+    end case;
+  end process csr_write_data;
 
 
   -- External CSR Interface -----------------------------------------------------------------
@@ -1900,9 +1864,6 @@ begin
     end if;
   end process csr_write_access;
 
-  -- out-of-process CSR write access --
-  csr.tdata1_hit_we <= '1' when (csr.we = '1') and (csr.cmd(0) = '1') and (csr.addr = csr_tdata1_c) else '0'; -- tdata1.hit: write/clear only
-
   -- effective privilege mode is MACHINE when in debug mode --
   csr.privilege_eff <= priv_mode_m_c when (debug_ctrl.running = '1') else csr.privilege;
 
@@ -2110,7 +2071,7 @@ begin
       -- --------------------------------------------------------------------
       -- undefined/unavailable (or implemented externally) --
       -- --------------------------------------------------------------------
-      when others => NULL; -- read as zero
+      when others => NULL; -- use default: read as zero
 
     end case;
   end process csr_read_access;
@@ -2394,9 +2355,9 @@ begin
       if (rstn_i = '0') then
         hw_trigger_fired <= '0';
       elsif rising_edge(clk_i) then
-        if (hw_trigger_match = '1') and (trap_ctrl.exc_buf(exc_ebreak_c) = '1') then -- trigger has fired and breakpoint exception is pending
-          hw_trigger_fired <= '1';
-        elsif (csr.tdata1_hit_we = '1') and (csr.wmask(22) = '0') then -- clear-only
+        if (hw_trigger_fired = '0') then
+          hw_trigger_fired <= hw_trigger_match and trap_ctrl.exc_buf(exc_ebreak_c); -- trigger has fired and breakpoint exception is pending
+        elsif (csr.we = '1') and (csr.addr = csr_tdata1_c) and (csr.wdata(22) = '0') then -- tdata1 write access
           hw_trigger_fired <= '0';
         end if;
       end if;

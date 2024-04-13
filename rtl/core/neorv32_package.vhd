@@ -1,35 +1,12 @@
--- #################################################################################################
--- # << NEORV32 - Main VHDL Package File (CPU and SoC) >>                                          #
--- # ********************************************************************************************* #
--- # BSD 3-Clause License                                                                          #
--- #                                                                                               #
--- # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
--- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
--- #                                                                                               #
--- # Redistribution and use in source and binary forms, with or without modification, are          #
--- # permitted provided that the following conditions are met:                                     #
--- #                                                                                               #
--- # 1. Redistributions of source code must retain the above copyright notice, this list of        #
--- #    conditions and the following disclaimer.                                                   #
--- #                                                                                               #
--- # 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
--- #    conditions and the following disclaimer in the documentation and/or other materials        #
--- #    provided with the distribution.                                                            #
--- #                                                                                               #
--- # 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
--- #    endorse or promote products derived from this software without specific prior written      #
--- #    permission.                                                                                #
--- #                                                                                               #
--- # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
--- # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
--- # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
--- # COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
--- # EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
--- # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
--- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
--- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
--- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
--- #################################################################################################
+-- ================================================================================ --
+-- NEORV32 - Main VHDL Package File                                                 --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -37,9 +14,9 @@ use ieee.numeric_std.all;
 
 package neorv32_package is
 
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 -- Architecture Configuration and Constants
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 
   -- Architecture Configuration -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -52,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090800"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090801"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -68,9 +45,9 @@ package neorv32_package is
 -- pragma translate_on
   ;
 
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 -- Processor Address Space Layout
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 
   -- Main Address Regions ---
   constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via generic
@@ -124,9 +101,9 @@ package neorv32_package is
   constant dm_exc_entry_c  : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- = base_io_dm_c + 0, exceptions entry point
   constant dm_park_entry_c : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- = base_io_dm_c + 8, normal entry point
 
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 -- SoC Definitions
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 
   -- SoC Clock Select -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -206,9 +183,9 @@ package neorv32_package is
     ack  : std_ulogic;
   end record;
 
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 -- RISC-V ISA Definitions
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 
   -- RISC-V 32-Bit Instruction Word Layout --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -279,14 +256,14 @@ package neorv32_package is
   constant funct3_sh_c     : std_ulogic_vector(2 downto 0) := "001"; -- store half word
   constant funct3_sw_c     : std_ulogic_vector(2 downto 0) := "010"; -- store word
   -- alu --
-  constant funct3_subadd_c : std_ulogic_vector(2 downto 0) := "000"; -- sub/add via funct7
+  constant funct3_subadd_c : std_ulogic_vector(2 downto 0) := "000"; -- sub/add
   constant funct3_sll_c    : std_ulogic_vector(2 downto 0) := "001"; -- shift logical left
   constant funct3_slt_c    : std_ulogic_vector(2 downto 0) := "010"; -- set on less
   constant funct3_sltu_c   : std_ulogic_vector(2 downto 0) := "011"; -- set on less unsigned
-  constant funct3_xor_c    : std_ulogic_vector(2 downto 0) := "100"; -- xor
-  constant funct3_sr_c     : std_ulogic_vector(2 downto 0) := "101"; -- shift right via funct7
-  constant funct3_or_c     : std_ulogic_vector(2 downto 0) := "110"; -- or
-  constant funct3_and_c    : std_ulogic_vector(2 downto 0) := "111"; -- and
+  constant funct3_xor_c    : std_ulogic_vector(2 downto 0) := "100"; -- logical exclusive-or
+  constant funct3_sr_c     : std_ulogic_vector(2 downto 0) := "101"; -- shift right
+  constant funct3_or_c     : std_ulogic_vector(2 downto 0) := "110"; -- logical or
+  constant funct3_and_c    : std_ulogic_vector(2 downto 0) := "111"; -- logical and
   -- system/csr --
   constant funct3_env_c    : std_ulogic_vector(2 downto 0) := "000"; -- ecall, ebreak, mret, wfi, ...
   constant funct3_csrrw_c  : std_ulogic_vector(2 downto 0) := "001"; -- csr r/w
@@ -495,9 +472,9 @@ package neorv32_package is
   -- NEORV32-specific machine-mode registers --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
 
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 -- CPU Control
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 
   -- Main CPU Control Bus -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -697,9 +674,9 @@ package neorv32_package is
   --
   constant hpmcnt_event_size_c     : natural := 12; -- length of this list
 
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 -- Helper Functions
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 
   function index_size_f(input : natural) return natural;
   function cond_sel_int_f(cond : boolean; val_t : integer; val_f : integer) return integer;
@@ -722,9 +699,9 @@ package neorv32_package is
   function leading_zeros_f(input : std_ulogic_vector) return natural;
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
 
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 -- NEORV32 Processor Top Entity (component prototype)
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 
   component neorv32_top
     generic (
@@ -918,9 +895,9 @@ end neorv32_package;
 
 package body neorv32_package is
 
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 -- Helper Functions
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 
   -- Minimal required number of bits to represent <input> numbers ---------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1174,9 +1151,9 @@ package body neorv32_package is
 
 end neorv32_package;
 
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 -- Additional Packages
--- ****************************************************************************************************************************
+-- **********************************************************************************************************
 
   -- Prototype Definition: bootloader_init_image --------------------------------------------
   -- -------------------------------------------------------------------------------------------
