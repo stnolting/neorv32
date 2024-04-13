@@ -822,7 +822,7 @@ begin
     -- state machine --
     case execute_engine.state is
 
-      when DISPATCH => -- Wait for ISSUE ENGINE to emit a valid instruction word
+      when DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
       -- ------------------------------------------------------------
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           execute_engine.state_nxt <= TRAP_ENTER;
@@ -839,14 +839,14 @@ begin
           execute_engine.state_nxt <= EXECUTE;
         end if;
 
-      when TRAP_ENTER => -- Enter trap environment and jump to trap vector
+      when TRAP_ENTER => -- enter trap environment and jump to trap vector
       -- ------------------------------------------------------------
         if (trap_ctrl.env_pending = '1') then -- wait for sync. exceptions to become pending
           trap_ctrl.env_enter      <= '1';
           execute_engine.state_nxt <= RESTART;
         end if;
 
-      when TRAP_EXIT => -- Return from trap environment and jump to xEPC
+      when TRAP_EXIT => -- return from trap environment and jump to xEPC
       -- ------------------------------------------------------------
         trap_ctrl.env_exit       <= '1';
         execute_engine.state_nxt <= RESTART;
@@ -856,7 +856,7 @@ begin
         fetch_engine.reset       <= '1';
         execute_engine.state_nxt <= BRANCHED;
 
-      when EXECUTE => -- Decode and execute instruction (control will be here for exactly 1 cycle in any case)
+      when EXECUTE => -- decode and execute instruction (control will be here for exactly 1 cycle in any case)
       -- [NOTE] register file is read in this stage; due to the sync read, data will be available in the _next_ state
       -- ------------------------------------------------------------
         case decode_aux.opcode is
@@ -977,9 +977,8 @@ begin
 
       when BRANCHED => -- delay cycle to wait for reset of pipeline front-end (instruction fetch)
       -- ------------------------------------------------------------
+        ctrl_nxt.rf_zero_we      <= not bool_to_ulogic_f(REGFILE_HW_RST); -- house keeping: force writing zero to x0 if it's a phys. register
         execute_engine.state_nxt <= DISPATCH;
-        -- house keeping: use this state also to (re-)initialize the register file's x0/zero register --
-        ctrl_nxt.rf_zero_we <= not bool_to_ulogic_f(REGFILE_HW_RST); -- force write access to x0 if it is a physical register
 
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
