@@ -1858,7 +1858,13 @@ int main() {
         (neorv32_cpu_csr_read(CSR_MEPC) == neorv32_cpu_csr_read(CSR_TDATA2)) && // mepc has to be set to the triggering instruction address
         (neorv32_cpu_csr_read(CSR_TDATA1) & (1 << 22)) && // trigger has fired
         (hw_brk_mscratch_ok == 1)) { // make sure mepc was correct in trap handler
-      test_ok();
+      neorv32_cpu_csr_clr(CSR_TDATA1, 1 << 22); // clear pending trigger hit flag
+      if (neorv32_cpu_csr_read(CSR_TDATA1) & (1 << 22)) { // fail if falg is still set
+        test_fail();
+      }
+      else {
+        test_ok();
+      }
     }
     else {
       test_fail();
