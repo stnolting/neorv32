@@ -1,8 +1,6 @@
 -- ================================================================================ --
 -- NEORV32 CPU - Arithmetic/Logic Unit                                              --
 -- -------------------------------------------------------------------------------- --
--- Main data/address ALU and ALU co-processors (= multi-cycle function units).      --
--- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
 -- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --

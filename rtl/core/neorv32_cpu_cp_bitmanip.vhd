@@ -2,9 +2,9 @@
 -- NEORV32 CPU - Co-Processor: Bit-Manip. Co-Processor Unit (RISC-V "B" Extension)  --
 -- -------------------------------------------------------------------------------- --
 -- RISC-V "B" ISA Extension = Zba + Zbb + Zbs                                       --
--- + Zba: Address-generation instructions                                           --
--- + Zbb: Basic bit-manipulation instructions                                       --
--- + Zbs: Single-bit instructions                                                   --
+--  Zba: Address-generation instructions                                            --
+--  Zbb: Basic bit-manipulation instructions                                        --
+--  Zbs: Single-bit instructions                                                    --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
