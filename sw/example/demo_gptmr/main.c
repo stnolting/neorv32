@@ -89,7 +89,7 @@ int main() {
   // install GPTMR interrupt handler
   neorv32_rte_handler_install(GPTMR_RTE_ID, gptmr_firq_handler);
 
-  // configure timer for 1Hz ticks with clock divisor = 8 and enable timer-match interrupt
+  // configure timer for 0.5Hz ticks with clock divisor = 8 and enable timer-match interrupt
   neorv32_gptmr_setup(CLK_PRSC_8, NEORV32_SYSINFO->CLK / (8 * 2), 1);
 
   // enable interrupt
