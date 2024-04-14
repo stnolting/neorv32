@@ -982,18 +982,17 @@ begin
 
       when MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
-        if (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- abort if illegal instruction
-          execute_engine.state_nxt <= DISPATCH;
-        else
-          ctrl_nxt.lsu_req         <= '1'; -- memory access request
-          execute_engine.state_nxt <= MEM_WAIT;
+        if (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- memory request only if not an illegal instruction
+          ctrl_nxt.lsu_req <= '1'; -- memory access request
         end if;
+        execute_engine.state_nxt <= MEM_WAIT;
 
       when MEM_WAIT => -- wait for bus transaction to finish
       -- ------------------------------------------------------------
         if (lsu_wait_i = '0') or -- bus system has completed the transaction
            (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
-           (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') then -- alignment exception
+           (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
+           (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- illegal instruction exception
           if ((CPU_EXTENSION_RISCV_A = true) and (decode_aux.opcode(2) = opcode_amo_c(2))) or -- atomic operation
              (execute_engine.ir(instr_opcode_msb_c-1) = '0') then -- normal load
             ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file (won't happen in case of exception)
@@ -1009,22 +1008,30 @@ begin
 
       when others => -- SYSTEM - system environment operation; no effect if illegal instruction
       -- ------------------------------------------------------------
-        execute_engine.state_nxt <= DISPATCH; -- default
         if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and -- ENVIRONMENT
            (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- not an illegal instruction
-          case execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c) is
-            when funct12_ecall_c                 => trap_ctrl.ecall          <= '1'; -- ecall
-            when funct12_ebreak_c                => trap_ctrl.ebreak         <= '1'; -- ebreak
-            when funct12_mret_c | funct12_dret_c => execute_engine.state_nxt <= TRAP_EXIT; -- mret/dret
-            when others                          => execute_engine.state_nxt <= SLEEP; -- "funct12_wfi_c" - wfi/sleep
-          end case;
+          -- three LSBs are sufficient to distinguish environment instructions --
+          if (execute_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = "000") then
+            trap_ctrl.ecall <= '1'; -- ecall
+          end if;
+          if (execute_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = "001") then
+            trap_ctrl.ebreak <= '1'; -- ebreak
+          end if;
+          if (execute_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = "010") then
+            execute_engine.state_nxt <= TRAP_EXIT; -- xret
+          elsif (execute_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = "101") then
+            execute_engine.state_nxt <= SLEEP; -- wfi
+          else
+            execute_engine.state_nxt <= DISPATCH; -- default
+          end if;
         else -- CSR ACCESS - no state change if illegal instruction
           if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
              (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
              (decode_aux.rs1_zero = '0') then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
             csr.we_nxt <= '1';
           end if;
-          ctrl_nxt.rf_wb_en <= '1'; -- valid RF write-back
+          ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back
+          execute_engine.state_nxt <= DISPATCH;
         end if;
 
     end case;
@@ -1475,7 +1482,6 @@ begin
       elsif (trap_ctrl.irq_buf(irq_mei_irq_c)  = '1') then trap_ctrl.cause <= trap_mei_c; -- machine external interrupt (MEI)
       elsif (trap_ctrl.irq_buf(irq_msi_irq_c)  = '1') then trap_ctrl.cause <= trap_msi_c; -- machine software interrupt (MSI)
       elsif (trap_ctrl.irq_buf(irq_mti_irq_c)  = '1') then trap_ctrl.cause <= trap_mti_c; -- machine timer interrupt (MTI)
-      --
       else trap_ctrl.cause <= (others => '0'); end if;
     end if;
   end process trap_priority;
