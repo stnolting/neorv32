@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Link |
 |:----:|:-------:|:--------|:----:|
+| 14.04.2024 | 1.9.8.2 | :warning: rename SLINK data interface registers; minor CPU control logic/area optimizations | [#874](https://github.com/stnolting/neorv32/pull/874) |
 | 13.04.2024 | 1.9.8.1 | minor rtl code cleanups and optimizations | [#872](https://github.com/stnolting/neorv32/pull/872) |
 | 04.04.2024 | [**:rocket:1.9.8**](https://github.com/stnolting/neorv32/releases/tag/v1.9.8) | **New release** | |
 | 04.04.2024 | 1.9.7.10 | extend SPI and SDI interrupt conditions | [#870](https://github.com/stnolting/neorv32/pull/870) |
