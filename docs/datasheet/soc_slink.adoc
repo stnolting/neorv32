@@ -54,14 +54,14 @@ The interface names and the underlying protocol is compatible to the AXI4-Stream
 **Theory of Operation**
 
 The SLINK provides four interface registers. The control register (`CTRL`) is used to configure
-the module and to check its status. Three individual data registers (`RX_DATA`, `TX_DATA`, `TX_DATA_LAST`)
+the module and to check its status. Two individual data registers (`DATA` and `DATA_LAST`)
 are used to send and receive the link's actual data stream.
 
-The `RX_DATA` register provides direct access to the RX link FIFO buffer. After reading data from this register
-the control register's `SLINK_CTRL_RX_LAST` flag can be checked to determine if the according data word has been marked
-as "end of stream" via the `slink_rx_lst_i` signal (this signal is also buffered by the link's FIFO).
-
-Writing to the `TX_DATA` or `TX_DATA_LAST` register will immediately write to the TX link FIFO buffer.
+The `DATA` register provides direct access to the RX/TX FIFO buffers. Read accesses return data from the RX FIFO.
+After reading data from this register the control register's `SLINK_CTRL_RX_LAST` flag can be checked to determine
+if the according data word has been marked as "end of stream" via the `slink_rx_lst_i` signal (this signal is also
+buffered by the link's FIFO).
+Writing to the `DATA` register will immediately write to the TX link FIFO.
 When writing to the `TX_DATA_LAST` the according data word will also be marked as "end of stream" via the
 `slink_tx_lst_o` signal (this signal is also buffered by the link's FIFO).
 
@@ -121,7 +121,7 @@ interrupt-causing condition is resolved (e.g. by reading from the RX FIFO).
                                                 <| `23:22` _reserved_                                        ^| r/- <| _reserved_, read as zero
                                                 <| `27:24` `SLINK_CTRL_RX_FIFO_MSB : SLINK_CTRL_RX_FIFO_LSB` ^| r/- <| log2(RX FIFO size)
                                                 <| `31:28` `SLINK_CTRL_TX_FIFO_MSB : SLINK_CTRL_TX_FIFO_LSB` ^| r/- <| log2(TX FIFO size)
-| `0xffffec04` | `NEORV32_SLINK.RX_DATA`      | `31:0` | r/- | Read word from RX link FIFO
-| `0xffffec08` | `NEORV32_SLINK.TX_DATA`      | `31:0` | -/w | Write word to TX link FIFO
-| `0xffffec0c` | `NEORV32_SLINK.TX_DATA_LAST` | `31:0` | -/w | Write word to TX link FIFO and also set "end-of-stream" delimiter
+| `0xffffec04` | -                         | `31:0` | -/- | _reserved_
+| `0xffffec08` | `NEORV32_SLINK.DATA`      | `31:0` | r/w | Write data to TX FIFO; read data from RX FIFO
+| `0xffffec0c` | `NEORV32_SLINK.DATA_LAST` | `31:0` | r/w | Write data to TX FIFO (and also set "last" signal); read data from RX FIFO
 |=======================

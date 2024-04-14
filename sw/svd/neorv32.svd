@@ -349,19 +349,13 @@
           </fields>
         </register>
         <register>
-          <name>RX_DATA</name>
-          <description>RX link receive data</description>
-           <access>read-only</access>
-          <addressOffset>0x04</addressOffset>
-        </register>
-        <register>
-          <name>TX_DATA</name>
-          <description>TX link transmit data</description>
+          <name>DATA</name>
+          <description>RX/TX data register</description>
           <addressOffset>0x08</addressOffset>
         </register>
         <register>
-          <name>TX_DATA_LAST</name>
-          <description>TX link transmit data (plus end-of-stream delimiter)</description>
+          <name>DATA_LAST</name>
+          <description>RX/TX data register (plus TX end-of-stream delimiter)</description>
           <addressOffset>0x0c</addressOffset>
         </register>
       </registers>

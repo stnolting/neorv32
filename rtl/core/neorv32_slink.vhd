@@ -1,38 +1,16 @@
--- #################################################################################################
--- # << NEORV32 - Stream Link Interface (SLINK) >>                                                 #
--- # ********************************************************************************************* #
--- # Two independent stream links for RX and TX each equipped with a configurable FIFO and         #
--- # individually programmable interrupt conditions (based on the FIFO status flags).              #
--- # ********************************************************************************************* #
--- # BSD 3-Clause License                                                                          #
--- #                                                                                               #
--- # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
--- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
--- #                                                                                               #
--- # Redistribution and use in source and binary forms, with or without modification, are          #
--- # permitted provided that the following conditions are met:                                     #
--- #                                                                                               #
--- # 1. Redistributions of source code must retain the above copyright notice, this list of        #
--- #    conditions and the following disclaimer.                                                   #
--- #                                                                                               #
--- # 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
--- #    conditions and the following disclaimer in the documentation and/or other materials        #
--- #    provided with the distribution.                                                            #
--- #                                                                                               #
--- # 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
--- #    endorse or promote products derived from this software without specific prior written      #
--- #    permission.                                                                                #
--- #                                                                                               #
--- # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
--- # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
--- # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
--- # COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
--- # EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
--- # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
--- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
--- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
--- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
--- #################################################################################################
+-- ================================================================================ --
+-- NEORV32 SoC - Stream Link Interface (SLINK)                                      --
+-- -------------------------------------------------------------------------------- --
+-- Two independent stream links for RX and TX each equipped with a configurable     --
+-- FIFO and individually programmable interrupt conditions (based on the FIFO       --
+-- status flags).                                                                   --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -68,12 +46,6 @@ entity neorv32_slink is
 end neorv32_slink;
 
 architecture neorv32_slink_rtl of neorv32_slink is
-
-  -- memory-mapped interface registers --
-  constant addr_ctrl_c    : std_ulogic_vector(1 downto 0) := "00"; -- control register
-  constant addr_rx_c      : std_ulogic_vector(1 downto 0) := "01"; -- RX data
-  constant addr_tx_c      : std_ulogic_vector(1 downto 0) := "10"; -- TX data
-  constant addr_tx_last_c : std_ulogic_vector(1 downto 0) := "11"; -- TX data + last-delimiter
 
   -- control register --
   constant ctrl_en_c            : natural :=  0; -- r/w: Global module enable
@@ -115,16 +87,16 @@ architecture neorv32_slink_rtl of neorv32_slink is
   end record;
   signal ctrl : ctrl_t;
 
-  -- RX end-of-stream indicator --
-  signal rx_last : std_ulogic;
+  -- stream attributes --
+  signal rx_last : std_ulogic; -- RX end-of-stream indicator
 
   -- FIFO interface --
   type fifo_t is record
     we    : std_ulogic; -- write enable
     re    : std_ulogic; -- read enable
     clear : std_ulogic; -- sync reset, high-active
-    wdata : std_ulogic_vector(32 downto 0); -- write data + last-flag
-    rdata : std_ulogic_vector(32 downto 0); -- read data + last-flag
+    wdata : std_ulogic_vector((1+32)-1 downto 0); -- last + data
+    rdata : std_ulogic_vector((1+32)-1 downto 0); -- last + data
     avail : std_ulogic; -- data available?
     free  : std_ulogic; -- free entry available?
     half  : std_ulogic; -- half full
@@ -163,7 +135,8 @@ begin
       if (bus_req_i.stb = '1') then
         -- write access --
         if (bus_req_i.rw = '1') then
-          if (bus_req_i.addr(3 downto 2) = addr_ctrl_c) then -- control register
+          -- control register --
+          if (bus_req_i.addr(3 downto 2) = "00") then
             ctrl.enable <= bus_req_i.data(ctrl_en_c);
             ctrl.rx_clr <= bus_req_i.data(ctrl_rx_clr_c);
             ctrl.tx_clr <= bus_req_i.data(ctrl_tx_clr_c);
@@ -177,30 +150,31 @@ begin
           end if;
         -- read access --
         else
-          if (bus_req_i.addr(3 downto 2) = addr_ctrl_c) then -- control register
-            bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
-            --
-            bus_rsp_o.data(ctrl_rx_last_c) <= rx_last;
-            --
-            bus_rsp_o.data(ctrl_rx_empty_c) <= not rx_fifo.avail;
-            bus_rsp_o.data(ctrl_rx_half_c)  <= rx_fifo.half;
-            bus_rsp_o.data(ctrl_rx_full_c)  <= not rx_fifo.free;
-            bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
-            bus_rsp_o.data(ctrl_tx_half_c)  <= tx_fifo.half;
-            bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
-            --
-            bus_rsp_o.data(ctrl_irq_rx_nempty_c) <= ctrl.irq_rx_nempty;
-            bus_rsp_o.data(ctrl_irq_rx_half_c)   <= ctrl.irq_rx_half;
-            bus_rsp_o.data(ctrl_irq_rx_full_c)   <= ctrl.irq_rx_full;
-            bus_rsp_o.data(ctrl_irq_tx_empty_c)  <= ctrl.irq_tx_empty;
-            bus_rsp_o.data(ctrl_irq_tx_nhalf_c)  <= ctrl.irq_tx_nhalf;
-            bus_rsp_o.data(ctrl_irq_tx_nfull_c)  <= ctrl.irq_tx_nfull;
-            --
-            bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_RX_FIFO), 4));
-            bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_TX_FIFO), 4));
-          else -- RX (TX) data register
-            bus_rsp_o.data <= rx_fifo.rdata(31 downto 0);
-          end if;
+          case bus_req_i.addr(3 downto 2) is
+            when "00" => -- control register
+              bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
+              --
+              bus_rsp_o.data(ctrl_rx_last_c) <= rx_last;
+              --
+              bus_rsp_o.data(ctrl_rx_empty_c) <= not rx_fifo.avail;
+              bus_rsp_o.data(ctrl_rx_half_c)  <= rx_fifo.half;
+              bus_rsp_o.data(ctrl_rx_full_c)  <= not rx_fifo.free;
+              bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
+              bus_rsp_o.data(ctrl_tx_half_c)  <= tx_fifo.half;
+              bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
+              --
+              bus_rsp_o.data(ctrl_irq_rx_nempty_c) <= ctrl.irq_rx_nempty;
+              bus_rsp_o.data(ctrl_irq_rx_half_c)   <= ctrl.irq_rx_half;
+              bus_rsp_o.data(ctrl_irq_rx_full_c)   <= ctrl.irq_rx_full;
+              bus_rsp_o.data(ctrl_irq_tx_empty_c)  <= ctrl.irq_tx_empty;
+              bus_rsp_o.data(ctrl_irq_tx_nhalf_c)  <= ctrl.irq_tx_nhalf;
+              bus_rsp_o.data(ctrl_irq_tx_nfull_c)  <= ctrl.irq_tx_nfull;
+              --
+              bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_RX_FIFO), 4));
+              bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_TX_FIFO), 4));
+            when others => -- RTX data register
+              bus_rsp_o.data <= rx_fifo.rdata(31 downto 0);
+          end case;
         end if;
       end if;
     end if;
@@ -212,7 +186,7 @@ begin
   rx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => SLINK_RX_FIFO,
-    FIFO_WIDTH => 32+1,  -- data + last-flag
+    FIFO_WIDTH => 1+32,  -- last + data
     FIFO_RSYNC => false, -- "async" read - update FIFO status RIGHT after write access (for slink_rx_ready_o)
     FIFO_SAFE  => true,  -- safe access
     FULL_RESET => false  -- no HW reset, try to infer BRAM
@@ -234,15 +208,15 @@ begin
   );
 
   rx_fifo.clear <= (not ctrl.enable) or ctrl.rx_clr;
-  rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3 downto 2) = addr_rx_c) else '0';
+  rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3) = '1') else '0';
 
   rx_fifo.we                 <= slink_rx_valid_i;
   rx_fifo.wdata(31 downto 0) <= slink_rx_data_i;
   rx_fifo.wdata(32)          <= slink_rx_last_i;
   slink_rx_ready_o           <= rx_fifo.free;
 
-  -- backup current RX last indicator for current access --
-  rx_last_flag: process(rstn_i, clk_i)
+  -- backup RX attributes for current access --
+  rx_attributes: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       rx_last <= '0';
@@ -253,7 +227,7 @@ begin
         rx_last <= rx_fifo.rdata(32);
       end if;
     end if;
-  end process rx_last_flag;
+  end process rx_attributes;
 
   -- interrupt generator --
   rx_interrupt: process(rstn_i, clk_i)
@@ -274,7 +248,7 @@ begin
   tx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => SLINK_TX_FIFO,
-    FIFO_WIDTH => 32+1,  -- data + last-flag
+    FIFO_WIDTH => 1+32,  -- last + data
     FIFO_RSYNC => false, -- "async" read - update FIFO status RIGHT after read access (for slink_tx_valid_o)
     FIFO_SAFE  => true,  -- safe access
     FULL_RESET => false  -- no HW reset, try to infer BRAM
@@ -297,11 +271,11 @@ begin
 
   tx_fifo.clear <= (not ctrl.enable) or ctrl.tx_clr;
   tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3) = '1') else '0';
-  tx_fifo.wdata <= bus_req_i.addr(2) & bus_req_i.data; -- last-flag is set implicitly via access address (TX/TX_LAST register)
+  tx_fifo.wdata <= bus_req_i.addr(2) & bus_req_i.data; -- last-flag is set implicitly via access address (RTX_LAST register)
 
   tx_fifo.re       <= slink_tx_ready_i;
   slink_tx_data_o  <= tx_fifo.rdata(31 downto 0);
-  slink_tx_last_o  <= tx_fifo.rdata(32) and tx_fifo.avail;
+  slink_tx_last_o  <= tx_fifo.rdata(32);
   slink_tx_valid_o <= tx_fifo.avail;
 
   -- interrupt generator --

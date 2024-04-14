@@ -131,7 +131,7 @@ int neorv32_slink_get_tx_fifo_depth(void) {
  **************************************************************************/
 inline uint32_t __attribute__((always_inline)) neorv32_slink_get(void) {
 
-  return NEORV32_SLINK->RX_DATA;
+  return NEORV32_SLINK->DATA;
 }
 
 
@@ -156,7 +156,7 @@ inline uint32_t __attribute__((always_inline)) neorv32_slink_check_last(void) {
  **************************************************************************/
 inline void __attribute__((always_inline)) neorv32_slink_put(uint32_t tx_data) {
 
-  NEORV32_SLINK->TX_DATA = tx_data;
+  NEORV32_SLINK->DATA = tx_data;
 }
 
 
@@ -168,7 +168,7 @@ inline void __attribute__((always_inline)) neorv32_slink_put(uint32_t tx_data) {
  **************************************************************************/
 inline void __attribute__((always_inline)) neorv32_slink_put_last(uint32_t tx_data) {
 
-  NEORV32_SLINK->TX_DATA_LAST = tx_data;
+  NEORV32_SLINK->DATA_LAST = tx_data;
 }
 
 

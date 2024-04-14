@@ -94,7 +94,7 @@ architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
 begin
 
   -- **************************************************************************************************************************
-  -- This controller is required to handle the CFU <-> CPU interface.
+  -- This controller is required to handle the CFU-CPU interface.
   -- **************************************************************************************************************************
 
   -- CFU Controller -------------------------------------------------------------------------
@@ -205,9 +205,14 @@ begin
   -- several clock cycles for internal processing, the <start_i> signal can be used to *start* a new iterative operation. As soon
   -- as all internal computations have completed, the <control.done> signal has to be set to indicate completion. This will
   -- complete CFU instruction operation and will also write the processing result <control.result> back to the CPU register file.
-  --
-  -- [NOTE] If the <control.done> signal is not set within a bound time window (default = 512 cycles) the CFU operation is
-  --        automatically terminated by the hardware and an illegal instruction exception is raised. This feature can also be
+
+  -- ----------------------------------------------------------------------------------------
+  -- CFU Exception
+  -- ----------------------------------------------------------------------------------------
+  -- The CFU does not provide a dedicated exception mechanism. However, if the <control.done> signal is not set within a bound
+  -- time window (default = 512 cycles; see "monitor_mc_tmo_c" constant in the main NEORV32 package file) the CFU operation is
+  -- automatically terminated by the hardware and an **illegal instruction exception** is raised. This default mechanism combined
+  -- with according software handling can be used to "emulate" dedicated CFU exceptions.
 
   -- ----------------------------------------------------------------------------------------
   -- CFU-Internal Control and Status Registers (CFU-CSRs)
@@ -320,9 +325,12 @@ begin
           when xtea_enc_v0_c | xtea_enc_v1_c | xtea_dec_v0_c | xtea_dec_v1_c => -- encryption/decryption
             control.result <= xtea.res; -- processing result
             control.done   <= xtea.done(xtea.done'left); -- multi-cycle processing done when set
-          when others => -- initialization and all further unspecified operations
+          when xtea_init_c => -- initialization
             control.result <= (others => '0'); -- just output zero
             control.done   <= '1'; -- pure-combinatorial, so we are done "immediately"
+          when others => -- all unspecified operations
+            control.result <= (others => '0'); -- no logic implemented
+            control.done   <= '0'; -- this will cause an illegal instruction exception after timeout
         end case;
 
       when r4type_c => -- R4-type instructions; function select via "funct3"
