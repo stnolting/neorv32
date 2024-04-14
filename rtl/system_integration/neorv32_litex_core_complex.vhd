@@ -1,70 +1,31 @@
--- #################################################################################################
--- # << The NEORV32 RISC-V Processor - LiteX NEORV32 Core Complex Wrapper >>                       #
--- # ********************************************************************************************* #
--- #                                      __   _ __      _  __                                     #
--- #                                     / /  (_) /____ | |/_/                                     #
--- #                                    / /__/ / __/ -_)>  <                                       #
--- #                                   /____/_/\__/\__/_/|_|                                       #
--- #                                 Build your hardware, easily!                                  #
--- #                                                                                               #
--- # Unless otherwise noted, LiteX is copyright (C) 2012-2022 Enjoy-Digital. All rights reserved.  #
--- # LiteX HQ: https://github.com/enjoy-digital/litex                                              #
--- #                                                                                               #
--- # ********************************************************************************************* #
--- # NEORV32 Core Complex wrapper for the LiteX SoC builder framework.                             #
--- # https://github.com/enjoy-digital/litex/tree/master/litex/soc/cores/cpu/neorv32                #
--- #                                                                                               #
--- # This wrapper provides four pre-configured core complex configurations: "minimal", "lite",     #
--- # "standard" and "full". See the 'configs_c' table for more details which RISC-V ISA extensions #
--- # and module parameters are used by each of the these configurations. All configurations can be #
--- # used with the RISC-V-compatible on-chip debugger ("DEBUG").                                   #
--- #                                                                                               #
--- # === Bus Interface ===                                                                         #
--- # This wrappers uses the "pipelined" Wishbone b4 protocol for the bus interface. See the        #
--- # "global configuration" constants for further bus configuration parameters (endianness,        #
--- # timeout, etc.).                                                                               #
--- #                                                                                               #
--- # === Interrupt ====                                                                            #
--- # The external interrupt signal is delegated to the CPU as RISC-V "machine external interrupt   #
--- # (MTI)". Note that this IRQ signal is high-active - once set the signal has to stay high until #
--- # the interrupt request is explicitly acknowledged (e.g. writing to a memory-mapped register)!  #
--- #                                                                                               #
--- # === Core Complex Address Space ===                                                            #
--- # Note that the NEORV32 core complex occupies a small fraction of the total 32-bit address      #
--- # space for internal components (machine timer, on-chip-debugger, ...). This address space      #
--- # starts at address 0xffff0000 and ends at 0xffffffff. Any CPU access to this address space     #
--- # will NOT be delegated to bus interface of the core complex!                                   #
--- # ********************************************************************************************* #
--- # BSD 3-Clause License                                                                          #
--- #                                                                                               #
--- # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
--- #                                                                                               #
--- # Redistribution and use in source and binary forms, with or without modification, are          #
--- # permitted provided that the following conditions are met:                                     #
--- #                                                                                               #
--- # 1. Redistributions of source code must retain the above copyright notice, this list of        #
--- #    conditions and the following disclaimer.                                                   #
--- #                                                                                               #
--- # 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
--- #    conditions and the following disclaimer in the documentation and/or other materials        #
--- #    provided with the distribution.                                                            #
--- #                                                                                               #
--- # 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
--- #    endorse or promote products derived from this software without specific prior written      #
--- #    permission.                                                                                #
--- #                                                                                               #
--- # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
--- # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
--- # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
--- # COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
--- # EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
--- # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
--- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
--- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
--- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
--- # ********************************************************************************************* #
--- # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
--- #################################################################################################
+-- ================================================================================ --
+-- The NEORV32 RISC-V Processor - LiteX NEORV32 Core Complex Wrapper                --
+-- -------------------------------------------------------------------------------- --
+--                                __   _ __      _  __                              --
+--                               / /  (_) /____ | |/_/                              --
+--                              / /__/ / __/ -_)>  <                                --
+--                             /____/_/\__/\__/_/|_|                                --
+--                           Build your hardware, easily!                           --
+--                                                                                  --
+-- Unless otherwise noted, LiteX is copyright (C) 2012-2024 Enjoy-Digital.          --
+-- All rights reserved.                                                             --
+-- LiteX HQ: https://github.com/enjoy-digital/litex                                 --
+-- -------------------------------------------------------------------------------- --
+-- NEORV32 Core Complex wrapper for the LiteX SoC builder framework.                --
+-- https://github.com/enjoy-digital/litex/tree/master/litex/soc/cores/cpu/neorv32   --
+--                                                                                  --
+-- This wrapper provides four pre-configured core complex configurations:           --
+-- "minimal", "lite", "standard" and "full". See the 'configs_c' table for more     --
+-- details which RISC-V ISA extensions and module parameters are used by each of    --
+-- the these configurations. All configurations can be used with the                --
+--  RISC-V-compatible on-chip debugger ("DEBUG").                                   --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
 
 library ieee;
 use ieee.std_logic_1164.all;
