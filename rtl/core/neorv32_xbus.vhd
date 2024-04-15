@@ -121,7 +121,7 @@ begin
   xbus_cyc_o <= bus_req.stb or pending;
 
   -- response gating --
-  bus_rsp.data <= xbus_dat_i when (pending = '1') else (others => '0');
+  bus_rsp.data <= xbus_dat_i when (pending = '1') and (bus_req.rw = '0') else (others => '0'); -- no read-back if READ operation
   bus_rsp.ack  <= xbus_ack_i when (pending = '1') else '0';
   bus_rsp.err  <= (xbus_err_i or timeout) when (pending = '1') else '0';
 
