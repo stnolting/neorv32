@@ -73,11 +73,8 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
   constant hart_id_c  : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID ("core ID")
   constant jedec_id_c : std_ulogic_vector(10 downto 0) := "00000000000"; -- vendor's JEDEC manufacturer ID
 
-  -- advanced configuration --
+  -- configuration helpers --
   constant num_configs_c : natural := 4;    -- number of pre-defined configurations
-  constant wb_timeout_c  : natural := 1024; -- external bus interface timeout cycles
-
-  -- helpers --
   type bool_t is array (0 to num_configs_c-1) of boolean;
   type natural_t is array (0 to num_configs_c-1) of natural;
   type configs_t is record
@@ -112,6 +109,9 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     mtime        => ( false,   true,    true,    true  )  -- RISC-V machine system timer
   );
 
+  -- misc --
+  signal wb_cyc : std_ulogic:
+
 begin
 
   -- NEORV32 Core Complex -------------------------------------------------------------------
@@ -141,10 +141,8 @@ begin
     HPM_CNT_WIDTH              => 64,                             -- total size of HPM counters (0..64)
     -- External bus interface (XBUS) --
     XBUS_EN                    => true,                           -- implement external memory bus interface?
-    XBUS_TIMEOUT               => wb_timeout_c,                   -- cycles after a pending bus access auto-terminates (0 = disabled)
-    XBUS_PIPE_MODE             => false,                          -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    XBUS_ASYNC_RX              => true,                           -- use register buffer for RX data when false
-    XBUS_ASYNC_TX              => true,                           -- use register buffer for TX data when false
+    XBUS_TIMEOUT               => 1023,                           -- cycles after a pending bus access auto-terminates (0 = disabled)
+    XBUS_REGSTAGE_EN           => false,                          -- add XBUS register stage
     XBUS_CACHE_EN              => configs_c.xcache_en(CONFIG),    -- enable external bus cache (x-cache)
     XBUS_CACHE_NUM_BLOCKS      => configs_c.xcache_nb(CONFIG),    -- x-cache: number of blocks (min 1), has to be a power of 2
     XBUS_CACHE_BLOCK_SIZE      => configs_c.xcache_bs(CONFIG),    -- x-cache: block size in bytes (min 4), has to be a power of 2
@@ -167,13 +165,17 @@ begin
     xbus_dat_o  => wb_dat_o,    -- write data
     xbus_we_o   => wb_we_o,     -- read/write
     xbus_sel_o  => wb_sel_o,    -- byte enable
-    xbus_stb_o  => wb_stb_o,    -- strobe
-    xbus_cyc_o  => wb_cyc_o,    -- valid cycle
+    xbus_stb_o  => open,        -- strobe
+    xbus_cyc_o  => wb_cyc,      -- valid cycle
     xbus_ack_i  => wb_ack_i,    -- transfer acknowledge
     xbus_err_i  => wb_err_i,    -- transfer error
     -- CPU Interrupts --
     mext_irq_i  => mext_irq_i   -- machine external interrupt
   );
+
+  -- convert to "classic" Wishbone protocol (STB = CYC) --
+  wb_cyc_o <= wb_cyc;
+  wb_stb_o <= wb_cyc;
 
 
 end neorv32_litex_core_complex_rtl;
