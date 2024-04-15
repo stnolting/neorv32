@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090802"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090803"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -758,9 +758,7 @@ package neorv32_package is
       -- External bus interface (XBUS) --
       XBUS_EN                    : boolean                        := false;
       XBUS_TIMEOUT               : natural                        := 255;
-      XBUS_PIPE_MODE             : boolean                        := false;
-      XBUS_ASYNC_RX              : boolean                        := false;
-      XBUS_ASYNC_TX              : boolean                        := false;
+      XBUS_REGSTAGE_EN           : boolean                        := false;
       XBUS_CACHE_EN              : boolean                        := false;
       XBUS_CACHE_NUM_BLOCKS      : natural                        := 64;
       XBUS_CACHE_BLOCK_SIZE      : natural                        := 32;
