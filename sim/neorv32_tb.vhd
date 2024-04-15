@@ -237,9 +237,7 @@ begin
     -- External bus interface --
     XBUS_EN                      => true,          -- implement external memory bus interface?
     XBUS_TIMEOUT                 => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)
-    XBUS_PIPE_MODE               => false,         -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    XBUS_ASYNC_RX                => true,          -- use register buffer for RX data when false
-    XBUS_ASYNC_TX                => true,          -- use register buffer for TX data when false
+    XBUS_REGSTAGE_EN             => false,         -- add register stage
     XBUS_CACHE_EN                => true,          -- enable external bus cache (x-cache)
     XBUS_CACHE_NUM_BLOCKS        => 64,            -- x-cache: number of blocks (min 1), has to be a power of 2
     XBUS_CACHE_BLOCK_SIZE        => 32,            -- x-cache: block size in bytes (min 4), has to be a power of 2
