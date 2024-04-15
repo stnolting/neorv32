@@ -110,7 +110,7 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
   );
 
   -- misc --
-  signal wb_cyc : std_ulogic:
+  signal wb_cyc : std_ulogic;
 
 begin
 
