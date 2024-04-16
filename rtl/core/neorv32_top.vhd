@@ -86,9 +86,7 @@ entity neorv32_top is
     -- External bus interface (XBUS) --
     XBUS_EN                    : boolean                        := false;       -- implement external memory bus interface?
     XBUS_TIMEOUT               : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
-    XBUS_PIPE_MODE             : boolean                        := false;       -- protocol: false=classic/standard wishbone mode, true=pipelined wishbone mode
-    XBUS_ASYNC_RX              : boolean                        := false;       -- use register buffer for RX data when false
-    XBUS_ASYNC_TX              : boolean                        := false;       -- use register buffer for TX data when false
+    XBUS_REGSTAGE_EN           : boolean                        := false;       -- add XBUS register stage
     XBUS_CACHE_EN              : boolean                        := false;       -- enable external bus cache (x-cache)
     XBUS_CACHE_NUM_BLOCKS      : natural                        := 64;          -- x-cache: number of blocks (min 1), has to be a power of 2
     XBUS_CACHE_BLOCK_SIZE      : natural                        := 32;          -- x-cache: block size in bytes (min 4), has to be a power of 2
@@ -933,13 +931,11 @@ begin
     neorv32_xbus_inst_true:
     if XBUS_EN generate
 
-      -- bus gateway (Wishbone) --
+      -- external bus gateway (XBUS) --
       neorv32_xbus_inst: entity neorv32.neorv32_xbus
       generic map (
-        BUS_TIMEOUT => XBUS_TIMEOUT,
-        PIPE_MODE   => XBUS_PIPE_MODE,
-        ASYNC_RX    => XBUS_ASYNC_RX,
-        ASYNC_TX    => XBUS_ASYNC_TX
+        TIMEOUT_VAL => XBUS_TIMEOUT,
+        REGSTAGE_EN => XBUS_REGSTAGE_EN
       )
       port map (
         clk_i      => clk_i,

@@ -5,8 +5,8 @@
   {name: 'xbus_dat_o',  wave: 'x....|.x.'},
   {name: 'xbus_we_o',   wave: 'x0...|.x.'},
   {name: 'xbus_sel_o',  wave: 'x....|.x.'},
-  {name: 'xbus_stb_o',  wave: '01...|.0.'},
+  {name: 'xbus_stb_o',  wave: '010..|...'},
   {name: 'xbus_cyc_o',  wave: '01...|.0.'},
-  {name: 'xbus_ack_i',  wave: '0....|10.'},
-  {name: 'xbus_err_i',  wave: '0....|...'},
+  {name: 'xbus_ack_i',  wave: 'x0...|1x.'},
+  {name: 'xbus_err_i',  wave: 'x0...|.x.'},
 ]}
