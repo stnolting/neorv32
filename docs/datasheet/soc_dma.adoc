@@ -5,12 +5,12 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_dma.vhd |
-| Software driver file(s): | neorv32_dma.c |
-|                          | neorv32_dma.h |
-| Top entity port:         | none |
-| Configuration generics:  | `IO_DMA_EN` | implement DMA when `true`
-| CPU interrupts:          | fast IRQ channel 10 | DMA transfer done (see <<_processor_interrupts>>)
+| Hardware source files:  | neorv32_dma.vhd |
+| Software driver files:  | neorv32_dma.c |
+|                         | neorv32_dma.h |
+| Top entity ports:       | none |
+| Configuration generics: | `IO_DMA_EN` | implement DMA when `true`
+| CPU interrupts:         | fast IRQ channel 10 | DMA transfer done (see <<_processor_interrupts>>)
 |=======================
 
 
@@ -98,19 +98,18 @@ data quantity has to be set to **word** (32-bit) since all IO registers can only
 **Automatic Trigger**
 
 As an alternative to the manual trigger mode, the DMA can be configured to **automatic trigger mode** starting a pre-configured
-transfer if a specific processor-internal peripheral issues an interrupt request. The automatic trigger mode is enabled by
+transfer if a specific processor-internal peripheral issues a FIRQ interrupt request. The automatic trigger mode is enabled by
 setting the `CTRL` register's `DMA_CTRL_AUTO` bit. In this configuration _no_ transfer is started when writing to the DMA's
 `TTYPE` register.
 
-The actual trigger is configured via the control register `DMA_CTRL_FIRQ_MASK`. These bits reflect the state of the CPU's
-<<_mip>> CSR showing any pending fast interrupt requests (for a full list see <<_neorv32_specific_fast_interrupt_requests>>).
-The same bit definitions/locations as for the <<_mip>> and <<_mie>> CPU CSRs are used.
-If any of the enabled sources issues an interrupt the DMA will start the pre-configured transfer (note that all enabled
-sources are logically OR-ed).
+The actually triggering FIRQ channel is configured via the control register's `DMA_CTRL_FIRQ_SEL` bits. Writing a 0 will
+select FIRQ channel 0, writing a 1 will select FIRQ channel 1, and so on. See section <<_processor_interrupts>>
+for a list of all FIRQ channels and their according sources.
 
 .FIRQ Trigger
 [NOTE]
-The DMA transfer will start if a **rising edge** is detected on _any_ of the enabled FIRQ source channels.
+The DMA transfer will start if a **rising edge** is detected on the configured FIRQ channel. Hence, the DMA is triggered only
+once even if the selected FIRQ channel keeps pending.
 
 
 **Memory Barrier / Fence Operation**
@@ -135,16 +134,17 @@ register).
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xffffed00` .10+<| `CTRL` <|`0`     `DMA_CTRL_EN`                                     ^| r/w <| DMA module enable
-                                  <|`1`     `DMA_CTRL_AUTO`                                   ^| r/w <| Enable automatic mode (FIRQ-triggered)
-                                  <|`2`     `DMA_CTRL_FENCE`                                  ^| r/w <| Issue a downstream FENCE operation when DMA transfer completes (without errors)
-                                  <|`7:3`   _reserved_                                        ^| r/- <| reserved, read as zero
-                                  <|`8`     `DMA_CTRL_ERROR_RD`                               ^| r/- <| Error during read access, clears when starting a new transfer
-                                  <|`9`     `DMA_CTRL_ERROR_WR`                               ^| r/- <| Error during write access, clears when starting a new transfer
-                                  <|`10`    `DMA_CTRL_BUSY`                                   ^| r/- <| DMA transfer in progress
-                                  <|`11`    `DMA_CTRL_DONE`                                   ^| r/c <| Set if a transfer was executed; auto-clears on write-access
-                                  <|`15:12` _reserved_                                        ^| r/- <| reserved, read as zero
-                                  <|`31:16` `DMA_CTRL_FIRQ_MASK_MSB : DMA_CTRL_FIRQ_MASK_LSB` ^| r/w <| FIRQ trigger mask (same bits as in <<_mip>>)
+.11+<| `0xffffed00` .11+<| `CTRL` <|`0`     `DMA_CTRL_EN`                                   ^| r/w <| DMA module enable
+                                  <|`1`     `DMA_CTRL_AUTO`                                 ^| r/w <| Enable automatic mode (FIRQ-triggered)
+                                  <|`2`     `DMA_CTRL_FENCE`                                ^| r/w <| Issue a downstream FENCE operation when DMA transfer completes (without errors)
+                                  <|`7:3`   _reserved_                                      ^| r/- <| reserved, read as zero
+                                  <|`8`     `DMA_CTRL_ERROR_RD`                             ^| r/- <| Error during read access, clears when starting a new transfer
+                                  <|`9`     `DMA_CTRL_ERROR_WR`                             ^| r/- <| Error during write access, clears when starting a new transfer
+                                  <|`10`    `DMA_CTRL_BUSY`                                 ^| r/- <| DMA transfer in progress
+                                  <|`11`    `DMA_CTRL_DONE`                                 ^| r/c <| Set if a transfer was executed; auto-clears on write-access
+                                  <|`15:12` _reserved_                                      ^| r/- <| reserved, read as zero
+                                  <|`19:16` `DMA_CTRL_FIRQ_SEL_MSB : DMA_CTRL_FIRQ_SEL_LSB` ^| r/w <| FIRQ trigger select (FIRQ0=0 ... FIRQ15=15)
+                                  <|`31:20` _reserved_                                      ^| r/- <| reserved, read as zero
 | `0xffffed04` | `SRC_BASE` |`31:0` | r/w | Source base address (shows the last-accessed source address when read)
 | `0xffffed08` | `DST_BASE` |`31:0` | r/w | Destination base address (shows the last-accessed destination address when read)
 .6+<| `0xffffed0c` .6+<| `TTYPE` <|`23:0`  `DMA_TTYPE_NUM_MSB : DMA_TTYPE_NUM_LSB`   ^| r/w <| Number of elements to transfer (shows the last-transferred element index when read)
