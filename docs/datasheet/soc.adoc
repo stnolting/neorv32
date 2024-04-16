@@ -488,13 +488,18 @@ image::address_space.png[900]
 [NOTE]
 Physical memory attributes can be customized (constrained) using the CPU's <<_smpmp_isa_extension>>.
 
+
+:sectnums:
+==== Bus System
+
 The CPU can access all of the 32-bit address space from the instruction fetch interface and also from the data access
-interface. Both interfaces can be equipped with optional caches (<<_processor_internal_data_cache_dcache>> and
+interface. Both CPU interfaces can be equipped with optional caches (<<_processor_internal_data_cache_dcache>> and
 <<_processor_internal_instruction_cache_icache>>). The two CPU interfaces are multiplexed by a simple bus switch into
-a single processor-internal bus. Optionally, this bus is further switched by another instance of the bus switch so the
+a _single processor-internal bus_. Optionally, this bus is further switched by another instance of the bus switch so the
 <<_direct_memory_access_controller_dma>> controller can also access the entire address space. Accesses via the
-resulting SoC bus are split by the <<_bus_gateway>> that redirects accesses to the according main address regions.
-Accesses to the processor-internal IO/peripheral devices are further redirected via a dedicated <<_io_switch>>.
+resulting SoC bus are split by the <<_bus_gateway>> that redirects accesses to the according main address regions
+(see table above). Accesses to the processor-internal IO/peripheral devices are further redirected via a
+dedicated <<_io_switch>>.
 
 .Processor-Internal Bus Architecture
 image::neorv32_bus.png[1300]
@@ -514,15 +519,15 @@ customizable memory map implemented via VHDL constants in the main package file 
 .Main Address Regions Configuration in the VHDL Package File
 [source,vhdl]
 ----
-  -- Main Address Regions ---
-  constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via generic
-  constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via generic
-  constant mem_xip_base_c  : std_ulogic_vector(31 downto 0) := x"e0000000";
-  constant mem_xip_size_c  : natural := 256*1024*1024;
-  constant mem_boot_base_c : std_ulogic_vector(31 downto 0) := x"ffffc000";
-  constant mem_boot_size_c : natural := 8*1024;
-  constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffffe000";
-  constant mem_io_size_c   : natural := 8*1024;
+-- Main Address Regions ---
+constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000";
+constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000";
+constant mem_xip_base_c  : std_ulogic_vector(31 downto 0) := x"e0000000";
+constant mem_xip_size_c  : natural := 256*1024*1024;
+constant mem_boot_base_c : std_ulogic_vector(31 downto 0) := x"ffffc000";
+constant mem_boot_size_c : natural := 8*1024;
+constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffffe000";
+constant mem_io_size_c   : natural := 8*1024;
 ----
 
 Besides the delegation of bus requests the gateway also implements a bus monitor (aka "the bus keeper") that tracks all
