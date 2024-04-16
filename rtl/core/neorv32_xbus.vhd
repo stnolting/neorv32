@@ -48,6 +48,7 @@ architecture neorv32_xbus_rtl of neorv32_xbus is
 
   -- bus arbiter --
   signal pending     : std_ulogic;
+  signal bus_rw      : std_ulogic;
   signal timeout     : std_ulogic;
   signal timeout_cnt : std_ulogic_vector(index_size_f(TIMEOUT_VAL) downto 0);
 
@@ -94,6 +95,7 @@ begin
     if (rstn_i = '0') then
       pending     <= '0';
       timeout_cnt <= (others => '0');
+      bus_rw      <= '0';
     elsif rising_edge(clk_i) then
       if (pending = '0') then -- idle, waiting for request
         pending     <= bus_req.stb;
@@ -104,6 +106,7 @@ begin
         end if;
         timeout_cnt <= std_ulogic_vector(unsigned(timeout_cnt) - 1);
       end if;
+      bus_rw <= bus_req.rw;
     end if;
   end process arbiter;
 
@@ -121,7 +124,7 @@ begin
   xbus_cyc_o <= bus_req.stb or pending;
 
   -- response gating --
-  bus_rsp.data <= xbus_dat_i when (pending = '1') and (bus_req.rw = '0') else (others => '0'); -- no read-back if READ operation
+  bus_rsp.data <= xbus_dat_i when (pending = '1') and (bus_rw = '0') else (others => '0'); -- no read-back if READ operation
   bus_rsp.ack  <= xbus_ack_i when (pending = '1') else '0';
   bus_rsp.err  <= (xbus_err_i or timeout) when (pending = '1') else '0';
 
