@@ -50,8 +50,8 @@ architecture neorv32_dma_rtl of neorv32_dma is
   constant ctrl_busy_c          : natural := 10; -- r/-: DMA transfer in progress
   constant ctrl_done_c          : natural := 11; -- r/c: a DMA transfer was executed/attempted
   --
-  constant ctrl_firq_mask_lsb_c : natural := 16; -- r/w: FIRQ trigger mask LSB
-  constant ctrl_firq_mask_msb_c : natural := 31; -- r/w: FIRQ trigger mask MSB
+  constant ctrl_firq_sel_lsb_c  : natural := 16; -- r/w: FIRQ trigger select LSB
+  constant ctrl_firq_sel_msb_c  : natural := 19; -- r/w: FIRQ trigger select MSB
 
   -- transfer quantities --
   constant qsel_b2b_c  : std_ulogic_vector(1 downto 0) := "00"; -- byte to byte
@@ -64,7 +64,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
     enable    : std_ulogic; -- DMA enabled when set
     auto      : std_ulogic; -- FIRQ-driven auto transfer
     fence     : std_ulogic; -- issue FENCE operation when DMA is done
-    firq_mask : std_ulogic_vector(15 downto 0); -- FIRQ trigger mask
+    firq_sel  : std_ulogic_vector(03 downto 0); -- FIRQ trigger select
     src_base  : std_ulogic_vector(31 downto 0); -- source base address
     dst_base  : std_ulogic_vector(31 downto 0); -- destination base address
     num       : std_ulogic_vector(23 downto 0); -- number of elements
@@ -116,7 +116,7 @@ begin
       config.enable    <= '0';
       config.auto      <= '0';
       config.fence     <= '0';
-      config.firq_mask <= (others => '0');
+      config.firq_sel  <= (others => '0');
       config.src_base  <= (others => '0');
       config.dst_base  <= (others => '0');
       config.num       <= (others => '0');
@@ -143,7 +143,7 @@ begin
             config.auto      <= bus_req_i.data(ctrl_auto_c);
             config.fence     <= bus_req_i.data(ctrl_fence_c);
             config.done      <= '0'; -- clear on write access
-            config.firq_mask <= bus_req_i.data(ctrl_firq_mask_msb_c downto ctrl_firq_mask_lsb_c);
+            config.firq_sel <= bus_req_i.data(ctrl_firq_sel_msb_c downto ctrl_firq_sel_lsb_c);
           end if;
           if (bus_req_i.addr(3 downto 2) = "01") then -- source base address
             config.src_base <= bus_req_i.data;
@@ -169,7 +169,7 @@ begin
               bus_rsp_o.data(ctrl_error_wr_c) <= engine.err_wr;
               bus_rsp_o.data(ctrl_busy_c)     <= engine.busy;
               bus_rsp_o.data(ctrl_done_c)     <= config.done;
-              bus_rsp_o.data(ctrl_firq_mask_msb_c downto ctrl_firq_mask_lsb_c) <= config.firq_mask;
+              bus_rsp_o.data(ctrl_firq_sel_msb_c downto ctrl_firq_sel_lsb_c) <= config.firq_sel;
             when "01" => -- address of last read access
               bus_rsp_o.data <= engine.src_addr;
             when "10" => -- address of last write access
@@ -205,8 +205,8 @@ begin
     end if;
   end process automatic_trigger;
 
-  -- logical OR of all enabled trigger FIRQs --
-  match <= or_reduce_f(firq_buf and config.firq_mask);
+  -- select a single FIRQ --
+  match <= firq_buf(to_integer(unsigned(config.firq_sel)));
 
 
   -- Bus Access Engine ----------------------------------------------------------------------

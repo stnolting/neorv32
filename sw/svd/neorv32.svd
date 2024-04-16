@@ -422,9 +422,9 @@
               <description>DMA transfer done; auto-clears on write access</description>
             </field>
             <field>
-              <name>DMA_CTRL_FIRQ_MASK</name>
-              <bitRange>[31:16]</bitRange>
-              <description>FIRQ trigger mask</description>
+              <name>DMA_CTRL_FIRQ_SEL</name>
+              <bitRange>[19:16]</bitRange>
+              <description>FIRQ trigger select</description>
             </field>
           </fields>
         </register>
