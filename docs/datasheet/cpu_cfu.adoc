@@ -33,13 +33,17 @@ as "real world" application example.
 The custom instructions executed by the CFU utilize a specific opcode space in the `rv32` 32-bit instruction
 encoding space that has been explicitly reserved for user-defined extensions by the RISC-V specifications ("Guaranteed
 Non-Standard Encoding Space"). The NEORV32 CFU uses the `custom-*` opcodes to identify the instructions implemented
-by the CFU and to differentiate between the available instruction formats. The according binary encoding of these
+by the CFU and to differentiate between the predefined instruction formats. The according binary encoding of these
 opcodes is shown below:
 
 * `custom-0`: `0001011` RISC-V standard, used for <<_cfu_r3_type_instructions>>
 * `custom-1`: `0101011` RISC-V standard, used for <<_cfu_r4_type_instructions>>
 * `custom-2`: `1011011` NEORV32-specific, used for <<_cfu_r5_type_instructions>> type A
 * `custom-3`: `1111011` NEORV32-specific, used for <<_cfu_r5_type_instructions>> type B
+
+[TIP]
+The four presented instructions types/formats are predefined to allow an easy integration framework.
+However, system designers are free to ignore those and use their own instruction types and formats.
 
 
 :sectnums:
