@@ -149,12 +149,12 @@ entity neorv32_top is
 
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     : out std_ulogic_vector(31 downto 0); -- address
-    xbus_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- read data
     xbus_dat_o     : out std_ulogic_vector(31 downto 0); -- write data
     xbus_we_o      : out std_ulogic; -- read/write
     xbus_sel_o     : out std_ulogic_vector(03 downto 0); -- byte enable
     xbus_stb_o     : out std_ulogic; -- strobe
     xbus_cyc_o     : out std_ulogic; -- valid cycle
+    xbus_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- read data
     xbus_ack_i     : in  std_ulogic := 'L'; -- transfer acknowledge
     xbus_err_i     : in  std_ulogic := 'L'; -- transfer error
 

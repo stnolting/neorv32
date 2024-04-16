@@ -161,12 +161,12 @@ begin
     jtag_tms_i  => jtag_tms_i,  -- mode select
     -- External bus interface --
     xbus_adr_o  => wb_adr_o,    -- address
-    xbus_dat_i  => wb_dat_i,    -- read data
     xbus_dat_o  => wb_dat_o,    -- write data
     xbus_we_o   => wb_we_o,     -- read/write
     xbus_sel_o  => wb_sel_o,    -- byte enable
     xbus_stb_o  => open,        -- strobe
     xbus_cyc_o  => wb_cyc,      -- valid cycle
+    xbus_dat_i  => wb_dat_i,    -- read data
     xbus_ack_i  => wb_ack_i,    -- transfer acknowledge
     xbus_err_i  => wb_err_i,    -- transfer error
     -- CPU Interrupts --
