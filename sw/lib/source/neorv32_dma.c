@@ -175,5 +175,4 @@ int neorv32_dma_done(void) {
   else {
     return 0; // no transfer executed
   }
-
 }
