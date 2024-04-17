@@ -155,6 +155,9 @@ int main() {
       (dma_dst[3] != 0xffee1100)) {
     neorv32_uart0_printf("Incorrect DST data!\n");
   }
+  else {
+    neorv32_uart0_printf("Transfer succeeded!\n");
+  }
 
   show_arrays();
 
@@ -199,6 +202,9 @@ int main() {
       (dma_dst[3] != 0x66778899)) {
     neorv32_uart0_printf("Incorrect DST data!\n");
   }
+  else {
+    neorv32_uart0_printf("Transfer succeeded!\n");
+  }
 
   show_arrays();
 
@@ -236,6 +242,9 @@ int main() {
       (dma_dst[3] != 0x00000066)) {
     neorv32_uart0_printf("Transfer failed!\n");
   }
+  else {
+    neorv32_uart0_printf("Transfer succeeded!\n");
+  }
 
   show_arrays();
 
@@ -262,11 +271,11 @@ int main() {
           DMA_CMD_DST_INC;    // auto-increment destination address
 
     // configure automatic DMA transfer
-    neorv32_dma_transfer_auto((uint32_t)(&dma_src[3]),   // source array base address (data = 0xff)
-                              (uint32_t)(&dma_dst[0]),   // destination array base address
-                               16,                       // number of elements to transfer: 16
-                               cmd,                      // transfer type configuration
-                               1 << GPTMR_FIRQ_PENDING); // trigger transfer on pending GPTMR interrupt
+    neorv32_dma_transfer_auto((uint32_t)(&dma_src[3]), // source array base address (data = 0xff)
+                              (uint32_t)(&dma_dst[0]), // destination array base address
+                               16,                     // number of elements to transfer: 16
+                               cmd,                    // transfer type configuration
+                               GPTMR_FIRQ_PENDING);    // trigger transfer on pending GPTMR interrupt
 
     // sleep until interrupt (from DMA)
     neorv32_cpu_sleep();
@@ -280,6 +289,9 @@ int main() {
         (dma_dst[2] != 0xffffffff) ||
         (dma_dst[3] != 0xffffffff)) {
       neorv32_uart0_printf("Transfer failed!\n");
+    }
+    else {
+      neorv32_uart0_printf("Transfer succeeded!\n");
     }
 
     show_arrays();

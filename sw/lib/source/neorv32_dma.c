@@ -121,14 +121,14 @@ void neorv32_dma_transfer(uint32_t base_src, uint32_t base_dst, uint32_t num, ui
  * @param[in] base_dst Destination base address (has to be aligned to destination data type!).
  * @param[in] num Number of elements to transfer (24-bit).
  * @param[in] config Transfer type configuration/commands.
- * @param[in] firq_mask FIRQ trigger mask (#NEORV32_CSR_MIP_enum).
+ * @param[in] firq_sel FIRQ trigger select (#NEORV32_CSR_MIP_enum); only FIRQ0..FIRQ15 = 16..31.
  **************************************************************************/
-void neorv32_dma_transfer_auto(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config, uint32_t firq_mask) {
+void neorv32_dma_transfer_auto(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config, int firq_sel) {
 
   uint32_t tmp = NEORV32_DMA->CTRL;
   tmp |= (uint32_t)(1 << DMA_CTRL_AUTO); // automatic transfer trigger
-  tmp &= 0x0000ffffUL; // clear current FIRQ mask
-  tmp |= firq_mask & 0xffff0000UL; // set new FIRQ mask
+  tmp &= ~(0xf << DMA_CTRL_FIRQ_SEL_LSB); // clear current FIRQ select
+  tmp |= (uint32_t)((firq_sel & 0xf) << DMA_CTRL_FIRQ_SEL_LSB); // set new FIRQ select
   NEORV32_DMA->CTRL = tmp;
 
   NEORV32_DMA->SRC_BASE = base_src;
@@ -175,5 +175,4 @@ int neorv32_dma_done(void) {
   else {
     return 0; // no transfer executed
   }
-
 }

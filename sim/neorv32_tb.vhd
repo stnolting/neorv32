@@ -295,12 +295,12 @@ begin
     jtag_tms_i     => '0',             -- mode select
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     => wb_cpu.addr,     -- address
-    xbus_dat_i     => wb_cpu.rdata,    -- read data
     xbus_dat_o     => wb_cpu.wdata,    -- write data
     xbus_we_o      => wb_cpu.we,       -- read/write
     xbus_sel_o     => wb_cpu.sel,      -- byte enable
     xbus_stb_o     => wb_cpu.stb,      -- strobe
     xbus_cyc_o     => wb_cpu.cyc,      -- valid cycle
+    xbus_dat_i     => wb_cpu.rdata,    -- read data
     xbus_ack_i     => wb_cpu.ack,      -- transfer acknowledge
     xbus_err_i     => wb_cpu.err,      -- transfer error
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
