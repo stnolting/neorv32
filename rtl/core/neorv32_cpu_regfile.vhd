@@ -57,10 +57,8 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
 
   -- access --
   signal rf_we     : std_ulogic; -- write enable
-  signal rf_we_sel : std_ulogic_vector((2**addr_bits_c)-1 downto 0); -- one-hot write enable
   signal rd_zero   : std_ulogic; -- writing to x0?
   signal opa_addr  : std_ulogic_vector(4 downto 0); -- rs1/rd address
-  signal rd_addr   : std_ulogic_vector(4 downto 0); -- rd address
   signal rs3_addr  : std_ulogic_vector(4 downto 0); -- rs3 address
   signal rs4_addr  : std_ulogic_vector(4 downto 0); -- rs4 address
 
@@ -101,16 +99,6 @@ begin
   register_file_asic:
   if RST_EN generate
 
-    -- "write" to x0 if no write access --
-    rd_addr <= ctrl_i.rf_rd(addr_bits_c-1 downto 0) when (ctrl_i.rf_wb_en = '1') else (others => '0');
-
-    -- write enable decoder --
-    we_decode: process(rd_addr)
-    begin
-      rf_we_sel <= (others => '0');
-      rf_we_sel(to_integer(unsigned(rd_addr(addr_bits_c-1 downto 0)))) <= '1';
-    end process we_decode;
-
     -- individual registers --
     reg_gen:
     for i in 1 to (2**addr_bits_c)-1 generate
@@ -119,7 +107,7 @@ begin
         if (rstn_i = '0') then
           reg_file(i) <= (others => '0');
         elsif rising_edge(clk_i) then
-          if (rf_we_sel(i) = '1') then
+          if (unsigned(ctrl_i.rf_rd(addr_bits_c-1 downto 0)) = to_unsigned(i, addr_bits_c)) and (ctrl_i.rf_wb_en = '1') then
             reg_file(i) <= rd_i;
           end if;
         end if;
