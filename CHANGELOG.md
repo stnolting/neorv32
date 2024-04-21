@@ -27,8 +27,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 * :rocket: official release
 * Date format is "dd.mm.yyyy"
 
-| Date | Version | Comment | Link |
-|:----:|:-------:|:--------|:----:|
+| Date | Version | Comment | Ticket |
+|:----:|:-------:|:--------|:------:|
 | 21.04.2024 | 1.9.8.5 | rtl cleanups and (area) optimizations | [#880](https://github.com/stnolting/neorv32/pull/880) |
 | 16.04.2024 | 1.9.8.4 | :warning: use a 4-bit FIRQ select instead of a 16-bit FIRQ mask for DMA auto-trigger configuration | [#877](https://github.com/stnolting/neorv32/pull/877) |
 | 15.04.2024 | 1.9.8.3 | :warning: simplify XBUS gateway logic and configuration generics; only "pipelined Wishbone" protocol is supported now | [#876](https://github.com/stnolting/neorv32/pull/876) |
