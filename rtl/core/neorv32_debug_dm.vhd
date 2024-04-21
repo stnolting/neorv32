@@ -416,8 +416,8 @@ begin
           dm_reg.halt_req           <= dmi_req_i.data(31); -- haltreq (-/w): write 1 to request halt; has to be cleared again by debugger
           dm_reg.resume_req         <= dmi_req_i.data(30); -- resumereq (-/w1): write 1 to request resume; auto-clears
           dm_reg.reset_ack          <= dmi_req_i.data(28); -- ackhavereset (-/w1): write 1 to ACK reset; auto-clears
-          dm_reg.dmcontrol_ndmreset <= dmi_req_i.data(01); -- ndmreset (r/w): soc reset
-          dm_reg.dmcontrol_dmactive <= dmi_req_i.data(00); -- dmactive (r/w): DM reset
+          dm_reg.dmcontrol_ndmreset <= dmi_req_i.data(01); -- ndmreset (r/w): SoC reset when high
+          dm_reg.dmcontrol_dmactive <= dmi_req_i.data(00); -- dmactive (r/w): DM reset when low
         end if;
 
         -- write abstract command --
@@ -484,7 +484,7 @@ begin
   dci.data_we <= '1' when (dmi_wren = '1') and (dmi_req_i.addr = addr_data0_c) and (dm_ctrl.busy = '0') else '0';
 
   -- CPU halt/resume request --
-  cpu_halt_req_o <= dm_reg.halt_req and dm_reg.dmcontrol_dmactive; -- single-shot
+  cpu_halt_req_o <= dm_reg.halt_req and dm_reg.dmcontrol_dmactive;
   dci.resume_req <= dm_ctrl.hart_resume_req; -- active until explicitly cleared
 
   -- SoC reset --
