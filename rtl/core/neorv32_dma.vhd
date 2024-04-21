@@ -319,7 +319,7 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- endianness conversion --
-  align_end <= dma_rsp_i.data when (config.endian = '0') else bswap32_f(dma_rsp_i.data);
+  align_end <= dma_rsp_i.data when (config.endian = '0') else bswap_f(dma_rsp_i.data);
 
   -- source data alignment --
   src_align: process(rstn_i, clk_i)

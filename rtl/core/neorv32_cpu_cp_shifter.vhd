@@ -53,7 +53,7 @@ architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
   -- barrel shifter --
   type bs_level_t is array (index_size_f(XLEN) downto 0) of std_ulogic_vector(XLEN-1 downto 0);
   signal bs_level  : bs_level_t;
-  signal bs_mask   : std_ulogic;
+  signal bs_sign   : std_ulogic;
   signal bs_start  : std_ulogic;
   signal bs_result : std_ulogic_vector(XLEN-1 downto 0);
 
@@ -109,14 +109,14 @@ begin
   if FAST_SHIFT_EN generate
 
     -- input layer: convert left shifts to right shifts by bit-reversal --
-    bs_level(index_size_f(XLEN)) <= bit_rev_f(rs1_i) when (ctrl_i.ir_funct3(2) = '0') else rs1_i;
-    bs_mask <= rs1_i(XLEN-1) and ctrl_i.ir_funct12(10); -- MSBs mask for arithmetic/logic shifts
+    bs_level(0) <= bit_rev_f(rs1_i) when (ctrl_i.ir_funct3(2) = '0') else rs1_i;
+    bs_sign <= rs1_i(XLEN-1) and ctrl_i.ir_funct12(10); -- sign extension for arithmetic shifts
 
-    -- shifter layers: right-shifts only --
+    -- mux layers: right-shifts only --
     barrel_shifter_core:
-    for i in index_size_f(XLEN)-1 downto 0 generate
-      bs_level(i)(XLEN-1 downto XLEN-(2**i)) <= (others => bs_mask)               when (shamt_i(i) = '1') else bs_level(i+1)(XLEN-1 downto XLEN-(2**i));
-      bs_level(i)((XLEN-(2**i))-1 downto 0)  <= bs_level(i+1)(XLEN-1 downto 2**i) when (shamt_i(i) = '1') else bs_level(i+1)((XLEN-(2**i))-1 downto 0);
+    for i in 0 to index_size_f(XLEN)-1 generate
+      bs_level(i+1)(XLEN-1 downto XLEN-(2**i)) <= (others => bs_sign)             when (shamt_i(i) = '1') else bs_level(i)(XLEN-1 downto XLEN-(2**i));
+      bs_level(i+1)((XLEN-(2**i))-1 downto 0)  <= bs_level(i)(XLEN-1 downto 2**i) when (shamt_i(i) = '1') else bs_level(i)((XLEN-(2**i))-1 downto 0);
     end generate;
 
     -- pipeline register --
@@ -127,7 +127,7 @@ begin
         bs_result <= (others => '0');
       elsif rising_edge(clk_i) then -- this register stage can be moved by the register balancing
         bs_start  <= start_i;
-        bs_result <= bs_level(0);
+        bs_result <= bs_level(index_size_f(XLEN));
       end if;
     end process barrel_shifter_buf;
 

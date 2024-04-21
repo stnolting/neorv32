@@ -318,7 +318,7 @@ begin
 
       when S_BUSY => -- wait for PHY to complete operation
       -- ------------------------------------------------------------
-        xip_rsp_o.data <= bswap32_f(phy_if.rdata); -- convert incrementing byte-read to little-endian
+        xip_rsp_o.data <= bswap_f(phy_if.rdata); -- convert incrementing byte-read to little-endian
         if (phy_if.busy = '0') then
           xip_rsp_o.ack     <= '1';
           arbiter.state_nxt <= S_IDLE;

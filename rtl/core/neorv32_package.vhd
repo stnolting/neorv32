@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090804"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090805"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -694,7 +694,7 @@ package neorv32_package is
   function to_hstring32_f(input : std_ulogic_vector(31 downto 0)) return string;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
-  function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector;
+  function bswap_f(input : std_ulogic_vector) return std_ulogic_vector;
   function popcount_f(input : std_ulogic_vector) return natural;
   function leading_zeros_f(input : std_ulogic_vector) return natural;
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
@@ -1034,7 +1034,7 @@ package body neorv32_package is
     end case;
   end function su_undefined_f;
 
-  -- Convert std_ulogic_vector to lowercase HEX char ----------------------------------------
+  -- Convert std_ulogic_vector to lowercase hex char ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character is
     variable hex_v : string(1 to 16);
@@ -1073,15 +1073,15 @@ package body neorv32_package is
   -- Test if input number is a power of two -------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function is_power_of_two_f(input : natural) return boolean is
-    variable tmp : unsigned(31 downto 0);
+    variable tmp_v : unsigned(31 downto 0);
   begin
     if (input = 0) then
       return false;
     elsif (input = 1) then
       return true;
     else
-      tmp := to_unsigned(input, 32);
-      if ((tmp and (tmp - 1)) = 0) then
+      tmp_v := to_unsigned(input, 32);
+      if ((tmp_v and (tmp_v - 1)) = 0) then
         return true;
       else
         return false;
@@ -1089,17 +1089,18 @@ package body neorv32_package is
     end if;
   end function is_power_of_two_f;
 
-  -- Swap all bytes of a 32-bit word (endianness conversion) --------------------------------
+  -- Swap all bytes of a N*8-bit word (endianness conversion) -------------------------------
   -- -------------------------------------------------------------------------------------------
-  function bswap32_f(input : std_ulogic_vector) return std_ulogic_vector is
+  function bswap_f(input : std_ulogic_vector) return std_ulogic_vector is
     variable output_v : std_ulogic_vector(input'range);
+    variable j        : natural range 0 to input'length/8;
   begin
-    output_v(07 downto 00) := input(31 downto 24);
-    output_v(15 downto 08) := input(23 downto 16);
-    output_v(23 downto 16) := input(15 downto 08);
-    output_v(31 downto 24) := input(07 downto 00);
+    for i in 0 to (input'length/8)-1 loop
+      j := ((input'length/8) - 1) - i;
+      output_v(i*8+7 downto i*8+0) := input(j*8+7 downto j*8+0);
+    end loop;
     return output_v;
-  end function bswap32_f;
+  end function bswap_f;
 
   -- Population count (number of set bits) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1107,7 +1108,7 @@ package body neorv32_package is
     variable cnt_v : natural range 0 to input'length;
   begin
     cnt_v := 0;
-    for i in input'length-1 downto 0 loop
+    for i in 0 to input'length-1 loop
       if (input(i) = '1') then
         cnt_v := cnt_v + 1;
       end if;
