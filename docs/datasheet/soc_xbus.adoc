@@ -53,6 +53,12 @@ image::xbus_write.png[700]
 .XBUS/Wishbone Read Transaction
 image::xbus_read.png[700]
 
+.Wishbone "Classic" Protocol
+[IMPORTANT]
+Native support for the "classic" Wishbone protocol has been deprecated.
+However, classic mode can still be _emulated_ by connecting the processor's `xbus_cyc_o` directly to the
+device's / bus system's `cyc` and `stb` signals (omitting the processor's `xbus_stb_o` signal).
+
 .Endianness
 [NOTE]
 Just like the processor itself the XBUS interface uses **little-endian** byte order.
