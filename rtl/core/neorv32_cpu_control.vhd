@@ -193,7 +193,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     exc_fire    : std_ulogic; -- set if there is a valid source in the exception buffer
     irq_pnd     : std_ulogic_vector(irq_width_c-1 downto 0); -- pending interrupt
     irq_buf     : std_ulogic_vector(irq_width_c-1 downto 0); -- asynchronous exception/interrupt buffer (one bit per interrupt source)
-    irq_fire    : std_ulogic; -- set if an interrupt is actually kicking in
+    irq_fire    : std_ulogic_vector(2 downto 0); -- set if an interrupt is actually kicking in
     cause       : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR & debug-mode entry identifier
     epc         : std_ulogic_vector(XLEN-1 downto 0); -- exception program counter
     --
@@ -647,7 +647,7 @@ begin
   end process execute_engine_fsm_sync;
 
   -- check if branch destination is misaligned --
-  trap_ctrl.instr_ma <= '1' when (execute_engine.state = BRANCH) and (trap_ctrl.exc_buf(exc_illegal_c) = '0') and -- valid branch instruction
+  trap_ctrl.instr_ma <= '1' when (execute_engine.state = BRANCH) and -- branch instruction (can also be INVALID as exc_illegal_c has higher priority)
                                  (execute_engine.branch_taken = '1') and -- branch is taken
                                  (alu_add_i(1) = '1') and (CPU_EXTENSION_RISCV_C = false) else '0'; -- misaligned destination
 
@@ -826,8 +826,8 @@ begin
       -- ------------------------------------------------------------
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           execute_engine.state_nxt <= TRAP_ENTER;
-        elsif (CPU_EXTENSION_RISCV_Sdtrig = true) and (hw_trigger_match = '1') then -- hardware breakpoint
-          execute_engine.pc_we     <= '1'; -- pc <= next_pc
+        elsif (hw_trigger_match = '1') then -- hardware breakpoint
+          execute_engine.pc_we     <= '1'; -- pc <= next_pc; intercept BEFORE executing the instruction
           trap_ctrl.hwtrig         <= '1';
           execute_engine.state_nxt <= DISPATCH; -- stay here another round until trap_ctrl.hwtrig arrives in trap_ctrl.env_pending
         elsif (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- new instruction word available
@@ -1486,6 +1486,9 @@ begin
     end if;
   end process trap_priority;
 
+  -- exception program counter: async. interrupt or sync. exception? --
+  trap_ctrl.epc <= execute_engine.next_pc when (trap_ctrl.cause(trap_ctrl.cause'left) = '1') else execute_engine.pc;
+
 
   -- Trap Controller ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1495,33 +1498,40 @@ begin
       trap_ctrl.env_pending <= '0';
     elsif rising_edge(clk_i) then
       if (trap_ctrl.env_pending = '0') then -- no pending trap environment yet
-        if (trap_ctrl.exc_fire = '1') or ((trap_ctrl.irq_fire = '1') and (execute_engine.state = EXECUTE)) then -- trigger IRQ only in EXECUTE state
-          trap_ctrl.env_pending <= '1'; -- now execute engine can start trap handling
+        if (trap_ctrl.exc_fire = '1') or (or_reduce_f(trap_ctrl.irq_fire) = '1') then
+          trap_ctrl.env_pending <= '1'; -- execute engine can start trap handling
         end if;
-      elsif (trap_ctrl.env_enter = '1') then -- start of trap environment acknowledged by execute engine
-        trap_ctrl.env_pending <= '0';
+      else -- trap waiting to be served
+        if (trap_ctrl.env_enter = '1') then -- start of trap environment acknowledged by execute engine
+          trap_ctrl.env_pending <= '0';
+        end if;
       end if;
     end if;
   end process trap_controller;
 
-  -- wake-up from / do not enter sleep mode: during debugging or on pending IRQ --
-  trap_ctrl.wakeup <= or_reduce_f(trap_ctrl.irq_buf) or debug_ctrl.running or csr.dcsr_step;
-
   -- any exception? --
   trap_ctrl.exc_fire <= '1' when (or_reduce_f(trap_ctrl.exc_buf) = '1') else '0'; -- sync. exceptions CANNOT be masked
 
-  -- any interrupt? --
-  trap_ctrl.irq_fire <= '1' when
-    (
-     (or_reduce_f(trap_ctrl.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending IRQ
-     ((csr.mstatus_mie = '1') or (csr.privilege = priv_mode_u_c)) and -- take IRQ when in M-mode and MIE=1 OR when in U-mode
-     (debug_ctrl.running = '0') and (csr.dcsr_step = '0') -- no IRQs when in debug-mode or during debug single-stepping
-    ) or
-    (trap_ctrl.irq_buf(irq_db_step_c) = '1') or -- debug-mode single-step IRQ
-    (trap_ctrl.irq_buf(irq_db_halt_c) = '1') else '0'; -- debug-mode halt IRQ
+  -- any "normal" system interrupt? --
+  trap_ctrl.irq_fire(0) <= '1' when
+    (execute_engine.state = EXECUTE) and -- trigger system IRQ only in EXECUTE state
+    (or_reduce_f(trap_ctrl.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
+    ((csr.mstatus_mie = '1') or (csr.privilege = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
+    (debug_ctrl.running = '0') and -- no system IRQs when in debug-mode
+    (csr.dcsr_step = '0') -- no system IRQs during debug-single-stepping
+    else '0';
 
-  -- exception program counter (for updating xPC CSRs) --
-  trap_ctrl.epc <= execute_engine.next_pc when (trap_ctrl.cause(trap_ctrl.cause'left) = '1') else execute_engine.pc;
+  -- debug-entry halt interrupt? --
+  trap_ctrl.irq_fire(1) <= '1' when
+    ((execute_engine.state = EXECUTE) or (execute_engine.state = BRANCHED)) and -- allow halt also after "reset" (#879)
+    (trap_ctrl.irq_buf(irq_db_halt_c) = '1') -- pending external halt
+    else '0';
+
+  -- debug-entry single-step interrupt? --
+  trap_ctrl.irq_fire(2) <= '1' when
+    (execute_engine.state = EXECUTE) and -- trigger system IRQ only in EXECUTE state
+    (trap_ctrl.irq_buf(irq_db_step_c) = '1') -- pending single-step halt
+    else '0';
 
 
   -- CPU Sleep Mode Control -----------------------------------------------------------------
@@ -1540,6 +1550,9 @@ begin
       end if;
     end if;
   end process sleep_control;
+
+  -- wake-up from / do not enter sleep mode: during debugging or on pending IRQ --
+  trap_ctrl.wakeup <= or_reduce_f(trap_ctrl.irq_buf) or debug_ctrl.running or csr.dcsr_step;
 
 
 -- ****************************************************************************************************************************
