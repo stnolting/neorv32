@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090805"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090806"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -623,7 +623,6 @@ package neorv32_package is
   constant exc_laccess_c  : natural :=  8; -- load access fault
   constant exc_db_break_c : natural :=  9; -- enter debug mode via ebreak instruction
   constant exc_db_hw_c    : natural := 10; -- enter debug mode via hw trigger
-  --
   constant exc_width_c    : natural := 11; -- length of this list in bits
   -- interrupt source bits --
   constant irq_msi_irq_c  : natural :=  0; -- machine software interrupt
@@ -647,7 +646,6 @@ package neorv32_package is
   constant irq_firq_15_c  : natural := 18; -- fast interrupt channel 15
   constant irq_db_halt_c  : natural := 19; -- enter debug mode via external halt request
   constant irq_db_step_c  : natural := 20; -- enter debug mode via single-stepping
-  --
   constant irq_width_c    : natural := 21; -- length of this list in bits
 
   -- Privilege Modes ------------------------------------------------------------------------
