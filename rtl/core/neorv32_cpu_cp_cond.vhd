@@ -37,7 +37,8 @@ architecture neorv32_cpu_cp_cond_rtl of neorv32_cpu_cp_cond is
 
 begin
 
-  -- conditional output --
+  -- Conditional Output ---------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   cond_out: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
