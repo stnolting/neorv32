@@ -1153,7 +1153,7 @@ begin
               addsub.res_sign <= fpu_operands.rs1(31) xor addsub.exp_comp(0);
             end if;
           else
-            --  roundTowardNegative; under that attribute, the sign of an exact zero sum (or difference) shall be −0
+            --  roundTowardNegative; under that attribute, the sign of an exact zero sum (or difference) shall be -0
             if (fpu_operands.frm = "010") then -- round down (towards -infinity)
               addsub.res_sign <= '1'; -- set the sign to 0 to generate a +0.0 result
             else
@@ -1172,7 +1172,7 @@ begin
               addsub.res_sign <= fpu_operands.rs1(31) xor addsub.exp_comp(0);
             end if;
           else
-            --  roundTowardNegative; under that attribute, the sign of an exact zero sum (or difference) shall be −0
+            --  roundTowardNegative; under that attribute, the sign of an exact zero sum (or difference) shall be -0
             if (fpu_operands.frm = "010") then -- round down (towards -infinity)
               addsub.res_sign <= '1'; -- set the sign to 0 to generate a +0.0 result
             else
