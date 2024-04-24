@@ -293,8 +293,10 @@ begin
 
     -- check region match according to configured mode --
     match_gen: process(csr, region)
+      variable tmp_v : std_ulogic_vector(1 downto 0);
     begin
-      case csr.cfg(r)(cfg_ah_c downto cfg_al_c) is
+      tmp_v := csr.cfg(r)(cfg_ah_c downto cfg_al_c);
+      case tmp_v is -- VHDL/GHDL issue: "object type is not locally static"
         when mode_off_c => -- entry disabled
           region.i_match(r) <= '0';
           region.d_match(r) <= '0';
