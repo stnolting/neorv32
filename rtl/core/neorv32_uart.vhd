@@ -18,7 +18,7 @@ use std.textio.all;
 
 entity neorv32_uart is
   generic (
-    SIM_LOG_FILE : string;  -- name of SIM mode log file
+    SIM_LOG_FILE : string; -- name of SIM mode log file
     UART_RX_FIFO : natural range 1 to 2**15; -- RX fifo depth, has to be a power of two, min 1
     UART_TX_FIFO : natural range 1 to 2**15  -- TX fifo depth, has to be a power of two, min 1
   );
@@ -115,7 +115,7 @@ architecture neorv32_uart_rtl of neorv32_uart is
   -- UART receiver --
   type rx_engine_t is record
     state   : std_ulogic_vector(1 downto 0);
-    sreg    : std_ulogic_vector(9 downto 0);
+    sreg    : std_ulogic_vector(8 downto 0);
     bitcnt  : std_ulogic_vector(3 downto 0);
     baudcnt : std_ulogic_vector(9 downto 0);
     done    : std_ulogic;
@@ -337,9 +337,10 @@ begin
             tx_engine.state(1 downto 0) <= "01";
           end if;
 
-        when "101" => -- WAIT: check if we are allowed to start sending
+        when "101" => -- WAIT: check if we can start sending
         -- ------------------------------------------------------------
-          if (tx_engine.cts_sync(1) = '0') or (ctrl.hwfc_en = '0') then -- allowed to send OR flow-control disabled
+          if (uart_clk = '1') and -- start with next clock tick
+             ((tx_engine.cts_sync(1) = '0') or (ctrl.hwfc_en = '0')) then -- allowed to send OR flow-control disabled
             tx_engine.state(1 downto 0) <= "11";
           end if;
 
@@ -390,8 +391,7 @@ begin
       -- input synchronizer --
       rx_engine.sync(2) <= uart_rxd_i;
       if (uart_clk = '1') then
-        rx_engine.sync(1) <= rx_engine.sync(2);
-        rx_engine.sync(0) <= rx_engine.sync(1);
+        rx_engine.sync(1 downto 0) <= rx_engine.sync(2 downto 1);
       end if;
 
       -- defaults --

@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 24.04.2024 | 1.9.8.7 | minor RTL fixes | [#883](https://github.com/stnolting/neorv32/pull/883) |
 | 23.04.2024 | 1.9.8.6 | :bug: fix on-chip-debugger external-halt-request vs. exception concurrency | [#882](https://github.com/stnolting/neorv32/pull/882) |
 | 21.04.2024 | 1.9.8.5 | rtl cleanups and (area) optimizations | [#880](https://github.com/stnolting/neorv32/pull/880) |
 | 16.04.2024 | 1.9.8.4 | :warning: use a 4-bit FIRQ select instead of a 16-bit FIRQ mask for DMA auto-trigger configuration | [#877](https://github.com/stnolting/neorv32/pull/877) |
