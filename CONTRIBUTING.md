@@ -27,3 +27,7 @@ with the project's `main` branch; we will review it as soon as possible
 If your merge request modifies the code base in a significant way (something more than just a typo fix) please also update
 the version identifier (increment the least-significant number) and add an according change log entry
 (see [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md) for more information).
+
+> [!TIP]
+> If possible, use [labels](https://github.com/stnolting/neorv32/labels)
+to categorize your issue, discussion thread or merge request.
