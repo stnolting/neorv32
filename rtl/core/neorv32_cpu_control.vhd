@@ -199,6 +199,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     env_pending : std_ulogic; -- start of trap environment if pending
     env_enter   : std_ulogic; -- enter trap environment
+    env_entered : std_ulogic; -- trap environment has just been entered
     env_exit    : std_ulogic; -- leave trap environment
     wakeup      : std_ulogic; -- wakeup from sleep due to an enabled pending IRQ
     --
@@ -1496,7 +1497,9 @@ begin
   begin
     if (rstn_i = '0') then
       trap_ctrl.env_pending <= '0';
+      trap_ctrl.env_entered <= '0';
     elsif rising_edge(clk_i) then
+      -- pending trap environment --
       if (trap_ctrl.env_pending = '0') then -- no pending trap environment yet
         if (trap_ctrl.exc_fire = '1') or (or_reduce_f(trap_ctrl.irq_fire) = '1') then
           trap_ctrl.env_pending <= '1'; -- execute engine can start trap handling
@@ -1505,6 +1508,12 @@ begin
         if (trap_ctrl.env_enter = '1') then -- start of trap environment acknowledged by execute engine
           trap_ctrl.env_pending <= '0';
         end if;
+      end if;
+      -- trap environment has just been entered --
+      if (execute_engine.state = EXECUTE) then -- first instruction of trap environment is executing
+        trap_ctrl.env_entered <= '0';
+      elsif (trap_ctrl.env_enter = '1') then
+        trap_ctrl.env_entered <= '1';
       end if;
     end if;
   end process trap_controller;
@@ -1529,7 +1538,8 @@ begin
 
   -- debug-entry single-step interrupt? --
   trap_ctrl.irq_fire(2) <= '1' when
-    (execute_engine.state = EXECUTE) and -- trigger system IRQ only in EXECUTE state
+    ((execute_engine.state = EXECUTE) or -- trigger single-step in EXECUTE state
+     ((trap_ctrl.env_entered = '1') and (execute_engine.state = BRANCHED))) and -- also allow triggering when entering a system trap (#887)
     (trap_ctrl.irq_buf(irq_db_step_c) = '1') -- pending single-step halt
     else '0';
 
