@@ -1539,7 +1539,7 @@ begin
   -- debug-entry single-step interrupt? --
   trap_ctrl.irq_fire(2) <= '1' when
     ((execute_engine.state = EXECUTE) or -- trigger single-step in EXECUTE state
-     ((trap_ctrl.env_entered = '1') and (execute_engine.state = BRANCHED))) and -- also allow triggering when entering a system trap (#)
+     ((trap_ctrl.env_entered = '1') and (execute_engine.state = BRANCHED))) and -- also allow triggering when entering a system trap (#887)
     (trap_ctrl.irq_buf(irq_db_step_c) = '1') -- pending single-step halt
     else '0';
 
