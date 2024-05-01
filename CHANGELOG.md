@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 01.05.2024 | 1.9.8.9 | minor rtl cleanups (cleanup boolean expressions) | [#889](https://github.com/stnolting/neorv32/pull/889) |
 | 27.04.2024 | 1.9.8.8 | fix delayed halt when single-stepping into an exception | [#887](https://github.com/stnolting/neorv32/pull/887) |
 | 24.04.2024 | 1.9.8.7 | minor RTL fixes | [#883](https://github.com/stnolting/neorv32/pull/883) |
 | 23.04.2024 | 1.9.8.6 | :bug: fix on-chip-debugger external-halt-request vs. exception concurrency | [#882](https://github.com/stnolting/neorv32/pull/882) |
