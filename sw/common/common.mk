@@ -210,7 +210,7 @@ $(APP_ELF): $(OBJ)
 
 # Assembly listing file (for debugging)
 $(APP_ASM): $(APP_ELF)
-	@$(OBJDUMP) -d -S -z  $< > $@
+	@$(OBJDUMP) -d -S -z $< > $@
 
 # Generate final executable from .text + .rodata + .data (in THIS order!)
 main.bin: $(APP_ELF)
