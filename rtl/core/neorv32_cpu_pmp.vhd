@@ -109,7 +109,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (granularity_valid_c = false) report
+  assert granularity_valid_c report
     "[NEORV32] Auto-adjusting invalid PMP granularity configuration." severity warning;
 
 
@@ -147,9 +147,9 @@ begin
           csr.cfg(i)(cfg_x_c) <= csr_wdata_i((i mod 4)*8+2); -- X (execute)
           -- A (mode) --
           mode_v := csr_wdata_i((i mod 4)*8+4 downto (i mod 4)*8+3);
-          if ((mode_v = mode_tor_c)   and (TOR_EN = false)) or -- TOR mode not implemented
-             ((mode_v = mode_na4_c)   and (NAP_EN = false)) or -- NA4 mode not implemented
-             ((mode_v = mode_napot_c) and (NAP_EN = false)) or -- NAPOT mode not implemented
+          if ((mode_v = mode_tor_c)   and (not TOR_EN)) or -- TOR mode not implemented
+             ((mode_v = mode_na4_c)   and (not NAP_EN)) or -- NA4 mode not implemented
+             ((mode_v = mode_napot_c) and (not NAP_EN)) or -- NAPOT mode not implemented
              ((mode_v = mode_na4_c)   and (granularity_c > 4)) then -- NA4 not available
             csr.cfg(i)(cfg_ah_c downto cfg_al_c) <= mode_off_c;
           else -- valid configuration

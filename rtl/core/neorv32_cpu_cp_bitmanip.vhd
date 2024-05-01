@@ -169,7 +169,7 @@ begin
         when S_IDLE => -- wait for operation trigger
         -- ------------------------------------------------------------
           if (start_i = '1') then
-            if (FAST_SHIFT_EN = false) and ((cmd(op_cz_c) or cmd(op_cpop_c) or cmd(op_rot_c)) = '1') then -- multi-cycle shift operation
+            if (not FAST_SHIFT_EN) and ((cmd(op_cz_c) or cmd(op_cpop_c) or cmd(op_rot_c)) = '1') then -- multi-cycle shift operation
               shifter.start <= '1';
               ctrl_state <= S_START_SHIFT;
             else
@@ -201,7 +201,7 @@ begin
   -- Shifter Function Core (iterative: small but slow) --------------------------------------
   -- -------------------------------------------------------------------------------------------
   serial_shifter:
-  if (FAST_SHIFT_EN = false) generate
+  if not FAST_SHIFT_EN generate
 
     serial_shifter_core: process(rstn_i, clk_i)
     begin
@@ -266,7 +266,7 @@ begin
   -- Shifter Function Core (parallel: fast but large) ---------------------------------------
   -- -------------------------------------------------------------------------------------------
   barrel_shifter:
-  if (FAST_SHIFT_EN = true) generate
+  if FAST_SHIFT_EN generate
 
     -- rotator input layer: convert left-rotates to right-rotates (rotate by XLEN - N positions) --
     bs_shift <= std_ulogic_vector(unsigned(not sha_reg) + 1) when (ctrl_i.ir_funct3(2) = '0') else sha_reg;

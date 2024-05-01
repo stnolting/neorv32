@@ -150,7 +150,7 @@ begin
     severity note;
 
   -- simulation notifier --
-  assert not (is_simulation_c = true) report "[NEORV32] Assuming this is a simulation." severity warning;
+  assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
 
 
   -- Control Unit ---------------------------------------------------------------------------

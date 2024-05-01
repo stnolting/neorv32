@@ -89,7 +89,7 @@ begin
         -- privilege level --
         bus_req_o.priv <= ctrl_i.lsu_priv;
         -- reservation set operation --
-        if (AMO_LRSC_ENABLE = true) and (ctrl_i.ir_opcode(2) = opcode_amo_c(2)) then
+        if AMO_LRSC_ENABLE and (ctrl_i.ir_opcode(2) = opcode_amo_c(2)) then
           bus_req_o.rvso <= '1';
         else
           bus_req_o.rvso <= '0';
