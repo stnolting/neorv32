@@ -32,8 +32,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_fpu is
   generic (
-    -- FPU specific options
-    FPU_SUBNORMAL_SUPPORT      : boolean := false -- Implemented sub-normal support, default false
+    -- FPU-specific options --
+    FPU_SUBNORMAL_SUPPORT : boolean := false -- Implemented sub-normal support, default false
   );
   port (
     -- global control --
@@ -77,8 +77,8 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
   -- float-to-integer unit --
   component neorv32_cpu_cp_fpu_f2i
   generic (
-    -- FPU specific options
-    FPU_SUBNORMAL_SUPPORT      : boolean := false -- Implemented sub-normal support, default false
+    -- FPU-specific options --
+    FPU_SUBNORMAL_SUPPORT : boolean := false -- Implemented sub-normal support, default false
   );
   port (
     -- control --
@@ -103,8 +103,8 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
   -- normalizer + rounding unit --
   component neorv32_cpu_cp_fpu_normalizer
   generic (
-    -- FPU specific options
-    FPU_SUBNORMAL_SUPPORT      : boolean := false -- Implemented sub-normal support, default false
+    -- FPU-specific options --
+    FPU_SUBNORMAL_SUPPORT : boolean := false -- Implemented sub-normal support, default false
   );
   port (
     -- control --
@@ -678,7 +678,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_fpu_f2i_inst: neorv32_cpu_cp_fpu_f2i
   generic map (
-    -- FPU specific options
+    -- FPU-specific options --
     FPU_SUBNORMAL_SUPPORT => FPU_SUBNORMAL_SUPPORT -- Implemented sub-normal support, default false
   )
   port map (
@@ -1454,7 +1454,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_fpu_normalizer_inst: neorv32_cpu_cp_fpu_normalizer
   generic map (
-    -- FPU specific options
+    -- FPU-specific options --
     FPU_SUBNORMAL_SUPPORT => FPU_SUBNORMAL_SUPPORT -- Implemented sub-normal support, default false
   )
   port map (
@@ -1550,8 +1550,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_fpu_normalizer is
   generic (
-    -- FPU specific options
-    FPU_SUBNORMAL_SUPPORT      : boolean := false -- Implemented sub-normal support, default false
+    -- FPU-specific options --
+    FPU_SUBNORMAL_SUPPORT : boolean := false -- Implemented sub-normal support, default false
   );
   port (
     -- control --
@@ -1994,8 +1994,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_fpu_f2i is
   generic (
-    -- FPU specific options
-    FPU_SUBNORMAL_SUPPORT      : boolean := false -- Implemented sub-normal support, default false
+    -- FPU-specific options --
+    FPU_SUBNORMAL_SUPPORT : boolean := false -- Implemented sub-normal support, default false
   );
   port (
     -- control --
@@ -2136,7 +2136,7 @@ begin
                ctrl.class(fp_class_snan_c)     or ctrl.class(fp_class_qnan_c)) = '1') then
             ctrl.state <= S_FINALIZE;
           -- check for denorm case if we do not support subnormals
-          elsif ((FPU_SUBNORMAL_SUPPORT = false) and
+          elsif ((not FPU_SUBNORMAL_SUPPORT) and
                 ((ctrl.class(fp_class_neg_denorm_c) or ctrl.class(fp_class_pos_denorm_c)) = '1')) then
             ctrl.state <= S_FINALIZE;
           else
@@ -2212,7 +2212,7 @@ begin
               ctrl.flags(fp_exc_nx_c) <= '0';
             elsif (ctrl.class(fp_class_neg_zero_c) = '1') or (ctrl.class(fp_class_pos_zero_c) = '1') then -- zero
               ctrl.result <= x"00000000";
-            elsif ((FPU_SUBNORMAL_SUPPORT = false) and ((ctrl.class(fp_class_neg_denorm_c) = '1') or (ctrl.class(fp_class_pos_denorm_c) = '1'))) then -- subnormal
+            elsif ((not FPU_SUBNORMAL_SUPPORT) and ((ctrl.class(fp_class_neg_denorm_c) = '1') or (ctrl.class(fp_class_pos_denorm_c) = '1'))) then -- subnormal
               ctrl.result <= x"00000000";
             elsif ((ctrl.under = '1') and (ctrl.result_tmp(0) = '0')) then -- +/- underflow
               ctrl.result <= x"00000000";
@@ -2250,7 +2250,7 @@ begin
             elsif (ctrl.class(fp_class_neg_zero_c) = '1') or (ctrl.class(fp_class_pos_zero_c) = '1') then -- zero
               ctrl.result <= x"00000000";
             -- if we do no support subnormals treat them as +/- zero
-            elsif ((FPU_SUBNORMAL_SUPPORT = false) and ((ctrl.class(fp_class_neg_denorm_c) = '1') or (ctrl.class(fp_class_pos_denorm_c) = '1'))) then -- subnormal
+            elsif ((not FPU_SUBNORMAL_SUPPORT) and ((ctrl.class(fp_class_neg_denorm_c) = '1') or (ctrl.class(fp_class_pos_denorm_c) = '1'))) then -- subnormal
               ctrl.result <= x"00000000";
             -- if underflow is set the number is too small, but the rounding mode can cause the LSB to be
             -- set and thus we still have a valid result

@@ -41,17 +41,17 @@ architecture neorv32_dma_rtl of neorv32_dma is
   constant type_endian_c  : natural := 31; -- r/w: Convert Endianness when set
 
   -- control and status register bits --
-  constant ctrl_en_c            : natural :=  0; -- r/w: DMA enable
-  constant ctrl_auto_c          : natural :=  1; -- r/w: enable FIRQ-triggered transfer
-  constant ctrl_fence_c         : natural :=  2; -- r/w: issue FENCE operation when DMA is done
+  constant ctrl_en_c           : natural :=  0; -- r/w: DMA enable
+  constant ctrl_auto_c         : natural :=  1; -- r/w: enable FIRQ-triggered transfer
+  constant ctrl_fence_c        : natural :=  2; -- r/w: issue FENCE operation when DMA is done
   --
-  constant ctrl_error_rd_c      : natural :=  8; -- r/-: error during read transfer
-  constant ctrl_error_wr_c      : natural :=  9; -- r/-: error during write transfer
-  constant ctrl_busy_c          : natural := 10; -- r/-: DMA transfer in progress
-  constant ctrl_done_c          : natural := 11; -- r/c: a DMA transfer was executed/attempted
+  constant ctrl_error_rd_c     : natural :=  8; -- r/-: error during read transfer
+  constant ctrl_error_wr_c     : natural :=  9; -- r/-: error during write transfer
+  constant ctrl_busy_c         : natural := 10; -- r/-: DMA transfer in progress
+  constant ctrl_done_c         : natural := 11; -- r/c: a DMA transfer was executed/attempted
   --
-  constant ctrl_firq_sel_lsb_c  : natural := 16; -- r/w: FIRQ trigger select LSB
-  constant ctrl_firq_sel_msb_c  : natural := 19; -- r/w: FIRQ trigger select MSB
+  constant ctrl_firq_sel_lsb_c : natural := 16; -- r/w: FIRQ trigger select LSB
+  constant ctrl_firq_sel_msb_c : natural := 19; -- r/w: FIRQ trigger select MSB
 
   -- transfer quantities --
   constant qsel_b2b_c  : std_ulogic_vector(1 downto 0) := "00"; -- byte to byte

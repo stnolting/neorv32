@@ -191,8 +191,8 @@ void portable_fini(core_portable *p) {
     p->portable_id = 0;
 
     neorv32_uart0_printf("\nNEORV32: Hardware Performance Monitors (low words only)\n");
-    neorv32_uart0_printf(" > Active clock cycles          : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MCYCLE));
-    neorv32_uart0_printf(" > Retired instructions         : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MINSTRET));
+    neorv32_uart0_printf(" > Active clock cycles         : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MCYCLE));
+    neorv32_uart0_printf(" > Retired instructions        : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MINSTRET));
     if (num_hpm_cnts_global == 0) {neorv32_uart0_printf("no HPMs available\n"); }
     if (num_hpm_cnts_global > 0)  {neorv32_uart0_printf(" > Compressed instructions     : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER3));  }
     if (num_hpm_cnts_global > 1)  {neorv32_uart0_printf(" > Instr. dispatch wait cycles : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));  }

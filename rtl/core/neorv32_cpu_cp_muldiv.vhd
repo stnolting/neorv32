@@ -110,7 +110,7 @@ begin
         when S_IDLE => -- wait for start signal
           ctrl.cnt <= std_ulogic_vector(to_unsigned(XLEN-2, index_size_f(XLEN))); -- iterative cycle counter
           if (start_i = '1') then -- trigger new operation
-            if (DIVISION_EN = true) then
+            if DIVISION_EN then
               -- DIV: check relevant input signs for result sign compensation --
               if (ctrl_i.ir_funct3(1 downto 0) = op_div_c(1 downto 0)) then -- signed div operation
                 div.sign_mod <= (rs1_i(rs1_i'left) xor rs2_i(rs2_i'left)) and or_reduce_f(rs2_i); -- different signs AND divisor not zero
@@ -127,7 +127,7 @@ begin
               end if;
             end if;
             -- is fast multiplication? --
-            if (ctrl_i.ir_funct3(2) = '0') and (FAST_MUL_EN = true) then
+            if (ctrl_i.ir_funct3(2) = '0') and FAST_MUL_EN then
               ctrl.state <= S_DONE;
             else -- serial division or serial multiplication
               ctrl.state <= S_BUSY;
