@@ -286,7 +286,7 @@ begin
   );
 
   rx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
-  rx_fifo.wdata <= rx_engine.sreg(8 downto 1);
+  rx_fifo.wdata <= rx_engine.sreg(7 downto 0);
   rx_fifo.we    <= rx_engine.done;
   rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
 
