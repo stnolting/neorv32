@@ -16,14 +16,16 @@ __pycache__
 # keep default VHDL memory images
 !rtl/core/*_image.vhd
 
-# GDB logs
+# logs
 *.gdb_history
+*.log
+*.jou
 
 # host executables
 sw/image_gen/image_gen
-sw/image_gen/image_gen.exe
+*.exe
 
-# temporary/legacy files and folders
+# temporary files and folders
 *.tmp
 *.temp
 ~*
