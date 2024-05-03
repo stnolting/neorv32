@@ -1,6 +1,6 @@
 :keywords: neorv32, risc-v, riscv, rv32, fpga, soft-core, vhdl, microcontroller, cpu, soc, processor, gcc, openocd, gdb, verilog, rtl, asip, asic, safety
 :description: A size-optimized, customizable and highly extensible MCU-class 32-bit RISC-V soft-core CPU and microcontroller-like SoC written in platform-independent VHDL.
-:revnumber: v1.9.8
+:revnumber: v1.9.9
 :doctype: book
 :sectnums:
 :stem:
