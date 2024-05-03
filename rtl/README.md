@@ -1,26 +1,32 @@
 ## Hardware RTL Sources
 
-- [`core`](https://github.com/stnolting/neorv32/tree/main/rtl/core):
+#### [`core`](https://github.com/stnolting/neorv32/tree/main/rtl/core)
+
 This folder contains the core VHDL files for the NEORV32 CPU and the NEORV32 Processor.
-When creating a new synthesis/simulation project make sure that all `*.vhd` files from this
-folder are added to a **new design library** called `neorv32`. The processor's top entity
+When creating a new synthesis/simulation project make sure to add all `*.vhd` files from this
+folder to a **new design library** called `neorv32`. The processor's top entity
 is [`neorv32_top.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/core/neorv32_top.vhd).
 
 > [!IMPORTANT]
 > The sub-folder [`core/mem`](https://github.com/stnolting/neorv32/tree/main/rtl/core/mem)
-contains the _platform-agnostic_ VHDL architectures of the processor-internal memories (IMEM & DMEM).
-Make sure to add _one_ of these modules for each memory to the project's HDL file list. These default
-files can also be replaced by optimized platform-specific memory modules.
+contains different _platform-agnostic_ VHDL architectures of the processor-internal instruction and 
+data memories (IMEM & DMEM). Make sure to add only **one** of each modules to the project's HDL
+file list. However, these default files can also be replaced by optimized technology-specific memory modules.
 
-- [`processor_templates`](https://github.com/stnolting/neorv32/tree/main/rtl/processor_templates):
-Contains pre-configured "SoC" templates that instantiate the processor's top entity from `core`.
+#### [`processor_templates`](https://github.com/stnolting/neorv32/tree/main/rtl/processor_templates)
+
+Contains pre-configured SoC templates that instantiate the processor's top entity from `core`.
 These templates can be instantiated directly within a FPGA-specific board wrapper.
 
-- [`system_integration`](https://github.com/stnolting/neorv32/tree/main/rtl/system_integration):
-Top entities in this folder provide the same peripheral/IO signals and configuration generics as
-the default processor top entity from `core`, but featuring a different interface.
+#### [`system_integration`](https://github.com/stnolting/neorv32/tree/main/rtl/system_integration)
 
-- [`test_setups`](https://github.com/stnolting/neorv32/tree/main/rtl/test_setups):
-Minimal processor test setups (FPGA- and board-independent. See the folder's README
-for more information. Note that these test setups are used in the
+NEORV32 Processor wrappers dedicated for complex system integration:
+
+* LiteX SoC builder
+* Vivado IP integrator providing AXI4-lite and AXI4-stream interfaces
+
+#### [`test_setups`](https://github.com/stnolting/neorv32/tree/main/rtl/test_setups)
+
+Minimal processor test setups (FPGA- and board-independent) for checking out NEORV32.
+See the folder's README for more information. Note that these test setups are used in the
 [NEORV32 User Guide](https://stnolting.github.io/neorv32/ug).
