@@ -24,8 +24,7 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     -- Configuration Generics
     -- ------------------------------------------------------------
-    -- AXI Connectivity --
-    AXI4_LITE_EN               : boolean                        := false;
+    -- AXI-Stream Interfaces --
     AXI4_STREAM_EN             : boolean                        := false;
     -- General --
     CLOCK_FREQUENCY            : natural                        := 0;
@@ -76,6 +75,7 @@ entity neorv32_vivado_ip is
     DCACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
     DCACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
     -- External Bus Interface --
+    XBUS_TIMEOUT               : natural range 8 to 65536       := 64;
     XBUS_CACHE_EN              : boolean                        := false;
     XBUS_CACHE_NUM_BLOCKS      : natural range 1 to 256         := 8;
     XBUS_CACHE_BLOCK_SIZE      : natural range 1 to 2**16       := 256;
@@ -86,8 +86,8 @@ entity neorv32_vivado_ip is
     XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16       := 256;
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                : natural                        := 0;
-    XIRQ_TRIGGER_TYPE          : std_ulogic_vector(31 downto 0) := x"FFFFFFFF";
-    XIRQ_TRIGGER_POLARITY      : std_ulogic_vector(31 downto 0) := x"FFFFFFFF";
+    XIRQ_TRIGGER_TYPE          : std_ulogic_vector(31 downto 0) := x"ffffffff";
+    XIRQ_TRIGGER_POLARITY      : std_ulogic_vector(31 downto 0) := x"ffffffff";
     -- Processor peripherals --
     IO_GPIO_NUM                : natural range 0 to 64          := 0;
     IO_MTIME_EN                : boolean                        := false;
@@ -127,7 +127,7 @@ entity neorv32_vivado_ip is
     clk            : in  std_ulogic;
     resetn         : in  std_ulogic; -- low-active
     -- ------------------------------------------------------------
-    -- AXI4-Lite-Compatible Host Interface (available if AXI4_LITE_EN = true)
+    -- AXI4-Lite-Compatible Host Interface (always available)
     -- ------------------------------------------------------------
     -- Clock and Reset --
 --  m_axi_aclk     : in  std_ulogic := '0'; -- just to satisfy Vivado, but not actually used!
@@ -316,8 +316,8 @@ begin
     DCACHE_NUM_BLOCKS          => DCACHE_NUM_BLOCKS,
     DCACHE_BLOCK_SIZE          => DCACHE_BLOCK_SIZE,
     -- External bus interface --
-    XBUS_EN                    => AXI4_LITE_EN,
-    XBUS_TIMEOUT               => 0,
+    XBUS_EN                    => true,
+    XBUS_TIMEOUT               => XBUS_TIMEOUT,
     XBUS_REGSTAGE_EN           => false,
     XBUS_CACHE_EN              => XBUS_CACHE_EN,
     XBUS_CACHE_NUM_BLOCKS      => XBUS_CACHE_NUM_BLOCKS,
@@ -446,118 +446,89 @@ begin
 
   -- Wishbone to AXI4-Lite Bridge -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  axi4_lite_enabled:
-  if AXI4_LITE_EN generate
-
-    axi_arbiter: process(resetn, clk)
-    begin
-      if (resetn = '0') then
+  axi_arbiter: process(resetn, clk)
+  begin
+    if (resetn = '0') then
+      axi_ctrl.radr_received <= '0';
+      axi_ctrl.wadr_received <= '0';
+      axi_ctrl.wdat_received <= '0';
+    elsif rising_edge(clk) then
+      if (wb_core.cyc = '0') then -- idle
         axi_ctrl.radr_received <= '0';
         axi_ctrl.wadr_received <= '0';
         axi_ctrl.wdat_received <= '0';
-      elsif rising_edge(clk) then
-        if (wb_core.cyc = '0') then -- idle
-          axi_ctrl.radr_received <= '0';
-          axi_ctrl.wadr_received <= '0';
-          axi_ctrl.wdat_received <= '0';
-        else -- busy
-          -- "read address received" flag --
-          if (wb_core.we = '0') then -- pending READ
-            if (m_axi_arready = '1') then -- read address received by interconnect?
-              axi_ctrl.radr_received <= '1';
+      else -- busy
+        -- "read address received" flag --
+        if (wb_core.we = '0') then -- pending READ
+          if (m_axi_arready = '1') then -- read address received by interconnect?
+            axi_ctrl.radr_received <= '1';
+          end if;
+        end if;
+        -- "write address received" flag --
+        if (wb_core.we = '1') then -- pending WRITE
+          if (m_axi_awready = '1') then -- write address received by interconnect?
+            axi_ctrl.wadr_received <= '1';
+          end if;
+        end if;
+        -- "write data received" flag --
+        if (wb_core.we = '1') then -- pending WRITE
+          if (m_axi_wready = '1') then -- write data received by interconnect?
+            axi_ctrl.wdat_received <= '1';
+          end if;
+        end if;
+      end if;
+    end if;
+  end process axi_arbiter;
+
+
+  -- read address channel --
+  m_axi_araddr  <= wb_core.adr;
+  m_axi_arvalid <= wb_core.cyc and (not wb_core.we) and (not axi_ctrl.radr_received);
+  m_axi_arprot  <= "000";
+
+  -- read data channel --
+  m_axi_rready  <= wb_core.cyc and (not wb_core.we);
+  wb_core.di    <= m_axi_rdata;
+
+  -- write address channel --
+  m_axi_awaddr  <= wb_core.adr;
+  m_axi_awvalid <= wb_core.cyc and wb_core.we and (not axi_ctrl.wadr_received);
+  m_axi_awprot  <= "000";
+
+  -- write data channel --
+  m_axi_wdata   <= wb_core.do;
+  m_axi_wvalid  <= wb_core.cyc and wb_core.we and (not axi_ctrl.wdat_received);
+  m_axi_wstrb   <= wb_core.sel;
+
+  -- write response channel --
+  m_axi_bready  <= wb_core.cyc and wb_core.we;
+
+
+  -- read/write response --
+  axi_response: process(wb_core, m_axi_bvalid, m_axi_bresp, m_axi_rvalid, m_axi_rresp)
+  begin
+    wb_core.ack <= '0'; -- default
+    wb_core.err <= '0'; -- default
+      if (wb_core.cyc = '1') then -- bus operation in progress
+        if (wb_core.we = '1') then -- write operation
+          if (m_axi_bvalid = '1') then -- valid response
+            if (m_axi_bresp = "00") then -- status check
+              wb_core.ack <= '1'; -- OK
+            else
+              wb_core.err <= '1'; -- ERROR!
             end if;
           end if;
-          -- "write address received" flag --
-          if (wb_core.we = '1') then -- pending WRITE
-            if (m_axi_awready = '1') then -- write address received by interconnect?
-              axi_ctrl.wadr_received <= '1';
-            end if;
-          end if;
-          -- "write data received" flag --
-          if (wb_core.we = '1') then -- pending WRITE
-            if (m_axi_wready = '1') then -- write data received by interconnect?
-              axi_ctrl.wdat_received <= '1';
+        else -- read operation
+          if (m_axi_rvalid = '1') then -- valid response
+            if (m_axi_rresp = "00") then -- status check
+              wb_core.ack <= '1'; -- OK
+            else
+              wb_core.err <= '1'; -- ERROR!
             end if;
           end if;
         end if;
       end if;
-    end process axi_arbiter;
-
-
-    -- read address channel --
-    m_axi_araddr  <= wb_core.adr;
-    m_axi_arvalid <= wb_core.cyc and (not wb_core.we) and (not axi_ctrl.radr_received);
-    m_axi_arprot  <= "000";
-
-    -- read data channel --
-    m_axi_rready  <= wb_core.cyc and (not wb_core.we);
-    wb_core.di    <= m_axi_rdata;
-
-    -- write address channel --
-    m_axi_awaddr  <= wb_core.adr;
-    m_axi_awvalid <= wb_core.cyc and wb_core.we and (not axi_ctrl.wadr_received);
-    m_axi_awprot  <= "000";
-
-    -- write data channel --
-    m_axi_wdata   <= wb_core.do;
-    m_axi_wvalid  <= wb_core.cyc and wb_core.we and (not axi_ctrl.wdat_received);
-    m_axi_wstrb   <= wb_core.sel;
-
-    -- write response channel --
-    m_axi_bready  <= wb_core.cyc and wb_core.we;
-
-
-    -- read/write response --
-    axi_response: process(wb_core, m_axi_bvalid, m_axi_bresp, m_axi_rvalid, m_axi_rresp)
-    begin
-      wb_core.ack <= '0'; -- default
-      wb_core.err <= '0'; -- default
-        if (wb_core.cyc = '1') then -- bus operation in progress
-          if (wb_core.we = '1') then -- write operation
-            if (m_axi_bvalid = '1') then -- valid response
-              if (m_axi_bresp = "00") then -- status check
-                wb_core.ack <= '1'; -- OK
-              else
-                wb_core.err <= '1'; -- ERROR!
-              end if;
-            end if;
-          else -- read operation
-            if (m_axi_rvalid = '1') then -- valid response
-              if (m_axi_rresp = "00") then -- status check
-                wb_core.ack <= '1'; -- OK
-              else
-                wb_core.err <= '1'; -- ERROR!
-              end if;
-            end if;
-          end if;
-        end if;
-    end process axi_response;
-
-  end generate; -- /axi4_lite_enabled
-
-
-  axi4_lite_disabled:
-  if not AXI4_LITE_EN generate
-    axi_ctrl.radr_received <= '0';
-    axi_ctrl.wadr_received <= '0';
-    axi_ctrl.wdat_received <= '0';
-    --
-    m_axi_araddr  <= (others => '0');
-    m_axi_arvalid <= '0';
-    m_axi_arprot  <= (others => '0');
-    m_axi_rready  <= '0';
-    wb_core.di    <= (others => '0');
-    m_axi_awaddr  <= (others => '0');
-    m_axi_awvalid <= '0';
-    m_axi_awprot  <= (others => '0');
-    m_axi_wdata   <= (others => '0');
-    m_axi_wvalid  <= '0';
-    m_axi_wstrb   <= (others => '0');
-    m_axi_bready  <= '0';
-    --
-    wb_core.ack <= '0';
-    wb_core.err <= '0';
-  end generate; -- /axi4_lite_disabled
+  end process axi_response;
 
 
 end architecture neorv32_vivado_ip_rtl;
