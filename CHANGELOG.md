@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 04.05.2024 | 1.9.9.1 | :sparkles: add NEORV32 as Vivado IP block | [#894](https://github.com/stnolting/neorv32/pull/894) |
 | 03.05.2024 | [**:rocket:1.9.9**](https://github.com/stnolting/neorv32/releases/tag/v1.9.9) | **New release** | |
 | 02.05.2024 | 1.9.8.10 | :bug: fix UART receiver bug (introduced in v1.9.8.7) | [#891](https://github.com/stnolting/neorv32/pull/891) |
 | 01.05.2024 | 1.9.8.9 | minor rtl cleanups (cleanup boolean expressions) | [#889](https://github.com/stnolting/neorv32/pull/889) |
