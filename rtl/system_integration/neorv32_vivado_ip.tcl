@@ -1,6 +1,10 @@
 # -- ================================================================================ --
 # -- NEORV32 - Vivado IP Packaging + Customization GUI Setup                          --
 # -- -------------------------------------------------------------------------------- --
+# -- This scripts packages the entire processor as Vivado IP module including a fancy --
+# -- customization GUI.                                                               --
+# -- See the NEORV32 Datasheet and User Guide for more information.                   --
+# -- -------------------------------------------------------------------------------- --
 # -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 # -- Copyright (c) NEORV32 contributors.                                              --
 # -- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
@@ -59,6 +63,8 @@ update_compile_order -fileset sources_1
 # Package as IP block
 # **************************************************************
 ipx::package_project -root_dir $outputdir/packaged_ip -vendor NEORV32 -library user -taxonomy /UserIP -import_files -set_current true -force
+set_property company_url https://github.com/stnolting/neorv32 [ipx::current_core]
+set_property description "The NEORV32 RISC-V Processor" [ipx::current_core]
 
 
 # **************************************************************
@@ -139,7 +145,7 @@ set_property tooltip      {Less-privileged user-mode}                           
 set_property display_name {RISC-V Zfinx ISA extension}                           [ipgui::get_guiparamspec -name "CPU_EXTENSION_RISCV_Zfinx"  -component [ipx::current_core]]
 set_property tooltip      {Embedded FPU}                                         [ipgui::get_guiparamspec -name "CPU_EXTENSION_RISCV_Zfinx"  -component [ipx::current_core]]
 set_property display_name {RISC-V Zihpm ISA extension}                           [ipgui::get_guiparamspec -name "CPU_EXTENSION_RISCV_Zihpm"  -component [ipx::current_core]]
-set_property tooltip      {Base counters (cycles and instructions)}              [ipgui::get_guiparamspec -name "CPU_EXTENSION_RISCV_Zihpm"  -component [ipx::current_core]]
+set_property tooltip      {Hardware performance monitors (HPMs)}                 [ipgui::get_guiparamspec -name "CPU_EXTENSION_RISCV_Zihpm"  -component [ipx::current_core]]
 set_property display_name {HPM counters}                                         [ipgui::get_guiparamspec -name "HPM_NUM_CNTS"               -component [ipx::current_core]]
 set_property tooltip      {Numer of total hardware performance monitor counters} [ipgui::get_guiparamspec -name "HPM_NUM_CNTS"               -component [ipx::current_core]]
 set_property display_name {HPM width}                                            [ipgui::get_guiparamspec -name "HPM_CNT_WIDTH"              -component [ipx::current_core]]

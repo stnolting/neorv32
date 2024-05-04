@@ -3,7 +3,8 @@
 -- -------------------------------------------------------------------------------- --
 -- Dedicated for IP packaging/integration using AMD Vivado.                         --
 -- Use the provided TCL script to automatically package this as IP module:          --
--- > source neorv32_vivado_ip.tcl                                                   --
+-- Vivado TCL console: > source neorv32_vivado_ip.tcl                               --
+-- See the NEORV32 Datasheet and User Guide for more information.                   --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
