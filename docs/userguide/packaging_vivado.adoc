@@ -1,45 +1,45 @@
 <<<
 :sectnums:
-== Packaging the Processor as IP block for Xilinx Vivado Block Designer
+== Packaging the Processor as Vivado IP Block
+
+Packaging the entire processor as IP module allows easy integration of the core (or even several cores)
+into a block-design-based Vivado project. The NEORV32 repository provides a full-scale TCL script that
+automatically packages the processor as IP block.
+
+.Example Vivado SoC using the NEORV32 IP Block
+image::vivado_ip_soc.png[]
+
+Besides packaging the HDL modules, the TCL script also generates a simplified customization GUI that enables
+configuration of the processor. The rather complex VHDL configuration generics are renamed and provided with tool tips
+to make it easier to understand the options.
+
+.NEORV32 IP Customization GUI
+image::vivado_ip_gui.png[]
+
+The following steps show how to package the processor using the provided TCL script and how to import
+the generated IP block into the Vivado IP repository.
 
 [start=1]
-. Import all the core files from `rtl/core` (including default internal memory architectures from `rtl/core/mem`)
-and assign them to a _new_ design library `neorv32`.
-. Instantiate the `rtl/system_integration/neorv32_top_axi4lite.vhd` module.
-. Then either directly use that module in a new block-design ("Create Block Design", right-click -> "Add Module",
-thats easier for a first try) or package it ("Tools", "Create and Package new IP") for the use in other projects.
-. Connect your AXI-peripheral directly to the core's AXI4-Interface if you only have one, or to an AXI-Interconnect
-(from the IP-catalog) if you have multiple peripherals.
-. Connect ALL the `ACLK` and `ARESETN` pins of all peripherals and interconnects to the processor's clock and reset
-signals to have a _unified_ clock and reset domain (easier for a first setup).
-. Open the "Address Editor" tab and let Vivado assign the base-addresses for the AXI-peripherals (you can modify them
-according to your needs).
-. For all FPGA-external signals (like UART signals) make all the connections you need "external"
-(right-click on the signal/pin -> "Make External").
-. Save everything, let VIVADO create a HDL-Wrapper for the block-design and choose this as your _Top Level Design_.
-. Define your constraints and generate your bitstream.
+. Open the Vivado GUI.
+. In GUI mode select either "Tools -> Run TCL Script" to directly execute the script or open the TCL
+shell ("Window -> Tcl Console") to manually invoke the script.
+. Use `cd` in the TCL console to navigate to the project's `neorv32/rtl/system_integration` folder.
+. Execute `source source neorv32_vivado_ip.tcl` in the TCL console.
+. A second Vivado instance will open automatically packaging the IP module. After this process is completed,
+the second Vivado instance will automatically close again.
+. A new folder `neorv32_vivado_ip_work` is created in `neorv32/rtl/system_integration` which contains the IP-packaging
+Vivado project.
+. Inside, the `packaged_ip` folder provides the actual IP module.
+. Open your design project in Vivado.
+. Click on "Settings" in the "Project Manager" on the left side.
+. Under "Project Settings" expand the "IP" section and click on "Repository".
+. Click the large plus button and select the previously generated IP folder (`path/to/neorv32/rtl/system_integration/neorv32_vivado_ip_work/packaged_ip`).
+. Click "Select" and close the Settings menu with "Apply" and "OK".
+. You will find the NEORV32 in the "User Repository" section of the Vivado IP catalog.
 
-.Example AXI SoC using Xilinx Vivado
-image::neorv32_axi_soc.png[]
 
-.True Random Number Generator
-[IMPORTANT]
-The NEORV32 TRNG peripheral is enabled by default in the `neorv32_top_axi4lite` AXI wrapper. Otherwise, Vivado
-cannot insert the wrapper into a block design (see https://github.com/stnolting/neorv32/issues/227.).
-footnote:[Seems like Vivado has problem evaluating design source files that have more than two in-file sub-entities.]
-If the TRNG is not needed, you can disable it by double-clicking on the module's block and de-selecting
-"IO_TRNG_EN" after inserting the module.
-
-.SLINK AXI4-Stream Interfaces
-[IMPORTANT]
-The SLINK peripheral's input and output streams are exposed as AXI4-Stream compatible interfaces in the
-`rtl/system_integration/neorv32_top_axi4lite.vhd` top-level module. These interfaces provide clock inputs for
-each of the streams, so that they can be connected to an appropriate clock source to satisfy Vivado's
-validation for compatible clocks on each end of the stream connection. However, these clock inputs are not presently
-used internally to the core, and using streams clocked on a clock domain other than that connected to m_axi_aclk is NOT
-presently supported - doing this will result in timing failures or improper operation.
-
-**Combinatorial Loops DRC error**
+.Combinatorial Loops DRC Errors
+[WARNING]
 If the TRNG is enabled it is recommended to add the following commands to the project's constraints file in order
 to prevent DRC errors during bitstream generation:
 
@@ -49,7 +49,3 @@ set_property SEVERITY {warning} [get_drc_checks LUTLP-1]
 set_property IS_ENABLED FALSE [get_drc_checks LUTLP-1]
 set_property ALLOW_COMBINATORIAL_LOOPS TRUE
 ----
-
-[NOTE]
-Guide provided by GitHub user https://github.com/AWenzel83[`AWenzel83`] (see
-https://github.com/stnolting/neorv32/discussions/52#discussioncomment-819013). ❤️
