@@ -160,7 +160,7 @@ set_property display_name {RISC-V Zxcfu ISA extension}                          
 set_property tooltip      {Custom-instructions unit}                             [ipgui::get_guiparamspec -name "CPU_EXTENSION_RISCV_Zxcfu"  -component [ipx::current_core]]
 set_property display_name {DSP multiplier}                                       [ipgui::get_guiparamspec -name "FAST_MUL_EN"                -component [ipx::current_core]]
 set_property display_name {Barrel shifter}                                       [ipgui::get_guiparamspec -name "FAST_SHIFT_EN"              -component [ipx::current_core]]
-set_property display_name {Barrel shifter}                                       [ipgui::get_guiparamspec -name "REGFILE_HW_RST"             -component [ipx::current_core]]
+set_property display_name {FF-based register file with full HW reset}            [ipgui::get_guiparamspec -name "REGFILE_HW_RST"             -component [ipx::current_core]]
 set_property display_name {PMP regions}                                          [ipgui::get_guiparamspec -name "PMP_NUM_REGIONS"            -component [ipx::current_core]]
 set_property tooltip      {Numer of total physical memory protection regions}    [ipgui::get_guiparamspec -name "PMP_NUM_REGIONS"            -component [ipx::current_core]]
 set_property display_name {PMP minimal granularity}                              [ipgui::get_guiparamspec -name "PMP_MIN_GRANULARITY"        -component [ipx::current_core]]
