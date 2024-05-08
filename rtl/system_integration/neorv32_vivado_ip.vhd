@@ -175,7 +175,7 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true)
     -- ------------------------------------------------------------
-    jtag_trst_i    : in  std_ulogic := '0';
+    jtag_trst_i    : in  std_ulogic := '1'; -- low-active; disable reset by default
     jtag_tck_i     : in  std_ulogic := '0';
     jtag_tdi_i     : in  std_ulogic := '0';
     jtag_tdo_o     : out std_ulogic := '0';
@@ -510,25 +510,25 @@ begin
   begin
     wb_core.ack <= '0'; -- default
     wb_core.err <= '0'; -- default
-      if (wb_core.cyc = '1') then -- bus operation in progress
-        if (wb_core.we = '1') then -- write operation
-          if (m_axi_bvalid = '1') then -- valid response
-            if (m_axi_bresp = "00") then -- status check
-              wb_core.ack <= '1'; -- OK
-            else
-              wb_core.err <= '1'; -- ERROR!
-            end if;
+    if (wb_core.cyc = '1') then -- bus operation in progress
+      if (wb_core.we = '1') then -- write operation
+        if (m_axi_bvalid = '1') then -- valid response
+          if (m_axi_bresp = "00") then -- status check
+            wb_core.ack <= '1'; -- OK
+          else
+            wb_core.err <= '1'; -- ERROR
           end if;
-        else -- read operation
-          if (m_axi_rvalid = '1') then -- valid response
-            if (m_axi_rresp = "00") then -- status check
-              wb_core.ack <= '1'; -- OK
-            else
-              wb_core.err <= '1'; -- ERROR!
-            end if;
+        end if;
+      else -- read operation
+        if (m_axi_rvalid = '1') then -- valid response
+          if (m_axi_rresp = "00") then -- status check
+            wb_core.ack <= '1'; -- OK
+          else
+            wb_core.err <= '1'; -- ERROR
           end if;
         end if;
       end if;
+    end if;
   end process axi_response;
 
 
