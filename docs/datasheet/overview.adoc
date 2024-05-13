@@ -246,6 +246,29 @@ source file in order to use platform-specific features (like advanced memory res
 and/or timing.
 
 
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== VHDL Coding Style
+
+* The entire processor including the CPU core is written in platform-/technology-independent VHDL.
+The code makes minimal use of VHDL 2008 features to provide compatibility even for older EDA tools.
+* A single package / library file (`neorv32_package.vhd`) is used to provide global defines and helper
+functions. The specific user-defined configuration is done entirely by the generics of the top entity.
+* Internally, the generics are checked to ensure a correct configuration. Asserts and "sanity checks" are used
+to inform the user about the actual processor configuration and potential illegal setting.
+* The code uses _entity instation_ for all internal modules. However, if several "submodules" are specified
+within the same file _component instantiation_ is used for those.
+* When instantiating the processor top module (`neorv32_top.vhd`) in a custom design either entity instantiation or
+component instantiation can be used as the NEORV32 package file / library already provides an according component declaration.
+
+.Verilog Version
+[TIP]
+A GHDL-generated all-Verilog version of the processor is available at https://github.com/stnolting/neorv32-verilog.
+The provided setup generates a synthesizable Verilog netlist for a custom processor configuration.
+
+
 <<<
 // ####################################################################################################################
 :sectnums:
