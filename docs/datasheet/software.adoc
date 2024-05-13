@@ -110,7 +110,6 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 | `neorv32_xip.c`     | `neorv32_xip.h`        | <<_execute_in_place_module_xip>> HAL
 | `neorv32_xirq.c`    | `neorv32_xirq.h`       | <<_external_interrupt_controller_xirq>> HAL
 | `syscalls.c`        | -                      | Newlib "system calls" (stubs)
-| -                   | `legacy.h`             | Backwards compatibility wrappers and functions (do not use for new designs)
 |=======================
 
 .Core Library Documentation

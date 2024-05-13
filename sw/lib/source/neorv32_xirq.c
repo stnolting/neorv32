@@ -94,6 +94,8 @@ int neorv32_xirq_setup(void) {
 
 /**********************************************************************//**
  * Globally enable XIRQ interrupts (via according FIRQ channel).
+ *
+ * @note Triggered / triggering XIRQ will remain pending.
  **************************************************************************/
 void neorv32_xirq_global_enable(void) {
 
@@ -104,6 +106,8 @@ void neorv32_xirq_global_enable(void) {
 
 /**********************************************************************//**
  * Globally disable XIRQ interrupts (via according FIRQ channel).
+ *
+ * @note Triggered / triggering XIRQ will remain pending.
  **************************************************************************/
 void neorv32_xirq_global_disable(void) {
 
