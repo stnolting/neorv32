@@ -1,3 +1,11 @@
+// ================================================================================ //
+// The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
+// Copyright (c) NEORV32 contributors.                                              //
+// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Licensed under the BSD-3-Clause license, see LICENSE for details.                //
+// SPDX-License-Identifier: BSD-3-Clause                                            //
+// ================================================================================ //
+
 /* An extremely minimalist syscalls.c for newlib
  * Based on riscv newlib libgloss/riscv/sys_*.c
  *
@@ -17,7 +25,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-/**********************************************************************//**
+/**
  * @file syscalls.c
  * @brief Newlib system calls
  *
@@ -26,7 +34,9 @@
  * @note Original source file: https://github.com/openhwgroup/cv32e40p/blob/master/example_tb/core/custom/syscalls.c
  * @note Original license: SOLDERPAD HARDWARE LICENSE version 0.51
  * @note More information was derived from: https://interrupt.memfault.com/blog/boostrapping-libc-with-newlib#implementing-newlib
- **************************************************************************/
+ *
+ * @see https://stnolting.github.io/neorv32/sw/files.html
+ */
 
 #include <sys/stat.h>
 #include <sys/timeb.h>
