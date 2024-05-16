@@ -25,6 +25,9 @@ NEORV32 Processor wrappers dedicated for complex system integration:
 * LiteX SoC builder
 * Vivado IP integrator providing AXI4-lite and AXI4-stream interfaces
 
+> [!NOTE]
+> These pre-defined top entity wrappers can also be used for custom setups outside of LiteX and Vivado IP designs.
+
 #### [`test_setups`](https://github.com/stnolting/neorv32/tree/main/rtl/test_setups)
 
 Minimal processor test setups (FPGA- and board-independent) for checking out NEORV32.

@@ -3,9 +3,14 @@
 ### `neorv32_litex_core_complex.vhd`
 
 Pre-configured top entity wrapper for integration within the [LiteX](https://github.com/enjoy-digital/litex) SoC builder framework.
+This wrapper provides AXI4-Lite- and AXI4-Stream-compatible interfaces.
 
 > [!TIP]
-> See the user guide's [`core/mem`](https://stnolting.github.io/neorv32/ug/#_litex_soc_builder_support) section for more information.
+> See the user guide section [`core/mem`](https://stnolting.github.io/neorv32/ug/#_litex_soc_builder_support) for more information.
+
+> [!NOTE]
+> The provided top entity wrapper can also be used for custom (AXI) setups outside of Vivado IP block designs.
+
 
 ### `neorv32_vivado_ip.vhd`
 
