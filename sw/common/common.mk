@@ -1,35 +1,12 @@
-#################################################################################################
-# << NEORV32 - Application Makefile >>                                                          #
-# ********************************************************************************************* #
-# BSD 3-Clause License                                                                          #
-#                                                                                               #
-# The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
-# Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
-#                                                                                               #
-# Redistribution and use in source and binary forms, with or without modification, are          #
-# permitted provided that the following conditions are met:                                     #
-#                                                                                               #
-# 1. Redistributions of source code must retain the above copyright notice, this list of        #
-#    conditions and the following disclaimer.                                                   #
-#                                                                                               #
-# 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
-#    conditions and the following disclaimer in the documentation and/or other materials        #
-#    provided with the distribution.                                                            #
-#                                                                                               #
-# 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
-#    endorse or promote products derived from this software without specific prior written      #
-#    permission.                                                                                #
-#                                                                                               #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
-# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
-# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
-# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
-# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
-# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
-# OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
-#################################################################################################
+# ================================================================================ #
+# NEORV32 Software Makefile                                                        #
+# -------------------------------------------------------------------------------- #
+# The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              #
+# Copyright (c) NEORV32 contributors.                                              #
+# Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  #
+# Licensed under the BSD-3-Clause license, see LICENSE for details.                #
+# SPDX-License-Identifier: BSD-3-Clause                                            #
+# ================================================================================ #
 
 
 # -----------------------------------------------------------------------------
@@ -98,6 +75,8 @@ APP_EXE  = neorv32_exe.bin
 APP_ELF  = main.elf
 APP_HEX  = neorv32_raw_exe.hex
 APP_BIN  = neorv32_raw_exe.bin
+APP_COE  = neorv32_raw_exe.coe
+APP_MEM  = neorv32_raw_exe.mem
 APP_ASM  = main.asm
 APP_IMG  = neorv32_application_image.vhd
 BOOT_IMG = neorv32_bootloader_image.vhd
@@ -156,16 +135,16 @@ NEO_ASFLAGS = $(CC_FLAGS) $(ASFLAGS)
 .PHONY: check info help elf_info clean clean_all bootloader
 .DEFAULT_GOAL := help
 
-# 'compile' is still here for compatibility
 asm:     $(APP_ASM)
 elf:     $(APP_ELF)
 exe:     $(APP_EXE)
 hex:     $(APP_HEX)
 bin:     $(APP_BIN)
-compile: $(APP_EXE)
+coe:     $(APP_COE)
+mem:     $(APP_MEM)
 image:   $(APP_IMG)
 install: image install-$(APP_IMG)
-all:     $(APP_ASM) $(APP_EXE) $(APP_IMG) install hex bin
+all:     $(APP_ASM) $(APP_EXE) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_IMG) install hex bin
 
 # Check if making bootloader
 # Use different base address and length for instruction memory/"rom" (BOOTROM instead of IMEM)
@@ -252,6 +231,16 @@ $(APP_BIN): main.bin $(IMAGE_GEN)
 	@set -e
 	@$(IMAGE_GEN) -raw_bin $< $@ $(shell basename $(CURDIR))
 
+# Generate NEORV32 RAW executable image in COE format
+$(APP_COE): main.bin $(IMAGE_GEN)
+	@set -e
+	@$(IMAGE_GEN) -raw_coe $< $@ $(shell basename $(CURDIR))
+
+# Generate NEORV32 RAW executable image in MEM format
+$(APP_MEM): main.bin $(IMAGE_GEN)
+	@set -e
+	@$(IMAGE_GEN) -raw_mem $< $@ $(shell basename $(CURDIR))
+
 
 # -----------------------------------------------------------------------------
 # Bootloader targets
@@ -325,7 +314,7 @@ gdb:
 # Clean up
 # -----------------------------------------------------------------------------
 clean:
-	@rm -f *.elf *.o *.bin *.out *.asm *.vhd *.hex .gdb_history
+	@rm -f *.elf *.o *.bin *.coe *.mem *.out *.asm *.vhd *.hex .gdb_history
 
 clean_all: clean
 	@rm -f $(OBJ) $(IMAGE_GEN)
@@ -413,6 +402,8 @@ help:
 	@echo " exe        - compile and generate <$(APP_EXE)> executable for upload via default bootloader (binary file, with header)"
 	@echo " bin        - compile and generate <$(APP_BIN)> RAW executable file (binary file, no header)"
 	@echo " hex        - compile and generate <$(APP_HEX)> RAW executable file (hex char file, no header)"
+	@echo " coe        - compile and generate <$(APP_COE)> RAW executable file (COE file, no header)"
+	@echo " mem        - compile and generate <$(APP_MEM)> RAW executable file (MEM file, no header)"
 	@echo " image      - compile and generate VHDL IMEM boot image (for application, no header) in local folder"
 	@echo " install    - compile, generate and install VHDL IMEM boot image (for application, no header)"
 	@echo " sim        - in-console simulation using default/simple testbench and GHDL"
