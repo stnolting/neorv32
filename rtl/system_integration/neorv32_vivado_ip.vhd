@@ -150,11 +150,11 @@ entity neorv32_vivado_ip is
     m_axi_arready  : in  std_ulogic := '0';
     -- Read Data Channel --
     m_axi_rdata    : in  std_ulogic_vector(31 downto 0) := x"00000000";
-    m_axi_rresp    : in  std_ulogic_vector(1 downto 0) := "00";
+    m_axi_rresp    : in  std_ulogic_vector(1 downto 0) := "11"; -- error by default
     m_axi_rvalid   : in  std_ulogic := '0';
     m_axi_rready   : out std_ulogic;
     -- Write Response Channel --
-    m_axi_bresp    : in  std_ulogic_vector(1 downto 0) := "00";
+    m_axi_bresp    : in  std_ulogic_vector(1 downto 0) := "11"; -- error by default
     m_axi_bvalid   : in  std_ulogic := '0';
     m_axi_bready   : out std_ulogic;
     -- ------------------------------------------------------------
@@ -510,22 +510,20 @@ begin
   begin
     wb_core.ack <= '0'; -- default
     wb_core.err <= '0'; -- default
-    if (wb_core.cyc = '1') then -- bus operation in progress
-      if (wb_core.we = '1') then -- write operation
-        if (m_axi_bvalid = '1') then -- valid response
-          if (m_axi_bresp = "00") then -- status check
-            wb_core.ack <= '1'; -- OK
-          else
-            wb_core.err <= '1'; -- ERROR
-          end if;
+    if (wb_core.we = '1') then -- write operation
+      if (m_axi_bvalid = '1') then -- valid write response
+        if (m_axi_bresp = "00") then -- status check
+          wb_core.ack <= '1'; -- OK
+        else
+          wb_core.err <= '1'; -- ERROR
         end if;
-      else -- read operation
-        if (m_axi_rvalid = '1') then -- valid response
-          if (m_axi_rresp = "00") then -- status check
-            wb_core.ack <= '1'; -- OK
-          else
-            wb_core.err <= '1'; -- ERROR
-          end if;
+      end if;
+    else -- read operation
+      if (m_axi_rvalid = '1') then -- valid read response
+        if (m_axi_rresp = "00") then -- status check
+          wb_core.ack <= '1'; -- OK
+        else
+          wb_core.err <= '1'; -- ERROR
         end if;
       end if;
     end if;
