@@ -163,6 +163,8 @@ Targets:
  elf        - compile and generate <main.elf> ELF file
  bin        - compile and generate <neorv32_raw_exe.bin> RAW executable file (binary file, no header)
  hex        - compile and generate <neorv32_raw_exe.hex> RAW executable file (hex char file, no header)
+ coe        - compile and generate <neorv32_raw_exe.coe>> RAW executable file (COE file, no header)
+ mem        - compile and generate <neorv32_raw_exe.mem>> RAW executable file (MEM file, no header)
  image      - compile and generate VHDL IMEM boot image (for application, no header) in local folder
  install    - compile, generate and install VHDL IMEM boot image (for application, no header)
  sim        - in-console simulation using default/simple testbench and GHDL
@@ -476,16 +478,18 @@ is available in `sw/example/demo_newlib`
 ==== Executable Image Generator
 
 The `main.bin` file is packed by the NEORV32 image generator (`sw/image_gen`) to generate the final executable file.
-The image generator can generate several types of executables selected by a flag when calling the generator:
+The image generator can generate several types of executable file formats selected by a flag when calling the generator:
 
 [cols="<2,<8"]
 [grid="none"]
 |=======================
 | `-app_bin` | Generates an executable binary file `neorv32_exe.bin` (including header) for UART uploading via the bootloader.
 | `-app_img` | Generates an executable VHDL memory initialization image (no header) for the processor-internal IMEM. This option generates the `rtl/core/neorv32_application_image.vhd` file.
-| `-raw_hex` | Generates a plain ASCII hex-char file `neorv32_raw_exe.hex` (no header) for custom purpose.
-| `-raw_bin` | Generates a plain binary file `neorv32_raw_exe.bin` (no header) for custom purpose.
 | `-bld_img` | Generates an executable VHDL memory initialization image (no header) for the processor-internal BOOT ROM. This option generates the `rtl/core/neorv32_bootloader_image.vhd` file.
+| `-raw_hex` | Generates a plain 8x ASCII hex-char file `neorv32_raw_exe.hex` (no header) for custom purpose.
+| `-raw_bin` | Generates a plain binary file `neorv32_raw_exe.bin` (no header) for custom purpose.
+| `-raw_coe` | Generates a COE file `neorv32_raw_exe.coe` (no header) for FPGA memory initialization.
+| `-raw_mem` | Generates a MEM file `neorv32_raw_exe.mem` (no header) for FPGA memory initialization.
 |=======================
 
 All these options are managed by the makefile. The normal application compilation flow will generate the `neorv32_exe.bin`
