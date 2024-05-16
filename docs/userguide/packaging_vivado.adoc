@@ -4,14 +4,20 @@
 
 Packaging the entire processor as IP module allows easy integration of the core (or even several cores)
 into a block-design-based Vivado project. The NEORV32 repository provides a full-scale TCL script that
-automatically packages the processor as IP block.
+automatically packages the processor as Vivado IP block. For this, a specialized wrapper for the processor's
+top entity is provided (`rtl/system_integration/neorv32_vivado_ip.vhd`) that features AXI4-Lite (via XBUS)
+and AXI4-Stream (via SLINK) compatible interfaces.
+
+.General AXI Wrapper
+[NOTE]
+The provided AXI wrapper can also be used for custom (AXI) setups outside of Vivado and/or IP block designs.
 
 .Example Vivado SoC using the NEORV32 IP Block
 image::vivado_ip_soc.png[]
 
-Besides packaging the HDL modules, the TCL script also generates a simplified customization GUI that enables
-configuration of the processor. The rather complex VHDL configuration generics are renamed and provided with tool tips
-to make it easier to understand the options.
+Besides packaging the HDL modules, the TCL script also generates a simplified customization GUI that allows an easy
+and intuitive configuration of the processor. The rather complex VHDL configuration generics are renamed and provided
+with tool tips to make it easier to understand the different configuration options.
 
 .NEORV32 IP Customization GUI
 image::vivado_ip_gui.png[]
