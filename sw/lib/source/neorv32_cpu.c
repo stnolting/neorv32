@@ -319,7 +319,22 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
 int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
 
   if ((index > 15) || ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_SMPMP)) == 0)) {
-    return -1;
+    return -1; // entry not available
+  }
+
+  // get current configuration
+  uint32_t pmp_cfg = -1;
+  switch ((index >> 2) & 3) {
+    case 0: pmp_cfg = neorv32_cpu_csr_read(CSR_PMPCFG0); break;
+    case 1: pmp_cfg = neorv32_cpu_csr_read(CSR_PMPCFG1); break;
+    case 2: pmp_cfg = neorv32_cpu_csr_read(CSR_PMPCFG2); break;
+    case 3: pmp_cfg = neorv32_cpu_csr_read(CSR_PMPCFG3); break;
+    default: break;
+  }
+
+  // check lock bit
+  if ((pmp_cfg >> ((index & 3) * 8)) & (1 << PMPCFG_L)) {
+    return -2; // entry is locked
   }
 
   // set address
