@@ -25,7 +25,6 @@ static uint32_t __neorv32_rte_vector_lut[NEORV32_RTE_NUM_TRAPS] __attribute__((u
 
 // private functions
 static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void);
-static void __neorv32_rte_debug_handler(void);
 static void __neorv32_rte_print_hex_word(uint32_t num);
 
 
@@ -89,7 +88,7 @@ int neorv32_rte_handler_uninstall(int id) {
   // id valid?
   uint32_t index = (uint32_t)id;
   if (index < ((uint32_t)NEORV32_RTE_NUM_TRAPS)) {
-    __neorv32_rte_vector_lut[index] = (uint32_t)(&__neorv32_rte_debug_handler); // use dummy handler in case the trap is accidentally triggered
+    __neorv32_rte_vector_lut[index] = (uint32_t)(&neorv32_rte_debug_handler); // use dummy handler in case the trap is accidentally triggered
     return 0;
   }
   return -1;
@@ -183,7 +182,7 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
     case TRAP_CODE_FIRQ_13:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_13];      break;
     case TRAP_CODE_FIRQ_14:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_14];      break;
     case TRAP_CODE_FIRQ_15:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_15];      break;
-    default:                     handler_base = (uint32_t)(&__neorv32_rte_debug_handler);        break;
+    default:                     handler_base = (uint32_t)(&neorv32_rte_debug_handler);        break;
   }
 
   // execute handler
@@ -294,7 +293,7 @@ void neorv32_rte_context_put(int x, uint32_t data) {
  * NEORV32 runtime environment (RTE):
  * Debug trap handler, printing information via UART0.
  **************************************************************************/
-static void __neorv32_rte_debug_handler(void) {
+void neorv32_rte_debug_handler(void) {
 
   if (neorv32_uart0_available() == 0) {
     return; // handler cannot output anything if UART0 is not implemented
