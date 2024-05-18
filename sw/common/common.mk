@@ -111,7 +111,7 @@ IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 
 # Compiler & linker flags
 CC_OPTS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
-CC_OPTS += -mstrict-align -mbranch-cost=10 -g -Wl,--gc-sections
+CC_OPTS += -mstrict-align -mbranch-cost=10 -g -Wl,--gc-sections -ffp-contract=off
 CC_OPTS += $(USER_FLAGS)
 LD_LIBS =  -lm -lc -lgcc
 LD_LIBS += $(USER_LIBS)
@@ -324,72 +324,45 @@ clean_all: clean
 # Show configuration
 # -----------------------------------------------------------------------------
 info:
-	@echo "------------------------------------------------------"
-	@echo "-- Project"
-	@echo "------------------------------------------------------"
-	@echo "Project folder:        $(shell basename $(CURDIR))"
-	@echo "Source files:          $(APP_SRC)"
-	@echo "Include folder(s):     $(APP_INC)"
+	@echo "******************************************************"
+	@echo "Project / Makfile Configuration"
+	@echo "******************************************************"
+	@echo "Project folder: $(shell basename $(CURDIR))"
+	@echo "Source files: $(APP_SRC)"
+	@echo "Include folder(s): $(APP_INC)"
 	@echo "ASM include folder(s): $(ASM_INC)"
-	@echo "------------------------------------------------------"
-	@echo "-- NEORV32"
-	@echo "------------------------------------------------------"
 	@echo "NEORV32 home folder (NEORV32_HOME): $(NEORV32_HOME)"
 	@echo "IMAGE_GEN: $(IMAGE_GEN)"
 	@echo "Core source files:"
 	@echo "$(CORE_SRC)"
 	@echo "Core include folder:"
 	@echo "$(NEORV32_INC_PATH)"
-	@echo "------------------------------------------------------"
-	@echo "-- Objects"
-	@echo "------------------------------------------------------"
 	@echo "Project object files:"
 	@echo "$(OBJ)"
-	@echo "------------------------------------------------------"
-	@echo "-- RISC-V CPU"
-	@echo "------------------------------------------------------"
-	@echo "MARCH:          $(MARCH)"
-	@echo "MABI:           $(MABI)"
-	@echo "------------------------------------------------------"
-	@echo "-- Toolchain"
-	@echo "------------------------------------------------------"
-	@echo "CC:             $(CC)"
-	@echo "OBJDUMP:        $(OBJDUMP)"
-	@echo "OBJCOPY:        $(OBJCOPY)"
-	@echo "SIZE:           $(SIZE)"
-	@echo "DEBUGGER:       $(GDB)"
-	@echo "------------------------------------------------------"
-	@echo "-- GDB Arguments"
-	@echo "------------------------------------------------------"
-	@echo "GDB_ARGS:       $(GDB_ARGS)"
-	@echo "------------------------------------------------------"
-	@echo "-- GHDL Run Arguments"
-	@echo "------------------------------------------------------"
-	@echo "GHDL_RUN_FLAGS: $(GHDL_RUN_FLAGS)"
-	@echo "------------------------------------------------------"
-	@echo "-- Libraries"
-	@echo "------------------------------------------------------"
 	@echo "LIBGCC:"
 	@$(CC) -print-libgcc-file-name
 	@echo "SEARCH-DIRS:"
 	@$(CC) -print-search-dirs
-	@echo "------------------------------------------------------"
-	@echo "-- Compiler Flags"
-	@echo "------------------------------------------------------"
-	@echo "USER_FLAGS:     $(USER_FLAGS)"
-	@echo "CC_OPTS:        $(CC_OPTS)"
-	@echo "------------------------------------------------------"
-	@echo "-- Libraries"
-	@echo "------------------------------------------------------"
-	@echo "USER_LIBS:      $(USER_LIBS)"
-	@echo "LD_LIBS:        $(LD_LIBS)"
+	@echo "USER_LIBS: $(USER_LIBS)"
+	@echo "LD_LIBS: $(LD_LIBS)"
+	@echo "MARCH: $(MARCH)"
+	@echo "MABI: $(MABI)"
+	@echo "CC: $(CC)"
+	@echo "OBJDUMP: $(OBJDUMP)"
+	@echo "OBJCOPY: $(OBJCOPY)"
+	@echo "SIZE: $(SIZE)"
+	@echo "DEBUGGER: $(GDB)"
+	@echo "GDB_ARGS: $(GDB_ARGS)"
+	@echo "GHDL_RUN_FLAGS: $(GHDL_RUN_FLAGS)"
+	@echo "USER_FLAGS: $(USER_FLAGS)"
+	@echo "CC_OPTS: $(CC_OPTS)"
 
 
 # -----------------------------------------------------------------------------
 # Help
 # -----------------------------------------------------------------------------
 help:
-	@echo "NEORV32 Software Application Makefile"
+	@echo "NEORV32 Software Makefile"
 	@echo "Find more information at https://github.com/stnolting/neorv32"
 	@echo ""
 	@echo "Targets:"

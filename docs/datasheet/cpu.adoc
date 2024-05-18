@@ -680,10 +680,14 @@ register file-related load/store or move instructions. The `Zfinx` extension'S f
 via dedicated <<_floating_point_csrs>>.
 This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_fpu.vhd`).
 
-.Fused Multiply-Add and Division Instructions
+.Fused / Multiply-Add Instructions
 [WARNING]
-Fused multiply-add instructions `f[n]m[add/sub].s` are not supported!
-Division `fdiv.s` and square root `fsqrt.s` instructions are not supported yet!
+Fused multiply-add instructions `f[n]m[add/sub].s` are not supported. A special GCC switch is used to prevent the
+compiler from emitting contracted/fused floating-point operations (see <<_default_compiler_flags>>).
+
+.Division and Squarer Root Instructions
+[WARNING]
+Division `fdiv.s` and square root `fsqrt.s` instructions are not supported yet.
 
 .Subnormal Number
 [WARNING]

@@ -286,6 +286,7 @@ The makefile's `CC_OPTS` is exported as **define** to be available within a C pr
 | `-g`                  | Include debugging information/symbols in ELF.
 | `-mstrict-align`      | Unaligned memory accesses cannot be resolved by the hardware and require emulation.
 | `-mbranch-cost=10`    | Branching costs a lot of cycles.
+| `-ffp-contract=off`   | Do not allow contraction of floatind-point operations (no fused operations as they are not supported).
 |=======================
 
 :sectnums:
