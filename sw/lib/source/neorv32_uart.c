@@ -284,21 +284,12 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
 /**********************************************************************//**
  * Custom version of 'vprintf' printing to UART.
  *
+ * @warning: This functions only provides a minimal subset of the 'vprintf' formating features!
  * @note This function is blocking.
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] format Pointer to format string.
  * @param[in] args A value identifying a variable arguments list.
- *
- * <TABLE>
- * <TR><TD>%s</TD><TD>String (array of chars, zero-terminated)</TD></TR>
- * <TR><TD>%c</TD><TD>Single char</TD></TR>
- * <TR><TD>%d/%i</TD><TD>32-bit signed number, printed as decimal</TD></TR>
- * <TR><TD>%u</TD><TD>32-bit unsigned number, printed as decimal</TD></TR>
- * <TR><TD>%x</TD><TD>32-bit number, printed as 8-char hexadecimal - lower-case</TD></TR>
- * <TR><TD>%X</TD><TD>32-bit number, printed as 8-char hexadecimal - upper-case</TD></TR>
- * <TR><TD>%p</TD><TD>32-bit pointer, printed as 8-char hexadecimal - lower-case</TD></TR>
- * </TABLE>
  **************************************************************************/
 void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list args) {
 
@@ -344,11 +335,21 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
           neorv32_uart_puts(UARTx, string_buf);
           break;
 
+//      case 'f': // floating point: print binary representation in hex
+//        union { double fp64; uint32_t u32[2]; } fp2hex;
+//        neorv32_uart_puts(UARTx, "FP64:0x");
+//        fp2hex.fp64 = va_arg(args, double); // C promotes float to double!
+//        __neorv32_uart_tohex(fp2hex.u32[0], string_buf);
+//        neorv32_uart_puts(UARTx, string_buf);
+//        __neorv32_uart_tohex(fp2hex.u32[1], string_buf);
+//        neorv32_uart_puts(UARTx, string_buf);
+//        break;
+
         case '%': // escaped percent sign
-          neorv32_uart_putc(UARTx, '%');
+          neorv32_uart_putc(UARTx, c);
           break;
 
-        default: // unsupported format
+        default: // unsupported formating character
           neorv32_uart_putc(UARTx, '%');
           neorv32_uart_putc(UARTx, c);
           break;
@@ -367,6 +368,7 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
 /**********************************************************************//**
  * Custom version of 'printf' printing to UART.
  *
+ * @warning: This functions only provides a minimal subset of the 'printf' formating features!
  * @note This function is blocking.
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
