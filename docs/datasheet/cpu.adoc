@@ -807,9 +807,11 @@ Several <<_processor_top_entity_generics>> are provided to fine-tune the CPU's P
 [NOTE]
 When in debug-mode all PMP rules are ignored making the debugger have maximum access rights.
 
+.Protected Instruction Fetches
 [IMPORTANT]
-Instruction fetches are also triggered when denied by a certain PMP rule. However, the fetched instruction(s)
-will not be executed and will not change CPU core state.
+New instruction fetches are **always triggered even when denied** by a certain PMP rule. However, the fetched instruction(s)
+will not be executed and will not change CPU core state. Instead, they will raise a bus exception when reaching the CPU's
+executions stage.
 
 
 ==== `Sdext` ISA Extension
