@@ -386,11 +386,11 @@ package neorv32_package is
   constant csr_tdata1_c         : std_ulogic_vector(11 downto 0) := x"7a1";
   constant csr_tdata2_c         : std_ulogic_vector(11 downto 0) := x"7a2";
   constant csr_tinfo_c          : std_ulogic_vector(11 downto 0) := x"7a4";
-  -- debug mode registers --
+  -- debug registers --
   constant csr_dcsr_c           : std_ulogic_vector(11 downto 0) := x"7b0";
   constant csr_dpc_c            : std_ulogic_vector(11 downto 0) := x"7b1";
   constant csr_dscratch0_c      : std_ulogic_vector(11 downto 0) := x"7b2";
-  -- NEORV32-specific user-mode registers --
+  -- NEORV32-specific user registers --
   constant csr_cfureg0_c        : std_ulogic_vector(11 downto 0) := x"800";
   constant csr_cfureg1_c        : std_ulogic_vector(11 downto 0) := x"801";
   constant csr_cfureg2_c        : std_ulogic_vector(11 downto 0) := x"802";
@@ -429,6 +429,8 @@ package neorv32_package is
   constant csr_mhpmcounter13h_c : std_ulogic_vector(11 downto 0) := x"b8d";
   constant csr_mhpmcounter14h_c : std_ulogic_vector(11 downto 0) := x"b8e";
   constant csr_mhpmcounter15h_c : std_ulogic_vector(11 downto 0) := x"b8f";
+  -- NEORV32-specific read-write machine registers --
+--constant csr_mxstatus_c       : std_ulogic_vector(11 downto 0) := x"bc0";
   -- user counters/timers --
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
 --constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
@@ -469,7 +471,7 @@ package neorv32_package is
   constant csr_mimpid_c         : std_ulogic_vector(11 downto 0) := x"f13";
   constant csr_mhartid_c        : std_ulogic_vector(11 downto 0) := x"f14";
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
-  -- NEORV32-specific machine-mode registers --
+  -- NEORV32-specific read-only machine registers --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
 
 -- **********************************************************************************************************

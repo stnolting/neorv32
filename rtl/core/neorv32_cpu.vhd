@@ -246,15 +246,15 @@ begin
   )
   port map (
     -- global control --
-    clk_i  => clk_i,     -- global clock, rising edge
-    rstn_i => rstn_i,    -- global reset, low-active, async
-    ctrl_i => ctrl,      -- main control bus
+    clk_i  => clk_i,    -- global clock, rising edge
+    rstn_i => rstn_i,   -- global reset, low-active, async
+    ctrl_i => ctrl,     -- main control bus
     -- operands --
-    rd_i   => rf_wdata,  -- destination operand rd
-    rs1_o  => rs1,       -- source operand rs1
-    rs2_o  => rs2,       -- source operand rs2
-    rs3_o  => rs3,       -- source operand rs3
-    rs4_o  => rs4        -- source operand rs4
+    rd_i   => rf_wdata, -- destination operand rd
+    rs1_o  => rs1,      -- source operand rs1
+    rs2_o  => rs2,      -- source operand rs2
+    rs3_o  => rs3,      -- source operand rs3
+    rs4_o  => rs4       -- source operand rs4
   );
 
   -- all buses are zero unless there is an according operation --
