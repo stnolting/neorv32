@@ -103,6 +103,10 @@ void trap_handler_emulate_unaligned_lw(void) {
     neorv32_rte_context_put(rd_addr, rd);
 
   }
+  else {
+    // use the RTE debug handler for any other misaligned load exception
+    neorv32_rte_debug_handler();
+  }
 }
 
 
