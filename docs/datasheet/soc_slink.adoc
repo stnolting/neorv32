@@ -9,10 +9,12 @@
 | Software driver files:  | neorv32_slink.c     |
 |                         | neorv32_slink.h     |
 | Top entity ports:       | `slink_rx_dat_i`    | RX link data (32-bit)
+|                         | `slink_rx_src_i`    | RX routing information (4-bit)
 |                         | `slink_rx_val_i`    | RX link data valid (1-bit)
 |                         | `slink_rx_lst_i`    | RX link last element of stream (1-bit)
 |                         | `slink_rx_rdy_o`    | RX link ready to receive (1-bit)
 |                         | `slink_tx_dat_o`    | TX link data (32-bit)
+|                         | `slink_tx_dst_o`    | TX routing information (4-bit)
 |                         | `slink_tx_val_o`    | TX link data valid (1-bit)
 |                         | `slink_tx_lst_o`    | TX link last element of stream (1-bit)
 |                         | `slink_tx_rdy_i`    | TX link allowed to send (1-bit)
@@ -45,10 +47,11 @@ The SLINK interface consists of four signals for each channel:
 * `val` marks the current transmission cycle as valid
 * `lst` marks the current transmission cycle as the last element of a stream
 * `rdy` indicates that the receiver is ready to receive
+* `src` and `dst` provide source/destination routing information (optional)
 
 .AXI4-Stream Compatibility
 [NOTE]
-The interface names and the underlying protocol is compatible to the AXI4-Stream protocol standard.
+The interface names (except for `src` and `dst`) and the underlying protocol is compatible to the AXI4-Stream protocol standard.
 A processor top entity with a AXI4-Stream-compatible interfaces can be found in `rtl/system_inegration`.
 More information regarding this alternate top entity can be found in in the user guide:
 https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block
@@ -83,6 +86,16 @@ implemented yet.
 
 The current status of the RX and TX FIFOs can be determined via the control register's `SLINK_CTRL_RX_*` and
 `SLINK_CTRL_TX_*` flags.
+
+
+**Stream Routing Information**
+
+Both stream link interface provide an optional port for routing information: `slink_tx_dst_o` (AXI stream's `TDEST`)
+can be used to set a destination address when using a switch/interconnect to access several stream sinks. `slink_rx_src_i`
+(AXI stream's `TID`) can be used to determine the source when several sources can send data via a switch/interconnect.
+The routing information can be set/read via the `ROUTE` interface registers. Note that all routing information is also
+fully buffered by the internal RX/TX FIFOs. RX routing information has to be read **after** reading the according RX
+data. Vice versa, TX routing information has to be set **before** writing the according TX data.
 
 
 **Interrupts**
@@ -124,7 +137,9 @@ interrupt-causing condition is resolved (e.g. by reading from the RX FIFO).
                                                 <| `23:22` _reserved_                                        ^| r/- <| _reserved_, read as zero
                                                 <| `27:24` `SLINK_CTRL_RX_FIFO_MSB : SLINK_CTRL_RX_FIFO_LSB` ^| r/- <| log2(RX FIFO size)
                                                 <| `31:28` `SLINK_CTRL_TX_FIFO_MSB : SLINK_CTRL_TX_FIFO_LSB` ^| r/- <| log2(TX FIFO size)
-| `0xffffec04` | -                         | `31:0` | -/- | _reserved_
+.3+<| `0xffffec04` .3+<| `NEORV32_SLINK.ROUTE` <| `3:0` | r/w | TX destination routing information (`slink_tx_dst_o`)
+                                               <| `7:4` | r/- | RX source routing information (`slink_rx_src_i`)
+                                               <| `31:8` | -/- | _reserved_
 | `0xffffec08` | `NEORV32_SLINK.DATA`      | `31:0` | r/w | Write data to TX FIFO; read data from RX FIFO
 | `0xffffec0c` | `NEORV32_SLINK.DATA_LAST` | `31:0` | r/w | Write data to TX FIFO (and also set "last" signal); read data from RX FIFO
 |=======================
