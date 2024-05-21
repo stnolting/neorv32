@@ -1578,6 +1578,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_RX_FIRQ_ENABLE);
 
     // send RX_FIFO/2 data words
+    neorv32_slink_set_dst(0b1010);
     for (tmp_b=0; tmp_b<(tmp_a/2); tmp_b++) {
       neorv32_slink_put_last(0xAABBCCDD); // mark as end-of-stream
     }
@@ -1592,6 +1593,7 @@ int main() {
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == SLINK_RX_TRAP_CODE) && // correct trap code
         (neorv32_slink_rx_status() == SLINK_FIFO_HALF) && // RX FIFO is at least half full
         (neorv32_slink_get() == 0xAABBCCDD) && // correct RX data
+        (neorv32_slink_get_src() == 0b1010) && // correct routing information
         (neorv32_slink_check_last())) { // is marked as "end of stream"
       test_ok();
     }
@@ -1621,6 +1623,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_TX_FIRQ_ENABLE);
 
     // send single data word
+    neorv32_slink_set_dst(0b1100);
     neorv32_slink_put(0x11223344);
 
     // wait for interrupt
@@ -1633,6 +1636,7 @@ int main() {
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == SLINK_TX_TRAP_CODE) && // correct trap code
         (neorv32_slink_tx_status() == SLINK_FIFO_EMPTY) && // TX FIFO is empty
         (neorv32_slink_get() == 0x11223344) && // correct RX data
+        (neorv32_slink_get_src() == 0b1100) && // correct routing information
         (neorv32_slink_check_last() == 0)) { // is NOT marked as "end of stream"
       test_ok();
     }
