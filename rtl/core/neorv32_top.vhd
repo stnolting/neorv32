@@ -151,7 +151,7 @@ entity neorv32_top is
     xbus_adr_o     : out std_ulogic_vector(31 downto 0); -- address
     xbus_dat_o     : out std_ulogic_vector(31 downto 0); -- write data
     xbus_we_o      : out std_ulogic; -- read/write
-    xbus_sel_o     : out std_ulogic_vector(03 downto 0); -- byte enable
+    xbus_sel_o     : out std_ulogic_vector(3 downto 0); -- byte enable
     xbus_stb_o     : out std_ulogic; -- strobe
     xbus_cyc_o     : out std_ulogic; -- valid cycle
     xbus_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- read data
@@ -160,12 +160,14 @@ entity neorv32_top is
 
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- RX input data
+    slink_rx_src_i : in  std_ulogic_vector(3 downto 0) := (others => 'L'); -- RX source routing information
     slink_rx_val_i : in  std_ulogic := 'L'; -- RX valid input
-    slink_rx_lst_i : in  std_ulogic := 'L'; -- last element of stream
+    slink_rx_lst_i : in  std_ulogic := 'L'; --RX  last element of stream
     slink_rx_rdy_o : out std_ulogic; -- RX ready to receive
     slink_tx_dat_o : out std_ulogic_vector(31 downto 0); -- TX output data
+    slink_tx_dst_o : out std_ulogic_vector(3 downto 0); -- TX destination routing information
     slink_tx_val_o : out std_ulogic; -- TX valid output
-    slink_tx_lst_o : out std_ulogic; -- last element of stream
+    slink_tx_lst_o : out std_ulogic; -- TX last element of stream
     slink_tx_rdy_i : in  std_ulogic := 'L'; -- TX ready to send
 
     -- XIP (execute in place via SPI) signals (available if XIP_EN = true) --
@@ -194,7 +196,7 @@ entity neorv32_top is
     spi_clk_o      : out std_ulogic; -- SPI serial clock
     spi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
     spi_dat_i      : in  std_ulogic := 'L'; -- controller data in, peripheral data out
-    spi_csn_o      : out std_ulogic_vector(07 downto 0); -- chip-select
+    spi_csn_o      : out std_ulogic_vector(7 downto 0); -- chip-select
 
     -- SDI (available if IO_SDI_EN = true) --
     sdi_clk_i      : in  std_ulogic := 'L'; -- SDI serial clock
@@ -269,7 +271,7 @@ architecture neorv32_top_rtl of neorv32_top is
   -- clock generator --
   signal clk_cpu                   : std_ulogic; -- CPU core clock, can be switched off
   signal clk_div, clk_div_ff       : std_ulogic_vector(11 downto 0);
-  signal clk_gen                   : std_ulogic_vector(07 downto 0);
+  signal clk_gen                   : std_ulogic_vector(7 downto 0);
   signal clk_gen_en, clk_gen_en_ff : std_ulogic;
   --
   type cg_en_enum_t is (
@@ -557,16 +559,16 @@ begin
     );
 
     -- fast interrupt requests (FIRQs) --
-    cpu_firq(00) <= '0'; -- reserved
-    cpu_firq(01) <= firq(FIRQ_CFS);
-    cpu_firq(02) <= firq(FIRQ_UART0_RX);
-    cpu_firq(03) <= firq(FIRQ_UART0_TX);
-    cpu_firq(04) <= firq(FIRQ_UART1_RX);
-    cpu_firq(05) <= firq(FIRQ_UART1_TX);
-    cpu_firq(06) <= firq(FIRQ_SPI);
-    cpu_firq(07) <= firq(FIRQ_TWI);
-    cpu_firq(08) <= firq(FIRQ_XIRQ);
-    cpu_firq(09) <= firq(FIRQ_NEOLED);
+    cpu_firq(0)  <= '0'; -- reserved
+    cpu_firq(1)  <= firq(FIRQ_CFS);
+    cpu_firq(2)  <= firq(FIRQ_UART0_RX);
+    cpu_firq(3)  <= firq(FIRQ_UART0_TX);
+    cpu_firq(4)  <= firq(FIRQ_UART1_RX);
+    cpu_firq(5)  <= firq(FIRQ_UART1_TX);
+    cpu_firq(6)  <= firq(FIRQ_SPI);
+    cpu_firq(7)  <= firq(FIRQ_TWI);
+    cpu_firq(8)  <= firq(FIRQ_XIRQ);
+    cpu_firq(9)  <= firq(FIRQ_NEOLED);
     cpu_firq(10) <= firq(FIRQ_DMA);
     cpu_firq(11) <= firq(FIRQ_SDI);
     cpu_firq(12) <= firq(FIRQ_GPTMR);
@@ -1522,10 +1524,12 @@ begin
         rx_irq_o         => firq(FIRQ_SLINK_RX),
         tx_irq_o         => firq(FIRQ_SLINK_TX),
         slink_rx_data_i  => slink_rx_dat_i,
+        slink_rx_src_i   => slink_rx_src_i,
         slink_rx_valid_i => slink_rx_val_i,
         slink_rx_last_i  => slink_rx_lst_i,
         slink_rx_ready_o => slink_rx_rdy_o,
         slink_tx_data_o  => slink_tx_dat_o,
+        slink_tx_dst_o   => slink_tx_dst_o,
         slink_tx_valid_o => slink_tx_val_o,
         slink_tx_last_o  => slink_tx_lst_o,
         slink_tx_ready_i => slink_tx_rdy_i
@@ -1539,6 +1543,7 @@ begin
       firq(FIRQ_SLINK_TX)    <= '0';
       slink_rx_rdy_o         <= '0';
       slink_tx_dat_o         <= (others => '0');
+      slink_tx_dst_o         <= (others => '0');
       slink_tx_val_o         <= '0';
       slink_tx_lst_o         <= '0';
     end generate;
