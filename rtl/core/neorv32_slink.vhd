@@ -34,11 +34,13 @@ entity neorv32_slink is
     tx_irq_o         : out std_ulogic; -- TX interrupt
     -- RX stream interface --
     slink_rx_data_i  : in  std_ulogic_vector(31 downto 0); -- input data
+    slink_rx_src_i   : in  std_ulogic_vector(3 downto 0); -- routing information
     slink_rx_valid_i : in  std_ulogic; -- valid input
     slink_rx_last_i  : in  std_ulogic; -- end of stream
     slink_rx_ready_o : out std_ulogic; -- ready to receive
     -- TX stream interface --
     slink_tx_data_o  : out std_ulogic_vector(31 downto 0); -- output data
+    slink_tx_dst_o   : out std_ulogic_vector(3 downto 0); -- routing destination
     slink_tx_valid_o : out std_ulogic; -- valid output
     slink_tx_last_o  : out std_ulogic; -- end of stream
     slink_tx_ready_i : in  std_ulogic  -- ready to send
@@ -87,6 +89,9 @@ architecture neorv32_slink_rtl of neorv32_slink is
   end record;
   signal ctrl : ctrl_t;
 
+  -- routing information --
+  signal route_dst, route_src : std_ulogic_vector(3 downto 0);
+
   -- stream attributes --
   signal rx_last : std_ulogic; -- RX end-of-stream indicator
 
@@ -95,8 +100,8 @@ architecture neorv32_slink_rtl of neorv32_slink is
     we    : std_ulogic; -- write enable
     re    : std_ulogic; -- read enable
     clear : std_ulogic; -- sync reset, high-active
-    wdata : std_ulogic_vector((1+32)-1 downto 0); -- last + data
-    rdata : std_ulogic_vector((1+32)-1 downto 0); -- last + data
+    wdata : std_ulogic_vector((1+4+32)-1 downto 0); -- last + routing + data
+    rdata : std_ulogic_vector((1+4+32)-1 downto 0); -- last + routing + data
     avail : std_ulogic; -- data available?
     free  : std_ulogic; -- free entry available?
     half  : std_ulogic; -- half full
@@ -122,6 +127,7 @@ begin
       ctrl.irq_tx_empty  <= '0';
       ctrl.irq_tx_nhalf  <= '0';
       ctrl.irq_tx_nfull  <= '0';
+      route_dst          <= (others => '0');
     elsif rising_edge(clk_i) then
       -- bus handshake --
       bus_rsp_o.ack  <= bus_req_i.stb;
@@ -148,6 +154,10 @@ begin
             ctrl.irq_tx_nhalf  <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
             ctrl.irq_tx_nfull  <= bus_req_i.data(ctrl_irq_tx_nfull_c);
           end if;
+          -- routing information --
+          if (bus_req_i.addr(3 downto 2) = "01") then
+            route_dst <= bus_req_i.data(3 downto 0);
+          end if;
         -- read access --
         else
           case bus_req_i.addr(3 downto 2) is
@@ -172,6 +182,9 @@ begin
               --
               bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_RX_FIFO), 4));
               bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_TX_FIFO), 4));
+            when "01" => -- routing information
+              bus_rsp_o.data(3 downto 0) <= route_dst;
+              bus_rsp_o.data(7 downto 4) <= route_src;
             when others => -- RTX data register
               bus_rsp_o.data <= rx_fifo.rdata(31 downto 0);
           end case;
@@ -186,10 +199,10 @@ begin
   rx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => SLINK_RX_FIFO,
-    FIFO_WIDTH => 1+32,  -- last + data
-    FIFO_RSYNC => false, -- "async" read - update FIFO status RIGHT after write access (for slink_rx_ready_o)
-    FIFO_SAFE  => true,  -- safe access
-    FULL_RESET => false  -- no HW reset, try to infer BRAM
+    FIFO_WIDTH => 1+4+32, -- last + routing + data
+    FIFO_RSYNC => false,  -- "async" read - update FIFO status RIGHT after write access (for slink_rx_ready_o)
+    FIFO_SAFE  => true,   -- safe access
+    FULL_RESET => false   -- no HW reset, try to infer BRAM
   )
   port map (
     -- control --
@@ -210,21 +223,26 @@ begin
   rx_fifo.clear <= (not ctrl.enable) or ctrl.rx_clr;
   rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3) = '1') else '0';
 
-  rx_fifo.we                 <= slink_rx_valid_i;
-  rx_fifo.wdata(31 downto 0) <= slink_rx_data_i;
-  rx_fifo.wdata(32)          <= slink_rx_last_i;
-  slink_rx_ready_o           <= rx_fifo.free;
+  rx_fifo.we                  <= slink_rx_valid_i;
+  rx_fifo.wdata(31 downto 0)  <= slink_rx_data_i;
+  rx_fifo.wdata(35 downto 32) <= slink_rx_src_i;
+  rx_fifo.wdata(36)           <= slink_rx_last_i;
+  slink_rx_ready_o            <= rx_fifo.free;
 
   -- backup RX attributes for current access --
   rx_attributes: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      rx_last <= '0';
+      rx_last   <= '0';
+      route_src <= (others => '0');
     elsif rising_edge(clk_i) then
       if (rx_fifo.clear = '1') then
         rx_last <= '0';
       elsif (rx_fifo.re = '1') then
-        rx_last <= rx_fifo.rdata(32);
+        rx_last <= rx_fifo.rdata(36);
+      end if;
+      if (rx_fifo.re = '1') then
+        route_src <= rx_fifo.rdata(35 downto 32);
       end if;
     end if;
   end process rx_attributes;
@@ -248,10 +266,10 @@ begin
   tx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => SLINK_TX_FIFO,
-    FIFO_WIDTH => 1+32,  -- last + data
-    FIFO_RSYNC => false, -- "async" read - update FIFO status RIGHT after read access (for slink_tx_valid_o)
-    FIFO_SAFE  => true,  -- safe access
-    FULL_RESET => false  -- no HW reset, try to infer BRAM
+    FIFO_WIDTH => 1+4+32, -- last + routing + data
+    FIFO_RSYNC => false,  -- "async" read - update FIFO status RIGHT after read access (for slink_tx_valid_o)
+    FIFO_SAFE  => true,   -- safe access
+    FULL_RESET => false   -- no HW reset, try to infer BRAM
   )
   port map (
     -- control --
@@ -271,11 +289,12 @@ begin
 
   tx_fifo.clear <= (not ctrl.enable) or ctrl.tx_clr;
   tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3) = '1') else '0';
-  tx_fifo.wdata <= bus_req_i.addr(2) & bus_req_i.data; -- last-flag is set implicitly via access address (RTX_LAST register)
+  tx_fifo.wdata <= bus_req_i.addr(2) & route_dst & bus_req_i.data; -- last-flag is set implicitly via access address (RTX_LAST register)
 
   tx_fifo.re       <= slink_tx_ready_i;
   slink_tx_data_o  <= tx_fifo.rdata(31 downto 0);
-  slink_tx_last_o  <= tx_fifo.rdata(32);
+  slink_tx_dst_o   <= tx_fifo.rdata(35 downto 32);
+  slink_tx_last_o  <= tx_fifo.rdata(36);
   slink_tx_valid_o <= tx_fifo.avail;
 
   -- interrupt generator --
