@@ -62,9 +62,9 @@ enum NEORV32_SLINK_CTRL_enum {
 /** ROUTE register bits */
 enum NEORV32_SLINK_ROUTE_enum {
   SLINK_ROUTE_DST_LSB = 0, /**< SLINK routing register(0) (r/w): Destination routing information LSB */
-  SLINK_ROUTE_DST_MSB = 3, /**< SLINK routing register(3) (r/w): Destination routing information MSB */ 
+  SLINK_ROUTE_DST_MSB = 3, /**< SLINK routing register(3) (r/w): Destination routing information MSB */
   SLINK_ROUTE_SRC_LSB = 4, /**< SLINK routing register(4) (r/-): Source routing information LSB */
-  SLINK_ROUTE_SRC_MSB = 7  /**< SLINK routing register(7) (r/-): Source routing information MSB */ 
+  SLINK_ROUTE_SRC_MSB = 7  /**< SLINK routing register(7) (r/-): Source routing information MSB */
 };
 
 enum NEORV32_SLINK_STATUS_enum {
