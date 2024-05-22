@@ -128,6 +128,31 @@ inline uint32_t __attribute__((always_inline)) neorv32_slink_check_last(void) {
 
 
 /**********************************************************************//**
+ * Set TX link routing destination
+ *
+ * @param[in] dst Routing destination ID (4-bit, LSB-aligned).
+ **************************************************************************/
+inline void __attribute__((always_inline)) neorv32_slink_set_dst(uint32_t dst) {
+
+  NEORV32_SLINK->ROUTE = dst;
+}
+
+
+/**********************************************************************//**
+ * Get RX link routing source
+ *
+ * @note This needs has to be called AFTER reading the actual data word
+ * using #neorv32_slink_get(void).
+ *
+ * @return 4-bit source routing ID.
+ **************************************************************************/
+inline uint32_t __attribute__((always_inline)) neorv32_slink_get_src(void) {
+
+  return (NEORV32_SLINK->ROUTE >> SLINK_ROUTE_SRC_LSB) & 0xF;
+}
+
+
+/**********************************************************************//**
  * Write data to TX link (non-blocking)
  *
  * @param[in] tx_data Data to send to link.

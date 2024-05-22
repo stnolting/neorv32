@@ -349,6 +349,24 @@
           </fields>
         </register>
         <register>
+          <name>ROUTE</name>
+          <description>Routing information</description>
+          <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>SLINK_ROUTE_DST</name>
+              <bitRange>[3:0]</bitRange>
+              <description>TX stream destination address/ID (TDEST)</description>
+            </field>
+            <field>
+              <name>SLINK_ROUTE_SRC</name>
+              <bitRange>[7:4]</bitRange>
+              <access>read-only</access>
+              <description>RX stream source address/ID (TID)</description>
+            </field>
+          </fields>
+        </register>
+        <register>
           <name>DATA</name>
           <description>RX/TX data register</description>
           <addressOffset>0x08</addressOffset>

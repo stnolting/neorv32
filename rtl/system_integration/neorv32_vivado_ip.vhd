@@ -162,12 +162,14 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     -- Source --
 --  s0_axis_aclk   : in  std_ulogic := '0'; -- just to satisfy Vivado, but not actually used!
+    s0_axis_tdest  : out std_ulogic_vector(3 downto 0);
     s0_axis_tvalid : out std_ulogic;
     s0_axis_tready : in  std_ulogic := '0';
     s0_axis_tdata  : out std_ulogic_vector(31 downto 0);
     s0_axis_tlast  : out std_ulogic;
     -- Sink --
 --  s1_axis_aclk   : in  std_ulogic := '0'; -- just to satisfy Vivado, but not actually used!
+    s1_axis_tid    : in  std_ulogic_vector(3 downto 0) := x"0";
     s1_axis_tvalid : in  std_ulogic := '0';
     s1_axis_tready : out std_ulogic;
     s1_axis_tdata  : in  std_ulogic_vector(31 downto 0) := x"00000000";
@@ -387,10 +389,12 @@ begin
     xbus_err_i     => wb_core.err,
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i => s1_axis_tdata,
+    slink_rx_src_i => s1_axis_tid,
     slink_rx_val_i => s1_axis_tvalid,
     slink_rx_lst_i => s1_axis_tlast,
     slink_rx_rdy_o => s1_axis_tready,
     slink_tx_dat_o => s0_axis_tdata,
+    slink_tx_dst_o => s0_axis_tdest,
     slink_tx_val_o => s0_axis_tvalid,
     slink_tx_lst_o => s0_axis_tlast,
     slink_tx_rdy_i => s0_axis_tready,

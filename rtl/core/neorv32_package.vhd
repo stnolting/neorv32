@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090901"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090902"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -119,7 +119,7 @@ package neorv32_package is
   -- Internal Memory Types ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   type mem32_t is array (natural range <>) of std_ulogic_vector(31 downto 0); -- memory with 32-bit entries
-  type mem8_t  is array (natural range <>) of std_ulogic_vector(07 downto 0); -- memory with 8-bit entries
+  type mem8_t  is array (natural range <>) of std_ulogic_vector(7 downto 0);  -- memory with 8-bit entries
 
   -- Internal Bus Interface -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -127,7 +127,7 @@ package neorv32_package is
   type bus_req_t is record
     addr  : std_ulogic_vector(31 downto 0); -- access address
     data  : std_ulogic_vector(31 downto 0); -- write data
-    ben   : std_ulogic_vector(03 downto 0); -- byte enable
+    ben   : std_ulogic_vector(3 downto 0); -- byte enable
     stb   : std_ulogic; -- request strobe (single-shot)
     rw    : std_ulogic; -- 0=read, 1=write
     src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
@@ -167,8 +167,8 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- request --
   type dmi_req_t is record
-    addr : std_ulogic_vector(06 downto 0);
-    op   : std_ulogic_vector(01 downto 0);
+    addr : std_ulogic_vector(6 downto 0);
+    op   : std_ulogic_vector(1 downto 0);
     data : std_ulogic_vector(31 downto 0);
   end record;
 
@@ -483,17 +483,17 @@ package neorv32_package is
   type ctrl_bus_t is record
     -- register file --
     rf_wb_en     : std_ulogic; -- write back enable
-    rf_rs1       : std_ulogic_vector(04 downto 0); -- source register 1 address
-    rf_rs2       : std_ulogic_vector(04 downto 0); -- source register 2 address
-    rf_rd        : std_ulogic_vector(04 downto 0); -- destination register address
+    rf_rs1       : std_ulogic_vector(4 downto 0);  -- source register 1 address
+    rf_rs2       : std_ulogic_vector(4 downto 0);  -- source register 2 address
+    rf_rd        : std_ulogic_vector(4 downto 0);  -- destination register address
     rf_zero_we   : std_ulogic;                     -- allow/force write access to x0
     -- alu --
-    alu_op       : std_ulogic_vector(02 downto 0); -- operation select
+    alu_op       : std_ulogic_vector(2 downto 0);  -- operation select
     alu_sub      : std_ulogic;                     -- addition/subtraction control
     alu_opa_mux  : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
     alu_opb_mux  : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
     alu_unsigned : std_ulogic;                     -- is unsigned ALU operation
-    alu_cp_trig  : std_ulogic_vector(05 downto 0); -- co-processor trigger (one-hot)
+    alu_cp_trig  : std_ulogic_vector(5 downto 0);  -- co-processor trigger (one-hot)
     -- load/store unit --
     lsu_req      : std_ulogic;                     -- trigger memory access request
     lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
@@ -501,9 +501,9 @@ package neorv32_package is
     lsu_fence    : std_ulogic;                     -- fence(.i) operation
     lsu_priv     : std_ulogic;                     -- effective privilege mode for load/store
     -- instruction word --
-    ir_funct3    : std_ulogic_vector(02 downto 0); -- funct3 bit field
+    ir_funct3    : std_ulogic_vector(2 downto 0);  -- funct3 bit field
     ir_funct12   : std_ulogic_vector(11 downto 0); -- funct12 bit field
-    ir_opcode    : std_ulogic_vector(06 downto 0); -- opcode bit field
+    ir_opcode    : std_ulogic_vector(6 downto 0);  -- opcode bit field
     -- cpu status --
     cpu_priv     : std_ulogic;                     -- effective privilege mode
     cpu_sleep    : std_ulogic;                     -- set when CPU is in sleep mode
@@ -818,7 +818,7 @@ package neorv32_package is
       xbus_adr_o     : out std_ulogic_vector(31 downto 0);
       xbus_dat_o     : out std_ulogic_vector(31 downto 0);
       xbus_we_o      : out std_ulogic;
-      xbus_sel_o     : out std_ulogic_vector(03 downto 0);
+      xbus_sel_o     : out std_ulogic_vector(3 downto 0);
       xbus_stb_o     : out std_ulogic;
       xbus_cyc_o     : out std_ulogic;
       xbus_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => 'L');
@@ -826,10 +826,12 @@ package neorv32_package is
       xbus_err_i     : in  std_ulogic := 'L';
       -- Stream Link Interface (available if IO_SLINK_EN = true) --
       slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');
+      slink_rx_src_i : in  std_ulogic_vector(3 downto 0) := (others => 'L');
       slink_rx_val_i : in  std_ulogic := 'L';
       slink_rx_lst_i : in  std_ulogic := 'L';
       slink_rx_rdy_o : out std_ulogic;
       slink_tx_dat_o : out std_ulogic_vector(31 downto 0);
+      slink_tx_dst_o : out std_ulogic_vector(3 downto 0);
       slink_tx_val_o : out std_ulogic;
       slink_tx_lst_o : out std_ulogic;
       slink_tx_rdy_i : in  std_ulogic := 'L';
@@ -855,7 +857,7 @@ package neorv32_package is
       spi_clk_o      : out std_ulogic;
       spi_dat_o      : out std_ulogic;
       spi_dat_i      : in  std_ulogic := 'L';
-      spi_csn_o      : out std_ulogic_vector(07 downto 0); -- SPI CS
+      spi_csn_o      : out std_ulogic_vector(7 downto 0); -- SPI CS
       -- SDI (available if IO_SDI_EN = true) --
       sdi_clk_i      : in  std_ulogic := 'L';
       sdi_dat_o      : out std_ulogic;
