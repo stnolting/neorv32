@@ -237,6 +237,7 @@ All core VHDL files from the list below have to be assigned to a **new library**
 neorv32_top.vhd                  - NEORV32 PROCESSOR TOP ENTITY
 ...................................
 
+.Processor-Internal Memories
 [NOTE]
 The processor-internal instruction and data memories (IMEM and DMEM) are split into two design files each:
 a plain entity definition (`neorv32_*mem.entity.vhd`) and the actual architecture definition
@@ -244,6 +245,11 @@ a plain entity definition (`neorv32_*mem.entity.vhd`) and the actual architectur
 _platform independent_ memory design (inferring embedded memory blocks). You can replace/modify the architecture
 source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
 and/or timing.
+
+.File-List / Compile-Order Files
+[TIP]
+RTL file lists for the entire processor and for the CPU only are available in the `rtl` folder as
+`processor_hdl_files.f` and `cpu_hdl_files.f`, respectively. Theses files also define the actual compile order.
 
 
 
