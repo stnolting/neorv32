@@ -87,8 +87,6 @@ entity neorv32_vivado_ip is
     XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16       := 256;
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                : natural                        := 0;
-    XIRQ_TRIGGER_TYPE          : std_ulogic_vector(31 downto 0) := x"ffffffff";
-    XIRQ_TRIGGER_POLARITY      : std_ulogic_vector(31 downto 0) := x"ffffffff";
     -- Processor peripherals --
     IO_GPIO_NUM                : natural range 0 to 64          := 0;
     IO_MTIME_EN                : boolean                        := false;
@@ -332,8 +330,6 @@ begin
     XIP_CACHE_BLOCK_SIZE       => XIP_CACHE_BLOCK_SIZE,
     -- External Interrupts Controller --
     XIRQ_NUM_CH                => XIRQ_NUM_CH,
-    XIRQ_TRIGGER_TYPE          => XIRQ_TRIGGER_TYPE,
-    XIRQ_TRIGGER_POLARITY      => XIRQ_TRIGGER_POLARITY,
     -- Processor peripherals --
     IO_GPIO_NUM                => IO_GPIO_NUM,
     IO_MTIME_EN                => IO_MTIME_EN,
