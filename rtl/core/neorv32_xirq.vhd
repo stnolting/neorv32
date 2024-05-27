@@ -3,10 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- Simple interrupt controller for platform (processor-external) interrupts. Up to  --
 -- 32 channels are supported that get (optionally) prioritized into a single CPU    --
--- interrupt.                                                                       --
--- The actual trigger configuration has to be done BEFORE synthesis using the       --
--- XIRQ_TRIGGER_TYPE and XIRQ_TRIGGER_POLARITY generics. These allow to configure   --
--- channel-independent low-/high-level, falling-/rising-edge triggers.              --
+-- interrupt. Trigger type is programmable per channel by configuration registers.  --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -24,9 +21,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_xirq is
   generic (
-    XIRQ_NUM_CH           : natural range 0 to 32;          -- number of IRQ channels
-    XIRQ_TRIGGER_TYPE     : std_ulogic_vector(31 downto 0); -- trigger type: 0=level, 1=edge
-    XIRQ_TRIGGER_POLARITY : std_ulogic_vector(31 downto 0)  -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
+    XIRQ_NUM_CH : natural range 0 to 32 -- number of IRQ channels
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -40,10 +35,16 @@ end neorv32_xirq;
 
 architecture neorv32_xirq_rtl of neorv32_xirq is
 
+  -- register addresses --
+  constant addr_enable_c    : std_ulogic_vector(2 downto 0) := "000"; -- r/w: channel enable
+  constant addr_pending_c   : std_ulogic_vector(2 downto 0) := "001"; -- r/w: pending IRQs
+  constant addr_source_c    : std_ulogic_vector(2 downto 0) := "010"; -- r/w: source IRQ, ACK on write
+  constant addr_ttype_c     : std_ulogic_vector(2 downto 0) := "011"; -- r/w: trigger type (level/edge)
+  constant addr_tpolarity_c : std_ulogic_vector(2 downto 0) := "100"; -- r/w: trigger polarity (high/low or rising/falling)
+
   -- interface registers --
-  signal irq_enable   : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0); -- r/w: channel enable
-  signal nclr_pending : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0); -- r/w: pending IRQs
-  signal irq_source   : std_ulogic_vector(4 downto 0); -- r/w: source IRQ, ACK on write
+  signal irq_enable, nclr_pending, irq_type, irq_polarity : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
+  signal irq_source : std_ulogic_vector(4 downto 0);
 
   -- interrupt trigger --
   signal irq_sync, irq_sync2, irq_trig : std_ulogic_vector(XIRQ_NUM_CH-1 downto 0);
@@ -67,6 +68,8 @@ begin
       bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
       nclr_pending   <= (others => '0');
+      irq_type       <= (others => '0');
+      irq_polarity   <= (others => '0');
       irq_enable     <= (others => '0');
     elsif rising_edge(clk_i) then
       -- defaults --
@@ -74,21 +77,28 @@ begin
       bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
       nclr_pending   <= (others => '1');
-
       -- bus access --
       if (bus_req_i.stb = '1') then
         if (bus_req_i.rw = '1') then -- write access
-          if (bus_req_i.addr(3 downto 2) = "00") then -- channel-enable
+          if (bus_req_i.addr(4 downto 2) = addr_enable_c) then -- channel-enable
             irq_enable <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0);
           end if;
-          if (bus_req_i.addr(3 downto 2) = "01") then -- clear pending IRQs
+          if (bus_req_i.addr(4 downto 2) = addr_pending_c) then -- clear pending IRQs
             nclr_pending <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0); -- set zero to clear pending IRQ
           end if;
+          if (bus_req_i.addr(4 downto 2) = addr_ttype_c) then -- trigger type
+            irq_type <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0);
+          end if;
+          if (bus_req_i.addr(4 downto 2) = addr_tpolarity_c) then -- trigger polarity
+            irq_polarity <= bus_req_i.data(XIRQ_NUM_CH-1 downto 0);
+          end if;
         else -- read access
-          case bus_req_i.addr(3 downto 2) is
-            when "00"   => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_enable;  -- channel-enable
-            when "01"   => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_pending; -- pending IRQs
-            when others => bus_rsp_o.data(4 downto 0)             <= irq_source;  -- IRQ source
+          case bus_req_i.addr(4 downto 2) is
+            when addr_enable_c  => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_enable;   -- channel-enable
+            when addr_pending_c => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_pending;  -- pending IRQs
+            when addr_source_c  => bus_rsp_o.data(4 downto 0)             <= irq_source;   -- IRQ source
+            when addr_ttype_c   => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_type;     -- trigger type
+            when others         => bus_rsp_o.data(XIRQ_NUM_CH-1 downto 0) <= irq_polarity; -- trigger polarity
           end case;
         end if;
       end if;
@@ -112,10 +122,10 @@ begin
   -- trigger type select --
   irq_trigger_gen:
   for i in 0 to XIRQ_NUM_CH-1 generate
-    irq_trigger: process(irq_sync, irq_sync2)
+    irq_trigger: process(irq_sync, irq_sync2, irq_type, irq_polarity)
       variable sel_v : std_ulogic_vector(1 downto 0);
     begin
-      sel_v := XIRQ_TRIGGER_TYPE(i) & XIRQ_TRIGGER_POLARITY(i);
+      sel_v := irq_type(i) & irq_polarity(i);
       case sel_v is
         when "00"   => irq_trig(i) <= not irq_sync(i); -- low-level
         when "01"   => irq_trig(i) <= irq_sync(i); -- high-level
@@ -165,7 +175,8 @@ begin
         if (irq_fire = '1') then
           irq_active <= '1';
         end if;
-      elsif (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) = "10") then -- acknowledge on write access
+      elsif (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and
+            (bus_req_i.addr(4 downto 2) = addr_source_c) then -- acknowledge on write access
         irq_active <= '0';
       end if;
     end if;
