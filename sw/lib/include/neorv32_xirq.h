@@ -25,8 +25,8 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t       EIE;       /**< offset 0:  external interrupt enable register */
   uint32_t       EIP;       /**< offset 4:  external interrupt pending register */
   uint32_t       ESC;       /**< offset 8:  external interrupt source register */
-  uint32_t       TTYP;      /**< offset 12:  external interrupt source register */
-  uint32_t       TPOL;      /**< offset 16:  external interrupt source register */
+  uint32_t       TTYP;      /**< offset 12: external interrupt source register */
+  uint32_t       TPOL;      /**< offset 16: external interrupt source register */
   const uint32_t reserved0; /**< offset 20: reserved */
   const uint32_t reserved1; /**< offset 24: reserved */
   const uint32_t reserved2; /**< offset 28: reserved */
