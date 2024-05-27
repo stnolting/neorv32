@@ -147,6 +147,35 @@ int neorv32_xirq_get_num(void) {
 
 
 /**********************************************************************//**
+ * Configure a channel's trigger type.
+ *
+ * @param[in] channel XIRQ interrupt channel (0..31).
+ * @param[in] config Trigger type: 00 = low-level, 01 = high-level, 10 = falling-edge, 11 = rising-edge.
+ **************************************************************************/
+void neorv32_xirq_setup_trigger(int channel, int config) {
+
+  if (channel > 31) {
+    return;
+  }
+
+  uint32_t t = (((uint32_t)config) >> 1) & 1;
+  uint32_t p = (((uint32_t)config) >> 0) & 1;
+
+  uint32_t trig_typ = NEORV32_XIRQ->TTYP;
+  uint32_t trig_pol = NEORV32_XIRQ->TPOL;
+
+  trig_typ &= ~(1 << channel); // clear bit
+  trig_typ |= t << channel;
+
+  trig_pol &= ~(1 << channel); // clear bit
+  trig_pol |= p << channel;
+
+  NEORV32_XIRQ->TTYP = trig_typ;
+  NEORV32_XIRQ->TPOL = trig_pol;
+}
+
+
+/**********************************************************************//**
  * Clear pending interrupt.
  *
  * @param[in] channel XIRQ interrupt channel (0..31).
