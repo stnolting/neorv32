@@ -249,8 +249,6 @@ begin
     XIP_CACHE_BLOCK_SIZE         => 256,           -- block size in bytes (min 4), has to be a power of 2
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                  => 32,            -- number of external IRQ channels (0..32)
-    XIRQ_TRIGGER_TYPE            => (others => '1'), -- trigger type: 0=level, 1=edge
-    XIRQ_TRIGGER_POLARITY        => (others => '1'), -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
     -- Processor peripherals --
     IO_GPIO_NUM                  => 64,            -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                  => true,          -- implement machine system timer (MTIME)?

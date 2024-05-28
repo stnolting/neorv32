@@ -868,7 +868,7 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x10</size>
+        <size>0x14</size>
         <usage>registers</usage>
       </addressBlock>
 
@@ -887,6 +887,16 @@
           <name>SCR</name>
           <description>IRQ source register</description>
           <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>TTYP</name>
+          <description>IRQ trigger type (level/edge)</description>
+          <addressOffset>0x0c</addressOffset>
+        </register>
+        <register>
+          <name>TPOL</name>
+          <description>IRQ trigger polarity (high/low, rising/falling)</description>
+          <addressOffset>0x10</addressOffset>
         </register>
       </registers>
     </peripheral>

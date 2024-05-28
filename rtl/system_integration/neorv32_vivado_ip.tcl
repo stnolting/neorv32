@@ -244,10 +244,6 @@ ipgui::move_param -component [ipx::current_core] -order 14 [ipgui::get_guiparams
 # Configuration GUI: Peripherals
 # **************************************************************
 set_property display_name {External interrupt controller (XIRQ)}                  [ipgui::get_guiparamspec -name "XIRQ_NUM_CH"           -component [ipx::current_core]]
-set_property display_name {External interrupt controller (XIRQ trigger type}      [ipgui::get_guiparamspec -name "XIRQ_TRIGGER_TYPE"     -component [ipx::current_core]]
-set_property tooltip      {0=level, 1=edge}                                       [ipgui::get_guiparamspec -name "XIRQ_TRIGGER_TYPE"     -component [ipx::current_core]]
-set_property display_name {External interrupt controller (XIRQ trigger polarity}  [ipgui::get_guiparamspec -name "XIRQ_TRIGGER_POLARITY" -component [ipx::current_core]]
-set_property tooltip      {0=low-level/falling-edge, 1=high-level/rising-edge}    [ipgui::get_guiparamspec -name "XIRQ_TRIGGER_POLARITY" -component [ipx::current_core]]
 set_property display_name {GPIO port pins}                                        [ipgui::get_guiparamspec -name "IO_GPIO_NUM"           -component [ipx::current_core]]
 set_property display_name {Machine timer}                                         [ipgui::get_guiparamspec -name "IO_MTIME_EN"           -component [ipx::current_core]]
 set_property display_name {Primary UART (UART0)}                                  [ipgui::get_guiparamspec -name "IO_UART0_EN"           -component [ipx::current_core]]
@@ -307,9 +303,7 @@ ipgui::move_param -component [ipx::current_core] -order 24 [ipgui::get_guiparams
 ipgui::move_param -component [ipx::current_core] -order 25 [ipgui::get_guiparamspec -name "IO_ONEWIRE_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
 ipgui::move_param -component [ipx::current_core] -order 26 [ipgui::get_guiparamspec -name "IO_DMA_EN"             -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
 ipgui::move_param -component [ipx::current_core] -order 27 [ipgui::get_guiparamspec -name "XIRQ_NUM_CH"           -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 28 [ipgui::get_guiparamspec -name "XIRQ_TRIGGER_TYPE"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 29 [ipgui::get_guiparamspec -name "XIRQ_TRIGGER_POLARITY" -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 30 [ipgui::get_guiparamspec -name "IO_CRC_EN"             -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
+ipgui::move_param -component [ipx::current_core] -order 28 [ipgui::get_guiparamspec -name "IO_CRC_EN"             -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
 
 
 # **************************************************************

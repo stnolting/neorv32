@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090902"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090903"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -769,8 +769,6 @@ package neorv32_package is
       XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16       := 256;
       -- External Interrupts Controller (XIRQ) --
       XIRQ_NUM_CH                : natural range 0 to 32          := 0;
-      XIRQ_TRIGGER_TYPE          : std_ulogic_vector(31 downto 0) := x"ffffffff";
-      XIRQ_TRIGGER_POLARITY      : std_ulogic_vector(31 downto 0) := x"ffffffff";
       -- Processor peripherals --
       IO_GPIO_NUM                : natural range 0 to 64          := 0;
       IO_MTIME_EN                : boolean                        := false;
