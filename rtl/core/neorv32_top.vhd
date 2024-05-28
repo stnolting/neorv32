@@ -99,8 +99,6 @@ entity neorv32_top is
 
     -- External Interrupts Controller (XIRQ) --
     XIRQ_NUM_CH                : natural range 0 to 32          := 0;           -- number of external IRQ channels (0..32)
-    XIRQ_TRIGGER_TYPE          : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger type: 0=level, 1=edge
-    XIRQ_TRIGGER_POLARITY      : std_ulogic_vector(31 downto 0) := x"ffffffff"; -- trigger polarity: 0=low-level/falling-edge, 1=high-level/rising-edge
 
     -- Processor peripherals --
     IO_GPIO_NUM                : natural range 0 to 64          := 0;           -- number of GPIO input/output pairs (0..64)
@@ -1434,9 +1432,7 @@ begin
     if io_xirq_en_c generate
       neorv32_xirq_inst: entity neorv32.neorv32_xirq
       generic map (
-        XIRQ_NUM_CH           => XIRQ_NUM_CH,
-        XIRQ_TRIGGER_TYPE     => XIRQ_TRIGGER_TYPE,
-        XIRQ_TRIGGER_POLARITY => XIRQ_TRIGGER_POLARITY
+        XIRQ_NUM_CH => XIRQ_NUM_CH
       )
       port map (
         clk_i     => clk_i,

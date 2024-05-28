@@ -264,8 +264,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `XIP_CACHE_BLOCK_SIZE`  | natural   | 256        | Number of bytes per XIP cache block. Has to be a power of two, min 4.
 4+^| **<<_external_interrupt_controller_xirq>>**
 | `XIRQ_NUM_CH`           | natural   | 0          | Number of channels of the external interrupt controller. Valid values are 0..32.
-| `XIRQ_TRIGGER_TYPE`     | suv(31:0) | 0xFFFFFFFF | Trigger type (one bit per channel): `0` = level-triggered, '1' = edge triggered.
-| `XIRQ_TRIGGER_POLARITY` | suv(31:0) | 0xFFFFFFFF | Trigger polarity (one bit per channel): `0` = low-level/falling-edge, '1' = high-level/rising-edge.
 4+^| **Peripheral/IO Modules**
 | `IO_GPIO_NUM`           | natural   | 0          | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>.
 | `IO_MTIME_EN`           | boolean   | false      | Implement the <<_machine_system_timer_mtime>>.
