@@ -1,0 +1,15 @@
+neorv32_package.vhd
+neorv32_fifo.vhd
+neorv32_cpu_decompressor.vhd
+neorv32_cpu_control.vhd
+neorv32_cpu_regfile.vhd
+neorv32_cpu_cp_shifter.vhd
+neorv32_cpu_cp_muldiv.vhd
+neorv32_cpu_cp_bitmanip.vhd
+neorv32_cpu_cp_fpu.vhd
+neorv32_cpu_cp_cfu.vhd
+neorv32_cpu_cp_cond.vhd
+neorv32_cpu_alu.vhd
+neorv32_cpu_lsu.vhd
+neorv32_cpu_pmp.vhd
+neorv32_cpu.vhd
