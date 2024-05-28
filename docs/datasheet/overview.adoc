@@ -169,58 +169,53 @@ neorv32               - Project home folder
 All necessary VHDL hardware description files are located in the project's `rtl/core` folder. The top entity
 of the entire processor including all the required configuration generics is `neorv32_top.vhd`.
 
-.Compile Order
+.Compile Order / File-List Files
 [IMPORTANT]
 Most of the RTL sources use **entity instantiation**. Hence, the RTL compile order might be relevant.
-The list below shows the hierarchical compile order srarting at the top.
+Therefore, two file list files (`*.f`) are provided in the `rtl` folder that list all required rtl files
+for the CPU core and for the entire processor and also represent their recommended compile order.
 
 .VHDL Library
 [IMPORTANT]
 All core VHDL files from the list below have to be assigned to a **new library** named `neorv32`.
 
 ...................................
-┌neorv32_package.vhd             - Processor/CPU main VHDL package file
-├neorv32_clockgate.vhd           - Generic clock gating switch
-├neorv32_fifo.vhd                - Generic FIFO component
+neorv32_top.vhd                  - NEORV32 PROCESSOR TOP ENTITY
 │
-│ ┌neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
-│ ├neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
-│ ├neorv32_cpu_cp_cond.vhd       - Integer conditional operations (Zicond ext.)
-│ ├neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
-│ ├neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
-│ ├neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M ext.)
-│ │
-│┌neorv32_cpu_alu.vhd            - Arithmetic/logic unit
-│├neorv32_cpu_pmp.vhd            - Physical memory protection unit (Smpmp ext.)
-│├neorv32_cpu_lsu.vhd            - Load/store unit
-││ ┌neorv32_cpu_decompressor.vhd - Compressed instructions decoder (C ext.)
+├neorv32_cpu.vhd                 - NEORV32 CPU TOP ENTIT
+│├neorv32_cpu_alu.vhd            - Arithmetic/logic unit
+││├neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
+││├neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
+││├neorv32_cpu_cp_cond.vhd       - Integer conditional operations (Zicond ext.)
+││├neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
+││├neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
+││├neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M ext.)
 │├neorv32_cpu_control.vhd        - CPU control, exception system and CSRs
-│├neorv32_cpu_regfile.vhd        - Data register file
-││
-├neorv32_cpu.vhd                 - NEORV32 CPU TOP ENTITY
+││└neorv32_cpu_decompressor.vhd  - Compressed instructions decoder (C ext.)
+│├neorv32_cpu_lsu.vhd            - Load/store unit
+│├neorv32_cpu_pmp.vhd            - Physical memory protection unit (Smpmp ext.)
+│└neorv32_cpu_regfile.vhd        - Data register file
 │
-├mem/neorv32_dmem.default.vhd    - *Default* data memory (architecture-only)
-├mem/neorv32_imem.default.vhd    - *Default* instruction memory (architecture-only)
-│
-│┌neorv32_bootloader_image.vhd   - Bootloader ROM memory image
 ├neorv32_boot_rom.vhd            - Bootloader ROM
-│
-│┌neor32_application_image.vhd   - IMEM application initialization image
-├neorv32_imem.entity.vhd         - Processor-internal instruction memory (entity-only!)
-│
+│└neorv32_bootloader_image.vhd   - Bootloader ROM memory image
 ├neorv32_cfs.vhd                 - Custom functions subsystem
+├neorv32_clockgate.vhd           - Generic clock gating switch
 ├neorv32_crc.vhd                 - Cyclic redundancy check unit
 ├neorv32_cache.vhd               - Generic cache module
 ├neorv32_debug_dm.vhd            - on-chip debugger: debug module
 ├neorv32_debug_dtm.vhd           - on-chip debugger: debug transfer module
 ├neorv32_dma.vhd                 - Direct memory access controller
 ├neorv32_dmem.entity.vhd         - Processor-internal data memory (entity-only!)
+├neorv32_fifo.vhd                - Generic FIFO component
 ├neorv32_gpio.vhd                - General purpose input/output port unit
 ├neorv32_gptmr.vhd               - General purpose 32-bit timer
+├neorv32_imem.entity.vhd         - Processor-internal instruction memory (entity-only!)
+│└neor32_application_image.vhd   - IMEM application initialization image
 ├neorv32_intercon.vhd            - SoC bus infrastructure
 ├neorv32_mtime.vhd               - Machine system timer
 ├neorv32_neoled.vhd              - NeoPixel (TM) compatible smart LED interface
 ├neorv32_onewire.vhd             - One-Wire serial interface controller
+├neorv32_package.vhd             - Main VHDL package file
 ├neorv32_pwm.vhd                 - Pulse-width modulation controller
 ├neorv32_sdi.vhd                 - Serial data interface controller (SPI device)
 ├neorv32_slink.vhd               - Stream link interface
@@ -234,7 +229,8 @@ All core VHDL files from the list below have to be assigned to a **new library**
 ├neorv32_xip.vhd                 - Execute in place module
 ├neorv32_xirq.vhd                - External interrupt controller
 │
-neorv32_top.vhd                  - NEORV32 PROCESSOR TOP ENTITY
+├mem/neorv32_dmem.default.vhd    - *Default* data memory (architecture-only!)
+└mem/neorv32_imem.default.vhd    - *Default* instruction memory (architecture-only!)
 ...................................
 
 .Processor-Internal Memories
@@ -245,11 +241,6 @@ a plain entity definition (`neorv32_*mem.entity.vhd`) and the actual architectur
 _platform independent_ memory design (inferring embedded memory blocks). You can replace/modify the architecture
 source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
 and/or timing.
-
-.File-List / Compile-Order Files
-[TIP]
-RTL file lists for the entire processor and for the CPU only are available in the `rtl` folder as
-`processor_hdl_files.f` and `cpu_hdl_files.f`, respectively. Theses files also define the actual compile order.
 
 
 
