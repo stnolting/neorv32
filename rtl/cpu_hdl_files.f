@@ -1,0 +1,15 @@
+rtl/neorv32_package.vhd
+rtl/neorv32_fifo.vhd
+rtl/neorv32_cpu_decompressor.vhd
+rtl/neorv32_cpu_control.vhd
+rtl/neorv32_cpu_regfile.vhd
+rtl/neorv32_cpu_cp_shifter.vhd
+rtl/neorv32_cpu_cp_muldiv.vhd
+rtl/neorv32_cpu_cp_bitmanip.vhd
+rtl/neorv32_cpu_cp_fpu.vhd
+rtl/neorv32_cpu_cp_cfu.vhd
+rtl/neorv32_cpu_cp_cond.vhd
+rtl/neorv32_cpu_alu.vhd
+rtl/neorv32_cpu_lsu.vhd
+rtl/neorv32_cpu_pmp.vhd
+rtl/neorv32_cpu.vhd
