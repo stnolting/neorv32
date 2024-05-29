@@ -30,7 +30,7 @@ the generated IP block into the Vivado IP repository.
 . In GUI mode select either "Tools -> Run TCL Script" to directly execute the script or open the TCL
 shell ("Window -> Tcl Console") to manually invoke the script.
 . Use `cd` in the TCL console to navigate to the project's `neorv32/rtl/system_integration` folder.
-. Execute `source source neorv32_vivado_ip.tcl` in the TCL console.
+. Execute `source neorv32_vivado_ip.tcl` in the TCL console.
 . A second Vivado instance will open automatically packaging the IP module. After this process is completed,
 the second Vivado instance will automatically close again.
 . A new folder `neorv32_vivado_ip_work` is created in `neorv32/rtl/system_integration` which contains the IP-packaging
