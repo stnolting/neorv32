@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 29.05.2024 | 1.9.9.4 | Vivado IP block: add resizing ports for GPIOs, XIRQs and PWM; split size configuration for GPIO inputs and outputs | [#913](https://github.com/stnolting/neorv32/pull/913) |
 | 27.05.2024 | 1.9.9.3 | removed `XIRQ_TRIGGER_*` generics; XIRQ trigger type is now _programmable_ by dedicated configuration registers | [#911](https://github.com/stnolting/neorv32/pull/911) |
 | 21.05.2024 | 1.9.9.2 | :sparkles: add SLINK routing information ports (compatible to AXI-stream's `TID` and `TDEST` signals) | [#908](https://github.com/stnolting/neorv32/pull/908) |
 | 04.05.2024 | 1.9.9.1 | :sparkles: add NEORV32 as Vivado IP block | [#894](https://github.com/stnolting/neorv32/pull/894) |
