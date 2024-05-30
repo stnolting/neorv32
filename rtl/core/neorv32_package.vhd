@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090903"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01090904"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -683,6 +683,8 @@ package neorv32_package is
   function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural;
   function cond_sel_suv_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector;
   function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string;
+  function max_natural_f(a : natural; b : natural) return natural;
+  function min_natural_f(a : natural; b : natural) return natural;
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
   function bin_to_gray_f(input : std_ulogic_vector) return std_ulogic_vector;
   function gray_to_bin_f(input : std_ulogic_vector) return std_ulogic_vector;
@@ -952,6 +954,28 @@ package body neorv32_package is
       return val_f;
     end if;
   end function cond_sel_string_f;
+
+  -- Select minimal natural value -----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function max_natural_f(a : natural; b : natural) return natural is
+  begin
+    if a < b then
+      return b;
+    else
+      return a;
+    end if;
+  end function max_natural_f;
+
+  -- Select maximal natural value -----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function min_natural_f(a : natural; b : natural) return natural is
+  begin
+    if a < b then
+      return a;
+    else
+      return b;
+    end if;
+  end function min_natural_f;
 
   -- Convert boolean to std_ulogic ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
