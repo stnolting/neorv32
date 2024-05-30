@@ -59,7 +59,7 @@ All signals are of type `std_ulogic` or `std_ulogic_vector`, respectively.
 All _optional_ input signals provide default values in case they are not explicitly assigned during instantiation.
 The weak driver strengths of VHDL (`'L'` and `'H'`) are used to model a pull-down or pull-up resistor.
 
-.Configurable Amount of Channels
+.Variable-Sized Ports
 [NOTE]
 Some peripherals allow to configure the number of channels to-be-implemented by a generic (for example the number
 of PWM channels). The according input/output signals have a fixed sized regardless of the actually configured
@@ -168,10 +168,7 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 === Processor Top Entity - Generics
 
 This section lists all configuration generics of the NEORV32 processor top entity (`rtl/neorv32_top.vhd`).
-
-.Customization
-[TIP]
-The NEORV32 generics allow to configure the system according to your needs. The generics are
+These generics allow to configure the system according to your needs. The generics are
 used to control implementation of certain CPU extensions and peripheral modules and even allow to
 optimize the system for certain design goals like minimal area or maximum performance.
 
