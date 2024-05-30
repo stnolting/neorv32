@@ -204,11 +204,13 @@ begin
         dir_req_q <= req_terminate_c;
         dir_rsp_q <= rsp_terminate_c;
       elsif rising_edge(clk_i) then
+        -- is direct access? --
         if (dir_acc_q = '0') and (host_req_i.stb = '1') and (dir_acc_d = '1') then
           dir_acc_q <= '1';
         elsif (dir_acc_q = '1') and ((dir_rsp_q.ack = '1') or (dir_rsp_q.err = '1')) then
           dir_acc_q <= '0';
         end if;
+        -- bus request buffer --
         if (READ_ONLY = true) then -- do not propagate STB on write access, issue ERR instead
           dir_req_q     <= dir_req_d;
           dir_req_q.stb <= dir_req_d.stb and (not dir_req_d.rw); -- read accesses only
@@ -348,14 +350,15 @@ begin
       PORT_B_READ_ONLY => READ_ONLY
     )
     port map (
-      clk_i   => clk_i,
-      rstn_i  => rstn_i,
-      a_req_i => bus_req,
-      a_rsp_o => bus_rsp,
-      b_req_i => dir_req_q,
-      b_rsp_o => dir_rsp_d,
-      x_req_o => bus_req_o,
-      x_rsp_i => bus_rsp_i
+      clk_i    => clk_i,
+      rstn_i   => rstn_i,
+      a_lock_i => bus_cmd_busy, -- cache accesses have exclusive access
+      a_req_i  => bus_req,
+      a_rsp_o  => bus_rsp,
+      b_req_i  => dir_req_q,
+      b_rsp_o  => dir_rsp_d,
+      x_req_o  => bus_req_o,
+      x_rsp_i  => bus_rsp_i
     );
   end generate;
 
@@ -1054,7 +1057,7 @@ begin
   end process ctrl_engine_comb;
 
   -- bus arbiter operation in progress (host keeps allying cache address while bus unit reports idle state) --
-  cmd_busy_o <= '0' when (state = S_IDLE) or (state = S_CHECK) else '1';
+  cmd_busy_o <= '0' when (state = S_IDLE) else '1';
 
 
 end neorv32_cache_bus_rtl;
