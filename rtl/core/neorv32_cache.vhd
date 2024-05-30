@@ -381,7 +381,7 @@ end neorv32_cache_rtl;
 -- -------------------------------------------------------------------------------- --
 -- Handle host accesses to the cache (check for hit/miss) or bypass cache if        --
 -- direct/uncached access. If a cache miss occurs or a fence request is received an --
--- according command is sent to the bus interface unit.                             --                                       
+-- according command is sent to the bus interface unit.                             --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -389,7 +389,6 @@ end neorv32_cache_rtl;
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
-
 
 library ieee;
 use ieee.std_logic_1164.all;
