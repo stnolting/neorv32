@@ -1056,7 +1056,7 @@ begin
     end case;
   end process ctrl_engine_comb;
 
-  -- bus arbiter operation in progress (host keeps allying cache address while bus unit reports idle state) --
+  -- bus arbiter operation in progress --
   cmd_busy_o <= '0' when (state = S_IDLE) else '1';
 
 
