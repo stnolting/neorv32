@@ -35,9 +35,10 @@ informed via _precise_ and resumable hardware exceptions.
 * :books: For detailed information see the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
 * :recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
 * :heavy_check_mark: [Continuous integration](#project-status) to check for regressions (including RISC-V ISA compatibility check using **RISCOF**).
-* :package: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
+* :open_file_folder: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
 [community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
 targeting various FPGA boards and toolchains to get started.
+* :package: The entire processor is also available as [Vivado IP Block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block).
 * :kite: Support for [FreeRTOS](https://github.com/stnolting/neorv32-freertos),
 [Zephyr OS](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) and
 [LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC Builder Framework.
@@ -48,7 +49,7 @@ targeting various FPGA boards and toolchains to get started.
 
 > [!NOTE]
 > Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
-[discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas or if something is
+[discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas, feedback or if something is
 not working as expected. See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
 
 
@@ -271,7 +272,7 @@ This overview provides some *quick links* to the most important sections of the
 * [Simulation](https://stnolting.github.io/neorv32/ug/#_simulating_the_processor) - simulate the whole SoC
 * [LiteX Integration](https://stnolting.github.io/neorv32/ug/#_litex_soc_builder_support) - build a SoC using NEORV32 + [LiteX](https://github.com/enjoy-digital/litex)
 * [Convert to Verilog](https://stnolting.github.io/neorv32/ug/#_neorv32_in_verilog) - turn the NEORV32 into an all-Verilog design
-* [Package as IP block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block) - turn the processor into an interactive AMD Vivado IP block
+* [Package as Vivado IP block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block) - turn the entire processor into an interactive AMD Vivado IP block
 
 ### :copyright: Legal
 
