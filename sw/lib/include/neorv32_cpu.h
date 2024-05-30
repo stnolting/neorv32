@@ -348,19 +348,6 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_store_conditional_wo
 }
 
 
-/**********************************************************************//**
- * Atomic memory access: invalidate (all) current reservation sets
- *
- * @warning This function requires the A ISA extension.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_invalidate_reservations(void) {
-
-#if defined __riscv_atomic
-  asm volatile ("sc.w zero, zero, (zero)");
-#endif
-}
-
-
 // #################################################################################################
 // CSR access helpers
 // #################################################################################################
