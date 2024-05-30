@@ -24,14 +24,15 @@ entity neorv32_bus_switch is
     PORT_B_READ_ONLY : boolean  -- set if port B is read-only
   );
   port (
-    clk_i   : in  std_ulogic; -- global clock, rising edge
-    rstn_i  : in  std_ulogic; -- global reset, low-active, async
-    a_req_i : in  bus_req_t;  -- host port A: request bus (PRIORITIZED)
-    a_rsp_o : out bus_rsp_t;  -- host port A: response bus
-    b_req_i : in  bus_req_t;  -- host port B: request bus
-    b_rsp_o : out bus_rsp_t;  -- host port B: response bus
-    x_req_o : out bus_req_t;  -- device port request bus
-    x_rsp_i : in  bus_rsp_t   -- device port response bus
+    clk_i    : in  std_ulogic; -- global clock, rising edge
+    rstn_i   : in  std_ulogic; -- global reset, low-active, async
+    a_lock_i : in  std_ulogic; -- exclusive access for port A
+    a_req_i  : in  bus_req_t;  -- host port A: request bus (PRIORITIZED)
+    a_rsp_o  : out bus_rsp_t;  -- host port A: response bus
+    b_req_i  : in  bus_req_t;  -- host port B: request bus
+    b_rsp_o  : out bus_rsp_t;  -- host port B: response bus
+    x_req_o  : out bus_req_t;  -- device port request bus
+    x_rsp_i  : in  bus_rsp_t   -- device port response bus
   );
 end neorv32_bus_switch;
 
@@ -68,7 +69,7 @@ begin
   end process arbiter_sync;
 
   -- fsm --
-  arbiter_comb: process(arbiter, a_req_i, b_req_i, x_rsp_i)
+  arbiter_comb: process(arbiter, a_lock_i, a_req_i, b_req_i, x_rsp_i)
   begin
     -- defaults --
     arbiter.state_nxt <= arbiter.state;
@@ -98,7 +99,7 @@ begin
           arbiter.sel       <= '0';
           arbiter.stb       <= '1';
           arbiter.state_nxt <= BUSY_A;
-        elsif (b_req_i.stb = '1') or (arbiter.b_req = '1') then -- request from port B?
+        elsif ((b_req_i.stb = '1') or (arbiter.b_req = '1')) and (a_lock_i = '0') then -- request from port B?
           arbiter.sel       <= '1';
           arbiter.stb       <= '1';
           arbiter.state_nxt <= BUSY_B;
