@@ -641,14 +641,15 @@ begin
       PORT_B_READ_ONLY => true -- i-fetch is read-only
     )
     port map (
-      clk_i   => clk_i,
-      rstn_i  => rstn_sys,
-      a_req_i => dcache_req, -- prioritized
-      a_rsp_o => dcache_rsp,
-      b_req_i => icache_req,
-      b_rsp_o => icache_rsp,
-      x_req_o => core_req,
-      x_rsp_i => core_rsp
+      clk_i    => clk_i,
+      rstn_i   => rstn_sys,
+      a_lock_i => '0', -- no exclusive accesses for port A
+      a_req_i  => dcache_req, -- prioritized
+      a_rsp_o  => dcache_rsp,
+      b_req_i  => icache_req,
+      b_rsp_o  => icache_rsp,
+      x_req_o  => core_req,
+      x_rsp_i  => core_rsp
     );
 
   end generate; -- /core_complex
@@ -683,14 +684,15 @@ begin
       PORT_B_READ_ONLY => false
     )
     port map (
-      clk_i   => clk_i,
-      rstn_i  => rstn_sys,
-      a_req_i => core_req, -- prioritized
-      a_rsp_o => core_rsp,
-      b_req_i => dma_req,
-      b_rsp_o => dma_rsp,
-      x_req_o => main_req,
-      x_rsp_i => main_rsp
+      clk_i    => clk_i,
+      rstn_i   => rstn_sys,
+      a_lock_i => '0', -- no exclusive accesses for port A
+      a_req_i  => core_req, -- prioritized
+      a_rsp_o  => core_rsp,
+      b_req_i  => dma_req,
+      b_rsp_o  => dma_rsp,
+      x_req_o  => main_req,
+      x_rsp_i  => main_rsp
     );
 
   end generate; -- /neorv32_dma_complex_true
