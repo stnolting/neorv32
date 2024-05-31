@@ -1901,8 +1901,6 @@ int main() {
     // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
     //        it before/after making "normal" load/store operations
 
-    neorv32_cpu_invalidate_reservations(); // invalidate all current reservations
-
     amo_var = 0x00cafe00; // initialize
     asm volatile ("fence"); // flush/reload d-cache
 
@@ -1943,8 +1941,6 @@ int main() {
 
     // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
     //        it before/after making "normal" load/store operations
-
-    neorv32_cpu_invalidate_reservations(); // invalidate all current reservations
 
     amo_var = 0x00abba00; // initialize
     asm volatile ("fence"); // flush/reload d-cache

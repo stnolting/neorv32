@@ -22,7 +22,9 @@ full-transparent accesses. The cache is direct-mapped and read-only.
 [NOTE]
 The data cache provides direct accesses (= uncached) to memory in order to access memory-mapped IO (like the
 processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
-will not be cached at all (see section <<_address_space>>).
+will not be cached at all (see section <<_address_space>>). Direct/uncached accesses have **lower** priority than
+cache block operations to allow continuous burst transfer and also to maintain logical instruction forward
+progress / data coherency.
 
 .Caching Internal Memories
 [NOTE]

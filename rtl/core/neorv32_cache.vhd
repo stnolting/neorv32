@@ -204,11 +204,13 @@ begin
         dir_req_q <= req_terminate_c;
         dir_rsp_q <= rsp_terminate_c;
       elsif rising_edge(clk_i) then
+        -- is direct access? --
         if (dir_acc_q = '0') and (host_req_i.stb = '1') and (dir_acc_d = '1') then
           dir_acc_q <= '1';
         elsif (dir_acc_q = '1') and ((dir_rsp_q.ack = '1') or (dir_rsp_q.err = '1')) then
           dir_acc_q <= '0';
         end if;
+        -- bus request buffer --
         if (READ_ONLY = true) then -- do not propagate STB on write access, issue ERR instead
           dir_req_q     <= dir_req_d;
           dir_req_q.stb <= dir_req_d.stb and (not dir_req_d.rw); -- read accesses only
@@ -348,14 +350,15 @@ begin
       PORT_B_READ_ONLY => READ_ONLY
     )
     port map (
-      clk_i   => clk_i,
-      rstn_i  => rstn_i,
-      a_req_i => bus_req,
-      a_rsp_o => bus_rsp,
-      b_req_i => dir_req_q,
-      b_rsp_o => dir_rsp_d,
-      x_req_o => bus_req_o,
-      x_rsp_i => bus_rsp_i
+      clk_i    => clk_i,
+      rstn_i   => rstn_i,
+      a_lock_i => bus_cmd_busy, -- cache accesses have exclusive access
+      a_req_i  => bus_req,
+      a_rsp_o  => bus_rsp,
+      b_req_i  => dir_req_q,
+      b_rsp_o  => dir_rsp_d,
+      x_req_o  => bus_req_o,
+      x_rsp_i  => bus_rsp_i
     );
   end generate;
 
@@ -373,42 +376,19 @@ end neorv32_cache_rtl;
 -- ###########################################################################################################################################
 
 
--- #################################################################################################
--- # << NEORV32 - Generic Cache: Host Access Controller >>                                         #
--- # ********************************************************************************************* #
--- # Handle host accesses to the cache (check for hit/miss) or bypass cache if direct/uncached     #
--- # access. If a cache miss occurs or a fence request is received an according command is sent to #
--- # the bus interface unit.                                                                       #
--- # ********************************************************************************************* #
--- # BSD 3-Clause License                                                                          #
--- #                                                                                               #
--- # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
--- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
--- #                                                                                               #
--- # Redistribution and use in source and binary forms, with or without modification, are          #
--- # permitted provided that the following conditions are met:                                     #
--- #                                                                                               #
--- # 1. Redistributions of source code must retain the above copyright notice, this list of        #
--- #    conditions and the following disclaimer.                                                   #
--- #                                                                                               #
--- # 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
--- #    conditions and the following disclaimer in the documentation and/or other materials        #
--- #    provided with the distribution.                                                            #
--- #                                                                                               #
--- # 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
--- #    endorse or promote products derived from this software without specific prior written      #
--- #    permission.                                                                                #
--- #                                                                                               #
--- # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
--- # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
--- # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
--- # COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
--- # EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
--- # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
--- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
--- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
--- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
--- #################################################################################################
+-- ================================================================================ --
+-- NEORV32 CPU - Generic Cache: Host Access Controller                              --
+-- -------------------------------------------------------------------------------- --
+-- Handle host accesses to the cache (check for hit/miss) or bypass cache if        --
+-- direct/uncached access. If a cache miss occurs or a fence request is received an --
+-- according command is sent to the bus interface unit.                             --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -565,38 +545,15 @@ end neorv32_cache_host_rtl;
 -- ###########################################################################################################################################
 
 
--- #################################################################################################
--- # << NEORV32 - Generic Cache: Data and Status Memory (direct-mapped) >>                         #
--- # ********************************************************************************************* #
--- # BSD 3-Clause License                                                                          #
--- #                                                                                               #
--- # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
--- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
--- #                                                                                               #
--- # Redistribution and use in source and binary forms, with or without modification, are          #
--- # permitted provided that the following conditions are met:                                     #
--- #                                                                                               #
--- # 1. Redistributions of source code must retain the above copyright notice, this list of        #
--- #    conditions and the following disclaimer.                                                   #
--- #                                                                                               #
--- # 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
--- #    conditions and the following disclaimer in the documentation and/or other materials        #
--- #    provided with the distribution.                                                            #
--- #                                                                                               #
--- # 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
--- #    endorse or promote products derived from this software without specific prior written      #
--- #    permission.                                                                                #
--- #                                                                                               #
--- # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
--- # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
--- # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
--- # COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
--- # EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
--- # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
--- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
--- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
--- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
--- #################################################################################################
+-- ================================================================================ --
+-- NEORV32 CPU - Generic Cache: Data and Status Memory (direct-mapped)              --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -779,38 +736,15 @@ end neorv32_cache_memory_rtl;
 -- ###########################################################################################################################################
 
 
--- #################################################################################################
--- # << NEORV32 - Generic Cache: Bus Interface Unit >>                                             #
--- # ********************************************************************************************* #
--- # BSD 3-Clause License                                                                          #
--- #                                                                                               #
--- # The NEORV32 RISC-V Processor, https://github.com/stnolting/neorv32                            #
--- # Copyright (c) 2024, Stephan Nolting. All rights reserved.                                     #
--- #                                                                                               #
--- # Redistribution and use in source and binary forms, with or without modification, are          #
--- # permitted provided that the following conditions are met:                                     #
--- #                                                                                               #
--- # 1. Redistributions of source code must retain the above copyright notice, this list of        #
--- #    conditions and the following disclaimer.                                                   #
--- #                                                                                               #
--- # 2. Redistributions in binary form must reproduce the above copyright notice, this list of     #
--- #    conditions and the following disclaimer in the documentation and/or other materials        #
--- #    provided with the distribution.                                                            #
--- #                                                                                               #
--- # 3. Neither the name of the copyright holder nor the names of its contributors may be used to  #
--- #    endorse or promote products derived from this software without specific prior written      #
--- #    permission.                                                                                #
--- #                                                                                               #
--- # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS   #
--- # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF               #
--- # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE    #
--- # COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,     #
--- # EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE #
--- # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED    #
--- # AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     #
--- # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED  #
--- # OF THE POSSIBILITY OF SUCH DAMAGE.                                                            #
--- #################################################################################################
+-- ================================================================================ --
+-- NEORV32 CPU - Generic Cache: Bus Interface Unit                                  --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -1053,8 +987,8 @@ begin
     end case;
   end process ctrl_engine_comb;
 
-  -- bus arbiter operation in progress (host keeps allying cache address while bus unit reports idle state) --
-  cmd_busy_o <= '0' when (state = S_IDLE) or (state = S_CHECK) else '1';
+  -- bus arbiter operation in progress --
+  cmd_busy_o <= '0' when (state = S_IDLE) else '1';
 
 
 end neorv32_cache_bus_rtl;

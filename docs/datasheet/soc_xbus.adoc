@@ -118,7 +118,10 @@ The **write-allocate** strategy will fetch the entire referenced block from main
 a cache write-miss. The **write-back** strategy will gather all writes locally inside the cache until the according
 cache block is about to be replaced. In this case, the entire modified cache block is written back to main memory.
 
-The x-cache also provides "direct accesses" that bypass the cache. For example, this can be used to access
-processor-external memory-mapped IO. All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
-will always bypass the cache (see section <<_address_space>>). Furthermore, load-reservate and store conditional
-<<_atomic_accesses>> will also always bypass the cache **regardless of the accessed address**.
+.Cached/Uncached Accesses
+[NOTE]
+The data cache provides direct accesses (= uncached) to memory in order to access memory-mapped IO.
+All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
+will not be cached at all (see section <<_address_space>>). Direct/uncached accesses have **lower** priority than
+cache block operations to allow continuous burst transfer and also to maintain logical instruction forward
+progress / data coherency.
