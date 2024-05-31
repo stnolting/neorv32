@@ -256,8 +256,9 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
     adr : std_ulogic_vector(31 downto 0);
     di  : std_ulogic_vector(31 downto 0);
     do  : std_ulogic_vector(31 downto 0);
+    tag : std_ulogic_vector(2 downto 0);
     we  : std_ulogic;
-    sel : std_ulogic_vector(03 downto 0);
+    sel : std_ulogic_vector(3 downto 0);
     cyc : std_ulogic;
     ack : std_ulogic;
     err : std_ulogic;
@@ -382,12 +383,13 @@ begin
     jtag_tms_i     => jtag_tms_i,
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     => wb_core.adr,
-    xbus_dat_i     => wb_core.di,
     xbus_dat_o     => wb_core.do,
+    xbus_tag_o     => wb_core.tag,
     xbus_we_o      => wb_core.we,
     xbus_sel_o     => wb_core.sel,
     xbus_stb_o     => open,
     xbus_cyc_o     => wb_core.cyc,
+    xbus_dat_i     => wb_core.di,
     xbus_ack_i     => wb_core.ack,
     xbus_err_i     => wb_core.err,
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
@@ -495,25 +497,19 @@ begin
       axi_wadr_received <= '0';
       axi_wdat_received <= '0';
     elsif rising_edge(clk) then
-      if (wb_core.cyc = '0') then -- idle
+      if (wb_core.cyc = '0') then
         axi_radr_received <= '0';
         axi_wadr_received <= '0';
         axi_wdat_received <= '0';
-      else -- busy
-        -- "read address received" flag --
-        if (wb_core.we = '0') then -- pending READ
+      else -- pending access
+        if (wb_core.we = '0') then -- read
           if (m_axi_arready = '1') then -- read address received by interconnect?
             axi_radr_received <= '1';
           end if;
-        end if;
-        -- "write address received" flag --
-        if (wb_core.we = '1') then -- pending WRITE
+        else -- write
           if (m_axi_awready = '1') then -- write address received by interconnect?
             axi_wadr_received <= '1';
           end if;
-        end if;
-        -- "write data received" flag --
-        if (wb_core.we = '1') then -- pending WRITE
           if (m_axi_wready = '1') then -- write data received by interconnect?
             axi_wdat_received <= '1';
           end if;
@@ -526,7 +522,7 @@ begin
   -- read address channel --
   m_axi_araddr  <= wb_core.adr;
   m_axi_arvalid <= wb_core.cyc and (not wb_core.we) and (not axi_radr_received);
-  m_axi_arprot  <= "000";
+  m_axi_arprot  <= wb_core.tag;
 
   -- read data channel --
   m_axi_rready  <= wb_core.cyc and (not wb_core.we);
@@ -535,7 +531,7 @@ begin
   -- write address channel --
   m_axi_awaddr  <= wb_core.adr;
   m_axi_awvalid <= wb_core.cyc and wb_core.we and (not axi_wadr_received);
-  m_axi_awprot  <= "000";
+  m_axi_awprot  <= wb_core.tag;
 
   -- write data channel --
   m_axi_wdata   <= wb_core.do;
