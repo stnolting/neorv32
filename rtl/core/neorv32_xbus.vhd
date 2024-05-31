@@ -31,6 +31,7 @@ entity neorv32_xbus is
     xbus_adr_o : out std_ulogic_vector(31 downto 0); -- address
     xbus_dat_i : in  std_ulogic_vector(31 downto 0); -- read data
     xbus_dat_o : out std_ulogic_vector(31 downto 0); -- write data
+    xbus_tag_o : out std_ulogic_vector(2 downto 0); -- access tag
     xbus_we_o  : out std_ulogic; -- read/write
     xbus_sel_o : out std_ulogic_vector(3 downto 0); -- byte enable
     xbus_stb_o : out std_ulogic; -- strobe
@@ -122,6 +123,7 @@ begin
   xbus_sel_o <= bus_req.ben;
   xbus_stb_o <= bus_req.stb;
   xbus_cyc_o <= bus_req.stb or pending;
+  xbus_tag_o <= bus_req.src & '0' & bus_req.priv; -- instr/data, secure, privileged/unprivileged
 
   -- response gating --
   bus_rsp.data <= xbus_dat_i when (pending = '1') and (bus_rw = '0') else (others => '0'); -- no read-back if READ operation
