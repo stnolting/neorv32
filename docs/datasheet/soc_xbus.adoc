@@ -9,12 +9,13 @@
 |                         | neorv32_cache.vhd       | Generic cache module
 | Software driver files:  | none                    | _implicitly used_
 | Top entity ports:       | `xbus_adr_o`            | address output (32-bit)
-|                         | `xbus_dat_i`            | data input (32-bit)
 |                         | `xbus_dat_o`            | data output (32-bit)
+|                         | `xbus_tag_o`            | access tag (3-bit)
 |                         | `xbus_we_o`             | write enable (1-bit)
 |                         | `xbus_sel_o`            | byte enable (4-bit)
 |                         | `xbus_stb_o`            | bus strobe (1-bit)
 |                         | `xbus_cyc_o`            | valid cycle (1-bit)
+|                         | `xbus_dat_i`            | data input (32-bit)
 |                         | `xbus_ack_i`            | acknowledge (1-bit)
 |                         | `xbus_err_i`            | bus error (1-bit)
 | Configuration generics: | `XBUS_EN`               | enable external bus interface when `true`
@@ -92,6 +93,16 @@ An optional register stage can be added to the XBUS gateway to break up the crit
 When `XBUS_REGSTAGE_EN` is _true_ all outgoing and incoming XBUS signals are registered increasing access latency
 by two cycles. Furthermore, all outgoing signals (like the address) will be kept stable if there is no bus access
 being initiated.
+
+
+**Access Tag**
+
+The XBUS tag signal `xbus_tag_o(0)` provides additional information about the current access cycle.
+It compatible to the the AXI4 `ARPROT` and `AWPROT` signals.
+
+* `xbus_tag_o(0)` **P**: access is performed from **privileged** mode (machine-mode) when set
+* `xbus_tag_o(1)` **NS**: this bit is hardwired to `0` indicating a **secure** access
+* `xbus_tag_o(2)` **I**: access is an **instruction** fetch when set; access is a data access when cleared
 
 
 **External Bus Cache (X-CACHE)**
