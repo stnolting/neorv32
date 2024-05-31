@@ -86,15 +86,16 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 | `jtag_tdo_o`     |  1 | out |   -   | serial data output
 | `jtag_tms_i`     |  1 |  in | `'L'` | mode select
 5+^| **<<_processor_external_bus_interface_xbus>>**
-| `xbus_adr_o`     | 32 | out |   -   |  destination address
-| `xbus_dat_o`     | 32 | out |   -   |  read data
-| `xbus_we_o`      |  1 | out |   -   |  write enable ('0' = read transfer)
-| `xbus_sel_o`     |  4 | out |   -   |  byte enable
-| `xbus_stb_o`     |  1 | out |   -   |  strobe
-| `xbus_cyc_o`     |  1 | out |   -   |  valid cycle
-| `xbus_dat_i`     | 32 |  in | `'L'` |  write data
-| `xbus_ack_i`     |  1 |  in | `'L'` |  transfer acknowledge
-| `xbus_err_i`     |  1 |  in | `'L'` |  transfer error
+| `xbus_adr_o`     | 32 | out |   -   | destination address
+| `xbus_dat_o`     | 32 | out |   -   | read data
+| `xbus_tag_o`     |  3 | out |   -   | access tag
+| `xbus_we_o`      |  1 | out |   -   | write enable ('0' = read transfer)
+| `xbus_sel_o`     |  4 | out |   -   | byte enable
+| `xbus_stb_o`     |  1 | out |   -   | strobe
+| `xbus_cyc_o`     |  1 | out |   -   | valid cycle
+| `xbus_dat_i`     | 32 |  in | `'L'` | write data
+| `xbus_ack_i`     |  1 |  in | `'L'` | transfer acknowledge
+| `xbus_err_i`     |  1 |  in | `'L'` | transfer error
 5+^| **<<_stream_link_interface_slink>>**
 | `slink_rx_dat_i` | 32 |  in | `'L'` | RX data
 | `slink_rx_src_i` |  4 |  in | `'L'` | RX source routing information
