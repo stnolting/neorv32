@@ -9,7 +9,7 @@
 ==========================
 **The NEORV32 RISC-V Processor** +
 https://github.com/stnolting/neorv32 +
-Dipl.-Ing. (M.Sc.) Stephan Nolting +
+Dipl.-Ing. Stephan Nolting (M.Sc.) +
 🇪🇺 European Union, Germany +
 stnolting@gmail.com
 ==========================
@@ -65,10 +65,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 * "Windows" is a trademark of Microsoft Corporation.
 * "Tera Term" copyright by T. Teranishi.
 * "NeoPixel" is a trademark of Adafruit Industries.
+* "Segger Embedded Studio" and "J-Link" are trademarks of Segger Microcontroller Systems GmbH.
 * Images/figures made with _Microsoft Power Point_.
 * Timing diagrams made with _WaveDrom Editor_.
 * Documentation made with `asciidoctor`.
-* "Segger Embedded Studio" and "J-Link" are trademarks of Segger Microcontroller Systems GmbH.
 
 All further/unreferenced projects/products/brands belong to their according copyright holders.
 No copyright infringement intended.
@@ -77,7 +77,8 @@ No copyright infringement intended.
 === Disclaimer
 
 This project is released under the BSD 3-Clause license. No copyright infringement intended.
-Other implied or used projects/sources might have different licensing – see their documentation to get more information.
+Other implied or used projects/sources might have different licensing – see their according
+documentation for more information.
 
 :sectnums!:
 === Limitation of Liability for External Links
