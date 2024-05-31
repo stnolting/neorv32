@@ -47,11 +47,9 @@ targeting various FPGA boards and toolchains to get started.
 [*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started setting up _your_ NEORV32 processor!
 * :interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
 
-> [!NOTE]
-> Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
+Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
 [discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas, feedback or if something is
 not working as expected. See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
-
 
 ### Key Features
 
@@ -64,7 +62,6 @@ not working as expected. See how to [contribute](https://github.com/stnolting/ne
 - [x] optimized for high clock frequencies to ease integration / timing closure
 - [x] from zero to _"hello world!"_ - completely open source and documented
 - [x] easy to use even for FPGA / RISC-V starters – intended to work _out of the box_
-
 
 ### Project Status
 
