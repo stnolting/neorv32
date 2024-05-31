@@ -271,6 +271,7 @@ begin
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     => wb_cpu.addr,     -- address
     xbus_dat_o     => wb_cpu.wdata,    -- write data
+    xbus_tag_o     => open,            -- access tag
     xbus_we_o      => wb_cpu.we,       -- read/write
     xbus_sel_o     => wb_cpu.sel,      -- byte enable
     xbus_stb_o     => wb_cpu.stb,      -- strobe
