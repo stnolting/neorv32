@@ -17,7 +17,7 @@
 # **************************************************************
 set neorv32_home ../..
 set rtl_top neorv32_vivado_ip.vhd
-set logo docs/figures/neorv32_logo_small.png
+set logo docs/figures/neorv32_logo_riscv_small.png
 
 
 # **************************************************************
