@@ -31,7 +31,6 @@
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
 
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -685,7 +684,7 @@ begin
 
 	-- Access Status (1 Cycle Latency) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  hit_o   <= '1' when (valid_mem_rd = '1') and (acc_tag_ff = tag_mem_rd) else '0'; -- cache access hit
+  hit_o   <= '1' when (valid_mem_rd = '1') and (tag_mem_rd = acc_tag_ff) else '0'; -- cache access hit
   dirty_o <= '1' when (valid_mem_rd = '1') and (dirty_mem_rd = '1') and (READ_ONLY = false) else '0'; -- accessed block is dirty
 
   -- base address of accessed block --
