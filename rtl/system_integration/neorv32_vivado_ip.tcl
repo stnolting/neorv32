@@ -13,22 +13,22 @@
 # -- ================================================================================ --
 
 # **************************************************************
-# IP configuration
+# Global configuration
 # **************************************************************
 set neorv32_home ../..
 set rtl_top neorv32_vivado_ip.vhd
 set logo docs/figures/neorv32_logo_riscv_small.png
-
-
-# **************************************************************
-# Create empty output/working directory
-# **************************************************************
 set outputdir neorv32_vivado_ip_work
-file mkdir $outputdir
+set cur_dir [ file normalize .]
 
+
+# **************************************************************
+# Create empty (!) output/working directory
+# **************************************************************
+file mkdir $outputdir
 set files [glob -nocomplain "$outputdir/*"]
 if {[llength $files] != 0} {
-    puts "deleting contents of $outputdir"
+    puts "DELETING ALL FILES of $outputdir"
     file delete -force {*}[glob -directory $outputdir *];
 } else {
     puts "$outputdir is empty"
@@ -92,7 +92,7 @@ set_property enablement_dependency {$io_mtime_en = false}        [ipx::get_ports
 
 
 # **************************************************************
-# -Configuration GUI: General
+# Configuration GUI: General
 # **************************************************************
 set_property display_name {Clock frequency (Hz)}                                   [ipgui::get_guiparamspec -name "CLOCK_FREQUENCY"       -component [ipx::current_core]]
 set_property tooltip      {Frequency of the clk signal in Hz}                      [ipgui::get_guiparamspec -name "CLOCK_FREQUENCY"       -component [ipx::current_core]]
@@ -330,7 +330,6 @@ ipx::create_xgui_files [ipx::current_core]
 ipx::update_checksums [ipx::current_core]
 ipx::save_core [ipx::current_core]
 
-set cur_dir [ file normalize .]
 set_property ip_repo_paths $cur_dir/$outputdir/packaged_ip [current_project]
 update_ip_catalog
 

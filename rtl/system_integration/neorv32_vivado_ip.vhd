@@ -109,8 +109,8 @@ entity neorv32_vivado_ip is
     IO_TRNG_FIFO               : natural range 1 to 2**15       := 1;
     IO_CFS_EN                  : boolean                        := false;
     IO_CFS_CONFIG              : std_ulogic_vector(31 downto 0) := x"00000000";
-    IO_CFS_IN_SIZE             : natural                        := 32;
-    IO_CFS_OUT_SIZE            : natural                        := 32;
+    IO_CFS_IN_SIZE             : natural range 0 to 4096        := 32;
+    IO_CFS_OUT_SIZE            : natural range 0 to 4096        := 32;
     IO_NEOLED_EN               : boolean                        := false;
     IO_NEOLED_TX_FIFO          : natural range 1 to 2**15       := 1;
     IO_GPTMR_EN                : boolean                        := false;
