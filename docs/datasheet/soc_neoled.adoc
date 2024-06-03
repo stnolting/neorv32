@@ -5,13 +5,13 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_neoled.vhd |
-| Software driver file(s): | neorv32_neoled.c |
-|                          | neorv32_neoled.h |
-| Top entity port:         | `neoled_o` | 1-bit serial data output
-| Configuration generics:  | `IO_NEOLED_EN`      | implement NEOLED controller when `true`
-|                          | `IO_NEOLED_TX_FIFO` | TX FIFO depth, has to be a power of 2, min 1
-| CPU interrupts:          | fast IRQ channel 9  | configurable NEOLED data FIFO interrupt (see <<_processor_interrupts>>)
+| Hardware source files:  | neorv32_neoled.vhd |
+| Software driver files:  | neorv32_neoled.c |
+|                         | neorv32_neoled.h |
+| Top entity ports:       | `neoled_o` | 1-bit serial data output
+| Configuration generics: | `IO_NEOLED_EN`      | implement NEOLED controller when `true`
+|                         | `IO_NEOLED_TX_FIFO` | TX FIFO depth, has to be a power of 2, min 1
+| CPU interrupts:         | fast IRQ channel 9  | configurable NEOLED data FIFO interrupt (see <<_processor_interrupts>>)
 |=======================
 
 

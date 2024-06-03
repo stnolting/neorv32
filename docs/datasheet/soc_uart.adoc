@@ -5,18 +5,18 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_uart.vhd |
-| Software driver file(s): | neorv32_uart.c |
-|                          | neorv32_uart.h |
-| Top entity port:         | `uart0_txd_o` | serial transmitter output
-|                          | `uart0_rxd_i` | serial receiver input
-|                          | `uart0_rts_o` | flow control: RX ready to receive, low-active
-|                          | `uart0_cts_i` | flow control: RX ready to receive, low-active
-| Configuration generics:  | `IO_UART0_EN`   | implement UART0 when `true`
-|                          | `UART0_RX_FIFO` | RX FIFO depth (power of 2, min 1)
-|                          | `UART0_TX_FIFO` | TX FIFO depth (power of 2, min 1)
-| CPU interrupts:          | fast IRQ channel 2 | RX interrupt
-|                          | fast IRQ channel 3 | TX interrupt (see <<_processor_interrupts>>)
+| Hardware source files:  | neorv32_uart.vhd |
+| Software driver files:  | neorv32_uart.c |
+|                         | neorv32_uart.h |
+| Top entity ports:       | `uart0_txd_o` | serial transmitter output
+|                         | `uart0_rxd_i` | serial receiver input
+|                         | `uart0_rts_o` | flow control: RX ready to receive, low-active
+|                         | `uart0_cts_i` | flow control: RX ready to receive, low-active
+| Configuration generics: | `IO_UART0_EN`   | implement UART0 when `true`
+|                         | `UART0_RX_FIFO` | RX FIFO depth (power of 2, min 1)
+|                         | `UART0_TX_FIFO` | TX FIFO depth (power of 2, min 1)
+| CPU interrupts:         | fast IRQ channel 2 | RX interrupt
+|                         | fast IRQ channel 3 | TX interrupt (see <<_processor_interrupts>>)
 |=======================
 
 

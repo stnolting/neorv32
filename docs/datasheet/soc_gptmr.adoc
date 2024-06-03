@@ -5,12 +5,12 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_gptmr.vhd |
-| Software driver file(s): | neorv32_gptmr.c |
-|                          | neorv32_gptmr.h |
-| Top entity port:         | `gptmr_trig_i` | timer capture input
-| Configuration generics:  | `IO_GPTMR_EN` | implement general purpose timer when `true`
-| CPU interrupts:          | fast IRQ channel 12 | timer interrupt (see <<_processor_interrupts>>)
+| Hardware source files:  | neorv32_gptmr.vhd |
+| Software driver files:  | neorv32_gptmr.c |
+|                         | neorv32_gptmr.h |
+| Top entity ports:       | `gptmr_trig_i` | timer capture input
+| Configuration generics: | `IO_GPTMR_EN` | implement general purpose timer when `true`
+| CPU interrupts:         | fast IRQ channel 12 | timer interrupt (see <<_processor_interrupts>>)
 |=======================
 
 

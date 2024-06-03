@@ -5,12 +5,12 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_crc.vhd |
-| Software driver file(s): | neorv32_crc.c |
-|                          | neorv32_crc.h |
-| Top entity port:         | none |
-| Configuration generics:  | `IO_CRC_EN` | implement CRC module when `true`
-| CPU interrupts:          | none |  
+| Hardware source files:  | neorv32_crc.vhd |
+| Software driver files:  | neorv32_crc.c |
+|                         | neorv32_crc.h |
+| Top entity ports:       | none |
+| Configuration generics: | `IO_CRC_EN` | implement CRC module when `true`
+| CPU interrupts:         | none |  
 |=======================
 
 

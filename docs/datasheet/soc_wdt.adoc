@@ -5,12 +5,12 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_wdt.vhd | 
-| Software driver file(s): | neorv32_wdt.c |
-|                          | neorv32_wdt.h |
-| Top entity port:         | none | 
-| Configuration generics:  | `IO_WDT_EN` | implement watchdog when `true`
-| CPU interrupts:          | - | none
+| Hardware source files:  | neorv32_wdt.vhd |
+| Software driver files:  | neorv32_wdt.c |
+|                         | neorv32_wdt.h |
+| Top entity ports:       | none |
+| Configuration generics: | `IO_WDT_EN` | implement watchdog when `true`
+| CPU interrupts:         | - | none
 |=======================
 
 

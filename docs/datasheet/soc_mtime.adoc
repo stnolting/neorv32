@@ -5,13 +5,13 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_mtime.vhd |
-| Software driver file(s): | neorv32_mtime.c |
-|                          | neorv32_mtime.h |
-| Top entity port:         | `mtime_irq_i`  | RISC-V machine timer IRQ if internal one is **not** implemented
-|                          | `mtime_time_o` | Current system time (`TIME` register)
-| Configuration generics:  | `IO_MTIME_EN` | implement machine timer when `true`
-| CPU interrupts:          | `MTI` | machine timer interrupt (see <<_processor_interrupts>>)
+| Hardware source files:  | neorv32_mtime.vhd |
+| Software driver files:  | neorv32_mtime.c |
+|                         | neorv32_mtime.h |
+| Top entity ports:       | `mtime_irq_i`  | RISC-V machine timer IRQ if internal one is **not** implemented
+|                         | `mtime_time_o` | Current system time (`TIME` register)
+| Configuration generics: | `IO_MTIME_EN` | implement machine timer when `true`
+| CPU interrupts:         | `MTI` | machine timer interrupt (see <<_processor_interrupts>>)
 |=======================
 
 The MTIME module implements a memory-mapped machine system timer that is compatible to the RISC-V

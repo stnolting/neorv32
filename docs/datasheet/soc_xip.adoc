@@ -5,19 +5,19 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_xip.vhd        | XIP module
-|                          | neorv32_cache.vhd      | Generic cache module
-| Software driver file(s): | neorv32_xip.c          |
-|                          | neorv32_xip.h          |
-| Top entity port:         | `xip_csn_o`            | 1-bit chip select, low-active
-|                          | `xip_clk_o`            | 1-bit serial clock output
-|                          | `xip_dat_i`            | 1-bit serial data input
-|                          | `xip_dat_o`            | 1-bit serial data output
-| Configuration generics:  | `XIP_EN`               | implement XIP module when `true`
-|                          | `XIP_CACHE_EN`         | implement XIP cache when `true`
-|                          | `XIP_CACHE_NUM_BLOCKS` | number of blocks in XIP cache; has to be a power of two
-|                          | `XIP_CACHE_BLOCK_SIZE` | number of bytes per XIP cache block; has to be a power of two, min 4
-| CPU interrupts:          | none                   |
+| Hardware source files:  | neorv32_xip.vhd        | XIP module
+|                         | neorv32_cache.vhd      | Generic cache module
+| Software driver files:  | neorv32_xip.c          |
+|                         | neorv32_xip.h          |
+| Top entity ports:       | `xip_csn_o`            | 1-bit chip select, low-active
+|                         | `xip_clk_o`            | 1-bit serial clock output
+|                         | `xip_dat_i`            | 1-bit serial data input
+|                         | `xip_dat_o`            | 1-bit serial data output
+| Configuration generics: | `XIP_EN`               | implement XIP module when `true`
+|                         | `XIP_CACHE_EN`         | implement XIP cache when `true`
+|                         | `XIP_CACHE_NUM_BLOCKS` | number of blocks in XIP cache; has to be a power of two
+|                         | `XIP_CACHE_BLOCK_SIZE` | number of bytes per XIP cache block; has to be a power of two, min 4
+| CPU interrupts:         | none                   |
 |=======================
 
 

@@ -5,13 +5,13 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_cache.vhd   | Generic cache module
-| Software driver file(s): | none                | _implicitly used_
-| Top entity port:         | none                |
-| Configuration generics:  | `DCACHE_EN`         | implement processor-internal data cache when `true`
-|                          | `DCACHE_NUM_BLOCKS` | number of cache blocks (pages/lines)
-|                          | `DCACHE_BLOCK_SIZE` | size of a cache block in bytes
-| CPU interrupts:          | none |
+| Hardware source files:  | neorv32_cache.vhd   | Generic cache module
+| Software driver files:  | none                | _implicitly used_
+| Top entity ports:       | none                |
+| Configuration generics: | `DCACHE_EN`         | implement processor-internal data cache when `true`
+|                         | `DCACHE_NUM_BLOCKS` | number of cache blocks (pages/lines)
+|                         | `DCACHE_BLOCK_SIZE` | size of a cache block in bytes
+| CPU interrupts:         | none |
 |=======================
 
 The processor features an optional data cache to improve performance when using memories with high
@@ -24,7 +24,8 @@ The data cache provides direct accesses (= uncached) to memory in order to acces
 processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
 will not be cached at all (see section <<_address_space>>). Direct/uncached accesses have **lower** priority than
 cache block operations to allow continuous burst transfer and also to maintain logical instruction forward
-progress / data coherency.
+progress / data coherency. Furthermore, atomic load-reservate and store-conditional instructions (<<_a_isa_extension>>)
+will always **bypass** the cache.
 
 .Caching Internal Memories
 [NOTE]

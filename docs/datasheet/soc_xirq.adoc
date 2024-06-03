@@ -5,12 +5,12 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s):  | neorv32_xirq.vhd   |
-| Software driver file(s):  | neorv32_xirq.c     |
-|                           | neorv32_xirq.h     |
-| Top entity port:          | `xirq_i`           | External interrupts input (32-bit)
-| Configuration generic(s): | `XIRQ_NUM_CH`      | Number of external IRQ channels to implement (0..32)
-| CPU interrupts:           | fast IRQ channel 8 | XIRQ (see <<_processor_interrupts>>)
+| Hardware source files:  | neorv32_xirq.vhd   |
+| Software driver files:  | neorv32_xirq.c     |
+|                         | neorv32_xirq.h     |
+| Top entity ports:       | `xirq_i`           | External interrupts input (32-bit)
+| Configuration generics: | `XIRQ_NUM_CH`      | Number of external IRQ channels to implement (0..32)
+| CPU interrupts:         | fast IRQ channel 8 | XIRQ (see <<_processor_interrupts>>)
 |=======================
 
 

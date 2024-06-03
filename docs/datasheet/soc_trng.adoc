@@ -5,13 +5,13 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_trng.vhd |
-| Software driver file(s): | neorv32_trng.c |
-|                          | neorv32_trng.h |
-| Top entity port:         | none |
-| Configuration generics:  | `IO_TRNG_EN`   | implement TRNG when `true`
-|                          | `IO_TRNG_FIFO` | data FIFO depth, min 1, has to be a power of two
-| CPU interrupts:          | - | none
+| Hardware source files:  | neorv32_trng.vhd |
+| Software driver files:  | neorv32_trng.c |
+|                         | neorv32_trng.h |
+| Top entity ports:       | none |
+| Configuration generics: | `IO_TRNG_EN`   | implement TRNG when `true`
+|                         | `IO_TRNG_FIFO` | data FIFO depth, min 1, has to be a power of two
+| CPU interrupts:         | - | none
 |=======================
 
 

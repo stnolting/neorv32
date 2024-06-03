@@ -5,13 +5,13 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source file(s): | neorv32_gpio.vhd | 
-| Software driver file(s): | neorv32_gpio.c |
-|                          | neorv32_gpio.h |
-| Top entity port:         | `gpio_o` | 64-bit parallel output port
-|                          | `gpio_i` | 64-bit parallel input port
-| Configuration generics:  | `IO_GPIO_NUM` | number of input/output pairs to implement (0..64)
-| CPU interrupts:          | none |
+| Hardware source files:  | neorv32_gpio.vhd | 
+| Software driver files:  | neorv32_gpio.c |
+|                         | neorv32_gpio.h |
+| Top entity ports:       | `gpio_o` | 64-bit parallel output port
+|                         | `gpio_i` | 64-bit parallel input port
+| Configuration generics: | `IO_GPIO_NUM` | number of input/output pairs to implement (0..64)
+| CPU interrupts:         | none |
 |=======================
 
 The general purpose parallel IO unit provides a simple parallel input and output port. These ports can be used
