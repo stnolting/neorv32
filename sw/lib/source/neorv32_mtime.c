@@ -110,8 +110,6 @@ void neorv32_mtime_set_timecmp(uint64_t timecmp) {
   NEORV32_MTIME->TIMECMP_LO = -1; // prevent MTIMECMP from temporarily becoming smaller than the lesser of the old and new values
   NEORV32_MTIME->TIMECMP_HI = cycles.uint32[1];
   NEORV32_MTIME->TIMECMP_LO = cycles.uint32[0];
-
-  asm volatile("nop"); // delay due to write buffer
 }
 
 
