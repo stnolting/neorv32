@@ -65,10 +65,21 @@
 enum SPI_FLASH_CMD {
   SPI_FLASH_CMD_WRITE         = 0x02, /**< Write data */
   SPI_FLASH_CMD_READ          = 0x03, /**< Read data */
+  SPI_FLASH_CMD_WRITE_DISABLE = 0x04, /**< Disable write access */
   SPI_FLASH_CMD_READ_STATUS   = 0x05, /**< Get status register */
-  SPI_FLASH_CMD_WRITE_ENABLE  = 0x06, /**< Allow write access */
+  SPI_FLASH_CMD_WRITE_ENABLE  = 0x06, /**< Enable write access */
   SPI_FLASH_CMD_SECTOR_ERASE  = 0xD8  /**< Erase complete sector */
 };
+
+
+/**********************************************************************//**
+ * SPI flash status register
+ **************************************************************************/
+enum SPI_FLASH_SREG {
+  SPI_FLASH_SREG_WIP = 0, /**< Write-in-progress data */
+  SPI_FLASH_SREG_WEL = 1  /**< Write-enable latch */
+};
+
 
 /**********************************************************************//**
  * Valid executable identification signature
@@ -77,8 +88,9 @@ enum SPI_FLASH_CMD {
 
 
 /**********************************************************************//**
- * @name Prototypes
+ * @name Function prototypes
  **************************************************************************/
+int xip_flash_access_check(void);
 void xip_flash_erase_sector(uint32_t base_addr);
 void xip_flash_program(uint32_t *src, uint32_t base_addr, uint32_t size);
 int uart_get_executable(uint32_t *dst, uint32_t *size);
@@ -177,10 +189,20 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Program flash
+  // Check, erase and program flash
   // ----------------------------------------------------------
 
   // NOTE: this (direct SPI access via the XIP module) has to be done before the actual XIP mode is enabled!
+
+  neorv32_uart0_printf("Checking SPI flash connection... ");
+  if (xip_flash_access_check() == 0) {
+    neorv32_uart0_printf("OK!\n");
+  }
+  else {
+    neorv32_uart0_printf("FAILED!\n");
+    return -1;
+  }
+
   neorv32_uart0_printf("Erasing XIP flash (base = 0x%x)...\n", (uint32_t)FLASH_BASE);
   xip_flash_erase_sector(FLASH_BASE);
 
@@ -240,6 +262,57 @@ int main() {
 
 
 /**********************************************************************//**
+ * Check SPI flash connection by toggling the status register's write
+ * enable latch.
+ *
+ * @return Returns 0 on success.
+ **************************************************************************/
+int xip_flash_access_check(void) {
+
+  int success = 2;
+  uint32_t tmp = 0;
+
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
+  } data;
+
+  // set write-enable latch
+  // 1 byte command
+  data.uint32[0] = 0;
+  data.uint32[1] = SPI_FLASH_CMD_WRITE_ENABLE << 24;
+  neorv32_xip_spi_trans(1, &data.uint64);
+
+  // check status register
+  tmp = SPI_FLASH_CMD_READ_STATUS << 24;
+  data.uint32[0] = 0;
+  data.uint32[1] = tmp;
+  neorv32_xip_spi_trans(2, &data.uint64);
+  if (((data.uint32[0] >> SPI_FLASH_SREG_WEL ) & 1) != 0) { // write-enable-latch bit set?
+    success--;
+  }
+
+  // clear write-enable latch
+  // 1 byte command
+  data.uint32[0] = 0;
+  data.uint32[1] = SPI_FLASH_CMD_WRITE_DISABLE << 24;
+  neorv32_xip_spi_trans(1, &data.uint64);
+
+
+  // check status register
+  tmp = SPI_FLASH_CMD_READ_STATUS << 24;
+  data.uint32[0] = 0;
+  data.uint32[1] = tmp;
+  neorv32_xip_spi_trans(2, &data.uint64);
+  if (((data.uint32[0] >> SPI_FLASH_SREG_WEL ) & 1) == 0) { // write-enable-latch bit cleared?
+    success--;
+  }
+
+  return success;
+}
+
+
+/**********************************************************************//**
  * Erase sector starting at base address.
  *
  * @param[in] base_addr Base address of sector to erase.
@@ -275,7 +348,7 @@ void xip_flash_erase_sector(uint32_t base_addr) {
     data.uint32[0] = 0;
     data.uint32[1] = tmp;
     neorv32_xip_spi_trans(2, &data.uint64);
-    if ((data.uint32[0] & 0x01) == 0) { // WIP bit cleared?
+    if (((data.uint32[0] >> SPI_FLASH_SREG_WIP) & 1) == 0) { // WIP bit cleared?
       break;
     }
   }
