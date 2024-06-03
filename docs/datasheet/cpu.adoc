@@ -284,8 +284,8 @@ as soon as the CPU has fully halted ("CPU is sleeping"):
 .There is no enabled interrupt being pending.
 
 CPU-external modules like memories, timers and peripheral interfaces are not affected by this. Furthermore, the CPU will
-continue to buffer/enqueue incoming interrupt. The CPU will leave sleep mode as soon as any _enabled (via <<_mie>>)
-interrupt source becomes _pending_ or if a debug session is started.
+continue to buffer/enqueue incoming interrupt. The CPU will leave sleep mode as soon as any _enabled_ interrupt (via <<_mie>>)
+source becomes _pending_ or if a debug session is started.
 
 ===== Power-Down Mode
 
