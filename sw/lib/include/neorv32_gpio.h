@@ -40,12 +40,11 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
  **************************************************************************/
 /**@{*/
 int      neorv32_gpio_available(void);
-void     neorv32_gpio_pin_set(int pin);
-void     neorv32_gpio_pin_clr(int pin);
+void     neorv32_gpio_pin_set(int pin, int value);
 void     neorv32_gpio_pin_toggle(int pin);
 uint32_t neorv32_gpio_pin_get(int pin);
-
 void     neorv32_gpio_port_set(uint64_t d);
+void     neorv32_gpio_port_toggle(uint64_t toggle);
 uint64_t neorv32_gpio_port_get(void);
 /**@}*/
 

@@ -1,9 +1,6 @@
 // #################################################################################################
 // # << NEORV32 - Processor Performance Measurement >>                                             #
 // # ********************************************************************************************* #
-// # (c) "AXI", "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.                         #
-// # Note: External MTIME is not supported.                                                        #
-// # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
 // # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
@@ -69,10 +66,10 @@ int main() {
   // Disable compilation by default
   #ifndef RUN_CHECK
     #warning Program HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.
-  
+
     // inform the user if you are actually executing this
     neorv32_uart0_printf("ERROR! Program has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
-  
+
     return 1;
   #endif
 
@@ -84,7 +81,7 @@ int main() {
     #define rv32M_mult  1
     #define rv32M_div  1
     #define rv32M_rem  1
-  #endif  
+  #endif
   #ifndef rv32M_mult
     #define rv32M_mult  0
   #endif
@@ -148,7 +145,7 @@ int main() {
   #if rv32M_mult == 1
     instToTest += 4;
     // set up compute variables
-    __asm__ ("li a1, 87654321\n\t"); // set a1 to 1 
+    __asm__ ("li a1, 87654321\n\t"); // set a1 to 1
     __asm__ ("li a2, 12345678\n\t"); // set a2 to 2
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
@@ -201,7 +198,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nmulh rd,rs1,rs2 inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -227,7 +224,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nmulhsu rd,rs1,rs2 inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -253,13 +250,13 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nmulhu rd,imm inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
   #endif
 
   #if rv32M_div == 1
     instToTest += 2;
     // set up compute variables
-    __asm__ ("li a1, 87654321\n\t"); // set a1 to 1 
+    __asm__ ("li a1, 87654321\n\t"); // set a1 to 1
     __asm__ ("li a2, 12345678\n\t"); // set a2 to 2
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
@@ -312,13 +309,13 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\ndivu rd,rs1,shamt inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
   #endif
 
   #if rv32M_rem == 1
     instToTest += 2;
     // set up compute variables
-    __asm__ ("li a1, 87654321\n\t"); // set a1 to 1 
+    __asm__ ("li a1, 87654321\n\t"); // set a1 to 1
     __asm__ ("li a2, 12345678\n\t"); // set a2 to 2
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
@@ -371,7 +368,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nremu rd,rs1,rs2 inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
   #endif
 
   int instructions  = instToTest * instLoop * instCalls;
@@ -385,6 +382,6 @@ int main() {
 
   // Stop simulation
   if (neorv32_gpio_available()) {
-    neorv32_gpio_pin_set(32);
+    neorv32_gpio_pin_set(32, 1);
   }
 }
