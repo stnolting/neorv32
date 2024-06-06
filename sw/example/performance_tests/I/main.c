@@ -1,9 +1,6 @@
 // #################################################################################################
 // # << NEORV32 - Processor Performance Measurement >>                                             #
 // # ********************************************************************************************* #
-// # (c) "AXI", "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.                         #
-// # Note: External MTIME is not supported.                                                        #
-// # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
 // # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
@@ -70,10 +67,10 @@ int main() {
   // Disable compilation by default
   #ifndef RUN_CHECK
     #warning Program HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.
-  
+
     // inform the user if you are actually executing this
     neorv32_uart0_printf("ERROR! Program has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
-  
+
     return 1;
   #endif
 
@@ -326,7 +323,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\naddi rd,rs1,imm inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -352,7 +349,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nsub rd,rs1,rs2 inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -378,7 +375,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nlui rd,imm inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -460,7 +457,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nsli rd,rs1,shamt inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     __asm__ ("li a2, 31\n\t"); // set a2 to 31 to ensure we have the largest shift
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
@@ -487,7 +484,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nsrl rd,rs1,rs2 inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -540,7 +537,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nsra rd,rs1,rs2 inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -595,7 +592,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nxor rd,rs1,rs2 inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -621,7 +618,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nxori rd,rs1,imm inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -647,7 +644,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nand rd,rs1,rs2 inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -673,7 +670,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nandi rd,rs1,imm inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -699,7 +696,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nor rd,rs1,rs2 inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -754,7 +751,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nslt rd,rs1,rs2 inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -806,7 +803,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nsltu rd,rs1,rs2 inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -861,7 +858,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nlb rd,rs1,imm inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -887,7 +884,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nlh rd,rs1,imm inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -939,7 +936,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nlhu rd,rs1,imm inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -995,7 +992,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nsb rd,rs1,imm inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -1021,7 +1018,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nsh rd,rs1,imm inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -1076,7 +1073,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\ncsrrw rd,csr,rs1 inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -1102,7 +1099,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\ncsrrs rd,csr,rs1 inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -1128,7 +1125,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\ncsrrc rd,csr,rs1 inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -1154,7 +1151,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\ncsrrwi rd,csr,rs1 inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -1180,7 +1177,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\ncsrrsi rd,csr,rs1 inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
       #if instCalls == 16
@@ -1324,8 +1321,8 @@ int main() {
   #if rv32I_branch_beq == 1
     instToTest += 3;
     // set up compare variables
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
-    __asm__ ("li a2, 2\n\t"); // set a2 to 2 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
+    __asm__ ("li a2, 2\n\t"); // set a2 to 2
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
@@ -1353,8 +1350,8 @@ int main() {
     #endif
     neorv32_uart0_printf("\nbeq rs1,rs2,imm no branch inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
-    __asm__ ("li a2, 1\n\t"); // set a2 to 1 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
+    __asm__ ("li a2, 1\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
@@ -1382,12 +1379,12 @@ int main() {
     #endif
     neorv32_uart0_printf("\nbeq rs1,rs2,imm branch forward inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
-    __asm__ ("li a2, 1\n\t"); // set a2 to 1 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
+    __asm__ ("li a2, 1\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
-      
+
       #if instCalls == 16
         __asm__ ("jal .+132\n\t");
         __asm__ ("jal .+132\n\t");
@@ -1430,7 +1427,7 @@ int main() {
   #if rv32I_branch_bne == 1
     instToTest += 3;
     // set up compare variables
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
     __asm__ ("li a2, 1\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
@@ -1459,8 +1456,8 @@ int main() {
     #endif
     neorv32_uart0_printf("\nbne rs1,rs2,imm no branch inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
-    __asm__ ("li a2, 2\n\t"); // set a2 to 2 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
+    __asm__ ("li a2, 2\n\t"); // set a2 to 2
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
@@ -1488,12 +1485,12 @@ int main() {
     #endif
     neorv32_uart0_printf("\nbne rs1,rs2,imm branch forward inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
-    __asm__ ("li a2, 2\n\t"); // set a2 to 1 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
+    __asm__ ("li a2, 2\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
-      
+
       #if instCalls == 16
         __asm__ ("jal .+132\n\t");
         __asm__ ("jal .+132\n\t");
@@ -1536,7 +1533,7 @@ int main() {
   #if rv32I_branch_blt == 1
     instToTest += 3;
     // set up compare variables
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
     __asm__ ("li a2, 1\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
@@ -1565,8 +1562,8 @@ int main() {
     #endif
     neorv32_uart0_printf("\nblt rs1,rs2,imm no branch inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
-    __asm__ ("li a2, 2\n\t"); // set a2 to 2 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
+    __asm__ ("li a2, 2\n\t"); // set a2 to 2
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
@@ -1594,12 +1591,12 @@ int main() {
     #endif
     neorv32_uart0_printf("\nblt rs1,rs2,imm branch forward inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
-    __asm__ ("li a2, 2\n\t"); // set a2 to 1 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
+    __asm__ ("li a2, 2\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
-      
+
       #if instCalls == 16
         __asm__ ("jal .+132\n\t");
         __asm__ ("jal .+132\n\t");
@@ -1642,7 +1639,7 @@ int main() {
   #if rv32I_branch_bge == 1
     instToTest += 3;
     // set up compare variables
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
     __asm__ ("li a2, 2\n\t"); // set a2 to 2
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
@@ -1671,8 +1668,8 @@ int main() {
     #endif
     neorv32_uart0_printf("\nbge rs1,rs2,imm no branch inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 2\n\t"); // set a1 to 2 
-    __asm__ ("li a2, 1\n\t"); // set a2 to 1 
+    __asm__ ("li a1, 2\n\t"); // set a1 to 2
+    __asm__ ("li a2, 1\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
@@ -1700,12 +1697,12 @@ int main() {
     #endif
     neorv32_uart0_printf("\nbge rs1,rs2,imm branch forward inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 2\n\t"); // set a1 to 1 
-    __asm__ ("li a2, 1\n\t"); // set a2 to 1 
+    __asm__ ("li a1, 2\n\t"); // set a1 to 1
+    __asm__ ("li a2, 1\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
-      
+
       #if instCalls == 16
         __asm__ ("jal .+132\n\t");
         __asm__ ("jal .+132\n\t");
@@ -1748,7 +1745,7 @@ int main() {
   #if rv32I_branch_bltu == 1
     instToTest += 3;
     // set up compare variables
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
     __asm__ ("li a2, 1\n\t"); // set a2 to 2
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
@@ -1777,8 +1774,8 @@ int main() {
     #endif
     neorv32_uart0_printf("\nbltu rs1,rs2,imm no branch inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 1\n\t"); // set a1 to 2 
-    __asm__ ("li a2, 2\n\t"); // set a2 to 1 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 2
+    __asm__ ("li a2, 2\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
@@ -1806,12 +1803,12 @@ int main() {
     #endif
     neorv32_uart0_printf("\nbltu rs1,rs2,imm branch forward inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
-    __asm__ ("li a2, 2\n\t"); // set a2 to 1 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
+    __asm__ ("li a2, 2\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
-      
+
       #if instCalls == 16
         __asm__ ("jal .+132\n\t");
         __asm__ ("jal .+132\n\t");
@@ -1854,7 +1851,7 @@ int main() {
   #if rv32I_branch_bgeu == 1
     instToTest += 3;
     // set up compare variables
-    __asm__ ("li a1, 1\n\t"); // set a1 to 1 
+    __asm__ ("li a1, 1\n\t"); // set a1 to 1
     __asm__ ("li a2, 2\n\t"); // set a2 to 2
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
@@ -1883,8 +1880,8 @@ int main() {
     #endif
     neorv32_uart0_printf("\nbgeu rs1,rs2,imm no branch inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 2\n\t"); // set a1 to 2 
-    __asm__ ("li a2, 1\n\t"); // set a2 to 1 
+    __asm__ ("li a1, 2\n\t"); // set a1 to 2
+    __asm__ ("li a2, 1\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
@@ -1912,12 +1909,12 @@ int main() {
     #endif
     neorv32_uart0_printf("\nbgeu rs1,rs2,imm branch forward inst %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
 
-    __asm__ ("li a1, 2\n\t"); // set a1 to 1 
-    __asm__ ("li a2, 1\n\t"); // set a2 to 1 
+    __asm__ ("li a1, 2\n\t"); // set a1 to 1
+    __asm__ ("li a2, 1\n\t"); // set a2 to 1
 
     startTime = neorv32_cpu_csr_read(CSR_MCYCLE);
     for (i = 0; i < instLoop; i++) {
-      
+
       #if instCalls == 16
         __asm__ ("jal .+132\n\t");
         __asm__ ("jal .+132\n\t");
@@ -2013,6 +2010,6 @@ mret_label: // mret instruction for test
 
   // Stop simulation
   if (neorv32_gpio_available()) {
-    neorv32_gpio_pin_set(32);
+    neorv32_gpio_pin_set(32, 1);
   }
 }

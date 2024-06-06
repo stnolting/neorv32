@@ -1,9 +1,6 @@
 // #################################################################################################
 // # << NEORV32 - Processor Performance Measurement >>                                             #
 // # ********************************************************************************************* #
-// # (c) "AXI", "AXI4" and "AXI4-Lite" are trademarks of Arm Holdings plc.                         #
-// # Note: External MTIME is not supported.                                                        #
-// # ********************************************************************************************* #
 // # BSD 3-Clause License                                                                          #
 // #                                                                                               #
 // # Copyright (c) 2023, Stephan Nolting. All rights reserved.                                     #
@@ -70,10 +67,10 @@ int main() {
   // Disable compilation by default
   #ifndef RUN_CHECK
     #warning Program HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.
-  
+
     // inform the user if you are actually executing this
     neorv32_uart0_printf("ERROR! Program has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
-  
+
     return 1;
   #endif
 
@@ -369,7 +366,7 @@ int main() {
       neorv32_uart0_printf("\ntotal %d cyc\n", totalTime);
     #endif
     neorv32_uart0_printf("\nfsub.s rd,rs1,rs2 max. inst. %d cyc\n", (stopTime - startTime)/(instLoop * instCalls));
-  
+
     // set up compute variables
     __asm__ ("li a1, 0x00000000\n\t"); // set a1 to +1.0 2^0
     __asm__ ("li a2, 0x00000000\n\t"); // set a2 to +1.0 2^0
@@ -1171,6 +1168,6 @@ int main() {
 
   // Stop simulation
   if (neorv32_gpio_available()) {
-    neorv32_gpio_pin_set(32);
+    neorv32_gpio_pin_set(32, 1);
   }
 }

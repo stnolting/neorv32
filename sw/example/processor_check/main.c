@@ -1319,6 +1319,8 @@ int main() {
     int xirq_err_cnt = 0;
     xirq_trap_handler_ack = 0;
 
+    neorv32_gpio_port_set(0);
+
     xirq_err_cnt += neorv32_xirq_setup(); // initialize XIRQ
     xirq_err_cnt += neorv32_xirq_install(0, xirq_trap_handler0); // install XIRQ IRQ handler channel 0
     xirq_err_cnt += neorv32_xirq_install(1, xirq_trap_handler1); // install XIRQ IRQ handler channel 1
