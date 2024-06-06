@@ -39,34 +39,27 @@ int neorv32_gpio_available(void) {
  * Set single pin of GPIO's output port.
  *
  * @param[in] pin Output pin number to be set (0..63).
+ * @param[in] value Set pint high (1) or low (0).
  **************************************************************************/
-void neorv32_gpio_pin_set(int pin) {
+void neorv32_gpio_pin_set(int pin, int value) {
 
   uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
 
   if (pin < 32) {
-    NEORV32_GPIO->OUTPUT_LO |= mask;
+    if (value) {
+      NEORV32_GPIO->OUTPUT_LO |= mask;
+    }
+    else {
+      NEORV32_GPIO->OUTPUT_LO &= ~mask;
+    }
   }
   else {
-    NEORV32_GPIO->OUTPUT_HI |= mask;
-  }
-}
-
-
-/**********************************************************************//**
- * Clear single pin of GPIO's output port.
- *
- * @param[in] pin Output pin number to be cleared (0..63).
- **************************************************************************/
-void neorv32_gpio_pin_clr(int pin) {
-
-  uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
-
-  if (pin < 32) {
-    NEORV32_GPIO->OUTPUT_LO &= ~mask;
-  }
-  else {
-    NEORV32_GPIO->OUTPUT_HI &= ~mask;
+    if (value) {
+      NEORV32_GPIO->OUTPUT_HI |= mask;
+    }
+    else {
+      NEORV32_GPIO->OUTPUT_HI &= ~mask;
+    }
   }
 }
 
@@ -127,6 +120,24 @@ void neorv32_gpio_port_set(uint64_t port_data) {
 
 
 /**********************************************************************//**
+ * Toggle bit in entire GPIO output port.
+ *
+ * @param[in] toggle Bit mask; set bits will toggle the according output port (64-bit).
+ **************************************************************************/
+void neorv32_gpio_port_toggle(uint64_t toggle) {
+
+  union {
+    uint64_t uint64;
+    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
+  } data;
+
+  data.uint64 = toggle;
+  NEORV32_GPIO->OUTPUT_LO ^= data.uint32[0];
+  NEORV32_GPIO->OUTPUT_HI ^= data.uint32[1];
+}
+
+
+/**********************************************************************//**
  * Get complete GPIO input port.
  *
  * @return Current input port state (64-bit).
@@ -143,4 +154,3 @@ uint64_t neorv32_gpio_port_get(void) {
 
   return data.uint64;
 }
-
