@@ -318,7 +318,7 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- IRQs --
   type firq_enum_t is (
-    FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
+    FIRQ_TRNG, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
     FIRQ_CFS, FIRQ_NEOLED, FIRQ_XIRQ, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK_RX, FIRQ_SLINK_TX
   );
   type firq_t is array (firq_enum_t) of std_ulogic;
@@ -558,7 +558,7 @@ begin
     );
 
     -- fast interrupt requests (FIRQs) --
-    cpu_firq(0)  <= '0'; -- reserved
+    cpu_firq(0)  <= firq(FIRQ_TRNG);
     cpu_firq(1)  <= firq(FIRQ_CFS);
     cpu_firq(2)  <= firq(FIRQ_UART0_RX);
     cpu_firq(3)  <= firq(FIRQ_UART0_TX);
@@ -1391,7 +1391,8 @@ begin
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
         bus_req_i => iodev_req(IODEV_TRNG),
-        bus_rsp_o => iodev_rsp(IODEV_TRNG)
+        bus_rsp_o => iodev_rsp(IODEV_TRNG),
+        irq_o     => firq(FIRQ_TRNG)
       );
     end generate;
 
