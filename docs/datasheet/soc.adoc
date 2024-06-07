@@ -435,8 +435,8 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 [options="header",grid="rows"]
 |=======================
 | Channel | Source | Description
-| 0       | - | _reserved_
-| 1       | <<_custom_functions_subsystem_cfs,CFS>> | custom functions subsystem (CFS) interrupt (user-defined)
+| 0       | <<_true_random_number_generator_trng,TRNG>> | TRNG data available interrupt
+| 1       | <<_custom_functions_subsystem_cfs,CFS>> | Custom functions subsystem (CFS) interrupt (user-defined)
 | 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 RX FIFO level interrupt
 | 3       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 TX FIFO level interrupt
 | 4       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 RX FIFO level interrupt
