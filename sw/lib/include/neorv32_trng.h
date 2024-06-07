@@ -38,6 +38,7 @@ enum NEORV32_TRNG_CTRL_enum {
   TRNG_CTRL_FIFO_LSB        = 16, /**< TRNG data/control register(16) (r/-): log2(FIFO size), LSB */
   TRNG_CTRL_FIFO_MSB        = 19, /**< TRNG data/control register(19) (r/-): log2(FIFO size), MSB */
 
+  TRNG_CTRL_IRQ_SEL         = 27, /**< TRNG data/control register(27) (r/w): Interrupt trigger select (0 = data available, 1 = FIFO full) */
   TRNG_CTRL_FIFO_CLR        = 28, /**< TRNG data/control register(28) (-/w): Clear data FIFO (auto clears) */
   TRNG_CTRL_SIM_MODE        = 29, /**< TRNG data/control register(29) (r/-): PRNG mode (simulation mode) */
   TRNG_CTRL_EN              = 30, /**< TRNG data/control register(30) (r/w): TRNG enable */
@@ -51,7 +52,7 @@ enum NEORV32_TRNG_CTRL_enum {
  **************************************************************************/
 /**@{*/
 int  neorv32_trng_available(void);
-void neorv32_trng_enable(void);
+void neorv32_trng_enable(int irq_sel);
 void neorv32_trng_disable(void);
 void neorv32_trng_fifo_clear(void);
 int  neorv32_trng_get_fifo_depth(void);
