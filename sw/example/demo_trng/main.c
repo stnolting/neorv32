@@ -98,7 +98,7 @@ int main(void) {
   // enable TRNG
   neorv32_uart0_printf("\nTRNG FIFO depth: %i\n", neorv32_trng_get_fifo_depth());
   neorv32_uart0_printf("Starting TRNG...\n");
-  neorv32_trng_enable();
+  neorv32_trng_enable(0);
   neorv32_cpu_delay_ms(100); // TRNG "warm up"
 
   while(1) {
