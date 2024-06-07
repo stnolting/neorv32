@@ -1041,8 +1041,34 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 0
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ0 ", cnt_test);
-  PRINT_STANDARD("[n.a.]\n");
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] FIRQ (TRNG) ", cnt_test);
+
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
+    cnt_test++;
+
+    // enable TRNG, trigger IRQ when FIFO is full
+    neorv32_trng_enable(1);
+
+    // enable fast interrupt
+    neorv32_cpu_csr_write(CSR_MIE, 1 << TRNG_FIRQ_ENABLE);
+
+    // sleep until interrupt
+    neorv32_cpu_sleep();
+
+    // no more interrupts
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRNG_TRAP_CODE) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------
@@ -1249,8 +1275,8 @@ int main() {
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << SPI_FIRQ_ENABLE);
 
-    // wait for interrupt
-    asm volatile ("wfi");
+    // sleep until interrupt
+    neorv32_cpu_sleep();
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1287,8 +1313,8 @@ int main() {
     // enable TWI FIRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << TWI_FIRQ_ENABLE);
 
-    // wait for interrupt
-    asm volatile ("wfi");
+    // sleep until interrupt
+    neorv32_cpu_sleep();
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1419,7 +1445,7 @@ int main() {
     neorv32_dma_transfer((uint32_t)(&dma_src), (uint32_t)(&NEORV32_CRC->DATA), 4, tmp_a);
 
     // sleep until interrupt
-    asm volatile ("wfi");
+    neorv32_cpu_sleep();
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
@@ -1756,9 +1782,9 @@ int main() {
     // enable mtime interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
 
-    // put CPU into sleep mode -the CPU has to wakeup again if any enabled interrupt source
+    // put CPU into sleep mode - the CPU has to wakeup again if any enabled interrupt source
     // becomes pending - even if we are in m-mode and mstatus.mie is cleared
-    asm volatile ("wfi");
+    neorv32_cpu_sleep();
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);

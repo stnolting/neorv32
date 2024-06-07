@@ -157,7 +157,7 @@ begin
     if ci_mode then
       -- No need to send the full expectation in one big chunk
       check_uart(net, uart1_rx_handle, nul & nul);
-      check_uart(net, uart1_rx_handle, "0/55" & cr & lf);
+      check_uart(net, uart1_rx_handle, "0/56" & cr & lf);
     end if;
 
     -- Wait until all expected data has been received
