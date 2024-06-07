@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 07.06.2024 | 1.9.9.7 | :sparkles: re-add TRNG "data available" interrupt | [#922](https://github.com/stnolting/neorv32/pull/922) |
 | 31.05.2024 | 1.9.9.6 | add "tag" signal to XBUS to provide additional access information (compatible to the AXI4 _ARPROT_ and _AWPROT_ signals) | [#917](https://github.com/stnolting/neorv32/pull/917) |
 | 30.05.2024 | 1.9.9.5 | :bug: fix uncached-vs-cached memory accesses (do not interrupt cache bursts by direct/uncached memory accesses) | [#915](https://github.com/stnolting/neorv32/pull/915) |
 | 29.05.2024 | 1.9.9.4 | Vivado IP block: add resizing ports for GPIOs, XIRQs and PWM; split size configuration for GPIO inputs and outputs | [#913](https://github.com/stnolting/neorv32/pull/913) |
