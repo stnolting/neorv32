@@ -1342,6 +1342,11 @@
               <description>Log2(FIFO size)</description>
             </field>
             <field>
+              <name>TRNG_CTRL_IRQ_SEL</name>
+              <bitRange>[27:27]</bitRange>
+              <description>Interrupt trigger select (0 = data available, 1 = FIFO full)</description>
+            </field>
+            <field>
               <name>TRNG_CTRL_FIFO_CLR</name>
               <bitRange>[28:28]</bitRange>
               <description>Clear data FIFO when set (auto clears)</description>
