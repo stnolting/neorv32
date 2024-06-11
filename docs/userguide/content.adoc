@@ -1,4 +1,4 @@
-Let's Get It Started!
+**Let's Get It Started!**
 
 This user guide uses the NEORV32 project _as is_ from the official `neorv32` repository.
 To make your first NEORV32 project run, follow the guides from the upcoming sections. It is recommended to
