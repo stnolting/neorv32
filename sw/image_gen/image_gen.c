@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
   struct tm *time_local = localtime(&time_current);
   char compile_time[64];
 
-  snprintf(compile_time, 64, "%02d.%02d.%d %02d:%02d:%02d",
+  snprintf(compile_time, 64, "%02d.%02d.%d %02d:%02d:%02d (dd.mm.yyyy hh:mm:ss)",
     time_local->tm_mday,
     time_local->tm_mon + 1,
     time_local->tm_year + 1900,
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate BINARY executable (with header!) for bootloader upload
+  // Generate BINARY executable (with header) for bootloader upload
   // --------------------------------------------------------------------------
   if (operation == OP_APP_BIN) {
 
@@ -189,8 +189,8 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate APPLICATION's executable memory initialization file (no header!)
-  // => VHDL package body
+  // Generate APPLICATION's executable memory initialization file (no header)
+  // -> VHDL package body
   // --------------------------------------------------------------------------
   else if (operation == OP_APP_IMG) {
 
@@ -246,8 +246,8 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate BOOTLOADER's executable memory initialization file (no header!)
-  // => VHDL package body
+  // Generate BOOTLOADER's executable memory initialization file (no header)
+  // -> VHDL package body
   // --------------------------------------------------------------------------
   else if (operation == OP_BLD_IMG) {
 
@@ -303,7 +303,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate raw APPLICATION's executable ASCII hex file (no header!)
+  // Generate raw APPLICATION's executable ASCII hex file (no header)
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_HEX) {
 
@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate raw APPLICATION's executable binary file (no header!)
+  // Generate raw APPLICATION's executable binary file (no header)
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_BIN) {
 
@@ -330,7 +330,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate raw APPLICATION's executable COE file (no header!)
+  // Generate raw APPLICATION's executable COE file (no header)
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_COE) {
 
@@ -363,7 +363,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate raw APPLICATION's executable MEM file (no header!)
+  // Generate raw APPLICATION's executable MEM file (no header)
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_MEM) {
 
