@@ -25,11 +25,11 @@ entity neorv32_spi is
     bus_req_i   : in  bus_req_t;  -- bus request
     bus_rsp_o   : out bus_rsp_t;  -- bus response
     clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(07 downto 0);
+    clkgen_i    : in  std_ulogic_vector(7 downto 0);
     spi_clk_o   : out std_ulogic; -- SPI serial clock
     spi_dat_o   : out std_ulogic; -- controller data out, peripheral data in
     spi_dat_i   : in  std_ulogic; -- controller data in, peripheral data out
-    spi_csn_o   : out std_ulogic_vector(07 downto 0); -- SPI CS
+    spi_csn_o   : out std_ulogic_vector(7 downto 0); -- SPI CS
     irq_o       : out std_ulogic -- transmission done interrupt
   );
 end neorv32_spi;

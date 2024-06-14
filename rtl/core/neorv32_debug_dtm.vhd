@@ -16,7 +16,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_debug_dtm is
   generic (
-    IDCODE_VERSION : std_ulogic_vector(03 downto 0); -- version
+    IDCODE_VERSION : std_ulogic_vector(3 downto 0);  -- version
     IDCODE_PARTID  : std_ulogic_vector(15 downto 0); -- part number
     IDCODE_MANID   : std_ulogic_vector(10 downto 0)  -- manufacturer id
   );
@@ -39,9 +39,9 @@ end neorv32_debug_dtm;
 architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
 
   -- DMI Configuration (fixed!) --
-  constant dmi_idle_c    : std_ulogic_vector(02 downto 0) := "000";    -- no idle cycles required
-  constant dmi_version_c : std_ulogic_vector(03 downto 0) := "0001";   -- debug spec. version (0.13 & 1.0)
-  constant dmi_abits_c   : std_ulogic_vector(05 downto 0) := "000111"; -- number of DMI address bits (7)
+  constant dmi_idle_c    : std_ulogic_vector(2 downto 0) := "000";    -- no idle cycles required
+  constant dmi_version_c : std_ulogic_vector(3 downto 0) := "0001";   -- debug spec. version (0.13 & 1.0)
+  constant dmi_abits_c   : std_ulogic_vector(5 downto 0) := "000111"; -- number of DMI address bits (7)
 
   -- TAP data register addresses --
   constant addr_idcode_c : std_ulogic_vector(4 downto 0) := "00001"; -- identifier
@@ -71,7 +71,7 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
 
   -- tap registers --
   type tap_reg_t is record
-    ireg             : std_ulogic_vector(04 downto 0);
+    ireg             : std_ulogic_vector(4 downto 0);
     bypass           : std_ulogic;
     idcode           : std_ulogic_vector(31 downto 0);
     dtmcs, dtmcs_nxt : std_ulogic_vector(31 downto 0);
@@ -89,13 +89,13 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
   -- debug module interface controller --
   type dmi_ctrl_t is record
     busy         : std_ulogic;
-    op           : std_ulogic_vector(01 downto 0);
+    op           : std_ulogic_vector(1 downto 0);
     dmihardreset : std_ulogic;
     dmireset     : std_ulogic;
     err          : std_ulogic;
     rdata        : std_ulogic_vector(31 downto 0);
     wdata        : std_ulogic_vector(31 downto 0);
-    addr         : std_ulogic_vector(06 downto 0);
+    addr         : std_ulogic_vector(6 downto 0);
   end record;
   signal dmi_ctrl : dmi_ctrl_t;
 

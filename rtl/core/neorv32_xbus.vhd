@@ -58,7 +58,7 @@ begin
   -- Configuration Info ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert not (TIMEOUT_VAL = 0) report
-    "[NEORV32] External Bus Interface (XBUS) - NO auto-timeout defined; can cause permanent CPU stall!" severity warning;
+    "[NEORV32] External Bus Interface (XBUS): NO auto-timeout defined - can cause permanent CPU stall!" severity warning;
 
 
   -- Register Stage -------------------------------------------------------------------------
@@ -72,10 +72,10 @@ begin
         bus_rsp_o <= rsp_terminate_c;
       elsif rising_edge(clk_i) then
         -- request --
-        if (bus_req_i.stb = '1') then -- keep all signals stable...
+        if (bus_req_i.stb = '1') then -- keep all signals stable ...
           bus_req <= bus_req_i;
         end if;
-        bus_req.stb <= bus_req_i.stb; -- ...except for STB that is single-shot
+        bus_req.stb <= bus_req_i.stb; -- ... except for STB that is single-shot
         -- response --
         bus_rsp_o <= bus_rsp;
       end if;
@@ -94,18 +94,18 @@ begin
   arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      pending     <= '0';
       timeout_cnt <= (others => '0');
+      pending     <= '0';
       bus_rw      <= '0';
     elsif rising_edge(clk_i) then
       if (pending = '0') then -- idle, waiting for request
-        pending     <= bus_req.stb;
         timeout_cnt <= std_ulogic_vector(to_unsigned(TIMEOUT_VAL, index_size_f(TIMEOUT_VAL)+1));
+        pending     <= bus_req.stb;
       else -- busy, transfer in progress
+        timeout_cnt <= std_ulogic_vector(unsigned(timeout_cnt) - 1);
         if (xbus_ack_i = '1') or (xbus_err_i = '1') or (timeout = '1') then
           pending <= '0';
         end if;
-        timeout_cnt <= std_ulogic_vector(unsigned(timeout_cnt) - 1);
       end if;
       bus_rw <= bus_req.rw;
     end if;

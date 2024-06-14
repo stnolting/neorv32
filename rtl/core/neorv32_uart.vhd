@@ -28,7 +28,7 @@ entity neorv32_uart is
     bus_req_i   : in  bus_req_t;  -- bus request
     bus_rsp_o   : out bus_rsp_t;  -- bus response
     clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(07 downto 0);
+    clkgen_i    : in  std_ulogic_vector(7 downto 0);
     uart_txd_o  : out std_ulogic; -- serial TX line
     uart_rxd_i  : in  std_ulogic; -- serial RX line
     uart_rts_o  : out std_ulogic; -- UART.RX ready to receive ("RTR"), low-active, optional

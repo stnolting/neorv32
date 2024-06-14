@@ -86,16 +86,16 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     start_i    : in  std_ulogic; -- trigger operation
     abort_i    : in  std_ulogic; -- abort current operation
-    rmode_i    : in  std_ulogic_vector(02 downto 0); -- rounding mode
+    rmode_i    : in  std_ulogic_vector(2 downto 0); -- rounding mode
     funct_i    : in  std_ulogic; -- 0=signed, 1=unsigned
     -- input --
     sign_i     : in  std_ulogic; -- sign
-    exponent_i : in  std_ulogic_vector(07 downto 0); -- exponent
+    exponent_i : in  std_ulogic_vector(7 downto 0); -- exponent
     mantissa_i : in  std_ulogic_vector(22 downto 0); -- mantissa
     class_i    : in  std_ulogic_vector(09 downto 0); -- operand class
     -- output --
     result_o   : out std_ulogic_vector(31 downto 0); -- integer result
-    flags_o    : out std_ulogic_vector(04 downto 0); -- exception flags
+    flags_o    : out std_ulogic_vector(4 downto 0); -- exception flags
     done_o     : out std_ulogic -- operation done
   );
   end component;
@@ -112,18 +112,18 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     start_i    : in  std_ulogic; -- trigger operation
     abort_i    : in  std_ulogic; -- abort current operation
-    rmode_i    : in  std_ulogic_vector(02 downto 0); -- rounding mode
+    rmode_i    : in  std_ulogic_vector(2 downto 0); -- rounding mode
     funct_i    : in  std_ulogic; -- operating mode (0=norm&round, 1=int-to-float)
     -- input --
     sign_i     : in  std_ulogic; -- sign
-    exponent_i : in  std_ulogic_vector(08 downto 0); -- extended exponent
+    exponent_i : in  std_ulogic_vector(8 downto 0); -- extended exponent
     mantissa_i : in  std_ulogic_vector(47 downto 0); -- extended mantissa
     integer_i  : in  std_ulogic_vector(31 downto 0); -- integer input
-    class_i    : in  std_ulogic_vector(09 downto 0); -- input number class
-    flags_i    : in  std_ulogic_vector(04 downto 0); -- exception flags input
+    class_i    : in  std_ulogic_vector(9 downto 0); -- input number class
+    flags_i    : in  std_ulogic_vector(4 downto 0); -- exception flags input
     -- output --
     result_o   : out std_ulogic_vector(31 downto 0); -- result (float or int)
-    flags_o    : out std_ulogic_vector(04 downto 0); -- exception flags
+    flags_o    : out std_ulogic_vector(4 downto 0); -- exception flags
     done_o     : out std_ulogic -- operation done
   );
   end component;
@@ -157,24 +157,24 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
   type op_class_t is array (0 to 1) of std_ulogic_vector(09 downto 0);
   type fpu_operands_t is record
     rs1       : std_ulogic_vector(31 downto 0); -- operand 1
-    rs1_class : std_ulogic_vector(09 downto 0); -- operand 1 number class
+    rs1_class : std_ulogic_vector(9 downto 0);  -- operand 1 number class
     rs2       : std_ulogic_vector(31 downto 0); -- operand 2
-    rs2_class : std_ulogic_vector(09 downto 0); -- operand 2 number class
-    frm       : std_ulogic_vector(02 downto 0); -- rounding mode
+    rs2_class : std_ulogic_vector(9 downto 0);  -- operand 2 number class
+    frm       : std_ulogic_vector(2 downto 0);  -- rounding mode
   end record;
   signal op_data      : op_data_t;
   signal op_class     : op_class_t;
   signal fpu_operands : fpu_operands_t;
 
   -- floating-point comparator --
-  signal cmp_ff        : std_ulogic_vector(01 downto 0);
+  signal cmp_ff        : std_ulogic_vector(1 downto 0);
   signal comp_equal_ff : std_ulogic;
   signal comp_less_ff  : std_ulogic;
 
   -- functional units interface --
   type fu_interface_t is record
     result : std_ulogic_vector(31 downto 0);
-    flags  : std_ulogic_vector(04 downto 0);
+    flags  : std_ulogic_vector(4 downto 0);
     start  : std_ulogic;
     done   : std_ulogic;
   end record;
@@ -203,14 +203,14 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     buf_ff    : unsigned(47 downto 0); -- product buffer
     sign      : std_ulogic; -- resulting sign
     product   : std_ulogic_vector(47 downto 0); -- product
-    exp_sum   : std_ulogic_vector(08 downto 0); -- incl 1x overflow/underflow bit
-    exp_res   : std_ulogic_vector(09 downto 0); -- resulting exponent incl 2x overflow/underflow bit
+    exp_sum   : std_ulogic_vector(8 downto 0);  -- incl 1x overflow/underflow bit
+    exp_res   : std_ulogic_vector(9 downto 0);  -- resulting exponent incl 2x overflow/underflow bit
     --
-    res_class : std_ulogic_vector(09 downto 0);
-    flags     : std_ulogic_vector(04 downto 0); -- exception flags
+    res_class : std_ulogic_vector(9 downto 0);
+    flags     : std_ulogic_vector(4 downto 0);  -- exception flags
     --
     start     : std_ulogic;
-    latency   : std_ulogic_vector(02 downto 0); -- unit latency
+    latency   : std_ulogic_vector(2 downto 0);  -- unit latency
     done      : std_ulogic;
   end record;
   signal multiplier : multiplier_t;
@@ -218,17 +218,17 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
   -- adder/subtractor unit --
   type addsub_t is record
     -- input comparison --
-    exp_comp  : std_ulogic_vector(01 downto 0); -- equal & less
-    small_exp : std_ulogic_vector(07 downto 0);
+    exp_comp  : std_ulogic_vector(1 downto 0);  -- equal & less
+    small_exp : std_ulogic_vector(7 downto 0);
     small_man : std_ulogic_vector(23 downto 0); -- mantissa + hidden one
-    large_exp : std_ulogic_vector(07 downto 0);
+    large_exp : std_ulogic_vector(7 downto 0);
     large_man : std_ulogic_vector(23 downto 0); -- mantissa + hidden one
     -- smaller mantissa alginment --
     man_sreg  : std_ulogic_vector(23 downto 0); -- mantissa + hidden one
     man_g_ext : std_ulogic;
     man_r_ext : std_ulogic;
     man_s_ext : std_ulogic;
-    exp_cnt   : std_ulogic_vector(08 downto 0);
+    exp_cnt   : std_ulogic_vector(8 downto 0);
     -- adder/subtractor stage --
     man_comp  : std_ulogic;
     man_s     : std_ulogic_vector(26 downto 0); -- mantissa + hidden one + GRS
@@ -237,11 +237,11 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     -- result --
     res_sign  : std_ulogic;
     res_sum   : std_ulogic_vector(27 downto 0); -- mantissa sum (+1 bit) + GRS bits (for rounding)
-    res_class : std_ulogic_vector(09 downto 0);
-    flags     : std_ulogic_vector(04 downto 0); -- exception flags
+    res_class : std_ulogic_vector(9 downto 0);
+    flags     : std_ulogic_vector(4 downto 0);  -- exception flags
     -- arbitration --
     start     : std_ulogic;
-    latency   : std_ulogic_vector(04 downto 0); -- unit latency
+    latency   : std_ulogic_vector(4 downto 0);  -- unit latency
     done      : std_ulogic;
   end record;
   signal addsub : addsub_t;
@@ -251,12 +251,12 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     start     : std_ulogic;
     mode      : std_ulogic;
     sign      : std_ulogic;
-    xexp      : std_ulogic_vector(08 downto 0);
+    xexp      : std_ulogic_vector(8 downto 0);
     xmantissa : std_ulogic_vector(47 downto 0);
     result    : std_ulogic_vector(31 downto 0);
-    class     : std_ulogic_vector(09 downto 0);
-    flags_in  : std_ulogic_vector(04 downto 0);
-    flags_out : std_ulogic_vector(04 downto 0);
+    class     : std_ulogic_vector(9 downto 0);
+    flags_in  : std_ulogic_vector(4 downto 0);
+    flags_out : std_ulogic_vector(4 downto 0);
     done      : std_ulogic;
   end record;
   signal normalizer : normalizer_t;

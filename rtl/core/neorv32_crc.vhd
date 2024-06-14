@@ -34,12 +34,12 @@ architecture neorv32_crc_rtl of neorv32_crc is
 
   -- CRC core --
   type crc_t is record
-    mode : std_ulogic_vector(01 downto 0);
+    mode : std_ulogic_vector(1 downto 0);
     poly : std_ulogic_vector(31 downto 0);
-    data : std_ulogic_vector(07 downto 0);
+    data : std_ulogic_vector(7 downto 0);
     sreg : std_ulogic_vector(31 downto 0);
     --
-    cnt  : std_ulogic_vector(03 downto 0);
+    cnt  : std_ulogic_vector(3 downto 0);
     msb  : std_ulogic;
   end record;
   signal crc : crc_t;
