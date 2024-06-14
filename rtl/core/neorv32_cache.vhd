@@ -152,7 +152,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   -- cache memory module interface --
   type cache_in_t is record
     addr  : std_ulogic_vector(31 downto 0);
-    we    : std_ulogic_vector(03 downto 0);
+    we    : std_ulogic_vector(3 downto 0);
     swe   : std_ulogic;
     wdata : std_ulogic_vector(31 downto 0);
     wstat : std_ulogic;

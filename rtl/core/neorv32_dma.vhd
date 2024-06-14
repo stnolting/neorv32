@@ -64,11 +64,11 @@ architecture neorv32_dma_rtl of neorv32_dma is
     enable    : std_ulogic; -- DMA enabled when set
     auto      : std_ulogic; -- FIRQ-driven auto transfer
     fence     : std_ulogic; -- issue FENCE operation when DMA is done
-    firq_sel  : std_ulogic_vector(03 downto 0); -- FIRQ trigger select
+    firq_sel  : std_ulogic_vector(3 downto 0);  -- FIRQ trigger select
     src_base  : std_ulogic_vector(31 downto 0); -- source base address
     dst_base  : std_ulogic_vector(31 downto 0); -- destination base address
     num       : std_ulogic_vector(23 downto 0); -- number of elements
-    qsel      : std_ulogic_vector(01 downto 0); -- data quantity select
+    qsel      : std_ulogic_vector(1 downto 0);  -- data quantity select
     src_inc   : std_ulogic; -- constant (0) or incrementing (1) source address
     dst_inc   : std_ulogic; -- constant (0) or incrementing (1) destination address
     endian    : std_ulogic; -- convert endianness when set
@@ -333,16 +333,16 @@ begin
         else -- byte
           case engine.src_addr(1 downto 0) is
             when "00" => -- byte 0
-              align_buf(07 downto 0) <= align_end(07 downto 00);
-              align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(07))); -- sign extension
+              align_buf(7 downto 0)  <= align_end(7 downto 0);
+              align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(7))); -- sign extension
             when "01" => -- byte 1
-              align_buf(07 downto 0) <= align_end(15 downto 08);
+              align_buf(7 downto 0)  <= align_end(15 downto 8);
               align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(15))); -- sign extension
             when "10" => -- byte 2
-              align_buf(07 downto 0) <= align_end(23 downto 16);
+              align_buf(7 downto 0)  <= align_end(23 downto 16);
               align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(23))); -- sign extension
             when others => -- byte 3
-              align_buf(07 downto 0) <= align_end(31 downto 24);
+              align_buf(7 downto 0)  <= align_end(31 downto 24);
               align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(31))); -- sign extension
           end case;
         end if;
@@ -355,8 +355,8 @@ begin
   begin
     dma_req_o.ben <= (others => '0'); -- default
     if (config.qsel = qsel_b2b_c) then -- byte
-      dma_req_o.data(07 downto 00) <= align_buf(7 downto 0);
-      dma_req_o.data(15 downto 08) <= align_buf(7 downto 0);
+      dma_req_o.data(7 downto 0)   <= align_buf(7 downto 0);
+      dma_req_o.data(15 downto 8)  <= align_buf(7 downto 0);
       dma_req_o.data(23 downto 16) <= align_buf(7 downto 0);
       dma_req_o.data(31 downto 24) <= align_buf(7 downto 0);
       dma_req_o.ben(to_integer(unsigned(engine.dst_addr(1 downto 0)))) <= '1';

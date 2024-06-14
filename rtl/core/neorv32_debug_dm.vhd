@@ -83,7 +83,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     dmcontrol_ndmreset           : std_ulogic;
     dmcontrol_dmactive           : std_ulogic;
     abstractauto_autoexecdata    : std_ulogic;
-    abstractauto_autoexecprogbuf : std_ulogic_vector(01 downto 0);
+    abstractauto_autoexecprogbuf : std_ulogic_vector(1 downto 0);
     progbuf                      : progbuf_t;
     command                      : std_ulogic_vector(31 downto 0);
     --
@@ -107,11 +107,11 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- **********************************************************
 
   -- DM configuration --
-  constant nscratch_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of dscratch registers in CPU (=1)
-  constant datasize_c   : std_ulogic_vector(03 downto 0) := "0001"; -- number of data registers in memory/CSR space (=1)
+  constant nscratch_c   : std_ulogic_vector(3 downto 0)  := "0001"; -- number of dscratch registers in CPU (=1)
+  constant datasize_c   : std_ulogic_vector(3 downto 0)  := "0001"; -- number of data registers in memory/CSR space (=1)
   constant dataaddr_c   : std_ulogic_vector(11 downto 0) := dm_data_base_c(11 downto 0); -- signed base address of data registers in memory/CSR space
   constant dataaccess_c : std_ulogic                     := '1';    -- 1: abstract data is memory-mapped, 0: abstract data is CSR-mapped
-  constant dm_version_c : std_ulogic_vector(03 downto 0) := cond_sel_suv_f(LEGACY_MODE, "0010", "0011"); -- version: v0.13 / v1.0
+  constant dm_version_c : std_ulogic_vector(3 downto 0)  := cond_sel_suv_f(LEGACY_MODE, "0010", "0011"); -- version: v0.13 / v1.0
 
   -- debug module controller --
   type dm_ctrl_state_t is (CMD_IDLE, CMD_CHECK, CMD_PREPARE, CMD_TRIGGER, CMD_BUSY, CMD_ERROR);
@@ -124,7 +124,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     -- error flags --
     illegal_state   : std_ulogic;
     illegal_cmd     : std_ulogic;
-    cmderr          : std_ulogic_vector(02 downto 0);
+    cmderr          : std_ulogic_vector(2 downto 0);
     -- hart status --
     hart_halted     : std_ulogic;
     hart_resume_req : std_ulogic;

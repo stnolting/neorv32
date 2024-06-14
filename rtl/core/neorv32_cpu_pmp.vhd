@@ -76,7 +76,7 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   type csr_cfg_rd32_t is array (0 to 03) of std_ulogic_vector(XLEN-1 downto 0);
   type csr_addr_rd_t  is array (0 to 15) of std_ulogic_vector(XLEN-1 downto 0);
   type csr_t is record
-    we_cfg  : std_ulogic_vector(03 downto 0);
+    we_cfg  : std_ulogic_vector(3 downto 0);
     we_addr : std_ulogic_vector(15 downto 0);
     cfg     : csr_cfg_t;
     addr    : csr_addr_t;
