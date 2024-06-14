@@ -22,14 +22,14 @@ minimal base & privileged ISA `rv32i_zicsr_zifencei` only to ensure it can work 
 4+^| Memory layout
 | `EXE_BASE_ADDR` | `0x00000000` | _any_ | Base address / boot address for the executable (see section "Address Space" in the NEORV32 data sheet)
 4+^| Serial console interface
-| `UART_EN`   | `1` | `0`, `1` | Set to `0` to disable UART0 (no serial console at all)
-| `UART_BAUD` | `19200` | _any_ | Baud rate of UART0
+| `UART_EN`   | `1`     | `0`, `1` | Set to `0` to disable UART0 (no serial console at all)
+| `UART_BAUD` | `19200` | _any_    | Baud rate of UART0
 | `UART_HW_HANDSHAKE_EN`   | `0` | `0`, `1` | Set to `1` to enable UART0 hardware flow control
 4+^| Status LED
 | `STATUS_LED_EN`  | `1` | `0`, `1`     | Enable bootloader status led ("heart beat") at `GPIO` output port pin #`STATUS_LED_PIN` when `1`
 | `STATUS_LED_PIN` | `0` | `0` ... `31` | `GPIO` output pin used for the high-active status LED
 4+^| Auto-boot configuration
-| `AUTO_BOOT_TIMEOUT` | `8` | _any_    | Time in seconds after the auto-boot sequence starts (if there is no UART input by the user); set to 0 to disabled auto-boot sequence
+| `AUTO_BOOT_TIMEOUT` | `10` | _any_  | Time in seconds after the auto-boot sequence starts (if there is no UART input by the user); set to 0 to disabled auto-boot sequence
 4+^| SPI configuration
 | `SPI_EN`                | `1` | `0`, `1`      | Set `1` to enable the usage of the SPI module (including load/store executables from/to SPI flash options)
 | `SPI_FLASH_CS`          | `0` | `0` ... `7`   | SPI chip select output (`spi_csn_o`) for selecting flash

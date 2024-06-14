@@ -3,7 +3,7 @@
 
 .Pre-Built Bootloader Image
 [IMPORTANT]
-This section refers to the **default** NEORV32 bootloader. A pre-compiled memory image for the processor-internal 
+This section refers to the **default** NEORV32 bootloader. A pre-compiled memory image for the processor-internal
 <<_bootloader_rom_bootrom>> is available in the project's +rtl+ folder: `rtl/core/neorv32_bootloader_image.vhd`.
 This image is automatically inserted into the boot ROM when synthesizing the processor with the bootloader being
 enabled. **Note that the default bootloader image was compiled for a minimal `rv32i` + priv. ISA!**
@@ -99,7 +99,7 @@ SOC:  0xffff402f
 IMEM: 0x00008000
 DMEM: 0x00002000
 
-Autoboot in 8s. Press any key to abort.
+Autoboot in 10s. Press any key to abort.
 ----
 
 The start-up screen gives some brief information about the bootloader and several system configuration parameters:
@@ -117,8 +117,8 @@ The start-up screen gives some brief information about the bootloader and severa
 | `DMEM` | Internal DMEM size in byte (via the `MEM` register from the <<_system_configuration_information_memory_sysinfo>>.
 |=======================
 
-Now you have 8 seconds to press _any_ key. Otherwise, the bootloader starts the <<_auto_boot_sequence>>. When
-you press any key within the 8 seconds, the actual bootloader user console starts:
+Now you have 10 seconds to press _any_ key. Otherwise, the bootloader starts the <<_auto_boot_sequence>>. When
+you press any key within the 10 seconds, the actual bootloader user console starts:
 
 [source]
 ----
@@ -133,7 +133,7 @@ SOC:  0xffff402f
 IMEM: 0x00008000
 DMEM: 0x00002000
 
-Autoboot in 8s. Press any key to abort. <1>
+Autoboot in 10s. Press any key to abort. <1>
 Aborted.
 
 Available CMDs:
