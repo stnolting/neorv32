@@ -42,6 +42,11 @@ to a different location (makefile, NEORV32 sources, etc.).
 Make sure to adjust the binaries / installation folders of the RISC-V GCC toolchain
 and OpenOCD according to your installation. See the following chapter for more information.
 
+.Obtaining the Toolchain
+[TIP]
+I recommend the prebuilt binaries (RISC-V GCC and OpenOCD; for Windows and for Linux) from
+**The xPack Reproducible Build Framework**: https://github.com/xpack
+
 
 :sectnums:
 === Setup a new Eclipse Project from Scratch
@@ -139,6 +144,28 @@ the required `main.elf` file gets generated instead of _all_ executable files (l
 * In the "Common" tab mark **Shared file** to store the run-configuration right in the project folder instead of the workspace(optional).
 * In the **SVD Path** tab add the NEORV32 SVD file (`path/to/neorv32/sw/svd/neorv32.svd`).
 . Click **Apply** and then **Close**.
+
+==== Setup Serial Terminal
+
+A serial terminal can be added to Eclipse by installing it as a plugin.
+I recommend "TM Terminal" which is already installed in some Eclipse bundles.
+
+Open a TM Terminal serial console:
+
+[start=1]
+. Click on **Window > Show View > Terminal** to open the terminal.
+. A **Terminal** tab appears on the bottom. Click the tiny screen button on the right (or press Ctrl+Alt+Shift)
+to open the terminal configuration.
+. Select **Serial Terminal** in **Choose Terminal** and configure the settings according to the processor's
+UART configuration.
+
+Installing TM Terminal from the Eclipse market place:
+
+[start=1]
+. Click on **Help > Eclipse Marketplace...**.
+. Enter "TM Terminal" to the **Find** line and hit enter.
+. Select **TM Terminal** from the list and install it.
+. After installation restart Eclipse.
 
 === Eclipse Setup References
 
