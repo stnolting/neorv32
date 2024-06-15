@@ -27,7 +27,7 @@
 		<link>
 			<name>source</name>
 			<type>2</type>
-			<locationURI>sw/lib/source</locationURI>
+			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/lib/source</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>
