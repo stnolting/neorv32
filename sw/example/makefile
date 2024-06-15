@@ -8,8 +8,10 @@ TOPTARGETS := exe clean_all check info all
 
 SUBDIRS := $(wildcard */.)
 # ignore dummy folders (starting with '~')
-DUMMYDIRS := $(wildcard ~*/.)
-SUBDIRS := $(filter-out $(DUMMYDIRS), $(SUBDIRS))
+EXCLDIR := $(wildcard ~*/.)
+# ignore the Eclipse project
+EXCLDIR += eclipse/.
+SUBDIRS := $(filter-out $(EXCLDIR), $(SUBDIRS))
 
 $(TOPTARGETS): $(SUBDIRS)
 $(SUBDIRS):
