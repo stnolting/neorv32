@@ -8,4 +8,4 @@ Pre-configured project that can be imported into Eclipse:
 * Click on **Directory** and select _this_ folder.
 * Click **Finish**.
 
-See the NEORV32 User Guide for more information.
+See the NEORV32 User Guide for more information: [UG: Eclipse IDE](https://stnolting.github.io/neorv32/ug/#_eclipse_ide)
