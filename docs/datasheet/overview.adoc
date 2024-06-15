@@ -150,6 +150,8 @@ neorv32               - Project home folder
   ├bootloader         - Sources of the processor-internal bootloader
   ├common             - Linker script, crt0.S start-up code and central makefile
   ├example            - Example programs for the core and the SoC modules
+  │├eclipse           - Pre-configured Eclipse IDE project
+  │└...               - Several example programs
   ├lib                - Processor core library
   │├include           - Header files (*.h)
   │└source            - Source files (*.c)
