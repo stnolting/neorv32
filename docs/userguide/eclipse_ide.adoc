@@ -19,6 +19,17 @@ image::eclipse.png[align=center]
 
 
 :sectnums:
+=== Eclipse Prerequisites
+
+The following tools are required:
+
+* Eclipse IDE (**Eclipse IDE for Embedded C/C++ Developers**): https://www.eclipse.org/downloads/
+* Precompiled RISC-V GCC toolchain: e.g. https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack
+* Precompiled OpenOCD binaries: e.g. https://github.com/xpack-dev-tools/openocd-xpack
+* Build tools like make: e.g. https://github.com/xpack-dev-tools/windows-build-tools-xpack
+
+
+:sectnums:
 === Import The Provided Eclipse Example Project
 
 A pre-configured Eclipse project is available in `neorv32/sw/example/eclipse`.
@@ -26,27 +37,21 @@ To import it:
 
 [start=1]
 . Open Eclipse.
-. Click on **File > Import** and select **Projects from Folder or Archive**.
+. Click on **File > Import**, expand **General** and select **Projects from Folder or Archive**.
 . Click **Next**.
 . Click on **Directory** and select the provided example project folder (see directory above).
 . Click **Finish**.
 
 .NEORV32 Folder and File Paths
-[WARNING]
+[IMPORTANT]
 The provided example project uses **relative paths** for including all the NEORV32-specific files and folders
 (in the Eclipse configuration files). Note that these paths need to be adjusted when moving this example setup
 to a different location (makefile, NEORV32 sources, etc.).
 
 .Executables Configuration
-[WARNING]
+[IMPORTANT]
 Make sure to adjust the binaries / installation folders of the RISC-V GCC toolchain
 and OpenOCD according to your installation. See the following chapter for more information.
-
-.Obtaining the Toolchain
-[TIP]
-I recommend the prebuilt binaries (RISC-V GCC and OpenOCD; for Windows and for Linux) from
-**The xPack Reproducible Build Framework**: https://github.com/xpack
-
 
 :sectnums:
 === Setup a new Eclipse Project from Scratch
@@ -76,6 +81,15 @@ Feel free to open a new issue or pull request to improve this setup.
 * Example: `Toolchain path: C:\Program Files (x86)\xpack-riscv-none-elf-gcc-13.2.0-2\bin`
 . Click **Finish**.
 
+If you need to reconfigure the RISC-V GCC binaries and/or paths:
+
+[start=1]
+. right-click on the projet in the left view, select **Properties**
+. expand **MCU** and select **RISC-V Toolchain Paths**
+. adjust the **Toolchain folder** and the **Toolchain name** if required
+. Click **Apply**.
+
+
 ==== Add Initial Files
 
 Start a simple project by adding two initial files. Further files can be added later. Only the makefile is really
@@ -95,14 +109,30 @@ This step adds some of the targets of the NEORV32 makefile for easy access. This
 . Add "`all`" as **Target name** (keep all the default checked boxes).
 . Repeat these steps for all further targets that you wish to add (e..g `clean_all`, `exe`, `elf`).
 
-=== Setup Build Configuration (optional)
+.Available Target
+[TIP]
+See the NEORV32 data sheet for a list and description of all available makefile targets:
+https://stnolting.github.io/neorv32/#_makefile_targets
+
+=== Configure Build Tools
+
+This step is only required if your system does not provide any build tools (like `make`) by default.
+
+[start=1]
+. In the project explorer right-click on the project and select **Properties**.
+. Expand **MCU** and click on **Build Tools Path**.
+. Configure the **Build tools folder**.
+* Example: `Build tools folder: C:/xpack/xpack-windows-build-tools-4.4.1-2/bin`
+. Click **Apply and Close**.
+
+=== Adjust Default Build Configuration (optional)
 
 This will simplify the auto-build by replacing the default `make all` command by `make elf`. Thus, only
 the required `main.elf` file gets generated instead of _all_ executable files (like HDL and memory image files).
 
 [start=1]
 . In the project explorer right-click on the project and select **Properties**.
-. Select on **C/C++ Build** and click on the **Behavior** Tab.
+. Select **C/C++ Build** and click on the **Behavior** Tab.
 . Update the default targets in the **Workbench Build Behavior** box:
 * **Build on resource save:** `elf` (only build the ELF file)
 * **Build (Incremental build):** `elf` (only build the ELF file)
@@ -144,6 +174,19 @@ the required `main.elf` file gets generated instead of _all_ executable files (l
 * In the "Common" tab mark **Shared file** to store the run-configuration right in the project folder instead of the workspace(optional).
 * In the **SVD Path** tab add the NEORV32 SVD file (`path/to/neorv32/sw/svd/neorv32.svd`).
 . Click **Apply** and then **Close**.
+
+.Default Debug Configuration
+[NOTE]
+When you start debugging the first time you might need to select the provided debug configuration:
+**GDB OpenOCD Debugging > eclipse_example Default**
+
+If you need to reconfigure OpenOCD binaries and/or paths:
+
+[start=1]
+. right-click on the projet in the left view, select **Properties**
+. expand **MCU** and select **OpenOCD Path**
+. adjust the **Folder** and the **Executable** name if required
+. Click **Apply**.
 
 ==== Setup Serial Terminal
 
