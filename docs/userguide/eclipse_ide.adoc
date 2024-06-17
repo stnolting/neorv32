@@ -5,14 +5,14 @@
 Eclipse (https://www.eclipse.org/) is an interactive development environment that can be used to develop, debug and profile
 application code for the NEORV32 RISC-V Processor. This chapter shows how to import the provided example setup
 from the NEORV32 project repository. Additionally, all the required steps to create a compatible project from
-scratch are illustrated in this section.
+scratch are illustrated in this chapter.
 
-.Makefile-Based Project
+.This is a Makefile-Based Project!
 [IMPORTANT]
-Note that the Eclipse project illustrated in this chapter re-uses the NEORV32 main application makefile for building
-the application instead of an Eclipse-managed build. Hence, **all CPU- and compiler-relevant configuration has to be
-done using the makefile** (e.g. configuring the RISC-V GCC's toolchain prefix via `RISCV_PREFIX` or specifying the CPU ISA
-using `MARCH`; see the makefile in the provided Eclipse example for more information).
+Note that the provided Eclipse project as well as the setup tutorial in this section implement a **makefile-based project**.
+Hence, the makefile in the example folder (that includes the main NEORV32 makefile) is used for building the application
+instead of the Eclipse-managed build. Therefore, **all compiler options, include folder, source files, etc. have to be
+defined within the project's makefile**.
 
 .Developing and debugging code for the NEORV32 using the Eclipse IDE
 image::eclipse.png[align=center]
@@ -108,6 +108,11 @@ This step adds some of the targets of the NEORV32 makefile for easy access. This
 . In the project explorer right-click on the project and select **Build Target > Create...**.
 . Add "`all`" as **Target name** (keep all the default checked boxes).
 . Repeat these steps for all further targets that you wish to add (e..g `clean_all`, `exe`, `elf`).
+
+.Clean-All Target
+[TIP]
+Adding the `clean_all` target is highly recommended. Executing this target once after importing the project ensures
+that there are no (incompatible) artifacts left from previous builds.
 
 .Available Target
 [TIP]
