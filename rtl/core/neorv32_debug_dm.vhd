@@ -213,7 +213,7 @@ begin
       dm_ctrl.pbuf_en       <= '0';
       dm_ctrl.illegal_cmd   <= '0';
       dm_ctrl.illegal_state <= '0';
-      dm_ctrl.cmderr        <= "000";
+      dm_ctrl.cmderr        <= (others => '0');
     elsif rising_edge(clk_i) then
       if (dm_reg.dmcontrol_dmactive = '0') then -- DM reset / DM disabled
         dm_ctrl.state         <= CMD_IDLE;
@@ -223,7 +223,7 @@ begin
         --
         dm_ctrl.illegal_cmd   <= '0';
         dm_ctrl.illegal_state <= '0';
-        dm_ctrl.cmderr        <= "000";
+        dm_ctrl.cmderr        <= (others => '0');
       else -- DM active
 
         -- defaults --
@@ -416,8 +416,8 @@ begin
           dm_reg.halt_req           <= dmi_req_i.data(31); -- haltreq (-/w): write 1 to request halt; has to be cleared again by debugger
           dm_reg.resume_req         <= dmi_req_i.data(30); -- resumereq (-/w1): write 1 to request resume; auto-clears
           dm_reg.reset_ack          <= dmi_req_i.data(28); -- ackhavereset (-/w1): write 1 to ACK reset; auto-clears
-          dm_reg.dmcontrol_ndmreset <= dmi_req_i.data(01); -- ndmreset (r/w): SoC reset when high
-          dm_reg.dmcontrol_dmactive <= dmi_req_i.data(00); -- dmactive (r/w): DM reset when low
+          dm_reg.dmcontrol_ndmreset <= dmi_req_i.data(1);  -- ndmreset (r/w): SoC reset when high
+          dm_reg.dmcontrol_dmactive <= dmi_req_i.data(0);  -- dmactive (r/w): DM reset when low
         end if;
 
         -- write abstract command --
@@ -430,7 +430,7 @@ begin
         -- write abstract command autoexec --
         if (dmi_req_i.addr = addr_abstractauto_c) then
           if (dm_ctrl.busy = '0') then -- idle and no errors yet
-            dm_reg.abstractauto_autoexecdata       <= dmi_req_i.data(00);
+            dm_reg.abstractauto_autoexecdata       <= dmi_req_i.data(0);
             dm_reg.abstractauto_autoexecprogbuf(0) <= dmi_req_i.data(16);
             dm_reg.abstractauto_autoexecprogbuf(1) <= dmi_req_i.data(17);
           end if;
@@ -529,13 +529,13 @@ begin
           dmi_rsp_o.data(12)           <= dm_reg.dmcontrol_ndmreset; -- anyunavail (r/-): there is only one hart that is unavailable during reset
           dmi_rsp_o.data(11)           <= not dm_ctrl.hart_halted;   -- allrunning (r/-): there is only one hart that can be RUNNING or HALTED
           dmi_rsp_o.data(10)           <= not dm_ctrl.hart_halted;   -- anyrunning (r/-): there is only one hart that can be RUNNING or HALTED
-          dmi_rsp_o.data(09)           <= dm_ctrl.hart_halted;       -- allhalted (r/-): there is only one hart that can be RUNNING or HALTED
-          dmi_rsp_o.data(08)           <= dm_ctrl.hart_halted;       -- anyhalted (r/-): there is only one hart that can be RUNNING or HALTED
-          dmi_rsp_o.data(07)           <= '1';                       -- authenticated (r/-): authentication passed since there is no authentication
-          dmi_rsp_o.data(06)           <= '0';                       -- authbusy (r/-): always ready since there is no authentication
-          dmi_rsp_o.data(05)           <= '0';                       -- hasresethaltreq (r/-): halt-on-reset not implemented
-          dmi_rsp_o.data(04)           <= '0';                       -- confstrptrvalid (r/-): no configuration string available
-          dmi_rsp_o.data(03 downto 00) <= dm_version_c;              -- version (r/-): DM spec. version
+          dmi_rsp_o.data(9)            <= dm_ctrl.hart_halted;       -- allhalted (r/-): there is only one hart that can be RUNNING or HALTED
+          dmi_rsp_o.data(8)            <= dm_ctrl.hart_halted;       -- anyhalted (r/-): there is only one hart that can be RUNNING or HALTED
+          dmi_rsp_o.data(7)            <= '1';                       -- authenticated (r/-): authentication passed since there is no authentication
+          dmi_rsp_o.data(6)            <= '0';                       -- authbusy (r/-): always ready since there is no authentication
+          dmi_rsp_o.data(5)            <= '0';                       -- hasresethaltreq (r/-): halt-on-reset not implemented
+          dmi_rsp_o.data(4)            <= '0';                       -- confstrptrvalid (r/-): no configuration string available
+          dmi_rsp_o.data(3 downto 0)   <= dm_version_c;              -- version (r/-): DM spec. version
 
         -- debug module control --
         when addr_dmcontrol_c =>
@@ -546,12 +546,12 @@ begin
           dmi_rsp_o.data(27)           <= '0';                       -- reserved (r/-)
           dmi_rsp_o.data(26)           <= '0';                       -- hasel (r/-) - only a single hart can be selected at once
           dmi_rsp_o.data(25 downto 16) <= (others => '0');           -- hartsello (r/-) - there is only one hart
-          dmi_rsp_o.data(15 downto 06) <= (others => '0');           -- hartselhi (r/-) - there is only one hart
-          dmi_rsp_o.data(05 downto 04) <= (others => '0');           -- reserved (r/-)
-          dmi_rsp_o.data(03)           <= '0';                       -- setresethaltreq (-/w1): halt-on-reset request - halt-on-reset not implemented
-          dmi_rsp_o.data(02)           <= '0';                       -- clrresethaltreq (-/w1): halt-on-reset ack - halt-on-reset not implemented
-          dmi_rsp_o.data(01)           <= dm_reg.dmcontrol_ndmreset; -- ndmreset (r/w): soc reset
-          dmi_rsp_o.data(00)           <= dm_reg.dmcontrol_dmactive; -- dmactive (r/w): DM reset
+          dmi_rsp_o.data(15 downto 6)  <= (others => '0');           -- hartselhi (r/-) - there is only one hart
+          dmi_rsp_o.data(5 downto 4)   <= (others => '0');           -- reserved (r/-)
+          dmi_rsp_o.data(3)            <= '0';                       -- setresethaltreq (-/w1): halt-on-reset request - halt-on-reset not implemented
+          dmi_rsp_o.data(2)            <= '0';                       -- clrresethaltreq (-/w1): halt-on-reset ack - halt-on-reset not implemented
+          dmi_rsp_o.data(1)            <= dm_reg.dmcontrol_ndmreset; -- ndmreset (r/w): soc reset
+          dmi_rsp_o.data(0)            <= dm_reg.dmcontrol_dmactive; -- dmactive (r/w): DM reset
 
         -- hart info --
         when addr_hartinfo_c =>
@@ -560,7 +560,7 @@ begin
           dmi_rsp_o.data(19 downto 17) <= (others => '0');         -- reserved (r/-)
           dmi_rsp_o.data(16)           <= dataaccess_c;            -- dataaccess (r/-): 1: data registers are memory-mapped, 0: data registers are CSR-mapped
           dmi_rsp_o.data(15 downto 12) <= datasize_c;              -- datasize (r/-): number data registers in memory/CSR space
-          dmi_rsp_o.data(11 downto 00) <= dataaddr_c(11 downto 0); -- dataaddr (r/-): data registers base address (memory/CSR)
+          dmi_rsp_o.data(11 downto 0)  <= dataaddr_c(11 downto 0); -- dataaddr (r/-): data registers base address (memory/CSR)
 
         -- abstract control and status --
         when addr_abstractcs_c =>
@@ -568,23 +568,23 @@ begin
           dmi_rsp_o.data(28 downto 24) <= "00010";         -- progbufsize (r/-): number of words in program buffer = 2
           dmi_rsp_o.data(12)           <= dm_ctrl.busy;    -- busy (r/-): abstract command in progress (1) / idle (0)
           dmi_rsp_o.data(11)           <= '1';             -- relaxedpriv (r/-): PMP rules are ignored when in debug-mode
-          dmi_rsp_o.data(10 downto 08) <= dm_ctrl.cmderr;  -- cmderr (r/w1c): any error during execution?
-          dmi_rsp_o.data(07 downto 04) <= (others => '0'); -- reserved (r/-)
-          dmi_rsp_o.data(03 downto 00) <= "0001";          -- datacount (r/-): number of implemented data registers = 1
+          dmi_rsp_o.data(10 downto 8)  <= dm_ctrl.cmderr;  -- cmderr (r/w1c): any error during execution?
+          dmi_rsp_o.data(7 downto 4)   <= (others => '0'); -- reserved (r/-)
+          dmi_rsp_o.data(3 downto 0)   <= "0001";          -- datacount (r/-): number of implemented data registers = 1
 
-        -- abstract command (-/w) --
-        when addr_command_c =>
-          dmi_rsp_o.data <= (others => '0'); -- register is write-only
+--      -- abstract command (-/w) --
+--      when addr_command_c =>
+--        dmi_rsp_o.data <= (others => '0'); -- register is write-only
 
         -- abstract command autoexec (r/w) --
         when addr_abstractauto_c =>
-          dmi_rsp_o.data(00) <= dm_reg.abstractauto_autoexecdata;       -- autoexecdata(0):    read/write access to data0 triggers execution of program buffer
+          dmi_rsp_o.data(0)  <= dm_reg.abstractauto_autoexecdata;       -- autoexecdata(0):    read/write access to data0 triggers execution of program buffer
           dmi_rsp_o.data(16) <= dm_reg.abstractauto_autoexecprogbuf(0); -- autoexecprogbuf(0): read/write access to progbuf0 triggers execution of program buffer
           dmi_rsp_o.data(17) <= dm_reg.abstractauto_autoexecprogbuf(1); -- autoexecprogbuf(1): read/write access to progbuf1 triggers execution of program buffer
 
-        -- next debug module (r/-) --
-        when addr_nextdm_c =>
-          dmi_rsp_o.data <= (others => '0'); -- this is the only DM
+--      -- next debug module (r/-) --
+--      when addr_nextdm_c =>
+--        dmi_rsp_o.data <= (others => '0'); -- this is the only DM
 
         -- abstract data 0 (r/w) --
         when addr_data0_c =>
@@ -596,9 +596,9 @@ begin
         when addr_progbuf1_c =>
           if (LEGACY_MODE = true) then dmi_rsp_o.data <= dm_reg.progbuf(1); else dmi_rsp_o.data <= (others => '0'); end if; -- program buffer 1
 
-        -- system bus access control and status (r/-) --
-        when addr_sbcs_c =>
-          dmi_rsp_o.data <= (others => '0'); -- system bus access not implemented
+--      -- system bus access control and status (r/-) --
+--      when addr_sbcs_c =>
+--        dmi_rsp_o.data <= (others => '0'); -- system bus access not implemented
 
         -- halt summary 0 (r/-) --
         when addr_haltsum0_c =>
