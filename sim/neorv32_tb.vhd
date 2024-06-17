@@ -287,7 +287,6 @@ begin
     clk_i          => clk_gen,         -- global clock, rising edge
     rstn_i         => rst_gen,         -- global reset, low-active, async
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_trst_i    => '1',             -- low-active TAP reset (optional)
     jtag_tck_i     => '0',             -- serial clock
     jtag_tdi_i     => '0',             -- serial data input
     jtag_tdo_o     => open,            -- serial data output

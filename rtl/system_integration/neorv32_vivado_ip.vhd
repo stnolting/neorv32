@@ -176,7 +176,6 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true)
     -- ------------------------------------------------------------
-    jtag_trst_i    : in  std_ulogic := '1'; -- low-active; disable reset by default
     jtag_tck_i     : in  std_ulogic := '0';
     jtag_tdi_i     : in  std_ulogic := '0';
     jtag_tdo_o     : out std_ulogic := '0';
@@ -376,7 +375,6 @@ begin
     clk_i          => clk,
     rstn_i         => resetn,
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_trst_i    => jtag_trst_i,
     jtag_tck_i     => jtag_tck_i,
     jtag_tdi_i     => jtag_tdi_i,
     jtag_tdo_o     => jtag_tdo_o,

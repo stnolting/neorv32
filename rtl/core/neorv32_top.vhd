@@ -139,7 +139,6 @@ entity neorv32_top is
     rstn_i         : in  std_ulogic; -- global reset, low-active, async
 
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_trst_i    : in  std_ulogic := 'H'; -- low-active TAP reset (optional)
     jtag_tck_i     : in  std_ulogic := 'L'; -- serial clock
     jtag_tdi_i     : in  std_ulogic := 'L'; -- serial data input
     jtag_tdo_o     : out std_ulogic; -- serial data output
@@ -1640,15 +1639,14 @@ begin
       IDCODE_MANID   => JEDEC_ID
     )
     port map (
-      clk_i        => clk_i,
-      rstn_i       => rstn_ext,
-      jtag_trst_i  => jtag_trst_i,
-      jtag_tck_i   => jtag_tck_i,
-      jtag_tdi_i   => jtag_tdi_i,
-      jtag_tdo_o   => jtag_tdo_o,
-      jtag_tms_i   => jtag_tms_i,
-      dmi_req_o    => dmi_req,
-      dmi_rsp_i    => dmi_rsp
+      clk_i      => clk_i,
+      rstn_i     => rstn_ext,
+      jtag_tck_i => jtag_tck_i,
+      jtag_tdi_i => jtag_tdi_i,
+      jtag_tdo_o => jtag_tdo_o,
+      jtag_tms_i => jtag_tms_i,
+      dmi_req_o  => dmi_req,
+      dmi_rsp_i  => dmi_rsp
     );
 
     -- On-Chip Debugger - Debug Module (DM) ---------------------------------------------------
