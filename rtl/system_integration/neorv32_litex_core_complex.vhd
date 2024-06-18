@@ -41,29 +41,28 @@ entity neorv32_litex_core_complex is
   );
   port (
     -- Global control --
-    clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic; -- global reset, low-active, async
+    clk_i      : in  std_ulogic; -- global clock, rising edge
+    rstn_i     : in  std_ulogic; -- global reset, low-active, async
 
     -- JTAG on-chip debugger interface --
-    jtag_trst_i : in  std_ulogic; -- low-active TAP reset (optional)
-    jtag_tck_i  : in  std_ulogic; -- serial clock
-    jtag_tdi_i  : in  std_ulogic; -- serial data input
-    jtag_tdo_o  : out std_ulogic; -- serial data output
-    jtag_tms_i  : in  std_ulogic; -- mode select
+    jtag_tck_i : in  std_ulogic; -- serial clock
+    jtag_tdi_i : in  std_ulogic; -- serial data input
+    jtag_tdo_o : out std_ulogic; -- serial data output
+    jtag_tms_i : in  std_ulogic; -- mode select
 
     -- External bus interface (Wishbone) --
-    wb_adr_o    : out std_ulogic_vector(31 downto 0); -- address
-    wb_dat_i    : in  std_ulogic_vector(31 downto 0); -- read data
-    wb_dat_o    : out std_ulogic_vector(31 downto 0); -- write data
-    wb_we_o     : out std_ulogic; -- read/write
-    wb_sel_o    : out std_ulogic_vector(3 downto 0); -- byte enable
-    wb_stb_o    : out std_ulogic; -- strobe
-    wb_cyc_o    : out std_ulogic; -- valid cycle
-    wb_ack_i    : in  std_ulogic; -- transfer acknowledge
-    wb_err_i    : in  std_ulogic; -- transfer error
+    wb_adr_o   : out std_ulogic_vector(31 downto 0); -- address
+    wb_dat_i   : in  std_ulogic_vector(31 downto 0); -- read data
+    wb_dat_o   : out std_ulogic_vector(31 downto 0); -- write data
+    wb_we_o    : out std_ulogic; -- read/write
+    wb_sel_o   : out std_ulogic_vector(3 downto 0); -- byte enable
+    wb_stb_o   : out std_ulogic; -- strobe
+    wb_cyc_o   : out std_ulogic; -- valid cycle
+    wb_ack_i   : in  std_ulogic; -- transfer acknowledge
+    wb_err_i   : in  std_ulogic; -- transfer error
 
     -- CPU interrupt --
-    mext_irq_i  : in  std_ulogic  -- RISC-V machine external interrupt (MEI)
+    mext_irq_i : in  std_ulogic  -- RISC-V machine external interrupt (MEI)
   );
 end neorv32_litex_core_complex;
 
@@ -151,26 +150,25 @@ begin
   )
   port map (
     -- Global control --
-    clk_i       => clk_i,       -- global clock, rising edge
-    rstn_i      => rstn_i,      -- global reset, low-active, async
+    clk_i       => clk_i,      -- global clock, rising edge
+    rstn_i      => rstn_i,     -- global reset, low-active, async
     -- JTAG on-chip debugger interface --
-    jtag_trst_i => jtag_trst_i, -- low-active TAP reset (optional)
-    jtag_tck_i  => jtag_tck_i,  -- serial clock
-    jtag_tdi_i  => jtag_tdi_i,  -- serial data input
-    jtag_tdo_o  => jtag_tdo_o,  -- serial data output
-    jtag_tms_i  => jtag_tms_i,  -- mode select
+    jtag_tck_i  => jtag_tck_i, -- serial clock
+    jtag_tdi_i  => jtag_tdi_i, -- serial data input
+    jtag_tdo_o  => jtag_tdo_o, -- serial data output
+    jtag_tms_i  => jtag_tms_i, -- mode select
     -- External bus interface --
-    xbus_adr_o  => wb_adr_o,    -- address
-    xbus_dat_o  => wb_dat_o,    -- write data
-    xbus_we_o   => wb_we_o,     -- read/write
-    xbus_sel_o  => wb_sel_o,    -- byte enable
-    xbus_stb_o  => open,        -- strobe
-    xbus_cyc_o  => wb_cyc,      -- valid cycle
-    xbus_dat_i  => wb_dat_i,    -- read data
-    xbus_ack_i  => wb_ack_i,    -- transfer acknowledge
-    xbus_err_i  => wb_err_i,    -- transfer error
+    xbus_adr_o  => wb_adr_o,   -- address
+    xbus_dat_o  => wb_dat_o,   -- write data
+    xbus_we_o   => wb_we_o,    -- read/write
+    xbus_sel_o  => wb_sel_o,   -- byte enable
+    xbus_stb_o  => open,       -- strobe
+    xbus_cyc_o  => wb_cyc,     -- valid cycle
+    xbus_dat_i  => wb_dat_i,   -- read data
+    xbus_ack_i  => wb_ack_i,   -- transfer acknowledge
+    xbus_err_i  => wb_err_i,   -- transfer error
     -- CPU Interrupts --
-    mext_irq_i  => mext_irq_i   -- machine external interrupt
+    mext_irq_i  => mext_irq_i  -- machine external interrupt
   );
 
   -- convert to "classic" Wishbone protocol (STB = CYC) --

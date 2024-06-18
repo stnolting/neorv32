@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100000"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100001"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -809,7 +809,6 @@ package neorv32_package is
       clk_i          : in  std_ulogic;
       rstn_i         : in  std_ulogic;
       -- JTAG on-chip debugger interface --
-      jtag_trst_i    : in  std_ulogic := 'H';
       jtag_tck_i     : in  std_ulogic := 'L';
       jtag_tdi_i     : in  std_ulogic := 'L';
       jtag_tdo_o     : out std_ulogic;

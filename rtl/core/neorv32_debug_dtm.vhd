@@ -22,17 +22,16 @@ entity neorv32_debug_dtm is
   );
   port (
     -- global control --
-    clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
+    clk_i      : in  std_ulogic; -- global clock line
+    rstn_i     : in  std_ulogic; -- global reset line, low-active
     -- jtag connection --
-    jtag_trst_i : in  std_ulogic;
-    jtag_tck_i  : in  std_ulogic;
-    jtag_tdi_i  : in  std_ulogic;
-    jtag_tdo_o  : out std_ulogic;
-    jtag_tms_i  : in  std_ulogic;
+    jtag_tck_i : in  std_ulogic;
+    jtag_tdi_i : in  std_ulogic;
+    jtag_tdo_o : out std_ulogic;
+    jtag_tms_i : in  std_ulogic;
     -- debug module interface (DMI) --
-    dmi_req_o   : out dmi_req_t; -- request
-    dmi_rsp_i   : in  dmi_rsp_t  -- response
+    dmi_req_o  : out dmi_req_t; -- request
+    dmi_rsp_i  : in  dmi_rsp_t  -- response
   );
 end neorv32_debug_dtm;
 
@@ -51,16 +50,9 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
   -- tap JTAG signal synchronizer --
   type tap_sync_t is record
     -- internal --
-    trst_ff     : std_ulogic_vector(2 downto 0);
-    tck_ff      : std_ulogic_vector(2 downto 0);
-    tdi_ff      : std_ulogic_vector(2 downto 0);
-    tms_ff      : std_ulogic_vector(2 downto 0);
+    tck_ff, tdi_ff, tms_ff : std_ulogic_vector(2 downto 0);
     -- external --
-    trst        : std_ulogic;
-    tck_rising  : std_ulogic;
-    tck_falling : std_ulogic;
-    tdi         : std_ulogic;
-    tms         : std_ulogic;
+    tck_rising, tck_falling, tdi, tms: std_ulogic;
   end record;
   signal tap_sync : tap_sync_t;
 
@@ -106,20 +98,15 @@ begin
   tap_synchronizer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      tap_sync.trst_ff <= (others => '0');
-      tap_sync.tck_ff  <= (others => '0');
-      tap_sync.tdi_ff  <= (others => '0');
-      tap_sync.tms_ff  <= (others => '0');
+      tap_sync.tck_ff <= (others => '0');
+      tap_sync.tdi_ff <= (others => '0');
+      tap_sync.tms_ff <= (others => '0');
     elsif rising_edge(clk_i) then
-      tap_sync.trst_ff <= tap_sync.trst_ff(1 downto 0) & jtag_trst_i;
-      tap_sync.tck_ff  <= tap_sync.tck_ff( 1 downto 0) & jtag_tck_i;
-      tap_sync.tdi_ff  <= tap_sync.tdi_ff( 1 downto 0) & jtag_tdi_i;
-      tap_sync.tms_ff  <= tap_sync.tms_ff( 1 downto 0) & jtag_tms_i;
+      tap_sync.tck_ff <= tap_sync.tck_ff(1 downto 0) & jtag_tck_i;
+      tap_sync.tdi_ff <= tap_sync.tdi_ff(1 downto 0) & jtag_tdi_i;
+      tap_sync.tms_ff <= tap_sync.tms_ff(1 downto 0) & jtag_tms_i;
     end if;
   end process tap_synchronizer;
-
-  -- JTAG reset --
-  tap_sync.trst <= '0' when (tap_sync.trst_ff(2 downto 1) = "00") else '1';
 
   -- JTAG clock edge --
   tap_sync.tck_rising  <= '1' when (tap_sync.tck_ff(2 downto 1) = "01") else '0';
@@ -139,9 +126,7 @@ begin
     if (rstn_i = '0') then
       tap_ctrl_state <= LOGIC_RESET;
     elsif rising_edge(clk_i) then
-      if (tap_sync.trst = '0') then -- reset
-        tap_ctrl_state <= LOGIC_RESET;
-      elsif (tap_sync.tck_rising = '1') then -- clock pulse (evaluate TMS on the rising edge of TCK)
+      if (tap_sync.tck_rising = '1') then -- clock pulse (evaluate TMS on the rising edge of TCK)
         case tap_ctrl_state is -- JTAG state machine
           when LOGIC_RESET => if (tap_sync.tms = '0') then tap_ctrl_state <= RUN_IDLE;   else tap_ctrl_state <= LOGIC_RESET; end if;
           when RUN_IDLE    => if (tap_sync.tms = '0') then tap_ctrl_state <= RUN_IDLE;   else tap_ctrl_state <= DR_SCAN;     end if;

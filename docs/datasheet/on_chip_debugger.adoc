@@ -81,7 +81,6 @@ External JTAG access is provided by the following top-level ports:
 [options="header",grid="rows"]
 |=======================
 | Name          | Width | Direction | Description
-| `jtag_trst_i` | 1     | in        | TAP reset (low-active); this signal is optional, make sure to pull it **high** if not used
 | `jtag_tck_i`  | 1     | in        | serial clock
 | `jtag_tdi_i`  | 1     | in        | serial data input
 | `jtag_tdo_o`  | 1     | out       | serial data output
@@ -93,6 +92,11 @@ External JTAG access is provided by the following top-level ports:
 All JTAG signals are synchronized to the processor's clock domain. Hence, no additional clock domain is required for the DTM.
 However, this constraints the maximal JTAG clock frequency (`jtag_tck_i`) to be less than or equal to **1/5** of the processor
 clock frequency (`clk_i`).
+
+.JTAG TAP Reset
+[NOTE]
+The NEORV32 JTAG TAP does not provide a dedicated reset signal ("TRST"). However, the missing TRST is not a problem,
+since JTAG-level resets can be triggered using with TMS signaling.
 
 .Maintaining JTAG Chain
 [NOTE]

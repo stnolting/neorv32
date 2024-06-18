@@ -80,7 +80,6 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 | `clk_i`          |  1 |  in | none  | global clock line, all registers triggering on rising edge
 | `rstn_i`         |  1 |  in | none  | global reset, asynchronous, **low-active**
 5+^| **JTAG Access Port for <<_on_chip_debugger_ocd>>**
-| `jtag_trst_i`    |  1 |  in | `'H'` | TAP reset, low-active (optional)
 | `jtag_tck_i`     |  1 |  in | `'L'` | serial clock
 | `jtag_tdi_i`     |  1 |  in | `'L'` | serial data input
 | `jtag_tdo_o`     |  1 | out |   -   | serial data output

@@ -10,7 +10,7 @@ RISC-V _GNU debugger_ `gdb`.
 .TLDR
 [TIP]
 You can start a pre-configured debug session (using default `main.elf` as executable and
-`target extended-remote localhost:3333` as gdb connection configuration) by using the **gdb** makefile target
+`target extended-remote localhost:3333` as GDB connection configuration) by using the **GDB** makefile target
 (i.e. `make gdb`).
 
 .OCD Hardware Implementation
@@ -39,17 +39,17 @@ also use a FTDI-based adapter like the "FT2232H-56Q Mini Module", which is a sim
 [cols="^3,^2,^2"]
 [options="header",grid="rows"]
 |=======================
-| NEORV32 top signal | JTAG signal | FTDI port
+| NEORV32 top signal | JTAG signal | Default FTDI port
 | `jtag_tck_i`       | TCK         | D0
 | `jtag_tdi_i`       | TDI         | D1
 | `jtag_tdo_o`       | TDO         | D2
 | `jtag_tms_i`       | TMS         | D3
-| `jtag_trst_i`      | TRST        | D4
 |=======================
 
-[TIP]
-The low-active JTAG tap reset `jtag_trst_i` signals is _optional_ as a reset can also be triggered via the TAP controller
-issuing special commands. If `jtag_trst_i` is not connected make sure to pull the signal _high_.
+.JTAG TAP Reset
+[NOTE]
+The NEORV32 JTAG TAP does not provide a dedicated reset signal ("TRST"). However, the missing TRST is not a problem,
+since JTAG-level resets can be triggered using with TMS signaling.
 
 
 :sectnums:
@@ -239,7 +239,7 @@ instruction. Whenever execution reaches this instruction, debug mode is entered 
 instruction at this address to maintain original program behavior. +
  +
 When debugging programs executed from ROM _hardware-assisted_ breakpoints using the core's trigger module have to be used.
-See section <<_hardware_breakpoints>> for more information. 
+See section <<_hardware_breakpoints>> for more information.
 
 Now execute `c` (= continue). The CPU will resume operation until it hits the break-point.
 By this we can move from one counter increment to another.

@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 17.05.2024 | 1.10.0.1 | :warning: remove (optional and redundant) JTAG reset signal `jtag_trst_i` | [#928](https://github.com/stnolting/neorv32/pull/928) |
 | 16.05.2024 | [**:rocket:1.10.0**](https://github.com/stnolting/neorv32/releases/tag/v1.10.0) | **New release** | |
 | 15.06.2024 | 1.9.9.9 | :sparkles: add pre-configured example project for Eclipse IDE | [#926](https://github.com/stnolting/neorv32/pull/926) |
 | 14.06.2024 | 1.9.9.8 | minor rtl edits/cleanups; increase bootloader's auto-boot timeout from 8s to 10s | [#925](https://github.com/stnolting/neorv32/pull/925) |

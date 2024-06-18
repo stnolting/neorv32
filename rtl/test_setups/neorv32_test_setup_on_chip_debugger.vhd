@@ -27,7 +27,6 @@ entity neorv32_test_on_chip_debugger is
     clk_i       : in  std_ulogic; -- global clock, rising edge
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     -- JTAG on-chip debugger interface --
-    jtag_trst_i : in  std_ulogic; -- low-active TAP reset (optional)
     jtag_tck_i  : in  std_ulogic; -- serial clock
     jtag_tdi_i  : in  std_ulogic; -- serial data input
     jtag_tdo_o  : out std_ulogic; -- serial data output
@@ -76,7 +75,6 @@ begin
     clk_i       => clk_i,       -- global clock, rising edge
     rstn_i      => rstn_i,      -- global reset, low-active, async
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_trst_i => jtag_trst_i, -- low-active TAP reset (optional)
     jtag_tck_i  => jtag_tck_i,  -- serial clock
     jtag_tdi_i  => jtag_tdi_i,  -- serial data input
     jtag_tdo_o  => jtag_tdo_o,  -- serial data output
