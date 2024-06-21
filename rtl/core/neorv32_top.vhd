@@ -991,6 +991,7 @@ begin
       xbus_rsp   <= rsp_terminate_c;
       xbus_adr_o <= (others => '0');
       xbus_dat_o <= (others => '0');
+      xbus_tag_o <= (others => '0');
       xbus_we_o  <= '0';
       xbus_sel_o <= (others => '0');
       xbus_stb_o <= '0';
@@ -1398,6 +1399,7 @@ begin
     neorv32_trng_inst_false:
     if not IO_TRNG_EN generate
       iodev_rsp(IODEV_TRNG) <= rsp_terminate_c;
+      firq(FIRQ_TRNG)       <= '0';
     end generate;
 
 
