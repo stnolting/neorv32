@@ -1,5 +1,5 @@
 # ================================================================================ #
-# NEORV32 Software Makefile                                                        #
+# NEORV32 Application Software Makefile                                            #
 # -------------------------------------------------------------------------------- #
 # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              #
 # Copyright (c) NEORV32 contributors.                                              #
