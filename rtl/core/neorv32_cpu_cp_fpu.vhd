@@ -92,7 +92,7 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     sign_i     : in  std_ulogic; -- sign
     exponent_i : in  std_ulogic_vector(7 downto 0); -- exponent
     mantissa_i : in  std_ulogic_vector(22 downto 0); -- mantissa
-    class_i    : in  std_ulogic_vector(09 downto 0); -- operand class
+    class_i    : in  std_ulogic_vector(9 downto 0); -- operand class
     -- output --
     result_o   : out std_ulogic_vector(31 downto 0); -- integer result
     flags_o    : out std_ulogic_vector(4 downto 0); -- exception flags
@@ -154,7 +154,7 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
 
   -- floating-point operands --
   type op_data_t  is array (0 to 1) of std_ulogic_vector(31 downto 0);
-  type op_class_t is array (0 to 1) of std_ulogic_vector(09 downto 0);
+  type op_class_t is array (0 to 1) of std_ulogic_vector(9 downto 0);
   type fpu_operands_t is record
     rs1       : std_ulogic_vector(31 downto 0); -- operand 1
     rs1_class : std_ulogic_vector(9 downto 0);  -- operand 1 number class
@@ -339,11 +339,11 @@ begin
   -- rs1 --
   op_data(0)(31)           <= rs1_i(31);
   op_data(0)(30 downto 23) <= rs1_i(30 downto 23);
-  op_data(0)(22 downto 00) <= (others => '0') when (rs1_i(30 downto 23) = "00000000") else rs1_i(22 downto 0); -- flush mantissa to zero if subnormal
+  op_data(0)(22 downto 0)  <= (others => '0') when (rs1_i(30 downto 23) = "00000000") else rs1_i(22 downto 0); -- flush mantissa to zero if subnormal
   -- rs2 --
   op_data(1)(31)           <= rs2_i(31);
   op_data(1)(30 downto 23) <= rs2_i(30 downto 23);
-  op_data(1)(22 downto 00) <= (others => '0') when (rs2_i(30 downto 23) = "00000000") else rs2_i(22 downto 0); -- flush mantissa to zero if subnormal
+  op_data(1)(22 downto 0)  <= (others => '0') when (rs2_i(30 downto 23) = "00000000") else rs2_i(22 downto 0); -- flush mantissa to zero if subnormal
 
 
   -- O Classifier ----------------------------------------------------------------------
@@ -354,7 +354,7 @@ begin
   begin
     for i in 0 to 1 loop -- for rs1 and rs2 inputs
       -- check for all-zero/all-one --
-      op_m_all_zero_v := not or_reduce_f(op_data(i)(22 downto 00));
+      op_m_all_zero_v := not or_reduce_f(op_data(i)(22 downto 0));
       op_e_all_zero_v := not or_reduce_f(op_data(i)(30 downto 23));
       op_e_all_one_v  :=    and_reduce_f(op_data(i)(30 downto 23));
 
@@ -475,7 +475,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   fu_classify.flags <= (others => '0'); -- does not generate flags at all
   fu_classify.result(31 downto 10) <= (others => '0');
-  fu_classify.result(09 downto 00) <= fpu_operands.rs1_class;
+  fu_classify.result(9 downto 0) <= fpu_operands.rs1_class;
   fu_classify.done <= fu_classify.start;
 
 
@@ -692,7 +692,7 @@ begin
     -- input --
     sign_i     => fpu_operands.rs1(31),           -- sign
     exponent_i => fpu_operands.rs1(30 downto 23), -- exponent
-    mantissa_i => fpu_operands.rs1(22 downto 00), -- mantissa
+    mantissa_i => fpu_operands.rs1(22 downto 0),  -- mantissa
     class_i    => fpu_operands.rs1_class,         -- operand class
     -- output --
     result_o   => fu_conv_f2i.result,             -- integer result
@@ -1233,8 +1233,8 @@ begin
   -- exponent check: find smaller number (magnitude-only) --
   addsub.small_exp <=        fpu_operands.rs1(30 downto 23)  when (addsub.exp_comp(0) = '1') else        fpu_operands.rs2(30 downto 23);
   addsub.large_exp <=        fpu_operands.rs2(30 downto 23)  when (addsub.exp_comp(0) = '1') else        fpu_operands.rs1(30 downto 23);
-  addsub.small_man <= ('1' & fpu_operands.rs1(22 downto 00)) when (addsub.exp_comp(0) = '1') else ('1' & fpu_operands.rs2(22 downto 00));
-  addsub.large_man <= ('1' & fpu_operands.rs2(22 downto 00)) when (addsub.exp_comp(0) = '1') else ('1' & fpu_operands.rs1(22 downto 00));
+  addsub.small_man <= ('1' & fpu_operands.rs1(22 downto 0))  when (addsub.exp_comp(0) = '1') else ('1' & fpu_operands.rs2(22 downto 0));
+  addsub.large_man <= ('1' & fpu_operands.rs2(22 downto 0))  when (addsub.exp_comp(0) = '1') else ('1' & fpu_operands.rs1(22 downto 0));
 
   -- mantissa check: find smaller number (magnitude-only) --
   addsub.man_s <= (addsub.man_sreg & addsub.man_g_ext & addsub.man_r_ext & addsub.man_s_ext) when (addsub.man_comp = '1') else (addsub.large_man & "000");
@@ -1425,8 +1425,8 @@ begin
         normalizer.xmantissa(47 downto 23) <= addsub.res_sum(27 downto 3);
         normalizer.xmantissa(22) <= addsub.res_sum(2);
         normalizer.xmantissa(21) <= addsub.res_sum(1);
-        normalizer.xmantissa(20 downto 01) <= (others => '0');
-        normalizer.xmantissa(00) <= addsub.res_sum(0);
+        normalizer.xmantissa(20 downto 1) <= (others => '0');
+        normalizer.xmantissa(0) <= addsub.res_sum(0);
         normalizer.class     <= addsub.res_class;
         normalizer.flags_in  <= addsub.flags;
         normalizer.start     <= addsub.done;
@@ -1559,18 +1559,18 @@ entity neorv32_cpu_cp_fpu_normalizer is
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     start_i    : in  std_ulogic; -- trigger operation
     abort_i    : in  std_ulogic; -- abort current operation
-    rmode_i    : in  std_ulogic_vector(02 downto 0); -- rounding mode
+    rmode_i    : in  std_ulogic_vector(2 downto 0); -- rounding mode
     funct_i    : in  std_ulogic; -- operating mode (0=norm&round, 1=int-to-float)
     -- input --
     sign_i     : in  std_ulogic; -- sign
-    exponent_i : in  std_ulogic_vector(08 downto 0); -- extended exponent
+    exponent_i : in  std_ulogic_vector(8 downto 0); -- extended exponent
     mantissa_i : in  std_ulogic_vector(47 downto 0); -- extended mantissa
     integer_i  : in  std_ulogic_vector(31 downto 0); -- integer input
-    class_i    : in  std_ulogic_vector(09 downto 0); -- input number class
-    flags_i    : in  std_ulogic_vector(04 downto 0); -- exception flags input
+    class_i    : in  std_ulogic_vector(9 downto 0); -- input number class
+    flags_i    : in  std_ulogic_vector(4 downto 0); -- exception flags input
     -- output --
     result_o   : out std_ulogic_vector(31 downto 0); -- float result
-    flags_o    : out std_ulogic_vector(04 downto 0); -- exception flags output
+    flags_o    : out std_ulogic_vector(4 downto 0); -- exception flags output
     done_o     : out std_ulogic -- operation done
   );
 end neorv32_cpu_cp_fpu_normalizer;
@@ -1582,16 +1582,16 @@ architecture neorv32_cpu_cp_fpu_normalizer_rtl of neorv32_cpu_cp_fpu_normalizer 
   type ctrl_t is record
     state   : ctrl_engine_state_t; -- current state
     norm_r  : std_ulogic; -- normalization round 0 or 1
-    cnt     : std_ulogic_vector(08 downto 0); -- interation counter/exponent (incl. overflow)
-    cnt_pre : std_ulogic_vector(08 downto 0);
+    cnt     : std_ulogic_vector(8 downto 0); -- interation counter/exponent (incl. overflow)
+    cnt_pre : std_ulogic_vector(8 downto 0);
     cnt_of  : std_ulogic; -- counter overflow
     cnt_uf  : std_ulogic; -- counter underflow
     rounded : std_ulogic; -- output is rounded
     res_sgn : std_ulogic;
-    res_exp : std_ulogic_vector(07 downto 0);
+    res_exp : std_ulogic_vector(7 downto 0);
     res_man : std_ulogic_vector(22 downto 0);
-    class   : std_ulogic_vector(09 downto 0);
-    flags   : std_ulogic_vector(04 downto 0);
+    class   : std_ulogic_vector(9 downto 0);
+    flags   : std_ulogic_vector(4 downto 0);
   end record;
   signal ctrl : ctrl_t;
 
@@ -1710,8 +1710,8 @@ begin
 
         when S_PREPARE_NORM => -- prepare "normal" normalization & rounding
         -- ------------------------------------------------------------
-          sreg.upper(31 downto 02) <= (others => '0');
-          sreg.upper(01 downto 00) <= mantissa_i(47 downto 46);
+          sreg.upper(31 downto 2) <= (others => '0');
+          sreg.upper(1 downto 0)  <= mantissa_i(47 downto 46);
           sreg.lower <= mantissa_i(45 downto 23);
           sreg.ext_g <= mantissa_i(22);
           sreg.ext_r <= mantissa_i(21);
@@ -1782,10 +1782,10 @@ begin
         when S_ROUND => -- rounding cycle (after first normalization)
         -- ------------------------------------------------------------
           ctrl.rounded <= ctrl.rounded or round.en;
-          sreg.upper(31 downto 02) <= (others => '0');
-          sreg.upper(01 downto 00) <= round.output(24 downto 23);
-          sreg.lower <= round.output(22 downto 00);
-          -- If after the first shift we get a bit in any of the guard bitsthen independent of rounding mode
+          sreg.upper(31 downto 2) <= (others => '0');
+          sreg.upper(1 downto 0)  <= round.output(24 downto 23);
+          sreg.lower <= round.output(22 downto 0);
+          -- If after the first shift we get a bit in any of the guard bits then independent of rounding mode
           -- the end result will be inexact as we are truncating away information
           ctrl.flags(fp_exc_nx_c) <= sreg.ext_g or sreg.ext_r or sreg.ext_s;
           sreg.ext_g <= '0';
@@ -1828,33 +1828,33 @@ begin
           if (ctrl.class(fp_class_snan_c) = '1') or (ctrl.class(fp_class_qnan_c) = '1') then -- sNaN / qNaN
             ctrl.res_sgn <= fp_single_qnan_c(31);
             ctrl.res_exp <= fp_single_qnan_c(30 downto 23);
-            ctrl.res_man <= fp_single_qnan_c(22 downto 00);
+            ctrl.res_man <= fp_single_qnan_c(22 downto 0);
           elsif (ctrl.class(fp_class_neg_inf_c) = '1') or (ctrl.class(fp_class_pos_inf_c) = '1') or -- infinity
                 (ctrl.flags(fp_exc_of_c) = '1') then -- overflow
             -- if rounding mode is towards 0 we cannot generate an infinity instead we need to generate +MAX
             if ((rmode_i = "001") and (ctrl.flags(fp_exc_of_c) = '1')) then
               ctrl.res_exp <= fp_single_pos_max_c(30 downto 23); -- keep original sign
-              ctrl.res_man <= fp_single_pos_max_c(22 downto 00);
+              ctrl.res_man <= fp_single_pos_max_c(22 downto 0);
             -- if rounding mode is towards -inf we cannot generate a positive infinity instead we need to generate +MAX
             elsif ((rmode_i = "010") and (ctrl.flags(fp_exc_of_c) = '1') and (sign_i = '0')) then
               ctrl.res_exp <= fp_single_pos_max_c(30 downto 23); -- keep original sign
-              ctrl.res_man <= fp_single_pos_max_c(22 downto 00);
+              ctrl.res_man <= fp_single_pos_max_c(22 downto 0);
             -- if rounding mode is towards +inf we cannot generate a negative infinity instead we need to generate -MAX
             elsif ((rmode_i = "011") and (ctrl.flags(fp_exc_of_c) = '1') and (sign_i = '1')) then
               ctrl.res_exp <= fp_single_neg_max_c(30 downto 23); -- keep original sign
-              ctrl.res_man <= fp_single_neg_max_c(22 downto 00);
+              ctrl.res_man <= fp_single_neg_max_c(22 downto 0);
             else
               ctrl.res_exp <= fp_single_pos_inf_c(30 downto 23); -- keep original sign
-              ctrl.res_man <= fp_single_pos_inf_c(22 downto 00);
+              ctrl.res_man <= fp_single_pos_inf_c(22 downto 0);
             end if;
           elsif (ctrl.class(fp_class_neg_zero_c) = '1') or (ctrl.class(fp_class_pos_zero_c) = '1') then -- zero
             ctrl.res_sgn <= ctrl.class(fp_class_neg_zero_c);
             ctrl.res_exp <= fp_single_pos_zero_c(30 downto 23);
-            ctrl.res_man <= fp_single_pos_zero_c(22 downto 00);
+            ctrl.res_man <= fp_single_pos_zero_c(22 downto 0);
           elsif (ctrl.flags(fp_exc_uf_c) = '1') or -- underflow
                 (sreg.zero = '1') or (ctrl.class(fp_class_neg_denorm_c) = '1') or (ctrl.class(fp_class_pos_denorm_c) = '1') then -- denormalized (flush-to-zero)
             ctrl.res_exp <= fp_single_pos_zero_c(30 downto 23); -- keep original sign
-            ctrl.res_man <= fp_single_pos_zero_c(22 downto 00);
+            ctrl.res_man <= fp_single_pos_zero_c(22 downto 0);
           else -- result is fine as it is
             ctrl.res_exp <= ctrl.cnt(7 downto 0);
             ctrl.res_man <= sreg.lower;
@@ -1888,7 +1888,7 @@ begin
   -- result --
   result_o(31)           <= ctrl.res_sgn;
   result_o(30 downto 23) <= ctrl.res_exp;
-  result_o(22 downto  0) <= ctrl.res_man;
+  result_o(22 downto 0)  <= ctrl.res_man;
 
   -- exception flags --
   flags_o(fp_exc_nv_c) <= ctrl.flags(fp_exc_nv_c); -- invalid operation
@@ -2003,16 +2003,16 @@ entity neorv32_cpu_cp_fpu_f2i is
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     start_i    : in  std_ulogic; -- trigger operation
     abort_i    : in  std_ulogic; -- abort current operation
-    rmode_i    : in  std_ulogic_vector(02 downto 0); -- rounding mode
+    rmode_i    : in  std_ulogic_vector(2 downto 0); -- rounding mode
     funct_i    : in  std_ulogic; -- 0=signed, 1=unsigned
     -- input --
     sign_i     : in  std_ulogic; -- sign
-    exponent_i : in  std_ulogic_vector(07 downto 0); -- exponent
+    exponent_i : in  std_ulogic_vector(7 downto 0); -- exponent
     mantissa_i : in  std_ulogic_vector(22 downto 0); -- mantissa
-    class_i    : in  std_ulogic_vector(09 downto 0); -- operand class
+    class_i    : in  std_ulogic_vector(9 downto 0); -- operand class
     -- output --
     result_o   : out std_ulogic_vector(31 downto 0); -- integer result
-    flags_o    : out std_ulogic_vector(04 downto 0); -- exception flags
+    flags_o    : out std_ulogic_vector(4 downto 0); -- exception flags
     done_o     : out std_ulogic -- operation done
   );
 end neorv32_cpu_cp_fpu_f2i;
@@ -2024,15 +2024,15 @@ architecture neorv32_cpu_cp_fpu_f2i_rtl of neorv32_cpu_cp_fpu_f2i is
   type ctrl_t is record
     state      : ctrl_engine_state_t; -- current state
     unsign     : std_ulogic;
-    cnt        : std_ulogic_vector(07 downto 0); -- interation counter/exponent
+    cnt        : std_ulogic_vector(7 downto 0); -- interation counter/exponent
     sign       : std_ulogic;
-    class      : std_ulogic_vector(09 downto 0);
+    class      : std_ulogic_vector(9 downto 0);
     rounded    : std_ulogic; -- output is rounded
     over       : std_ulogic; -- output is overflowing
     under      : std_ulogic; -- output in underflowing
     result_tmp : std_ulogic_vector(31 downto 0);
     result     : std_ulogic_vector(31 downto 0);
-    flags      : std_ulogic_vector(04 downto 0); -- we need to generate flags during the normalizing processes
+    flags      : std_ulogic_vector(4 downto 0); -- we need to generate flags during the normalizing processes
   end record;
   signal ctrl : ctrl_t;
 

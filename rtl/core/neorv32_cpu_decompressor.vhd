@@ -59,29 +59,29 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- 22-bit sign-extended immediate for J/JAL --
-  imm20(00) <= '0';
-  imm20(01) <= ci_instr16_i(3);
-  imm20(02) <= ci_instr16_i(4);
-  imm20(03) <= ci_instr16_i(5);
-  imm20(04) <= ci_instr16_i(11);
-  imm20(05) <= ci_instr16_i(2);
-  imm20(06) <= ci_instr16_i(7);
-  imm20(07) <= ci_instr16_i(6);
-  imm20(08) <= ci_instr16_i(9);
-  imm20(09) <= ci_instr16_i(10);
+  imm20(0)  <= '0';
+  imm20(1)  <= ci_instr16_i(3);
+  imm20(2)  <= ci_instr16_i(4);
+  imm20(3)  <= ci_instr16_i(5);
+  imm20(4)  <= ci_instr16_i(11);
+  imm20(5)  <= ci_instr16_i(2);
+  imm20(6)  <= ci_instr16_i(7);
+  imm20(7)  <= ci_instr16_i(6);
+  imm20(8)  <= ci_instr16_i(9);
+  imm20(9)  <= ci_instr16_i(10);
   imm20(10) <= ci_instr16_i(8);
   imm20(20 downto 11) <= (others => ci_instr16_i(12)); -- sign extension
 
   -- 12-bit sign-extended immediate for branches --
-  imm12(00) <= '0';
-  imm12(01) <= ci_instr16_i(3);
-  imm12(02) <= ci_instr16_i(4);
-  imm12(03) <= ci_instr16_i(10);
-  imm12(04) <= ci_instr16_i(11);
-  imm12(05) <= ci_instr16_i(2);
-  imm12(06) <= ci_instr16_i(5);
-  imm12(07) <= ci_instr16_i(6);
-  imm12(12 downto 08) <= (others => ci_instr16_i(12)); -- sign extension
+  imm12(0) <= '0';
+  imm12(1) <= ci_instr16_i(3);
+  imm12(2) <= ci_instr16_i(4);
+  imm12(3) <= ci_instr16_i(10);
+  imm12(4) <= ci_instr16_i(11);
+  imm12(5) <= ci_instr16_i(2);
+  imm12(6) <= ci_instr16_i(5);
+  imm12(7) <= ci_instr16_i(6);
+  imm12(12 downto 8) <= (others => ci_instr16_i(12)); -- sign extension
 
 
   -- Compressed Instruction Decoder ---------------------------------------------------------
@@ -136,8 +136,8 @@ begin
           when "110" => -- C.SW
           -- ----------------------------------------------------------------------------------------------------------
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_c;
-            decoded(08 downto 07)                                 <= "00";
-            decoded(09)                                           <= ci_instr16_i(6);
+            decoded(8 downto 7)                                   <= "00";
+            decoded(9)                                            <= ci_instr16_i(6);
             decoded(10)                                           <= ci_instr16_i(10);
             decoded(11)                                           <= ci_instr16_i(11);
             decoded(25)                                           <= ci_instr16_i(12);
@@ -166,7 +166,7 @@ begin
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_jal_c;
             decoded(19 downto 12)                                 <= imm20(19 downto 12);
             decoded(20)                                           <= imm20(11);
-            decoded(30 downto 21)                                 <= imm20(10 downto 01);
+            decoded(30 downto 21)                                 <= imm20(10 downto 1);
             decoded(31)                                           <= imm20(20);
 
           when "110" | "111" => -- C.BEQ, C.BNEZ
@@ -179,9 +179,9 @@ begin
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_branch_c;
             decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "01" & ci_instr16_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c);
             decoded(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= "00000"; -- x0
-            decoded(07)                                           <= imm12(11);
-            decoded(11 downto 08)                                 <= imm12(04 downto 01);
-            decoded(30 downto 25)                                 <= imm12(10 downto 05);
+            decoded(7)                                            <= imm12(11);
+            decoded(11 downto 8)                                  <= imm12(4 downto 1);
+            decoded(30 downto 25)                                 <= imm12(10 downto 5);
             decoded(31)                                           <= imm12(12);
 
           when "010" => -- C.LI
@@ -342,8 +342,8 @@ begin
           when "110" | "111" => -- C.SWSP / C.FSWSP
           -- ----------------------------------------------------------------------------------------------------------
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_c;
-            decoded(08 downto 07)                                 <= "00";
-            decoded(09)                                           <= ci_instr16_i(9);
+            decoded(8 downto 7)                                   <= "00";
+            decoded(9)                                            <= ci_instr16_i(9);
             decoded(10)                                           <= ci_instr16_i(10);
             decoded(11)                                           <= ci_instr16_i(11);
             decoded(25)                                           <= ci_instr16_i(12);

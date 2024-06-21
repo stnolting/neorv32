@@ -213,10 +213,10 @@ begin
       elsif rising_edge(clk_i) then
         if (mul.start = '1') then -- start new multiplication
           mul.prod(63 downto 32) <= (others => '0');
-          mul.prod(31 downto 00) <= rs1_i;
+          mul.prod(31 downto 0)  <= rs1_i;
         elsif (ctrl.state = S_BUSY) or (ctrl.state = S_DONE) then -- processing step or sign-finalization step
           mul.prod(63 downto 31) <= mul.add(32 downto 0);
-          mul.prod(30 downto 00) <= mul.prod(31 downto 1);
+          mul.prod(30 downto 0)  <= mul.prod(31 downto 1);
         end if;
       end if;
     end process multiplier_core;
@@ -290,8 +290,8 @@ begin
   -- no divider --
   divider_core_serial_none:
   if not DIVISION_EN generate
-    div.remainder <= (others => '0');
     div.quotient  <= (others => '0');
+    div.remainder <= (others => '0');
     div.sub       <= (others => '0');
     div.res_u     <= (others => '0');
     div.res       <= (others => '0');
@@ -306,7 +306,7 @@ begin
     if (ctrl.out_en = '1') then
       case ctrl_i.ir_funct3 is
         when op_mul_c =>
-          res_o <= mul.prod(31 downto 00);
+          res_o <= mul.prod(31 downto 0);
         when op_mulh_c | op_mulhsu_c | op_mulhu_c =>
           res_o <= mul.prod(63 downto 32);
         when others => -- op_div_c | op_rem_c | op_divu_c | op_remu_c
