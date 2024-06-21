@@ -337,7 +337,7 @@ begin
   -- sign-extension --
   res_int(op_sext_c)(XLEN-1 downto 16) <= (others => rs1_reg(15)) when (ctrl_i.ir_funct12(0) = '1') else (others => rs1_reg(7));
   res_int(op_sext_c)(15 downto 8)      <= rs1_reg(15 downto 8)    when (ctrl_i.ir_funct12(0) = '1') else (others => rs1_reg(7));
-  res_int(op_sext_c)(07 downto 0)      <= rs1_reg(07 downto 0);
+  res_int(op_sext_c)(7 downto 0)       <= rs1_reg(7 downto 0);
 
   -- zero-extension --
   res_int(op_zexth_c)(XLEN-1 downto 16) <= (others => '0');

@@ -27,10 +27,10 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_regfile is
   generic (
-    RST_EN : boolean; -- enable dedicated hardware reset ("ASIC style")
+    RST_EN : boolean; -- implement dedicated hardware reset ("ASIC style")
     RVE_EN : boolean; -- implement embedded RF extension
-    RS3_EN : boolean; -- enable 3rd read port
-    RS4_EN : boolean  -- enable 4th read port
+    RS3_EN : boolean; -- implement 3rd read port
+    RS4_EN : boolean  -- implement 4th read port
   );
   port (
     -- global control --
@@ -71,8 +71,8 @@ begin
 
     -- Register zero (x0) is a "normal" physical register that is set to zero by the CPU control
     -- hardware. The register file uses synchronous read accesses and a *single* multiplexed
-    -- address port for writing and reading rd/rs1 and a single read-only port for rs2. Therefore,
-    -- the whole register file can be mapped to a single true-dual-port block RAM.
+    -- address port for writing and reading rd/rs1 and a single read-only port for reading rs2.
+    -- Therefore, the whole register file can be mapped to a single true-dual-port block RAM.
 
     rd_zero  <= '1' when (ctrl_i.rf_rd = "00000") else '0';
     rf_we    <= (ctrl_i.rf_wb_en and (not rd_zero)) or ctrl_i.rf_zero_we; -- never write to x0 unless explicitly forced
