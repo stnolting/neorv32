@@ -48,8 +48,8 @@ __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x800000
 /* ************************************************************************************************* */
 MEMORY
 {
-  rom  (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFFC000 : __neorv32_rom_base, LENGTH = DEFINED(make_bootloader) ? 8K : __neorv32_rom_size
-  ram (rwx) : ORIGIN = __neorv32_ram_base, LENGTH = DEFINED(make_bootloader) ? 512 : __neorv32_ram_size
+  rom  (rx) : ORIGIN = DEFINED(MAKE_BOOTLOADER) ? 0xFFFFC000 : __neorv32_rom_base, LENGTH = DEFINED(MAKE_BOOTLOADER) ? 8K : __neorv32_rom_size
+  ram (rwx) : ORIGIN = __neorv32_ram_base, LENGTH = DEFINED(MAKE_BOOTLOADER) ? 512 : __neorv32_ram_size
   xip  (rx) : ORIGIN = 0xE0000000, LENGTH = 256M
   boot (rx) : ORIGIN = 0xFFFFC000, LENGTH = 8K
   io  (rwx) : ORIGIN = 0xFFFFE000, LENGTH = 8K

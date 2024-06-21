@@ -63,7 +63,7 @@ void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_m
 
   // raw clock prescaler
   uint32_t clock = NEORV32_SYSINFO->CLK; // system clock in Hz
-#ifndef make_bootloader // use div instructions
+#ifndef MAKE_BOOTLOADER // use div instructions
   baud_div = clock / (2*baudrate);
 #else // division via repeated subtraction (minimal size, only for bootloader)
   while (clock >= 2*baudrate) {

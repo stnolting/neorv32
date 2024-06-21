@@ -148,9 +148,9 @@ all:     $(APP_ASM) $(APP_EXE) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP
 
 # Check if making bootloader
 # Use different base address and length for instruction memory/"rom" (BOOTROM instead of IMEM)
-# Also define "make_bootloader" symbol for crt0.S, add debug symbols and use link-time optimization
-target bootloader: CC_OPTS += -Wl,--defsym=make_bootloader=1 -Dmake_bootloader -g -flto
-target bl_image:   CC_OPTS += -Wl,--defsym=make_bootloader=1 -Dmake_bootloader -g -flto
+# Also define "MAKE_BOOTLOADER" symbol for simplified code when building the bootloader
+target bootloader: CC_OPTS += -Wl,--defsym=MAKE_BOOTLOADER=1 -DMAKE_BOOTLOADER -g -flto
+target bl_image:   CC_OPTS += -Wl,--defsym=MAKE_BOOTLOADER=1 -DMAKE_BOOTLOADER -g -flto
 
 
 # -----------------------------------------------------------------------------

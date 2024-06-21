@@ -121,7 +121,7 @@ __crt0_clear_bss_loop_end:
 // ************************************************************************************************
 // Call constructors
 // ************************************************************************************************
-#ifndef make_bootloader // constructors are not supported for bootloader
+#ifndef MAKE_BOOTLOADER // constructors are not supported for bootloader
 __crt0_call_constructors:
   la   x8,  __init_array_start
   la   x9,  __init_array_end
@@ -153,7 +153,7 @@ __crt0_main_exit:   // main's "return" and "exit" will arrive here
 // ************************************************************************************************
 // Call destructors
 // ************************************************************************************************
-#ifndef make_bootloader // destructors are not supported for bootloader
+#ifndef MAKE_BOOTLOADER // destructors are not supported for bootloader
 __crt0_call_destructors:
   la   x8, __fini_array_start
   la   x9, __fini_array_end
