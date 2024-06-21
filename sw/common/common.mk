@@ -264,10 +264,10 @@ bootloader: bl_image install-$(BOOT_IMG)
 # Check toolchain
 # -----------------------------------------------------------------------------
 check: $(IMAGE_GEN)
-	@echo "---------------- Check: NEORV32_HOME folder ----------------"
-ifneq ($(shell [ -e $(NEORV32_HOME_MARKER) ] && echo 1 || echo 0 ), 1)
-$(error NEORV32_HOME folder not found!)
+ifneq ("$(wildcard $NEORV32_HOME_MARKER)", "")
+	$(error NEORV32_HOME folder not found!)
 endif
+	@echo "---------------- Check: NEORV32_HOME folder ----------------"
 	@echo "NEORV32_HOME: $(NEORV32_HOME)"
 	@echo "---------------- Check: Shell ----------------"
 	@echo ${SHELL}
