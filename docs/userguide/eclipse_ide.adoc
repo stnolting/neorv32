@@ -28,6 +28,11 @@ The following tools are required:
 * Precompiled OpenOCD binaries: e.g. https://github.com/xpack-dev-tools/openocd-xpack
 * Build tools like make: e.g. https://github.com/xpack-dev-tools/windows-build-tools-xpack
 
+.XPack Windows Build Tools
+[IMPORTANT]
+The NEORV32 makefile relies on the `basename` command which is not part of the default XPack
+Windows Build Tools. However, you can just open the `bin` folder, copy `busybox.exe` and rename
+that copy to `basename.exe`.
 
 :sectnums:
 === Import The Provided Eclipse Example Project
