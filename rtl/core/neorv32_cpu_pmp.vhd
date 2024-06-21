@@ -266,7 +266,7 @@ begin
         end if;
       end process addr_masking;
 
-    end generate;
+    end generate; -- /nap_mode_enable
 
 
     -- check region address match --
