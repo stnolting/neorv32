@@ -70,6 +70,8 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant ctrl_irq_tx_empty_c  : natural := 25; -- r/w: TX FIFO empty
   constant ctrl_irq_tx_nhalf_c  : natural := 26; -- r/w: TX FIFO not at least half-full
   --
+  constant ctrl_rx_clr_c        : natural := 28; -- r/w: Clear RX FIFO, flag auto-clears
+  constant ctrl_tx_clr_c        : natural := 29; -- r/w: Clear TX FIFO, flag auto-clears
   constant ctrl_rx_over_c       : natural := 30; -- r/-: RX FIFO overflow
   constant ctrl_tx_busy_c       : natural := 31; -- r/-: UART transmitter is busy and TX FIFO not empty
 
@@ -96,6 +98,8 @@ architecture neorv32_uart_rtl of neorv32_uart is
     irq_rx_full   : std_ulogic;
     irq_tx_empty  : std_ulogic;
     irq_tx_nhalf  : std_ulogic;
+    clr_rx        : std_ulogic;
+    clr_tx        : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
 
@@ -157,15 +161,18 @@ begin
       ctrl.irq_rx_full   <= '0';
       ctrl.irq_tx_empty  <= '0';
       ctrl.irq_tx_nhalf  <= '0';
+      ctrl.clr_rx        <= '0';
+      ctrl.clr_tx        <= '0';
     elsif rising_edge(clk_i) then
-      -- bus handshake --
+      -- defaults --
       bus_rsp_o.ack  <= bus_req_i.stb;
       bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
+      ctrl.clr_rx    <= '0'; -- auto-clear
+      ctrl.clr_tx    <= '0'; -- auto-clear
+      -- bus access --
       if (bus_req_i.stb = '1') then
-
-        -- write access --
-        if (bus_req_i.rw = '1') then
+        if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(2) = '0') then -- control register
             ctrl.enable        <= bus_req_i.data(ctrl_en_c);
             ctrl.sim_mode      <= bus_req_i.data(ctrl_sim_en_c);
@@ -178,10 +185,10 @@ begin
             ctrl.irq_rx_full   <= bus_req_i.data(ctrl_irq_rx_full_c);
             ctrl.irq_tx_empty  <= bus_req_i.data(ctrl_irq_tx_empty_c);
             ctrl.irq_tx_nhalf  <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
+            ctrl.clr_rx        <= bus_req_i.data(ctrl_rx_clr_c);
+            ctrl.clr_tx        <= bus_req_i.data(ctrl_tx_clr_c);
           end if;
-
-        -- read access --
-        else
+        else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
             bus_rsp_o.data(ctrl_sim_en_c)                    <= ctrl.sim_mode;
@@ -244,7 +251,7 @@ begin
     avail_o => tx_fifo.avail
   );
 
-  tx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
+  tx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') or (ctrl.clr_tx = '1') else '0';
   tx_fifo.wdata <= bus_req_i.data(data_rtx_msb_c downto data_rtx_lsb_c);
   tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.re    <= '1' when (tx_engine.state = "100") else '0';
@@ -285,7 +292,7 @@ begin
     avail_o => rx_fifo.avail
   );
 
-  rx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
+  rx_fifo.clear <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') or (ctrl.clr_rx = '1') else '0';
   rx_fifo.wdata <= rx_engine.sreg(7 downto 0);
   rx_fifo.we    <= rx_engine.done;
   rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
