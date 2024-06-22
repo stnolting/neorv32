@@ -192,6 +192,28 @@ void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {
 
 
 /**********************************************************************//**
+ * Clear RX FIFO.
+ *
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
+ **************************************************************************/
+void neorv32_uart_rx_clear(neorv32_uart_t *UARTx) {
+
+  UARTx->CTRL |= (uint32_t)(1 << UART_CTRL_RX_CLR);
+}
+
+
+/**********************************************************************//**
+ * Clear TX FIFO.
+ *
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
+ **************************************************************************/
+void neorv32_uart_tx_clear(neorv32_uart_t *UARTx) {
+
+  UARTx->CTRL |= (uint32_t)(1 << UART_CTRL_TX_CLR);
+}
+
+
+/**********************************************************************//**
  * Check if UART TX is busy (transmitter busy or data left in TX buffer).
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
