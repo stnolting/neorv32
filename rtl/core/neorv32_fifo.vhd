@@ -222,12 +222,7 @@ begin
     -- just 1 FIFO entry --
     fifo_read_sync_small:
     if (fifo_depth_c = 1) generate
-      sync_read_small: process(clk_i)
-      begin
-        if rising_edge(clk_i) then
-          rdata_o <= fifo_reg;
-        end if;
-      end process sync_read_small;
+      rdata_o <= fifo_reg;
     end generate;
 
     -- more than 1 FIFO entry --
