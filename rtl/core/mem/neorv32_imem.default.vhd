@@ -26,10 +26,6 @@ architecture neorv32_imem_rtl of neorv32_imem is
   signal rden  : std_ulogic;
   signal addr  : std_ulogic_vector(index_size_f(IMEM_SIZE/4)-1 downto 0);
 
-  -- --------------------------- --
-  -- IMEM as pre-initialized ROM --
-  -- --------------------------- --
-
   -- application (image) size in bytes --
   constant imem_app_size_c : natural := (application_init_image'length)*4;
 
