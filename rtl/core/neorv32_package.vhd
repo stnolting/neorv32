@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100003"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100004"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -672,7 +672,7 @@ package neorv32_package is
   constant hpmcnt_event_wait_lsu_c : natural := 10; -- load-store unit memory wait cycle
   constant hpmcnt_event_trap_c     : natural := 11; -- entered trap
   --
-  constant hpmcnt_event_size_c     : natural := 12; -- length of this list
+  constant hpmcnt_event_width_c    : natural := 12; -- length of this list
 
 -- **********************************************************************************************************
 -- Helper Functions

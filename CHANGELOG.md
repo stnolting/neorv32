@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 23.06.2024 | 1.10.0.4 | minor rtl edits/cleanups | [#931](https://github.com/stnolting/neorv32/pull/931) |
 | 22.06.2024 | 1.10.0.3 | UARTs: add flags to clear RX/TX FIFOs; DMA: add FIRQ trigger type configuration flag | [#930](https://github.com/stnolting/neorv32/pull/930) |
 | 21.06.2024 | 1.10.0.2 | minor code rtl clean-ups; fix some missing TOP defaults | [#929](https://github.com/stnolting/neorv32/pull/929) |
 | 17.05.2024 | 1.10.0.1 | :warning: remove (optional and redundant) JTAG reset signal `jtag_trst_i` | [#928](https://github.com/stnolting/neorv32/pull/928) |
