@@ -97,13 +97,15 @@ void neorv32_dma_transfer(uint32_t base_src, uint32_t base_dst, uint32_t num, ui
  * @param[in] num Number of elements to transfer (24-bit).
  * @param[in] config Transfer type configuration/commands.
  * @param[in] firq_sel FIRQ trigger select (#NEORV32_CSR_MIP_enum); only FIRQ0..FIRQ15 = 16..31.
+ * @param[in] firq_type Trigger on rising-edge (0) or high-level (1) of FIRQ channel.
  **************************************************************************/
-void neorv32_dma_transfer_auto(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config, int firq_sel) {
+void neorv32_dma_transfer_auto(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config, int firq_sel, int firq_type) {
 
   uint32_t tmp = NEORV32_DMA->CTRL;
   tmp |= (uint32_t)(1 << DMA_CTRL_AUTO); // automatic transfer trigger
   tmp &= ~(0xf << DMA_CTRL_FIRQ_SEL_LSB); // clear current FIRQ select
   tmp |= (uint32_t)((firq_sel & 0xf) << DMA_CTRL_FIRQ_SEL_LSB); // set new FIRQ select
+  tmp |= (uint32_t)((firq_type & 1) << DMA_CTRL_FIRQ_TYPE); // FIRQ trigger type
   NEORV32_DMA->CTRL = tmp;
 
   NEORV32_DMA->SRC_BASE = base_src;

@@ -50,6 +50,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
   constant ctrl_busy_c         : natural := 10; -- r/-: DMA transfer in progress
   constant ctrl_done_c         : natural := 11; -- r/c: a DMA transfer was executed/attempted
   --
+  constant ctrl_firq_type_c    : natural := 15; -- r/w: trigger on FIRQ rising-edge or on high-level
   constant ctrl_firq_sel_lsb_c : natural := 16; -- r/w: FIRQ trigger select LSB
   constant ctrl_firq_sel_msb_c : natural := 19; -- r/w: FIRQ trigger select MSB
 
@@ -65,6 +66,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
     auto      : std_ulogic; -- FIRQ-driven auto transfer
     fence     : std_ulogic; -- issue FENCE operation when DMA is done
     firq_sel  : std_ulogic_vector(3 downto 0);  -- FIRQ trigger select
+    firq_type : std_ulogic; -- trigger on FIRQ rising-edge (0) or high-level (1)
     src_base  : std_ulogic_vector(31 downto 0); -- source base address
     dst_base  : std_ulogic_vector(31 downto 0); -- destination base address
     num       : std_ulogic_vector(23 downto 0); -- number of elements
@@ -117,6 +119,7 @@ begin
       config.auto      <= '0';
       config.fence     <= '0';
       config.firq_sel  <= (others => '0');
+      config.firq_type <= '0';
       config.src_base  <= (others => '0');
       config.dst_base  <= (others => '0');
       config.num       <= (others => '0');
@@ -143,7 +146,8 @@ begin
             config.auto      <= bus_req_i.data(ctrl_auto_c);
             config.fence     <= bus_req_i.data(ctrl_fence_c);
             config.done      <= '0'; -- clear on write access
-            config.firq_sel <= bus_req_i.data(ctrl_firq_sel_msb_c downto ctrl_firq_sel_lsb_c);
+            config.firq_type <= bus_req_i.data(ctrl_firq_type_c);
+            config.firq_sel  <= bus_req_i.data(ctrl_firq_sel_msb_c downto ctrl_firq_sel_lsb_c);
           end if;
           if (bus_req_i.addr(3 downto 2) = "01") then -- source base address
             config.src_base <= bus_req_i.data;
@@ -162,13 +166,14 @@ begin
         else -- read access
           case bus_req_i.addr(3 downto 2) is
             when "00" => -- control and status register
-              bus_rsp_o.data(ctrl_en_c)       <= config.enable;
-              bus_rsp_o.data(ctrl_auto_c)     <= config.auto;
-              bus_rsp_o.data(ctrl_fence_c)    <= config.fence;
-              bus_rsp_o.data(ctrl_error_rd_c) <= engine.err_rd;
-              bus_rsp_o.data(ctrl_error_wr_c) <= engine.err_wr;
-              bus_rsp_o.data(ctrl_busy_c)     <= engine.busy;
-              bus_rsp_o.data(ctrl_done_c)     <= config.done;
+              bus_rsp_o.data(ctrl_en_c)        <= config.enable;
+              bus_rsp_o.data(ctrl_auto_c)      <= config.auto;
+              bus_rsp_o.data(ctrl_fence_c)     <= config.fence;
+              bus_rsp_o.data(ctrl_error_rd_c)  <= engine.err_rd;
+              bus_rsp_o.data(ctrl_error_wr_c)  <= engine.err_wr;
+              bus_rsp_o.data(ctrl_busy_c)      <= engine.busy;
+              bus_rsp_o.data(ctrl_done_c)      <= config.done;
+              bus_rsp_o.data(ctrl_firq_type_c) <= config.firq_type;
               bus_rsp_o.data(ctrl_firq_sel_msb_c downto ctrl_firq_sel_lsb_c) <= config.firq_sel;
             when "01" => -- address of last read access
               bus_rsp_o.data <= engine.src_addr;
@@ -201,7 +206,11 @@ begin
     elsif rising_edge(clk_i) then
       firq_buf <= firq_i;
       match_ff <= match;
-      atrigger <= match and (not match_ff); -- trigger on rising edge of FIRQ
+      if (config.firq_type = '0') then -- auto-trigger on rising-edge of FIRQ
+        atrigger <= match and (not match_ff);
+      else -- auto-trigger on high-level of FIRQ
+        atrigger <= match;
+      end if;
     end if;
   end process automatic_trigger;
 

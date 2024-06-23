@@ -33,6 +33,8 @@
 #define neorv32_uart0_rtscts_disable()             neorv32_uart_rtscts_disable(NEORV32_UART0)
 #define neorv32_uart0_rtscts_enable()              neorv32_uart_rtscts_enable(NEORV32_UART0)
 #define neorv32_uart0_putc(c)                      neorv32_uart_putc(NEORV32_UART0, c)
+#define neorv32_uart0_rx_clear()                   neorv32_uart_rx_clear(NEORV32_UART0)
+#define neorv32_uart0_tx_clear()                   neorv32_uart_tx_clear(NEORV32_UART0)
 #define neorv32_uart0_tx_busy()                    neorv32_uart_tx_busy(NEORV32_UART0)
 #define neorv32_uart0_getc()                       neorv32_uart_getc(NEORV32_UART0)
 #define neorv32_uart0_char_received()              neorv32_uart_char_received(NEORV32_UART0)
@@ -55,6 +57,8 @@
 #define neorv32_uart1_rtscts_disable()             neorv32_uart_rtscts_disable(NEORV32_UART1)
 #define neorv32_uart1_rtscts_enable()              neorv32_uart_rtscts_enable(NEORV32_UART1)
 #define neorv32_uart1_putc(c)                      neorv32_uart_putc(NEORV32_UART1, c)
+#define neorv32_uart1_rx_clear()                   neorv32_uart_rx_clear(NEORV32_UART1)
+#define neorv32_uart1_tx_clear()                   neorv32_uart_tx_clear(NEORV32_UART1)
 #define neorv32_uart1_tx_busy()                    neorv32_uart_tx_busy(NEORV32_UART1)
 #define neorv32_uart1_getc()                       neorv32_uart_getc(NEORV32_UART1)
 #define neorv32_uart1_char_received()              neorv32_uart_char_received(NEORV32_UART1)
@@ -113,6 +117,8 @@ enum NEORV32_UART_CTRL_enum {
   UART_CTRL_IRQ_TX_EMPTY  = 25, /**< UART control register(25) (r/w): Fire IRQ if TX FIFO empty */
   UART_CTRL_IRQ_TX_NHALF  = 26, /**< UART control register(26) (r/w): Fire IRQ if TX FIFO not at least half-full */
 
+  UART_CTRL_RX_CLR        = 28, /**< UART control register(28) (r/w): Clear RX FIFO, flag auto-clears */
+  UART_CTRL_TX_CLR        = 29, /**< UART control register(29) (r/w): Clear TX FIFO, flag auto-clears */
   UART_CTRL_RX_OVER       = 30, /**< UART control register(30) (r/-): RX FIFO overflow */
   UART_CTRL_TX_BUSY       = 31  /**< UART control register(31) (r/-): Transmitter busy or TX FIFO not empty */
 };
@@ -144,6 +150,8 @@ void neorv32_uart_disable(neorv32_uart_t *UARTx);
 void neorv32_uart_rtscts_enable(neorv32_uart_t *UARTx);
 void neorv32_uart_rtscts_disable(neorv32_uart_t *UARTx);
 void neorv32_uart_putc(neorv32_uart_t *UARTx, char c);
+void neorv32_uart_rx_clear(neorv32_uart_t *UARTx);
+void neorv32_uart_tx_clear(neorv32_uart_t *UARTx);
 int  neorv32_uart_tx_busy(neorv32_uart_t *UARTx);
 char neorv32_uart_getc(neorv32_uart_t *UARTx);
 int  neorv32_uart_char_received(neorv32_uart_t *UARTx);

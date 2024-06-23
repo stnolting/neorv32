@@ -34,6 +34,14 @@ and the runtime environment) use the primary UART (_UART0_) as default user cons
 is used to implement the "standard consoles" (`STDIN`, `STDOUT` and `STDERR`).
 
 
+**RX and TX FIFOs**
+
+The UART provides individual data FIFOs for RX and TX to allow data transmission without CPU intervention.
+The sizes of these FIFOs can be configured via the according configuration generics (`UART0_RX_FIFO` and `UART0_TX_FIFO`).
+Both FIFOs a re automatically cleared when disabling the module via the `UART_CTRL_EN` flag. However, the FIFOs can
+also be cleared individually by setting the `UART_CTRL_RX_CLR` / `UART_CTRL_TX_CLR` flags.
+
+
 **Theory of Operation**
 
 The module is enabled by setting the `UART_CTRL_EN` bit in the UART0 control register `CTRL`. The Baud rate
@@ -119,7 +127,7 @@ Both file are created in the simulation's home folder.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.19+<| `0xfffff500` .19+<| `CTRL` <|`0`     `UART_CTRL_EN`                      ^| r/w <| UART enable
+.20+<| `0xfffff500` .20+<| `CTRL` <|`0`     `UART_CTRL_EN`                      ^| r/w <| UART enable
                                   <|`1`     `UART_CTRL_SIM_MODE`                ^| r/w <| enable **simulation mode**
                                   <|`2`     `UART_CTRL_HWFC_EN`                 ^| r/w <| enable RTS/CTS hardware flow-control
                                   <|`5:3`   `UART_CTRL_PRSC2 : UART_CTRL_PRSC0` ^| r/w <| Baud rate clock prescaler select
@@ -135,7 +143,9 @@ Both file are created in the simulation's home folder.
                                   <|`24`    `UART_CTRL_IRQ_RX_FULL`             ^| r/w <| fire IRQ if RX FIFO full
                                   <|`25`    `UART_CTRL_IRQ_TX_EMPTY`            ^| r/w <| fire IRQ if TX FIFO empty
                                   <|`26`    `UART_CTRL_IRQ_TX_NHALF`            ^| r/w <| fire IRQ if TX not at least half full
-                                  <|`29:27` -                                   ^| r/- <| _reserved_ read as zero
+                                  <|`27`    -                                   ^| r/- <| _reserved_ read as zero
+                                  <|`28`    `UART_CTRL_RX_CLR`                  ^| r/w <| Clear RX FIFO, flag auto-clears
+                                  <|`29`    `UART_CTRL_TX_CLR`                  ^| r/w <| Clear TX FIFO, flag auto-clears
                                   <|`30`    `UART_CTRL_RX_OVER`                 ^| r/- <| RX FIFO overflow; cleared by disabling the module
                                   <|`31`    `UART_CTRL_TX_BUSY`                 ^| r/- <| TX busy or TX FIFO not empty
 .4+<| `0xfffff504` .4+<| `DATA` <|`7:0`   `UART_DATA_RTX_MSB : UART_DATA_RTX_LSB`                   ^| r/w <| receive/transmit data

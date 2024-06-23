@@ -50,6 +50,7 @@ int main() {
   // setup UART at default baud rate, no interrupts
   neorv32_uart0_setup(BAUD_RATE, 0);
 
+
   // intro
   neorv32_uart0_printf("\n<<< DMA Controller Demo Program >>>\n\n");
 
@@ -249,7 +250,8 @@ int main() {
                               (uint32_t)(&dma_dst[0]), // destination array base address
                                16,                     // number of elements to transfer: 16
                                cmd,                    // transfer type configuration
-                               GPTMR_FIRQ_PENDING);    // trigger transfer on pending GPTMR interrupt
+                               GPTMR_FIRQ_PENDING,     // trigger transfer on pending GPTMR interrupt
+                               0);                     // trigger on rising-edge of selected FIRQ channel
 
     // sleep until interrupt (from DMA)
     neorv32_cpu_sleep();
@@ -275,6 +277,40 @@ int main() {
   }
 
 
+  // ----------------------------------------------------------
+  // example 5
+  // ----------------------------------------------------------
+  neorv32_uart0_printf("\nExample 5: Automatic UART0 echo without CPU.\n");
+  neorv32_uart0_printf(  "           The UART RX FIRQ channel is used to trigger the DMA.\n\n");
+
+  // note that NO CPU interrupts are enabled here
+  neorv32_cpu_csr_write(CSR_MIE, 0);
+  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+
+  // clear UART0 RX FIFO
+  neorv32_uart0_rx_clear();
+
+  // configure DMA-triggering interrupt: UART0 RX
+  NEORV32_UART0->CTRL |= (uint32_t)(1 << UART_CTRL_IRQ_RX_NEMPTY); // RX FIFO not empty interrupt
+
+  // configure transfer type
+  cmd = DMA_CMD_W2W       | // read source in word quantities, write destination in word quantities
+        DMA_CMD_SRC_CONST | // constant source address
+        DMA_CMD_DST_CONST;  // constant address source
+
+  // configure automatic DMA transfer
+  neorv32_dma_transfer_auto((uint32_t)(&NEORV32_UART0->DATA), // source: UART0 RX data register
+                            (uint32_t)(&NEORV32_UART0->DATA), // destination: UART0 TX data register
+                             1,                               // number of elements to transfer: 1
+                             cmd,                             // transfer type configuration
+                             UART0_RX_FIRQ_PENDING,           // trigger transfer on pending UART0 RX interrupt
+                             1);                              // trigger on hihg-level of selected FIRQ channel
+
+  // put CPU into eternal sleep mode
+  neorv32_cpu_sleep();
+
+
+  // should never be reached
   neorv32_uart0_printf("\nProgram completed.\n");
   return 0;
 }

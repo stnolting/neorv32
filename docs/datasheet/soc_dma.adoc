@@ -97,7 +97,7 @@ data quantity has to be set to **word** (32-bit) since all IO registers can only
 
 **Automatic Trigger**
 
-As an alternative to the manual trigger mode, the DMA can be configured to **automatic trigger mode** starting a pre-configured
+As an alternative to the manual trigger mode, the DMA can be set to **automatic trigger mode** starting a pre-configured
 transfer if a specific processor-internal peripheral issues a FIRQ interrupt request. The automatic trigger mode is enabled by
 setting the `CTRL` register's `DMA_CTRL_AUTO` bit. In this configuration _no_ transfer is started when writing to the DMA's
 `TTYPE` register.
@@ -105,6 +105,13 @@ setting the `CTRL` register's `DMA_CTRL_AUTO` bit. In this configuration _no_ tr
 The actually triggering FIRQ channel is configured via the control register's `DMA_CTRL_FIRQ_SEL` bits. Writing a 0 will
 select FIRQ channel 0, writing a 1 will select FIRQ channel 1, and so on. See section <<_processor_interrupts>>
 for a list of all FIRQ channels and their according sources.
+
+The FIRQ trigger can operate in two trigger mode configured via the `DMA_CTRL_FIRQ_TYPE` flag:
+
+* `DMA_CTRL_FIRQ_TYPE = 0`: trigger the automatic DMA transfer on a rising-edge of the selected FIRQ channel (e.g. trigger
+DMA transfer only once)
+* `DMA_CTRL_FIRQ_TYPE = 1`: trigger the automatic DMA transfer when the selected FIRQ channel is active (e.g. trigger
+DMA transfer again and again)
 
 .FIRQ Trigger
 [NOTE]
@@ -134,7 +141,7 @@ register).
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.11+<| `0xffffed00` .11+<| `CTRL` <|`0`     `DMA_CTRL_EN`                                   ^| r/w <| DMA module enable
+.12+<| `0xffffed00` .12+<| `CTRL` <|`0`     `DMA_CTRL_EN`                                   ^| r/w <| DMA module enable
                                   <|`1`     `DMA_CTRL_AUTO`                                 ^| r/w <| Enable automatic mode (FIRQ-triggered)
                                   <|`2`     `DMA_CTRL_FENCE`                                ^| r/w <| Issue a downstream FENCE operation when DMA transfer completes (without errors)
                                   <|`7:3`   _reserved_                                      ^| r/- <| reserved, read as zero
@@ -142,7 +149,8 @@ register).
                                   <|`9`     `DMA_CTRL_ERROR_WR`                             ^| r/- <| Error during write access, clears when starting a new transfer
                                   <|`10`    `DMA_CTRL_BUSY`                                 ^| r/- <| DMA transfer in progress
                                   <|`11`    `DMA_CTRL_DONE`                                 ^| r/c <| Set if a transfer was executed; auto-clears on write-access
-                                  <|`15:12` _reserved_                                      ^| r/- <| reserved, read as zero
+                                  <|`14:12` _reserved_                                      ^| r/- <| reserved, read as zero
+                                  <|`15`    `DMA_CTRL_FIRQ_TYPE`                            ^| r/w <| Trigger on rising-edge (`0`) or high-level (`1`) or selected FIRQ channel
                                   <|`19:16` `DMA_CTRL_FIRQ_SEL_MSB : DMA_CTRL_FIRQ_SEL_LSB` ^| r/w <| FIRQ trigger select (FIRQ0=0 ... FIRQ15=15)
                                   <|`31:20` _reserved_                                      ^| r/- <| reserved, read as zero
 | `0xffffed04` | `SRC_BASE` |`31:0` | r/w | Source base address (shows the last-accessed source address when read)
