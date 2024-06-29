@@ -64,7 +64,6 @@
 
 // Prototypes
 uint32_t get_test_vector(void);
-uint32_t xorshift32(void);
 uint32_t verify_result(uint32_t num, uint32_t opa, uint32_t opb, uint32_t ref, uint32_t res);
 void print_report(uint32_t num_err);
 
@@ -265,5 +264,3 @@ int main() {
   }
 
 }
-
-

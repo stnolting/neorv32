@@ -81,23 +81,6 @@ uint32_t time_enc_sw, time_enc_hw, time_dec_sw, time_dec_hw;
 
 
 /**********************************************************************//**
- * Pseudo-random number generator (to generate deterministic test data).
- *
- * @return Random data (32-bit).
- **************************************************************************/
-uint32_t xorshift32(void) {
-
-  static uint32_t x32 = 314159265;
-
-  x32 ^= x32 << 13;
-  x32 ^= x32 >> 17;
-  x32 ^= x32 << 5;
-
-  return x32;
-}
-
-
-/**********************************************************************//**
  * XTEA encryption - software reference
  *
  * Source: https://de.wikipedia.org/wiki/Extended_Tiny_Encryption_Algorithm
@@ -218,7 +201,7 @@ int main() {
 
   // generate "random" data for the plain text
   for (i=0; i<DATA_NUM; i++) {
-    input_data[i] = xorshift32();
+    input_data[i] = neorv32_aux_xorshift32();
   }
 
 

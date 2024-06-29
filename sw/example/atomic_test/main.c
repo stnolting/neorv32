@@ -30,7 +30,6 @@
 
 
 // Prototypes
-uint32_t xorshift32(void);
 uint32_t check_result(uint32_t num, uint32_t amo_var_old, uint32_t amo_var_pre, uint32_t amo_var_new, uint32_t amo_var);
 void print_report(int num_err, int num_tests);
 
@@ -92,8 +91,8 @@ int main() {
   neorv32_uart0_printf("\namoswap.w:\n");
   err_cnt = 0;
   for (i=0; i<num_tests; i++) {
-    amo_var_old = xorshift32();
-    amo_var_update = xorshift32();
+    amo_var_old = neorv32_aux_xorshift32();
+    amo_var_update = neorv32_aux_xorshift32();
 
     amo_var = amo_var_old;
     asm volatile ("fence");
@@ -110,8 +109,8 @@ int main() {
   neorv32_uart0_printf("\namoadd.w:\n");
   err_cnt = 0;
   for (i=0; i<num_tests; i++) {
-    amo_var_old = xorshift32();
-    amo_var_update = xorshift32();
+    amo_var_old = neorv32_aux_xorshift32();
+    amo_var_update = neorv32_aux_xorshift32();
 
     amo_var = amo_var_old;
     asm volatile ("fence");
@@ -128,8 +127,8 @@ int main() {
   neorv32_uart0_printf("\namoand.w:\n");
   err_cnt = 0;
   for (i=0; i<num_tests; i++) {
-    amo_var_old = xorshift32();
-    amo_var_update = xorshift32();
+    amo_var_old = neorv32_aux_xorshift32();
+    amo_var_update = neorv32_aux_xorshift32();
 
     amo_var = amo_var_old;
     asm volatile ("fence");
@@ -146,8 +145,8 @@ int main() {
   neorv32_uart0_printf("\namoor.w:\n");
   err_cnt = 0;
   for (i=0; i<num_tests; i++) {
-    amo_var_old = xorshift32();
-    amo_var_update = xorshift32();
+    amo_var_old = neorv32_aux_xorshift32();
+    amo_var_update = neorv32_aux_xorshift32();
 
     amo_var = amo_var_old;
     asm volatile ("fence");
@@ -164,8 +163,8 @@ int main() {
   neorv32_uart0_printf("\namoxor.w:\n");
   err_cnt = 0;
   for (i=0; i<num_tests; i++) {
-    amo_var_old = xorshift32();
-    amo_var_update = xorshift32();
+    amo_var_old = neorv32_aux_xorshift32();
+    amo_var_update = neorv32_aux_xorshift32();
 
     amo_var = amo_var_old;
     asm volatile ("fence");
@@ -182,8 +181,8 @@ int main() {
   neorv32_uart0_printf("\namomax.w:\n");
   err_cnt = 0;
   for (i=0; i<num_tests; i++) {
-    amo_var_old = xorshift32();
-    amo_var_update = xorshift32();
+    amo_var_old = neorv32_aux_xorshift32();
+    amo_var_update = neorv32_aux_xorshift32();
 
     amo_var = amo_var_old;
     asm volatile ("fence");
@@ -200,8 +199,8 @@ int main() {
   neorv32_uart0_printf("\namomaxu.w:\n");
   err_cnt = 0;
   for (i=0; i<num_tests; i++) {
-    amo_var_old = xorshift32();
-    amo_var_update = xorshift32();
+    amo_var_old = neorv32_aux_xorshift32();
+    amo_var_update = neorv32_aux_xorshift32();
 
     amo_var = amo_var_old;
     asm volatile ("fence");
@@ -218,8 +217,8 @@ int main() {
   neorv32_uart0_printf("\namomin.w:\n");
   err_cnt = 0;
   for (i=0; i<num_tests; i++) {
-    amo_var_old = xorshift32();
-    amo_var_update = xorshift32();
+    amo_var_old = neorv32_aux_xorshift32();
+    amo_var_update = neorv32_aux_xorshift32();
 
     amo_var = amo_var_old;
     asm volatile ("fence");
@@ -236,8 +235,8 @@ int main() {
   neorv32_uart0_printf("\namominu.w:\n");
   err_cnt = 0;
   for (i=0; i<num_tests; i++) {
-    amo_var_old = xorshift32();
-    amo_var_update = xorshift32();
+    amo_var_old = neorv32_aux_xorshift32();
+    amo_var_update = neorv32_aux_xorshift32();
 
     amo_var = amo_var_old;
     asm volatile ("fence");
@@ -258,23 +257,6 @@ int main() {
 
   neorv32_uart0_printf("\n\nTests completed.\n");
   return 0;
-}
-
-
-/**********************************************************************//**
- * Pseudo-Random Number Generator (to generate deterministic test vectors).
- *
- * @return Random data (32-bit).
- **************************************************************************/
-uint32_t xorshift32(void) {
-
-  static uint32_t x32 = 314159265;
-
-  x32 ^= x32 << 13;
-  x32 ^= x32 >> 17;
-  x32 ^= x32 << 5;
-
-  return x32;
 }
 
 

@@ -34,7 +34,6 @@ void setup_access(void);
 void write_memory(uint32_t address, uint32_t data);
 void dump_memory(uint32_t address);
 void hexdump(uint32_t address);
-uint32_t hexstr_to_uint32(char *buffer, uint8_t length);
 void aux_print_hex_byte(uint8_t byte);
 
 
@@ -118,7 +117,7 @@ int main() {
         neorv32_uart0_printf("Insufficient arguments.\n");
       }
       else {
-        read_memory((uint32_t)hexstr_to_uint32(arg0, 8));
+        read_memory((uint32_t)neorv32_aux_hexstr2uint64(arg0, 8));
       }
     }
 
@@ -127,7 +126,7 @@ int main() {
         neorv32_uart0_printf("Insufficient arguments.\n");
       }
       else {
-        write_memory((uint32_t)hexstr_to_uint32(arg0, 8), (uint32_t)hexstr_to_uint32(arg1, 8));
+        write_memory((uint32_t)neorv32_aux_hexstr2uint64(arg0, 8), (uint32_t)neorv32_aux_hexstr2uint64(arg1, 8));
       }
     }
 
@@ -136,7 +135,7 @@ int main() {
         neorv32_uart0_printf("Insufficient arguments.\n");
       }
       else {
-        dump_memory((uint32_t)hexstr_to_uint32(arg0, 8));
+        dump_memory((uint32_t)neorv32_aux_hexstr2uint64(arg0, 8));
       }
     }
 
@@ -145,7 +144,7 @@ int main() {
         neorv32_uart0_printf("Insufficient arguments.\n");
       }
       else {
-        hexdump((uint32_t)hexstr_to_uint32(arg0, 8));
+        hexdump((uint32_t)neorv32_aux_hexstr2uint64(arg0, 8));
       }
     }
 
@@ -392,46 +391,6 @@ void hexdump(uint32_t address) {
   }
   neorv32_uart0_char_received_get(); // clear UART rx buffer
   neorv32_uart0_printf("\n");
-}
-
-
-/**********************************************************************//**
- * Helper function to convert N hex chars string into uint32_t
- *
- * @param[in,out] buffer Pointer to array of chars to convert into number.
- * @param[in,out] length Length of the conversion string.
- * @return Converted number.
- **************************************************************************/
-uint32_t hexstr_to_uint32(char *buffer, uint8_t length) {
-
-  uint32_t res = 0, d = 0;
-  char c = 0;
-
-  while (length--) {
-    c = *buffer++;
-
-    if (c == '\0') {
-      break;
-    }
-
-    if ((c >= '0') && (c <= '9')) {
-      d = (uint32_t)(c - '0');
-    }
-    else if ((c >= 'a') && (c <= 'f')) {
-      d = (uint32_t)((c - 'a') + 10);
-    }
-    else if ((c >= 'A') && (c <= 'F')) {
-      d = (uint32_t)((c - 'A') + 10);
-    }
-    else {
-      d = 0;
-    }
-
-    res <<= 4;
-    res |= d & 0xf;
-  }
-
-  return res;
 }
 
 

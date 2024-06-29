@@ -62,7 +62,7 @@ int main() {
   date.minutes = 47;   // 0..59
   date.seconds = 11;   // 0..59
 
-  neorv32_mtime_set_unixtime(neorv32_mtime_date2unixtime(&date));
+  neorv32_mtime_set_unixtime(neorv32_aux_date2unixtime(&date));
   neorv32_uart0_printf("Unix timestamp: %u\n", (uint32_t)neorv32_mtime_get_unixtime());
 
   // clear GPIO output port
@@ -103,7 +103,7 @@ void mtime_irq_handler(void) {
 
   // show date in human-readable format
   date_t date;
-  neorv32_mtime_unixtime2date(neorv32_mtime_get_unixtime(), &date);
+  neorv32_aux_unixtime2date(neorv32_mtime_get_unixtime(), &date);
   neorv32_uart0_printf("%u.%u.%u (%s) ", date.day, date.month, date.year, weekdays[(date.weekday-1)%7]);
   neorv32_uart0_printf("%u:%u:%u\n", date.hours, date.minutes, date.seconds);
 }

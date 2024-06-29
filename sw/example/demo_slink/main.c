@@ -26,7 +26,6 @@
 
 // Prototypes
 void slink_firq_handler(void);
-uint32_t xorshift32(void);
 
 
 /**********************************************************************//**
@@ -79,7 +78,7 @@ int main() {
   neorv32_uart0_printf("-------- TX Demo --------\n");
 
   for (i=0; i<(rx_depth+tx_depth); i++) {
-    slink_data = xorshift32();
+    slink_data = neorv32_aux_xorshift32();
     neorv32_uart0_printf("[%i] Sending 0x%x... ", i, slink_data);
 
     slink_rc = neorv32_slink_tx_status();
@@ -135,7 +134,7 @@ int main() {
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 
   for (i=0; i<4; i++) {
-    slink_data = xorshift32();
+    slink_data = neorv32_aux_xorshift32();
     neorv32_uart0_printf("[%i] Sending 0x%x... ", i, slink_data);
 
     slink_rc = neorv32_slink_tx_status();
@@ -160,21 +159,4 @@ int main() {
 void slink_firq_handler(void) {
 
   neorv32_uart0_printf(" <<RX data: 0x%x>> ", neorv32_slink_get());
-}
-
-
-/**********************************************************************//**
- * Simple pseudo random number generator.
- *
- * @return Random number.
- **************************************************************************/
-uint32_t xorshift32(void) {
-
-  static uint32_t x32 = 314159265;
-
-  x32 ^= x32 << 13;
-  x32 ^= x32 >> 17;
-  x32 ^= x32 << 5;
-
-  return x32;
 }

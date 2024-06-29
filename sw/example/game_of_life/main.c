@@ -48,7 +48,6 @@ int get_cell(int u, int x, int y);
 int get_neighborhood(int u, int x, int y);
 void print_universe(int u);
 int pop_count(int u);
-uint32_t xorshift32(void);
 
 
 /**********************************************************************//**
@@ -105,7 +104,7 @@ int main(void) {
 
     // randomize until key pressed
     while (neorv32_uart0_char_received() == 0) {
-      xorshift32();
+      neorv32_aux_xorshift32();
     }
     neorv32_uart0_char_received_get(); // discard received char
 
@@ -125,7 +124,7 @@ int main(void) {
           universe[0][x][y] = trng_data; // use data from TRNG
         }
         else {
-          universe[0][x][y] = (uint8_t)xorshift32(); // use data from PRNG
+          universe[0][x][y] = (uint8_t)neorv32_aux_xorshift32(); // use data from PRNG
         }
       }
     }
@@ -333,21 +332,4 @@ int pop_count(int u) {
   }
 
   return cnt;
-}
-
-
-/**********************************************************************//**
- * Simple pseudo random number generator.
- *
- * @return Random number.
- **************************************************************************/
-uint32_t xorshift32(void) {
-
-  static uint32_t x32 = 314159265;
-
-  x32 ^= x32 << 13;
-  x32 ^= x32 >> 17;
-  x32 ^= x32 << 5;
-
-  return x32;
 }
