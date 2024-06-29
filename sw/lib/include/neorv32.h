@@ -200,6 +200,9 @@ enum NEORV32_CLOCK_PRSC_enum {
 // intrinsics
 #include "neorv32_intrinsics.h"
 
+// helper functions
+#include "neorv32_aux.h"
+
 // cpu core
 #include "neorv32_cpu.h"
 #include "neorv32_cpu_amo.h"

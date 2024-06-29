@@ -36,7 +36,6 @@ void show_1wire_commands(void);
 void read_byte(void);
 void write_byte(void);
 void scan_bus(void);
-uint32_t hexstr_to_uint32(char *buffer, uint8_t length);
 
 
 /**********************************************************************//**
@@ -211,7 +210,7 @@ void write_byte(void) {
   // enter address
   neorv32_uart0_printf("Enter write data (2 hex chars): 0x");
   neorv32_uart0_scan(terminal_buffer, 2+1, 1); // 2 hex chars for address plus '\0'
-  uint8_t wdata = (uint8_t)hexstr_to_uint32(terminal_buffer, strlen(terminal_buffer));
+  uint8_t wdata = (uint8_t)neorv32_aux_hexstr2uint64(terminal_buffer, strlen(terminal_buffer));
 
   // write to bus
   neorv32_uart0_printf("\nWriting 0x");
@@ -261,44 +260,4 @@ void scan_bus(void) {
   }
 
   neorv32_uart0_printf("Devices found: %u\n", cnt);
-}
-
-
-/**********************************************************************//**
- * Helper function to convert N hex chars string into uint32_t
- *
- * @param[in,out] buffer Pointer to array of chars to convert into number.
- * @param[in,out] length Length of the conversion string.
- * @return Converted number.
- **************************************************************************/
-uint32_t hexstr_to_uint32(char *buffer, uint8_t length) {
-
-  uint32_t res = 0, d = 0;
-  char c = 0;
-
-  while (length--) {
-    c = *buffer++;
-
-    if (c == '\0') {
-      break;
-    }
-
-    if ((c >= '0') && (c <= '9')) {
-      d = (uint32_t)(c - '0');
-    }
-    else if ((c >= 'a') && (c <= 'f')) {
-      d = (uint32_t)((c - 'a') + 10);
-    }
-    else if ((c >= 'A') && (c <= 'F')) {
-      d = (uint32_t)((c - 'A') + 10);
-    }
-    else {
-      d = 0;
-    }
-
-    res <<= 4;
-    res |= d & 0xf;
-  }
-
-  return res;
 }

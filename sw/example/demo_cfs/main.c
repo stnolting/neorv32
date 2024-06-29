@@ -28,12 +28,6 @@
 
 
 /**********************************************************************//**
- * @name Prototypes
- **************************************************************************/
-uint32_t xorshift32(void);
-
-
-/**********************************************************************//**
  * Main function
  *
  * @note This program requires the CFS and UART0.
@@ -76,28 +70,28 @@ int main() {
   // function examples
   neorv32_uart0_printf("\n--- CFS 'binary to gray' function ---\n");
   for (i=0; i<TESTCASES; i++) {
-    tmp = xorshift32(); // get random test data
+    tmp = neorv32_aux_xorshift32(); // get random test data
     NEORV32_CFS->REG[0] = tmp; // write to CFS memory-mapped register 0
     neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS->REG[0]); // read from CFS memory-mapped register 0
   }
 
   neorv32_uart0_printf("\n--- CFS 'gray to binary' function ---\n");
   for (i=0; i<TESTCASES; i++) {
-    tmp = xorshift32(); // get random test data
+    tmp = neorv32_aux_xorshift32(); // get random test data
     NEORV32_CFS->REG[1] = tmp; // write to CFS memory-mapped register 1
     neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS->REG[1]); // read from CFS memory-mapped register 1
   }
 
   neorv32_uart0_printf("\n--- CFS 'bit reversal' function ---\n");
   for (i=0; i<TESTCASES; i++) {
-    tmp = xorshift32(); // get random test data
+    tmp = neorv32_aux_xorshift32(); // get random test data
     NEORV32_CFS->REG[2] = tmp; // write to CFS memory-mapped register 2
     neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS->REG[2]); // read from CFS memory-mapped register 2
   }
 
   neorv32_uart0_printf("\n--- CFS 'byte swap' function ---\n");
   for (i=0; i<TESTCASES; i++) {
-    tmp = xorshift32(); // get random test data
+    tmp = neorv32_aux_xorshift32(); // get random test data
     NEORV32_CFS->REG[3] = tmp; // write to CFS memory-mapped register 3
     neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS->REG[3]); // read from CFS memory-mapped register 3
   }
@@ -106,21 +100,4 @@ int main() {
   neorv32_uart0_printf("\nCFS demo program completed.\n");
 
   return 0;
-}
-
-
-/**********************************************************************//**
- * Pseudo-Random Number Generator (to generate deterministic test vectors).
- *
- * @return Random data (32-bit).
- **************************************************************************/
-uint32_t xorshift32(void) {
-
-  static uint32_t x32 = 314159265;
-
-  x32 ^= x32 << 13;
-  x32 ^= x32 >> 17;
-  x32 ^= x32 << 5;
-
-  return x32;
 }

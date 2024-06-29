@@ -30,7 +30,6 @@
 void scan_twi(void);
 void set_clock(void);
 void send_twi(void);
-uint32_t hexstr_to_uint32(char *buffer, uint8_t length);
 void print_hex_byte(uint8_t data);
 
 
@@ -131,7 +130,7 @@ void set_clock(void) {
   // clock prescaler
   neorv32_uart0_printf("Select new clock prescaler (0..7; one hex char): ");
   neorv32_uart0_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
-  int prsc = (int)hexstr_to_uint32(terminal_buffer, strlen(terminal_buffer));
+  int prsc = (int)neorv32_aux_hexstr2uint64(terminal_buffer, strlen(terminal_buffer));
 
   if ((prsc < 0) || (prsc > 7)) { // invalid?
     neorv32_uart0_printf("\nInvalid selection!\n");
@@ -141,7 +140,7 @@ void set_clock(void) {
   // clock divider
   neorv32_uart0_printf("\nSelect new clock divider (0..15; one hex char): ");
   neorv32_uart0_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
-  int cdiv = (int)hexstr_to_uint32(terminal_buffer, strlen(terminal_buffer));
+  int cdiv = (int)neorv32_aux_hexstr2uint64(terminal_buffer, strlen(terminal_buffer));
 
   if ((cdiv < 0) || (cdiv > 15)) { // invalid?
     neorv32_uart0_printf("\nInvalid selection!\n");
@@ -217,7 +216,7 @@ void send_twi(void) {
   // TX data
   neorv32_uart0_printf("Enter TX data (2 hex chars): ");
   neorv32_uart0_scan(terminal_buffer, 3, 1); // 2 hex chars for address plus '\0'
-  data = (uint8_t)hexstr_to_uint32(terminal_buffer, strlen(terminal_buffer));
+  data = (uint8_t)neorv32_aux_hexstr2uint64(terminal_buffer, strlen(terminal_buffer));
 
   // host ACK
   neorv32_uart0_printf("\nIssue ACK by host (y/n)? ");
@@ -247,46 +246,6 @@ void send_twi(void) {
   else {
     neorv32_uart0_printf("\n");
   }
-}
-
-
-/**********************************************************************//**
- * Helper function to convert N hex chars string into uint32_t
- *
- * @param[in,out] buffer Pointer to array of chars to convert into number.
- * @param[in,out] length Length of the conversion string.
- * @return Converted number.
- **************************************************************************/
-uint32_t hexstr_to_uint32(char *buffer, uint8_t length) {
-
-  uint32_t res = 0, d = 0;
-  char c = 0;
-
-  while (length--) {
-    c = *buffer++;
-
-    if (c == '\0') {
-      break;
-    }
-
-    if ((c >= '0') && (c <= '9')) {
-      d = (uint32_t)(c - '0');
-    }
-    else if ((c >= 'a') && (c <= 'f')) {
-      d = (uint32_t)((c - 'a') + 10);
-    }
-    else if ((c >= 'A') && (c <= 'F')) {
-      d = (uint32_t)((c - 'A') + 10);
-    }
-    else {
-      d = 0;
-    }
-
-    res <<= 4;
-    res |= d & 0xf;
-  }
-
-  return res;
 }
 
 
