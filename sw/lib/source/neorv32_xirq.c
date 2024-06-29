@@ -214,8 +214,6 @@ void neorv32_xirq_channel_disable(int channel) {
 /**********************************************************************//**
  * Install interrupt handler function for XIRQ channel.
  *
- * @note This will also activate the according XIRQ channel and clear a pending IRQ at this channel.
- *
  * @param[in] channel XIRQ interrupt channel (0..31).
  * @param[in] handler The actual handler function for the specified interrupt (function MUST be of type "void function(void);").
  * @return 0 if success, 1 if error.
@@ -225,9 +223,6 @@ int neorv32_xirq_install(int channel, void (*handler)(void)) {
   // channel valid?
   if (channel < 32) {
     __neorv32_xirq_vector_lut[channel] = (uint32_t)handler; // install handler
-    uint32_t mask = 1 << channel;
-    NEORV32_XIRQ->EIP = ~mask; // clear if pending
-    NEORV32_XIRQ->EIE |= mask; // enable channel
     return 0;
   }
   return 1;
