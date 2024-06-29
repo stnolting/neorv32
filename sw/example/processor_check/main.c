@@ -557,37 +557,41 @@ int main() {
 
   tmp_a = trap_cnt; // current number of traps
 
-  {
+  // try executing some illegal instructions
+  asm volatile (".align 4");
+  asm volatile (".word 0x0e00202f"); // amoswap.w x0, x0, (x0)
+  asm volatile (".word 0x34004073"); // illegal CSR access funct3 (using mscratch)
+  asm volatile (".word 0x30200077"); // mret with illegal opcode
+  asm volatile (".word 0x3020007f"); // mret with illegal opcode
+  asm volatile (".word 0x7b200073"); // dret outside of debug mode
+  asm volatile (".word 0x7b300073"); // illegal system funct12
+  asm volatile (".word 0xfe000033"); // illegal add funct7
+  asm volatile (".word 0x80002163"); // illegal branch funct3 (misaligned DST if C not available)
+  asm volatile (".word 0x0000200f"); // illegal fence funct3
+  asm volatile (".word 0xfe002fe3"); // illegal store funct3
+  if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
     asm volatile (".align 4");
-    if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
-      asm volatile (".half 0x0000"); // canonical compressed illegal
-      asm volatile (".half 0x66aa"); // c.flwsp (illegal since F is not supported)
-    }
-    asm volatile (".word 0x0e00202f"); // amoswap.w x0, x0, (x0)
-    asm volatile (".word 0x34004073"); // illegal CSR access funct3 (using mscratch)
-    asm volatile (".word 0x30200077"); // mret with illegal opcode
-    asm volatile (".word 0x3020007f"); // mret with illegal opcode
-    asm volatile (".word 0x7b200073"); // dret outside of debug mode
-    asm volatile (".word 0x7b300073"); // illegal system funct12
-    asm volatile (".word 0xfe000033"); // illegal add funct7
-    asm volatile (".word 0x80002163"); // illegal branch funct3 (misaligned DST if C not available)
-    asm volatile (".word 0x0000200f"); // illegal fence funct3
-    asm volatile (".word 0xfe002fe3"); // illegal store funct3
+    asm volatile (".half 0x0000"); // canonical compressed illegal
+    asm volatile (".half 0x66aa"); // c.flwsp (illegal since F ISA extension is not supported)
     asm volatile (".align 4");
   }
+  asm volatile (".align 4");
 
-  // number of traps we are expecting
+  // number of traps we are expecting + expected instruction word of last illegal instruction
+  uint32_t invalid_instr;
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
     tmp_a += 12;
+    invalid_instr = 0x08812681; // mtinst: pre-decompressed; clear bit 1 if compressed instruction
   }
   else { // C extension disabled
     tmp_a += 10;
+    invalid_instr = 0xfe002fe3;
   }
 
   tmp_b = trap_cnt; // number of traps we have seen here
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) && // illegal instruction exception
-      (neorv32_cpu_csr_read(CSR_MTINST) == 0xfe002fe3) && // instruction word of last illegal instruction
+      (neorv32_cpu_csr_read(CSR_MTINST) == invalid_instr) && // instruction word of last illegal instruction
       (tmp_a == tmp_b)) { // right amount of illegal instruction exceptions
     test_ok();
   }
@@ -597,34 +601,6 @@ int main() {
 
   // re-enable machine-mode interrupts
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
-
-
-  // ----------------------------------------------------------
-  // Illegal compressed instruction
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Illegal C instr. EXC ", cnt_test);
-
-  // skip if C-mode is not implemented
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C))) {
-
-    cnt_test++;
-
-    // illegal 16-bit instruction (official UNIMP instruction)
-    asm volatile (".align 2     \n"
-                  ".half 0x0001 \n" // NOP
-                  ".half 0x0000");  // UNIMP
-
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
 
 
   // ----------------------------------------------------------
@@ -1338,12 +1314,17 @@ int main() {
     xirq_err_cnt += neorv32_xirq_install(1, xirq_trap_handler1); // install XIRQ IRQ handler channel 1
     neorv32_xirq_setup_trigger(0, XIRQ_TRIGGER_EDGE_RISING); // configure channel 0 as rising-edge trigger
     neorv32_xirq_setup_trigger(1, XIRQ_TRIGGER_EDGE_RISING); // configure channel 1 as rising-edge trigger
+    neorv32_xirq_clear_pending(0); // clear any pending request
+    neorv32_xirq_clear_pending(1); // clear any pending request
+    neorv32_xirq_channel_enable(0); // enable XIRQ channel 0
+    neorv32_xirq_channel_enable(1); // enable XIRQ channel 1
 
     // enable XIRQ FIRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << XIRQ_FIRQ_ENABLE);
 
     // trigger XIRQ channel 1 and 0
     neorv32_gpio_port_set(3);
+    neorv32_gpio_port_set(0);
 
     // wait for interrupt
     asm volatile ("nop");
