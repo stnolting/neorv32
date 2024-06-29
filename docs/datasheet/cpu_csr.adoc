@@ -476,7 +476,8 @@ However, any write-access will be ignored and will not cause an exception to mai
 The RISC-V priv. spec. suggests that the instruction word written to `mtinst` by the hardware should be "transformed".
 However, the NEORV32 `mtinst` CSR uses a simplified transformation scheme: if the trap-causing instruction is a
 standard 32-bit instruction, `mtinst` contains the exact instruction word that caused the trap. If the trap-causing
-instruction is a compressed instruction, `mtinst` contains the de-compressed 32-bit equivalent with bit 1 being cleared.
+instruction is a compressed instruction, `mtinst` contains the de-compressed 32-bit equivalent with bit 1 being cleared
+while all remaining bits represent the pre-decoded 32-bit instruction equivalent.
 
 
 

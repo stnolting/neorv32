@@ -81,6 +81,12 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal fpu_csr_we, cfu_csr_we : std_ulogic;
   signal fpu_csr_rd, cfu_csr_rd : std_ulogic_vector(XLEN-1 downto 0);
 
+  -- CFU proxy --
+  signal cfu_run  : std_ulogic;
+  signal cfu_done : std_ulogic;
+  signal cfu_wait : std_ulogic_vector(1 downto 0);
+  signal cfu_res  : std_ulogic_vector(XLEN-1 downto 0);
+
   -- CSR read-backs --
   signal csr_rdata_fpu, csr_rdata_cfu : std_ulogic_vector(XLEN-1 downto 0);
 
@@ -287,29 +293,52 @@ begin
     neorv32_cpu_cp_cfu_inst: entity neorv32.neorv32_cpu_cp_cfu
     port map (
       -- global control --
-      clk_i   => clk_i,                      -- global clock, rising edge
-      rstn_i  => rstn_i,                     -- global reset, low-active, async
-      ctrl_i  => ctrl_i,                     -- main control bus
-      start_i => cp_start(4),                -- trigger operation
+      clk_i       => clk_i,                          -- global clock, rising edge
+      rstn_i      => rstn_i,                         -- global reset, low-active, async
+      -- operation control --
+      start_i     => cp_start(4),                    -- operation trigger/strobe
+      active_i    => cfu_run,                        -- operation in progress
+      rtype_i     => ctrl_i.ir_opcode(6 downto 5),   -- instruction type, see constants below
+      funct3_i    => ctrl_i.ir_funct3,               -- "funct3" bit-field from custom instruction word
+      funct7_i    => ctrl_i.ir_funct12(11 downto 5), -- "funct7" bit-field from custom instruction word
       -- CSR interface --
-      csr_we_i    => cfu_csr_we,             -- write enable
-      csr_addr_i  => csr_addr_i(1 downto 0), -- address
-      csr_wdata_i => csr_wdata_i,            -- write data
-      csr_rdata_o => cfu_csr_rd,             -- read data
-      -- data input --
-      rs1_i   => rs1_i,                      -- rf source 1
-      rs2_i   => rs2_i,                      -- rf source 2
-      rs3_i   => rs3_i,                      -- rf source 3
-      rs4_i   => rs4_i,                      -- rf source 4
+      csr_we_i    => cfu_csr_we,                     -- write enable
+      csr_addr_i  => csr_addr_i(1 downto 0),         -- address
+      csr_wdata_i => csr_wdata_i,                    -- write data
+      csr_rdata_o => cfu_csr_rd,                     -- read data
+      -- operands --
+      rs1_i       => rs1_i,                          -- rf source 1
+      rs2_i       => rs2_i,                          -- rf source 2
+      rs3_i       => rs3_i,                          -- rf source 3
+      rs4_i       => rs4_i,                          -- rf source 4
       -- result and status --
-      res_o   => cp_result(4),               -- operation result
-      valid_o => cp_valid(4)                 -- data output valid
+      result_o    => cfu_res,                        -- operation result
+      valid_o     => cfu_done                        -- data output valid (one cycle ahead); operation done
     );
 
     -- CSR proxy --
     cfu_csr_en    <= '1' when (csr_addr_i(11 downto 2) = csr_cfureg0_c(11 downto 2)) else '0';
     cfu_csr_we    <= cfu_csr_en and csr_we_i;
     csr_rdata_cfu <= cfu_csr_rd when (cfu_csr_en = '1') else (others => '0');
+
+    -- operation proxy --
+    cfu_arbiter: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        cfu_wait <= (others => '0');
+      elsif rising_edge(clk_i) then
+        cfu_wait(1) <= cfu_wait(0); -- shift register
+        if (cfu_wait(0) = '0') then -- CFU is idle
+          cfu_wait(0) <= cp_start(4); -- trigger new CFU operation
+        elsif (cfu_done = '1') or (ctrl_i.cpu_trap = '1') then -- operation done or abort if trap (exception)
+          cfu_wait(0) <= '0';
+        end if;
+      end if;
+    end process cfu_arbiter;
+
+    cfu_run      <= cp_start(4) or cfu_wait(0); -- CFU operation in progress
+    cp_result(4) <= cfu_res when (cfu_wait(1) = '1') else (others => '0'); -- output gate
+    cp_valid(4)  <= cfu_wait(0) and cfu_done;
   end generate;
 
   neorv32_cpu_cp_cfu_inst_false:
