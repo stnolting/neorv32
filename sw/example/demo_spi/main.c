@@ -33,7 +33,7 @@ uint32_t spi_configured;
 void spi_cs(uint32_t type);
 void spi_trans(void);
 void spi_setup(void);
-uint32_t hexstr_to_uint(char *buffer, uint8_t length);
+uint32_t hexstr_to_uint32(char *buffer, uint8_t length);
 void aux_print_hex_byte(uint8_t byte);
 
 
@@ -142,7 +142,7 @@ void spi_cs(uint32_t type) {
     neorv32_uart0_printf("Chip-select line to ENABLE (set low) [0..7]: ");
     while (1) {
       neorv32_uart0_scan(terminal_buffer, 2, 1); // 1 hex char plus '\0'
-      channel = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+      channel = (uint8_t)hexstr_to_uint32(terminal_buffer, strlen(terminal_buffer));
       if (channel > 7) {
         neorv32_uart0_printf("\nInvalid channel selection!\n");
         return;
@@ -175,7 +175,7 @@ void spi_trans(void) {
 
   neorv32_uart0_printf("Enter TX data (2 hex chars): 0x");
   neorv32_uart0_scan(terminal_buffer, 2+1, 1);
-  uint32_t tx_data = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+  uint32_t tx_data = (uint32_t)hexstr_to_uint32(terminal_buffer, strlen(terminal_buffer));
 
   uint32_t rx_data = neorv32_spi_trans(tx_data);
 
@@ -203,7 +203,7 @@ void spi_setup(void) {
   while (1) {
     neorv32_uart0_printf("Select SPI clock prescaler (0..7): ");
     neorv32_uart0_scan(terminal_buffer, 2, 1);
-    tmp = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+    tmp = (uint32_t)hexstr_to_uint32(terminal_buffer, strlen(terminal_buffer));
     if (tmp > 8) {
       neorv32_uart0_printf("\nInvalid selection!\n");
     }
@@ -215,7 +215,7 @@ void spi_setup(void) {
 
   neorv32_uart0_printf("\nEnter clock divider (0..15, as one hex char): ");
   neorv32_uart0_scan(terminal_buffer, 2, 1);
-  clk_div = (uint8_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+  clk_div = (uint8_t)hexstr_to_uint32(terminal_buffer, strlen(terminal_buffer));
 
   uint32_t clock = NEORV32_SYSINFO->CLK / (2 * PRSC_LUT[spi_prsc] * (1 + clk_div));
   neorv32_uart0_printf("\n+ New SPI clock speed = %u Hz\n", clock);
@@ -225,7 +225,7 @@ void spi_setup(void) {
   while (1) {
     neorv32_uart0_printf("Select SPI clock mode (0..3): ");
     neorv32_uart0_scan(terminal_buffer, 2, 1);
-    tmp = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+    tmp = (uint32_t)hexstr_to_uint32(terminal_buffer, strlen(terminal_buffer));
     if (tmp > 4) {
       neorv32_uart0_printf("\nInvalid selection!\n");
     }
@@ -243,13 +243,13 @@ void spi_setup(void) {
 
 
 /**********************************************************************//**
- * Helper function to convert N hex chars string into uint32_T
+ * Helper function to convert N hex chars string into uint32_t
  *
  * @param[in,out] buffer Pointer to array of chars to convert into number.
  * @param[in,out] length Length of the conversion string.
  * @return Converted number.
  **************************************************************************/
-uint32_t hexstr_to_uint(char *buffer, uint8_t length) {
+uint32_t hexstr_to_uint32(char *buffer, uint8_t length) {
 
   uint32_t res = 0, d = 0;
   char c = 0;
@@ -257,16 +257,25 @@ uint32_t hexstr_to_uint(char *buffer, uint8_t length) {
   while (length--) {
     c = *buffer++;
 
-    if ((c >= '0') && (c <= '9'))
-      d = (uint32_t)(c - '0');
-    else if ((c >= 'a') && (c <= 'f'))
-      d = (uint32_t)((c - 'a') + 10);
-    else if ((c >= 'A') && (c <= 'F'))
-      d = (uint32_t)((c - 'A') + 10);
-    else
-      d = 0;
+    if (c == '\0') {
+      break;
+    }
 
-    res = res + (d << (length*4));
+    if ((c >= '0') && (c <= '9')) {
+      d = (uint32_t)(c - '0');
+    }
+    else if ((c >= 'a') && (c <= 'f')) {
+      d = (uint32_t)((c - 'a') + 10);
+    }
+    else if ((c >= 'A') && (c <= 'F')) {
+      d = (uint32_t)((c - 'A') + 10);
+    }
+    else {
+      d = 0;
+    }
+
+    res <<= 4;
+    res |= d & 0xf;
   }
 
   return res;
