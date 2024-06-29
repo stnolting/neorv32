@@ -432,8 +432,8 @@ begin
   if CPU_EXTENSION_RISCV_C generate
     neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
     port map (
-      ci_instr16_i => issue_engine.ci_i16,
-      ci_instr32_o => issue_engine.ci_i32
+      instr16_i => issue_engine.ci_i16,
+      instr32_o => issue_engine.ci_i32
     );
   end generate;
 
