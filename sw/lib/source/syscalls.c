@@ -211,7 +211,7 @@ int _openat(int dirfd, const char *name, int flags, int mode)
 
 ssize_t _read(int file, void *ptr, size_t len)
 {
-    int read_cnt = 0;
+    ssize_t read_cnt = 0;
 
     // read everything (STDIN, ...) from NEORV32.UART0 (if available)
     if (neorv32_uart0_available()) {
@@ -275,7 +275,7 @@ ssize_t _write(int file, const void *ptr, size_t len)
       return len;
     }
     else {
-      return (size_t)0; // nothing sent
+      return (ssize_t)0; // nothing sent
     }
 }
 
