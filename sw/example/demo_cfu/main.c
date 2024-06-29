@@ -31,7 +31,7 @@
 
 
 /**********************************************************************//**
- * @name Define macros for easy custom instruction wrapping
+ * @name Define macros for easy CFU instruction wrapping
  **************************************************************************/
 /**@{*/
 #define xtea_hw_init(sum)           neorv32_cfu_r3_instr(0b0000000, 0b100, sum, 0)
@@ -39,13 +39,14 @@
 #define xtea_hw_enc_v1_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b001, v0, v1)
 #define xtea_hw_dec_v0_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b010, v0, v1)
 #define xtea_hw_dec_v1_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b011, v0, v1)
+#define xtea_hw_illegal_inst()      neorv32_cfu_r3_instr(0b0000000, 0b111, 0, 0)
 /**@}*/
 
 // The CFU custom instructions can be used as plain C functions as they are simple "intrinsics".
 // There are 4 "prototype primitives" for the CFU instructions (define in sw/lib/include/neorv32_cfu.h):
 //
-// > neorv32_cfu_r3_instr(funct7, funct3, rs1, rs2) - for r3-type instructions (custom-0 opcode)
-// > neorv32_cfu_r4_instr(funct3, rs1, rs2, rs3)    - for r4-type instructions (custom-1 opcode)
+// > neorv32_cfu_r3_instr(funct7, funct3, rs1, rs2) - for r3-type instructions  (custom-0 opcode)
+// > neorv32_cfu_r4_instr(funct3, rs1, rs2, rs3)    - for r4-type instructions  (custom-1 opcode)
 // > neorv32_cfu_r5_instr_a(rs1, rs2, rs3, rs4)     - for r5-type instruction A (custom-2 opcode)
 // > neorv32_cfu_r5_instr_b(rs1, rs2, rs3, rs4)     - for r5-type instruction B (custom-3 opcode)
 //
@@ -325,6 +326,12 @@ int main() {
   neorv32_uart0_printf("DEC SW = %u cycles\n", time_dec_sw);
   neorv32_uart0_printf("DEC HW = %u cycles\n", time_dec_hw);
 
+
+  // ----------------------------------------------------------
+  // Execute an unimplemented CFU instruction word
+  // ----------------------------------------------------------
+  neorv32_uart0_printf("\nExecuting non-implemented CFU instruction (raise ILLEGAL INSTRUCTION exception)...\n");
+  xtea_hw_illegal_inst();
 
 
   neorv32_uart0_printf("\nCFU demo program completed.\n");

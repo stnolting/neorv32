@@ -121,6 +121,13 @@ int main() {
     return 1;
   }
 
+  // enable XIRQ channels
+  neorv32_xirq_channel_enable(0);
+  neorv32_xirq_channel_enable(1);
+  neorv32_xirq_channel_enable(2);
+  neorv32_xirq_channel_enable(3);
+
+
   // allow XIRQ to trigger CPU interrupt
   neorv32_xirq_global_enable();
 

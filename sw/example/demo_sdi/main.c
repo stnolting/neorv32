@@ -28,7 +28,7 @@
 // Prototypes
 void sdi_put(void);
 void sdi_get(void);
-uint32_t hexstr_to_uint(char *buffer, uint8_t length);
+uint32_t hexstr_to_uint32(char *buffer, uint8_t length);
 
 
 /**********************************************************************//**
@@ -115,7 +115,7 @@ void sdi_put(void) {
 
   neorv32_uart0_printf("Enter TX data (2 hex chars): 0x");
   neorv32_uart0_scan(terminal_buffer, sizeof(terminal_buffer), 1);
-  uint32_t tx_data = (uint32_t)hexstr_to_uint(terminal_buffer, strlen(terminal_buffer));
+  uint32_t tx_data = (uint32_t)hexstr_to_uint32(terminal_buffer, strlen(terminal_buffer));
 
   neorv32_uart0_printf("\nWriting 0x%x to SDI TX buffer... ", tx_data);
 
@@ -145,13 +145,13 @@ void sdi_get(void) {
 
 
 /**********************************************************************//**
- * Helper function to convert N hex chars string into uint32_T
+ * Helper function to convert N hex chars string into uint32_t
  *
  * @param[in,out] buffer Pointer to array of chars to convert into number.
  * @param[in,out] length Length of the conversion string.
  * @return Converted number.
  **************************************************************************/
-uint32_t hexstr_to_uint(char *buffer, uint8_t length) {
+uint32_t hexstr_to_uint32(char *buffer, uint8_t length) {
 
   uint32_t res = 0, d = 0;
   char c = 0;
@@ -159,16 +159,25 @@ uint32_t hexstr_to_uint(char *buffer, uint8_t length) {
   while (length--) {
     c = *buffer++;
 
-    if ((c >= '0') && (c <= '9'))
-      d = (uint32_t)(c - '0');
-    else if ((c >= 'a') && (c <= 'f'))
-      d = (uint32_t)((c - 'a') + 10);
-    else if ((c >= 'A') && (c <= 'F'))
-      d = (uint32_t)((c - 'A') + 10);
-    else
-      d = 0;
+    if (c == '\0') {
+      break;
+    }
 
-    res = res + (d << (length*4));
+    if ((c >= '0') && (c <= '9')) {
+      d = (uint32_t)(c - '0');
+    }
+    else if ((c >= 'a') && (c <= 'f')) {
+      d = (uint32_t)((c - 'a') + 10);
+    }
+    else if ((c >= 'A') && (c <= 'F')) {
+      d = (uint32_t)((c - 'A') + 10);
+    }
+    else {
+      d = 0;
+    }
+
+    res <<= 4;
+    res |= d & 0xf;
   }
 
   return res;
