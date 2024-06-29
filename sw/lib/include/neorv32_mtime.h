@@ -36,22 +36,6 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 
 /**********************************************************************//**
- * @name Date and time struct
- **************************************************************************/
-/**@{*/
-typedef struct {
-  uint16_t year;    /**< current year (absolute) */
-  uint8_t  month;   /**< 1..12 */
-  uint8_t  day;     /**< 1..31 */
-  uint8_t  weekday; /**< 1..7 starting with Monday */
-  uint8_t  hours;   /**< 0..23 */
-  uint8_t  minutes; /**< 0..59 */
-  uint8_t  seconds; /**< 0..59 */
-} date_t;
-/**@}*/
-
-
-/**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
 /**@{*/
@@ -62,10 +46,6 @@ void     neorv32_mtime_set_timecmp(uint64_t timecmp);
 uint64_t neorv32_mtime_get_timecmp(void);
 void     neorv32_mtime_set_unixtime(uint64_t unixtime);
 uint64_t neorv32_mtime_get_unixtime(void);
-uint64_t neorv32_mtime_date2unixtime(date_t* date);
-void     neorv32_mtime_unixtime2date(uint64_t unixtime, date_t* date);
 /**@}*/
-
-
 
 #endif // neorv32_mtime_h
