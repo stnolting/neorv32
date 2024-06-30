@@ -389,7 +389,7 @@ begin
   bus_req_o.rw    <= '0'; -- read-only
   bus_req_o.src   <= '1'; -- source = instruction fetch
   bus_req_o.rvso  <= '0'; -- cannot be a reservation set operation
-  bus_req_o.fence <= ctrl.lsu_fence; -- fence(.i) operation, valid without STB being set
+  bus_req_o.fence <= ctrl.lsu_fence; -- fence operation, valid without STB being set
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
@@ -766,21 +766,16 @@ begin
     execute_engine.ir_nxt    <= execute_engine.ir;
     execute_engine.is_ci_nxt <= execute_engine.is_ci;
     execute_engine.pc_we     <= '0';
-    --
     issue_engine.ack         <= '0';
-    --
     fetch_engine.reset       <= '0';
-    --
     trap_ctrl.env_enter      <= '0';
     trap_ctrl.env_exit       <= '0';
     trap_ctrl.instr_be       <= '0';
     trap_ctrl.ecall          <= '0';
     trap_ctrl.ebreak         <= '0';
     trap_ctrl.hwtrig         <= '0';
-    --
     csr.we_nxt               <= '0';
     csr.re_nxt               <= '0';
-    --
     ctrl_nxt                 <= ctrl_bus_zero_c; -- all zero/off by default (default ALU operation = ZERO, adder.out = ADD)
 
     -- ALU sign control --
@@ -1306,7 +1301,7 @@ begin
         illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- all encodings valid if CFU enable
 
       when others =>
-        illegal_cmd <= '1'; -- undefined/illegal opcode
+        illegal_cmd <= '1'; -- undefined/unimplemented/illegal opcode
 
     end case;
   end process illegal_check;
@@ -2094,7 +2089,6 @@ begin
     end case;
   end process csr_read_access;
 
-
   -- CSR read-data gate --
   csr_read_reg: process(rstn_i, clk_i)
   begin
@@ -2136,7 +2130,6 @@ begin
     end if;
   end process cnt_we;
 
-
   -- hardware counters --
   cnt_gen:
   for i in 0 to 2+hpm_num_c generate
@@ -2169,7 +2162,6 @@ begin
     cnt.nxt(i) <= std_ulogic_vector(unsigned('0' & cnt.lo(i)) + unsigned(cnt.inc(i)));
 
   end generate; -- /cnt_gen
-
 
   -- read-back --
   cnt_connect: process(cnt)
@@ -2239,7 +2231,6 @@ begin
     end generate;
 
   end generate;
-
 
   -- no HPMs implemented --
   hpmevent_gen_disable:
