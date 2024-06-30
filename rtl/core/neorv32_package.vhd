@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100005"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100006"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -735,14 +735,14 @@ package neorv32_package is
       REGFILE_HW_RST             : boolean                        := false;
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS            : natural range 0 to 16          := 0;
-      PMP_MIN_GRANULARITY        : natural                        := 4;
+      PMP_MIN_GRANULARITY        : natural range 4 to 2**30       := 4;
       PMP_TOR_MODE_EN            : boolean                        := true;
       PMP_NAP_MODE_EN            : boolean                        := true;
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS               : natural range 0 to 13          := 0;
       HPM_CNT_WIDTH              : natural range 0 to 64          := 40;
       -- Atomic Memory Access - Reservation Set Granularity --
-      AMO_RVS_GRANULARITY        : natural                        := 4;
+      AMO_RVS_GRANULARITY        : natural range 4 to 2**30       := 4;
       -- Internal Instruction memory (IMEM) --
       MEM_INT_IMEM_EN            : boolean                        := false;
       MEM_INT_IMEM_SIZE          : natural                        := 16*1024;
@@ -762,8 +762,8 @@ package neorv32_package is
       XBUS_TIMEOUT               : natural                        := 255;
       XBUS_REGSTAGE_EN           : boolean                        := false;
       XBUS_CACHE_EN              : boolean                        := false;
-      XBUS_CACHE_NUM_BLOCKS      : natural                        := 64;
-      XBUS_CACHE_BLOCK_SIZE      : natural                        := 32;
+      XBUS_CACHE_NUM_BLOCKS      : natural range 1 to 256         := 64;
+      XBUS_CACHE_BLOCK_SIZE      : natural range 1 to 2**16       := 32;
       -- Execute in-place module (XIP) --
       XIP_EN                     : boolean                        := false;
       XIP_CACHE_EN               : boolean                        := false;
