@@ -9,8 +9,8 @@
 
   <!-- CPU core -->
   <cpu>
-    <name>NEORV32</name>
-    <revision>r2p0</revision>
+    <name>other</name>
+    <revision>r1p0</revision>
     <endian>little</endian>
     <mpuPresent>true</mpuPresent>
     <fpuPresent>true</fpuPresent>
@@ -18,8 +18,9 @@
     <dspPresent>false</dspPresent>
     <icachePresent>true</icachePresent>
     <dcachePresent>true</dcachePresent>
+    <itcmPresent>true</itcmPresent>
+    <dtcmPresent>true</dtcmPresent>
     <nvicPrioBits>4</nvicPrioBits>
-    <vendorSystickConfig>false</vendorSystickConfig>
   </cpu>
 
   <!-- defaults for all peripherals -->
@@ -38,7 +39,6 @@
     <peripheral>
       <name>CFS</name>
       <description>Custom functions subsystem</description>
-      <groupName>CFS</groupName>
       <baseAddress>0xFFFFEB00</baseAddress>
 
       <interrupt><name>CFS_FIRQ</name><value>1</value></interrupt>
@@ -122,7 +122,6 @@
     <peripheral>
       <name>SDI</name>
       <description>Serial data interface controller</description>
-      <groupName>SDI</groupName>
       <baseAddress>0xFFFFF700</baseAddress>
 
       <interrupt><name>SDI_FIRQ</name><value>11</value></interrupt>
@@ -230,7 +229,6 @@
     <peripheral>
       <name>SLINK</name>
       <description>Stream Link Interface</description>
-      <groupName>SLINK</groupName>
       <baseAddress>0xFFFFEC00</baseAddress>
 
       <interrupt><name>SLINK_RX_FIRQ</name><value>14</value></interrupt>
@@ -384,7 +382,6 @@
     <peripheral>
       <name>DMA</name>
       <description>Direct memory access controller</description>
-      <groupName>DMA</groupName>
       <baseAddress>0xFFFFED00</baseAddress>
 
       <interrupt><name>DMA_FIRQ</name><value>10</value></interrupt>
@@ -501,7 +498,6 @@
     <peripheral>
       <name>CRC</name>
       <description>Cyclic redundancy check unit</description>
-      <groupName>CRC</groupName>
       <baseAddress>0xFFFFEE00</baseAddress>
 
       <addressBlock>
@@ -539,7 +535,6 @@
     <peripheral>
       <name>PWM</name>
       <description>Pulse-width modulation controller</description>
-      <groupName>PWM</groupName>
       <baseAddress>0xFFFFF000</baseAddress>
 
       <addressBlock>
@@ -589,7 +584,6 @@
     <peripheral>
       <name>XIP</name>
       <description>Execute In Place Module</description>
-      <groupName>CIP</groupName>
       <baseAddress>0xFFFFEF00</baseAddress>
 
       <addressBlock>
@@ -691,7 +685,6 @@
     <peripheral>
       <name>GPTMR</name>
       <description>General purpose timer</description>
-      <groupName>GPTMR</groupName>
       <baseAddress>0xFFFFF100</baseAddress>
 
       <interrupt><name>GPTMR_FIRQ</name><value>12</value></interrupt>
@@ -779,7 +772,6 @@
     <peripheral>
       <name>ONEWIRE</name>
       <description>1-Wire Interface Controller</description>
-      <groupName>ONEWIRE</groupName>
       <baseAddress>0xFFFFF200</baseAddress>
 
       <interrupt><name>ONEWIRE_FIRQ</name><value>13</value></interrupt>
@@ -866,7 +858,6 @@
     <peripheral>
       <name>XIRQ</name>
       <description>External interrupts controller</description>
-      <groupName>XIRQ</groupName>
       <baseAddress>0xFFFFF300</baseAddress>
 
       <interrupt><name>XIRQ_FIRQ</name><value>8</value></interrupt>
@@ -911,7 +902,6 @@
     <peripheral>
       <name>MTIME</name>
       <description>Machine timer</description>
-      <groupName>MTIME</groupName>
       <baseAddress>0xFFFFF400</baseAddress>
 
       <addressBlock>
@@ -949,7 +939,6 @@
     <peripheral>
       <name>UART0</name>
       <description>Primary universal asynchronous receiver and transmitter</description>
-      <groupName>UART0</groupName>
       <baseAddress>0xFFFFF500</baseAddress>
 
       <interrupt><name>UART0_RX_FIRQ</name><value>2</value></interrupt>
@@ -1090,7 +1079,6 @@
     <peripheral derivedFrom="UART0">
       <name>UART1</name>
       <description>Secondary universal asynchronous receiver and transmitter</description>
-      <groupName>UART1</groupName>
       <baseAddress>0xFFFFF600</baseAddress>
 
       <interrupt><name>UART1_RX_FIRQ</name><value>4</value></interrupt>
@@ -1108,7 +1096,6 @@
     <peripheral>
       <name>SPI</name>
       <description>Serial peripheral interface controller</description>
-      <groupName>SPI</groupName>
       <baseAddress>0xFFFFF800</baseAddress>
 
       <interrupt><name>SPI_FIRQ</name><value>6</value></interrupt>
@@ -1236,7 +1223,6 @@
     <peripheral>
       <name>TWI</name>
       <description>Two-wire interface controller</description>
-      <groupName>SPI</groupName>
       <baseAddress>0xFFFFF900</baseAddress>
 
       <interrupt><name>TWI_FIRQ</name><value>7</value></interrupt>
@@ -1329,7 +1315,6 @@
     <peripheral>
       <name>TRNG</name>
       <description>True random number generator</description>
-      <groupName>TRNG</groupName>
       <baseAddress>0xFFFFFA00</baseAddress>
 
       <addressBlock>
@@ -1393,7 +1378,6 @@
     <peripheral>
       <name>WDT</name>
       <description>Watchdog timer</description>
-      <groupName>WDT</groupName>
       <baseAddress>0xFFFFFB00</baseAddress>
 
       <addressBlock>
@@ -1467,7 +1451,6 @@
     <peripheral>
       <name>GPIO</name>
       <description>General purpose input/output port</description>
-      <groupName>GPIO</groupName>
       <baseAddress>0xFFFFFC00</baseAddress>
 
       <addressBlock>
@@ -1507,7 +1490,6 @@
     <peripheral>
       <name>NEOLED</name>
       <description>Smart LED hardware interface</description>
-      <groupName>NEOLED</groupName>
       <baseAddress>0xFFFFFD00</baseAddress>
 
       <interrupt><name>NEOLED_FIRQ</name><value>9</value></interrupt>
@@ -1609,7 +1591,6 @@
     <peripheral>
       <name>SYSINFO</name>
       <description>System configuration information memory</description>
-      <groupName>SYSINFO</groupName>
       <baseAddress>0xFFFFFE00</baseAddress>
 
       <addressBlock>
@@ -1633,8 +1614,8 @@
           <fields>
             <field><name>SYSINFO_MEM_0</name><bitRange>[7:0]</bitRange><description>log2(IMEM size in bytes)</description></field>
             <field><name>SYSINFO_MEM_1</name><bitRange>[15:8]</bitRange><description>log2(DMEM size in bytes)</description></field>
-            <field><name>SYSINFO_MEM_2</name><bitRange>[23:16]</bitRange><description>reserved</description></field>
-            <field><name>SYSINFO_MEM_3</name><bitRange>[31:24]</bitRange><description>log2(reservation set granulartiy in bytes)</description></field>
+            <field><name>SYSINFO_MEM_2</name><bitRange>[23:16]</bitRange><description>yet unused</description></field>
+            <field><name>SYSINFO_MEM_3</name><bitRange>[31:24]</bitRange><description>log2(reservation set granularity in bytes)</description></field>
           </fields>
         </register>
         <register>
