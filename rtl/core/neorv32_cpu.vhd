@@ -129,6 +129,7 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_C,      "c",         "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_B,      "b",         "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_U,      "u",         "" ) &
+    cond_sel_string_f(true,                       "x",         "" ) & -- always enabled
     cond_sel_string_f(true,                       "_zicsr",    "" ) & -- always enabled
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_zicntr",   "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zicond, "_zicond",   "" ) &
