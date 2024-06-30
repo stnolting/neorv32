@@ -480,16 +480,16 @@ begin
 
   -- Combine Device Ports -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dev_00_req_o <= dev_req(00); dev_rsp(00) <= dev_00_rsp_i;
-  dev_01_req_o <= dev_req(01); dev_rsp(01) <= dev_01_rsp_i;
-  dev_02_req_o <= dev_req(02); dev_rsp(02) <= dev_02_rsp_i;
-  dev_03_req_o <= dev_req(03); dev_rsp(03) <= dev_03_rsp_i;
-  dev_04_req_o <= dev_req(04); dev_rsp(04) <= dev_04_rsp_i;
-  dev_05_req_o <= dev_req(05); dev_rsp(05) <= dev_05_rsp_i;
-  dev_06_req_o <= dev_req(06); dev_rsp(06) <= dev_06_rsp_i;
-  dev_07_req_o <= dev_req(07); dev_rsp(07) <= dev_07_rsp_i;
-  dev_08_req_o <= dev_req(08); dev_rsp(08) <= dev_08_rsp_i;
-  dev_09_req_o <= dev_req(09); dev_rsp(09) <= dev_09_rsp_i;
+  dev_00_req_o <= dev_req(0);  dev_rsp(0)  <= dev_00_rsp_i;
+  dev_01_req_o <= dev_req(1);  dev_rsp(1)  <= dev_01_rsp_i;
+  dev_02_req_o <= dev_req(2);  dev_rsp(2)  <= dev_02_rsp_i;
+  dev_03_req_o <= dev_req(3);  dev_rsp(3)  <= dev_03_rsp_i;
+  dev_04_req_o <= dev_req(4);  dev_rsp(4)  <= dev_04_rsp_i;
+  dev_05_req_o <= dev_req(5);  dev_rsp(5)  <= dev_05_rsp_i;
+  dev_06_req_o <= dev_req(6);  dev_rsp(6)  <= dev_06_rsp_i;
+  dev_07_req_o <= dev_req(7);  dev_rsp(7)  <= dev_07_rsp_i;
+  dev_08_req_o <= dev_req(8);  dev_rsp(8)  <= dev_08_rsp_i;
+  dev_09_req_o <= dev_req(9);  dev_rsp(9)  <= dev_09_rsp_i;
   dev_10_req_o <= dev_req(10); dev_rsp(10) <= dev_10_rsp_i;
   dev_11_req_o <= dev_req(11); dev_rsp(11) <= dev_11_rsp_i;
   dev_12_req_o <= dev_req(12); dev_rsp(12) <= dev_12_rsp_i;
@@ -554,7 +554,7 @@ end neorv32_bus_io_switch_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 SoC - PProcessor Bus Infrastructure: Reservation Set Control             --
+-- NEORV32 SoC - Processor Bus Infrastructure: Reservation Set Control              --
 -- -------------------------------------------------------------------------------- --
 -- Reservation set controller for the A (atomic) ISA extension's LR.W               --
 -- (load-reservate) and SC.W (store-conditional) instructions. Only a single        --

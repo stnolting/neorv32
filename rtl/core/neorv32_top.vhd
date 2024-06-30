@@ -2,9 +2,10 @@
 -- NEORV32 SoC - Processor Top Entity                                               --
 -- -------------------------------------------------------------------------------- --
 -- Check out the processor's online documentation for more information:             --
---  HQ:         https://github.com/stnolting/neorv32                                --
---  Data Sheet: https://stnolting.github.io/neorv32                                 --
---  User Guide: https://stnolting.github.io/neorv32/ug                              --
+-- > HQ:           https://github.com/stnolting/neorv32                             --
+-- > Data Sheet:   https://stnolting.github.io/neorv32                              --
+-- > User Guide:   https://stnolting.github.io/neorv32/ug                           --
+-- > Software Ref: https://stnolting.github.io/neorv32/sw/files.html                --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -54,7 +55,7 @@ entity neorv32_top is
 
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS            : natural range 0 to 16          := 0;           -- number of regions (0..16)
-    PMP_MIN_GRANULARITY        : natural                        := 4;           -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_MIN_GRANULARITY        : natural range 4 to 2**30       := 4;           -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     PMP_TOR_MODE_EN            : boolean                        := true;        -- implement TOR mode
     PMP_NAP_MODE_EN            : boolean                        := true;        -- implement NAPOT/NA4 modes
 
@@ -63,7 +64,7 @@ entity neorv32_top is
     HPM_CNT_WIDTH              : natural range 0 to 64          := 40;          -- total size of HPM counters (0..64)
 
     -- Atomic Memory Access - Reservation Set Granularity --
-    AMO_RVS_GRANULARITY        : natural                        := 4;           -- size in bytes, has to be a power of 2, min 4
+    AMO_RVS_GRANULARITY        : natural range 4 to 2**30       := 4;           -- size in bytes, has to be a power of 2, min 4
 
     -- Internal Instruction memory (IMEM) --
     MEM_INT_IMEM_EN            : boolean                        := false;       -- implement processor-internal instruction memory
@@ -88,8 +89,8 @@ entity neorv32_top is
     XBUS_TIMEOUT               : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_REGSTAGE_EN           : boolean                        := false;       -- add XBUS register stage
     XBUS_CACHE_EN              : boolean                        := false;       -- enable external bus cache (x-cache)
-    XBUS_CACHE_NUM_BLOCKS      : natural                        := 64;          -- x-cache: number of blocks (min 1), has to be a power of 2
-    XBUS_CACHE_BLOCK_SIZE      : natural                        := 32;          -- x-cache: block size in bytes (min 4), has to be a power of 2
+    XBUS_CACHE_NUM_BLOCKS      : natural range 1 to 256         := 64;          -- x-cache: number of blocks (min 1), has to be a power of 2
+    XBUS_CACHE_BLOCK_SIZE      : natural range 1 to 2**16       := 32;          -- x-cache: block size in bytes (min 4), has to be a power of 2
 
     -- Execute in-place module (XIP) --
     XIP_EN                     : boolean                        := false;       -- implement execute in place module (XIP)?

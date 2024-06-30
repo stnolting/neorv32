@@ -36,8 +36,8 @@ entity neorv32_cpu_lsu is
     be_store_o  : out std_ulogic; -- bus error on store data access
     pmp_fault_i : in  std_ulogic; -- PMP read/write access fault
     -- data bus --
-    bus_req_o   : out bus_req_t;  -- request
-    bus_rsp_i   : in  bus_rsp_t   -- response
+    bus_req_o   : out bus_req_t; -- request
+    bus_rsp_i   : in  bus_rsp_t  -- response
   );
 end neorv32_cpu_lsu;
 
@@ -101,8 +101,8 @@ begin
   -- source identifier --
   bus_req_o.src <= '0'; -- 0 = data access
 
-  -- data/instruction fence(.i)
-  bus_req_o.fence <= ctrl_i.lsu_fence; -- this is valid even without STB being set
+  -- data fence --
+  bus_req_o.fence <= ctrl_i.lsu_fence; -- this is valid without STB being set
 
 
   -- Data Output - Alignment and Byte Enable ------------------------------------------------

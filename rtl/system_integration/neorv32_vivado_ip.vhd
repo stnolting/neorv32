@@ -53,14 +53,14 @@ entity neorv32_vivado_ip is
     REGFILE_HW_RST             : boolean                        := false;
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS            : natural range 0 to 16          := 0;
-    PMP_MIN_GRANULARITY        : natural                        := 4;
+    PMP_MIN_GRANULARITY        : natural range 4 to 2**30       := 4;
     PMP_TOR_MODE_EN            : boolean                        := false;
     PMP_NAP_MODE_EN            : boolean                        := false;
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS               : natural range 0 to 13          := 0;
     HPM_CNT_WIDTH              : natural range 0 to 64          := 40;
     -- Atomic Memory Access - Reservation Set Granularity --
-    AMO_RVS_GRANULARITY        : natural                        := 4;
+    AMO_RVS_GRANULARITY        : natural range 4 to 2**30       := 4;
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN            : boolean                        := false;
     MEM_INT_IMEM_SIZE          : natural                        := 16*1024;
@@ -245,10 +245,10 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   constant num_gpio_c : natural := max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM);
 
   -- variable-sized ports --
-  signal gpio_o_tmp : std_ulogic_vector(63 downto 0);
-  signal gpio_i_tmp : std_ulogic_vector(63 downto 0);
-  signal pwm_o_tmp  : std_ulogic_vector(11 downto 0);
-  signal xirq_i_tmp : std_ulogic_vector(31 downto 0);
+  signal gpio_o_aux : std_ulogic_vector(63 downto 0);
+  signal gpio_i_aux : std_ulogic_vector(63 downto 0);
+  signal pwm_o_aux  : std_ulogic_vector(11 downto 0);
+  signal xirq_i_aux : std_ulogic_vector(31 downto 0);
 
   -- internal wishbone bus --
   type wb_bus_t is record
@@ -407,8 +407,8 @@ begin
     xip_dat_i      => xip_dat_i,
     xip_dat_o      => xip_dat_o,
     -- GPIO (available if IO_GPIO_NUM > 0) --
-    gpio_o         => gpio_o_tmp,
-    gpio_i         => gpio_i_tmp,
+    gpio_o         => gpio_o_aux,
+    gpio_i         => gpio_i_aux,
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    => uart0_txd_o,
     uart0_rxd_i    => uart0_rxd_i,
@@ -433,7 +433,7 @@ begin
     onewire_i      => onewire_i,
     onewire_o      => onewire_o,
     -- PWM available if IO_PWM_NUM_CH > 0) --
-    pwm_o          => pwm_o_tmp,
+    pwm_o          => pwm_o_aux,
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       => cfs_in_i,
     cfs_out_o      => cfs_out_o,
@@ -444,7 +444,7 @@ begin
     -- GPTMR timer capture (available if IO_GPTMR_EN = true) --
     gptmr_trig_i   => gptmr_trig_i,
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i         => xirq_i_tmp,
+    xirq_i         => xirq_i_aux,
     -- CPU Interrupts --
     mtime_irq_i    => mtime_irq_i,
     msw_irq_i      => msw_irq_i,
@@ -458,30 +458,30 @@ begin
   -- GPIO input --
   gpio_in_mapping: process(gpio_i)
   begin
-    gpio_i_tmp <= (others => '0');
+    gpio_i_aux <= (others => '0');
     for i in 0 to IO_GPIO_IN_NUM-1 loop
-      gpio_i_tmp(i) <= gpio_i(i);
+      gpio_i_aux(i) <= gpio_i(i);
     end loop;
   end process gpio_in_mapping;
 
   -- GPIO output --
   gpio_out_mapping:
   for i in 0 to IO_GPIO_OUT_NUM-1 generate
-    gpio_o(i) <= gpio_o_tmp(i);
+    gpio_o(i) <= gpio_o_aux(i);
   end generate;
 
   -- PWM --
   pwm_mapping:
   for i in 0 to IO_PWM_NUM_CH-1 generate
-    pwm_o(i) <= pwm_o_tmp(i);
+    pwm_o(i) <= pwm_o_aux(i);
   end generate;
 
   -- XIRQ --
   xirq_mapping: process(xirq_i)
   begin
-    xirq_i_tmp <= (others => '0');
+    xirq_i_aux <= (others => '0');
     for i in 0 to XIRQ_NUM_CH-1 loop
-      xirq_i_tmp(i) <= xirq_i(i);
+      xirq_i_aux(i) <= xirq_i(i);
     end loop;
   end process xirq_mapping;
 

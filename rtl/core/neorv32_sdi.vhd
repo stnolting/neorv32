@@ -111,9 +111,7 @@ begin
   bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o.ack     <= '0';
-      bus_rsp_o.err     <= '0';
-      bus_rsp_o.data    <= (others => '0');
+      bus_rsp_o         <= rsp_terminate_c;
       ctrl.enable       <= '0';
       ctrl.clr_rx       <= '0';
       ctrl.irq_rx_avail <= '0';
