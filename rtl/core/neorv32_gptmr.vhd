@@ -82,14 +82,12 @@ begin
   bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o.ack  <= '0';
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
-      ctrl           <= (others => '0');
-      trig_match     <= '0';
-      trig_capture   <= '0';
-      timer.cnt_we   <= '0';
-      timer.thres    <= (others => '0');
+      bus_rsp_o    <= rsp_terminate_c;
+      ctrl         <= (others => '0');
+      trig_match   <= '0';
+      trig_capture <= '0';
+      timer.cnt_we <= '0';
+      timer.thres  <= (others => '0');
     elsif rising_edge(clk_i) then
       -- defaults --
       bus_rsp_o.ack  <= bus_req_i.stb;

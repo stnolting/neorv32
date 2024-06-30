@@ -123,18 +123,15 @@ begin
   bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl.enable    <= '0';
-      ctrl.mode      <= '0';
-      ctrl.strobe    <= '0';
-      ctrl.clk_prsc  <= (others => '0');
-      ctrl.irq_conf  <= '0';
-      ctrl.t_total   <= (others => '0');
-      ctrl.t0_high   <= (others => '0');
-      ctrl.t1_high   <= (others => '0');
-      --
-      bus_rsp_o.ack  <= '0';
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
+      ctrl.enable   <= '0';
+      ctrl.mode     <= '0';
+      ctrl.strobe   <= '0';
+      ctrl.clk_prsc <= (others => '0');
+      ctrl.irq_conf <= '0';
+      ctrl.t_total  <= (others => '0');
+      ctrl.t0_high  <= (others => '0');
+      ctrl.t1_high  <= (others => '0');
+      bus_rsp_o     <= rsp_terminate_c;
     elsif rising_edge(clk_i) then
       -- bus handshake --
       bus_rsp_o.ack  <= bus_req_i.stb;

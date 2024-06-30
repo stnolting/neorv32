@@ -64,13 +64,11 @@ begin
   bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o.ack  <= '0';
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
-      nclr_pending   <= (others => '0');
-      irq_type       <= (others => '0');
-      irq_polarity   <= (others => '0');
-      irq_enable     <= (others => '0');
+      bus_rsp_o    <= rsp_terminate_c;
+      nclr_pending <= (others => '0');
+      irq_type     <= (others => '0');
+      irq_polarity <= (others => '0');
+      irq_enable   <= (others => '0');
     elsif rising_edge(clk_i) then
       -- defaults --
       bus_rsp_o.ack  <= bus_req_i.stb;

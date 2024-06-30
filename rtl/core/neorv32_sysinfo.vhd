@@ -145,13 +145,9 @@ begin
   bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o.ack  <= '0';
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
+      bus_rsp_o <= rsp_terminate_c;
     elsif rising_edge(clk_i) then
-      bus_rsp_o.ack  <= '0';
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
+      bus_rsp_o <= rsp_terminate_c; -- default
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then -- read-only
         bus_rsp_o.ack  <= '1';
         bus_rsp_o.data <= sysinfo(to_integer(unsigned(bus_req_i.addr(3 downto 2))));

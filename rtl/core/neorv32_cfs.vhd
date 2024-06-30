@@ -147,14 +147,11 @@ begin
   bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cfs_reg_wr(0)  <= (others => '0');
-      cfs_reg_wr(1)  <= (others => '0');
-      cfs_reg_wr(2)  <= (others => '0');
-      cfs_reg_wr(3)  <= (others => '0');
-      --
-      bus_rsp_o.ack  <= '0';
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
+      cfs_reg_wr(0) <= (others => '0');
+      cfs_reg_wr(1) <= (others => '0');
+      cfs_reg_wr(2) <= (others => '0');
+      cfs_reg_wr(3) <= (others => '0');
+      bus_rsp_o     <= rsp_terminate_c;
     elsif rising_edge(clk_i) then -- synchronous interface for read and write accesses
       -- transfer/access acknowledge --
       bus_rsp_o.ack <= bus_req_i.stb;

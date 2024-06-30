@@ -49,16 +49,13 @@ begin
   bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      mtimecmp_lo    <= (others => '0');
-      mtimecmp_hi    <= (others => '0');
-      mtime_we       <= (others => '0');
-      mtime_lo       <= (others => '0');
-      mtime_lo_cry   <= (others => '0');
-      mtime_hi       <= (others => '0');
-      --
-      bus_rsp_o.ack  <= '0';
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
+      mtimecmp_lo  <= (others => '0');
+      mtimecmp_hi  <= (others => '0');
+      mtime_we     <= (others => '0');
+      mtime_lo     <= (others => '0');
+      mtime_lo_cry <= (others => '0');
+      mtime_hi     <= (others => '0');
+      bus_rsp_o    <= rsp_terminate_c;
     elsif rising_edge(clk_i) then
       -- mtimecmp --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3) = '1') then
