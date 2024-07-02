@@ -20,6 +20,9 @@
 #ifndef neorv32_cfs_h
 #define neorv32_cfs_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: Custom Functions Subsystem (CFS)
  **************************************************************************/

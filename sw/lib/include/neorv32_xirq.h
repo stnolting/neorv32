@@ -16,6 +16,9 @@
 #ifndef neorv32_xirq_h
 #define neorv32_xirq_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: External Interrupt Controller (XIRQ)
  **************************************************************************/

@@ -18,6 +18,9 @@
 #ifndef neorv32_crc_h
 #define neorv32_crc_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: Cyclic Redundancy Check Unit (CRC)
  **************************************************************************/

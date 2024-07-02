@@ -16,6 +16,9 @@
 #ifndef neorv32_slink_h
 #define neorv32_slink_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: Stream Link Interface (SLINK)
  **************************************************************************/

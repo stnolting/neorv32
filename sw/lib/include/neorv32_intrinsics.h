@@ -16,6 +16,8 @@
 #ifndef neorv32_intrinsics_h
 #define neorv32_intrinsics_h
 
+#include <stdint.h>
+
 
 // ****************************************************************************************************************************
 // Custom Instruction Intrinsics

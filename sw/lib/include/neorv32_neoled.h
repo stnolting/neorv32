@@ -18,6 +18,9 @@
 #ifndef neorv32_neoled_h
 #define neorv32_neoled_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: Smart LED Hardware Interface (NEOLED)
  **************************************************************************/
