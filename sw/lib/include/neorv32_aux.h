@@ -17,12 +17,30 @@
 
 #include <stdint.h>
 
+
 /**********************************************************************//**
  * @name Select minimum/maximum
  **************************************************************************/
 /**@{*/
 #define neorv32_aux_min(a, b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
 #define neorv32_aux_max(a, b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
+/**@}*/
+
+
+/**********************************************************************//**
+ * Processor clock prescaler select
+ **************************************************************************/
+/**@{*/
+enum NEORV32_CLOCK_PRSC_enum {
+  CLK_PRSC_2    = 0, /**< CPU_CLK (from clk_i top signal) / 2 */
+  CLK_PRSC_4    = 1, /**< CPU_CLK (from clk_i top signal) / 4 */
+  CLK_PRSC_8    = 2, /**< CPU_CLK (from clk_i top signal) / 8 */
+  CLK_PRSC_64   = 3, /**< CPU_CLK (from clk_i top signal) / 64 */
+  CLK_PRSC_128  = 4, /**< CPU_CLK (from clk_i top signal) / 128 */
+  CLK_PRSC_1024 = 5, /**< CPU_CLK (from clk_i top signal) / 1024 */
+  CLK_PRSC_2048 = 6, /**< CPU_CLK (from clk_i top signal) / 2048 */
+  CLK_PRSC_4096 = 7  /**< CPU_CLK (from clk_i top signal) / 4096 */
+};
 /**@}*/
 
 
@@ -48,9 +66,7 @@ typedef struct {
 /**@{*/
 uint64_t neorv32_aux_date2unixtime(date_t* date);
 void     neorv32_aux_unixtime2date(uint64_t unixtime, date_t* date);
-
 uint64_t neorv32_aux_hexstr2uint64(char *buffer, uint8_t length);
-
 uint32_t neorv32_aux_xorshift32(void);
 /**@}*/
 
