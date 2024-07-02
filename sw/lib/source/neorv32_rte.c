@@ -111,7 +111,7 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
     "addi sp, sp, -16*4 \n"
 #endif
 
-    "sw x0, 0*4(sp) \n"
+    "sw x0, 0*4(sp) \n" // is always zero, but backup to have a "complete" indexable register frame
     "sw x1, 1*4(sp) \n"
 
     "csrrw x1, mscratch, sp \n" // mscratch = base address of original context
@@ -182,7 +182,7 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
     case TRAP_CODE_FIRQ_13:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_13];      break;
     case TRAP_CODE_FIRQ_14:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_14];      break;
     case TRAP_CODE_FIRQ_15:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_15];      break;
-    default:                     handler_base = (uint32_t)(&neorv32_rte_debug_handler);        break;
+    default:                     handler_base = (uint32_t)(&neorv32_rte_debug_handler);          break;
   }
 
   // execute handler
@@ -211,7 +211,7 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
 
   // restore context
   asm volatile (
-//  "lw x0,   0*4(sp) \n"
+//  "lw x0,   0*4(sp) \n" // hardwired to zero
     "lw x1,   1*4(sp) \n"
 //  restore 2x at the very end
     "lw x3,   3*4(sp) \n"
@@ -260,6 +260,7 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
  **************************************************************************/
 uint32_t neorv32_rte_context_get(int x) {
 
+  // MSCRATCH CSR contain the stack pointer of the interrupted program
   uint32_t tmp = neorv32_cpu_csr_read(CSR_MSCRATCH);
 #ifdef __riscv_32e
   tmp += (x & 15) << 2;
@@ -279,6 +280,7 @@ uint32_t neorv32_rte_context_get(int x) {
  **************************************************************************/
 void neorv32_rte_context_put(int x, uint32_t data) {
 
+  // MSCRATCH CSR contain the stack pointer of the interrupted program
   uint32_t tmp = neorv32_cpu_csr_read(CSR_MSCRATCH);
 #ifdef __riscv_32e
   tmp += (x & 15) << 2;
@@ -374,70 +376,6 @@ void neorv32_rte_debug_handler(void) {
 
   // outro
   neorv32_uart0_puts(" </NEORV32-RTE>\n");
-}
-
-
-/**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * Print current RTE configuration via UART0.
- **************************************************************************/
-void neorv32_rte_print_info(void) {
-
-  const char trap_name[NEORV32_RTE_NUM_TRAPS][11] = {
-    "I_ACCESS  ",
-    "I_ILLEGAL ",
-    "I_MISALIGN",
-    "BREAKPOINT",
-    "L_MISALIGN",
-    "L_ACCESS  ",
-    "S_MISALIGN",
-    "S_ACCESS  ",
-    "UENV_CALL ",
-    "MENV_CALL ",
-    "MSI       ",
-    "MTI       ",
-    "MEI       ",
-    "FIRQ_0    ",
-    "FIRQ_1    ",
-    "FIRQ_2    ",
-    "FIRQ_3    ",
-    "FIRQ_4    ",
-    "FIRQ_5    ",
-    "FIRQ_6    ",
-    "FIRQ_7    ",
-    "FIRQ_8    ",
-    "FIRQ_9    ",
-    "FIRQ_10   ",
-    "FIRQ_11   ",
-    "FIRQ_12   ",
-    "FIRQ_13   ",
-    "FIRQ_14   ",
-    "FIRQ_15   "
-  };
-
-  if (neorv32_uart0_available() == 0) {
-    return; // cannot output anything if UART0 is not implemented
-  }
-
-  neorv32_uart0_puts("\n\n<< NEORV32 RTE Configuration >>\n\n");
-
-  // header
-  neorv32_uart0_puts("-------------------------------\n");
-  neorv32_uart0_puts("Trap Name [ID]       Handler\n");
-  neorv32_uart0_puts("-------------------------------\n");
-
-  uint32_t i;
-  for (i=0; i<NEORV32_RTE_NUM_TRAPS; i++) {
-    neorv32_uart0_puts("RTE_TRAP_");
-    neorv32_uart0_puts(trap_name[i]);
-    neorv32_uart0_puts("  ");
-    __neorv32_rte_print_hex_word(__neorv32_rte_vector_lut[i]);
-    neorv32_uart0_puts("\n");
-  }
-
-  // footer
-  neorv32_uart0_puts("-------------------------------\n");
-  neorv32_uart0_puts("\n");
 }
 
 
@@ -762,13 +700,15 @@ void neorv32_rte_print_hw_version(void) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
- * Print project credits via UART0.
+ * Print project info via UART0.
  **************************************************************************/
-void neorv32_rte_print_credits(void) {
+void neorv32_rte_print_about(void) {
 
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     neorv32_uart0_puts("The NEORV32 RISC-V Processor, github.com/stnolting/neorv32\n"
-                       "(c) 2024 by Dipl.-Ing. Stephan Nolting, BSD 3-Clause License\n");
+                       "Copyright (c) NEORV32 contributors.\n"
+                       "Copyright (c) 2020 - 2024, Stephan Nolting. All rights reserved.\n"
+                       "SPDX-License-Identifier: BSD-3-Clause\n");
   }
 }
 
@@ -779,28 +719,28 @@ void neorv32_rte_print_credits(void) {
  **************************************************************************/
 void neorv32_rte_print_logo(void) {
 
-  const uint16_t logo_data_c[9][7] = {
-    {0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000001100000000,0b1100011000110000},
-    {0b0110000011000111,0b1111110001111111,0b1000011111111000,0b1100000011000111,0b1111100001111111,0b1000001100000011,0b1111111111111100},
-    {0b1111000011001100,0b0000000011000000,0b1100110000001100,0b1100000011001100,0b0000110011000000,0b1100001100001111,0b0000000000001111},
-    {0b1101100011001100,0b0000000011000000,0b1100110000001100,0b1100000011000000,0b0000110000000001,0b1000001100000011,0b0001111110001100},
-    {0b1100110011001111,0b1111100011000000,0b1100111111111000,0b1100000011000000,0b1111100000000110,0b0000001100001111,0b0001111110001111},
-    {0b1100011011001100,0b0000000011000000,0b1100110000110000,0b0110000110000000,0b0000110000011000,0b0000001100000011,0b0001111110001100},
-    {0b1100001111001100,0b0000000011000000,0b1100110000011000,0b0011001100001100,0b0000110001100000,0b0000001100001111,0b0000000000001111},
-    {0b1100000110000111,0b1111110001111111,0b1000110000001100,0b0000110000000111,0b1111100011111111,0b1100001100000011,0b1111111111111100},
-    {0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000000000000000,0b0000001100000000,0b1100011000110000}
+  const uint16_t logo_c[9][7] = {
+    {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0300, 0xc630},
+    {0x60c7, 0xfc7f, 0x87f8, 0xc0c7, 0xf87f, 0x8303, 0xfffc},
+    {0xf0cc, 0x00c0, 0xcc0c, 0xc0cc, 0x0cc0, 0xc30f, 0x000f},
+    {0xd8cc, 0x00c0, 0xcc0c, 0xc0c0, 0x0c01, 0x8303, 0x1f8c},
+    {0xcccf, 0xf8c0, 0xcff8, 0xc0c0, 0xf806, 0x030f, 0x1f8f},
+    {0xc6cc, 0x00c0, 0xcc30, 0x6180, 0x0c18, 0x0303, 0x1f8c},
+    {0xc3cc, 0x00c0, 0xcc18, 0x330c, 0x0c60, 0x030f, 0x000f},
+    {0xc187, 0xfc7f, 0x8c0c, 0x0c07, 0xf8ff, 0xc303, 0xfffc},
+    {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0300, 0xc630}
   };
 
-  int u,v,w;
+  int x, y, z;
   uint16_t tmp;
   char c;
 
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
-    for (u=0; u<9; u++) {
+    for (y=0; y<(sizeof(logo_c) / sizeof(logo_c[0])); y++) {
       neorv32_uart0_puts("\n");
-      for (v=0; v<7; v++) {
-        tmp = logo_data_c[u][v];
-        for (w=0; w<16; w++){
+      for (x=0; x<(sizeof(logo_c[0]) / sizeof(logo_c[0][0])); x++) {
+        tmp = logo_c[y][x];
+        for (z=0; z<(sizeof(logo_c[0][0])*8); z++){
           c = ' ';
           if (((int16_t)tmp) < 0) { // check MSB
             c = '#';
