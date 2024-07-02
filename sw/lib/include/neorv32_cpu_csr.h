@@ -16,6 +16,8 @@
 #ifndef neorv32_cpu_csr_h
 #define neorv32_cpu_csr_h
 
+#include <stdint.h>
+
 
 /**********************************************************************//**
  * Available CPU Control and Status Registers (CSRs)

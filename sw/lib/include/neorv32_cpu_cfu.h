@@ -16,6 +16,9 @@
 #ifndef neorv32_cpu_cfu_h
 #define neorv32_cpu_cfu_h
 
+#include <stdint.h>
+
+
 // prototypes
 int neorv32_cpu_cfu_available(void);
 

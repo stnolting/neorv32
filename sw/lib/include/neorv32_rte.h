@@ -16,6 +16,8 @@
 #ifndef neorv32_rte_h
 #define neorv32_rte_h
 
+#include <stdint.h>
+
 
 /**********************************************************************//**
  * NEORV32 runtime environment: Number of available traps.
@@ -69,11 +71,10 @@ int      neorv32_rte_handler_uninstall(int id);
 void     neorv32_rte_debug_handler(void);
 uint32_t neorv32_rte_context_get(int x);
 void     neorv32_rte_context_put(int x, uint32_t data);
-void     neorv32_rte_print_info(void);
 
 void neorv32_rte_print_hw_config(void);
 void neorv32_rte_print_hw_version(void);
-void neorv32_rte_print_credits(void);
+void neorv32_rte_print_about(void);
 void neorv32_rte_print_logo(void);
 void neorv32_rte_print_license(void);
 /**@}*/

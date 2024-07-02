@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 02.07.2024 | 1.10.0.7 | minor rtl and software edits and cleanups | [#936](https://github.com/stnolting/neorv32/pull/936) |
 | 30.06.2024 | 1.10.0.6 | minor rtl edits and cleanups | [#935](https://github.com/stnolting/neorv32/pull/935) |
 | 29.06.2024 | 1.10.0.5 | :warning: rework and optimize custom functions unit (CFU) interface; simplified illegal RVC decoding | [#932](https://github.com/stnolting/neorv32/pull/932) |
 | 23.06.2024 | 1.10.0.4 | minor rtl edits/cleanups | [#931](https://github.com/stnolting/neorv32/pull/931) |

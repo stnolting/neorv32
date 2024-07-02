@@ -18,6 +18,9 @@
 #ifndef neorv32_twi_h
 #define neorv32_twi_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: Two-Wire Interface Controller (TWI)
  **************************************************************************/

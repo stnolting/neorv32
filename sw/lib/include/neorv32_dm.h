@@ -18,6 +18,9 @@
 #ifndef neorv32_dm_h
 #define neorv32_dm_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: On-Chip Debugger (CANNOT be accessed by application software!)
  **************************************************************************/

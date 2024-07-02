@@ -18,6 +18,9 @@
 #ifndef neorv32_dma_h
 #define neorv32_dma_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: Direct Memory Access Controller (DMA)
  **************************************************************************/

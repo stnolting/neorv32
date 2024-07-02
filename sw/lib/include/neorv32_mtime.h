@@ -18,6 +18,9 @@
 #ifndef neorv32_mtime_h
 #define neorv32_mtime_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: Machine System Timer (MTIME)
  **************************************************************************/

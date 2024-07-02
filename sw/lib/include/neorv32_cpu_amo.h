@@ -16,6 +16,9 @@
 #ifndef neorv32_cpu_amo_h
 #define neorv32_cpu_amo_h
 
+#include <stdint.h>
+
+
 // prototypes
 uint32_t neorv32_cpu_amoswapw(uint32_t addr, uint32_t wdata);
 uint32_t neorv32_cpu_amoaddw(uint32_t addr, uint32_t wdata);

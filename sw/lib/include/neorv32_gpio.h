@@ -18,6 +18,9 @@
 #ifndef neorv32_gpio_h
 #define neorv32_gpio_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: General Purpose Input/Output Port Unit (GPIO)
  **************************************************************************/

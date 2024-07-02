@@ -16,6 +16,9 @@
 #ifndef neorv32_sysinfo_h
 #define neorv32_sysinfo_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: System Configuration Information Memory (SYSINFO)
  **************************************************************************/

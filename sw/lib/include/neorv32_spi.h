@@ -18,6 +18,9 @@
 #ifndef neorv32_spi_h
 #define neorv32_spi_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: Serial Peripheral Interface Controller (SPI)
  **************************************************************************/
