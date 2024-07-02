@@ -396,7 +396,18 @@ entity neorv32_bus_io_switch is
     DEV_17_EN : boolean; DEV_17_BASE : std_ulogic_vector(31 downto 0);
     DEV_18_EN : boolean; DEV_18_BASE : std_ulogic_vector(31 downto 0);
     DEV_19_EN : boolean; DEV_19_BASE : std_ulogic_vector(31 downto 0);
-    DEV_20_EN : boolean; DEV_20_BASE : std_ulogic_vector(31 downto 0)
+    DEV_20_EN : boolean; DEV_20_BASE : std_ulogic_vector(31 downto 0);
+    DEV_21_EN : boolean; DEV_21_BASE : std_ulogic_vector(31 downto 0);
+    DEV_22_EN : boolean; DEV_22_BASE : std_ulogic_vector(31 downto 0);
+    DEV_23_EN : boolean; DEV_23_BASE : std_ulogic_vector(31 downto 0);
+    DEV_24_EN : boolean; DEV_24_BASE : std_ulogic_vector(31 downto 0);
+    DEV_25_EN : boolean; DEV_25_BASE : std_ulogic_vector(31 downto 0);
+    DEV_26_EN : boolean; DEV_26_BASE : std_ulogic_vector(31 downto 0);
+    DEV_27_EN : boolean; DEV_27_BASE : std_ulogic_vector(31 downto 0);
+    DEV_28_EN : boolean; DEV_28_BASE : std_ulogic_vector(31 downto 0);
+    DEV_29_EN : boolean; DEV_29_BASE : std_ulogic_vector(31 downto 0);
+    DEV_30_EN : boolean; DEV_30_BASE : std_ulogic_vector(31 downto 0);
+    DEV_31_EN : boolean; DEV_31_BASE : std_ulogic_vector(31 downto 0)
   );
   port (
     -- host port --
@@ -423,56 +434,51 @@ entity neorv32_bus_io_switch is
     dev_17_req_o : out bus_req_t; dev_17_rsp_i : in bus_rsp_t;
     dev_18_req_o : out bus_req_t; dev_18_rsp_i : in bus_rsp_t;
     dev_19_req_o : out bus_req_t; dev_19_rsp_i : in bus_rsp_t;
-    dev_20_req_o : out bus_req_t; dev_20_rsp_i : in bus_rsp_t
+    dev_20_req_o : out bus_req_t; dev_20_rsp_i : in bus_rsp_t;
+    dev_21_req_o : out bus_req_t; dev_21_rsp_i : in bus_rsp_t;
+    dev_22_req_o : out bus_req_t; dev_22_rsp_i : in bus_rsp_t;
+    dev_23_req_o : out bus_req_t; dev_23_rsp_i : in bus_rsp_t;
+    dev_24_req_o : out bus_req_t; dev_24_rsp_i : in bus_rsp_t;
+    dev_25_req_o : out bus_req_t; dev_25_rsp_i : in bus_rsp_t;
+    dev_26_req_o : out bus_req_t; dev_26_rsp_i : in bus_rsp_t;
+    dev_27_req_o : out bus_req_t; dev_27_rsp_i : in bus_rsp_t;
+    dev_28_req_o : out bus_req_t; dev_28_rsp_i : in bus_rsp_t;
+    dev_29_req_o : out bus_req_t; dev_29_rsp_i : in bus_rsp_t;
+    dev_30_req_o : out bus_req_t; dev_30_rsp_i : in bus_rsp_t;
+    dev_31_req_o : out bus_req_t; dev_31_rsp_i : in bus_rsp_t
   );
 end neorv32_bus_io_switch;
 
 architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
 
-  -- ------------------------------------------------------------------------------------------- --
-  -- How to add another device port                                                              --
-  -- ------------------------------------------------------------------------------------------- --
-  -- 1. Increment <num_devs_physical_c> (must not exceed <num_devs_logical_c>).                  --
-  -- 2. Append another pair of "DEV_xx_EN" and "DEV_xx_BASE" generics.                           --
-  -- 3. Append these two generics to the according <dev_en_list_c> and <dev_base_list_c> arrays. --
-  -- 4. Append another pair of "dev_xx_req_o" and "dev_xx_rsp_i" ports.                          --
-  -- 5. Append these two ports to the according <dev_req> and <dev_rsp> array assignments in     --
-  --    the "Combine Device Ports" section.                                                      --
-  -- ------------------------------------------------------------------------------------------- --
-
   -- module configuration --
-  constant num_devs_physical_c : natural := 21; -- actual number of devices, max num_devs_logical_c
-  constant num_devs_logical_c  : natural := 32; -- logical max number of devices; do not change!
+  constant num_devs_c : natural := 32; -- number of device ports
 
   -- address bits for access decoding --
   constant abb_lo_c : natural := index_size_f(DEV_SIZE); -- low address boundary bit
-  constant abb_hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_logical_c)) - 1; -- high address boundary bit
+  constant abb_hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_c)) - 1; -- high address boundary bit
 
   -- list of enabled device ports --
-  type dev_en_list_t is array (0 to num_devs_physical_c-1) of boolean;
+  type dev_en_list_t is array (0 to num_devs_c-1) of boolean;
   constant dev_en_list_c : dev_en_list_t := (
-    DEV_00_EN, DEV_01_EN, DEV_02_EN, DEV_03_EN,
-    DEV_04_EN, DEV_05_EN, DEV_06_EN, DEV_07_EN,
-    DEV_08_EN, DEV_09_EN, DEV_10_EN, DEV_11_EN,
-    DEV_12_EN, DEV_13_EN, DEV_14_EN, DEV_15_EN,
-    DEV_16_EN, DEV_17_EN, DEV_18_EN, DEV_19_EN,
-    DEV_20_EN
+    DEV_00_EN, DEV_01_EN, DEV_02_EN, DEV_03_EN, DEV_04_EN, DEV_05_EN, DEV_06_EN, DEV_07_EN,
+    DEV_08_EN, DEV_09_EN, DEV_10_EN, DEV_11_EN, DEV_12_EN, DEV_13_EN, DEV_14_EN, DEV_15_EN,
+    DEV_16_EN, DEV_17_EN, DEV_18_EN, DEV_19_EN, DEV_20_EN, DEV_21_EN, DEV_22_EN, DEV_23_EN,
+    DEV_24_EN, DEV_25_EN, DEV_26_EN, DEV_27_EN, DEV_28_EN, DEV_29_EN, DEV_30_EN, DEV_31_EN
   );
 
   -- list of device base addresses --
-  type dev_base_list_t is array (0 to num_devs_physical_c-1) of std_ulogic_vector(31 downto 0);
+  type dev_base_list_t is array (0 to num_devs_c-1) of std_ulogic_vector(31 downto 0);
   constant dev_base_list_c : dev_base_list_t := (
-    DEV_00_BASE, DEV_01_BASE, DEV_02_BASE, DEV_03_BASE,
-    DEV_04_BASE, DEV_05_BASE, DEV_06_BASE, DEV_07_BASE,
-    DEV_08_BASE, DEV_09_BASE, DEV_10_BASE, DEV_11_BASE,
-    DEV_12_BASE, DEV_13_BASE, DEV_14_BASE, DEV_15_BASE,
-    DEV_16_BASE, DEV_17_BASE, DEV_18_BASE, DEV_19_BASE,
-    DEV_20_BASE
+    DEV_00_BASE, DEV_01_BASE, DEV_02_BASE, DEV_03_BASE, DEV_04_BASE, DEV_05_BASE, DEV_06_BASE, DEV_07_BASE,
+    DEV_08_BASE, DEV_09_BASE, DEV_10_BASE, DEV_11_BASE, DEV_12_BASE, DEV_13_BASE, DEV_14_BASE, DEV_15_BASE,
+    DEV_16_BASE, DEV_17_BASE, DEV_18_BASE, DEV_19_BASE, DEV_20_BASE, DEV_21_BASE, DEV_22_BASE, DEV_23_BASE,
+    DEV_24_BASE, DEV_25_BASE, DEV_26_BASE, DEV_27_BASE, DEV_28_BASE, DEV_29_BASE, DEV_30_BASE, DEV_31_BASE
   );
 
   -- device ports combined as arrays --
-  type dev_req_t is array (0 to num_devs_physical_c-1) of bus_req_t;
-  type dev_rsp_t is array (0 to num_devs_physical_c-1) of bus_rsp_t;
+  type dev_req_t is array (0 to num_devs_c-1) of bus_req_t;
+  type dev_rsp_t is array (0 to num_devs_c-1) of bus_rsp_t;
   signal dev_req : dev_req_t;
   signal dev_rsp : dev_rsp_t;
 
@@ -501,12 +507,23 @@ begin
   dev_18_req_o <= dev_req(18); dev_rsp(18) <= dev_18_rsp_i;
   dev_19_req_o <= dev_req(19); dev_rsp(19) <= dev_19_rsp_i;
   dev_20_req_o <= dev_req(20); dev_rsp(20) <= dev_20_rsp_i;
+  dev_21_req_o <= dev_req(21); dev_rsp(21) <= dev_21_rsp_i;
+  dev_22_req_o <= dev_req(22); dev_rsp(22) <= dev_22_rsp_i;
+  dev_23_req_o <= dev_req(23); dev_rsp(23) <= dev_23_rsp_i;
+  dev_24_req_o <= dev_req(24); dev_rsp(24) <= dev_24_rsp_i;
+  dev_25_req_o <= dev_req(25); dev_rsp(25) <= dev_25_rsp_i;
+  dev_26_req_o <= dev_req(26); dev_rsp(26) <= dev_26_rsp_i;
+  dev_27_req_o <= dev_req(27); dev_rsp(27) <= dev_27_rsp_i;
+  dev_28_req_o <= dev_req(28); dev_rsp(28) <= dev_28_rsp_i;
+  dev_29_req_o <= dev_req(29); dev_rsp(29) <= dev_29_rsp_i;
+  dev_30_req_o <= dev_req(30); dev_rsp(30) <= dev_30_rsp_i;
+  dev_31_req_o <= dev_req(31); dev_rsp(31) <= dev_31_rsp_i;
 
 
   -- Request --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_request_gen:
-  for i in 0 to (num_devs_physical_c-1) generate
+  for i in 0 to (num_devs_c-1) generate
 
     bus_request_port_enabled:
     if dev_en_list_c(i) generate
@@ -514,7 +531,7 @@ begin
       begin
         dev_req(i) <= main_req_i;
         if (main_req_i.addr(abb_hi_c downto abb_lo_c) = dev_base_list_c(i)(abb_hi_c downto abb_lo_c)) then
-          dev_req(i).stb <= main_req_i.stb;
+          dev_req(i).stb <= main_req_i.stb; -- propagate transaction strobe if address match
         else
           dev_req(i).stb <= '0';
         end if;
@@ -526,7 +543,7 @@ begin
       dev_req(i) <= req_terminate_c;
     end generate;
 
-  end generate; -- /bus_request_gen
+  end generate;
 
 
   -- Response -------------------------------------------------------------------------------
@@ -535,7 +552,7 @@ begin
     variable tmp_v : bus_rsp_t;
   begin
     tmp_v := rsp_terminate_c; -- start with all-zero
-    for i in 0 to (num_devs_physical_c-1) loop -- logical OR all response signals
+    for i in 0 to (num_devs_c-1) loop -- OR all enabled response buses
       if dev_en_list_c(i) then
         tmp_v.data := tmp_v.data or dev_rsp(i).data;
         tmp_v.ack  := tmp_v.ack  or dev_rsp(i).ack;

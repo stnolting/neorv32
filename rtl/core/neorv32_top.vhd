@@ -340,7 +340,7 @@ begin
     -- say hello --
     assert false report
       "[NEORV32] The NEORV32 RISC-V Processor " &
-      "(version 0x" & to_hstring32_f(hw_version_c) & "), " &
+      "(v" & print_version_f(hw_version_c) & "), " &
       "github.com/stnolting/neorv32" severity note;
 
     -- show main SoC configuration --
@@ -1033,7 +1033,18 @@ begin
       DEV_17_EN => IO_CRC_EN,           DEV_17_BASE => base_io_crc_c,
       DEV_18_EN => IO_DMA_EN,           DEV_18_BASE => base_io_dma_c,
       DEV_19_EN => IO_SLINK_EN,         DEV_19_BASE => base_io_slink_c,
-      DEV_20_EN => IO_CFS_EN,           DEV_20_BASE => base_io_cfs_c
+      DEV_20_EN => IO_CFS_EN,           DEV_20_BASE => base_io_cfs_c,
+      DEV_21_EN => false,               DEV_31_BASE => (others => '-'), -- reserved
+      DEV_22_EN => false,               DEV_30_BASE => (others => '-'), -- reserved
+      DEV_23_EN => false,               DEV_29_BASE => (others => '-'), -- reserved
+      DEV_24_EN => false,               DEV_28_BASE => (others => '-'), -- reserved
+      DEV_25_EN => false,               DEV_27_BASE => (others => '-'), -- reserved
+      DEV_26_EN => false,               DEV_26_BASE => (others => '-'), -- reserved
+      DEV_27_EN => false,               DEV_25_BASE => (others => '-'), -- reserved
+      DEV_28_EN => false,               DEV_24_BASE => (others => '-'), -- reserved
+      DEV_29_EN => false,               DEV_23_BASE => (others => '-'), -- reserved
+      DEV_30_EN => false,               DEV_22_BASE => (others => '-'), -- reserved
+      DEV_31_EN => false,               DEV_21_BASE => (others => '-')  -- reserved
     )
     port map (
       main_req_i   => io_req,
@@ -1058,7 +1069,18 @@ begin
       dev_17_req_o => iodev_req(IODEV_CRC),     dev_17_rsp_i => iodev_rsp(IODEV_CRC),
       dev_18_req_o => iodev_req(IODEV_DMA),     dev_18_rsp_i => iodev_rsp(IODEV_DMA),
       dev_19_req_o => iodev_req(IODEV_SLINK),   dev_19_rsp_i => iodev_rsp(IODEV_SLINK),
-      dev_20_req_o => iodev_req(IODEV_CFS),     dev_20_rsp_i => iodev_rsp(IODEV_CFS)
+      dev_20_req_o => iodev_req(IODEV_CFS),     dev_20_rsp_i => iodev_rsp(IODEV_CFS),
+      dev_21_req_o => open,                     dev_21_rsp_i => rsp_terminate_c, -- reserved
+      dev_22_req_o => open,                     dev_22_rsp_i => rsp_terminate_c, -- reserved
+      dev_23_req_o => open,                     dev_23_rsp_i => rsp_terminate_c, -- reserved
+      dev_24_req_o => open,                     dev_24_rsp_i => rsp_terminate_c, -- reserved
+      dev_25_req_o => open,                     dev_25_rsp_i => rsp_terminate_c, -- reserved
+      dev_26_req_o => open,                     dev_26_rsp_i => rsp_terminate_c, -- reserved
+      dev_27_req_o => open,                     dev_27_rsp_i => rsp_terminate_c, -- reserved
+      dev_28_req_o => open,                     dev_28_rsp_i => rsp_terminate_c, -- reserved
+      dev_29_req_o => open,                     dev_29_rsp_i => rsp_terminate_c, -- reserved
+      dev_30_req_o => open,                     dev_30_rsp_i => rsp_terminate_c, -- reserved
+      dev_31_req_o => open,                     dev_31_rsp_i => rsp_terminate_c  -- reserved
     );
 
 
