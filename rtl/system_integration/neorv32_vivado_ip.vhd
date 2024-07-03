@@ -305,8 +305,6 @@ begin
     -- Hardware Performance Monitors --
     HPM_NUM_CNTS               => HPM_NUM_CNTS,
     HPM_CNT_WIDTH              => HPM_CNT_WIDTH,
-    -- Atomic Memory Access - Reservation Set Granularity --
-    AMO_RVS_GRANULARITY        => AMO_RVS_GRANULARITY,
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN            => MEM_INT_IMEM_EN,
     MEM_INT_IMEM_SIZE          => MEM_INT_IMEM_SIZE,
