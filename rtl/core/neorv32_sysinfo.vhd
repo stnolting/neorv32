@@ -24,7 +24,6 @@ entity neorv32_sysinfo is
     MEM_INT_IMEM_SIZE     : natural; -- size of processor-internal instruction memory in bytes
     MEM_INT_DMEM_EN       : boolean; -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE     : natural; -- size of processor-internal data memory in bytes
-    AMO_RVS_GRANULARITY   : natural; -- size in bytes, has to be a power of 2, min 4
     ICACHE_EN             : boolean; -- implement instruction cache
     ICACHE_NUM_BLOCKS     : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
     ICACHE_BLOCK_SIZE     : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
@@ -90,7 +89,7 @@ begin
   sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_IMEM_SIZE), 8)); -- log2(IMEM size)
   sysinfo(1)(15 downto 8)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_DMEM_SIZE), 8)); -- log2(DMEM size)
   sysinfo(1)(23 downto 16) <= (others => '0'); -- reserved
-  sysinfo(1)(31 downto 24) <= std_ulogic_vector(to_unsigned(index_size_f(AMO_RVS_GRANULARITY), 8)); -- log2(reservation set granularity)
+  sysinfo(1)(31 downto 24) <= (others => '0'); -- reserved
 
   -- SYSINFO(2): SoC Configuration --
   sysinfo(2)(0)  <= '1' when INT_BOOTLOADER_EN   else '0'; -- processor-internal bootloader implemented?
