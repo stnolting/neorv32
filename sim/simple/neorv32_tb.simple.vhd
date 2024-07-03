@@ -127,8 +127,9 @@ architecture neorv32_tb_simple_rtl of neorv32_tb_simple is
     addr  : std_ulogic_vector(31 downto 0); -- address
     wdata : std_ulogic_vector(31 downto 0); -- master write data
     rdata : std_ulogic_vector(31 downto 0); -- master read data
+    tag   : std_ulogic_vector(2 downto 0); -- access tag
     we    : std_ulogic; -- write enable
-    sel   : std_ulogic_vector(03 downto 0); -- byte enable
+    sel   : std_ulogic_vector(3 downto 0); -- byte enable
     stb   : std_ulogic; -- strobe
     cyc   : std_ulogic; -- valid cycle
     ack   : std_ulogic; -- transfer acknowledge
@@ -270,7 +271,7 @@ begin
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     => wb_cpu.addr,     -- address
     xbus_dat_o     => wb_cpu.wdata,    -- write data
-    xbus_tag_o     => open,            -- access tag
+    xbus_tag_o     => wb_cpu.tag,      -- access tag
     xbus_we_o      => wb_cpu.we,       -- read/write
     xbus_sel_o     => wb_cpu.sel,      -- byte enable
     xbus_stb_o     => wb_cpu.stb,      -- strobe
