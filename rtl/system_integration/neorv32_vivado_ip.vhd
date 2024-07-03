@@ -59,8 +59,6 @@ entity neorv32_vivado_ip is
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS               : natural range 0 to 13          := 0;
     HPM_CNT_WIDTH              : natural range 0 to 64          := 40;
-    -- Atomic Memory Access - Reservation Set Granularity --
-    AMO_RVS_GRANULARITY        : natural range 4 to 2**30       := 4;
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN            : boolean                        := false;
     MEM_INT_IMEM_SIZE          : natural                        := 16*1024;
@@ -307,8 +305,6 @@ begin
     -- Hardware Performance Monitors --
     HPM_NUM_CNTS               => HPM_NUM_CNTS,
     HPM_CNT_WIDTH              => HPM_CNT_WIDTH,
-    -- Atomic Memory Access - Reservation Set Granularity --
-    AMO_RVS_GRANULARITY        => AMO_RVS_GRANULARITY,
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN            => MEM_INT_IMEM_EN,
     MEM_INT_IMEM_SIZE          => MEM_INT_IMEM_SIZE,

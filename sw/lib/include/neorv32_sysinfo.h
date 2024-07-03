@@ -36,10 +36,8 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** NEORV32_SYSINFO->MEM (r/-): Memory configuration (sizes) */
 enum NEORV32_SYSINFO_MEM_enum {
-  SYSINFO_MEM_IMEM =  0, /**< SYSINFO_MEM byte 0 (r/-): log2(internal IMEM size in bytes) (via MEM_INT_IMEM_SIZE generic) */
-  SYSINFO_MEM_DMEM =  1, /**< SYSINFO_MEM byte 1 (r/-): log2(internal DMEM size in bytes) (via MEM_INT_DMEM_SIZE generic) */
-
-  SYSINFO_MEM_RVSG =  3  /**< SYSINFO_MEM byte 3 (r/-): log2(reservation set granularity in bytes) (via AMO_RVS_GRANULARITY generic) */
+  SYSINFO_MEM_IMEM = 0, /**< SYSINFO_MEM byte 0 (r/-): log2(internal IMEM size in bytes) (via MEM_INT_IMEM_SIZE generic) */
+  SYSINFO_MEM_DMEM = 1  /**< SYSINFO_MEM byte 1 (r/-): log2(internal DMEM size in bytes) (via MEM_INT_DMEM_SIZE generic) */
 };
 
 /** NEORV32_SYSINFO->SOC (r/-): Implemented processor devices/features */

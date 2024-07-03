@@ -575,8 +575,7 @@ end neorv32_bus_io_switch_rtl;
 -- -------------------------------------------------------------------------------- --
 -- Reservation set controller for the A (atomic) ISA extension's LR.W               --
 -- (load-reservate) and SC.W (store-conditional) instructions. Only a single        --
--- reservation set is supported. The reservation set's granularity can be           --
--- configured via the GRANULARITY generic.                                          --
+-- reservation set (granularity = 4 bytes) is supported. T                          --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -593,9 +592,6 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_bus_reservation_set is
-  generic (
-    GRANULARITY : natural range 4 to natural'high -- reservation set granularity in bytes; has to be power of 2, min 4
-  );
   port (
     -- global control --
     clk_i       : in  std_ulogic; -- global clock, rising edge
@@ -615,17 +611,10 @@ end neorv32_bus_reservation_set;
 
 architecture neorv32_bus_reservation_set_rtl of neorv32_bus_reservation_set is
 
-  -- auto-configuration --
-  constant granularity_valid_c : boolean := is_power_of_two_f(GRANULARITY);
-  constant granularity_c       : natural := cond_sel_natural_f(granularity_valid_c, GRANULARITY, 2**index_size_f(GRANULARITY));
-
-  -- reservation set granularity address boundary bit --
-  constant abb_c : natural := index_size_f(granularity_c);
-
   -- reservation set --
   type rsvs_t is record
-    state : std_ulogic_vector(01 downto 0);
-    addr  : std_ulogic_vector(31 downto abb_c);
+    state : std_ulogic_vector(1 downto 0);
+    addr  : std_ulogic_vector(31 downto 2); -- reservated address; 4-byte granularity
     valid : std_ulogic;
     match : std_ulogic;
   end record;
@@ -635,12 +624,6 @@ architecture neorv32_bus_reservation_set_rtl of neorv32_bus_reservation_set is
   signal ack_local : std_ulogic;
 
 begin
-
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not (granularity_valid_c = false) report
-    "[NEORV32] Auto-adjusting invalid reservation set granularity configuration." severity warning;
-
 
   -- Reservation Set Control ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -655,7 +638,7 @@ begin
         when "10" => -- active reservation: wait for condition to invalidate reservation
         -- --------------------------------------------------------------------
           if (core_req_i.stb = '1') and (core_req_i.rw = '0') and (core_req_i.rvso = '1') then -- another LR instruction overriding the current reservation
-            rsvs.addr <= core_req_i.addr(31 downto abb_c);
+            rsvs.addr <= core_req_i.addr(31 downto 2);
           end if;
           --
           if (rvs_clear_i = '1') then -- external clear request (highest priority)
@@ -684,7 +667,7 @@ begin
         when others => -- "0-" no active reservation: wait for new registration request
         -- --------------------------------------------------------------------
           if (core_req_i.stb = '1') and (core_req_i.rw = '0') and (core_req_i.rvso = '1') then -- load-reservate instruction
-            rsvs.addr  <= core_req_i.addr(31 downto abb_c);
+            rsvs.addr  <= core_req_i.addr(31 downto 2);
             rsvs.state <= "10";
           end if;
 
@@ -693,15 +676,14 @@ begin
   end process rvs_control;
 
   -- address match? --
-  rsvs.match <= '1' when (core_req_i.addr(31 downto abb_c) = rsvs.addr) else '0';
+  rsvs.match <= '1' when (core_req_i.addr(31 downto 2) = rsvs.addr) else '0';
 
   -- reservation valid? --
   rsvs.valid <= rsvs.state(1);
 
   -- status for external system --
-  rvs_valid_o                  <= rsvs.valid;
-  rvs_addr_o(31 downto abb_c)  <= rsvs.addr;
-  rvs_addr_o(abb_c-1 downto 0) <= (others => '0');
+  rvs_valid_o <= rsvs.valid;
+  rvs_addr_o  <= rsvs.addr & "00";
 
 
   -- System Bus Interface -------------------------------------------------------------------

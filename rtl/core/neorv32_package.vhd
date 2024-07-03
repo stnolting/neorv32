@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100008"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100009"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -742,8 +742,6 @@ package neorv32_package is
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS               : natural range 0 to 13          := 0;
       HPM_CNT_WIDTH              : natural range 0 to 64          := 40;
-      -- Atomic Memory Access - Reservation Set Granularity --
-      AMO_RVS_GRANULARITY        : natural range 4 to 2**30       := 4;
       -- Internal Instruction memory (IMEM) --
       MEM_INT_IMEM_EN            : boolean                        := false;
       MEM_INT_IMEM_SIZE          : natural                        := 16*1024;

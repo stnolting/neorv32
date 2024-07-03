@@ -590,15 +590,6 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("none\n");
   }
 
-  // reservation set granularity
-  neorv32_uart0_printf("Reservation set:     ");
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << 0)) {
-    neorv32_uart0_printf("%u bytes granularity\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_RVSG]) & 0xFFFFFFFCUL);
-  }
-  else {
-    neorv32_uart0_printf("none\n");
-  }
-
   // external bus interface
   neorv32_uart0_printf("Ext. bus interface:  ");
   tmp = NEORV32_SYSINFO->SOC;

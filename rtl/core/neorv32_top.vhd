@@ -1,11 +1,10 @@
 -- ================================================================================ --
 -- NEORV32 SoC - Processor Top Entity                                               --
 -- -------------------------------------------------------------------------------- --
--- Check out the processor's online documentation for more information:             --
--- > HQ:           https://github.com/stnolting/neorv32                             --
--- > Data Sheet:   https://stnolting.github.io/neorv32                              --
--- > User Guide:   https://stnolting.github.io/neorv32/ug                           --
--- > Software Ref: https://stnolting.github.io/neorv32/sw/files.html                --
+-- HQ:           https://github.com/stnolting/neorv32                               --
+-- Data Sheet:   https://stnolting.github.io/neorv32                                --
+-- User Guide:   https://stnolting.github.io/neorv32/ug                             --
+-- Software Ref: https://stnolting.github.io/neorv32/sw/files.html                  --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -62,9 +61,6 @@ entity neorv32_top is
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS               : natural range 0 to 13          := 0;           -- number of implemented HPM counters (0..13)
     HPM_CNT_WIDTH              : natural range 0 to 64          := 40;          -- total size of HPM counters (0..64)
-
-    -- Atomic Memory Access - Reservation Set Granularity --
-    AMO_RVS_GRANULARITY        : natural range 4 to 2**30       := 4;           -- size in bytes, has to be a power of 2, min 4
 
     -- Internal Instruction memory (IMEM) --
     MEM_INT_IMEM_EN            : boolean                        := false;       -- implement processor-internal instruction memory
@@ -713,9 +709,6 @@ begin
   neorv32_bus_reservation_set_true:
   if CPU_EXTENSION_RISCV_A generate
     neorv32_bus_reservation_set_inst: entity neorv32.neorv32_bus_reservation_set
-    generic map (
-      GRANULARITY => AMO_RVS_GRANULARITY
-    )
     port map (
       clk_i       => clk_i,
       rstn_i      => rstn_sys,
@@ -1604,7 +1597,6 @@ begin
       MEM_INT_IMEM_SIZE     => imem_size_c,
       MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
       MEM_INT_DMEM_SIZE     => dmem_size_c,
-      AMO_RVS_GRANULARITY   => AMO_RVS_GRANULARITY,
       ICACHE_EN             => ICACHE_EN,
       ICACHE_NUM_BLOCKS     => ICACHE_NUM_BLOCKS,
       ICACHE_BLOCK_SIZE     => ICACHE_BLOCK_SIZE,

@@ -1615,7 +1615,7 @@
             <field><name>SYSINFO_MEM_0</name><bitRange>[7:0]</bitRange><description>log2(IMEM size in bytes)</description></field>
             <field><name>SYSINFO_MEM_1</name><bitRange>[15:8]</bitRange><description>log2(DMEM size in bytes)</description></field>
             <field><name>SYSINFO_MEM_2</name><bitRange>[23:16]</bitRange><description>yet unused</description></field>
-            <field><name>SYSINFO_MEM_3</name><bitRange>[31:24]</bitRange><description>log2(reservation set granularity in bytes)</description></field>
+            <field><name>SYSINFO_MEM_3</name><bitRange>[31:24]</bitRange><description>yet unused</description></field>
           </fields>
         </register>
         <register>
