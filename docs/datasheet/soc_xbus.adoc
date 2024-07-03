@@ -49,7 +49,7 @@ https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_bl
 
 .AHB3-Lite Interface Bridge
 [TIP]
-A simple bridge that converts the processor's XBUS into an AHB3-lite-compatible host interface can 
+A simple bridge that converts the processor's XBUS into an AHB3-lite-compatible host interface can
 be found in in `rtl/system_inegration` (`xbus2ahblite_bridge.vhd`).
 
 
