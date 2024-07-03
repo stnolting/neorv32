@@ -41,11 +41,16 @@ The external interface is **not** mapped to a specific address space. Instead, a
 do not target a specific (and actually implemented) processor-internal address region (hence, accessing the "void";
 see section <<_address_space>>) are **redirected** to the external bus interface.
 
-.AXI4-Lite Interface
+.AXI4-Lite Interface Bridge
 [TIP]
 A processor top entity with an AXI4-Lite-compatible bus interface can be found in `rtl/system_inegration`.
 More information regarding this alternate top entity can be found in in the user guide:
 https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block
+
+.AHB3-Lite Interface Bridge
+[TIP]
+A simple bridge that converts the processor's XBUS into an AHB3-lite-compatible host interface can
+be found in in `rtl/system_inegration` (`xbus2ahblite_bridge.vhd`).
 
 
 **Wishbone Bus Protocol**
