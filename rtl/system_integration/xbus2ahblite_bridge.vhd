@@ -44,8 +44,9 @@ end xbus2ahblite_bridge;
 
 architecture xbus2ahblite_bridge_rtl of xbus2ahblite_bridge is
 
-  -- pending bus transaction (bus is in "data phase") --
-  signal pending_q : std_ulogic;
+  -- arbiter --
+  signal addr_ack_q : std_ulogic; -- address phase transfer completed
+  signal pending_q  : std_ulogic; -- pending bus transaction (bus is in "data phase")
 
 begin
 
@@ -53,23 +54,28 @@ begin
   arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      pending_q <= '0';
+      addr_ack_q <= '0';
+      pending_q  <= '0';
     elsif rising_edge(clk_i) then
-      if (pending_q = '0') then -- idle
+      if (pending_q = '0') then -- idle (also AHB address phase)
+        addr_ack_q <= ahb_hready_i; -- sample HREADY in address phase
         if (xbus_stb_i = '1') then
           pending_q <= '1';
         end if;
       else -- transfer in progress (AHB data phase)
-        if (ahb_hready_i = '1') or (xbus_cyc_i = '0') then
-          pending_q <= '0';
+        -- complete if HREADY has acknowledged address phase and is acknowledging data phase
+        -- abort if core terminated the transfer by pulling CYC low
+        if ((addr_ack_q = '1') and (ahb_hready_i = '1')) or (xbus_cyc_i = '0') then
+          addr_ack_q <= '0';
+          pending_q  <= '0';
         end if;
       end if;
     end if;
   end process arbiter;
 
   -- host response: evaluate in data phase --
-  xbus_ack_o <= '1' when (pending_q = '1') and (ahb_hresp_i = '0') else '0'; -- okay
-  xbus_err_o <= '1' when (pending_q = '1') and (ahb_hresp_i = '1') else '0'; -- error
+  xbus_ack_o <= '1' when (addr_ack_q = '1') and (pending_q = '1') and (ahb_hready_i = '1') and (ahb_hresp_i = '0') else '0'; -- okay
+  xbus_err_o <= '1' when (addr_ack_q = '1') and (pending_q = '1') and (ahb_hready_i = '1') and (ahb_hresp_i = '1') else '0'; -- error
 
   -- host request: NONSEQ during address phase, IDLE during data phase --
   ahb_htrans_o <= "10" when (xbus_stb_i = '1') else "00";
