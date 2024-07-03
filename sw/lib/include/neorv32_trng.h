@@ -18,6 +18,9 @@
 #ifndef neorv32_trng_h
 #define neorv32_trng_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: True Random Number Generator (TRNG)
  **************************************************************************/

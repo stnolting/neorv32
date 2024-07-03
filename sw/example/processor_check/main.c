@@ -149,7 +149,7 @@ int main() {
   // fancy intro
   // -----------------------------------------------
   neorv32_rte_print_logo(); // show NEORV32 ASCII logo
-  neorv32_rte_print_credits(); // show project credits
+  neorv32_rte_print_about(); // show project credits
   neorv32_rte_print_hw_config(); // show full hardware configuration report
 
 
@@ -992,7 +992,7 @@ int main() {
   // Fast interrupt channel 0
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FIRQ (TRNG) ", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ0 (TRNG) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
     cnt_test++;

@@ -111,9 +111,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library neorv32;
-use neorv32.neorv32_package.all;
-
 entity neorv32_cpu_cp_cfu is
   port (
     -- global control --
@@ -251,12 +248,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   result_select: process(rtype_i, funct3_i, xtea)
   begin
-    -- defaults --
-    result_o <= (others => '0');
-    valid_o  <= '0';
-
-    -- check instruction type --
-    case rtype_i is
+    case rtype_i is -- check instruction type
 
       when r3type_c => -- R3-type instructions; function select via "funct3" and ""funct7
       -- ----------------------------------------------------------------------

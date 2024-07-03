@@ -18,6 +18,9 @@
 #ifndef neorv32_onewire_h
 #define neorv32_onewire_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: 1-Wire Interface Controller (ONEWIRE)
  **************************************************************************/

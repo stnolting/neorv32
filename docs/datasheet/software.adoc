@@ -94,7 +94,8 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 | `neorv32_dma.c`     | `neorv32_dma.h`        | <<_direct_memory_access_controller_dma>> HAL
 | `neorv32_gpio.c`    | `neorv32_gpio.h`       | <<_general_purpose_input_and_output_port_gpio>> HAL
 | `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | <<_general_purpose_timer_gptmr>> HAL
-| -                   | `neorv32_intrinsics.h` | Macros for intrinsics & custom instructions
+| -                   | `neorv32_intrinsics.h` | Macros for intrinsics and custom instructions
+| -                   | `neorv32_legacy.h`     | Legacy compatibility layer / wrappers (**do not use for new designs!**)
 | `neorv32_mtime.c`   | `neorv32_mtime.h`      | <<_machine_system_timer_mtime>> HAL
 | `neorv32_neoled.c`  | `neorv32_neoled.h`     | <<_smart_led_interface_neoled>> HAL
 | `neorv32_onewire.c` | `neorv32_onewire.h`    | <<_one_wire_serial_interface_controller_onewire>> HAL

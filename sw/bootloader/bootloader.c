@@ -480,7 +480,7 @@ void start_app(int boot_xip) {
 /**********************************************************************//**
  * Bootloader trap handler. Used for the MTIME tick and to capture any other traps.
  *
- * @note Since we have no runtime environment, we have to use the interrupt attribute here.
+ * @note Since we have no runtime environment we have to use the interrupt attribute here.
  **************************************************************************/
 void __attribute__((interrupt("machine"))) bootloader_trap_handler(void) {
 
@@ -728,9 +728,9 @@ void print_hex_word(uint32_t num) {
 
 
 
-// -------------------------------------------------------------------------------------
+// ##########################################################################################################
 // SPI flash driver functions
-// -------------------------------------------------------------------------------------
+// ##########################################################################################################
 
 /**********************************************************************//**
  * Wake up flash from deep sleep state
@@ -743,6 +743,7 @@ void spi_flash_wakeup(void) {
   neorv32_spi_cs_dis();
 #endif
 }
+
 
 /**********************************************************************//**
  * Check if SPI and flash are available/working by making sure the WEL
@@ -773,6 +774,7 @@ int spi_flash_check(void) {
   return -1;
 #endif
 }
+
 
 /**********************************************************************//**
  * Read byte from SPI flash.

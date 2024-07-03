@@ -16,6 +16,8 @@
 #ifndef neorv32_cpu_h
 #define neorv32_cpu_h
 
+#include <stdint.h>
+
 
 /**********************************************************************//**
  * @name Prototypes

@@ -133,8 +133,8 @@ int main() {
   #endif
 
   // setup input variables
-  uint startTime, stopTime;
-  uint totalTime = 0;
+  uint32_t startTime, stopTime;
+  uint32_t totalTime = 0;
   #ifndef instCalls
     #define instCalls 256
   #endif

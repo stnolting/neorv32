@@ -18,6 +18,9 @@
 #ifndef neorv32_gptmr_h
 #define neorv32_gptmr_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: General Purpose Timer (GPTMR)
  **************************************************************************/

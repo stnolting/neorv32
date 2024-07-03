@@ -18,6 +18,9 @@
 #ifndef neorv32_pwm_h
 #define neorv32_pwm_h
 
+#include <stdint.h>
+
+
 /**********************************************************************//**
  * @name IO Device: Pulse Width Modulation Controller (PWM)
  **************************************************************************/
