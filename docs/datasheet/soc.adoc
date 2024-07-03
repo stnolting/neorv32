@@ -231,8 +231,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 4+^| **Hardware Performance Monitors (<<_zihpm_isa_extension>>)**
 | `HPM_NUM_CNTS`          | natural   | 0          | Number of implemented hardware performance monitor counters (0..13).
 | `HPM_CNT_WIDTH`         | natural   | 40         | Total LSB-aligned size of each HPM counter. Min 0, max 64.
-4+^| **Atomic Memory Access Reservation Set Granularity (<<_a_isa_extension>>)**
-| `AMO_RVS_GRANULARITY`   | natural   | 4          | Size in bytes, has to be a power of 2, min 4.
 4+^| **Internal <<_instruction_memory_imem>>**
 | `MEM_INT_IMEM_EN`       | boolean   | false      | Implement the processor-internal instruction memory.
 | `MEM_INT_IMEM_SIZE`     | natural   | 16*1024    | Size in bytes of the processor internal instruction memory (use a power of 2).
@@ -567,6 +565,10 @@ the reservation is still valid the write access triggered by the SC instruction 
 return a "success" state (`rd` = 0). If the reservation has been invalidated the SC instruction will not write to memory
 and will return a "failed" state (`rd` = 1).
 
+.Reservation Set(s) and Granule
+[NOTE]
+The reservation set controller supports only **a single** global reservation set with a **word-aligned 4-byte granule**.
+
 The reservation is invalidated if...
 
 * an SC instruction is executed that accesses an address **outside** of the reservation set of the previous LR instruction.
@@ -592,12 +594,6 @@ If the SC operation causes a bus access error (raising a store access exception)
 The LR/SC mechanism follows the _strong semantic_ approach: the LR/SC instruction pair fails only if there is a write
 access to the referenced memory location between the LR and SC instructions (by the CPU itself or by the DMA).
 Context changes, interrupts, traps, etc. do not effect nor invalidate the reservation state at all.
-
-The controller supports only a single global reservation set. By default this reservation set "monitors" a word-aligned
-4-byte granule. However, the granularity can be customized via the `AMO_RVS_GRANULARITY` top entity generic (see
-<<_processor_top_entity_generics>>) to cover an arbitrarily large naturally aligned address region. The only constraint is
-that the size of the address region has to be a power of two. The configured granularity can be determined by software via
-the <<_system_configuration_information_memory_sysinfo>> module.
 
 .Physical Memory Attributes
 [NOTE]
