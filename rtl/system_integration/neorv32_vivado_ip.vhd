@@ -226,8 +226,6 @@ entity neorv32_vivado_ip is
     neoled_o       : out std_ulogic;
     -- Machine timer system time (available if IO_MTIME_EN = true) --
     mtime_time_o   : out std_ulogic_vector(63 downto 0);
-    -- GPTMR timer capture (available if IO_GPTMR_EN = true) --
-    gptmr_trig_i   : in  std_ulogic := '0';
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_ulogic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0');
     -- CPU Interrupts --
@@ -437,8 +435,6 @@ begin
     neoled_o       => neoled_o,
     -- Machine timer system time (available if IO_MTIME_EN = true) --
     mtime_time_o   => mtime_time_o,
-    -- GPTMR timer capture (available if IO_GPTMR_EN = true) --
-    gptmr_trig_i   => gptmr_trig_i,
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         => xirq_i_aux,
     -- CPU Interrupts --

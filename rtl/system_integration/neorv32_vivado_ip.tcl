@@ -86,7 +86,6 @@ set_property enablement_dependency {$io_pwm_num_ch > 0}          [ipx::get_ports
 set_property enablement_dependency {$io_cfs_en = true}           [ipx::get_ports cfs_*        -of_objects [ipx::current_core]]
 set_property enablement_dependency {$io_neoled_en = true}        [ipx::get_ports neoled_o     -of_objects [ipx::current_core]]
 set_property enablement_dependency {$io_mtime_en = true}         [ipx::get_ports mtime_time_o -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_gptmr_en = true}         [ipx::get_ports gptmr_trig_i -of_objects [ipx::current_core]]
 set_property enablement_dependency {$xirq_num_ch > 0}            [ipx::get_ports xirq_i       -of_objects [ipx::current_core]]
 set_property enablement_dependency {$io_mtime_en = false}        [ipx::get_ports mtime_irq_i  -of_objects [ipx::current_core]]
 
