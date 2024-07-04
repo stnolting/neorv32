@@ -712,39 +712,20 @@
               <description>Clock prescaler select</description>
             </field>
             <field>
-              <name>GPTMR_CTRL_IRQM</name>
+              <name>GPTMR_CTRL_MODE</name>
               <bitRange>[4:4]</bitRange>
-              <description>Enable interrupt on timer match</description>
+              <description>Operation mode (0=single-shot, 1=continuous)</description>
             </field>
             <field>
-              <name>GPTMR_CTRL_IRQC</name>
-              <bitRange>[5:5]</bitRange>
-              <description>Enable interrupt on capture trigger</description>
-            </field>
-            <field>
-              <name>GPTMR_CTRL_RISE</name>
-              <bitRange>[6:6]</bitRange>
-              <description>Capture on rising edge; capture-mode only</description>
-            </field>
-            <field>
-              <name>GPTMR_CTRL_FALL</name>
-              <bitRange>[7:7]</bitRange>
-              <description>Capture on falling edge; capture-mode only</description>
-            </field>
-            <field>
-              <name>GPTMR_CTRL_FILTER</name>
-              <bitRange>[8:8]</bitRange>
-              <description>Filter capture input; capture-mode only</description>
-            </field>
-            <field>
-              <name>GPTMR_CTRL_TRIGM</name>
+              <name>GPTMR_CTRL_IRQ_CLR</name>
               <bitRange>[30:30]</bitRange>
-              <description>Timer-match has fired, cleared by writing 0</description>
+              <description>Set to clear timer-match interrupt</description>
             </field>
             <field>
-              <name>GPTMR_CTRL_TRIGC</name>
+              <name>GPTMR_CTRL_IRQ_PND</name>
               <bitRange>[31:31]</bitRange>
-              <description>Capture-trigger has fired, cleared by writing</description>
+              <access>read-only</access>
+              <description>Timer-match interrupt pending</description>
             </field>
           </fields>
         </register>
@@ -757,11 +738,6 @@
           <name>COUNT</name>
           <description>Counter register</description>
           <addressOffset>0x08</addressOffset>
-        </register>
-        <register>
-          <name>CAPTURE</name>
-          <description>Capture register</description>
-          <addressOffset>0x0C</addressOffset>
           <access>read-only</access>
         </register>
       </registers>

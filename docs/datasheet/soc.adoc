@@ -36,7 +36,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ custom functions subsystem for custom co-processor extensions (<<_custom_functions_subsystem_cfs,**CFS**>>)
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
 * _optional_ external interrupt controller with up to 32 channels (<<_external_interrupt_controller_xirq,**XIRQ**>>)
-* _optional_ general purpose 32-bit timer (<<_general_purpose_timer_gptmr,**GPTMR**>>) with capture input
+* _optional_ general purpose 32-bit timer (<<_general_purpose_timer_gptmr,**GPTMR**>>)
 * _optional_ execute in-place module (<<_execute_in_place_module_xip,**XIP**>>)
 * _optional_ 1-wire serial interface controller (<<_one_wire_serial_interface_controller_onewire,**ONEWIRE**>>), compatible to the 1-wire standard
 * _optional_ autonomous direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
@@ -151,8 +151,6 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 | `neoled_o`       |  1 | out |   -   | asynchronous serial data output
 5+^| **<<_machine_system_timer_mtime>>**
 | `mtime_time_o`   | 64 | out |   -   | MTIME system time output
-5+^| **<<_general_purpose_timer_gptmr>>**
-| `gptmr_trig_i`   |  1 |  in | `'L'` | timer capture input
 5+^| **<<_external_interrupt_controller_xirq>>**
 | `xirq_i`         | 32 |  in | `'L'` | external interrupt requests
 5+^| **RISC-V Machine-Mode <<_processor_interrupts>>**

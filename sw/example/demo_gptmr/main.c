@@ -34,7 +34,7 @@ void gptmr_firq_handler(void);
  *
  * @note This program requires the GPTMR unit to be synthesized (and UART0 and GPIO).
  *
- * @return Should not return;
+ * @return Should not return.
  **************************************************************************/
 int main() {
 
@@ -63,7 +63,7 @@ int main() {
   // install GPTMR interrupt handler
   neorv32_rte_handler_install(GPTMR_RTE_ID, gptmr_firq_handler);
 
-  // configure timer for 0.5Hz ticks with clock divisor = 8 and enable timer-match interrupt
+  // configure timer for 0.5Hz ticks with clock divisor = 8 and set to run in continuous mode
   neorv32_gptmr_setup(CLK_PRSC_8, NEORV32_SYSINFO->CLK / (8 * 2), 1);
 
   // enable interrupt
@@ -87,7 +87,7 @@ int main() {
  **************************************************************************/
 void gptmr_firq_handler(void) {
 
-  neorv32_gptmr_trigger_matched(); // clear timer-match interrupt
+  neorv32_gptmr_irq_ack(); // clear pending timer-internal interrupt
 
   neorv32_uart0_putc('.'); // send tick symbol via UART0
   neorv32_gpio_pin_toggle(0); // toggle output port bit 0

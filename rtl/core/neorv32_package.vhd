@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100009"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100010"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -879,8 +879,6 @@ package neorv32_package is
       neoled_o       : out std_ulogic;
       -- Machine timer system time (available if IO_MTIME_EN = true) --
       mtime_time_o   : out std_ulogic_vector(63 downto 0);
-      -- GPTMR timer capture (available if IO_GPTMR_EN = true) --
-      gptmr_trig_i   : in  std_ulogic := 'L';
       -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
       xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');
       -- CPU Interrupts --
