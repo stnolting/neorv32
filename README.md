@@ -32,7 +32,6 @@ For example, the CPU ensures _all_ memory accesses are properly acknowledged and
 instructions are always detected as such. Whenever an unexpected state occurs the application software is
 informed via _precise_ and resumable hardware exceptions.
 
-* :books: For detailed information see the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
 * :recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
 * :heavy_check_mark: [Continuous integration](#project-status) to check for regressions (including RISC-V ISA compatibility check using **RISCOF**).
 * :open_file_folder: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
@@ -46,6 +45,7 @@ targeting various FPGA boards and toolchains to get started.
 * :label: The project's change log is available in [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
 * :rocket: Check out the [quick links below](#5-getting-started) and the
 [*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started setting up _your_ NEORV32 processor!
+* :books: For detailed information see the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
 * :interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
 
 Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
@@ -140,7 +140,7 @@ allows booting application code via UART or from external SPI flash
 **Timers and Counters**
 
 * 64-bit machine timer ([MTIME](https://stnolting.github.io/neorv32/#_machine_system_timer_mtime)), RISC-V spec. compatible
-* 32-bit general purpose timer ([GPTMR](https://stnolting.github.io/neorv32/#_general_purpose_timer_gptmr)) with capture input
+* 32-bit general purpose timer ([GPTMR](https://stnolting.github.io/neorv32/#_general_purpose_timer_gptmr))
 * watchdog timer ([WDT](https://stnolting.github.io/neorv32/#_watchdog_timer_wdt))
 
 **Input / Output**
