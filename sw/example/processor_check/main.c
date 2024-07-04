@@ -1494,8 +1494,8 @@ int main() {
     // enable GPTMR FIRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << GPTMR_FIRQ_ENABLE);
 
-    // match-interrupt after CLK_PRSC_2*THRESHOLD = 2*2 = 8 clock cycles
-    neorv32_gptmr_setup(CLK_PRSC_2, 2, 1);
+    // match-interrupt after CLK_PRSC_2*THRESHOLD = 2*2 = 8 clock cycles, single-shot mode
+    neorv32_gptmr_setup(CLK_PRSC_2, 2, 0);
 
     // wait for interrupt
     asm volatile ("nop");
@@ -1504,8 +1504,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == GPTMR_TRAP_CODE) && // correct interrupt?
-        (neorv32_gptmr_trigger_matched()  == 1) && // IRQ caused by timer match?
-        (neorv32_gptmr_trigger_captured() == 0)) { // no capture trigger?
+        (NEORV32_GPTMR->CTRL & (1 << GPTMR_CTRL_IRQ_PND))) { // timer interrupt pending?
       test_ok();
     }
     else {

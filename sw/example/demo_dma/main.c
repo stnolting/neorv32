@@ -238,7 +238,7 @@ int main() {
     // configure GPTMR
     neorv32_gptmr_setup(CLK_PRSC_2, // GPTM clock = 1/2 main clock
                         4096,       // counter threshold for triggering IRQ
-                        1);         // enable timer-match interrupt
+                        0);         // single-shot mode
 
     // configure transfer type
     cmd = DMA_CMD_B2B       | // read source in byte quantities, write destination in byte quantities
@@ -270,6 +270,7 @@ int main() {
       neorv32_uart0_printf("Transfer succeeded!\n");
     }
 
+    neorv32_gptmr_disable(); // disable GPTMR
     show_arrays();
   }
   else {
@@ -338,7 +339,7 @@ void show_arrays(void) {
  **************************************************************************/
 void dma_firq_handler(void) {
 
-  neorv32_gptmr_trigger_matched(); // clear GPTMR timer-match interrupt
+  neorv32_gptmr_irq_ack(); // clear GPTMR timer-match interrupt
   NEORV32_DMA->CTRL &= ~(1<<DMA_CTRL_DONE); // clear DMA-done interrupt
   neorv32_gptmr_disable(); // disable GPTMR
   neorv32_uart0_printf("<<DMA interrupt>>\n");
