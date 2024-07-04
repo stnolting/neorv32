@@ -222,9 +222,6 @@ entity neorv32_top is
     -- Machine timer system time (available if IO_MTIME_EN = true) --
     mtime_time_o   : out std_ulogic_vector(63 downto 0); -- current system time
 
-    -- GPTMR timer capture (available if IO_GPTMR_EN = true) --
-    gptmr_trig_i   : in  std_ulogic := 'L'; -- capture trigger
-
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- IRQ channels
 
@@ -1485,8 +1482,7 @@ begin
         bus_rsp_o   => iodev_rsp(IODEV_GPTMR),
         clkgen_en_o => cg_en(CG_GPTMR),
         clkgen_i    => clk_gen,
-        irq_o       => firq(FIRQ_GPTMR),
-        capture_i   => gptmr_trig_i
+        irq_o       => firq(FIRQ_GPTMR)
       );
     end generate;
 
