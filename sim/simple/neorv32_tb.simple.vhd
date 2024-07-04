@@ -333,8 +333,6 @@ begin
     neoled_o       => open,            -- async serial data line
     -- Machine timer system time (available if IO_MTIME_EN = true) --
     mtime_time_o   => open,
-    -- GPTMR timer capture (available if IO_GPTMR_EN = true) --
-    gptmr_trig_i   => gpio(63),        -- capture trigger
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         => gpio(31 downto 0), -- IRQ channels
     -- CPU Interrupts --
