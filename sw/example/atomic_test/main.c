@@ -250,8 +250,8 @@ int main() {
 
 #else
 
-  #warning Program HAS NOT BEEN COMPILED as RISC-V A ISA extensions is not enabled!
-  neorv32_uart0_printf("\nProgram HAS NOT BEEN COMPILED as RISC-V A ISA extensions is not enabled!\n");
+  #warning Program HAS NOT BEEN COMPILED since RISC-V 'A' ISA extension is not enabled!
+  neorv32_uart0_printf("\nProgram HAS NOT BEEN COMPILED since RISC-V 'A' ISA extension is not enabled!\n");
 
 #endif
 
