@@ -5,7 +5,7 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source files:  | neorv32_gpio.vhd | 
+| Hardware source files:  | neorv32_gpio.vhd |
 | Software driver files:  | neorv32_gpio.c |
 |                         | neorv32_gpio.h |
 | Top entity ports:       | `gpio_o` | 64-bit parallel output port
@@ -37,8 +37,8 @@ be performed within a single clock cycle.
 [options="header",grid="rows"]
 |=======================
 | Address      | Name [C]    | Bit(s) | R/W | Function
-| `0xfffffc00` | `INPUT_LO`  | 31:0   | r/- | parallel input port pins 31:0
-| `0xfffffc04` | `INPUT_HI`  | 31:0   | r/- | parallel input port pins 63:32
-| `0xfffffc08` | `OUTPUT_LO` | 31:0   | r/w | parallel output port pins 31:0
-| `0xfffffc0c` | `OUTPUT_HI` | 31:0   | r/w | parallel output port pins 63:32
+| `0xfffffc00` | `INPUT[0]`  | 31:0   | r/- | parallel input port pins 31:0
+| `0xfffffc04` | `INPUT[1]`  | 31:0   | r/- | parallel input port pins 63:32
+| `0xfffffc08` | `OUTPUT[0]` | 31:0   | r/w | parallel output port pins 31:0
+| `0xfffffc0c` | `OUTPUT[1]` | 31:0   | r/w | parallel output port pins 63:32
 |=======================

@@ -1437,24 +1437,24 @@
 
       <registers>
         <register>
-          <name>INPUT_LO</name>
+          <name>INPUT[0]</name>
           <description>Parallel input register - low</description>
           <addressOffset>0x00</addressOffset>
           <access>read-only</access>
         </register>
         <register>
-          <name>INPUT_HI</name>
+          <name>INPUT[1]</name>
           <description>Parallel input register - high</description>
           <addressOffset>0x04</addressOffset>
           <access>read-only</access>
         </register>
         <register>
-          <name>OUTPUT_LO</name>
+          <name>OUTPUT[0]</name>
           <description>Parallel output register - low</description>
           <addressOffset>0x08</addressOffset>
         </register>
         <register>
-          <name>OUTPUT_HI</name>
+          <name>OUTPUT[1]</name>
           <description>Parallel output register - high</description>
           <addressOffset>0x0C</addressOffset>
         </register>
