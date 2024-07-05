@@ -276,7 +276,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     inc   : cnt_inc_t;
     lo    : cnt_dat_t; -- counter word low
     hi    : cnt_dat_t; -- counter word high
-    nxt   : cnt_nxt_t; -- increment, including carry bit
+    nxt   : cnt_nxt_t; -- low-word increment including carry bit
     ovf   : cnt_ovf_t; -- counter low-to-high-word overflow
   end record;
   signal cnt                  : cnt_t;
@@ -426,31 +426,11 @@ begin
 -- Instruction Issue (decompress 16-bit instructions and assemble a 32-bit instruction word)
 -- ****************************************************************************************************************************
 
-  -- Compressed Instructions Decoder --------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_decompressor_inst_true:
-  if CPU_EXTENSION_RISCV_C generate
-    neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
-    port map (
-      instr16_i => issue_engine.ci_i16,
-      instr32_o => issue_engine.ci_i32
-    );
-  end generate;
-
-  neorv32_cpu_decompressor_inst_false:
-  if not CPU_EXTENSION_RISCV_C generate
-    issue_engine.ci_i32 <= (others => '0');
-  end generate;
-
-  -- half-word select --
-  issue_engine.ci_i16 <= ipb.rdata(0)(15 downto 0) when (issue_engine.align = '0') else ipb.rdata(1)(15 downto 0);
-
-
-  -- Issue Engine FSM (required if C extension is enabled) ----------------------------------
-  -- -------------------------------------------------------------------------------------------
   issue_engine_enabled:
   if CPU_EXTENSION_RISCV_C generate
 
+    -- Issue Engine FSM -----------------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
     issue_engine_fsm_sync: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
@@ -459,7 +439,7 @@ begin
         if (fetch_engine.restart = '1') then
           issue_engine.align <= execute_engine.next_pc(1); -- branch to unaligned address?
         elsif (issue_engine.ack = '1') then
-          issue_engine.align <= (issue_engine.align and (not issue_engine.align_clr)) or issue_engine.align_set; -- "RS" flip-flop
+          issue_engine.align <= (issue_engine.align and (not issue_engine.align_clr)) or issue_engine.align_set; -- "rs flip-flop"
         end if;
       end if;
     end process issue_engine_fsm_sync;
@@ -493,13 +473,27 @@ begin
       end if;
     end process issue_engine_fsm_comb;
 
+
+    -- Compressed Instructions Decoder --------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
+    port map (
+      instr16_i => issue_engine.ci_i16,
+      instr32_o => issue_engine.ci_i32
+    );
+
+    -- half-word select --
+    issue_engine.ci_i16 <= ipb.rdata(0)(15 downto 0) when (issue_engine.align = '0') else ipb.rdata(1)(15 downto 0);
+
   end generate; -- /issue_engine_enabled
 
-  issue_engine_disabled: -- use IPB(0) status flags only
+
+  -- issue engine disabled --
+  issue_engine_disabled:
   if not CPU_EXTENSION_RISCV_C generate
-    issue_engine.valid <= (others => ipb.avail(0));
+    issue_engine.valid <= (others => ipb.avail(0)); -- use IPB(0) status flags only
     issue_engine.data  <= '0' & ipb.rdata(0)(16) & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
-  end generate; -- /issue_engine_disabled
+  end generate;
 
   -- update IPB FIFOs --
   ipb.re(0) <= issue_engine.valid(0) and issue_engine.ack;
@@ -517,39 +511,20 @@ begin
     if (rstn_i = '0') then
       imm_o <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- default I-immediate: ALU-immediate, load, jump-and-link with register --
-      imm_o(XLEN-1 downto 11) <= (others => execute_engine.ir(31)); -- sign extension
-      imm_o(10 downto 1)      <= execute_engine.ir(30 downto 21);
-      imm_o(0)                <= execute_engine.ir(20);
-      --
+      imm_o <= (others => '0');
       case decode_aux.opcode is
-        when opcode_store_c => -- S-immediate: store
-          imm_o(XLEN-1 downto 11) <= (others => execute_engine.ir(31)); -- sign extension
-          imm_o(10 downto 5)      <= execute_engine.ir(30 downto 25);
-          imm_o(4 downto 0)       <= execute_engine.ir(11 downto 7);
-        when opcode_branch_c => -- B-immediate: conditional branch
-          imm_o(XLEN-1 downto 12) <= (others => execute_engine.ir(31)); -- sign extension
-          imm_o(11)               <= execute_engine.ir(7);
-          imm_o(10 downto 5)      <= execute_engine.ir(30 downto 25);
-          imm_o(4 downto 1)       <= execute_engine.ir(11 downto 8);
-          imm_o(0)                <= '0';
-        when opcode_lui_c | opcode_auipc_c => -- U-immediate: lui, auipc
-          imm_o(XLEN-1 downto 12) <= execute_engine.ir(31 downto 12);
-          imm_o(11 downto 0)      <= (others => '0');
-        when opcode_jal_c => -- J-immediate: unconditional jump
-          imm_o(XLEN-1 downto 20) <= (others => execute_engine.ir(31)); -- sign extension
-          imm_o(19 downto 12)     <= execute_engine.ir(19 downto 12);
-          imm_o(11)               <= execute_engine.ir(20);
-          imm_o(10 downto 1)      <= execute_engine.ir(30 downto 21);
-          imm_o(0)                <= '0';
+        when opcode_store_c => -- S-immediate
+          imm_o <= replicate_f(execute_engine.ir(31), 21) & execute_engine.ir(30 downto 25) & execute_engine.ir(11 downto 7);
+        when opcode_branch_c => -- B-immediate
+          imm_o <= replicate_f(execute_engine.ir(31), 20) & execute_engine.ir(7) & execute_engine.ir(30 downto 25) & execute_engine.ir(11 downto 8) & '0';
+        when opcode_lui_c | opcode_auipc_c => -- U-immediate
+          imm_o <= execute_engine.ir(31 downto 12) & x"000";
+        when opcode_jal_c => -- J-immediate
+          imm_o <= replicate_f(execute_engine.ir(31), 12) & execute_engine.ir(19 downto 12) & execute_engine.ir(20) & execute_engine.ir(30 downto 21) & '0';
         when opcode_amo_c => -- atomic memory access
-          if CPU_EXTENSION_RISCV_A then
-            imm_o <= (others => '0');
-          else
-            NULL;
-          end if;
-        when others =>
-          NULL;
+          imm_o <= (others => '0');
+        when others => -- I-immediate
+          imm_o <= replicate_f(execute_engine.ir(31), 21) & execute_engine.ir(30 downto 21) & execute_engine.ir(20);
       end case;
     end if;
   end process imm_gen;
@@ -1028,15 +1003,11 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- register file --
-  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and -- inhibit write-back only for rd-updating exceptions that must not commit
-                         (not trap_ctrl.exc_buf(exc_illegal_c)) and
-                         (not trap_ctrl.exc_buf(exc_ialign_c))  and (not trap_ctrl.exc_buf(exc_salign_c))  and (not trap_ctrl.exc_buf(exc_lalign_c)) and
-                         (not trap_ctrl.exc_buf(exc_iaccess_c)) and (not trap_ctrl.exc_buf(exc_saccess_c)) and (not trap_ctrl.exc_buf(exc_laccess_c));
+  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and (not or_reduce_f(trap_ctrl.exc_buf));-- inhibit write-back if exception
   ctrl_o.rf_rs1       <= execute_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c);
   ctrl_o.rf_rs2       <= execute_engine.ir(instr_rs2_msb_c downto instr_rs2_lsb_c);
   ctrl_o.rf_rd        <= execute_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c);
   ctrl_o.rf_zero_we   <= ctrl.rf_zero_we;
-
   -- alu --
   ctrl_o.alu_op       <= ctrl.alu_op;
   ctrl_o.alu_sub      <= ctrl.alu_sub;
@@ -1044,19 +1015,16 @@ begin
   ctrl_o.alu_opb_mux  <= ctrl.alu_opb_mux;
   ctrl_o.alu_unsigned <= ctrl.alu_unsigned;
   ctrl_o.alu_cp_trig  <= ctrl.alu_cp_trig;
-
   -- load/store unit --
   ctrl_o.lsu_req      <= ctrl.lsu_req;
   ctrl_o.lsu_rw       <= ctrl.lsu_rw;
   ctrl_o.lsu_mo_we    <= '1' when (execute_engine.state = MEM_REQ) else '0'; -- write memory output registers (data & address)
   ctrl_o.lsu_fence    <= ctrl.lsu_fence; -- fence(.i)
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
-
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
   ctrl_o.ir_funct12   <= execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c);
   ctrl_o.ir_opcode    <= execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c);
-
   -- cpu status --
   ctrl_o.cpu_priv     <= csr.privilege_eff;
   ctrl_o.cpu_sleep    <= sleep_mode;
@@ -1101,10 +1069,9 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- available if FPU implemented
 
       -- machine trap setup/handling, environment/information registers, etc. --
-      when csr_mstatus_c  | csr_mstatush_c      | csr_misa_c      | csr_mie_c     | csr_mtvec_c  |
-           csr_mscratch_c | csr_mepc_c          | csr_mcause_c    | csr_mip_c     | csr_mtval_c  |
-           csr_mtinst_c   | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c |
-           csr_mhartid_c  | csr_mconfigptr_c    | csr_mxisa_c =>
+      when csr_mstatus_c   | csr_mstatush_c | csr_misa_c   | csr_mie_c     | csr_mtvec_c      | csr_mscratch_c      |
+           csr_mepc_c      | csr_mcause_c   | csr_mip_c    | csr_mtval_c   | csr_mtinst_c     | csr_mcountinhibit_c |
+           csr_mvendorid_c | csr_marchid_c  | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c | csr_mxisa_c =>
         csr_valid(2) <= '1'; -- always implemented
 
       -- machine-controlled user-mode CSRs --
@@ -1138,8 +1105,7 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm); -- available if Zihpm implemented
 
       -- counter and timer CSRs --
-      when csr_cycle_c  | csr_mcycle_c  | csr_instret_c  | csr_minstret_c |
-           csr_cycleh_c | csr_mcycleh_c | csr_instreth_c | csr_minstreth_c =>
+      when csr_cycle_c | csr_mcycle_c | csr_instret_c | csr_minstret_c | csr_cycleh_c | csr_mcycleh_c | csr_instreth_c | csr_minstreth_c =>
         csr_valid(2) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr); -- available if Zicntr implemented
 
       -- debug-mode CSRs --
@@ -1271,7 +1237,7 @@ begin
 
       when opcode_fence_c =>
         case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when funct3_fence_c | funct3_fencei_c => illegal_cmd <= '0'; -- fence[.i]
+          when funct3_fence_c | funct3_fencei_c => illegal_cmd <= '0';
           when others                           => illegal_cmd <= '1';
         end case;
 
@@ -1359,13 +1325,8 @@ begin
       end if;
 
       -- debug-mode entry --
-      if CPU_EXTENSION_RISCV_Sdext then
-        trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_enter);
-        trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_enter);
-      else
-        trap_ctrl.exc_buf(exc_db_break_c) <= '0';
-        trap_ctrl.exc_buf(exc_db_hw_c)    <= '0';
-      end if;
+      trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_enter);
     end if;
   end process exception_buffer;
 
@@ -1396,7 +1357,7 @@ begin
       trap_ctrl.irq_pnd(irq_db_halt_c) <= '0'; -- unused
       trap_ctrl.irq_pnd(irq_db_step_c) <= '0'; -- unused
 
-      -- Interrupt-Masking Buffer ---------------------------------------------
+      -- Interrupt Buffer -----------------------------------------------------
       -- Masking of interrupt request lines. Additionally, this buffer ensures
       -- that an active interrupt request line stays active (even when
       -- disabled via MIE) if the trap environment is already starting.
@@ -1413,13 +1374,8 @@ begin
       end loop;
 
       -- debug-mode entry --
-      if CPU_EXTENSION_RISCV_Sdext then
-        trap_ctrl.irq_buf(irq_db_halt_c) <= debug_ctrl.trig_halt or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_db_halt_c));
-        trap_ctrl.irq_buf(irq_db_step_c) <= debug_ctrl.trig_step or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_db_step_c));
-      else
-        trap_ctrl.irq_buf(irq_db_halt_c) <= '0';
-        trap_ctrl.irq_buf(irq_db_step_c) <= '0';
-      end if;
+      trap_ctrl.irq_buf(irq_db_halt_c) <= debug_ctrl.trig_halt or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_db_halt_c));
+      trap_ctrl.irq_buf(irq_db_step_c) <= debug_ctrl.trig_step or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_db_step_c));
     end if;
   end process interrupt_buffer;
 
@@ -1785,12 +1741,9 @@ begin
 
         -- DEBUG MODE entry - no CSR update when already in debug-mode! --
         if CPU_EXTENSION_RISCV_Sdext and (trap_ctrl.cause(5) = '1') and (debug_ctrl.running = '0') then
-          -- trap cause --
-          csr.dcsr_cause <= trap_ctrl.cause(2 downto 0); -- why did we enter debug mode?
-          -- current privilege mode when debug mode was entered --
-          csr.dcsr_prv <= csr.privilege;
-          -- trap PC --
-          csr.dpc <= trap_ctrl.epc(XLEN-1 downto 1) & '0';
+          csr.dcsr_cause <= trap_ctrl.cause(2 downto 0); -- trap cause
+          csr.dcsr_prv   <= csr.privilege; -- current privilege mode when debug mode was entered
+          csr.dpc        <= trap_ctrl.epc(XLEN-1 downto 1) & '0'; -- trap PC
         end if;
 
       -- ********************************************************************************
@@ -2053,7 +2006,7 @@ begin
       when csr_tinfo_c   => -- trigger information
         if CPU_EXTENSION_RISCV_Sdtrig then
           csr_rdata(31 downto 24) <= x"01"; -- Sdtrig ISA spec. version 1.0
-          csr_rdata(15 downto 00) <= x"0006"; -- mcontrol6 type trigger only
+          csr_rdata(15 downto  0) <= x"0006"; -- mcontrol6 type trigger only
         end if;
 
       -- --------------------------------------------------------------------
@@ -2198,7 +2151,7 @@ begin
     hpmevent_write: process(csr)
     begin
       hpmevent_we <= (others => '0');
-      -- [NOTE] no need to check bit 4 of the address as it's always zero (checked by illegal CSR logic)
+      -- [NOTE] no need to check bit 4 of the address as it is always zero (checked by illegal CSR logic)
       if (csr.addr(11 downto 5) = csr_mcountinhibit_c(11 downto 5)) and (csr.we = '1') then
         hpmevent_we(to_integer(unsigned(csr.addr(3 downto 0)))) <= '1';
       end if;
