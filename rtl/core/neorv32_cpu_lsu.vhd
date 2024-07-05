@@ -69,8 +69,7 @@ begin
     end if;
   end process mem_addr_reg;
 
-  -- address output --
-  bus_req_o.addr <= mar;
+  bus_req_o.addr <= mar; -- bus address
   mar_o          <= mar; -- for MTVAL CSR
 
 
@@ -98,10 +97,7 @@ begin
     end if;
   end process mem_type_reg;
 
-  -- source identifier --
-  bus_req_o.src <= '0'; -- 0 = data access
-
-  -- data fence --
+  bus_req_o.src   <= '0'; -- 0 = data access
   bus_req_o.fence <= ctrl_i.lsu_fence; -- this is valid without STB being set
 
 
@@ -116,23 +112,15 @@ begin
       if (ctrl_i.lsu_mo_we = '1') then
         case ctrl_i.ir_funct3(1 downto 0) is
           when "00" => -- byte
-            bus_req_o.data(7 downto 0)   <= wdata_i(7 downto 0);
-            bus_req_o.data(15 downto 8)  <= wdata_i(7 downto 0);
-            bus_req_o.data(23 downto 16) <= wdata_i(7 downto 0);
-            bus_req_o.data(31 downto 24) <= wdata_i(7 downto 0);
-            bus_req_o.ben <= (others => '0');
+            bus_req_o.data <= wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0);
+            bus_req_o.ben  <= (others => '0');
             bus_req_o.ben(to_integer(unsigned(addr_i(1 downto 0)))) <= '1';
           when "01" => -- half-word
-            bus_req_o.data(15 downto 0)  <= wdata_i(15 downto 0);
-            bus_req_o.data(31 downto 16) <= wdata_i(15 downto 0);
-            if (addr_i(1) = '0') then
-              bus_req_o.ben <= "0011"; -- low half-word
-            else
-              bus_req_o.ben <= "1100"; -- high half-word
-            end if;
+            bus_req_o.data <= wdata_i(15 downto 0) & wdata_i(15 downto 0);
+            bus_req_o.ben  <= addr_i(1) & addr_i(1) & (not addr_i(1)) & (not addr_i(1));
           when others => -- word
             bus_req_o.data <= wdata_i;
-            bus_req_o.ben  <= "1111";
+            bus_req_o.ben  <= (others => '1');
         end case;
       end if;
     end if;
@@ -146,36 +134,29 @@ begin
     if (rstn_i = '0') then
       rdata_o <= (others => '0');
     elsif rising_edge(clk_i) then
+      rdata_o <= (others => '0'); -- output zero if there is no memory access
       if (arbiter_req = '1') then -- pending request
         case ctrl_i.ir_funct3(1 downto 0) is
           when "00" => -- byte
             case mar(1 downto 0) is
               when "00" => -- byte 0
-                rdata_o(7 downto 0) <= bus_rsp_i.data(7 downto 0);
-                rdata_o(XLEN-1 downto 8) <= (others => ((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(7))); -- sign-extend
+                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(7), 24) & bus_rsp_i.data(7 downto 0);
               when "01" => -- byte 1
-                rdata_o(7 downto 0) <= bus_rsp_i.data(15 downto 8);
-                rdata_o(XLEN-1 downto 8) <= (others => ((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(15))); -- sign-extend
+                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(15), 24) & bus_rsp_i.data(15 downto 8);
               when "10" => -- byte 2
-                rdata_o(7 downto 0) <= bus_rsp_i.data(23 downto 16);
-                rdata_o(XLEN-1 downto 8) <= (others => ((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(23))); -- sign-extend
+                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(23), 24) & bus_rsp_i.data(23 downto 16);
               when others => -- byte 3
-                rdata_o(7 downto 0) <= bus_rsp_i.data(31 downto 24);
-                rdata_o(XLEN-1 downto 8) <= (others => ((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(31))); -- sign-extend
+                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(31), 24) & bus_rsp_i.data(31 downto 24);
             end case;
           when "01" => -- half-word
             if (mar(1) = '0') then -- low half-word
-              rdata_o(15 downto 0) <= bus_rsp_i.data(15 downto 0);
-              rdata_o(XLEN-1 downto 16) <= (others => ((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(15))); -- sign-extend
+              rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(15), 16) & bus_rsp_i.data(15 downto 0);
             else -- high half-word
-              rdata_o(15 downto 0) <= bus_rsp_i.data(31 downto 16);
-              rdata_o(XLEN-1 downto 16) <= (others => ((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(31))); -- sign-extend
+              rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(31), 16) & bus_rsp_i.data(31 downto 16);
             end if;
           when others => -- word
-            rdata_o(XLEN-1 downto 0) <= bus_rsp_i.data(XLEN-1 downto 0);
+            rdata_o <= bus_rsp_i.data;
         end case;
-      else
-        rdata_o <= (others => '0'); -- output zero if there is no memory access
       end if;
     end if;
   end process mem_di_reg;
