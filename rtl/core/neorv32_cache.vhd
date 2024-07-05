@@ -229,9 +229,7 @@ begin
   -- direct accesses not implemented --
   direct_acc_disable:
   if not UC_ENABLE generate
-    dir_acc_q  <= '0';
     dir_req_q  <= req_terminate_c;
-    dir_rsp_q  <= rsp_terminate_c;
     host_rsp_o <= cache_rsp;
   end generate;
 

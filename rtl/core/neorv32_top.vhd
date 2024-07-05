@@ -132,103 +132,103 @@ entity neorv32_top is
   );
   port (
     -- Global control --
-    clk_i          : in  std_ulogic; -- global clock, rising edge
-    rstn_i         : in  std_ulogic; -- global reset, low-active, async
+    clk_i          : in  std_ulogic;                                        -- global clock, rising edge
+    rstn_i         : in  std_ulogic;                                        -- global reset, low-active, async
 
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_tck_i     : in  std_ulogic := 'L'; -- serial clock
-    jtag_tdi_i     : in  std_ulogic := 'L'; -- serial data input
-    jtag_tdo_o     : out std_ulogic; -- serial data output
-    jtag_tms_i     : in  std_ulogic := 'L'; -- mode select
+    jtag_tck_i     : in  std_ulogic := 'L';                                 -- serial clock
+    jtag_tdi_i     : in  std_ulogic := 'L';                                 -- serial data input
+    jtag_tdo_o     : out std_ulogic;                                        -- serial data output
+    jtag_tms_i     : in  std_ulogic := 'L';                                 -- mode select
 
     -- External bus interface (available if XBUS_EN = true) --
-    xbus_adr_o     : out std_ulogic_vector(31 downto 0); -- address
-    xbus_dat_o     : out std_ulogic_vector(31 downto 0); -- write data
-    xbus_tag_o     : out std_ulogic_vector(2 downto 0); -- access tag
-    xbus_we_o      : out std_ulogic; -- read/write
-    xbus_sel_o     : out std_ulogic_vector(3 downto 0); -- byte enable
-    xbus_stb_o     : out std_ulogic; -- strobe
-    xbus_cyc_o     : out std_ulogic; -- valid cycle
+    xbus_adr_o     : out std_ulogic_vector(31 downto 0);                    -- address
+    xbus_dat_o     : out std_ulogic_vector(31 downto 0);                    -- write data
+    xbus_tag_o     : out std_ulogic_vector(2 downto 0);                     -- access tag
+    xbus_we_o      : out std_ulogic;                                        -- read/write
+    xbus_sel_o     : out std_ulogic_vector(3 downto 0);                     -- byte enable
+    xbus_stb_o     : out std_ulogic;                                        -- strobe
+    xbus_cyc_o     : out std_ulogic;                                        -- valid cycle
     xbus_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- read data
-    xbus_ack_i     : in  std_ulogic := 'L'; -- transfer acknowledge
-    xbus_err_i     : in  std_ulogic := 'L'; -- transfer error
+    xbus_ack_i     : in  std_ulogic := 'L';                                 -- transfer acknowledge
+    xbus_err_i     : in  std_ulogic := 'L';                                 -- transfer error
 
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- RX input data
-    slink_rx_src_i : in  std_ulogic_vector(3 downto 0) := (others => 'L'); -- RX source routing information
-    slink_rx_val_i : in  std_ulogic := 'L'; -- RX valid input
-    slink_rx_lst_i : in  std_ulogic := 'L'; --RX  last element of stream
-    slink_rx_rdy_o : out std_ulogic; -- RX ready to receive
-    slink_tx_dat_o : out std_ulogic_vector(31 downto 0); -- TX output data
-    slink_tx_dst_o : out std_ulogic_vector(3 downto 0); -- TX destination routing information
-    slink_tx_val_o : out std_ulogic; -- TX valid output
-    slink_tx_lst_o : out std_ulogic; -- TX last element of stream
-    slink_tx_rdy_i : in  std_ulogic := 'L'; -- TX ready to send
+    slink_rx_src_i : in  std_ulogic_vector(3 downto 0)  := (others => 'L'); -- RX source routing information
+    slink_rx_val_i : in  std_ulogic := 'L';                                 -- RX valid input
+    slink_rx_lst_i : in  std_ulogic := 'L';                                 -- RX last element of stream
+    slink_rx_rdy_o : out std_ulogic;                                        -- RX ready to receive
+    slink_tx_dat_o : out std_ulogic_vector(31 downto 0);                    -- TX output data
+    slink_tx_dst_o : out std_ulogic_vector(3 downto 0);                     -- TX destination routing information
+    slink_tx_val_o : out std_ulogic;                                        -- TX valid output
+    slink_tx_lst_o : out std_ulogic;                                        -- TX last element of stream
+    slink_tx_rdy_i : in  std_ulogic := 'L';                                 -- TX ready to send
 
     -- XIP (execute in place via SPI) signals (available if XIP_EN = true) --
-    xip_csn_o      : out std_ulogic; -- chip-select, low-active
-    xip_clk_o      : out std_ulogic; -- serial clock
-    xip_dat_i      : in  std_ulogic := 'L'; -- device data input
-    xip_dat_o      : out std_ulogic; -- controller data output
+    xip_csn_o      : out std_ulogic;                                        -- chip-select, low-active
+    xip_clk_o      : out std_ulogic;                                        -- serial clock
+    xip_dat_i      : in  std_ulogic := 'L';                                 -- device data input
+    xip_dat_o      : out std_ulogic;                                        -- controller data output
 
     -- GPIO (available if IO_GPIO_NUM > 0) --
-    gpio_o         : out std_ulogic_vector(63 downto 0); -- parallel output
+    gpio_o         : out std_ulogic_vector(63 downto 0);                    -- parallel output
     gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'L'); -- parallel input
 
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o    : out std_ulogic; -- UART0 send data
-    uart0_rxd_i    : in  std_ulogic := 'L'; -- UART0 receive data
-    uart0_rts_o    : out std_ulogic; -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_txd_o    : out std_ulogic;                                        -- UART0 send data
+    uart0_rxd_i    : in  std_ulogic := 'L';                                 -- UART0 receive data
+    uart0_rts_o    : out std_ulogic;                                        -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_cts_i    : in  std_ulogic := 'L';                                 -- HW flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o    : out std_ulogic; -- UART1 send data
-    uart1_rxd_i    : in  std_ulogic := 'L'; -- UART1 receive data
-    uart1_rts_o    : out std_ulogic; -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i    : in  std_ulogic := 'L'; -- HW flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_txd_o    : out std_ulogic;                                        -- UART1 send data
+    uart1_rxd_i    : in  std_ulogic := 'L';                                 -- UART1 receive data
+    uart1_rts_o    : out std_ulogic;                                        -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_cts_i    : in  std_ulogic := 'L';                                 -- HW flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
-    spi_clk_o      : out std_ulogic; -- SPI serial clock
-    spi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
-    spi_dat_i      : in  std_ulogic := 'L'; -- controller data in, peripheral data out
-    spi_csn_o      : out std_ulogic_vector(7 downto 0); -- chip-select
+    spi_clk_o      : out std_ulogic;                                        -- SPI serial clock
+    spi_dat_o      : out std_ulogic;                                        -- controller data out, peripheral data in
+    spi_dat_i      : in  std_ulogic := 'L';                                 -- controller data in, peripheral data out
+    spi_csn_o      : out std_ulogic_vector(7 downto 0);                     -- chip-select, low-active
 
     -- SDI (available if IO_SDI_EN = true) --
-    sdi_clk_i      : in  std_ulogic := 'L'; -- SDI serial clock
-    sdi_dat_o      : out std_ulogic; -- controller data out, peripheral data in
-    sdi_dat_i      : in  std_ulogic := 'L'; -- controller data in, peripheral data out
-    sdi_csn_i      : in  std_ulogic := 'H'; -- chip-select
+    sdi_clk_i      : in  std_ulogic := 'L';                                 -- SDI serial clock
+    sdi_dat_o      : out std_ulogic;                                        -- controller data out, peripheral data in
+    sdi_dat_i      : in  std_ulogic := 'L';                                 -- controller data in, peripheral data out
+    sdi_csn_i      : in  std_ulogic := 'H';                                 -- chip-select, low-active
 
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_i      : in  std_ulogic := 'H'; -- serial data line sense input
-    twi_sda_o      : out std_ulogic; -- serial data line output (pull low only)
-    twi_scl_i      : in  std_ulogic := 'H'; -- serial clock line sense input
-    twi_scl_o      : out std_ulogic; -- serial clock line output (pull low only)
+    twi_sda_i      : in  std_ulogic := 'H';                                 -- serial data line sense input
+    twi_sda_o      : out std_ulogic;                                        -- serial data line output (pull low only)
+    twi_scl_i      : in  std_ulogic := 'H';                                 -- serial clock line sense input
+    twi_scl_o      : out std_ulogic;                                        -- serial clock line output (pull low only)
 
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_i      : in  std_ulogic := 'H'; -- 1-wire bus sense input
-    onewire_o      : out std_ulogic; -- 1-wire bus output (pull low only)
+    onewire_i      : in  std_ulogic := 'H';                                 -- 1-wire bus sense input
+    onewire_o      : out std_ulogic;                                        -- 1-wire bus output (pull low only)
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o          : out std_ulogic_vector(11 downto 0); -- pwm channels
+    pwm_o          : out std_ulogic_vector(11 downto 0);                    -- pwm channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => 'L'); -- custom CFS inputs conduit
-    cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- custom CFS outputs conduit
+    cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);     -- custom CFS outputs conduit
 
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o       : out std_ulogic; -- async serial data line
+    neoled_o       : out std_ulogic;                                        -- async serial data line
 
     -- Machine timer system time (available if IO_MTIME_EN = true) --
-    mtime_time_o   : out std_ulogic_vector(63 downto 0); -- current system time
+    mtime_time_o   : out std_ulogic_vector(63 downto 0);                    -- current system time
 
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- IRQ channels
 
     -- CPU interrupts --
-    mtime_irq_i    : in  std_ulogic := 'L'; -- machine timer interrupt, available if IO_MTIME_EN = false
-    msw_irq_i      : in  std_ulogic := 'L'; -- machine software interrupt
-    mext_irq_i     : in  std_ulogic := 'L'  -- machine external interrupt
+    mtime_irq_i    : in  std_ulogic := 'L';                                 -- machine timer interrupt, available if IO_MTIME_EN = false
+    msw_irq_i      : in  std_ulogic := 'L';                                 -- machine software interrupt
+    mext_irq_i     : in  std_ulogic := 'L'                                  -- machine external interrupt
   );
 end neorv32_top;
 
@@ -318,9 +318,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal firq      : firq_t;
   signal cpu_firq  : std_ulogic_vector(15 downto 0);
   signal mtime_irq : std_ulogic;
-
-  -- misc --
-  signal mtime_time : std_ulogic_vector(63 downto 0);
 
 begin
 
@@ -1197,30 +1194,16 @@ begin
         rstn_i    => rstn_sys,
         bus_req_i => iodev_req(IODEV_MTIME),
         bus_rsp_o => iodev_rsp(IODEV_MTIME),
-        time_o    => mtime_time,
+        time_o    => mtime_time_o,
         irq_o     => mtime_irq
       );
-
-      -- synchronize system time output LO --
-      mtime_sync: process(rstn_sys, clk_i)
-      begin
-        if (rstn_sys = '0') then
-          mtime_time_o(31 downto 0) <= (others => '0');
-        elsif rising_edge(clk_i) then
-          mtime_time_o(31 downto 0) <= mtime_time(31 downto 0);
-        end if;
-      end process mtime_sync;
-
-      -- system time output HI --
-      mtime_time_o(63 downto 32) <= mtime_time(63 downto 32);
-
     end generate;
 
     neorv32_mtime_inst_false:
     if not IO_MTIME_EN generate
       iodev_rsp(IODEV_MTIME) <= rsp_terminate_c;
-      mtime_irq              <= mtime_irq_i;
       mtime_time_o           <= (others => '0');
+      mtime_irq              <= mtime_irq_i;
     end generate;
 
 

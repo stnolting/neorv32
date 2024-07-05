@@ -189,6 +189,48 @@ extern "C" {
 /**@}*/
 
 
+/**********************************************************************//**
+ * Processor clock prescaler select (relative to processor's main clock)
+ **************************************************************************/
+/**@{*/
+enum NEORV32_CLOCK_PRSC_enum {
+  CLK_PRSC_2    = 0, /**< CPU_CLK / 2 */
+  CLK_PRSC_4    = 1, /**< CPU_CLK / 4 */
+  CLK_PRSC_8    = 2, /**< CPU_CLK / 8 */
+  CLK_PRSC_64   = 3, /**< CPU_CLK / 64 */
+  CLK_PRSC_128  = 4, /**< CPU_CLK / 128 */
+  CLK_PRSC_1024 = 5, /**< CPU_CLK / 1024 */
+  CLK_PRSC_2048 = 6, /**< CPU_CLK / 2048 */
+  CLK_PRSC_4096 = 7  /**< CPU_CLK / 4096 */
+};
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name Subword-access helper
+ **************************************************************************/
+/**@{*/
+/** @name 64-bit */
+typedef union {
+  uint64_t uint64;
+  uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
+  uint16_t uint16[sizeof(uint64_t)/sizeof(uint16_t)];
+  uint8_t  uint8[ sizeof(uint64_t)/sizeof(uint8_t)];
+} subwords64_t;
+/** @name 32-bit */
+typedef union {
+  uint32_t uint32[sizeof(uint32_t)/sizeof(uint32_t)];
+  uint16_t uint16[sizeof(uint32_t)/sizeof(uint16_t)];
+  uint8_t  uint8[ sizeof(uint32_t)/sizeof(uint8_t)];
+} subwords32_t;
+/** @name 16-bit */
+typedef union {
+  uint16_t uint16[sizeof(uint16_t)/sizeof(uint16_t)];
+  uint8_t  uint8[ sizeof(uint16_t)/sizeof(uint8_t)];
+} subwords16_t;
+/**@}*/
+
+
 // ----------------------------------------------------------------------------
 // Include all system header files
 // ----------------------------------------------------------------------------

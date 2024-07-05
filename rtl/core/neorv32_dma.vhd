@@ -339,18 +339,10 @@ begin
           align_buf <= align_end;
         else -- byte
           case engine.src_addr(1 downto 0) is
-            when "00" => -- byte 0
-              align_buf(7 downto 0)  <= align_end(7 downto 0);
-              align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(7))); -- sign extension
-            when "01" => -- byte 1
-              align_buf(7 downto 0)  <= align_end(15 downto 8);
-              align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(15))); -- sign extension
-            when "10" => -- byte 2
-              align_buf(7 downto 0)  <= align_end(23 downto 16);
-              align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(23))); -- sign extension
-            when others => -- byte 3
-              align_buf(7 downto 0)  <= align_end(31 downto 24);
-              align_buf(31 downto 8) <= (others => (config.qsel(1) and align_end(31))); -- sign extension
+            when "00"   => align_buf <= replicate_f(config.qsel(1) and align_end(7),  24) & align_end(7 downto 0);
+            when "01"   => align_buf <= replicate_f(config.qsel(1) and align_end(15), 24) & align_end(15 downto 8);
+            when "10"   => align_buf <= replicate_f(config.qsel(1) and align_end(23), 24) & align_end(23 downto 16);
+            when others => align_buf <= replicate_f(config.qsel(1) and align_end(31), 24) & align_end(31 downto 24);
           end case;
         end if;
       end if;
@@ -362,14 +354,11 @@ begin
   begin
     dma_req_o.ben <= (others => '0'); -- default
     if (config.qsel = qsel_b2b_c) then -- byte
-      dma_req_o.data(7 downto 0)   <= align_buf(7 downto 0);
-      dma_req_o.data(15 downto 8)  <= align_buf(7 downto 0);
-      dma_req_o.data(23 downto 16) <= align_buf(7 downto 0);
-      dma_req_o.data(31 downto 24) <= align_buf(7 downto 0);
+      dma_req_o.data <= align_buf(7 downto 0) & align_buf(7 downto 0) & align_buf(7 downto 0) & align_buf(7 downto 0);
       dma_req_o.ben(to_integer(unsigned(engine.dst_addr(1 downto 0)))) <= '1';
     else -- word
       dma_req_o.data <= align_buf;
-      dma_req_o.ben  <= "1111";
+      dma_req_o.ben  <= (others => '1');
     end if;
   end process dst_align;
 

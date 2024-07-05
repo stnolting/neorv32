@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100100"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100101"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -699,6 +699,7 @@ package neorv32_package is
   function bswap_f(input : std_ulogic_vector) return std_ulogic_vector;
   function popcount_f(input : std_ulogic_vector) return natural;
   function leading_zeros_f(input : std_ulogic_vector) return natural;
+  function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector;
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
   function print_version_f(version : std_ulogic_vector(31 downto 0)) return string;
 
@@ -1152,6 +1153,15 @@ package body neorv32_package is
     end loop;
     return cnt_v;
   end function leading_zeros_f;
+
+  -- Replicate input bit num times ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector is
+    variable tmp_v : std_ulogic_vector(num-1 downto 0);
+  begin
+    tmp_v := (others => input);
+    return tmp_v;
+  end function replicate_f;
 
   -- Initialize mem32_t array from another mem32_t array ------------------------------------
   -- -------------------------------------------------------------------------------------------
