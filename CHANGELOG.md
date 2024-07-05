@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 05.07.2024 | 1.10.1.1 | minor rtl cleanups and optimizations | [#941](https://github.com/stnolting/neorv32/pull/941) |
 | 04.07.2024 | [**:rocket:1.10.1**](https://github.com/stnolting/neorv32/releases/tag/v1.10.1) | **New release** | |
 | 04.07.2024 | 1.10.0.10 | :warning: rework GPTMRM and remove capture mode | [#939](https://github.com/stnolting/neorv32/pull/939) |
 | 03.07.2024 | 1.10.0.9 | :warning: remove `AMO_RVS_GRANULARITY` generic, reservation set granularity is now fixed to 4 bytes | [#938](https://github.com/stnolting/neorv32/pull/938) |
