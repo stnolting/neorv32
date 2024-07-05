@@ -44,18 +44,14 @@ int neorv32_mtime_available(void) {
  **************************************************************************/
 void neorv32_mtime_set_time(uint64_t time) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } cycles;
+  subwords64_t cycles;
 
   cycles.uint64 = time;
 
+  // prevent low-to-high carry while writing
   NEORV32_MTIME->TIME_LO = 0;
   NEORV32_MTIME->TIME_HI = cycles.uint32[1];
   NEORV32_MTIME->TIME_LO = cycles.uint32[0];
-
-  asm volatile("nop"); // delay due to write buffer
 }
 
 
@@ -68,10 +64,7 @@ void neorv32_mtime_set_time(uint64_t time) {
  **************************************************************************/
 uint64_t neorv32_mtime_get_time(void) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } cycles;
+  subwords64_t cycles;
 
   uint32_t tmp1, tmp2, tmp3;
   while(1) {
@@ -100,14 +93,12 @@ uint64_t neorv32_mtime_get_time(void) {
  **************************************************************************/
 void neorv32_mtime_set_timecmp(uint64_t timecmp) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } cycles;
+  subwords64_t cycles;
 
   cycles.uint64 = timecmp;
 
-  NEORV32_MTIME->TIMECMP_LO = -1; // prevent MTIMECMP from temporarily becoming smaller than the lesser of the old and new values
+  // prevent MTIMECMP from temporarily becoming smaller than the lesser of the old and new values
+  NEORV32_MTIME->TIMECMP_LO = -1;
   NEORV32_MTIME->TIMECMP_HI = cycles.uint32[1];
   NEORV32_MTIME->TIMECMP_LO = cycles.uint32[0];
 }
@@ -120,10 +111,7 @@ void neorv32_mtime_set_timecmp(uint64_t timecmp) {
  **************************************************************************/
 uint64_t neorv32_mtime_get_timecmp(void) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } cycles;
+  subwords64_t cycles;
 
   cycles.uint32[0] = NEORV32_MTIME->TIMECMP_LO;
   cycles.uint32[1] = NEORV32_MTIME->TIMECMP_HI;
