@@ -185,10 +185,8 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
     default:                     handler_base = (uint32_t)(&neorv32_rte_debug_handler);          break;
   }
 
-  // execute handler
-  void (*handler_pnt)(void);
-  handler_pnt = (void*)handler_base;
-  (*handler_pnt)();
+  // call handler
+  asm volatile ("jalr ra, 0(%[dst])" : : [dst] "r" (handler_base));
 
   // compute return address (for exceptions only)
   // do not alter return address if instruction access exception (fatal?)

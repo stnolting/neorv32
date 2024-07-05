@@ -38,119 +38,6 @@ void     neorv32_cpu_goto_user_mode(void);
 /**@}*/
 
 
-// #################################################################################################
-// Context save/restore helpers
-// #################################################################################################
-
-
-/**********************************************************************//**
- * Save all integer registers to the stack.
- *
- * @note This inlined function automatically constrains the number
- * of registers when compiling for rv32e (only 16 registers).
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_context_save(void) {
-
-  // do not backup x0 and sp
-  asm volatile (
-#ifndef __riscv_32e
-    "addi sp, sp, -30*4 \n"
-#else
-    "addi sp, sp, -14*4 \n"
-#endif
-    "sw x1,   0*4(sp) \n"
-    "sw x3,   1*4(sp) \n"
-    "sw x4,   2*4(sp) \n"
-    "sw x5,   3*4(sp) \n"
-    "sw x6,   4*4(sp) \n"
-    "sw x7,   5*4(sp) \n"
-    "sw x8,   6*4(sp) \n"
-    "sw x9,   7*4(sp) \n"
-    "sw x10,  8*4(sp) \n"
-    "sw x11,  9*4(sp) \n"
-    "sw x12, 10*4(sp) \n"
-    "sw x13, 11*4(sp) \n"
-    "sw x14, 12*4(sp) \n"
-    "sw x15, 13*4(sp) \n"
-#ifndef __riscv_32e
-    "sw x16, 14*4(sp) \n"
-    "sw x17, 15*4(sp) \n"
-    "sw x18, 16*4(sp) \n"
-    "sw x19, 17*4(sp) \n"
-    "sw x20, 18*4(sp) \n"
-    "sw x21, 19*4(sp) \n"
-    "sw x22, 20*4(sp) \n"
-    "sw x23, 21*4(sp) \n"
-    "sw x24, 22*4(sp) \n"
-    "sw x25, 23*4(sp) \n"
-    "sw x26, 24*4(sp) \n"
-    "sw x27, 25*4(sp) \n"
-    "sw x28, 26*4(sp) \n"
-    "sw x29, 27*4(sp) \n"
-    "sw x30, 28*4(sp) \n"
-    "sw x31, 29*4(sp) \n"
-#endif
-  );
-}
-
-
-/**********************************************************************//**
- * Restore all integer registers from the stack.
- *
- * @note This inlined function automatically constrains the number
- * of registers when compiling for rv32e (only 16 registers).
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_context_restore(void) {
-
-  // do not restore x0 and sp
-  asm volatile (
-    "lw x1,   0*4(sp) \n"
-    "lw x3,   1*4(sp) \n"
-    "lw x4,   2*4(sp) \n"
-    "lw x5,   3*4(sp) \n"
-    "lw x6,   4*4(sp) \n"
-    "lw x7,   5*4(sp) \n"
-    "lw x8,   6*4(sp) \n"
-    "lw x9,   7*4(sp) \n"
-    "lw x10,  8*4(sp) \n"
-    "lw x11,  9*4(sp) \n"
-    "lw x12, 10*4(sp) \n"
-    "lw x13, 11*4(sp) \n"
-    "lw x14, 12*4(sp) \n"
-    "lw x15, 13*4(sp) \n"
-#ifndef __riscv_32e
-    "lw x16, 14*4(sp) \n"
-    "lw x17, 15*4(sp) \n"
-    "lw x18, 16*4(sp) \n"
-    "lw x19, 17*4(sp) \n"
-    "lw x20, 18*4(sp) \n"
-    "lw x21, 19*4(sp) \n"
-    "lw x22, 20*4(sp) \n"
-    "lw x23, 21*4(sp) \n"
-    "lw x24, 22*4(sp) \n"
-    "lw x25, 23*4(sp) \n"
-    "lw x26, 24*4(sp) \n"
-    "lw x27, 25*4(sp) \n"
-    "lw x28, 26*4(sp) \n"
-    "lw x29, 27*4(sp) \n"
-    "lw x30, 28*4(sp) \n"
-    "lw x31, 29*4(sp) \n"
-#endif
-#ifndef __riscv_32e
-    "addi sp, sp, +30*4 \n"
-#else
-    "addi sp, sp, +14*4 \n"
-#endif
-    "ret              \n"
-  );
-}
-
-
-// #################################################################################################
-// Load/store helpers
-// #################################################################################################
-
-
 /**********************************************************************//**
  * Store unsigned word to address space.
  *
@@ -163,7 +50,6 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_word(uint
 
   uint32_t reg_addr = addr;
   uint32_t reg_data = wdata;
-
   asm volatile ("sw %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr));
 }
 
@@ -180,7 +66,6 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_half(uint
 
   uint32_t reg_addr = addr;
   uint32_t reg_data = (uint32_t)wdata;
-
   asm volatile ("sh %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr));
 }
 
@@ -195,7 +80,6 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_byte(uint
 
   uint32_t reg_addr = addr;
   uint32_t reg_data = (uint32_t)wdata;
-
   asm volatile ("sb %[da], 0(%[ad])" : : [da] "r" (reg_data), [ad] "r" (reg_addr));
 }
 
@@ -212,9 +96,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_word(u
 
   uint32_t reg_addr = addr;
   uint32_t reg_data;
-
   asm volatile ("lw %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
-
   return reg_data;
 }
 
@@ -231,9 +113,7 @@ inline uint16_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_half(u
 
   uint32_t reg_addr = addr;
   uint16_t reg_data;
-
   asm volatile ("lhu %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
-
   return reg_data;
 }
 
@@ -250,9 +130,7 @@ inline int16_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_half(uint
 
   uint32_t reg_addr = addr;
   int16_t reg_data;
-
   asm volatile ("lh %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
-
   return reg_data;
 }
 
@@ -267,9 +145,7 @@ inline uint8_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_byte(ui
 
   uint32_t reg_addr = addr;
   uint8_t reg_data;
-
   asm volatile ("lbu %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
-
   return reg_data;
 }
 
@@ -284,16 +160,9 @@ inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint3
 
   uint32_t reg_addr = addr;
   int8_t reg_data;
-
   asm volatile ("lb %[da], 0(%[ad])" : [da] "=r" (reg_data) : [ad] "r" (reg_addr));
-
   return reg_data;
 }
-
-
-// #################################################################################################
-// CSR access helpers
-// #################################################################################################
 
 
 /**********************************************************************//**
@@ -305,9 +174,7 @@ inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint3
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int csr_id) {
 
   uint32_t csr_data;
-
   asm volatile ("csrr %[result], %[input_i]" : [result] "=r" (csr_data) : [input_i] "i" (csr_id));
-
   return csr_data;
 }
 
@@ -321,7 +188,6 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int c
 inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_id, uint32_t data) {
 
   uint32_t csr_data = data;
-
   asm volatile ("csrw %[input_i], %[input_j]" :  : [input_i] "i" (csr_id), [input_j] "r" (csr_data));
 }
 
@@ -335,7 +201,6 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_
 inline void __attribute__ ((always_inline)) neorv32_cpu_csr_set(const int csr_id, uint32_t mask) {
 
   uint32_t csr_data = mask;
-
   asm volatile ("csrs %[input_i], %[input_j]" :  : [input_i] "i" (csr_id), [input_j] "r" (csr_data));
 }
 
@@ -349,14 +214,8 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_set(const int csr_id
 inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int csr_id, uint32_t mask) {
 
   uint32_t csr_data = mask;
-
   asm volatile ("csrc %[input_i], %[input_j]" :  : [input_i] "i" (csr_id), [input_j] "r" (csr_data));
 }
-
-
-// #################################################################################################
-// Misc helpers
-// #################################################################################################
 
 
 /**********************************************************************//**
