@@ -44,22 +44,13 @@ int neorv32_gpio_available(void) {
 void neorv32_gpio_pin_set(int pin, int value) {
 
   uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
+  int lohi = (pin < 32) ? 0 : 1;
 
-  if (pin < 32) {
-    if (value) {
-      NEORV32_GPIO->OUTPUT_LO |= mask;
-    }
-    else {
-      NEORV32_GPIO->OUTPUT_LO &= ~mask;
-    }
+  if (value) {
+    NEORV32_GPIO->OUTPUT[lohi] |= mask;
   }
   else {
-    if (value) {
-      NEORV32_GPIO->OUTPUT_HI |= mask;
-    }
-    else {
-      NEORV32_GPIO->OUTPUT_HI &= ~mask;
-    }
+    NEORV32_GPIO->OUTPUT[lohi] &= ~mask;
   }
 }
 
@@ -72,13 +63,8 @@ void neorv32_gpio_pin_set(int pin, int value) {
 void neorv32_gpio_pin_toggle(int pin) {
 
   uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
-
-  if (pin < 32) {
-    NEORV32_GPIO->OUTPUT_LO ^= mask;
-  }
-  else {
-    NEORV32_GPIO->OUTPUT_HI ^= mask;
-  }
+  int lohi = (pin < 32) ? 0 : 1;
+  NEORV32_GPIO->OUTPUT[lohi] ^= mask;
 }
 
 
@@ -91,13 +77,8 @@ void neorv32_gpio_pin_toggle(int pin) {
 uint32_t neorv32_gpio_pin_get(int pin) {
 
   uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
-
-  if (pin < 32) {
-    return NEORV32_GPIO->INPUT_LO & mask;
-  }
-  else {
-    return NEORV32_GPIO->INPUT_HI & mask;
-  }
+  int lohi = (pin < 32) ? 0 : 1;
+  return NEORV32_GPIO->INPUT[lohi] & mask;
 }
 
 
@@ -108,14 +89,11 @@ uint32_t neorv32_gpio_pin_get(int pin) {
  **************************************************************************/
 void neorv32_gpio_port_set(uint64_t port_data) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } data;
+  subwords64_t data;
 
   data.uint64 = port_data;
-  NEORV32_GPIO->OUTPUT_LO = data.uint32[0];
-  NEORV32_GPIO->OUTPUT_HI = data.uint32[1];
+  NEORV32_GPIO->OUTPUT[0] = data.uint32[0];
+  NEORV32_GPIO->OUTPUT[1] = data.uint32[1];
 }
 
 
@@ -126,14 +104,11 @@ void neorv32_gpio_port_set(uint64_t port_data) {
  **************************************************************************/
 void neorv32_gpio_port_toggle(uint64_t toggle) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } data;
+  subwords64_t data;
 
   data.uint64 = toggle;
-  NEORV32_GPIO->OUTPUT_LO ^= data.uint32[0];
-  NEORV32_GPIO->OUTPUT_HI ^= data.uint32[1];
+  NEORV32_GPIO->OUTPUT[0] ^= data.uint32[0];
+  NEORV32_GPIO->OUTPUT[1] ^= data.uint32[1];
 }
 
 
@@ -144,13 +119,10 @@ void neorv32_gpio_port_toggle(uint64_t toggle) {
  **************************************************************************/
 uint64_t neorv32_gpio_port_get(void) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } data;
+  subwords64_t data;
 
-  data.uint32[0] = NEORV32_GPIO->INPUT_LO;
-  data.uint32[1] = NEORV32_GPIO->INPUT_HI;
+  data.uint32[0] = NEORV32_GPIO->INPUT[0];
+  data.uint32[1] = NEORV32_GPIO->INPUT[1];
 
   return data.uint64;
 }

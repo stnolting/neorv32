@@ -20,21 +20,23 @@
 /**********************************************************************//**
  * Unavailable extensions warnings.
  **************************************************************************/
+/**@{*/
 #if defined __riscv_d || (__riscv_flen == 64)
-  #error Double-precision floating-point extension <D/Zdinx> is NOT supported!
+  #error Double-precision floating-point extension D/Zdinx is NOT supported!
 #endif
 
 #if (__riscv_xlen > 32)
-  #error Only 32-bit <rv32> is supported!
+  #error Only XLEN=32 (rv32) is supported!
 #endif
 
 #ifdef __riscv_fdiv
-  #warning Floating-point division instruction <FDIV> is NOT supported yet!
+  #warning Floating-point division instruction FDIV is NOT supported!
 #endif
 
 #ifdef __riscv_fsqrt
-  #warning Floating-point square root instruction <FSQRT> is NOT supported yet!
+  #warning Floating-point square root instruction FSQRT is NOT supported!
 #endif
+/**@}*/
 
 
 /**********************************************************************//**
@@ -44,10 +46,7 @@
  **************************************************************************/
 uint64_t neorv32_cpu_get_cycle(void) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } cycles;
+  subwords64_t cycles;
 
   uint32_t tmp1, tmp2, tmp3;
   while(1) {
@@ -73,14 +72,11 @@ uint64_t neorv32_cpu_get_cycle(void) {
  **************************************************************************/
 void neorv32_cpu_set_mcycle(uint64_t value) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } cycles;
+  subwords64_t cycles;
 
   cycles.uint64 = value;
 
-  // prevent low-to-high word overflow while writing
+  // prevent low-to-high carry while writing
   neorv32_cpu_csr_write(CSR_MCYCLE,  0);
   neorv32_cpu_csr_write(CSR_MCYCLEH, cycles.uint32[1]);
   neorv32_cpu_csr_write(CSR_MCYCLE,  cycles.uint32[0]);
@@ -94,10 +90,7 @@ void neorv32_cpu_set_mcycle(uint64_t value) {
  **************************************************************************/
 uint64_t neorv32_cpu_get_instret(void) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } cycles;
+  subwords64_t cycles;
 
   uint32_t tmp1, tmp2, tmp3;
   while(1) {
@@ -123,14 +116,11 @@ uint64_t neorv32_cpu_get_instret(void) {
  **************************************************************************/
 void neorv32_cpu_set_minstret(uint64_t value) {
 
-  union {
-    uint64_t uint64;
-    uint32_t uint32[sizeof(uint64_t)/sizeof(uint32_t)];
-  } cycles;
+  subwords64_t cycles;
 
   cycles.uint64 = value;
 
-  // prevent low-to-high word overflow while writing
+  // prevent low-to-high carry while writing
   neorv32_cpu_csr_write(CSR_MINSTRET,  0);
   neorv32_cpu_csr_write(CSR_MINSTRETH, cycles.uint32[1]);
   neorv32_cpu_csr_write(CSR_MINSTRET,  cycles.uint32[0]);
@@ -458,7 +448,7 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
 void __attribute__((naked,noinline)) neorv32_cpu_goto_user_mode(void) {
 
   asm volatile (
-    "csrw mepc, ra     \n" // move return address to mepc so we can return using "mret". also, we can now use ra as temp register
+    "csrw mepc, ra     \n" // move return address to mepc so we can return using mret; we can now use ra as temp register
     "li   ra, 3<<11    \n" // bit mask to clear the two MPP bits
     "csrc mstatus, ra  \n" // clear MPP bits -> MPP = u-mode
     "csrr ra, mstatus  \n" // get mstatus

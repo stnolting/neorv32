@@ -472,7 +472,7 @@ To benchmark a certain processor configuration for its setup-specific CPI value 
 The `A` ISA extension adds instructions and mechanisms for atomic memory access operations. Note that the NEORV32 `A`
 only includes the _load-reservate_ (`lr.w`) and _store-conditional_ (`sc.w`) instructions - the remaining read-modify-write
 instructions (like `amoswap`) are **not supported**. However, these missing instructions can be emulated using the
-LR and SC operations.
+LR and SC operations (quote from the RISC-V spec.: "_Any AMO can be emulated by an LR/SC pair._").
 
 .AMO Emulation
 [NOTE]

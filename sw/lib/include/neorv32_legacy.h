@@ -67,4 +67,23 @@
 #define neorv32_uart1_scan(buffer, max_size, echo) neorv32_uart_scan(NEORV32_UART1, buffer, max_size, echo)
 /**@}*/
 
+/**********************************************************************//**
+ * @name GPIO aliases
+ **************************************************************************/
+/**@{*/
+#define INPUT_LO  INPUT[0]
+#define INPUT_HI  INPUT[1]
+#define OUTPUT_LO OUTPUT[0]
+#define OUTPUT_HI OUTPUT[1]
+/**@}*/
+
+/**********************************************************************//**
+ * @name Atomic LR/SC aliases
+ **************************************************************************/
+/**@{*/
+#define neorv32_cpu_load_reservate_word(addr, wdata)    neorv32_cpu_amolr(addr, wdata)
+#define neorv32_cpu_store_conditional_word(addr, wdata) neorv32_cpu_amosc(addr, wdata)
+/**@}*/
+
+
 #endif // neorv32_legacy_h

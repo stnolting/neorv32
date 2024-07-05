@@ -27,6 +27,16 @@
 
 
 /**********************************************************************//**
+ * @name Print main's return code using a destructor
+ **************************************************************************/
+void __attribute__((destructor)) main_destructor_test(void) {
+
+  int32_t main_ret = (int32_t)neorv32_cpu_csr_read(CSR_MSCRATCH);
+  neorv32_uart0_printf("\nDestructor: main terminated with return/exit code %i.\n", main_ret);
+}
+
+
+/**********************************************************************//**
  * @name Max heap size (from linker script's "__neorv32_heap_size")
  **************************************************************************/
 extern char __crt0_max_heap[];
@@ -111,10 +121,11 @@ int main() {
   // NOTE: exit is highly over-sized as it also includes clean-up functions (destructors), which
   // are not required for bare-metal or RTOS applications... better use the simple 'return' or even better
   // make sure main never returns. Anyway, let's check if 'exit' works.
-  neorv32_uart0_printf("terminating via <exit> ");
-  exit(0);
+  int exit_code = 7;
+  neorv32_uart0_printf("<exit> terminating by exit(%i)...\n", exit_code);
+  exit(exit_code);
 
   // should never be reached
-  neorv32_uart0_printf("failed!n");
+  neorv32_uart0_printf("exit failed!\n");
   return 0;
 }
