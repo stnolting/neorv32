@@ -143,11 +143,12 @@ __crt0_call_constructors_loop_end:
 __crt0_main_entry:
   addi x10, zero, 0 // x10 = a0 = argc = 0
   addi x11, zero, 0 // x11 = a1 = argv = 0
-  jal  x1,  main    // call actual app's main function
+  jal  x1,  main    // call actual main function
 
 __crt0_main_exit:   // main's "return" and "exit" will arrive here
   csrw mie, zero    // disable all interrupt sources
-  csrw mscratch, a0 // backup main's return code to mscratch (for debugger)
+  csrw mscratch, a0 // backup main's return code to mscratch (for debugger or destructors)
+
 
 
 // ************************************************************************************************
@@ -155,8 +156,10 @@ __crt0_main_exit:   // main's "return" and "exit" will arrive here
 // ************************************************************************************************
 #ifndef MAKE_BOOTLOADER // destructors are not supported for bootloader
 __crt0_call_destructors:
-  la   x8, __fini_array_start
-  la   x9, __fini_array_end
+  la   x8,    __crt0_trap_handler // use the crt0 trap handler if there are exceptions in the destructors
+  csrw mtvec, x8
+  la   x8,    __fini_array_start
+  la   x9,    __fini_array_end
 
 __crt0_call_destructors_loop:
   bge  x8, x9, __crt0_call_destructors_loop_end
