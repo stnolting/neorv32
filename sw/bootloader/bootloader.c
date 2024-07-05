@@ -8,7 +8,6 @@
 
 /**
  * @file bootloader.c
- * @author Stephan Nolting
  * @brief Default NEORV32 bootloader.
  */
 
