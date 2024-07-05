@@ -35,12 +35,14 @@ architecture neorv32_mtime_rtl of neorv32_mtime is
   signal mtimecmp_lo  : std_ulogic_vector(31 downto 0);
   signal mtimecmp_hi  : std_ulogic_vector(31 downto 0);
   signal mtime_lo     : std_ulogic_vector(31 downto 0);
-  signal mtime_lo_nxt : std_ulogic_vector(32 downto 0);
-  signal mtime_lo_cry : std_ulogic_vector(00 downto 0);
+  signal mtime_lo_q   : std_ulogic_vector(31 downto 0);
   signal mtime_hi     : std_ulogic_vector(31 downto 0);
+  signal mtime_lo_inc : std_ulogic_vector(32 downto 0);
+  signal carry        : std_ulogic_vector( 0 downto 0);
+  signal mtime_hi_inc : std_ulogic_vector(31 downto 0);
 
-  -- comparators --
-  signal cmp_lo_ge, cmp_lo_ge_ff, cmp_hi_eq, cmp_hi_gt : std_ulogic;
+  -- comparator --
+  signal cmp_lo_eq, cmp_lo_gt, cmp_lo_ge, cmp_hi_eq, cmp_hi_gt : std_ulogic;
 
 begin
 
@@ -49,15 +51,12 @@ begin
   bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      mtimecmp_lo  <= (others => '0');
-      mtimecmp_hi  <= (others => '0');
-      mtime_we     <= (others => '0');
-      mtime_lo     <= (others => '0');
-      mtime_lo_cry <= (others => '0');
-      mtime_hi     <= (others => '0');
-      bus_rsp_o    <= rsp_terminate_c;
+      mtimecmp_lo <= (others => '0');
+      mtimecmp_hi <= (others => '0');
+      mtime_we    <= (others => '0');
+      bus_rsp_o   <= rsp_terminate_c;
     elsif rising_edge(clk_i) then
-      -- mtimecmp --
+      -- MTIMECMP write access --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3) = '1') then
         if (bus_req_i.addr(2) = '0') then
           mtimecmp_lo <= bus_req_i.data;
@@ -65,28 +64,9 @@ begin
           mtimecmp_hi <= bus_req_i.data;
         end if;
       end if;
-
-      -- mtime write access buffer --
+      -- MTIME write access buffer --
       mtime_we(0) <= bus_req_i.stb and bus_req_i.rw and (not bus_req_i.addr(3)) and (not bus_req_i.addr(2));
       mtime_we(1) <= bus_req_i.stb and bus_req_i.rw and (not bus_req_i.addr(3)) and (    bus_req_i.addr(2));
-
-      -- mtime.low --
-      if (mtime_we(0) = '1') then -- write access
-        mtime_lo <= bus_req_i.data;
-      else -- auto increment
-        mtime_lo <= mtime_lo_nxt(31 downto 0);
-      end if;
-
-      -- low-to-high carry --
-      mtime_lo_cry(0) <= mtime_lo_nxt(32);
-
-      -- mtime.high --
-      if (mtime_we(1) = '1') then -- write access
-        mtime_hi <= bus_req_i.data;
-      else -- auto increment (if mtime.low overflows)
-        mtime_hi <= std_ulogic_vector(unsigned(mtime_hi) + unsigned(mtime_lo_cry));
-      end if;
-
       -- read access --
       bus_rsp_o.ack  <= bus_req_i.stb; -- bus handshake
       bus_rsp_o.err  <= '0'; -- no access errors
@@ -102,30 +82,71 @@ begin
     end if;
   end process bus_access;
 
-  -- mtime.time_LO increment --
-  mtime_lo_nxt <= std_ulogic_vector(unsigned('0' & mtime_lo) + 1);
 
-  -- system time output --
-  time_o <= mtime_hi & mtime_lo; -- NOTE: low and high words are not synchronized here!
-
-
-  -- Comparator -----------------------------------------------------------------------------
+  -- 64-Bit MTIME Counter -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cmp_sync: process(rstn_i, clk_i)
+  counter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cmp_lo_ge_ff <= '0';
-      irq_o        <= '0';
+      mtime_lo <= (others => '0');
+      carry    <= (others => '0');
+      mtime_hi <= (others => '0');
     elsif rising_edge(clk_i) then
-      cmp_lo_ge_ff <= cmp_lo_ge; -- there is one cycle delay between low (earlier) and high (later) word
-      irq_o        <= cmp_hi_gt or (cmp_hi_eq and cmp_lo_ge_ff);
+      -- low-word --
+      if (mtime_we(0) = '1') then -- write access
+        mtime_lo <= bus_req_i.data; -- write data is stable for at least one cycle after STB becomes low
+        carry(0) <= '0';
+      else -- auto increment
+        mtime_lo <= mtime_lo_inc(31 downto 0);
+        carry(0) <= mtime_lo_inc(32);
+      end if;
+      -- high-word --
+      if (mtime_we(1) = '1') then -- write access
+        mtime_hi <= bus_req_i.data; -- write data is stable for at least one cycle after STB becomes low
+      else -- auto increment
+        mtime_hi <= mtime_hi_inc;
+      end if;
     end if;
-  end process cmp_sync;
+  end process counter;
 
-  -- sub-word comparators --
-  cmp_lo_ge <= '1' when (unsigned(mtime_lo) >= unsigned(mtimecmp_lo)) else '0'; -- low-word: greater than or equal
-  cmp_hi_eq <= '1' when (unsigned(mtime_hi) =  unsigned(mtimecmp_hi)) else '0'; -- high-word: equal
-  cmp_hi_gt <= '1' when (unsigned(mtime_hi) >  unsigned(mtimecmp_hi)) else '0'; -- high-word: greater than
+  -- time increment --
+  mtime_lo_inc <= std_ulogic_vector(unsigned('0' & mtime_lo) + 1);
+  mtime_hi_inc <= std_ulogic_vector(unsigned(mtime_hi) + unsigned(carry));
+
+
+  -- Synchronize Output Words ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  out_sync: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      mtime_lo_q <= (others => '0');
+    elsif rising_edge(clk_i) then
+      mtime_lo_q <= mtime_lo;
+    end if;
+  end process out_sync;
+
+  -- delay low-word by one cycle --
+  time_o <= mtime_hi & mtime_lo_q;
+
+
+  -- Comparator (Interrupt Generator) -------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  irq_gen: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      cmp_lo_ge <= '0';
+      irq_o     <= '0';
+    elsif rising_edge(clk_i) then
+      cmp_lo_ge <= cmp_lo_gt or cmp_lo_eq; -- low word greater than or equal
+      irq_o     <= cmp_hi_gt or (cmp_hi_eq and cmp_lo_ge);
+    end if;
+  end process irq_gen;
+
+  -- sub-word comparators; there is one cycle delay between low (earlier) and high (later) word --
+  cmp_lo_eq <= '1' when (unsigned(mtime_lo) = unsigned(mtimecmp_lo)) else '0'; -- low-word equal
+  cmp_lo_gt <= '1' when (unsigned(mtime_lo) > unsigned(mtimecmp_lo)) else '0'; -- low-word greater than
+  cmp_hi_eq <= '1' when (unsigned(mtime_hi) = unsigned(mtimecmp_hi)) else '0'; -- high-word equal
+  cmp_hi_gt <= '1' when (unsigned(mtime_hi) > unsigned(mtimecmp_hi)) else '0'; -- high-word greater than
 
 
 end neorv32_mtime_rtl;
