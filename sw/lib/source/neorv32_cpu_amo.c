@@ -18,17 +18,6 @@
 
 
 /**********************************************************************//**
- * MIN/MAX helpers.
- **************************************************************************/
-/**@{*/
-static inline int32_t MAX(int32_t a, int32_t b) { return((a) > (b) ? a : b); }
-static inline int32_t MIN(int32_t a, int32_t b) { return((a) < (b) ? a : b); }
-static inline int32_t MAXU(uint32_t a, uint32_t b) { return((a) > (b) ? a : b); }
-static inline int32_t MINU(uint32_t a, uint32_t b) { return((a) < (b) ? a : b); }
-/**@}*/
-
-
-/**********************************************************************//**
  * Atomic SWAP (AMOSWAP.W).
  * return <= MEM[addr]; MEM[addr] <= wdata
  *
@@ -40,18 +29,25 @@ static inline int32_t MINU(uint32_t a, uint32_t b) { return((a) < (b) ? a : b); 
  **************************************************************************/
 uint32_t neorv32_cpu_amoswapw(uint32_t addr, uint32_t wdata) {
 
+#if defined __riscv_atomic
   uint32_t rdata;
   uint32_t status;
 
   while(1) {
-    rdata  = neorv32_cpu_load_reservate_word(addr);
-    status = neorv32_cpu_store_conditional_word(addr, wdata);
+    rdata  = neorv32_cpu_amolr(addr);
+    status = neorv32_cpu_amosc(addr, wdata);
     if (status == 0) {
       break;
     }
   }
 
   return rdata;
+#else
+  (void)addr;
+  (void)wdata;
+
+  return 0;
+#endif
 }
 
 
@@ -67,20 +63,27 @@ uint32_t neorv32_cpu_amoswapw(uint32_t addr, uint32_t wdata) {
  **************************************************************************/
 uint32_t neorv32_cpu_amoaddw(uint32_t addr, uint32_t wdata) {
 
+#if defined __riscv_atomic
   uint32_t rdata;
   uint32_t tmp;
   uint32_t status;
 
   while(1) {
-    rdata  = neorv32_cpu_load_reservate_word(addr);
+    rdata  = neorv32_cpu_amolr(addr);
     tmp    = rdata + wdata;
-    status = neorv32_cpu_store_conditional_word(addr, tmp);
+    status = neorv32_cpu_amosc(addr, tmp);
     if (status == 0) {
       break;
     }
   }
 
   return rdata;
+#else
+  (void)addr;
+  (void)wdata;
+
+  return 0;
+#endif
 }
 
 
@@ -96,20 +99,27 @@ uint32_t neorv32_cpu_amoaddw(uint32_t addr, uint32_t wdata) {
  **************************************************************************/
 uint32_t neorv32_cpu_amoandw(uint32_t addr, uint32_t wdata) {
 
+#if defined __riscv_atomic
   uint32_t rdata;
   uint32_t tmp;
   uint32_t status;
 
   while(1) {
-    rdata  = neorv32_cpu_load_reservate_word(addr);
+    rdata  = neorv32_cpu_amolr(addr);
     tmp    = rdata & wdata;
-    status = neorv32_cpu_store_conditional_word(addr, tmp);
+    status = neorv32_cpu_amosc(addr, tmp);
     if (status == 0) {
       break;
     }
   }
 
   return rdata;
+#else
+  (void)addr;
+  (void)wdata;
+
+  return 0;
+#endif
 }
 
 
@@ -125,20 +135,27 @@ uint32_t neorv32_cpu_amoandw(uint32_t addr, uint32_t wdata) {
  **************************************************************************/
 uint32_t neorv32_cpu_amoorw(uint32_t addr, uint32_t wdata) {
 
+#if defined __riscv_atomic
   uint32_t rdata;
   uint32_t tmp;
   uint32_t status;
 
   while(1) {
-    rdata  = neorv32_cpu_load_reservate_word(addr);
+    rdata  = neorv32_cpu_amolr(addr);
     tmp    = rdata | wdata;
-    status = neorv32_cpu_store_conditional_word(addr, tmp);
+    status = neorv32_cpu_amosc(addr, tmp);
     if (status == 0) {
       break;
     }
   }
 
   return rdata;
+#else
+  (void)addr;
+  (void)wdata;
+
+  return 0;
+#endif
 }
 
 
@@ -154,20 +171,27 @@ uint32_t neorv32_cpu_amoorw(uint32_t addr, uint32_t wdata) {
  **************************************************************************/
 uint32_t neorv32_cpu_amoxorw(uint32_t addr, uint32_t wdata) {
 
+#if defined __riscv_atomic
   uint32_t rdata;
   uint32_t tmp;
   uint32_t status;
 
   while(1) {
-    rdata  = neorv32_cpu_load_reservate_word(addr);
+    rdata  = neorv32_cpu_amolr(addr);
     tmp    = rdata ^ wdata;
-    status = neorv32_cpu_store_conditional_word(addr, tmp);
+    status = neorv32_cpu_amosc(addr, tmp);
     if (status == 0) {
       break;
     }
   }
 
   return rdata;
+#else
+  (void)addr;
+  (void)wdata;
+
+  return 0;
+#endif
 }
 
 
@@ -183,20 +207,27 @@ uint32_t neorv32_cpu_amoxorw(uint32_t addr, uint32_t wdata) {
  **************************************************************************/
 int32_t neorv32_cpu_amomaxw(uint32_t addr, int32_t wdata) {
 
+#if defined __riscv_atomic
   int32_t rdata;
   int32_t tmp;
   uint32_t status;
 
   while(1) {
-    rdata  = (int32_t)neorv32_cpu_load_reservate_word(addr);
-    tmp    = MAX(rdata, wdata);
-    status = neorv32_cpu_store_conditional_word(addr, tmp);
+    rdata  = (int32_t)neorv32_cpu_amolr(addr);
+    tmp    = neorv32_aux_max(rdata, wdata);
+    status = neorv32_cpu_amosc(addr, tmp);
     if (status == 0) {
       break;
     }
   }
 
   return rdata;
+#else
+  (void)addr;
+  (void)wdata;
+
+  return 0;
+#endif
 }
 
 
@@ -212,20 +243,27 @@ int32_t neorv32_cpu_amomaxw(uint32_t addr, int32_t wdata) {
  **************************************************************************/
 uint32_t neorv32_cpu_amomaxuw(uint32_t addr, uint32_t wdata) {
 
+#if defined __riscv_atomic
   uint32_t rdata;
   uint32_t tmp;
   uint32_t status;
 
   while(1) {
-    rdata  = (uint32_t)neorv32_cpu_load_reservate_word(addr);
-    tmp    = MAXU(rdata, wdata);
-    status = neorv32_cpu_store_conditional_word(addr, tmp);
+    rdata  = (uint32_t)neorv32_cpu_amolr(addr);
+    tmp    = neorv32_aux_max(rdata, wdata);
+    status = neorv32_cpu_amosc(addr, tmp);
     if (status == 0) {
       break;
     }
   }
 
   return rdata;
+#else
+  (void)addr;
+  (void)wdata;
+
+  return 0;
+#endif
 }
 
 
@@ -241,20 +279,27 @@ uint32_t neorv32_cpu_amomaxuw(uint32_t addr, uint32_t wdata) {
  **************************************************************************/
 int32_t neorv32_cpu_amominw(uint32_t addr, int32_t wdata) {
 
+#if defined __riscv_atomic
   int32_t rdata;
   int32_t tmp;
   uint32_t status;
 
   while(1) {
-    rdata  = (int32_t)neorv32_cpu_load_reservate_word(addr);
-    tmp    = MIN(rdata, wdata);
-    status = neorv32_cpu_store_conditional_word(addr, tmp);
+    rdata  = (int32_t)neorv32_cpu_amolr(addr);
+    tmp    = neorv32_aux_min(rdata, wdata);
+    status = neorv32_cpu_amosc(addr, tmp);
     if (status == 0) {
       break;
     }
   }
 
   return rdata;
+#else
+  (void)addr;
+  (void)wdata;
+
+  return 0;
+#endif
 }
 
 
@@ -270,18 +315,25 @@ int32_t neorv32_cpu_amominw(uint32_t addr, int32_t wdata) {
  **************************************************************************/
 uint32_t neorv32_cpu_amominuw(uint32_t addr, uint32_t wdata) {
 
+#if defined __riscv_atomic
   uint32_t rdata;
   uint32_t tmp;
   uint32_t status;
 
   while(1) {
-    rdata  = (uint32_t)neorv32_cpu_load_reservate_word(addr);
-    tmp    = MINU(rdata, wdata);
-    status = neorv32_cpu_store_conditional_word(addr, tmp);
+    rdata  = (uint32_t)neorv32_cpu_amolr(addr);
+    tmp    = neorv32_aux_min(rdata, wdata);
+    status = neorv32_cpu_amosc(addr, tmp);
     if (status == 0) {
       break;
     }
   }
 
   return rdata;
+#else
+  (void)addr;
+  (void)wdata;
+
+  return 0;
+#endif
 }
