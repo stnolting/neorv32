@@ -2267,8 +2267,8 @@ begin
             -- the mantissa is not 0 (without hidden 1) then we have a true overflow.
             -- Otherwise we have a "real" 1 in the result MSB which should result in -MAX as the correct value.
             -- This captures the corner case where the number is exactly 2^-31
-            elsif ((ctrl.sign = '1') and (ctrl.over = '1') and
-                   (ctrl.result_tmp /= x"80000000") and (mantissa_i /= "00000000000000000000000")) then -- negative out-of-range
+            elsif (ctrl.sign = '1') and (ctrl.over = '1') then -- negative out-of-range
+--                and (ctrl.result_tmp /= x"80000000") and (mantissa_i /= "00000000000000000000000") then -- negative out-of-range
               ctrl.result <= x"80000000";
               -- if we had a negative out of range we are not valid but never inexact
               ctrl.flags(fp_exc_nv_c) <= '1';
