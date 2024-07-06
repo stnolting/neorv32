@@ -535,13 +535,8 @@ The `crt0.S` start-up performs the following operations:
 . If `main` returns:
 ** All interrupt sources are disabled by clearing <<_mie>>.
 ** The return value of `main` is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
-** Call all _destructors_ (if there are any).
+** Call all _destructors_ (if there are any). If any destructor causes an exception the crt0's trap handler is used for handling (= skipping) this.
 ** The CPU enters sleep mode executing the `wfi` instruction in an endless loop.
-
-.Bootloader Start-Up Code
-[NOTE]
-The bootloader uses the same start-up code as any "usual" application. However, certain parts are omitted when compiling
-`crt0` for the bootloader (like calling constructors and destructors). See the `crt0` source code for more information.
 
 
 :sectnums:
