@@ -358,7 +358,7 @@ void neorv32_rte_debug_handler(void) {
   __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
 
   // unhandled IRQ - disable interrupt channel
-  if (trap_cause & (1<<31)) { // is interrupt
+  if (((int32_t)trap_cause) < 0) { // is interrupt
     neorv32_uart0_puts(" Disabling IRQ source\n");
     neorv32_cpu_csr_clr(CSR_MIE, 1 << (trap_cause & 0x1f));
   }
