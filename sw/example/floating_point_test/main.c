@@ -264,6 +264,14 @@ int main() {
 
   neorv32_uart0_printf("\n#%u: FCVT.W.S (float to signed integer)...\n", test_cnt);
   err_cnt = 0;
+  // corner case tests (#942)
+  for (i=0;i<256;i++) {
+    opa.binary_value = i << 24;
+    res_hw.binary_value = (uint32_t)riscv_intrinsic_fcvt_ws(opa.float_value);
+    res_sw.binary_value = (uint32_t)riscv_emulate_fcvt_ws(opa.float_value);
+    err_cnt += verify_result(i, opa.binary_value, 0, res_sw.binary_value, res_hw.binary_value);
+  }
+  // regular tests
   for (i=0;i<(uint32_t)NUM_TEST_CASES; i++) {
     opa.binary_value = get_test_vector();
     res_hw.binary_value = (uint32_t)riscv_intrinsic_fcvt_ws(opa.float_value);
@@ -902,14 +910,14 @@ uint32_t get_test_vector(void) {
   // generate special value "every" ~256th time this function is called
   if ((neorv32_aux_xorshift32() & 0xff) == 0xff) {
 
-    switch((neorv32_aux_xorshift32() >> 10) & 0x3) { // random decision which special value we are taking
+    switch((neorv32_aux_xorshift32() >> 20) & 0x7) { // random decision which special value we are taking
       case  0: tmp.float_value  = +INFINITY; break;
       case  1: tmp.float_value  = -INFINITY; break;
       case  2: tmp.float_value  = +0.0f; break;
       case  3: tmp.float_value  = -0.0f; break;
       case  4: tmp.binary_value = 0x7fffffff; break;
       case  5: tmp.binary_value = 0xffffffff; break;
-      case  6: tmp.float_value  = NAN; break;
+      case  6: tmp.binary_value = 0xff000000; break;
       case  7: tmp.float_value  = NAN; break; // FIXME signaling_NAN?
       default: tmp.float_value  = NAN; break;
     }
