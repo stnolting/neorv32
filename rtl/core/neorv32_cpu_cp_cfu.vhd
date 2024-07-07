@@ -12,100 +12,102 @@
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
 
-  -- **************************************************************************************************************************
-  -- CFU Interface Documentation
-  -- **************************************************************************************************************************
+-- **************************************************************************************************************************
+-- CFU Interface Documentation
+-- **************************************************************************************************************************
 
-  -- ----------------------------------------------------------------------------------------
-  -- Input Operands
-  -- ----------------------------------------------------------------------------------------
-  -- rs1_i    (input, 32-bit): source register 1; selected by instruction word's <rs1> bit-field
-  -- rs2_i    (input, 32-bit): source register 2; selected by instruction word's <rs2> bit-field
-  -- rs3_i    (input, 32-bit): source register 3; selected by instruction word's <rs3> bit-field
-  -- rs4_i    (input, 32-bit): source register 4; selected by instruction word's <rs4> bit-field
-  -- rtype_i  (input,  2-bit): instruction R-type; driven by instruction word's OPCODE
-  -- funct3_i (input,  3-bit): 3-bit function select / immediate value; driven by instruction word's <funct3> bit-field
-  -- funct7_i (input,  7-bit): 7-bit function select / immediate value; driven by instruction word's <funct7> bit-field
-  --
-  -- The general instruction type is identified by the <rtype_i> input.
-  -- r3type_c  (= 00) - R3-type instructions  (custom-0 opcode): 'rs1', 'rs2' and 'funct7' and 'funct3'
-  -- r4type_c  (= 01) - R4-type instructions  (custom-1 opcode): 'rs1', 'rs2', 'rs3' and 'funct3'
-  -- r5typeA_c (= 10) - R5-type instruction A (custom-2 opcode): 'rs1', 'rs2', 'rs3', 'rs4', no immediates
-  -- r5typeB_c (= 11) - R5-type instruction B (custom-3 opcode): 'rs1', 'rs2', 'rs3', 'rs4', no immediates
-  --
-  -- The four signals <rs1_i>, <rs2_i>, <rs3_i> and <rs4_i> provide the source operand data read from the CPU's register
-  -- file. The source registers are adressed by the custom instruction word's <rs1>, <rs2>, <rs3> and <rs4> bit-fields.
-  --
-  -- [TIP] <rs1_i>, <rs2_i>, <rs3_i> and <rs4_i> are directly driven by the register file (e.g. block RAM). For complex CFU
-  --       designs it is recommended to buffer these signals using CFU-internal registers before actually using them.
-  --
-  -- [NOTE] The R4-type instructions and R5-type instruction provide additional source register. When used, this will
-  --        increase the hardware requirements of the register file.
-  --
-  -- The actual CFU operation can be defined by using the <funct3_i> and/or <funct7_i> signals (depending on the R-type).
-  -- Both signals are driven by the according bit-fields of the custom instruction word. These immediates can be used to
-  -- select the actual function or to provide small literals for certain operations (like shift amounts, offsets, ...).
-  --
-  -- [NOTE] All input operand signals remain stable during CFU operation.
+-- ----------------------------------------------------------------------------------------
+-- Input Operands
+-- ----------------------------------------------------------------------------------------
+-- rs1_i    (input, 32-bit): source register 1; selected by instruction word's <rs1> bit-field
+-- rs2_i    (input, 32-bit): source register 2; selected by instruction word's <rs2> bit-field
+-- rs3_i    (input, 32-bit): source register 3; selected by instruction word's <rs3> bit-field
+-- rs4_i    (input, 32-bit): source register 4; selected by instruction word's <rs4> bit-field
+-- rtype_i  (input,  2-bit): instruction R-type; driven by instruction word's OPCODE
+-- funct3_i (input,  3-bit): 3-bit function select / immediate value; driven by instruction word's <funct3> bit-field
+-- funct7_i (input,  7-bit): 7-bit function select / immediate value; driven by instruction word's <funct7> bit-field
+--
+-- The general instruction type is identified by the <rtype_i> input.
+-- r3type_c  (= 00) - R3-type instructions  (custom-0 opcode): 'rs1', 'rs2' and 'funct7' and 'funct3'
+-- r4type_c  (= 01) - R4-type instructions  (custom-1 opcode): 'rs1', 'rs2', 'rs3' and 'funct3'
+-- r5typeA_c (= 10) - R5-type instruction A (custom-2 opcode): 'rs1', 'rs2', 'rs3', 'rs4', no immediates
+-- r5typeB_c (= 11) - R5-type instruction B (custom-3 opcode): 'rs1', 'rs2', 'rs3', 'rs4', no immediates
+--
+-- The four signals <rs1_i>, <rs2_i>, <rs3_i> and <rs4_i> provide the source operand data read from the CPU's register
+-- file. The source registers are adressed by the custom instruction word's <rs1>, <rs2>, <rs3> and <rs4> bit-fields.
+--
+-- [TIP] <rs1_i>, <rs2_i>, <rs3_i> and <rs4_i> are directly driven by the register file (e.g. block RAM). For complex CFU
+--       designs it is recommended to buffer these signals using CFU-internal registers before actually using them.
+--
+-- [NOTE] The R4-type instructions and R5-type instruction provide additional source register. When used, this will
+--        increase the hardware requirements of the register file.
+--
+-- The actual CFU operation can be defined by using the <funct3_i> and/or <funct7_i> signals (depending on the R-type).
+-- Both signals are driven by the according bit-fields of the custom instruction word. These immediates can be used to
+-- select the actual function or to provide small literals for certain operations (like shift amounts, offsets, ...).
+--
+-- [NOTE] All input operand signals remain stable during CFU operation.
 
-  -- ----------------------------------------------------------------------------------------
-  -- Processing Interface
-  -- ----------------------------------------------------------------------------------------
-  -- rstn_i   (input,   1-bit): asynchronous reset, low-active
-  -- clk_i    (input,   1-bit): main clock, interface signals updated on the rising edge
-  -- start_i  (input,   1-bit): operation trigger (start processing, high for one cycle)
-  -- active_i (input,   1-bit): operation in progress while (optional signal)
-  -- result_o (output, 32-bit): processing result
-  -- valid_o  (output,  1-bit): set high when processing is done
-  --
-  -- The start of a new CFU operation is indicated by <start_i> being high for exactly one cycle. The CFU may operate while
-  -- <active_i> is high and should stop all internal operations when it clears again. However, using this signal is optional.
-  --
-  -- When the CFU has completed computation, the data send via the <result_o> signal will be written to the CPU's register
-  -- file (indexed by the "rd" register). The CPU pipeline samples this signal exactly one cycle after <valid_o> has been set.
-  --
-  -- [TIP] For complex CFU designs it is highly recommended to register <result_o> in order to keep the CPU's critical
-  --       path as short as possible.
-  --
-  -- The <valid_o> signal is used to signal the completion of the CFU operation. For pure-combinatorial instructions
-  -- (completing within 1 clock cycle) <valid_o> can be tied to 1. If the CFU requires several clock cycles for completion
-  -- the <valid_o> signal has to be set high for one cycle EXACTLY ONE CYCLE before <result_o> is valid.
-  --
-  -- Example interface timing for a multi-cycle CFU operation ("D" represents the processing result in the output phase):
-  -- clk_i    ____/----\____/----\____/----\____/----\____/----\____
-  -- start_i  ____/---------\_______________________________________ trigger is high for one cycle
-  -- active_i ____/-----------------------------\___________________ cease processing when low
-  -- valid_o  ________________________/---------\___________________ set one cycle before output phase, zero otherwise
-  -- result_o dddddddddddddddddddddddddddddddddd|DDDDDDDDD|ddddddddd don't care except for output phase
-  --
-  -- [NOTE] If the <valid_o> signal is not set within a bound time window (default = 512 cycles; see "monitor_mc_tmo_c"
-  --        constant in the main NEORV32 package file) the CFU operation is automatically terminated by the hardware
-  --        (clearing <active_i>) and an illegal instruction exception is raised.
+-- ----------------------------------------------------------------------------------------
+-- Processing Interface
+-- ----------------------------------------------------------------------------------------
+-- rstn_i   (input,   1-bit): asynchronous reset, low-active
+-- clk_i    (input,   1-bit): main clock, interface signals updated on the rising edge
+-- start_i  (input,   1-bit): operation trigger (start processing, high for one cycle)
+-- active_i (input,   1-bit): operation in progress while (optional signal)
+-- result_o (output, 32-bit): processing result
+-- valid_o  (output,  1-bit): set high when processing is done
+--
+-- The start of a new CFU operation is indicated by <start_i> being high for exactly one cycle. The CFU may operate while
+-- <active_i> is high and should stop all internal operations when it clears again. However, using this signal is optional.
+--
+-- When the CFU has completed computation, the data send via the <result_o> signal will be written to the CPU's register
+-- file (indexed by the "rd" register). The CPU pipeline samples this signal exactly one cycle after <valid_o> has been set.
+--
+-- [TIP] For complex CFU designs it is highly recommended to register <result_o> in order to keep the CPU's critical
+--       path as short as possible.
+--
+-- The <valid_o> signal is used to signal the completion of the CFU operation. For pure-combinatorial instructions
+-- (completing within 1 clock cycle) <valid_o> can be tied to 1. If the CFU requires several clock cycles for completion
+-- the <valid_o> signal has to be set high for one cycle EXACTLY ONE CYCLE before <result_o> is valid.
+--
+-- Example interface timing for a multi-cycle CFU operation ("D" represents the processing result in the output phase):
+-- clk_i    ____/----\____/----\____/----\____/----\____/----\____
+-- start_i  ____/---------\_______________________________________ trigger is high for one cycle
+-- active_i ____/-----------------------------\___________________ cease processing when low
+-- valid_o  ________________________/---------\___________________ set one cycle before output phase, zero otherwise
+-- result_o dddddddddddddddddddddddddddddddddd|DDDDDDDDD|ddddddddd don't care except for output phase
+--
+-- [NOTE] If the <valid_o> signal is not set within a bound time window (default = 512 cycles; see "monitor_mc_tmo_c"
+--        constant in the main NEORV32 package file) the CFU operation is automatically terminated by the hardware
+--        (clearing <active_i>) and an illegal instruction exception is raised.
 
-  -- ----------------------------------------------------------------------------------------
-  -- CFU-Internal Control and Status Registers (CFU-CSRs)
-  -- ----------------------------------------------------------------------------------------
-  -- csr_we_i    (input,   1-bit): set to indicate a valid CFU CSR write access, high for one cycle
-  -- csr_addr_i  (input,   2-bit): CSR address
-  -- csr_wdata_i (input,  32-bit): CSR write data
-  -- csr_rdata_i (output, 32-bit): CSR read data
-  --
-  -- The NEORV32 provides four directly accessible CSRs for custom use inside the CFU. These registers can be used to pass
-  -- further operands, to check the unit's status or to configure operation modes.
-  --
-  -- [TIP] If more than four CFU-internal CSRs are required the designer can implement an "indirect access mechanism" based
-  --       on just two of the default CSRs: one CSR is used to configure the index while the other is used as an alias to
-  --       exchange data with the indexed CFU-internal CSR.
+-- ----------------------------------------------------------------------------------------
+-- CFU-Internal Control and Status Registers (CFU-CSRs)
+-- ----------------------------------------------------------------------------------------
+-- csr_we_i    (input,   1-bit): set to indicate a valid CFU CSR write access, high for one cycle
+-- csr_addr_i  (input,   2-bit): CSR address
+-- csr_wdata_i (input,  32-bit): CSR write data
+-- csr_rdata_i (output, 32-bit): CSR read data
+--
+-- The NEORV32 provides four directly accessible CSRs for custom use inside the CFU. These registers can be used to pass
+-- further operands, to check the unit's status or to configure operation modes.
+--
+-- [TIP] If more than four CFU-internal CSRs are required the designer can implement an "indirect access mechanism" based
+--       on just two of the default CSRs: one CSR is used to configure the index while the other is used as an alias to
+--       exchange data with the indexed CFU-internal CSR.
 
-  -- **************************************************************************************************************************
-  -- Actual CFU User Logic Example: XTEA - Extended Tiny Encryption Algorithm (replace this with your custom logic)
-  -- **************************************************************************************************************************
+-- **************************************************************************************************************************
+-- Actual CFU User Logic Example: XTEA - Extended Tiny Encryption Algorithm (replace this with your custom logic)
+-- **************************************************************************************************************************
 
-  -- This CFU example implements the Extended Tiny Encryption Algorithm (XTEA).
-  -- The CFU provides 5 custom instructions to accelerate encryption and decryption using dedicated hardware.
-  -- The RTL code is not optimized (not for area, not for clock speed, not for performance) and was
-  -- implemented according to an open-source software C reference:
-  -- https://de.wikipedia.org/wiki/Extended_Tiny_Encryption_Algorithm
+-- This CFU example implements the Extended Tiny Encryption Algorithm (XTEA).
+-- The CFU provides 5 custom instructions to accelerate encryption and decryption using dedicated hardware.
+-- Furthermore, 4 CFU-internal control and status registers (CSRs) are implemented for key storage.
+
+-- The RTL code is not optimized at all (not for area, not for clock speed, not for performance) and was
+-- implemented according to an open-source software C reference:
+-- https://de.wikipedia.org/wiki/Extended_Tiny_Encryption_Algorithm
 
 library ieee;
 use ieee.std_logic_1164.all;
