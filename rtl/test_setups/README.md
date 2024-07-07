@@ -25,10 +25,11 @@ your FPGA/board.
 * The processor-internal instruction memory (IMEM) size _can be modified_ via the `MEM_INT_IMEM_SIZE` generic.
 * The processor-internal data memory (DMEM) size _can be modified_ via the `MEM_INT_DMEM_SIZE` generic.
 
-:warning: Modifying the memory sizes might require adaption of the NEORV32 linker script.
+> [!WARNING]
+> Modifying the memory sizes might require adaption of the NEORV32 linker script.
 
 
-### [`neorv32_test_setup_approm.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/test_setups/neorv32_test_setup_approm.vhd)
+### > [`neorv32_test_setup_approm.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/test_setups/neorv32_test_setup_approm.vhd)
 
 This setup configures a `rv32imc_Zicsr_Zicntr` CPU with 16kB IMEM (as pre-initialized ROM),
 8kB DMEM and includes the **GPIO** module to drive 8 external signals (`gpio_o`)
@@ -37,11 +38,11 @@ The setup uses the ["direct boot"](https://stnolting.github.io/neorv32/#_direct_
 configuration, so software applications are "installed" directly into the
 processor-internal IMEM (via the bitstream) during synthesis.
 
-:books: See User Guide section
-[Installing an Executable Directly Into Memory](https://stnolting.github.io/neorv32/ug/#_installing_an_executable_directly_into_memory).
+> [!TIP]
+> See User Guide section [Installing an Executable Directly Into Memory](https://stnolting.github.io/neorv32/ug/#_installing_an_executable_directly_into_memory).
 
 
-### [`neorv32_test_setup_bootloader.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/test_setups/neorv32_test_setup_bootloader.vhd)
+### > [`neorv32_test_setup_bootloader.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/test_setups/neorv32_test_setup_bootloader.vhd)
 
 This setup configures a `rv32imc_Zicsr_Zicntr` CPU with 16kB IMEM (as RAM), 8kB DMEM
 and includes the **GPIO** module to drive 8 external signals (`gpio_o`), the **MTIME**
@@ -51,11 +52,11 @@ The setup uses the ["indirect boot"](https://stnolting.github.io/neorv32/#_indir
 configuration, so software applications can be uploaded and run at any timer via the bootloader
 and a serial terminal.
 
-:books: See User Guide section
-[Uploading and Starting of a Binary Executable Image via UART](https://stnolting.github.io/neorv32/ug/#_uploading_and_starting_of_a_binary_executable_image_via_uart).
+> [!TIP]
+> See User Guide section [Uploading and Starting of a Binary Executable Image via UART](https://stnolting.github.io/neorv32/ug/#_uploading_and_starting_of_a_binary_executable_image_via_uart).
 
 
-### [`neorv32_test_setup_on_chip_debugger.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/test_setups/neorv32_test_setup_on_chip_debugger.vhd)
+### > [`neorv32_test_setup_on_chip_debugger.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/test_setups/neorv32_test_setup_on_chip_debugger.vhd)
 
 This setup configures a `rv32imc_Zicsr_Zicntr_Zifencei` CPU with 16kB IMEM (as RAM), 8kB DMEM
 and includes the **GPIO** module to drive 8 external signals (`gpio_o`), the **MTIME**
@@ -66,5 +67,5 @@ The setup uses the ["indirect boot"](https://stnolting.github.io/neorv32/#_indir
 configuration, so software applications can be uploaded and run at any timer via the bootloader
 and a serial terminal and also via the on-chip debugger.
 
-:books: See User Guide section
-[Debugging using the On-Chip Debugger](https://stnolting.github.io/neorv32/ug/#_debugging_using_the_on_chip_debugger).
+> [!TIP]
+> See User Guide section [Debugging using the On-Chip Debugger](https://stnolting.github.io/neorv32/ug/#_debugging_using_the_on_chip_debugger).

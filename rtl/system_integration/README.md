@@ -1,6 +1,6 @@
 ## Processor System Integration
 
-### `neorv32_litex_core_complex.vhd`
+### > `neorv32_litex_core_complex.vhd`
 
 Pre-configured top entity wrapper for integration within the [LiteX](https://github.com/enjoy-digital/litex)
 SoC builder framework. This wrapper provides AXI4-Lite- and AXI4-Stream-compatible interfaces.
@@ -13,7 +13,7 @@ for more information.
 > The provided top entity wrapper can also be used for custom (AXI) setups outside of Vivado IP block designs.
 
 
-### `neorv32_vivado_ip.vhd`
+### > `neorv32_vivado_ip.vhd`
 
 Processor top entity with optional AXI4-Lite and AXI4-Stream interfaces. Dedicated for integration as custom
 IP block within AMD Vivado. Run the provided packaging script in the Vivado TCL shell to generate a NEORV32
@@ -28,6 +28,6 @@ source neorv32_vivado_ip.tcl
 section for more information and step-by-step instructions for generating a NEORV32 IP module.
 
 
-### `xbus2ahblite_bridge.vhd`
+### > `xbus2ahblite_bridge.vhd`
 
 A simple bridge module that converts the processor's XBUS interface into an AHB3-lite-compatible host interface.
