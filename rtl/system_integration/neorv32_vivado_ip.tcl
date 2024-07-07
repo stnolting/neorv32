@@ -2,8 +2,7 @@
 # -- NEORV32 - Vivado IP Packaging + Customization GUI Setup                          --
 # -- -------------------------------------------------------------------------------- --
 # -- This scripts packages the entire processor as Vivado IP module including a fancy --
-# -- customization GUI.                                                               --
-# -- See the NEORV32 Datasheet and User Guide for more information.                   --
+# -- customization GUI. See the NEORV32 Datasheet & User Guide for more information.  --
 # -- -------------------------------------------------------------------------------- --
 # -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 # -- Copyright (c) NEORV32 contributors.                                              --
@@ -12,6 +11,7 @@
 # -- SPDX-License-Identifier: BSD-3-Clause                                            --
 # -- ================================================================================ --
 
+
 # **************************************************************
 # Global configuration
 # **************************************************************
@@ -19,7 +19,7 @@ set neorv32_home ../..
 set rtl_top neorv32_vivado_ip.vhd
 set logo docs/figures/neorv32_logo_riscv_small.png
 set outputdir neorv32_vivado_ip_work
-set cur_dir [ file normalize .]
+set cur_dir [file normalize .]
 
 
 # **************************************************************
@@ -46,8 +46,7 @@ set_property target_language VHDL [current_project]
 # Add HDL source files
 # **************************************************************
 add_files [glob $neorv32_home/rtl/core/*.vhd]
-add_file $neorv32_home/rtl/core/mem/neorv32_dmem.default.vhd
-add_file $neorv32_home/rtl/core/mem/neorv32_imem.default.vhd
+add_files [glob $neorv32_home/rtl/core/mem/neorv32_*mem.default.vhd]
 add_file $neorv32_home/rtl/system_integration/$rtl_top
 
 set_property library neorv32 [get_files [glob $neorv32_home/rtl/core/*.vhd]]
@@ -55,7 +54,6 @@ set_property library neorv32 [get_files [glob $neorv32_home/rtl/core/mem/neorv32
 set_property library neorv32 [get_files [glob $neorv32_home/rtl/system_integration/$rtl_top]]
 
 set_property top $rtl_top [current_fileset]
-
 update_compile_order -fileset sources_1
 
 
