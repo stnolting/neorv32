@@ -218,7 +218,8 @@ int main() {
 // ----------------------------------------------------------------------------
 // Initialize FPU hardware
 // ----------------------------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_FCSR, 0); // clear exception flags and set "round to nearest"
+  neorv32_cpu_csr_write(CSR_FFLAGS, 0); // clear exception flags
+  neorv32_cpu_csr_write(CSR_FRM, 0b000); // set dynamic rounding mode "round to nearest, ties to even"
 
 
 // ----------------------------------------------------------------------------
