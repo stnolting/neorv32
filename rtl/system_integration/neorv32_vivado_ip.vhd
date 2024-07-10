@@ -53,7 +53,7 @@ entity neorv32_vivado_ip is
     REGFILE_HW_RST             : boolean                        := false;
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS            : natural range 0 to 16          := 0;
-    PMP_MIN_GRANULARITY        : natural range 4 to 2**30       := 4;
+    PMP_MIN_GRANULARITY        : natural                        := 4;
     PMP_TOR_MODE_EN            : boolean                        := false;
     PMP_NAP_MODE_EN            : boolean                        := false;
     -- Hardware Performance Monitors (HPM) --

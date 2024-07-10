@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100101"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100102"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -128,19 +128,19 @@ package neorv32_package is
     addr  : std_ulogic_vector(31 downto 0); -- access address
     data  : std_ulogic_vector(31 downto 0); -- write data
     ben   : std_ulogic_vector(3 downto 0); -- byte enable
-    stb   : std_ulogic; -- request strobe (single-shot)
+    stb   : std_ulogic; -- request strobe, single-shot
     rw    : std_ulogic; -- 0=read, 1=write
     src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
     priv  : std_ulogic; -- set if privileged (machine-mode) access
     rvso  : std_ulogic; -- set if reservation set operation (atomic LR/SC)
-    fence : std_ulogic; -- fence(.i) operation, independent of STB
+    fence : std_ulogic; -- set if fence(.i) operation, single-shot, independent of STB
   end record;
 
   -- bus response --
   type bus_rsp_t is record
-    data : std_ulogic_vector(31 downto 0); -- read data
-    ack  : std_ulogic; -- access acknowledge (single-shot)
-    err  : std_ulogic; -- access error (single-shot)
+    data : std_ulogic_vector(31 downto 0); -- read data, valid if ack=1
+    ack  : std_ulogic; -- access acknowledge, single-shot
+    err  : std_ulogic; -- access error, single-shot
   end record;
 
   -- source (request) termination --
@@ -737,7 +737,7 @@ package neorv32_package is
       REGFILE_HW_RST             : boolean                        := false;
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS            : natural range 0 to 16          := 0;
-      PMP_MIN_GRANULARITY        : natural range 4 to 2**30       := 4;
+      PMP_MIN_GRANULARITY        : natural                        := 4;
       PMP_TOR_MODE_EN            : boolean                        := true;
       PMP_NAP_MODE_EN            : boolean                        := true;
       -- Hardware Performance Monitors (HPM) --
