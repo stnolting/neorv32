@@ -29,7 +29,6 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 06.07.2024 | 1.10.1.2 | :bug: fix corner case in FPU's float-to-signed-integer converter | [#943](https://github.com/stnolting/neorv32/pull/943) |
 | 05.07.2024 | 1.10.1.1 | minor rtl cleanups and optimizations | [#941](https://github.com/stnolting/neorv32/pull/941) |
 | 04.07.2024 | [**:rocket:1.10.1**](https://github.com/stnolting/neorv32/releases/tag/v1.10.1) | **New release** | |
 | 04.07.2024 | 1.10.0.10 | :warning: rework GPTMRM and remove capture mode | [#939](https://github.com/stnolting/neorv32/pull/939) |
