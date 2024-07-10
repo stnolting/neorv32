@@ -34,12 +34,12 @@ following parameters:
 * 1 stop bit
 * no parity bits
 * _no_ transmission/flow control protocol
-* receiver (host computer) newline on `\r\n` (carriage return & newline)
+* newline on `\r\n` (carriage return **and** line feed)
 
 [start=4]
 . Also make sure that single chars are send from your computer _without_ any consecutive "new line" or "carriage
 return" commands. This is highly dependent on your terminal application of choice, TeraTerm only
-sends the raw chars by default. In `cutecom`, change `LF` to `None` in the dropdown menu
+sends the raw chars by default. In `cutecom`, change `LF` to `None` in the drop-down menu
 next to the input text box.
 . Press the NEORV32 reset button to restart the bootloader. The status LED starts blinking and the
 bootloader intro screen appears in your console. Hurry up and press any key (hit space!) to abort the
@@ -57,8 +57,8 @@ CLK:  0x05f5e100
 MISA: 0x40901106
 XISA: 0xc0000fab
 SOC:  0xffff402f
-IMEM: 0x00008000 bytes @0x00000000
-DMEM: 0x00002000 bytes @0x80000000
+IMEM: 0x00008000
+DMEM: 0x00002000
 
 Autoboot in 10s. Press any key to abort.
 Aborted.
