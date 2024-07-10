@@ -357,6 +357,7 @@ end neorv32_bus_gateway_rtl;
 -- NEORV32 SoC - Processor Bus Infrastructure: IO Switch                            --
 -- -------------------------------------------------------------------------------- --
 -- Simple switch for accessing one out of several (IO) devices.                     --
+-- Note: Enabled ports do not have to be contiguous.                                --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -376,76 +377,76 @@ entity neorv32_bus_io_switch is
   generic (
     DEV_SIZE  : natural; -- size of a single IO device, has to be a power of two
     -- device port enable and base address --
-    DEV_00_EN : boolean; DEV_00_BASE : std_ulogic_vector(31 downto 0);
-    DEV_01_EN : boolean; DEV_01_BASE : std_ulogic_vector(31 downto 0);
-    DEV_02_EN : boolean; DEV_02_BASE : std_ulogic_vector(31 downto 0);
-    DEV_03_EN : boolean; DEV_03_BASE : std_ulogic_vector(31 downto 0);
-    DEV_04_EN : boolean; DEV_04_BASE : std_ulogic_vector(31 downto 0);
-    DEV_05_EN : boolean; DEV_05_BASE : std_ulogic_vector(31 downto 0);
-    DEV_06_EN : boolean; DEV_06_BASE : std_ulogic_vector(31 downto 0);
-    DEV_07_EN : boolean; DEV_07_BASE : std_ulogic_vector(31 downto 0);
-    DEV_08_EN : boolean; DEV_08_BASE : std_ulogic_vector(31 downto 0);
-    DEV_09_EN : boolean; DEV_09_BASE : std_ulogic_vector(31 downto 0);
-    DEV_10_EN : boolean; DEV_10_BASE : std_ulogic_vector(31 downto 0);
-    DEV_11_EN : boolean; DEV_11_BASE : std_ulogic_vector(31 downto 0);
-    DEV_12_EN : boolean; DEV_12_BASE : std_ulogic_vector(31 downto 0);
-    DEV_13_EN : boolean; DEV_13_BASE : std_ulogic_vector(31 downto 0);
-    DEV_14_EN : boolean; DEV_14_BASE : std_ulogic_vector(31 downto 0);
-    DEV_15_EN : boolean; DEV_15_BASE : std_ulogic_vector(31 downto 0);
-    DEV_16_EN : boolean; DEV_16_BASE : std_ulogic_vector(31 downto 0);
-    DEV_17_EN : boolean; DEV_17_BASE : std_ulogic_vector(31 downto 0);
-    DEV_18_EN : boolean; DEV_18_BASE : std_ulogic_vector(31 downto 0);
-    DEV_19_EN : boolean; DEV_19_BASE : std_ulogic_vector(31 downto 0);
-    DEV_20_EN : boolean; DEV_20_BASE : std_ulogic_vector(31 downto 0);
-    DEV_21_EN : boolean; DEV_21_BASE : std_ulogic_vector(31 downto 0);
-    DEV_22_EN : boolean; DEV_22_BASE : std_ulogic_vector(31 downto 0);
-    DEV_23_EN : boolean; DEV_23_BASE : std_ulogic_vector(31 downto 0);
-    DEV_24_EN : boolean; DEV_24_BASE : std_ulogic_vector(31 downto 0);
-    DEV_25_EN : boolean; DEV_25_BASE : std_ulogic_vector(31 downto 0);
-    DEV_26_EN : boolean; DEV_26_BASE : std_ulogic_vector(31 downto 0);
-    DEV_27_EN : boolean; DEV_27_BASE : std_ulogic_vector(31 downto 0);
-    DEV_28_EN : boolean; DEV_28_BASE : std_ulogic_vector(31 downto 0);
-    DEV_29_EN : boolean; DEV_29_BASE : std_ulogic_vector(31 downto 0);
-    DEV_30_EN : boolean; DEV_30_BASE : std_ulogic_vector(31 downto 0);
-    DEV_31_EN : boolean; DEV_31_BASE : std_ulogic_vector(31 downto 0)
+    DEV_00_EN : boolean := false; DEV_00_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_01_EN : boolean := false; DEV_01_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_02_EN : boolean := false; DEV_02_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_03_EN : boolean := false; DEV_03_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_04_EN : boolean := false; DEV_04_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_05_EN : boolean := false; DEV_05_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_06_EN : boolean := false; DEV_06_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_07_EN : boolean := false; DEV_07_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_08_EN : boolean := false; DEV_08_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_09_EN : boolean := false; DEV_09_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_10_EN : boolean := false; DEV_10_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_11_EN : boolean := false; DEV_11_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_12_EN : boolean := false; DEV_12_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_13_EN : boolean := false; DEV_13_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_14_EN : boolean := false; DEV_14_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_15_EN : boolean := false; DEV_15_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_16_EN : boolean := false; DEV_16_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_17_EN : boolean := false; DEV_17_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_18_EN : boolean := false; DEV_18_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_19_EN : boolean := false; DEV_19_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_20_EN : boolean := false; DEV_20_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_21_EN : boolean := false; DEV_21_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_22_EN : boolean := false; DEV_22_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_23_EN : boolean := false; DEV_23_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_24_EN : boolean := false; DEV_24_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_25_EN : boolean := false; DEV_25_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_26_EN : boolean := false; DEV_26_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_27_EN : boolean := false; DEV_27_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_28_EN : boolean := false; DEV_28_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_29_EN : boolean := false; DEV_29_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_30_EN : boolean := false; DEV_30_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
+    DEV_31_EN : boolean := false; DEV_31_BASE : std_ulogic_vector(31 downto 0) := (others => '-')
   );
   port (
     -- host port --
     main_req_i   : in  bus_req_t; -- host request
     main_rsp_o   : out bus_rsp_t; -- host response
     -- device ports --
-    dev_00_req_o : out bus_req_t; dev_00_rsp_i : in bus_rsp_t;
-    dev_01_req_o : out bus_req_t; dev_01_rsp_i : in bus_rsp_t;
-    dev_02_req_o : out bus_req_t; dev_02_rsp_i : in bus_rsp_t;
-    dev_03_req_o : out bus_req_t; dev_03_rsp_i : in bus_rsp_t;
-    dev_04_req_o : out bus_req_t; dev_04_rsp_i : in bus_rsp_t;
-    dev_05_req_o : out bus_req_t; dev_05_rsp_i : in bus_rsp_t;
-    dev_06_req_o : out bus_req_t; dev_06_rsp_i : in bus_rsp_t;
-    dev_07_req_o : out bus_req_t; dev_07_rsp_i : in bus_rsp_t;
-    dev_08_req_o : out bus_req_t; dev_08_rsp_i : in bus_rsp_t;
-    dev_09_req_o : out bus_req_t; dev_09_rsp_i : in bus_rsp_t;
-    dev_10_req_o : out bus_req_t; dev_10_rsp_i : in bus_rsp_t;
-    dev_11_req_o : out bus_req_t; dev_11_rsp_i : in bus_rsp_t;
-    dev_12_req_o : out bus_req_t; dev_12_rsp_i : in bus_rsp_t;
-    dev_13_req_o : out bus_req_t; dev_13_rsp_i : in bus_rsp_t;
-    dev_14_req_o : out bus_req_t; dev_14_rsp_i : in bus_rsp_t;
-    dev_15_req_o : out bus_req_t; dev_15_rsp_i : in bus_rsp_t;
-    dev_16_req_o : out bus_req_t; dev_16_rsp_i : in bus_rsp_t;
-    dev_17_req_o : out bus_req_t; dev_17_rsp_i : in bus_rsp_t;
-    dev_18_req_o : out bus_req_t; dev_18_rsp_i : in bus_rsp_t;
-    dev_19_req_o : out bus_req_t; dev_19_rsp_i : in bus_rsp_t;
-    dev_20_req_o : out bus_req_t; dev_20_rsp_i : in bus_rsp_t;
-    dev_21_req_o : out bus_req_t; dev_21_rsp_i : in bus_rsp_t;
-    dev_22_req_o : out bus_req_t; dev_22_rsp_i : in bus_rsp_t;
-    dev_23_req_o : out bus_req_t; dev_23_rsp_i : in bus_rsp_t;
-    dev_24_req_o : out bus_req_t; dev_24_rsp_i : in bus_rsp_t;
-    dev_25_req_o : out bus_req_t; dev_25_rsp_i : in bus_rsp_t;
-    dev_26_req_o : out bus_req_t; dev_26_rsp_i : in bus_rsp_t;
-    dev_27_req_o : out bus_req_t; dev_27_rsp_i : in bus_rsp_t;
-    dev_28_req_o : out bus_req_t; dev_28_rsp_i : in bus_rsp_t;
-    dev_29_req_o : out bus_req_t; dev_29_rsp_i : in bus_rsp_t;
-    dev_30_req_o : out bus_req_t; dev_30_rsp_i : in bus_rsp_t;
-    dev_31_req_o : out bus_req_t; dev_31_rsp_i : in bus_rsp_t
+    dev_00_req_o : out bus_req_t; dev_00_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_01_req_o : out bus_req_t; dev_01_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_02_req_o : out bus_req_t; dev_02_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_03_req_o : out bus_req_t; dev_03_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_04_req_o : out bus_req_t; dev_04_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_05_req_o : out bus_req_t; dev_05_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_06_req_o : out bus_req_t; dev_06_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_07_req_o : out bus_req_t; dev_07_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_08_req_o : out bus_req_t; dev_08_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_09_req_o : out bus_req_t; dev_09_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_10_req_o : out bus_req_t; dev_10_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_11_req_o : out bus_req_t; dev_11_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_12_req_o : out bus_req_t; dev_12_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_13_req_o : out bus_req_t; dev_13_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_14_req_o : out bus_req_t; dev_14_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_15_req_o : out bus_req_t; dev_15_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_16_req_o : out bus_req_t; dev_16_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_17_req_o : out bus_req_t; dev_17_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_18_req_o : out bus_req_t; dev_18_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_19_req_o : out bus_req_t; dev_19_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_20_req_o : out bus_req_t; dev_20_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_21_req_o : out bus_req_t; dev_21_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_22_req_o : out bus_req_t; dev_22_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_23_req_o : out bus_req_t; dev_23_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_24_req_o : out bus_req_t; dev_24_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_25_req_o : out bus_req_t; dev_25_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_26_req_o : out bus_req_t; dev_26_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_27_req_o : out bus_req_t; dev_27_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_28_req_o : out bus_req_t; dev_28_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_29_req_o : out bus_req_t; dev_29_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_30_req_o : out bus_req_t; dev_30_rsp_i : in bus_rsp_t := rsp_terminate_c;
+    dev_31_req_o : out bus_req_t; dev_31_rsp_i : in bus_rsp_t := rsp_terminate_c
   );
 end neorv32_bus_io_switch;
 
@@ -454,9 +455,9 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   -- module configuration --
   constant num_devs_c : natural := 32; -- number of device ports
 
-  -- address bits for access decoding --
-  constant abb_lo_c : natural := index_size_f(DEV_SIZE); -- low address boundary bit
-  constant abb_hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_c)) - 1; -- high address boundary bit
+  -- address bit boundaries for access decoding --
+  constant addr_lo_c : natural := index_size_f(DEV_SIZE); -- low address boundary bit
+  constant addr_hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_c)) - 1; -- high address boundary bit
 
   -- list of enabled device ports --
   type dev_en_list_t is array (0 to num_devs_c-1) of boolean;
@@ -530,7 +531,7 @@ begin
       bus_request: process(main_req_i)
       begin
         dev_req(i) <= main_req_i;
-        if (main_req_i.addr(abb_hi_c downto abb_lo_c) = dev_base_list_c(i)(abb_hi_c downto abb_lo_c)) then
+        if (main_req_i.addr(addr_hi_c downto addr_lo_c) = dev_base_list_c(i)(addr_hi_c downto addr_lo_c)) then
           dev_req(i).stb <= main_req_i.stb; -- propagate transaction strobe if address match
         else
           dev_req(i).stb <= '0';
