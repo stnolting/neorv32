@@ -17,7 +17,17 @@
 // executable signature ("magic word")
 const uint32_t signature = 0x4788CAFE;
 
-enum operation_enum {OP_APP_BIN, OP_APP_IMG, OP_BLD_IMG, OP_RAW_HEX, OP_RAW_BIN, OP_RAW_COE, OP_RAW_MEM};
+// output file types (operation select)
+enum operation_enum {
+  OP_APP_BIN,
+  OP_APP_IMG,
+  OP_BLD_IMG,
+  OP_RAW_HEX,
+  OP_RAW_BIN,
+  OP_RAW_COE,
+  OP_RAW_MEM,
+  OP_RAW_MIF
+};
 
 int main(int argc, char *argv[]) {
 
@@ -32,6 +42,7 @@ int main(int argc, char *argv[]) {
            " -raw_bin : Generate application raw executable (binary file, no header)\n"
            " -raw_coe : Generate application raw executable (COE file, no header)\n"
            " -raw_mem : Generate application raw executable (MEM file, no header)\n"
+           " -raw_mif : Generate application raw executable (MIF file, no header)\n"
            "2nd: Input file (raw binary image)\n"
            "3rd: Output file\n"
            "4th: Project name or folder (optional)\n");
@@ -53,6 +64,7 @@ int main(int argc, char *argv[]) {
   else if (strcmp(argv[1], "-raw_bin") == 0) { operation = OP_RAW_BIN; }
   else if (strcmp(argv[1], "-raw_coe") == 0) { operation = OP_RAW_COE; }
   else if (strcmp(argv[1], "-raw_mem") == 0) { operation = OP_RAW_MEM; }
+  else if (strcmp(argv[1], "-raw_mif") == 0) { operation = OP_RAW_MIF; }
   else {
     printf("Invalid operation!");
     return -1;
@@ -87,8 +99,7 @@ int main(int argc, char *argv[]) {
   }
 
   // --------------------------------------------------------------------------
-  // Try to find out targeted CPU configuration
-  // via MARCH environment variable
+  // Try to find out targeted CPU configuration via MARCH environment variable
   // --------------------------------------------------------------------------
   char string_march[64] = "default";
   char *envvar_march = "MARCH";
@@ -130,7 +141,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate BINARY executable (with header) for bootloader upload
+  // Generate BINARY executable for bootloader upload (with header)
   // --------------------------------------------------------------------------
   if (operation == OP_APP_BIN) {
 
@@ -189,7 +200,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate APPLICATION's executable memory initialization file (no header)
+  // Generate RAW APPLICATION's executable memory initialization file
   // -> VHDL package body
   // --------------------------------------------------------------------------
   else if (operation == OP_APP_IMG) {
@@ -246,7 +257,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate BOOTLOADER's executable memory initialization file (no header)
+  // Generate RAW BOOTLOADER's executable memory initialization file
   // -> VHDL package body
   // --------------------------------------------------------------------------
   else if (operation == OP_BLD_IMG) {
@@ -303,7 +314,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate raw APPLICATION's executable ASCII hex file (no header)
+  // Generate RAW APPLICATION's executable ASCII hex file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_HEX) {
 
@@ -319,7 +330,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate raw APPLICATION's executable binary file (no header)
+  // Generate RAW APPLICATION's executable binary file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_BIN) {
 
@@ -330,7 +341,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate raw APPLICATION's executable COE file (no header)
+  // Generate RAW APPLICATION's executable COE file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_COE) {
 
@@ -363,7 +374,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate raw APPLICATION's executable MEM file (no header)
+  // Generate RAW APPLICATION's executable MEM file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_MEM) {
 
@@ -381,6 +392,42 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
+  // Generate RAW APPLICATION's executable MIF file
+  // --------------------------------------------------------------------------
+  else if (operation == OP_RAW_MIF) {
+
+    // header
+    sprintf(tmp_string, "DEPTH = %lu;\n", raw_exe_size/4); // memory depth in words
+    fputs(tmp_string, output);
+    sprintf(tmp_string, "WIDTH = 32;\n"); // bits per data word
+    fputs(tmp_string, output);
+    sprintf(tmp_string, "ADDRESS_RADIX = HEX;\n"); // hexadecimal address format
+    fputs(tmp_string, output);
+    sprintf(tmp_string, "DATA_RADIX = HEX;\n"); // hexadecimal data format
+    fputs(tmp_string, output);
+
+    sprintf(tmp_string, "CONTENT\n");
+    fputs(tmp_string, output);
+    sprintf(tmp_string, "BEGIN\n");
+    fputs(tmp_string, output);
+    i = 0;
+    while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
+      tmp  = (uint32_t)(buffer[0] << 0);
+      tmp |= (uint32_t)(buffer[1] << 8);
+      tmp |= (uint32_t)(buffer[2] << 16);
+      tmp |= (uint32_t)(buffer[3] << 24);
+      sprintf(tmp_string, "%08x : %08x;\n", (unsigned int)i, (unsigned int)tmp);
+      fputs(tmp_string, output);
+      i++;
+    }
+
+    // footer
+    sprintf(tmp_string, "END;\n");
+    fputs(tmp_string, output);
+  }
+
+
+  // --------------------------------------------------------------------------
   // Invalid operation
   // --------------------------------------------------------------------------
   else {
@@ -394,7 +441,6 @@ int main(int argc, char *argv[]) {
   // --------------------------------------------------------------------------
   // Done, clean up
   // --------------------------------------------------------------------------
-
   fclose(input);
   fclose(output);
 
