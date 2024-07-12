@@ -77,6 +77,7 @@ APP_HEX  = neorv32_raw_exe.hex
 APP_BIN  = neorv32_raw_exe.bin
 APP_COE  = neorv32_raw_exe.coe
 APP_MEM  = neorv32_raw_exe.mem
+APP_MIF  = neorv32_raw_exe.mif
 APP_ASM  = main.asm
 APP_IMG  = neorv32_application_image.vhd
 BOOT_IMG = neorv32_bootloader_image.vhd
@@ -142,9 +143,10 @@ hex:     $(APP_HEX)
 bin:     $(APP_BIN)
 coe:     $(APP_COE)
 mem:     $(APP_MEM)
+mif:     $(APP_MIF)
 image:   $(APP_IMG)
 install: image install-$(APP_IMG)
-all:     $(APP_ASM) $(APP_EXE) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_IMG) install hex bin
+all:     $(APP_ASM) $(APP_EXE) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_IMG) install hex bin
 
 # Check if making bootloader
 # Use different base address and length for instruction memory/"rom" (BOOTROM instead of IMEM)
@@ -236,6 +238,11 @@ $(APP_COE): main.bin $(IMAGE_GEN)
 	@set -e
 	@$(IMAGE_GEN) -raw_coe $< $@ $(shell basename $(CURDIR))
 
+# Generate NEORV32 RAW executable image in MIF format
+$(APP_MIF): main.bin $(IMAGE_GEN)
+	@set -e
+	@$(IMAGE_GEN) -raw_mif $< $@ $(shell basename $(CURDIR))
+
 # Generate NEORV32 RAW executable image in MEM format
 $(APP_MEM): main.bin $(IMAGE_GEN)
 	@set -e
@@ -314,7 +321,7 @@ gdb:
 # Clean up
 # -----------------------------------------------------------------------------
 clean:
-	@rm -f *.elf *.o *.bin *.coe *.mem *.out *.asm *.vhd *.hex .gdb_history
+	@rm -f *.elf *.o *.bin *.coe *.mem *.mif *.out *.asm *.vhd *.hex .gdb_history
 
 clean_all: clean
 	@rm -f $(OBJ) $(IMAGE_GEN)
@@ -372,11 +379,12 @@ help:
 	@echo " gdb        - run GNU debugging session"
 	@echo " asm        - compile and generate <$(APP_ASM)> assembly listing file for manual debugging"
 	@echo " elf        - compile and generate <$(APP_ELF)> ELF file"
-	@echo " exe        - compile and generate <$(APP_EXE)> executable for upload via default bootloader (binary file, with header)"
-	@echo " bin        - compile and generate <$(APP_BIN)> RAW executable file (binary file, no header)"
-	@echo " hex        - compile and generate <$(APP_HEX)> RAW executable file (hex char file, no header)"
-	@echo " coe        - compile and generate <$(APP_COE)> RAW executable file (COE file, no header)"
-	@echo " mem        - compile and generate <$(APP_MEM)> RAW executable file (MEM file, no header)"
+	@echo " exe        - compile and generate <$(APP_EXE)> executable image file for upload via default bootloader (binary file)"
+	@echo " bin        - compile and generate <$(APP_BIN)> RAW executable memory image (binary file)"
+	@echo " hex        - compile and generate <$(APP_HEX)> RAW executable memory image (hex char file)"
+	@echo " coe        - compile and generate <$(APP_COE)> RAW executable memory image (COE file)"
+	@echo " mem        - compile and generate <$(APP_MEM)> RAW executable memory image (MEM file)"
+	@echo " mif        - compile and generate <$(APP_MIF)> RAW executable memory image (MIF file)"
 	@echo " image      - compile and generate VHDL IMEM boot image (for application, no header) in local folder"
 	@echo " install    - compile, generate and install VHDL IMEM boot image (for application, no header)"
 	@echo " sim        - in-console simulation using default/simple testbench and GHDL"

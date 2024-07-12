@@ -8,6 +8,7 @@ __pycache__
 *.bin
 *.coe
 *.mem
+*.mif
 *.o
 *.elf
 *.asm

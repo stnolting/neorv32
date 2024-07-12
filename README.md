@@ -255,6 +255,7 @@ This overview provides some *quick links* to the most important sections of the
 * [Software Framework Documentation](https://stnolting.github.io/neorv32/sw/files.html) - _doxygen_-based
 * [Application Makefile](https://stnolting.github.io/neorv32/#_application_makefile) - turning _your_ application into an executable
 * [Bootloader](https://stnolting.github.io/neorv32/#_bootloader) - the build-in NEORV32 bootloader
+* [Image Generator](https://stnolting.github.io/neorv32/#_executable_image_format) - create (FPGA) memory initialization files from your application
 
 ### :rocket: [User Guide](https://stnolting.github.io/neorv32/ug/) - Getting Started!
 
