@@ -15,7 +15,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_test_on_chip_debugger is
+entity neorv32_test_setup_on_chip_debugger is
   generic (
     -- adapt these for your setup --
     CLOCK_FREQUENCY   : natural := 100000000; -- clock frequency of clk_i in Hz
@@ -39,9 +39,9 @@ entity neorv32_test_on_chip_debugger is
   );
 end entity;
 
-architecture neorv32_test_on_chip_debugger_rtl of neorv32_test_on_chip_debugger is
+architecture neorv32_test_setup_on_chip_debugger_rtl of neorv32_test_setup_on_chip_debugger is
 
-  signal con_gpio_o : std_ulogic_vector(63 downto 0);
+  signal con_gpio_out : std_ulogic_vector(63 downto 0);
 
 begin
 
@@ -72,22 +72,22 @@ begin
   )
   port map (
     -- Global control --
-    clk_i       => clk_i,       -- global clock, rising edge
-    rstn_i      => rstn_i,      -- global reset, low-active, async
+    clk_i       => clk_i,        -- global clock, rising edge
+    rstn_i      => rstn_i,       -- global reset, low-active, async
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_tck_i  => jtag_tck_i,  -- serial clock
-    jtag_tdi_i  => jtag_tdi_i,  -- serial data input
-    jtag_tdo_o  => jtag_tdo_o,  -- serial data output
-    jtag_tms_i  => jtag_tms_i,  -- mode select
+    jtag_tck_i  => jtag_tck_i,   -- serial clock
+    jtag_tdi_i  => jtag_tdi_i,   -- serial data input
+    jtag_tdo_o  => jtag_tdo_o,   -- serial data output
+    jtag_tms_i  => jtag_tms_i,   -- mode select
     -- GPIO (available if IO_GPIO_NUM > 0) --
-    gpio_o      => con_gpio_o,  -- parallel output
+    gpio_o      => con_gpio_out, -- parallel output
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o => uart0_txd_o, -- UART0 send data
-    uart0_rxd_i => uart0_rxd_i  -- UART0 receive data
+    uart0_txd_o => uart0_txd_o,  -- UART0 send data
+    uart0_rxd_i => uart0_rxd_i   -- UART0 receive data
   );
 
   -- GPIO output --
-  gpio_o <= con_gpio_o(7 downto 0);
+  gpio_o <= con_gpio_out(7 downto 0);
 
 
 end architecture;
