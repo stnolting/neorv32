@@ -462,6 +462,13 @@ the access capabilities (`rwxac`; `r` = read permission, `w` = write permission,
 .NEORV32 Processor Address Space (Default Configuration)
 image::address_space.png[900]
 
+.The "Void" (Unmapped Addresses)
+[NOTE]
+All accesses to "unmapped" addresses (= "void") are redirected to the <<_processor_external_bus_interface_xbus>>.
+For example, if the internal IMEM is disabled, the accesses to the _entire_ address space between `0x00000000` and
+`0x7FFFFFFF` are converted into XBUS requests. If the XBUS interface is not enabled any access to the void will
+raise a bus error exception.
+
 .Main Address Regions
 [cols="<1,^4,^2,<7"]
 [options="header",grid="rows"]
