@@ -240,7 +240,7 @@ ipgui::move_param -component [ipx::current_core] -order 14 [ipgui::get_guiparams
 # **************************************************************
 # Configuration GUI: Peripherals
 # **************************************************************
-set_property display_name {External interrupt controller (XIRQ)}                  [ipgui::get_guiparamspec -name "XIRQ_NUM_CH"           -component [ipx::current_core]]
+set_property display_name {External interrupt controller (XIRQ) channels}         [ipgui::get_guiparamspec -name "XIRQ_NUM_CH"           -component [ipx::current_core]]
 set_property display_name {General-purpose inputs}                                [ipgui::get_guiparamspec -name "IO_GPIO_IN_NUM"        -component [ipx::current_core]]
 set_property display_name {General-purpose outputs}                               [ipgui::get_guiparamspec -name "IO_GPIO_OUT_NUM"       -component [ipx::current_core]]
 set_property display_name {Machine timer}                                         [ipgui::get_guiparamspec -name "IO_MTIME_EN"           -component [ipx::current_core]]
