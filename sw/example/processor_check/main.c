@@ -22,17 +22,15 @@
  **************************************************************************/
 /**@{*/
 //** UART BAUD rate */
-#define BAUD_RATE           (19200)
+#define BAUD_RATE        (19200)
 //** Reachable but unaligned address */
-#define ADDR_UNALIGNED_1    (0x00000001UL)
+#define ADDR_UNALIGNED_1 (0x00000001UL)
 //** Reachable but unaligned address */
-#define ADDR_UNALIGNED_3    (0x00000003UL)
+#define ADDR_UNALIGNED_3 (0x00000003UL)
 //** Unreachable word-aligned address */
-#define ADDR_UNREACHABLE    ((uint32_t)&NEORV32_DM->SREG)
-//** Read-only word-aligned address */
-#define ADDR_READONLY       ((uint32_t)&NEORV32_SYSINFO->CLK)
+#define ADDR_UNREACHABLE ((uint32_t)&NEORV32_DM->SREG)
 //** External memory base address */
-#define EXT_MEM_BASE        (0xF0000000UL)
+#define EXT_MEM_BASE     (0xF0000000UL)
 /**@}*/
 
 
@@ -708,10 +706,10 @@ int main() {
   cnt_test++;
 
   // store to unreachable aligned address
-  neorv32_cpu_store_unsigned_word(ADDR_READONLY, 0);
+  neorv32_cpu_store_unsigned_word(ADDR_UNREACHABLE, 0);
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && // store bus access error exception
-      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_READONLY)) {
+      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNREACHABLE)) {
     test_ok();
   }
   else {
