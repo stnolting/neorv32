@@ -98,6 +98,7 @@ entity neorv32_top is
     XIRQ_NUM_CH                : natural range 0 to 32          := 0;           -- number of external IRQ channels (0..32)
 
     -- Processor peripherals --
+    IO_DISABLE_SYSINFO         : boolean                        := false;       -- disable the SYSINFO module (for advanced users only)
     IO_GPIO_NUM                : natural range 0 to 64          := 0;           -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN                : boolean                        := false;       -- implement machine system timer (MTIME)?
     IO_UART0_EN                : boolean                        := false;       -- implement primary universal asynchronous receiver/transmitter (UART0)?
@@ -241,6 +242,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_xirq_en_c    : boolean := boolean(XIRQ_NUM_CH > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
   constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
+  constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
 
   -- convert JEDEC ID to mvendor CSR --
   constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
@@ -363,7 +365,7 @@ begin
       cond_sel_string_f(IO_DMA_EN,                 "DMA ",       "") &
       cond_sel_string_f(IO_SLINK_EN,               "SLINK ",     "") &
       cond_sel_string_f(IO_CRC_EN,                 "CRC ",       "") &
-      cond_sel_string_f(true,                      "SYSINFO ",   "") & -- always enabled
+      cond_sel_string_f(io_sysinfo_en_c,           "SYSINFO ",   "") &
       cond_sel_string_f(ON_CHIP_DEBUGGER_EN,       "OCD ",       "") &
       ""
       severity note;
@@ -375,6 +377,10 @@ begin
     -- DMEM size --
     assert not ((dmem_size_valid_c = false) and (MEM_INT_DMEM_EN = true)) report
       "[NEORV32] Auto-adjusting invalid DMEM size configuration." severity warning;
+
+    -- SYSINFO warning --
+    assert not (io_sysinfo_en_c = false) report
+      "[NEORV32] SYSINFO module disabled - large parts of the NEORV32 software framework will no longer work!" severity warning;
 
   end generate; -- /sanity_checks
 
@@ -1001,7 +1007,7 @@ begin
     generic map (
       DEV_SIZE  => iodev_size_c, -- size of a single IO device
       DEV_00_EN => ON_CHIP_DEBUGGER_EN, DEV_00_BASE => base_io_dm_c,
-      DEV_01_EN => true,                DEV_01_BASE => base_io_sysinfo_c, -- always enabled (mandatory core module)
+      DEV_01_EN => io_sysinfo_en_c,     DEV_01_BASE => base_io_sysinfo_c,
       DEV_02_EN => IO_NEOLED_EN,        DEV_02_BASE => base_io_neoled_c,
       DEV_03_EN => io_gpio_en_c,        DEV_03_BASE => base_io_gpio_c,
       DEV_04_EN => IO_WDT_EN,           DEV_04_BASE => base_io_wdt_c,
@@ -1567,55 +1573,64 @@ begin
 
     -- System Configuration Information Memory (SYSINFO) --------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_sysinfo_inst: entity neorv32.neorv32_sysinfo
-    generic map (
-      CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
-      CLOCK_GATING_EN       => CLOCK_GATING_EN,
-      INT_BOOTLOADER_EN     => INT_BOOTLOADER_EN,
-      MEM_INT_IMEM_EN       => MEM_INT_IMEM_EN,
-      MEM_INT_IMEM_SIZE     => imem_size_c,
-      MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
-      MEM_INT_DMEM_SIZE     => dmem_size_c,
-      ICACHE_EN             => ICACHE_EN,
-      ICACHE_NUM_BLOCKS     => ICACHE_NUM_BLOCKS,
-      ICACHE_BLOCK_SIZE     => ICACHE_BLOCK_SIZE,
-      DCACHE_EN             => DCACHE_EN,
-      DCACHE_NUM_BLOCKS     => DCACHE_NUM_BLOCKS,
-      DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
-      XBUS_EN               => XBUS_EN,
-      XBUS_CACHE_EN         => XBUS_CACHE_EN,
-      XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
-      XBUS_CACHE_BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
-      XIP_EN                => XIP_EN,
-      XIP_CACHE_EN          => XIP_CACHE_EN,
-      XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
-      XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
-      ON_CHIP_DEBUGGER_EN   => ON_CHIP_DEBUGGER_EN,
-      IO_GPIO_EN            => io_gpio_en_c,
-      IO_MTIME_EN           => IO_MTIME_EN,
-      IO_UART0_EN           => IO_UART0_EN,
-      IO_UART1_EN           => IO_UART1_EN,
-      IO_SPI_EN             => IO_SPI_EN,
-      IO_SDI_EN             => IO_SDI_EN,
-      IO_TWI_EN             => IO_TWI_EN,
-      IO_PWM_EN             => io_pwm_en_c,
-      IO_WDT_EN             => IO_WDT_EN,
-      IO_TRNG_EN            => IO_TRNG_EN,
-      IO_CFS_EN             => IO_CFS_EN,
-      IO_NEOLED_EN          => IO_NEOLED_EN,
-      IO_XIRQ_EN            => io_xirq_en_c,
-      IO_GPTMR_EN           => IO_GPTMR_EN,
-      IO_ONEWIRE_EN         => IO_ONEWIRE_EN,
-      IO_DMA_EN             => IO_DMA_EN,
-      IO_SLINK_EN           => IO_SLINK_EN,
-      IO_CRC_EN             => IO_CRC_EN
-    )
-    port map (
-      clk_i     => clk_i,
-      rstn_i    => rstn_sys,
-      bus_req_i => iodev_req(IODEV_SYSINFO),
-      bus_rsp_o => iodev_rsp(IODEV_SYSINFO)
-    );
+    neorv32_sysinfo_inst_true:
+    if io_sysinfo_en_c generate
+      neorv32_sysinfo_inst: entity neorv32.neorv32_sysinfo
+      generic map (
+        CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
+        CLOCK_GATING_EN       => CLOCK_GATING_EN,
+        INT_BOOTLOADER_EN     => INT_BOOTLOADER_EN,
+        MEM_INT_IMEM_EN       => MEM_INT_IMEM_EN,
+        MEM_INT_IMEM_SIZE     => imem_size_c,
+        MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
+        MEM_INT_DMEM_SIZE     => dmem_size_c,
+        ICACHE_EN             => ICACHE_EN,
+        ICACHE_NUM_BLOCKS     => ICACHE_NUM_BLOCKS,
+        ICACHE_BLOCK_SIZE     => ICACHE_BLOCK_SIZE,
+        DCACHE_EN             => DCACHE_EN,
+        DCACHE_NUM_BLOCKS     => DCACHE_NUM_BLOCKS,
+        DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
+        XBUS_EN               => XBUS_EN,
+        XBUS_CACHE_EN         => XBUS_CACHE_EN,
+        XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
+        XBUS_CACHE_BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
+        XIP_EN                => XIP_EN,
+        XIP_CACHE_EN          => XIP_CACHE_EN,
+        XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
+        XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
+        ON_CHIP_DEBUGGER_EN   => ON_CHIP_DEBUGGER_EN,
+        IO_GPIO_EN            => io_gpio_en_c,
+        IO_MTIME_EN           => IO_MTIME_EN,
+        IO_UART0_EN           => IO_UART0_EN,
+        IO_UART1_EN           => IO_UART1_EN,
+        IO_SPI_EN             => IO_SPI_EN,
+        IO_SDI_EN             => IO_SDI_EN,
+        IO_TWI_EN             => IO_TWI_EN,
+        IO_PWM_EN             => io_pwm_en_c,
+        IO_WDT_EN             => IO_WDT_EN,
+        IO_TRNG_EN            => IO_TRNG_EN,
+        IO_CFS_EN             => IO_CFS_EN,
+        IO_NEOLED_EN          => IO_NEOLED_EN,
+        IO_XIRQ_EN            => io_xirq_en_c,
+        IO_GPTMR_EN           => IO_GPTMR_EN,
+        IO_ONEWIRE_EN         => IO_ONEWIRE_EN,
+        IO_DMA_EN             => IO_DMA_EN,
+        IO_SLINK_EN           => IO_SLINK_EN,
+        IO_CRC_EN             => IO_CRC_EN
+      )
+      port map (
+        clk_i     => clk_i,
+        rstn_i    => rstn_sys,
+        bus_req_i => iodev_req(IODEV_SYSINFO),
+        bus_rsp_o => iodev_rsp(IODEV_SYSINFO)
+      );
+    end generate;
+
+    neorv32_sysinfo_inst_false:
+    if not io_sysinfo_en_c generate
+      iodev_rsp(IODEV_SYSINFO) <= rsp_terminate_c;
+    end generate;
+
 
   end generate; -- /io_system
 

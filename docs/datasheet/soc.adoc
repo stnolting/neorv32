@@ -258,6 +258,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 4+^| **<<_external_interrupt_controller_xirq>>**
 | `XIRQ_NUM_CH`           | natural   | 0          | Number of channels of the external interrupt controller. Valid values are 0..32.
 4+^| **Peripheral/IO Modules**
+| `IO_DISABLE_SYSINFO`    | boolean   | false      | Disable <<_system_configuration_information_memory_sysinfo>> module; ⚠️ not recommended - for advanced users only!
 | `IO_GPIO_NUM`           | natural   | 0          | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>.
 | `IO_MTIME_EN`           | boolean   | false      | Implement the <<_machine_system_timer_mtime>>.
 | `IO_UART0_EN`           | boolean   | false      | Implement the <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>.
