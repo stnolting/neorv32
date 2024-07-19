@@ -76,7 +76,7 @@
 -- start_i  ____/---------\_______________________________________ trigger is high for one cycle
 -- active_i ____/-----------------------------\___________________ cease processing when low
 -- valid_o  ________________________/---------\___________________ set one cycle before output phase, zero otherwise
--- result_o dddddddddddddddddddddddddddddddddd|DDDDDDDDD|ddddddddd don't care except for output phase
+-- result_o dddddddddddddddddddddddddddddddddd|DDDDDDDDD|ddddddddd don't care (d) except for output phase (D)
 --
 -- [NOTE] If the <valid_o> signal is not set within a bound time window (default = 512 cycles; see "monitor_mc_tmo_c"
 --        constant in the main NEORV32 package file) the CFU operation is automatically terminated by the hardware

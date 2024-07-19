@@ -1,10 +1,10 @@
 -- ================================================================================ --
 -- NEORV32 CPU - CPU Top Entity                                                     --
 -- -------------------------------------------------------------------------------- --
--- Check out the processor's online documentation for more information:             --
---  HQ:         https://github.com/stnolting/neorv32                                --
---  Data Sheet: https://stnolting.github.io/neorv32                                 --
---  User Guide: https://stnolting.github.io/neorv32/ug                              --
+-- HQ:           https://github.com/stnolting/neorv32                               --
+-- Data Sheet:   https://stnolting.github.io/neorv32                                --
+-- User Guide:   https://stnolting.github.io/neorv32/ug                             --
+-- Software Ref: https://stnolting.github.io/neorv32/sw/files.html                  --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
