@@ -689,18 +689,18 @@ providing an initialized external memory that contains the actual application to
 :sectnums:
 === Processor-Internal Modules
 
-.Module Address Space Mapping
-[IMPORTANT]
-The base address of each component/module has to be aligned to the total size of the module's occupied address space.
-The occupied address space has to be a power of two (minimum 4 bytes). Addresses of peripheral modules must not overlap.
-
 .Full-Word Write Accesses Only
-[IMPORTANT]
+[NOTE]
 All peripheral/IO devices should only be written in full-word mode (i.e. 32-bit). Byte or half-word (8/16-bit) write accesses
 might cause undefined behavior.
 
+.Writing to Read-Only Registers
+[NOTE]
+Unless otherwise specified, writing to registers that are listed as read-only does not trigger an exception.
+The write access is simply ignored by the corresponding hardware module.
+
 .IO Module's Address Space
-[IMPORTANT]
+[NOTE]
 Each peripheral/IO module occupies an address space of 256 bytes (64 words). Most devices do not fully utilize this address
 space and will simply _mirror_ the available interface registers across the entire 256 bytes of address space.
 
@@ -711,13 +711,12 @@ or when accessing an address that is actually unused, a load/store access fault 
 
 .Module Interrupts
 [NOTE]
-Most peripheral/IO devices provide some kind of interrupt (for example to signal available incoming data). These
-interrupts are entirely mapped to the CPU's <<_custom_fast_interrupt_request_lines>>.
-See section <<_processor_interrupts>> for more information.
+Several peripheral/IO devices provide some kind of interrupt. These interrupts are mapped to the CPU's
+<<_custom_fast_interrupt_request_lines>>. See section <<_processor_interrupts>> for more information.
 
 .CMSIS System Description View (SVD)
 [TIP]
-A CMSIS-SVD-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
+A CMSIS-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
 
 
 include::soc_imem.adoc[]
