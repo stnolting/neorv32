@@ -405,7 +405,7 @@ int main(void) {
     }
 #endif
     else if (c == '?') {
-      PRINT_TEXT("by Stephan Nolting\ngithub.com/stnolting/neorv32");
+      PRINT_TEXT("github.com/stnolting/neorv32");
     }
     else { // unknown command
       PRINT_TEXT("Invalid CMD");
