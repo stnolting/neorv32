@@ -1104,28 +1104,18 @@
               <description>Clock polarity</description>
             </field>
             <field>
-              <name>SPI_CTRL_CS_SEL</name>
-              <bitRange>[5:3]</bitRange>
-              <description>CS select</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_CS_EN</name>
-              <bitRange>[6:6]</bitRange>
-              <description>Enable selected CS line</description>
-            </field>
-            <field>
               <name>SPI_CTRL_PRSC</name>
-              <bitRange>[9:7]</bitRange>
+              <bitRange>[5:3]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
               <name>SPI_CTRL_CDIV</name>
-              <bitRange>[13:10]</bitRange>
+              <bitRange>[9:6]</bitRange>
               <description>SPI clock divider</description>
             </field>
             <field>
               <name>SPI_CTRL_HIGHSPEED</name>
-              <bitRange>[14:14]</bitRange>
+              <bitRange>[10:10]</bitRange>
               <description>SPI high-speed mode</description>
             </field>
             <field>
@@ -1179,10 +1169,16 @@
               <description>log2(FIFO size)</description>
             </field>
             <field>
+              <name>SPI_CS_ACTIVE</name>
+              <bitRange>[30:30]</bitRange>
+              <access>read-only</access>
+              <description>Set if any chip-select line is active</description>
+            </field>
+            <field>
               <name>SPI_CTRL_BUSY</name>
               <bitRange>[31:31]</bitRange>
               <access>read-only</access>
-              <description>SPI busy flag</description>
+              <description>SPI busy flag (transmission in progress and TX FIFO not empty yet)</description>
             </field>
           </fields>
         </register>
@@ -1190,6 +1186,18 @@
           <name>DATA</name>
           <description>Data register</description>
           <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>SPI_DATA</name>
+              <bitRange>[7:0]</bitRange>
+              <description>RX/TX data (via FIFOs)</description>
+            </field>
+            <field>
+              <name>SPI_DATA_CMD</name>
+              <bitRange>[31:31]</bitRange>
+              <description>SPI TX data (0) / command (1) select</description>
+            </field>
+          </fields>
         </register>
       </registers>
     </peripheral>
@@ -1578,7 +1586,7 @@
       <registers>
         <register>
           <name>CLK</name>
-          <description>Clock speed in Hz</description>
+          <description>Processor clock speed in Hz</description>
           <addressOffset>0x00</addressOffset>
           <access>read-only</access>
         </register>
