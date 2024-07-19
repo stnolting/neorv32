@@ -1466,8 +1466,10 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
+    uint8_t sdi_read_data;
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == SDI_TRAP_CODE) && // correct trap code
-        (neorv32_sdi_get_nonblocking() == 0x83) && // correct SDI read data
+        (neorv32_sdi_get(&sdi_read_data) == 0) && // correct SDI read data status
+        (sdi_read_data == 0x83) && // correct SDI read data
         ((tmp_a & 0xff) == 0xab)) { // correct SPI read data
       test_ok();
     }
