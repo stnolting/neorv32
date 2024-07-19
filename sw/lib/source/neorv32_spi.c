@@ -163,7 +163,7 @@ void neorv32_spi_cs_dis(void) {
 
 
 /**********************************************************************//**
- * Initiate SPI transfer.
+ * Perform a single SPI data transfer.
  *
  * @note This function is blocking.
  *
@@ -179,7 +179,7 @@ uint8_t neorv32_spi_trans(uint8_t tx_data) {
 
 
 /**********************************************************************//**
- * Initiate SPI TX transfer (non-blocking).
+ * Put SPI TX data (non-blocking).
  *
  * @param tx_data Transmit data (8-bit, LSB-aligned).
  **************************************************************************/
