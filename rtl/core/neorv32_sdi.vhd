@@ -55,7 +55,7 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
   constant ctrl_rx_full_c      : natural := 25; -- r/-: RX FIFO full
   constant ctrl_tx_empty_c     : natural := 26; -- r/-: TX FIFO empty
   constant ctrl_tx_nhalf_c     : natural := 27; -- r/-: TX FIFO not at least half-full
-  constant ctrl_tx_full_c      : natural := 27; -- r/-: TX FIFO full
+  constant ctrl_tx_full_c      : natural := 28; -- r/-: TX FIFO full
 
   -- control register (see bit definitions above) --
   type ctrl_t is record
