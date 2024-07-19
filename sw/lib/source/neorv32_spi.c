@@ -138,15 +138,14 @@ int neorv32_spi_get_fifo_depth(void) {
  * Activate single SPI chip select signal.
  *
  * @note The SPI chip select output lines are LOW when activated.
+ * @note This function is blocking.
  *
  * @param cs Chip select line to activate (0..7).
  **************************************************************************/
 void neorv32_spi_cs_en(int cs) {
 
-  uint32_t tmp = NEORV32_SPI->CTRL;
-  tmp &= ~(0xf << SPI_CTRL_CS_SEL0); // clear old configuration
-  tmp |= (1 << SPI_CTRL_CS_EN) | ((cs & 7) << SPI_CTRL_CS_SEL0); // set new configuration
-  NEORV32_SPI->CTRL = tmp;
+  while(NEORV32_SPI->CTRL & (1<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
+  neorv32_spi_cs_en_nonblocking(cs);
 }
 
 
@@ -154,10 +153,12 @@ void neorv32_spi_cs_en(int cs) {
  * Deactivate currently active SPI chip select signal.
  *
  * @note The SPI chip select output lines are HIGH when deactivated.
+ * @note This function is blocking.
  **************************************************************************/
 void neorv32_spi_cs_dis(void) {
 
-  NEORV32_SPI->CTRL &= ~(1 << SPI_CTRL_CS_EN);
+  while(NEORV32_SPI->CTRL & (1<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
+  neorv32_spi_cs_dis_nonblocking();
 }
 
 
@@ -171,10 +172,9 @@ void neorv32_spi_cs_dis(void) {
  **************************************************************************/
 uint8_t neorv32_spi_trans(uint8_t tx_data) {
 
-  NEORV32_SPI->DATA = (uint32_t)tx_data; // trigger transfer
+  neorv32_spi_put_nonblocking(tx_data);
   while (neorv32_spi_busy()); // wait for current transfer to finish
-
-  return (uint8_t)NEORV32_SPI->DATA;
+  return neorv32_spi_get_nonblocking();
 }
 
 
@@ -185,7 +185,7 @@ uint8_t neorv32_spi_trans(uint8_t tx_data) {
  **************************************************************************/
 void neorv32_spi_put_nonblocking(uint8_t tx_data) {
 
-  NEORV32_SPI->DATA = (uint32_t)tx_data; // put transfer into TX FIFO
+  NEORV32_SPI->DATA = (0 << SPI_DATA_CMD) | ((uint32_t)tx_data); // put data into TX FIFO
 }
 
 
@@ -197,6 +197,46 @@ void neorv32_spi_put_nonblocking(uint8_t tx_data) {
 uint8_t neorv32_spi_get_nonblocking(void) {
 
   return (uint8_t)NEORV32_SPI->DATA;
+}
+
+
+/**********************************************************************//**
+ * Activate single SPI chip select signal (non-blocking).
+ *
+ * @note The SPI chip select output lines are LOW when activated.
+ *
+ * @param cs Chip select line to activate (0..7).
+ **************************************************************************/
+void neorv32_spi_cs_en_nonblocking(int cs) {
+
+  NEORV32_SPI->DATA = (1 << SPI_DATA_CMD) | ((1 << SPI_DATA_CSEN) + (cs & 7)); // put CS command into TX FIFO
+}
+
+
+/**********************************************************************//**
+ * Deactivate currently active SPI chip select signal (non-blocking).
+ *
+ * @note The SPI chip select output lines are HIGH when deactivated.
+ **************************************************************************/
+void neorv32_spi_cs_dis_nonblocking(void) {
+
+  NEORV32_SPI->DATA = (1 << SPI_DATA_CMD) | 0; // put CS command into TX FIFO
+}
+
+
+/**********************************************************************//**
+ * Check if any chip-select line is active.
+ *
+ * @return 0 if no CS lines are active, 1 if at least one CS line is active.
+ **************************************************************************/
+int neorv32_spi_check_cs(void) {
+
+  if (NEORV32_SPI->CTRL & (1<<SPI_CS_ACTIVE)) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
 }
 
 
