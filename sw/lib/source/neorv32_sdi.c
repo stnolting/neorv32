@@ -83,7 +83,7 @@ void neorv32_sdi_enable(void) {
 /**********************************************************************//**
  * Get SDI FIFO depth.
  *
- * @return FIFO depth (number of entries), zero if no FIFO implemented
+ * @return FIFO depth (number of entries), 1 if no FIFO implemented
  **************************************************************************/
 int neorv32_sdi_get_fifo_depth(void) {
 
@@ -96,7 +96,7 @@ int neorv32_sdi_get_fifo_depth(void) {
  * Push data to SDI output FIFO.
  *
  * @param[in] data Byte to push into TX FIFO.
- * @return -1 if TX FIFO is full.
+ * @return -1 if TX FIFO is full, 0 if success.
  **************************************************************************/
 int neorv32_sdi_put(uint8_t data) {
 
@@ -111,21 +111,10 @@ int neorv32_sdi_put(uint8_t data) {
 
 
 /**********************************************************************//**
- * Push data to SDI output FIFO (ignoring TX FIFO status).
- *
- * @param[in] data Byte to push into TX FIFO.
- **************************************************************************/
-void neorv32_sdi_put_nonblocking(uint8_t data) {
-
-  NEORV32_SDI->DATA = (uint32_t)data;
-}
-
-
-/**********************************************************************//**
  * Get data from SDI input FIFO.
  *
  * @param[in,out] Pointer fro data byte read from RX FIFO.
- * @return -1 if RX FIFO is empty.
+ * @return -1 if RX FIFO is empty, 0 if success.
  **************************************************************************/
 int neorv32_sdi_get(uint8_t* data) {
 
@@ -136,15 +125,4 @@ int neorv32_sdi_get(uint8_t* data) {
   else {
     return -1;
   }
-}
-
-
-/**********************************************************************//**
- * Get data from SDI input FIFO (ignoring RX FIFO status).
- *
- * @param[in] data Byte read from RX FIFO.
- **************************************************************************/
-uint8_t neorv32_sdi_get_nonblocking(void) {
-
-  return (uint8_t)NEORV32_SDI->DATA;
 }
