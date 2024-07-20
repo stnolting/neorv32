@@ -199,6 +199,8 @@ SECTIONS
   .heap : ALIGN(4)
   {
     PROVIDE(__heap_start = .);
+    /* start section on WORD boundary */
+    . = ALIGN(4);
     . = __neorv32_heap_size;
     /* finish section on WORD boundary */
     . = ALIGN(4);
