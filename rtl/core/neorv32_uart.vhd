@@ -12,9 +12,14 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+-- pragma translate_off
+-- RTL_SYNTHESIS OFF
+use std.textio.all;
+-- RTL_SYNTHESIS ON
+-- pragma translate_on
+
 library neorv32;
 use neorv32.neorv32_package.all;
-use std.textio.all;
 
 entity neorv32_uart is
   generic (
@@ -474,6 +479,8 @@ begin
 
   -- SIMULATION Transmitter -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+-- pragma translate_off
+-- RTL_SYNTHESIS OFF
   simulation_transmitter:
   if is_simulation_c generate -- for simulation only!
     sim_tx: process(clk_i)
@@ -501,6 +508,8 @@ begin
       end if;
     end process sim_tx;
   end generate;
+-- RTL_SYNTHESIS ON
+-- pragma translate_on
 
 
 end neorv32_uart_rtl;
