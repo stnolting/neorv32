@@ -144,11 +144,6 @@
               <description>SDI enable flag</description>
             </field>
             <field>
-              <name>SDI_CTRL_CLR_RX</name>
-              <bitRange>[1:1]</bitRange>
-              <description>Clear RX FIFO, bit auto-clears</description>
-            </field>
-            <field>
               <name>SDI_CTRL_FIFO</name>
               <bitRange>[7:4]</bitRange>
               <description>Log2 of SDI FIFO size</description>
@@ -213,6 +208,12 @@
               <bitRange>[28:28]</bitRange>
               <access>read-only</access>
               <description>TX FIFO full</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_CS_ACTIVE</name>
+              <bitRange>[31:31]</bitRange>
+              <access>read-only</access>
+              <description>Chip-select line is active when set</description>
             </field>
           </fields>
         </register>
