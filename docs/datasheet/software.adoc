@@ -69,7 +69,7 @@ user guide section https://stnolting.github.io/neorv32/ug/#_software_toolchain_s
 === Core Libraries
 
 The NEORV32 project provides a set of pre-defined C libraries that allow an easy integration of the processor/CPU features
-(also called "HAL" - hardware abstraction layer). All driver and runtime-related files are located in
+(also called "HAL" - _hardware abstraction layer_). All driver and runtime-related files are located in
 `sw/lib`. These library files are automatically included and linked by adding the following include statement:
 
 [source,c]
@@ -77,7 +77,7 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 #include <neorv32.h> // NEORV32 HAL, core and runtime libraries
 ----
 
-.NEORV32 HAL File List
+.NEORV32 Hardware Abstraction Layer File List
 [cols="<3,<3,<6"]
 [options="header",grid="rows"]
 |=======================
@@ -90,7 +90,6 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 | `neorv32_cpu_amo.c` | `neorv32_cpu_amo.h`    | Emulation functions for the read-modify-write  <<_a_isa_extension>> instructions
 |                     | `neorv32_cpu_csr.h`    | <<_control_and_status_registers_csrs>> definitions
 | `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | <<_custom_functions_unit_cfu>> HAL
-| -                   | `neorv32_dm.h`         | <<_debug_module_dm>> HAL
 | `neorv32_dma.c`     | `neorv32_dma.h`        | <<_direct_memory_access_controller_dma>> HAL
 | `neorv32_gpio.c`    | `neorv32_gpio.h`       | <<_general_purpose_input_and_output_port_gpio>> HAL
 | `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | <<_general_purpose_timer_gptmr>> HAL
