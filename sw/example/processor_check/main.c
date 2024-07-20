@@ -1452,7 +1452,6 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 1 << SDI_FIRQ_ENABLE);
 
     // write test data to SDI
-    neorv32_sdi_rx_clear();
     neorv32_sdi_put(0xab);
 
     // trigger SDI IRQ by sending data via SPI
