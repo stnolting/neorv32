@@ -255,7 +255,6 @@ typedef union {
 // IO/peripheral devices
 #include "neorv32_cfs.h"
 #include "neorv32_crc.h"
-#include "neorv32_dm.h"
 #include "neorv32_dma.h"
 #include "neorv32_gpio.h"
 #include "neorv32_gptmr.h"
