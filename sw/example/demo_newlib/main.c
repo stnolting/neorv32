@@ -14,6 +14,7 @@
  **************************************************************************/
 #include <neorv32.h>
 #include <unistd.h>
+#include <time.h>
 #include <stdlib.h>
 
 
@@ -33,6 +34,9 @@ void __attribute__((destructor)) main_destructor_test(void) {
 
   int32_t main_ret = (int32_t)neorv32_cpu_csr_read(CSR_MSCRATCH);
   neorv32_uart0_printf("\nDestructor: main terminated with return/exit code %i.\n", main_ret);
+  if (main_ret == 7) {
+    neorv32_uart0_printf("exit() succeeded.\n");
+  }
 }
 
 
@@ -68,34 +72,51 @@ int main() {
   // say hello
   neorv32_uart0_printf("<<< Newlib demo/test program >>>\n\n");
 
-  // heap size definition
-  volatile uint32_t max_heap = (uint32_t)__crt0_max_heap;
-  if (max_heap > 0){
-    neorv32_uart0_printf("MAX heap size: %u bytes\n", max_heap);
-  }
-  else {
-    neorv32_uart0_printf("ERROR! No heap size defined (USER_FLAGS+='-Wl,--defsym,__neorv32_heap_size=1024')!\n");
-    return -1;
-  }
 
   // check if newlib is really available
 #ifndef __NEWLIB__
   neorv32_uart0_printf("ERROR! Seems like the compiler toolchain does not support newlib...\n");
   return -1;
 #endif
+  neorv32_uart0_printf("NEWLIB version %u.%u\n\n", (uint32_t)__NEWLIB__, (uint32_t)__NEWLIB_MINOR__);
 
-  neorv32_uart0_printf("newlib version %i.%i\n\n", (int32_t)__NEWLIB__, (int32_t)__NEWLIB_MINOR__);
 
+  // heap size definition
+  uint32_t max_heap = (uint32_t)&__crt0_max_heap[0];
+  if (max_heap > 0){
+    neorv32_uart0_printf("MAX heap size: %u bytes\n", max_heap);
+  }
+  else {
+    neorv32_uart0_printf("ERROR! No heap size defined!\n");
+    neorv32_uart0_printf("Use <USER_FLAGS+='-Wl,--defsym,__neorv32_heap_size=1024'> to set the heap size.\n");
+    return -1;
+  }
+
+
+  // rand test
   neorv32_uart0_printf("<rand> test... ");
   srand(neorv32_cpu_csr_read(CSR_CYCLE)); // set random seed
   neorv32_uart0_printf("%i, %i, %i, %i\n", rand() % 100, rand() % 100, rand() % 100, rand() % 100);
 
 
-  char *char_buffer; // pointer for dynamic memory allocation
+  // time test
+  neorv32_uart0_printf("<time> test... ");
+  time_t seconds = time(NULL);
+  neorv32_uart0_printf("Seconds since January 1, 1970 (32-bit!) = %u\n", (uint32_t)seconds);
+  neorv32_uart0_printf("%i, %i, %i, %i\n", rand() % 100, rand() % 100, rand() % 100, rand() % 100);
 
+
+  // malloc test
   neorv32_uart0_printf("<malloc> test...\n");
-  char_buffer = (char *) malloc(4 * sizeof(char)); // 4 bytes
+  char *char_buffer = (char *) malloc(4 * sizeof(char)); // 4 bytes
 
+  if (char_buffer == NULL) {
+    neorv32_uart0_printf("malloc FAILED!\n");
+    return -1;
+  }
+
+
+  // STDx tests using read and write
   // do not test read & write in simulation as there would be no UART RX input
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
     neorv32_uart0_printf("Skipping <read> & <write> tests as this seems to be a simulation.\n");
@@ -118,12 +139,14 @@ int main() {
   free(char_buffer);
 
 
+  // exit test
   // NOTE: exit is highly over-sized as it also includes clean-up functions (destructors), which
   // are not required for bare-metal or RTOS applications... better use the simple 'return' or even better
   // make sure main never returns. Anyway, let's check if 'exit' works.
   int exit_code = 7;
   neorv32_uart0_printf("<exit> terminating by exit(%i)...\n", exit_code);
   exit(exit_code);
+
 
   // should never be reached
   neorv32_uart0_printf("exit failed!\n");
