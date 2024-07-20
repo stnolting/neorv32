@@ -1,6 +1,6 @@
 ## Simulation Sources
 
-### [`simple`](simple) testbench
+### > [`simple`](simple) testbench
 
 "Simple" testbench for the NEORV32 Processor and script for simulation using GHDL.
 
@@ -11,7 +11,7 @@
 - [`uart_rx.simple.vhd`](simple/uart_rx.simple.vhd)
 
 
-### VUnit testbench (this folder)
+### > VUnit testbench (this folder)
 
 VUnit testbench for the NEORV32 Processor.
 
