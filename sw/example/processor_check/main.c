@@ -28,7 +28,7 @@
 //** Reachable but unaligned address */
 #define ADDR_UNALIGNED_3 (0x00000003UL)
 //** Unreachable word-aligned address */
-#define ADDR_UNREACHABLE ((uint32_t)&NEORV32_DM->SREG)
+#define ADDR_UNREACHABLE (NEORV32_DM_BASE)
 //** External memory base address */
 #define EXT_MEM_BASE     (0xF0000000UL)
 /**@}*/
