@@ -452,13 +452,13 @@ int neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ech
  * Private function for 'neorv32_printf' to convert into decimal.
  *
  * @param[in] x Unsigned input number.
- * @param[in,out] res Pointer for storing the reuslting number string (11 chars).
+ * @param[in,out] res Pointer for storing the resulting number string (11 chars).
  **************************************************************************/
 static void __neorv32_uart_itoa(uint32_t x, char *res) {
 
   static const char numbers[] = "0123456789";
   char buffer1[11];
-  uint16_t i, j;
+  int i, j;
 
   buffer1[10] = '\0';
   res[10] = '\0';
