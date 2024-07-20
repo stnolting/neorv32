@@ -54,15 +54,6 @@ void neorv32_sdi_setup(uint32_t irq_mask) {
 
 
 /**********************************************************************//**
- * Clear SDI receive FIFO.
- **************************************************************************/
-void neorv32_sdi_rx_clear(void) {
-
-  NEORV32_SDI->CTRL |= (uint32_t)(1 << SDI_CTRL_CLR_RX);
-}
-
-
-/**********************************************************************//**
  * Disable SDI controller.
  **************************************************************************/
 void neorv32_sdi_disable(void) {
@@ -124,5 +115,21 @@ int neorv32_sdi_get(uint8_t* data) {
   }
   else {
     return -1;
+  }
+}
+
+
+/**********************************************************************//**
+ * Get status of chip-select line.
+ *
+ * @return 1 if chip-select line is enabled/active (driven low), 0 otherwise.
+ **************************************************************************/
+int neorv32_sdi_check_cs(void) {
+
+  if (NEORV32_SDI->CTRL & (1 << SDI_CTRL_CS_ACTIVE)) {
+    return 1;
+  }
+  else {
+    return 0;
   }
 }

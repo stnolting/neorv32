@@ -84,17 +84,13 @@ int main() {
       neorv32_uart0_printf("Available commands:\n"
                           " help - show this text\n"
                           " put  - write byte to TX buffer\n"
-                          " get  - read byte from RX buffer\n"
-                          " clr  - clear RX buffer\n");
+                          " get  - read byte from RX buffer\n");
     }
     else if (!strcmp(buffer, "put")) {
       sdi_put();
     }
     else if (!strcmp(buffer, "get")) {
       sdi_get();
-    }
-    else if (!strcmp(buffer, "clr")) {
-      neorv32_sdi_rx_clear();
     }
     else {
       neorv32_uart0_printf("Invalid command. Type 'help' to see all commands.\n");

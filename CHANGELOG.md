@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 20.07.2024 | 1.10.1.6 | SDI: remove explicit "RX clear flag"; add new flag to check the current state of the chip-select input | [#955](https://github.com/stnolting/neorv32/pull/955) |
 | 19.07.2024 | 1.10.1.5 | :sparkles: add "programmable" chip-select enable/disable functionality to SPI module | [#954](https://github.com/stnolting/neorv32/pull/954) |
 | 19.07.2024 | 1.10.1.4 | :bug: fix SDI "TX FIFO full" flag | [#953](https://github.com/stnolting/neorv32/pull/953) |
 | 18.07.2024 | 1.10.1.3 | :test_tube: add new generic to disable the SYSINFO module (:warning: for advanced users only that wish to use a CPU-only setup): `IO_DISABLE_SYSINFO` | [#952](https://github.com/stnolting/neorv32/pull/952) |

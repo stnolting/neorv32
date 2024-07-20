@@ -36,11 +36,10 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** SDI control register bits */
 enum NEORV32_SDI_CTRL_enum {
-  SDI_CTRL_EN           =  0, /**< SDI control register(00) (r/w): SID module enable */
-  SDI_CTRL_CLR_RX       =  1, /**< SDI control register(01) (-/w): Clear RX FIFO when set, auto-clear */
+  SDI_CTRL_EN           =  0, /**< SDI control register(0) (r/w): SID module enable */
 
-  SDI_CTRL_FIFO_LSB     =  4, /**< SDI control register(04) (r/-): log2 of SDI FIFO size, LSB */
-  SDI_CTRL_FIFO_MSB     =  7, /**< SDI control register(07) (r/-): log2 of SDI FIFO size, MSB */
+  SDI_CTRL_FIFO_LSB     =  4, /**< SDI control register(4) (r/-): log2 of SDI FIFO size, LSB */
+  SDI_CTRL_FIFO_MSB     =  7, /**< SDI control register(7) (r/-): log2 of SDI FIFO size, MSB */
 
   SDI_CTRL_IRQ_RX_AVAIL = 15, /**< SDI control register(15) (r/w): IRQ when RX FIFO not empty */
   SDI_CTRL_IRQ_RX_HALF  = 16, /**< SDI control register(16) (r/w): IRQ when RX FIFO at least half full */
@@ -53,7 +52,9 @@ enum NEORV32_SDI_CTRL_enum {
   SDI_CTRL_RX_FULL      = 25, /**< SDI control register(25) (r/-): RX FIFO full */
   SDI_CTRL_TX_EMPTY     = 26, /**< SDI control register(26) (r/-): TX FIFO empty */
   SDI_CTRL_TX_NHALF     = 27, /**< SDI control register(27) (r/-): TX FIFO not at least half full */
-  SDI_CTRL_TX_FULL      = 28  /**< SDI control register(28) (r/-): TX FIFO full */
+  SDI_CTRL_TX_FULL      = 28, /**< SDI control register(28) (r/-): TX FIFO full */
+
+  SDI_CTRL_CS_ACTIVE    = 31  /**< SDI control register(31) (r/-): Chip-select is active when set */
 };
 /**@}*/
 
@@ -64,12 +65,12 @@ enum NEORV32_SDI_CTRL_enum {
 /**@{*/
 int  neorv32_sdi_available(void);
 void neorv32_sdi_setup(uint32_t irq_mask);
-void neorv32_sdi_rx_clear(void);
 void neorv32_sdi_disable(void);
 void neorv32_sdi_enable(void);
 int  neorv32_sdi_get_fifo_depth(void);
 int  neorv32_sdi_put(uint8_t data);
 int  neorv32_sdi_get(uint8_t* data);
+int  neorv32_sdi_check_cs(void);
 /**@}*/
 
 

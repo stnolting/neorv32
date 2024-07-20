@@ -358,11 +358,11 @@ begin
   -- 1-Wire termination (pull-up) --
   onewire <= 'H';
 
-  -- SPI/SDI echo --
-  sdi_clk <= spi_clk;
-  sdi_csn <= spi_csn(7);
-  sdi_di  <= spi_do;
-  spi_di  <= sdi_do when (spi_csn(7) = '0') else spi_do;
+  -- SPI/SDI echo with propagation delay --
+  sdi_clk <= spi_clk after 40 ns;
+  sdi_csn <= spi_csn(7) after 40 ns;
+  sdi_di  <= spi_do after 40 ns;
+  spi_di  <= sdi_do when (spi_csn(7) = '0') else spi_do after 40 ns;
 
 
   -- UART Simulation Receiver ---------------------------------------------------------------

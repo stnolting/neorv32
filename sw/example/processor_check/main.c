@@ -1226,7 +1226,7 @@ int main() {
     cnt_test++;
 
     // configure SPI
-    neorv32_spi_setup(CLK_PRSC_8, 0, 0, 0, 1<<SPI_CTRL_IRQ_IDLE); // IRQ when TX FIFO is empty and SPI bus engine is idle
+    neorv32_spi_setup(CLK_PRSC_8, 0, 1, 1, 1<<SPI_CTRL_IRQ_IDLE); // IRQ when TX FIFO is empty and SPI bus engine is idle
 
     // trigger SPI transmissions
     neorv32_spi_put_nonblocking(0xab); // non-blocking
@@ -1446,14 +1446,13 @@ int main() {
 
     // configure and enable SDI + SPI
     neorv32_sdi_setup(1 << SDI_CTRL_IRQ_RX_AVAIL);
-    neorv32_spi_setup(CLK_PRSC_4, 0, 0, 0, 0);
+    neorv32_spi_setup(CLK_PRSC_8, 0, 0, 0, 0);
 
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << SDI_FIRQ_ENABLE);
 
     // write test data to SDI
-    neorv32_sdi_rx_clear();
-    neorv32_sdi_put(0xab);
+    neorv32_sdi_put(0xeb);
 
     // trigger SDI IRQ by sending data via SPI
     neorv32_spi_cs_en(7); // select SDI
@@ -1470,7 +1469,7 @@ int main() {
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == SDI_TRAP_CODE) && // correct trap code
         (neorv32_sdi_get(&sdi_read_data) == 0) && // correct SDI read data status
         (sdi_read_data == 0x83) && // correct SDI read data
-        ((tmp_a & 0xff) == 0xab)) { // correct SPI read data
+        ((tmp_a & 0xff) == 0xeb)) { // correct SPI read data
       test_ok();
     }
     else {

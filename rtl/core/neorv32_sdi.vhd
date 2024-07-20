@@ -36,8 +36,6 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
 
   -- control register --
   constant ctrl_en_c           : natural :=  0; -- r/w: SDI enable
-  constant ctrl_clr_rx_c       : natural :=  1; -- -/w: clear RX FIFO, auto-clears
---constant ctrl_cpha_c         : natural :=  2; -- r/w: clock phase [TODO]
   --
   constant ctrl_fifo_size0_c   : natural :=  4; -- r/-: log2(FIFO size), bit 0 (lsb)
   constant ctrl_fifo_size1_c   : natural :=  5; -- r/-: log2(FIFO size), bit 1
@@ -56,11 +54,12 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
   constant ctrl_tx_empty_c     : natural := 26; -- r/-: TX FIFO empty
   constant ctrl_tx_nhalf_c     : natural := 27; -- r/-: TX FIFO not at least half-full
   constant ctrl_tx_full_c      : natural := 28; -- r/-: TX FIFO full
+  --
+  constant ctrl_cs_active_c    : natural := 31; -- r/-: chip-select is active when set
 
   -- control register (see bit definitions above) --
   type ctrl_t is record
     enable       : std_ulogic;
-    clr_rx       : std_ulogic;
     irq_rx_avail : std_ulogic;
     irq_rx_half  : std_ulogic;
     irq_rx_full  : std_ulogic;
@@ -113,7 +112,6 @@ begin
     if (rstn_i = '0') then
       bus_rsp_o         <= rsp_terminate_c;
       ctrl.enable       <= '0';
-      ctrl.clr_rx       <= '0';
       ctrl.irq_rx_avail <= '0';
       ctrl.irq_rx_half  <= '0';
       ctrl.irq_rx_full  <= '0';
@@ -126,12 +124,10 @@ begin
       bus_rsp_o.data <= (others => '0');
 
       -- read/write access --
-      ctrl.clr_rx <= '0'; -- default
       if (bus_req_i.stb = '1') then
         if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(2) = '0') then -- control register
             ctrl.enable <= bus_req_i.data(ctrl_en_c);
-            ctrl.clr_rx <= bus_req_i.data(ctrl_clr_rx_c);
             --
             ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
             ctrl.irq_rx_half  <= bus_req_i.data(ctrl_irq_rx_half_c);
@@ -157,6 +153,8 @@ begin
             bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
             bus_rsp_o.data(ctrl_tx_nhalf_c) <= not tx_fifo.half;
             bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
+            --
+            bus_rsp_o.data(ctrl_cs_active_c) <= not sync.csn;
           else -- data register
             bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
           end if;
@@ -209,7 +207,7 @@ begin
     FIFO_DEPTH => RTX_FIFO, -- number of fifo entries; has to be a power of two; min 1
     FIFO_WIDTH => 8,        -- size of data elements in fifo (32-bit only for simulation)
     FIFO_RSYNC => true,     -- sync read
-    FIFO_SAFE  => true,      -- safe access
+    FIFO_SAFE  => true,     -- safe access
     FULL_RESET => false     -- no HW reset, try to infer BRAM
   )
   port map (
@@ -233,7 +231,7 @@ begin
   rx_fifo.we    <= serial.done;
 
   -- read access (CPU) --
-  rx_fifo.clear <= (not ctrl.enable) or ctrl.clr_rx;
+  rx_fifo.clear <= not ctrl.enable;
   rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
 
 
@@ -296,7 +294,7 @@ begin
         when "100" => -- enabled but idle, waiting for new transmission trigger
         -- ------------------------------------------------------------
           serial.cnt <= (others => '0');
-          if (tx_fifo.avail = '0') then -- output zero if no RX data available
+          if (tx_fifo.avail = '0') then -- send zero if no RX data available
             serial.sreg <= (others => '0');
           else
             serial.sreg <= tx_fifo.rdata;

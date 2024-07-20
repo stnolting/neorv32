@@ -21,48 +21,51 @@
 **Overview**
 
 The serial data interface module provides a **device-class** SPI interface and allows to connect the processor
-to an external SPI _host_, which is responsible for triggering (clocking) the actual transmission - the SDI is entirely
-passive. An optional receive/transmit FIFO can be configured via the _IO_SDI_FIFO_ generic to support block-based
-transmissions without CPU interaction.
+to an **external SPI host**, which is responsible of performing the actual transmission - the SDI is entirely
+passive. An optional receive/transmit ring buffer (FIFOs) can be configured via the `IO_SDI_FIFO` generic to
+support block-based transmissions without CPU interaction.
 
 .Device-Mode Only
 [NOTE]
 The NEORV32 SDI module only supports _device mode_. Transmission are initiated by an external host and not by the
 the processor itself. If you are looking for a _host-mode_ serial peripheral interface (transactions
-initiated by the NEORV32) check out the <<_serial_peripheral_interface_controller_spi>>.
+performed by the NEORV32) check out the <<_serial_peripheral_interface_controller_spi>>.
 
 The SDI module provides a single control register `CTRL` to configure the module and to check it's status
-and a single data register `DATA` for receiving/transmitting data.
+and a single data register `DATA` for receiving/transmitting data. Any access to the `DATA` register
+actually accesses the internal ring buffer.
 
 
 **Theory of Operation**
 
 The SDI module is enabled by setting the `SDI_CTRL_EN` bit in the `CTRL` control register. Clearing this bit
-resets the entire module including the RX and TX FIFOs.
+resets the entire module and will also clear the entire RX/TX ring buffer.
 
 The SDI operates on byte-level only. Data written to the `DATA` register will be pushed to the TX FIFO. Received
 data can be retrieved by reading the RX FIFO via the `DATA` register. The current state of these FIFOs is available
-via the control register's `SDI_CTRL_RX_*` and `SDI_CTRL_TX_*` flags. The RX FIFO can be manually cleared at any time
-by setting the `SDI_CTRL_CLR_RX` bit.
+via the control register's `SDI_CTRL_RX_*` and `SDI_CTRL_TX_*` flags. If no data is available in the TX FIFO while
+an external device performs a transmission the external device will read all-zero from the SDI controller.
 
-If no data is available in the TX FIFO while an external device performs a transmission the external device will
-read all-zero from the SDI controller.
+Application software can check the current state of the SDI chip-select input via the control register's
+`SDI_CTRL_CS_ACTIVE` flag (the flag is set when the chip-select line is active (pulled low)).
 
 .MSB-first Only
 [NOTE]
 The NEORV32 SDI module only supports MSB-first mode.
 
-.Transmission Abort
+.In-Transmission Abort
 [NOTE]
-If the external SPI controller aborts an transmission (by setting the chip-select signal high again) _before_
+If the external SPI controller aborts the transmission by setting the chip-select signal high again _before_
 8 data bits have been transferred, no data is written to the RX FIFO.
 
 
 **SDI Clocking**
 
-The SDI module supports both SPI clock polarity modes ("CPOL") but regarding the clock phase only "CPHA=0" is supported
-yet. All SDI operations are clocked by the external `sdi_clk_i` signal. This signal is synchronized to the processor's
-clock domain to simplify timing behavior. However, the clock synchronization requires that the external SDI clock
+The SDI module supports both SPI clock polarity modes ("CPOL") but only "CPHA=0"-clock-phase is _officially_ supported
+yet. However, experiments have shown that the SDI module can also deal with both clock phase modes (for slow SDI clock speeds).
+
+All SDI operations are clocked by the external `sdi_clk_i` signal. This signal is synchronized to the processor's
+clock domain to simplify timing behavior. This clock synchronization requires the external SDI clock
 (`sdi_clk_i`) does **not exceed 1/4 of the processor's main clock**.
 
 
@@ -84,8 +87,7 @@ example if just the `SDI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep 
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
 .18+<| `0xfffff700` .18+<| `CTRL` <|`0`     `SDI_CTRL_EN`                           ^| r/w <| SDI module enable
-                                  <|`1`     `SDI_CTRL_CLR_RX`                       ^| -/w <| clear RX FIFO when set, bit auto-clears
-                                  <|`3:2`   _reserved_                              ^| r/- <| reserved, read as zero
+                                  <|`3:1`   _reserved_                              ^| r/- <| reserved, read as zero
                                   <|`7:4`   `SDI_CTRL_FIFO_MSB : SDI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(_IO_SDI_FIFO_)
                                   <|`14:8`  _reserved_                              ^| r/- <| reserved, read as zero
                                   <|`15`    `SDI_CTRL_IRQ_RX_AVAIL`                 ^| r/w <| fire interrupt if RX FIFO is not empty
@@ -100,6 +102,8 @@ example if just the `SDI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep 
                                   <|`26`    `SDI_CTRL_TX_EMPTY`                     ^| r/- <| TX FIFO empty
                                   <|`27`    `SDI_CTRL_TX_NHALF`                     ^| r/- <| TX FIFO not at least half full
                                   <|`28`    `SDI_CTRL_TX_FULL`                      ^| r/- <| TX FIFO full
-                                  <|`31:29` _reserved_                              ^| r/- <| reserved, read as zero
-| `0xfffff704` | `DATA` |`7:0` | r/w | receive/transmit data (FIFO)
+                                  <|`30:29` _reserved_                              ^| r/- <| reserved, read as zero
+                                  <|`31`    `SDI_CTRL_CS_ACTIVE`                    ^| r/- <| Chip-select is active when set
+.2+<| `0xfffff704` .2+<| `DATA` <|`7:0`             ^| r/w <| receive/transmit data (FIFO)
+                                <|`31:8` _reserved_ ^| r/- <| reserved, read as zero
 |=======================
