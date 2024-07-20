@@ -1,6 +1,6 @@
 ## Hardware RTL Sources
 
-### > [`core`](https://github.com/stnolting/neorv32/tree/main/rtl/core)
+### > [`core`](core)
 
 This folder contains the core VHDL files for the NEORV32 CPU and the NEORV32 Processor.
 When creating a new synthesis/simulation project make sure to add all `*.vhd` files from this
@@ -17,12 +17,12 @@ file list. However, these default files can also be replaced by optimized techno
 > Two file list files (`*.f`) are provided that list all required rtl files for the CPU core and
 for the entire processor including their recommended compile order.
 
-### > [`processor_templates`](https://github.com/stnolting/neorv32/tree/main/rtl/processor_templates)
+### > [`processor_templates`](processor_templates)
 
 Contains pre-configured SoC templates that instantiate the processor's top entity from `core`.
 These templates can be instantiated directly within a FPGA-specific board wrapper.
 
-### > [`system_integration`](https://github.com/stnolting/neorv32/tree/main/rtl/system_integration)
+### > [`system_integration`](system_integration)
 
 NEORV32 Processor wrappers dedicated for complex system integration:
 
@@ -32,7 +32,7 @@ NEORV32 Processor wrappers dedicated for complex system integration:
 > [!NOTE]
 > These pre-defined top entity wrappers can also be used for custom setups outside of LiteX and Vivado IP designs.
 
-### > [`test_setups`](https://github.com/stnolting/neorv32/tree/main/rtl/test_setups)
+### > [`test_setups`](test_setups)
 
 Minimal processor test setups (FPGA- and board-independent) for checking out NEORV32.
 See the folder's README for more information. Note that these test setups are used in the

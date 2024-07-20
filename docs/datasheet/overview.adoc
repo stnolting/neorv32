@@ -144,7 +144,7 @@ neorv32               - Project home folder
 │├system_integration  - System wrappers and bridges for advanced connectivity
 │└test_setups         - Minimal test setup "SoCs" used in the User Guide
 │
-├sim                  - Simulation files (see User Guide)
+├sim                  - Simulation files
 │
 └-sw                  - Software framework
   ├bootloader         - Sources of the processor-internal bootloader
@@ -153,9 +153,9 @@ neorv32               - Project home folder
   │├eclipse           - Pre-configured Eclipse IDE project
   │└...               - Several example programs
   ├lib                - Processor core library
-  │├include           - Header files (*.h)
-  │└source            - Source files (*.c)
-  ├image_gen          - Helper program to generate NEORV32 executables
+  │├include           - NEORV32 core library header files (*.h)
+  │└source            - NEORV32 core library source files (*.c)
+  ├image_gen          - Helper program to generate executables & memory images
   ├ocd_firmware       - Firmware for the on-chip debugger's "park loop"
   ├openocd            - OpenOCD configuration files
   └svd                - Processor system view description file (CMSIS-SVD)
