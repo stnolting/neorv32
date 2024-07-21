@@ -34,12 +34,12 @@
  * @name Define macros for easy CFU instruction wrapping
  **************************************************************************/
 /**@{*/
-#define xtea_hw_init(sum)           neorv32_cfu_r3_instr(0b0000000, 0b100, sum, 0)
-#define xtea_hw_enc_v0_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b000, v0, v1)
-#define xtea_hw_enc_v1_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b001, v0, v1)
-#define xtea_hw_dec_v0_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b010, v0, v1)
-#define xtea_hw_dec_v1_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b011, v0, v1)
-#define xtea_hw_illegal_inst()      neorv32_cfu_r3_instr(0b0000000, 0b111, 0, 0)
+#define xtea_hw_init(sum)           neorv32_cfu_r3_instr(0b0000000, 0b100, sum, 0 )
+#define xtea_hw_enc_v0_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b000, v0,  v1)
+#define xtea_hw_enc_v1_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b001, v0,  v1)
+#define xtea_hw_dec_v0_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b010, v0,  v1)
+#define xtea_hw_dec_v1_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b011, v0,  v1)
+#define xtea_hw_illegal_inst()      neorv32_cfu_r3_instr(0b0000000, 0b111, 0,   0 )
 /**@}*/
 
 // The CFU custom instructions can be used as plain C functions as they are simple "intrinsics".
@@ -67,14 +67,19 @@
 /**@{*/
 /** XTEA delta (round-key update) */
 const uint32_t xtea_delta = 0x9e3779b9;
+
 /** Encryption/decryption key (128-bit) */
 const uint32_t key[4] = {0x207230ba, 0x1ffba710, 0xc45271ef, 0xdd01768a};
+
 /** Encryption input data */
 uint32_t input_data[DATA_NUM];
+
 /** Encryption results */
 uint32_t cypher_data_sw[DATA_NUM], cypher_data_hw[DATA_NUM];
+
 /** Decryption results */
 uint32_t plain_data_sw[DATA_NUM], plain_data_hw[DATA_NUM];
+
 /** Timing data */
 uint32_t time_enc_sw, time_enc_hw, time_dec_sw, time_dec_hw;
 /**@}*/

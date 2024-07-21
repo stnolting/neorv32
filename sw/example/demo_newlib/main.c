@@ -95,7 +95,7 @@ int main() {
 
   // rand test
   neorv32_uart0_printf("<rand> test... ");
-  srand(neorv32_cpu_csr_read(CSR_CYCLE)); // set random seed
+  srand(time(NULL)); // set random seed
   neorv32_uart0_printf("%i, %i, %i, %i\n", rand() % 100, rand() % 100, rand() % 100, rand() % 100);
 
 
