@@ -382,7 +382,7 @@ $ make USER_FLAGS+="-Wl,--defsym,__neorv32_rom_size=4096" clean_all exe
 ----
 
 [IMPORTANT]
-`__neorv32_rom_base` (= `ORIGIN` of the `ram` section) and `__neorv32_ram_base` (= `ORIGIN` of the `rom` section) have to
+`__neorv32_rom_base` (= `ORIGIN` of the `rom` section) and `__neorv32_ram_base` (= `ORIGIN` of the `ram` section) have to
 be sync to the actual memory layout configuration of the processor (see section <<_address_space>>).
 
 [NOTE]
