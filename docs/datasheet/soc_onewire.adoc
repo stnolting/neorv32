@@ -12,6 +12,7 @@
 |                         | `onewire_o` | 1-bit 1-wire bus output (pull low only)
 | Configuration generics: | `IO_ONEWIRE_EN`     | implement ONEWIRE interface controller when `true`
 | CPU interrupts:         | fast IRQ channel 13 | operation done interrupt (see <<_processor_interrupts>>)
+| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
 

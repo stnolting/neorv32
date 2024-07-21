@@ -740,29 +740,35 @@ begin
     A_BASE   => mem_imem_base_c,
     A_SIZE   => imem_size_c,
     A_TMO_EN => true,
+    A_PRIV   => false,
     -- port B: DMEM --
     B_ENABLE => MEM_INT_DMEM_EN,
     B_BASE   => mem_dmem_base_c,
     B_SIZE   => dmem_size_c,
     B_TMO_EN => true,
+    B_PRIV   => false,
     -- port C: XIP --
     C_ENABLE => XIP_EN,
     C_BASE   => mem_xip_base_c,
     C_SIZE   => mem_xip_size_c,
-    C_TMO_EN => false, -- not timeout for XIP flash accesses
+    C_TMO_EN => false, -- no timeout for XIP accesses
+    C_PRIV   => false,
     -- port D: BOOT ROM --
     D_ENABLE => INT_BOOTLOADER_EN,
     D_BASE   => mem_boot_base_c,
     D_SIZE   => mem_boot_size_c,
     D_TMO_EN => true,
+    D_PRIV   => true, -- only privileged (M-mode) accesses are allowed
     -- port E: IO --
-    E_ENABLE => true, -- always enabled (mandatory core module)
+    E_ENABLE => true, -- always enabled (but will be trimmed if no IO devices are implemented)
     E_BASE   => mem_io_base_c,
     E_SIZE   => mem_io_size_c,
     E_TMO_EN => true,
-    -- port X: XBUS --
+    E_PRIV   => true, -- only privileged (M-mode) accesses are allowed
+    -- port X (the void): XBUS --
     X_ENABLE => XBUS_EN,
-    X_TMO_EN => false -- timeout handled by XBUS gateway
+    X_TMO_EN => false, -- timeout handled by XBUS gateway
+    X_PRIV   => false
   )
   port map (
     -- global control --

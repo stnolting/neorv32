@@ -13,7 +13,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -151,10 +150,11 @@ end neorv32_bus_switch_rtl;
 -- NEORV32 SoC - Processor Bus Infrastructure: Section Gateway                      --
 -- -------------------------------------------------------------------------------- --
 -- Bus gateway to distribute accesses to 5 non-overlapping address sub-spaces       --
--- (A..E). All accesses that do not match any of these sections are redirected to   --
--- the "X" port. The gateway-internal bus monitor ensures that all accesses are     --
--- completed within a bound time window (if *_TMO_EN is true). Otherwise, a bus     --
--- error is triggered.                                                              --
+-- (A to E). Note that the sub-spaces have to be aligned to their individual sizes. --
+-- All accesses that do not match any of these sections are redirected to the "X"   --
+-- port. The gateway-internal bus monitor ensures that all accesses are completed   --
+-- within a bound time window (if port's *_TMO_EN is true). Otherwise, a bus error  --
+-- exception is raised.                                                             --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -176,31 +176,37 @@ entity neorv32_bus_gateway is
     -- port A --
     A_ENABLE : boolean; -- port enable
     A_BASE   : std_ulogic_vector(31 downto 0); -- port address space base address
-    A_SIZE   : natural; -- port address space size in bytes (power of two!)
-    A_TMO_EN : boolean; -- port timeout enable
+    A_SIZE   : natural; -- port address space size in bytes (power of two), aligned to size
+    A_TMO_EN : boolean; -- port access timeout enable
+    A_PRIV   : boolean; -- privileged (M-mode) access only
     -- port B --
     B_ENABLE : boolean;
     B_BASE   : std_ulogic_vector(31 downto 0);
     B_SIZE   : natural;
     B_TMO_EN : boolean;
+    B_PRIV   : boolean;
     -- port C --
     C_ENABLE : boolean;
     C_BASE   : std_ulogic_vector(31 downto 0);
     C_SIZE   : natural;
     C_TMO_EN : boolean;
+    C_PRIV   : boolean;
     -- port D --
     D_ENABLE : boolean;
     D_BASE   : std_ulogic_vector(31 downto 0);
     D_SIZE   : natural;
     D_TMO_EN : boolean;
+    D_PRIV   : boolean;
     -- port E --
     E_ENABLE : boolean;
     E_BASE   : std_ulogic_vector(31 downto 0);
     E_SIZE   : natural;
     E_TMO_EN : boolean;
-    -- port X --
+    E_PRIV   : boolean;
+    -- port X (the void) --
     X_ENABLE : boolean;
-    X_TMO_EN : boolean
+    X_TMO_EN : boolean;
+    X_PRIV   : boolean
   );
   port (
     -- global control --
@@ -230,18 +236,15 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   -- port select --
   signal port_sel : std_ulogic_vector(5 downto 0);
 
-  -- port enable list --
-  type port_en_list_t is array (0 to 5) of boolean;
-  constant port_en_list_c : port_en_list_t := (A_ENABLE, B_ENABLE, C_ENABLE, D_ENABLE, E_ENABLE, X_ENABLE);
+  -- port enable and privileged access lists --
+  type port_bool_list_t is array (0 to 5) of boolean;
+  constant port_en_list_c  : port_bool_list_t := (A_ENABLE, B_ENABLE, C_ENABLE, D_ENABLE, E_ENABLE, X_ENABLE);
+  constant priv_acc_list_c : port_bool_list_t := (A_PRIV, B_PRIV, C_PRIV, D_PRIV, E_PRIV, X_PRIV);
 
   -- port timeout enable list --
   constant tmo_en_list_c : std_ulogic_vector(5 downto 0) := (
-    bool_to_ulogic_f(X_TMO_EN),
-    bool_to_ulogic_f(E_TMO_EN),
-    bool_to_ulogic_f(D_TMO_EN),
-    bool_to_ulogic_f(C_TMO_EN),
-    bool_to_ulogic_f(B_TMO_EN),
-    bool_to_ulogic_f(A_TMO_EN)
+    bool_to_ulogic_f(X_TMO_EN), bool_to_ulogic_f(E_TMO_EN), bool_to_ulogic_f(D_TMO_EN),
+    bool_to_ulogic_f(C_TMO_EN), bool_to_ulogic_f(B_TMO_EN), bool_to_ulogic_f(A_TMO_EN)
   );
 
   -- gateway ports combined as arrays --
@@ -266,11 +269,11 @@ begin
 
   -- Address Section Decoder ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  port_sel(0) <= '1' when (req_i.addr(31 downto index_size_f(A_SIZE)) = A_BASE(31 downto index_size_f(A_SIZE))) and A_ENABLE else '0';
-  port_sel(1) <= '1' when (req_i.addr(31 downto index_size_f(B_SIZE)) = B_BASE(31 downto index_size_f(B_SIZE))) and B_ENABLE else '0';
-  port_sel(2) <= '1' when (req_i.addr(31 downto index_size_f(C_SIZE)) = C_BASE(31 downto index_size_f(C_SIZE))) and C_ENABLE else '0';
-  port_sel(3) <= '1' when (req_i.addr(31 downto index_size_f(D_SIZE)) = D_BASE(31 downto index_size_f(D_SIZE))) and D_ENABLE else '0';
-  port_sel(4) <= '1' when (req_i.addr(31 downto index_size_f(E_SIZE)) = E_BASE(31 downto index_size_f(E_SIZE))) and E_ENABLE else '0';
+  port_sel(0) <= '1' when A_ENABLE and (req_i.addr(31 downto index_size_f(A_SIZE)) = A_BASE(31 downto index_size_f(A_SIZE))) else '0';
+  port_sel(1) <= '1' when B_ENABLE and (req_i.addr(31 downto index_size_f(B_SIZE)) = B_BASE(31 downto index_size_f(B_SIZE))) else '0';
+  port_sel(2) <= '1' when C_ENABLE and (req_i.addr(31 downto index_size_f(C_SIZE)) = C_BASE(31 downto index_size_f(C_SIZE))) else '0';
+  port_sel(3) <= '1' when D_ENABLE and (req_i.addr(31 downto index_size_f(D_SIZE)) = D_BASE(31 downto index_size_f(D_SIZE))) else '0';
+  port_sel(4) <= '1' when E_ENABLE and (req_i.addr(31 downto index_size_f(E_SIZE)) = E_BASE(31 downto index_size_f(E_SIZE))) else '0';
 
   -- accesses to the "void" are redirected to the X port --
   port_sel(5) <= '1' when ((port_sel(4 downto 0) = "00000") and X_ENABLE) else '0';
@@ -290,9 +293,13 @@ begin
   begin
     for i in 0 to 5 loop
       port_req(i) <= req_terminate_c;
-      if port_en_list_c(i) then
-        port_req(i)     <= req_i;
-        port_req(i).stb <= req_i.stb and port_sel(i);
+      if port_en_list_c(i) then -- port enabled
+        port_req(i) <= req_i;
+        if priv_acc_list_c(i) then -- privileged access only
+          port_req(i).stb <= port_sel(i) and req_i.stb and req_i.priv;
+        else
+          port_req(i).stb <= port_sel(i) and req_i.stb;
+        end if;
       end if;
     end loop;
   end process request;
@@ -303,7 +310,7 @@ begin
   begin
     tmp_v := rsp_terminate_c; -- start with all-zero
     for i in 0 to 5 loop -- OR all response signals
-      if port_en_list_c(i) then
+      if port_en_list_c(i) then -- port enabled
         tmp_v.data := tmp_v.data or port_rsp(i).data;
         tmp_v.ack  := tmp_v.ack  or port_rsp(i).ack;
         tmp_v.err  := tmp_v.err  or port_rsp(i).err;
@@ -368,7 +375,6 @@ end neorv32_bus_gateway_rtl;
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -587,7 +593,6 @@ end neorv32_bus_io_switch_rtl;
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;

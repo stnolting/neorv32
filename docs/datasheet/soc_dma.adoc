@@ -11,6 +11,7 @@
 | Top entity ports:       | none |
 | Configuration generics: | `IO_DMA_EN` | implement DMA when `true`
 | CPU interrupts:         | fast IRQ channel 10 | DMA transfer done (see <<_processor_interrupts>>)
+| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
 
@@ -61,7 +62,7 @@ automatically cleared when writing the `CTRL` register.
 .DMA Access Privilege Level
 [WARNING]
 Transactions performed by the DMA are executed as bus transactions with elevated **machine-mode** privilege level.
-Additionally, all physical memory protection rules (<<_smpmp_isa_extension>>) defined by the CPU are **bypassed**.
+Note that any physical memory protection rules (<<_smpmp_isa_extension>>) are not applied to DMA transfers.
 
 
 **Transfer Configuration**

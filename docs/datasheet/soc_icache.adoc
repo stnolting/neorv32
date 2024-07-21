@@ -12,7 +12,11 @@
 |                         | `ICACHE_NUM_BLOCKS` | number of cache blocks (pages/lines)
 |                         | `ICACHE_BLOCK_SIZE` | size of a cache block in bytes
 | CPU interrupts:         | none |
+| Access restrictions:  2+| none
 |=======================
+
+
+**Overview**
 
 The processor features an optional instruction cache to improve performance when using memories with high
 access latencies. The cache is connected directly to the CPU's instruction fetch interface and provides

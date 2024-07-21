@@ -11,6 +11,7 @@
 | Top entity ports:       | none |
 | Configuration generics: | `IO_GPTMR_EN` | implement general purpose timer when `true`
 | CPU interrupts:         | fast IRQ channel 12 | timer interrupt (see <<_processor_interrupts>>)
+| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
 
@@ -18,7 +19,7 @@
 
 The general purpose timer module implements a simple yet universal 32-bit timer. It is implemented if the processor's
 `IO_GPTMR_EN` top generic is set `true`. The timer provides a pre-scaled counter register that can trigger an interrupt
-when reaching a programmable threshold value.l.
+when reaching a programmable threshold value.
 
 The GPTMR provides three interface registers : a control register (`CTRL`), a 32-bit counter register (`COUNT`) and a
 32-bit threshold register (`THRES`). The timer is globally enabled by setting the `GPTMR_CTRL_EN` bit in the module's
