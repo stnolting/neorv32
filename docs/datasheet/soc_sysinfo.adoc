@@ -10,54 +10,43 @@
 | Top entity ports:       | none |
 | Configuration generics: | * | most of the top's configuration generics
 | CPU interrupts:         | none |
+| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
 
 **Overview**
 
-The SYSINFO module allows the application software to determine the setting of most of the <<_processor_top_entity_generics>>
-that are related to CPU and processor/SoC configuration. This device is always implemented - regardless of the actual hardware
-configuration since the NEORV32 software framework requires information from this device for correct operation.
-However, advanced users that do not want to use the default NEORV32 software framework can choose to disable the
-entire SYSINFO module. This might also be suitable for setups that use the processor just as wrapper for a CPU-only
-configuration.
-
-.Disabling the SYSINFO Module
-[WARNING]
-Setting the `IO_DISABLE_SYSINFO` top entity generic to `true` will remove the SYSINFO module from the design.
-This option is suitable for advanced uses that wish to use a CPU-only setup that still contains the bus infrastructure.
-As a result, large parts of the NEORV32 software framework no longer work (e.g. most IO drivers, the RTE and the bootloader).
-**Hence, this option is not recommended.**
+The SYSINFO allows the application software to determine the setting of most of the <<_processor_top_entity_generics>>
+that are related to processor/SoC configuration. All registers of this unit are read-only.
+This device is always implemented - regardless of the actual hardware configuration. The bootloader as well
+as the NEORV32 software runtime environment require information from this device (like memory layout
+and default clock frequency) for correct operation.
 
 
 **Register Map**
 
-All registers of this module are read-only except for the `CLK` register. Upon reset, the `CLK` registers is initialized
-from the `CLOCK_FREQUENCY` top entity generic. Application software can override this default value in order, for example,
-to take into account a dynamic frequency scaling of the processor.
-
 .SYSINFO register map (`struct NEORV32_SYSINFO`)
-[cols="<2,<1,^1,<7"]
+[cols="<2,<1,<7"]
 [options="header",grid="all"]
 |=======================
-| Address | Name [C] | R/W | Description
-| `0xfffffe00` | `CLK`    | r/w | clock frequency in Hz (initialized from top's `CLOCK_FREQUENCY` generic)
-| `0xfffffe04` | `MEM[4]` | r/- | internal memory configuration (see <<_sysinfo_memory_configuration>>)
-| `0xfffffe08` | `SOC`    | r/- | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
-| `0xfffffe0c` | `CACHE`  | r/- | cache configuration information (see <<_sysinfo_cache_configuration>>)
+| Address | Name [C] | Function
+| `0xfffffe00` | `CLK`    | clock frequency in Hz (via top's `CLOCK_FREQUENCY` generic)
+| `0xfffffe04` | `MEM[4]` | internal memory configuration (see <<_sysinfo_memory_configuration>>)
+| `0xfffffe08` | `SOC`    | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
+| `0xfffffe0c` | `CACHE`  | cache configuration information (see <<_sysinfo_cache_configuration>>)
 |=======================
 
 
 ===== SYSINFO - Memory Configuration
 
 [NOTE]
-Bit fields in this register are set to all-zero if the according memory system is not implemented.
+Bit fields in this register are set to all-zero if the according cache is not implemented.
 
 .SYSINFO `MEM` Bytes
 [cols="^1,<2,<7"]
 [options="header",grid="all"]
 |=======================
-| Byte | Name [C] | Description
+| Byte | Name [C] | Function
 | `0`  | `SYSINFO_MEM_IMEM` | _log2_(internal IMEM size in bytes), via top's `MEM_INT_IMEM_SIZE` generic
 | `1`  | `SYSINFO_MEM_DMEM` | _log2_(internal DMEM size in bytes), via top's `MEM_INT_DMEM_SIZE` generic
 | `2`  | -                  | _reserved_, read as zero
@@ -71,7 +60,7 @@ Bit fields in this register are set to all-zero if the according memory system i
 [cols="^2,<6,<10"]
 [options="header",grid="all"]
 |=======================
-| Bit | Name [C] | Description
+| Bit | Name [C] | Function
 | `0`     | `SYSINFO_SOC_BOOTLOADER`     | set if processor-internal bootloader is implemented (via top's `INT_BOOTLOADER_EN` generic)
 | `1`     | `SYSINFO_SOC_XBUS`           | set if external Wishbone bus interface is implemented (via top's `XBUS_EN` generic)
 | `2`     | `SYSINFO_SOC_MEM_INT_IMEM`   | set if processor-internal DMEM implemented (via top's `MEM_INT_DMEM_EN` generic)
@@ -114,7 +103,7 @@ Bit fields in this register are set to all-zero if the according cache is not im
 [cols="^1,<10,<10"]
 [options="header",grid="all"]
 |=======================
-| Bit     | Name [C] | Description
+| Bit     | Name [C] | Function
 | `3:0`   | `SYSINFO_CACHE_INST_BLOCK_SIZE_3 : SYSINFO_CACHE_INST_BLOCK_SIZE_0` | _log2_(i-cache block size in bytes), via top's `ICACHE_BLOCK_SIZE` generic
 | `7:4`   | `SYSINFO_CACHE_INST_NUM_BLOCKS_3 : SYSINFO_CACHE_INST_NUM_BLOCKS_0` | _log2_(i-cache number of cache blocks), via top's `ICACHE_NUM_BLOCKS` generic
 | `11:8`  | `SYSINFO_CACHE_DATA_BLOCK_SIZE_3 : SYSINFO_CACHE_DATA_BLOCK_SIZE_0` | _log2_(d-cache block size in bytes), via top's `DCACHE_BLOCK_SIZE` generic
