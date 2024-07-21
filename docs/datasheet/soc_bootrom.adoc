@@ -10,7 +10,7 @@
 | Top entity ports:       | none                 |
 | Configuration generics: | `INT_BOOTLOADER_EN`  | implement processor-internal bootloader when `true`
 | CPU interrupts:         | none                 |
-| Access restrictions:  2+| read-only
+| Access restrictions:  2+| privileged access only, read-only
 |=======================
 
 

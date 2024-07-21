@@ -758,7 +758,7 @@ begin
     D_BASE   => mem_boot_base_c,
     D_SIZE   => mem_boot_size_c,
     D_TMO_EN => true,
-    D_PRIV   => false,
+    D_PRIV   => true, -- only privileged (M-mode) accesses are allowed
     -- port E: IO --
     E_ENABLE => true, -- always enabled (but will be trimmed if no IO devices are implemented)
     E_BASE   => mem_io_base_c,
