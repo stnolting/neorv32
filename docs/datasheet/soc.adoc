@@ -458,7 +458,7 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 As a 32-bit architecture the NEORV32 can access a 4GB physical address space. By default, this address space is
 split into six main regions. Each region provides specific _physical memory attributes_ ("PMAs") that define
 the access capabilities (`rwxac`; `r` = read permission, `w` = write permission, `x` - execute permission,
-`a` = atomic access support, `c` = cached CPU access).
+`a` = atomic access support, `c` = cached CPU access, `p` = privileged access only).
 
 .NEORV32 Processor Address Space (Default Configuration)
 image::address_space.png[900]
@@ -475,17 +475,23 @@ raise a bus error exception.
 [options="header",grid="rows"]
 |=======================
 | # | Region                      | PMAs    | Description
-| 1 | Internal IMEM address space | `rwxac` | For instructions (=code) and constants; mapped to the internal <<_instruction_memory_imem>>.
-| 2 | Internal DMEM address space | `rwxac` | For application runtime data (heap, stack, etc.); mapped to the internal <<_data_memory_dmem>>).
-| 3 | Memory-mapped XIP flash     | `r-xac` | Memory-mapped access to the <<_execute_in_place_module_xip>> SPI flash.
-| 4 | Bootloader address space    | `r-xa-` | Read-only memory for the internal <<_bootloader_rom_bootrom>> containing the default <<_bootloader>>.
-| 5 | IO/peripheral address space | `rwxa-` | Processor-internal peripherals / IO devices.
-| 6 | The "**void**"              | `rwxac` | Unmapped address space. All accesses to this region(s) are redirected to the <<_processor_external_bus_interface_xbus>> (if implemented).
+| 1 | Internal IMEM address space | `rwxac-` | For instructions (=code) and constants; mapped to the internal <<_instruction_memory_imem>>.
+| 2 | Internal DMEM address space | `rwxac-` | For application runtime data (heap, stack, etc.); mapped to the internal <<_data_memory_dmem>>).
+| 3 | Memory-mapped XIP flash     | `r-xac-` | Memory-mapped access to the <<_execute_in_place_module_xip>> SPI flash.
+| 4 | Bootloader address space    | `r-xa--` | Read-only memory for the internal <<_bootloader_rom_bootrom>> containing the default <<_bootloader>>.
+| 5 | IO/peripheral address space | `rwxa-p` | Processor-internal peripherals / IO devices.
+| 6 | The "**void**"              | `rwxac-` | Unmapped address space. All accesses to this region(s) are redirected to the <<_processor_external_bus_interface_xbus>> (if implemented).
 |=======================
 
+.Privileged IO Access Only
+[IMPORTANT]
+Only privileged accesses (M-mode) to the IO/peripheral address space are allowed. If an unprivileged application
+tries to access this address space a bus access error exception is raised.
+
 .Custom PMAs
-[NOTE]
-Physical memory attributes can be customized (constrained) using the CPU's <<_smpmp_isa_extension>>.
+[TIP]
+Custom physical memory attributes enforced by the CPU's _physcial memory protection_ (<<_smpmp_isa_extension>>)
+can be used to further constrain the physical memory attributes.
 
 
 :sectnums:
@@ -688,6 +694,11 @@ providing an initialized external memory that contains the actual application to
 // ####################################################################################################################
 :sectnums:
 === Processor-Internal Modules
+
+.Privileged IO Access Only
+[IMPORTANT]
+Only privileged accesses (M-mode) to the IO/peripheral modules are allowed. If an unprivileged application
+tries to access this address space a bus access error exception is raised.
 
 .Full-Word Write Accesses Only
 [NOTE]
