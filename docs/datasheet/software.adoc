@@ -345,9 +345,9 @@ relevant for the executable itself; the remaining sections are just listed for c
 [options="header",grid="rows"]
 |=======================
 | Memory section  | Description
-| `ram`           | Data memory address space (processor-internal <<_instruction_memory_imem>> and/or external memory)
-| `rom`           | Instruction memory address space (processor-internal <<_data_memory_dmem>> and/or external memory)
-| `xip`           | Address space for the <<_execute_in_place_module_xip>> (accessing an external SPI flash)
+| `ram`           | Data memory address space (processor-internal <<_data_memory_dmem>> and/or external memory)
+| `rom`           | Instruction memory address space (processor-internal <<_instruction_memory_imem>> and/or external memory)
+| `xip`           | Address space for the <<_execute_in_place_module_xip>> (accessing an external SPI memory)
 | `boot`          | Address space for the processor-internal <<_bootloader_rom_bootrom>>
 | `io`            | Address space for the processor-internal IO/peripheral devices
 |=======================
