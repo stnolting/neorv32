@@ -15,6 +15,7 @@
 | Configuration generics: | `IO_TWI_EN`        | implement TWI controller when `true`
 |                         | `IO_TWI_FIFO`      | FIFO depth, has to be a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 7 | FIFO empty and module idle interrupt (see <<_processor_interrupts>>)
+| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
 

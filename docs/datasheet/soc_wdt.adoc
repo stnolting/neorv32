@@ -10,20 +10,19 @@
 |                         | neorv32_wdt.h |
 | Top entity ports:       | none |
 | Configuration generics: | `IO_WDT_EN` | implement watchdog when `true`
-| CPU interrupts:         | - | none
+| CPU interrupts:         | none |
+| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
 
-**Theory of Operation**
+**Overview**
 
-The watchdog (WDT) provides a last resort for safety-critical applications. The WDT provides a "bark and bite"
-concept. The timeout counter first triggers an optional CPU interrupt ("bark") when reaching half of the programmed
-interval to inform the application of the imminent timeout. When the full timeout value is reached
-a system-wide hardware reset is generated ("bite"). The internal counter has to be reset explicitly by the application
+The watchdog (WDT) provides a last resort for safety-critical applications. When a pre-programmed timeout value is reached
+a system-wide hardware reset is generated. The internal counter has to be reset explicitly by the application
 program every now and then to prevent a timeout.
 
 
-**Configuration**
+**Theory of Operation**
 
 The watchdog is enabled by setting the control register's `WDT_CTRL_EN` bit. When this bit is cleared, the internal
 timeout counter is reset to zero and no system reset can be triggered by this module.
@@ -92,5 +91,5 @@ The cause of the last system hardware reset can be determined via the `WDT_CTRL_
                                 <|`6:5` `WDT_CTRL_RCAUSE_HI : WDT_CTRL_RCAUSE_LO` ^| r/- ^| `0` ^| -   <| cause of last system reset; 0=external reset, 1=ocd-reset, 2=watchdog reset
                                 <|`7` -                 ^| r/- ^| -   ^| -   <| _reserved_, reads as zero
                                 <|`31:8` `WDT_CTRL_TIMEOUT_MSB : WDT_CTRL_TIMEOUT_LSB` ^| r/w ^| 0 ^| no <| 24-bit watchdog timeout value
-| `0xfffffb04` | `RESET`         |                       | -/w  | -    | yes  | Write PASSWORD to reset WDT timeout counter ("feed the watchdog")
+| `0xfffffb04` | `RESET`         |`31:0`                 | -/w  | -    | yes  | Write _PASSWORD_ to reset WDT timeout counter
 |=======================

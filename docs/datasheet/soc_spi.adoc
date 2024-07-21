@@ -15,6 +15,7 @@
 | Configuration generics: | `IO_SPI_EN`   | implement SPI controller when `true`
 |                         | `IO_SPI_FIFO` | FIFO depth, has to be a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 6 | configurable SPI interrupt (see <<_processor_interrupts>>)
+| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
 
@@ -26,14 +27,14 @@ SPI clock generator and provides up to 8 dedicated chip select signals via the t
 An optional receive/transmit ring-buffer/FIFO can be configured via the `IO_SPI_FIFO` generic to support block-based
 transmissions without CPU interaction.
 
-The SPI module provides a single control register `CTRL` to configure the module and to check it's status
-and a single data register `DATA` for receiving/transmitting data.
-
 .Host-Mode Only
 [NOTE]
 The NEORV32 SPI module only supports _host mode_. Transmission are initiated only by the processor's SPI module
 and not by an external SPI module. If you are looking for a _device-mode_ serial peripheral interface (transactions
 initiated by an external host) check out the <<_serial_data_interface_controller_sdi>>.
+
+The SPI module provides a single control register `CTRL` to configure the module and to check it's status
+and a single data register `DATA` for receiving/transmitting data.
 
 
 **Theory of Operation**

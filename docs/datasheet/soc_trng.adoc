@@ -12,6 +12,7 @@
 | Configuration generics: | `IO_TRNG_EN`   | implement TRNG when `true`
 |                         | `IO_TRNG_FIFO` | data FIFO depth, min 1, has to be a power of two
 | CPU interrupts:         | fast IRQ channel 0 | TRNG data available interrupt (see <<_processor_interrupts>>)
+| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
 

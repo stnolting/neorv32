@@ -14,7 +14,11 @@
 |                         | `MEM_INT_IMEM_SIZE`          | IMEM size in bytes (use a power of 2)
 |                         | `INT_BOOTLOADER_EN`          | use internal bootloader when `true` (implements IMEM as _uninitialized_ RAM, otherwise the IMEM is implemented an _pre-intialized_ ROM)
 | CPU interrupts:         | none                         |
+| Access restrictions:  2+| none / read-only if `INT_BOOTLOADER_EN = true`
 |=======================
+
+
+**Overview**
 
 Implementation of the processor-internal instruction memory is enabled by the processor's
 `MEM_INT_IMEM_EN` generic. The total memory size in bytes is defined via the `MEM_INT_IMEM_SIZE` generic.

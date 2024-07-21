@@ -12,7 +12,11 @@
 |                         | `DCACHE_NUM_BLOCKS` | number of cache blocks (pages/lines)
 |                         | `DCACHE_BLOCK_SIZE` | size of a cache block in bytes
 | CPU interrupts:         | none |
+| Access restrictions:  2+| none
 |=======================
+
+
+**Overview**
 
 The processor features an optional data cache to improve performance when using memories with high
 access latencies. The cache is connected directly to the CPU's data access interface and provides

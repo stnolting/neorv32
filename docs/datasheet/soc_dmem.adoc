@@ -9,11 +9,15 @@
 |                         | mem/neorv32_dmem.default.vhd | default _platform-agnostic_ memory architecture
 |                         | mem/neorv32_dmem.legacy.vhd  | alternative legacy-style memory architecture
 | Software driver files:  | none                         | _implicitly used_
-| Top entity ports:       | none                         | 
+| Top entity ports:       | none                         |
 | Configuration generics: | `MEM_INT_DMEM_EN`            | implement processor-internal DMEM when `true`
 |                         | `MEM_INT_DMEM_SIZE`          | DMEM size in bytes (use a power of 2)
-| CPU interrupts:         | none                         | 
+| CPU interrupts:         | none                         |
+| Access restrictions:  2+| none
 |=======================
+
+
+**Overview**
 
 Implementation of the processor-internal data memory is enabled by the processor's `MEM_INT_DMEM_EN`
 generic. The total memory size in bytes is defined via the `MEM_INT_DMEM_SIZE` generic. Note that this

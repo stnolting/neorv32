@@ -5,7 +5,7 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source files:  | neorv32_cfs.vhd | 
+| Hardware source files:  | neorv32_cfs.vhd |
 | Software driver files:  | neorv32_cfs.c |
 |                         | neorv32_cfs.h |
 | Top entity ports:       | `cfs_in_i`  | custom input conduit
@@ -15,10 +15,11 @@
 |                         | `IO_CFS_IN_SIZE`   | size of `cfs_in_i`
 |                         | `IO_CFS_OUT_SIZE`  | size of `cfs_out_o`
 | CPU interrupts:         | fast IRQ channel 1 | CFS interrupt (see <<_processor_interrupts>>)
+| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
 
-**Theory of Operation**
+**Overview**
 
 The custom functions subsystem is meant for implementing custom tightly-coupled co-processors or interfaces.
 IT provides up to 64 32-bit memory-mapped read/write registers (`REG`, see register map below) that can be

@@ -10,7 +10,8 @@
 |                         | neorv32_crc.h |
 | Top entity ports:       | none |
 | Configuration generics: | `IO_CRC_EN` | implement CRC module when `true`
-| CPU interrupts:         | none |  
+| CPU interrupts:         | none |
+| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
 
@@ -20,7 +21,7 @@ The cyclic redundancy check unit provides a programmable checksum computation mo
 single bytes and can either compute CRC8, CRC16 or CRC32 checksums based on an arbitrary polynomial and
 start value.
 
-.DMA Demo Program
+.CRC Demo Program
 [TIP]
 A CRC example program (also using CPU-independent DMA transfers) can be found in `sw/example/crc_dma`.
 

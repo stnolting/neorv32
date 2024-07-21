@@ -25,6 +25,7 @@
 |                         | `XBUS_CACHE_NUM_BLOCKS` | number of blocks ("lines"), has to be a power of two.
 |                         | `XBUS_CACHE_BLOCK_SIZE` | size in bytes of each block, has to be a power of two.
 | CPU interrupts:         | none |
+| Access restrictions:  2+| none
 |=======================
 
 
