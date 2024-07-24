@@ -273,6 +273,7 @@ typedef union {
 #include "neorv32_xip.h"
 #include "neorv32_xirq.h"
 
+
 #ifdef __cplusplus
 }
 #endif

@@ -74,7 +74,10 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amosc(uint32_t addr,
 }
 
 
-// prototypes
+/**********************************************************************//**
+ * @name Prototypes
+ **************************************************************************/
+/**@{*/
 uint32_t neorv32_cpu_amoswapw(uint32_t addr, uint32_t wdata);
 uint32_t neorv32_cpu_amoaddw(uint32_t addr, uint32_t wdata);
 uint32_t neorv32_cpu_amoandw(uint32_t addr, uint32_t wdata);
@@ -84,5 +87,7 @@ int32_t  neorv32_cpu_amomaxw(uint32_t addr, int32_t wdata);
 uint32_t neorv32_cpu_amomaxuw(uint32_t addr, uint32_t wdata);
 int32_t  neorv32_cpu_amominw(uint32_t addr, int32_t wdata);
 uint32_t neorv32_cpu_amominuw(uint32_t addr, uint32_t wdata);
+/**@}*/
+
 
 #endif // neorv32_cpu_amo_h
