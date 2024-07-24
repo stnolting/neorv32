@@ -22,7 +22,8 @@
 #include <sys/stat.h>
 #include <sys/timeb.h>
 #include <sys/times.h>
-#include <utime.h>
+#include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 #include <errno.h>
 #include <neorv32.h>
