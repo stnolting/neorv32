@@ -68,7 +68,7 @@ int main() {
   neorv32_rte_print_logo();
 
   // say hello
-  neorv32_uart0_puts("Hello world! :)\n");
+  neorv32_uart0_printf("Hello C++! :)\n");
 
   // print the IDs of the two statically declared instances of DemoClass
   demo1.print_id();
