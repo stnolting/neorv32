@@ -641,7 +641,7 @@ void neorv32_rte_print_hw_config(void) {
 void __neorv32_rte_print_hex_word(uint32_t num) {
 
   int i;
-  static const char hex_symbols[16] = "0123456789ABCDEF";
+  static const char hex_symbols[] = "0123456789ABCDEF";
 
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     neorv32_uart0_putc('0');
@@ -721,7 +721,7 @@ void neorv32_rte_print_logo(void) {
     {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0300, 0xc630}
   };
 
-  int x, y, z;
+  unsigned int x, y, z;
   uint16_t tmp;
   char c;
 
