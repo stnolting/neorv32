@@ -263,10 +263,9 @@ static void __neorv32_xirq_core(void) {
   NEORV32_XIRQ->EIP = ~(1 << src);
 
   // execute handler
-  uint32_t xirq_handler = __neorv32_xirq_vector_lut[src];
-  void (*handler_pnt)(void);
-  handler_pnt = (void*)xirq_handler;
-  (*handler_pnt)();
+  typedef void handler_t();
+  handler_t* handler = (handler_t*)__neorv32_xirq_vector_lut[src];
+  handler();
 
   NEORV32_XIRQ->ESC = 0; // acknowledge the current XIRQ interrupt
 }

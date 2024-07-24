@@ -186,7 +186,9 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
   }
 
   // call handler
-  asm volatile ("jalr ra, 0(%[dst])" : : [dst] "r" (handler_base));
+  typedef void handler_t();
+  handler_t* handler = (handler_t*)handler_base;
+  handler();
 
   // compute return address (for exceptions only)
   // do not alter return address if instruction access exception (fatal?)
