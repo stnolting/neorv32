@@ -32,14 +32,16 @@
 // # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
 // #################################################################################################
 
-
-/**********************************************************************//**
+/**
  * @file neorv32_xirq.c
  * @brief External Interrupt controller HW driver source file.
- **************************************************************************/
+ *
+ * @note These functions should only be used if the XIRQ controller was synthesized.
+ *
+ * @see https://stnolting.github.io/neorv32/sw/files.html
+ */
 
 #include "neorv32.h"
-#include "neorv32_xirq.h"
 
 
 /**********************************************************************//**

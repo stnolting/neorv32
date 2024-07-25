@@ -14,7 +14,6 @@
  */
 
 #include "neorv32.h"
-#include "neorv32_rte.h"
 
 
 /**********************************************************************//**
@@ -253,14 +252,14 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
- * Read register from application context.
+ * Read register from application context (on stack).
  *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
  * @return Content of register x.
  **************************************************************************/
 uint32_t neorv32_rte_context_get(int x) {
 
-  // MSCRATCH CSR contain the stack pointer of the interrupted program
+  // MSCRATCH CSR contains the stack pointer of the interrupted program
   uint32_t tmp = neorv32_cpu_csr_read(CSR_MSCRATCH);
 #ifdef __riscv_32e
   tmp += (x & 15) << 2;
@@ -273,14 +272,14 @@ uint32_t neorv32_rte_context_get(int x) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
- * Write register in application context.
+ * Write register to application context (on stack).
  *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
  * @param[in] data Data to be written to register x.
  **************************************************************************/
 void neorv32_rte_context_put(int x, uint32_t data) {
 
-  // MSCRATCH CSR contain the stack pointer of the interrupted program
+  // MSCRATCH CSR contains the stack pointer of the interrupted program
   uint32_t tmp = neorv32_cpu_csr_read(CSR_MSCRATCH);
 #ifdef __riscv_32e
   tmp += (x & 15) << 2;
