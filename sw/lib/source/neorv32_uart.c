@@ -16,7 +16,6 @@
  */
 
 #include "neorv32.h"
-#include "neorv32_uart.h"
 #include <string.h>
 #include <stdarg.h>
 

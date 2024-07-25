@@ -32,14 +32,16 @@
 // # The NEORV32 Processor - https://github.com/stnolting/neorv32              (c) Stephan Nolting #
 // #################################################################################################
 
-
-/**********************************************************************//**
+/**
  * @file neorv32_xirq.c
  * @brief External Interrupt controller HW driver source file.
- **************************************************************************/
+ *
+ * @note These functions should only be used if the XIRQ controller was synthesized.
+ *
+ * @see https://stnolting.github.io/neorv32/sw/files.html
+ */
 
 #include "neorv32.h"
-#include "neorv32_xirq.h"
 
 
 /**********************************************************************//**
@@ -263,10 +265,9 @@ static void __neorv32_xirq_core(void) {
   NEORV32_XIRQ->EIP = ~(1 << src);
 
   // execute handler
-  uint32_t xirq_handler = __neorv32_xirq_vector_lut[src];
-  void (*handler_pnt)(void);
-  handler_pnt = (void*)xirq_handler;
-  (*handler_pnt)();
+  typedef void handler_t();
+  handler_t* handler = (handler_t*)__neorv32_xirq_vector_lut[src];
+  handler();
 
   NEORV32_XIRQ->ESC = 0; // acknowledge the current XIRQ interrupt
 }

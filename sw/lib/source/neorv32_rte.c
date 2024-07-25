@@ -14,7 +14,6 @@
  */
 
 #include "neorv32.h"
-#include "neorv32_rte.h"
 
 
 /**********************************************************************//**
@@ -186,7 +185,9 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
   }
 
   // call handler
-  asm volatile ("jalr ra, 0(%[dst])" : : [dst] "r" (handler_base));
+  typedef void handler_t();
+  handler_t* handler = (handler_t*)handler_base;
+  handler();
 
   // compute return address (for exceptions only)
   // do not alter return address if instruction access exception (fatal?)
@@ -251,14 +252,14 @@ static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
- * Read register from application context.
+ * Read register from application context (on stack).
  *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
  * @return Content of register x.
  **************************************************************************/
 uint32_t neorv32_rte_context_get(int x) {
 
-  // MSCRATCH CSR contain the stack pointer of the interrupted program
+  // MSCRATCH CSR contains the stack pointer of the interrupted program
   uint32_t tmp = neorv32_cpu_csr_read(CSR_MSCRATCH);
 #ifdef __riscv_32e
   tmp += (x & 15) << 2;
@@ -271,14 +272,14 @@ uint32_t neorv32_rte_context_get(int x) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
- * Write register in application context.
+ * Write register to application context (on stack).
  *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
  * @param[in] data Data to be written to register x.
  **************************************************************************/
 void neorv32_rte_context_put(int x, uint32_t data) {
 
-  // MSCRATCH CSR contain the stack pointer of the interrupted program
+  // MSCRATCH CSR contains the stack pointer of the interrupted program
   uint32_t tmp = neorv32_cpu_csr_read(CSR_MSCRATCH);
 #ifdef __riscv_32e
   tmp += (x & 15) << 2;
@@ -641,7 +642,7 @@ void neorv32_rte_print_hw_config(void) {
 void __neorv32_rte_print_hex_word(uint32_t num) {
 
   int i;
-  static const char hex_symbols[16] = "0123456789ABCDEF";
+  static const char hex_symbols[] = "0123456789ABCDEF";
 
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     neorv32_uart0_putc('0');
@@ -721,7 +722,7 @@ void neorv32_rte_print_logo(void) {
     {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0300, 0xc630}
   };
 
-  int x, y, z;
+  unsigned int x, y, z;
   uint16_t tmp;
   char c;
 
