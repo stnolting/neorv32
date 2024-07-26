@@ -20,7 +20,7 @@ image::neorv32_processor.png[align=center]
 **Key Features**
 
 * _optional_ processor-internal data and instruction memories (<<_data_memory_dmem,**DMEM**>>/<<_instruction_memory_imem,**IMEM**>>)
-* _optional_ caches (<<_processor_internal_instruction_cache_icache,**iCACHE**>>, <<_processor_internal_data_cache_dcache,**dCACHE**>, <<_execute_in_place_module_xip,**xipCACHE**>, <<_processor_external_bus_interface_xbus,**xCACHE**>>)
+* _optional_ caches (<<_processor_internal_instruction_cache_icache,**iCACHE**>>, <<_processor_internal_data_cache_dcache,**dCACHE**>>, <<_execute_in_place_module_xip,**xipCACHE**>>, <<_processor_external_bus_interface_xbus,**xCACHE**>>)
 * _optional_ internal bootloader (<<_bootloader_rom_bootrom,**BOOTROM**>>) with UART console & SPI flash boot option
 * _optional_ machine system timer (<<_machine_system_timer_mtime,**MTIME**>>), RISC-V-compatible
 * _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>,
