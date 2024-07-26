@@ -31,37 +31,25 @@
 #undef errno
 extern int errno;
 
-// defined in sw/common/crt0.S
-extern const volatile unsigned int __crt0_main_exit;
-
-// linker script symbols
-extern char __heap_start[];
-extern char __heap_end[];
-extern char __crt0_max_heap[];
-
 
 void *_sbrk(int incr) {
 
   static unsigned char *curr_heap_ptr = NULL; // current heap pointer
   unsigned char *prev_heap_ptr; // previous heap pointer
 
-  const uint32_t heap_begin = (uint32_t)&__heap_start[0];
-  const uint32_t heap_end   = (uint32_t)&__heap_end[0];
-  const uint32_t heap_size  = (uint32_t)&__crt0_max_heap[0];
-
   // initialize
   if (curr_heap_ptr == NULL) {
-    curr_heap_ptr = (unsigned char *)heap_begin;
+    curr_heap_ptr = (unsigned char *)neorv32_heap_begin_c;
   }
 
   // do we have a heap at all?
-  if ((heap_begin == heap_end) || (heap_size == 0)) {
+  if ((neorv32_heap_begin_c == neorv32_heap_end_c) || (neorv32_heap_size_c == 0)) {
     errno = ENOMEM;
     return (void*)-1; // error - no more memory
   }
 
   // sufficient space left?
-  if ((((uint32_t)curr_heap_ptr) + ((uint32_t)incr)) >= heap_end) {
+  if ((((uint32_t)curr_heap_ptr) + ((uint32_t)incr)) >= neorv32_heap_end_c) {
     errno = ENOMEM;
     return (void*)-1; // error - no more memory
   }
@@ -88,7 +76,7 @@ int _fstat(int file, struct stat *st) {
 
 int _isatty(int file) {
 
-  return 1;
+  return -1;
 }
 
 
@@ -101,9 +89,13 @@ int _lseek(int file, int ptr, int dir) {
 void _exit(int status) {
 
   // jump to crt0's shutdown code
-  asm volatile ("la t0, __crt0_main_exit \n"
-                "jr t0                   \n");
-  while(1); // will never be reached
+  asm volatile (".extern __crt0_main_exit \n"
+                "la t0, __crt0_main_exit  \n"
+                "jr t0                    \n");
+
+  // will never be reached
+  __builtin_unreachable();
+  while(1);
 }
 
 
@@ -131,12 +123,14 @@ int _write(int file, char *ptr, int len) {
     return len;
   }
   else {
+    errno = ENOSYS;
     return 0; // nothing sent
   }
 }
 
 
 int _read(int file, char *ptr, int len) {
+
   int read_cnt = 0;
 
   // read everything (STDIN, ...) from NEORV32.UART0 (if available)
@@ -148,6 +142,9 @@ int _read(int file, char *ptr, int len) {
       read_cnt++;
       len--;
     }
+  }
+  else {
+    errno = ENOSYS;
   }
 
   return read_cnt;

@@ -41,12 +41,6 @@ void __attribute__((destructor)) main_destructor_test(void) {
 
 
 /**********************************************************************//**
- * @name Max heap size (from linker script's "__neorv32_heap_size")
- **************************************************************************/
-extern char __crt0_max_heap[];
-
-
-/**********************************************************************//**
  * Main function: Check some of newlib's core functions.
  *
  * @note This program requires UART0.
@@ -82,7 +76,7 @@ int main() {
 
 
   // heap size definition
-  uint32_t max_heap = (uint32_t)&__crt0_max_heap[0];
+  uint32_t max_heap = (uint32_t)neorv32_heap_size_c;
   if (max_heap > 0){
     neorv32_uart0_printf("MAX heap size: %u bytes\n", max_heap);
   }
