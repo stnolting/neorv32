@@ -190,6 +190,35 @@ extern "C" {
 
 
 /**********************************************************************//**
+ * @name Export linker script symbols
+ **************************************************************************/
+/**@{*/
+extern char __heap_start[];               /**< heap start address */
+extern char __heap_end[];                 /**< heap end address */
+extern char __crt0_max_heap[];            /**< heap size in bytes */
+extern char __crt0_imem_begin[];          /**< instruction memory/ROM start address */
+extern char __crt0_dmem_begin[];          /**< data memory/RAM start address */
+extern char __crt0_stack_end[];           /**< last address of stack space */
+extern char __crt0_bss_start[];           /**< bss start address */
+extern char __crt0_bss_end[];             /**< bss end address */
+extern char __crt0_copy_data_dst_begin[]; /**< data start address */
+extern char __crt0_copy_data_dst_end[];   /**< data end address */
+
+// aliases
+#define neorv32_heap_begin_c ((uint32_t)&__heap_start[0])
+#define neorv32_heap_end_c   ((uint32_t)&__heap_end[0])
+#define neorv32_heap_size_c  ((uint32_t)&__crt0_max_heap[0])
+#define neorv32_imem_begin_c ((uint32_t)&__crt0_imem_begin[0])
+#define neorv32_dmem_begin_c ((uint32_t)&__crt0_dmem_begin[0])
+#define neorv32_stack_end_c  ((uint32_t)&__crt0_stack_end[0])
+#define neorv32_bss_start_c  ((uint32_t)&__crt0_bss_start[0])
+#define neorv32_bss_end_c    ((uint32_t)&__crt0_bss_end[0])
+#define neorv32_data_start_c ((uint32_t)&__crt0_copy_data_dst_begin[0])
+#define neorv32_data_end_c   ((uint32_t)&__crt0_copy_data_dst_end[0])
+/**@}*/
+
+
+/**********************************************************************//**
  * Processor clock prescaler select (relative to processor's main clock)
  **************************************************************************/
 /**@{*/
