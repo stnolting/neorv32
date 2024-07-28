@@ -72,7 +72,7 @@ int main() {
   neorv32_rte_handler_install(RTE_TRAP_MTI, mtime_irq_handler);
 
   // configure MTIME timer's first interrupt to trigger after 1 second starting from now
-  neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + NEORV32_SYSINFO->CLK);
+  neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + neorv32_sysinfo_get_clk());
 
   // enable interrupt
   neorv32_cpu_csr_set(CSR_MIE, 1 << CSR_MIE_MTIE); // enable MTIME interrupt
@@ -96,7 +96,7 @@ int main() {
 void mtime_irq_handler(void) {
 
   // configure MTIME timer's next interrupt to trigger after 1 second starting from now
-  neorv32_mtime_set_timecmp(neorv32_mtime_get_timecmp() + NEORV32_SYSINFO->CLK);
+  neorv32_mtime_set_timecmp(neorv32_mtime_get_timecmp() + neorv32_sysinfo_get_clk());
 
   // toggle output port bit 0
   neorv32_gpio_pin_toggle(0);

@@ -115,7 +115,7 @@ CORE_TICKS get_time(void) {
 */
 secs_ret time_in_secs(CORE_TICKS ticks) {
     /* NEORV32-specific */
-    secs_ret retval = (secs_ret)(((CORE_TICKS)ticks) / ((CORE_TICKS)NEORV32_SYSINFO->CLK));
+    secs_ret retval = (secs_ret)(((CORE_TICKS)ticks) / ((CORE_TICKS)neorv32_sysinfo_get_clk()));
     return retval;
 }
 
@@ -162,7 +162,7 @@ void portable_init(core_portable *p, int *argc, char *argv[]) {
   if (num_hpm_cnts_global > 7)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_WAIT_LSU); }
   if (num_hpm_cnts_global > 8)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_TRAP);     }
 
-  neorv32_uart0_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)NEORV32_SYSINFO->CLK);
+  neorv32_uart0_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)neorv32_sysinfo_get_clk());
   neorv32_uart0_printf("NEORV32: Executing coremark (%u iterations). This may take some time...\n\n", (uint32_t)ITERATIONS);
 
 /*

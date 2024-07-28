@@ -74,7 +74,7 @@ int main() {
 
   // compute WDT timeout value
   // - the WDT counter increments at f_wdt = f_main / 4096
-  uint32_t timeout = WDT_TIMEOUT_S * (NEORV32_SYSINFO->CLK / 4096);
+  uint32_t timeout = WDT_TIMEOUT_S * (neorv32_sysinfo_get_clk() / 4096);
   if (timeout & 0xFF000000U) { // check if timeout value fits into 24-bit
     neorv32_uart0_puts("Timeout value does not fit into 24-bit!\n");
     return -1;

@@ -216,7 +216,7 @@ void spi_setup(void) {
   neorv32_uart0_scan(terminal_buffer, 2, 1);
   clk_div = (uint8_t)neorv32_aux_hexstr2uint64(terminal_buffer, strlen(terminal_buffer));
 
-  uint32_t clock = NEORV32_SYSINFO->CLK / (2 * PRSC_LUT[spi_prsc] * (1 + clk_div));
+  uint32_t clock = neorv32_sysinfo_get_clk() / (2 * PRSC_LUT[spi_prsc] * (1 + clk_div));
   neorv32_uart0_printf("\n+ New SPI clock speed = %u Hz\n", clock);
 
   // ---- SPI clock mode ----

@@ -64,7 +64,7 @@ int main() {
   neorv32_rte_handler_install(GPTMR_RTE_ID, gptmr_firq_handler);
 
   // configure timer for 0.5Hz ticks with clock divisor = 8 and set to run in continuous mode
-  neorv32_gptmr_setup(CLK_PRSC_8, NEORV32_SYSINFO->CLK / (8 * 2), 1);
+  neorv32_gptmr_setup(CLK_PRSC_8, neorv32_sysinfo_get_clk() / (8 * 2), 1);
 
   // enable interrupt
   neorv32_cpu_csr_set(CSR_MIE, 1 << GPTMR_FIRQ_ENABLE);   // enable GPTMR FIRQ channel
