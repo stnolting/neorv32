@@ -94,7 +94,7 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 | `neorv32_gpio.c`    | `neorv32_gpio.h`       | <<_general_purpose_input_and_output_port_gpio>> HAL
 | `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | <<_general_purpose_timer_gptmr>> HAL
 | -                   | `neorv32_intrinsics.h` | Macros for intrinsics and custom instructions
-| -                   | `neorv32_legacy.h`     | Legacy compatibility layer / wrappers (**do not use for new designs!**)
+| -                   | `neorv32_legacy.h`     | Legacy compatibility layer / wrappers (**do not use for new designs**)
 | `neorv32_mtime.c`   | `neorv32_mtime.h`      | <<_machine_system_timer_mtime>> HAL
 | `neorv32_neoled.c`  | `neorv32_neoled.h`     | <<_smart_led_interface_neoled>> HAL
 | `neorv32_onewire.c` | `neorv32_onewire.h`    | <<_one_wire_serial_interface_controller_onewire>> HAL
@@ -103,14 +103,14 @@ The NEORV32 project provides a set of pre-defined C libraries that allow an easy
 | `neorv32_sdi.c`     | `neorv32_sdi.h`        | <<_serial_data_interface_controller_sdi>> HAL
 | `neorv32_slink.c`   | `neorv32_slink.h`      | <<_stream_link_interface_slink>> HAL
 | `neorv32_spi.c`     | `neorv32_spi.h`        | <<_serial_peripheral_interface_controller_spi>> HAL
-| -                   | `neorv32_sysinfo.h`    | <<_system_configuration_information_memory_sysinfo>> HAL
+| `neorv32_sysinfo.c` | `neorv32_sysinfo.h`    | <<_system_configuration_information_memory_sysinfo>> HAL
 | `neorv32_trng.c`    | `neorv32_trng.h`       | <<_true_random_number_generator_trng>> HAL
 | `neorv32_twi.c`     | `neorv32_twi.h`        | <<_two_wire_serial_interface_controller_twi>> HAL
 | `neorv32_uart.c`    | `neorv32_uart.h`       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>> and UART1 HAL
 | `neorv32_wdt.c`     | `neorv32_wdt.h`        | <<_watchdog_timer_wdt>> HAL
 | `neorv32_xip.c`     | `neorv32_xip.h`        | <<_execute_in_place_module_xip>> HAL
 | `neorv32_xirq.c`    | `neorv32_xirq.h`       | <<_external_interrupt_controller_xirq>> HAL
-| `syscalls.c`        | -                      | Newlib "system calls" (stubs)
+| `neorv32_newlib.c`  | -                      | Platform-specific system calls for _newlib_
 |=======================
 
 .Core Library Documentation

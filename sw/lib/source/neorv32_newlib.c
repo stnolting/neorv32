@@ -7,10 +7,8 @@
 // ================================================================================ //
 
 /**
- * @file syscalls.c
- * @brief Newlib system calls
- *
- * @warning UART0 (if available) is used to read/write console data (STDIN, STDOUT, STDERR, ...).
+ * @file neorv32_newlib.c
+ * @brief NEORV32-specific Newlib system calls
  *
  * @note Original source file: https://github.com/openhwgroup/cv32e40p/blob/master/example_tb/core/custom/syscalls.c
  * @note More information was derived from: https://interrupt.memfault.com/blog/boostrapping-libc-with-newlib#implementing-newlib
@@ -114,18 +112,21 @@ int _getpid() {
 
 int _write(int file, char *ptr, int len) {
 
+  int write_cnt = 0;
+
   // write everything (STDOUT, STDERR, ...) to NEORV32.UART0 (if available)
-  const void *eptr = ptr + len;
   if (neorv32_uart0_available()) {
-    while (ptr != eptr) {
-      neorv32_uart0_putc(*(char *)(ptr++));
+    while (len > 0) {
+      neorv32_uart0_putc((char)*ptr++);
+      len--;
+      write_cnt++;
     }
-    return len;
   }
   else {
     errno = ENOSYS;
-    return 0; // nothing sent
   }
+
+  return write_cnt;
 }
 
 
@@ -135,12 +136,10 @@ int _read(int file, char *ptr, int len) {
 
   // read everything (STDIN, ...) from NEORV32.UART0 (if available)
   if (neorv32_uart0_available()) {
-    char *char_ptr;
-    char_ptr = (char *)ptr;
     while (len > 0) {
-      *char_ptr++ = (char)neorv32_uart0_getc();
-      read_cnt++;
+      *ptr++ = (char)neorv32_uart0_getc();
       len--;
+      read_cnt++;
     }
   }
   else {
