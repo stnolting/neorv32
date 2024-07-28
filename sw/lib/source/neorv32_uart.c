@@ -61,7 +61,7 @@ void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_m
   UARTx->CTRL = 0;
 
   // raw clock prescaler
-  uint32_t clock = NEORV32_SYSINFO->CLK; // system clock in Hz
+  uint32_t clock = neorv32_sysinfo_get_clk(); // system clock in Hz
 #ifndef MAKE_BOOTLOADER // use div instructions
   baud_div = clock / (2*baudrate);
 #else // division via repeated subtraction (minimal size, only for bootloader)
@@ -355,16 +355,6 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
           }
           neorv32_uart_puts(UARTx, string_buf);
           break;
-
-//      case 'f': // floating point: print binary representation in hex
-//        union { double fp64; uint32_t u32[2]; } fp2hex;
-//        neorv32_uart_puts(UARTx, "FP64:0x");
-//        fp2hex.fp64 = va_arg(args, double); // C promotes float to double!
-//        __neorv32_uart_tohex(fp2hex.u32[0], string_buf);
-//        neorv32_uart_puts(UARTx, string_buf);
-//        __neorv32_uart_tohex(fp2hex.u32[1], string_buf);
-//        neorv32_uart_puts(UARTx, string_buf);
-//        break;
 
         case '%': // escaped percent sign
           neorv32_uart_putc(UARTx, c);

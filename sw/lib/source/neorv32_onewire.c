@@ -51,7 +51,7 @@ int neorv32_onewire_setup(uint32_t t_base) {
   uint32_t t_tick;
   uint32_t clkdiv;
   uint32_t clk_prsc_sel   = 0; // initial prsc = CLK/2
-  uint32_t t_clock_x250ps = (4 * 1000 * 1000 * 1000U) / NEORV32_SYSINFO->CLK; // t_clock in multiples of 0.25 ns
+  uint32_t t_clock_x250ps = (4 * 1000 * 1000 * 1000U) / neorv32_sysinfo_get_clk(); // t_clock in multiples of 0.25 ns
 
   // find best base tick configuration
   while (1) {

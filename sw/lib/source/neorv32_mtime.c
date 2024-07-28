@@ -122,20 +122,20 @@ uint64_t neorv32_mtime_get_timecmp(void) {
 /**********************************************************************//**
  * Set TIME to Unix time.
  *
- * @param[in] unixtime Unix time since 00:00:00 UTC, January 1, 1970 in seconds.
+ * @param[in] unixtime Unix time since 00:00:00 UTC, January 1st, 1970 in seconds.
  **************************************************************************/
 void neorv32_mtime_set_unixtime(uint64_t unixtime) {
 
-  neorv32_mtime_set_time(((uint64_t)NEORV32_SYSINFO->CLK) * unixtime);
+  neorv32_mtime_set_time(((uint64_t)neorv32_sysinfo_get_clk()) * unixtime);
 }
 
 
 /**********************************************************************//**
  * Get Unix time from TIME.
  *
- * @return Unix time since 00:00:00 UTC, January 1, 1970 in seconds.
+ * @return Unix time since 00:00:00 UTC, January 1st, 1970 in seconds.
  **************************************************************************/
 uint64_t neorv32_mtime_get_unixtime(void) {
 
-  return neorv32_mtime_get_time() / ((uint64_t)NEORV32_SYSINFO->CLK);
+  return neorv32_mtime_get_time() / ((uint64_t)neorv32_sysinfo_get_clk());
 }

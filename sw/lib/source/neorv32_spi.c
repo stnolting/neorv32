@@ -99,7 +99,7 @@ uint32_t neorv32_spi_get_clock_speed(void) {
     tmp = 2 * PRSC_LUT[prsc_sel] * (1 + clock_div);
   }
 
-  return NEORV32_SYSINFO->CLK / tmp;
+  return neorv32_sysinfo_get_clk() / tmp;
 }
 
 
