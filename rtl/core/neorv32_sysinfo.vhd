@@ -74,16 +74,29 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant xcache_en_c    : boolean := XBUS_EN and XBUS_CACHE_EN;
   constant xip_cache_en_c : boolean := XIP_EN and XIP_CACHE_EN;
 
-  -- system information ROM --
+  -- system information memory --
   type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
   signal sysinfo : sysinfo_t;
 
+  -- bus access buffer --
+  signal buf_adr : std_ulogic_vector(1 downto 0);
+  signal buf_ack : std_ulogic;
+
 begin
 
-  -- Construct Info ROM ---------------------------------------------------------------------
+  -- Construct Info Memory ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- SYSINFO(0): Processor Clock Frequency in Hz --
-  sysinfo(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32));
+  sysinfo_0_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      sysinfo(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32)); -- initialize from generic
+    elsif rising_edge(clk_i) then
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) = "00") then
+        sysinfo(0) <= bus_req_i.data;
+      end if;
+    end if;
+  end process sysinfo_0_write;
 
   -- SYSINFO(1): Internal Memory Configuration (sizes)
   sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_IMEM_SIZE), 8)); -- log2(IMEM size)
@@ -101,8 +114,8 @@ begin
   sysinfo(2)(6)  <= '1' when DCACHE_EN           else '0'; -- processor-internal data cache implemented?
   sysinfo(2)(7)  <= '1' when CLOCK_GATING_EN     else '0'; -- enable clock gating when in sleep mode
   sysinfo(2)(8)  <= '1' when xcache_en_c         else '0'; -- external bus interface cache implemented?
-  sysinfo(2)(9)  <= '1' when XIP_EN              else '0'; -- execute in place module implemented?
-  sysinfo(2)(10) <= '1' when xip_cache_en_c      else '0'; -- execute in place cache implemented?
+  sysinfo(2)(9)  <= '1' when XIP_EN              else '0'; -- execute in-place module implemented?
+  sysinfo(2)(10) <= '1' when xip_cache_en_c      else '0'; -- execute in-place cache implemented?
   sysinfo(2)(11) <= '0';                                   -- reserved
   sysinfo(2)(12) <= '0';                                   -- reserved
   sysinfo(2)(13) <= '0';                                   -- reserved
@@ -141,18 +154,23 @@ begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  access_buffer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o <= rsp_terminate_c;
+      buf_ack <= '0';
+      buf_adr <= (others => '0');
     elsif rising_edge(clk_i) then
-      bus_rsp_o <= rsp_terminate_c; -- default
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then -- read-only
-        bus_rsp_o.ack  <= '1';
-        bus_rsp_o.data <= sysinfo(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
+      buf_ack <= bus_req_i.stb;
+      if (bus_req_i.stb = '1') then
+        buf_adr <= bus_req_i.addr(3 downto 2);
       end if;
     end if;
-  end process bus_access;
+  end process access_buffer;
+
+  -- output gate and SYSINFO lookup --
+  bus_rsp_o.data <= sysinfo(to_integer(unsigned(buf_adr))) when (buf_ack = '1') else (others => '0');
+  bus_rsp_o.ack  <= buf_ack;
+  bus_rsp_o.err  <= '0'; -- no bus errors
 
 
 end neorv32_sysinfo_rtl;
