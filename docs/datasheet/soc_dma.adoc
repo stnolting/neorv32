@@ -158,7 +158,7 @@ register).
 | `0xffffed08` | `DST_BASE` |`31:0` | r/w | Destination base address (shows the last-accessed destination address when read)
 .6+<| `0xffffed0c` .6+<| `TTYPE` <|`23:0`  `DMA_TTYPE_NUM_MSB : DMA_TTYPE_NUM_LSB`   ^| r/w <| Number of elements to transfer (shows the last-transferred element index when read)
                                  <|`26:24` _reserved_                                ^| r/- <| reserved, read as zero
-                                 <|`28:27` `DMA_TTYPE_QSEL_MSB : DMA_TTYPE_QSEL_LSB` ^| r/w <| Source data quantity select (`00` = byte, `01` = half-word, `10` = word)
+                                 <|`28:27` `DMA_TTYPE_QSEL_MSB : DMA_TTYPE_QSEL_LSB` ^| r/w <| Quantity select (`00` = byte -> byte, `01` = byte -> zero-extended-word, `10` = byte -> sign-extended-word, `11` = word -> word)
                                  <|`29`    `DMA_TTYPE_SRC_INC`                       ^| r/w <| Constant (`0`) or incrementing (`1`) source address
                                  <|`30`    `DMA_TTYPE_DST_INC`                       ^| r/w <| Constant (`0`) or incrementing (`1`) destination address
                                  <|`31`    `DMA_TTYPE_ENDIAN`                        ^| r/w <| Swap Endianness when set

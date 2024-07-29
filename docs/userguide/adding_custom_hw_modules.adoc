@@ -39,9 +39,6 @@ AXI4-Lite or Intel's Avalon protocols. By using a full-featured bus protocol, co
 including several modules and even multi-core architectures. Many FPGA EDA tools provide graphical editors to build
 and customize whole SoC architectures and even include pre-defined IP libraries.
 
-.Example AXI SoC using AMD Vivado
-image::neorv32_axi_soc.png[]
-
 Custom hardware modules attached to the processor's bus interface have no limitations regarding their functionality.
 User-defined interfaces (like DDR memory access) can be implemented and the hardware module can operate completely
 independent of the CPU.
