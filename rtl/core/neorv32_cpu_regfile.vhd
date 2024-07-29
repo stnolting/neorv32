@@ -8,8 +8,6 @@
 -- provide a dedicated hardware reset. For ASIC implementation or setup requiring a --
 -- dedicated hardware reset a single-register-based architecture can be enabled via --
 -- "RST_EN".                                                                        --
---                                                                                  --
--- A third and a fourth read port can be optionally enabled ("RS3_EN", "RS4_EN").   --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -29,8 +27,7 @@ entity neorv32_cpu_regfile is
   generic (
     RST_EN : boolean; -- implement dedicated hardware reset ("ASIC style")
     RVE_EN : boolean; -- implement embedded RF extension
-    RS3_EN : boolean; -- implement 3rd read port
-    RS4_EN : boolean  -- implement 4th read port
+    RS3_EN : boolean  -- implement 3rd read port
   );
   port (
     -- global control --
@@ -41,8 +38,7 @@ entity neorv32_cpu_regfile is
     rd_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- destination operand rd
     rs1_o  : out std_ulogic_vector(XLEN-1 downto 0); -- source operand rs1
     rs2_o  : out std_ulogic_vector(XLEN-1 downto 0); -- source operand rs2
-    rs3_o  : out std_ulogic_vector(XLEN-1 downto 0); -- source operand rs3
-    rs4_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- source operand rs4
+    rs3_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- source operand rs3
   );
 end neorv32_cpu_regfile;
 
@@ -56,11 +52,10 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   signal reg_file : reg_file_t;
 
   -- access --
-  signal rf_we     : std_ulogic; -- write enable
-  signal rd_zero   : std_ulogic; -- writing to x0?
-  signal opa_addr  : std_ulogic_vector(4 downto 0); -- rs1/rd address
-  signal rs3_addr  : std_ulogic_vector(4 downto 0); -- rs3 address
-  signal rs4_addr  : std_ulogic_vector(4 downto 0); -- rs4 address
+  signal rf_we    : std_ulogic; -- write enable
+  signal rd_zero  : std_ulogic; -- writing to x0?
+  signal opa_addr : std_ulogic_vector(4 downto 0); -- rs1/rd address
+  signal rs3_addr : std_ulogic_vector(4 downto 0); -- rs3 address
 
 begin
 
@@ -145,25 +140,6 @@ begin
   rs3_disable:
   if not RS3_EN generate
     rs3_o <= (others => '0');
-  end generate;
-
-
-  -- Optional 4th Read Port (rs4) -----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  rs4_enable:
-  if RS4_EN generate
-    rs4_read: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        rs4_o <= reg_file(to_integer(unsigned(rs4_addr(addr_bits_c-1 downto 0))));
-      end if;
-    end process rs4_read;
-    rs4_addr <= ctrl_i.ir_funct12(6 downto 5) & ctrl_i.ir_funct3; -- rs4 = [26:25] & [14:12]; not RISC-V-standard!
-  end generate;
-
-  rs4_disable:
-  if not RS4_EN generate
-    rs4_o <= (others => '0');
   end generate;
 
 
