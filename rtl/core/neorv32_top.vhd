@@ -735,13 +735,13 @@ begin
   neorv32_bus_gateway_inst: entity neorv32.neorv32_bus_gateway
   generic map (
     TIMEOUT  => bus_timeout_c,
-    -- port A: IMEM --
+    -- port A: internal IMEM --
     A_ENABLE => MEM_INT_IMEM_EN,
     A_BASE   => mem_imem_base_c,
     A_SIZE   => imem_size_c,
     A_TMO_EN => true,
     A_PRIV   => false,
-    -- port B: DMEM --
+    -- port B: internal DMEM --
     B_ENABLE => MEM_INT_DMEM_EN,
     B_BASE   => mem_dmem_base_c,
     B_SIZE   => dmem_size_c,

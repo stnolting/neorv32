@@ -66,9 +66,9 @@ begin
     -- Global control --
     clk_i       => clk_i,        -- global clock, rising edge
     rstn_i      => rstn_i,       -- global reset, low-active, async
-    -- GPIO (available if IO_GPIO_EN = true) --
+    -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o      => con_gpio_out, -- parallel output
-    -- primary UART0 (available if IO_GPIO_NUM > 0) --
+    -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart0_txd_o,  -- UART0 send data
     uart0_rxd_i => uart0_rxd_i   -- UART0 receive data
   );
