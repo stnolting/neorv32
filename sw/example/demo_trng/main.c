@@ -360,7 +360,7 @@ void compute_rate(void) {
 
   uint32_t delta = neorv32_cpu_csr_read(CSR_CYCLE) - cycles;
   uint32_t cycles_per_rnd = delta / n_samples;
-  uint32_t rnd_per_sec = NEORV32_SYSINFO->CLK / cycles_per_rnd;
+  uint32_t rnd_per_sec = neorv32_sysinfo_get_clk() / cycles_per_rnd;
 
   neorv32_uart0_printf("\nAverage random generation rate\n");
   neorv32_uart0_printf("Cycles per random byte: ~%u\n", cycles_per_rnd);

@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100108"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100109"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -1061,12 +1061,12 @@ package body neorv32_package is
     variable hex_v : string(1 to 16);
   begin
     hex_v := "0123456789abcdef";
-    if su_undefined_f(input(3)) or su_undefined_f(input(2)) or
-       su_undefined_f(input(1)) or su_undefined_f(input(0)) then
-      return '?';
-    else
-      return hex_v(to_integer(unsigned(input)) + 1);
-    end if;
+    for i in 0 to 3 loop
+      if su_undefined_f(input(i)) then
+        return '?';
+      end if;
+    end loop;
+    return hex_v(to_integer(unsigned(input)) + 1);
   end function to_hexchar_f;
 
   -- Convert 32-bit std_ulogic_vector to hex string -----------------------------------------

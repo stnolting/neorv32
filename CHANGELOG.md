@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 28.07.2024 | 1.10.1.9 | make SYSINFO.CLK read/**write** | [#966](https://github.com/stnolting/neorv32/pull/966) |
 | 21.07.2024 | 1.10.1.8 | :lock: restrict IO access to privileged (machine-mode) software | [#958](https://github.com/stnolting/neorv32/pull/958) |
 | 20.07.2024 | 1.10.1.7 | :bug: fix bug in `sbrk` newlib system call (causing `malloc` to provide infinite memory until heap and stack collide) | [#957](https://github.com/stnolting/neorv32/pull/957) |
 | 20.07.2024 | 1.10.1.6 | SDI: remove explicit "RX clear flag"; add new flag to check the current state of the chip-select input | [#955](https://github.com/stnolting/neorv32/pull/955) |

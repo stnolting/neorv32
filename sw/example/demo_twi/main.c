@@ -166,7 +166,7 @@ void set_clock(void) {
   neorv32_twi_setup(prsc, cdiv, clkstr);
 
   // print new clock frequency
-  uint32_t clock = NEORV32_SYSINFO->CLK / (4 * PRSC_LUT[prsc] * (1 + cdiv));
+  uint32_t clock = neorv32_sysinfo_get_clk() / (4 * PRSC_LUT[prsc] * (1 + cdiv));
   neorv32_uart0_printf("\nNew I2C clock: %u Hz\n", clock);
 }
 

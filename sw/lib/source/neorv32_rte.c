@@ -400,7 +400,7 @@ void neorv32_rte_print_hw_config(void) {
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) { neorv32_uart0_printf("yes\n"); }
   else { neorv32_uart0_printf("no\n"); }
 
-  neorv32_uart0_printf("Clock speed:         %u Hz\n", NEORV32_SYSINFO->CLK);
+  neorv32_uart0_printf("Clock speed:         %u Hz\n", neorv32_sysinfo_get_clk());
 
   neorv32_uart0_printf("Clock gating:        ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_CLOCK_GATING)) { neorv32_uart0_printf("enabled\n"); }

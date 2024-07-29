@@ -1589,7 +1589,6 @@
           <name>CLK</name>
           <description>Processor clock speed in Hz</description>
           <addressOffset>0x00</addressOffset>
-          <access>read-only</access>
         </register>
         <register>
           <name>MEM</name>
