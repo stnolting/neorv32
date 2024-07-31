@@ -89,7 +89,7 @@ Feel free to open a new issue or pull request to improve this setup.
 If you need to reconfigure the RISC-V GCC binaries and/or paths:
 
 [start=1]
-. right-click on the projet in the left view, select **Properties**
+. right-click on the project in the left view, select **Properties**
 . expand **MCU** and select **RISC-V Toolchain Paths**
 . adjust the **Toolchain folder** and the **Toolchain name** if required
 . Click **Apply**.
@@ -193,7 +193,7 @@ When you start debugging the first time you might need to select the provided de
 If you need to reconfigure OpenOCD binaries and/or paths:
 
 [start=1]
-. right-click on the projet in the left view, select **Properties**
+. right-click on the project in the left view, select **Properties**
 . expand **MCU** and select **OpenOCD Path**
 . adjust the **Folder** and the **Executable** name if required
 . Click **Apply**.

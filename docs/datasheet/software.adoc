@@ -474,6 +474,7 @@ C libraries like `stdio`. These stubs are available in `sw/source/source/syscall
 [NOTE]
 The <<_primary_universal_asynchronous_receiver_and_transmitter_uart0, UART0>>
 is used to implement all the standard input, output and error consoles (`STDIN`, `STDOUT` and `STDERR`).
+Note that `\n` (newline) is automatically converted to `\r\n` (carriage-return and newline).
 
 .Constructors and Destructors
 [NOTE]
