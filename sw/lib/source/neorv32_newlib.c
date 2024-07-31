@@ -113,11 +113,16 @@ int _getpid() {
 int _write(int file, char *ptr, int len) {
 
   int write_cnt = 0;
+  char c = 0;
 
   // write everything (STDOUT, STDERR, ...) to NEORV32.UART0 (if available)
   if (neorv32_uart0_available()) {
     while (len > 0) {
-      neorv32_uart0_putc((char)*ptr++);
+      c = (char)*ptr++;
+      if (c == '\n') { // convert \n to \r\n
+        neorv32_uart0_putc('\r');
+      }
+      neorv32_uart0_putc(c);
       len--;
       write_cnt++;
     }
