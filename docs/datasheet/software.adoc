@@ -156,41 +156,43 @@ NEORV32 Software Application Makefile
 Find more information at https://github.com/stnolting/neorv32
 
 Targets:
- help         - show this text
- check        - check toolchain
- info         - show makefile/toolchain configuration
- gdb          - run GNU debugging session
- asm          - compile and generate <main.asm> assembly listing file for manual debugging
- elf          - compile and generate <main.elf> ELF file
- exe          - compile and generate <neorv32_exe.bin> executable image file for upload via default bootloader (binary file)
- bin          - compile and generate <neorv32_raw_exe.bin> RAW executable memory image (binary file)
- hex          - compile and generate <neorv32_raw_exe.hex> RAW executable memory image (hex char file)
- coe          - compile and generate <neorv32_raw_exe.coe> RAW executable memory image (COE file)
- mem          - compile and generate <neorv32_raw_exe.mem> RAW executable memory image (MEM file)
- mif          - compile and generate <neorv32_raw_exe.mif> RAW executable memory image (MIF file)
- image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder
- install      - compile, generate and install VHDL IMEM boot image (for application, no header)
- sim          - in-console simulation using default/simple testbench and GHDL
- all          - exe + install + hex + bin + asm
- elf_info     - show ELF layout info
- elf_sections - show ELF sections
- clean        - clean up project home folder
- clean_all    - clean up whole project, core libraries and image generator
- bl_image     - compile and generate VHDL BOOTROM boot image (for bootloader only, no header) in local folder
- bootloader   - compile, generate and install VHDL BOOTROM boot image (for bootloader only, no header)
+
+  help         - show this text
+  check        - check toolchain
+  info         - show makefile/toolchain configuration
+  gdb          - run GNU debugging session
+  asm          - compile and generate <main.asm> assembly listing file for manual debugging
+  elf          - compile and generate <main.elf> ELF file
+  exe          - compile and generate <neorv32_exe.bin> executable image file for upload via default bootloader (binary file)
+  bin          - compile and generate <neorv32_raw_exe.bin> RAW executable memory image (binary file)
+  hex          - compile and generate <neorv32_raw_exe.hex> RAW executable memory image (hex char file)
+  coe          - compile and generate <neorv32_raw_exe.coe> RAW executable memory image (COE file)
+  mem          - compile and generate <neorv32_raw_exe.mem> RAW executable memory image (MEM file)
+  mif          - compile and generate <neorv32_raw_exe.mif> RAW executable memory image (MIF file)
+  image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder
+  install      - compile, generate and install VHDL IMEM boot image (for application, no header)
+  sim          - in-console simulation using default/simple testbench and GHDL
+  all          - exe + install + hex + bin + asm
+  elf_info     - show ELF layout info
+  elf_sections - show ELF sections
+  clean        - clean up project home folder
+  clean_all    - clean up whole project, core libraries and image generator
+  bl_image     - compile and generate VHDL BOOTROM boot image (for bootloader only, no header) in local folder
+  bootloader   - compile, generate and install VHDL BOOTROM boot image (for bootloader only, no header)
 
 Variables:
- USER_FLAGS     - Custom toolchain flags [append only]: ""
- USER_LIBS      - Custom libraries [append only]: ""
- EFFORT         - Optimization level: "-Os"
- MARCH          - Machine architecture: "rv32i_zicsr_zifencei"
- MABI           - Machine binary interface: "ilp32"
- APP_INC        - C include folder(s) [append only]: "-I ."
- ASM_INC        - ASM include folder(s) [append only]: "-I ."
- RISCV_PREFIX   - Toolchain prefix: "riscv32-unknown-elf-"
- NEORV32_HOME   - NEORV32 home folder: "../../.."
- GDB_ARGS       - GDB (connection) arguments: "-ex target extended-remote localhost:3333"
- GHDL_RUN_FLAGS - GHDL simulation run arguments: ""
+
+  USER_FLAGS     - Custom toolchain flags [append only]: ""
+  USER_LIBS      - Custom libraries [append only]: ""
+  EFFORT         - Optimization level: "-Os"
+  MARCH          - Machine architecture: "rv32i_zicsr_zifencei"
+  MABI           - Machine binary interface: "ilp32"
+  APP_INC        - C include folder(s) [append only]: "-I ."
+  ASM_INC        - ASM include folder(s) [append only]: "-I ."
+  RISCV_PREFIX   - Toolchain prefix: "riscv32-unknown-elf-"
+  NEORV32_HOME   - NEORV32 home folder: "../../.."
+  GDB_ARGS       - GDB (connection) arguments: "-ex target extended-remote localhost:3333"
+  GHDL_RUN_FLAGS - GHDL simulation run arguments: ""
 ----
 
 
