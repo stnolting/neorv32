@@ -2,7 +2,7 @@
 override GHDL_RUN_FLAGS ?= --stop-time=15ms
 override EFFORT = -Os
 override MARCH = rv32ima_zba_zbb_zbs_zicsr_zifencei_zicond
-override USER_FLAGS += -DUART0_SIM_MODE -DUART1_SIM_MODE -flto
+override USER_FLAGS += -flto
 
 # Modify this variable to fit your NEORV32 setup (neorv32 home folder)
 NEORV32_HOME ?= ../../..
