@@ -101,6 +101,7 @@ OBJ = $(SRC:%=%.o)
 CC      = $(RISCV_PREFIX)gcc
 OBJDUMP = $(RISCV_PREFIX)objdump
 OBJCOPY = $(RISCV_PREFIX)objcopy
+READELF = $(RISCV_PREFIX)readelf
 SIZE    = $(RISCV_PREFIX)size
 GDB     = $(RISCV_PREFIX)gdb
 
@@ -285,6 +286,8 @@ endif
 	@$(OBJDUMP) -V
 	@echo "---------------- Check: $(OBJCOPY) ----------------"
 	@$(OBJCOPY) -V
+	@echo "---------------- Check: $(READELF) ----------------"
+	@$(READELF) -v
 	@echo "---------------- Check: $(SIZE) ----------------"
 	@$(SIZE) -V
 	@echo "---------------- Check: NEORV32 image_gen ----------------"
@@ -308,6 +311,9 @@ sim: $(APP_IMG) install
 # -----------------------------------------------------------------------------
 elf_info: $(APP_ELF)
 	@$(OBJDUMP) -x $(APP_ELF)
+
+elf_sections: $(APP_ELF)
+	@$(READELF) -S $(APP_ELF)
 
 
 # -----------------------------------------------------------------------------
@@ -373,27 +379,28 @@ help:
 	@echo "Find more information at https://github.com/stnolting/neorv32"
 	@echo ""
 	@echo "Targets:"
-	@echo " help       - show this text"
-	@echo " check      - check toolchain"
-	@echo " info       - show makefile/toolchain configuration"
-	@echo " gdb        - run GNU debugging session"
-	@echo " asm        - compile and generate <$(APP_ASM)> assembly listing file for manual debugging"
-	@echo " elf        - compile and generate <$(APP_ELF)> ELF file"
-	@echo " exe        - compile and generate <$(APP_EXE)> executable image file for upload via default bootloader (binary file)"
-	@echo " bin        - compile and generate <$(APP_BIN)> RAW executable memory image (binary file)"
-	@echo " hex        - compile and generate <$(APP_HEX)> RAW executable memory image (hex char file)"
-	@echo " coe        - compile and generate <$(APP_COE)> RAW executable memory image (COE file)"
-	@echo " mem        - compile and generate <$(APP_MEM)> RAW executable memory image (MEM file)"
-	@echo " mif        - compile and generate <$(APP_MIF)> RAW executable memory image (MIF file)"
-	@echo " image      - compile and generate VHDL IMEM boot image (for application, no header) in local folder"
-	@echo " install    - compile, generate and install VHDL IMEM boot image (for application, no header)"
-	@echo " sim        - in-console simulation using default/simple testbench and GHDL"
-	@echo " all        - exe + install + hex + bin + asm"
-	@echo " elf_info   - show ELF layout info"
-	@echo " clean      - clean up project home folder"
-	@echo " clean_all  - clean up whole project, core libraries and image generator"
-	@echo " bl_image   - compile and generate VHDL BOOTROM boot image (for bootloader only, no header) in local folder"
-	@echo " bootloader - compile, generate and install VHDL BOOTROM boot image (for bootloader only, no header)"
+	@echo " help         - show this text"
+	@echo " check        - check toolchain"
+	@echo " info         - show makefile/toolchain configuration"
+	@echo " gdb          - run GNU debugging session"
+	@echo " asm          - compile and generate <$(APP_ASM)> assembly listing file for manual debugging"
+	@echo " elf          - compile and generate <$(APP_ELF)> ELF file"
+	@echo " exe          - compile and generate <$(APP_EXE)> executable image file for upload via default bootloader (binary file)"
+	@echo " bin          - compile and generate <$(APP_BIN)> RAW executable memory image (binary file)"
+	@echo " hex          - compile and generate <$(APP_HEX)> RAW executable memory image (hex char file)"
+	@echo " coe          - compile and generate <$(APP_COE)> RAW executable memory image (COE file)"
+	@echo " mem          - compile and generate <$(APP_MEM)> RAW executable memory image (MEM file)"
+	@echo " mif          - compile and generate <$(APP_MIF)> RAW executable memory image (MIF file)"
+	@echo " image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder"
+	@echo " install      - compile, generate and install VHDL IMEM boot image (for application, no header)"
+	@echo " sim          - in-console simulation using default/simple testbench and GHDL"
+	@echo " all          - exe + install + hex + bin + asm"
+	@echo " elf_info     - show ELF layout info"
+	@echo " elf_sections - show ELF sections"
+	@echo " clean        - clean up project home folder"
+	@echo " clean_all    - clean up whole project, core libraries and image generator"
+	@echo " bl_image     - compile and generate VHDL BOOTROM boot image (for bootloader only, no header) in local folder"
+	@echo " bootloader   - compile, generate and install VHDL BOOTROM boot image (for bootloader only, no header)"
 	@echo ""
 	@echo "Variables:"
 	@echo " USER_FLAGS     - Custom toolchain flags [append only]: \"$(USER_FLAGS)\""
