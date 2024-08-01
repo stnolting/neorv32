@@ -42,7 +42,6 @@ entity neorv32_cpu_alu is
     rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     rs3_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
-    rs4_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 4
     pc_i        : in  std_ulogic_vector(XLEN-1 downto 0); -- current PC
     imm_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- immediate
     -- data output --
@@ -298,7 +297,7 @@ begin
       -- operation control --
       start_i     => cp_start(4),                    -- operation trigger/strobe
       active_i    => cfu_run,                        -- operation in progress
-      rtype_i     => ctrl_i.ir_opcode(6 downto 5),   -- instruction type, see constants below
+      rtype_i     => ctrl_i.ir_opcode(5),            -- instruction type (R3-type or R4-type)
       funct3_i    => ctrl_i.ir_funct3,               -- "funct3" bit-field from custom instruction word
       funct7_i    => ctrl_i.ir_funct12(11 downto 5), -- "funct7" bit-field from custom instruction word
       -- CSR interface --
@@ -310,10 +309,9 @@ begin
       rs1_i       => rs1_i,                          -- rf source 1
       rs2_i       => rs2_i,                          -- rf source 2
       rs3_i       => rs3_i,                          -- rf source 3
-      rs4_i       => rs4_i,                          -- rf source 4
       -- result and status --
       result_o    => cfu_res,                        -- operation result
-      valid_o     => cfu_done                        -- data output valid (one cycle ahead); operation done
+      valid_o     => cfu_done                        -- result valid; operation done
     );
 
     -- CSR proxy --

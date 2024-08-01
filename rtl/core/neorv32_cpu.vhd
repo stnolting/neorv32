@@ -83,7 +83,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
   constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port (rs3)
-  constant regfile_rs4_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu; -- 4th register file read port (rs4)
 
   -- control-unit-external CSR interface --
   signal xcsr_we        : std_ulogic;
@@ -94,28 +93,27 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal xcsr_rdata_res : std_ulogic_vector(XLEN-1 downto 0);
 
   -- local signals --
-  signal ctrl         : ctrl_bus_t; -- main control bus
-  signal imm          : std_ulogic_vector(XLEN-1 downto 0); -- immediate
-  signal rf_wdata     : std_ulogic_vector(XLEN-1 downto 0); -- register file write data
-  signal rs1, rs2     : std_ulogic_vector(XLEN-1 downto 0); -- source registers 1 and 2
-  signal rs3, rs4     : std_ulogic_vector(XLEN-1 downto 0); -- source registers 3 and 4 (optional)
-  signal alu_res      : std_ulogic_vector(XLEN-1 downto 0); -- alu result
-  signal alu_add      : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
-  signal alu_cmp      : std_ulogic_vector(1 downto 0); -- comparator result
-  signal mem_rdata    : std_ulogic_vector(XLEN-1 downto 0); -- memory read data
-  signal cp_done      : std_ulogic; -- ALU co-processor operation done
-  signal lsu_wait     : std_ulogic; -- wait for current data bus access
-  signal csr_rdata    : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
-  signal mar          : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-  signal ma_load      : std_ulogic; -- misaligned load data address
-  signal ma_store     : std_ulogic; -- misaligned store data address
-  signal be_load      : std_ulogic; -- bus error on load data access
-  signal be_store     : std_ulogic; -- bus error on store data access
-  signal fetch_pc     : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
-  signal curr_pc      : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
-  signal link_pc      : std_ulogic_vector(XLEN-1 downto 0); -- link pc (return address)
-  signal pmp_ex_fault : std_ulogic; -- PMP instruction fetch fault
-  signal pmp_rw_fault : std_ulogic; -- PMP read/write access fault
+  signal ctrl          : ctrl_bus_t; -- main control bus
+  signal imm           : std_ulogic_vector(XLEN-1 downto 0); -- immediate
+  signal rf_wdata      : std_ulogic_vector(XLEN-1 downto 0); -- register file write data
+  signal rs1, rs2, rs3 : std_ulogic_vector(XLEN-1 downto 0); -- source registers
+  signal alu_res       : std_ulogic_vector(XLEN-1 downto 0); -- alu result
+  signal alu_add       : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
+  signal alu_cmp       : std_ulogic_vector(1 downto 0); -- comparator result
+  signal mem_rdata     : std_ulogic_vector(XLEN-1 downto 0); -- memory read data
+  signal cp_done       : std_ulogic; -- ALU co-processor operation done
+  signal lsu_wait      : std_ulogic; -- wait for current data bus access
+  signal csr_rdata     : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
+  signal mar           : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
+  signal ma_load       : std_ulogic; -- misaligned load data address
+  signal ma_store      : std_ulogic; -- misaligned store data address
+  signal be_load       : std_ulogic; -- bus error on load data access
+  signal be_store      : std_ulogic; -- bus error on store data access
+  signal fetch_pc      : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
+  signal curr_pc       : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
+  signal link_pc       : std_ulogic_vector(XLEN-1 downto 0); -- link pc (return address)
+  signal pmp_ex_fault  : std_ulogic; -- PMP instruction fetch fault
+  signal pmp_rw_fault  : std_ulogic; -- PMP read/write access fault
 
 begin
 
@@ -242,8 +240,7 @@ begin
   generic map (
     RST_EN => REGFILE_HW_RST,        -- enable dedicated hardware reset ("ASIC style")
     RVE_EN => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension
-    RS3_EN => regfile_rs3_en_c,      -- enable 3rd read port
-    RS4_EN => regfile_rs4_en_c       -- enable 4th read port
+    RS3_EN => regfile_rs3_en_c       -- enable 3rd read port
   )
   port map (
     -- global control --
@@ -254,8 +251,7 @@ begin
     rd_i   => rf_wdata, -- destination operand rd
     rs1_o  => rs1,      -- source operand rs1
     rs2_o  => rs2,      -- source operand rs2
-    rs3_o  => rs3,      -- source operand rs3
-    rs4_o  => rs4       -- source operand rs4
+    rs3_o  => rs3       -- source operand rs3
   );
 
   -- all buses are zero unless there is an according operation --
@@ -291,7 +287,6 @@ begin
     rs1_i       => rs1,            -- rf source 1
     rs2_i       => rs2,            -- rf source 2
     rs3_i       => rs3,            -- rf source 3
-    rs4_i       => rs4,            -- rf source 4
     pc_i        => curr_pc,        -- current PC
     imm_i       => imm,            -- immediate
     -- data output --
