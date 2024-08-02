@@ -491,8 +491,12 @@ begin
   -- issue engine disabled --
   issue_engine_disabled:
   if not CPU_EXTENSION_RISCV_C generate
-    issue_engine.valid <= (others => ipb.avail(0)); -- use IPB(0) status flags only
-    issue_engine.data  <= '0' & ipb.rdata(0)(16) & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
+    issue_engine.align_set <= '0';
+    issue_engine.align_clr <= '0';
+    issue_engine.ci_i16    <= (others => '0');
+    issue_engine.ci_i32    <= (others => '0');
+    issue_engine.valid     <= (others => ipb.avail(0)); -- use IPB(0) status flags only
+    issue_engine.data      <= '0' & ipb.rdata(0)(16) & (ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0));
   end generate;
 
   -- update IPB FIFOs --
@@ -898,7 +902,7 @@ begin
             execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if FPU not implemented
 
           -- CFU: custom RISC-V instructions --
-          when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c =>
+          when opcode_cust0_c | opcode_cust1_c =>
             ctrl_nxt.alu_cp_trig(cp_sel_cfu_c) <= '1'; -- trigger CFU co-processor
             execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if CFU not implemented
 
@@ -1263,7 +1267,7 @@ begin
       when opcode_fop_c =>
         illegal_cmd <= (not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx)) or (not decode_aux.is_f_op);
 
-      when opcode_cust0_c | opcode_cust1_c | opcode_cust2_c | opcode_cust3_c =>
+      when opcode_cust0_c | opcode_cust1_c =>
         illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- all encodings valid if CFU enable
 
       when others =>
@@ -2348,7 +2352,7 @@ begin
   csr.tdata1_rd(18 downto 16) <= "000"; -- size: match accesses of any size
   csr.tdata1_rd(15 downto 12) <= "000" & csr.tdata1_action; -- action = 1: enter debug mode on trigger, action = 0: ebreak exception on trigger
   csr.tdata1_rd(11)           <= '0'; -- chain: chaining not supported - there is only one trigger
-  csr.tdata1_rd(10 downto 07) <= "0000"; -- match: equal-match only
+  csr.tdata1_rd(10 downto 7)  <= "0000"; -- match: equal-match only
   csr.tdata1_rd(6)            <= '1'; -- m: trigger always enabled when in machine-mode
   csr.tdata1_rd(5)            <= '0'; -- uncertainen: hardwired to zero
   csr.tdata1_rd(4)            <= '0'; -- s: supervisor-mode not supported

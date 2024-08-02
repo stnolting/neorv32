@@ -22,11 +22,11 @@
  **************************************************************************/
 /**@{*/
 /** UART BAUD rate */
-#define BAUD_RATE 19200
-/** Number XTEA cycles */
-#define XTEA_CYCLES 20
+#define BAUD_RATE   19200
+/** Number XTEA rounds */
+#define XTEA_ROUNDS 20
 /** Input data size (in number of 32-bit words), has to be even */
-#define DATA_NUM 64
+#define DATA_NUM    64
 /**@}*/
 
 
@@ -42,42 +42,42 @@
 #define xtea_hw_illegal_inst()      neorv32_cfu_r3_instr(0b0000000, 0b111, 0,   0 )
 /**@}*/
 
-// The CFU custom instructions can be used as plain C functions as they are simple "intrinsics".
-// There are 4 "prototype primitives" for the CFU instructions (define in sw/lib/include/neorv32_cfu.h):
-//
-// > neorv32_cfu_r3_instr(funct7, funct3, rs1, rs2) - for r3-type instructions  (custom-0 opcode)
-// > neorv32_cfu_r4_instr(funct3, rs1, rs2, rs3)    - for r4-type instructions  (custom-1 opcode)
-// > neorv32_cfu_r5_instr_a(rs1, rs2, rs3, rs4)     - for r5-type instruction A (custom-2 opcode)
-// > neorv32_cfu_r5_instr_b(rs1, rs2, rs3, rs4)     - for r5-type instruction B (custom-3 opcode)
-//
-// Every instance of these functions is converted into a single 32-bit RISC-V instruction word
-// without any calling overhead at all (see the generated assembly code).
-//
-// The "rs*" source operands can be literals, variables, function return values, ... - you name it.
-// The 7-bit immediate ("funct7") and the 3-bit immediate ("funct3") values can be used to pass
-// compile-time static literal data to the CFU or to do a fine-grained function selection.
-//
-// Each "neorv32_cfu_r*" function returns a 32-bit data word of type uint32_t that represents
-// the processing result of the according instruction.
+/*
+ * The CFU custom instructions can be used as plain C functions as they are simple "intrinsics".
+ * There are two "prototype primitives" for the CFU instructions (defined in sw/lib/include/neorv32_cfu.h):
+ *
+ * > neorv32_cfu_r3_instr(funct7, funct3, rs1, rs2) - for r3-type instructions (custom-0 opcode)
+ * > neorv32_cfu_r4_instr(funct3, rs1, rs2, rs3)    - for r4-type instructions (custom-1 opcode)
+ *
+ * Each instance of these intrinsics is converted into a single 32-bit RISC-V instruction word
+ * without any calling overhead at all.
+ *
+ * The "rs*" source operands can be literals, variables, function return values, ... you name it.
+ * The 7-bit immediate ("funct7") and the 3-bit immediate ("funct3") values can be used to pass
+ * compile-time static literal data to the CFU or to do a fine-grained function selection.
+ *
+ * Each "neorv32_cfu_r*" intrinsics returns a 32-bit data word of type uint32_t that represents
+ * the processing result of the according instruction.
+ */
 
 
 /**********************************************************************//**
  * @name Global variables
  **************************************************************************/
 /**@{*/
-/** XTEA delta (round-key update) */
+/** XTEA delta (round-key update); do not change */
 const uint32_t xtea_delta = 0x9e3779b9;
 
-/** Encryption/decryption key (128-bit) */
+/** Secret encryption/decryption key (128-bit) */
 const uint32_t key[4] = {0x207230ba, 0x1ffba710, 0xc45271ef, 0xdd01768a};
 
 /** Encryption input data */
 uint32_t input_data[DATA_NUM];
 
-/** Encryption results */
+/** Encryption result buffer */
 uint32_t cypher_data_sw[DATA_NUM], cypher_data_hw[DATA_NUM];
 
-/** Decryption results */
+/** Decryption result buffer */
 uint32_t plain_data_sw[DATA_NUM], plain_data_hw[DATA_NUM];
 
 /** Timing data */
@@ -87,7 +87,6 @@ uint32_t time_enc_sw, time_enc_hw, time_dec_sw, time_dec_hw;
 
 /**********************************************************************//**
  * XTEA encryption - software reference
- *
  * Source: https://de.wikipedia.org/wiki/Extended_Tiny_Encryption_Algorithm
  *
  * @param[in] num_cycles Number of encryption cycles.
@@ -114,7 +113,6 @@ void xtea_sw_encipher(uint32_t num_cycles, uint32_t *v, const uint32_t k[4]) {
 
 /**********************************************************************//**
  * XTEA decryption - software reference
- *
  * Source: https://de.wikipedia.org/wiki/Extended_Tiny_Encryption_Algorithm
  *
  * @param[in] num_cycles Number of encryption cycles.
@@ -140,9 +138,9 @@ void xtea_sw_decipher(unsigned int num_cycles, uint32_t *v, const uint32_t k[4])
 
 
 /**********************************************************************//**
- * Main function: run pure-SW XTEA and compare with HW-XTEA
+ * Main function: run pure-SW XTEA and compare with HW-accelerated XTEA
  *
- * @note This program requires the CFU, UART0 and the Zicntr ISA extension.
+ * @note This program requires UART0 and the Zxcfu and Zicntr ISA extension.
  *
  * @return 0 if execution was successful
  **************************************************************************/
@@ -183,15 +181,16 @@ int main() {
   // intro
   neorv32_uart0_printf("\n<<< NEORV32 Custom Functions Unit (CFU) - Custom Instructions Example >>>\n\n");
 
-  neorv32_uart0_printf("[NOTE] This program assumes the default CFU hardware module that\n"
-                       "       implements the Extended Tiny Encryption Algorithm (XTEA).\n\n");
+  neorv32_uart0_printf("[NOTE] This program assumes the default CFU hardware in\n"
+                       "       'rtl/core/neorv32_cpu_cp_cfu.vhd' that implements\n"
+                       "       the Extended Tiny Encryption Algorithm (XTEA).\n\n");
 
 
   // ----------------------------------------------------------
   // XTEA example
   // ----------------------------------------------------------
 
-  // set XTEA-CFU key storage (the CFU CSRs)
+  // set XTEA-CFU key storage (via CFU CSRs)
   neorv32_cpu_csr_write(CSR_CFUREG0, key[0]);
   neorv32_cpu_csr_write(CSR_CFUREG1, key[1]);
   neorv32_cpu_csr_write(CSR_CFUREG2, key[2]);
@@ -211,17 +210,17 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // XTEA encryption
+  // XTEA encryption (plain SW version and CFU-accelerated version)
   // ----------------------------------------------------------
 
   // encryption using software only
-  neorv32_uart0_printf("XTEA SW encryption (%u rounds, %u words)...\n", 2*XTEA_CYCLES, DATA_NUM);
+  neorv32_uart0_printf("XTEA SW encryption (%u rounds, %u words)...\n", 2*XTEA_ROUNDS, DATA_NUM);
 
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   for (i=0; i<(DATA_NUM/2); i++) {
     v[0] = input_data[i*2+0];
     v[1] = input_data[i*2+1];
-    xtea_sw_encipher(XTEA_CYCLES, v, key);
+    xtea_sw_encipher(XTEA_ROUNDS, v, key);
     cypher_data_sw[i*2+0] = v[0];
     cypher_data_sw[i*2+1] = v[1];
   }
@@ -229,14 +228,14 @@ int main() {
 
 
   // encryption using the XTEA CFU
-  neorv32_uart0_printf("XTEA HW encryption (%u rounds, %u words)...\n", 2*XTEA_CYCLES, DATA_NUM);
+  neorv32_uart0_printf("XTEA HW encryption (%u rounds, %u words)...\n", 2*XTEA_ROUNDS, DATA_NUM);
 
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   for (i=0; i<(DATA_NUM/2); i++) {
     v[0] = input_data[i*2+0];
     v[1] = input_data[i*2+1];
     xtea_hw_init(0);
-    for (j=0; j<XTEA_CYCLES; j++) {
+    for (j=0; j<XTEA_ROUNDS; j++) {
       v[0] = xtea_hw_enc_v0_step(v[0], v[1]);
       v[1] = xtea_hw_enc_v1_step(v[0], v[1]);
     }
@@ -250,7 +249,7 @@ int main() {
   neorv32_uart0_printf("Comparing results... ");
   for (i=0; i<DATA_NUM; i++) {
     if (cypher_data_sw[i] != cypher_data_hw[i]) {
-      neorv32_uart0_printf("FAILED\n");
+      neorv32_uart0_printf("FAILED at byte %d\n", i);
       return -1;
     }
   }
@@ -258,18 +257,18 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // XTEA decryption
+  // XTEA decryption (plain SW version and CFU-accelerated version)
   // ----------------------------------------------------------
   neorv32_uart0_printf("\n");
 
   // decryption using software only
-  neorv32_uart0_printf("XTEA SW decryption (%u rounds, %u words)...\n", 2*XTEA_CYCLES, DATA_NUM);
+  neorv32_uart0_printf("XTEA SW decryption (%u rounds, %u words)...\n", 2*XTEA_ROUNDS, DATA_NUM);
 
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   for (i=0; i<(DATA_NUM/2); i++) {
     v[0] = cypher_data_sw[i*2+0];
     v[1] = cypher_data_sw[i*2+1];
-    xtea_sw_decipher(XTEA_CYCLES, v, key);
+    xtea_sw_decipher(XTEA_ROUNDS, v, key);
     plain_data_sw[i*2+0] = v[0];
     plain_data_sw[i*2+1] = v[1];
   }
@@ -277,14 +276,14 @@ int main() {
 
 
   // decryption using the XTEA CFU
-  neorv32_uart0_printf("XTEA HW decryption (%u rounds, %u words)...\n", 2*XTEA_CYCLES, DATA_NUM);
+  neorv32_uart0_printf("XTEA HW decryption (%u rounds, %u words)...\n", 2*XTEA_ROUNDS, DATA_NUM);
 
   neorv32_cpu_csr_write(CSR_MCYCLE, 0); // start timing
   for (i=0; i<(DATA_NUM/2); i++) {
     v[0] = cypher_data_hw[i*2+0];
     v[1] = cypher_data_hw[i*2+1];
-    xtea_hw_init(XTEA_CYCLES * xtea_delta);
-    for (j=0; j<XTEA_CYCLES; j++) {
+    xtea_hw_init(XTEA_ROUNDS * xtea_delta);
+    for (j=0; j<XTEA_ROUNDS; j++) {
       v[1] = xtea_hw_dec_v1_step(v[0], v[1]);
       v[0] = xtea_hw_dec_v0_step(v[0], v[1]);
     }
@@ -297,8 +296,8 @@ int main() {
   // compare results
   neorv32_uart0_printf("Comparing results... ");
   for (i=0; i<DATA_NUM; i++) {
-    if (plain_data_sw[i] != plain_data_hw[i]) {
-      neorv32_uart0_printf("FAILED\n");
+    if ((plain_data_sw[i] != plain_data_hw[i]) || (plain_data_sw[i] != input_data[i])) {
+      neorv32_uart0_printf("FAILED at byte %d\n", i);
       return -1;
     }
   }
@@ -306,13 +305,14 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Print benchmarking results
+  // Print timing results
   // ----------------------------------------------------------
-  neorv32_uart0_printf("\nExecution benchmarking:\n");
+  neorv32_uart0_printf("\nExecution timing:\n");
   neorv32_uart0_printf("ENC SW = %u cycles\n", time_enc_sw);
   neorv32_uart0_printf("ENC HW = %u cycles\n", time_enc_hw);
   neorv32_uart0_printf("DEC SW = %u cycles\n", time_dec_sw);
   neorv32_uart0_printf("DEC HW = %u cycles\n", time_dec_hw);
+  neorv32_uart0_printf("Average speedup: ~%ux\n", (time_enc_sw + time_dec_sw) / (time_enc_hw + time_dec_hw));
 
 
   // ----------------------------------------------------------
