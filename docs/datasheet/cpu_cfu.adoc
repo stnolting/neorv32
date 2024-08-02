@@ -108,6 +108,11 @@ are ignored by the CPU's illegal instruction check logic.
 By using the `funct3` bit field entirely for selecting the actual operation a total of 8 custom R4-type
 instructions can be implemented (3-bit -> 8 different values).
 
+.Re-purposing R4-type instructions as additional R3-type instructions
+[TIP]
+Advanced user can use the custom-1 opcode to implement additional R3-type instructions instead of the
+predefined r4-type instructions.
+
 
 :sectnums:
 ==== Using Custom Instructions in Software
