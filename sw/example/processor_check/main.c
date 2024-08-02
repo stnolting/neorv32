@@ -1689,6 +1689,41 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Check dynamic memory allocation
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] heap/malloc ", cnt_test);
+
+  tmp_a = (uint32_t)neorv32_heap_size_c;
+
+  if (tmp_a >= 3096) { // sufficient heap for this test?
+    cnt_test++;
+
+    uint8_t *malloc_a = (uint8_t*)malloc(8 * sizeof(uint8_t));
+    uint8_t *malloc_b = (uint8_t*)malloc(tmp_a * sizeof(uint8_t));
+    free(malloc_b);
+    uint8_t *malloc_c = (uint8_t*)malloc(8 * sizeof(uint8_t));
+    free(malloc_c);
+    free(malloc_a);
+
+    if ((((uint32_t)neorv32_heap_begin_c + tmp_a) == (uint32_t)neorv32_heap_end_c) && // correct heap layout
+        (malloc_a != NULL) && // malloc successful
+        (malloc_b == NULL) && // malloc failed due to exhausted heap
+        (malloc_c != NULL) && // malloc successful
+        (malloc_a != malloc_c) && // allocated different base addresses
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
   // Test WFI ("sleep") instruction (executed in user mode), wakeup via MTIME
   // mstatus.mie is cleared before to check if machine-mode IRQ still trigger in user-mode
   // ----------------------------------------------------------
