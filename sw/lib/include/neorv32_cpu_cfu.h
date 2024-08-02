@@ -26,7 +26,8 @@ int neorv32_cpu_cfu_available(void);
 
 
 /**********************************************************************//**
- * @name Low-level CFU custom instruction prototypes ("intrinsics")
+ * @name Low-level CFU custom instruction prototypes ("intrinsics").
+ * Note that each instruction provides a uint32_t return value.
  **************************************************************************/
 /**@{*/
 /** R3-type CFU custom instruction (CUSTOM-0 opcode) */
