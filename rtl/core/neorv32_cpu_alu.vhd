@@ -296,22 +296,22 @@ begin
       rstn_i      => rstn_i,                         -- global reset, low-active, async
       -- operation control --
       start_i     => cp_start(4),                    -- operation trigger/strobe
-      active_i    => cfu_run,                        -- operation in progress
-      rtype_i     => ctrl_i.ir_opcode(5),            -- instruction type (R3-type or R4-type)
-      funct3_i    => ctrl_i.ir_funct3,               -- "funct3" bit-field from custom instruction word
-      funct7_i    => ctrl_i.ir_funct12(11 downto 5), -- "funct7" bit-field from custom instruction word
+      active_i    => cfu_run,                        -- operation in progress, CPU is waiting for CFU
       -- CSR interface --
       csr_we_i    => cfu_csr_we,                     -- write enable
       csr_addr_i  => csr_addr_i(1 downto 0),         -- address
       csr_wdata_i => csr_wdata_i,                    -- write data
       csr_rdata_o => cfu_csr_rd,                     -- read data
       -- operands --
+      rtype_i     => ctrl_i.ir_opcode(5),            -- instruction type (R3-type or R4-type)
+      funct3_i    => ctrl_i.ir_funct3,               -- "funct3" bit-field from custom instruction word
+      funct7_i    => ctrl_i.ir_funct12(11 downto 5), -- "funct7" bit-field from custom instruction word
       rs1_i       => rs1_i,                          -- rf source 1
       rs2_i       => rs2_i,                          -- rf source 2
       rs3_i       => rs3_i,                          -- rf source 3
       -- result and status --
       result_o    => cfu_res,                        -- operation result
-      valid_o     => cfu_done                        -- result valid; operation done
+      valid_o     => cfu_done                        -- result valid, operation done; set one cycle before result_o is valid
     );
 
     -- CSR proxy --
@@ -325,7 +325,7 @@ begin
       if (rstn_i = '0') then
         cfu_wait <= (others => '0');
       elsif rising_edge(clk_i) then
-        cfu_wait(1) <= cfu_wait(0); -- shift register
+        cfu_wait(1) <= cfu_wait(0);
         if (cfu_wait(0) = '0') then -- CFU is idle
           cfu_wait(0) <= cp_start(4); -- trigger new CFU operation
         elsif (cfu_done = '1') or (ctrl_i.cpu_trap = '1') then -- operation done or abort if trap (exception)
