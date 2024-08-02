@@ -37,7 +37,7 @@ LiteX: external interrupt - the "RISC-V machine external interrupt" is not suppo
 You can download prebuilt packages for example from https://github.com/YosysHQ/fpga-toolchain, which is _no longer maintained. It is superdesed
 by https://github.com/YosysHQ/fpga-toolchain.
 . _EXPERIMENTAL:_ GHDL provides a https://ghdl.github.io/ghdl/using/Synthesis.html[synthesis options], which converts a VHDL setup into a plain-Verilog
-netlist module (not tested on LiteX yet). Check out https://github.com/stnolting/neorv32-verilog[neorv32-verilog] for more information.
+module (not tested on LiteX yet). Check out https://github.com/stnolting/neorv32-verilog[neorv32-verilog] for more information.
 
 
 .GHDL-yosys Plugin
@@ -161,7 +161,7 @@ mem_read                 - Read address space
 mem_list                 - List available memory regions
 
 
-litex> 
+litex>
 ----
 
 You can use the provided console to execute LiteX commands.
