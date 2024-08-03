@@ -14,8 +14,12 @@ data memories (IMEM & DMEM). Make sure to add only **one** of each modules to th
 file list. However, these default files can also be replaced by optimized technology-specific memory modules.
 
 > [!TIP]
-> Two file list files (`*.f`) are provided that list all required rtl files for the CPU core and
-for the entire processor including their recommended compile order.
+> Two file-list files (`*.f`) are provided that list all required rtl files for the CPU core and
+for the entire processor including their recommended compile order. Make sure to substitute
+the `NEORV32_RTL_PATH_PLACEHOLDER` placeholder by the actual path to _this_ folder (`path/to/neorv32/rtl`).
+The `*.f` files can be re-generated using the provided GHDL bash script (`generate_file_lists.sh`).
+See the online documentation for more information:
+https://stnolting.github.io/neorv32/#_file_list_files
 
 ### > [`processor_templates`](processor_templates)
 
