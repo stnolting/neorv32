@@ -55,18 +55,17 @@ NEORV32_INC_PATH = $(NEORV32_HOME)/sw/lib/include
 NEORV32_SRC_PATH = $(NEORV32_HOME)/sw/lib/source
 # Path to NEORV32 executable generator
 NEORV32_EXG_PATH = $(NEORV32_HOME)/sw/image_gen
-# Path to NEORV32 core rtl folder
-NEORV32_RTL_PATH = $(NEORV32_LOCAL_RTL)/core
+# Path to NEORV32 rtl folder
+NEORV32_RTL_PATH = $(NEORV32_LOCAL_RTL)
 # Path to NEORV32 sim folder
 NEORV32_SIM_PATH = $(NEORV32_HOME)/sim/simple
 # Marker file to check for NEORV32 home folder
 NEORV32_HOME_MARKER = $(NEORV32_INC_PATH)/neorv32.h
 
 # Core libraries (peripheral and CPU drivers)
-CORE_SRC  = $(wildcard $(NEORV32_SRC_PATH)/*.c)
+CORE_SRC = $(wildcard $(NEORV32_SRC_PATH)/*.c)
 # Application start-up code
 CORE_SRC += $(NEORV32_COM_PATH)/crt0.S
-
 # Linker script
 LD_SCRIPT ?= $(NEORV32_COM_PATH)/neorv32.ld
 
@@ -221,8 +220,8 @@ $(APP_IMG): main.bin $(IMAGE_GEN)
 # Install VHDL memory initialization file
 install-$(APP_IMG): $(APP_IMG)
 	@set -e
-	@echo "Installing application image to $(NEORV32_RTL_PATH)/$(APP_IMG)"
-	@cp $(APP_IMG) $(NEORV32_RTL_PATH)/.
+	@echo "Installing application image to $(NEORV32_RTL_PATH)/core/$(APP_IMG)"
+	@cp $(APP_IMG) $(NEORV32_RTL_PATH)/core/.
 
 # Generate NEORV32 RAW executable image in plain hex format
 $(APP_HEX): main.bin $(IMAGE_GEN)
@@ -260,8 +259,8 @@ $(BOOT_IMG): main.bin $(IMAGE_GEN)
 
 install-$(BOOT_IMG): $(BOOT_IMG)
 	@set -e
-	@echo "Installing bootloader image to $(NEORV32_RTL_PATH)/$(BOOT_IMG)"
-	@cp $(BOOT_IMG) $(NEORV32_RTL_PATH)/.
+	@echo "Installing bootloader image to $(NEORV32_RTL_PATH)/core/$(BOOT_IMG)"
+	@cp $(BOOT_IMG) $(NEORV32_RTL_PATH)/core/.
 
 # Just an alias
 bl_image: $(BOOT_IMG)
@@ -304,6 +303,13 @@ endif
 sim: $(APP_IMG) install
 	@echo "Simulating processor using simple testbench..."
 	@sh $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
+
+
+# -----------------------------------------------------------------------------
+# Regenerate HDL file lists
+# -----------------------------------------------------------------------------
+hdl_lists:
+	@sh $(NEORV32_RTL_PATH)/generate_file_lists.sh
 
 
 # -----------------------------------------------------------------------------
@@ -395,6 +401,7 @@ help:
 	@echo "  image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder"
 	@echo "  install      - compile, generate and install VHDL IMEM boot image (for application, no header)"
 	@echo "  sim          - in-console simulation using default/simple testbench and GHDL"
+	@echo "  hdl_lists    - regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
 	@echo "  all          - exe + install + hex + bin + asm"
 	@echo "  elf_info     - show ELF layout info"
 	@echo "  elf_sections - show ELF sections"
