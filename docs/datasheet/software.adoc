@@ -172,6 +172,7 @@ Targets:
   image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder
   install      - compile, generate and install VHDL IMEM boot image (for application, no header)
   sim          - in-console simulation using default/simple testbench and GHDL
+  hdl_lists    - regenerate HDL file-lists in NEORV32_HOME/rtl
   all          - exe + install + hex + bin + asm
   elf_info     - show ELF layout info
   elf_sections - show ELF sections
