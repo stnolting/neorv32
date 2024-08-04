@@ -43,7 +43,6 @@ Vivado project.
 . Click "Select" and close the Settings menu with "Apply" and "OK".
 . You will find the NEORV32 in the "User Repository" section of the Vivado IP catalog.
 
-
 .Combinatorial Loops DRC Errors
 [WARNING]
 If the TRNG is enabled it is recommended to add the following commands to the project's constraints file in order
@@ -55,3 +54,9 @@ set_property SEVERITY {warning} [get_drc_checks LUTLP-1]
 set_property IS_ENABLED FALSE [get_drc_checks LUTLP-1]
 set_property ALLOW_COMBINATORIAL_LOOPS TRUE
 ----
+
+.VHDL2008
+[IMPORTANT]
+If the processor's AXI/IP wrapper (`rtl/system_integration/neorv32_vivado_ip.vhd`) is used in stand-alone mode
+(i.e. not packaged by the default packaging TCL script), make sure to compile this design unit using
+VHDL2008 standard to allow connecting `std_logic_vector` and `std_ulogic_vector` without casting (#974).

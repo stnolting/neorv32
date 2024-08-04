@@ -53,6 +53,9 @@ set_property library neorv32 [get_files [glob $neorv32_home/rtl/core/*.vhd]]
 set_property library neorv32 [get_files [glob $neorv32_home/rtl/core/mem/neorv32_*mem.default.vhd]]
 set_property library neorv32 [get_files [glob $neorv32_home/rtl/system_integration/$rtl_top]]
 
+# Compile top module with VHDL2008 standard to allow connecting std_logic_vector and std_ulogic_vector without casting (#974)
+set_property file_type {VHDL 2008} [get_files [glob $neorv32_home/rtl/system_integration/$rtl_top]]
+
 ##set_property top $rtl_top [current_fileset]
 update_compile_order -fileset sources_1
 
