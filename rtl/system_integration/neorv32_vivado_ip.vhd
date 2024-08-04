@@ -6,6 +6,9 @@
 -- Vivado TCL console: > source neorv32_vivado_ip.tcl                               --
 -- See the NEORV32 Datasheet and User Guide for more information.                   --
 -- -------------------------------------------------------------------------------- --
+-- [IMPORTANT] Compile this top module using VHDL2008 standard to allow connecting  --
+-- std_logic_vector and std_ulogic_vector without casting (#974).                   --
+-- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
 -- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
@@ -26,212 +29,212 @@ entity neorv32_vivado_ip is
     -- Configuration Generics
     -- ------------------------------------------------------------
     -- AXI-Stream Interfaces --
-    AXI4_STREAM_EN             : boolean                        := false;
+    AXI4_STREAM_EN             : boolean                       := false;
     -- General --
-    CLOCK_FREQUENCY            : natural; -- no default as this HAS to be set by the user
-    HART_ID                    : std_ulogic_vector(31 downto 0) := x"00000000";
-    JEDEC_ID                   : std_ulogic_vector(10 downto 0) := "00000000000";
-    INT_BOOTLOADER_EN          : boolean                        := false;
+    CLOCK_FREQUENCY            : natural                       := 100_000_000;
+    HART_ID                    : std_logic_vector(31 downto 0) := x"00000000";
+    JEDEC_ID                   : std_logic_vector(10 downto 0) := "00000000000";
+    INT_BOOTLOADER_EN          : boolean                       := false;
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN        : boolean                        := false;
+    ON_CHIP_DEBUGGER_EN        : boolean                       := false;
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A      : boolean                        := false;
-    CPU_EXTENSION_RISCV_B      : boolean                        := false;
-    CPU_EXTENSION_RISCV_C      : boolean                        := false;
-    CPU_EXTENSION_RISCV_E      : boolean                        := false;
-    CPU_EXTENSION_RISCV_M      : boolean                        := false;
-    CPU_EXTENSION_RISCV_U      : boolean                        := false;
-    CPU_EXTENSION_RISCV_Zfinx  : boolean                        := false;
-    CPU_EXTENSION_RISCV_Zicntr : boolean                        := false;
-    CPU_EXTENSION_RISCV_Zicond : boolean                        := false;
-    CPU_EXTENSION_RISCV_Zihpm  : boolean                        := false;
-    CPU_EXTENSION_RISCV_Zmmul  : boolean                        := false;
-    CPU_EXTENSION_RISCV_Zxcfu  : boolean                        := false;
+    CPU_EXTENSION_RISCV_A      : boolean                       := false;
+    CPU_EXTENSION_RISCV_B      : boolean                       := false;
+    CPU_EXTENSION_RISCV_C      : boolean                       := false;
+    CPU_EXTENSION_RISCV_E      : boolean                       := false;
+    CPU_EXTENSION_RISCV_M      : boolean                       := false;
+    CPU_EXTENSION_RISCV_U      : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zfinx  : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zicntr : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zicond : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zihpm  : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zmmul  : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zxcfu  : boolean                       := false;
     -- Tuning Options --
-    FAST_MUL_EN                : boolean                        := false;
-    FAST_SHIFT_EN              : boolean                        := false;
-    REGFILE_HW_RST             : boolean                        := false;
+    FAST_MUL_EN                : boolean                       := false;
+    FAST_SHIFT_EN              : boolean                       := false;
+    REGFILE_HW_RST             : boolean                       := false;
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS            : natural range 0 to 16          := 0;
-    PMP_MIN_GRANULARITY        : natural                        := 4;
-    PMP_TOR_MODE_EN            : boolean                        := false;
-    PMP_NAP_MODE_EN            : boolean                        := false;
+    PMP_NUM_REGIONS            : natural range 0 to 16         := 0;
+    PMP_MIN_GRANULARITY        : natural                       := 4;
+    PMP_TOR_MODE_EN            : boolean                       := false;
+    PMP_NAP_MODE_EN            : boolean                       := false;
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS               : natural range 0 to 13          := 0;
-    HPM_CNT_WIDTH              : natural range 0 to 64          := 40;
+    HPM_NUM_CNTS               : natural range 0 to 13         := 0;
+    HPM_CNT_WIDTH              : natural range 0 to 64         := 40;
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN            : boolean                        := false;
-    MEM_INT_IMEM_SIZE          : natural                        := 16*1024;
+    MEM_INT_IMEM_EN            : boolean                       := false;
+    MEM_INT_IMEM_SIZE          : natural                       := 16384;
     -- Internal Data memory --
-    MEM_INT_DMEM_EN            : boolean                        := false;
-    MEM_INT_DMEM_SIZE          : natural                        := 8*1024;
+    MEM_INT_DMEM_EN            : boolean                       := false;
+    MEM_INT_DMEM_SIZE          : natural                       := 8192;
     -- Internal Cache memory --
-    ICACHE_EN                  : boolean                        := false;
-    ICACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
-    ICACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
+    ICACHE_EN                  : boolean                       := false;
+    ICACHE_NUM_BLOCKS          : natural range 1 to 256        := 4;
+    ICACHE_BLOCK_SIZE          : natural range 4 to 2**16      := 64;
     -- Internal Data Cache (dCACHE) --
-    DCACHE_EN                  : boolean                        := false;
-    DCACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
-    DCACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
+    DCACHE_EN                  : boolean                       := false;
+    DCACHE_NUM_BLOCKS          : natural range 1 to 256        := 4;
+    DCACHE_BLOCK_SIZE          : natural range 4 to 2**16      := 64;
     -- External Bus Interface --
-    XBUS_TIMEOUT               : natural range 8 to 65536       := 64;
-    XBUS_CACHE_EN              : boolean                        := false;
-    XBUS_CACHE_NUM_BLOCKS      : natural range 1 to 256         := 8;
-    XBUS_CACHE_BLOCK_SIZE      : natural range 1 to 2**16       := 256;
+    XBUS_TIMEOUT               : natural range 8 to 65536      := 64;
+    XBUS_CACHE_EN              : boolean                       := false;
+    XBUS_CACHE_NUM_BLOCKS      : natural range 1 to 256        := 8;
+    XBUS_CACHE_BLOCK_SIZE      : natural range 1 to 2**16      := 256;
     -- Execute in-place module (XIP) --
-    XIP_EN                     : boolean                        := false;
-    XIP_CACHE_EN               : boolean                        := false;
-    XIP_CACHE_NUM_BLOCKS       : natural range 1 to 256         := 8;
-    XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16       := 256;
+    XIP_EN                     : boolean                       := false;
+    XIP_CACHE_EN               : boolean                       := false;
+    XIP_CACHE_NUM_BLOCKS       : natural range 1 to 256        := 8;
+    XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16      := 256;
     -- External Interrupts Controller (XIRQ) --
-    XIRQ_NUM_CH                : natural range 0 to 32          := 0;
+    XIRQ_NUM_CH                : natural range 0 to 32         := 0;
     -- Processor peripherals --
-    IO_GPIO_IN_NUM             : natural range 0 to 64          := 0;
-    IO_GPIO_OUT_NUM            : natural range 0 to 64          := 0;
-    IO_MTIME_EN                : boolean                        := false;
-    IO_UART0_EN                : boolean                        := false;
-    IO_UART0_RX_FIFO           : natural range 1 to 2**15       := 1;
-    IO_UART0_TX_FIFO           : natural range 1 to 2**15       := 1;
-    IO_UART1_EN                : boolean                        := false;
-    IO_UART1_RX_FIFO           : natural range 1 to 2**15       := 1;
-    IO_UART1_TX_FIFO           : natural range 1 to 2**15       := 1;
-    IO_SPI_EN                  : boolean                        := false;
-    IO_SPI_FIFO                : natural range 1 to 2**15       := 1;
-    IO_SDI_EN                  : boolean                        := false;
-    IO_SDI_FIFO                : natural range 1 to 2**15       := 1;
-    IO_TWI_EN                  : boolean                        := false;
-    IO_TWI_FIFO                : natural range 1 to 2**15       := 1;
-    IO_PWM_NUM_CH              : natural range 0 to 12          := 0;
-    IO_WDT_EN                  : boolean                        := false;
-    IO_TRNG_EN                 : boolean                        := false;
-    IO_TRNG_FIFO               : natural range 1 to 2**15       := 1;
-    IO_CFS_EN                  : boolean                        := false;
-    IO_CFS_CONFIG              : std_ulogic_vector(31 downto 0) := x"00000000";
-    IO_CFS_IN_SIZE             : natural range 0 to 4096        := 32;
-    IO_CFS_OUT_SIZE            : natural range 0 to 4096        := 32;
-    IO_NEOLED_EN               : boolean                        := false;
-    IO_NEOLED_TX_FIFO          : natural range 1 to 2**15       := 1;
-    IO_GPTMR_EN                : boolean                        := false;
-    IO_ONEWIRE_EN              : boolean                        := false;
-    IO_DMA_EN                  : boolean                        := false;
-    IO_SLINK_RX_FIFO           : natural range 1 to 2**15       := 1;
-    IO_SLINK_TX_FIFO           : natural range 1 to 2**15       := 1;
-    IO_CRC_EN                  : boolean                        := false
+    IO_GPIO_IN_NUM             : natural range 0 to 64         := 0;
+    IO_GPIO_OUT_NUM            : natural range 0 to 64         := 0;
+    IO_MTIME_EN                : boolean                       := false;
+    IO_UART0_EN                : boolean                       := false;
+    IO_UART0_RX_FIFO           : natural range 1 to 2**15      := 1;
+    IO_UART0_TX_FIFO           : natural range 1 to 2**15      := 1;
+    IO_UART1_EN                : boolean                       := false;
+    IO_UART1_RX_FIFO           : natural range 1 to 2**15      := 1;
+    IO_UART1_TX_FIFO           : natural range 1 to 2**15      := 1;
+    IO_SPI_EN                  : boolean                       := false;
+    IO_SPI_FIFO                : natural range 1 to 2**15      := 1;
+    IO_SDI_EN                  : boolean                       := false;
+    IO_SDI_FIFO                : natural range 1 to 2**15      := 1;
+    IO_TWI_EN                  : boolean                       := false;
+    IO_TWI_FIFO                : natural range 1 to 2**15      := 1;
+    IO_PWM_NUM_CH              : natural range 0 to 12         := 0;
+    IO_WDT_EN                  : boolean                       := false;
+    IO_TRNG_EN                 : boolean                       := false;
+    IO_TRNG_FIFO               : natural range 1 to 2**15      := 1;
+    IO_CFS_EN                  : boolean                       := false;
+    IO_CFS_CONFIG              : std_logic_vector(31 downto 0) := x"00000000";
+    IO_CFS_IN_SIZE             : natural range 0 to 4096       := 32;
+    IO_CFS_OUT_SIZE            : natural range 0 to 4096       := 32;
+    IO_NEOLED_EN               : boolean                       := false;
+    IO_NEOLED_TX_FIFO          : natural range 1 to 2**15      := 1;
+    IO_GPTMR_EN                : boolean                       := false;
+    IO_ONEWIRE_EN              : boolean                       := false;
+    IO_DMA_EN                  : boolean                       := false;
+    IO_SLINK_RX_FIFO           : natural range 1 to 2**15      := 1;
+    IO_SLINK_TX_FIFO           : natural range 1 to 2**15      := 1;
+    IO_CRC_EN                  : boolean                       := false
   );
   port (
     -- ------------------------------------------------------------
     -- Global Control
     -- ------------------------------------------------------------
-    clk            : in  std_ulogic;
-    resetn         : in  std_ulogic; -- low-active
+    clk            : in  std_logic;
+    resetn         : in  std_logic; -- low-active
     -- ------------------------------------------------------------
     -- AXI4-Lite-Compatible Host Interface (always available)
     -- ------------------------------------------------------------
     -- Clock and Reset --
---  m_axi_aclk     : in  std_ulogic := '0'; -- just to satisfy Vivado, but not actually used!
---  m_axi_aresetn  : in  std_ulogic := '0'; -- just to satisfy Vivado, but not actually used!
+--  m_axi_aclk     : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used!
+--  m_axi_aresetn  : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used!
     -- Write Address Channel --
-    m_axi_awaddr   : out std_ulogic_vector(31 downto 0);
-    m_axi_awprot   : out std_ulogic_vector(2 downto 0);
-    m_axi_awvalid  : out std_ulogic;
-    m_axi_awready  : in  std_ulogic := '0';
+    m_axi_awaddr   : out std_logic_vector(31 downto 0);
+    m_axi_awprot   : out std_logic_vector(2 downto 0);
+    m_axi_awvalid  : out std_logic;
+    m_axi_awready  : in  std_logic := '0';
     -- Write Data Channel --
-    m_axi_wdata    : out std_ulogic_vector(31 downto 0);
-    m_axi_wstrb    : out std_ulogic_vector(3 downto 0);
-    m_axi_wvalid   : out std_ulogic;
-    m_axi_wready   : in  std_ulogic := '0';
+    m_axi_wdata    : out std_logic_vector(31 downto 0);
+    m_axi_wstrb    : out std_logic_vector(3 downto 0);
+    m_axi_wvalid   : out std_logic;
+    m_axi_wready   : in  std_logic := '0';
     -- Read Address Channel --
-    m_axi_araddr   : out std_ulogic_vector(31 downto 0);
-    m_axi_arprot   : out std_ulogic_vector(2 downto 0);
-    m_axi_arvalid  : out std_ulogic;
-    m_axi_arready  : in  std_ulogic := '0';
+    m_axi_araddr   : out std_logic_vector(31 downto 0);
+    m_axi_arprot   : out std_logic_vector(2 downto 0);
+    m_axi_arvalid  : out std_logic;
+    m_axi_arready  : in  std_logic := '0';
     -- Read Data Channel --
-    m_axi_rdata    : in  std_ulogic_vector(31 downto 0) := x"00000000";
-    m_axi_rresp    : in  std_ulogic_vector(1 downto 0) := "11"; -- error by default
-    m_axi_rvalid   : in  std_ulogic := '0';
-    m_axi_rready   : out std_ulogic;
+    m_axi_rdata    : in  std_logic_vector(31 downto 0) := x"00000000";
+    m_axi_rresp    : in  std_logic_vector(1 downto 0) := "11"; -- error by default
+    m_axi_rvalid   : in  std_logic := '0';
+    m_axi_rready   : out std_logic;
     -- Write Response Channel --
-    m_axi_bresp    : in  std_ulogic_vector(1 downto 0) := "11"; -- error by default
-    m_axi_bvalid   : in  std_ulogic := '0';
-    m_axi_bready   : out std_ulogic;
+    m_axi_bresp    : in  std_logic_vector(1 downto 0) := "11"; -- error by default
+    m_axi_bvalid   : in  std_logic := '0';
+    m_axi_bready   : out std_logic;
     -- ------------------------------------------------------------
     -- AXI4-Stream-Compatible Interfaces (available if AXI4_STREAM_EN = true)
     -- ------------------------------------------------------------
     -- Source --
---  s0_axis_aclk   : in  std_ulogic := '0'; -- just to satisfy Vivado, but not actually used!
-    s0_axis_tdest  : out std_ulogic_vector(3 downto 0);
-    s0_axis_tvalid : out std_ulogic;
-    s0_axis_tready : in  std_ulogic := '0';
-    s0_axis_tdata  : out std_ulogic_vector(31 downto 0);
-    s0_axis_tlast  : out std_ulogic;
+--  s0_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used!
+    s0_axis_tdest  : out std_logic_vector(3 downto 0);
+    s0_axis_tvalid : out std_logic;
+    s0_axis_tready : in  std_logic := '0';
+    s0_axis_tdata  : out std_logic_vector(31 downto 0);
+    s0_axis_tlast  : out std_logic;
     -- Sink --
---  s1_axis_aclk   : in  std_ulogic := '0'; -- just to satisfy Vivado, but not actually used!
-    s1_axis_tid    : in  std_ulogic_vector(3 downto 0) := x"0";
-    s1_axis_tvalid : in  std_ulogic := '0';
-    s1_axis_tready : out std_ulogic;
-    s1_axis_tdata  : in  std_ulogic_vector(31 downto 0) := x"00000000";
-    s1_axis_tlast  : in  std_ulogic := '0';
+--  s1_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used!
+    s1_axis_tid    : in  std_logic_vector(3 downto 0) := x"0";
+    s1_axis_tvalid : in  std_logic := '0';
+    s1_axis_tready : out std_logic;
+    s1_axis_tdata  : in  std_logic_vector(31 downto 0) := x"00000000";
+    s1_axis_tlast  : in  std_logic := '0';
     -- ------------------------------------------------------------
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true)
     -- ------------------------------------------------------------
-    jtag_tck_i     : in  std_ulogic := '0';
-    jtag_tdi_i     : in  std_ulogic := '0';
-    jtag_tdo_o     : out std_ulogic := '0';
-    jtag_tms_i     : in  std_ulogic := '0';
+    jtag_tck_i     : in  std_logic := '0';
+    jtag_tdi_i     : in  std_logic := '0';
+    jtag_tdo_o     : out std_logic := '0';
+    jtag_tms_i     : in  std_logic := '0';
     -- ------------------------------------------------------------
     -- Processor IO
     -- ------------------------------------------------------------
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
-    xip_csn_o      : out std_ulogic;
-    xip_clk_o      : out std_ulogic;
-    xip_dat_i      : in  std_ulogic := '0';
-    xip_dat_o      : out std_ulogic;
+    xip_csn_o      : out std_logic;
+    xip_clk_o      : out std_logic;
+    xip_dat_i      : in  std_logic := '0';
+    xip_dat_o      : out std_logic;
     -- GPIO (available if IO_GPIO_IN/OUT_NUM > 0) --
-    gpio_o         : out std_ulogic_vector(IO_GPIO_OUT_NUM-1 downto 0);
-    gpio_i         : in  std_ulogic_vector(IO_GPIO_IN_NUM-1 downto 0) := (others => '0');
+    gpio_o         : out std_logic_vector(IO_GPIO_OUT_NUM-1 downto 0);
+    gpio_i         : in  std_logic_vector(IO_GPIO_IN_NUM-1 downto 0) := (others => '0');
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o    : out std_ulogic;
-    uart0_rxd_i    : in  std_ulogic := '0';
-    uart0_rts_o    : out std_ulogic;
-    uart0_cts_i    : in  std_ulogic := '0';
+    uart0_txd_o    : out std_logic;
+    uart0_rxd_i    : in  std_logic := '0';
+    uart0_rts_o    : out std_logic;
+    uart0_cts_i    : in  std_logic := '0';
     -- secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o    : out std_ulogic;
-    uart1_rxd_i    : in  std_ulogic := '0';
-    uart1_rts_o    : out std_ulogic;
-    uart1_cts_i    : in  std_ulogic := '0';
+    uart1_txd_o    : out std_logic;
+    uart1_rxd_i    : in  std_logic := '0';
+    uart1_rts_o    : out std_logic;
+    uart1_cts_i    : in  std_logic := '0';
     -- SPI (available if IO_SPI_EN = true) --
-    spi_clk_o      : out std_ulogic;
-    spi_dat_o      : out std_ulogic;
-    spi_dat_i      : in  std_ulogic := '0';
-    spi_csn_o      : out std_ulogic_vector(7 downto 0); -- SPI CS
+    spi_clk_o      : out std_logic;
+    spi_dat_o      : out std_logic;
+    spi_dat_i      : in  std_logic := '0';
+    spi_csn_o      : out std_logic_vector(7 downto 0); -- SPI CS
     -- SDI (available if IO_SDI_EN = true) --
-    sdi_clk_i      : in  std_ulogic := '0';
-    sdi_dat_o      : out std_ulogic;
-    sdi_dat_i      : in  std_ulogic := '0';
-    sdi_csn_i      : in  std_ulogic := '0';
+    sdi_clk_i      : in  std_logic := '0';
+    sdi_dat_o      : out std_logic;
+    sdi_dat_i      : in  std_logic := '0';
+    sdi_csn_i      : in  std_logic := '0';
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_i      : in  std_ulogic := '0';
-    twi_sda_o      : out std_ulogic;
-    twi_scl_i      : in  std_ulogic := '0';
-    twi_scl_o      : out std_ulogic;
+    twi_sda_i      : in  std_logic := '0';
+    twi_sda_o      : out std_logic;
+    twi_scl_i      : in  std_logic := '0';
+    twi_scl_o      : out std_logic;
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_i      : in  std_ulogic := '0';
-    onewire_o      : out std_ulogic;
+    onewire_i      : in  std_logic := '0';
+    onewire_o      : out std_logic;
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o          : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0);
+    pwm_o          : out std_logic_vector(IO_PWM_NUM_CH-1 downto 0);
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1  downto 0) := (others => '0');
-    cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
+    cfs_in_i       : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0) := (others => '0');
+    cfs_out_o      : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0);
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o       : out std_ulogic;
+    neoled_o       : out std_logic;
     -- Machine timer system time (available if IO_MTIME_EN = true) --
-    mtime_time_o   : out std_ulogic_vector(63 downto 0);
+    mtime_time_o   : out std_logic_vector(63 downto 0);
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i         : in  std_ulogic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0');
+    xirq_i         : in  std_logic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0');
     -- CPU Interrupts --
-    mtime_irq_i    : in  std_ulogic := '0';
-    msw_irq_i      : in  std_ulogic := '0';
-    mext_irq_i     : in  std_ulogic := '0'
+    mtime_irq_i    : in  std_logic := '0';
+    msw_irq_i      : in  std_logic := '0';
+    mext_irq_i     : in  std_logic := '0'
   );
 end entity;
 
@@ -272,8 +275,8 @@ begin
     -- General --
     CLOCK_FREQUENCY            => CLOCK_FREQUENCY,
     CLOCK_GATING_EN            => false, -- clock gating is not supported here
-    HART_ID                    => HART_ID,
-    JEDEC_ID                   => JEDEC_ID,
+    HART_ID                    => std_ulogic_vector(HART_ID),
+    JEDEC_ID                   => std_ulogic_vector(JEDEC_ID),
     INT_BOOTLOADER_EN          => INT_BOOTLOADER_EN,
     -- On-Chip Debugger --
     ON_CHIP_DEBUGGER_EN        => ON_CHIP_DEBUGGER_EN,
@@ -351,7 +354,7 @@ begin
     IO_TRNG_EN                 => IO_TRNG_EN,
     IO_TRNG_FIFO               => IO_TRNG_FIFO,
     IO_CFS_EN                  => IO_CFS_EN,
-    IO_CFS_CONFIG              => IO_CFS_CONFIG,
+    IO_CFS_CONFIG              => std_ulogic_vector(IO_CFS_CONFIG),
     IO_CFS_IN_SIZE             => IO_CFS_IN_SIZE,
     IO_CFS_OUT_SIZE            => IO_CFS_OUT_SIZE,
     IO_NEOLED_EN               => IO_NEOLED_EN,
@@ -510,26 +513,26 @@ begin
 
 
   -- read address channel --
-  m_axi_araddr  <= wb_core.adr;
-  m_axi_arvalid <= wb_core.cyc and (not wb_core.we) and (not axi_radr_received);
-  m_axi_arprot  <= wb_core.tag;
+  m_axi_araddr  <= std_logic_vector(wb_core.adr);
+  m_axi_arprot  <= std_logic_vector(wb_core.tag);
+  m_axi_arvalid <= std_logic(wb_core.cyc and (not wb_core.we) and (not axi_radr_received));
 
   -- read data channel --
-  m_axi_rready  <= wb_core.cyc and (not wb_core.we);
-  wb_core.di    <= m_axi_rdata;
+  m_axi_rready  <= std_logic(wb_core.cyc and (not wb_core.we));
+  wb_core.di    <= std_ulogic_vector(m_axi_rdata);
 
   -- write address channel --
-  m_axi_awaddr  <= wb_core.adr;
-  m_axi_awvalid <= wb_core.cyc and wb_core.we and (not axi_wadr_received);
-  m_axi_awprot  <= wb_core.tag;
+  m_axi_awaddr  <= std_logic_vector(wb_core.adr);
+  m_axi_awprot  <= std_logic_vector(wb_core.tag);
+  m_axi_awvalid <= std_logic(wb_core.cyc and wb_core.we and (not axi_wadr_received));
 
   -- write data channel --
-  m_axi_wdata   <= wb_core.do;
-  m_axi_wvalid  <= wb_core.cyc and wb_core.we and (not axi_wdat_received);
-  m_axi_wstrb   <= wb_core.sel;
+  m_axi_wdata   <= std_logic_vector(wb_core.do);
+  m_axi_wstrb   <= std_logic_vector(wb_core.sel);
+  m_axi_wvalid  <= std_logic(wb_core.cyc and wb_core.we and (not axi_wdat_received));
 
   -- write response channel --
-  m_axi_bready  <= wb_core.cyc and wb_core.we;
+  m_axi_bready  <= std_logic(wb_core.cyc and wb_core.we);
 
 
   -- read/write response --
