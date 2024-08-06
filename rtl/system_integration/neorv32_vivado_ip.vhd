@@ -87,9 +87,11 @@ entity neorv32_vivado_ip is
     XIP_CACHE_NUM_BLOCKS       : natural range 1 to 256        := 8;
     XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16      := 256;
     -- External Interrupts Controller (XIRQ) --
-    XIRQ_NUM_CH                : natural range 0 to 32         := 0;
+    XIRQ_EN                    : boolean                       := false;
+    XIRQ_NUM_CH                : natural range 1 to 32         := 1; -- variable-size input ports must be at least 0 downto 0; #974
     -- Processor peripherals --
-    IO_GPIO_IN_NUM             : natural range 0 to 64         := 0;
+    IO_GPIO_EN                 : boolean                       := false;
+    IO_GPIO_IN_NUM             : natural range 1 to 64         := 1; -- variable-size input ports must be at least 0 downto 0; #974
     IO_GPIO_OUT_NUM            : natural range 0 to 64         := 0;
     IO_MTIME_EN                : boolean                       := false;
     IO_UART0_EN                : boolean                       := false;
@@ -110,7 +112,7 @@ entity neorv32_vivado_ip is
     IO_TRNG_FIFO               : natural range 1 to 2**15      := 1;
     IO_CFS_EN                  : boolean                       := false;
     IO_CFS_CONFIG              : std_logic_vector(31 downto 0) := x"00000000";
-    IO_CFS_IN_SIZE             : natural range 0 to 4096       := 32;
+    IO_CFS_IN_SIZE             : natural range 1 to 4096       := 32; -- variable-size input ports must be at least 0 downto 0; #974
     IO_CFS_OUT_SIZE            : natural range 0 to 4096       := 32;
     IO_NEOLED_EN               : boolean                       := false;
     IO_NEOLED_TX_FIFO          : natural range 1 to 2**15      := 1;
@@ -241,7 +243,8 @@ end entity;
 architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
 
   -- auto-configuration --
-  constant num_gpio_c : natural := max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM);
+  constant num_gpio_c : natural := cond_sel_natural_f(IO_GPIO_EN, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
+  constant num_xirq_c : natural := cond_sel_natural_f(XIRQ_EN, XIRQ_NUM_CH, 0);
 
   -- variable-sized ports --
   signal gpio_o_aux : std_ulogic_vector(63 downto 0);
@@ -333,7 +336,7 @@ begin
     XIP_CACHE_NUM_BLOCKS       => XIP_CACHE_NUM_BLOCKS,
     XIP_CACHE_BLOCK_SIZE       => XIP_CACHE_BLOCK_SIZE,
     -- External Interrupts Controller --
-    XIRQ_NUM_CH                => XIRQ_NUM_CH,
+    XIRQ_NUM_CH                => num_xirq_c,
     -- Processor peripherals --
     IO_GPIO_NUM                => num_gpio_c,
     IO_MTIME_EN                => IO_MTIME_EN,
