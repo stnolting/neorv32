@@ -88,11 +88,11 @@ entity neorv32_vivado_ip is
     XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16      := 256;
     -- External Interrupts Controller (XIRQ) --
     XIRQ_EN                    : boolean                       := false;
-    XIRQ_NUM_CH                : natural range 1 to 32         := 1; -- variable-size input ports must be at least 0 downto 0; #974
+    XIRQ_NUM_CH                : natural range 1 to 32         := 1; -- variable-sized ports must be at least 0 downto 0; #974
     -- Processor peripherals --
     IO_GPIO_EN                 : boolean                       := false;
-    IO_GPIO_IN_NUM             : natural range 1 to 64         := 1; -- variable-size input ports must be at least 0 downto 0; #974
-    IO_GPIO_OUT_NUM            : natural range 0 to 64         := 0;
+    IO_GPIO_IN_NUM             : natural range 1 to 64         := 1; -- variable-sized ports must be at least 0 downto 0; #974
+    IO_GPIO_OUT_NUM            : natural range 1 to 64         := 1;
     IO_MTIME_EN                : boolean                       := false;
     IO_UART0_EN                : boolean                       := false;
     IO_UART0_RX_FIFO           : natural range 1 to 2**15      := 1;
@@ -106,14 +106,15 @@ entity neorv32_vivado_ip is
     IO_SDI_FIFO                : natural range 1 to 2**15      := 1;
     IO_TWI_EN                  : boolean                       := false;
     IO_TWI_FIFO                : natural range 1 to 2**15      := 1;
-    IO_PWM_NUM_CH              : natural range 0 to 12         := 0;
+    IO_PWM_EN                  : boolean                       := false;
+    IO_PWM_NUM_CH              : natural range 1 to 12         := 1; -- variable-sized ports must be at least 0 downto 0; #974
     IO_WDT_EN                  : boolean                       := false;
     IO_TRNG_EN                 : boolean                       := false;
     IO_TRNG_FIFO               : natural range 1 to 2**15      := 1;
     IO_CFS_EN                  : boolean                       := false;
     IO_CFS_CONFIG              : std_logic_vector(31 downto 0) := x"00000000";
-    IO_CFS_IN_SIZE             : natural range 1 to 4096       := 32; -- variable-size input ports must be at least 0 downto 0; #974
-    IO_CFS_OUT_SIZE            : natural range 0 to 4096       := 32;
+    IO_CFS_IN_SIZE             : natural range 1 to 4096       := 32; -- variable-sized ports must be at least 0 downto 0; #974
+    IO_CFS_OUT_SIZE            : natural range 1 to 4096       := 32; -- variable-sized ports must be at least 0 downto 0; #974
     IO_NEOLED_EN               : boolean                       := false;
     IO_NEOLED_TX_FIFO          : natural range 1 to 2**15      := 1;
     IO_GPTMR_EN                : boolean                       := false;
@@ -192,8 +193,8 @@ entity neorv32_vivado_ip is
     xip_dat_i      : in  std_logic := '0';
     xip_dat_o      : out std_logic;
     -- GPIO (available if IO_GPIO_IN/OUT_NUM > 0) --
-    gpio_o         : out std_logic_vector(IO_GPIO_OUT_NUM-1 downto 0);
-    gpio_i         : in  std_logic_vector(IO_GPIO_IN_NUM-1 downto 0) := (others => '0');
+    gpio_o         : out std_logic_vector(IO_GPIO_OUT_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
+    gpio_i         : in  std_logic_vector(IO_GPIO_IN_NUM-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_logic;
     uart0_rxd_i    : in  std_logic := '0';
@@ -223,16 +224,16 @@ entity neorv32_vivado_ip is
     onewire_i      : in  std_logic := '0';
     onewire_o      : out std_logic;
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o          : out std_logic_vector(IO_PWM_NUM_CH-1 downto 0);
+    pwm_o          : out std_logic_vector(IO_PWM_NUM_CH-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i       : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0) := (others => '0');
-    cfs_out_o      : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0);
+    cfs_in_i       : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
+    cfs_out_o      : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_logic;
     -- Machine timer system time (available if IO_MTIME_EN = true) --
     mtime_time_o   : out std_logic_vector(63 downto 0);
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i         : in  std_logic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0');
+    xirq_i         : in  std_logic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
     -- CPU Interrupts --
     mtime_irq_i    : in  std_logic := '0';
     msw_irq_i      : in  std_logic := '0';
@@ -245,6 +246,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   -- auto-configuration --
   constant num_gpio_c : natural := cond_sel_natural_f(IO_GPIO_EN, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
   constant num_xirq_c : natural := cond_sel_natural_f(XIRQ_EN, XIRQ_NUM_CH, 0);
+  constant num_pwm_c  : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM_CH, 0);
 
   -- variable-sized ports --
   signal gpio_o_aux : std_ulogic_vector(63 downto 0);
@@ -352,7 +354,7 @@ begin
     IO_SDI_FIFO                => IO_SDI_FIFO,
     IO_TWI_EN                  => IO_TWI_EN,
     IO_TWI_FIFO                => IO_TWI_FIFO,
-    IO_PWM_NUM_CH              => IO_PWM_NUM_CH,
+    IO_PWM_NUM_CH              => num_pwm_c,
     IO_WDT_EN                  => IO_WDT_EN,
     IO_TRNG_EN                 => IO_TRNG_EN,
     IO_TRNG_FIFO               => IO_TRNG_FIFO,
