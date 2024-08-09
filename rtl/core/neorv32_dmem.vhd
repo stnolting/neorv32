@@ -30,29 +30,28 @@ end neorv32_dmem;
 architecture neorv32_dmem_rtl of neorv32_dmem is
 
   -- configuration --
-  constant alternaitve_style_en_c : boolean := false; -- enable this if synthesis fails to infer block RAM
+  constant alternaitve_style_en_c : boolean := false; -- [TIP] enable this if synthesis fails to infer block RAM
 
   -- local signals --
   signal rdata         : std_ulogic_vector(31 downto 0);
   signal rden          : std_ulogic;
   signal addr, addr_ff : std_ulogic_vector(index_size_f(DMEM_SIZE/4)-1 downto 0);
 
-  -- The memory (RAM) is built from 4 individual byte-wide memories because some synthesis
-  -- tools have issues inferring 32-bit memories that provide dedicated byte-enable signals
-  -- and/or with multi-dimensional arrays. [NOTE] Read-during-write behavior is irrelevant
-  -- as read and write accesses are mutually exclusive.
+  -- [NOTE] The memory (RAM) is built from 4 individual byte-wide memories as some synthesis tools
+  --        have issues inferring 32-bit memories with individual byte-enable signals.
+  -- [NOTE] Read-during-write behavior is irrelevant
+  --        as read and write accesses are mutually exclusive (ensured by bus protocol).
   signal mem_ram_b0, mem_ram_b1, mem_ram_b2, mem_ram_b3 : mem8_t(0 to DMEM_SIZE/4-1);
 
 begin
 
-  -- Memory Access --------------------------------------------------------------------------
+  -- Memory Core ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_access_default:
+  dmem_ram_default: -- default memory HDL style
   if not alternaitve_style_en_c generate
-
     mem_access: process(clk_i)
     begin
-      if rising_edge(clk_i) then -- no reset to infer block RAM
+      if rising_edge(clk_i) then
         if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
           if (bus_req_i.ben(0) = '1') then -- byte 0
             mem_ram_b0(to_integer(unsigned(addr))) <= bus_req_i.data(7 downto 0);
@@ -67,24 +66,20 @@ begin
             mem_ram_b3(to_integer(unsigned(addr))) <= bus_req_i.data(31 downto 24);
           end if;
         end if;
-        rdata(7 downto 0)   <= mem_ram_b0(to_integer(unsigned(addr)));
+        rdata(7  downto 0)  <= mem_ram_b0(to_integer(unsigned(addr)));
         rdata(15 downto 8)  <= mem_ram_b1(to_integer(unsigned(addr)));
         rdata(23 downto 16) <= mem_ram_b2(to_integer(unsigned(addr)));
         rdata(31 downto 24) <= mem_ram_b3(to_integer(unsigned(addr)));
       end if;
     end process mem_access;
-
     addr_ff <= (others => '0'); -- unused
-
   end generate;
 
-  -- legacy/alternative-style --
-  mem_access_alternative:
+  dmem_ram_alternative: -- alternative memory HDL style
   if alternaitve_style_en_c generate
-
     mem_access: process(clk_i)
     begin
-      if rising_edge(clk_i) then -- no reset to infer block RAM
+      if rising_edge(clk_i) then
         addr_ff <= addr;
         if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
           if (bus_req_i.ben(0) = '1') then -- byte 0
@@ -102,19 +97,17 @@ begin
         end if;
       end if;
     end process mem_access;
-
-    rdata(7 downto 0)   <= mem_ram_b0(to_integer(unsigned(addr_ff)));
+    rdata(7  downto 0)  <= mem_ram_b0(to_integer(unsigned(addr_ff)));
     rdata(15 downto 8)  <= mem_ram_b1(to_integer(unsigned(addr_ff)));
     rdata(23 downto 16) <= mem_ram_b2(to_integer(unsigned(addr_ff)));
     rdata(31 downto 24) <= mem_ram_b3(to_integer(unsigned(addr_ff)));
-
   end generate;
 
   -- word aligned access address --
   addr <= bus_req_i.addr(index_size_f(DMEM_SIZE/4)+1 downto 2);
 
 
-  -- Bus Feedback ---------------------------------------------------------------------------
+  -- Bus Response ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_feedback: process(rstn_i, clk_i)
   begin
