@@ -16,24 +16,16 @@ image::neorv32_test_setup.png[align=center]
 [start=1]
 . Create a new project with your FPGA/ASIC/simulator EDA tool of choice.
 . Add all VHDL files from the project's `rtl/core` folder to your project.
-
-.Processor-Internal Memories
-[IMPORTANT]
-For a first setup use the `*.default.vhd` memory architectures for the processor-internal memories
-(IMEM and DMEM). These are located in `rtl/core/mem` so make sure to add these two files to your project, too.
-
-[start=3]
-. Make sure to add all NEORV32 rtl files to a new library called `neorv32`. If your toolchain does not
+Make sure to add all these rtl files to a new library called `neorv32`. If your toolchain does not
 provide a field to enter the library name, check out the "properties" menu of the added rtl files.
 
-.Compile Order
-[NOTE]
-Some tools (like Lattice Radiant) might require a _manual compile order_ of the VHDL source files to identify the dependencies.
-The package file `neorv32_package.vhd` should be analyzed first followed by the memory image files (`neorv32_application_imagevhd`
-and `neorv32_bootloader_image.vhd`) and the entity-only files (`neorv32_*mem.entity.vhd`). The `rtl` folder features HDL file-list
-list files that list all required files in their recommended compilation oder (see `hdl_files_soc.f`).
+.Compile Order and File-List Files
+[TIP]
+Some tools (like Lattice Radiant) might require a _manual compile order_ of the VHDL source files to
+identify the dependencies. The `rtl` folder features file-list files that list all required HDL files in
+their recommended compilation order (see https://stnolting.github.io/neorv32/#_file_list_files).
 
-[start=4]
+[start=3]
 . The `rtl/core/neorv32_top.vhd` VHDL file is the top entity of the NEORV32 processor, which can be
 instantiated within the actual project. However, in this tutorial we will use one of the pre-defined
 test setups from `rtl/test_setups` (see above).
@@ -42,7 +34,7 @@ test setups from `rtl/test_setups` (see above).
 Make sure to include the `neorv32` package into your design when instantiating the processor: add
 `library neorv32;` and `use neorv32.neorv32_package.all;` to your design unit.
 
-[start=5]
+[start=4]
 . Add the pre-defined test setup of choice to the project, too, and select it as **top entity**.
 . The entity of the test setups provides a minimal set of configuration generics, that might have
 to be adapted to match your FPGA and board:
@@ -50,18 +42,18 @@ to be adapted to match your FPGA and board:
 .Test setup entity - configuration generics
 [source,vhdl]
 ----
-  generic (
-    -- adapt these for your setup --
-    CLOCK_FREQUENCY   : natural := 100000000; <1>
-    MEM_INT_IMEM_SIZE : natural := 16*1024;   <2>
-    MEM_INT_DMEM_SIZE : natural := 8*1024     <3>
-  );
+generic (
+  -- adapt these for your setup --
+  CLOCK_FREQUENCY   : natural := 100000000; <1>
+  MEM_INT_IMEM_SIZE : natural := 16*1024;   <2>
+  MEM_INT_DMEM_SIZE : natural := 8*1024     <3>
+);
 ----
 <1> Clock frequency of `clk_i` signal in Hertz
 <2> Default size of internal instruction memory: 16kB
 <3> Default size of internal data memory: 8kB
 
-[start=7]
+[start=6]
 . If you want to or if your FPGA does not provide sufficient resources you can modify the
 _memory sizes_ (`MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE`).
 . There is one generic that has to be set according to your FPGA board setup: the actual clock frequency
@@ -74,7 +66,7 @@ If you have changed the default memory configuration (`MEM_INT_IMEM_SIZE` and `M
 keep those new sizes in mind - these values are required for setting up the software framework in the next
 section <<_general_software_framework_setup>>.
 
-[start=9]
+[start=8]
 . Assign the signals of the test setup top entity to the according pins of your FPGA board.
 All the signals can be found in the entity declaration of the corresponding test setup, e.g.:
 
@@ -98,7 +90,7 @@ port (
 If your FPGA board has inverse polarity for certain input/output you need to add inverters. Example: The reset signal
 `rstn_i` is low-active by default; the LEDs connected to `gpio_o` are high-active by default.
 
-[start=10]
+[start=9]
 . Attach the clock input `clk_i` to your clock source and connect the reset line `rstn_i` to a button of
 your FPGA board. Check whether it is low-active or high-active - the reset signal of the processor is
 **low-active**, so maybe you need to invert the input signal.
