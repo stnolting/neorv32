@@ -62,6 +62,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 * "ModelSim" is a trademark of Mentor Graphics – A Siemens Business.
 * "Quartus Prime" and "Cyclone" are trademarks of Intel Corporation.
 * "iCE40", "UltraPlus" and "Radiant" are trademarks of Lattice Semiconductor Corporation.
+* "GateMate" is a trademark of Cologne Chip AG.
 * "Windows" is a trademark of Microsoft Corporation.
 * "Tera Term" copyright by T. Teranishi.
 * "NeoPixel" is a trademark of Adafruit Industries.

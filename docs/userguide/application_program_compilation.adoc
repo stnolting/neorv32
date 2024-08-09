@@ -5,11 +5,6 @@
 This guide shows how to compile an example C-code application into a NEORV32 executable that
 can be uploaded via the bootloader or the on-chip debugger.
 
-[IMPORTANT]
-If your FPGA board does not provide such an interface - don't worry!
-Section <<_installing_an_executable_directly_into_memory>> shows how to
-run custom programs on your FPGA setup without having a UART.
-
 [start=1]
 . Open a terminal console and navigate to one of the project's example programs. For instance, navigate to the
 simple `sw/example_demo_blink_led` example program. This program uses the NEORV32 GPIO module to display
