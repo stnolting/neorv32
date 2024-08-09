@@ -12,7 +12,7 @@ SOC_TOP=neorv32_top
 
 # temporary GHDL project
 mkdir -p ~build
-ghdl -i --work=neorv32 --workdir=~build core/*.vhd core/mem/*.vhd
+ghdl -i --work=neorv32 --workdir=~build core/*.vhd
 
 # CPU core only
 echo "Regenerating file_list_cpu.f ..."

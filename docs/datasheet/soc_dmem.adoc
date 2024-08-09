@@ -5,14 +5,12 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source files:  | neorv32_dmem.entity.vhd      | entity-only definition
-|                         | mem/neorv32_dmem.default.vhd | default _platform-agnostic_ memory architecture
-|                         | mem/neorv32_dmem.legacy.vhd  | alternative legacy-style memory architecture
-| Software driver files:  | none                         | _implicitly used_
-| Top entity ports:       | none                         |
-| Configuration generics: | `MEM_INT_DMEM_EN`            | implement processor-internal DMEM when `true`
-|                         | `MEM_INT_DMEM_SIZE`          | DMEM size in bytes (use a power of 2)
-| CPU interrupts:         | none                         |
+| Hardware source files:  | neorv32_dmem.vhd    | default platform-agnostic data memory
+| Software driver files:  | none                | _implicitly used_
+| Top entity ports:       | none                |
+| Configuration generics: | `MEM_INT_DMEM_EN`   | implement processor-internal DMEM when `true`
+|                         | `MEM_INT_DMEM_SIZE` | DMEM size in bytes (use a power of 2)
+| CPU interrupts:         | none                |
 | Access restrictions:  2+| none
 |=======================
 
@@ -25,20 +23,21 @@ size should be a power of two to optimize physical implementation. If the DMEM i
 it is mapped to base address `0x80000000` by default (see section <<_address_space>>).
 The DMEM is always implemented as true RAM.
 
+.Platform-Specific Memory Primitives
+[NOTE]
+If required, the default DMEM can be replaced by a platform-/technology-specific primitive to
+optimize area utilization, timing and power consumption.
+
 .Memory Size
-[IMPORTANT]
-If the configured memory size (via the `MEM_INT_IMEM_SIZE` generic) is **not** a power of two the actual memory
+[NOTE]
+If the configured memory size (via the `MEM_INT_DMEM_SIZE` generic) is not a power of two the actual memory
 size will be auto-adjusted to the next power of two (e.g. configuring a memory size of 60kB will result in a
 physical memory size of 64kB).
 
-.VHDL Source File
-[NOTE]
-The actual DMEM is split into two design files: a plain entity definition `neorv32_dmem.entity.vhd` and the actual
-architecture definition `mem/neorv32_dmem.default.vhd`. This **default architecture** provides a _generic_ and
-_platform independent_ memory design that infers embedded memory blocks (blockRAM). The default architecture can
-be replaced by platform-specific modules in order to use platform-specific features or to improve technology mapping
-and/or timing. A "legacy-style" memory architecture is provided in `rtl/mem` that can be used if the synthesis does
-not correctly infer blockRAMs.
+.Legacy HDL Style
+[TIP]
+If synthesis fails to infer block RAM for the DMEM, turn on the `alternaitve_style_en_c` option inside
+the memory's VHDL source file. When enabled, a different HDL style is used to describe the memory core.
 
 .Execute from RAM
 [TIP]
