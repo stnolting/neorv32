@@ -402,7 +402,7 @@ begin
       FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in fifo
       FIFO_RSYNC => false,               -- we NEED to read data asynchronously
       FIFO_SAFE  => false,               -- no safe access required (ensured by FIFO-external logic)
-      FULL_RESET => false                -- no HW reset, try to infer RAM primitives
+      FULL_RESET => REGFILE_HW_RST       -- default: no HW reset, try to infer RAM primitives
     )
     port map (
       -- control --
@@ -491,6 +491,7 @@ begin
   -- issue engine disabled --
   issue_engine_disabled:
   if not CPU_EXTENSION_RISCV_C generate
+    issue_engine.align     <= '0';
     issue_engine.align_set <= '0';
     issue_engine.align_clr <= '0';
     issue_engine.ci_i16    <= (others => '0');
@@ -2192,6 +2193,7 @@ begin
   -- no HPMs implemented --
   hpmevent_gen_disable:
   if (not CPU_EXTENSION_RISCV_Zihpm) or (hpm_num_c = 0) generate
+    hpmevent_we  <= (others => '0');
     hpmevent_cfg <= (others => (others => '0'));
     hpmevent_rd  <= (others => (others => '0'));
   end generate;

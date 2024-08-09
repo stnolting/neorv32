@@ -47,8 +47,7 @@ end neorv32_cpu_pmp;
 architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
   -- auto-configuration --
-  constant granularity_valid_c : boolean := is_power_of_two_f(GRANULARITY);
-  constant granularity_c       : natural := cond_sel_natural_f(granularity_valid_c, GRANULARITY, 2**index_size_f(GRANULARITY));
+  constant granularity_c : natural := cond_sel_natural_f(boolean(GRANULARITY < 4), 4, 2**index_size_f(GRANULARITY));
 
   -- PMP configuration register bits --
   constant cfg_r_c  : natural := 0; -- read permit
@@ -109,7 +108,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert granularity_valid_c report
+  assert (GRANULARITY = granularity_c) report
     "[NEORV32] Auto-adjusting invalid PMP granularity configuration." severity warning;
 
 
