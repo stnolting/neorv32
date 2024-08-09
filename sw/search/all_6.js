@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['_5f_5fcrt0_5fbss_5fend_0',['__crt0_bss_end',['../neorv32_8h.html#a8997b81eab05d1082c55876240bc2b44',1,'neorv32.h']]],
+  ['_5f_5fcrt0_5fbss_5fstart_1',['__crt0_bss_start',['../neorv32_8h.html#a3bbafc9807e0575d8b68c0a4e131440e',1,'neorv32.h']]],
+  ['_5f_5fcrt0_5fcopy_5fdata_5fdst_5fbegin_2',['__crt0_copy_data_dst_begin',['../neorv32_8h.html#a4f751aa26ed3681b0610aa88184fb432',1,'neorv32.h']]],
+  ['_5f_5fcrt0_5fcopy_5fdata_5fdst_5fend_3',['__crt0_copy_data_dst_end',['../neorv32_8h.html#acf015e26f2fae15fabeb663ad7f5ad53',1,'neorv32.h']]],
+  ['_5f_5fcrt0_5fdmem_5fbegin_4',['__crt0_dmem_begin',['../neorv32_8h.html#a9cc3f1d0f7842997cc6e9f3d79015bbe',1,'neorv32.h']]],
+  ['_5f_5fcrt0_5fimem_5fbegin_5',['__crt0_imem_begin',['../neorv32_8h.html#a71f154e24ea886f2b866b812960b802b',1,'neorv32.h']]],
+  ['_5f_5fcrt0_5fmax_5fheap_6',['__crt0_max_heap',['../neorv32_8h.html#aaa2cb9e7075a852870fd67eff2861b18',1,'neorv32.h']]],
+  ['_5f_5fcrt0_5fstack_5fend_7',['__crt0_stack_end',['../neorv32_8h.html#abf19d14b018d3bb45966d31e7902bf9e',1,'neorv32.h']]],
+  ['_5f_5fheap_5fend_8',['__heap_end',['../neorv32_8h.html#ae6ef7c715931df8bdc331577da14119b',1,'neorv32.h']]],
+  ['_5f_5fheap_5fstart_9',['__heap_start',['../neorv32_8h.html#a0eaa3dcfb1db0c72534046feb9fa9b60',1,'neorv32.h']]],
+  ['_5f_5fneorv32_5frte_5fcore_10',['__neorv32_rte_core',['../neorv32__rte_8c.html#a53f1e006f0bf61deb7ad018f35228873',1,'neorv32_rte.c']]],
+  ['_5f_5fneorv32_5frte_5fprint_5fhex_5fword_11',['__neorv32_rte_print_hex_word',['../neorv32__rte_8c.html#a01bf6c01f5a8cda2132b9ac98824edc1',1,'neorv32_rte.c']]],
+  ['_5f_5fneorv32_5frte_5fvector_5flut_12',['__neorv32_rte_vector_lut',['../neorv32__rte_8c.html#a2c8272b4628edddb943bcfad829b561a',1,'neorv32_rte.c']]],
+  ['_5f_5fneorv32_5fuart_5fitoa_13',['__neorv32_uart_itoa',['../neorv32__uart_8c.html#a3543435827204d82755b0a23bdea1296',1,'neorv32_uart.c']]],
+  ['_5f_5fneorv32_5fuart_5ftohex_14',['__neorv32_uart_tohex',['../neorv32__uart_8c.html#aefa844cd170e50e088c42829029060f3',1,'neorv32_uart.c']]],
+  ['_5f_5fneorv32_5fuart_5ftouppercase_15',['__neorv32_uart_touppercase',['../neorv32__uart_8c.html#adf807d0476b475276b8b29924297cda9',1,'neorv32_uart.c']]],
+  ['_5f_5fneorv32_5fxirq_5fcore_16',['__neorv32_xirq_core',['../neorv32__xirq_8c.html#a14661d628dd31e6bfce89376c6614627',1,'neorv32_xirq.c']]],
+  ['_5f_5fneorv32_5fxirq_5fdummy_5fhandler_17',['__neorv32_xirq_dummy_handler',['../neorv32__xirq_8c.html#ae4d9362b23a1341c595a4cd239a87091',1,'neorv32_xirq.c']]],
+  ['_5f_5fneorv32_5fxirq_5fvector_5flut_18',['__neorv32_xirq_vector_lut',['../neorv32__xirq_8c.html#a76d73c3bf372989703c685a9e8d229ac',1,'neorv32_xirq.c']]],
+  ['_5fneorv32_5fcentral_5fprocessing_5funit_5fcpu_20neorv32_20cpu_20a_20the_20core_19',[':abacus: &lt;a href=&quot;https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu&quot; &gt;NEORV32 CPU&lt;/a&gt; - The Core',['../md_README.html#autotoc_md10',1,'']]],
+  ['_5fneorv32_5fprocessor_5fsoc_20neorv32_20processor_20a_20the_20soc_20',[':desktop_computer: &lt;a href=&quot;https://stnolting.github.io/neorv32/#_neorv32_processor_soc&quot; &gt;NEORV32 Processor&lt;/a&gt; - The SoC',['../md_README.html#autotoc_md9',1,'']]],
+  ['_5foverview_20neorv32_20project_20a_20an_20introduction_21',[':mag: &lt;a href=&quot;https://stnolting.github.io/neorv32/#_overview&quot; &gt;NEORV32 Project&lt;/a&gt; - An Introduction',['../md_README.html#autotoc_md8',1,'']]],
+  ['_5fsoftware_5fframework_20software_20framework_20a_20the_20software_20ecosystem_22',[':floppy_disk: &lt;a href=&quot;https://stnolting.github.io/neorv32/#_software_framework&quot; &gt;Software Framework&lt;/a&gt; - The Software Ecosystem',['../md_README.html#autotoc_md11',1,'']]]
+];
