@@ -491,6 +491,7 @@ begin
   -- issue engine disabled --
   issue_engine_disabled:
   if not CPU_EXTENSION_RISCV_C generate
+    issue_engine.align     <= '0';
     issue_engine.align_set <= '0';
     issue_engine.align_clr <= '0';
     issue_engine.ci_i16    <= (others => '0');
