@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 09.08.2024 | 1.10.2.5 | minor HDL edits | [#984](https://github.com/stnolting/neorv32/pull/984) |
 | 06.08.2024 | 1.10.2.4 | :warning: **Vivado IP module**: constrain minimal ALL input/output size to 1; add explicit PWM controller enable option | [#980](https://github.com/stnolting/neorv32/pull/980) |
 | 05.08.2024 | 1.10.2.3 | :bug: fix bug in **Vivado IP module** (error zero-sized input port is unconnected) | [#978](https://github.com/stnolting/neorv32/pull/978) |
 | 04.08.2024 | 1.10.2.2 | :bug: fix bug in **Vivado IP module** (error if AXI port is unconnected) | [#976](https://github.com/stnolting/neorv32/pull/976) |
