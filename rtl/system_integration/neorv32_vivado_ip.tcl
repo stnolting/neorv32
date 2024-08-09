@@ -28,7 +28,7 @@ set cur_dir [file normalize .]
 file mkdir $outputdir
 set files [glob -nocomplain "$outputdir/*"]
 if {[llength $files] != 0} {
-    puts "DELETING ALL FILES of $outputdir"
+    puts "DELETING ALL FILES in $outputdir"
     file delete -force {*}[glob -directory $outputdir *];
 } else {
     puts "$outputdir is empty"
@@ -43,14 +43,20 @@ set_property target_language VHDL [current_project]
 
 
 # **************************************************************
-# Add HDL source files
+# Import HDL source files
 # **************************************************************
-add_files [glob $neorv32_home/rtl/core/*.vhd]
-add_files [glob $neorv32_home/rtl/core/mem/neorv32_*mem.default.vhd]
-add_file $neorv32_home/rtl/system_integration/$rtl_top
 
-set_property library neorv32 [get_files [glob $neorv32_home/rtl/core/*.vhd]]
-set_property library neorv32 [get_files [glob $neorv32_home/rtl/core/mem/neorv32_*mem.default.vhd]]
+# read and process NEORV32 file list
+set file_list_file [read [open "$neorv32_home/rtl/file_list_soc.f" r]]
+set file_list [string map [list "NEORV32_RTL_PATH_PLACEHOLDER" "$neorv32_home/rtl"] $file_list_file]
+puts "NEORV32 source files:"
+puts $file_list
+
+add_files $file_list
+set_property library neorv32 [get_files $file_list]
+
+# add IP top module
+add_file $neorv32_home/rtl/system_integration/$rtl_top
 set_property library neorv32 [get_files [glob $neorv32_home/rtl/system_integration/$rtl_top]]
 
 # Compile top module with VHDL2008 standard to allow connecting std_logic_vector and std_ulogic_vector without casting (#974)
