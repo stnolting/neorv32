@@ -2,68 +2,40 @@
 :sectnums:
 == General Hardware Setup
 
-This guide shows the basics of setting up a NEORV32 project for FPGA implementation (or simulation only)
-_from scratch_. It uses a _simplified_ test "SoC" setup of the processor to keeps things simple at the beginning.
-This simple setup is intended for evaluation or as "hello world" project to check out the NEORV32
-on _your_ FPGA board.
-
-[TIP]
-If you want to use a more sophisticated pre-defined setup to start with, check out the
-`setups` folder, which provides example setups for various FPGA, boards and toolchains.
+This guide shows the basics of setting up a NEORV32 project for simulation or synthesis
+_from scratch_. It uses a simple, exemplary test "SoC" setup of the processor to keep things simple at the beginning.
+This simple setup is intended for a first test / evaluation of the NEORV32.
 
 The NEORV32 project features three minimalistic pre-configured test setups in
 https://github.com/stnolting/neorv32/blob/main/rtl/test_setups[`rtl/test_setups`].
-These test setups only implement very basic processor and CPU features.
-The main difference between the setups is the processor boot concept - so how to get a software executable
-_into_ the processor:
+These test setups only implement very basic processor and CPU features and mainly differ in the actual boot configuration.
 
-* **`rtl/test_setups/neorv32_testsetup_approm.vhd`**: this setup does not require a connection via UART. The
-software executable is "installed" into the bitstream to initialize a read-only memory. Use this setup
-if your FPGA board does _not_ provide a UART interface.
-* **`rtl/test_setups/neorv32_testsetup_bootloader.vhd`**: this setups uses the UART and the default NEORV32
-bootloader to upload new software executables. Use this setup if your board _does_ provide a UART interface.
-* **`rtl/test_setups/neorv32_testsetup_on_chip_debugger.vhd`**: besides the UARt bootloader, this setups uses
-on-chip debugger to upload and inspect new software executables. Use this setup if your board _does_ provide a JTAG
-interface (the UART is optional).
-
-.NEORV32 "hello world" test setup (`rtl/test_setups/neorv32_testsetup_bootloader.vhd`)
+.NEORV32 "hello world" test setup (`rtl/test_setups/neorv32_test_setup_bootloader.vhd`)
 image::neorv32_test_setup.png[align=center]
 
-.External Clock Source
-[NOTE]
-These test setups are intended to be directly used as **design top entity**. Of course you can also instantiate them
-into another design unit. If your FPGA board only provides _very fast_ external clock sources (like on the FOMU board)
-you might need to add clock management components (PLLs, DCMs, MMCMs, ...) to the test setup or to the according top entity
-if you instantiate one of the test setups.
-
 [start=1]
-. Create a new project with your FPGA EDA tool of choice.
+. Create a new project with your FPGA/ASIC/simulator EDA tool of choice.
 . Add all VHDL files from the project's `rtl/core` folder to your project.
 
-.Internal Memories
+.Processor-Internal Memories
 [IMPORTANT]
-For a _general_ first setup (technology-independent) use the `*.default.vhd` memory architectures for the internal memories
-(IMEM and DMEM). These are located in `rtl/core/mem` so make sure to add the files to your project, too. +
- +
-If synthesis cannot efficiently map those default memory descriptions to the available memory resources, you can later replace the
-default memory architectures by optimized platform-specific memory architectures. **Example:** The `neorv32-setups/radiant/UPduino_v3`
-example setup uses optimized memory primitives. Hence, it does not include the default memory architectures from
-`rtl/core/mem` as these are replaced by device-specific implementations. However, it still has to include the entity
-definitions from `rtl/core`.
+For a first setup use the `*.default.vhd` memory architectures for the processor-internal memories
+(IMEM and DMEM). These are located in `rtl/core/mem` so make sure to add these two files to your project, too.
 
 [start=3]
-. Make sure to add all the rtl files to a new library called `neorv32`. If your FPGA tools does not
+. Make sure to add all NEORV32 rtl files to a new library called `neorv32`. If your toolchain does not
 provide a field to enter the library name, check out the "properties" menu of the added rtl files.
 
-.Compile order
+.Compile Order
 [NOTE]
 Some tools (like Lattice Radiant) might require a _manual compile order_ of the VHDL source files to identify the dependencies.
 The package file `neorv32_package.vhd` should be analyzed first followed by the memory image files (`neorv32_application_imagevhd`
-and `neorv32_bootloader_image.vhd`) and the entity-only files (`neorv32_*mem.entity.vhd`).
+and `neorv32_bootloader_image.vhd`) and the entity-only files (`neorv32_*mem.entity.vhd`). The `rtl` folder features HDL file-list
+list files that list all required files in their recommended compilation oder (see `hdl_files_soc.f`).
 
 [start=4]
 . The `rtl/core/neorv32_top.vhd` VHDL file is the top entity of the NEORV32 processor, which can be
-instantiated into the "real" project. However, in this tutorial we will use one of the pre-defined
+instantiated within the actual project. However, in this tutorial we will use one of the pre-defined
 test setups from `rtl/test_setups` (see above).
 
 [IMPORTANT]
@@ -71,9 +43,9 @@ Make sure to include the `neorv32` package into your design when instantiating t
 `library neorv32;` and `use neorv32.neorv32_package.all;` to your design unit.
 
 [start=5]
-. Add the pre-defined test setup of choice to the project, too, and select it as _top entity_.
-. The entity of both test setups
-provide a minimal set of configuration generics, that might have to be adapted to match your FPGA and board:
+. Add the pre-defined test setup of choice to the project, too, and select it as **top entity**.
+. The entity of the test setups provides a minimal set of configuration generics, that might have
+to be adapted to match your FPGA and board:
 
 .Test setup entity - configuration generics
 [source,vhdl]
@@ -90,76 +62,50 @@ provide a minimal set of configuration generics, that might have to be adapted t
 <3> Default size of internal data memory: 8kB
 
 [start=7]
-. If you feel like it - or if your FPGA does not provide sufficient resources - you can modify the
-_memory sizes_ (`MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE` - marked with notes "2" and "3"). But as mentioned
-above, let's keep things simple at first and use the standard configuration for now.
-. There is one generic that _has to be set according to your FPGA board_ setup: the actual clock frequency
+. If you want to or if your FPGA does not provide sufficient resources you can modify the
+_memory sizes_ (`MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE`).
+. There is one generic that has to be set according to your FPGA board setup: the actual clock frequency
 of the top's clock input signal (`clk_i`). Use the `CLOCK_FREQUENCY` generic to specify your clock source's
 frequency in Hertz (Hz).
 
+.Memory Layout
 [NOTE]
 If you have changed the default memory configuration (`MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE` generics)
-keep those new sizes in mind - these values are required for setting
-up the software framework in the next section <<_general_software_framework_setup>>.
+keep those new sizes in mind - these values are required for setting up the software framework in the next
+section <<_general_software_framework_setup>>.
 
 [start=9]
-. Depending on your FPGA tool of choice, it is time to assign the signals of the test setup top entity to
-the according pins of your FPGA board. All the signals can be found in the entity declaration of the
-corresponding test setup:
+. Assign the signals of the test setup top entity to the according pins of your FPGA board.
+All the signals can be found in the entity declaration of the corresponding test setup, e.g.:
 
-.Entity signals of `neorv32_testsetup_approm.vhd`
+.Ports of `neorv32_test_setup_bootloader.vhd`
 [source,vhdl]
 ----
-  port (
-    -- Global control --
-    clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic; -- global reset, low-active, async
-    -- GPIO --
-    gpio_o      : out std_ulogic_vector(7 downto 0) -- parallel output
-  );
-----
-
-.Entity signals of `neorv32_testsetup_bootloader.vhd`
-[source,vhdl]
-----
-  port (
-    -- Global control --
-    clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic; -- global reset, low-active, async
-    -- GPIO --
-    gpio_o      : out std_ulogic_vector(7 downto 0); -- parallel output
-    -- UART0 --
-    uart0_txd_o : out std_ulogic; -- UART0 send data
-    uart0_rxd_i : in  std_ulogic  -- UART0 receive data
-  );
+port (
+  -- Global control --
+  clk_i       : in  std_ulogic; -- global clock, rising edge
+  rstn_i      : in  std_ulogic; -- global reset, low-active, async
+  -- GPIO --
+  gpio_o      : out std_ulogic_vector(7 downto 0); -- parallel output
+  -- UART0 --
+  uart0_txd_o : out std_ulogic; -- UART0 send data
+  uart0_rxd_i : in  std_ulogic  -- UART0 receive data
+);
 ----
 
 .Signal Polarity
 [NOTE]
-If your FPGA board has inverse polarity for certain input/output you can add `not` gates. Example: The reset signal
-`rstn_i` is low-active by default; the LEDs connected to `gpio_o` high-active by default.
-You can do this in your board top if you instantiate the test setup,
-or _inside_ the test setup if this is your top entity (low-active LEDs example: `gpio_o <= NOT con_gpio_o(7 downto 0);`).
+If your FPGA board has inverse polarity for certain input/output you need to add inverters. Example: The reset signal
+`rstn_i` is low-active by default; the LEDs connected to `gpio_o` are high-active by default.
 
 [start=10]
 . Attach the clock input `clk_i` to your clock source and connect the reset line `rstn_i` to a button of
 your FPGA board. Check whether it is low-active or high-active - the reset signal of the processor is
 **low-active**, so maybe you need to invert the input signal.
-. If possible, connected _at least_ bit `0` of the GPIO output port `gpio_o` to a LED (see "Signal Polarity" note above).
+. If possible, connected at least bit `0` of the GPIO output port `gpio_o` to a LED (see "Signal Polarity" note above).
 . If your are using a UART-based test setup connect the UART communication signals `uart0_txd_o` and `uart0_rxd_i`
-to the host interface (e.g. USB-UART converter).
-. If your are using the on-chip debugger setup connect the processor's JTAG signal `jtag_*` to a suitable JTAG adapter.
-. Perform the project HDL compilation (synthesis, mapping, bitstream generation).
+to the host interface (e.g. a USB-UART converter).
+. If you are using the on-chip debugger setup connect the processor's JTAG signal `jtag_*` to a suitable JTAG adapter.
+. Perform the project HDL compilation (synthesis, mapping, placement, routing, bitstream generation).
 . Program the generated bitstream into your FPGA and press the button connected to the reset signal.
 . Done! The LED(s) connected to `gpio_o` should be flashing now.
-
-.Going Further
-[TIP]
-Now that the hardware is ready, you can advance to one of these chapters to learn how to get a software executable
-into your processor setup (setup the GCC toolchain before; next section <<_general_software_framework_setup>>): +
- +
-`neorv32_testsetup_approm.vhd`: <<_installing_an_executable_directly_into_memory>>
- +
-`neorv32_testsetup_bootloader.vhd`: <<_uploading_and_starting_of_a_binary_executable_image_via_uart>>
- +
-`neorv32_testsetup_on_chip_debugger.vhd`: <<_debugging_using_the_on_chip_debugger>>
