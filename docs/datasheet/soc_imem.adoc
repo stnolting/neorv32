@@ -5,15 +5,13 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source files:  | neorv32_imem.entity.vhd      | entity-only definition
-|                         | mem/neorv32_imem.default.vhd | default _platform-agnostic_ memory architecture
-|                         | mem/neorv32_imem.legacy.vhd  | alternative legacy-style memory architecture
-| Software driver files:  | none                         | _implicitly used_
-| Top entity ports:       | none                         |
-| Configuration generics: | `MEM_INT_IMEM_EN`            | implement processor-internal IMEM when `true`
-|                         | `MEM_INT_IMEM_SIZE`          | IMEM size in bytes (use a power of 2)
-|                         | `INT_BOOTLOADER_EN`          | use internal bootloader when `true` (implements IMEM as _uninitialized_ RAM, otherwise the IMEM is implemented an _pre-intialized_ ROM)
-| CPU interrupts:         | none                         |
+| Hardware source files:  | neorv32_imem.vhd    | default platform-agnostic instruction memory
+| Software driver files:  | none                | _implicitly used_
+| Top entity ports:       | none                |
+| Configuration generics: | `MEM_INT_IMEM_EN`   | implement processor-internal IMEM when `true`
+|                         | `MEM_INT_IMEM_SIZE` | IMEM size in bytes (use a power of 2)
+|                         | `INT_BOOTLOADER_EN` | use internal bootloader when `true` (implements IMEM as _uninitialized_ RAM, otherwise the IMEM is implemented an _pre-intialized_ ROM)
+| CPU interrupts:         | none                |
 | Access restrictions:  2+| none / read-only if `INT_BOOTLOADER_EN = true`
 |=======================
 
@@ -36,20 +34,21 @@ image. The compiler toolchain provides an option to generate and override the de
 `rtl/core/neorv32_application_image.vhd`, which is automatically inserted into the IMEM. If the IMEM is implemented
 as RAM (default), the memory block will **not be initialized at all**.
 
+.Platform-Specific Memory Primitives
+[NOTE]
+If required, the default IMEM can be replaced by a platform-/technology-specific primitive to
+optimize area utilization, timing and power consumption.
+
 .Memory Size
-[IMPORTANT]
-If the configured memory size (via the `MEM_INT_IMEM_SIZE` generic) is **not** a power of two the actual memory
+[NOTE]
+If the configured memory size (via the `MEM_INT_IMEM_SIZE` generic) is not a power of two the actual memory
 size will be auto-adjusted to the next power of two (e.g. configuring a memory size of 60kB will result in a
 physical memory size of 64kB).
 
-.VHDL Source File
-[NOTE]
-The actual IMEM is split into two design files: a plain entity definition (`neorv32_imem.entity.vhd`) and the actual
-architecture definition `mem/neorv32_imem.default.vhd`. This **default architecture** provides a _generic_ and
-_platform independent_ memory design that infers embedded memory blocks (blockRAM). The default architecture can
-be replaced by platform-specific modules in order to use platform-specific features or to improve technology mapping
-and/or timing. A "legacy-style" memory architecture is provided in `rtl/mem` that can be used if the synthesis does
-not correctly infer blockRAMs.
+.Legacy HDL Style
+[TIP]
+If synthesis fails to infer block RAM for the IMEM, turn on the `alternaitve_style_en_c` option inside
+the memory's VHDL source file. When enabled, a different HDL style is used to describe the memory core.
 
 .Read-Only Access
 [NOTE]
