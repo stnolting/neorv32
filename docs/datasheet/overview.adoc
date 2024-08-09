@@ -139,7 +139,6 @@ neorv32               - Project home folder
 │
 ├rtl                  - VHDL sources
 │├core                - Core sources of the CPU & SoC
-││└mem                - SoC-internal memories (default architectures)
 │├processor_templates - Pre-configured SoC wrappers
 │├system_integration  - System wrappers and bridges for advanced connectivity
 │└test_setups         - Minimal test setup "SoCs" used in the User Guide
@@ -175,67 +174,55 @@ All necessary VHDL hardware description files are located in the project's `rtl/
 All core VHDL files from the list below have to be assigned to a **new library** named `neorv32`.
 
 ...................................
-neorv32_top.vhd                  - NEORV32 PROCESSOR/SOC TOP ENTITY
+neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 │
-├neorv32_cpu.vhd                 - NEORV32 CPU TOP ENTITY
-│├neorv32_cpu_alu.vhd            - Arithmetic/logic unit
-││├neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
-││├neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
-││├neorv32_cpu_cp_cond.vhd       - Integer conditional operations (Zicond ext.)
-││├neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
-││├neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
-││├neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M ext.)
-│├neorv32_cpu_control.vhd        - CPU control, exception system and CSRs
-││└neorv32_cpu_decompressor.vhd  - Compressed instructions decoder (C ext.)
-│├neorv32_cpu_lsu.vhd            - Load/store unit
-│├neorv32_cpu_pmp.vhd            - Physical memory protection unit (Smpmp ext.)
-│└neorv32_cpu_regfile.vhd        - Data register file
+├neorv32_cpu.vhd                - NEORV32 CPU TOP ENTITY
+│├neorv32_cpu_alu.vhd           - Arithmetic/logic unit
+││├neorv32_cpu_cp_bitmanip.vhd  - Bit-manipulation co-processor (B ext.)
+││├neorv32_cpu_cp_cfu.vhd       - Custom instructions co-processor (Zxcfu ext.)
+││├neorv32_cpu_cp_cond.vhd      - Integer conditional operations (Zicond ext.)
+││├neorv32_cpu_cp_fpu.vhd       - Floating-point co-processor (Zfinx ext.)
+││├neorv32_cpu_cp_shifter.vhd   - Bit-shift co-processor (base ISA)
+││├neorv32_cpu_cp_muldiv.vhd    - Mul/Div co-processor (M ext.)
+│├neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
+││└neorv32_cpu_decompressor.vhd - Compressed instructions decoder (C ext.)
+│├neorv32_cpu_lsu.vhd           - Load/store unit
+│├neorv32_cpu_pmp.vhd           - Physical memory protection unit (Smpmp ext.)
+│└neorv32_cpu_regfile.vhd       - Data register file
 │
-├neorv32_boot_rom.vhd            - Bootloader ROM
-│└neorv32_bootloader_image.vhd   - Bootloader ROM memory image
-├neorv32_cfs.vhd                 - Custom functions subsystem
-├neorv32_clockgate.vhd           - Generic clock gating switch
-├neorv32_crc.vhd                 - Cyclic redundancy check unit
-├neorv32_cache.vhd               - Generic cache module
-├neorv32_debug_dm.vhd            - on-chip debugger: debug module
-├neorv32_debug_dtm.vhd           - on-chip debugger: debug transfer module
-├neorv32_dma.vhd                 - Direct memory access controller
-├neorv32_dmem.entity.vhd         - Processor-internal data memory (entity-only!)
-├neorv32_fifo.vhd                - Generic FIFO component
-├neorv32_gpio.vhd                - General purpose input/output port unit
-├neorv32_gptmr.vhd               - General purpose 32-bit timer
-├neorv32_imem.entity.vhd         - Processor-internal instruction memory (entity-only!)
-│└neor32_application_image.vhd   - IMEM application initialization image
-├neorv32_intercon.vhd            - SoC bus infrastructure
-├neorv32_mtime.vhd               - Machine system timer
-├neorv32_neoled.vhd              - NeoPixel (TM) compatible smart LED interface
-├neorv32_onewire.vhd             - One-Wire serial interface controller
-├neorv32_package.vhd             - Main VHDL package file
-├neorv32_pwm.vhd                 - Pulse-width modulation controller
-├neorv32_sdi.vhd                 - Serial data interface controller (SPI device)
-├neorv32_slink.vhd               - Stream link interface
-├neorv32_spi.vhd                 - Serial peripheral interface controller (SPI host)
-├neorv32_sysinfo.vhd             - System configuration information memory
-├neorv32_trng.vhd                - True random number generator
-├neorv32_twi.vhd                 - Two wire serial interface controller
-├neorv32_uart.vhd                - Universal async. receiver/transmitter
-├neorv32_wdt.vhd                 - Watchdog timer
-├neorv32_xbus.vhd                - External (Wishbone) bus interface gateways
-├neorv32_xip.vhd                 - Execute in place module
-├neorv32_xirq.vhd                - External interrupt controller
-│
-├mem/neorv32_dmem.default.vhd    - *Default* data memory (architecture-only!)
-└mem/neorv32_imem.default.vhd    - *Default* instruction memory (architecture-only!)
+├neorv32_boot_rom.vhd           - Bootloader ROM
+│└neorv32_bootloader_image.vhd  - Bootloader ROM memory image
+├neorv32_cfs.vhd                - Custom functions subsystem
+├neorv32_clockgate.vhd          - Generic clock gating switch
+├neorv32_crc.vhd                - Cyclic redundancy check unit
+├neorv32_cache.vhd              - Generic cache module
+├neorv32_debug_dm.vhd           - on-chip debugger: debug module
+├neorv32_debug_dtm.vhd          - on-chip debugger: debug transfer module
+├neorv32_dma.vhd                - Direct memory access controller
+├neorv32_dmem.vhd               - Processor-internal data memory
+├neorv32_fifo.vhd               - Generic FIFO component
+├neorv32_gpio.vhd               - General purpose input/output port unit
+├neorv32_gptmr.vhd              - General purpose 32-bit timer
+├neorv32_imem.vhd               - Processor-internal instruction memory
+│└neor32_application_image.vhd  - IMEM application initialization image
+├neorv32_intercon.vhd           - SoC bus infrastructure
+├neorv32_mtime.vhd              - Machine system timer
+├neorv32_neoled.vhd             - NeoPixel (TM) compatible smart LED interface
+├neorv32_onewire.vhd            - One-Wire serial interface controller
+├neorv32_package.vhd            - Main VHDL package file
+├neorv32_pwm.vhd                - Pulse-width modulation controller
+├neorv32_sdi.vhd                - Serial data interface controller (SPI device)
+├neorv32_slink.vhd              - Stream link interface
+├neorv32_spi.vhd                - Serial peripheral interface controller (SPI host)
+├neorv32_sysinfo.vhd            - System configuration information memory
+├neorv32_trng.vhd               - True random number generator
+├neorv32_twi.vhd                - Two wire serial interface controller
+├neorv32_uart.vhd               - Universal async. receiver/transmitter
+├neorv32_wdt.vhd                - Watchdog timer
+├neorv32_xbus.vhd               - External (Wishbone) bus interface gateways
+├neorv32_xip.vhd                - Execute in place module
+└neorv32_xirq.vhd               - External interrupt controller
 ...................................
-
-.Processor-Internal Memories
-[NOTE]
-The processor-internal instruction and data memories (IMEM and DMEM) are split into two design files each:
-a plain entity definition (`neorv32_*mem.entity.vhd`) and the actual architecture definition
-(`mem/neorv32_*mem.default.vhd`). The `*.default.vhd` architecture definitions from `rtl/core/mem` provide a _generic_ and
-_platform independent_ memory design (inferring embedded memory blocks). You can replace/modify the architecture
-source file in order to use platform-specific features (like advanced memory resources) or to improve technology mapping
-and/or timing.
 
 
 :sectnums:
@@ -252,13 +239,13 @@ These file-list files can be consumed by EDA tools to simplify project setup.
 A simple bash script `generate_file_lists.sh` is provided for regenerating the file-lists (using GHDL's _elaborate_ command).
 This script can also be invoked using the default application makefile (see <<_makefile_targets>>).
 
-By default, the file-list files include a _placeholder_ in the path of each included hardware source file.
+By default, the file-list files include a **placeholder** in the path of each included hardware source file.
 These placeholders need to be replaced by the actual path before being used. Example:
 
 * default: `NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_package.vhd`
 * adjusted: `path/to/neorv32/rtl/core/neorv32_package.vhd`
 
-.Processing the file-list files in a makefile
+.Example: Processing the File-List Files in a Makefile
 [source,makefile]
 ----
 NEORV32_HOME = path/to/neorv32 <1>
@@ -268,6 +255,20 @@ NEORV32_SOC_SRCS = $(subst NEORV32_RTL_PATH_PLACEHOLDER, $(NEORV32_HOME)/rtl, $(
 <1> Path to the NEORV32 home folder (i.e. the root folder of the GitHub repository).
 <2> Load the content of the `file_list_soc.f` file-list into a new variable `NEORV32_SOC_FILE`.
 <3> Substitute the file-list file's path placeholder "`NEORV32_RTL_PATH_PLACEHOLDER`" by the actual path.
+
+.Example: Processing the File-List Files in a TCL Script
+[source,tcl]
+----
+set file_list_file [read [open "$neorv32_home/rtl/file_list_soc.f" r]]
+set file_list [string map [list "NEORV32_RTL_PATH_PLACEHOLDER" "$neorv32_home/rtl"] $file_list_file]
+puts "NEORV32 source files:"
+puts $file_list
+----
+
+.File-List Usage Examples
+[TIP]
+The provided file-list files are used by the GHDL-based simple simulation setup (`sim/tb_simple/ghdl.setup.sh`) as
+well as by the Vivado IP packager script (`rtl/system_integration/neorv32_vivado_ip.tcl`).
 
 
 <<<
