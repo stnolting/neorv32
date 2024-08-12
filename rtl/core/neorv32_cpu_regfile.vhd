@@ -8,6 +8,10 @@
 -- provide a dedicated hardware reset. For ASIC implementation or setup requiring a --
 -- dedicated hardware reset a single-register-based architecture can be enabled via --
 -- "RST_EN".                                                                        --
+--                                                                                  --
+-- [NOTE] Read-during-write behavior of the register file's memory core is          --
+--        irrelevant as read and write accesses are mutually exclusive and will     --
+--        never happen at the same time.                                            --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
