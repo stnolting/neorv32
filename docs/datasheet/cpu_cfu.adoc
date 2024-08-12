@@ -12,17 +12,17 @@ use-cases might include:
 * **AI:** sub-word / vertical vector/SIMD operations like processing all four sub-bytes of a 32-bit data word individually
 * **Cryptographic:** bit substitution and permutation
 * **Communication:** data conversions like binary to gray-code
-* **Arithmetic:** BCD (binary-coded decimal) operations; multiply-add operations
+* **Arithmetic:** BCD (binary-coded decimal) operations; multiply-add operations; shift-and-add algorithms like CORDIC or BKM
 * **Image processing:** look-up-tables for color space transformations
 * implementing instructions from **other RISC-V ISA extensions** that are not yet supported by NEORV32
 
 The NEORV32 CFU supports two different instruction formats (R3-type and R4-type; see <<_cfu_instruction_formats>>) and also
-allows to implement up to 4 custom control and status registers (see <<_cfu_control_and_status_registers_cfu_csrs>>).
+allows to implement up to 4 CFU-internal custom control and status registers (see <<_cfu_control_and_status_registers_cfu_csrs>>).
 
 .CFU Complexity
 [NOTE]
 The CFU is not intended for complex and **CPU-independent** functional units that implement complete accelerators
-(like block-based AES encryption). These kind of accelerators should be implemented as memory-mapped
+(like block-based AES encryption). These kind of accelerators should be implemented as memory-mapped co-processor via the
 <<_custom_functions_subsystem_cfs>> to allow CPU-independent operation. A comparative survey of all NEORV32-specific
 hardware extension/customization options is provided in the user guide section
 https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules[Adding Custom Hardware Modules].
@@ -38,7 +38,7 @@ as "real world" application example.
 
 The custom instructions executed by the CFU utilize a specific opcode space in the `rv32` 32-bit instruction
 encoding space that has been explicitly reserved for user-defined extensions by the RISC-V specifications ("Guaranteed
-Non-Standard Encoding Space"). The NEORV32 CFU uses the `custom-1` and `custom-2` opcodes to identify the instruction
+Non-Standard Encoding Space"). The NEORV32 CFU uses the `custom-0` and `custom-1` opcodes to identify the instruction
 implemented by the CFU and to differentiate between the predefined instruction formats.
 
 The NEORV32 CFU utilizes these two opcodes to support user-defined **R3-type** instructions (2 source registers,
@@ -62,7 +62,7 @@ These immediates can also be used to pass additional data to the CFU like offset
 shift-amounts. However, the actual functionality is entirely user-defined. Note that all immediate values are
 always compile-time-static.
 
-Example operation: `rd <= rs1 xnor rs2` (bit-wise XNOR)
+Example operation: `rd <= rs1 xnor rs2` (bit-wise logical XNOR)
 
 .CFU R3-type instruction format
 image::cfu_r3type_instruction.png[align=left]
