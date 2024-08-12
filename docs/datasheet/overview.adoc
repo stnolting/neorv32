@@ -127,6 +127,9 @@ of the user guide.
 :sectnums:
 === Project Folder Structure
 
+The root directory of the repository is considered the NEORV32 base or home folder (i.e. `neorv32/`).
+
+.Folder Structure
 ...................................
 neorv32               - Project home folder
 │
@@ -167,12 +170,17 @@ neorv32               - Project home folder
 :sectnums:
 === VHDL File Hierarchy
 
-All necessary VHDL hardware description files are located in the project's `rtl/core` folder.
+All required VHDL hardware source files are located in the project's `rtl/core` folder.
 
 .VHDL Library
 [IMPORTANT]
 All core VHDL files from the list below have to be assigned to a **new library** named `neorv32`.
 
+.Compilation Order
+[NOTE]
+See section <<_file_list_files>> for more information.
+
+.RTL File List and Hierarchy
 ...................................
 neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 │
@@ -199,11 +207,11 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 ├neorv32_debug_dm.vhd           - on-chip debugger: debug module
 ├neorv32_debug_dtm.vhd          - on-chip debugger: debug transfer module
 ├neorv32_dma.vhd                - Direct memory access controller
-├neorv32_dmem.vhd               - Processor-internal data memory
+├neorv32_dmem.vhd               - Generic processor-internal data memory
 ├neorv32_fifo.vhd               - Generic FIFO component
 ├neorv32_gpio.vhd               - General purpose input/output port unit
 ├neorv32_gptmr.vhd              - General purpose 32-bit timer
-├neorv32_imem.vhd               - Processor-internal instruction memory
+├neorv32_imem.vhd               - Generic processor-internal instruction memory
 │└neor32_application_image.vhd  - IMEM application initialization image
 ├neorv32_intercon.vhd           - SoC bus infrastructure
 ├neorv32_mtime.vhd              - Machine system timer
@@ -223,6 +231,13 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 ├neorv32_xip.vhd                - Execute in place module
 └neorv32_xirq.vhd               - External interrupt controller
 ...................................
+
+.Replacing Modules for Customization or Optimization
+[TIP]
+Any module of the core can be replaced by the user for customization purpose. For example, the default IMEM and DMEM
+modules as well as the CPU's register file can be replaced by technology-specific primitives to optimize energy, speed
+and area utilization. The module, which are dedicated for customization, i.e. CFS and CFU can be replaced by
+user-defined modules to implement application-specific functionality.
 
 
 :sectnums:
