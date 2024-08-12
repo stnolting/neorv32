@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Generate file lists for the CPU and the entire processor/SoC
+# Generate file-list files for the CPU and the entire processor/SoC
 # using GHDL's elaborate option.
 
 set -e
@@ -10,23 +10,30 @@ cd $(dirname "$0")
 CPU_TOP=neorv32_cpu
 SOC_TOP=neorv32_top
 
+# file-list files
+CPU_LIST=file_list_cpu.f
+SOC_LIST=file_list_soc.f
+
+# rtl path placeholder
+PLACEHOLDER="NEORV32_RTL_PATH_PLACEHOLDER"
+
 # temporary GHDL project
 mkdir -p ~build
 ghdl -i --work=neorv32 --workdir=~build core/*.vhd
 
 # CPU core only
-echo "Regenerating file_list_cpu.f ..."
-ghdl --elab-order --work=neorv32 --workdir=~build $CPU_TOP > ~file_list_cpu.f
+echo "Regenerating $CPU_LIST ..."
+ghdl --elab-order --work=neorv32 --workdir=~build $CPU_TOP > ~$CPU_LIST
 while IFS= read -r line; do
-  echo "NEORV32_RTL_PATH_PLACEHOLDER/$line"
-done < ~file_list_cpu.f > file_list_cpu.f
+  echo "$PLACEHOLDER/$line"
+done < ~$CPU_LIST > $CPU_LIST
 
 # full processor/SoC
-echo "Regenerating file_list_soc.f ..."
-ghdl --elab-order --work=neorv32 --workdir=~build $SOC_TOP > ~file_list_soc.f
+echo "Regenerating $SOC_LIST ..."
+ghdl --elab-order --work=neorv32 --workdir=~build $SOC_TOP > ~$SOC_LIST
 while IFS= read -r line; do
-  echo "NEORV32_RTL_PATH_PLACEHOLDER/$line"
-done < ~file_list_soc.f > file_list_soc.f
+  echo "$PLACEHOLDER/$line"
+done < ~$SOC_LIST > $SOC_LIST
 
-# clean-up
-rm -rf ~build ~file_list_cpu.f ~file_list_soc.f
+# clean-up temporaries
+rm -rf ~build ~$CPU_LIST ~$SOC_LIST
