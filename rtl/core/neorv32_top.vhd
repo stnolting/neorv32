@@ -248,13 +248,8 @@ architecture neorv32_top_rtl of neorv32_top is
   constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
 
   -- make sure physical memory sizes are a power of two --
-  constant imem_size_valid_c : boolean := is_power_of_two_f(MEM_INT_IMEM_SIZE);
-  constant imem_size_pow2_c  : natural := 2**index_size_f(MEM_INT_IMEM_SIZE);
-  constant imem_size_c       : natural := cond_sel_natural_f(imem_size_valid_c, MEM_INT_IMEM_SIZE, imem_size_pow2_c);
-  --
-  constant dmem_size_valid_c : boolean := is_power_of_two_f(MEM_INT_DMEM_SIZE);
-  constant dmem_size_pow2_c  : natural := 2**index_size_f(MEM_INT_DMEM_SIZE);
-  constant dmem_size_c       : natural := cond_sel_natural_f(dmem_size_valid_c, MEM_INT_DMEM_SIZE, dmem_size_pow2_c);
+  constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_IMEM_SIZE), MEM_INT_IMEM_SIZE, 2**index_size_f(MEM_INT_IMEM_SIZE));
+  constant dmem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_DMEM_SIZE), MEM_INT_DMEM_SIZE, 2**index_size_f(MEM_INT_DMEM_SIZE));
 
   -- reset generator --
   signal rstn_wdt                     : std_ulogic;
@@ -284,17 +279,9 @@ architecture neorv32_top_rtl of neorv32_top is
   -- debug core interface (DCI) --
   signal dci_ndmrstn, dci_halt_req : std_ulogic;
 
-  -- bus: core complex --
-  signal cpu_i_req,  cpu_d_req  : bus_req_t; -- CPU core
-  signal cpu_i_rsp,  cpu_d_rsp  : bus_rsp_t; -- CPU core
-  signal icache_req, dcache_req : bus_req_t; -- CPU caches
-  signal icache_rsp, dcache_rsp : bus_rsp_t; -- CPU caches
-  signal core_req               : bus_req_t; -- core complex (CPU + caches)
-  signal core_rsp               : bus_rsp_t; -- core complex (CPU + caches)
-
-  -- bus: core complex + DMA --
-  signal main_req, main2_req, dma_req : bus_req_t; -- core complex (CPU + caches + DMA)
-  signal main_rsp, main2_rsp, dma_rsp : bus_rsp_t; -- core complex (CPU + caches + DMA)
+  -- bus: core complex (CPU + caches) and DMA --
+  signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req, main_req, main2_req, dma_req : bus_req_t;
+  signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp, main_rsp, main2_rsp, dma_rsp : bus_rsp_t;
 
   -- bus: main sections --
   signal imem_req, dmem_req, xipcache_req, xip_req, boot_req, io_req, xcache_req, xbus_req : bus_req_t;
@@ -335,7 +322,7 @@ begin
       "(v" & print_version_f(hw_version_c) & "), " &
       "github.com/stnolting/neorv32" severity note;
 
-    -- show main SoC configuration --
+    -- show SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: " &
       cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",      "") &
@@ -370,17 +357,17 @@ begin
       ""
       severity note;
 
-    -- IMEM size --
-    assert not ((imem_size_valid_c = false) and (MEM_INT_IMEM_EN = true)) report
+    -- IMEM size was not a power of two --
+    assert not ((MEM_INT_IMEM_SIZE /= imem_size_c) and (MEM_INT_IMEM_EN = true)) report
       "[NEORV32] Auto-adjusting invalid IMEM size configuration." severity warning;
 
-    -- DMEM size --
-    assert not ((dmem_size_valid_c = false) and (MEM_INT_DMEM_EN = true)) report
+    -- DMEM size was not a power of two --
+    assert not ((MEM_INT_DMEM_SIZE /= dmem_size_c) and (MEM_INT_DMEM_EN = true)) report
       "[NEORV32] Auto-adjusting invalid DMEM size configuration." severity warning;
 
-    -- SYSINFO warning --
+    -- SYSINFO disabled --
     assert not (io_sysinfo_en_c = false) report
-      "[NEORV32] SYSINFO module disabled - large parts of the NEORV32 software framework will no longer work!" severity warning;
+      "[NEORV32] SYSINFO module disabled - some parts of the NEORV32 software framework will no longer work!" severity warning;
 
   end generate; -- /sanity_checks
 
@@ -1651,8 +1638,8 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_debug_dtm_inst: entity neorv32.neorv32_debug_dtm
     generic map (
-      IDCODE_VERSION => (others => '0'), -- always zero
-      IDCODE_PARTID  => (others => '0'), -- always zero
+      IDCODE_VERSION => (others => '0'), -- yet unused
+      IDCODE_PARTID  => (others => '0'), -- yet unused
       IDCODE_MANID   => JEDEC_ID
     )
     port map (
