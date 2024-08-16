@@ -1,8 +1,8 @@
 -- ================================================================================ --
 -- NEORV32 CPU - Co-Processor: Shifter (CPU Base ISA)                               --
 -- -------------------------------------------------------------------------------- --
--- # FAST_SHIFT_EN = false -> Use bit-serial shifter architecture (small but slow)  --
--- # FAST_SHIFT_EN = true  -> Use barrel shifter architecture (large but fast)      --
+-- FAST_SHIFT_EN = false -> Use bit-serial shifter architecture (small but slow)    --
+-- FAST_SHIFT_EN = true  -> Use barrel shifter architecture (large but fast)        --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -54,7 +54,6 @@ architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
   type bs_level_t is array (index_size_f(XLEN) downto 0) of std_ulogic_vector(XLEN-1 downto 0);
   signal bs_level  : bs_level_t;
   signal bs_sign   : std_ulogic;
-  signal bs_start  : std_ulogic;
   signal bs_result : std_ulogic_vector(XLEN-1 downto 0);
 
 begin
@@ -108,9 +107,9 @@ begin
   barrel_shifter:
   if FAST_SHIFT_EN generate
 
-    -- input layer: convert left shifts to right shifts by bit-reversal --
-    bs_level(0) <= bit_rev_f(rs1_i) when (ctrl_i.ir_funct3(2) = '0') else rs1_i;
-    bs_sign <= rs1_i(XLEN-1) and ctrl_i.ir_funct12(10); -- sign extension for arithmetic shifts
+    -- input layer: operand gating and convert left shifts to right shifts by bit-reversal --
+    bs_level(0) <= (others => '0') when (start_i = '0') else bit_rev_f(rs1_i) when (ctrl_i.ir_funct3(2) = '0') else rs1_i;
+    bs_sign <= rs1_i(XLEN-1) and ctrl_i.ir_funct12(10) and start_i; -- sign extension for arithmetic shifts
 
     -- mux layers: right-shifts only --
     barrel_shifter_core:
@@ -119,20 +118,18 @@ begin
       bs_level(i+1)((XLEN-(2**i))-1 downto 0)  <= bs_level(i)(XLEN-1 downto 2**i) when (shamt_i(i) = '1') else bs_level(i)((XLEN-(2**i))-1 downto 0);
     end generate;
 
-    -- pipeline register --
+    -- register layer (can be moved by the register balancing) --
     barrel_shifter_buf: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        bs_start  <= '0';
         bs_result <= (others => '0');
-      elsif rising_edge(clk_i) then -- this register stage can be moved by the register balancing
-        bs_start  <= start_i;
+      elsif rising_edge(clk_i) then
         bs_result <= bs_level(index_size_f(XLEN));
       end if;
     end process barrel_shifter_buf;
 
-    -- output layer: output gate and re-convert original left shifts --
-    res_o   <= (others => '0') when (bs_start = '0') else bit_rev_f(bs_result) when (ctrl_i.ir_funct3(2) = '0') else bs_result;
+    -- output layer: re-convert original left shifts --
+    res_o   <= bit_rev_f(bs_result) when (ctrl_i.ir_funct3(2) = '0') else bs_result;
     valid_o <= start_i;
 
   end generate;
