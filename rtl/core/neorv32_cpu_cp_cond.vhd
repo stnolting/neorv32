@@ -33,6 +33,7 @@ end neorv32_cpu_cp_cond;
 
 architecture neorv32_cpu_cp_cond_rtl of neorv32_cpu_cp_cond is
 
+  constant zero_c : std_ulogic_vector(XLEN-1 downto 0) := (others => '0');
   signal rs2_zero, condition : std_ulogic;
 
 begin
@@ -53,7 +54,7 @@ begin
   end process cond_out;
 
   -- condition check --
-  rs2_zero  <= '1' when (or_reduce_f(rs2_i) = '0') else '0';
+  rs2_zero  <= '1' when (rs2_i = zero_c) else '0';
   condition <= rs2_zero xnor ctrl_i.ir_funct3(1); -- equal zero / non equal zero
 
   -- processing done --

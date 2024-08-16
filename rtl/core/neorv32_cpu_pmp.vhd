@@ -328,23 +328,23 @@ begin
     perm_gen: process(csr.cfg, ctrl_i)
     begin
       -- execute (X) --
-      if (ctrl_i.cpu_priv = priv_mode_m_c) then -- M mode: always allow if lock bit
-        region.perm_ex(r) <= csr.cfg(r)(cfg_x_c) or (not csr.cfg(r)(cfg_l_c));
-      else -- U mode: check actual permission
+      if (ctrl_i.cpu_priv = priv_mode_m_c) then
+        region.perm_ex(r) <= csr.cfg(r)(cfg_x_c) or (not csr.cfg(r)(cfg_l_c)); -- M mode: always allow if not locked
+      else
         region.perm_ex(r) <= csr.cfg(r)(cfg_x_c);
       end if;
       -- read (R) --
       if (ctrl_i.lsu_rw = '0') then
-        if (ctrl_i.lsu_priv = priv_mode_m_c) then -- M mode: always allow if lock bit
-          region.perm_rw(r) <= csr.cfg(r)(cfg_r_c) or (not csr.cfg(r)(cfg_l_c));
-        else -- U mode: check actual permission
+        if (ctrl_i.lsu_priv = priv_mode_m_c) then
+          region.perm_rw(r) <= csr.cfg(r)(cfg_r_c) or (not csr.cfg(r)(cfg_l_c)); -- M mode: always allow if not locked
+        else
           region.perm_rw(r) <= csr.cfg(r)(cfg_r_c);
         end if;
       -- write (W) --
       else
-        if (ctrl_i.lsu_priv = priv_mode_m_c) then -- M mode: always allow if lock bit
-          region.perm_rw(r) <= csr.cfg(r)(cfg_w_c) or (not csr.cfg(r)(cfg_l_c));
-        else -- U mode: check actual permission
+        if (ctrl_i.lsu_priv = priv_mode_m_c) then
+          region.perm_rw(r) <= csr.cfg(r)(cfg_w_c) or (not csr.cfg(r)(cfg_l_c)); -- M mode: always allow if not locked
+        else
           region.perm_rw(r) <= csr.cfg(r)(cfg_w_c);
         end if;
       end if;

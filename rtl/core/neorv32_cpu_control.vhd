@@ -103,8 +103,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- HPM counter auto-configuration --
   constant hpm_num_c          : natural := cond_sel_natural_f(CPU_EXTENSION_RISCV_Zihpm, HPM_NUM_CNTS, 0);
-  constant hpm_cnt_lo_width_c : natural := cond_sel_natural_f(boolean(HPM_CNT_WIDTH < 32), HPM_CNT_WIDTH, 32); -- width low word
-  constant hpm_cnt_hi_width_c : natural := natural(cond_sel_int_f(boolean(HPM_CNT_WIDTH > 32), HPM_CNT_WIDTH-32, 0)); -- width high word
+  constant hpm_cnt_lo_width_c : natural := min_natural_f(HPM_CNT_WIDTH, 32); -- size low word
+  constant hpm_cnt_hi_width_c : natural := (HPM_CNT_WIDTH / 32) * (HPM_CNT_WIDTH rem 32); -- size high word
 
   -- instruction fetch engine --
   type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING);
@@ -516,7 +516,6 @@ begin
     if (rstn_i = '0') then
       imm_o <= (others => '0');
     elsif rising_edge(clk_i) then
-      imm_o <= (others => '0');
       case decode_aux.opcode is
         when opcode_store_c => -- S-immediate
           imm_o <= replicate_f(execute_engine.ir(31), 21) & execute_engine.ir(30 downto 25) & execute_engine.ir(11 downto 7);
@@ -580,6 +579,8 @@ begin
       -- link PC: return address --
       if (execute_engine.state = BRANCH) then
         execute_engine.link_pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
+      else -- output zero if not a branch instruction
+        execute_engine.link_pc <= (others => '0');
       end if;
 
       -- next PC: address of next instruction --
@@ -627,11 +628,11 @@ begin
 
   -- PC increment for next LINEAR instruction (+2 for compressed instr., +4 otherwise) --
   execute_engine.next_pc_inc(XLEN-1 downto 4) <= (others => '0');
-  execute_engine.next_pc_inc(3 downto 0) <= x"4" when ((execute_engine.is_ci = '0') or (not CPU_EXTENSION_RISCV_C)) else x"2";
+  execute_engine.next_pc_inc(3 downto 0) <= x"2" when (execute_engine.is_ci = '1') and CPU_EXTENSION_RISCV_C else x"4";
 
   -- PC output --
   curr_pc_o <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- current PC
-  link_pc_o <= (execute_engine.link_pc(XLEN-1 downto 1) & '0') when (execute_engine.state = BRANCHED) else (others => '0'); -- return address
+  link_pc_o <= (execute_engine.link_pc(XLEN-1 downto 1) & '0'); -- jump-and-link return address
 
 
   -- Decoding Helper Logic ------------------------------------------------------------------
@@ -974,8 +975,7 @@ begin
 
       when others => -- SYSTEM - system environment operation; no effect if illegal instruction
       -- ------------------------------------------------------------
-        if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and -- ENVIRONMENT
-           (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- not an illegal instruction
+        if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- non-illegal ENVIRONMENT
           -- three LSBs are sufficient to distinguish environment instructions --
           if (execute_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = "000") then
             trap_ctrl.ecall <= '1'; -- ecall
@@ -1152,8 +1152,8 @@ begin
        CPU_EXTENSION_RISCV_Sdext and (debug_ctrl.running = '0') then -- debug-mode implemented and not running?
       csr_valid(0) <= '0'; -- invalid access
     elsif (csr.addr(11 downto 8) = csr_cycle_c(11 downto 8)) and -- user-mode counter access
-          (CPU_EXTENSION_RISCV_Zicntr or CPU_EXTENSION_RISCV_Zihpm) and -- any counters available?
-          CPU_EXTENSION_RISCV_U and (csr.privilege_eff = '0') and (csr.mcounteren = '0') then -- user mode enabled, active and access not allowed?
+          (CPU_EXTENSION_RISCV_Zicntr or CPU_EXTENSION_RISCV_Zihpm) and CPU_EXTENSION_RISCV_U and -- any user-mode counters available?
+          (csr.privilege_eff = '0') and (csr.mcounteren = '0') then -- in user mode and access not allowed?
       csr_valid(0) <= '0'; -- invalid access
     elsif (csr.addr(9 downto 8) /= "00") and (csr.privilege_eff = '0') then -- invalid privilege level
       csr_valid(0) <= '0'; -- invalid access
@@ -2054,11 +2054,10 @@ begin
       csr.re    <= '0';
       csr.rdata <= (others => '0');
     elsif rising_edge(clk_i) then
-      csr.re <= csr.re_nxt;
+      csr.re    <= csr.re_nxt;
+      csr.rdata <= (others => '0'); -- output zero if no valid CSR read access operation
       if (csr.re = '1') then
         csr.rdata <= csr_rdata or xcsr_rdata;
-      else
-        csr.rdata <= (others => '0'); -- output zero if no valid CSR read access operation
       end if;
     end if;
   end process csr_read_reg;
