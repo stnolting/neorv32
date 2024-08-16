@@ -104,7 +104,7 @@ begin
       register_file: process(rstn_i, clk_i)
       begin
         if (rstn_i = '0') then
-          reg_file(i) <= (others => '0');
+          reg_file(i) <= (others => '0'); -- full hardware reset
         elsif rising_edge(clk_i) then
           if (unsigned(ctrl_i.rf_rd(addr_bits_c-1 downto 0)) = to_unsigned(i, addr_bits_c)) and (ctrl_i.rf_wb_en = '1') then
             reg_file(i) <= rd_i;
@@ -117,9 +117,12 @@ begin
     reg_file(0) <= (others => '0');
 
     -- synchronous read --
-    rf_read: process(clk_i)
+    rf_read: process(rstn_i, clk_i)
     begin
-      if rising_edge(clk_i) then
+      if (rstn_i = '0') then
+        rs1_o <= (others => '0');
+        rs2_o <= (others => '0');
+      elsif rising_edge(clk_i) then
         rs1_o <= reg_file(to_integer(unsigned(ctrl_i.rf_rs1(addr_bits_c-1 downto 0))));
         rs2_o <= reg_file(to_integer(unsigned(ctrl_i.rf_rs2(addr_bits_c-1 downto 0))));
       end if;
