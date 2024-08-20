@@ -31,8 +31,8 @@ end neorv32_imem;
 
 architecture neorv32_imem_rtl of neorv32_imem is
 
-  -- configuration --
-  constant alternaitve_style_en_c : boolean := false; -- [TIP] enable this if synthesis fails to infer block RAM
+  -- alternative memory description style --
+  constant alt_style_c : boolean := false; -- [TIP] enable this if synthesis fails to infer block RAM
 
   -- local signals --
   signal rdata         : std_ulogic_vector(31 downto 0);
@@ -70,7 +70,7 @@ begin
   if IMEM_AS_IROM generate
 
     imem_rom_default: -- default memory HDL style
-    if not alternaitve_style_en_c generate
+    if not alt_style_c generate
       mem_access: process(clk_i)
       begin
         if rising_edge(clk_i) then
@@ -81,7 +81,7 @@ begin
     end generate;
 
     imem_rom_alternative: -- alternative memory HDL style
-    if alternaitve_style_en_c generate
+    if alt_style_c generate
       mem_access: process(clk_i)
       begin
         if rising_edge(clk_i) then
@@ -103,7 +103,7 @@ begin
   if not IMEM_AS_IROM generate
 
     imem_ram_default: -- default memory HDL style
-    if not alternaitve_style_en_c generate
+    if not alt_style_c generate
       mem_access: process(clk_i)
       begin
         if rising_edge(clk_i) then
@@ -131,7 +131,7 @@ begin
     end generate;
 
     imem_ram_alternative: -- alternative memory HDL style
-    if alternaitve_style_en_c generate
+    if alt_style_c generate
       mem_access: process(clk_i)
       begin
         if rising_edge(clk_i) then
