@@ -299,7 +299,7 @@ The vectored `mtvec` mode is useful for reducing the time between interrupt requ
 | Name        | Machine counter enable
 | Address     | `0x306`
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` & `U`
+| ISA         | `Zicsr` & `Zicntr` & `U`
 | Description | The `mcounteren` CSR is used to constrain user-mode access to the CPU's counter CSRs.
 |=======================
 
@@ -311,7 +311,7 @@ The vectored `mtvec` mode is useful for reducing the time between interrupt requ
 | 0    | `CSR_MCOUNTEREN_CY` | r/w | **CY**: User-mode is allowed to read <<_cycleh>> CSRs when set
 | 1    | -                   | r/- | **TM**: not implemented, hardwired to zero
 | 2    | `CSR_MCOUNTEREN_IR` | r/w | **IR**: User-mode is allowed to read <<_instreth>> CSRs when set
-| 31:3 | -                   | r/- | **HPM**: not implemented, hardwired to zero
+| 31:3 | -                   | r/- | not implemented, hardwired to zero
 |=======================
 
 
@@ -532,7 +532,7 @@ See section <<_smpmp_isa_extension>> for more information.
 |             | `0x3a2` (`pmpcfg2`)
 |             | `0x3a3` (`pmpcfg3`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` & `PMP`
+| ISA         | `Zicsr` & `Smpmp`
 | Description | Configuration of physical memory protection regions. Each region provides an individual 8-bit array in these CSRs.
 |=======================
 
@@ -581,7 +581,7 @@ The `pmpaddr*` CSRs are used to configure the region's address boundaries.
 |             | `0x3be` (`pmpaddr14`)
 |             | `0x3bf` (`pmpaddr15`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` & `PMP`
+| ISA         | `Zicsr` & `Smpmp`
 | Description | Region address configuration. The two MSBs of each CSR are hardwired to zero (= bits 33:32 of the physical address).
 |=======================
 
