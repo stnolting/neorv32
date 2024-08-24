@@ -783,9 +783,9 @@ See section <<_hardware_performance_monitors_hpm_csrs>> for a list of all HPM-re
 Note that only the machine-mode hardware performance counter CSR are available (`mhpmcounter*[h]`).
 Accessing any user-mode HPM CSR (`hpmcounter*[h]`) will raise an illegal instruction exception.
 
-.Auto-Increment
+.Increment Inhibit
 [TIP]
-The vent-driven increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
+The event-driven increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
 
 
 ==== `Zmmul` - ISA Extension
