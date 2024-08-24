@@ -433,36 +433,10 @@ package neorv32_package is
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
 --constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
   constant csr_instret_c        : std_ulogic_vector(11 downto 0) := x"c02";
-  constant csr_hpmcounter3_c    : std_ulogic_vector(11 downto 0) := x"c03";
-  constant csr_hpmcounter4_c    : std_ulogic_vector(11 downto 0) := x"c04";
-  constant csr_hpmcounter5_c    : std_ulogic_vector(11 downto 0) := x"c05";
-  constant csr_hpmcounter6_c    : std_ulogic_vector(11 downto 0) := x"c06";
-  constant csr_hpmcounter7_c    : std_ulogic_vector(11 downto 0) := x"c07";
-  constant csr_hpmcounter8_c    : std_ulogic_vector(11 downto 0) := x"c08";
-  constant csr_hpmcounter9_c    : std_ulogic_vector(11 downto 0) := x"c09";
-  constant csr_hpmcounter10_c   : std_ulogic_vector(11 downto 0) := x"c0a";
-  constant csr_hpmcounter11_c   : std_ulogic_vector(11 downto 0) := x"c0b";
-  constant csr_hpmcounter12_c   : std_ulogic_vector(11 downto 0) := x"c0c";
-  constant csr_hpmcounter13_c   : std_ulogic_vector(11 downto 0) := x"c0d";
-  constant csr_hpmcounter14_c   : std_ulogic_vector(11 downto 0) := x"c0e";
-  constant csr_hpmcounter15_c   : std_ulogic_vector(11 downto 0) := x"c0f";
   --
   constant csr_cycleh_c         : std_ulogic_vector(11 downto 0) := x"c80";
 --constant csr_timeh_c          : std_ulogic_vector(11 downto 0) := x"c81";
   constant csr_instreth_c       : std_ulogic_vector(11 downto 0) := x"c82";
-  constant csr_hpmcounter3h_c   : std_ulogic_vector(11 downto 0) := x"c83";
-  constant csr_hpmcounter4h_c   : std_ulogic_vector(11 downto 0) := x"c84";
-  constant csr_hpmcounter5h_c   : std_ulogic_vector(11 downto 0) := x"c85";
-  constant csr_hpmcounter6h_c   : std_ulogic_vector(11 downto 0) := x"c86";
-  constant csr_hpmcounter7h_c   : std_ulogic_vector(11 downto 0) := x"c87";
-  constant csr_hpmcounter8h_c   : std_ulogic_vector(11 downto 0) := x"c88";
-  constant csr_hpmcounter9h_c   : std_ulogic_vector(11 downto 0) := x"c89";
-  constant csr_hpmcounter10h_c  : std_ulogic_vector(11 downto 0) := x"c8a";
-  constant csr_hpmcounter11h_c  : std_ulogic_vector(11 downto 0) := x"c8b";
-  constant csr_hpmcounter12h_c  : std_ulogic_vector(11 downto 0) := x"c8c";
-  constant csr_hpmcounter13h_c  : std_ulogic_vector(11 downto 0) := x"c8d";
-  constant csr_hpmcounter14h_c  : std_ulogic_vector(11 downto 0) := x"c8e";
-  constant csr_hpmcounter15h_c  : std_ulogic_vector(11 downto 0) := x"c8f";
   -- machine information registers --
   constant csr_mvendorid_c      : std_ulogic_vector(11 downto 0) := x"f11";
   constant csr_marchid_c        : std_ulogic_vector(11 downto 0) := x"f12";
