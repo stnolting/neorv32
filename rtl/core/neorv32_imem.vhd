@@ -56,7 +56,7 @@ begin
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-    "[NEORV32] Implementing DEFAULT processor-internal IMEM as " &
+    "[NEORV32] Implementing processor-internal IMEM as " &
     cond_sel_string_f(IMEM_AS_IROM, "pre-initialized ROM.", "blank RAM.") severity note;
 
   assert not ((IMEM_AS_IROM = true) and (imem_app_size_c > IMEM_SIZE)) report
