@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 25.08.2024 | 1.10.2.8 | :warning: remove user-mode HPM counters; add individual `mocuntern` bits (`CY` and `IR`) rework Vivado IP module; minor RTL cleanups and optimization | [#996](https://github.com/stnolting/neorv32/pull/996) |
 | 16.08.2024 | 1.10.2.7 | minor CPU area and critical path optimizations; minor code cleanups | [#990](https://github.com/stnolting/neorv32/pull/990) |
 | 09.08.2024 | 1.10.2.6 | :warning: re-organize RTL files; all core files are now located in `rtl/core`; remove `mem` sub-folder | [#985](https://github.com/stnolting/neorv32/pull/985) |
 | 09.08.2024 | 1.10.2.5 | minor HDL edits | [#984](https://github.com/stnolting/neorv32/pull/984) |
