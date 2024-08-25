@@ -165,9 +165,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     is_ci_nxt    : std_ulogic;
     branch_taken : std_ulogic; -- branch condition fulfilled
     pc           : std_ulogic_vector(XLEN-1 downto 0); -- actual PC, corresponding to current executed instruction
-    pc_we        : std_ulogic; -- PC update enabled
+    pc_we        : std_ulogic; -- PC update enable
     next_pc      : std_ulogic_vector(XLEN-1 downto 0); -- next PC, corresponding to next instruction to be executed
-    next_pc_inc  : std_ulogic_vector(XLEN-1 downto 0); -- increment to get next PC
     link_pc      : std_ulogic_vector(XLEN-1 downto 0); -- next PC for linking (return address)
   end record;
   signal execute_engine : execute_engine_t;
@@ -517,20 +516,28 @@ begin
     if (rstn_i = '0') then
       imm_o <= (others => '0');
     elsif rising_edge(clk_i) then
-      case decode_aux.opcode is
-        when opcode_store_c => -- S-immediate
-          imm_o <= replicate_f(execute_engine.ir(31), 21) & execute_engine.ir(30 downto 25) & execute_engine.ir(11 downto 7);
-        when opcode_branch_c => -- B-immediate
-          imm_o <= replicate_f(execute_engine.ir(31), 20) & execute_engine.ir(7) & execute_engine.ir(30 downto 25) & execute_engine.ir(11 downto 8) & '0';
-        when opcode_lui_c | opcode_auipc_c => -- U-immediate
-          imm_o <= execute_engine.ir(31 downto 12) & x"000";
-        when opcode_jal_c => -- J-immediate
-          imm_o <= replicate_f(execute_engine.ir(31), 12) & execute_engine.ir(19 downto 12) & execute_engine.ir(20) & execute_engine.ir(30 downto 21) & '0';
-        when opcode_amo_c => -- atomic memory access
-          imm_o <= (others => '0');
-        when others => -- I-immediate
-          imm_o <= replicate_f(execute_engine.ir(31), 21) & execute_engine.ir(30 downto 21) & execute_engine.ir(20);
-      end case;
+      if (execute_engine.state = DISPATCH) then -- prepare update of next_pc (using ALU's PC + IMM in EXECUTE state)
+        if CPU_EXTENSION_RISCV_C and (issue_engine.data(33) = '1') then -- is de-compressed C instruction?
+          imm_o <= x"00000002";
+        else
+          imm_o <= x"00000004";
+        end if;
+      else
+        case decode_aux.opcode is
+          when opcode_store_c => -- S-immediate
+            imm_o <= replicate_f(execute_engine.ir(31), 21) & execute_engine.ir(30 downto 25) & execute_engine.ir(11 downto 7);
+          when opcode_branch_c => -- B-immediate
+            imm_o <= replicate_f(execute_engine.ir(31), 20) & execute_engine.ir(7) & execute_engine.ir(30 downto 25) & execute_engine.ir(11 downto 8) & '0';
+          when opcode_lui_c | opcode_auipc_c => -- U-immediate
+            imm_o <= execute_engine.ir(31 downto 12) & x"000";
+          when opcode_jal_c => -- J-immediate
+            imm_o <= replicate_f(execute_engine.ir(31), 12) & execute_engine.ir(19 downto 12) & execute_engine.ir(20) & execute_engine.ir(30 downto 21) & '0';
+          when opcode_amo_c => -- atomic memory access
+            imm_o <= (others => '0');
+          when others => -- I-immediate
+            imm_o <= replicate_f(execute_engine.ir(31), 21) & execute_engine.ir(30 downto 21) & execute_engine.ir(20);
+        end case;
+      end if;
     end if;
   end process imm_gen;
 
@@ -560,9 +567,9 @@ begin
       execute_engine.state   <= RESTART;
       execute_engine.ir      <= (others => '0');
       execute_engine.is_ci   <= '0';
-      execute_engine.pc      <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
-      execute_engine.next_pc <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
-      execute_engine.link_pc <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
+      execute_engine.pc      <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
+      execute_engine.next_pc <= (others => '0');
+      execute_engine.link_pc <= (others => '0');
     elsif rising_edge(clk_i) then
       -- control bus --
       ctrl <= ctrl_nxt;
@@ -612,8 +619,8 @@ begin
             execute_engine.next_pc <= alu_add_i(XLEN-1 downto 1) & '0';
           end if;
 
-        when EXECUTE => -- linear increment
-          execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc));
+        when EXECUTE => -- linear increment (ise ALU's adder to compute next_p = pm + imm)
+          execute_engine.next_pc <= alu_add_i(XLEN-1 downto 1) & '0';
 
         when others => -- no update
           NULL;
@@ -626,10 +633,6 @@ begin
   trap_ctrl.instr_ma <= '1' when (execute_engine.state = BRANCH) and -- branch instruction (can also be INVALID as exc_illegal_c has higher priority)
                                  (execute_engine.branch_taken = '1') and -- branch is taken
                                  (alu_add_i(1) = '1') and (not CPU_EXTENSION_RISCV_C) else '0'; -- misaligned destination
-
-  -- PC increment for next LINEAR instruction (+2 for compressed instr., +4 otherwise) --
-  execute_engine.next_pc_inc(XLEN-1 downto 4) <= (others => '0');
-  execute_engine.next_pc_inc(3 downto 0) <= x"2" when (execute_engine.is_ci = '1') and CPU_EXTENSION_RISCV_C else x"4";
 
   -- PC output --
   curr_pc_o <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- current PC
@@ -795,6 +798,8 @@ begin
 
       when DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
       -- ------------------------------------------------------------
+        ctrl_nxt.alu_opa_mux <= '1'; -- prepare update of next_pc in EXECUTE (opa = current_pc)
+        ctrl_nxt.alu_opb_mux <= '1'; -- prepare update of next_pc in EXECUTE (opb = imm = +2/4)
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           execute_engine.state_nxt <= TRAP_ENTER;
         elsif (hw_trigger_match = '1') and CPU_EXTENSION_RISCV_Sdtrig then -- hardware breakpoint
@@ -902,12 +907,12 @@ begin
           -- FPU: floating-point operations --
           when opcode_fop_c =>
             ctrl_nxt.alu_cp_trig(cp_sel_fpu_c) <= '1'; -- trigger FPU co-processor
-            execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if FPU not implemented
+            execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor timeout if FPU is not implemented
 
           -- CFU: custom RISC-V instructions --
           when opcode_cust0_c | opcode_cust1_c =>
             ctrl_nxt.alu_cp_trig(cp_sel_cfu_c) <= '1'; -- trigger CFU co-processor
-            execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor exception if CFU not implemented
+            execute_engine.state_nxt           <= ALU_WAIT; -- will be aborted via monitor timeout if CFU is not implemented
 
           -- environment/CSR operation or ILLEGAL opcode --
           when others =>
