@@ -299,17 +299,22 @@ int main() {
     // stop base counters
     neorv32_cpu_csr_set(CSR_MCOUNTINHIBIT, 0b101);
 
-    // no access to counter CSRs
-    neorv32_cpu_csr_write(CSR_MCOUNTEREN, 0);
+    // allow user-mode access for cycle counter only
+    neorv32_cpu_csr_write(CSR_MCOUNTEREN, 1<<CSR_MCOUNTEREN_CY);
 
-    // read counter from user mode
+    // read base counter from user mode
     neorv32_cpu_goto_user_mode();
     {
-      asm volatile ("addi      %[rd], zero, 123 \n" // this value must not change
-                    "rdinstret %[rd]" : [rd] "=r" (tmp_a) : ); // has to trap
+      asm volatile ("addi      %[cy], zero, 123 \n"
+                    "rdcycle   %[cy]            \n"
+                    "addi      %[ir], zero, 123 \n" // this value must not change
+                    "rdinstret %[ir]            \n" // has to trap
+                    : [cy] "=r" (tmp_a), [ir] "=r" (tmp_b) : );
     }
 
-    if ((tmp_a == 123) && ((neorv32_cpu_csr_read(CSR_MCOUNTEREN) & 7) == 0b000) &&
+    if ((tmp_a == neorv32_cpu_csr_read(CSR_CYCLE)) &&
+        (tmp_b == 123) &&
+        (neorv32_cpu_csr_read(CSR_MCOUNTEREN) == (1<<CSR_MCOUNTEREN_CY)) &&
         (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL)) {
       test_ok();
     }

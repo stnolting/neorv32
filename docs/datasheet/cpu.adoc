@@ -150,6 +150,7 @@ these two bus interfaces are merged into a single processor-internal bus via a p
 have higher priority). Hence, _all_ memory addresses including peripheral devices are mapped to a single unified 32-bit
 <<_address_space>>.
 
+.Linear/In-Order Execution Only
 [NOTE]
 The CPU does not perform any speculative/out-of-order operations at all. Hence, it is not vulnerable to security issues
 caused by speculative execution (like Spectre or Meltdown).
@@ -270,6 +271,7 @@ includes the <<_control_and_status_registers_csrs>> as well as the trap controll
 The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing
 dynamic power consumption. Sleep mode is entered by executing the `wfi` ("wait for interrupt") instruction.
 
+.Execution Details
 [NOTE]
 The `wfi` instruction will raise an illegal instruction exception when executed in user-mode
 if `TW` in <<_mstatus>> is set. When executed in debug-mode or during single-stepping `wfi` will behave as
@@ -409,7 +411,7 @@ operation is indicated by a **1** being returned via `rsp.data` together with `a
 .Three Exemplary LR/SC Bus Transactions
 image::bus_interface_atomic.png[700]
 
-.SC Status
+.Store-Conditional Status
 [NOTE]
 The "normal" load data mechanism is used to return success/failure of the `sc.w` instruction to the CPU (via the LSB of `rsp.data`).
 
@@ -569,6 +571,7 @@ The "compressed" ISA extension provides 16-bit encodings of commonly used instru
 The "embedded" ISA extensions reduces the size of the general purpose register file from 32 entries to 16 entries to
 shrink hardware size. It provides the same instructions as the the base `I` ISA extensions.
 
+.Alternative MABI
 [NOTE]
 Due to the reduced register file size an alternate toolchain ABI (`ilp32e*`) is required.
 
@@ -714,13 +717,19 @@ If a computational instruction generates a subnormal result it is also flushed t
 The `Zicntr` ISA extension adds the basic <<_cycleh>>, <<_mcycleh>>, <<_instreth>> and <<_minstreth>>
 counter CSRs. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Zicntr`-related CSRs.
 
+.Time CSRs
 [NOTE]
 The user-mode `time[h]` CSRs are **not implemented**. Any access will trap allowing the trap handler to
 retrieve system time from the <<_machine_system_timer_mtime>>.
 
+.Mandatory Extension
 [NOTE]
 This extensions is stated as _mandatory_ by the RISC-V spec. However, area-constrained setups may remove
 support for these counters.
+
+.Constrained Access
+[TIP]
+User-level access to the counter CSRs can be constrained by the <<_mcounteren>> CSR.
 
 
 ==== `Zicond` ISA Extension
@@ -744,6 +753,7 @@ This ISA extensions provides instructions for accessing the <<_control_and_statu
 privileged-architecture extensions. This extension is mandatory and cannot be disabled. Hence, there is no generic
 for enabling/disabling this ISA extension.
 
+.Side-Effects if Destination is Zero-Register
 [NOTE]
 If `rd=x0` for the `csrrw[i]` instructions there will be no actual read access to the according CSR.
 However, access privileges are still enforced so these instruction variants _do_ cause side-effects
@@ -762,13 +772,20 @@ However, access privileges are still enforced so these instruction variants _do_
 
 In additions to the base counters the NEORV32 CPU provides up to 13 hardware performance monitors (HPM 3..15),
 which can be used to benchmark applications. Each HPM consists of an N-bit wide counter (split in a high-word 32-bit
-CSR and a low-word 32-bit CSR), where N is defined via the top's
-`HPM_CNT_WIDTH` generic and a corresponding event configuration CSR. The event configuration
-CSR defines the architectural events that lead to an increment of the associated HPM counter. See section
-<<_hardware_performance_monitors_hpm_csrs>> for a list of all HPM-related CSRs and event configurations.
+CSR and a low-word 32-bit CSR), where N is defined via the top's `HPM_CNT_WIDTH` generic and a corresponding event
+configuration CSR.
 
+The event configuration CSR defines the architectural events that lead to an increment of the associated HPM counter.
+See section <<_hardware_performance_monitors_hpm_csrs>> for a list of all HPM-related CSRs and event configurations.
+
+.Machine-Mode HPMs Only
+[NOTE]
+Note that only the machine-mode hardware performance counter CSR are available (`mhpmcounter*[h]`).
+Accessing any user-mode HPM CSR (`hpmcounter*[h]`) will raise an illegal instruction exception.
+
+.Increment Inhibit
 [TIP]
-Auto-increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
+The event-driven increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
 
 
 ==== `Zmmul` - ISA Extension

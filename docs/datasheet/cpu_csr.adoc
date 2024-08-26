@@ -72,8 +72,6 @@ to check if the targeted bits can actually be modified.
 | 0x323 .. 0x32f | <<_mhpmevent, `mhpmevent3`>> .. <<_mhpmevent, `mhpmevent15`>>             | `CSR_MHPMEVENT3` .. `CSR_MHPMEVENT15`       | MRW | Machine performance-monitoring event select for counter 3..15
 | 0xb03 .. 0xb0f | <<_mhpmcounterh, `mhpmcounter3`>> .. <<_mhpmcounterh, `mhpmcounter15`>>   | `CSR_MHPMCOUNTER3` .. `CSR_MHPMCOUNTER15`   | MRW | Machine performance-monitoring counter 3..15 low word
 | 0xb83 .. 0xb8f | <<_mhpmcounterh, `mhpmcounter3h`>> .. <<_mhpmcounterh, `mhpmcounter15h`>> | `CSR_MHPMCOUNTER3H` .. `CSR_MHPMCOUNTER15H` | MRW | Machine performance-monitoring counter 3..15 high word
-| 0xc03 .. 0xc0f | <<_hpmcounterh, `hpmcounter3`>> .. <<_hpmcounterh, `hpmcounter15`>>       | `CSR_HPMCOUNTER3`  .. `CSR_HPMCOUNTER15H`   | URO | User performance-monitoring counter 3..15 low word
-| 0xc83 .. 0xc8f | <<_hpmcounterh, `hpmcounter3h`>> .. <<_hpmcounterh, `hpmcounter15h`>>     | `CSR_HPMCOUNTER3H` .. `CSR_HPMCOUNTER15H`   | URO | User performance-monitoring counter 3..15 high word
 5+^| **<<_machine_information_csrs>>**
 | 0xf11 | <<_mvendorid>>  | `CSR_MVENDORID`  | MRO | Machine vendor ID
 | 0xf12 | <<_marchid>>    | `CSR_MARCHID`    | MRO | Machine architecture ID
@@ -301,7 +299,7 @@ The vectored `mtvec` mode is useful for reducing the time between interrupt requ
 | Name        | Machine counter enable
 | Address     | `0x306`
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` & `U`
+| ISA         | `Zicsr` & `Zicntr` & `U`
 | Description | The `mcounteren` CSR is used to constrain user-mode access to the CPU's counter CSRs.
 |=======================
 
@@ -309,17 +307,12 @@ The vectored `mtvec` mode is useful for reducing the time between interrupt requ
 [cols="^1,^1,<8"]
 [options="header",grid="rows"]
 |=======================
-| Bit   | R/W     | Function
-| 0     | r/w (!) | **CY**: User-mode is allowed to read <<_cycleh>> CSRs when set
-| 1     | r/-     | **TM**: not implemented, hardwired to zero
-| 2     | r/w (!) | **IR**: User-mode is allowed to read <<_instreth>> CSRs when set
-| 15:3  | r/w (!) | **HPM**: user-mode is allowed to read <<_hpmcounterh>> CSRs when set
+| Bit | Name [C] | R/W | Function
+| 0    | `CSR_MCOUNTEREN_CY` | r/w | **CY**: User-mode is allowed to read <<_cycleh>> CSRs when set
+| 1    | -                   | r/- | **TM**: not implemented, hardwired to zero
+| 2    | `CSR_MCOUNTEREN_IR` | r/w | **IR**: User-mode is allowed to read <<_instreth>> CSRs when set
+| 31:3 | -                   | r/- | not implemented, hardwired to zero
 |=======================
-
-[IMPORTANT]
-Physically, the NEORV32's `mcounteren` CSR is implemented as a **single 1-bit register**. Setting _any_ bit of
-the CSR will result in all bits being set. Hence, user-mode access can either be granted for **all** counter CSRs
-or entirely denied allowing access to **none** counter CSRs.
 
 
 {empty} +
@@ -539,7 +532,7 @@ See section <<_smpmp_isa_extension>> for more information.
 |             | `0x3a2` (`pmpcfg2`)
 |             | `0x3a3` (`pmpcfg3`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` & `PMP`
+| ISA         | `Zicsr` & `Smpmp`
 | Description | Configuration of physical memory protection regions. Each region provides an individual 8-bit array in these CSRs.
 |=======================
 
@@ -588,7 +581,7 @@ The `pmpaddr*` CSRs are used to configure the region's address boundaries.
 |             | `0x3be` (`pmpaddr14`)
 |             | `0x3bf` (`pmpaddr15`)
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` & `PMP`
+| ISA         | `Zicsr` & `Smpmp`
 | Description | Region address configuration. The two MSBs of each CSR are hardwired to zero (= bits 33:32 of the physical address).
 |=======================
 
@@ -708,12 +701,16 @@ Note that **all** executed instruction do increment the `[m]instret`[h] counters
 :sectnums:
 ==== Hardware Performance Monitors (HPM) CSRs
 
-The actual number of implemented hardware performance monitors is configured via the `HPM_NUM_CNTS` top entity generic,
-Note that always all 13 HPM counter and configuration registers (`mhpmcounter*[h]` and `mhpmevent*`) are implemented, but
-only the actually configured ones are implemented as "real" physical registers - the remaining ones will be hardwired to zero.
+.Machine-Mode HPMs Only
+[NOTE]
+Note that only the machine-mode hardware performance counter CSR are available (`mhpmcounter*[h]`).
+Accessing any user-mode HPM CSR (`hpmcounter*[h]`) will raise an illegal instruction exception.
 
+The actual number of implemented hardware performance monitors is configured via the `HPM_NUM_CNTS` top entity generic,
+Note that always all 13 HPM counter and configuration registers (`mhpmcounter*[h]`) are implemented, but
+only the actually configured ones are implemented as "real" physical registers - the remaining ones will be hardwired to zero.
 If trying to access an HPM-related CSR beyond `HPM_NUM_CNTS` **no illegal instruction exception is
-triggered**. These CSRs are read-only (writes are ignored) and always return zero.
+triggered**. These CSRs are read-only, writes are ignored and reads always return zero.
 
 The total counter width of the HPMs can be configured before synthesis via the `HPM_CNT_WIDTH` generic (0..64-bit).
 If `HPM_NUM_CNTS` is less than 64, all remaining MSB-aligned bits are hardwired to zero.
@@ -772,7 +769,7 @@ caused by a fence instruction, a control flow transfer or a instruction fetch bu
 .Instruction Retiring ("Retired == Executed")
 [IMPORTANT]
 The CPU HPM/counter logic treats all executed instruction as "retired" even if they raise an exception,
-cause an interrupt, trigger a privilege mode change or were not meant to retire (by the RISC-V spec.).
+cause an interrupt, trigger a privilege mode change or were not meant to retire (i.e. claimed by the RISC-V spec.).
 
 
 {empty} +
@@ -798,37 +795,9 @@ cause an interrupt, trigger a privilege mode change or were not meant to retire 
 |             | `0xb0f`, `0xb8f` (`mhpmcounter15`, `mhpmcounter15h`)
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `Zihpm`
-| Description | If not halted via the <<_mcountinhibit>> CSR the HPM counter CSR(s) increment whenever a
+| Description | If not halted via the <<_mcountinhibit>> CSR the HPM counter CSR(s) increment whenever the
 configured event from the according <<_mhpmevent>> CSR occurs. The counter registers are read/write for machine mode
 and are not accessible for lower-privileged software.
-|=======================
-
-
-{empty} +
-[discrete]
-===== **`hpmcounter[h]`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | User hardware performance monitor (HPM) counter
-| Address     | `0xc03`, `0xc83` (`hpmcounter3`, `hpmcounter3h`)
-|             | `0xc04`, `0xc84` (`hpmcounter4`, `hpmcounter4h`)
-|             | `0xc05`, `0xc85` (`hpmcounter5`, `hpmcounter5h`)
-|             | `0xc06`, `0xc86` (`hpmcounter6`, `hpmcounter6h`)
-|             | `0xc07`, `0xc87` (`hpmcounter7`, `hpmcounter7h`)
-|             | `0xc08`, `0xc88` (`hpmcounter8`, `hpmcounter8h`)
-|             | `0xc09`, `0xc89` (`hpmcounter9`, `hpmcounter9h`)
-|             | `0xc0a`, `0xc8a` (`hpmcounter10`, `hpmcounter10h`)
-|             | `0xc0b`, `0xc8b` (`hpmcounter11`, `hpmcounter11h`)
-|             | `0xc0c`, `0xc8c` (`hpmcounter12`, `hpmcounter12h`)
-|             | `0xc0d`, `0xc8d` (`hpmcounter13`, `hpmcounter13h`)
-|             | `0xc0e`, `0xc8e` (`hpmcounter14`, `hpmcounter14h`)
-|             | `0xc0f`, `0xc8f` (`hpmcounter15`, `hpmcounter15h`)
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` & `Zihpm`
-| Description | The `hpmcounter*[h]` are user-mode shadow copies of the according <<_mhpmcounterh>> CSRs. The user mode
-counter CSRs are read-only. Any write access will raise an illegal instruction exception.
 |=======================
 
 

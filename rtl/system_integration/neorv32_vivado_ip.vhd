@@ -6,9 +6,6 @@
 -- Vivado TCL console: > source neorv32_vivado_ip.tcl                               --
 -- See the NEORV32 Datasheet and User Guide for more information.                   --
 -- -------------------------------------------------------------------------------- --
--- [IMPORTANT] Compile this top module using VHDL2008 standard to allow connecting  --
--- std_logic_vector and std_ulogic_vector without casting (#974).                   --
--- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
 -- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
@@ -134,8 +131,8 @@ entity neorv32_vivado_ip is
     -- AXI4-Lite-Compatible Host Interface (always available)
     -- ------------------------------------------------------------
     -- Clock and Reset --
---  m_axi_aclk     : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used!
---  m_axi_aresetn  : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used!
+--  m_axi_aclk     : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
+--  m_axi_aresetn  : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
     -- Write Address Channel --
     m_axi_awaddr   : out std_logic_vector(31 downto 0);
     m_axi_awprot   : out std_logic_vector(2 downto 0);
@@ -164,14 +161,14 @@ entity neorv32_vivado_ip is
     -- AXI4-Stream-Compatible Interfaces (available if AXI4_STREAM_EN = true)
     -- ------------------------------------------------------------
     -- Source --
---  s0_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used!
+--  s0_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
     s0_axis_tdest  : out std_logic_vector(3 downto 0);
     s0_axis_tvalid : out std_logic;
     s0_axis_tready : in  std_logic := '0';
     s0_axis_tdata  : out std_logic_vector(31 downto 0);
     s0_axis_tlast  : out std_logic;
     -- Sink --
---  s1_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used!
+--  s1_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
     s1_axis_tid    : in  std_logic_vector(3 downto 0) := x"0";
     s1_axis_tvalid : in  std_logic := '0';
     s1_axis_tready : out std_logic;
@@ -226,7 +223,7 @@ entity neorv32_vivado_ip is
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          : out std_logic_vector(IO_PWM_NUM_CH-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i       : in  std_logic_vector(IO_CFS_IN_SIZE-1  downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
+    cfs_in_i       : in  std_logic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
     cfs_out_o      : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_logic;
@@ -248,7 +245,23 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   constant num_xirq_c : natural := cond_sel_natural_f(XIRQ_EN, XIRQ_NUM_CH, 0);
   constant num_pwm_c  : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM_CH, 0);
 
-  -- variable-sized ports --
+  -- type conversion --
+  signal jtag_tdo_aux : std_ulogic;
+  signal s0_axis_tdata_aux : std_ulogic_vector(31 downto 0);
+  signal s0_axis_tdest_aux : std_ulogic_vector(3 downto 0);
+  signal s1_axis_tready_aux, s0_axis_tvalid_aux, s0_axis_tlast_aux : std_ulogic;
+  signal xip_csn_aux, xip_clk_aux, xip_do_aux : std_ulogic;
+  signal uart0_txd_aux, uart0_rts_aux, uart1_txd_aux, uart1_rts_aux : std_ulogic;
+  signal spi_clk_aux, spi_do_aux : std_ulogic;
+  signal spi_csn_aux : std_ulogic_vector(7 downto 0);
+  signal sdi_do_aux : std_ulogic;
+  signal twi_sda_o_aux, twi_scl_o_aux : std_ulogic;
+  signal onewire_o_aux : std_ulogic;
+  signal cfs_out_aux : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
+  signal neoled_aux : std_ulogic;
+  signal mtime_time_aux : std_ulogic_vector(63 downto 0);
+
+  -- constrained size ports --
   signal gpio_o_aux : std_ulogic_vector(63 downto 0);
   signal gpio_i_aux : std_ulogic_vector(63 downto 0);
   signal pwm_o_aux  : std_ulogic_vector(11 downto 0);
@@ -374,13 +387,13 @@ begin
   )
   port map (
     -- Global control --
-    clk_i          => clk,
-    rstn_i         => resetn,
+    clk_i          => std_ulogic(clk),
+    rstn_i         => std_ulogic(resetn),
     -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
-    jtag_tck_i     => jtag_tck_i,
-    jtag_tdi_i     => jtag_tdi_i,
-    jtag_tdo_o     => jtag_tdo_o,
-    jtag_tms_i     => jtag_tms_i,
+    jtag_tck_i     => std_ulogic(jtag_tck_i),
+    jtag_tdi_i     => std_ulogic(jtag_tdi_i),
+    jtag_tdo_o     => jtag_tdo_aux,
+    jtag_tms_i     => std_ulogic(jtag_tms_i),
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     => wb_core.adr,
     xbus_dat_o     => wb_core.do,
@@ -393,66 +406,108 @@ begin
     xbus_ack_i     => wb_core.ack,
     xbus_err_i     => wb_core.err,
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
-    slink_rx_dat_i => s1_axis_tdata,
-    slink_rx_src_i => s1_axis_tid,
-    slink_rx_val_i => s1_axis_tvalid,
-    slink_rx_lst_i => s1_axis_tlast,
-    slink_rx_rdy_o => s1_axis_tready,
-    slink_tx_dat_o => s0_axis_tdata,
-    slink_tx_dst_o => s0_axis_tdest,
-    slink_tx_val_o => s0_axis_tvalid,
-    slink_tx_lst_o => s0_axis_tlast,
-    slink_tx_rdy_i => s0_axis_tready,
+    slink_rx_dat_i => std_ulogic_vector(s1_axis_tdata),
+    slink_rx_src_i => std_ulogic_vector(s1_axis_tid),
+    slink_rx_val_i => std_ulogic(s1_axis_tvalid),
+    slink_rx_lst_i => std_ulogic(s1_axis_tlast),
+    slink_rx_rdy_o => s1_axis_tready_aux,
+    slink_tx_dat_o => s0_axis_tdata_aux,
+    slink_tx_dst_o => s0_axis_tdest_aux,
+    slink_tx_val_o => s0_axis_tvalid_aux,
+    slink_tx_lst_o => s0_axis_tlast_aux,
+    slink_tx_rdy_i => std_ulogic(s0_axis_tready),
     -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
-    xip_csn_o      => xip_csn_o,
-    xip_clk_o      => xip_clk_o,
-    xip_dat_i      => xip_dat_i,
-    xip_dat_o      => xip_dat_o,
+    xip_csn_o      => xip_csn_aux,
+    xip_clk_o      => xip_clk_aux,
+    xip_dat_i      => std_ulogic(xip_dat_i),
+    xip_dat_o      => xip_do_aux,
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o         => gpio_o_aux,
     gpio_i         => gpio_i_aux,
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o    => uart0_txd_o,
-    uart0_rxd_i    => uart0_rxd_i,
-    uart0_rts_o    => uart0_rts_o,
-    uart0_cts_i    => uart0_cts_i,
+    uart0_txd_o    => uart0_txd_aux,
+    uart0_rxd_i    => std_ulogic(uart0_rxd_i),
+    uart0_rts_o    => uart0_rts_aux,
+    uart0_cts_i    => std_ulogic(uart0_cts_i),
     -- secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o    => uart1_txd_o,
-    uart1_rxd_i    => uart1_rxd_i,
-    uart1_rts_o    => uart1_rts_o,
-    uart1_cts_i    => uart1_cts_i,
+    uart1_txd_o    => uart1_txd_aux,
+    uart1_rxd_i    => std_ulogic(uart1_rxd_i),
+    uart1_rts_o    => uart1_rts_aux,
+    uart1_cts_i    => std_ulogic(uart1_cts_i),
     -- SPI (available if IO_SPI_EN = true) --
-    spi_clk_o      => spi_clk_o,
-    spi_dat_o      => spi_dat_o,
-    spi_dat_i      => spi_dat_i,
-    spi_csn_o      => spi_csn_o,
+    spi_clk_o      => spi_clk_aux,
+    spi_dat_o      => spi_do_aux,
+    spi_dat_i      => std_ulogic(spi_dat_i),
+    spi_csn_o      => spi_csn_aux,
+    -- SDI (available if IO_SDI_EN = true) --
+    sdi_clk_i      => std_ulogic(sdi_clk_i),
+    sdi_dat_o      => sdi_do_aux,
+    sdi_dat_i      => std_ulogic(sdi_dat_i),
+    sdi_csn_i      => std_ulogic(sdi_csn_i),
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_i      => twi_sda_i,
-    twi_sda_o      => twi_sda_o,
-    twi_scl_i      => twi_scl_i,
-    twi_scl_o      => twi_scl_o,
+    twi_sda_i      => std_ulogic(twi_sda_i),
+    twi_sda_o      => twi_sda_o_aux,
+    twi_scl_i      => std_ulogic(twi_scl_i),
+    twi_scl_o      => twi_scl_o_aux,
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_i      => onewire_i,
-    onewire_o      => onewire_o,
+    onewire_i      => std_ulogic(onewire_i),
+    onewire_o      => onewire_o_aux,
     -- PWM available if IO_PWM_NUM_CH > 0) --
     pwm_o          => pwm_o_aux,
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i       => cfs_in_i,
-    cfs_out_o      => cfs_out_o,
+    cfs_in_i       => std_ulogic_vector(cfs_in_i),
+    cfs_out_o      => cfs_out_aux,
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o       => neoled_o,
+    neoled_o       => neoled_aux,
     -- Machine timer system time (available if IO_MTIME_EN = true) --
-    mtime_time_o   => mtime_time_o,
+    mtime_time_o   => mtime_time_aux,
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         => xirq_i_aux,
     -- CPU Interrupts --
-    mtime_irq_i    => mtime_irq_i,
-    msw_irq_i      => msw_irq_i,
-    mext_irq_i     => mext_irq_i
+    mtime_irq_i    => std_ulogic(mtime_irq_i),
+    msw_irq_i      => std_ulogic(msw_irq_i),
+    mext_irq_i     => std_ulogic(mext_irq_i)
   );
 
 
-  -- Variable-Sized Ports -------------------------------------------------------------------
+  -- Type Conversion (Outputs) --------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  jtag_tdo_o     <= std_logic(jtag_tdo_aux);
+
+  s1_axis_tready <= std_logic(s1_axis_tready_aux);
+  s0_axis_tdata  <= std_logic_vector(s0_axis_tdata_aux);
+  s0_axis_tdest  <= std_logic_vector(s0_axis_tdest_aux);
+  s0_axis_tvalid <= std_logic(s0_axis_tvalid_aux);
+  s0_axis_tlast  <= std_logic(s0_axis_tlast_aux);
+
+  xip_csn_o      <= std_logic(xip_csn_aux);
+  xip_clk_o      <= std_logic(xip_clk_aux);
+  xip_dat_o      <= std_logic(xip_do_aux);
+
+  uart0_txd_o    <= std_logic(uart0_txd_aux);
+  uart0_rts_o    <= std_logic(uart0_rts_aux);
+  uart1_txd_o    <= std_logic(uart1_txd_aux);
+  uart1_rts_o    <= std_logic(uart1_rts_aux);
+
+  spi_clk_o      <= std_logic(spi_clk_aux);
+  spi_dat_o      <= std_logic(spi_do_aux);
+  spi_csn_o      <= std_logic_vector(spi_csn_aux);
+
+  sdi_dat_o      <= std_logic(sdi_do_aux);
+
+  twi_sda_o      <= std_logic(twi_sda_o_aux);
+  twi_scl_o      <= std_logic(twi_scl_o_aux);
+
+  onewire_o      <= std_logic(onewire_o_aux);
+
+  cfs_out_o      <= std_logic_vector(cfs_out_aux);
+
+  neoled_o       <= std_logic(neoled_aux);
+
+  mtime_time_o   <= std_logic_vector(mtime_time_aux);
+
+
+  -- Type Conversion (Constrained Size Ports) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
   -- GPIO input --
@@ -460,20 +515,20 @@ begin
   begin
     gpio_i_aux <= (others => '0');
     for i in 0 to IO_GPIO_IN_NUM-1 loop
-      gpio_i_aux(i) <= gpio_i(i);
+      gpio_i_aux(i) <= std_ulogic(gpio_i(i));
     end loop;
   end process gpio_in_mapping;
 
   -- GPIO output --
   gpio_out_mapping:
   for i in 0 to IO_GPIO_OUT_NUM-1 generate
-    gpio_o(i) <= gpio_o_aux(i);
+    gpio_o(i) <= std_logic(gpio_o_aux(i));
   end generate;
 
   -- PWM --
   pwm_mapping:
   for i in 0 to IO_PWM_NUM_CH-1 generate
-    pwm_o(i) <= pwm_o_aux(i);
+    pwm_o(i) <= std_logic(pwm_o_aux(i));
   end generate;
 
   -- XIRQ --
@@ -481,7 +536,7 @@ begin
   begin
     xirq_i_aux <= (others => '0');
     for i in 0 to XIRQ_NUM_CH-1 loop
-      xirq_i_aux(i) <= xirq_i(i);
+      xirq_i_aux(i) <= std_ulogic(xirq_i(i));
     end loop;
   end process xirq_mapping;
 

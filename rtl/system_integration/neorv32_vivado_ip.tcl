@@ -30,8 +30,6 @@ set files [glob -nocomplain "$outputdir/*"]
 if {[llength $files] != 0} {
     puts "DELETING ALL FILES in $outputdir"
     file delete -force {*}[glob -directory $outputdir *];
-} else {
-    puts "$outputdir is empty"
 }
 
 
@@ -55,14 +53,11 @@ puts $file_list
 add_files $file_list
 set_property library neorv32 [get_files $file_list]
 
-# add IP top module
+# IP top module
 add_file $neorv32_home/rtl/system_integration/$rtl_top
 set_property library neorv32 [get_files [glob $neorv32_home/rtl/system_integration/$rtl_top]]
-
-# Compile top module with VHDL2008 standard to allow connecting std_logic_vector and std_ulogic_vector without casting (#974)
-set_property file_type {VHDL 2008} [get_files [glob $neorv32_home/rtl/system_integration/$rtl_top]]
-
 ##set_property top $rtl_top [current_fileset]
+
 update_compile_order -fileset sources_1
 
 
@@ -249,48 +244,48 @@ ipgui::move_param -component [ipx::current_core] -order 14 [ipgui::get_guiparams
 # **************************************************************
 # Configuration GUI: Peripherals
 # **************************************************************
-set_property display_name {Enable external interrupt controller (XIRQ)}           [ipgui::get_guiparamspec -name "XIRQ_EN"               -component [ipx::current_core]]
-set_property display_name {External interrupt controller (XIRQ) channels}         [ipgui::get_guiparamspec -name "XIRQ_NUM_CH"           -component [ipx::current_core]]
-set_property display_name {Enable general-purpose input/output controller (GPIO)} [ipgui::get_guiparamspec -name "IO_GPIO_EN"            -component [ipx::current_core]]
-set_property display_name {General-purpose inputs}                                [ipgui::get_guiparamspec -name "IO_GPIO_IN_NUM"        -component [ipx::current_core]]
-set_property display_name {General-purpose outputs}                               [ipgui::get_guiparamspec -name "IO_GPIO_OUT_NUM"       -component [ipx::current_core]]
-set_property display_name {Machine timer}                                         [ipgui::get_guiparamspec -name "IO_MTIME_EN"           -component [ipx::current_core]]
-set_property display_name {Primary UART (UART0)}                                  [ipgui::get_guiparamspec -name "IO_UART0_EN"           -component [ipx::current_core]]
-set_property display_name {Primary UART (UART0) RX FIFO depth}                    [ipgui::get_guiparamspec -name "IO_UART0_RX_FIFO"      -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}                [ipgui::get_guiparamspec -name "IO_UART0_RX_FIFO"      -component [ipx::current_core]]
-set_property display_name {Primary UART (UART0) TX FIFO depth}                    [ipgui::get_guiparamspec -name "IO_UART0_TX_FIFO"      -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}                [ipgui::get_guiparamspec -name "IO_UART0_TX_FIFO"      -component [ipx::current_core]]
-set_property display_name {Secondary UART (UART1)}                                [ipgui::get_guiparamspec -name "IO_UART1_EN"           -component [ipx::current_core]]
-set_property display_name {Secondary UART (UART1) RX FIFO depth}                  [ipgui::get_guiparamspec -name "IO_UART1_RX_FIFO"      -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}                [ipgui::get_guiparamspec -name "IO_UART1_RX_FIFO"      -component [ipx::current_core]]
-set_property display_name {Secondary UART (UART1) TX FIFO depth}                  [ipgui::get_guiparamspec -name "IO_UART1_TX_FIFO"      -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}                [ipgui::get_guiparamspec -name "IO_UART1_TX_FIFO"      -component [ipx::current_core]]
-set_property display_name {SPI}                                                   [ipgui::get_guiparamspec -name "IO_SPI_EN"             -component [ipx::current_core]]
-set_property display_name {SPI FIFO depth}                                        [ipgui::get_guiparamspec -name "IO_SPI_FIFO"           -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}                [ipgui::get_guiparamspec -name "IO_SPI_FIFO"           -component [ipx::current_core]]
-set_property display_name {SDI}                                                   [ipgui::get_guiparamspec -name "IO_SDI_EN"             -component [ipx::current_core]]
-set_property display_name {SDI FIFO depth}                                        [ipgui::get_guiparamspec -name "IO_SDI_FIFO"           -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}                [ipgui::get_guiparamspec -name "IO_SDI_FIFO"           -component [ipx::current_core]]
-set_property display_name {TWI}                                                   [ipgui::get_guiparamspec -name "IO_TWI_EN"             -component [ipx::current_core]]
-set_property display_name {TWI FIFO depth}                                        [ipgui::get_guiparamspec -name "IO_TWI_FIFO"           -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}                [ipgui::get_guiparamspec -name "IO_TWI_FIFO"           -component [ipx::current_core]]
-set_property display_name {Enable PWM controller}                                 [ipgui::get_guiparamspec -name "IO_PWM_EN"             -component [ipx::current_core]]
-set_property display_name {PWM channels}                                          [ipgui::get_guiparamspec -name "IO_PWM_NUM_CH"         -component [ipx::current_core]]
-set_property display_name {Watchdog}                                              [ipgui::get_guiparamspec -name "IO_WDT_EN"             -component [ipx::current_core]]
-set_property display_name {TRNG}                                                  [ipgui::get_guiparamspec -name "IO_TRNG_EN"            -component [ipx::current_core]]
-set_property display_name {TRNG FIFO depth}                                       [ipgui::get_guiparamspec -name "IO_TRNG_FIFO"          -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}                [ipgui::get_guiparamspec -name "IO_TRNG_FIFO"          -component [ipx::current_core]]
-set_property display_name {Custom Functions Subsystem (CFU)}                      [ipgui::get_guiparamspec -name "IO_CFS_EN"             -component [ipx::current_core]]
-set_property display_name {Custom Functions Subsystem (CFU) configuration string} [ipgui::get_guiparamspec -name "IO_CFS_CONFIG"         -component [ipx::current_core]]
-set_property display_name {Custom Functions Subsystem (CFU) input port width}     [ipgui::get_guiparamspec -name "IO_CFS_IN_SIZE"        -component [ipx::current_core]]
-set_property display_name {Custom Functions Subsystem (CFU) output port width}    [ipgui::get_guiparamspec -name "IO_CFS_OUT_SIZE"       -component [ipx::current_core]]
-set_property display_name {NEOLED}                                                [ipgui::get_guiparamspec -name "IO_NEOLED_EN"          -component [ipx::current_core]]
-set_property display_name {NEOLED FIFO depth}                                     [ipgui::get_guiparamspec -name "IO_NEOLED_TX_FIFO"     -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}                [ipgui::get_guiparamspec -name "IO_NEOLED_TX_FIFO"     -component [ipx::current_core]]
-set_property display_name {General Purpose Timer (GPTM)}                          [ipgui::get_guiparamspec -name "IO_GPTMR_EN"           -component [ipx::current_core]]
-set_property display_name {ONEWIRE}                                               [ipgui::get_guiparamspec -name "IO_ONEWIRE_EN"         -component [ipx::current_core]]
-set_property display_name {DMA controller}                                        [ipgui::get_guiparamspec -name "IO_DMA_EN"             -component [ipx::current_core]]
-set_property display_name {CRC Unit}                                              [ipgui::get_guiparamspec -name "IO_CRC_EN"             -component [ipx::current_core]]
+set_property display_name {External interrupt controller (XIRQ)}                [ipgui::get_guiparamspec -name "XIRQ_EN"               -component [ipx::current_core]]
+set_property display_name {External interrupt controller (XIRQ) channels}       [ipgui::get_guiparamspec -name "XIRQ_NUM_CH"           -component [ipx::current_core]]
+set_property display_name {General-Purpose Input/Output (GPIO) controller}      [ipgui::get_guiparamspec -name "IO_GPIO_EN"            -component [ipx::current_core]]
+set_property display_name {General-purpose (GPIO) inputs}                       [ipgui::get_guiparamspec -name "IO_GPIO_IN_NUM"        -component [ipx::current_core]]
+set_property display_name {General-purpose (GPIO) outputs}                      [ipgui::get_guiparamspec -name "IO_GPIO_OUT_NUM"       -component [ipx::current_core]]
+set_property display_name {Machine timer (MTIME)}                               [ipgui::get_guiparamspec -name "IO_MTIME_EN"           -component [ipx::current_core]]
+set_property display_name {Primary UART (UART0)}                                [ipgui::get_guiparamspec -name "IO_UART0_EN"           -component [ipx::current_core]]
+set_property display_name {Primary UART (UART0) RX FIFO depth}                  [ipgui::get_guiparamspec -name "IO_UART0_RX_FIFO"      -component [ipx::current_core]]
+set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_UART0_RX_FIFO"      -component [ipx::current_core]]
+set_property display_name {Primary UART (UART0) TX FIFO depth}                  [ipgui::get_guiparamspec -name "IO_UART0_TX_FIFO"      -component [ipx::current_core]]
+set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_UART0_TX_FIFO"      -component [ipx::current_core]]
+set_property display_name {Secondary UART (UART1)}                              [ipgui::get_guiparamspec -name "IO_UART1_EN"           -component [ipx::current_core]]
+set_property display_name {Secondary UART (UART1) RX FIFO depth}                [ipgui::get_guiparamspec -name "IO_UART1_RX_FIFO"      -component [ipx::current_core]]
+set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_UART1_RX_FIFO"      -component [ipx::current_core]]
+set_property display_name {Secondary UART (UART1) TX FIFO depth}                [ipgui::get_guiparamspec -name "IO_UART1_TX_FIFO"      -component [ipx::current_core]]
+set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_UART1_TX_FIFO"      -component [ipx::current_core]]
+set_property display_name {SPI host controller (SPI)}                           [ipgui::get_guiparamspec -name "IO_SPI_EN"             -component [ipx::current_core]]
+set_property display_name {SPI host controller (SPI) FIFO depth}                [ipgui::get_guiparamspec -name "IO_SPI_FIFO"           -component [ipx::current_core]]
+set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_SPI_FIFO"           -component [ipx::current_core]]
+set_property display_name {SPI device controller (SDI)}                         [ipgui::get_guiparamspec -name "IO_SDI_EN"             -component [ipx::current_core]]
+set_property display_name {SPI device controller (SDI) FIFO depth}              [ipgui::get_guiparamspec -name "IO_SDI_FIFO"           -component [ipx::current_core]]
+set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_SDI_FIFO"           -component [ipx::current_core]]
+set_property display_name {Two-Wire/I2C Interface (TWI)}                        [ipgui::get_guiparamspec -name "IO_TWI_EN"             -component [ipx::current_core]]
+set_property display_name {Two-Wire/I2C Interface (TWI) FIFO depth}             [ipgui::get_guiparamspec -name "IO_TWI_FIFO"           -component [ipx::current_core]]
+set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_TWI_FIFO"           -component [ipx::current_core]]
+set_property display_name {Pulse-Width Moduleation (PWM) controller}            [ipgui::get_guiparamspec -name "IO_PWM_EN"             -component [ipx::current_core]]
+set_property display_name {Pulse-Width Moduleation (PWM) channels}              [ipgui::get_guiparamspec -name "IO_PWM_NUM_CH"         -component [ipx::current_core]]
+set_property display_name {Watchdog timer (WDT)}                                [ipgui::get_guiparamspec -name "IO_WDT_EN"             -component [ipx::current_core]]
+set_property display_name {True-Random-Number Generator (TRNG)}                 [ipgui::get_guiparamspec -name "IO_TRNG_EN"            -component [ipx::current_core]]
+set_property display_name {True-Random-Number Generator (TRNG) FIFO depth}      [ipgui::get_guiparamspec -name "IO_TRNG_FIFO"          -component [ipx::current_core]]
+set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_TRNG_FIFO"          -component [ipx::current_core]]
+set_property display_name {Custom Functions Subsystem (CFS)}                    [ipgui::get_guiparamspec -name "IO_CFS_EN"             -component [ipx::current_core]]
+set_property display_name {Custom Functions Subsystem (CFS) configuration word} [ipgui::get_guiparamspec -name "IO_CFS_CONFIG"         -component [ipx::current_core]]
+set_property display_name {Custom Functions Subsystem (CFS) input port width}   [ipgui::get_guiparamspec -name "IO_CFS_IN_SIZE"        -component [ipx::current_core]]
+set_property display_name {Custom Functions Subsystem (CFS) output port width}  [ipgui::get_guiparamspec -name "IO_CFS_OUT_SIZE"       -component [ipx::current_core]]
+set_property display_name {Smart LED Interface (NEOLED)}                        [ipgui::get_guiparamspec -name "IO_NEOLED_EN"          -component [ipx::current_core]]
+set_property display_name {Smart LED Interface (NEOLED) FIFO depth}             [ipgui::get_guiparamspec -name "IO_NEOLED_TX_FIFO"     -component [ipx::current_core]]
+set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_NEOLED_TX_FIFO"     -component [ipx::current_core]]
+set_property display_name {General Purpose Timer (GPTMR)}                       [ipgui::get_guiparamspec -name "IO_GPTMR_EN"           -component [ipx::current_core]]
+set_property display_name {1-Wire (ONEWIRE) controller}                         [ipgui::get_guiparamspec -name "IO_ONEWIRE_EN"         -component [ipx::current_core]]
+set_property display_name {Direct Memory Access (DMA) controller}               [ipgui::get_guiparamspec -name "IO_DMA_EN"             -component [ipx::current_core]]
+set_property display_name {Cyclic Redundancy Check (CRC) Unit}                  [ipgui::get_guiparamspec -name "IO_CRC_EN"             -component [ipx::current_core]]
 
 ipgui::add_group -name {Peripherals} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Page 0" -component [ipx::current_core]] -display_name {Peripherals}
 ipgui::move_group -component [ipx::current_core] -order  3 [ipgui::get_groupspec    -name "Peripherals"           -component [ipx::current_core]] -parent [ipgui::get_pagespec  -name "Page 0"      -component [ipx::current_core]]
@@ -355,6 +350,6 @@ update_ip_catalog
 
 
 # **************************************************************
-# Close temporary IP-building project
+# Close IP-packaging project
 # **************************************************************
 close_project

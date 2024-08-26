@@ -151,24 +151,30 @@ begin
   multiplier_core_parallel:
   if FAST_MUL_EN generate
 
-    -- direct approach --
-    multiplier_core: process(rstn_i, clk_i)
+    -- input registers --
+    multiplier_core_in_reg: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
         mul.dsp_x <= (others => '0');
         mul.dsp_y <= (others => '0');
-        mul.prod  <= (others => '0');
       elsif rising_edge(clk_i) then
         if (mul.start = '1') then
           mul.dsp_x <= signed((rs1_i(rs1_i'left) and ctrl.rs1_is_signed) & rs1_i);
           mul.dsp_y <= signed((rs2_i(rs2_i'left) and ctrl.rs2_is_signed) & rs2_i);
         end if;
-        mul.prod <= std_ulogic_vector(mul.dsp_z(63 downto 0));
       end if;
-    end process multiplier_core;
+    end process multiplier_core_in_reg;
 
     -- actual multiplication --
     mul.dsp_z <= mul.dsp_x * mul.dsp_y;
+
+    -- output register --
+    multiplier_core_out_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve DSP mapping
+        mul.prod <= std_ulogic_vector(mul.dsp_z(63 downto 0));
+      end if;
+    end process multiplier_core_out_reg;
 
   end generate; --/multiplier_core_parallel
 
