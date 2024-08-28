@@ -621,7 +621,7 @@ architecture neorv32_cache_memory_rtl of neorv32_cache_memory is
 
 begin
 
-	-- Access Address Decomposition -----------------------------------------------------------
+  -- Access Address Decomposition -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   acc_tag <= addr_i(31 downto 31-(tag_size_c-1));
   acc_idx <= addr_i(31-tag_size_c downto 2+offset_size_c);
@@ -641,7 +641,7 @@ begin
   end process access_buffer;
 
 
-	-- Status Flag Memory ---------------------------------------------------------------------
+  -- Status Flag Memory ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   status_memory: process(rstn_i, clk_i)
   begin
@@ -667,7 +667,7 @@ begin
   end process status_memory;
 
 
-	-- Tag Memory -----------------------------------------------------------------------------
+  -- Tag Memory -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   tag_memory: process(clk_i) -- no reset to allow inferring of blockRAM
   begin
@@ -680,7 +680,7 @@ begin
   end process tag_memory;
 
 
-	-- Access Status (1 Cycle Latency) --------------------------------------------------------
+  -- Access Status (1 Cycle Latency) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   hit_o   <= '1' when (valid_mem_rd = '1') and (tag_mem_rd = acc_tag_ff) else '0'; -- cache access hit
   dirty_o <= '1' when (valid_mem_rd = '1') and (dirty_mem_rd = '1') and (READ_ONLY = false) else '0'; -- accessed block is dirty
@@ -691,7 +691,7 @@ begin
   base_o(2+(offset_size_c-1) downto 0)         <= (others => '0');
 
 
-	-- Cache Data Memory ----------------------------------------------------------------------
+  -- Cache Data Memory ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   cache_mem_access: process(clk_i) -- no reset to allow inferring of blockRAM
   begin
