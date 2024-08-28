@@ -68,8 +68,8 @@ logic (example: many physical memory protection address configuration registers)
 adds additional register stages to maintain critical path length. Obviously, this increases operation latency.
 
 [TIP]
-Enable the "ASIC style" register file option (`REGFILE_HW_RST`) to obtain maximum clock speed for the CPU (at the cost of
-of an increased hardware footprint).
+Enable the "ASIC style" / full-reset register file option (`REGFILE_HW_RST`) to obtain maximum clock speed for
+the CPU (at the cost of an increased hardware footprint).
 
 In order to optimize for a minimal critical path (= maximum clock speed) the following points should be considered:
 

@@ -169,10 +169,12 @@ The register file provides two different implementation options configured via t
 
 * `REGFILE_HW_RST = false` (default): In this configuration the register file is implemented as plain memory array without a
 dictated hardware reset. This architecture allows to infer FPGA block RAM for the entire register file resulting in minimal
-logic utilization and optimal timing.
+general logic utilization.
 * `REGFILE_HW_RST = true`: This configuration is based on individual FFs that do provide a dedicated hardware reset.
-Hence, the register cannot be mapped to FPGA block RAM. This optional should only be selected if the application requires a
+Hence, the register cannot be mapped to FPGA block RAM. This optional can be selected if the application requires a
 reset of the register file (e.g. for security reasons) or if the design shall be synthesized for an **ASIC** implementation.
+Using individual FFs for th register file might also improve timing as no long routing lines are required to connect to
+block RAM primitives.
 
 The state of this configuration generic can be checked by software via the <<_mxisa>> CSR.
 
