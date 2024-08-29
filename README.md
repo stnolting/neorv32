@@ -286,12 +286,6 @@ This is an open-source project that is free of charge. Use this project in any w
 (as long as it complies to the permissive [license](https://github.com/stnolting/neorv32/blob/main/LICENSE)).
 Please cite it appropriately. :+1:
 
-### :email: Contact
-
-Please use GitHub [Issues](https://github.com/stnolting/neorv32/issues) and [Discussions](https://github.com/stnolting/neorv32/discussions)
-for all kind of requests, issues, ideas, questions, etc. If you would like to contact [me](https://github.com/stnolting) directly
-check out the [About](https://stnolting.github.io/neorv32/#_about) section.
-
 
 ---------------------------------------
 

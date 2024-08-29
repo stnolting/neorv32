@@ -9,9 +9,9 @@
 ==========================
 **The NEORV32 RISC-V Processor** +
 https://github.com/stnolting/neorv32 +
-Dipl.-Ing. Stephan Nolting (M.Sc.) +
+Dipl.-Ing. S. Nolting (M.Sc.) +
 🇪🇺 European Union, Germany +
-stnolting@gmail.com
+`stnolting[ät]gmail[d0t]com`
 ==========================
 
 
