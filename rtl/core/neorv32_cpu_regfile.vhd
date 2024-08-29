@@ -4,14 +4,17 @@
 -- Data register file. 32 entries (= 1024 bit) for RV32I ISA (default), 16 entries  --
 -- (= 512 bit) for RV32E ISA (when RISC-V "E" extension is enabled via "RVE_EN").   --
 --                                                                                  --
--- By default the register file is coded to infer block RAM (for FPGAs), that do no --
--- provide a dedicated hardware reset. For ASIC implementation or setup requiring a --
--- dedicated hardware reset a single-register-based architecture can be enabled via --
--- "RST_EN".                                                                        --
+-- By default the register file is coded to infer block RAM (for FPGAs), that does  --
+-- not provide a dedicated hardware reset. For ASIC implementation or setups that   --
+-- do require a dedicated hardware reset a single-FF-based architecture can be      --
+-- enabled via "RST_EN".                                                            --
 --                                                                                  --
 -- [NOTE] Read-during-write behavior of the register file's memory core is          --
 --        irrelevant as read and write accesses are mutually exclusive and will     --
 --        never happen at the same time.                                            --
+--                                                                                  --
+-- [TIP] This file can be replaced by a technology-specific implementation to       --
+--       optimize timing, area, energy, etc.                                        --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --

@@ -295,7 +295,7 @@ begin
       port_req(i) <= req_terminate_c;
       if port_en_list_c(i) then -- port enabled
         port_req(i) <= req_i;
-        if priv_acc_list_c(i) then -- privileged access only
+        if priv_acc_list_c(i) then -- privileged-access only
           port_req(i).stb <= port_sel(i) and req_i.stb and req_i.priv;
         else
           port_req(i).stb <= port_sel(i) and req_i.stb;
@@ -364,7 +364,7 @@ end neorv32_bus_gateway_rtl;
 -- NEORV32 SoC - Processor Bus Infrastructure: IO Switch                            --
 -- -------------------------------------------------------------------------------- --
 -- Simple switch for accessing one out of several (IO) devices.                     --
--- Note: Enabled ports do not have to be contiguous.                                --
+-- [Note] Enabled ports do not have to be contiguous.                               --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --

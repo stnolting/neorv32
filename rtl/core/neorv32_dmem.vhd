@@ -1,6 +1,9 @@
 -- ================================================================================ --
 -- NEORV32 SoC - Processor-Internal Data Memory (DMEM)                              --
 -- -------------------------------------------------------------------------------- --
+-- [TIP] This file can be replaced by a technology-specific implementation to       --
+--       optimize timing, area, energy, etc.                                        --
+-- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
 -- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
