@@ -139,6 +139,7 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     instr_addsub : std_ulogic;
     instr_mul    : std_ulogic;
     funct        : std_ulogic_vector(2 downto 0);
+    valid        : std_ulogic;
   end record;
   signal cmd : cmd_t;
   signal funct_ff : std_ulogic_vector(2 downto 0);
@@ -313,24 +314,31 @@ begin
   -- Instruction Decoding -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- one-hot re-encoding --
-  cmd.instr_class  <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11100") else '0';
-  cmd.instr_comp   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "10100") else '0';
-  cmd.instr_i2f    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11010") else '0';
-  cmd.instr_f2i    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11000") else '0';
-  cmd.instr_sgnj   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00100") else '0';
-  cmd.instr_minmax <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00101") else '0';
-  cmd.instr_addsub <= '1' when (ctrl_i.ir_funct12(11 downto 8) = "0000" ) else '0';
-  cmd.instr_mul    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00010") else '0';
+  cmd.instr_class  <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11100") and (ctrl_i.ir_funct3 = "001")               else '0'; -- FCLASS
+  cmd.instr_comp   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "10100") and (ctrl_i.ir_funct3(2) = '0')              else '0'; -- FEQ/FLT/FLE
+  cmd.instr_i2f    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11010") and (ctrl_i.ir_funct12(4 downto 1) = "0000") else '0'; -- FCVT
+  cmd.instr_f2i    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11000") and (ctrl_i.ir_funct12(4 downto 1) = "0000") else '0' ;-- FCVT
+  cmd.instr_sgnj   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00100") and (ctrl_i.ir_funct3(2) = '0')              else '0'; -- FSGNJ
+  cmd.instr_minmax <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00101") and (ctrl_i.ir_funct3(2 downto 1) = "00")    else '0'; -- FMIN/FMAX
+  cmd.instr_addsub <= '1' when (ctrl_i.ir_funct12(11 downto 8) = "0000")                                               else '0'; -- FADD/FSUB
+  cmd.instr_mul    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00010")                                              else '0'; -- FMUL
+
+  -- valid FPU operation? --
+  cmd.valid <= '1' when (ctrl_i.ir_funct12(6 downto 5) = "00") and -- single-precision format only
+                        ((cmd.instr_class  = '1') or (cmd.instr_comp   = '1') or
+                         (cmd.instr_i2f    = '1') or (cmd.instr_f2i    = '1') or
+                         (cmd.instr_sgnj   = '1') or (cmd.instr_minmax = '1') or
+                         (cmd.instr_addsub = '1') or (cmd.instr_mul    = '1')) else '0';
 
   -- binary re-encoding --
-  cmd.funct <= op_mul_c     when (cmd.instr_mul    = '1') else
-               op_addsub_c  when (cmd.instr_addsub = '1') else
-               op_minmax_c  when (cmd.instr_minmax = '1') else
-               op_sgnj_c    when (cmd.instr_sgnj   = '1') else
-               op_f2i_c     when (cmd.instr_f2i    = '1') else
-               op_i2f_c     when (cmd.instr_i2f    = '1') else
-               op_comp_c    when (cmd.instr_comp   = '1') else
-               op_class_c;--when (cmd.instr_class  = '1') else (others => '-');
+  cmd.funct <= op_mul_c    when (cmd.instr_mul    = '1') else
+               op_addsub_c when (cmd.instr_addsub = '1') else
+               op_minmax_c when (cmd.instr_minmax = '1') else
+               op_sgnj_c   when (cmd.instr_sgnj   = '1') else
+               op_f2i_c    when (cmd.instr_f2i    = '1') else
+               op_i2f_c    when (cmd.instr_i2f    = '1') else
+               op_comp_c   when (cmd.instr_comp   = '1') else
+               op_class_c;
 
 
   -- Input Operands: Check for subnormal numbers (flush to zero) ----------------------------
@@ -425,7 +433,7 @@ begin
             fpu_operands.frm <= ctrl_i.ir_funct3(2 downto 0);
           end if;
           --
-          if (start_i = '1') then
+          if (start_i = '1') and (cmd.valid = '1') then
             -- operand data --
             fpu_operands.rs1       <= op_data(0);
             fpu_operands.rs1_class <= op_class(0);
