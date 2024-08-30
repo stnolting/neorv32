@@ -152,8 +152,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
   -- make sure reset state is the first item in the list (discussion #415)
-  type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_EXIT, RESTART, FENCE, SLEEP,
-                                  EXECUTE, ALU_WAIT, BRANCH, BRANCHED, SYSTEM, MEM_REQ, MEM_WAIT);
+  type execute_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_EXIT, RESTART, SLEEP, EXECUTE,
+                                  ALU_WAIT, BRANCH, BRANCHED, SYSTEM, MEM_REQ, MEM_WAIT);
   type execute_engine_t is record
     state        : execute_engine_state_t;
     state_nxt    : execute_engine_state_t;
@@ -845,8 +845,7 @@ begin
               ctrl_nxt.alu_cp_trig(cp_sel_cond_c) <= '1'; -- trigger COND co-processor
               execute_engine.state_nxt            <= ALU_WAIT;
             -- BASE: co-processor SHIFT operation (multi-cycle) --
-            elsif (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or
-                  (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) then
+            elsif (execute_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01") then -- sll/sr
               ctrl_nxt.alu_cp_trig(cp_sel_shifter_c) <= '1'; -- trigger SHIFTER co-processor
               execute_engine.state_nxt               <= ALU_WAIT;
             -- BASE: ALU CORE operation (single-cycle) --
@@ -873,9 +872,10 @@ begin
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c =>
             execute_engine.state_nxt <= BRANCH;
 
-          -- memory fence operations --
+          -- memory fence operations (execute even if illegal funct3) --
           when opcode_fence_c =>
-            execute_engine.state_nxt <= FENCE;
+            ctrl_nxt.lsu_fence       <= '1'; -- [NOTE] fence == fence.i; ignore all ordering bits
+            execute_engine.state_nxt <= RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
 
           -- FPU: floating-point operations --
           when opcode_fop_c =>
@@ -900,15 +900,6 @@ begin
         if (alu_cp_done_i = '1') or (trap_ctrl.exc_buf(exc_illegal_c) = '1') then
           ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back (won't happen in case of an illegal instruction)
           execute_engine.state_nxt <= DISPATCH;
-        end if;
-
-      when FENCE => -- memory fence
-      -- ------------------------------------------------------------
-        if (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- abort if illegal instruction
-          execute_engine.state_nxt <= DISPATCH;
-        else
-          ctrl_nxt.lsu_fence       <= '1'; -- NOTE: fence == fence.i
-          execute_engine.state_nxt <= RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
         end if;
 
       when BRANCH => -- update next_pc on taken branches and jumps
@@ -1204,8 +1195,7 @@ begin
             (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_xor_c) or
             (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_or_c) or
             (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_and_c) or
-            ((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and
-             (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000")) or
+            ((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000")) or
             ((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) and
              ((execute_engine.ir(instr_funct7_msb_c-2 downto instr_funct7_lsb_c) = "00000") and (execute_engine.ir(instr_funct7_msb_c) = '0')))) or -- valid base ALUI instruction?
            (CPU_EXTENSION_RISCV_B and (decode_aux.is_b_imm = '1')) then -- valid BITMANIP immediate instruction?
