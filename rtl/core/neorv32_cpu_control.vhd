@@ -143,7 +143,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- instruction decoding helper logic --
   type decode_aux_t is record
     opcode             : std_ulogic_vector(6 downto 0);
-    is_a_lr,  is_a_sc  : std_ulogic;
     is_m_mul, is_m_div : std_ulogic;
     is_b_imm, is_b_reg : std_ulogic;
     is_zicond          : std_ulogic;
@@ -643,21 +642,11 @@ begin
   decode_helper: process(execute_engine)
   begin
     -- defaults --
-    decode_aux.is_a_lr   <= '0';
-    decode_aux.is_a_sc   <= '0';
-    decode_aux.is_m_mul  <= '0';
-    decode_aux.is_m_div  <= '0';
     decode_aux.is_b_imm  <= '0';
     decode_aux.is_b_reg  <= '0';
+    decode_aux.is_m_mul  <= '0';
+    decode_aux.is_m_div  <= '0';
     decode_aux.is_zicond <= '0';
-
-    -- ATOMIC instructions --
-    if CPU_EXTENSION_RISCV_A and -- implemented at all?
-       (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and
-       (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c+3) = "0001") then
-      decode_aux.is_a_lr <= not execute_engine.ir(instr_funct7_lsb_c+2); -- LR.W
-      decode_aux.is_a_sc <=     execute_engine.ir(instr_funct7_lsb_c+2); -- SC.W
-    end if;
 
     -- BITMANIP instruction --
     if CPU_EXTENSION_RISCV_B then -- implemented at all?
@@ -1182,7 +1171,8 @@ begin
         end case;
 
       when opcode_amo_c =>
-        if CPU_EXTENSION_RISCV_A and ((decode_aux.is_a_lr = '1') or (decode_aux.is_a_sc = '1')) then -- LR.W/SC.W
+        if CPU_EXTENSION_RISCV_A and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and
+          (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c+3) = "0001") then -- LR.W/SC.W
           illegal_cmd <= '0';
         else
           illegal_cmd <= '1';
@@ -1250,7 +1240,7 @@ begin
         end if;
 
       when opcode_fop_c =>
-        illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);
+        illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- valid encodings checked by FPU
 
       when opcode_cust0_c | opcode_cust1_c =>
         illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- all encodings valid if CFU enable
