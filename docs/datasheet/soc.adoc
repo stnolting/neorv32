@@ -646,6 +646,12 @@ package file (`rtl/core/neorv323_package.vhd`).
   constant base_io_dma_c   : std_ulogic_vector(31 downto 0) := x"ffffed00";
 ----
 
+.IO Access Latency
+[IMPORTANT]
+In order to shorten the critical path of the IO system, the IO switch contain a partial register stage that
+buffers the address bus. Hence, accesses to the processor-internal IO region requires an additional clock cycle
+to complete.
+
 
 :sectnums:
 ==== Boot Configuration

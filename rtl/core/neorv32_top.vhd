@@ -1033,6 +1033,8 @@ begin
       DEV_31_EN => false,               DEV_21_BASE => (others => '-')  -- reserved
     )
     port map (
+      clk_i        => clk_i,
+      rstn_i       => rstn_sys,
       main_req_i   => io_req,
       main_rsp_o   => io_rsp,
       dev_00_req_o => iodev_req(IODEV_OCD),     dev_00_rsp_i => iodev_rsp(IODEV_OCD),

@@ -363,8 +363,9 @@ end neorv32_bus_gateway_rtl;
 -- ================================================================================ --
 -- NEORV32 SoC - Processor Bus Infrastructure: IO Switch                            --
 -- -------------------------------------------------------------------------------- --
--- Simple switch for accessing one out of several (IO) devices.                     --
--- [Note] Enabled ports do not have to be contiguous.                               --
+-- Simple switch for accessing one out of several (IO) devices. The main request    --
+-- input bus provides a partial register stage to relax timing. Thus, accesses      --
+-- require an additional clock cycle.                                               --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -382,7 +383,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_bus_io_switch is
   generic (
     DEV_SIZE  : natural; -- size of a single IO device, has to be a power of two
-    -- device port enable and base address --
+    -- device port enable and base address; enabled ports do not have to be contiguous --
     DEV_00_EN : boolean := false; DEV_00_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
     DEV_01_EN : boolean := false; DEV_01_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
     DEV_02_EN : boolean := false; DEV_02_BASE : std_ulogic_vector(31 downto 0) := (others => '-');
@@ -417,6 +418,9 @@ entity neorv32_bus_io_switch is
     DEV_31_EN : boolean := false; DEV_31_BASE : std_ulogic_vector(31 downto 0) := (others => '-')
   );
   port (
+    -- global control --
+    clk_i        : in  std_ulogic; -- global clock, rising edge
+    rstn_i       : in  std_ulogic; -- global reset, low-active, async
     -- host port --
     main_req_i   : in  bus_req_t; -- host request
     main_rsp_o   : out bus_rsp_t; -- host response
@@ -489,6 +493,9 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   signal dev_req : dev_req_t;
   signal dev_rsp : dev_rsp_t;
 
+  -- (partial) register stage --
+  signal main_req : bus_req_t;
+
 begin
 
   -- Combine Device Ports -------------------------------------------------------------------
@@ -527,6 +534,31 @@ begin
   dev_31_req_o <= dev_req(31); dev_rsp(31) <= dev_31_rsp_i;
 
 
+  -- Input Buffer ---------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  request_reg: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      main_req.addr <= (others => '0');
+      main_req.stb  <= '0';
+    elsif rising_edge(clk_i) then
+      if (main_req_i.stb = '1') then -- reduce switching activity on IO bus system
+        main_req.addr <= main_req_i.addr;
+      end if;
+      main_req.stb <= main_req_i.stb;
+    end if;
+  end process request_reg;
+
+  -- no need to register these signals; they are stable for the entire transfer and do not impact the critical path --
+  main_req.data  <= main_req_i.data;
+  main_req.ben   <= main_req_i.ben;
+  main_req.rw    <= main_req_i.rw;
+  main_req.src   <= main_req_i.src;
+  main_req.priv  <= main_req_i.priv;
+  main_req.rvso  <= main_req_i.rvso;
+  main_req.fence <= main_req_i.fence;
+
+
   -- Request --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_request_gen:
@@ -534,11 +566,11 @@ begin
 
     bus_request_port_enabled:
     if dev_en_list_c(i) generate
-      bus_request: process(main_req_i)
+      bus_request: process(main_req)
       begin
-        dev_req(i) <= main_req_i;
-        if (main_req_i.addr(addr_hi_c downto addr_lo_c) = dev_base_list_c(i)(addr_hi_c downto addr_lo_c)) then
-          dev_req(i).stb <= main_req_i.stb; -- propagate transaction strobe if address match
+        dev_req(i) <= main_req;
+        if (main_req.addr(addr_hi_c downto addr_lo_c) = dev_base_list_c(i)(addr_hi_c downto addr_lo_c)) then
+          dev_req(i).stb <= main_req.stb; -- propagate transaction strobe if address match
         else
           dev_req(i).stb <= '0';
         end if;
