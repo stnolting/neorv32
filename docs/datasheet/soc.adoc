@@ -298,11 +298,11 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 :sectnums:
 === Processor Clocking
 
-The processor is implemented as fully-synchronous logic design using a single clock domain that is driven entirely by the
-top's `clk_i` signal. This clock signal is used by all internal registers and memories, which trigger on the rising edge of
-this clock signal - except for the <<_processor_reset>> and the clock switching gate that trigger on a falling edge.
-External "clocks" like the OCD's JTAG clock or the SDI's serial clock are synchronized into the processor's clock domain
-before being further processed.
+The processor is implemented as fully-synchronous logic design using a single clock domain that is driven entirely
+by the top's `clk_i` signal. This clock signal is used by all internal registers and memories. All of them trigger
+on the **rising edge** of this clock signal - the only exception it the default <<_clock_gating>> module. External
+"clocks" like the OCD's JTAG clock or the SDI's serial clock are synchronized into the processor's clock domain
+before being used as "general logic signal" (and not as a dedicated clock).
 
 ==== Clock Gating
 
@@ -371,8 +371,8 @@ The actual reset cause can be determined via the <<_watchdog_timer_wdt>>.
 
 If any of these sources trigger a reset, the internal reset will be triggered for at least 4 clock cycles ensuring
 a valid reset of the entire processor. The internal global reset is asserted _aysynchronoulsy_ if triggered by the external
-`rstn_i` signal. For internal reset sources, the global reset is asserted _synchronously_. If the reset cause gets inactive
-the internal reset is de-asserted _synchronously_ at a falling clock edge.
+`rstn_i` signal. For internal reset sources, the global reset is asserted _synchronously_. If the reset cause is de-asserted
+the internal reset is de-asserted _synchronously_ at the next rising clock edge.
 
 Internally, **all registers** that are not meant for mapping to blockRAM (like the register file) do provide a dedicated and
 low-active **asynchronous hardware reset**. This asynchronous reset ensures that the entire processor logic is reset to a
