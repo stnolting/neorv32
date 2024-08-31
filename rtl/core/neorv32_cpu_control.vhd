@@ -317,9 +317,9 @@ begin
   begin
     if (rstn_i = '0') then
       fetch_engine.state   <= IF_RESTART;
-      fetch_engine.restart <= '1'; -- set to reset IPB
-      fetch_engine.pc      <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit aligned boot address
-      fetch_engine.priv    <= priv_mode_m_c; -- start in machine mode
+      fetch_engine.restart <= '1'; -- reset IPB and issue engine
+      fetch_engine.pc      <= (others => '0');
+      fetch_engine.priv    <= '0';
     elsif rising_edge(clk_i) then
       -- restart request --
       if (fetch_engine.state = IF_RESTART) then -- restart done
