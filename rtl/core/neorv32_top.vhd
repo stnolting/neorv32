@@ -387,7 +387,7 @@ begin
         rstn_ext      <= '0';
         rstn_sys_sreg <= (others => '0');
         rstn_sys      <= '0';
-      elsif falling_edge(clk_i) then -- inverted clock to release reset _before_ all FFs trigger (rising edge)
+      elsif rising_edge(clk_i) then -- inverted clock to release reset _before_ all FFs trigger (rising edge)
         -- external reset --
         rstn_ext_sreg <= rstn_ext_sreg(rstn_ext_sreg'left-1 downto 0) & '1'; -- active for at least <rstn_ext_sreg'size> clock cycles
         rstn_ext      <= and_reduce_f(rstn_ext_sreg);
@@ -408,7 +408,7 @@ begin
     begin
       if (rstn_ext = '0') then
         rst_cause <= "00"; -- reset from external pin
-      elsif falling_edge(clk_i) then
+      elsif rising_edge(clk_i) then
         if (dci_ndmrstn = '0') then
           rst_cause <= "01"; -- reset from on-chip debugger
         elsif (rstn_wdt = '0') then
@@ -1033,6 +1033,8 @@ begin
       DEV_31_EN => false,               DEV_21_BASE => (others => '-')  -- reserved
     )
     port map (
+      clk_i        => clk_i,
+      rstn_i       => rstn_sys,
       main_req_i   => io_req,
       main_rsp_o   => io_rsp,
       dev_00_req_o => iodev_req(IODEV_OCD),     dev_00_rsp_i => iodev_rsp(IODEV_OCD),

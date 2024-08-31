@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100208"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100209"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -285,11 +285,6 @@ package neorv32_package is
 
   -- RISC-V Floating-Point Stuff ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant float_single_c : std_ulogic_vector(1 downto 0) := "00"; -- single-precision (32-bit)
---constant float_double_c : std_ulogic_vector(1 downto 0) := "01"; -- double-precision (64-bit)
---constant float_half_c   : std_ulogic_vector(1 downto 0) := "10"; -- half-precision (16-bit)
---constant float_quad_c   : std_ulogic_vector(1 downto 0) := "11"; -- quad-precision (128-bit)
-
   -- number class flags --
   constant fp_class_neg_inf_c    : natural := 0; -- negative infinity
   constant fp_class_neg_norm_c   : natural := 1; -- negative normal number

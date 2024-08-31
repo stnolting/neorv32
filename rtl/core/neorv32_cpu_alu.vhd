@@ -115,7 +115,7 @@ begin
   addsub_res <= std_ulogic_vector(unsigned(opa_x) - unsigned(opb_x)) when (ctrl_i.alu_sub = '1') else
                 std_ulogic_vector(unsigned(opa_x) + unsigned(opb_x));
 
-  add_o <= addsub_res(XLEN-1 downto 0); -- direct output of adder result
+  add_o <= addsub_res(XLEN-1 downto 0); -- direct output
 
 
   -- ALU Operation Select -------------------------------------------------------------------
