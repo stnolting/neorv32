@@ -566,7 +566,7 @@ begin
       execute_engine.ir      <= (others => '0');
       execute_engine.is_ci   <= '0';
       execute_engine.pc      <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
-      execute_engine.next_pc <= (others => '0');
+      execute_engine.next_pc <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
       execute_engine.link_pc <= (others => '0');
     elsif rising_edge(clk_i) then
       -- control bus --
@@ -617,7 +617,7 @@ begin
             execute_engine.next_pc <= alu_add_i(XLEN-1 downto 1) & '0';
           end if;
 
-        when EXECUTE => -- linear increment (ise ALU's adder to compute next_p = pm + imm)
+        when EXECUTE => -- linear increment (use ALU's adder to compute next_pc = current_pc + imm)
           execute_engine.next_pc <= alu_add_i(XLEN-1 downto 1) & '0';
 
         when others => -- no update
