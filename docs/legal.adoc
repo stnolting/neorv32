@@ -9,8 +9,8 @@
 ==========================
 **The NEORV32 RISC-V Processor** +
 https://github.com/stnolting/neorv32 +
-Dipl.-Ing. S. Nolting (M.Sc.) +
-🇪🇺 European Union, Germany +
+Stephan Nolting, M.Sc. +
+🇪🇺 European Union +
 `stnolting[ät]gmail[d0t]com`
 ==========================
 
@@ -34,17 +34,14 @@ the following disclaimer in the documentation and/or other materials provided wi
 . Neither the name of the copyright holder nor the names of its contributors may be used to endorse or
 promote products derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
 
 .SPDX Identifier
 [NOTE]
@@ -56,11 +53,11 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 :sectnums!:
 === Proprietary Notice
 
-* "GitHub" is a Subsidiary of Microsoft Corporation.
+* "GitHub" is a subsidiary of Microsoft Corporation.
 * "Vivado" and "Artix" are trademarks of AMD Inc.
 * "AXI", "AXI", "AXI4-Lite", "AXI4-Stream", "AHB", "AHB3" and "AHB3-Lite" are trademarks of Arm Holdings plc.
 * "ModelSim" is a trademark of Mentor Graphics – A Siemens Business.
-* "Quartus Prime" and "Cyclone" are trademarks of Intel Corporation.
+* "Quartus [Prime]" and "Cyclone" are trademarks of Intel Corporation.
 * "iCE40", "UltraPlus" and "Radiant" are trademarks of Lattice Semiconductor Corporation.
 * "GateMate" is a trademark of Cologne Chip AG.
 * "Windows" is a trademark of Microsoft Corporation.
@@ -77,7 +74,7 @@ No copyright infringement intended.
 :sectnums!:
 === Disclaimer
 
-This project is released under the BSD 3-Clause license. No copyright infringement intended.
+This project is released under the BSD 3-Clause license. NO COPYRIGHT INFRINGEMENT INTENDED.
 Other implied or used projects/sources might have different licensing – see their according
 documentation for more information.
 
@@ -103,7 +100,7 @@ Please add as many https://github.com/stnolting/neorv32/graphs/contributors[cont
 This project would not be where it is without them.
 
 .DOI
-[TIP]
+[NOTE]
 This project provides a _digital object identifier_ provided by https://zenodo.org[zenodo]:
 https://doi.org/10.5281/zenodo.5018888[image:https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg[title='zenodo']]
 
@@ -115,4 +112,5 @@ who helped improving this project! This project would not be where it is without
 
 https://riscv.org[RISC-V] - instruction sets want to be free!
 
-Continuous integration provided by https://github.com/features/actions[GitHub Actions] and powered by https://github.com/ghdl/ghdl[GHDL].
+Continuous integration provided by https://github.com/features/actions[GitHub Actions]
+and powered by https://github.com/ghdl/ghdl[GHDL].

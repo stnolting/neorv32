@@ -1,6 +1,6 @@
 ## Contributor Covenant Code of Conduct
 
-> [!NOTE]
+> [!IMPORTANT]
 > Please note that we have a **Code of Conduct**. Please follow it in all your interactions with this project.
 
 ### Our Pledge
@@ -25,14 +25,11 @@ include:
 
 Examples of unacceptable behavior by participants include:
 
-* The use of sexualized language or imagery and unwelcome sexual attention or
- advances
+* The use of sexualized language or imagery and unwelcome sexual attention or advances
 * Trolling, insulting/derogatory comments, and personal or political attacks
 * Public or private harassment
-* Publishing others' private information, such as a physical or electronic
- address, without explicit permission
-* Other conduct which could reasonably be considered inappropriate in a
- professional setting
+* Publishing others' private information, such as a physical or electronic address, without explicit permission
+* Other conduct which could reasonably be considered inappropriate in a professional setting
 
 ### Our Responsibilities
 
