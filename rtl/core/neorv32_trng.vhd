@@ -394,8 +394,8 @@ end neoTRNG_rtl;
 
 -- **********************************************************************************************************
 -- neoTRNG entropy source cell, based on a simple ring-oscillator constructed from an odd number
--- of inverter. The inverters are decoupled using individually-enabled latches to prevent the
--- synthesis from removing parts of the oscillator chain.
+-- of inverter. The inverters are decoupled using individually-enabled latches to prevent synthesis
+-- from removing parts of the oscillator chain.
 -- **********************************************************************************************************
 
 library ieee;
