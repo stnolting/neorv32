@@ -37,7 +37,7 @@ if {[llength $files] != 0} {
 # Create Vivado project
 # **************************************************************
 create_project "neorv32-ip" $outputdir
-set_property target_language VHDL [current_project]
+#set_property target_language VHDL [current_project]
 
 
 # **************************************************************
@@ -49,14 +49,13 @@ set file_list_file [read [open "$neorv32_home/rtl/file_list_soc.f" r]]
 set file_list [string map [list "NEORV32_RTL_PATH_PLACEHOLDER" "$neorv32_home/rtl"] $file_list_file]
 puts "NEORV32 source files:"
 puts $file_list
-
 add_files $file_list
 set_property library neorv32 [get_files $file_list]
 
 # IP top module
 add_file $neorv32_home/rtl/system_integration/$rtl_top
 set_property library neorv32 [get_files [glob $neorv32_home/rtl/system_integration/$rtl_top]]
-##set_property top $rtl_top [current_fileset]
+set_property top $rtl_top [current_fileset]
 
 update_compile_order -fileset sources_1
 
