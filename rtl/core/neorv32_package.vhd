@@ -47,7 +47,7 @@ package neorv32_package is
 -- Processor Address Space Layout
 -- **********************************************************************************************************
 
-  -- Main Address Regions ---
+  -- Main Address Regions (base address must be aligned to the region's size) ---
   constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via generic
   constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via generic
   constant mem_xip_base_c  : std_ulogic_vector(31 downto 0) := x"e0000000"; -- page (4MSBs) only!
@@ -55,12 +55,12 @@ package neorv32_package is
   constant mem_boot_base_c : std_ulogic_vector(31 downto 0) := x"ffffc000";
   constant mem_boot_size_c : natural := 8*1024;
   constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffffe000";
-  constant mem_io_size_c   : natural := 8*1024;
+  constant mem_io_size_c   : natural := 8*1024; -- = 32 * iodev_size_c
 
   -- Start of uncached memory access (256MB page / 4MSBs only) --
   constant uncached_begin_c  : std_ulogic_vector(31 downto 0) := x"f0000000";
 
-  -- IO Address Map --
+  -- IO Address Map (base address must be aligned to the region's size) --
   constant iodev_size_c      : natural := 256; -- size of a single IO device (bytes)
 --constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe000"; -- reserved
 --constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe100"; -- reserved
