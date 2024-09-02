@@ -16,8 +16,8 @@
 # Global configuration
 # **************************************************************
 set neorv32_home ../..
-set rtl_top neorv32_vivado_ip.vhd
-set logo docs/figures/neorv32_logo_riscv_small.png
+set ip_top neorv32_vivado_ip
+set ip_logo docs/figures/neorv32_logo_riscv_small.png
 set outputdir neorv32_vivado_ip_work
 set cur_dir [file normalize .]
 
@@ -28,8 +28,8 @@ set cur_dir [file normalize .]
 file mkdir $outputdir
 set files [glob -nocomplain "$outputdir/*"]
 if {[llength $files] != 0} {
-    puts "DELETING ALL FILES in $outputdir"
-    file delete -force {*}[glob -directory $outputdir *];
+  puts "DELETING ALL FILES in $outputdir"
+  file delete -force {*}[glob -directory $outputdir *];
 }
 
 
@@ -44,7 +44,7 @@ create_project "neorv32-ip" $outputdir
 # Import HDL source files
 # **************************************************************
 
-# read and process NEORV32 file list
+# read and process NEORV32 SoC file list
 set file_list_file [read [open "$neorv32_home/rtl/file_list_soc.f" r]]
 set file_list [string map [list "NEORV32_RTL_PATH_PLACEHOLDER" "$neorv32_home/rtl"] $file_list_file]
 puts "NEORV32 source files:"
@@ -53,9 +53,8 @@ add_files $file_list
 set_property library neorv32 [get_files $file_list]
 
 # IP top module
-add_file $neorv32_home/rtl/system_integration/$rtl_top
-set_property library neorv32 [get_files [glob $neorv32_home/rtl/system_integration/$rtl_top]]
-set_property top $rtl_top [current_fileset]
+add_file $neorv32_home/rtl/system_integration/$ip_top.vhd
+set_property top $ip_top [current_fileset]
 
 update_compile_order -fileset sources_1
 
@@ -328,13 +327,13 @@ ipgui::move_param -component [ipx::current_core] -order 32 [ipgui::get_guiparams
 # **************************************************************
 ipx::add_file_group -type utility {} [ipx::current_core]
 ipx::add_file ../../$neorv32_home/$logo [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]
-set_property type image [ipx::get_files ../../$neorv32_home/$logo -of_objects [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]]
-set_property type LOGO  [ipx::get_files ../../$neorv32_home/$logo -of_objects [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]]
+set_property type image [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]]
+set_property type LOGO  [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]]
 
 ipx::add_file_group -type gui_icon {} [ipx::current_core]
 ipx::add_file ../../$neorv32_home/$logo [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]
-set_property type image [ipx::get_files ../../$neorv32_home/$logo -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
-set_property type LOGO  [ipx::get_files ../../$neorv32_home/$logo -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
+set_property type image [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
+set_property type LOGO  [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
 
 
 # **************************************************************
