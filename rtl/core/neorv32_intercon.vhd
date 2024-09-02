@@ -25,11 +25,11 @@ entity neorv32_bus_switch is
   port (
     clk_i    : in  std_ulogic; -- global clock, rising edge
     rstn_i   : in  std_ulogic; -- global reset, low-active, async
-    a_lock_i : in  std_ulogic; -- exclusive access for port A
-    a_req_i  : in  bus_req_t;  -- host port A: request bus (PRIORITIZED)
-    a_rsp_o  : out bus_rsp_t;  -- host port A: response bus
-    b_req_i  : in  bus_req_t;  -- host port B: request bus
-    b_rsp_o  : out bus_rsp_t;  -- host port B: response bus
+    a_lock_i : in  std_ulogic; -- exclusive access for port A while set
+    a_req_i  : in  bus_req_t;  -- host port A request bus (PRIORITIZED)
+    a_rsp_o  : out bus_rsp_t;  -- host port A response bus
+    b_req_i  : in  bus_req_t;  -- host port B request bus
+    b_rsp_o  : out bus_rsp_t;  -- host port B response bus
     x_req_o  : out bus_req_t;  -- device port request bus
     x_rsp_i  : in  bus_rsp_t   -- device port response bus
   );
@@ -121,9 +121,9 @@ begin
                    a_req_i.data when PORT_B_READ_ONLY    else
                    a_req_i.data when (arbiter.sel = '0') else b_req_i.data;
 
-  x_req_o.ben   <= b_req_i.ben when PORT_A_READ_ONLY     else
-                   a_req_i.ben when PORT_B_READ_ONLY     else
-                   a_req_i.ben when (arbiter.sel = '0')  else b_req_i.ben;
+  x_req_o.ben   <= b_req_i.ben  when PORT_A_READ_ONLY    else
+                   a_req_i.ben  when PORT_B_READ_ONLY    else
+                   a_req_i.ben  when (arbiter.sel = '0') else b_req_i.ben;
 
   x_req_o.stb   <= arbiter.stb;
 
@@ -276,7 +276,7 @@ begin
   port_sel(4) <= '1' when E_ENABLE and (req_i.addr(31 downto index_size_f(E_SIZE)) = E_BASE(31 downto index_size_f(E_SIZE))) else '0';
 
   -- accesses to the "void" are redirected to the X port --
-  port_sel(5) <= '1' when ((port_sel(4 downto 0) = "00000") and X_ENABLE) else '0';
+  port_sel(5) <= '1' when X_ENABLE and (port_sel(4 downto 0) = "00000") else '0';
 
 
   -- Gateway Ports --------------------------------------------------------------------------
